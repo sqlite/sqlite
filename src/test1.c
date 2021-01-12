@@ -8385,6 +8385,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 { "sqlite3_column_database_name",test_stmt_utf8,(void*)sqlite3_column_database_name},
 { "sqlite3_column_table_name",test_stmt_utf8,(void*)sqlite3_column_table_name},
+{ "sqlite3_column_table_alias",test_stmt_utf8,(void*)sqlite3_column_table_alias},
 { "sqlite3_column_origin_name",test_stmt_utf8,(void*)sqlite3_column_origin_name},
 #endif
 
@@ -8400,6 +8401,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 {"sqlite3_column_database_name16",
   test_stmt_utf16, (void*)sqlite3_column_database_name16},
 {"sqlite3_column_table_name16", test_stmt_utf16, (void*)sqlite3_column_table_name16},
+{"sqlite3_column_table_alias16", test_stmt_utf16, (void*)sqlite3_column_table_alias16},
 {"sqlite3_column_origin_name16", test_stmt_utf16, (void*)sqlite3_column_origin_name16},
 #endif
 #endif
