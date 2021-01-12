@@ -483,7 +483,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_database_file_object,
   /* Version 3.34.0 and later */
   sqlite3_txn_state,
-  /* Version 3.35.0 and later */
+  /* Version 3.36.0 and later */
   sqlite3_column_table_alias,
   sqlite3_column_table_alias16,
 };

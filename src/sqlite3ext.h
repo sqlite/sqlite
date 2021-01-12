@@ -644,7 +644,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_free_filename          sqlite3_api->free_filename
 #define sqlite3_database_file_object   sqlite3_api->database_file_object
 /* Version 3.34.0 and later */
-#define sqlite3_txn_state              sqlite3_api->txn_state/* Version 3.34.0 and later */
+#define sqlite3_txn_state              sqlite3_api->txn_state
+/* Version 3.36.0 and later */
 #define sqlite3_column_table_alias     sqlite3_api->column_table_alias
 #define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
