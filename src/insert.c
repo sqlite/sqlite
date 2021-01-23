@@ -370,7 +370,9 @@ static int autoIncBegin(
     while( pInfo && pInfo->pTab!=pTab ){ pInfo = pInfo->pNext; }
     if( pInfo==0 ){
       pInfo = sqlite3DbMallocRawNN(pParse->db, sizeof(*pInfo));
-      if( pInfo==0 ) return 0;
+      sqlite3ParserAddCleanup(pToplevel, sqlite3DbFree, pInfo);
+      testcase( pParse->earlyCleanup );
+      if( pParse->db->mallocFailed ) return 0;
       pInfo->pNext = pToplevel->pAinc;
       pToplevel->pAinc = pInfo;
       pInfo->pTab = pTab;
@@ -1299,7 +1301,9 @@ void sqlite3Insert(
     sqlite3VdbeJumpHere(v, addrInsTop);
   }
 
+#ifndef SQLITE_OMIT_XFER_OPT
 insert_end:
+#endif /* SQLITE_OMIT_XFER_OPT */
   /* Update the sqlite_sequence table by storing the content of the
   ** maximum rowid counter values recorded while inserting into
   ** autoincrement tables.

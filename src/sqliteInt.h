@@ -1137,6 +1137,7 @@ typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
+typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
@@ -1154,6 +1155,7 @@ typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
+typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
 typedef struct RenameToken RenameToken;
@@ -1495,7 +1497,7 @@ struct sqlite3 {
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
   int iSysErrno;                /* Errno value from last system error */
-  u16 dbOptFlags;               /* Flags to enable/disable optimizations */
+  u32 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
@@ -1702,24 +1704,26 @@ struct sqlite3 {
 ** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface to
 ** selectively disable various optimizations.
 */
-#define SQLITE_QueryFlattener 0x0001   /* Query flattening */
-#define SQLITE_WindowFunc     0x0002   /* Use xInverse for window functions */
-#define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
-#define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
-#define SQLITE_DistinctOpt    0x0010   /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x0020   /* Covering index scans */
-#define SQLITE_OrderByIdxJoin 0x0040   /* ORDER BY of joins via index */
-#define SQLITE_Transitive     0x0080   /* Transitive constraints */
-#define SQLITE_OmitNoopJoin   0x0100   /* Omit unused tables in joins */
-#define SQLITE_CountOfView    0x0200   /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x0400   /* Add OP_CursorHint opcodes */
-#define SQLITE_Stat4          0x0800   /* Use STAT4 data */
-   /* TH3 expects the Stat4   ^^^^^^ value to be 0x0800.  Don't change it */
-#define SQLITE_PushDown       0x1000   /* The push-down optimization */
-#define SQLITE_SimplifyJoin   0x2000   /* Convert LEFT JOIN to JOIN */
-#define SQLITE_SkipScan       0x4000   /* Skip-scans */
-#define SQLITE_PropagateConst 0x8000   /* The constant propagation opt */
-#define SQLITE_AllOpts        0xffff   /* All optimizations */
+#define SQLITE_QueryFlattener 0x00000001 /* Query flattening */
+#define SQLITE_WindowFunc     0x00000002 /* Use xInverse for window functions */
+#define SQLITE_GroupByOrder   0x00000004 /* GROUPBY cover of ORDERBY */
+#define SQLITE_FactorOutConst 0x00000008 /* Constant factoring */
+#define SQLITE_DistinctOpt    0x00000010 /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan   0x00000020 /* Covering index scans */
+#define SQLITE_OrderByIdxJoin 0x00000040 /* ORDER BY of joins via index */
+#define SQLITE_Transitive     0x00000080 /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x00000100 /* Omit unused tables in joins */
+#define SQLITE_CountOfView    0x00000200 /* The count-of-view optimization */
+#define SQLITE_CursorHints    0x00000400 /* Add OP_CursorHint opcodes */
+#define SQLITE_Stat4          0x00000800 /* Use STAT4 data */
+   /* TH3 expects this value  ^^^^^^^^^^ to be 0x0000800. Don't change it */
+#define SQLITE_PushDown       0x00001000 /* The push-down optimization */
+#define SQLITE_SimplifyJoin   0x00002000 /* Convert LEFT JOIN to JOIN */
+#define SQLITE_SkipScan       0x00004000 /* Skip-scans */
+#define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
+#define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
+#define SQLITE_ExistsToIN     0x00020000 /* The EXISTS-to-IN optimization */
+#define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
@@ -2186,7 +2190,6 @@ struct Table {
 #endif
   Trigger *pTrigger;   /* List of triggers stored in pSchema */
   Schema *pSchema;     /* Schema that contains this table */
-  Table *pNextZombie;  /* Next on the Parse.pZombieTab list */
 };
 
 /*
@@ -3349,6 +3352,17 @@ struct TriggerPrg {
 #endif
 
 /*
+** An instance of the ParseCleanup object specifies an operation that
+** should be performed after parsing to deallocation resources obtained
+** during the parse and which are no longer needed.
+*/
+struct ParseCleanup {
+  ParseCleanup *pNext;               /* Next cleanup task */
+  void *pPtr;                        /* Pointer to object to deallocate */
+  void (*xCleanup)(sqlite3*,void*);  /* Deallocation routine */
+};
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -3379,6 +3393,9 @@ struct Parse {
   u8 okConstFactor;    /* OK to factor out constants */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 disableVtab;      /* Disable all virtual tables for this parse */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
+  u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
+#endif
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
@@ -3457,10 +3474,9 @@ struct Parse {
   Token sArg;               /* Complete text of a module argument */
   Table **apVtabLock;       /* Pointer to virtual tables needing locking */
 #endif
-  Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
-  With *pWithToFree;        /* Free this WITH object at the end of the parse */
+  ParseCleanup *pCleanup;   /* List of cleanup operations to run after parse */
 #ifndef SQLITE_OMIT_ALTERTABLE
   RenameToken *pRename;     /* Tokens subject to renaming by ALTER TABLE */
 #endif
@@ -3636,21 +3652,6 @@ struct TriggerStep {
 };
 
 /*
-** The following structure contains information used by the sqliteFix...
-** routines as they walk the parse tree to make database references
-** explicit.
-*/
-typedef struct DbFixer DbFixer;
-struct DbFixer {
-  Parse *pParse;      /* The parsing context.  Error messages written here */
-  Schema *pSchema;    /* Fix items to this schema */
-  u8 bTemp;           /* True for TEMP schema entries */
-  const char *zDb;    /* Make sure all objects are contained in this database */
-  const char *zType;  /* Type of the container - used for error messages */
-  const Token *pName; /* Name of the container - used for error messages */
-};
-
-/*
 ** An objected used to accumulate the text of a string where we
 ** do not necessarily know how big the string will be in the end.
 */
@@ -3800,7 +3801,23 @@ struct Walker {
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
     struct Table *pTab;                       /* Table of generated column */
     struct SrcList_item *pSrcItem;            /* A single FROM clause item */
+    DbFixer *pFix;
   } u;
+};
+
+/*
+** The following structure contains information used by the sqliteFix...
+** routines as they walk the parse tree to make database references
+** explicit.
+*/
+struct DbFixer {
+  Parse *pParse;      /* The parsing context.  Error messages written here */
+  Walker w;           /* Walker object */
+  Schema *pSchema;    /* Fix items to this schema */
+  u8 bTemp;           /* True for TEMP schema entries */
+  const char *zDb;    /* Make sure all objects are contained in this database */
+  const char *zType;  /* Type of the container - used for error messages */
+  const Token *pName; /* Name of the container - used for error messages */
 };
 
 /* Forward declarations */
@@ -4328,6 +4345,7 @@ LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);
 int sqlite3WhereIsOrdered(WhereInfo*);
 int sqlite3WhereOrderByLimitOptLabel(WhereInfo*);
+void sqlite3WhereMinMaxOptEarlyOut(Vdbe*,WhereInfo*);
 int sqlite3WhereIsSorted(WhereInfo*);
 int sqlite3WhereContinueLabel(WhereInfo*);
 int sqlite3WhereBreakLabel(WhereInfo*);
@@ -4511,7 +4529,6 @@ void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
-int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 int sqlite3RealSameAsInt(double,sqlite3_int64);
 void sqlite3Int64ToText(i64,char*);
@@ -4827,6 +4844,7 @@ sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParserReset(Parse*);
+void sqlite3ParserAddCleanup(Parse*,void(*)(sqlite3*,void*),void*);
 #ifdef SQLITE_ENABLE_NORMALIZE
 char *sqlite3Normalize(Vdbe*, const char*);
 #endif
