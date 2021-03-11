@@ -1028,7 +1028,9 @@ static int exprUsesSrclistCb(Walker *p, Expr *pExpr){
 /*
 ** Select callback for exprUsesSrclist().
 */
-static int exprUsesSrclistSelectCb(Walker *p, Select *pSelect){
+static int exprUsesSrclistSelectCb(Walker *NotUsed1, Select *NotUsed2){
+  UNUSED_PARAMETER(NotUsed1);
+  UNUSED_PARAMETER(NotUsed2);
   return WRC_Abort;
 }
 
@@ -1208,7 +1210,10 @@ static void exprAnalyzeExists(
   assert( pExpr->op==TK_EXISTS );
   assert( (pExpr->flags & EP_VarSelect) && (pExpr->flags & EP_xIsSelect) );
 
-  if( (pSel->selFlags & SF_Aggregate) || pSel->pWin ) return;
+  if( pSel->selFlags & SF_Aggregate ) return;
+#ifndef SQLITE_OMIT_WINDOWFUNC
+  if( pSel->pWin ) return;
+#endif
   if( pSel->pPrior ) return;
   if( pSel->pWhere==0 ) return;
   if( 0==exprAnalyzeExistsFindEq(pSel, 0, 0) ) return;
@@ -1405,6 +1410,12 @@ static void exprAnalyze(
       pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;
       pNew->eOperator = (operatorMask(pDup->op) + eExtraOp) & opMask;
+    }else if( op==TK_ISNULL && 0==sqlite3ExprCanBeNull(pLeft) ){
+      pExpr->op = TK_TRUEFALSE;
+      pExpr->u.zToken = "false";
+      ExprSetProperty(pExpr, EP_IsFalse);
+      pTerm->prereqAll = 0;
+      pTerm->eOperator = 0;
     }
   }
 
@@ -1851,7 +1862,7 @@ void sqlite3WhereExprAnalyze(
 */
 void sqlite3WhereTabFuncArgs(
   Parse *pParse,                    /* Parsing context */
-  struct SrcList_item *pItem,       /* The FROM clause term to process */
+  SrcItem *pItem,                   /* The FROM clause term to process */
   WhereClause *pWC                  /* Xfer function arguments to here */
 ){
   Table *pTab;

@@ -694,7 +694,8 @@ static int patternCompare(
       /* Skip over multiple "*" characters in the pattern.  If there
       ** are also "?" characters, skip those as well, but consume a
       ** single character of the input string for each "?" skipped */
-      while( (c=Utf8Read(zPattern)) == matchAll || c == matchOne ){
+      while( (c=Utf8Read(zPattern)) == matchAll 
+             || (c == matchOne && matchOne!=0) ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
           return SQLITE_NOWILDCARDMATCH;
         }
@@ -1980,7 +1981,7 @@ static void logFunc(
     case SQLITE_INTEGER:
     case SQLITE_FLOAT:
       x = sqlite3_value_double(argv[0]);
-      if( x<0.0 ) return;
+      if( x<=0.0 ) return;
       break;
     default:
       return;
@@ -1989,14 +1990,15 @@ static void logFunc(
     switch( sqlite3_value_numeric_type(argv[0]) ){
       case SQLITE_INTEGER:
       case SQLITE_FLOAT:
-        b = x;
+        b = log(x);
+        if( b<=0.0 ) return;
         x = sqlite3_value_double(argv[1]);
-        if( x<0.0 ) return;
+        if( x<=0.0 ) return;
         break;
      default:
         return;
     }
-    ans = log(x)/log(b);
+    ans = log(x)/b;
   }else{
     ans = log(x);
     switch( SQLITE_PTR_TO_INT(sqlite3_user_data(context)) ){

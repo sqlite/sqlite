@@ -989,7 +989,7 @@ test_suite "journaltest" -description {
   pager1.test syscall.test tkt3457.test *malloc* mmap* multiplex* nolock*
   pager2.test *fault* rowal* snapshot* superlock* symlink.test
   delete_db.test shmlock.test chunksize.test
-  busy2.test
+  busy2.test avfs.test
 }]
 
 if {[info commands register_demovfs] != ""} {
@@ -1062,7 +1062,8 @@ test_suite "no_optimization" -description {
     where6.test where7.test where8.test where9.test                  \
     whereA.test whereB.test wherelimit.test                          \
     select1.test select2.test select3.test select4.test select5.test \
-    select7.test select8.test selectA.test selectC.test     
+    select7.test select8.test selectA.test selectC.test              \
+    -exclude windowpushd.test
 ] -dbconfig {
   optimization_control $::dbhandle all 0
 }
