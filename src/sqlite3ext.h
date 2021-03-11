@@ -336,7 +336,7 @@ struct sqlite3_api_routines {
   void (*free_filename)(char*);
   sqlite3_file *(*database_file_object)(const char*);
   /* Version 3.34.0 and later */
-  int (*txn_state)(sqlite3*,const char*);  /* Version 3.34.0 and later */
+  /* Version 3.35.0 and later */
   const char * (*column_table_alias)(sqlite3_stmt*,int);
   const void * (*column_table_alias16)(sqlite3_stmt*,int);
 };

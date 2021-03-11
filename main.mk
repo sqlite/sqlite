@@ -360,6 +360,7 @@ TESTSRC = \
 #
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/appendvfs.c \
   $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/cksumvfs.c \
   $(TOP)/ext/misc/closure.c \
@@ -954,7 +955,7 @@ fuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-
 	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
-	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 	valgrind ./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
 # The veryquick.test TCL tests.

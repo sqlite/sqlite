@@ -456,7 +456,7 @@ static int fixExprCb(Walker *p, Expr *pExpr){
 static int fixSelectCb(Walker *p, Select *pSelect){
   DbFixer *pFix = p->u.pFix;
   int i;
-  struct SrcList_item *pItem;
+  SrcItem *pItem;
   sqlite3 *db = pFix->pParse->db;
   int iDb = sqlite3FindDbName(db, pFix->zDb);
   SrcList *pList = pSelect->pSrc;
@@ -480,7 +480,6 @@ static int fixSelectCb(Walker *p, Select *pSelect){
 #endif
   }
   if( pSelect->pWith ){
-    int i;
     for(i=0; i<pSelect->pWith->nCte; i++){
       if( sqlite3WalkSelect(p, pSelect->pWith->a[i].pSelect) ){
         return WRC_Abort;
