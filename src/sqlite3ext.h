@@ -344,6 +344,9 @@ struct sqlite3_api_routines {
   int (*autovacuum_pages)(sqlite3*,
      unsigned int(*)(void*,const char*,unsigned int,unsigned int,unsigned int),
      void*, void(*)(void*));
+  /* Version 3.38.0 and later */
+  const char * (*column_table_alias)(sqlite3_stmt*,int);
+  const void * (*column_table_alias16)(sqlite3_stmt*,int);
 };
 
 /*
@@ -655,6 +658,9 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_total_changes64        sqlite3_api->total_changes64
 /* Version 3.37.0 and later */
 #define sqlite3_autovacuum_pages       sqlite3_api->autovacuum_pages
+/* Version 3.38.0 and later */
+#define sqlite3_column_table_alias     sqlite3_api->column_table_alias
+#define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
