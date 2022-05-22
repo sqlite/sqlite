@@ -567,6 +567,9 @@ static int memsys3Init(void *NotUsed){
   mem3.aPool[0].u.hdr.size4x = (mem3.szKeyBlk<<2) + 2;
   mem3.aPool[mem3.nPool].u.hdr.prevSize = mem3.nPool;
   mem3.aPool[mem3.nPool].u.hdr.size4x = 1;
+  
+  memset(mem3.aiSmall,0,sizeof(mem3.aiSmall));
+  memset(mem3.aiHash,0,sizeof(mem3.aiHash));
 
   return SQLITE_OK;
 }
