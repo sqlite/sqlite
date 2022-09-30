@@ -966,6 +966,7 @@ void sqlite3Pragma(
   **
   */
   case PragTyp_TEMP_STORE_DIRECTORY: {
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
     if( !zRight ){
       returnSingleText(v, sqlite3_temp_directory);
     }else{
@@ -975,6 +976,7 @@ void sqlite3Pragma(
         rc = sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
         if( rc!=SQLITE_OK || res==0 ){
           sqlite3ErrorMsg(pParse, "not a writable directory");
+          sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
           goto pragma_out;
         }
       }
@@ -992,6 +994,7 @@ void sqlite3Pragma(
       }
 #endif /* SQLITE_OMIT_WSD */
     }
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
     break;
   }
 
@@ -1010,6 +1013,7 @@ void sqlite3Pragma(
   **
   */
   case PragTyp_DATA_STORE_DIRECTORY: {
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
     if( !zRight ){
       returnSingleText(v, sqlite3_data_directory);
     }else{
@@ -1019,6 +1023,7 @@ void sqlite3Pragma(
         rc = sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
         if( rc!=SQLITE_OK || res==0 ){
           sqlite3ErrorMsg(pParse, "not a writable directory");
+          sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
           goto pragma_out;
         }
       }
@@ -1030,6 +1035,7 @@ void sqlite3Pragma(
       }
 #endif /* SQLITE_OMIT_WSD */
     }
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
     break;
   }
 #endif
