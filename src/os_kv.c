@@ -797,6 +797,9 @@ static int kvvfsWriteDb(
   if( iOfst+iAmt > pFile->szDb ){
     pFile->szDb = iOfst + iAmt;
   }
+  if( iAmt>=512 && (iAmt & (iAmt-1))==0 ){
+    pFile->szPage = iAmt;
+  }
   return SQLITE_OK;
 }
 
