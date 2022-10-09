@@ -1,9 +1,9 @@
-C In\sos_kv.c,\severy\sxWrite\smethod\scall\son\sa\sdatabase\sshould\srecord\sthe\spage\ssize.
-D 2022-10-03T18:23:54.243
+C Cherrypick\s[ea370b9b05f7ed7eaa]\sand\spart\sof\s[92b500da]\sinto\skv-vfs\sbranch.
+D 2022-10-09T13:33:34.070
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in ee179f405fd5f8845473f888517c4ada46099306c33ae1f27dd1aef53fe8e867
+F Makefile.in c80d05a84c16fce844db1dafdfcd2cdd116177027202e09c4a54681ecd72c6ec
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc d547a2fdba38a1c6cd1954977d0b0cc017f5f8fbfbc65287bf8d335808938016
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -574,7 +574,7 @@ F src/notify.c 89a97dc854c3aa62ad5f384ef50c5a4a11d70fcc69f86de3e991573421130ed6
 F src/os.c 0eb831ba3575af5277e47f4edd14fdfc90025c67eb25ce5cda634518d308d4e9
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h b2f4707a603e36811d9b1a13278bffd757857b85
-F src/os_kv.c f9e56534d8825b6a7c122c9cf6c52c27f920cc6d0c5ce8cf7eeb1c1cf85a2560
+F src/os_kv.c fe6d52ab2bcb00b855a4237f0320b6f1789bfb1ac805bd5b52559451e8017041
 F src/os_setup.h 0711dbc4678f3ac52d7fe736951b6384a0615387c4ba5135a4764e4e31f4b6a6
 F src/os_unix.c 287aa5f5691a2b356780c63e83abaa33549add84227b8313395f04088486d79c
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
@@ -2004,8 +2004,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d350aa0c04d68ddbfa3ee4936bd7f700e400ce9e83361e908b1442feff4cbff
-R 1f3ba01fb41faf792f0840d36953234e
-U drh
-Z fcee7b37cc91592220fd4b4fd4c975a1
+P e9411c74fcce5e109fd02e7db55c0bf113ae8e02f46dfccc0b950dd06e5bd39b
+Q +92b500da70a3dc64e910c232a2cac7620b6609162c2a5058b269d3b83d763c02
+Q +ea370b9b05f7ed7eaa154ba58019f6642217eabc18517e721567adf948d93980
+R cb72d36beff7f7f7a1bade2b759b933e
+U stephan
+Z 6daf03a792b7f21d2196b1f5d1530641
 # Remove this line to create a well-formed Fossil manifest.
