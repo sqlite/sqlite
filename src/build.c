@@ -3406,6 +3406,7 @@ void sqlite3CreateIndex(
       j = XN_EXPR;
       pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
+      pIndex->bHasExpr = 1;
     }else{
       j = pCExpr->iColumn;
       assert( j<=0x7fff );

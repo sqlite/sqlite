@@ -524,6 +524,12 @@ void sqlite3ParserReset(Parse *pParse){
   sqlite3 *db = pParse->db;
   sqlite3DbFree(db, pParse->aLabel);
   sqlite3ExprListDelete(db, pParse->pConstExpr);
+  while( pParse->pIdxExpr!=0 ){
+    IndexedExpr *p = pParse->pIdxExpr;
+    pParse->pIdxExpr = p->pIENext;
+    sqlite3ExprDelete(db, p->pExpr);
+    sqlite3DbFreeNN(db, p);
+  }
   if( db ){
     assert( db->lookaside.bDisable >= pParse->disableLookaside );
     db->lookaside.bDisable -= pParse->disableLookaside;

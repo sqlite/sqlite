@@ -95,6 +95,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
       }else{
         char aff;
         assert( x==XN_EXPR );
+        assert( pIdx->bHasExpr );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
         if( aff==0 ) aff = SQLITE_AFF_BLOB;
