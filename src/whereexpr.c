@@ -1835,7 +1835,7 @@ void sqlite3WhereTabFuncArgs(
     pColRef->iColumn = k++;
     assert( ExprUseYTab(pColRef) );
     pColRef->y.pTab = pTab;
-    pItem->colUsed |= sqlite3ExprColUsed(pColRef);
+    sqlite3CSetAddExpr(&pItem->colUsed, pColRef);
     pRhs = sqlite3PExpr(pParse, TK_UPLUS, 
         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef, pRhs);

@@ -195,7 +195,8 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     sqlite3_str_appendf(&x, "{%d:*} %!S", pItem->iCursor, pItem);
     if( pItem->pTab ){
       sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx",
-           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, pItem->colUsed);
+           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab,
+           sqlite3CSetToMask(&pItem->colUsed));
     }
     if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==(JT_LEFT|JT_RIGHT) ){
       sqlite3_str_appendf(&x, " FULL-OUTER-JOIN");

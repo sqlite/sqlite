@@ -3920,7 +3920,7 @@ static int recomputeColumnsUsedExpr(Walker *pWalker, Expr *pExpr){
   pItem = pWalker->u.pSrcItem;
   if( pItem->iCursor!=pExpr->iTable ) return WRC_Continue;
   if( pExpr->iColumn<0 ) return WRC_Continue;
-  pItem->colUsed |= sqlite3ExprColUsed(pExpr);
+  sqlite3CSetAddExpr(&pItem->colUsed, pExpr);
   return WRC_Continue;
 }
 static void recomputeColumnsUsed(
@@ -3933,7 +3933,7 @@ static void recomputeColumnsUsed(
   w.xExprCallback = recomputeColumnsUsedExpr;
   w.xSelectCallback = sqlite3SelectWalkNoop;
   w.u.pSrcItem = pSrcItem;
-  pSrcItem->colUsed = 0;
+  pSrcItem->colUsed.m = 0;
   sqlite3WalkSelect(&w, pSelect);
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
@@ -6939,7 +6939,7 @@ int sqlite3Select(
     ** assume the column name is non-NULL and segfault.  The use of an empty
     ** string for the fake column name seems safer.
     */
-    if( pItem->colUsed==0 && pItem->zName!=0 ){
+    if( pItem->colUsed.m==0 && pItem->zName!=0 ){
       sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", pItem->zDatabase);
     }
 

@@ -9,10 +9,14 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file implements an object that represents a fixed-length
-** bitmap.  Bits are numbered starting with 1.
+** This file implements two objects:  Bitvec and ColumnSet
 **
-** A bitmap is used to record which pages of a database file have been
+** ## BITVEC
+**
+** The Bitvec object represents a fixed-length bitmap.  Bits are
+** numbered starting with 1.
+**
+** A Bitvec bitmap is used to record which pages of a database file have been
 ** journalled during a transaction, or which pages have the "dont-write"
 ** property.  Usually only a few pages are meet either condition.
 ** So the bitmap is usually sparse and has low cardinality.
@@ -21,7 +25,7 @@
 ** the bitmap becomes dense with high cardinality.  The algorithm needs 
 ** to handle both cases well.
 **
-** The size of the bitmap is fixed when the object is created.
+** The size of a Bitvec bitmap is fixed when the object is created.
 **
 ** All bits are clear when the bitmap is created.  Individual bits
 ** may be set or cleared one at a time.
@@ -33,6 +37,13 @@
 ** Bitvec object is the number of pages in the database file at the
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
+**
+** ## COLUMNSET
+**
+** The ColumnSet object represents a subset of the columns of a table that
+** are used by an SQL statement or an index.  This information is used to
+** during query planning, and especially to help determine if an index will
+** be a covering index.
 */
 #include "sqliteInt.h"
 
@@ -409,3 +420,38 @@ bitvec_end:
   return rc;
 }
 #endif /* SQLITE_UNTESTABLE */
+
+
+/*
+** The pExpr argument is guaranteed to be a non-NULL Expr node of 
+** type TK_COLUMN.  Mark this column as used in pCSet.
+*/
+void sqlite3CSetAddExpr(ColumnSet *pCSet, const Expr *pExpr){
+  int n;
+  Table *pExTab;
+
+  assert( pExpr!=0 );
+  n = pExpr->iColumn;
+  assert( ExprUseYTab(pExpr) );
+  pExTab = pExpr->y.pTab;
+  assert( pExTab!=0 );
+  if( (pExTab->tabFlags & TF_HasGenerated)!=0
+   && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
+  ){
+    testcase( pExTab->nCol==BMS-1 );
+    testcase( pExTab->nCol==BMS );
+    pCSet->m |= (pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1);
+  }else{
+    testcase( n==BMS-1 );
+    testcase( n==BMS );
+    if( n>=BMS ) n = BMS-1;
+    pCSet->m |= ((Bitmask)1)<<n;
+  }
+}
+
+/*
+** Convert a ColumnSet into a finite-length bitmask.
+*/
+Bitmask sqlite3CSetToMask(const ColumnSet *pCSet){
+  return pCSet->m;
+}

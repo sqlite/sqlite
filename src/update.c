@@ -560,7 +560,7 @@ void sqlite3Update(
   ** case, set all bits of the colUsed mask (to ensure that the virtual
   ** table implementation makes all columns available).
   */
-  pTabList->a[0].colUsed = IsVirtual(pTab) ? ALLBITS : 0;
+  pTabList->a[0].colUsed.m = IsVirtual(pTab) ? ALLBITS : 0;
 
   hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngKey);
 

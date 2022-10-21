@@ -154,32 +154,6 @@ static int areDoubleQuotedStringsEnabled(sqlite3 *db, NameContext *pTopNC){
 }
 
 /*
-** The argument is guaranteed to be a non-NULL Expr node of type TK_COLUMN.
-** return the appropriate colUsed mask.
-*/
-Bitmask sqlite3ExprColUsed(Expr *pExpr){
-  int n;
-  Table *pExTab;
-
-  n = pExpr->iColumn;
-  assert( ExprUseYTab(pExpr) );
-  pExTab = pExpr->y.pTab;
-  assert( pExTab!=0 );
-  if( (pExTab->tabFlags & TF_HasGenerated)!=0
-   && (pExTab->aCol[n].colFlags & COLFLAG_GENERATED)!=0 
-  ){
-    testcase( pExTab->nCol==BMS-1 );
-    testcase( pExTab->nCol==BMS );
-    return pExTab->nCol>=BMS ? ALLBITS : MASKBIT(pExTab->nCol)-1;
-  }else{
-    testcase( n==BMS-1 );
-    testcase( n==BMS );
-    if( n>=BMS ) n = BMS-1;
-    return ((Bitmask)1)<<n;
-  }
-}
-
-/*
 ** Create a new expression term for the column specified by pMatch and
 ** iColumn.  Append this new expression term to the FULL JOIN Match set
 ** in *ppList.  Create a new *ppList if this is the first term in the
@@ -714,9 +688,7 @@ static int lookupName(
   }
 
   /* If a column from a table in pSrcList is referenced, then record
-  ** this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
-  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  Bit 63 is
-  ** set if the 63rd or any subsequent column is used.
+  ** this fact in pSrcList.a[].colUsed.
   **
   ** The colUsed mask is an optimization used to help determine if an
   ** index is a covering index.  The correct answer is still obtained
@@ -728,7 +700,7 @@ static int lookupName(
   ** of the table.
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
-    pMatch->colUsed |= sqlite3ExprColUsed(pExpr);
+    sqlite3CSetAddExpr(&pMatch->colUsed, pExpr);
   }
 
   pExpr->op = eNewExprOp;
@@ -777,11 +749,11 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
       ){
         testcase( pTab->nCol==63 );
         testcase( pTab->nCol==64 );
-        pItem->colUsed = pTab->nCol>=64 ? ALLBITS : MASKBIT(pTab->nCol)-1;
+        pItem->colUsed.m = pTab->nCol>=64 ? ALLBITS : MASKBIT(pTab->nCol)-1;
       }else{
         testcase( iCol==BMS );
         testcase( iCol==BMS-1 );
-        pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+        pItem->colUsed.m |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
       }
     }
   }

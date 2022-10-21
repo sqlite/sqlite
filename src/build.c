@@ -2303,8 +2303,8 @@ static void recomputeColumnsNotIndexed(Index *pIdx){
       if( x<BMS-1 ) m |= MASKBIT(x);
     }
   }
-  pIdx->colNotIdxed = ~m;
-  assert( (pIdx->colNotIdxed>>63)==1 );
+  pIdx->colNotIdxed.m = ~m;
+  assert( (pIdx->colNotIdxed.m>>63)==1 );
 }
 
 /*

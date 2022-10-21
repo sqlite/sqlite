@@ -1694,7 +1694,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     }else{
       pNewItem->u3.pOn = sqlite3ExprDup(db, pOldItem->u3.pOn, flags);
     }
-    pNewItem->colUsed = pOldItem->colUsed;
+    pNewItem->colUsed.m = pOldItem->colUsed.m;
   }
   return pNew;
 }

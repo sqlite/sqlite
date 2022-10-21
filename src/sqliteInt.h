@@ -1176,6 +1176,7 @@ typedef struct AutoincInfo AutoincInfo;
 typedef struct Bitvec Bitvec;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
+typedef struct ColumnSet ColumnSet;
 typedef struct Cte Cte;
 typedef struct CteUse CteUse;
 typedef struct Db Db;
@@ -2556,6 +2557,14 @@ struct UnpackedRecord {
   u8 eqSeen;          /* True if an equality comparison has been seen */
 };
 
+/*
+** A ColumnSet object is used to indicate a subset of the columns in
+** a table that are used in an SQL statement or used by an Index.
+*/
+struct ColumnSet {
+  Bitmask m;
+};
+
 
 /*
 ** Each SQL index is represented in memory by an
@@ -2628,7 +2637,7 @@ struct Index {
   tRowcnt *aiRowEst;       /* Non-logarithmic stat1 data for this index */
   tRowcnt nRowEst0;        /* Non-logarithmic number of rows in the index */
 #endif
-  Bitmask colNotIdxed;     /* 0 for unindexed columns in pTab */
+  ColumnSet colNotIdxed;   /* 0 for unindexed columns in pTab */
 };
 
 /*
@@ -3120,7 +3129,6 @@ struct SrcItem {
     Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
     IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
   } u3;
-  Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
     ExprList *pFuncArg;  /* Arguments to table-valued-function */
@@ -3129,6 +3137,7 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info info fg.isCte is true */
   } u2;
+  ColumnSet colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
 };
 
 /*
@@ -5078,7 +5087,8 @@ int sqlite3MatchEName(
   const char*,
   const char*
 );
-Bitmask sqlite3ExprColUsed(Expr*);
+void sqlite3CSetAddExpr(ColumnSet*,const Expr*);
+Bitmask sqlite3CSetToMask(const ColumnSet*);
 u8 sqlite3StrIHash(const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 int sqlite3ResolveExprListNames(NameContext*, ExprList*);

@@ -908,14 +908,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   ** original table changes and the index and table cannot both be used
   ** if they go out of sync.
   */
-  extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
+  extraCols = pSrc->colUsed.m & (~idxCols | MASKBIT(BMS-1));
   mxBitCol = MIN(BMS-1,pTable->nCol);
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
   for(i=0; i<mxBitCol; i++){
     if( extraCols & MASKBIT(i) ) nKeyCol++;
   }
-  if( pSrc->colUsed & MASKBIT(BMS-1) ){
+  if( pSrc->colUsed.m & MASKBIT(BMS-1) ){
     nKeyCol += pTable->nCol - BMS + 1;
   }
 
@@ -958,7 +958,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
       n++;
     }
   }
-  if( pSrc->colUsed & MASKBIT(BMS-1) ){
+  if( pSrc->colUsed.m & MASKBIT(BMS-1) ){
     for(i=BMS-1; i<pTable->nCol; i++){
       pIdx->aiColumn[n] = i;
       pIdx->azColl[n] = sqlite3StrBINARY;
@@ -3463,7 +3463,7 @@ static int whereLoopAddBtree(
         pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         m = 0;
       }else{
-        m = pSrc->colUsed & pProbe->colNotIdxed;
+        m = pSrc->colUsed.m & pProbe->colNotIdxed.m;
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
@@ -3626,7 +3626,7 @@ static int whereLoopAddVirtualOne(
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
   pIdxInfo->estimatedRows = 25;
   pIdxInfo->idxFlags = 0;
-  pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
+  pIdxInfo->colUsed = sqlite3CSetToMask(&pSrc->colUsed);
   pHidden->mHandleIn = 0;
 
   /* Invoke the virtual table xBestIndex() method */
@@ -5140,7 +5140,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       }
       if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
-      if( pIdx->isCovering || (pItem->colUsed & pIdx->colNotIdxed)==0 ){
+      if( pIdx->isCovering || (pItem->colUsed.m & pIdx->colNotIdxed.m)==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
       }
       pLoop->nLTerm = j;
@@ -5937,7 +5937,7 @@ WhereInfo *sqlite3WhereBegin(
         /* If we know that only a prefix of the record will be used,
         ** it is advantageous to reduce the "column count" field in
         ** the P4 operand of the OP_OpenRead/Write opcode. */
-        Bitmask b = pTabItem->colUsed;
+        Bitmask b = pTabItem->colUsed.m;
         int n = 0;
         for(; b; b=b>>1, n++){}
         sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(n), P4_INT32);
@@ -5953,7 +5953,7 @@ WhereInfo *sqlite3WhereBegin(
       }
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
-                            (const u8*)&pTabItem->colUsed, P4_INT64);
+                            (const u8*)&pTabItem->colUsed.m, P4_INT64);
 #endif
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
@@ -6015,7 +6015,7 @@ WhereInfo *sqlite3WhereBegin(
             jj = pIx->aiColumn[ii];
             if( jj<0 ) continue;
             if( jj>63 ) jj = 63;
-            if( (pTabItem->colUsed & MASKBIT(jj))==0 ) continue;
+            if( (pTabItem->colUsed.m & MASKBIT(jj))==0 ) continue;
             colUsed |= ((u64)1)<<(ii<63 ? ii : 63);
           }
           sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, iIndexCur, 0, 0,
