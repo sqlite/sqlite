@@ -1138,6 +1138,7 @@ typedef struct With With;
 #define MASKBIT(n)   (((Bitmask)1)<<(n))
 #define MASKBIT32(n) (((unsigned int)1)<<(n))
 #define ALLBITS      ((Bitmask)-1)
+#define TOPBIT        (((Bitmask)1)<<(BMS-1))
 
 /* A VList object records a mapping between parameters/variables/wildcards
 ** in the SQL statement (such as $abc, @pqr, or :xyz) and the integer
@@ -3521,6 +3522,7 @@ struct Walker {
     struct WindowRewrite *pRewrite;           /* Window rewrite context */
     struct WhereConst *pConst;                /* WHERE clause constants */
     struct RenameCtx *pRename;                /* RENAME COLUMN context */
+    struct CoveringIndexCheck *pCovIdxCk;     /* Check for covering index */
   } u;
 };
 
@@ -4013,7 +4015,7 @@ Expr *sqlite3LimitWhere(Parse*,SrcList*,Expr*,ExprList*,Expr*,char*);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*, ExprList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,
                    Upsert*);
-WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
+WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,Select*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);

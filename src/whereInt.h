@@ -446,6 +446,7 @@ struct WhereInfo {
   ExprList *pResultSet;     /* Result set of the query */
   Expr *pWhere;             /* The complete WHERE clause */
   LogEst iLimit;            /* LIMIT if wctrlFlags has WHERE_USE_LIMIT */
+  Select *pSelect;          /* The entire SELECT statement containing WHERE */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
