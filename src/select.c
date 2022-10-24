@@ -4386,10 +4386,12 @@ static int flattenSubquery(
 
   /* Delete the transient structures associated with thesubquery */
   pSub1 = pSubitem->pSelect;
-  sqlite3DbFree(db, pSubitem->zDatabase);
+  if( pSubitem->fg.useSchema==0 && pSubitem->u4.zDatabase ){
+    sqlite3DbFree(db, pSubitem->u4.zDatabase);
+    pSubitem->u4.zDatabase = 0;
+  }
   sqlite3DbFree(db, pSubitem->zName);
   sqlite3DbFree(db, pSubitem->zAlias);
-  pSubitem->zDatabase = 0;
   pSubitem->zName = 0;
   pSubitem->zAlias = 0;
   pSubitem->pSelect = 0;
@@ -5347,7 +5349,8 @@ static struct Cte *searchWith(
 ){
   const char *zName = pItem->zName;
   With *p;
-  assert( pItem->zDatabase==0 );
+  assert( pItem->fg.useSchema==0 );
+  assert( pItem->u4.zDatabase==0 );
   assert( zName!=0 );
   for(p=pWith; p; p=p->pOuter){
     int i;
@@ -5428,7 +5431,7 @@ static int resolveFromTermToCte(
     ** go no further. */
     return 0;
   }
-  if( pFrom->zDatabase!=0 ){
+  if( pFrom->fg.useSchema || pFrom->u4.zDatabase!=0 ){
     /* The FROM term contains a schema qualifier (ex: main.t1) and so
     ** it cannot possibly be a CTE reference. */
     return 0;
@@ -5508,7 +5511,8 @@ static int resolveFromTermToCte(
       assert( pRecTerm->pPrior!=0 );
       for(i=0; i<pSrc->nSrc; i++){
         SrcItem *pItem = &pSrc->a[i];
-        if( pItem->zDatabase==0 
+        if( pItem->fg.useSchema==0
+         && pItem->u4.zDatabase==0 
          && pItem->zName!=0 
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
         ){
@@ -6940,7 +6944,8 @@ int sqlite3Select(
     ** string for the fake column name seems safer.
     */
     if( pItem->colUsed==0 && pItem->zName!=0 ){
-      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", pItem->zDatabase);
+      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "",
+                       pItem->fg.useSchema ? "" : pItem->u4.zDatabase);
     }
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)

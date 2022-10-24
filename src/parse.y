@@ -719,7 +719,9 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
         SrcItem *pNew = &A->a[A->nSrc-1];
         SrcItem *pOld = F->a;
         pNew->zName = pOld->zName;
-        pNew->zDatabase = pOld->zDatabase;
+        assert( pOld->fg.useSchema==0 );
+        assert( pNew->fg.useSchema==0 );
+        pNew->u4.zDatabase = pOld->u4.zDatabase;
         pNew->pSelect = pOld->pSelect;
         if( pNew->pSelect && (pNew->pSelect->selFlags & SF_NestedFrom)!=0 ){
           pNew->fg.isNestedFrom = 1;
@@ -730,7 +732,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pOld->fg.isTabFunc = 0;
           pNew->fg.isTabFunc = 1;
         }
-        pOld->zName = pOld->zDatabase = 0;
+        pOld->zName = pOld->u4.zDatabase = 0;
         pOld->pSelect = 0;
       }
       sqlite3SrcListDelete(pParse->db, F);

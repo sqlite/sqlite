@@ -3110,8 +3110,6 @@ struct IdList {
 **    u2.pCteUse             fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
-  Schema *pSchema;  /* Schema to which this item is fixed */
-  char *zDatabase;  /* Name of database holding this table */
   char *zName;      /* Name of the table */
   char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
   Table *pTab;      /* An SQL table corresponding to zName */
@@ -3135,8 +3133,13 @@ struct SrcItem {
     unsigned isOn :1;          /* u3.pOn was once valid and non-NULL */
     unsigned isSynthUsing :1;  /* u3.pUsing is synthensized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
+    unsigned useSchema :1;     /* use u4.pSchema rather than u4.zDatabase */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
+  union {
+    Schema *pSchema;  /* Schema to which this item is fixed */
+    char *zDatabase;  /* Name of database holding this table */
+  } u4;
   union {
     Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
     IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */

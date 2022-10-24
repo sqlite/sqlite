@@ -1664,8 +1664,11 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     SrcItem *pNewItem = &pNew->a[i];
     const SrcItem *pOldItem = &p->a[i];
     Table *pTab;
-    pNewItem->pSchema = pOldItem->pSchema;
-    pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
+    if( pOldItem->fg.useSchema ){
+      pNewItem->u4.pSchema = pOldItem->u4.pSchema;
+    }else{
+      pNewItem->u4.zDatabase = sqlite3DbStrDup(db, pOldItem->u4.zDatabase);
+    }
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
     pNewItem->zAlias = sqlite3DbStrDup(db, pOldItem->zAlias);
     pNewItem->fg = pOldItem->fg;
