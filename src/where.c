@@ -3274,29 +3274,51 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
   const Index *pIdx;      /* The index of interest */
   const i16 *aiColumn;    /* Columns contained in the index */
   u16 nColumn;            /* Number of columns in the index */
-  if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_AGG_COLUMN ) return WRC_Continue;
-  if( pExpr->iColumn<(BMS-1) ) return WRC_Continue;
-  if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
-  pIdx = pWalk->u.pCovIdxCk->pIdx;
-  aiColumn = pIdx->aiColumn;
-  nColumn = pIdx->nColumn;
-  for(i=0; i<nColumn; i++){
-    if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+  if( pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN ){
+    if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ){
+      return WRC_Prune;
+    }
+    pIdx = pWalk->u.pCovIdxCk->pIdx;
+    aiColumn = pIdx->aiColumn;
+    nColumn = pIdx->nColumn;
+    for(i=0; i<nColumn; i++){
+      if( aiColumn[i]==pExpr->iColumn ){
+        return WRC_Prune;
+      }
+    }
+    pWalk->eCode = 0;  /* Not a covering index */
+    return WRC_Abort;
+  }else if( pWalk->eCode==2 ){
+    int iCur = pWalk->u.pCovIdxCk->iTabCur;
+    pIdx = pWalk->u.pCovIdxCk->pIdx;
+    assert( pIdx->aColExpr!=0 );
+    aiColumn = pIdx->aiColumn;
+    nColumn = pIdx->nColumn;
+    for(i=0; i<nColumn; i++){
+      if( aiColumn[i]==XN_EXPR
+       && sqlite3ExprCompare(0, pExpr, pIdx->aColExpr->a[i].pExpr, iCur)==0
+      ){
+        return WRC_Prune;
+      }
+    }
   }
-  pWalk->eCode = 1;
-  return WRC_Abort;
+  return WRC_Continue;
 }
 
 
 /*
-** pIdx is an index that covers all of the low-number columns used by
-** pWInfo->pSelect (columns from 0 through 62).  But there are columns
-** in pWInfo->pSelect beyond 62.  This routine tries to answer the question
-** of whether pIdx covers *all* columns in the query.
+** pIdx is an index for which we cannot determine is covering using
+** the SrcItem.colUsed bitmask.  We can't use colUsed to make the
+** determination for either of these reasons:
 **
-** Return 0 if pIdx is a covering index.   Return non-zero if pIdx is
-** not a covering index or if we are unable to determine if pIdx is a
-** covering index.
+**   *   pIdx might contains indexed expressions.
+**   *   SrcItem.colUsed indicates that columns beyond the 63rd column
+**       are used in the query, making bitmap tests ineffective.
+**
+** This routine does extra work to try to make a more accurate determination
+** of whether or not pIdx is covering.  Return 0 if we know that pIdx is
+** covering.  Return non-zero if pIdx is not covering or if unable to
+** complete the analysis.
 **
 ** This routine is an optimization.  It is always safe to return non-zero.
 ** But returning zero when non-zero should have been returned can lead to
@@ -3310,18 +3332,20 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   int i;
   struct CoveringIndexCheck ck;
   Walker w;
+  int bHasHigh = 0;
+  int bHasExpr = 0;
   if( pWInfo->pSelect==0 ){
     /* We don't have access to the full query, so we cannot check to see
     ** if pIdx is covering.  Assume it is not. */
     return 1;
   }
   for(i=0; i<pIdx->nColumn; i++){
-    if( pIdx->aiColumn[i]>=BMS-1 ) break;
+    if( pIdx->aiColumn[i]>=BMS-1 ) bHasHigh = 1;
+    if( pIdx->aiColumn[i]==XN_EXPR ) bHasExpr = 1;
   }
-  if( i>=pIdx->nColumn ){
-    /* pIdx does not index any columns greater than 62, but we know from
-    ** colMask that columns greater than 62 are used, so this is not a
-    ** covering index */
+  if( bHasHigh==0 && bHasExpr==0 ){
+    /* pIdx does not index any columns greater than 62 nor any expression
+    ** columns.  The colMask analysis must have been correct.  Not covering. */
     return 1;
   }
   ck.pIdx = pIdx;
@@ -3330,9 +3354,9 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   w.xExprCallback = whereIsCoveringIndexWalkCallback;
   w.xSelectCallback = sqlite3SelectWalkNoop;
   w.u.pCovIdxCk = &ck;
-  w.eCode = 0;
+  w.eCode = 1 + bHasExpr;
   sqlite3WalkSelect(&w, pWInfo->pSelect);
-  return w.eCode;
+  return w.eCode==0;
 }
 
 /*
@@ -3552,7 +3576,7 @@ static int whereLoopAddBtree(
         m = 0;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( m==TOPBIT ){
+        if( m==TOPBIT || (pProbe->bHasExpr && m!=0) ){
           m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
         }
         pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
