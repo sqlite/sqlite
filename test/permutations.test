@@ -90,6 +90,7 @@ foreach f [glob -nocomplain            \
     $testdir/../ext/rtree/*.test       \
     $testdir/../ext/fts5/test/*.test   \
     $testdir/../ext/lsm1/test/*.test   \
+    $testdir/../ext/recover/*.test     \
 ] {
   lappend alltests $f 
 }
@@ -128,6 +129,7 @@ set allquicktests [test_set $alltests -exclude {
   fts4merge5.test
   fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
   fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
+  recovercorrupt.test
 
   rtree4.test
   sessionbig.test
@@ -823,6 +825,8 @@ test_suite "inmemory_journal" -description {
   # This test depends on a successful recovery from the pager error 
   # state. Which is not possible with an in-memory journal
   fts5fault1.test
+
+  recoverpgsz.test
 }]
 
 ifcapable mem3 {
