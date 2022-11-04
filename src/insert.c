@@ -96,6 +96,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
         aff = SQLITE_AFF_INTEGER;
       }else{
         assert( x==XN_EXPR );
+        assert( pIdx->bHasExpr );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
       }
@@ -107,6 +108,28 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
   }
  
   return pIdx->zColAff;
+}
+
+/*
+** Compute an affinity string for a table.   Space is obtained
+** from sqlite3DbMalloc().  The caller is responsible for freeing
+** the space when done.
+*/
+char *sqlite3TableAffinityStr(sqlite3 *db, const Table *pTab){
+  char *zColAff;
+  zColAff = (char *)sqlite3DbMallocRaw(db, pTab->nCol+1);
+  if( zColAff ){
+    int i, j;
+    for(i=j=0; i<pTab->nCol; i++){
+      if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
+        zColAff[j++] = pTab->aCol[i].affinity;
+      }
+    }
+    do{
+      zColAff[j--] = 0;
+    }while( j>=0 && zColAff[j]<=SQLITE_AFF_BLOB );
+  }
+  return zColAff;  
 }
 
 /*
@@ -150,7 +173,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 ** Apply the type checking to that array of registers.
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
-  int i, j;
+  int i;
   char *zColAff;
   if( pTab->tabFlags & TF_Strict ){
     if( iReg==0 ){
@@ -173,22 +196,11 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   }
   zColAff = pTab->zColAff;
   if( zColAff==0 ){
-    sqlite3 *db = sqlite3VdbeDb(v);
-    zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
+    zColAff = sqlite3TableAffinityStr(0, pTab);
     if( !zColAff ){
-      sqlite3OomFault(db);
+      sqlite3OomFault(sqlite3VdbeDb(v));
       return;
     }
-
-    for(i=j=0; i<pTab->nCol; i++){
-      assert( pTab->aCol[i].affinity!=0 || sqlite3VdbeParser(v)->nErr>0 );
-      if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
-        zColAff[j++] = pTab->aCol[i].affinity;
-      }
-    }
-    do{
-      zColAff[j--] = 0;
-    }while( j>=0 && zColAff[j]<=SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   assert( zColAff!=0 );

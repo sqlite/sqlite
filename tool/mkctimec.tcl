@@ -43,7 +43,7 @@ set ::headCode "
 ** autoconf-based build
 */
 #if defined(_HAVE_SQLITE_CONFIG_H) && !defined(SQLITECONFIG_H)
-#include \"config.h\"
+#include \"sqlite_cfg.h\"
 #define SQLITECONFIG_H 1
 #endif
 
@@ -304,6 +304,7 @@ set value_options {
   SQLITE_DEFAULT_WAL_AUTOCHECKPOINT
   SQLITE_DEFAULT_WAL_SYNCHRONOUS
   SQLITE_DEFAULT_WORKER_THREADS
+  SQLITE_DQS
   SQLITE_ENABLE_8_3_NAMES
   SQLITE_ENABLE_CEROD
   SQLITE_ENABLE_LOCKING_STYLE
