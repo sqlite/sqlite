@@ -14,7 +14,7 @@
   sqlite3.js, initializes the module, and postMessage()'s a message
   after the module is initialized:
 
-  {type: 'sqlite3-api', data: 'worker-ready'}
+  {type: 'sqlite3-api', result: 'worker1-ready'}
 
   This seemingly superfluous level of indirection is necessary when
   loading sqlite3.js via a Worker. Instantiating a worker with new
@@ -25,7 +25,25 @@
   Worker-specific API needs to pass _this_ file (or equivalent) to the
   Worker constructor and then listen for an event in the form shown
   above in order to know when the module has completed initialization.
+
+  This file accepts a URL arguments to adjust how it loads sqlite3.js:
+
+  - `sqlite3.dir`, if set, treats the given directory name as the
+    directory from which `sqlite3.js` will be loaded.
 */
 "use strict";
-importScripts('sqlite3.js');
-sqlite3InitModule().then((EmscriptenModule)=>EmscriptenModule.sqlite3.initWorkerAPI());
+(()=>{
+  const urlParams = new URL(self.location.href).searchParams;
+  let theJs = 'sqlite3.js';
+  if(urlParams.has('sqlite3.dir')){
+    theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
+  }
+  //console.warn("worker1 theJs =",theJs);
+  importScripts(theJs);
+  sqlite3InitModule().then((sqlite3)=>{
+    if(sqlite3.capi.sqlite3_wasmfs_opfs_dir){
+      sqlite3.capi.sqlite3_wasmfs_opfs_dir();
+    }
+    sqlite3.initWorker1API();
+  });
+})();

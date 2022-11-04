@@ -1251,7 +1251,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
+         notify.lo opcodes.lo os.lo os_kv.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
@@ -1332,6 +1332,7 @@ SRC00 = \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
+  $(TOP)\src\os_kv.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c
 
@@ -1587,6 +1588,9 @@ TESTEXT = \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c \
   $(TOP)\ext\rtree\test_rtreedoc.c \
+  $(TOP)\ext\recover\sqlite3recover.c \
+  $(TOP)\ext\recover\test_recover.c \
+  $(TOP)\ext\recover\dbdata.c \
   fts5.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -1697,15 +1701,25 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS =
-FUZZCHECK_OPTS = -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ -DSQLITE_MAX_MEMORY=50000000 -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -I$(TOP)\test -I$(TOP)\ext\recover
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MEMORY=50000000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS4
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS5
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzcheck.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\ossfuzz.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
 
-FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c $(TOP)\test\fuzzinvariants.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 KV_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
@@ -2053,6 +2067,9 @@ pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
 os.lo:	$(TOP)\src\os.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os.c
 
+os_kv.lo:	$(TOP)\src\os_kv.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_kv.c
+
 os_unix.lo:	$(TOP)\src\os_unix.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_unix.c
 
@@ -2224,6 +2241,9 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
+	$(TOP)/ext/recover/dbdata.c \
+	$(TOP)/ext/recover/sqlite3recover.c \
+	$(TOP)/ext/recover/sqlite3recover.h \
 	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.

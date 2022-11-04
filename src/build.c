@@ -455,7 +455,7 @@ Table *sqlite3LocateTable(
     /* If zName is the not the name of a table in the schema created using
     ** CREATE, then check to see if it is the name of an virtual table that
     ** can be an eponymous virtual table. */
-    if( pParse->disableVtab==0 && db->init.busy==0 ){
+    if( (pParse->prepFlags & SQLITE_PREPARE_NO_VTAB)==0 && db->init.busy==0 ){
       Module *pMod = (Module*)sqlite3HashFind(&db->aModule, zName);
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
@@ -468,7 +468,7 @@ Table *sqlite3LocateTable(
 #endif
     if( flags & LOCATE_NOERR ) return 0;
     pParse->checkSchema = 1;
-  }else if( IsVirtual(p) && pParse->disableVtab ){
+  }else if( IsVirtual(p) && (pParse->prepFlags & SQLITE_PREPARE_NO_VTAB)!=0 ){
     p = 0;
   }
 
@@ -2278,7 +2278,8 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 /* Recompute the colNotIdxed field of the Index.
 **
 ** colNotIdxed is a bitmask that has a 0 bit representing each indexed
-** columns that are within the first 63 columns of the table.  The
+** columns that are within the first 63 columns of the table and a 1 for
+** all other bits (all columns that are not in the index).  The
 ** high-order bit of colNotIdxed is always 1.  All unindexed columns
 ** of the table have a 1.
 **
@@ -2306,7 +2307,7 @@ static void recomputeColumnsNotIndexed(Index *pIdx){
     }
   }
   pIdx->colNotIdxed = ~m;
-  assert( (pIdx->colNotIdxed>>63)==1 );
+  assert( (pIdx->colNotIdxed>>63)==1 );  /* See note-20221022-a */
 }
 
 /*
@@ -4194,6 +4195,7 @@ void sqlite3CreateIndex(
       j = XN_EXPR;
       pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
+      pIndex->bHasExpr = 1;
     }else{
       j = pCExpr->iColumn;
       assert( j<=0x7fff );
@@ -4205,6 +4207,7 @@ void sqlite3CreateIndex(
         }
         if( pTab->aCol[j].colFlags & COLFLAG_VIRTUAL ){
           pIndex->bHasVCol = 1;
+          pIndex->bHasExpr = 1;
         }
       }
       pIndex->aiColumn[i] = (i16)j;

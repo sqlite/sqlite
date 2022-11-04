@@ -1287,6 +1287,9 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
+      if( pDest->zAffSdst ){
+        sqlite3VdbeChangeP4(v, -1, pDest->zAffSdst, nResultCol);
+      }
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -3750,6 +3753,7 @@ typedef struct SubstContext {
   int iNewTable;            /* New table number */
   int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
   ExprList *pEList;         /* Replacement expressions */
+  ExprList *pCList;         /* Collation sequences for replacement expr */
 } SubstContext;
 
 /* Forward Declarations */
@@ -3791,9 +3795,10 @@ static Expr *substExpr(
 #endif
     {
       Expr *pNew;
-      Expr *pCopy = pSubst->pEList->a[pExpr->iColumn].pExpr;
+      int iColumn = pExpr->iColumn;
+      Expr *pCopy = pSubst->pEList->a[iColumn].pExpr;
       Expr ifNullRow;
-      assert( pSubst->pEList!=0 && pExpr->iColumn<pSubst->pEList->nExpr );
+      assert( pSubst->pEList!=0 && iColumn<pSubst->pEList->nExpr );
       assert( pExpr->pRight==0 );
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
@@ -3831,11 +3836,16 @@ static Expr *substExpr(
 
         /* Ensure that the expression now has an implicit collation sequence,
         ** just as it did when it was a column of a view or sub-query. */
-        if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE ){
-          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
-          pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr, 
-              (pColl ? pColl->zName : "BINARY")
+        {
+          CollSeq *pNat = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
+          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse,
+                pSubst->pCList->a[iColumn].pExpr
           );
+          if( pNat!=pColl || (pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE) ){
+            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr,
+                (pColl ? pColl->zName : "BINARY")
+            );
+          }
         }
         ExprClearProperty(pExpr, EP_Collate);
       }
@@ -4028,6 +4038,18 @@ static void renumberCursors(
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
+/*
+** If pSel is not part of a compound SELECT, return a pointer to its
+** expression list. Otherwise, return a pointer to the expression list
+** of the leftmost SELECT in the compound.
+*/
+static ExprList *findLeftmostExprlist(Select *pSel){
+  while( pSel->pPrior ){
+    pSel = pSel->pPrior;
+  }
+  return pSel->pEList;
+}
+
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
 ** This routine attempts to flatten subqueries as a performance optimization.
@@ -4130,6 +4152,8 @@ static void renumberCursors(
 **        (17g) either the subquery is the first element of the outer
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
+**        (17h) The corresponding result set expressions in all arms of the
+**              compound must have the same affinity.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4306,6 +4330,7 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    int ii;
     if( pSub->pOrderBy ){
       return 0;  /* Restriction (20) */
     }
@@ -4338,7 +4363,6 @@ static int flattenSubquery(
 
     /* Restriction (18). */
     if( p->pOrderBy ){
-      int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
         if( p->pOrderBy->a[ii].u.x.iOrderByCol==0 ) return 0;
       }
@@ -4346,6 +4370,21 @@ static int flattenSubquery(
 
     /* Restriction (23) */
     if( (p->selFlags & SF_Recursive) ) return 0;
+
+    /* Restriction (17h) */
+    for(ii=0; ii<pSub->pEList->nExpr; ii++){
+      char aff;
+      assert( pSub->pEList->a[ii].pExpr!=0 );
+      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
+      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
+        assert( pSub1->pEList!=0 );
+        assert( pSub1->pEList->nExpr>ii );
+        assert( pSub1->pEList->a[ii].pExpr!=0 );
+        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+          return 0;
+        }
+      }
+    }
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
@@ -4580,6 +4619,7 @@ static int flattenSubquery(
       x.iNewTable = iNewParent;
       x.isOuterJoin = isOuterJoin;
       x.pEList = pSub->pEList;
+      x.pCList = findLeftmostExprlist(pSub);
       substSelect(&x, pParent, 0);
     }
   
@@ -4599,7 +4639,7 @@ static int flattenSubquery(
       pSub->pLimit = 0;
     }
 
-    /* Recompute the SrcList_item.colUsed masks for the flattened
+    /* Recompute the SrcItem.colUsed masks for the flattened
     ** tables. */
     for(i=0; i<nSubSrc; i++){
       recomputeColumnsUsed(pParent, &pSrc->a[i+iFrom]);
@@ -4989,6 +5029,13 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       be materialized.  (This restriction is implemented in the calling
 **       routine.)
 **
+**   (8) The subquery may not be a compound that uses UNION, INTERSECT,
+**       or EXCEPT.  (We could, perhaps, relax this restriction to allow
+**       this case if none of the comparisons operators between left and
+**       right arms of the compound use a collation other than BINARY.
+**       But it is a lot of work to check that case for an obscure and
+**       minor optimization, so we omit it for now.)
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -5008,6 +5055,10 @@ static int pushDownWhereTerms(
   if( pSubq->pPrior ){
     Select *pSel;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+      u8 op = pSel->op;
+      assert( op==TK_ALL || op==TK_SELECT 
+           || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
+      if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
       if( pSel->pWin ) return 0;    /* restriction (6b) */
     }
   }else{
@@ -5062,6 +5113,7 @@ static int pushDownWhereTerms(
       x.iNewTable = pSrc->iCursor;
       x.isOuterJoin = 0;
       x.pEList = pSubq->pEList;
+      x.pCList = findLeftmostExprlist(pSubq);
       pNew = substExpr(&x, pNew);
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSubq->pWin && 0==pushDownWindowCheck(pParse, pSubq, pNew) ){
@@ -5586,9 +5638,9 @@ void sqlite3SelectPopWith(Walker *pWalker, Select *p){
 #endif
 
 /*
-** The SrcList_item structure passed as the second argument represents a
+** The SrcItem structure passed as the second argument represents a
 ** sub-query in the FROM clause of a SELECT statement. This function
-** allocates and populates the SrcList_item.pTab object. If successful,
+** allocates and populates the SrcItem.pTab object. If successful,
 ** SQLITE_OK is returned. Otherwise, if an OOM error is encountered,
 ** SQLITE_NOMEM.
 */
@@ -6421,7 +6473,7 @@ static void havingToWhere(Parse *pParse, Select *p){
 
 /*
 ** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcList_item for the prior view.  If it is not,
+** If it is, then return the SrcItem for the prior view.  If it is not,
 ** then return 0.
 */
 static SrcItem *isSelfJoinView(
@@ -7039,7 +7091,10 @@ int sqlite3Select(
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       ExplainQueryPlan((pParse, 1, "MATERIALIZE %!S", pItem));
+      dest.zAffSdst = sqlite3TableAffinityStr(db, pItem->pTab);
       sqlite3Select(pParse, pSub, &dest);
+      sqlite3DbFree(db, dest.zAffSdst);
+      dest.zAffSdst = 0;
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
@@ -7465,7 +7520,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       SELECTTRACE(1,pParse,p,("WhereBegin\n"));
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
-          0, (sDistinct.isTnct==2 ? WHERE_DISTINCTBY : WHERE_GROUPBY) 
+          p, (sDistinct.isTnct==2 ? WHERE_DISTINCTBY : WHERE_GROUPBY) 
           |  (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
       );
       if( pWInfo==0 ){
@@ -7764,7 +7819,7 @@ int sqlite3Select(
 
         SELECTTRACE(1,pParse,p,("WhereBegin\n"));
         pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
-                                   pDistinct, 0, minMaxFlag|distFlag, 0);
+                                   pDistinct, p, minMaxFlag|distFlag, 0);
         if( pWInfo==0 ){
           goto select_end;
         }
