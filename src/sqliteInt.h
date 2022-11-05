@@ -5153,7 +5153,7 @@ void sqlite3UnlockReusableSchema(sqlite3 *db, int bRelease);
 int sqlite3LockReusableSchema(sqlite3 *db);
 #else
 # define sqlite3SchemaWritable(x,y)
-# define sqlite3UnlockReusableSchema(x,y)
+# define sqlite3UnlockReusableSchema(x,y) (void)(y)
 # define sqlite3LockReusableSchema(x) 0
 # define sqlite3SchemaDisconnect(x,y,z) SQLITE_OK
 # define sqlite3SchemaLoad(w,x,y,z) SQLITE_OK

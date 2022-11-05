@@ -7334,7 +7334,7 @@ static void shellExecPrintf(sqlite3 *db, int *pRc, const char *zFmt, ...){
   }
 }
 
-static int sharedSchemaFix(ShellState *pState, const char *zDb, int eFix){
+static int sharedSchemaFix(ShellState *pState, const char *zDb){
   int rc = SQLITE_OK;
   i64 iLast = 0;
   int iCookie = 0;
@@ -7545,7 +7545,7 @@ static int sharedSchemaDotCommand(
     if( rc==SQLITE_OK && bFix && eFix ){
       utf8_printf(pState->out, "Fixing %s... ", azArg[i]);
       fflush(pState->out);
-      rc = sharedSchemaFix(pState, azArg[i], eFix);
+      rc = sharedSchemaFix(pState, azArg[i]);
       if( rc==SQLITE_OK ){
         rc = sharedSchemaCheck(pState, azArg[i], &eFix);
         if( rc==SQLITE_OK && eFix ){
