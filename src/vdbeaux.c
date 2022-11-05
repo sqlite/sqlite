@@ -1158,6 +1158,18 @@ void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
 }
 
 /*
+** If the previous opcode is an OP_Column that delivers results
+** into register iDest, then add the OPFLAG_TYPEOFARG flag to that
+** opcode.
+*/
+void sqlite3VdbeTypeofColumn(Vdbe *p, int iDest){
+  VdbeOp *pOp = sqlite3VdbeGetLastOp(p);
+  if( pOp->p3==iDest && pOp->opcode==OP_Column ){
+    pOp->p5 |= OPFLAG_TYPEOFARG;
+  }
+}
+
+/*
 ** Change the P2 operand of instruction addr so that it points to
 ** the address of the next instruction to be coded.
 */
@@ -4565,7 +4577,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   assert( pPKey2->pKeyInfo->aSortFlags!=0 );
   assert( pPKey2->pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
-  do{
+  while( 1 /*exit-by-break*/ ){
     u32 serial_type;
 
     /* RHS is an integer */
@@ -4575,7 +4587,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       serial_type = aKey1[idx1];
       testcase( serial_type==12 );
       if( serial_type>=10 ){
-        rc = +1;
+        rc = serial_type==10 ? -1 : +1;
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
@@ -4600,7 +4612,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         ** numbers). Types 10 and 11 are currently "reserved for future 
         ** use", so it doesn't really matter what the results of comparing
         ** them to numberic values are.  */
-        rc = +1;
+        rc = serial_type==10 ? -1 : +1;
       }else if( serial_type==0 ){
         rc = -1;
       }else{
@@ -4681,7 +4693,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     /* RHS is null */
     else{
       serial_type = aKey1[idx1];
-      rc = (serial_type!=0);
+      rc = (serial_type!=0 && serial_type!=10);
     }
 
     if( rc!=0 ){
@@ -4703,8 +4715,13 @@ int sqlite3VdbeRecordCompareWithSkip(
     if( i==pPKey2->nField ) break;
     pRhs++;
     d1 += sqlite3VdbeSerialTypeLen(serial_type);
+    if( d1>(unsigned)nKey1 ) break;
     idx1 += sqlite3VarintLen(serial_type);
-  }while( idx1<(unsigned)szHdr1 && d1<=(unsigned)nKey1 );
+    if( idx1>=(unsigned)szHdr1 ){
+      pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
+      return 0;  /* Corrupt index */
+    }
+  }
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
