@@ -428,7 +428,7 @@ static void dbdataValue(
   u32 enc,
   int eType, 
   u8 *pData,
-  int nData
+  sqlite3_int64 nData
 ){
   if( eType>=0 && dbdataValueBytes(eType)<=nData ){
     switch( eType ){
@@ -864,7 +864,7 @@ static int dbdataColumn(
       case DBDATA_COLUMN_VALUE: {
         if( pCsr->iField<0 ){
           sqlite3_result_int64(ctx, pCsr->iIntkey);
-        }else{
+        }else if( &pCsr->pRec[pCsr->nRec] >= pCsr->pPtr ){
           sqlite3_int64 iType;
           dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
           dbdataValue(
