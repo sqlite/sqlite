@@ -1,5 +1,5 @@
-C Merge\sthe\s3.40.0\src1\schanges\sinto\sthe\sbegin-concurrent-pnu-wal2\sbranch.
-D 2022-11-14T13:18:39.458
+C Merge\sthe\s3.40.0\srelease\sinto\sthe\sbegin-concurrent-pnu-wal2\sbranch.
+D 2022-11-16T16:11:07.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -656,7 +656,7 @@ F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 4e64ba300a5a26e0f1170e09032429faeb65e45e8f3d1a7833e8edb69fc2979e
 F src/test1.c 917aafccba9b2061cc52471fefad26dfce4a490df4b04d763f28baa8e0b148ca
-F src/test2.c 3efb99ab7f1fc8d154933e02ae1378bac9637da5
+F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
@@ -831,9 +831,9 @@ F test/bestindex9.test bf2eb8556e8d5c00ef3ee18c521751cd03c1b55454b6e7683b4c6742e
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
-F test/bigmmap.test b820c234daa56d24bc3bf006e3ac7aa9d9623c8ac656a38f59063b444a2d65d1
+F test/bigmmap.test 6021e205487347c6d7e5a541aa472a4b8efc4e9f4a3799a823b61a8e6616105d
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bigsort.test 8299fa9298f4f1e02fc7d2712e8b77d6cd60e5a2
+F test/bigsort.test 997e172009905873c06426145e4b3794c7dfe2d563724cb2fd39d45f319cf3d2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
 F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aab7
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -2090,8 +2090,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa2e247b58dea930c4f0af3566d287f196ea178be8e994fc9eec685a89bebac8 a5a610a650b6b49f4bb5fbb8e2f43c730afbe88df2c3ae4ddf3d1e5392960387
-R bf634048a9309e706ba9fd2dd7b62edb
+P b0e2b9aa2c77af8c1e5b35a49f58610c8ac7063a63fd61c34bff6050348e068f 2df915ef04a64cc8027330013f73ac0ee1fee8cb6eb61f3a608c21ea419d5928
+R dc1741efc143c2fb4c4d3d73a664670c
 U drh
-Z fba0e24db4f0528106635cb0d3708ddc
+Z 77aac3c4187a8013d5a466b29f7fd9c2
 # Remove this line to create a well-formed Fossil manifest.
