@@ -8154,6 +8154,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "DQS_DML",            SQLITE_DBCONFIG_DQS_DML },
     { "DQS_DDL",            SQLITE_DBCONFIG_DQS_DDL },
     { "LEGACY_FILE_FORMAT", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT },
+    { "LENIENT_JSON",       SQLITE_DBCONFIG_LENIENT_JSON },
   };
   int i;
   int v = 0;

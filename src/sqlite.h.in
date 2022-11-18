@@ -2424,6 +2424,19 @@ struct sqlite3_mem_methods {
 ** process a table with generated columns and a descending index.  This is
 ** not considered a bug since SQLite versions 3.3.0 and earlier do not support
 ** either generated columns or decending indexes.
+**
+** [[SQLITE_DBCONFIG_LENIENT_JSON]]
+** <dt>SQLITE_DBCONFIG_LENIENT_JSON</td>
+** <dd>The SQLITE_DBCONFIG_LENIENT_JSON option affects the operation of
+** the [JSON SQL functions].  When SQLITE_DBCONFIG_LENIENT_JSON is disabled
+** (the default) then the JSON functions will typically (depending on the
+** specific function) raise an error when given malformed JSON inputs.
+** When SQLITE_DBCONFIG_LENIENT_JSON is enabled, the JSON functions are more
+** forgiving of malformed inputs and will press on and try to return some kind
+** of sensible answer in spite of the malformed input. The lenient JSON mode
+** is useful when dealing with unvalidated inputs as it avoids having to
+** test every input using [json_valid()] prior to using it, thus greatly
+** simplifying complex queries.
 ** </dd>
 ** </dl>
 */
@@ -2445,7 +2458,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1017 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_LENIENT_JSON          1018 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1018 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

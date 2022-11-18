@@ -7929,6 +7929,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
+        { "lenient_json",       SQLITE_DBCONFIG_LENIENT_JSON          },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },

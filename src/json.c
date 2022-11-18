@@ -917,6 +917,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
 }
 
 /*
+** Return true if we are in lenient-JSON mode
+*/
+static int jsonLenientMode(sqlite3_context *pCtx){
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  return (db->flags & SQLITE_LenientJSON)!=0;
+}
+
+/*
 ** Parse a complete JSON string.  Return 0 on success or non-zero if there
 ** are any errors.  If an error occurs, free all memory associated with
 ** pParse.
@@ -926,7 +934,8 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
 static int jsonParse(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
   sqlite3_context *pCtx,       /* Report errors here */
-  const char *zJson            /* Input JSON text to be parsed */
+  const char *zJson,           /* Input JSON text to be parsed */
+  int noErr                    /* If bad JSON, act as if input was "null" */
 ){
   int i;
   memset(pParse, 0, sizeof(*pParse));
@@ -943,11 +952,15 @@ static int jsonParse(
     if( pCtx!=0 ){
       if( pParse->oom ){
         sqlite3_result_error_nomem(pCtx);
-      }else{
+      }else if( !jsonLenientMode(pCtx) ){
         sqlite3_result_error(pCtx, "malformed JSON", -1);
+        noErr = 0;
       }
     }
     jsonParseReset(pParse);
+    if( noErr ){
+      return jsonParse(pParse, pCtx, "null", 0);
+    }
     return 1;
   }
   return 0;
@@ -1056,7 +1069,7 @@ static JsonParse *jsonParseCached(
   memset(p, 0, sizeof(*p));
   p->zJson = (char*)&p[1];
   memcpy((char*)p->zJson, zJson, nJson+1);
-  if( jsonParse(p, pErrCtx, p->zJson) ){
+  if( jsonParse(p, pErrCtx, p->zJson, 0) ){
     sqlite3_free(p);
     return 0;
   }
@@ -1374,7 +1387,7 @@ static void jsonParseFunc(
   u32 i;
 
   assert( argc==1 );
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]), 0) ) return;
   jsonParseFindParents(&x);
   jsonInit(&s, ctx);
   for(i=0; i<x.nNode; i++){
@@ -1483,7 +1496,10 @@ static void jsonArrayLengthFunc(
   JsonNode *pNode;
 
   p = jsonParseCached(ctx, argv, ctx);
-  if( p==0 ) return;
+  if( p==0 ){
+    if( jsonLenientMode(ctx) ) goto end_json_array_length;
+    return;
+  }
   assert( p->nNode );
   if( argc==2 ){
     const char *zPath = (const char*)sqlite3_value_text(argv[1]);
@@ -1492,6 +1508,7 @@ static void jsonArrayLengthFunc(
     pNode = p->aNode;
   }
   if( pNode==0 ){
+    if( jsonLenientMode(ctx) ) goto end_json_array_length;
     return;
   }
   if( pNode->eType==JSON_ARRAY ){
@@ -1500,6 +1517,7 @@ static void jsonArrayLengthFunc(
       i += jsonNodeSize(&pNode[i]);
     }
   }
+end_json_array_length:
   sqlite3_result_int64(ctx, n);
 }
 
@@ -1707,8 +1725,8 @@ static void jsonPatchFunc(
   JsonNode *pResult;   /* The result of the merge */
 
   UNUSED_PARAMETER(argc);
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
-  if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1])) ){
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]), 1) ) return;
+  if( jsonParse(&y, ctx, (const char*)sqlite3_value_text(argv[1]), 0) ){
     jsonParseReset(&x);
     return;
   }
@@ -1782,7 +1800,7 @@ static void jsonRemoveFunc(
   u32 i;
 
   if( argc<1 ) return;
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]), 0) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -1819,7 +1837,7 @@ static void jsonReplaceFunc(
     jsonWrongNumArgs(ctx, "replace");
     return;
   }
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]), 1) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -1873,7 +1891,7 @@ static void jsonSetFunc(
     jsonWrongNumArgs(ctx, bIsSet ? "set" : "insert");
     return;
   }
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]), 1) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -2521,7 +2539,7 @@ static int jsonEachFilter(
   p->zJson = sqlite3_malloc64( n+1 );
   if( p->zJson==0 ) return SQLITE_NOMEM;
   memcpy(p->zJson, z, (size_t)n+1);
-  if( jsonParse(&p->sParse, 0, p->zJson) ){
+  if( jsonParse(&p->sParse, 0, p->zJson, 0) ){
     int rc = SQLITE_NOMEM;
     if( p->sParse.oom==0 ){
       sqlite3_free(cur->pVtab->zErrMsg);

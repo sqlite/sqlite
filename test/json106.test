@@ -1,0 +1,90 @@
+# 2022-11-18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements tests for JSON SQL functions extension to the
+# SQLite library.  This file focuses on SQLITE_DBCONFIG_LENIENT_JSON.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+sqlite3_db_config db LENIENT_JSON 0
+do_catchsql_test json108-100 {
+  SELECT json_array_length(NULL);
+} {0 {{}}}
+do_catchsql_test json108-110 {
+  SELECT json_array_length('[1,2,3]');
+} {0 3}
+do_catchsql_test json108-120 {
+  SELECT json_array_length('not-json');
+} {1 {malformed JSON}}
+do_catchsql_test json108-130 {
+  SELECT json_array_length('null');
+} {0 0}
+
+sqlite3_db_config db LENIENT_JSON 1
+do_catchsql_test json108-150 {
+  SELECT json_array_length(NULL);
+} {0 0}
+do_catchsql_test json108-160 {
+  SELECT json_array_length('[1,2,3]');
+} {0 3}
+do_catchsql_test json108-170 {
+  SELECT json_array_length('not-json');
+} {0 0}
+do_catchsql_test json108-180 {
+  SELECT json_array_length('null');
+} {0 0}
+
+sqlite3_db_config db LENIENT_JSON 0
+do_catchsql_test json108-200 {
+ SELECT null ->> 'x';
+} {0 {{}}}
+do_catchsql_test json108-210 {
+ SELECT 'null' ->> 'x';
+} {0 {{}}}
+do_catchsql_test json108-220 {
+ SELECT 'nullx' ->> 'x';
+} {1 {malformed JSON}}
+do_catchsql_test json108-230 {
+ SELECT '{"x":5}' ->> 'x';
+} {0 5}
+
+sqlite3_db_config db LENIENT_JSON 1
+do_catchsql_test json108-250 {
+ SELECT null ->> 'x';
+} {0 {{}}}
+do_catchsql_test json108-260 {
+ SELECT 'null' ->> 'x';
+} {0 {{}}}
+do_catchsql_test json108-270 {
+ SELECT 'nullx' ->> 'x';
+} {0 {{}}}
+do_catchsql_test json108-280 {
+ SELECT '{"x":5}' ->> 'x';
+} {0 5}
+
+sqlite3_db_config db LENIENT_JSON 0
+do_catchsql_test json108-300 {
+ SELECT json_patch('nullx','{"x":5,"y":10}');
+} {1 {malformed JSON}}
+do_catchsql_test json108-310 {
+ SELECT json_patch('null','{"x":5,"y":10}');
+} {0 {{{"x":5,"y":10}}}}
+
+sqlite3_db_config db LENIENT_JSON 1
+do_catchsql_test json108-350 {
+ SELECT json_patch('nullx','{"x":5,"y":10}');
+} {0 {{{"x":5,"y":10}}}}
+do_catchsql_test json108-360 {
+ SELECT json_patch('null','{"x":5,"y":10}');
+} {0 {{{"x":5,"y":10}}}}
+
+finish_test
