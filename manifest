@@ -1,5 +1,5 @@
-C Fix\slast\sfunction\spointer\sin\ssqlite3Apis\sinit.\sReported\sat\s\n[forum:/info/eba0faa96d|forum\spost\seba0faa96d].
-D 2022-11-22T15:47:09.173
+C Bump\sthe\sversion\snumber\sto\s3.40.1.
+D 2022-11-22T15:48:02.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 78e4c4916f2c3993a8a454018745ff02094a8029d449d0c22db98f1cf8260420
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc e7a564ceec71f0d9666031d5638cf0d4f88b050b44e8df5d32125137cd259ac0
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
-F VERSION 8868ddfa6e1eee218286021a94b3e22d13e550c76c72d878857547ca001de24a
+F VERSION abec048a7ac74ad5559a336fe048d624207ac1e21be7be4356f3fa6b1ad4bec8
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -2055,12 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 89c459e766ea7e9165d0beeb124708b955a4950d0f4792f457465d71b158d318
-Q +6d5dc9eed54b7d883aa7dbe2eb5ff17d2a703eabdb7d548a27cccc1fe5addb4a
-R 205c0546cfc4e45e54e723ac4e2c3c91
-T *branch * branch-3.40
-T *sym-branch-3.40 *
-T -sym-trunk *
+P b3795d28fe607d0e74ff120788a0db2fa76a6ce819b65ba042cc1ba00fd070a8
+R 78992d3a4e66285bc9e6a44b3151817a
 U drh
-Z 5bdedf5efaf8e443b4aa3a32022fad83
+Z 2345d0052ecc03f4754ed1cc3112b798
 # Remove this line to create a well-formed Fossil manifest.
