@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.40.1.
-D 2022-11-22T15:48:02.451
+C Fix\sthe\serror\smessage\sin\sthe\sCLI\sfor\s"no\ssuch\sVFS".\n[forum:/info/1217fdd6b3|Forum\spost\s1217fdd6b3].
+D 2022-11-22T18:24:59.744
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,7 +638,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 9886d6669f5787471aab6ae52af76fad90b53edb1c218fc9ed9d953363bc5184
-F src/shell.c.in 458cb3de9d548342fc645b699620b1af3de770d2ceec09ac71f86c19bd244064
+F src/shell.c.in 743949ff5c7efe0fc9960d59e32b206ecc6c7079df01faf3e5f44b55c128f2e2
 F src/sqlite.h.in bdb10b78166f5b735318667eb16c84ac90d9e0de88cc25c193eeb4379a126945
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -2055,8 +2055,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b3795d28fe607d0e74ff120788a0db2fa76a6ce819b65ba042cc1ba00fd070a8
-R 78992d3a4e66285bc9e6a44b3151817a
+P d0ca348b25ce0e597054920c2124ad5965c11b58280b8fd83f1a115b557ca907
+Q +861af465fda8485dfff143dc45c659b884d826aaec2ebaa941566404d1fe427b
+R e7ec7869eae38a3da373a40677ea0d8e
 U drh
-Z 2345d0052ecc03f4754ed1cc3112b798
+Z dc5dc9e45269782a206cea22b69ccd7f
 # Remove this line to create a well-formed Fossil manifest.
