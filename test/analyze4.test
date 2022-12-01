@@ -20,6 +20,12 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
 do_test analyze4-1.0 {
   db eval {
     CREATE TABLE t1(a,b);
@@ -38,7 +44,7 @@ do_test analyze4-1.0 {
 
   # Should choose the t1a index since it is more specific than t1b.
   db eval {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=5 AND b IS NULL}
-} {/*SEARCH TABLE t1 USING INDEX t1a (a=?)*/}
+} {/*SEARCH t1 USING INDEX t1a (a=?)*/}
 
 # Verify that the t1b index shows that it does not narrow down the
 # search any at all.

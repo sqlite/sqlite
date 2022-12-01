@@ -493,10 +493,10 @@ do_execsql_test e_createtable-1.7.0 {
 do_createtable_tests 1.7.1 -error { %s } {
   1    "CREATE TABLE t1(a, b)"   {{table t1 already exists}}
   2    "CREATE TABLE i1(a, b)"   {{there is already an index named i1}}
-  3    "CREATE TABLE v1(a, b)"   {{table v1 already exists}}
+  3    "CREATE TABLE v1(a, b)"   {{view v1 already exists}}
   4    "CREATE TABLE auxa.tbl1(a, b)"   {{table tbl1 already exists}}
   5    "CREATE TABLE auxa.idx1(a, b)"   {{there is already an index named idx1}}
-  6    "CREATE TABLE auxa.view1(a, b)"  {{table view1 already exists}}
+  6    "CREATE TABLE auxa.view1(a, b)"  {{view view1 already exists}}
 }
 do_createtable_tests 1.7.2 {
   1    "CREATE TABLE auxa.t1(a, b)"   {}
@@ -1272,9 +1272,10 @@ do_createtable_tests 4.4 {
   14   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
 }
 
-# EVIDENCE-OF: R-35113-43214 Unless the column is an INTEGER PRIMARY KEY
-# or the table is a WITHOUT ROWID table or the column is declared NOT
-# NULL, SQLite allows NULL values in a PRIMARY KEY column.
+# EVIDENCE-OF: R-40010-16873 Unless the column is an INTEGER PRIMARY KEY
+# or the table is a WITHOUT ROWID table or a STRICT table or the column
+# is declared NOT NULL, SQLite allows NULL values in a PRIMARY KEY
+# column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
 #     into the column triggers the auto-increment behavior. Attempting
@@ -1304,6 +1305,14 @@ do_catchsql_test 4.5.5 {
   CREATE TABLE t5(s, u INT PRIMARY KEY NOT NULL, v);
   INSERT INTO t5 VALUES(1, NULL, 2);
 } {1 {NOT NULL constraint failed: t5.u}}
+do_catchsql_test 4.5.6 {
+  CREATE TABLE t6(s INT, u INT PRIMARY KEY, v INT) STRICT;
+  INSERT INTO t6 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t6.u}}
+do_catchsql_test 4.5.7 {
+  CREATE TABLE t7(s INT, u INT PRIMARY KEY NOT NULL, v INT) STRICT;
+  INSERT INTO t7 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t7.u}}
 
 # EVIDENCE-OF: R-00227-21080 A UNIQUE constraint is similar to a PRIMARY
 # KEY constraint, except that a single table may have any number of
@@ -1393,13 +1402,13 @@ do_execsql_test 4.10.0 {
 }
 do_createtable_tests 4.10 {
   1    "EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 5" 
-       {/*SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?)*/}
+       {/*SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (b=?)*/}
 
   2    "EXPLAIN QUERY PLAN SELECT * FROM t2 ORDER BY b, c"
-       {/*SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1*/}
+       {/*SCAN t2 USING INDEX sqlite_autoindex_t2_1*/}
 
   3    "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE b=10 AND c>10"
-       {/*SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)*/}
+       {/*SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)*/}
 }
 
 # EVIDENCE-OF: R-45493-35653 A CHECK constraint may be attached to a

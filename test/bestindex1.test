@@ -29,7 +29,10 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       if {[llength $clist]!=1} { error "unexpected constraint list" }
       catch { array unset C }
       array set C [lindex $clist 0]
@@ -51,11 +54,11 @@ do_execsql_test 1.0 {
 
 do_eqp_test 1.1 {
   SELECT * FROM x1 WHERE a = 'abc'
-} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+} {SCAN x1 VIRTUAL TABLE INDEX 555:eq!}
 
 do_eqp_test 1.2 {
   SELECT * FROM x1 WHERE a IN ('abc', 'def');
-} {SCAN TABLE x1 VIRTUAL TABLE INDEX 555:eq!}
+} {SCAN x1 VIRTUAL TABLE INDEX 555:eq!}
 
 #-------------------------------------------------------------------------
 #
@@ -76,10 +79,13 @@ proc t1_vtab {mode method args} {
     }
 
     xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+
       set SQL_FILTER {SELECT * FROM t1x WHERE a='%1%'}
       set SQL_SCAN   {SELECT * FROM t1x}
 
-      set clist [lindex $args 0]
       set idx 0
       for {set idx 0} {$idx < [llength $clist]} {incr idx} {
         array unset C
@@ -141,17 +147,17 @@ foreach {tn mode} {
 
   set plan(use) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
     `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(omit) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x WHERE a='%1%'
     `--USE TEMP B-TREE FOR ORDER BY
   }
   set plan(use2) {
     QUERY PLAN
-    |--SCAN TABLE t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x
+    |--SCAN t1 VIRTUAL TABLE INDEX 0:SELECT * FROM t1x
     `--USE TEMP B-TREE FOR ORDER BY
   }
 
@@ -177,7 +183,10 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       #puts $clist
       set W [list]
       set U [list]
@@ -287,12 +296,17 @@ proc vtab_command {method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      
       lappend ::bestindex_calls $clist
       set ret "cost 1000000 idxnum 555"
       for {set i 0} {$i < [llength $clist]} {incr i} {
         array set C [lindex $clist $i]
-        if {$C(usable)} { lappend ret use $i }
+        if {$C(usable)} { 
+          lappend ret use $i 
+        }
       }
       return $ret
     }
@@ -323,5 +337,8 @@ do_test 4.1 {
     ]
 ]
 
+do_catchsql_test 5.0 {
+  SELECT * FROM tcl('abc');
+} {1 {wrong number of arguments}}
 
 finish_test

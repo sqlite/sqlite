@@ -10,6 +10,7 @@
 #***********************************************************************
 # This file test the busy handler
 #
+# TESTRUNNER: slow
 
 
 set testdir [file dirname $argv0]
@@ -168,4 +169,3 @@ do_multiclient_test tn {
 }
 
 finish_test
-

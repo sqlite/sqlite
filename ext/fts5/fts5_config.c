@@ -537,7 +537,7 @@ int sqlite3Fts5ConfigParse(
 
   nByte = nArg * (sizeof(char*) + sizeof(u8));
   pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, nByte);
-  pRet->abUnindexed = (u8*)&pRet->azCol[nArg];
+  pRet->abUnindexed = pRet->azCol ? (u8*)&pRet->azCol[nArg] : 0;
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
@@ -562,6 +562,7 @@ int sqlite3Fts5ConfigParse(
     z = fts5ConfigSkipWhitespace(z);
     if( z && *z=='=' ){
       bOption = 1;
+      assert( zOne!=0 );
       z++;
       if( bMustBeCol ) z = 0;
     }
@@ -578,7 +579,11 @@ int sqlite3Fts5ConfigParse(
         rc = SQLITE_ERROR;
       }else{
         if( bOption ){
-          rc = fts5ConfigParseSpecial(pGlobal, pRet, zOne, zTwo?zTwo:"", pzErr);
+          rc = fts5ConfigParseSpecial(pGlobal, pRet, 
+            ALWAYS(zOne)?zOne:"",
+            zTwo?zTwo:"",
+            pzErr
+          );
         }else{
           rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr);
           zOne = 0;

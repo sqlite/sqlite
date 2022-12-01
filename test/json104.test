@@ -15,11 +15,6 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix json104
 
-ifcapable !json1 {
-  finish_test
-  return
-}
-
 # This is the example from pages 2 and 3 of RFC-7396
 do_execsql_test json104-100 {
   SELECT json_patch('{
@@ -125,6 +120,9 @@ do_execsql_test json104-313 {
 do_execsql_test json104-314 {
   SELECT json_patch('{}','{"a":{"bb":{"ccc":null}}}');
 } {{{"a":{"bb":{}}}}}
+do_execsql_test json104-320 {
+  SELECT json_patch('{"x":{"one":1}}','{"x":{"two":2},"x":"three"}');
+} {{{"x":"three"}}}
 
 #-------------------------------------------------------------------------
 

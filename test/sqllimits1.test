@@ -293,8 +293,14 @@ do_test sqllimits1-5.9 {
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.10 {
-  set ::str [string repeat %J 2100]
-  catchsql { SELECT strftime($::str, '2003-10-31') }
+  # Prior to 3.37.0 strftime() allocated a large static buffer into
+  # which to format its output. Using that strategy, 2100 repeats was
+  # enough to exceed 100KiB and provoke the error. As of 3.37.0 strftime()
+  # uses the StrAccum functions, so it requires 12100 to fail.
+  #
+  # set ::str [string repeat %J 2100]
+  set ::str [string repeat %J 12100]
+  catchsql { SELECT length(strftime($::str, '2003-10-31')) }
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.11 {
@@ -372,7 +378,7 @@ db eval {DROP TABLE t4}
 sqlite3_limit db SQLITE_LIMIT_SQL_LENGTH 0x7fffffff
 set strvalue [string repeat A $::SQLITE_LIMIT_LENGTH]
 do_test sqllimits1-5.16 {
-  catchsql "SELECT '$strvalue'"
+  catchsql "SELECT '$strvalue' AS x"
 } [list 0 $strvalue]
 do_test sqllimits1-5.17.1 {
   catchsql "SELECT 'A$strvalue'"
@@ -387,7 +393,7 @@ do_test sqllimits1-5.17.3 {
 } [list 1 {string or blob too big}]
 set blobvalue [string repeat 41 $::SQLITE_LIMIT_LENGTH]
 do_test sqllimits1-5.18 {
-  catchsql "SELECT x'$blobvalue'"
+  catchsql "SELECT x'$blobvalue' AS x"
 } [list 0 $strvalue]
 do_test sqllimits1-5.19 {
   catchsql "SELECT '41$blobvalue'"
@@ -395,7 +401,7 @@ do_test sqllimits1-5.19 {
 unset blobvalue
 
 ifcapable datetime {
-  set strvalue [string repeat D [expr {$SQLITE_LIMIT_LENGTH-12}]]
+  set strvalue [string repeat D [expr {$SQLITE_LIMIT_LENGTH-11}]]
   do_test sqllimits1-5.20 {
     catchsql {SELECT strftime('%Y ' || $::strvalue, '2008-01-02')}
   } [list 0 [list "2008 $strvalue"]]
@@ -863,16 +869,21 @@ do_test sqllimits1-15.2 {
 # This test case doesn't really belong with the other limits tests.
 # It is in this file because it is taxing to run, like the limits tests.
 #
-do_test sqllimits1-16.1 {
-  set ::N [expr int(([expr pow(2,32)]/50) + 1)]
-  expr (($::N*50) & 0xffffffff)<55
-} {1}
-do_test sqllimits1-16.2 {
-  set ::format "[string repeat A 60][string repeat "%J" $::N]"
-  catchsql {
-    SELECT strftime($::format, 1);
-  }
-} {1 {string or blob too big}}
+# Update for 3.37.0: strftime() used to allocate a large static buffer
+# into which it would write its result. With that implementation, the
+# following would trigger an SQLITE_TOOBIG error. But strftime() now
+# uses the StrAccum functions, causing this test to fail.
+#
+#do_test sqllimits1-16.1 {
+#  set ::N [expr int(([expr pow(2,32)]/50) + 1)]
+#  expr (($::N*50) & 0xffffffff)<55
+#} {1}
+#do_test sqllimits1-16.2 {
+#  set ::format "[string repeat A 60][string repeat "%J" $::N]"
+#  catchsql {
+#    SELECT strftime($::format, 1);
+#  }
+#} {1 {string or blob too big}}
 
 do_catchsql_test sqllimits1.17.0 {
   SELECT *,*,*,*,*,*,*,* FROM (
@@ -898,5 +909,18 @@ set nm [string repeat x 10000]
 do_catchsql_test sqllimits1-17.1 "
   CREATE TABLE $nm (x PRIMARY KEY)
 " {1 {string or blob too big}}
+
+#-------------------------------------------------------------------------
+#
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 10
+do_catchsql_test sqllimits1-18.1 {
+  CREATE TABLE b1(x);
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11);
+} {0 {}}
+
+do_catchsql_test sqllimits1-18.2 {
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10)
+    UNION VALUES(11);
+} {1 {too many terms in compound SELECT}}
 
 finish_test

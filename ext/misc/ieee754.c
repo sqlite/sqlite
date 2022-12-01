@@ -194,7 +194,11 @@ static void ieee754func(
     e += 1075;
     if( e<=0 ){
       /* Subnormal */
-      m >>= 1-e;
+      if( 1-e >= 64 ){
+        m = 0;
+      }else{
+        m >>= 1-e;
+      }
       e = 0;
     }else if( e>0x7ff ){
       e = 0x7ff;
@@ -280,7 +284,7 @@ int sqlite3_ieee_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,	
+    rc = sqlite3_create_function(db, aFunc[i].zFName, aFunc[i].nArg,
                                SQLITE_UTF8|SQLITE_INNOCUOUS,
                                (void*)&aFunc[i].iAux,
                                aFunc[i].xFunc, 0, 0);

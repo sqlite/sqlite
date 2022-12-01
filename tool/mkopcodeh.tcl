@@ -145,7 +145,9 @@ foreach name {OP_Noop OP_Explain OP_Abortable} {
   incr nOp
 }
 
-# The following are the opcodes that are processed by resolveP2Values()
+# The following are the opcodes that receive special processing in the
+# resolveP2Values() routine.  Update this list whenever new cases are
+# added to the pOp->opcode switch within resolveP2Values().
 #
 set rp2v_ops {
   OP_Transaction
@@ -156,14 +158,10 @@ set rp2v_ops {
   OP_JournalMode
   OP_VUpdate
   OP_VFilter
-  OP_Next
-  OP_NextIfOpen
-  OP_SorterNext
-  OP_Prev
-  OP_PrevIfOpen
+  OP_Init
 }
 
-# Assign small values to opcodes that are processed by resolveP2Values()
+# Assign the smallest values to opcodes that are processed by resolveP2Values()
 # to make code generation for the switch() statement smaller and faster.
 #
 set cnt -1
@@ -177,6 +175,7 @@ for {set i 0} {$i<$nOp} {incr i} {
     set def($cnt) $name
   }
 }
+set mxCase1 $cnt
 
 # Assign the next group of values to JUMP opcodes
 #
@@ -207,8 +206,9 @@ for {set i 0} {$i<$nOp} {incr i} {
 for {set g 0} {$g<$nGroup} {incr g} {
   set gLen [llength $groups($g)]
   set ok 0; set start -1
+  set seek $cnt
   while {!$ok} {
-    set seek $cnt; incr seek
+    incr seek
     while {[info exists used($seek)]} {incr seek}
     set ok 1; set start $seek
     for {set j 0} {$j<$gLen} {incr j} {
@@ -311,7 +311,7 @@ for {set i 0} {$i<=$max} {incr i} {
 }
 puts "\175"
 puts ""
-puts "/* The sqlite3P2Values() routine is able to run faster if it knows"
+puts "/* The resolve3P2Values() routine is able to run faster if it knows"
 puts "** the value of the largest JUMP opcode.  The smaller the maximum"
 puts "** JUMP opcode the better, so the mkopcodeh.tcl script that"
 puts "** generated this include file strives to group all JUMP opcodes"

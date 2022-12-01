@@ -281,12 +281,13 @@ do_test in-7.8.2 {
   db status step
 } {0}
 
-do_test in-8.1 {
+do_test in-8.3 {
   execsql {
     SELECT b FROM t1 WHERE a IN ('hello','there')
   }
 } {world}
-do_test in-8.2 {
+do_test in-8.4 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     SELECT b FROM t1 WHERE a IN ("hello",'there')
   }
@@ -796,5 +797,14 @@ do_execsql_test in-19.40 {
 do_execsql_test in-20.1 {
   SELECT (1 IN (2 IS TRUE));
 } {1}
+
+# Forum post: https://sqlite.org/forum/forumpost/5782619992.
+#
+reset_db
+do_execsql_test in-21.1 {
+  CREATE TABLE t0(c0);
+  SELECT COUNT(*) FROM t0 ORDER BY (t0.c0 IN ());
+} {0}
+
 
 finish_test

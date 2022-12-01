@@ -1007,32 +1007,32 @@ do_test func-21.2 {
 } {1 {wrong number of arguments to function replace()}}
 do_test func-21.3 {
   execsql {
-    SELECT typeof(replace("This is the main test string", NULL, "ALT"));
+    SELECT typeof(replace('This is the main test string', NULL, 'ALT'));
   }
 } {null}
 do_test func-21.4 {
   execsql {
-    SELECT typeof(replace(NULL, "main", "ALT"));
+    SELECT typeof(replace(NULL, 'main', 'ALT'));
   }
 } {null}
 do_test func-21.5 {
   execsql {
-    SELECT typeof(replace("This is the main test string", "main", NULL));
+    SELECT typeof(replace('This is the main test string', 'main', NULL));
   }
 } {null}
 do_test func-21.6 {
   execsql {
-    SELECT replace("This is the main test string", "main", "ALT");
+    SELECT replace('This is the main test string', 'main', 'ALT');
   }
 } {{This is the ALT test string}}
 do_test func-21.7 {
   execsql {
-    SELECT replace("This is the main test string", "main", "larger-main");
+    SELECT replace('This is the main test string', 'main', 'larger-main');
   }
 } {{This is the larger-main test string}}
 do_test func-21.8 {
   execsql {
-    SELECT replace("aaaaaaa", "a", "0123456789");
+    SELECT replace('aaaaaaa', 'a', '0123456789');
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
 
@@ -1110,6 +1110,13 @@ do_test func-22.21 {
 do_test func-22.22 {
   execsql {SELECT typeof(trim('hello',NULL));}
 } {null}
+
+# 2021-06-15 - infinite loop due to unsigned character counter
+# overflow, reported by Zimuzo Ezeozue
+#
+do_execsql_test func-22.23 {
+  SELECT trim('xyzzy',x'c0808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080808080');
+} {xyzzy}
 
 # This is to test the deprecated sqlite3_aggregate_count() API.
 #
@@ -1308,7 +1315,7 @@ do_test func-29.1 {
     CREATE TABLE t29(id INTEGER PRIMARY KEY, x, y);
     INSERT INTO t29 VALUES(1, 2, 3), (2, NULL, 4), (3, 4.5, 5);
     INSERT INTO t29 VALUES(4, randomblob(1000000), 6);
-    INSERT INTO t29 VALUES(5, "hello", 7);
+    INSERT INTO t29 VALUES(5, 'hello', 7);
   }
   db close
   sqlite3 db test.db
@@ -1452,12 +1459,15 @@ do_execsql_test func-33.10 {
 do_catchsql_test func-33.11 {
   INSERT INTO t33a VALUES(1,2);
 } {1 {unsafe use of testdirectonly()}}
+
+ifcapable altertable {
 do_execsql_test func-33.20 {
   ALTER TABLE t33a RENAME COLUMN a TO aaa;
   SELECT sql FROM sqlite_master WHERE name='r1';
 } {{CREATE TRIGGER r1 AFTER INSERT ON t33a BEGIN
     INSERT INTO t33b(x,y) VALUES(testdirectonly(new.aaa),new.b);
   END}}
+}
 
 # 2020-01-09 Yongheng fuzzer find
 # The bug is in the register-validity debug logic, not in the SQLite core
@@ -1496,5 +1506,20 @@ do_execsql_test func-35.200 {
   CREATE TABLE t0(c0 CHECK(ABS(-9223372036854775808)));
   PRAGMA integrity_check;
 } {ok}
+
+# 2021-01-07:  The -> and ->> operators.
+#
+proc ptr1 {a b} { return "$a->$b" }
+db func -> ptr1
+proc ptr2 {a b} { return "$a->>$b" }
+db func ->> ptr2
+do_execsql_test func-36.100 {
+  SELECT 123 -> 456
+} {123->456}
+do_execsql_test func-36.110 {
+  SELECT 123 ->> 456
+} {123->>456}
+
+
 
 finish_test

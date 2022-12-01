@@ -726,7 +726,7 @@ static void decode_btree_page(
   }
   if( showMap ){
     printf("Page map:  (H=header P=cell-index 1=page-1-header .=free-space)\n");
-    for(i=0; i<g.pagesize; i+=64){
+    for(i=0; (u32)i<g.pagesize; i+=64){
       printf(" %03x: %.64s\n", i, &zMap[i]);
     }
     sqlite3_free(zMap);
@@ -753,7 +753,7 @@ static void decode_trunk_page(
       n = decodeInt32(&a[4]);
       for(i=0; i<n && i<g.pagesize/4; i++){
         u32 x = decodeInt32(&a[8+4*i]);
-        char zIdx[10];
+        char zIdx[13];
         sprintf(zIdx, "[%d]", i);
         printf("  %5s %7u", zIdx, x);
         if( i%5==4 ) printf("\n");
@@ -861,7 +861,7 @@ static int allZero(unsigned char *a, int n){
 */
 static void page_usage_btree(
   u32 pgno,             /* Page to describe */
-  u32 parent,           /* Parent of this page.  0 for root pages */
+  int parent,           /* Parent of this page.  0 for root pages */
   int idx,              /* Which child of the parent */
   const char *zName     /* Name of the table */
 ){
@@ -912,10 +912,19 @@ static void page_usage_btree(
     int cellstart = hdr+12;
     u32 child;
     for(i=0; i<nCell; i++){
+      u32 cellidx;
       u32 ofst;
 
-      ofst = cellstart + i*2;
-      ofst = a[ofst]*256 + a[ofst+1];
+      cellidx = cellstart + i*2;
+      if( cellidx+1 >= g.pagesize ){
+        printf("ERROR: page %d too many cells (%d)\n", pgno, nCell);
+        break;
+      }
+      ofst = a[cellidx]*256 + a[cellidx+1];
+      if( ofst<cellidx+2 || ofst+4>=g.pagesize ){
+        printf("ERROR: page %d cell %d out of bounds\n", pgno, i);
+        continue;
+      }
       child = decodeInt32(a+ofst);
       page_usage_btree(child, pgno, i, zName);
     }
@@ -945,7 +954,7 @@ static void page_usage_freelist(u32 pgno){
   int iNext;
   int parent = 1;
 
-  while( pgno>0 && pgno<=g.mxPage && (cnt++)<g.mxPage ){
+  while( pgno>0 && pgno<=g.mxPage && (u32)(cnt++)<g.mxPage ){
     page_usage_msg(pgno, "freelist trunk #%d child of %d", cnt, parent);
     a = fileRead((pgno-1)*g.pagesize, g.pagesize);
     iNext = decodeInt32(a);
@@ -1032,6 +1041,8 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   for(i=1; i<=g.mxPage; i++){
     if( zPageUse[i]==0 ) page_usage_btree(i, -1, 0, 0);
     printf("%5u: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
+  }
+  for(i=1; i<=g.mxPage; i++){
     sqlite3_free(zPageUse[i]);
   }
   sqlite3_free(zPageUse);

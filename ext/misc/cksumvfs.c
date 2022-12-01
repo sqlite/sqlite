@@ -47,7 +47,7 @@
 **
 **     sqlite3 *db;
 **     sqlite3_open(":memory:", &db);
-**     sqlite3_load_extention(db, "./cksumvfs");
+**     sqlite3_load_extension(db, "./cksumvfs");
 **     sqlite3_close(db);
 **
 ** If this extension is compiled with -DSQLITE_CKSUMVFS_STATIC and
@@ -579,6 +579,18 @@ static int cksmFileControl(sqlite3_file *pFile, int op, void *pArg){
   }else if( op==SQLITE_FCNTL_CKPT_START || op==SQLITE_FCNTL_CKPT_DONE ){
     p->inCkpt = op==SQLITE_FCNTL_CKPT_START;
     if( p->pPartner ) p->pPartner->inCkpt = p->inCkpt;
+  }else if( op==SQLITE_FCNTL_CKSM_FILE ){
+    /* This VFS needs to obtain a pointer to the corresponding database
+    ** file handle from within xOpen() calls to open wal files. To do this,
+    ** it uses the sqlite3_database_file_object() API to obtain a pointer
+    ** to the file-handle used by SQLite to access the db file. This is
+    ** fine if cksmvfs happens to be the top-level VFS, but not if there
+    ** are one or more wrapper VFS. To handle this case, this file-control
+    ** is used to extract the cksmvfs file-handle from any wrapper file 
+    ** handle.  */
+    sqlite3_file **ppFile = (sqlite3_file**)pArg;
+    *ppFile = (sqlite3_file*)p;
+    return SQLITE_OK;
   }
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
   if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
@@ -688,6 +700,8 @@ static int cksmOpen(
   if( rc ) goto cksm_open_done;
   if( flags & SQLITE_OPEN_WAL ){
     sqlite3_file *pDb = sqlite3_database_file_object(zName);
+    rc = pDb->pMethods->xFileControl(pDb, SQLITE_FCNTL_CKSM_FILE, (void*)&pDb);
+    assert( rc==SQLITE_OK );
     p->pPartner = (CksmFile*)pDb;
     assert( p->pPartner->pPartner==0 );
     p->pPartner->pPartner = p;
@@ -809,6 +823,7 @@ static int cksmRegisterVfs(void){
   sqlite3_vfs *pOrig;
   if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
   pOrig = sqlite3_vfs_find(0);
+  if( pOrig==0 ) return SQLITE_ERROR;
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;
   cksm_vfs.szOsFile = pOrig->szOsFile + sizeof(CksmFile);
@@ -856,9 +871,6 @@ int sqlite3_cksumvfs_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg; /* not used */
   rc = cksmRegisterFunc(db, 0, 0);
-  if( rc==SQLITE_OK ){
-    
-  }
   if( rc==SQLITE_OK ){
     rc = cksmRegisterVfs();
   }

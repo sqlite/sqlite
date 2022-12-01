@@ -158,7 +158,7 @@ do_test index6-2.2 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a=5;
   }
-} {/.* TABLE t2 USING INDEX t2a1 .*/}
+} {/(SEARCH|SCAN) t2 USING INDEX t2a1 /}
 ifcapable stat4 {
   execsql ANALYZE
   do_test index6-2.3stat4 {
@@ -166,21 +166,21 @@ ifcapable stat4 {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL;
     }
-  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+  } {/(SEARCH|SCAN) t2 USING INDEX t2a1 /}
 } else {
   do_test index6-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
       SELECT * FROM t2 WHERE a IS NOT NULL AND a>0;
     }
-  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+  } {/(SEARCH|SCANE) t2 USING INDEX t2a1 /}
 }
 do_test index6-2.4 {
   execsql {
     EXPLAIN QUERY PLAN
     SELECT * FROM t2 WHERE a IS NULL;
   }
-} {~/.*INDEX t2a1.*/}
+} {~/INDEX t2a1/}
 
 do_execsql_test index6-2.101 {
   DROP INDEX t2a1;
@@ -319,8 +319,8 @@ do_eqp_test index6-8.1 {
   SELECT * FROM t8a LEFT JOIN t8b ON (x = 'value' AND y = a)
 } {
   QUERY PLAN
-  |--SCAN TABLE t8a
-  `--SEARCH TABLE t8b USING INDEX i8c (y=?)
+  |--SCAN t8a
+  `--SEARCH t8b USING INDEX i8c (y=?) LEFT-JOIN
 }
 
 do_execsql_test index6-8.2 {
@@ -497,5 +497,35 @@ do_execsql_test index6-17.2 {
 do_execsql_test index6-17.3 {
   SELECT COUNT(*) FROM t0 WHERE t0.c0 GLOB t0.c0;
 } {1}
+
+# 2021-05-29
+# Forum https://sqlite.org/forum/forumpost/d813704d7c
+reset_db
+do_execsql_test index6-18.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1 VALUES(10,10);
+  CREATE UNIQUE INDEX t1b ON t1(b) WHERE a>NULL;
+  SELECT * FROM t1 WHERE a IS NOT NULL;
+} {10 10}
+
+# 2022-06-09
+# https://sqlite.org/forum/forumpost/c4676c4956
+# Cannot do a scan of a partial index on the left table of a RIGHT JOIN
+# since that will cause extra rows to appear in the output during the
+# right-join no-match loop.  The following testcase is verify using
+# PostgreSQL 14.
+#
+reset_db
+do_execsql_test index6-19.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1(a) VALUES(2);
+  CREATE TABLE t2(c INT);
+  CREATE INDEX i0 ON t2(c) WHERE c=3;
+  CREATE TABLE t3(d INT);
+  INSERT INTO t3 VALUES(1);
+}
+do_execsql_test index6-19.2 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON d<>0 LEFT JOIN t1 ON c=3 WHERE t1.a<>0;
+} {}
 
 finish_test

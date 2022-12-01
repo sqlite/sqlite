@@ -123,7 +123,7 @@ int sqlite3BtreeIncrVacuum(Btree *);
 #define BTREE_BLOBKEY    2    /* Table has keys only - no data */
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
-int sqlite3BtreeClearTable(Btree*, int, int*);
+int sqlite3BtreeClearTable(Btree*, int, i64*);
 int sqlite3BtreeClearTableOfCursor(BtCursor*);
 int sqlite3BtreeTripAllCursors(Btree*, int, int);
 
@@ -183,7 +183,7 @@ int sqlite3BtreeNewDb(Btree *p);
 **     reduce network bandwidth.
 **
 ** Note that BTREE_HINT_FLAGS with BTREE_BULKLOAD is the only hint used by
-** standard SQLite.  The other hints are provided for extentions that use
+** standard SQLite.  The other hints are provided for extensions that use
 ** the SQLite parser and code generator but substitute their own storage
 ** engine.
 */
@@ -247,11 +247,15 @@ void sqlite3BtreeCursorHint(BtCursor*, int, ...);
 #endif
 
 int sqlite3BtreeCloseCursor(BtCursor*);
-int sqlite3BtreeMovetoUnpacked(
+int sqlite3BtreeTableMoveto(
   BtCursor*,
-  UnpackedRecord *pUnKey,
   i64 intKey,
   int bias,
+  int *pRes
+);
+int sqlite3BtreeIndexMoveto(
+  BtCursor*,
+  UnpackedRecord *pUnKey,
   int *pRes
 );
 int sqlite3BtreeCursorHasMoved(BtCursor*);
@@ -363,6 +367,8 @@ void sqlite3BtreeCursorList(Btree*);
 #endif
 
 int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
+
+void sqlite3BtreeClearCache(Btree*);
 
 /*
 ** If we are not using shared cache, then there is no need to

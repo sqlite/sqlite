@@ -66,7 +66,6 @@ void sqlite3Fts5BufferAppendBlob(
   u32 nData, 
   const u8 *pData
 ){
-  assert_nc( *pRc || nData>=0 );
   if( nData ){
     if( fts5BufferGrow(pRc, pBuf, nData) ) return;
     memcpy(&pBuf->p[pBuf->n], pData, nData);
@@ -176,7 +175,7 @@ int sqlite3Fts5PoslistNext64(
     return 1;  
   }else{
     i64 iOff = *piOff;
-    int iVal;
+    u32 iVal;
     fts5FastGetVarint32(a, i, iVal);
     if( iVal<=1 ){
       if( iVal==0 ){
@@ -185,15 +184,19 @@ int sqlite3Fts5PoslistNext64(
       }
       fts5FastGetVarint32(a, i, iVal);
       iOff = ((i64)iVal) << 32;
+      assert( iOff>=0 );
       fts5FastGetVarint32(a, i, iVal);
       if( iVal<2 ){
         /* This is a corrupt record. So stop parsing it here. */
         *piOff = -1;
         return 1;
       }
+      *piOff = iOff + ((iVal-2) & 0x7FFFFFFF);
+    }else{
+      *piOff = (iOff & (i64)0x7FFFFFFF<<32)+((iOff + (iVal-2)) & 0x7FFFFFFF);
     }
-    *piOff = iOff + ((iVal-2) & 0x7FFFFFFF);
     *pi = i;
+    assert_nc( *piOff>=iOff );
     return 0;
   }
 }
@@ -232,14 +235,16 @@ void sqlite3Fts5PoslistSafeAppend(
   i64 *piPrev, 
   i64 iPos
 ){
-  static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
-  if( (iPos & colmask) != (*piPrev & colmask) ){
-    pBuf->p[pBuf->n++] = 1;
-    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
-    *piPrev = (iPos & colmask);
+  if( iPos>=*piPrev ){
+    static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
+    if( (iPos & colmask) != (*piPrev & colmask) ){
+      pBuf->p[pBuf->n++] = 1;
+      pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
+      *piPrev = (iPos & colmask);
+    }
+    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-*piPrev)+2);
+    *piPrev = iPos;
   }
-  pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-*piPrev)+2);
-  *piPrev = iPos;
 }
 
 int sqlite3Fts5PoslistWriterAppend(

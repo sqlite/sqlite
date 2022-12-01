@@ -157,7 +157,6 @@ do_execsql_test skipscan2-2.1 {
   CREATE INDEX peoplew_idx1 ON peoplew(role, height);
   INSERT INTO peoplew(name,role,height)
      SELECT name, role, height FROM  people;
-  ALTER TABLE people RENAME TO old_people;
   SELECT name FROM peoplew WHERE height>=180 ORDER BY +name;
 } {David Jack Patrick Quiana Xavier}
 do_execsql_test skipscan2-2.2 {
@@ -199,7 +198,7 @@ do_test skipscan2-3.2 {
 } {}
 do_eqp_test skipscan2-3.3eqp {
   SELECT * FROM t3 WHERE b=42;
-} {SEARCH TABLE t3 USING PRIMARY KEY (ANY(a) AND b=?)}
+} {SEARCH t3 USING PRIMARY KEY (ANY(a) AND b=?)}
 
 
 

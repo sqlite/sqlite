@@ -89,6 +89,9 @@
 #      verbose
 #
 
+# Only run this script once.  If sourced a second time, make it a no-op
+if {[info exists ::tester_tcl_has_run]} return
+
 # Set the precision of FP arithmatic used by the interpreter. And
 # configure SQLite to take database file locks on the page that begins
 # 64KB into the database file instead of the one 1GB in. This means
@@ -181,7 +184,7 @@ proc get_pwd {} {
       set comSpec {C:\Windows\system32\cmd.exe}
     }
     return [string map [list \\ /] \
-        [string trim [exec -- $comSpec /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c CD]]]
   } else {
     return [pwd]
   }
@@ -1008,6 +1011,7 @@ proc query_plan_graph {sql} {
   append a [append_graph "  " dx cx 0]
   regsub -all { 0x[A-F0-9]+\y} $a { xxxxxx} a
   regsub -all {(MATERIALIZE|CO-ROUTINE|SUBQUERY) \d+\y} $a {\1 xxxxxx} a
+  regsub -all {\((join|subquery)-\d+\)} $a {(\1-xxxxxx)} a
   return $a
 }
 
@@ -1200,13 +1204,36 @@ proc speed_trial_summary {name} {
   }
 }
 
-# Run this routine last
+# Clear out left-over configuration setup from the end of a test
 #
-proc finish_test {} {
-  catch {db close}
+proc finish_test_precleanup {} {
   catch {db1 close}
   catch {db2 close}
   catch {db3 close}
+  catch {unregister_devsim}
+  catch {unregister_jt_vfs}
+  catch {unregister_demovfs}
+}
+
+# Run this routine last
+#
+proc finish_test {} {
+  global argv
+  finish_test_precleanup
+  if {[llength $argv]>0} {
+    # If additional test scripts are specified on the command-line, 
+    # run them also, before quitting.
+    proc finish_test {} {
+      finish_test_precleanup
+      return
+    }
+    foreach extra $argv {
+      puts "Running \"$extra\""
+      db_delete_and_reopen
+      uplevel #0 source $extra
+    }
+  }
+  catch {db close}
   if {0==[info exists ::SLAVE]} { finalize_testing }
 }
 proc finalize_testing {} {
@@ -1520,6 +1547,47 @@ proc explain_i {sql {db db}} {
   }
   output2 "----  ------------  ------  ------  ------  ----------------  --  -"
 }
+
+proc execsql_pp {sql {db db}} {
+  set nCol 0
+  $db eval $sql A {
+    if {$nCol==0} {
+      set nCol [llength $A(*)]
+      foreach c $A(*) { 
+        set aWidth($c) [string length $c] 
+        lappend data $c
+      }
+    }
+    foreach c $A(*) { 
+      set n [string length $A($c)]
+      if {$n > $aWidth($c)} {
+        set aWidth($c) $n
+      }
+      lappend data $A($c)
+    }
+  }
+  if {$nCol>0} {
+    set nTotal 0
+    foreach e [array names aWidth] { incr nTotal $aWidth($e) }
+    incr nTotal [expr ($nCol-1) * 3]
+    incr nTotal 4
+
+    set fmt ""
+    foreach c $A(*) { 
+      lappend fmt "% -$aWidth($c)s"
+    }
+    set fmt "| [join $fmt { | }] |"
+    
+    puts [string repeat - $nTotal]
+    for {set i 0} {$i < [llength $data]} {incr i $nCol} {
+      set vals [lrange $data $i [expr $i+$nCol-1]]
+      puts [format $fmt {*}$vals]
+      if {$i==0} { puts [string repeat - $nTotal] }
+    }
+    puts [string repeat - $nTotal]
+  }
+}
+
 
 # Show the VDBE program for an SQL statement but omit the Trace
 # opcode at the beginning.  This procedure can be used to prove
@@ -1904,21 +1972,23 @@ proc do_ioerr_test {testname args} {
       set ::sqlite_io_error_hardhit 0
       set r [catch $::ioerrorbody msg]
       set ::errseen $r
-      set rc [sqlite3_errcode $::DB]
-      if {$::ioerropts(-erc)} {
-        # If we are in extended result code mode, make sure all of the
-        # IOERRs we get back really do have their extended code values.
-        # If an extended result code is returned, the sqlite3_errcode
-        # TCLcommand will return a string of the form:  SQLITE_IOERR+nnnn
-        # where nnnn is a number
-        if {[regexp {^SQLITE_IOERR} $rc] && ![regexp {IOERR\+\d} $rc]} {
-          return $rc
-        }
-      } else {
-        # If we are not in extended result code mode, make sure no
-        # extended error codes are returned.
-        if {[regexp {\+\d} $rc]} {
-          return $rc
+      if {[info commands db]!=""} {
+        set rc [sqlite3_errcode db]
+        if {$::ioerropts(-erc)} {
+          # If we are in extended result code mode, make sure all of the
+          # IOERRs we get back really do have their extended code values.
+          # If an extended result code is returned, the sqlite3_errcode
+          # TCLcommand will return a string of the form:  SQLITE_IOERR+nnnn
+          # where nnnn is a number
+          if {[regexp {^SQLITE_IOERR} $rc] && ![regexp {IOERR\+\d} $rc]} {
+            return $rc
+          }
+        } else {
+          # If we are not in extended result code mode, make sure no
+          # extended error codes are returned.
+          if {[regexp {\+\d} $rc]} {
+            return $rc
+          }
         }
       }
       # The test repeats as long as $::go is non-zero.  $::go starts out
@@ -2142,13 +2212,13 @@ proc memdebug_log_sql {filename} {
   }
 
   set escaped "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
-  set escaped [string map [list "{" "\\{" "}" "\\}"] $escaped] 
+  set escaped [string map [list "{" "\\{" "}" "\\}" "\\" "\\\\"] $escaped] 
 
   set fd [open $filename w]
   puts $fd "set BUILTIN {"
   puts $fd $escaped
   puts $fd "}"
-  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}"] $BUILTIN]}
+  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}" "\\\\" "\\"] $BUILTIN]}
   set mtv [open $::testdir/malloctraceviewer.tcl]
   set txt [read $mtv]
   close $mtv
@@ -2449,13 +2519,44 @@ proc test_find_binary {nm} {
 }
 
 # Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
-# the tests in shell[1-5].test. If no such executable can be found, invoke
+# the tests in shell*.test. If no such executable can be found, invoke
 # [finish_test ; return] in the callers context.
 #
 proc test_find_cli {} {
   set prog [test_find_binary sqlite3]
   if {$prog==""} { return -code return }
   return $prog
+}
+
+# Find invocation of the 'shell' executable (e.g. "sqlite3.exe") to use
+# for the tests in shell*.test with optional valgrind prefix when the
+# environment variable SQLITE_CLI_VALGRIND_OPT is set. The set value
+# operates as follows:
+#   empty or 0 => no valgrind prefix;
+#   1 => valgrind options for memory leak check;
+#   other => use value as valgrind options.
+# If shell not found, invoke [finish_test ; return] in callers context.
+#
+proc test_cli_invocation {} {
+  set prog [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  set vgrun [expr {[permutation]=="valgrind"}]
+  if {$vgrun || [info exists ::env(SQLITE_CLI_VALGRIND_OPT)]} {
+    if {$vgrun} {
+      set vgo "--quiet"
+    } else {
+      set vgo $::env(SQLITE_CLI_VALGRIND_OPT)
+    }
+    if {$vgo == 0 || $vgo eq ""} {
+      return $prog
+    } elseif {$vgo == 1} {
+      return "valgrind --quiet --leak-check=yes $prog"
+    } else {
+      return "valgrind $vgo $prog"
+    }
+  } else {
+    return $prog
+  }
 }
 
 # Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for
@@ -2495,3 +2596,5 @@ extra_schema_checks 1
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl
+
+set tester_tcl_has_run 1
