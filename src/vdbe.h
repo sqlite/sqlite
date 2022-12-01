@@ -144,7 +144,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define COLNAME_COLUMN      4
 #define COLNAME_TABLE_ALIAS 5
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
-# define COLNAME_N          6      /* Number of COLNAME_xxx symbols */
+# define COLNAME_N        6      /* Number of COLNAME_xxx symbols */
 #else
 # ifdef SQLITE_OMIT_DECLTYPE
 #   define COLNAME_N      1      /* Store only the name */

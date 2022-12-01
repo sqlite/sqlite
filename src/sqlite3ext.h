@@ -359,7 +359,6 @@ struct sqlite3_api_routines {
   const char *(*db_name)(sqlite3*,int);
   /* Version 3.40.0 and later */
   int (*value_encoding)(sqlite3_value*);
-
   /* Version 3.40.1 and later */
   const char * (*column_table_alias)(sqlite3_stmt*,int);
   const void * (*column_table_alias16)(sqlite3_stmt*,int);
