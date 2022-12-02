@@ -1072,6 +1072,11 @@ INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.c
 # endif
 #endif
+
+/*
+** Provide for incorporating more or fewer extensions in custom builds.
+*/
+INCLUDE cli_extend.c
 #ifdef SQLITE_SHELL_EXTSRC
 # include SHELL_STRINGIFY(SQLITE_SHELL_EXTSRC)
 #endif
