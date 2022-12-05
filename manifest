@@ -1,5 +1,5 @@
-C Fix\sthe\serror\smessage\sin\sthe\sCLI\sfor\s"no\ssuch\sVFS".\n[forum:/info/1217fdd6b3|Forum\spost\s1217fdd6b3].
-D 2022-11-22T18:24:59.744
+C Regenerate\sthe\sconfigure\sscript\sso\sthat\sit\sincludes\sthe\scorrect\spatch\snumber.
+D 2022-12-05T14:20:57.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -33,7 +33,7 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure b93755fe94b3e9b2015f3c2d6c63928e8899b0a7c54e042deb843498094179da x
+F configure 291769d08ff3a3091f420ccf7d2e1010153f778d6372217d4cc6fcbd2d14bb2d x
 F configure.ac 48dc6bfee293eef05910faf085760f2fd79b680aa47b50e8e6a22ca40bb026bb
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2055,9 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d0ca348b25ce0e597054920c2124ad5965c11b58280b8fd83f1a115b557ca907
-Q +861af465fda8485dfff143dc45c659b884d826aaec2ebaa941566404d1fe427b
-R e7ec7869eae38a3da373a40677ea0d8e
+P b344f33d16213cd8861903b9e3e8efe9b4aaf36e742006e32b67b8ff4d5f8b7d
+R b04783b8d5555affda4a0fb27de8501c
 U drh
-Z dc5dc9e45269782a206cea22b69ccd7f
+Z 88487a218fbbe5a11095f4905c42c222
 # Remove this line to create a well-formed Fossil manifest.
