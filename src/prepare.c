@@ -838,17 +838,32 @@ static int sqlite3LockAndPrepare(
   if( !sqlite3SafetyCheckOk(db)||zSql==0 ){
     return SQLITE_MISUSE_BKPT;
   }
+//prepFlags |= SQLITE_PREPARE_SAFEOPT;
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
-  do{
+  while( 1 /* exit-by-break */ ){
     /* Make multiple attempts to compile the SQL, until it either succeeds
     ** or encounters a permanent error.  A schema problem after one schema
     ** reset is considered a permanent error. */
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
     if( rc==SQLITE_OK || db->mallocFailed ) break;
-  }while( (rc==SQLITE_ERROR_RETRY && (cnt++)<SQLITE_MAX_PREPARE_RETRY)
-       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
+    if( rc==SQLITE_ERROR_RETRY ){
+      if( (cnt++) < SQLITE_MAX_PREPARE_RETRY ) continue;
+      break;
+    }
+    if( rc==SQLITE_SCHEMA ){
+      if( cnt++>0 ) break;
+      sqlite3ResetOneSchema(db,-1);
+      continue;
+    }
+//    if( rc==SQLITE_ERROR_UNSAFEOPT ){
+//      assert( (prepFlags & SQLITE_PREPARE_SAFEOPT)==0 );
+//      prepFlags |= SQLITE_PREPARE_SAFEOPT;
+//      continue;
+//    }
+    break;
+  }
   sqlite3BtreeLeaveAll(db);
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
