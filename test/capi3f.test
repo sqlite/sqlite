@@ -23,6 +23,7 @@ set ::testprefix capi3f
 #
 do_not_use_codec
 
+
 # Return the UTF-16 representation of the supplied UTF-8 string $str.
 # If $nt is true, append two 0x00 bytes as a nul terminator.
 proc utf16 {str {nt 1}} {
@@ -67,6 +68,7 @@ proc check_origin_header2 {STMT test als } {
   # If sqlite3_column_origin_name() and friends are not compiled into
   # this build, this proc is a no-op.
   ifcapable columnmetadata {
+
     # Use the return value of sqlite3_column_count() to build
     # a list of column indexes. i.e. If sqlite3_column_count
     # is 3, build the list {0 1 2}.
@@ -97,6 +99,9 @@ proc check_origin_header2 {STMT test als } {
   }
 }
 
+sqlite3 db test.db
+set DB [sqlite3_connection_pointer db]
+
 do_test capi3f-1 {
   execsql {
     CREATE TABLE t1(a VARINT, b BLOB, c VARCHAR(16));
@@ -109,8 +114,8 @@ do_test capi3f-1 {
   sqlite3_column_count $STMT
 } 3
 
-check_origin_header2 $STMT capi3f-1{tz tz tz}
+check_origin_header2 $STMT capi3f-1 {tz tz tz}
 
-
+db close
 
 finish_test
