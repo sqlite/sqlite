@@ -513,7 +513,7 @@ static const sqlite3_api_routines sqlite3Apis = {
 #endif
   sqlite3_db_name,
   /* Version 3.40.0 and later */
-  sqlite3_value_encoding
+  sqlite3_value_encoding,
   /* Version 3.40.1 and later */
   sqlite3_column_table_alias,
   sqlite3_column_table_alias16,
