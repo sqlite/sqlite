@@ -1419,9 +1419,10 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N){
 #endif /* SQLITE_OMIT_UTF16 */
 
 /*
-** Return the name of the table alias from which a result column derives.
-** NULL is returned if the result name is an expression or constant or
-** anything else which is not an unambiguous reference to a database table.
+** Return the alias or, if no alias specified, the name of the table from
+** which a result column derives. NULL is returned if the result name is
+** an expression or constant or anything else which is not an unambiguous
+** reference to a database table.
 */
 const char *sqlite3_column_table_alias(sqlite3_stmt *pStmt, int N){
   return columnName(
