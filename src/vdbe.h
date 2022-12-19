@@ -392,4 +392,8 @@ void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
 void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
 #endif
 
+void sqlite3VdbeIsSchemaVersion(Vdbe*);
+void sqlite3SchemaVersionLog(Vdbe *v);
+u64 sqlite3STimeNow();
+
 #endif /* SQLITE_VDBE_H */

@@ -7905,4 +7905,8 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
+void sqlite3PagerIsSchemaVersion(Pager *pPager, u64 *a){
+  sqlite3WalIsSchemaVersion(pPager->pWal, a);
+}
+
 #endif /* SQLITE_OMIT_DISKIO */

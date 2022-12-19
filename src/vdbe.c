@@ -3849,8 +3849,18 @@ case OP_Transaction: {
   pDb = &db->aDb[pOp->p1];
   pBt = pDb->pBt;
 
+  if( p->bSchemaVersion ){
+    p->aSchemaVersion[SCHEMA_VERSION_OPTRANS] = sqlite3STimeNow();
+  }
+
   if( pBt ){
+    if( p->bSchemaVersion ){
+      sqlite3PagerIsSchemaVersion(sqlite3BtreePager(pBt), p->aSchemaVersion);
+    }
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, &iMeta);
+    if( p->bSchemaVersion ){
+      sqlite3PagerIsSchemaVersion(sqlite3BtreePager(pBt), 0);
+    }
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
     if( rc!=SQLITE_OK ){
@@ -3860,6 +3870,10 @@ case OP_Transaction: {
         goto vdbe_return;
       }
       goto abort_due_to_error;
+    }
+
+    if( p->bSchemaVersion ){
+      p->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE] = sqlite3STimeNow();
     }
 
     if( p->usesStmtJournal
@@ -3953,6 +3967,10 @@ case OP_ReadCookie: {               /* out2 */
   sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = iMeta;
+  if( p->bSchemaVersion ){
+    p->aSchemaVersion[SCHEMA_VERSION_READDONE] = sqlite3STimeNow();
+    sqlite3SchemaVersionLog(p);
+  }
   break;
 }
 
@@ -8507,6 +8525,11 @@ case OP_Init: {          /* jump */
   ** sqlite3_expanded_sql(P) otherwise.
   */
   assert( pOp->p4.z==0 || strncmp(pOp->p4.z, "-" "- ", 3)==0 );
+
+  if( p->bSchemaVersion ){
+    memset(p->aSchemaVersion, 0, sizeof(p->aSchemaVersion));
+    p->aSchemaVersion[SCHEMA_VERSION_START] = sqlite3STimeNow();
+  }
 
   /* OP_Init is always instruction 0 */
   assert( pOp==p->aOp || pOp->opcode==OP_Trace );

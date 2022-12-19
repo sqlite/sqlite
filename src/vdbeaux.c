@@ -5216,6 +5216,34 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   return 1;
 }
 
+#include <sys/time.h>
+void sqlite3VdbeIsSchemaVersion(Vdbe *v){
+  v->bSchemaVersion = 1;
+}
+void sqlite3SchemaVersionLog(Vdbe *v){
+  u64 i1 = v->aSchemaVersion[SCHEMA_VERSION_START];
+  if( v->aSchemaVersion[SCHEMA_VERSION_READDONE]>(i1+SCHEMA_VERSION_TIMEOUT) ){
+    sqlite3_log(SQLITE_WARNING, 
+        "slow \"PRAGMA schema_version\": (%d, %d, %d, %d, %d, %d)",
+        (int)(v->aSchemaVersion[SCHEMA_VERSION_OPTRANS] - i1),
+        (v->aSchemaVersion[SCHEMA_VERSION_BEFOREWALTBR]==0) ? 0 :
+            (int)(v->aSchemaVersion[SCHEMA_VERSION_BEFOREWALTBR] - i1),
+        (v->aSchemaVersion[SCHEMA_VERSION_BEFOREWALSHARED]==0) ? 0 :
+            (int)(v->aSchemaVersion[SCHEMA_VERSION_BEFOREWALSHARED] - i1),
+        (v->aSchemaVersion[SCHEMA_VERSION_AFTERWALSHARED]==0) ? 0 :
+            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERWALSHARED] - i1),
+        (v->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE]==0) ? 0 :
+            (int)(v->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE] - i1),
+        (int)(v->aSchemaVersion[SCHEMA_VERSION_READDONE] - i1)
+    );
+  }
+}
+u64 sqlite3STimeNow(){
+  struct timeval time;
+  gettimeofday(&time, 0);
+  return ((u64)time.tv_sec * 1000000 + (u64)time.tv_usec);
+}
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored

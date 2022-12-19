@@ -487,7 +487,20 @@ struct Vdbe {
   int nScan;              /* Entries in aScan[] */
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
+  int bSchemaVersion;
+  u64 aSchemaVersion[6];
 };
+
+#define SCHEMA_VERSION_START           0     /* OP_Init */
+#define SCHEMA_VERSION_OPTRANS         1     /* Start of OP_Transaction */
+#define SCHEMA_VERSION_BEFOREWALTBR    2     /* Before walTryBeginRead() loop */
+#define SCHEMA_VERSION_BEFOREWALSHARED 3     /* Before walTryBeginRead() loop */
+#define SCHEMA_VERSION_AFTERWALSHARED  4     /* Before walTryBeginRead() loop */
+#define SCHEMA_VERSION_BEGINTRANSDONE  5     /* After BeginTrans() */
+#define SCHEMA_VERSION_READDONE        6     /* End of OP_ReadCookie */
+
+/* Call sqlite3_log() if "PRAGMA schema_version" is slower than this (in us) */
+#define SCHEMA_VERSION_TIMEOUT 2000000
 
 /*
 ** The following are allowed values for Vdbe.eVdbeState

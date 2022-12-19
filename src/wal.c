@@ -435,6 +435,7 @@
 #ifndef SQLITE_OMIT_WAL
 
 #include "wal.h"
+#include "vdbeInt.h"
 
 /*
 ** Trace output macros
@@ -802,6 +803,7 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
 #endif
+  u64 *aSchemaVersion;
 };
 
 /*
@@ -3435,6 +3437,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     assert( iWal!=1 || nBackfill!=1 || eLock==WAL_LOCK_PART2 );
     assert( iWal!=1 || nBackfill!=0 || eLock==WAL_LOCK_PART2_FULL1 );
 
+    if( pWal->aSchemaVersion ){
+      pWal->aSchemaVersion[SCHEMA_VERSION_BEFOREWALSHARED] = sqlite3STimeNow();
+    }
+
     rc = walLockShared(pWal, WAL_READ_LOCK(eLock));
     if( rc!=SQLITE_OK ){
       return (rc==SQLITE_BUSY ? WAL_RETRY : rc);
@@ -3445,6 +3451,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       return WAL_RETRY;
     }else{
       pWal->readLock = eLock;
+    }
+    if( pWal->aSchemaVersion ){
+      pWal->aSchemaVersion[SCHEMA_VERSION_AFTERWALSHARED] = sqlite3STimeNow();
     }
     assert( pWal->minFrame==0 && walFramePage(pWal->minFrame)==0 );
   }else{
@@ -3711,6 +3720,10 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
     pWal->ckptLock = 1;
   }
 #endif
+
+  if( pWal->aSchemaVersion ){
+    pWal->aSchemaVersion[SCHEMA_VERSION_BEFOREWALTBR] = sqlite3STimeNow();
+  }
 
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
@@ -5329,6 +5342,12 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
 int sqlite3WalJournalMode(Wal *pWal){
   assert( pWal );
   return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
+}
+
+void sqlite3WalIsSchemaVersion(Wal *pWal, u64 *a){
+  if( pWal ){
+    pWal->aSchemaVersion = a;
+  }
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */
