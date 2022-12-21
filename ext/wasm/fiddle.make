@@ -39,6 +39,7 @@ fiddle.emcc-flags = \
   $(sqlite3.js.flags.--post-js) \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
+  -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT) $(SHELL_OPT) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
@@ -58,12 +59,12 @@ fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
 $(fiddle.SOAP.js): $(SOAP.js)
 	cp $< $@
 
-$(eval $(call call-make-pre-js,fiddle-module))
+$(eval $(call call-make-pre-js,fiddle-module,vanilla))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     $(EXPORTED_FUNCTIONS.fiddle) \
-    $(fiddle.cses) $(pre-post-fiddle-module.deps) $(fiddle.SOAP.js)
+    $(fiddle.cses) $(pre-post-fiddle-module.deps.vanilla) $(fiddle.SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
-    $(pre-post-common.flags) $(pre-post-fiddle-module.flags) \
+    $(pre-post-fiddle-module.flags.vanilla) \
     $(fiddle.cses)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz
