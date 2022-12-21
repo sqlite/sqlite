@@ -279,7 +279,7 @@ static void mallocWithAlarm(int n, void **pp){
 ** The upper bound is slightly less than 2GiB:  0x7ffffeff == 2,147,483,391
 ** This provides a 256-byte safety margin for defense against 32-bit 
 ** signed integer overflow bugs when computing memory allocation sizes.
-** Parnoid applications might want to reduce the maximum allocation size
+** Paranoid applications might want to reduce the maximum allocation size
 ** further for an even larger safety margin.  0x3fffffff or 0x0fffffff
 ** or even smaller would be reasonable upper bounds on the size of a memory
 ** allocations for most applications.
@@ -793,9 +793,14 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
 */
 char *sqlite3DbSpanDup(sqlite3 *db, const char *zStart, const char *zEnd){
   int n;
+#ifdef SQLITE_DEBUG
+  /* Because of the way the parser works, the span is guaranteed to contain
+  ** at least one non-space character */
+  for(n=0; sqlite3Isspace(zStart[n]); n++){ assert( &zStart[n]<zEnd ); }
+#endif
   while( sqlite3Isspace(zStart[0]) ) zStart++;
   n = (int)(zEnd - zStart);
-  while( ALWAYS(n>0) && sqlite3Isspace(zStart[n-1]) ) n--;
+  while( sqlite3Isspace(zStart[n-1]) ) n--;
   return sqlite3DbStrNDup(db, zStart, n);
 }
 

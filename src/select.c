@@ -65,6 +65,10 @@ struct SortCtx {
   } aDefer[4];
 #endif
   struct RowLoadInfo *pDeferredRowLoad;  /* Deferred row loading info or NULL */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrPush;         /* First instruction to push data into sorter */
+  int addrPushEnd;      /* Last instruction that pushes data into sorter */
+#endif
 };
 #define SORTFLAG_UseSorter  0x01   /* Use SorterOpen instead of OpenEphemeral */
 
@@ -721,6 +725,10 @@ static void pushOntoSorter(
   */
   assert( nData==1 || regData==regOrigData || regOrigData==0 );
 
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  pSort->addrPush = sqlite3VdbeCurrentAddr(v);
+#endif
+
   if( nPrefixReg ){
     assert( nPrefixReg==nExpr+bSeq );
     regBase = regData - nPrefixReg;
@@ -821,6 +829,9 @@ static void pushOntoSorter(
     sqlite3VdbeChangeP2(v, iSkip,
          pSort->labelOBLopt ? pSort->labelOBLopt : sqlite3VdbeCurrentAddr(v));
   }
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  pSort->addrPushEnd = sqlite3VdbeCurrentAddr(v)-1;
+#endif
 }
 
 /*
@@ -1287,9 +1298,6 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
-      if( pDest->zAffSdst ){
-        sqlite3VdbeChangeP4(v, -1, pDest->zAffSdst, nResultCol);
-      }
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -1647,6 +1655,16 @@ static void generateSortTail(
   int bSeq;                       /* True if sorter record includes seq. no. */
   int nRefKey = 0;
   struct ExprList_item *aOutEx = p->pEList->a;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrExplain;                /* Address of OP_Explain instruction */
+#endif
+
+  ExplainQueryPlan2(addrExplain, (pParse, 0, 
+        "USE TEMP B-TREE FOR %sORDER BY", pSort->nOBSat>0?"RIGHT PART OF ":"")
+  );
+  sqlite3VdbeScanStatusRange(v, addrExplain,pSort->addrPush,pSort->addrPushEnd);
+  sqlite3VdbeScanStatusCounters(v, addrExplain, addrExplain, pSort->addrPush);
+
 
   assert( addrBreak<0 );
   if( pSort->labelBkOut ){
@@ -1759,6 +1777,7 @@ static void generateSortTail(
       VdbeComment((v, "%s", aOutEx[i].zEName));
     }
   }
+  sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
@@ -1820,6 +1839,7 @@ static void generateSortTail(
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, iTab, addr); VdbeCoverage(v);
   }
+  sqlite3VdbeScanStatusRange(v, addrExplain, sqlite3VdbeCurrentAddr(v)-1, -1);
   if( pSort->regReturn ) sqlite3VdbeAddOp1(v, OP_Return, pSort->regReturn);
   sqlite3VdbeResolveLabel(v, addrBreak);
 }
@@ -1850,6 +1870,7 @@ static void generateSortTail(
 #else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
 # define columnType(A,B,C,D,E) columnTypeImpl(A,B)
 #endif
+#ifndef SQLITE_OMIT_DECLTYPE
 static const char *columnTypeImpl(
   NameContext *pNC, 
 #ifndef SQLITE_ENABLE_COLUMN_METADATA
@@ -1880,7 +1901,7 @@ static const char *columnTypeImpl(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
-      while( pNC && !pTab ){
+      while( ALWAYS(pNC) && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
         if( j<pTabList->nSrc ){
@@ -1891,7 +1912,7 @@ static const char *columnTypeImpl(
         }
       }
 
-      if( pTab==0 ){
+      if( NEVER(pTab==0) ){
         /* At one time, code such as "SELECT new.x" within a trigger would
         ** cause this condition to run.  Since then, we have restructured how
         ** trigger code is generated and so this condition is no longer 
@@ -1996,6 +2017,7 @@ static const char *columnTypeImpl(
 #endif
   return zType;
 }
+#endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 
 /*
 ** Generate code that will tell the VDBE the declaration types of columns
@@ -2091,7 +2113,7 @@ void sqlite3GenerateColumnNames(
   if( pParse->colNamesSet ) return;
   /* Column names are determined by the left-most term of a compound select */
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  SELECTTRACE(1,pParse,pSelect,("generating column names\n"));
+  TREETRACE(0x80,pParse,pSelect,("generating column names\n"));
   pTabList = pSelect->pSrc;
   pEList = pSelect->pEList;
   assert( v!=0 );
@@ -2267,47 +2289,76 @@ int sqlite3ColumnsFromExprList(
 }
 
 /*
-** Add type and collation information to a column list based on
-** a SELECT statement.
-** 
-** The column list presumably came from selectColumnNamesFromExprList().
-** The column list has only names, not types or collations.  This
-** routine goes through and adds the types and collations.
+** pTab is a transient Table object that represents a subquery of some
+** kind (maybe a parenthesized subquery in the FROM clause of a larger
+** query, or a VIEW, or a CTE).  This routine computes type information
+** for that Table object based on the Select object that implements the
+** subquery.  For the purposes of this routine, "type infomation" means:
 **
-** This routine requires that all identifiers in the SELECT
-** statement be resolved.
+**    *   The datatype name, as it might appear in a CREATE TABLE statement
+**    *   Which collating sequence to use for the column
+**    *   The affinity of the column
 */
-void sqlite3SelectAddColumnTypeAndCollation(
-  Parse *pParse,        /* Parsing contexts */
-  Table *pTab,          /* Add column type information to this table */
-  Select *pSelect,      /* SELECT used to determine types and collations */
-  char aff              /* Default affinity for columns */
+void sqlite3SubqueryColumnTypes(
+  Parse *pParse,      /* Parsing contexts */
+  Table *pTab,        /* Add column type information to this table */
+  Select *pSelect,    /* SELECT used to determine types and collations */
+  char aff            /* Default affinity. */
 ){
   sqlite3 *db = pParse->db;
-  NameContext sNC;
   Column *pCol;
   CollSeq *pColl;
-  int i;
+  int i,j;
   Expr *p;
   struct ExprList_item *a;
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
-  memset(&sNC, 0, sizeof(sNC));
-  sNC.pSrcList = pSelect->pSrc;
+  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
-    i64 n, m;
+    i64 n;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
-    zType = columnType(&sNC, p, 0, 0, 0);
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
+    if( pCol->affinity<=SQLITE_AFF_NONE ){
+      pCol->affinity = aff;
+    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+      pCol->affinity = SQLITE_AFF_FLEXNUM;
+    }
+    if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
+      int m = 0;
+      Select *pS2;
+      for(m=0, pS2=pSelect->pNext; pS2; pS2=pS2->pNext){
+        m |= sqlite3ExprDataType(pS2->pEList->a[i].pExpr);
+      }
+      if( pCol->affinity==SQLITE_AFF_TEXT && (m&0x01)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }else
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }
+    }
+    if( pCol->affinity==SQLITE_AFF_NUMERIC
+     || pCol->affinity==SQLITE_AFF_FLEXNUM
+    ){
+      zType = "NUM";
+    }else{
+      zType = 0;
+      for(j=1; j<SQLITE_N_STDTYPE; j++){
+        if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
+          zType = sqlite3StdType[j];
+          break;
+        }
+      }
+    }
     if( zType ){
-      m = sqlite3Strlen30(zType);
+      i64 m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zCnName);
       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
       if( pCol->zCnName ){
@@ -2318,7 +2369,6 @@ void sqlite3SelectAddColumnTypeAndCollation(
         pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }
-    if( pCol->affinity<=SQLITE_AFF_NONE ) pCol->affinity = aff;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
       assert( pTab->pIndex==0 );
@@ -2352,7 +2402,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect, char aff){
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   sqlite3ColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
-  sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSelect, aff);
+  sqlite3SubqueryColumnTypes(pParse, pTab, pSelect, aff);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pTab);
@@ -2877,7 +2927,7 @@ static int multiSelect(
         pPrior->iLimit = p->iLimit;
         pPrior->iOffset = p->iOffset;
         pPrior->pLimit = p->pLimit;
-        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL left...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect UNION ALL left...\n"));
         rc = sqlite3Select(pParse, pPrior, &dest);
         pPrior->pLimit = 0;
         if( rc ){
@@ -2895,7 +2945,7 @@ static int multiSelect(
           }
         }
         ExplainQueryPlan((pParse, 1, "UNION ALL"));
-        SELECTTRACE(1, pParse, p, ("multiSelect UNION ALL right...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect UNION ALL right...\n"));
         rc = sqlite3Select(pParse, p, &dest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -2948,7 +2998,7 @@ static int multiSelect(
         */
         assert( !pPrior->pOrderBy );
         sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
-        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION left...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect EXCEPT/UNION left...\n"));
         rc = sqlite3Select(pParse, pPrior, &uniondest);
         if( rc ){
           goto multi_select_end;
@@ -2968,7 +3018,7 @@ static int multiSelect(
         uniondest.eDest = op;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
-        SELECTTRACE(1, pParse, p, ("multiSelect EXCEPT/UNION right...\n"));
+        TREETRACE(0x200, pParse, p, ("multiSelect EXCEPT/UNION right...\n"));
         rc = sqlite3Select(pParse, p, &uniondest);
         testcase( rc!=SQLITE_OK );
         assert( p->pOrderBy==0 );
@@ -3029,7 +3079,7 @@ static int multiSelect(
         /* Code the SELECTs to our left into temporary table "tab1".
         */
         sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
-        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT left...\n"));
+        TREETRACE(0x400, pParse, p, ("multiSelect INTERSECT left...\n"));
         rc = sqlite3Select(pParse, pPrior, &intersectdest);
         if( rc ){
           goto multi_select_end;
@@ -3046,7 +3096,7 @@ static int multiSelect(
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
-        SELECTTRACE(1, pParse, p, ("multiSelect INTERSECT right...\n"));
+        TREETRACE(0x400, pParse, p, ("multiSelect INTERSECT right...\n"));
         rc = sqlite3Select(pParse, p, &intersectdest);
         testcase( rc!=SQLITE_OK );
         pDelete = p->pPrior;
@@ -4050,6 +4100,34 @@ static ExprList *findLeftmostExprlist(Select *pSel){
   return pSel->pEList;
 }
 
+/*
+** Return true if any of the result-set columns in the compound query
+** have incompatible affinities on one or more arms of the compound.
+*/
+static int compoundHasDifferentAffinities(Select *p){
+  int ii;
+  ExprList *pList;
+  assert( p!=0 );
+  assert( p->pEList!=0 );
+  assert( p->pPrior!=0 );
+  pList = p->pEList;
+  for(ii=0; ii<pList->nExpr; ii++){
+    char aff;
+    Select *pSub1;
+    assert( pList->a[ii].pExpr!=0 );
+    aff = sqlite3ExprAffinity(pList->a[ii].pExpr);
+    for(pSub1=p->pPrior; pSub1; pSub1=pSub1->pPrior){
+      assert( pSub1->pEList!=0 );
+      assert( pSub1->pEList->nExpr>ii );
+      assert( pSub1->pEList->a[ii].pExpr!=0 );
+      if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
 ** This routine attempts to flatten subqueries as a performance optimization.
@@ -4153,7 +4231,8 @@ static ExprList *findLeftmostExprlist(Select *pSel){
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
 **        (17h) The corresponding result set expressions in all arms of the
-**              compound must have the same affinity.
+**              compound must have the same affinity. (See restriction (9)
+**              on the push-down optimization.)
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -4372,19 +4451,7 @@ static int flattenSubquery(
     if( (p->selFlags & SF_Recursive) ) return 0;
 
     /* Restriction (17h) */
-    for(ii=0; ii<pSub->pEList->nExpr; ii++){
-      char aff;
-      assert( pSub->pEList->a[ii].pExpr!=0 );
-      aff = sqlite3ExprAffinity(pSub->pEList->a[ii].pExpr);
-      for(pSub1=pSub->pPrior; pSub1; pSub1=pSub1->pPrior){
-        assert( pSub1->pEList!=0 );
-        assert( pSub1->pEList->nExpr>ii );
-        assert( pSub1->pEList->a[ii].pExpr!=0 );
-        if( sqlite3ExprAffinity(pSub1->pEList->a[ii].pExpr)!=aff ){
-          return 0;
-        }
-      }
-    }
+    if( compoundHasDifferentAffinities(pSub) ) return 0;
 
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
@@ -4395,7 +4462,7 @@ static int flattenSubquery(
   }
 
   /***** If we reach this point, flattening is permitted. *****/
-  SELECTTRACE(1,pParse,p,("flatten %u.%p from term %d\n",
+  TREETRACE(0x4,pParse,p,("flatten %u.%p from term %d\n",
                    pSub->selId, pSub, iFrom));
 
   /* Authorize the subquery */
@@ -4474,7 +4541,7 @@ static int flattenSubquery(
       if( pPrior ) pPrior->pNext = pNew;
       pNew->pNext = p;
       p->pPrior = pNew;
-      SELECTTRACE(2,pParse,p,("compound-subquery flattener"
+      TREETRACE(0x4,pParse,p,("compound-subquery flattener"
                               " creates %u as peer\n",pNew->selId));
     }
     assert( pSubitem->pSelect==0 );
@@ -4654,8 +4721,8 @@ static int flattenSubquery(
   sqlite3SelectDelete(db, pSub1);
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x100 ){
-    SELECTTRACE(0x100,pParse,p,("After flattening:\n"));
+  if( sqlite3TreeTrace & 0x4 ){
+    TREETRACE(0x4,pParse,p,("After flattening:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -5029,12 +5096,14 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       be materialized.  (This restriction is implemented in the calling
 **       routine.)
 **
-**   (8) The subquery may not be a compound that uses UNION, INTERSECT,
-**       or EXCEPT.  (We could, perhaps, relax this restriction to allow
-**       this case if none of the comparisons operators between left and
-**       right arms of the compound use a collation other than BINARY.
-**       But it is a lot of work to check that case for an obscure and
-**       minor optimization, so we omit it for now.)
+**   (8) If the subquery is a compound that uses UNION, INTERSECT,
+**       or EXCEPT, then all of the result set columns for all arms of
+**       the compound must use the BINARY collating sequence.
+**
+**   (9) If the subquery is a compound, then all arms of the compound must
+**       have the same affinity.  (This is the same as restriction (17h)
+**       for query flattening.)
+**       
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -5051,20 +5120,44 @@ static int pushDownWhereTerms(
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
   if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
 
-#ifndef SQLITE_OMIT_WINDOWFUNC
   if( pSubq->pPrior ){
     Select *pSel;
+    int notUnionAll = 0;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
       u8 op = pSel->op;
       assert( op==TK_ALL || op==TK_SELECT 
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
-      if( op!=TK_ALL && op!=TK_SELECT ) return 0;  /* restriction (8) */
+      if( op!=TK_ALL && op!=TK_SELECT ){
+        notUnionAll = 1;
+      }
+#ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
+#endif
+    }
+    if( compoundHasDifferentAffinities(pSubq) ){
+      return 0;  /* restriction (9) */
+    }
+    if( notUnionAll ){
+      /* If any of the compound arms are connected using UNION, INTERSECT,
+      ** or EXCEPT, then we must ensure that none of the columns use a
+      ** non-BINARY collating sequence. */
+      for(pSel=pSubq; pSel; pSel=pSel->pPrior){
+        int ii;
+        const ExprList *pList = pSel->pEList;
+        assert( pList!=0 );
+        for(ii=0; ii<pList->nExpr; ii++){
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[ii].pExpr);
+          if( !sqlite3IsBinary(pColl) ){
+            return 0;  /* Restriction (8) */
+          }
+        }
+      }
     }
   }else{
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
-  }
 #endif
+  }
 
 #ifdef SQLITE_DEBUG
   /* Only the first term of a compound can have a WITH clause.  But make
@@ -6068,8 +6161,8 @@ static int selectExpander(Walker *pWalker, Select *p){
     }
   }
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x100 ){
-    SELECTTRACE(0x100,pParse,p,("After result-set wildcard expansion:\n"));
+  if( sqlite3TreeTrace & 0x8 ){
+    TREETRACE(0x8,pParse,p,("After result-set wildcard expansion:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6120,14 +6213,14 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
 ** This is a Walker.xSelectCallback callback for the sqlite3SelectTypeInfo()
 ** interface.
 **
-** For each FROM-clause subquery, add Column.zType and Column.zColl
-** information to the Table structure that represents the result set
-** of that subquery.
+** For each FROM-clause subquery, add Column.zType, Column.zColl, and
+** Column.affinity information to the Table structure that represents
+** the result set of that subquery.
 **
 ** The Table structure that represents the result set was constructed
-** by selectExpander() but the type and collation information was omitted
-** at that point because identifiers had not yet been resolved.  This
-** routine is called after identifier resolution.
+** by selectExpander() but the type and collation and affinity information
+** was omitted at that point because identifiers had not yet been resolved.
+** This routine is called after identifier resolution.
 */
 static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   Parse *pParse;
@@ -6147,9 +6240,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       Select *pSel = pFrom->pSelect;
       if( pSel ){
-        while( pSel->pPrior ) pSel = pSel->pPrior;
-        sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSel,
-                                               SQLITE_AFF_NONE);
+        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_NONE);
       }
     }
   }
@@ -6204,6 +6295,173 @@ void sqlite3SelectPrep(
   sqlite3SelectAddTypeInfo(pParse, p);
 }
 
+#if TREETRACE_ENABLED
+/*
+** Display all information about an AggInfo object
+*/
+static void printAggInfo(AggInfo *pAggInfo){
+  int ii;
+  for(ii=0; ii<pAggInfo->nColumn; ii++){
+    struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
+    sqlite3DebugPrintf(
+       "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
+       " iSorterColumn=%d %s\n",
+       ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
+       pCol->iTable, pCol->iColumn, pAggInfo->iFirstReg+ii,
+       pCol->iSorterColumn, 
+       ii>=pAggInfo->nAccumulator ? "" : " Accumulator");
+    sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
+  }
+  for(ii=0; ii<pAggInfo->nFunc; ii++){
+    sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
+        ii, pAggInfo->iFirstReg+pAggInfo->nColumn+ii);
+    sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
+  }
+}
+#endif /* TREETRACE_ENABLED */
+
+/*
+** Analyze the arguments to aggregate functions.  Create new pAggInfo->aCol[]
+** entries for columns that are arguments to aggregate functions but which
+** are not otherwise used.
+**
+** The aCol[] entries in AggInfo prior to nAccumulator are columns that
+** are referenced outside of aggregate functions.  These might be columns
+** that are part of the GROUP by clause, for example.  Other database engines
+** would throw an error if there is a column reference that is not in the
+** GROUP BY clause and that is not part of an aggregate function argument.
+** But SQLite allows this.
+**
+** The aCol[] entries beginning with the aCol[nAccumulator] and following
+** are column references that are used exclusively as arguments to
+** aggregate functions.  This routine is responsible for computing
+** (or recomputing) those aCol[] entries.
+*/
+static void analyzeAggFuncArgs(
+  AggInfo *pAggInfo,
+  NameContext *pNC
+){
+  int i;
+  assert( pAggInfo!=0 );
+  assert( pAggInfo->iFirstReg==0 );
+  pNC->ncFlags |= NC_InAggFunc;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
+    assert( ExprUseXList(pExpr) );
+    sqlite3ExprAnalyzeAggList(pNC, pExpr->x.pList);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    assert( !IsWindowFunc(pExpr) );
+    if( ExprHasProperty(pExpr, EP_WinFunc) ){
+      sqlite3ExprAnalyzeAggregates(pNC, pExpr->y.pWin->pFilter);
+    }
+#endif
+  }
+  pNC->ncFlags &= ~NC_InAggFunc;
+}
+
+/*
+** An index on expressions is being used in the inner loop of an
+** aggregate query with a GROUP BY clause.  This routine attempts
+** to adjust the AggInfo object to take advantage of index and to
+** perhaps use the index as a covering index.
+**
+*/
+static void optimizeAggregateUseOfIndexedExpr(
+  Parse *pParse,          /* Parsing context */
+  Select *pSelect,        /* The SELECT statement being processed */
+  AggInfo *pAggInfo,      /* The aggregate info */
+  NameContext *pNC        /* Name context used to resolve agg-func args */
+){
+  assert( pAggInfo->iFirstReg==0 );
+  pAggInfo->nColumn = pAggInfo->nAccumulator;
+  if( ALWAYS(pAggInfo->nSortingColumn>0) ){
+    if( pAggInfo->nColumn==0 ){
+      pAggInfo->nSortingColumn = 0;
+    }else{
+      pAggInfo->nSortingColumn =
+        pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
+    }
+  }
+  analyzeAggFuncArgs(pAggInfo, pNC);
+#if TREETRACE_ENABLED
+  if( sqlite3TreeTrace & 0x20 ){
+    IndexedExpr *pIEpr;
+    TREETRACE(0x20, pParse, pSelect,
+        ("AggInfo (possibly) adjusted for Indexed Exprs\n"));
+    sqlite3TreeViewSelect(0, pSelect, 0);
+    for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
+      printf("data-cursor=%d index={%d,%d}\n",
+          pIEpr->iDataCur, pIEpr->iIdxCur, pIEpr->iIdxCol);
+      sqlite3TreeViewExpr(0, pIEpr->pExpr, 0);
+    }
+    printAggInfo(pAggInfo);
+  }
+#else
+  UNUSED_PARAMETER(pSelect);
+  UNUSED_PARAMETER(pParse);
+#endif
+}
+
+/*
+** Walker callback for aggregateConvertIndexedExprRefToColumn().
+*/
+static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
+  AggInfo *pAggInfo;
+  struct AggInfo_col *pCol;
+  UNUSED_PARAMETER(pWalker);
+  if( pExpr->pAggInfo==0 ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_COLUMN ) return WRC_Continue;
+  if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
+  if( pExpr->op==TK_IF_NULL_ROW ) return WRC_Continue;
+  pAggInfo = pExpr->pAggInfo;
+  assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+  pCol = &pAggInfo->aCol[pExpr->iAgg];
+  pExpr->op = TK_AGG_COLUMN;
+  pExpr->iTable = pCol->iTable;
+  pExpr->iColumn = pCol->iColumn;
+  return WRC_Prune;
+}
+
+/*
+** Convert every pAggInfo->aFunc[].pExpr such that any node within
+** those expressions that has pAppInfo set is changed into a TK_AGG_COLUMN
+** opcode.
+*/
+static void aggregateConvertIndexedExprRefToColumn(AggInfo *pAggInfo){
+  int i;
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = aggregateIdxEprRefToColCallback;
+  for(i=0; i<pAggInfo->nFunc; i++){
+    sqlite3WalkExpr(&w, pAggInfo->aFunc[i].pFExpr);
+  }
+}
+
+
+/*
+** Allocate a block of registers so that there is one register for each
+** pAggInfo->aCol[] and pAggInfo->aFunc[] entry in pAggInfo.  The first
+** register in this block is stored in pAggInfo->iFirstReg.
+**
+** This routine may only be called once for each AggInfo object.  Prior
+** to calling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays may be modified
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may not be used
+**
+** After clling this routine:
+**
+**     *  The aCol[] and aFunc[] arrays are fixed
+**     *  The AggInfoColumnReg() and AggInfoFuncReg() macros may be used
+**
+*/
+static void assignAggregateRegisters(Parse *pParse, AggInfo *pAggInfo){
+  assert( pAggInfo!=0 );
+  assert( pAggInfo->iFirstReg==0 );
+  pAggInfo->iFirstReg = pParse->nMem + 1;
+  pParse->nMem += pAggInfo->nColumn + pAggInfo->nFunc;
+}
+
 /*
 ** Reset the aggregate accumulator.
 **
@@ -6217,24 +6475,13 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pFunc;
   int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
+  assert( pAggInfo->iFirstReg>0 );
   assert( pParse->db->pParse==pParse );
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
-#ifdef SQLITE_DEBUG
-  /* Verify that all AggInfo registers are within the range specified by
-  ** AggInfo.mnReg..AggInfo.mxReg */
-  assert( nReg==pAggInfo->mxReg-pAggInfo->mnReg+1 );
-  for(i=0; i<pAggInfo->nColumn; i++){
-    assert( pAggInfo->aCol[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aCol[i].iMem<=pAggInfo->mxReg );
-  }
-  for(i=0; i<pAggInfo->nFunc; i++){
-    assert( pAggInfo->aFunc[i].iMem>=pAggInfo->mnReg
-         && pAggInfo->aFunc[i].iMem<=pAggInfo->mxReg );
-  }
-#endif
-  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mxReg);
+  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->iFirstReg,
+                    pAggInfo->iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pFExpr;
@@ -6266,15 +6513,16 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
     pList = pF->pFExpr->x.pList;
-    sqlite3VdbeAddOp2(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0);
+    sqlite3VdbeAddOp2(v, OP_AggFinal, AggInfoFuncReg(pAggInfo,i),
+                      pList ? pList->nExpr : 0);
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
   }
 }
 
 
 /*
-** Update the accumulator memory cells for an aggregate based on
-** the current cursor position.
+** Generate code that will update the accumulator memory cells for an
+** aggregate based on the current cursor position.
 **
 ** If regAcc is non-zero and there are no min() or max() aggregates
 ** in pAggInfo, then only populate the pAggInfo->nAccumulator accumulator
@@ -6294,6 +6542,8 @@ static void updateAccumulator(
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
 
+  assert( pAggInfo->iFirstReg>0 );
+  if( pParse->nErr ) return;
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
@@ -6354,7 +6604,7 @@ static void updateAccumulator(
       if( regHit==0 && pAggInfo->nAccumulator ) regHit = ++pParse->nMem;
       sqlite3VdbeAddOp4(v, OP_CollSeq, regHit, 0, 0, (char *)pColl, P4_COLLSEQ);
     }
-    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, pF->iMem);
+    sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
     sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, (u8)nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
@@ -6369,7 +6619,7 @@ static void updateAccumulator(
     addrHitTest = sqlite3VdbeAddOp1(v, OP_If, regHit); VdbeCoverage(v);
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    sqlite3ExprCode(pParse, pC->pCExpr, pC->iMem);
+    sqlite3ExprCode(pParse, pC->pCExpr, AggInfoColumnReg(pAggInfo,i));
   }
 
   pAggInfo->directMode = 0;
@@ -6465,26 +6715,31 @@ static void havingToWhere(Parse *pParse, Select *p){
   sqlite3WalkExpr(&sWalker, p->pHaving);
 #if TREETRACE_ENABLED
   if( sWalker.eCode && (sqlite3TreeTrace & 0x100)!=0 ){
-    SELECTTRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
+    TREETRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
 }
 
 /*
-** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcItem for the prior view.  If it is not,
-** then return 0.
+** Check to see if the pThis entry of pTabList is a self-join of another view.
+** Search FROM-clause entries in the range of iFirst..iEnd, including iFirst
+** but stopping before iEnd.
+**
+** If pThis is a self-join, then return the SrcItem for the first other
+** instance of that view found.  If pThis is not a self-join then return 0.
 */
 static SrcItem *isSelfJoinView(
   SrcList *pTabList,           /* Search for self-joins in this FROM clause */
-  SrcItem *pThis               /* Search for prior reference to this subquery */
+  SrcItem *pThis,              /* Search for prior reference to this subquery */
+  int iFirst, int iEnd        /* Range of FROM-clause entries to search. */
 ){
   SrcItem *pItem;
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
-  for(pItem = pTabList->a; pItem<pThis; pItem++){
+  while( iFirst<iEnd ){
     Select *pS1;
+    pItem = &pTabList->a[iFirst++];
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
     if( pItem->zName==0 ) continue;
@@ -6597,8 +6852,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   p->selFlags &= ~SF_Aggregate;
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x400 ){
-    SELECTTRACE(0x400,pParse,p,("After count-of-view optimization:\n"));
+  if( sqlite3TreeTrace & 0x200 ){
+    TREETRACE(0x200,pParse,p,("After count-of-view optimization:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6627,6 +6882,62 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
     }
   }
   return 0;
+}
+
+/*
+** Return TRUE (non-zero) if the i-th entry in the pTabList SrcList can
+** be implemented as a co-routine.  The i-th entry is guaranteed to be
+** a subquery.
+**
+** The subquery is implemented as a co-routine if all of the following are
+** true:
+**
+**    (1)  The subquery will likely be implemented in the outer loop of
+**         the query.  This will be the case if any one of the following
+**         conditions hold:
+**         (a)  The subquery is the only term in the FROM clause
+**         (b)  The subquery is the left-most term and a CROSS JOIN or similar
+**              requires it to be the outer loop
+**         (c)  All of the following are true:
+**                (i) The subquery is the left-most subquery in the FROM clause
+**               (ii) There is nothing that would prevent the subquery from
+**                    being used as the outer loop if the sqlite3WhereBegin()
+**                    routine nominates it to that position.
+**              (iii) The query is not a UPDATE ... FROM
+**    (2)  The subquery is not a CTE that should be materialized because of
+**         the AS MATERIALIZED keywords
+**    (3)  The subquery is not part of a left operand for a RIGHT JOIN
+**    (4)  The SQLITE_Coroutine optimization disable flag is not set
+**    (5)  The subquery is not self-joined
+*/
+static int fromClauseTermCanBeCoroutine(
+  Parse *pParse,          /* Parsing context */
+  SrcList *pTabList,      /* FROM clause */
+  int i,                  /* Which term of the FROM clause holds the subquery */
+  int selFlags            /* Flags on the SELECT statement */
+){
+  SrcItem *pItem = &pTabList->a[i];
+  if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
+  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
+  if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
+  if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
+    return 0;                                                          /* (5) */
+  }
+  if( i==0 ){
+    if( pTabList->nSrc==1 ) return 1;                             /* (1a) */
+    if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;         /* (1b) */
+    if( selFlags & SF_UpdateFrom )              return 0;         /* (1c-iii) */
+    return 1;
+  }
+  if( selFlags & SF_UpdateFrom ) return 0;                        /* (1c-iii) */
+  while( 1 /*exit-by-break*/ ){
+    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;     /* (1c-ii) */
+    if( i==0 ) break;
+    i--;
+    pItem--;
+    if( pItem->pSelect!=0 ) return 0;                             /* (1c-i) */
+  }
+  return 1;
 }
 
 /*
@@ -6674,8 +6985,8 @@ int sqlite3Select(
   assert( db->mallocFailed==0 );
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 #if TREETRACE_ENABLED
-  SELECTTRACE(1,pParse,p, ("begin processing:\n", pParse->addrExplain));
-  if( sqlite3TreeTrace & 0x10100 ){
+  TREETRACE(0x1,pParse,p, ("begin processing:\n", pParse->addrExplain));
+  if( sqlite3TreeTrace & 0x10000 ){
     if( (sqlite3TreeTrace & 0x10001)==0x10000 ){
       sqlite3TreeViewLine(0, "In sqlite3Select() at %s:%d",
                            __FILE__, __LINE__);
@@ -6695,8 +7006,8 @@ int sqlite3Select(
     /* All of these destinations are also able to ignore the ORDER BY clause */
     if( p->pOrderBy ){
 #if TREETRACE_ENABLED
-      SELECTTRACE(1,pParse,p, ("dropping superfluous ORDER BY:\n"));
-      if( sqlite3TreeTrace & 0x100 ){
+      TREETRACE(0x800,pParse,p, ("dropping superfluous ORDER BY:\n"));
+      if( sqlite3TreeTrace & 0x800 ){
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif    
@@ -6716,8 +7027,8 @@ int sqlite3Select(
   assert( db->mallocFailed==0 );
   assert( p->pEList!=0 );
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x104 ){
-    SELECTTRACE(0x104,pParse,p, ("after name resolution:\n"));
+  if( sqlite3TreeTrace & 0x10 ){
+    TREETRACE(0x10,pParse,p, ("after name resolution:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6758,8 +7069,8 @@ int sqlite3Select(
     goto select_end;
   }
 #if TREETRACE_ENABLED
-  if( p->pWin && (sqlite3TreeTrace & 0x108)!=0 ){
-    SELECTTRACE(0x104,pParse,p, ("after window rewrite:\n"));
+  if( p->pWin && (sqlite3TreeTrace & 0x40)!=0 ){
+    TREETRACE(0x40,pParse,p, ("after window rewrite:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -6790,7 +7101,7 @@ int sqlite3Select(
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
-      SELECTTRACE(0x100,pParse,p,
+      TREETRACE(0x1000,pParse,p,
                 ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
       pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
       assert( pItem->iCursor>=0 );
@@ -6846,7 +7157,7 @@ int sqlite3Select(
      && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
      && OptimizationEnabled(db, SQLITE_OmitOrderBy)
     ){
-      SELECTTRACE(0x100,pParse,p,
+      TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
       sqlite3ParserAddCleanup(pParse, 
          (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
@@ -6901,8 +7212,8 @@ int sqlite3Select(
   if( p->pPrior ){
     rc = multiSelect(pParse, p, pDest);
 #if TREETRACE_ENABLED
-    SELECTTRACE(0x1,pParse,p,("end compound-select processing\n"));
-    if( (sqlite3TreeTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+    TREETRACE(0x400,pParse,p,("end compound-select processing\n"));
+    if( (sqlite3TreeTrace & 0x400)!=0 && ExplainQueryPlanParent(pParse)==0 ){
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
@@ -6922,13 +7233,13 @@ int sqlite3Select(
    && propagateConstants(pParse, p)
   ){
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x100 ){
-      SELECTTRACE(0x100,pParse,p,("After constant propagation:\n"));
+    if( sqlite3TreeTrace & 0x2000 ){
+      TREETRACE(0x2000,pParse,p,("After constant propagation:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
   }else{
-    SELECTTRACE(0x100,pParse,p,("Constant propagation not helpful\n"));
+    TREETRACE(0x2000,pParse,p,("Constant propagation not helpful\n"));
   }
 
 #ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
@@ -7001,36 +7312,23 @@ int sqlite3Select(
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem)
     ){
 #if TREETRACE_ENABLED
-      if( sqlite3TreeTrace & 0x100 ){
-        SELECTTRACE(0x100,pParse,p,
+      if( sqlite3TreeTrace & 0x4000 ){
+        TREETRACE(0x4000,pParse,p,
             ("After WHERE-clause push-down into subquery %d:\n", pSub->selId));
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif
       assert( pItem->pSelect && (pItem->pSelect->selFlags & SF_PushDown)!=0 );
     }else{
-      SELECTTRACE(0x100,pParse,p,("Push-down not possible\n"));
+      TREETRACE(0x4000,pParse,p,("Push-down not possible\n"));
     }
 
     zSavedAuthContext = pParse->zAuthContext;
     pParse->zAuthContext = pItem->zName;
 
     /* Generate code to implement the subquery
-    **
-    ** The subquery is implemented as a co-routine if all of the following are
-    ** true:
-    **
-    **    (1)  the subquery is guaranteed to be the outer loop (so that
-    **         it does not need to be computed more than once), and
-    **    (2)  the subquery is not a CTE that should be materialized
-    **    (3)  the subquery is not part of a left operand for a RIGHT JOIN
     */
-    if( i==0
-     && (pTabList->nSrc==1
-            || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)   /* (2) */
-     && (pTabList->a[0].fg.jointype & JT_LTORJ)==0                   /* (3) */
-    ){
+    if( fromClauseTermCanBeCoroutine(pParse, pTabList, i, p->selFlags) ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
       */
@@ -7061,7 +7359,7 @@ int sqlite3Select(
         VdbeComment((v, "%!S", pItem));
       }
       pSub->nSelectRow = pCteUse->nRowEst;
-    }else if( (pPrior = isSelfJoinView(pTabList, pItem))!=0 ){
+    }else if( (pPrior = isSelfJoinView(pTabList, pItem, 0, i))!=0 ){
       /* This view has already been materialized by a prior entry in
       ** this same FROM clause.  Reuse it. */
       if( pPrior->addrFillSub ){
@@ -7075,6 +7373,9 @@ int sqlite3Select(
       ** the same view can reuse the materialization. */
       int topAddr;
       int onceAddr = 0;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+      int addrExplain;
+#endif
 
       pItem->regReturn = ++pParse->nMem;
       topAddr = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -7090,15 +7391,14 @@ int sqlite3Select(
         VdbeNoopComment((v, "materialize %!S", pItem));
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-      ExplainQueryPlan((pParse, 1, "MATERIALIZE %!S", pItem));
-      dest.zAffSdst = sqlite3TableAffinityStr(db, pItem->pTab);
+
+      ExplainQueryPlan2(addrExplain, (pParse, 1, "MATERIALIZE %!S", pItem));
       sqlite3Select(pParse, pSub, &dest);
-      sqlite3DbFree(db, dest.zAffSdst);
-      dest.zAffSdst = 0;
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
+      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
       sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
@@ -7124,8 +7424,8 @@ int sqlite3Select(
   sDistinct.isTnct = (p->selFlags & SF_Distinct)!=0;
 
 #if TREETRACE_ENABLED
-  if( sqlite3TreeTrace & 0x400 ){
-    SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
+  if( sqlite3TreeTrace & 0x8000 ){
+    TREETRACE(0x8000,pParse,p,("After all FROM-clause analysis:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -7161,8 +7461,8 @@ int sqlite3Select(
     sDistinct.isTnct = 2;
 
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x400 ){
-      SELECTTRACE(0x400,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
+    if( sqlite3TreeTrace & 0x20000 ){
+      TREETRACE(0x20000,pParse,p,("Transform DISTINCT into GROUP BY:\n"));
       sqlite3TreeViewSelect(0, p, 0);
     }
 #endif
@@ -7248,7 +7548,7 @@ int sqlite3Select(
 
 
     /* Begin the database scan. */
-    SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+    TREETRACE(0x2,pParse,p,("WhereBegin\n"));
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, sSort.pOrderBy,
                                p->pEList, p, wctrlFlags, p->nSelectRow);
     if( pWInfo==0 ) goto select_end;
@@ -7265,7 +7565,7 @@ int sqlite3Select(
         sSort.pOrderBy = 0;
       }
     }
-    SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+    TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
     ** instruction ended up not being needed, then change the OP_OpenEphemeral
@@ -7304,7 +7604,7 @@ int sqlite3Select(
 
       /* End the database scan loop.
       */
-      SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+      TREETRACE(0x2,pParse,p,("WhereEnd\n"));
       sqlite3WhereEnd(pWInfo);
     }
   }else{
@@ -7385,12 +7685,14 @@ int sqlite3Select(
       goto select_end;
     }
     pAggInfo->selId = p->selId;
+#ifdef SQLITE_DEBUG
+    pAggInfo->pSelect = p;
+#endif
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pSrcList = pTabList;
     sNC.uNC.pAggInfo = pAggInfo;
     VVA_ONLY( sNC.ncFlags = NC_UAggInfo; )
-    pAggInfo->mnReg = pParse->nMem+1;
     pAggInfo->nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
     pAggInfo->pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
@@ -7411,45 +7713,17 @@ int sqlite3Select(
     }else{
       minMaxFlag = WHERE_ORDERBY_NORMAL;
     }
-    for(i=0; i<pAggInfo->nFunc; i++){
-      Expr *pExpr = pAggInfo->aFunc[i].pFExpr;
-      assert( ExprUseXList(pExpr) );
-      sNC.ncFlags |= NC_InAggFunc;
-      sqlite3ExprAnalyzeAggList(&sNC, pExpr->x.pList);
-#ifndef SQLITE_OMIT_WINDOWFUNC
-      assert( !IsWindowFunc(pExpr) );
-      if( ExprHasProperty(pExpr, EP_WinFunc) ){
-        sqlite3ExprAnalyzeAggregates(&sNC, pExpr->y.pWin->pFilter);
-      }
-#endif
-      sNC.ncFlags &= ~NC_InAggFunc;
-    }
-    pAggInfo->mxReg = pParse->nMem;
+    analyzeAggFuncArgs(pAggInfo, &sNC);
     if( db->mallocFailed ) goto select_end;
 #if TREETRACE_ENABLED
-    if( sqlite3TreeTrace & 0x400 ){
-      int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
+    if( sqlite3TreeTrace & 0x20 ){
+      TREETRACE(0x20,pParse,p,("After aggregate analysis %p:\n", pAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       if( minMaxFlag ){
         sqlite3DebugPrintf("MIN/MAX Optimization (0x%02x) adds:\n", minMaxFlag);
         sqlite3TreeViewExprList(0, pMinMaxOrderBy, 0, "ORDERBY");
       }
-      for(ii=0; ii<pAggInfo->nColumn; ii++){
-        struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
-        sqlite3DebugPrintf(
-           "agg-column[%d] pTab=%s iTable=%d iColumn=%d iMem=%d"
-           " iSorterColumn=%d\n",
-           ii, pCol->pTab ? pCol->pTab->zName : "NULL", 
-           pCol->iTable, pCol->iColumn, pCol->iMem,
-           pCol->iSorterColumn);
-        sqlite3TreeViewExpr(0, pAggInfo->aCol[ii].pCExpr, 0);
-      }
-      for(ii=0; ii<pAggInfo->nFunc; ii++){
-        sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-            ii, pAggInfo->aFunc[ii].iMem);
-        sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
-      }
+      printAggInfo(pAggInfo);
     }
 #endif
 
@@ -7518,7 +7792,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+      TREETRACE(0x2,pParse,p,("WhereBegin\n"));
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, pDistinct,
           p, (sDistinct.isTnct==2 ? WHERE_DISTINCTBY : WHERE_GROUPBY) 
           |  (orderByGrp ? WHERE_SORTBYGROUP : 0) | distFlag, 0
@@ -7527,8 +7801,12 @@ int sqlite3Select(
         sqlite3ExprListDelete(db, pDistinct);
         goto select_end;
       }
+      if( pParse->pIdxEpr ){
+        optimizeAggregateUseOfIndexedExpr(pParse, p, pAggInfo, &sNC);
+      }
+      assignAggregateRegisters(pParse, pAggInfo);
       eDist = sqlite3WhereIsDistinct(pWInfo);
-      SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+      TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenEphemeral table will be
@@ -7577,7 +7855,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterInsert, pAggInfo->sortingIdx, regRecord);
         sqlite3ReleaseTempReg(pParse, regRecord);
         sqlite3ReleaseTempRange(pParse, regBase, nCol);
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         pAggInfo->sortingIdxPTab = sortPTab = pParse->nTab++;
         sortOut = sqlite3GetTempReg(pParse);
@@ -7585,6 +7863,23 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterSort, pAggInfo->sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         pAggInfo->useSortingIdx = 1;
+      }
+
+      /* If there entries in pAgggInfo->aFunc[] that contain subexpressions
+      ** that are indexed (and that were previously identified and tagged
+      ** in optimizeAggregateUseOfIndexedExpr()) then those subexpressions
+      ** must now be converted into a TK_AGG_COLUMN node so that the value
+      ** is correctly pulled from the index rather than being recomputed. */
+      if( pParse->pIdxEpr ){
+        aggregateConvertIndexedExprRefToColumn(pAggInfo);
+#if TREETRACE_ENABLED
+        if( sqlite3TreeTrace & 0x20 ){
+          TREETRACE(0x20, pParse, p,
+             ("AggInfo function expressions converted to reference index\n"));
+          sqlite3TreeViewSelect(0, p, 0);
+          printAggInfo(pAggInfo);
+        }
+#endif
       }
 
       /* If the index or temporary table used by the GROUP BY sort
@@ -7655,7 +7950,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_SorterNext, pAggInfo->sortingIdx,addrTopOfLoop);
         VdbeCoverage(v);
       }else{
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeChangeToNoop(v, addrSortingIdx);
       }
@@ -7765,7 +8060,8 @@ int sqlite3Select(
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
-        sqlite3VdbeAddOp2(v, OP_Count, iCsr, pAggInfo->aFunc[0].iMem);
+        assignAggregateRegisters(pParse, pAggInfo);
+        sqlite3VdbeAddOp2(v, OP_Count, iCsr, AggInfoFuncReg(pAggInfo,0));
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
       }else{
@@ -7801,6 +8097,7 @@ int sqlite3Select(
           pDistinct = pAggInfo->aFunc[0].pFExpr->x.pList;
           distFlag = pDistinct ? (WHERE_WANT_DISTINCT|WHERE_AGG_DISTINCT) : 0;
         }
+        assignAggregateRegisters(pParse, pAggInfo);
 
         /* This case runs if the aggregate has no GROUP BY clause.  The
         ** processing is much simpler since there is only a single row
@@ -7817,13 +8114,13 @@ int sqlite3Select(
         assert( minMaxFlag==WHERE_ORDERBY_NORMAL || pMinMaxOrderBy!=0 );
         assert( pMinMaxOrderBy==0 || pMinMaxOrderBy->nExpr==1 );
 
-        SELECTTRACE(1,pParse,p,("WhereBegin\n"));
+        TREETRACE(0x2,pParse,p,("WhereBegin\n"));
         pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
                                    pDistinct, p, minMaxFlag|distFlag, 0);
         if( pWInfo==0 ){
           goto select_end;
         }
-        SELECTTRACE(1,pParse,p,("WhereBegin returns\n"));
+        TREETRACE(0x2,pParse,p,("WhereBegin returns\n"));
         eDist = sqlite3WhereIsDistinct(pWInfo);
         updateAccumulator(pParse, regAcc, pAggInfo, eDist);
         if( eDist!=WHERE_DISTINCT_NOOP ){
@@ -7837,7 +8134,7 @@ int sqlite3Select(
         if( minMaxFlag ){
           sqlite3WhereMinMaxOptEarlyOut(v, pWInfo);
         }
-        SELECTTRACE(1,pParse,p,("WhereEnd\n"));
+        TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, pAggInfo);
       }
@@ -7859,8 +8156,6 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( sSort.pOrderBy ){
-    explainTempTable(pParse,
-                     sSort.nOBSat>0 ? "RIGHT PART OF ORDER BY":"ORDER BY");
     assert( p->pEList==pEList );
     generateSortTail(pParse, p, &sSort, pEList->nExpr, pDest);
   }
@@ -7884,7 +8179,7 @@ select_end:
   if( pAggInfo && !db->mallocFailed ){
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pCExpr;
-      assert( pExpr!=0 );
+      if( pExpr==0 ) continue;
       assert( pExpr->pAggInfo==pAggInfo );
       assert( pExpr->iAgg==i );
     }
@@ -7898,8 +8193,8 @@ select_end:
 #endif
 
 #if TREETRACE_ENABLED
-  SELECTTRACE(0x1,pParse,p,("end processing\n"));
-  if( (sqlite3TreeTrace & 0x2000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
+  TREETRACE(0x1,pParse,p,("end processing\n"));
+  if( (sqlite3TreeTrace & 0x40000)!=0 && ExplainQueryPlanParent(pParse)==0 ){
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
