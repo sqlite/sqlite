@@ -504,7 +504,7 @@ struct Vdbe {
 #define SCHEMA_VERSION_BEGINTRANSDONE 10     /* After BeginTrans() */
 
 /* Call sqlite3_log() if "PRAGMA schema_version" is slower than this (in us) */
-#define SCHEMA_VERSION_TIMEOUT 2
+#define SCHEMA_VERSION_TIMEOUT 2000000
 
 /*
 ** The following are allowed values for Vdbe.eVdbeState
