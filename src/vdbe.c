@@ -3849,17 +3849,13 @@ case OP_Transaction: {
   pDb = &db->aDb[pOp->p1];
   pBt = pDb->pBt;
 
-  if( p->bSchemaVersion ){
-    p->aSchemaVersion[SCHEMA_VERSION_OPTRANS] = sqlite3STimeNow();
-  }
-
   if( pBt ){
     if( p->bSchemaVersion ){
-      sqlite3PagerIsSchemaVersion(sqlite3BtreePager(pBt), p->aSchemaVersion);
+      sqlite3BtreeIsSchemaVersion(pBt, p->aSchemaVersion);
     }
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, &iMeta);
     if( p->bSchemaVersion ){
-      sqlite3PagerIsSchemaVersion(sqlite3BtreePager(pBt), 0);
+      sqlite3BtreeIsSchemaVersion(pBt, 0);
     }
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
@@ -3968,7 +3964,6 @@ case OP_ReadCookie: {               /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = iMeta;
   if( p->bSchemaVersion ){
-    p->aSchemaVersion[SCHEMA_VERSION_READDONE] = sqlite3STimeNow();
     sqlite3SchemaVersionLog(p);
   }
   break;

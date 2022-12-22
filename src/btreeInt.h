@@ -464,6 +464,7 @@ struct BtShared {
   BtreePtrmap *pMap;
 #endif
   int nPreformatSize;   /* Size of last cell written by TransferRow() */
+  u64 *aSchemaVersion;
 };
 
 /*

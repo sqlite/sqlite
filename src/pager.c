@@ -21,6 +21,7 @@
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
 #include "wal.h"
+#include "vdbeInt.h"
 
 
 /******************* NOTES ON THE DESIGN OF THE PAGER ************************
@@ -703,6 +704,7 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+  u64 *aSchemaVersion;
 };
 
 /*
@@ -3015,9 +3017,16 @@ static int readDbPage(PgHdr *pPg){
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
 
+  if( pPager->aSchemaVersion ){
+    pPager->aSchemaVersion[SCHEMA_VERSION_BEFOREFINDFRAME] = sqlite3STimeNow();
+  }
+
   if( pagerUseWal(pPager) ){
     rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
     if( rc ) return rc;
+  }
+  if( pPager->aSchemaVersion ){
+    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERFINDFRAME] = sqlite3STimeNow();
   }
   if( iFrame ){
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
@@ -3029,6 +3038,9 @@ static int readDbPage(PgHdr *pPg){
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
     }
+  }
+  if( pPager->aSchemaVersion ){
+    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERREADPAGE] = sqlite3STimeNow();
   }
 
   if( pPg->pgno==1 ){
@@ -7906,6 +7918,7 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 #endif
 
 void sqlite3PagerIsSchemaVersion(Pager *pPager, u64 *a){
+  pPager->aSchemaVersion = a;
   sqlite3WalIsSchemaVersion(pPager->pWal, a);
 }
 

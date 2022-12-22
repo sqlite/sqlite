@@ -14,6 +14,7 @@
 ** Including a description of file format and an overview of operation.
 */
 #include "btreeInt.h"
+#include "vdbeInt.h"
 
 /*
 ** The header string that appears at the beginning of every
@@ -3434,6 +3435,10 @@ static int lockBtree(BtShared *pBt){
   rc = btreeGetPage(pBt, 1, &pPage1, 0);
   if( rc!=SQLITE_OK ) return rc;
 
+  if( pBt->aSchemaVersion ){
+    pBt->aSchemaVersion[SCHEMA_VERSION_AFTERGETPAGE1] = sqlite3STimeNow();
+  }
+
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
@@ -3824,6 +3829,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     */
     while( pBt->pPage1==0 && SQLITE_OK==(rc = lockBtree(pBt)) );
 
+    if( pBt->aSchemaVersion ){
+      pBt->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE] = sqlite3STimeNow();
+    }
+
     if( rc==SQLITE_OK && wrflag ){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
@@ -3838,6 +3847,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
           ** code to SQLITE_BUSY. */
           rc = SQLITE_BUSY;
         }
+      }
+
+      if( pBt->aSchemaVersion ){
+        pBt->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWRITE] = sqlite3STimeNow();
       }
     }
   
@@ -3898,6 +3911,9 @@ trans_begun:
     rc = sqlite3PagerBeginConcurrent(pBt->pPager);
     if( rc==SQLITE_OK && wrflag ){
       rc = btreePtrmapAllocate(pBt);
+    }
+    if( pBt->aSchemaVersion ){
+      pBt->aSchemaVersion[SCHEMA_VERSION_AFTERBEGINCONC] = sqlite3STimeNow();
     }
   }
 #endif
@@ -11661,3 +11677,8 @@ int sqlite3BtreeConnectionCount(Btree *p){
   return p->pBt->nRef;
 }
 #endif
+
+void sqlite3BtreeIsSchemaVersion(Btree *p, u64 *a){
+  p->pBt->aSchemaVersion = a;
+  sqlite3PagerIsSchemaVersion(p->pBt->pPager, a);
+}

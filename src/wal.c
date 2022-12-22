@@ -3437,10 +3437,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     assert( iWal!=1 || nBackfill!=1 || eLock==WAL_LOCK_PART2 );
     assert( iWal!=1 || nBackfill!=0 || eLock==WAL_LOCK_PART2_FULL1 );
 
-    if( pWal->aSchemaVersion ){
-      pWal->aSchemaVersion[SCHEMA_VERSION_BEFOREWALSHARED] = sqlite3STimeNow();
-    }
-
     rc = walLockShared(pWal, WAL_READ_LOCK(eLock));
     if( rc!=SQLITE_OK ){
       return (rc==SQLITE_BUSY ? WAL_RETRY : rc);
@@ -3451,9 +3447,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       return WAL_RETRY;
     }else{
       pWal->readLock = eLock;
-    }
-    if( pWal->aSchemaVersion ){
-      pWal->aSchemaVersion[SCHEMA_VERSION_AFTERWALSHARED] = sqlite3STimeNow();
     }
     assert( pWal->minFrame==0 && walFramePage(pWal->minFrame)==0 );
   }else{
@@ -3721,10 +3714,6 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   }
 #endif
 
-  if( pWal->aSchemaVersion ){
-    pWal->aSchemaVersion[SCHEMA_VERSION_BEFOREWALTBR] = sqlite3STimeNow();
-  }
-
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
@@ -3732,9 +3721,17 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   testcase( (rc&0xff)==SQLITE_IOERR );
   testcase( rc==SQLITE_PROTOCOL );
   testcase( rc==SQLITE_OK );
+
+  if( pWal->aSchemaVersion ){
+    pWal->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR] = sqlite3STimeNow();
+  }
   
   if( rc==SQLITE_OK && pWal->hdr.iVersion==WAL_VERSION2 ){
     rc = walOpenWal2(pWal);
+  }
+
+  if( pWal->aSchemaVersion ){
+    pWal->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWAL2] = sqlite3STimeNow();
   }
 
   pWal->nPriorFrame = pWal->hdr.mxFrame;
