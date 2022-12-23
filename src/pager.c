@@ -3017,16 +3017,16 @@ static int readDbPage(PgHdr *pPg){
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
 
-  if( pPager->aSchemaVersion ){
-    pPager->aSchemaVersion[SCHEMA_VERSION_BEFOREFINDFRAME] = sqlite3STimeNow();
-  }
-
   if( pagerUseWal(pPager) ){
+    if( pPager->aSchemaVersion ){
+      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_CNT]++;
+      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_TM] -= sqlite3STimeNow();
+    }
     rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
+    if( pPager->aSchemaVersion ){
+      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_TM] += sqlite3STimeNow();
+    }
     if( rc ) return rc;
-  }
-  if( pPager->aSchemaVersion ){
-    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERFINDFRAME] = sqlite3STimeNow();
   }
   if( iFrame ){
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
@@ -3038,9 +3038,6 @@ static int readDbPage(PgHdr *pPg){
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
     }
-  }
-  if( pPager->aSchemaVersion ){
-    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERREADPAGE] = sqlite3STimeNow();
   }
 
   if( pPg->pgno==1 ){
@@ -3278,6 +3275,9 @@ static int pagerBeginReadTransaction(Pager *pPager){
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
     if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
+    if( pPager->aSchemaVersion ){
+      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERRESET] = sqlite3STimeNow();
+    }
     assert( pPager->journalMode==PAGER_JOURNALMODE_WAL
          || pPager->journalMode==PAGER_JOURNALMODE_WAL2
     );
@@ -5587,6 +5587,9 @@ static int getPageNormal(
     PAGERTRACE(("USING page %d\n", pgno));
     rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
+    if( pPager->aSchemaVersion ){
+      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERBITVEC] = sqlite3STimeNow();
+    }
   }
 #endif
 
@@ -5605,6 +5608,10 @@ static int getPageNormal(
   assert( pPg==(*ppPage) );
   assert( pPg->pgno==pgno );
   assert( pPg->pPager==pPager || pPg->pPager==0 );
+
+  if( pPager->aSchemaVersion ){
+    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE] = sqlite3STimeNow();
+  }
 
   noContent = (flags & PAGER_GET_NOCONTENT)!=0;
   if( pPg->pPager && !noContent ){

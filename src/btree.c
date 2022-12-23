@@ -3435,10 +3435,6 @@ static int lockBtree(BtShared *pBt){
   rc = btreeGetPage(pBt, 1, &pPage1, 0);
   if( rc!=SQLITE_OK ) return rc;
 
-  if( pBt->aSchemaVersion ){
-    pBt->aSchemaVersion[SCHEMA_VERSION_AFTERGETPAGE1] = sqlite3STimeNow();
-  }
-
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
@@ -3848,10 +3844,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
           rc = SQLITE_BUSY;
         }
       }
-
-      if( pBt->aSchemaVersion ){
-        pBt->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWRITE] = sqlite3STimeNow();
-      }
     }
   
     if( rc!=SQLITE_OK ){
@@ -3911,9 +3903,6 @@ trans_begun:
     rc = sqlite3PagerBeginConcurrent(pBt->pPager);
     if( rc==SQLITE_OK && wrflag ){
       rc = btreePtrmapAllocate(pBt);
-    }
-    if( pBt->aSchemaVersion ){
-      pBt->aSchemaVersion[SCHEMA_VERSION_AFTERBEGINCONC] = sqlite3STimeNow();
     }
   }
 #endif

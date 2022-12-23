@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sprevious\scommit\scausing\stimings\sto\sbe\slogged\sfor\severy\s"PRAGMA\sschema_version"\scommand,\snot\sjust\sthose\sthat\sare\sslower\sthan\s2\sseconds.
-D 2022-12-22T15:04:04.115
+C Another\siteration\sof\s"PRAGMA\sschema_version"\sinstrumentation.
+D 2022-12-23T15:05:13.438
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -536,7 +536,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 3907fcbe8a0c8c2db58d97087d15cdabbf2842adb9125df9ab9ff87d3db16775
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 2bf3ae348445d1c0082e9d28f843ea665fa4dae4ee88ec0fcb699f484b8d07e5
+F src/btree.c 5b85d4868417157ea9e778c95c56e1d5ea91ec7845b8f3e0bb66f6d7f31453b4
 F src/btree.h c0f87461695a74cbe0be4643a8e47758a5f39752d4cc2ab9a941fd5ccbc0b80c
 F src/btreeInt.h 4e2992ce4402150a4ea849e1ac5dbfa6050345080a77ce74bae6e2f7016fc7fa
 F src/build.c c3cfa409c354a291acdb9d40199fa30e71020c30fdc6dee2d936ca15deb9046a
@@ -583,7 +583,7 @@ F src/os_setup.h 0dbaea40a7d36bf311613d31342e0b99e2536586
 F src/os_unix.c 52ac6823d3895c6a3a5cf4b07c05052f7ee8bd100a076bf0cd672ec83c996246
 F src/os_win.c 8d129ae3e59e0fa900e20d0ad789e96f2e08177f0b00b53cdda65c40331e0902
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 2a7d84bc3131d731d823ef8e8892b1f6402bc8657ed48c5a4b832c8049fc1acf
+F src/pager.c 093dd630b9816c967cdb19c8ad60c66f245a42ca3d9147c2d4e7793193b76615
 F src/pager.h 4684b1ea6a770b6cebd9dcd519e25d9eb3891f49fad14b096b4c35e3d6d27869
 F src/parse.y 17c50d262d92083badeb60b3ebe4725e19c76548f90aea898ab07d4f2940a7d8
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
@@ -670,9 +670,9 @@ F src/util.c 0be191521ff6d2805995f4910f0b6231b42843678b2efdc1abecaf39929a673f
 F src/vacuum.c 5b7888f917936dda09f98b1fda164cff1dad44fb5e143436bdbb9dc3191ce2df
 F src/vdbe.c addae8131682cb442a636a423e3fede8aa17385e625319e79b9604ccfe3e51b1
 F src/vdbe.h 2b994184581ac41e9f7ec49ac0f1569da1766f24d7a1775df67328d749a22a1c
-F src/vdbeInt.h 8e53106b328addd909ea3fc1302e3a7b291429b23b4b51e0118e5d9de50e5159
+F src/vdbeInt.h 18653d2b548b0e731531edd17824089de0cfca552622bfe6cd470377d0bf8600
 F src/vdbeapi.c fc3183daf72808b4311b228989120fdbc2dc44972fb0d77d5c453460cc0e5b2c
-F src/vdbeaux.c 8fe6ea4ea89376846b07db993e631d654e03bec3f0ad388c0c4f802324debd5a
+F src/vdbeaux.c 5dff25dee51bbcbbcd016b7e414143a841469fb47e6b696eeffef4c629910c5f
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c c3ce80af15e2ff5c2824a8db881681cbf511376f13613da020bac6d320c535b1
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -680,7 +680,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c f99b275366c5fc5e2d99f734729880994ab9500bdafde7fae3b02d562b9d323c
 F src/vtab.c bb53f9e2eaeecca07158643dd3d5039cf13b525fe2d267e113b39a36f374556c
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 1676bd032fd3c23642616b8e690c479894be948fffa209954f01f8fbaa5e094d
+F src/wal.c 3785c279d3e60806bad392e3d88a41364fb10152ba92ae45ea0b0f6ff4e65781
 F src/wal.h 11692a4e45c39dd8851a1b226cb22046f1271dedc19a2c734af0a1929c837b91
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 63e712bcad47f70e94c2150976cd7da5040933699e3938d4189d064acbe40891
@@ -2035,8 +2035,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b9efbc538b5461e6eb429630b3c61a7a849a77cdc4cc0efd6fc80d3e27d5f389
-R debed6d401f8eec5114dc810654b5d1e
+P 1e8220c1b4b5102eee08f4b1f783827156c682e5e7b00bc7283b08af15198681
+R 41d4aaac2927f538b0c671ddf4926be8
 U dan
-Z 4fde410c28425417d08e1340c227fb2c
+Z 461764c1ab10a3dad20fa66014ea57fd
 # Remove this line to create a well-formed Fossil manifest.
