@@ -1,5 +1,5 @@
-C Fix\ssafe\smode\sauthorizer\scallback\sto\sreject\sdisallowed\sUDFs.\sReported\sat\s[forum:/forumpost/07beac8056151b2f|Forum\spost\s07beac8056151b2f].
-D 2022-12-26T15:44:50.150
+C Fix\sa\soff-by-one\serror\sin\scode\sgeneration\sthat\scomes\sup\swhen\ndoing\sa\sDISTINCT\squery\sagainst\sa\svirtual\stable\swith\san\sOR\sterm\sin\sthe\nWHERE\sclause\sand\swhere\sthe\sORDER\sBY\sclause\shas\s64\sor\smore\sreferences\sto\nthe\sresult\sset.\s\s[forum:/forumpost/dfe8084751|Forum\spost\sdfe8084751].\nThe\serror\sis\sharmless\sin\sproduction\sbuilds,\sbut\smight\scause\san\sassertion\nfault\sin\sa\sdebugging\sbuild.
+D 2022-12-26T15:55:10.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -724,7 +724,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 1ef5aae7fac877057b9f360f06b26d4275888460d8fb6e92bbb9e70e07afe946
+F src/where.c 42f0433beedec9ba0ac0945732e1a8c10b5081f1e82caf4507ac493d79f552af
 F src/whereInt.h df0c79388c0b71b4a91f480d02791679fe0345d40410435c541c8893e95a4d3f
 F src/wherecode.c 133a94f82858787217d073143617df19e4a6a7d0b771a1519f957608109ad5a5
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
@@ -1874,7 +1874,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test e1a6ad0f3c78e98b55c3d5f0889cf366cc0d0a1cb2bccb44ac9ec67384adc4a1
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 1bea58a6a8e68a73f542ee4fca28b771b84ed803bd0c9e385087070b3d747b3c x
-F test/where.test d13cd7c24e80009d2b54e2f7a8893c457afa49c64f99359c9eb3fe668ba1d9d4
+F test/where.test 16d9f4590985898f458a697f8ed35f2580f306daefbbd022114f09afe767b231
 F test/where2.test 03c21a11e7b90e2845fc3c8b4002fc44cc2797fa74c86ee47d70bd7ea4f29ed6
 F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67753
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -2055,9 +2055,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c10d40ca683941be71f3be59b4251cf326a90a24e893169c744ade944dce3ee0
-Q +cefc032473ac5ad244c0b6402c541b2f76c0c65a041bda03bfbe7c0e2c11fac2
-R c362cdf9beffff40e0a5f53d15c2cc7b
+P 70964b8a1cfe8e47bac399db840afda9c35e36d62f1933744f49011e94a2343e
+Q +04af7ef77043702f93cbff23548610759786893bd3d4d6fc08181e1e249c6663
+R 48792d88b8481865424dd0453425ccb6
 U drh
-Z 698d6f848930185c92364e8b88cfbb5f
+Z bf85d64cd1846c96c1ebb289943a6ada
 # Remove this line to create a well-formed Fossil manifest.
