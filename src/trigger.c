@@ -82,7 +82,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     if( bSchemaMatch
      && pTrig->table
      && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-     && pTrig->pTabSchema!=pTmpSchema
+     && (pTrig->pTabSchema!=pTmpSchema || pTrig->bReturning)
     ){
       pTrig->pNext = pList;
       pList = pTrig;
