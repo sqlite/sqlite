@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sfts5.
-D 2022-12-27T14:14:56.308
+C Version\s3.40.1
+D 2022-12-28T14:03:47.023
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2055,9 +2055,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4acff807c68cf9751f5958bf8efac73ac2fe3d82d5efd62f1517796d05032075
-Q +ff5a9b054f4d5ad3d33787aee93b4181822c6dfc513626236d9867bb431f64da
+P ff1d456161e57314b0bb4e2e720eb1cd00f71b4bf4c459fad9fef4f11d38c19f
 R 3583cb8fddea8cad93eaac66eb583e8a
-U dan
-Z 9d2cd804e665b4f423c9ba227d02b89b
+T +sym-release *
+T +sym-version-3.40.1 *
+U drh
+Z dd3aba06a636bceff5c4750b57949095
 # Remove this line to create a well-formed Fossil manifest.
