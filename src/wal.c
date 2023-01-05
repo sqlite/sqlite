@@ -923,16 +923,9 @@ static SQLITE_NOINLINE int walIndexPageRealloc(
     pWal->apWiData[iPage] = (u32 volatile *)sqlite3MallocZero(WALINDEX_PGSZ);
     if( !pWal->apWiData[iPage] ) rc = SQLITE_NOMEM_BKPT;
   }else{
-    if( pWal->aSchemaVersion ){
-      pWal->aSchemaVersion[SCHEMA_VERSION_XSHMMAP_CNT]++;
-      pWal->aSchemaVersion[SCHEMA_VERSION_XSHMMAP_TM] -= sqlite3STimeNow();
-    }
     rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
         pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
     );
-    if( pWal->aSchemaVersion ){
-      pWal->aSchemaVersion[SCHEMA_VERSION_XSHMMAP_TM] += sqlite3STimeNow();
-    }
     assert( pWal->apWiData[iPage]!=0
          || rc!=SQLITE_OK
          || (pWal->writeLock==0 && iPage==0) );

@@ -3018,14 +3018,7 @@ static int readDbPage(PgHdr *pPg){
   assert( isOpen(pPager->fd) );
 
   if( pagerUseWal(pPager) ){
-    if( pPager->aSchemaVersion ){
-      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_CNT]++;
-      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_TM] -= sqlite3STimeNow();
-    }
     rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
-    if( pPager->aSchemaVersion ){
-      pPager->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_TM] += sqlite3STimeNow();
-    }
     if( rc ) return rc;
   }
   if( iFrame ){
@@ -3274,9 +3267,12 @@ static int pagerBeginReadTransaction(Pager *pPager){
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
-    if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
     if( pPager->aSchemaVersion ){
       pPager->aSchemaVersion[SCHEMA_VERSION_AFTERRESET] = sqlite3STimeNow();
+    }
+    if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
+    if( pPager->aSchemaVersion ){
+      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH] = sqlite3STimeNow();
     }
     assert( pPager->journalMode==PAGER_JOURNALMODE_WAL
          || pPager->journalMode==PAGER_JOURNALMODE_WAL2
@@ -5587,9 +5583,6 @@ static int getPageNormal(
     PAGERTRACE(("USING page %d\n", pgno));
     rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
-    if( pPager->aSchemaVersion ){
-      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERBITVEC] = sqlite3STimeNow();
-    }
   }
 #endif
 

@@ -5224,7 +5224,7 @@ void sqlite3SchemaVersionLog(Vdbe *v){
   u64 i1 = v->aSchemaVersion[SCHEMA_VERSION_START];
   if( v->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE]>(i1+SCHEMA_VERSION_TIMEOUT) ){
     sqlite3_log(SQLITE_WARNING, 
-        "slow \"PRAGMA schema_version\" (v=3): (%d, %d, %d, %d, %d, ffcnt=%d, fftm=%d, xscnt=%d, xstm=%d, %d, %d)",
+        "slow \"PRAGMA schema_version\" (v=4): (%d, %d, %d, %d, %d, %d, %d)",
         (v->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR]==0) ? 0 :
             (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR] - i1),
 
@@ -5234,17 +5234,11 @@ void sqlite3SchemaVersionLog(Vdbe *v){
         (v->aSchemaVersion[SCHEMA_VERSION_AFTERRESET]==0) ? 0 :
             (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERRESET] - i1),
 
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERBITVEC]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERBITVEC] - i1),
+        (v->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH]==0) ? 0 :
+            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH] - i1),
 
         (v->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE]==0) ? 0 :
             (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE] - i1),
-
-        (int)v->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_CNT],
-        (int)v->aSchemaVersion[SCHEMA_VERSION_FINDFRAME_TM],
-
-        (int)v->aSchemaVersion[SCHEMA_VERSION_XSHMMAP_CNT],
-        (int)v->aSchemaVersion[SCHEMA_VERSION_XSHMMAP_TM],
 
         (v->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE]==0) ? 0 :
             (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE] - i1),

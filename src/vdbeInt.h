@@ -488,26 +488,20 @@ struct Vdbe {
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
   int bSchemaVersion;
-  u64 aSchemaVersion[12];
+  u64 aSchemaVersion[8];
 };
 
 #define SCHEMA_VERSION_START           0     /* OP_Init */
 #define SCHEMA_VERSION_AFTERWALTBR     1     /* After walTryBeginRead() loop */
 #define SCHEMA_VERSION_AFTEROPENWAL2   2     /* After walOpenWal2() */
-#define SCHEMA_VERSION_AFTERRESET      3     /* After pager_reset()+xFetch(0) */
-#define SCHEMA_VERSION_AFTERBITVEC     4     /* After setting the bitvec */
+#define SCHEMA_VERSION_AFTERRESET      3     /* After pager_reset() */
+#define SCHEMA_VERSION_AFTERUNFETCH    4     /* After xUnfetch(0) */
 #define SCHEMA_VERSION_AFTERPCACHE     5     /* After setting the bitvec */
-
-#define SCHEMA_VERSION_FINDFRAME_CNT   6
-#define SCHEMA_VERSION_FINDFRAME_TM    7
-#define SCHEMA_VERSION_XSHMMAP_CNT     8
-#define SCHEMA_VERSION_XSHMMAP_TM      9
-
-#define SCHEMA_VERSION_AFTERLOCKBTREE  10     /* After lockBtree() */
-#define SCHEMA_VERSION_BEGINTRANSDONE  11     /* After BeginTrans() */
+#define SCHEMA_VERSION_AFTERLOCKBTREE  6     /* After lockBtree() */
+#define SCHEMA_VERSION_BEGINTRANSDONE  7     /* After BeginTrans() */
 
 /* Call sqlite3_log() if "PRAGMA schema_version" is slower than this (in us) */
-#define SCHEMA_VERSION_TIMEOUT 2000000
+#define SCHEMA_VERSION_TIMEOUT 2
 
 /*
 ** The following are allowed values for Vdbe.eVdbeState
