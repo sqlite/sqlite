@@ -387,7 +387,7 @@ static void applyAffinity(
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
     if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
-      if( (pRec->flags & MEM_Real)==0 ){
+      if( (pRec->flags & (MEM_Real|MEM_IntReal))==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else{
         sqlite3VdbeIntegerAffinity(pRec);
