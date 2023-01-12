@@ -1,0 +1,55 @@
+# 2023 January 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix concurrent9
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1), (2);
+  CREATE TABLE t2(y);
+  INSERT INTO t2 VALUES('a'), ('b');
+  PRAGMA journal_mode = wal;
+} {wal}
+
+db close
+
+#-------------------------------------------------------------------------
+# Fix a problem that may occur if a BEGIN CONCURRENT transaction is 
+# started when the wal file is completely empty and committed after
+# it has been initialized by some other connection.
+#
+sqlite3 db  test.db
+sqlite3 db2 test.db
+
+do_execsql_test -db db  1.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO t2 VALUES('c');
+}
+
+do_execsql_test -db db2  1.2 {
+  INSERT INTO t1 VALUES(3);
+}
+
+do_execsql_test -db db  1.3 {
+  COMMIT;
+}
+
+do_execsql_test -db db2  1.4 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {1 2 3 a b c}
+
+finish_test
+
