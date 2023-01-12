@@ -226,6 +226,9 @@ foreach {tn nRepeat oplist} {
   # }
 }
 
+catch { db close }
+sqlite3_shutdown
+test_sqlite3_log
 
 
 finish_test

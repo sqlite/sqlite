@@ -3521,7 +3521,11 @@ int sqlite3WalLockForCommit(
 int sqlite3WalUpgradeSnapshot(Wal *pWal){
   int rc = SQLITE_OK;
   assert( pWal->writeLock );
+
+  assert( pWal->szPage==pWal->hdr.szPage );
   memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
+  assert( pWal->szPage==pWal->hdr.szPage || pWal->szPage==0 );
+  pWal->szPage = pWal->hdr.szPage;
 
   /* If this client has its read-lock on slot aReadmark[0] and the entire
   ** wal has not been checkpointed, switch it to a different slot. Otherwise
