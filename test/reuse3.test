@@ -268,7 +268,7 @@ do_test 5.2 {
 
 do_test 5.3 { 
   catchsql { SELECT nref,nschema FROM schemapool } db2
-} {1 {vtable constructor failed: schemapool}}
+} {1 {malformed database schema (t3) - near "a": syntax error}}
 
 do_execsql_test 5.4 {
   PRAGMA writable_schema = 1;
