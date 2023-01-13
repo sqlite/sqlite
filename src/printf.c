@@ -884,6 +884,7 @@ void sqlite3_str_vappendf(
       }
       case etSRCITEM: {
         SrcItem *pItem;
+        Select *pSel;
         if( (pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)==0 ) return;
         pItem = va_arg(ap, SrcItem*);
         assert( bArgList==0 );
@@ -897,9 +898,7 @@ void sqlite3_str_vappendf(
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
-        }else{
-          Select *pSel = pItem->pSelect;
-          assert( pSel!=0 );
+        }else if( (pSel = pItem->pSelect)!=0 ){
           if( pSel->selFlags & SF_NestedFrom ){
             sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);
           }else{
