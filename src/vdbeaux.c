@@ -5217,33 +5217,21 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
 }
 
 #include <sys/time.h>
-void sqlite3VdbeIsSchemaVersion(Vdbe *v){
-  v->bSchemaVersion = 1;
-}
-void sqlite3SchemaVersionLog(Vdbe *v){
-  u64 i1 = v->aSchemaVersion[SCHEMA_VERSION_START];
-  if( v->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE]>(i1+SCHEMA_VERSION_TIMEOUT) ){
+void sqlite3OpenTransLog(u64 *aOpenTransTm){
+  u64 i1 = aOpenTransTm[OPEN_TRANS_START];
+  if( aOpenTransTm[OPEN_TRANS_DONE]>(i1+OPEN_TRANS_TIMEOUT) ){
     sqlite3_log(SQLITE_WARNING, 
-        "slow \"PRAGMA schema_version\" (v=4): (%d, %d, %d, %d, %d, %d, %d)",
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR] - i1),
+        "slow open transaction (v=5): (%d, %d, %d, %d)",
+        (aOpenTransTm[OPEN_TRANS_BEFORERESET]==0) ? 0 :
+            (int)(aOpenTransTm[OPEN_TRANS_BEFORERESET] - i1),
 
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWAL2]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWAL2] - i1),
+        (aOpenTransTm[OPEN_TRANS_AFTERRESET]==0) ? 0 :
+            (int)(aOpenTransTm[OPEN_TRANS_AFTERRESET] - i1),
 
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERRESET]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERRESET] - i1),
+        (aOpenTransTm[OPEN_TRANS_AFTERUNFETCH]==0) ? 0 :
+            (int)(aOpenTransTm[OPEN_TRANS_AFTERUNFETCH] - i1),
 
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH] - i1),
-
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE] - i1),
-
-        (v->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE]==0) ? 0 :
-            (int)(v->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE] - i1),
-
-        (int)(v->aSchemaVersion[SCHEMA_VERSION_BEGINTRANSDONE] - i1)
+        (int)(aOpenTransTm[OPEN_TRANS_DONE] - i1)
     );
   }
 }

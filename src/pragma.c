@@ -2066,7 +2066,6 @@ void sqlite3Pragma(
   case PragTyp_HEADER_VALUE: {
     int iCookie = pPragma->iArg;  /* Which cookie to read or write */
     sqlite3VdbeUsesBtree(v, iDb);
-    if( iCookie==BTREE_SCHEMA_VERSION ) sqlite3VdbeIsSchemaVersion(v);
     if( zRight && (pPragma->mPragFlg & PragFlg_ReadOnly)==0 ){
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {

@@ -704,7 +704,7 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
-  u64 *aSchemaVersion;
+  u64 *aOpenTransTm;
 };
 
 /*
@@ -3266,13 +3266,16 @@ static int pagerBeginReadTransaction(Pager *pPager){
 
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc!=SQLITE_OK || changed ){
+    if( pPager->aOpenTransTm ){
+      pPager->aOpenTransTm[OPEN_TRANS_BEFORERESET] = sqlite3STimeNow();
+    }
     pager_reset(pPager);
-    if( pPager->aSchemaVersion ){
-      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERRESET] = sqlite3STimeNow();
+    if( pPager->aOpenTransTm ){
+      pPager->aOpenTransTm[OPEN_TRANS_AFTERRESET] = sqlite3STimeNow();
     }
     if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
-    if( pPager->aSchemaVersion ){
-      pPager->aSchemaVersion[SCHEMA_VERSION_AFTERUNFETCH] = sqlite3STimeNow();
+    if( pPager->aOpenTransTm ){
+      pPager->aOpenTransTm[OPEN_TRANS_AFTERUNFETCH] = sqlite3STimeNow();
     }
     assert( pPager->journalMode==PAGER_JOURNALMODE_WAL
          || pPager->journalMode==PAGER_JOURNALMODE_WAL2
@@ -5602,10 +5605,6 @@ static int getPageNormal(
   assert( pPg->pgno==pgno );
   assert( pPg->pPager==pPager || pPg->pPager==0 );
 
-  if( pPager->aSchemaVersion ){
-    pPager->aSchemaVersion[SCHEMA_VERSION_AFTERPCACHE] = sqlite3STimeNow();
-  }
-
   noContent = (flags & PAGER_GET_NOCONTENT)!=0;
   if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
@@ -7917,9 +7916,8 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
-void sqlite3PagerIsSchemaVersion(Pager *pPager, u64 *a){
-  pPager->aSchemaVersion = a;
-  sqlite3WalIsSchemaVersion(pPager->pWal, a);
+void sqlite3PagerOpenTransTm(Pager *pPager, u64 *a){
+  pPager->aOpenTransTm = a;
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

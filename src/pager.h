@@ -274,6 +274,6 @@ int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
 # define enable_simulated_io_errors()
 #endif
 
-void sqlite3PagerIsSchemaVersion(Pager*, u64*);
+void sqlite3PagerOpenTransTm(Pager*, u64*);
 
 #endif /* SQLITE_PAGER_H */

@@ -410,6 +410,6 @@ int sqlite3BtreeTransferRow(BtCursor*, BtCursor*, i64);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
-void sqlite3BtreeIsSchemaVersion(Btree *p, u64 *a);
+void sqlite3BtreeOpenTransTm(Btree *p, u64 *a);
 
 #endif /* SQLITE_BTREE_H */

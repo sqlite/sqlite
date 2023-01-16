@@ -364,6 +364,7 @@ struct Btree {
 #ifndef SQLITE_OMIT_SHARED_CACHE
   BtLock lock;       /* Object used to lock page 1 */
 #endif
+  u64 *aOpenTransTm;
 };
 
 /*
@@ -464,7 +465,6 @@ struct BtShared {
   BtreePtrmap *pMap;
 #endif
   int nPreformatSize;   /* Size of last cell written by TransferRow() */
-  u64 *aSchemaVersion;
 };
 
 /*

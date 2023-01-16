@@ -3755,6 +3755,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   }
   assert( pBt->inTransaction==TRANS_WRITE || IfNotOmitAV(pBt->bDoTruncate)==0 );
 
+  if( p->aOpenTransTm ){
+    p->aOpenTransTm[OPEN_TRANS_START] = sqlite3STimeNow();
+  }
+
   if( (p->db->flags & SQLITE_ResetDatabase) 
    && sqlite3PagerIsreadonly(pPager)==0 
   ){
@@ -3824,10 +3828,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
     ** pBt->pageSize to the page-size of the file on disk.
     */
     while( pBt->pPage1==0 && SQLITE_OK==(rc = lockBtree(pBt)) );
-
-    if( pBt->aSchemaVersion ){
-      pBt->aSchemaVersion[SCHEMA_VERSION_AFTERLOCKBTREE] = sqlite3STimeNow();
-    }
 
     if( rc==SQLITE_OK && wrflag ){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
@@ -11667,7 +11667,7 @@ int sqlite3BtreeConnectionCount(Btree *p){
 }
 #endif
 
-void sqlite3BtreeIsSchemaVersion(Btree *p, u64 *a){
-  p->pBt->aSchemaVersion = a;
-  sqlite3PagerIsSchemaVersion(p->pBt->pPager, a);
+void sqlite3BtreeOpenTransTm(Btree *p, u64 *a){
+  p->aOpenTransTm = a;
+  sqlite3PagerOpenTransTm(p->pBt->pPager, a);
 }

@@ -170,7 +170,5 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
 /* sqlite3_wal_info() data */
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
 
-void sqlite3WalIsSchemaVersion(Wal *pWal, u64 *a);
-
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

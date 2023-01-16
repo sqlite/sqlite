@@ -435,7 +435,6 @@
 #ifndef SQLITE_OMIT_WAL
 
 #include "wal.h"
-#include "vdbeInt.h"
 
 /*
 ** Trace output macros
@@ -803,7 +802,6 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
 #endif
-  u64 *aSchemaVersion;
 };
 
 /*
@@ -3722,16 +3720,8 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   testcase( rc==SQLITE_PROTOCOL );
   testcase( rc==SQLITE_OK );
 
-  if( pWal->aSchemaVersion ){
-    pWal->aSchemaVersion[SCHEMA_VERSION_AFTERWALTBR] = sqlite3STimeNow();
-  }
-  
   if( rc==SQLITE_OK && pWal->hdr.iVersion==WAL_VERSION2 ){
     rc = walOpenWal2(pWal);
-  }
-
-  if( pWal->aSchemaVersion ){
-    pWal->aSchemaVersion[SCHEMA_VERSION_AFTEROPENWAL2] = sqlite3STimeNow();
   }
 
   pWal->nPriorFrame = pWal->hdr.mxFrame;
@@ -5339,12 +5329,6 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
 int sqlite3WalJournalMode(Wal *pWal){
   assert( pWal );
   return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
-}
-
-void sqlite3WalIsSchemaVersion(Wal *pWal, u64 *a){
-  if( pWal ){
-    pWal->aSchemaVersion = a;
-  }
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */
