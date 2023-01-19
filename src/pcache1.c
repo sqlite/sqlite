@@ -649,6 +649,11 @@ static void pcache1TruncateUnsafe(
 ){
   TESTONLY( int nPage = 0; )  /* To assert pCache->nPage is correct */
   unsigned int h, iStop;
+
+#define TRUNCATE_UNSAFE_TIMEOUT 1500000
+  u64 tmTruncate = 0;
+  unsigned int nTmPage = 0;
+
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   assert( pCache->iMaxKey >= iLimit );
   assert( pCache->nHash > 0 );
@@ -666,11 +671,18 @@ static void pcache1TruncateUnsafe(
     h = pCache->nHash/2;
     iStop = h - 1;
   }
+
+  if( iLimit<=1 ){
+    tmTruncate = sqlite3STimeNow();
+    nTmPage = pCache->nPage;
+  }
+
   for(;;){
     PgHdr1 **pp;
     PgHdr1 *pPage;
     assert( h<pCache->nHash );
     pp = &pCache->apHash[h]; 
+
     while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
         pCache->nPage--;
@@ -685,6 +697,17 @@ static void pcache1TruncateUnsafe(
     if( h==iStop ) break;
     h = (h+1) % pCache->nHash;
   }
+
+  if( iLimit<=1 ){
+    tmTruncate = sqlite3STimeNow() - tmTruncate;
+    if( tmTruncate>TRUNCATE_UNSAFE_TIMEOUT ){
+      sqlite3_log(SQLITE_WARNING,
+          "slow pcache.xTruncate(1) (v=6): (%d) nPage: %d -> %d", 
+          (int)tmTruncate, (int)nTmPage, (int)pCache->nPage
+      );
+    }
+  }
+
   assert( nPage<0 || pCache->nPage==(unsigned)nPage );
 }
 

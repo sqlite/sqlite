@@ -5221,7 +5221,7 @@ void sqlite3OpenTransLog(u64 *aOpenTransTm){
   u64 i1 = aOpenTransTm[OPEN_TRANS_START];
   if( aOpenTransTm[OPEN_TRANS_DONE]>(i1+OPEN_TRANS_TIMEOUT) ){
     sqlite3_log(SQLITE_WARNING, 
-        "slow open transaction (v=5): (%d, %d, %d, %d)",
+        "slow open transaction (v=6): (%d, %d, %d, %d)",
         (aOpenTransTm[OPEN_TRANS_BEFORERESET]==0) ? 0 :
             (int)(aOpenTransTm[OPEN_TRANS_BEFORERESET] - i1),
 
