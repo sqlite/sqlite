@@ -1,5 +1,5 @@
-C Experimental\spatch\sto\sput\spage\sbuffers\son\san\sinternal\sper-connection\slist\sfor\sreuse\sinstead\sof\sfree()ing\sthem\swhen\sthe\spage-cache\sis\sreset.
-D 2023-01-25T17:09:16.455
+C Change\sthe\sinstrumentation\smessages\son\sthis\sbranch\sso\sthat\sthey\scontain\s"v=7"\sinstead\sof\s"v=6".
+D 2023-01-25T17:24:34.562
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F src/pager.h be2b4b375a535cbca8a8c37223dddd0cac05f2d3a79b92d831c5bdcbefdef31a
 F src/parse.y 17c50d262d92083badeb60b3ebe4725e19c76548f90aea898ab07d4f2940a7d8
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c b69cbeca759bbf3b561c89d035d682809773c94c220cfffdb26e9060379694b1
+F src/pcache1.c 6b05f457044703eb6da771dc98f025a7753d2c5a352c6eaf0ff551139d835650
 F src/pragma.c c471a8752cc37919a213d860a1550c3e4b5bc1a416dff2aa72212e73c6982230
 F src/pragma.h 1f421360eed1a7721e8c521463df8519a7c8d0d5893ebd9dbfe0dba8de996f8c
 F src/prepare.c 971d5819a4bda88038c2283d71fc0a2974ffc3dd480f9bd941341017abacfd1b
@@ -672,7 +672,7 @@ F src/vdbe.c 574598c7688e16c6b49bb588edfebb23c4eb8bfbce781b3b9f973b0c1779d7c2
 F src/vdbe.h 923ce223c6b64bf38e174069ce9ac7b729aea82c6b278da346f5812f29da90dd
 F src/vdbeInt.h 202638f8eea5cf2600e033c6862c2872dbbde626582c1a2c2e1ff0760fcacfcd
 F src/vdbeapi.c fc3183daf72808b4311b228989120fdbc2dc44972fb0d77d5c453460cc0e5b2c
-F src/vdbeaux.c c89e1f812515848b79e5c65b5be13cf40b9c5a138d7da864e9111571acce6251
+F src/vdbeaux.c 6ee6ea20eaf22c72b5f28a2b0b77931aa648a59b366c7fb22f97b01755a40e1a
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c c3ce80af15e2ff5c2824a8db881681cbf511376f13613da020bac6d320c535b1
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -2035,8 +2035,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a057f9cb2c647e0ee95c5956eb8707f2a4892bbf207544b47d76db56fd4f8990
-R 2338c56a1d4124900b473e20ed288d42
+P 1e4cfd2f30c36172eb513b82db322f5c38d3686137a063f5c2a9dff957068e23
+R f51b267673d00e48e6358cb3156b2489
 U dan
-Z afe913f9adbc718f35beee0f8e10f42d
+Z 30b0adacbf5833d4a322fe01bc07b041
 # Remove this line to create a well-formed Fossil manifest.

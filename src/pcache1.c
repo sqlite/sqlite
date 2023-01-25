@@ -708,7 +708,7 @@ static void pcache1TruncateUnsafe(
     tmTruncate = sqlite3STimeNow() - tmTruncate;
     if( tmTruncate>TRUNCATE_UNSAFE_TIMEOUT ){
       sqlite3_log(SQLITE_WARNING,
-          "slow pcache.xTruncate(1) (v=6): (%d) nPage: %d -> %d", 
+          "slow pcache.xTruncate(1) (v=7): (%d) nPage: %d -> %d", 
           (int)tmTruncate, (int)nTmPage, (int)pCache->nPage
       );
     }
