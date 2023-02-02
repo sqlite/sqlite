@@ -676,7 +676,13 @@ static void pcache1TruncateUnsafe(
         pCache->nPage--;
         *pp = pPage->pNext;
         if( PAGE_IS_UNPINNED(pPage) ) pcache1PinPage(pPage);
-        pcache1FreePage(pPage);
+        if( pcache1.separateCache ){
+          pPage->pNext = pCache->pFree;
+          pCache->pFree = pPage;
+          (*pCache->pnPurgeable)--;
+        }else{
+          pcache1FreePage(pPage);
+        }
       }else{
         pp = &pPage->pNext;
         TESTONLY( if( nPage>=0 ) nPage++; )
@@ -1174,6 +1180,14 @@ static void pcache1Destroy(sqlite3_pcache *p){
   assert( pCache->bPurgeable || (pCache->nMax==0 && pCache->nMin==0) );
   pcache1EnterMutex(pGroup);
   if( pCache->nPage ) pcache1TruncateUnsafe(pCache, 0);
+  if( pcache1.separateCache ){
+    PgHdr1 *p1 = pCache->pFree;
+    while( p1 ){
+      PgHdr1 *pNext = p1->pNext;
+      if( p1->isBulkLocal==0 ) pcache1Free(p1->page.pBuf);
+      p1 = pNext;
+    }
+  }
   assert( pGroup->nMaxPage >= pCache->nMax );
   pGroup->nMaxPage -= pCache->nMax;
   assert( pGroup->nMinPage >= pCache->nMin );

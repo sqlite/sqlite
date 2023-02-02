@@ -1,5 +1,5 @@
-C Merge\slatest\senhancments\sinto\sthis\sbranch\sfrom\sbranch\swal2.
-D 2023-02-02T14:27:56.368
+C Instead\sof\sfree()ing\sthem,\sretain\sallocated\spage\sbuffers\son\san\sinternal\sper-connection\sreuse-list\swhen\sa\spage-cache\sis\sreset.
+D 2023-02-02T20:27:21.569
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -496,8 +496,8 @@ F ext/wasm/api/sqlite3-v-helper.js 6f6c3e390a72e08b0a5b16a0d567d7af3c04d17283185
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js a10bdc9695dcf453e120970a5de8a3e61db4e4047d0a7cc5a6d63dfe7ae87f4e
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 76625a70937a8522d014ef686c32db5b53a3ee61850323f5c601d2ac39fe52fe
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js f10c3ecd9df06f6320073c2ce230a7ed7c56034d8b88c1e57095f2a97faf423a w ext/wasm/api/sqlite3-worker1-promiser.js
-F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0 w ext/wasm/api/sqlite3-worker1.js
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js f10c3ecd9df06f6320073c2ce230a7ed7c56034d8b88c1e57095f2a97faf423a
+F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 0dad6a02ad796f1003d3b7048947d275c4d6277f63767b8e685c27df8fdac93e
 F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25b4
@@ -620,7 +620,7 @@ F src/pager.h 3ddab454e313da7c93f92fea35c842ad17ae9f4e96254871ddb0171b2bfb859a
 F src/parse.y 17c50d262d92083badeb60b3ebe4725e19c76548f90aea898ab07d4f2940a7d8
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
-F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
+F src/pcache1.c 9f51e80b6d55bc7b62e6260cfe2c06e0a541b4138de9f889c5a55f6c1a922327
 F src/pragma.c bcd8519da83da8023fd340f71cddfca33805d332e89b55cc974285f146e42e76
 F src/pragma.h 1f421360eed1a7721e8c521463df8519a7c8d0d5893ebd9dbfe0dba8de996f8c
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
@@ -2082,8 +2082,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c14f3832e0e21c4e68b556d5592860fcd79b6ca21db6c47f52a240b24559a9a c9b0180203378da26dc958c183ebb59274537e9fee3b346933b1e0844ed68a4a
-R 59e34e43e32fe21ff0308dae03891a8b
+P 5a22010c35789c6d12e4dd45c81c10b203f4662f206cb636bd0c2781f1cd9571
+R fb4fbbbd32eae880a6528e7a872eacac
+T *branch * bedrock
+T *sym-bedrock *
+T -sym-begin-concurrent-pnu-wal2 *
 U dan
-Z a5442445497925ad83f75a80548ca5da
+Z 1a54b7b0887392f44fe5cac394c09618
 # Remove this line to create a well-formed Fossil manifest.
