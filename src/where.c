@@ -2698,6 +2698,7 @@ static void whereLoopOutputAdjust(
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
     if( j<0 ){
+      sqlite3ProgressCheck(pWC->pWInfo->pParse);
       if( pLoop->maskSelf==pTerm->prereqAll ){
         /* If there are extra terms in the WHERE clause not used by an index
         ** that depend only on the table being scanned, and that will tend to
@@ -2865,7 +2866,10 @@ static int whereLoopAddBtreeIndex(
   WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
   pNew = pBuilder->pNew;
-  if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
+  assert( db->mallocFailed==0 || pParse->nErr>0 );
+  if( pParse->nErr ){
+    return pParse->rc;
+  }
   WHERETRACE(0x800, ("BEGIN %s.addBtreeIdx(%s), nEq=%d, nSkip=%d, rRun=%d\n",
                      pProbe->pTable->zName,pProbe->zName,
                      pNew->u.btree.nEq, pNew->nSkip, pNew->rRun));
@@ -3181,6 +3185,9 @@ static int whereLoopAddBtreeIndex(
      && (pNew->u.btree.nEq<pProbe->nKeyCol ||
            pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY)
     ){
+      if( pNew->u.btree.nEq>3 ){
+        sqlite3ProgressCheck(pParse);
+      }
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
     pNew->nOut = saved_nOut;
@@ -3588,7 +3595,8 @@ static int whereLoopAddBtree(
         if( !IsView(pTab) && (pTab->tabFlags & TF_Ephemeral)==0 ){
           pNew->rSetup += 28;
         }else{
-          pNew->rSetup -= 10;
+          pNew->rSetup -= 25;  /* Greatly reduced setup cost for auto indexes
+                               ** on ephemeral materializations of views */
         }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         if( pNew->rSetup<0 ) pNew->rSetup = 0;
@@ -4088,7 +4096,7 @@ int sqlite3_vtab_distinct(sqlite3_index_info *pIdxInfo){
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** Cause the prepared statement that is associated with a call to
-** xBestIndex to potentiall use all schemas.  If the statement being
+** xBestIndex to potentially use all schemas.  If the statement being
 ** prepared is read-only, then just start read transactions on all
 ** schemas.  But if this is a write operation, start writes on all
 ** schemas.
@@ -4103,7 +4111,7 @@ void sqlite3VtabUsesAllSchemas(sqlite3_index_info *pIdxInfo){
   for(i=0; i<nDb; i++){
     sqlite3CodeVerifySchema(pParse, i);
   }
-  if( pParse->writeMask ){
+  if( DbMaskNonZero(pParse->writeMask) ){
     for(i=0; i<nDb; i++){
       sqlite3BeginWriteOperation(pParse, 0, i);
     }
@@ -4340,8 +4348,6 @@ static int whereLoopAddOr(
         if( rc==SQLITE_OK ){
           rc = whereLoopAddOr(&sSubBuild, mPrereq, mUnusable);
         }
-        assert( rc==SQLITE_OK || rc==SQLITE_DONE || sCur.n==0
-                || rc==SQLITE_NOMEM );
         testcase( rc==SQLITE_NOMEM && sCur.n>0 );
         testcase( rc==SQLITE_DONE );
         if( sCur.n==0 ){

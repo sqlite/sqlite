@@ -33,6 +33,9 @@
 */
 "use strict";
 (()=>{
+//#if target=es6-bundler-friendly
+  importScripts('sqlite3.js');
+//#else
   const urlParams = new URL(self.location.href).searchParams;
   let theJs = 'sqlite3.js';
   if(urlParams.has('sqlite3.dir')){
@@ -40,10 +43,8 @@
   }
   //console.warn("worker1 theJs =",theJs);
   importScripts(theJs);
+//#endif
   sqlite3InitModule().then((sqlite3)=>{
-    if(sqlite3.capi.sqlite3_wasmfs_opfs_dir){
-      sqlite3.capi.sqlite3_wasmfs_opfs_dir();
-    }
     sqlite3.initWorker1API();
   });
 })();

@@ -176,6 +176,26 @@ void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
 }
 
 /*
+** Check for interrupts and invoke progress callback.
+*/
+void sqlite3ProgressCheck(Parse *p){
+  sqlite3 *db = p->db;
+  if( AtomicLoad(&db->u1.isInterrupted) ){
+    p->nErr++;
+    p->rc = SQLITE_INTERRUPT;
+  }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
+    if( db->xProgress(db->pProgressArg) ){
+      p->nErr++;
+      p->rc = SQLITE_INTERRUPT;
+    }
+    p->nProgressSteps = 0;
+  }
+#endif
+}
+
+/*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
 **
 ** This function should be used to report any error that occurs while
@@ -632,11 +652,14 @@ do_atof_calc:
 #endif
 
 /*
-** Render an signed 64-bit integer as text.  Store the result in zOut[].
+** Render an signed 64-bit integer as text.  Store the result in zOut[] and
+** return the length of the string that was stored, in bytes.  The value
+** returned does not include the zero terminator at the end of the output
+** string.
 **
 ** The caller must ensure that zOut[] is at least 21 bytes in size.
 */
-void sqlite3Int64ToText(i64 v, char *zOut){
+int sqlite3Int64ToText(i64 v, char *zOut){
   int i;
   u64 x;
   char zTemp[22];
@@ -653,6 +676,7 @@ void sqlite3Int64ToText(i64 v, char *zOut){
   }while( x );
   if( v<0 ) zTemp[i--] = '-';
   memcpy(zOut, &zTemp[i+1], sizeof(zTemp)-1-i);
+  return sizeof(zTemp)-2-i;
 }
 
 /*
