@@ -212,6 +212,8 @@ static int growOpArray(Vdbe *v, int nOp){
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
   static int n = 0;
+  (void)pc;
+  (void)pOp;
   n++;
 }
 #endif
@@ -572,6 +574,9 @@ static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
     int i;
     for(i=p->nLabelAlloc; i<nNewSize; i++) p->aLabel[i] = -1;
 #endif
+    if( nNewSize>=100 && (nNewSize/100)>(p->nLabelAlloc/100) ){
+      sqlite3ProgressCheck(p);
+    }
     p->nLabelAlloc = nNewSize;
     p->aLabel[j] = v->nOp;
   }
@@ -2316,7 +2321,6 @@ int sqlite3VdbeList(
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
   releaseMemArray(pMem, 8);
-  p->pResultSet = 0;
 
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
@@ -2373,7 +2377,7 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetStr(pMem+5, zP4, -1, SQLITE_UTF8, sqlite3_free);
         p->nResColumn = 8;
       }
-      p->pResultSet = pMem;
+      p->pResultRow = pMem;
       if( db->mallocFailed ){
         p->rc = SQLITE_NOMEM;
         rc = SQLITE_ERROR;
@@ -3505,7 +3509,7 @@ int sqlite3VdbeReset(Vdbe *p){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = 0;
   }
-  p->pResultSet = 0;
+  p->pResultRow = 0;
 #ifdef SQLITE_DEBUG
   p->nWrite = 0;
 #endif
