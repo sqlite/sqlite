@@ -4687,7 +4687,6 @@ int sqlite3PagerOpen(
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
   const char *zUri = 0;    /* URI args to copy */
   int nUriByte = 1;        /* Number of bytes of URI args at *zUri */
-  int nUri = 0;            /* Number of URI parameters */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal).  */
@@ -4735,7 +4734,6 @@ int sqlite3PagerOpen(
     while( *z ){
       z += strlen(z)+1;
       z += strlen(z)+1;
-      nUri++;
     }
     nUriByte = (int)(&z[1] - zUri);
     assert( nUriByte>=1 );
@@ -6266,7 +6264,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 # define DIRECT_MODE isDirectMode
 #endif
 
-  if( !pPager->changeCountDone && ALWAYS(pPager->dbSize>0) ){
+  if( !pPager->changeCountDone && pPager->dbSize>0 ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
 
     assert( !pPager->tempFile && isOpen(pPager->fd) );
