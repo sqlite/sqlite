@@ -1,4 +1,4 @@
-/*
+/**
   2022-07-22
 
   The author disclaims copyright to this source code.  In place of a
@@ -10,12 +10,12 @@
 
   ***********************************************************************
 
-  This file implements the initializer for the sqlite3 "Worker API
-  #1", a very basic DB access API intended to be scripted from a main
-  window thread via Worker-style messages. Because of limitations in
-  that type of communication, this API is minimalistic and only
-  capable of serving relatively basic DB requests (e.g. it cannot
-  process nested query loops concurrently).
+  This file implements the initializer for SQLite's "Worker API #1", a
+  very basic DB access API intended to be scripted from a main window
+  thread via Worker-style messages. Because of limitations in that
+  type of communication, this API is minimalistic and only capable of
+  serving relatively basic DB requests (e.g. it cannot process nested
+  query loops concurrently).
 
   This file requires that the core C-style sqlite3 API and OO API #1
   have been loaded.
@@ -157,15 +157,6 @@
       version: sqlite3.version object
 
       bigIntEnabled: bool. True if BigInt support is enabled.
-
-      wasmfsOpfsDir: path prefix, if any, _intended_ for use with
-      WASMFS OPFS persistent storage.
-
-      wasmfsOpfsEnabled: true if persistent storage is enabled in the
-      current environment. Only files stored under wasmfsOpfsDir
-      will persist using that mechanism, however. It is legal to use
-      the non-WASMFS OPFS VFS to open a database via a URI-style
-      db filename.
 
       vfsList: result of sqlite3.capi.sqlite3_js_vfs_list()
    }
@@ -449,7 +440,6 @@ sqlite3.initWorker1API = function(){
         toss("Throwing because of simulateError flag.");
       }
       const rc = Object.create(null);
-      const pDir = sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       let byteArray, pVfs;
       oargs.vfs = args.vfs;
       if(isSpecialDbFilename(args.filename)){
@@ -475,15 +465,14 @@ sqlite3.initWorker1API = function(){
             e.name+' creating '+args.filename+": "+e.message, {
               cause: e
             }
-          );                           
+          );
         }finally{
           if(pMem) sqlite3.wasm.dealloc(pMem);
         }
       }
       const db = wState.open(oargs);
       rc.filename = db.filename;
-      rc.persistent = (!!pDir && db.filename.startsWith(pDir+'/'))
-        || !!sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");
+      rc.persistent = !!sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");
       rc.dbId = getDbId(db);
       rc.vfs = db.dbVfsName();
       return rc;
@@ -558,11 +547,10 @@ sqlite3.initWorker1API = function(){
     'config-get': function(){
       const rc = Object.create(null), src = sqlite3.config;
       [
-        'wasmfsOpfsDir', 'bigIntEnabled'
+        'bigIntEnabled'
       ].forEach(function(k){
         if(Object.getOwnPropertyDescriptor(src, k)) rc[k] = src[k];
       });
-      rc.wasmfsOpfsEnabled = !!sqlite3.capi.sqlite3_wasmfs_opfs_dir();
       rc.version = sqlite3.version;
       rc.vfsList = sqlite3.capi.sqlite3_js_vfs_list();
       rc.opfsEnabled = !!sqlite3.opfs;
@@ -624,8 +612,8 @@ sqlite3.initWorker1API = function(){
         result.stack = ('string'===typeof err.stack)
           ? err.stack.split(/\n\s*/) : err.stack;
       }
-      if(0) console.warn("Worker is propagating an exception to main thread.",
-                         "Reporting it _here_ for the stack trace:",err,result);
+      if(0) sqlite3.config.warn("Worker is propagating an exception to main thread.",
+                                "Reporting it _here_ for the stack trace:",err,result);
     }
     if(!dbId){
       dbId = result.dbId/*from 'open' cmd*/

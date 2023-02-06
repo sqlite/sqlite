@@ -309,6 +309,7 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   char saveBuf[PARSE_TAIL_SZ];
 
   if( pParse->nErr ) return;
+  if( pParse->eParseMode ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
   zSql = sqlite3VMPrintf(db, zFormat, ap);
@@ -2586,6 +2587,7 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
 ** not pass them into code generator routines by mistake.
 */
 static int markImmutableExprStep(Walker *pWalker, Expr *pExpr){
+  (void)pWalker;
   ExprSetVVAProperty(pExpr, EP_Immutable);
   return WRC_Continue;
 }

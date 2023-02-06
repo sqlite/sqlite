@@ -1662,7 +1662,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
 **
 **    UNLOCKED -> SHARED
 **    SHARED -> RESERVED
-**    SHARED -> (PENDING) -> EXCLUSIVE
+**    SHARED -> EXCLUSIVE
 **    RESERVED -> (PENDING) -> EXCLUSIVE
 **    PENDING -> EXCLUSIVE
 **
@@ -1695,19 +1695,20 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** A RESERVED lock is implemented by grabbing a write-lock on the
   ** 'reserved byte'. 
   **
-  ** A process may only obtain a PENDING lock after it has obtained a
-  ** SHARED lock. A PENDING lock is implemented by obtaining a write-lock
-  ** on the 'pending byte'. This ensures that no new SHARED locks can be
-  ** obtained, but existing SHARED locks are allowed to persist. A process
-  ** does not have to obtain a RESERVED lock on the way to a PENDING lock.
-  ** This property is used by the algorithm for rolling back a journal file
-  ** after a crash.
+  ** An EXCLUSIVE lock may only be requested after either a SHARED or
+  ** RESERVED lock is held. An EXCLUSIVE lock is implemented by obtaining 
+  ** a write-lock on the entire 'shared byte range'. Since all other locks 
+  ** require a read-lock on one of the bytes within this range, this ensures 
+  ** that no other locks are held on the database. 
   **
-  ** An EXCLUSIVE lock, obtained after a PENDING lock is held, is
-  ** implemented by obtaining a write-lock on the entire 'shared byte
-  ** range'. Since all other locks require a read-lock on one of the bytes
-  ** within this range, this ensures that no other locks are held on the
-  ** database. 
+  ** If a process that holds a RESERVED lock requests an EXCLUSIVE, then
+  ** a PENDING lock is obtained first. A PENDING lock is implemented by 
+  ** obtaining a write-lock on the 'pending byte'. This ensures that no new 
+  ** SHARED locks can be obtained, but existing SHARED locks are allowed to 
+  ** persist. If the call to this function fails to obtain the EXCLUSIVE
+  ** lock in this case, it holds the PENDING lock intead. The client may
+  ** then re-attempt the EXCLUSIVE lock later on, after existing SHARED
+  ** locks have cleared.
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
@@ -1778,7 +1779,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   lock.l_len = 1L;
   lock.l_whence = SEEK_SET;
   if( eFileLock==SHARED_LOCK 
-      || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock<PENDING_LOCK)
+   || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock==RESERVED_LOCK)
   ){
     lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
@@ -1789,6 +1790,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
         storeLastErrno(pFile, tErrno);
       }
       goto end_lock;
+    }else if( eFileLock==EXCLUSIVE_LOCK ){
+      pFile->eFileLock = PENDING_LOCK;
+      pInode->eFileLock = PENDING_LOCK;
     }
   }
 
@@ -1876,13 +1880,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   }
 #endif
 
-
   if( rc==SQLITE_OK ){
     pFile->eFileLock = eFileLock;
     pInode->eFileLock = eFileLock;
-  }else if( eFileLock==EXCLUSIVE_LOCK ){
-    pFile->eFileLock = PENDING_LOCK;
-    pInode->eFileLock = PENDING_LOCK;
   }
 
 end_lock:
@@ -6512,12 +6512,10 @@ static void appendOnePathElement(
   if( zName[0]=='.' ){
     if( nName==1 ) return;
     if( zName[1]=='.' && nName==2 ){
-      if( pPath->nUsed<=1 ){
-        pPath->rc = SQLITE_ERROR;
-        return;
+      if( pPath->nUsed>1 ){
+        assert( pPath->zOut[0]=='/' );
+        while( pPath->zOut[--pPath->nUsed]!='/' ){}
       }
-      assert( pPath->zOut[0]=='/' );
-      while( pPath->zOut[--pPath->nUsed]!='/' ){}
       return;
     }
   }
