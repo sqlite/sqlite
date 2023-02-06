@@ -3929,7 +3929,7 @@ int sqlite3WalFindFrame(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
+#if  defined(SQLITE_ENABLE_EXPENSIVE_ASSERT) && /*TODO*/ 0
   /* If expensive assert() statements are available, do a linear search
   ** of the wal-index file content. Make sure the results agree with the
   ** result obtained using the hash indexes above.  

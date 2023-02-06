@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\swal2\sbranch.
-D 2023-02-06T17:48:49.853
+C Disable\san\sinvalid\sassert().\s\sAdd\sthe\s"WAL2"\scompile-time\sproperty\sso\sthat\ntest\sscripts\scan\smore\seasily\sdetermine\sthat\sthey\sare\sdealing\swith\sa\nWAL2-capable\sbuild.
+D 2023-02-06T19:00:53.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/btreeInt.h 06bb2c1a07172d5a1cd27a2a5d617b93b1e976c5873709c31964786f86365a6
 F src/build.c c55ab6d1b089ceef57160e840f05f692955ac90944c3d04fcf01d97fd7bfd08d
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
+F src/ctime.c f439c21d439aaf4706950a2597474f1a796b557a0750666308202c0f601ef0fd
 F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
@@ -705,7 +705,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
 F src/vtab.c a39f6ed161f16a84ff445af9dba4776b2cf0898be08a33bee8e1128a66c0074b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c f5fcbb7c5692690d877fb65f97f392cfd6a568e56c765c3f3f18bb9ed82409ed
+F src/wal.c b433980d0e97fa3469cb46136fd59194df638c684afc299b662b1114f3495af6
 F src/wal.h d01234e828943e002040c22a7e017642962f9fd9b2dc142fa599769ae4e459e9
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 3bbca705410258969d6d2e0c54b468de9674445d41b67714bb4fc3f1edef41d2
@@ -1984,7 +1984,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl c185cf1bdcd3d9bd3c06f77a2fd2df8a4a0d07266f992ecda75286965ba3574c x
+F tool/mkctimec.tcl 82e75faafe0625a9fedd3817a22bd9ac337b5ab8ba5486a9a113afce4ed1f67b x
 F tool/mkkeywordhash.c 35bfc41adacc4aa6ef6fca7fd0c63e0ec0534b78daf4d0cfdebe398216bbffc3
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9b0180203378da26dc958c183ebb59274537e9fee3b346933b1e0844ed68a4a 5dde07a91dcf99b9c9a418b4e2178f66eef4cffd4799538a419674314a7530f9
-R 84cde0279afd88fb09c07f8fe9ea2f8c
+P 44f8f33d4ab159476800142e763dfc6beb2c2c1d857c8eebb286498dec4004fd
+R 4a29884f29ee8d2f8e34960946ff4a8b
 U drh
-Z 5942c82874e68fc52050e3aca6e113bd
+Z 5908cdab3a7ef3394b937ba8240e9eba
 # Remove this line to create a well-formed Fossil manifest.

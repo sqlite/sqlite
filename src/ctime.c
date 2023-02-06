@@ -770,6 +770,7 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_VDBE_COVERAGE
   "VDBE_COVERAGE",
 #endif
+"WAL2",
 #ifdef SQLITE_WIN32_MALLOC
   "WIN32_MALLOC",
 #endif
