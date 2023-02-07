@@ -12,12 +12,11 @@
 
   This file is intended to be combined at build-time with other
   related code, most notably a header and footer which wraps this
-  whole file into an Emscripten Module.postRun() handler which has a
-  parameter named "Module" (the Emscripten Module object). The sqlite3
-  JS API has no hard requirements on Emscripten, and does not expose
+  whole file into an Emscripten Module.postRun() handler. The sqlite3
+  JS API has no hard requirements on Emscripten and does not expose
   any Emscripten APIs to clients. It is structured such that its build
   can be tweaked to include it in arbitrary WASM environments which
-  supply the necessary underlying features (e.g. a POSIX file I/O
+  can supply the necessary underlying features (e.g. a POSIX file I/O
   layer).
 
   Main project home page: https://sqlite.org
@@ -42,8 +41,8 @@
    Emscripten. (Note the default values for the config object!) The
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
-   (configured) object which gets initialized by the first call.
-   This function will throw if any of the required config options are
+   (configured) object which gets initialized by the first call.  This
+   function will throw if any of the required config options are
    missing.
 
    The config object properties include:
@@ -62,6 +61,8 @@
      true if `self.BigInt64Array` is available, else false. Some APIs
      will throw exceptions if called without BigInt support, as BigInt
      is required for marshalling C-side int64 into and out of JS.
+     (Sidebar: it is technically possible to add int64 support via
+     marshalling of int32 pairs, but doing so is unduly invasive.)
 
    - `allocExportName`: the name of the function, in `exports`, of the
      `malloc(3)`-compatible routine for the WASM environment. Defaults
@@ -69,7 +70,9 @@
      sqlite3_malloc() may require care in certain client-side code
      regarding which allocator is uses. Notably, sqlite3_deserialize()
      and sqlite3_serialize() can only safely use memory from different
-     allocators under very specific conditions.
+     allocators under very specific conditions. The canonical builds
+     of this API guaranty that `sqlite3_malloc()` is the JS-side
+     allocator implementation.
 
    - `deallocExportName`: the name of the function, in `exports`, of
      the `free(3)`-compatible routine for the WASM
@@ -79,13 +82,21 @@
      the `realloc(3)`-compatible routine for the WASM
      environment. Defaults to `"sqlite3_realloc"`.
 
+   - `debug`, `log`, `warn`, and `error` may be functions equivalent
+     to the like-named methods of the global `console` object. By
+     default, these map directly to their `console` counterparts, but
+     can be replaced with (e.g.) empty functions to squelch all such
+     output.
+
    - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
      currently work due to incompatible Emscripten-side changes made
      in the WASMFS+OPFS combination. This option is currently ignored.
 
    [^1] = This property may optionally be a function, in which case this
-          function re-assigns it to the value returned from that function,
+          function re-assigns calls that function to fetch the value,
           enabling delayed evaluation.
+
+   The returned object is the top-level sqlite3 namespace object.
 
 */
 'use strict';
@@ -108,6 +119,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return !!self.BigInt64Array;
     })(),
+    debug: console.debug.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+    log: console.log.bind(console),
     wasmfsOpfsDir: '/opfs',
     /**
        useStdAlloc is just for testing an allocator discrepancy. The
@@ -1008,7 +1023,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      space managed by Emscripten's stack-management, so does not
      collide with Emscripten-provided stack allocation APIs. The
      memory lives in the WASM heap and can be used with routines such
-     as wasm.poke() and any wasm.heap8u().slice().
+     as wasm.poke() and wasm.heap8u().slice().
   */
   wasm.pstack = Object.assign(Object.create(null),{
     /**
@@ -1021,7 +1036,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Attempts to allocate the given number of bytes from the
        pstack. On success, it zeroes out a block of memory of the
        given size, adjusts the pstack pointer, and returns a pointer
-       to the memory. On error, returns throws a WasmAllocError. The
+       to the memory. On error, throws a WasmAllocError. The
        memory must eventually be released using restore().
 
        If n is a string, it must be a WASM "IR" value in the set
@@ -1064,9 +1079,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const mem = wasm.pstack.alloc(n * sz);
       const rc = [];
       let i = 0, offset = 0;
-      for(; i < n; offset = (sz * ++i)){
-        rc.push(mem + offset);
-      }
+      for(; i < n; ++i, offset += sz) rc.push(mem + offset);
       return rc;
     },
     /**

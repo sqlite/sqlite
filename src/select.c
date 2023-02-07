@@ -2211,7 +2211,7 @@ int sqlite3ColumnsFromExprList(
   *pnCol = nCol;
   *paCol = aCol;
 
-  for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
+  for(i=0, pCol=aCol; i<nCol && !pParse->nErr; i++, pCol++){
     struct ExprList_item *pX = &pEList->a[i];
     struct ExprList_item *pCollide;
     /* Get an appropriate name for the column
@@ -2261,7 +2261,10 @@ int sqlite3ColumnsFromExprList(
         if( zName[j]==':' ) nName = j;
       }
       zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
-      if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
+      sqlite3ProgressCheck(pParse);
+      if( cnt>3 ){
+        sqlite3_randomness(sizeof(cnt), &cnt);
+      }
     }
     pCol->zCnName = zName;
     pCol->hName = sqlite3StrIHash(zName);
@@ -2274,14 +2277,14 @@ int sqlite3ColumnsFromExprList(
     }
   }
   sqlite3HashClear(&ht);
-  if( db->mallocFailed ){
+  if( pParse->nErr ){
     for(j=0; j<i; j++){
       sqlite3DbFree(db, aCol[j].zCnName);
     }
     sqlite3DbFree(db, aCol);
     *paCol = 0;
     *pnCol = 0;
-    return SQLITE_NOMEM_BKPT;
+    return pParse->rc;
   }
   return SQLITE_OK;
 }
@@ -2313,7 +2316,7 @@ void sqlite3SubqueryColumnTypes(
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
-  assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
@@ -5623,9 +5626,6 @@ static int resolveFromTermToCte(
     pFrom->fg.isCte = 1;
     pFrom->u2.pCteUse = pCteUse;
     pCteUse->nUse++;
-    if( pCteUse->nUse>=2 && pCteUse->eM10d==M10d_Any ){
-      pCteUse->eM10d = M10d_Yes;
-    }
 
     /* Check if this is a recursive CTE. */
     pRecTerm = pSel = pFrom->pSelect;
@@ -6908,8 +6908,10 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 **                    being used as the outer loop if the sqlite3WhereBegin()
 **                    routine nominates it to that position.
 **              (iii) The query is not a UPDATE ... FROM
-**    (2)  The subquery is not a CTE that should be materialized because of
-**         the AS MATERIALIZED keywords
+**    (2)  The subquery is not a CTE that should be materialized because
+**         (a) the AS MATERIALIZED keyword is used, or
+**         (b) the CTE is used multiple times and does not have the
+**             NOT MATERIALIZED keyword
 **    (3)  The subquery is not part of a left operand for a RIGHT JOIN
 **    (4)  The SQLITE_Coroutine optimization disable flag is not set
 **    (5)  The subquery is not self-joined
@@ -6921,9 +6923,13 @@ static int fromClauseTermCanBeCoroutine(
   int selFlags            /* Flags on the SELECT statement */
 ){
   SrcItem *pItem = &pTabList->a[i];
-  if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
-  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
-  if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
+  if( pItem->fg.isCte ){
+    const CteUse *pCteUse = pItem->u2.pCteUse;
+    if( pCteUse->eM10d==M10d_Yes ) return 0;                          /* (2a) */
+    if( pCteUse->nUse>=2 && pCteUse->eM10d!=M10d_No ) return 0;       /* (2b) */
+  }
+  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;               /* (3)  */
+  if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0; /* (4)  */
   if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
     return 0;                                                          /* (5) */
   }
