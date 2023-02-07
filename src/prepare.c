@@ -193,9 +193,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         if( rc > pData->rc ) pData->rc = rc;
         if( rc==SQLITE_NOMEM ){
           sqlite3OomFault(db);
-        }else if( rc!=SQLITE_INTERRUPT 
+        }else if( rc!=SQLITE_INTERRUPT && (rc&0xFF)!=SQLITE_LOCKED
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
-               && (rc&0xFF)!=SQLITE_LOCKED 
                && (rc&0xFF)!=SQLITE_IOERR
 #endif
         ){
