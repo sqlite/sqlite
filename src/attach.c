@@ -355,7 +355,9 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto attach_end;
+  if( (db->mDbFlags & DBFLAG_EncodingFixed)==0 ){
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto attach_end;
+  }
 
   if( pParse->nErr ) goto attach_end;
   memset(&sName, 0, sizeof(NameContext));

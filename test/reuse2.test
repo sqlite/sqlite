@@ -162,28 +162,28 @@ do_test 4.1.1 {
 do_execsql_test 4.1.2 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
   FROM schemapool;
-} {}
+} {nref=1 nschema=1 ndelete=0}
 do_execsql_test -db db2 4.1.3 {
   SELECT * FROM db3.x1
 }
 do_execsql_test 4.1.4 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
   FROM schemapool;
-} {nref=1 nschema=1 ndelete=0}
+} {nref=2 nschema=1 ndelete=0}
 do_execsql_test -db db2 4.1.5 {
   SELECT * FROM db2.x1
 }
 do_execsql_test 4.1.6 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
   FROM schemapool;
-} {nref=2 nschema=1 ndelete=0}
+} {nref=3 nschema=1 ndelete=0}
 do_execsql_test -db db2 4.1.7 {
   SELECT * FROM x1
 }
 do_execsql_test 4.1.8 {
   SELECT 'nref=' || nRef, 'nschema=' || nSchema, 'ndelete=' || nDelete
   FROM schemapool;
-} {nref=6 nschema=1 ndelete=0}
+} {nref=3 nschema=1 ndelete=0}
 
 do_test 4.2.1 {
   catchsql { SELECT * FROM abc } db2

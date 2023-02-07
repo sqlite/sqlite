@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2023-02-07T15:29:17.617
+C Avoid\sloading\s(and\sthen\sdiscarding)\sschemas\sfor\sall\sattached\sdatabases\swithin\san\sATTACH\scommand.\sThis\sis\sinefficient\sfor\sconnections\susing\sshared-schema.
+D 2023-02-07T15:57:02.261
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -490,8 +490,8 @@ F ext/wasm/api/sqlite3-v-helper.js 6f6c3e390a72e08b0a5b16a0d567d7af3c04d17283185
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js ca291837840b3eae3a60810721a7970c98f7c7cd3ee1c879acb7e91f1e3fe65a
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 76625a70937a8522d014ef686c32db5b53a3ee61850323f5c601d2ac39fe52fe
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js c5ac33e39f21a3481812d7333ca6e18853640d423a01960ca8dbc6e7c5c3c21c w ext/wasm/api/sqlite3-worker1-promiser.js
-F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0 w ext/wasm/api/sqlite3-worker1.js
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js c5ac33e39f21a3481812d7333ca6e18853640d423a01960ca8dbc6e7c5c3c21c
+F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 0dad6a02ad796f1003d3b7048947d275c4d6277f63767b8e685c27df8fdac93e
 F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25b4
@@ -556,7 +556,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c dab37a80032366d27a415d7a769aa1a7bba2358424f1f67dd910e25ffffe055f
 F src/analyze.c 594f0137ba2682cbbde286b2fed4d43b22054b4900d2f900a69a7555f9a4e4d7
-F src/attach.c 64e58698bcbf4ce3bb66f9cfe1c086552e4de673c008a1916e23ab13ca05f43a
+F src/attach.c 2af98700f1a3867a78475aa164571a2fbacce09c681076b01b119ef31b8ef4ac
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
@@ -1409,8 +1409,8 @@ F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test 3ef7b264598b3292be0cdb028e4acb7524c5fd409b33b78449f894dfd68db334
 F test/returningfault.test ae4c4b5e8745813287a359d9ccdb9d5c883c2e68afb18fb0767937d5de5692a4
 F test/reuse1.test faa2ce5ff566d936b8a10d9e22ba2ee66a54ce89fdcf8aef561df6b15b0ff3d3
-F test/reuse2.test 5dd9c98579358f0d5a90d25e36dd6e678a03e23446b6c7f2630a8da22ae7ca94
-F test/reuse3.test ee7dc9c3ee5d65aa2615b6d610cc368aaa04df0b464a578a4c3b25ee64de4e8a
+F test/reuse2.test 025d54dcbf5bb32a869ffde4884789af2ec4a302b7dc4550dfbd16e635a3dd65
+F test/reuse3.test fa1edd6a303bbb93aa076d6579fce9d2ee2d9e1a8f4d7b613ac20a76ba622eaa
 F test/reuse4.test adaad66253aea6cc748674328abe69b650c5c78b8676ed1162d3de09742519f9
 F test/reuse5.test bbe6cf7384ef90f134392edd93d626385ef0bf6f40eefc3d993535cd0861d83b
 F test/reuse6.test f4674f9967aee2a0b49c02832120b8b495291c0d87aae084c54e6c0cc18132fe
@@ -2055,8 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P deb26d034b9da463c0e1acd5aafa477b29fc25fdbe51995283d52715972355c9 90b12211376eb445df7221b3d3593394ff651ef93f4218492c6208bc74b8fc63
-R bc1fa47d6ae64ebeecce4aef3f57b239
+P 4d21640c58249a8bdbf4ed48ae22b745f3b87af7d046cc58cae6ff913b79d742
+R 08cbc8f769d43fef887b292cae875e1d
 U dan
-Z d2ff0e62def55e98638ab4fa4591d1fe
+Z acc985bd80718346b287466c9bd3a13e
 # Remove this line to create a well-formed Fossil manifest.
