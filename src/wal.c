@@ -3918,6 +3918,7 @@ int sqlite3WalFindFrame(
   )){
     rc = walSearchWal(pWal, !iApp, pgno, &iRead);
   }
+  if( rc!=SQLITE_OK ) return rc;
 
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
   if( iRead ){ 
