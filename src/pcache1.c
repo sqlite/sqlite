@@ -631,6 +631,14 @@ static void pcache1EnforceMaxPage(PCache1 *pCache){
     pcache1RemoveFromHash(p, 1);
   }
   if( pCache->nPage==0 && pCache->pBulk ){
+    if( pcache1.separateCache ){
+      PgHdr1 *p1 = pCache->pFree;
+      while( p1 ){
+        PgHdr1 *pNext = p1->pNext;
+        if( p1->isBulkLocal==0 ) pcache1Free(p1->page.pBuf);
+        p1 = pNext;
+      }
+    }
     sqlite3_free(pCache->pBulk);
     pCache->pBulk = pCache->pFree = 0;
   }
@@ -1187,6 +1195,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
       if( p1->isBulkLocal==0 ) pcache1Free(p1->page.pBuf);
       p1 = pNext;
     }
+    pCache->pFree = 0;
   }
   assert( pGroup->nMaxPage >= pCache->nMax );
   pGroup->nMaxPage -= pCache->nMax;
