@@ -557,6 +557,17 @@ do_test date-15.10 {
 } {1 1 1 0 0}
 db eval {COMMIT}
 
+reset_db
+do_test date-15.11 {
+  db eval {CREATE TABLE t1(x);}
+  db eval {VALUES(1),(2),(3)} {
+    db eval {INSERT INTO t1(x) VALUES(julianday('txn'))}
+    after 10
+  }
+  db eval {SELECT count(x), count(DISTINCT x) FROM t1}
+} {3 1}
+
+
 # Tests of extreme values in date/time functions.  Run with UBSan or the
 # equivalent to verify no signed interger overflow warnings.
 #

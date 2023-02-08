@@ -3376,7 +3376,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */
-  db->nVdbeActive--;
+  if( (--db->nVdbeActive)==0 && db->autoCommit )  db->txnTime = 0;
   if( !p->readOnly ) db->nVdbeWrite--;
   if( p->bIsReader ) db->nVdbeRead--;
   assert( db->nVdbeActive>=db->nVdbeRead );
@@ -3394,7 +3394,6 @@ int sqlite3VdbeHalt(Vdbe *p){
   */
   if( db->autoCommit ){
     sqlite3ConnectionUnlocked(db);
-    db->txnTime = 0;
   }
 
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
