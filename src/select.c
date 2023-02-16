@@ -5952,7 +5952,7 @@ int sqlite3Select(
     ** expressions, to avoid unneeded searching and computation.
     */
     if( disableUnusedSubqueryResultColumns(pItem) ){
-#if TREETRACE_ENABLED
+#if SELECTTRACE_ENABLED
       if( sqlite3TreeTrace & 0x4000 ){
         TREETRACE(0x4000,pParse,p,
             ("Change unused result columns to NULL for subquery %d:\n",
