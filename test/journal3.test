@@ -42,7 +42,7 @@ if {$::tcl_platform(platform) == "unix"
     do_test journal3-1.2.$tn.1 {
       catch { forcedelete test.db-journal }
       file attributes test.db -permissions $permissions
-      file attributes test.db -permissions
+      string map { o 0} [file attributes test.db -permissions]
     } $permissions
     do_test journal3-1.2.$tn.2 { file exists test.db-journal } {0}
     do_test journal3-1.2.$tn.3 {
@@ -54,7 +54,7 @@ if {$::tcl_platform(platform) == "unix"
       file exists test.db-journal
     } {1}
     do_test journal3-1.2.$tn.4 {
-      file attr test.db-journal -perm
+      string map {o 0} [file attr test.db-journal -perm]
     } $effective
     do_execsql_test journal3-1.2.$tn.5 { ROLLBACK } {}
   }
