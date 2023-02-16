@@ -1,5 +1,5 @@
-C Update\stest\scases\sso\sthat\sthey\swork\swith\sTCL\s8.7\sand\slater.
-D 2023-02-16T01:21:51.925
+C Do\snot\scompute\sunused\sresult\scolumns\sof\ssubqueries.\s\sThis\soptimization\swill\npotentially\sresolve\sthe\sperformance\soptimization\srequest\sof\n[baa5bb76c35a124c|ticket\sbaa5bb76c35a124c].
+D 2023-02-16T01:29:51.992
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F Makefile.in a050c8670ea0d7b37b2192306cbb50d392acd9902b84e9b56f3444d006f97a6c
@@ -506,7 +506,7 @@ F src/printf.c 0f1177cf1dd4d7827bf64d840768514ec76409abecaca9e8b577dbd065150381
 F src/random.c 80f5d666f23feb3e6665a6ce04c7197212a88384
 F src/resolve.c 4cfc44def0f0690ceaab8f6481f5d76284d7f9509aab6e218a679b4836a54614
 F src/rowset.c d977b011993aaea002cab3e0bb2ce50cf346000dff94e944d547b989f4b1fe93
-F src/select.c d292fc7d0ba854260d628989a1ed4c35cc9aece5a20aa767b69040181d9ed4f1
+F src/select.c d43c31813bbaabe5117e350fa14cfa46281c5bfd588e661ecbe096fdf1c92248
 F src/shell.c.in 482e23a370cbe5b0d4c73a0f0f5fce34f7caa08a14a8d75e12f0225c4e14915c
 F src/sqlite.h.in cce9feede1c1c03923c091b4bbbd081dd77aaf92024cc2cdbf65f712c2f668c3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1779,8 +1779,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7cbf30808e2c0c25aecd30c921b45a9888aff1a53f32350c5fc0196fb55b238
-R 8c04d000120f3201c20cbb96dbedc183
+P e9b762de0e8c505f2334d931a5b6db862733e99bc12025ebf9d8882c696959fd 77b220a7240425fa83e142ceef78505208e6e38d797070e146b9f7d255f753c7
+R 87a6dbc349841006e9598dfb4e1e39bd
 U drh
-Z e19c4a4e958d5af50a94c7b8637d662f
+Z dffd8acc783ccd53f09f735ed943e784
 # Remove this line to create a well-formed Fossil manifest.
