@@ -111,7 +111,7 @@ typedef unsigned char u8;
 
 #if !defined(_WIN32) && !defined(WIN32)
 # include <signal.h>
-# if !defined(__RTP__) && !defined(_WRS_KERNEL)
+# if !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI)
 #  include <pwd.h>
 # endif
 #endif
@@ -168,7 +168,7 @@ typedef unsigned char u8;
 
 #ifndef deliberate_fall_through
 /* Quiet some compilers about some of our intentional code. */
-# if GCC_VERSION>=7000000
+# if defined(GCC_VERSION) && GCC_VERSION>=7000000
 #  define deliberate_fall_through __attribute__((fallthrough));
 # else
 #  define deliberate_fall_through
@@ -200,7 +200,7 @@ typedef unsigned char u8;
  /* Make sure isatty() has a prototype. */
  extern int isatty(int);
 
-# if !defined(__RTP__) && !defined(_WRS_KERNEL)
+# if !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI)
   /* popen and pclose are not C89 functions and so are
   ** sometimes omitted from the <stdio.h> header */
    extern FILE *popen(const char*,const char*);
@@ -5474,7 +5474,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
   char *zSql;
   char zBuf[1000];
 
-  if( nLine>sizeof(zBuf)-30 ) return;
+  if( nLine>(i64)sizeof(zBuf)-30 ) return;
   if( zLine[0]=='.' || zLine[0]=='#') return;
   for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
   if( i==nLine-1 ) return;
@@ -5490,7 +5490,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     const char *zCompletion = (const char*)sqlite3_column_text(pStmt, 0);
     int nCompletion = sqlite3_column_bytes(pStmt, 0);
-    if( iStart+nCompletion < sizeof(zBuf)-1 && zCompletion ){
+    if( iStart+nCompletion < (i64)sizeof(zBuf)-1 && zCompletion ){
       memcpy(zBuf+iStart, zCompletion, nCompletion+1);
       linenoiseAddCompletion(lc, zBuf);
     }
@@ -11502,7 +11502,7 @@ static char *find_home_dir(int clearFlag){
   if( home_dir ) return home_dir;
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WIN32_WCE) \
-     && !defined(__RTP__) && !defined(_WRS_KERNEL)
+     && !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI)
   {
     struct passwd *pwent;
     uid_t uid = getuid();
