@@ -137,7 +137,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
   digit = (int)*val;
   d = digit;
   digit += '0';
-  *val = (*val - d)*10.0;
+  *val = *val*10.0 - d*10.0;
   return (char)digit;
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
