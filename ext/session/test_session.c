@@ -305,14 +305,15 @@ static int SQLITE_TCLAPI test_session_cmd(
       }else{
         if( iSub==7 ){
           rc = sqlite3session_patchset(pSession, &o.n, &o.p);
+          assert_changeset_is_ok(o.n, o.p);
         }else if( iSub==9 ){
           rc = sqlite3session_fullchangeset(pSession, &o.n, &o.p);
         }else{
           rc = sqlite3session_changeset(pSession, &o.n, &o.p);
+          assert_changeset_is_ok(o.n, o.p);
         }
       }
       if( rc==SQLITE_OK ){
-        assert_changeset_is_ok(o.n, o.p);
         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(o.p, o.n)); 
       }
       sqlite3_free(o.p);

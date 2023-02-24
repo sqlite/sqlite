@@ -397,7 +397,7 @@ int sqlite3changebatch_add(sqlite3_changebatch *p, void *pBuf, int nBuf){
   int rc;                         /* Return code */
   int bConf = 0;                  /* Conflict was detected */
 
-  rc = sqlite3changeset_start(&pIter, nBuf, pBuf);
+  rc = sqlite3changeset_start_v2(&pIter, nBuf, pBuf,SQLITE_CHANGESETSTART_FULL);
   if( rc==SQLITE_OK ){
     int rc2;
     for(rc2 = sqlite3changeset_next(pIter);

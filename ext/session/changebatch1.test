@@ -151,7 +151,6 @@ foreach {tn testfunction} {
     INSERT INTO x2 VALUES(X'abcd', X'1234', X'7890');
     INSERT INTO x2 VALUES(X'0000', X'0000', X'0000');
   }
-  breakpoint
   $testfunction $tn.2.6 {
     UPDATE x2 SET c = X'1234' WHERE a=X'abcd';
     INSERT INTO x2 VALUES(X'1234', X'abcd', X'7890');
@@ -216,6 +215,8 @@ do_test 4.1 {
   sqlite3changebatch cb db
   list [catch { cb add $c1 } msg] $msg
 } {1 SQLITE_RANGE}
+
+cb delete
 
 
 

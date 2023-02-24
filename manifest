@@ -1,5 +1,5 @@
-C Update\sthe\sbedrock\sbranch\sto\sversion\s3.41.0
-D 2023-02-21T21:22:24.906
+C Fix\sa\sproblem\swith\sthe\ssqlite3sessions_fullchangeset()\sand\ssqlite3changebatch_add()\sAPIs\son\sthis\sbranch.
+D 2023-02-24T19:58:56.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -431,7 +431,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1d2f94ac66
-F ext/session/changebatch1.test 9ceaa8f7b2a505933e250fbe6cbc550e4ce1e59d
+F ext/session/changebatch1.test 51694900ccbdf144c2e403f99358b7a3f137354e2ba8d1033ef88a53f1a494f2
 F ext/session/changebatchfault.test be49c793219bf387ad692a60856b921f0854ad6d
 F ext/session/changeset.c 7a1e6a14c7e92d36ca177e92e88b5281acd709f3b726298dc34ec0fb58869cb5
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
@@ -466,11 +466,11 @@ F ext/session/sessionrebase.test ccfa716b23bd1d3b03217ee58cfd90c78d4b99f53e6a9a2
 F ext/session/sessionsize.test 6f644aff31c7f1e4871e9ff3542766e18da68fc7e587b83a347ea9820a002dd8
 F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c2666091b54450a68fb5
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3changebatch.c d5553b79e012ee2cb06c0a96bdf9dfe19e66354390ea0036cc46c4953142d517
+F ext/session/sqlite3changebatch.c d488b42d8fd49fb013a1e9c4535232680dabeb28ae8f9421b65ea0ccc3b430f7
 F ext/session/sqlite3changebatch.h e72016998c9a22d439ddfd547b69e1ebac810c24
-F ext/session/sqlite3session.c 7084f9fb1c075cd0724d62d71affe5889ee514d60a02f8548e74e74f8e285df4
-F ext/session/sqlite3session.h 01807bb8c8f531c23052032e9d531eec49af79b7394f8213cf5a49784325b6a8
-F ext/session/test_session.c 0597d013e68abccb4aa808549139f985130a19732c2b827609a05100d8cbfeaf
+F ext/session/sqlite3session.c caa800fc9665e2e1bc15861ae285e47277c0950292fc5efa982503ce46b73929
+F ext/session/sqlite3session.h 55221fa46444a39b99a845d4e0e23ad192e152a88ba6e45b084b5bc9be5bdef8
+F ext/session/test_session.c 40fbe5761b910dbf81d7b34197ef7b8956a2095cdd35b3e42e9c63778a67dec5
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -2081,8 +2081,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 73e9f8d0bf78bbbaa3435330e485126bb09f008f35c1d0f366efd5e511f8f4a9 7bb1f6dca2d2e0c0c70f1d2d0c7130c182fc45e48138c57a3fbe92ee1f68da96
-R d031eada0322fc82071af9d5c997f8be
-U drh
-Z 5aa61c87f2d7430205d3b620d31ec49a
+P dc1d85707b130aae2f07b6b1961e0acd42d7a302b3518670f3dbfa96c179386d
+R 1b0ad48979e97c455633409f6f0e3549
+U dan
+Z 0fc1f6413ec534a029873988710cdbc0
 # Remove this line to create a well-formed Fossil manifest.
