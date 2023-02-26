@@ -1,5 +1,5 @@
-C Revise\sdoc\sfor\sSQLITE_DBCONFIG_*\soptions,\sfor\sclarification\sand\scoverage\sof\sall\svararg\sparameters.\sAlso,\sa\sgrammo\snit\sswat.
-D 2023-02-26T19:10:57.265
+C Correct\ssubstantive\serror\s(DML\sand\sDQL\sversus\sDML)\sof\slast\scheck-in.
+D 2023-02-26T19:36:40.890
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 230dc0601f55ae4909b5f88bc002bfa1f1fb331e51f2c6d670d3effc2ced365e
 F src/shell.c.in cb763c332be668ecba48c85de52df52a86f992867b813460d55c3bccaaf4c0eb
-F src/sqlite.h.in 2468888c5d885638f2178f1553cdda007882a343936b0288a72f7537b6ea4fe0
+F src/sqlite.h.in 803e314b6ed23d1044da57721ddb2e6458e003b79df1e40523e4c2dabf8a954a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
 F src/sqliteInt.h cb7182dcdc9910d5f1352c90762545cc5ffb79c4a47f4ae7c5ee044fdb80423b
@@ -2046,11 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 21aec65e5e2a01e58dd0bb8c8b9b29b8414373b53353fc7ca80a152fdd27566b
-R a114e6d09cdc6f06ebb48f93270698e9
-T *branch * db_config_ops_rewrite
-T *sym-db_config_ops_rewrite *
-T -sym-trunk *
+P aa25596b1eeb988d8ee098e4bac25aaa774c66e0fba2f7bd0ad31a4b62c7597f
+R d4c37edd291b8175041e66ebd78e365e
 U larrybr
-Z 396f8f7d4fa7b53c2f87827530a5dbf3
+Z b92c1a45ab34f6bca554156ea09d4a18
 # Remove this line to create a well-formed Fossil manifest.
