@@ -4441,6 +4441,7 @@ static int disableUnusedSubqueryResultColumns(struct SrcList_item *pItem){
       if( pY->op==TK_NULL ) continue;
       pY->op = TK_NULL;
       /* pX->selFlags |= SF_PushDown; */
+      ExprClearProperty(pY, EP_Skip|EP_Unlikely);
       nChng++;
     }
   }
@@ -5953,8 +5954,8 @@ int sqlite3Select(
     */
     if( disableUnusedSubqueryResultColumns(pItem) ){
 #if SELECTTRACE_ENABLED
-      if( sqlite3TreeTrace & 0x4000 ){
-        TREETRACE(0x4000,pParse,p,
+      if( sqlite3SelectTrace & 0x4000 ){
+        SELECTTRACE(0x4000,pParse,p,
             ("Change unused result columns to NULL for subquery %d:\n",
              pSub->selId));
         sqlite3TreeViewSelect(0, p, 0);
