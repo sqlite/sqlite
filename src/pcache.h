@@ -29,6 +29,7 @@ struct PgHdr {
   PCache *pCache;                /* PRIVATE: Cache that owns this page */
   PgHdr *pDirty;                 /* Transient list of dirty sorted by pgno */
   Pager *pPager;                 /* The pager this page is part of */
+  void (*xUnref)(PgHdr*);        /* Release function */
   Pgno pgno;                     /* Page number for this page */
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;                  /* Hash of page content */

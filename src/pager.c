@@ -3990,6 +3990,20 @@ static int pagerSyncHotJournal(Pager *pPager){
   return rc;
 }
 
+/*
+** Release a reference to page pPg. pPg must have been returned by an 
+** earlier call to pagerAcquireMapPage().
+*/
+static void pagerReleaseMapPage(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  pPager->nMmapOut--;
+  pPg->pDirty = pPager->pMmapFreelist;
+  pPager->pMmapFreelist = pPg;
+
+  assert( pPager->fd->pMethods->iVersion>=3 );
+  sqlite3OsUnfetch(pPager->fd, (i64)(pPg->pgno-1)*pPager->pageSize, pPg->pData);
+}
+
 #if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Obtain a reference to a memory mapped page object for page number pgno. 
@@ -4023,6 +4037,7 @@ static int pagerAcquireMapPage(
     }
     p->pExtra = (void *)&p[1];
     p->flags = PGHDR_MMAP;
+    p->xUnref = pagerReleaseMapPage;
     p->nRef = 1;
     p->pPager = pPager;
   }
@@ -4030,6 +4045,7 @@ static int pagerAcquireMapPage(
   assert( p->pExtra==(void *)&p[1] );
   assert( p->pPage==0 );
   assert( p->flags==PGHDR_MMAP );
+  assert( p->xUnref==pagerReleaseMapPage );
   assert( p->pPager==pPager );
   assert( p->nRef==1 );
 
@@ -4040,20 +4056,6 @@ static int pagerAcquireMapPage(
   return SQLITE_OK;
 }
 #endif
-
-/*
-** Release a reference to page pPg. pPg must have been returned by an 
-** earlier call to pagerAcquireMapPage().
-*/
-static void pagerReleaseMapPage(PgHdr *pPg){
-  Pager *pPager = pPg->pPager;
-  pPager->nMmapOut--;
-  pPg->pDirty = pPager->pMmapFreelist;
-  pPager->pMmapFreelist = pPg;
-
-  assert( pPager->fd->pMethods->iVersion>=3 );
-  sqlite3OsUnfetch(pPager->fd, (i64)(pPg->pgno-1)*pPager->pageSize, pPg->pData);
-}
 
 /*
 ** Free all PgHdr objects stored in the Pager.pMmapFreelist list.
@@ -5517,6 +5519,7 @@ static int getPageNormal(
     }
 
     pPg->pPager = pPager;
+    pPg->xUnref = sqlite3PcacheRelease;
 
     assert( !isOpen(pPager->fd) || !MEMDB );
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
@@ -5698,12 +5701,9 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 void sqlite3PagerUnrefNotNull(DbPage *pPg){
   TESTONLY( Pager *pPager = pPg->pPager; )
   assert( pPg!=0 );
-  if( pPg->flags & PGHDR_MMAP ){
-    assert( pPg->pgno!=1 );  /* Page1 is never memory mapped */
-    pagerReleaseMapPage(pPg);
-  }else{
-    sqlite3PcacheRelease(pPg);
-  }
+  assert( (pPg->flags & PGHDR_MMAP)==0 || pPg->xUnref==pagerReleaseMapPage );
+  assert( (pPg->flags & PGHDR_MMAP)!=0 || pPg->xUnref==sqlite3PcacheRelease );
+  pPg->xUnref(pPg);
   /* Do not use this routine to release the last reference to page1 */
   assert( sqlite3PcacheRefCount(pPager->pPCache)>0 );
 }
