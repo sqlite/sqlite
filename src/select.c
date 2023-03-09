@@ -6808,6 +6808,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   if( p->pWhere ) return 0;
   if( p->pGroupBy ) return 0;
+  if( p->pOrderBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
   assert( ExprUseUToken(pExpr) );
@@ -6818,7 +6819,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( ExprHasProperty(pExpr, EP_WinFunc) ) return 0;/* Not a window function */
   pSub = p->pSrc->a[0].pSelect;
   if( pSub==0 ) return 0;                           /* The FROM is a subquery */
-  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound ry */
+  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound */
+  if( pSub->selFlags & SF_CopyCte ) return 0;       /* Not a CTE */
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
@@ -7261,7 +7263,6 @@ int sqlite3Select(
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
     pTabList = p->pSrc;
   }
 #endif
