@@ -1,5 +1,5 @@
-C Fix\scountofview.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_PROGRESS_CALLBACK\sbuilds.
-D 2023-03-09T15:08:56.667
+C In\sthe\sBloom\sfilter\soptimization,\shash\sall\sstrings\sand\sblobs\sinto\sthe\ssame\nvalue,\sbecause\swe\sdo\snot\sknow\sif\stwo\sdifferent\sstrings\smight\scompare\sequal\neven\sif\sthey\shave\sdifferent\sbyte\ssequences,\sdue\sto\scollating\sfunctions.\nFormerly,\sthe\shash\sof\sa\sstring\sor\sblob\swas\sjust\sits\slength.\s\sThis\scould\nall\sbe\simproved.
+D 2023-03-09T16:04:34.291
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -691,7 +691,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c 0bf4804f6e9cae872502aa4533a62ba3f6e97ee28523302deb27f9c990b5f44f
+F src/vdbe.c b3fd04b0643edd7e0a4356aff6d2cf50f04d0e182e292c3a330d1afffe3100e1
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
@@ -814,7 +814,7 @@ F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aa
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
-F test/bloom1.test 2785a190fcc2a5e170e5d38b08aca8ff0f3e3b4a74d47453d6ac1bd355180a6a
+F test/bloom1.test 589361c1f20158a8583863738c883f0e73e82d18422c9b4ed9c7068c13c2d310
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
 F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
 F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
@@ -2045,9 +2045,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4e2e64725a196ee4f287649db33f49fd7329c95cef3ce743cd177c998a6a343
-Q +2fc7c3fcee05c2a251ceb3666f3f6e9014cfe6e2f8570b72c43f251067e6b252
-R 53da1bf93f2f919c47eb8511c942a273
-U dan
-Z ceb9f98a8348af253cc47acc64f81e23
+P d55a7742c9447eba20a7fe252fb3edcabba3793030a55976d5a5e6c65bce7706
+Q +090304b870419acb5b05205a07fc75830b556928149f76a843cda526f77a6fc0
+R 36a17de70fdfc70a02115f278d762e2d
+U drh
+Z 997ae489aebc30f3e5f62ab576efe0df
 # Remove this line to create a well-formed Fossil manifest.
