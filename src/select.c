@@ -2332,8 +2332,6 @@ void sqlite3SubqueryColumnTypes(
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       pCol->affinity = aff;
-    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
-      pCol->affinity = SQLITE_AFF_FLEXNUM;
     }
     if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
       int m = 0;
@@ -2346,6 +2344,9 @@ void sqlite3SubqueryColumnTypes(
       }else
       if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
         pCol->affinity = SQLITE_AFF_BLOB;
+      }
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+        pCol->affinity = SQLITE_AFF_FLEXNUM;
       }
     }
     zType = columnType(&sNC, p, 0, 0, 0);
@@ -3861,7 +3862,7 @@ static Expr *substExpr(
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
         sqlite3 *db = pSubst->pParse->db;
-        if( pSubst->isOuterJoin && pCopy->op!=TK_COLUMN ){
+        if( pSubst->isOuterJoin ){
           memset(&ifNullRow, 0, sizeof(ifNullRow));
           ifNullRow.op = TK_IF_NULL_ROW;
           ifNullRow.pLeft = pCopy;
@@ -6377,10 +6378,12 @@ static void optimizeAggregateUseOfIndexedExpr(
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
   assert( pAggInfo->iFirstReg==0 );
+  assert( pSelect!=0 );
+  assert( pSelect->pGroupBy!=0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
     if( pAggInfo->nColumn==0 ){
-      pAggInfo->nSortingColumn = 0;
+      pAggInfo->nSortingColumn = pSelect->pGroupBy->nExpr;
     }else{
       pAggInfo->nSortingColumn =
         pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
@@ -6805,6 +6808,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   if( p->pWhere ) return 0;
   if( p->pGroupBy ) return 0;
+  if( p->pOrderBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
   assert( ExprUseUToken(pExpr) );
@@ -6815,7 +6819,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( ExprHasProperty(pExpr, EP_WinFunc) ) return 0;/* Not a window function */
   pSub = p->pSrc->a[0].pSelect;
   if( pSub==0 ) return 0;                           /* The FROM is a subquery */
-  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound ry */
+  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound */
+  if( pSub->selFlags & SF_CopyCte ) return 0;       /* Not a CTE */
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
@@ -7258,7 +7263,6 @@ int sqlite3Select(
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
     pTabList = p->pSrc;
   }
 #endif
