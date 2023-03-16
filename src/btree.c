@@ -2156,8 +2156,15 @@ static int btreeInitPage(MemPage *pPage){
   data = pPage->aData + pPage->hdrOffset;
   /* EVIDENCE-OF: R-28594-02890 The one-byte flag at offset 0 indicating
   ** the b-tree page type. */
-  if( decodeFlags(pPage, data[0]) ){
-    rc = SQLITE_CORRUPT_PAGE(pPage);
+  pPage->nCell = get2byte(&data[3]);
+  if( decodeFlags(pPage, data[0]) || pPage->nCell>MX_CELL(pBt) ){
+    BtCursor *pCur;
+    for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+      sqlite3BtreeClearCursor(pCur);
+      pCur->eState = CURSOR_FAULT;
+      pCur->skipNext = SQLITE_CORRUPT;
+    }
+    return SQLITE_CORRUPT_PAGE(pPage);
   }
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
@@ -2168,11 +2175,6 @@ static int btreeInitPage(MemPage *pPage){
   pPage->aDataOfst = pPage->aData + pPage->childPtrSize;
   /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
   ** number of cells on the page. */
-  pPage->nCell = get2byte(&data[3]);
-  if( pPage->nCell>MX_CELL(pBt) ){
-    /* To many cells for a single page.  The page must be corrupt */
-    rc = SQLITE_CORRUPT_PAGE(pPage);
-  }
   testcase( pPage->nCell==MX_CELL(pBt) );
   /* EVIDENCE-OF: R-24089-57979 If a page contains no cells (which is only
   ** possible for a root page of a table that contains no rows) then the
@@ -2180,7 +2182,6 @@ static int btreeInitPage(MemPage *pPage){
   ** bytes of reserved space. */
   assert( pPage->nCell>0
        || get2byteNotZero(&data[5])==(int)pBt->usableSize
-       || rc==SQLITE_CORRUPT
        || CORRUPT_DB );
   pPage->nFree = -1;  /* Indicate that this value is yet uncomputed */
   pPage->isInit = 1;
