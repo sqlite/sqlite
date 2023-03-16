@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sthe\srecovery\sextension.
-D 2023-03-16T09:12:09.015
+C Remove\sa\sNEVER()\sfrom\sbtreeNext().
+D 2023-03-16T09:16:31.055
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -560,7 +560,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 2f012aea074de6319c191cbf5c45034de79bf1c762826e381b1cf75421d8d831
+F src/btree.c 3b86f65f059059672df77c790e54adcb1091a2b9f72c604d0bbb9bca1472ad18
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 06bb2c1a07172d5a1cd27a2a5d617b93b1e976c5873709c31964786f86365a6e
 F src/build.c 4fed662d383527c808d85f53b9c544ead425ac8b9c7cb38501a64e3797921d41
@@ -2045,9 +2045,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25e1831885e8de370482a1e9f664f1590fa49995048fb16e1f948acd2a29c3e3
-Q +4c4e66f293d7768cceb875a936ca0f4cd910473e20b9910698cc1e1ce221a7d4
-R 5a21ef88dd776346c58bb0c1b267f90a
+P 048711e49002e59cbaf51079403a3f37abaa7d3a04e0cb20de4aed2d56c0e837
+Q +1dffeffe150fff6777cf26bc960326ca4e4190d25d05bb066b082d1e1c8eb374
+R 514cfcdaded26951aac4ab75c255adfe
 U drh
-Z a77983da1d0d5146e14f3abe353dc381
+Z f3663ffc26ca62852f1067ce8c9f730a
 # Remove this line to create a well-formed Fossil manifest.
