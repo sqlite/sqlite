@@ -1,5 +1,5 @@
-C Ensure\sthat\san\serror\sdoes\snot\sdelete\sthe\sTable\sobject\sout\sfrom\sunder\nthe\sxConstruct\smethod\sof\sa\svirtual\stable.\ndbsqlfuzz\s7cc8804a1c6d4e3d554d79096e6ea75a7c1c7d2d
-D 2023-03-17T12:25:10.605
+C Fix\sa\spotential\sbuffer\soverread\sin\sthe\srecovery\sextension.
+D 2023-03-17T14:22:45.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -365,7 +365,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 348bb6251e6ec459de102f8b2dd50789a98643ef7a28e56e4c787ac9659c15ea
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c 156659357ed73e90263967c9db7ff5deeb1d92b3ab7f877afa92c2bf8e2ae2d9
+F ext/recover/dbdata.c 81115741d685f25cbeb52e233afc5b510bf2a144ea802eb7b64da2b95dc9b274
 F ext/recover/recover1.test 2072993624d5e32fef20ae03b17fc06c02bcb344421fe17bb329b24d2a51e647
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1ca7141334022a79f32e
@@ -2045,9 +2045,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 122f12f5363245a4566dc15ce81ecac5fce70ce9aa478408483f88bd86a8e6bc
-Q +df4928c92b0db77d0a40d7b492b609db191252e2f87bca63d000e4fe2e206293
-R f757c2784f525066bfdb03757d86380b
-U drh
-Z dc70c0046be1ba18aca0eda0a82926d8
+P c5bd0ea3b5b2f3ed8e971c5fd6e85e8f06d8055d74df65612c3794138306e6ba
+Q +0b3b5bf9597615589a1d045aaa697c13550553ee4fe4b9008a8e51415b6fe96a
+R 02be6c39e06df877a266747f4a17bfe1
+U dan
+Z 81691bf1b00f2e41170fc3675011bfa2
 # Remove this line to create a well-formed Fossil manifest.
