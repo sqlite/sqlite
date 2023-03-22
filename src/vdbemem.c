@@ -662,8 +662,11 @@ double sqlite3VdbeRealValue(Mem *pMem){
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     return memRealValue(pMem);
   }else{
-    /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+#ifdef SQLITE_NULL_TO_NAN
+    return NAN;
+#else
     return (double)0;
+#endif
   }
 }
 
@@ -964,10 +967,12 @@ void sqlite3VdbeMemSetPointer(
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
   sqlite3VdbeMemSetNull(pMem);
-  if( !sqlite3IsNaN(val) ){
-    pMem->u.r = val;
-    pMem->flags = MEM_Real;
-  }
+#ifndef SQLITE_ENABLE_SPECIAL_FP_VALUES
+  /* When SQLITE_ENABLE_SPECIAL_FP_VALUES is omitted, NaN converts to NULL */
+  if( sqlite3IsNaN(val) ) return;
+#endif
+  pMem->u.r = val;
+  pMem->flags = MEM_Real;
 }
 #endif
 

@@ -902,6 +902,19 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
         if( c<'0' || c>'9' ) return -1;
         continue;
       }
+#ifdef SQLITE_ENABLE_NAN_INF
+      /* Non-standard JSON:  Allow "-Inf" (in any case)
+      ** to be understood as floating point literals. */
+      if( (c=='i' || c=='I')
+       && j==i+1
+       && z[i]=='-'
+       && sqlite3StrNICmp(&z[j], "inf",3)==0
+       && !sqlite3Isalnum(z[j+4])
+      ){
+        jsonParseAddNode(pParse, JSON_REAL, 4, &z[i]);
+        return i+4;
+      }
+#endif
       break;
     }
     if( z[j-1]<'0' ) return -1;
@@ -914,6 +927,20 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return -3;  /* End of [...] */
   }else if( c==0 ){
     return 0;   /* End of file */
+#ifdef SQLITE_ENABLE_NAN_INF
+  /* Non-standard JSON:  Allow "NaN" and "Inf" (in any case)
+  ** to be understood as floating point literals. */
+  }else if( (c=='n' || c=='N')
+         && sqlite3StrNICmp(z+i,"nan",3)==0
+         && !sqlite3Isalnum(z[i+3]) ){
+    jsonParseAddNode(pParse, JSON_REAL, 3, &z[i]);
+    return i+3;
+  }else if( (c=='i' || c=='I')
+         && sqlite3StrNICmp(z+i,"inf",3)==0
+         && !sqlite3Isalnum(z[i+3]) ){
+    jsonParseAddNode(pParse, JSON_REAL, 3, &z[i]);
+    return i+3;
+#endif /* SQLITE_ENABLE_NAN_INF */
   }else{
     return -1;  /* Syntax error */
   }

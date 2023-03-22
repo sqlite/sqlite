@@ -249,6 +249,9 @@
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
+#ifndef SQLITE_OMIT_FLOATING_POINT
+#include <math.h>
+#endif
 
 /*
 ** The following macros are used to cast pointers to integers and

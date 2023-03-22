@@ -425,6 +425,34 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 #endif
 }
 
+#ifdef SQLITE_ENABLE_NAN_INF
+/* If the input string z[] is one of the special values
+** "inf" or "NaN" (in any case) then set pResult to that
+** value and return true.  Otherwise return false.
+*/
+static int translateInfNan(
+  const char *z,
+  int incr,
+  double *pResult
+){
+  if( (z[0]=='i'      || z[0]=='I')
+   && (z[incr]=='n'   || z[incr]=='N')
+   && (z[2*incr]=='f' || z[2*incr]=='f')
+  ){
+    *pResult = INFINITY;
+    return 1;
+  }
+  if( (z[0]=='n'      || z[0]=='N')
+   && (z[incr]=='a'   || z[incr]=='A')
+   && (z[2*incr]=='n' || z[2*incr]=='N')
+  ){
+    *pResult = NAN;
+    return 1;
+  }
+  return 0;
+}
+#endif /* SQLITE_ENABLE_NAN_INF */
+
 /*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
@@ -640,6 +668,11 @@ do_atof_calc:
     return eType;
   }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
     return -1;
+#ifdef SQLITE_ENABLE_NAN_INF
+  }else if( (zEnd-z)==3*incr && translateInfNan(z,incr,&result) ){
+    *pResult = sign ? +result : -result;
+    return 2;
+#endif
   }else{
     return 0;
   }
