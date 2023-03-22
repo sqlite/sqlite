@@ -6084,7 +6084,7 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
 
   pPage = pCur->pPage;
   idx = ++pCur->ix;
-  if( NEVER(!pPage->isInit) || sqlite3FaultSim(412) ){
+  if( !pPage->isInit || sqlite3FaultSim(412) ){
     return SQLITE_CORRUPT_BKPT;
   }
 
@@ -9213,6 +9213,7 @@ int sqlite3BtreeInsert(
   assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(p->pBt) );
   idx = pCur->ix;
+  pCur->info.nSize = 0;
   if( loc==0 ){
     CellInfo info;
     assert( idx>=0 );
@@ -9285,7 +9286,6 @@ int sqlite3BtreeInsert(
   ** larger than the largest existing key, it is possible to insert the
   ** row without seeking the cursor. This can be a big performance boost.
   */
-  pCur->info.nSize = 0;
   if( pPage->nOverflow ){
     assert( rc==SQLITE_OK );
     pCur->curFlags &= ~(BTCF_ValidNKey);
