@@ -607,7 +607,9 @@ do_test capi3-5.5 {
 
 check_header $STMT capi3-5.6 {a b c} {VARINT BLOB VARCHAR(16)}
 check_origin_header $STMT capi3-5.6 {main main main} {t1 t1 t1} {a b c}
-check_data $STMT capi3-5.7 {TEXT TEXT NULL} {0 0 0} {0.0 0.0 0.0} {one two {}}
+ifcapable !nan_inf {
+  check_data $STMT capi3-5.7 {TEXT TEXT NULL} {0 0 0} {0.0 0.0 0.0} {one two {}}
+}
 
 do_test capi3-5.8 {
   sqlite3_step $STMT

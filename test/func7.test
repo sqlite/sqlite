@@ -165,9 +165,15 @@ do_execsql_test func7-pg-550 {
 do_execsql_test func7-mysql-100 {
    SELECT acos(1);
 } {0.0}
-do_execsql_test func7-mysql-110 {
-   SELECT acos(1.0001);
-} {{}}
+ifcapable nan_inf {
+  do_execsql_test func7-mysql-110a {
+     SELECT acos(1.0001);
+  } {NaN}
+} else {
+  do_execsql_test func7-mysql-110b {
+     SELECT acos(1.0001);
+  } {{}}
+}
 do_execsql_test func7-mysql-120 {
    SELECT round( acos(0.0), 7);
 } {1.5707963}
@@ -237,9 +243,15 @@ do_execsql_test func7-mysql-300 {
 do_execsql_test func7-mysql-310 {
    SELECT sin(pi()) BETWEEN -1.0e-15 AND 1.0e-15;
 } {1}
-do_execsql_test func7-mysql-320 {
-   SELECT sqrt(4), round(sqrt(20),7), quote(sqrt(-16));
-} {2.0 4.472136 NULL}
+ifcapable nan_inf {
+  do_execsql_test func7-mysql-320a {
+     SELECT sqrt(4), round(sqrt(20),7), quote(sqrt(-16));
+  } {2.0 4.472136 NaN}
+} else {
+  do_execsql_test func7-mysql-320b {
+     SELECT sqrt(4), round(sqrt(20),7), quote(sqrt(-16));
+  } {2.0 4.472136 NULL}
+}
 do_execsql_test func7-mysql-330 {
    SELECT tan(pi()) BETWEEN -1.0e-15 AND 1.0e-15;
 } {1}

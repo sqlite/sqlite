@@ -53,8 +53,10 @@ do_test ieee754-111 {
     db eval {SELECT ieee754(-1,1024), ieee754(-4503599627370495,972);}
   ]
 } {-inf -1.79769313486232e+308}
-do_execsql_test ieee754-112 {
-  SELECT ieee754(4503599627370495,973) is null;
-} {1}
+ifcapable !nan_inf {
+  do_execsql_test ieee754-112 {
+    SELECT ieee754(4503599627370495,973) is null;
+  } {1}
+}
 
 finish_test

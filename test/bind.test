@@ -224,19 +224,35 @@ do_test bind-4.3 {
     DELETE FROM t1;
   }
 } {}
-do_test bind-4.4 {
-  sqlite3_bind_double $VM 1 NaN
-  sqlite3_bind_double $VM 2 1e300
-  sqlite3_bind_double $VM 3 -1e-300
-  sqlite_step $VM N VALUES COLNAMES
-  sqlite3_reset $VM
-  set x [execsql {SELECT rowid, * FROM t1}]
-  regsub {1e-005} $x {1e-05} y
-  set y
-} {1 {} 1e+300 -1e-300}
-do_test bind-4.5 {
-  execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
-} {null real real}
+ifcapable nan_inf {
+  do_test bind-4.4nan {
+    sqlite3_bind_double $VM 1 NaN
+    sqlite3_bind_double $VM 2 1e300
+    sqlite3_bind_double $VM 3 -1e-300
+    sqlite_step $VM N VALUES COLNAMES
+    sqlite3_reset $VM
+    set x [execsql {SELECT rowid, * FROM t1}]
+    regsub {1e-005} $x {1e-05} y
+    set y
+  } {1 NaN(7ffffffffffff) 1e+300 -1e-300}
+  do_test bind-4.5nan {
+    execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
+  } {real real real}
+} else {
+  do_test bind-4.4 {
+    sqlite3_bind_double $VM 1 NaN
+    sqlite3_bind_double $VM 2 1e300
+    sqlite3_bind_double $VM 3 -1e-300
+    sqlite_step $VM N VALUES COLNAMES
+    sqlite3_reset $VM
+    set x [execsql {SELECT rowid, * FROM t1}]
+    regsub {1e-005} $x {1e-05} y
+    set y
+  } {1 {} 1e+300 -1e-300}
+  do_test bind-4.5 {
+    execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
+  } {null real real}
+}
 do_test bind-4.6 {
   execsql {
     DELETE FROM t1;

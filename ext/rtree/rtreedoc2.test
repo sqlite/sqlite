@@ -124,7 +124,7 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE rt2 USING rtree(id, x1,x2, y1,y2);
   CREATE VIRTUAL TABLE rt3 USING rtree(id, x1,x2, y1,y2, z1,z2);
 
-  INSERT INTO rt1 DEFAULT VALUES;
+  INSERT INTO rt1(id,x1,x2) VALUES(1,0,0);
   INSERT INTO rt2 DEFAULT VALUES;
   INSERT INTO rt3 DEFAULT VALUES;
 }
@@ -343,4 +343,3 @@ do_test 6.3 {
 
 
 finish_test
-

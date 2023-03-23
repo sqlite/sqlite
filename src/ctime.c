@@ -60,9 +60,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
   "4_BYTE_ALIGNED_MALLOC",
 #endif
-#ifdef SQLITE_64BIT_STATS
-  "64BIT_STATS",
-#endif
 #ifdef SQLITE_ALLOW_COVERING_INDEX_SCAN
 # if SQLITE_ALLOW_COVERING_INDEX_SCAN != 1
   "ALLOW_COVERING_INDEX_SCAN=" CTIMEOPT_VAL(SQLITE_ALLOW_COVERING_INDEX_SCAN),
@@ -285,6 +282,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "ENABLE_MULTIPLEX",
+#endif
+#ifdef SQLITE_ENABLE_NAN_INF
+  "ENABLE_NAN_INF",
 #endif
 #ifdef SQLITE_ENABLE_NORMALIZE
   "ENABLE_NORMALIZE",

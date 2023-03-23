@@ -724,33 +724,35 @@ ifcapable floatingpoint {
   do_execsql_test func4-6.3.16 {
     SELECT toreal(x'7ff0000000000000');
   } {Inf}
-  do_execsql_test func4-6.3.17 {
-    SELECT toreal(x'fff8000000000000');
-  } {{}}
-  do_execsql_test func4-6.3.18 {
-    SELECT toreal(x'fff0000000000001');
-  } {{}}
-  do_execsql_test func4-6.3.19 {
-    SELECT toreal(x'fff7ffffffffffff');
-  } {{}}
-  do_execsql_test func4-6.3.20 {
-    SELECT toreal(x'7ff0000000000001');
-  } {{}}
-  do_execsql_test func4-6.3.21 {
-    SELECT toreal(x'7ff7ffffffffffff');
-  } {{}}
-  do_execsql_test func4-6.3.22 {
-    SELECT toreal(x'fff8000000000001');
-  } {{}}
-  do_execsql_test func4-6.3.23 {
-    SELECT toreal(x'ffffffffffffffff');
-  } {{}}
-  do_execsql_test func4-6.3.24 {
-    SELECT toreal(x'7ff8000000000000');
-  } {{}}
-  do_execsql_test func4-6.3.25 {
-    SELECT toreal(x'7fffffffffffffff');
-  } {{}}
+  ifcapable !nan_inf {
+    do_execsql_test func4-6.3.17 {
+      SELECT toreal(x'fff8000000000000');
+    } {{}}
+    do_execsql_test func4-6.3.18 {
+      SELECT toreal(x'fff0000000000001');
+    } {{}}
+    do_execsql_test func4-6.3.19 {
+      SELECT toreal(x'fff7ffffffffffff');
+    } {{}}
+    do_execsql_test func4-6.3.20 {
+      SELECT toreal(x'7ff0000000000001');
+    } {{}}
+    do_execsql_test func4-6.3.21 {
+      SELECT toreal(x'7ff7ffffffffffff');
+    } {{}}
+    do_execsql_test func4-6.3.22 {
+      SELECT toreal(x'fff8000000000001');
+    } {{}}
+    do_execsql_test func4-6.3.23 {
+      SELECT toreal(x'ffffffffffffffff');
+    } {{}}
+    do_execsql_test func4-6.3.24 {
+      SELECT toreal(x'7ff8000000000000');
+    } {{}}
+    do_execsql_test func4-6.3.25 {
+      SELECT toreal(x'7fffffffffffffff');
+    } {{}}
+  }
 }
 
 set tcl_precision $saved_tcl_precision
