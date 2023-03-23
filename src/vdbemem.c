@@ -662,7 +662,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     return memRealValue(pMem);
   }else{
-#ifdef SQLITE_NULL_TO_NAN
+#ifdef SQLITE_ENABLE_NAN_INF
     return NAN;
 #else
     return (double)0;
@@ -967,8 +967,8 @@ void sqlite3VdbeMemSetPointer(
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
   sqlite3VdbeMemSetNull(pMem);
-#ifndef SQLITE_ENABLE_SPECIAL_FP_VALUES
-  /* When SQLITE_ENABLE_SPECIAL_FP_VALUES is omitted, NaN converts to NULL */
+#ifndef SQLITE_ENABLE_NAN_INF
+  /* When SQLITE_ENABLE_NAN_INF is omitted, NaN converts to NULL */
   if( sqlite3IsNaN(val) ) return;
 #endif
   pMem->u.r = val;

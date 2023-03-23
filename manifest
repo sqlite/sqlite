@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_ENABLE_NAN_INF\scompile-time\soption\swhich\smakes\sthe\sfollowing\nbehavior\schanges:\s\s(1)\s\ssqlite3_value_double(NULL)\sreturns\sNaN,\s\s(2)\sSQLite\npreserves\sNaN\svalues\srather\sthan\sconverting\sthem\sto\sNULL.\s\s(3)\sCAST\sstatements\nunderstand\s"NaN"\sand\s"Inf"\sand\smake\sthe\sright\sconversions.\s\s(4)\sNon-standard\nJSON\sis\snever\sgenerated\sby\sSQLite\sJSON\sroutines,\sbut\sthose\sroutines\swill\naccept\sfloating\spoint\sliterals\s"NaN",\s"Inf",\sand\s"-Inf".
-D 2023-03-22T20:21:49.165
+C Fix\s#ifdefs\sthat\suse\sthe\swrong\spreprocessor\smacro.
+D 2023-03-23T12:00:03.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -701,7 +701,7 @@ F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
 F src/vdbeaux.c 7c8ea5a1ba0602332a1e335f95779c1a8d69421fdbc55a634c667bfadbb5d2e1
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c a021df401b4de72e218c7fbe700c72a3360e24ec8faf7815db5e9d5bc6471ab7
+F src/vdbemem.c 46d182099c2d531dd1711d70e76ab0415783382d6f73abdc35ff6244851970d9
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2051,11 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad59fa17663bda54ec5d4e48ac24e04b87daa70c795d840cd8db382e2dd581b9
-R fb79ed5683a512ac22052bbe024dd798
-T *branch * nan-inf
-T *sym-nan-inf *
-T -sym-trunk *
+P 96ec8306457eebf5ce955402d7b8b88aa7d73803e22144cc6a22da0048741016
+R ecf7f53684129937630d2122df0ae80d
 U drh
-Z b4a65856caa12f9fd796f5366ea8bd6b
+Z abe4a4a96925f84320d9b8b9319bd107
 # Remove this line to create a well-formed Fossil manifest.
