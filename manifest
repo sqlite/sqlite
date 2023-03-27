@@ -1,5 +1,5 @@
-C Improvements\sto\sregister\sallocation,\sespecially\sin\sthe\sANALYZE\scommand.\nNew\sassert()\sstatements\sadded\sto\shelp\sverify\sthat\smemory\sallocation\sis\ncorrect,\sand\sto\shelp\sfuzzer\sfind\slingering\serrors.
-D 2023-03-27T13:10:43.014
+C Do\snot\sallow\sconstant\sfactoring\sduring\sPRAGMA\sintegrity_check,\ssince\sthe\nconstants\smight\sbe\sstored\sin\sregisters\sthat\sare\slater\sreused\sfor\sother\npurposes.
+D 2023-03-27T13:27:25.639
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/parse.y 960d2da92a23f8ba2ca22748a51bd75ee2c575564f2cbc59f119640e7f5b4c5d
 F src/pcache.c 842410539b544e12d5fccfcf29890782f46a58f227a77bc0bd76243799662c0c
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
-F src/pragma.c a6f721ae2b1a7d93a97270b1fb1550d8f4818f414c92bf5d3e16a35f3b92bb20
+F src/pragma.c acec1c96eae560ac333d0446713903cee3214d4340e1f2705c0551054f1201d1
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
 F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
@@ -1374,7 +1374,7 @@ F test/pendingrace.test cbdf0f74bc939fb43cebad64dda7a0b5a3941a10b7e9cc2b596ff3e4
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 8bd6b6db541e2a7f9bb894be99ef5c00526b23762c4a00c574e1cba697495125
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
-F test/pragma.test aeefa47ba5ebbf4ffc6addc223568d2a95dc7ec3ba3e3c4a26b199e805f94514
+F test/pragma.test d21ae02249f2a1813f016efebe616a1916b3f9abd71867da6211a50bfea373ba
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
 F test/pragma4.test ca5e4dfc46adfe490f75d73734f70349d95a199e6510973899e502eef2c8b1f8
@@ -2045,9 +2045,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c51df77ebe5046fdcbd6b45990ba0eb295486a4ce12a1d47d0cacc8ec3310024
-Q +6f8b97f31a4c8552312b4c98432ea356ae54c06d9cc929969f50c3c88360cd7b
-R b967f4cfe5e20f2be7fd6edb9e8fba82
+P 636f6fad8d4cf7238ed2281d6c3c29736663935ff58709a783a50bc0289d40f4
+Q +0bba27b78112b2b2271e498f41c437df985aa2faab302ee5b29d9b60003a8379
+R 2395e95d2389c8ef2cc081fe4cb2f951
 U drh
-Z 31b11df2feeb97af503570cf43aa658a
+Z 23c6255513149a9e6277371e6bd28100
 # Remove this line to create a well-formed Fossil manifest.
