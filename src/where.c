@@ -963,7 +963,11 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   ** original table changes and the index and table cannot both be used
   ** if they go out of sync.
   */
-  extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
+  if( IsView(pTable) ){
+    extraCols = ALLBITS;
+  }else{
+    extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
+  }
   mxBitCol = MIN(BMS-1,pTable->nCol);
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
@@ -6238,7 +6242,7 @@ WhereInfo *sqlite3WhereBegin(
         assert( n<=pTab->nCol );
       }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
-      if( pLoop->u.btree.pIndex!=0 ){
+      if( pLoop->u.btree.pIndex!=0 && (pTab->tabFlags & TF_WithoutRowid)==0 ){
         sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ|bFordelete);
       }else
 #endif

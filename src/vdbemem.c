@@ -1524,16 +1524,11 @@ static int valueFromFunction(
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
     assert( rc==SQLITE_OK );
-    assert( enc==pVal->enc
-         || (pVal->flags & MEM_Str)==0
-         || db->mallocFailed  );
-#if 0  /* Not reachable except after a prior failure */
     rc = sqlite3VdbeChangeEncoding(pVal, enc);
-    if( rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal) ){
+    if( NEVER(rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal)) ){
       rc = SQLITE_TOOBIG;
       pCtx->pParse->nErr++;
     }
-#endif
   }
 
  value_from_function_out:
@@ -1597,6 +1592,13 @@ static int valueFromExpr(
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
+#ifdef SQLITE_ENABLE_STAT4
+      rc = ExpandBlob(*ppVal);
+#else
+      /* zero-blobs only come from functions, not literal values.  And
+      ** functions are only processed under STAT4 */
+      assert( (ppVal[0][0].flags & MEM_Zero)==0 );
+#endif
       sqlite3VdbeMemCast(*ppVal, aff, enc);
       sqlite3ValueApplyAffinity(*ppVal, affinity, enc);
     }

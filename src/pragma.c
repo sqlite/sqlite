@@ -1524,7 +1524,7 @@ void sqlite3Pragma(
       zDb = db->aDb[iDb].zDbSName;
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-      if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
+      sqlite3TouchRegister(pParse, pTab->nCol+regRow);
       sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       assert( IsOrdinaryTable(pTab) );
@@ -1565,7 +1565,7 @@ void sqlite3Pragma(
         ** regRow..regRow+n. If any of the child key values are NULL, this 
         ** row cannot cause an FK violation. Jump directly to addrOk in 
         ** this case. */
-        if( regRow+pFK->nCol>pParse->nMem ) pParse->nMem = regRow+pFK->nCol;
+        sqlite3TouchRegister(pParse, regRow + pFK->nCol);
         for(j=0; j<pFK->nCol; j++){
           int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
@@ -1694,6 +1694,7 @@ void sqlite3Pragma(
       if( iDb>=0 && i!=iDb ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
+      pParse->okConstFactor = 0;  /* tag-20230327-1 */
 
       /* Do an integrity check of the B-Tree
       **
@@ -1729,7 +1730,7 @@ void sqlite3Pragma(
       aRoot[0] = cnt;
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, 8+mxIdx );
+      sqlite3TouchRegister(pParse, 8+mxIdx);
       sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */
@@ -1879,15 +1880,29 @@ void sqlite3Pragma(
           labelOk = sqlite3VdbeMakeLabel(pParse);
           if( pCol->notNull ){
             /* (1) NOT NULL columns may not contain a NULL */
+            int jmp3;
             int jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            sqlite3VdbeChangeP5(v, 0x0f);
             VdbeCoverage(v);
+            if( p1<0 ){
+              sqlite3VdbeChangeP5(v, 0x0f); /* INT, REAL, TEXT, or BLOB */
+              jmp3 = jmp2;
+            }else{
+              sqlite3VdbeChangeP5(v, 0x0d); /* INT, TEXT, or BLOB */
+              /* OP_IsType does not detect NaN values in the database file
+              ** which should be treated as a NULL.  So if the header type
+              ** is REAL, we have to load the actual data using OP_Column
+              ** to reliably determine if the value is a NULL. */
+              sqlite3VdbeAddOp3(v, OP_Column, p1, p3, 3);
+              jmp3 = sqlite3VdbeAddOp2(v, OP_NotNull, 3, labelOk);
+              VdbeCoverage(v);
+            }            
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
             if( doTypeCheck ){
               sqlite3VdbeGoto(v, labelError);
               sqlite3VdbeJumpHere(v, jmp2);
+              sqlite3VdbeJumpHere(v, jmp3);
             }else{
               /* VDBE byte code will fall thru */
             }
