@@ -346,6 +346,36 @@ static void pragmaFunclistLine(
   }
 }
 
+/*
+** Generate a sequence of opcodes to test the type of a value.
+**
+** The byte code sequence might be either OP_Column, OP_IsType
+** or it might be just OP_IsType.  In either case, the address
+** returned is the opcode of the OP_IsType.
+**
+** This subroutine assumes that register 3 is available as a
+** temporary register.  Hence, this subroutine can really only
+** be used by PRAGMA integrity_check.
+*/
+static int generateIsTypeOpcode(
+  Vdbe *v,      /* VDBE under construction */
+  int p1,       /* Cursor holding the value to check.  -1 means none */
+  int p2,       /* Jump here if P1.P3 is correct */
+  int p3,       /* Column to examine */
+  int p4,       /* Default type of P1.P3 if does not exist */
+  int p5        /* Bitmask of allowed types */
+){
+  int addr;
+  if( p1<0 ){
+    addr = sqlite3VdbeAddOp4Int(v, OP_IsType, p5, p2, p3, p4);
+  }else{
+    sqlite3VdbeAddOp4Int(v, OP_Column, p1, p3, 3, p4);
+    sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+    addr = sqlite3VdbeAddOp3(v, OP_IsType, p5, p2, 3);
+  }
+  return addr;
+}
+
 
 /*
 ** Helper subroutine for PRAGMA integrity_check:
@@ -1880,8 +1910,7 @@ void sqlite3Pragma(
           labelOk = sqlite3VdbeMakeLabel(pParse);
           if( pCol->notNull ){
             /* (1) NOT NULL columns may not contain a NULL */
-            int jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            sqlite3VdbeChangeP5(v, 0x0f);
+            int jmp2 = generateIsTypeOpcode(v, p1, labelOk, p3, p4, 0x0f);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
@@ -1903,9 +1932,8 @@ void sqlite3Pragma(
                0x13,    /* REAL */
                0x14     /* TEXT */
             };
-            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            assert( pCol->eCType>=1 && pCol->eCType<=sizeof(aStdTypeMask) );
-            sqlite3VdbeChangeP5(v, aStdTypeMask[pCol->eCType-1]);
+            generateIsTypeOpcode(v, p1, labelOk, p3, p4,
+                                 aStdTypeMask[pCol->eCType-1]);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "non-%s value in %s.%s",
                                   sqlite3StdType[pCol->eCType-1],
@@ -1914,8 +1942,7 @@ void sqlite3Pragma(
           }else if( !bStrict && pCol->affinity==SQLITE_AFF_TEXT ){
             /* (3) Datatype for TEXT columns in non-STRICT tables must be
             **     NULL, TEXT, or BLOB. */
-            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            sqlite3VdbeChangeP5(v, 0x1c); /* NULL, TEXT, or BLOB */
+            generateIsTypeOpcode(v, p1, labelOk, p3, p4, 0x1c);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "NUMERIC value in %s.%s",
                                   pTab->zName, pTab->aCol[j].zCnName);
@@ -1923,15 +1950,13 @@ void sqlite3Pragma(
           }else if( !bStrict && pCol->affinity>=SQLITE_AFF_NUMERIC ){
             /* (4) Datatype for numeric columns in non-STRICT tables must not
             **     be a TEXT value that can be converted to numeric. */
-            sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            sqlite3VdbeChangeP5(v, 0x1b); /* NULL, INT, FLOAT, or BLOB */
+            generateIsTypeOpcode(v, p1, labelOk, p3, p4, 0x1b);
             VdbeCoverage(v);
             if( p1>=0 ){
               sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
             }
             sqlite3VdbeAddOp4(v, OP_Affinity, 3, 1, 0, "C", P4_STATIC);
-            sqlite3VdbeAddOp4Int(v, OP_IsType, -1, labelOk, 3, p4);
-            sqlite3VdbeChangeP5(v, 0x1c); /* NULL, TEXT, or BLOB */
+            generateIsTypeOpcode(v, -1, labelOk, 3, p4, 0x1c);
             VdbeCoverage(v);
             zErr = sqlite3MPrintf(db, "TEXT value in %s.%s",
                                   pTab->zName, pTab->aCol[j].zCnName);
