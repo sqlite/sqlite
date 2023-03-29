@@ -135,14 +135,9 @@ foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
     sqlite3_reset $::STMT
     sqlite3_finalize $::STMT
   } {SQLITE_OK}
-  ifcapable nan_inf {
-    set res 1
-  } else {
-    set res [expr {$tn in [list 5 6] ? {1} : {0}}]
-  }
   do_execsql_test istrue-600.$tn.3 {
     SELECT x IS TRUE FROM t1;
-  } $res
+  } [expr {$tn in [list 5 6] ? {1} : {0}}]
   do_execsql_test istrue-600.$tn.4 {
     SELECT x IS FALSE FROM t1;
   } {0}

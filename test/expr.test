@@ -390,13 +390,8 @@ ifcapable floatingpoint {
   test_expr expr-2.23 {r1=1.23, r2=2.34} {max(r1,r2,r1+r2,r1-r2)} {3.57}
   test_expr expr-2.24 {r1=25.0, r2=11.0} {r1%r2} 3.0
   test_expr expr-2.25 {r1=1.23, r2=NULL} {coalesce(r1+r2,99.0)} 99.0
-  ifcapable nan_inf {
-    test_expr expr-2.26a {r1=1e300, r2=1e300} {coalesce((r1*r2)*0.0,99.0)} -NaN
-    test_expr expr-2.26b {r1=1e300, r2=-1e300} {coalesce((r1*r2)*0.0,99.0)} -NaN
-  } else {
-    test_expr expr-2.26c {r1=1e300, r2=1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
-    test_expr expr-2.26d {r1=1e300, r2=-1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
-  }
+  test_expr expr-2.26 {r1=1e300, r2=1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
+  test_expr expr-2.26b {r1=1e300, r2=-1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
   test_expr expr-2.27 {r1=1.1, r2=0.0} {r1/r2} {{}}
   test_expr expr-2.28 {r1=1.1, r2=0.0} {r1%r2} {{}}
 }

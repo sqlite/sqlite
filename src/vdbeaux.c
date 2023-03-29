@@ -3990,11 +3990,7 @@ static void serialGet(
     assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
     swapMixedEndianFloat(x);
     memcpy(&pMem->u.r, &x, sizeof(x));
-#ifdef SQLITE_ENABLE_NAN_INF
-    pMem->flags = MEM_Real;
-#else
     pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
-#endif
   }
 }
 void sqlite3VdbeSerialGet(

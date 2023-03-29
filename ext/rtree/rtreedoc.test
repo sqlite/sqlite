@@ -250,26 +250,14 @@ do_execsql_test 8.2 {
   FROM rtI
 } {integer integer integer integer integer integer}
 
-ifcapable nan_inf {
-  do_execsql_test 8.3a {
-    DELETE FROM rtF;
-    INSERT INTO rtF VALUES(
-      1, 'hello world', X'616263', NULL, 44
-    );
-    SELECT * FROM rtF;
-  } {
-    1   0.0 0.0    NaN 44.0
-  }
-} else {
-  do_execsql_test 8.3b {
-    DELETE FROM rtF;
-    INSERT INTO rtF VALUES(
-      1, 'hello world', X'616263', NULL, 44
-    );
-    SELECT * FROM rtF;
-  } {
-    1   0.0 0.0    0.0 44.0
-  }
+do_execsql_test 8.3 {
+  DELETE FROM rtF;
+  INSERT INTO rtF VALUES(
+    1, 'hello world', X'616263', NULL, 44
+  );
+  SELECT * FROM rtF;
+} {
+  1   0.0 0.0    0.0 44.0
 }
 do_execsql_test 8.4 {
   SELECT 
@@ -406,29 +394,16 @@ foreach {tn cols lCol} {
   }
 
   # Show the default values have not been modified
-  ifcapable nan_inf {
-    do_execsql_test 1.$tn.4a {
-      INSERT INTO abc DEFAULT VALUES;
-      SELECT * FROM abc WHERE rowid NOT IN (1,2)
-    } {3 NaN NaN NaN NaN}
+  do_execsql_test 1.$tn.4 {
+    INSERT INTO abc DEFAULT VALUES;
+    SELECT * FROM abc WHERE rowid NOT IN (1,2)
+  } {3 0.0 0.0 0.0 0.0}
 
-    # Show that there are no NOT NULL constraints
-    do_execsql_test 1.$tn.5a {
-      INSERT INTO abc VALUES(NULL, NULL, NULL, NULL, NULL);
-      SELECT * FROM abc WHERE rowid NOT IN (1,2,3)
-    } {4 NaN NaN NaN NaN}
-  } else {
-    do_execsql_test 1.$tn.4b {
-      INSERT INTO abc DEFAULT VALUES;
-      SELECT * FROM abc WHERE rowid NOT IN (1,2)
-    } {3 0.0 0.0 0.0 0.0}
-
-    # Show that there are no NOT NULL constraints
-    do_execsql_test 1.$tn.5b {
-      INSERT INTO abc VALUES(NULL, NULL, NULL, NULL, NULL);
-      SELECT * FROM abc WHERE rowid NOT IN (1,2,3)
-    } {4 0.0 0.0 0.0 0.0}
-  }
+  # Show that there are no NOT NULL constraints
+  do_execsql_test 1.$tn.5 {
+    INSERT INTO abc VALUES(NULL, NULL, NULL, NULL, NULL);
+    SELECT * FROM abc WHERE rowid NOT IN (1,2,3)
+  } {4 0.0 0.0 0.0 0.0}
 
 # EVIDENCE-OF: R-06893-30579 In an RTREE virtual table, the first column
 # always has a type affinity of INTEGER and all other data columns have

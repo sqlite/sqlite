@@ -1250,10 +1250,12 @@ case OP_Int64: {           /* out2 */
 case OP_Real: {            /* same as TK_FLOAT, out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Real;
-#ifndef SQLITE_ENABLE_NAN_INF
-  assert( !sqlite3IsNaN(*pOp->p4.pReal) );
-#endif
   pOut->u.r = *pOp->p4.pReal;
+#ifdef SQLITE_ENABLE_NAN_INF
+  if( sqlite3IsNaN(pOut->u.r) ) pOut->flags = MEM_Null;
+#else
+  assert( !sqlite3IsNaN(pOut->u.r) );
+#endif
   break;
 }
 #endif
@@ -1813,11 +1815,9 @@ fp_math:
     pOut->u.i = rB;
     MemSetTypeFlag(pOut, MEM_Int);
 #else
-#ifndef SQLITE_ENABLE_NAN_INF
     if( sqlite3IsNaN(rB) ){
       goto arithmetic_result_is_null;
     }
-#endif
     pOut->u.r = rB;
     MemSetTypeFlag(pOut, MEM_Real);
 #endif
