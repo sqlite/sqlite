@@ -6288,7 +6288,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     sqlite3 *db = pParse->db;
     assert( iAgg>=0 );
     if( pExpr->op!=TK_AGG_FUNCTION ){
-      if( ALWAYS(iAgg<pAggInfo->nColumn)
+      if( iAgg<pAggInfo->nColumn
        && pAggInfo->aCol[iAgg].pCExpr==pExpr
       ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -6494,7 +6494,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
           } /* endif pExpr->iTable==pItem->iCursor */
         } /* end loop over pSrcList */
       }
-      return WRC_Prune;
+      return WRC_Continue;
     }
     case TK_AGG_FUNCTION: {
       if( (pNC->ncFlags & NC_InAggFunc)==0
