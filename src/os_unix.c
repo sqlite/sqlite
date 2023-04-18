@@ -3679,7 +3679,14 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   }
 #elif HAVE_FULLFSYNC
   if( fullSync ){
+#ifdef F_BARRIERFSYNC
+    rc = osFcntl(fd, F_BARRIERFSYNC, 0);
+    if( rc && errno==ENOTSUP ){
+      rc = osFcntl(fd, F_FULLFSYNC, 0);
+    }
+#else
     rc = osFcntl(fd, F_FULLFSYNC, 0);
+#endif
   }else{
     rc = 1;
   }

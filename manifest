@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sVACUUM\scommand\sis\snot\sconfused\sby\salternative\sencodings\swhen\nit\sis\sthe\sfirst\scommand\srun\son\snew\sdatabase\sconnection.\n[forum:/forumpost/09503b4d33|Forum\spost\s09503b4d33].
-D 2023-04-18T15:21:55.208
+C Make\suse\sof\sF_BARRIERFSYNC\sas\san\salternative\sto\sF_FULLFSYNC\swhen\sit\sis\savailable.
+D 2023-04-18T20:02:08.829
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
+F src/os_unix.c 40536afde614aff1fbc73cab15ab3e1de604e088a4973b02bb362c97f8202da8
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 39af8ff7c73a991f61f4d1e3a6f8f98b1c8e29144723507822774cac5e6ee0b5
@@ -2058,8 +2058,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5acc3ef83e16a9f2803981a6e61eca62fe177cac4eed1befe2ade3a5977a1eab
-R 1c9639553f364b83ea46a14ee324415d
+P 8b0fe63f873661037351fc1eba6071b98b5c97a0fc8bd8a504a90d047f78bc0d
+R c9dd1b4e12d97242758bf3226df77a50
+T *branch * barrier-fsync
+T *sym-barrier-fsync *
+T -sym-trunk *
 U drh
-Z 1f598f7bd83b32193e1562d0ae423411
+Z 601072f7aaa41953f8e950f31773598f
 # Remove this line to create a well-formed Fossil manifest.
