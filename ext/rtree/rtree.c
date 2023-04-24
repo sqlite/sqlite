@@ -711,6 +711,7 @@ static int nodeAcquire(
       RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
+    if( pNode->nRef==0 ) pRtree->nNodeRef++;
     pNode->nRef++;
     *ppNode = pNode;
     return SQLITE_OK;
@@ -887,6 +888,32 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
 }
 
 /*
+** Scan the hash table.  Verify that every hash table entry has nRef==0
+** and remove them.  Any dirty pages are written if writeDirty is true.
+*/
+static int rtreeResetHashTable(Rtree *pRtree, int writeDirty){
+  int i;
+  int rc = SQLITE_OK;
+  for(i=0; i<HASHSIZE; i++){
+    RtreeNode *pNode = pRtree->aHash[i];
+    RtreeNode *pNext;
+    if( pNode==0 ) continue;
+    while( 1 /*exit-by-break*/ ){
+      pNext = pNode->pNext;
+      if( pNode->isDirty && writeDirty ){
+         rc = nodeWrite(pRtree, pNode);
+         if( rc ) writeDirty = 0;
+      }
+      sqlite3_free(pNode);
+      if( pNext==0 ) break;
+      pNode = pNext;
+    }
+    pRtree->aHash[i] = 0;
+  }
+  return rc;
+}
+
+/*
 ** Release a reference to a node. If the node is dirty and the reference
 ** count drops to zero, the node data is written to the database.
 */
@@ -904,11 +931,13 @@ static int nodeRelease(Rtree *pRtree, RtreeNode *pNode){
       if( pNode->pParent ){
         rc = nodeRelease(pRtree, pNode->pParent);
       }
+#if 0
       if( rc==SQLITE_OK ){
         rc = nodeWrite(pRtree, pNode);
       }
       nodeHashDelete(pRtree, pNode);
       sqlite3_free(pNode);
+#endif
     }
   }
   return rc;
@@ -1016,6 +1045,7 @@ static void rtreeRelease(Rtree *pRtree){
     pRtree->inWrTrans = 0;
     assert( pRtree->nCursor==0 );
     nodeBlobReset(pRtree);
+    rtreeResetHashTable(pRtree, 0);
     assert( pRtree->nNodeRef==0 || pRtree->bCorrupt );
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
@@ -3375,10 +3405,33 @@ static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
 ** Called when a transaction completes (either by COMMIT or ROLLBACK).
 ** The sqlite3_blob object should be released at this point.
 */
-static int rtreeEndTransaction(sqlite3_vtab *pVtab){
+static int rtreeCommit(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
+  rtreeResetHashTable(pRtree, 1);
+  return SQLITE_OK;
+}
+static int rtreeRollback(sqlite3_vtab *pVtab){
+  Rtree *pRtree = (Rtree *)pVtab;
+  pRtree->inWrTrans = 0;
+  nodeBlobReset(pRtree);
+  rtreeResetHashTable(pRtree, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Called at the end of a statement to ensure that the cache
+** has been cleared and that all changes have been written.
+*/
+static int rtreeCacheWrite(sqlite3_vtab *pVtab, int n){
+  UNUSED_PARAMETER(n);
+  rtreeResetHashTable((Rtree*)pVtab, 1);
+  return SQLITE_OK;
+}
+static int rtreeCacheAbandon(sqlite3_vtab *pVtab, int n){
+  UNUSED_PARAMETER(n);
+  rtreeResetHashTable((Rtree*)pVtab, 0);
   return SQLITE_OK;
 }
 
@@ -3494,14 +3547,14 @@ static sqlite3_module rtreeModule = {
   rtreeRowid,                 /* xRowid - read data */
   rtreeUpdate,                /* xUpdate - write data */
   rtreeBeginTransaction,      /* xBegin - begin transaction */
-  rtreeEndTransaction,        /* xSync - sync transaction */
-  rtreeEndTransaction,        /* xCommit - commit transaction */
-  rtreeEndTransaction,        /* xRollback - rollback transaction */
+  rtreeCommit,                /* xSync - sync transaction */
+  rtreeCommit,                /* xCommit - commit transaction */
+  rtreeRollback,              /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */
-  0,                          /* xRelease */
-  0,                          /* xRollbackTo */
+  rtreeCacheWrite,            /* xRelease */
+  rtreeCacheAbandon,          /* xRollbackTo */
   rtreeShadowName             /* xShadowName */
 };
 

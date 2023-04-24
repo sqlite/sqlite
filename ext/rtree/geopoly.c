@@ -1772,14 +1772,14 @@ static sqlite3_module geopolyModule = {
   rtreeRowid,                 /* xRowid - read data */
   geopolyUpdate,              /* xUpdate - write data */
   rtreeBeginTransaction,      /* xBegin - begin transaction */
-  rtreeEndTransaction,        /* xSync - sync transaction */
-  rtreeEndTransaction,        /* xCommit - commit transaction */
-  rtreeEndTransaction,        /* xRollback - rollback transaction */
+  rtreeCommit,                /* xSync - sync transaction */
+  rtreeCommit,                /* xCommit - commit transaction */
+  rtreeRollback,              /* xRollback - rollback transaction */
   geopolyFindFunction,        /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */
-  0,                          /* xRelease */
-  0,                          /* xRollbackTo */
+  rtreeCacheWrite,            /* xRelease */
+  rtreeCacheAbandon,          /* xRollbackTo */
   rtreeShadowName             /* xShadowName */
 };
 
