@@ -756,4 +756,11 @@ do_execsql_test 20.4 {
   SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE x0 = 0;
 } {- - 0 0.0 0.0}
 
+reset_db
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE rt0 USING rtree(id, x0, x1);
+  INSERT INTO rt0 VALUES(5, 10, 10);
+  SELECT last_insert_rowid();
+} {5}
+
 finish_test

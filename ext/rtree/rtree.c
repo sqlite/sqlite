@@ -116,6 +116,7 @@ typedef struct RtreeMatchArg RtreeMatchArg;
 typedef struct RtreeGeomCallback RtreeGeomCallback;
 typedef union RtreeCoord RtreeCoord;
 typedef struct RtreeSearchPoint RtreeSearchPoint;
+typedef struct RtreeGlobal RtreeGlobal;
 
 /* The rtree may have between 1 and RTREE_MAX_DIMENSIONS dimensions. */
 #define RTREE_MAX_DIMENSIONS 5
@@ -138,6 +139,16 @@ typedef struct RtreeSearchPoint RtreeSearchPoint;
 */
 #define RTREE_DEFAULT_ROWEST 1048576
 #define RTREE_MIN_ROWEST         100
+
+/*
+** There is one instance of this structure for each database handle (sqlite3*)
+** that the rtree extension is registered with. It is used to allow the
+** rtreecheck() function to locate the Rtree structure it is operating on.
+*/
+struct RtreeGlobal {
+  Rtree *pGlobalRtree;            /* List of all Rtree structures for this db */
+  int nGlobalRef;                 /* Number of pointers to this structure */
+};
 
 /* 
 ** An rtree virtual-table object.
@@ -196,6 +207,9 @@ struct Rtree {
   sqlite3_stmt *pWriteAux;
 
   RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
+
+  RtreeGlobal *pGlobal;       /* Database-wide object */
+  Rtree *pGlobalNext;         /* Next in RtreeGlobal.pGlobalNext */
 };
 
 /* Possible values for Rtree.eCoordType: */
@@ -221,7 +235,10 @@ struct Rtree {
 ** Set the Rtree.bCorrupt flag
 */
 #ifdef SQLITE_DEBUG
-# define RTREE_IS_CORRUPT(X) ((X)->bCorrupt = 1)
+static void rtreeIsCorrupt(Rtree *pRtree){
+  pRtree->bCorrupt = 1;
+}
+# define RTREE_IS_CORRUPT(X) rtreeIsCorrupt(X)
 #else
 # define RTREE_IS_CORRUPT(X)
 #endif
@@ -355,12 +372,17 @@ struct RtreeConstraint {
 
 /* 
 ** An rtree structure node.
+**
+** bDel:
+**  This node is not in the hash table. It should be freed when its 
+**  ref-count reaches 0.
 */
 struct RtreeNode {
   RtreeNode *pParent;         /* Parent node */
   i64 iNode;                  /* The node number */
   int nRef;                   /* Number of references to this node */
-  int isDirty;                /* True if the node needs to be written to disk */
+  u8 bDel;
+  u8 isDirty;                 /* True if the node needs to be written to disk */
   u8 *zData;                  /* Content of the node, as should be on disk */
   RtreeNode *pNext;           /* Next node in this hash collision chain */
 };
@@ -641,6 +663,8 @@ static RtreeNode *nodeHashLookup(Rtree *pRtree, i64 iNode){
 static void nodeHashInsert(Rtree *pRtree, RtreeNode *pNode){
   int iHash;
   assert( pNode->pNext==0 );
+  assert( pNode->pParent==0 || pNode->nRef>0 );
+  assert( pNode->bDel==0 );
   iHash = nodeHash(pNode->iNode);
   pNode->pNext = pRtree->aHash[iHash];
   pRtree->aHash[iHash] = pNode;
@@ -675,6 +699,7 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
     pRtree->nNodeRef++;
     pNode->pParent = pParent;
     pNode->isDirty = 1;
+    pNode->bDel = 1;
     nodeReference(pParent);
   }
   return pNode;
@@ -707,13 +732,20 @@ static int nodeAcquire(
   ** increase its reference count and return it.
   */
   if( (pNode = nodeHashLookup(pRtree, iNode))!=0 ){
-    if( pParent && pParent!=pNode->pParent ){
-      RTREE_IS_CORRUPT(pRtree);
-      return SQLITE_CORRUPT_VTAB;
+    assert( pNode->pParent==0 || pNode->nRef>0 );
+    if( pNode->nRef==0 ){
+      pNode->pParent = pParent;
+      nodeReference(pParent);
+    }else{
+      if( pParent && pParent!=pNode->pParent ){
+        RTREE_IS_CORRUPT(pRtree);
+        return SQLITE_CORRUPT_VTAB;
+      }
     }
     if( pNode->nRef==0 ) pRtree->nNodeRef++;
     pNode->nRef++;
     *ppNode = pNode;
+    if( iNode==1 ) pRtree->iDepth = readInt16(pNode->zData);
     return SQLITE_OK;
   }
 
@@ -748,13 +780,13 @@ static int nodeAcquire(
     if( !pNode ){
       rc = SQLITE_NOMEM;
     }else{
-      pNode->pParent = pParent;
       pNode->zData = (u8 *)&pNode[1];
       pNode->nRef = 1;
       pRtree->nNodeRef++;
       pNode->iNode = iNode;
       pNode->isDirty = 0;
       pNode->pNext = 0;
+      pNode->bDel = 0;
       rc = sqlite3_blob_read(pRtree->pNodeBlob, pNode->zData,
                              pRtree->iNodeSize, 0);
     }
@@ -787,6 +819,7 @@ static int nodeAcquire(
 
   if( rc==SQLITE_OK ){
     if( pNode!=0 ){
+      pNode->pParent = pParent;
       nodeReference(pParent);
       nodeHashInsert(pRtree, pNode);
     }else{
@@ -880,10 +913,31 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
     rc = sqlite3_reset(p);
     sqlite3_bind_null(p, 2);
     if( pNode->iNode==0 && rc==SQLITE_OK ){
+      pNode->bDel = 0;
       pNode->iNode = sqlite3_last_insert_rowid(pRtree->db);
       nodeHashInsert(pRtree, pNode);
     }
   }
+  return rc;
+}
+
+/*
+** Write all dirty nodes out to disk.
+*/
+static int rtreeFlushCache(Rtree *pRtree){
+  int i;
+  int rc = SQLITE_OK;
+  i64 iLIR = sqlite3_last_insert_rowid(pRtree->db);
+  for(i=0; i<HASHSIZE && rc==SQLITE_OK; i++){
+    RtreeNode *pNode;
+    for(pNode=pRtree->aHash[i]; pNode; pNode=pNode->pNext){
+      if( pNode->isDirty ){
+         rc = nodeWrite(pRtree, pNode);
+         if( rc ) break;
+      }
+    }
+  }
+  sqlite3_set_last_insert_rowid(pRtree->db, iLIR);
   return rc;
 }
 
@@ -904,7 +958,12 @@ static int rtreeResetHashTable(Rtree *pRtree, int writeDirty){
          rc = nodeWrite(pRtree, pNode);
          if( rc ) writeDirty = 0;
       }
-      sqlite3_free(pNode);
+      if( pNode->nRef==0 ){
+        sqlite3_free(pNode);
+      }else{
+        pNode->isDirty = 0;
+        pNode->bDel = 1;
+      }
       if( pNext==0 ) break;
       pNode = pNext;
     }
@@ -930,6 +989,10 @@ static int nodeRelease(Rtree *pRtree, RtreeNode *pNode){
       }
       if( pNode->pParent ){
         rc = nodeRelease(pRtree, pNode->pParent);
+        pNode->pParent = 0;
+      }
+      if( pNode->bDel ){
+        sqlite3_free(pNode);
       }
 #if 0
       if( rc==SQLITE_OK ){
@@ -1057,6 +1120,14 @@ static void rtreeRelease(Rtree *pRtree){
     sqlite3_finalize(pRtree->pDeleteParent);
     sqlite3_finalize(pRtree->pWriteAux);
     sqlite3_free(pRtree->zReadAuxSql);
+
+    /* Remove this object from the global list. */
+    if( pRtree->pGlobal ){
+      Rtree **pp;
+      for(pp=&pRtree->pGlobal->pGlobalRtree;*pp!=pRtree;pp=&(*pp)->pGlobalNext);
+      *pp = pRtree->pGlobalNext;
+    }
+
     sqlite3_free(pRtree);
   }
 }
@@ -1158,6 +1229,11 @@ static int rtreeClose(sqlite3_vtab_cursor *cur){
   sqlite3_free(pCsr);
   pRtree->nCursor--;
   nodeBlobReset(pRtree);
+  if( pRtree->inWrTrans==0 && pRtree->nCursor==0 ){
+    /* If this was the last open cursor, and there is no write-transaction,
+    ** discard the contents of the node-cache.  */
+    rtreeResetHashTable(pRtree, 0);
+  }
   return SQLITE_OK;
 }
 
@@ -2597,7 +2673,7 @@ static int updateMapping(
     for(p=pNode; p; p=p->pParent){
       if( p==pChild ) return SQLITE_CORRUPT_VTAB;
     }
-    if( pChild ){
+    if( pChild && pChild->nRef>0 ){
       nodeRelease(pRtree, pChild->pParent);
       nodeReference(pNode);
       pChild->pParent = pNode;
@@ -3012,7 +3088,7 @@ static int rtreeInsertCell(
   int rc = SQLITE_OK;
   if( iHeight>0 ){
     RtreeNode *pChild = nodeHashLookup(pRtree, pCell->iRowid);
-    if( pChild ){
+    if( pChild && pChild->nRef>0 ){
       nodeRelease(pRtree, pChild->pParent);
       nodeReference(pNode);
       pChild->pParent = pNode;
@@ -3256,6 +3332,11 @@ static int rtreeUpdate(
   int rc = SQLITE_OK;
   RtreeCell cell;                 /* New cell to insert if nData>1 */
   int bHaveRowid = 0;             /* Set to 1 after new rowid is determined */
+  i64 iLIR = sqlite3_last_insert_rowid(pRtree->db);
+
+#ifdef SQLITE_DEBUG
+  int nNodeRefSave = pRtree->nNodeRef;
+#endif
 
   if( pRtree->nNodeRef ){
     /* Unable to write to the btree while another cursor is reading from it,
@@ -3387,6 +3468,8 @@ static int rtreeUpdate(
   }
 
 constraint:
+  sqlite3_set_last_insert_rowid(pRtree->db, iLIR);
+  assert( pRtree->nNodeRef==nNodeRefSave );
   rtreeRelease(pRtree);
   return rc;
 }
@@ -3406,11 +3489,14 @@ static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
 ** The sqlite3_blob object should be released at this point.
 */
 static int rtreeCommit(sqlite3_vtab *pVtab){
+  int rc = SQLITE_OK;
   Rtree *pRtree = (Rtree *)pVtab;
+  i64 iLIR = sqlite3_last_insert_rowid(pRtree->db);
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
-  rtreeResetHashTable(pRtree, 1);
-  return SQLITE_OK;
+  rc = rtreeResetHashTable(pRtree, 1);
+  sqlite3_set_last_insert_rowid(pRtree->db, iLIR);
+  return rc;
 }
 static int rtreeRollback(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
@@ -3426,8 +3512,7 @@ static int rtreeRollback(sqlite3_vtab *pVtab){
 */
 static int rtreeCacheWrite(sqlite3_vtab *pVtab, int n){
   UNUSED_PARAMETER(n);
-  rtreeResetHashTable((Rtree*)pVtab, 1);
-  return SQLITE_OK;
+  return rtreeFlushCache((Rtree*)pVtab);
 }
 static int rtreeCacheAbandon(sqlite3_vtab *pVtab, int n){
   UNUSED_PARAMETER(n);
@@ -3474,11 +3559,13 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
 static int rtreeSavepoint(sqlite3_vtab *pVtab, int iSavepoint){
   Rtree *pRtree = (Rtree *)pVtab;
   u8 iwt = pRtree->inWrTrans;
+  int rc = SQLITE_OK;
   UNUSED_PARAMETER(iSavepoint);
+  rc = rtreeFlushCache(pRtree);
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
   pRtree->inWrTrans = iwt;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -3786,11 +3873,12 @@ static int rtreeInit(
   char **pzErr,                       /* OUT: Error message, if any */
   int isCreate                        /* True for xCreate, false for xConnect */
 ){
+  RtreeGlobal *pGlobal = (RtreeGlobal*)pAux;
   int rc = SQLITE_OK;
   Rtree *pRtree;
   int nDb;              /* Length of string argv[1] */
   int nName;            /* Length of string argv[2] */
-  int eCoordType = (pAux ? RTREE_COORD_INT32 : RTREE_COORD_REAL32);
+  int eCoordType = 0; 
   sqlite3_str *pSql;
   char *zSql;
   int ii = 4;
@@ -3803,6 +3891,13 @@ static int rtreeInit(
     "Too many columns for an rtree table",                /* 3 */
     "Auxiliary rtree columns must be last"                /* 4 */
   };
+
+  eCoordType = RTREE_COORD_INT32;
+#ifndef SQLITE_RTREE_INT_ONLY
+  if( sqlite3_stricmp("rtree", argv[0])==0 ){
+    eCoordType = RTREE_COORD_REAL32;
+  }
+#endif
 
   assert( RTREE_MAX_AUX_COLUMN<256 ); /* Aux columns counted by a u8 */
   if( argc<6 || argc>RTREE_MAX_AUX_COLUMN+3 ){
@@ -3886,6 +3981,11 @@ static int rtreeInit(
     *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     goto rtreeInit_fail;
   }
+
+  /* Link this rtree into the global list */
+  pRtree->pGlobal = pGlobal;
+  pRtree->pGlobalNext = pGlobal->pGlobalRtree;
+  pGlobal->pGlobalRtree = pRtree;
 
   *ppVtab = (sqlite3_vtab *)pRtree;
   return SQLITE_OK;
@@ -3993,6 +4093,7 @@ struct RtreeCheck {
   sqlite3 *db;                    /* Database handle */
   const char *zDb;                /* Database containing rtree table */
   const char *zTab;               /* Name of rtree table */
+  Rtree *pRtree;                  /* Rtree object (may be NULL) */
   int bInt;                       /* True for rtree_i32 table */
   int nDim;                       /* Number of dimensions for this rtree tbl */
   sqlite3_stmt *pGetNode;         /* Statement used to retrieve nodes */
@@ -4088,6 +4189,21 @@ static void rtreeCheckAppendMsg(RtreeCheck *pCheck, const char *zFmt, ...){
 */
 static u8 *rtreeCheckGetNode(RtreeCheck *pCheck, i64 iNode, int *pnNode){
   u8 *pRet = 0;                   /* Return value */
+  
+  if( pCheck->pRtree ){
+    RtreeNode *pNode = nodeHashLookup(pCheck->pRtree, iNode);
+    if( pNode ){
+      int nNode = pCheck->pRtree->iNodeSize;
+      pRet = (u8*)sqlite3_malloc64(nNode);
+      if( pRet==0 ){
+        pCheck->rc = SQLITE_NOMEM;
+      }else{
+        memcpy(pRet, pNode->zData, nNode);
+        *pnNode = nNode;
+      }
+      return pRet;
+    }
+  }
 
   if( pCheck->rc==SQLITE_OK && pCheck->pGetNode==0 ){
     pCheck->pGetNode = rtreeCheckPrepare(pCheck,
@@ -4317,6 +4433,7 @@ static void rtreeCheckCount(RtreeCheck *pCheck, const char *zTbl, i64 nExpect){
 */
 static int rtreeCheckTable(
   sqlite3 *db,                    /* Database handle to access db through */
+  RtreeGlobal *pGlobal,
   const char *zDb,                /* Name of db ("main", "temp" etc.) */
   const char *zTab,               /* Name of rtree table to check */
   char **pzReport                 /* OUT: sqlite3_malloc'd report text */
@@ -4325,12 +4442,19 @@ static int rtreeCheckTable(
   sqlite3_stmt *pStmt = 0;        /* Used to find column count of rtree table */
   int bEnd = 0;                   /* True if transaction should be closed */
   int nAux = 0;                   /* Number of extra columns. */
+  Rtree *pRtree = 0;
 
   /* Initialize the context object */
   memset(&check, 0, sizeof(check));
   check.db = db;
   check.zDb = zDb;
   check.zTab = zTab;
+  for(pRtree=pGlobal->pGlobalRtree; pRtree; pRtree=pRtree->pGlobalNext){
+    if( sqlite3_stricmp(zDb, pRtree->zDb) ) continue;
+    if( sqlite3_stricmp(zTab, pRtree->zName) ) continue;
+    break;
+  }
+  check.pRtree = pRtree;
 
   /* If there is not already an open transaction, open one now. This is
   ** to ensure that the queries run as part of this integrity-check operate
@@ -4432,6 +4556,8 @@ static void rtreecheck(
         "wrong number of arguments to function rtreecheck()", -1
     );
   }else{
+    sqlite3 *db = sqlite3_context_db_handle(ctx);
+    RtreeGlobal *pGlobal = (RtreeGlobal*)sqlite3_user_data(ctx);
     int rc;
     char *zReport = 0;
     const char *zDb = (const char*)sqlite3_value_text(apArg[0]);
@@ -4442,7 +4568,7 @@ static void rtreecheck(
     }else{
       zTab = (const char*)sqlite3_value_text(apArg[1]);
     }
-    rc = rtreeCheckTable(sqlite3_context_db_handle(ctx), zDb, zTab, &zReport);
+    rc = rtreeCheckTable(db, pGlobal, zDb, zTab, &zReport);
     if( rc==SQLITE_OK ){
       sqlite3_result_text(ctx, zReport ? zReport : "ok", -1, SQLITE_TRANSIENT);
     }else{
@@ -4458,38 +4584,59 @@ static void rtreecheck(
 #endif
 
 /*
+** The argument passed to this function is an RtreeGlobal structure. 
+** Decrement its reference count. Free the structure if it reaches 0.
+*/
+static void rtreeDestroyGlobal(void *p){
+  RtreeGlobal *pGlobal = (RtreeGlobal*)p;
+  assert( pGlobal->nGlobalRef>0 );
+  if( 0==(--pGlobal->nGlobalRef) ){
+    sqlite3_free(pGlobal);
+  }
+}
+
+/*
 ** Register the r-tree module with database handle db. This creates the
 ** virtual table module "rtree" and the debugging/analysis scalar 
 ** function "rtreenode".
 */
 int sqlite3RtreeInit(sqlite3 *db){
+  RtreeGlobal *pGlobal = 0;
   const int utf8 = SQLITE_UTF8;
   int rc;
 
-  rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
+  pGlobal = (RtreeGlobal*)sqlite3_malloc(sizeof(*pGlobal));
+  if( pGlobal==0 ) return SQLITE_NOMEM;
+  memset(pGlobal, 0, sizeof(*pGlobal));
+
+  pGlobal->nGlobalRef++;
+  rc = sqlite3_create_function_v2(db, "rtreecheck", 
+      -1, utf8, pGlobal, rtreecheck, 0, 0, rtreeDestroyGlobal
+  );
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
+    pGlobal->nGlobalRef++;
+    rc = sqlite3_create_module_v2(db, "rtree", 
+        &rtreeModule, pGlobal, rtreeDestroyGlobal
+    );
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "rtreecheck", -1, utf8, 0,rtreecheck, 0,0);
-  }
-  if( rc==SQLITE_OK ){
-#ifdef SQLITE_RTREE_INT_ONLY
-    void *c = (void *)RTREE_COORD_INT32;
-#else
-    void *c = (void *)RTREE_COORD_REAL32;
-#endif
-    rc = sqlite3_create_module_v2(db, "rtree", &rtreeModule, c, 0);
-  }
-  if( rc==SQLITE_OK ){
-    void *c = (void *)RTREE_COORD_INT32;
-    rc = sqlite3_create_module_v2(db, "rtree_i32", &rtreeModule, c, 0);
+    pGlobal->nGlobalRef++;
+    rc = sqlite3_create_module_v2(db, "rtree_i32", 
+        &rtreeModule, pGlobal, rtreeDestroyGlobal
+    );
   }
 #ifdef SQLITE_ENABLE_GEOPOLY
   if( rc==SQLITE_OK ){
     rc = sqlite3_geopoly_init(db);
   }
 #endif
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "rtreenode", 2, utf8, 0, rtreenode, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "rtreedepth", 1, utf8, 0,rtreedepth, 0, 0);
+  }
 
   return rc;
 }
