@@ -124,11 +124,8 @@ typedef struct RtreeGlobal RtreeGlobal;
 /* Maximum number of auxiliary columns */
 #define RTREE_MAX_AUX_COLUMN 100
 
-/* Size of hash table Rtree.aHash. This hash table is not expected to
-** ever contain very many entries, so a fixed number of buckets is 
-** used.
-*/
-#define HASHSIZE 97
+/* Initial size of hash table Rtree.aHash.  */
+#define INITIAL_HASHSIZE 97
 
 /* The xBestIndex method of this virtual table requires an estimate of
 ** the number of rows in the virtual table to calculate the costs of
@@ -206,7 +203,9 @@ struct Rtree {
   /* Statement for writing to the "aux:" fields, if there are any */
   sqlite3_stmt *pWriteAux;
 
-  RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
+  int nHashSize;              /* Number of hash buckets */
+  int nHashEntry;             /* Number of entries in hash table */
+  RtreeNode **aHash;          /* Hash table of in-memory nodes. */ 
 
   RtreeGlobal *pGlobal;       /* Database-wide object */
   Rtree *pGlobalNext;         /* Next in RtreeGlobal.pGlobalNext */
@@ -643,8 +642,8 @@ static void nodeZero(Rtree *pRtree, RtreeNode *p){
 ** Given a node number iNode, return the corresponding key to use
 ** in the Rtree.aHash table.
 */
-static unsigned int nodeHash(i64 iNode){
-  return ((unsigned)iNode) % HASHSIZE;
+static unsigned int nodeHash(Rtree *pRtree, i64 iNode){
+  return ((unsigned)iNode) % pRtree->nHashSize;
 }
 
 /*
@@ -653,7 +652,7 @@ static unsigned int nodeHash(i64 iNode){
 */
 static RtreeNode *nodeHashLookup(Rtree *pRtree, i64 iNode){
   RtreeNode *p;
-  for(p=pRtree->aHash[nodeHash(iNode)]; p && p->iNode!=iNode; p=p->pNext);
+  for(p=pRtree->aHash[nodeHash(pRtree, iNode)]; p&&p->iNode!=iNode; p=p->pNext);
   return p;
 }
 
@@ -665,9 +664,33 @@ static void nodeHashInsert(Rtree *pRtree, RtreeNode *pNode){
   assert( pNode->pNext==0 );
   assert( pNode->pParent==0 || pNode->nRef>0 );
   assert( pNode->bDel==0 );
-  iHash = nodeHash(pNode->iNode);
+
+  if( pRtree->nHashEntry>pRtree->nHashSize ){
+    int nNew = pRtree->nHashSize * 2;
+    RtreeNode **aNew = (RtreeNode**)sqlite3_malloc64(sizeof(RtreeNode*)*nNew);
+    if( aNew ){
+      int ii;
+      memset(aNew, 0, sizeof(RtreeNode*)*nNew);
+      for(ii=0; ii<pRtree->nHashSize; ii++){
+        RtreeNode *p, *pNext;
+        for(p=pRtree->aHash[ii]; p; p=pNext){
+          int iBucket = p->iNode % nNew;
+          pNext = p->pNext;
+          p->pNext = aNew[iBucket];
+          aNew[iBucket] = p;
+        }
+      }
+
+      sqlite3_free(pRtree->aHash);
+      pRtree->aHash = aNew;
+      pRtree->nHashSize = nNew;
+    }
+  }
+
+  iHash = nodeHash(pRtree, pNode->iNode);
   pNode->pNext = pRtree->aHash[iHash];
   pRtree->aHash[iHash] = pNode;
+  pRtree->nHashEntry++;
 }
 
 /*
@@ -676,10 +699,11 @@ static void nodeHashInsert(Rtree *pRtree, RtreeNode *pNode){
 static void nodeHashDelete(Rtree *pRtree, RtreeNode *pNode){
   RtreeNode **pp;
   if( pNode->iNode!=0 ){
-    pp = &pRtree->aHash[nodeHash(pNode->iNode)];
+    pp = &pRtree->aHash[nodeHash(pRtree, pNode->iNode)];
     for( ; (*pp)!=pNode; pp = &(*pp)->pNext){ assert(*pp); }
     *pp = pNode->pNext;
     pNode->pNext = 0;
+    pRtree->nHashEntry--;
   }
 }
 
@@ -928,7 +952,7 @@ static int rtreeFlushCache(Rtree *pRtree){
   int i;
   int rc = SQLITE_OK;
   i64 iLIR = sqlite3_last_insert_rowid(pRtree->db);
-  for(i=0; i<HASHSIZE && rc==SQLITE_OK; i++){
+  for(i=0; i<pRtree->nHashSize && rc==SQLITE_OK; i++){
     RtreeNode *pNode;
     for(pNode=pRtree->aHash[i]; pNode; pNode=pNode->pNext){
       if( pNode->isDirty ){
@@ -948,7 +972,7 @@ static int rtreeFlushCache(Rtree *pRtree){
 static int rtreeResetHashTable(Rtree *pRtree, int writeDirty){
   int i;
   int rc = SQLITE_OK;
-  for(i=0; i<HASHSIZE; i++){
+  for(i=0; i<pRtree->nHashSize; i++){
     RtreeNode *pNode = pRtree->aHash[i];
     RtreeNode *pNext;
     if( pNode==0 ) continue;
@@ -969,6 +993,7 @@ static int rtreeResetHashTable(Rtree *pRtree, int writeDirty){
     }
     pRtree->aHash[i] = 0;
   }
+  pRtree->nHashEntry = 0;
   return rc;
 }
 
@@ -1120,6 +1145,7 @@ static void rtreeRelease(Rtree *pRtree){
     sqlite3_finalize(pRtree->pDeleteParent);
     sqlite3_finalize(pRtree->pWriteAux);
     sqlite3_free(pRtree->zReadAuxSql);
+    sqlite3_free(pRtree->aHash);
 
     /* Remove this object from the global list. */
     if( pRtree->pGlobal ){
@@ -3923,6 +3949,15 @@ static int rtreeInit(
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
 
+  pRtree->aHash = (RtreeNode**)sqlite3_malloc64(
+      sizeof(RtreeNode*) * INITIAL_HASHSIZE
+  );
+  if( pRtree->aHash==0 ){
+    rc = SQLITE_NOMEM;
+    goto rtreeInit_fail;
+  }
+  memset(pRtree->aHash, 0, sizeof(RtreeNode*)*INITIAL_HASHSIZE);
+  pRtree->nHashSize = INITIAL_HASHSIZE;
 
   /* Create/Connect to the underlying relational database schema. If
   ** that is successful, call sqlite3_declare_vtab() to configure

@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\sthe\srtree\smodule\sand\sexisting\stests\son\sthis\sbranch.
-D 2023-04-26T20:41:00.885
+C Dynamically\sresize\sthe\snode\shash\stable\sused\sby\sthe\srtree\smodule.
+D 2023-04-27T19:27:55.114
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -400,7 +400,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 398b966772d81b9e6cd05caaf94f5d9d38b26f4245d4f0908b41c60024298412
-F ext/rtree/rtree.c 862d2aaac6dfc4f4b03f45e94ab4728f35daf27da0ef88b457a938acda3dd663
+F ext/rtree/rtree.c 92def73e587b2daaff1c8b2c50c5ca0c0e543222f4d0e926ce0479454bd2b673
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 96271886cb39b680ed8c0a8dc0dd341e52a368bbd54d461a433e7aecd0556a2a
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b35cb7458fe16390f3b1f0b2acfd3d51fabd6bf9c5f176a44d8b3cc932f74149
-R b6b76068a047066e137cc4bd01872ea2
+P 50e8a30be1a8d4af42a2c58bdffcf3c4eae00450f0bb9ec39548d5a52d2a68ee
+R ef7db804b2d3b6c0c526bc82af548b3d
 U dan
-Z ce5901679438646e425be2a25d931a5b
+Z 41e485964a37c8d7a0bf6a892dd19281
 # Remove this line to create a well-formed Fossil manifest.
