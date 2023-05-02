@@ -637,7 +637,9 @@ static int vtabCallConstructor(
   sCtx.pPrior = db->pVtabCtx;
   sCtx.bDeclared = 0;
   db->pVtabCtx = &sCtx;
+  pTab->nTabRef++;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
+  sqlite3DeleteTable(db, pTab);
   db->pVtabCtx = sCtx.pPrior;
   if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
   assert( sCtx.pTab==pTab );
@@ -1366,6 +1368,10 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
       }
       case SQLITE_VTAB_DIRECTONLY: {
         p->pVTable->eVtabRisk = SQLITE_VTABRISK_High;
+        break;
+      }
+      case SQLITE_VTAB_USES_ALL_SCHEMAS: {
+        p->pVTable->bAllSchemas = 1;
         break;
       }
       default: {

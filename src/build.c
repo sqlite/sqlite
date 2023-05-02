@@ -1477,7 +1477,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   if( pParse->pNewTrigger ){
     sqlite3ErrorMsg(pParse, "cannot use RETURNING in a trigger");
   }else{
-    assert( pParse->bReturning==0 );
+    assert( pParse->bReturning==0 || pParse->ifNotExists );
   }
   pParse->bReturning = 1;
   pRet = sqlite3DbMallocZero(db, sizeof(*pRet));
@@ -1503,7 +1503,8 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pRet->retTStep.pTrig = &pRet->retTrig;
   pRet->retTStep.pExprList = pList;
   pHash = &(db->aDb[1].pSchema->trigHash);
-  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0 || pParse->nErr );
+  assert( sqlite3HashFind(pHash, RETURNING_TRIGGER_NAME)==0
+          || pParse->nErr  || pParse->ifNotExists );
   if( sqlite3HashInsert(pHash, RETURNING_TRIGGER_NAME, &pRet->retTrig)
           ==&pRet->retTrig ){
     sqlite3OomFault(db);
@@ -2038,6 +2039,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
     ** turn it into one by adding a unary "+" operator. */
     pExpr = sqlite3PExpr(pParse, TK_UPLUS, pExpr, 0);
   }
+  if( pExpr && pExpr->op!=TK_RAISE ) pExpr->affExpr = pCol->affinity;
   sqlite3ColumnSetExpr(pParse, pTab, pCol, pExpr);
   pExpr = 0;
   goto generated_done;
