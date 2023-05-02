@@ -467,7 +467,8 @@ static int lookupName(
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
         if( pParse->bReturning ){
           if( (pNC->ncFlags & NC_UBaseReg)!=0
-           && (zTab==0 || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
+           && ALWAYS(zTab==0
+                     || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
           ){
             pExpr->iTable = op!=TK_DELETE;
             pTab = pParse->pTriggerTab;
@@ -947,14 +948,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       if( 0==sqlite3ExprCanBeNull(pExpr->pLeft) && !IN_RENAME_OBJECT ){
         testcase( ExprHasProperty(pExpr, EP_OuterON) );
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
-        if( pExpr->op==TK_NOTNULL ){
-          pExpr->u.zToken = "true";
-          ExprSetProperty(pExpr, EP_IsTrue);
-        }else{
-          pExpr->u.zToken = "false";
-          ExprSetProperty(pExpr, EP_IsFalse);
-        }
-        pExpr->op = TK_TRUEFALSE;
+        pExpr->u.iValue = (pExpr->op==TK_NOTNULL);
+        pExpr->flags |= EP_IntValue;
+        pExpr->op = TK_INTEGER;
+
         for(i=0, p=pNC; p && i<ArraySize(anRef); p=p->pNext, i++){
           p->nRef = anRef[i];
         }
@@ -1256,8 +1253,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
           ExprSetProperty(pExpr, EP_VarSelect);
-          pNC->ncFlags |= NC_VarSelect;
         }
+        pNC->ncFlags |= NC_Subquery;
       }
       break;
     }

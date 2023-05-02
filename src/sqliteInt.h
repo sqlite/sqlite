@@ -224,8 +224,8 @@
 #endif
 
 /*
-** WAL mode depends on atomic aligned 32-bit loads and stores in a few
-** places.  The following macros try to make this explicit.
+** A few places in the code require atomic load/store of aligned
+** integer values.
 */
 #ifndef __has_extension
 # define __has_extension(x) 0     /* compatibility with non-clang compilers */
@@ -281,15 +281,22 @@
 #endif
 
 /*
-** A macro to hint to the compiler that a function should not be
+** Macros to hint to the compiler that a function should or should not be
 ** inlined.
 */
 #if defined(__GNUC__)
 #  define SQLITE_NOINLINE  __attribute__((noinline))
+#  define SQLITE_INLINE    __attribute__((always_inline)) inline
 #elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE  __declspec(noinline)
+#  define SQLITE_INLINE    __forceinline
 #else
 #  define SQLITE_NOINLINE
+#  define SQLITE_INLINE
+#endif
+#if defined(SQLITE_COVERAGE_TEST) || defined(__STRICT_ANSI__)
+# undef SQLITE_INLINE
+# define SQLITE_INLINE
 #endif
 
 /*
@@ -1757,7 +1764,7 @@ struct sqlite3 {
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
-#define SQLITE_ReadUncommit   0x00000400  /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_StmtScanStatus 0x00000400  /* Enable stmt_scanstats() counters */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
 #define SQLITE_ReverseOrder   0x00001000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x00002000  /* Enable recursive triggers */
@@ -1783,6 +1790,7 @@ struct sqlite3 {
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
+#define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -1839,6 +1847,7 @@ struct sqlite3 {
    /* TH3 expects this value  ^^^^^^^^^^ See flatten04.test */
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
 #define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
+#define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -2310,6 +2319,7 @@ struct VTable {
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
   u8 bConstraint;           /* True if constraints are supported */
+  u8 bAllSchemas;           /* True if might use any attached schema */
   u8 eVtabRisk;             /* Riskiness of allowing hacker access */
   int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
@@ -3341,7 +3351,7 @@ struct NameContext {
 #define NC_HasAgg    0x000010 /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x000020 /* True if resolving columns of CREATE INDEX */
 #define NC_SelfRef   0x00002e /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
-#define NC_VarSelect 0x000040 /* A correlated subquery has been seen */
+#define NC_Subquery  0x000040 /* A subquery has been seen */
 #define NC_UEList    0x000080 /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x000100 /* True if uNC.pAggInfo is used */
 #define NC_UUpsert   0x000200 /* True if uNC.pUpsert is used */
@@ -3660,6 +3670,7 @@ struct IndexedExpr {
   int iIdxCur;            /* The index cursor */
   int iIdxCol;            /* The index column that contains value of pExpr */
   u8 bMaybeNullRow;       /* True if we need an OP_IfNullRow check */
+  u8 aff;                 /* Affinity of the pExpr expression */
   IndexedExpr *pIENext;   /* Next in a list of all indexed expressions */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   const char *zIdxName;   /* Name of index, used only for bytecode comments */
@@ -3711,6 +3722,9 @@ struct Parse {
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
+#endif
+#ifdef SQLITE_DEBUG
+  u8 ifNotExists;      /* Might be true if IF NOT EXISTS.  Assert()s only */
 #endif
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -4172,6 +4186,7 @@ struct Walker {
     struct CoveringIndexCheck *pCovIdxCk;     /* Check for covering index */
     SrcItem *pSrcItem;                        /* A single FROM clause item */
     DbFixer *pFix;                            /* See sqlite3FixSelect() */
+    Mem *aMem;                                /* See sqlite3BtreeCursorHint() */
   } u;
 };
 
@@ -4441,6 +4456,8 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  (sqlite3CtypeMap[(unsigned char)(x)]&0x08)
 # define sqlite3Tolower(x)   (sqlite3UpperToLower[(unsigned char)(x)])
 # define sqlite3Isquote(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x80)
+# define sqlite3JsonId1(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x42)
+# define sqlite3JsonId2(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x46)
 #else
 # define sqlite3Toupper(x)   toupper((unsigned char)(x))
 # define sqlite3Isspace(x)   isspace((unsigned char)(x))
@@ -4450,6 +4467,8 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 # define sqlite3Isquote(x)   ((x)=='"'||(x)=='\''||(x)=='['||(x)=='`')
+# define sqlite3JsonId1(x)   (sqlite3IsIdChar(x)&&(x)<'0')
+# define sqlite3JsonId2(x)   sqlite3IsIdChar(x)
 #endif
 int sqlite3IsIdChar(u8);
 
@@ -4643,6 +4662,10 @@ void sqlite3ReleaseTempReg(Parse*,int);
 int sqlite3GetTempRange(Parse*,int);
 void sqlite3ReleaseTempRange(Parse*,int,int);
 void sqlite3ClearTempRegCache(Parse*);
+void sqlite3TouchRegister(Parse*,int);
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_DEBUG)
+int sqlite3FirstAvailableRegister(Parse*,int);
+#endif
 #ifdef SQLITE_DEBUG
 int sqlite3NoTempsInRange(Parse*,int,int);
 #endif
@@ -4793,7 +4816,7 @@ Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,u32,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
-int sqlite3IsReadOnly(Parse*, Table*, int);
+int sqlite3IsReadOnly(Parse*, Table*, Trigger*);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 #if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY)
 Expr *sqlite3LimitWhere(Parse*,SrcList*,Expr*,ExprList*,Expr*,char*);
@@ -5330,10 +5353,7 @@ int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
 
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
-#if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
-    && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  void sqlite3VtabUsesAllSchemas(sqlite3_index_info*);
-#endif
+void sqlite3VtabUsesAllSchemas(Parse*);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
@@ -5578,6 +5598,12 @@ int sqlite3KvvfsInit(void);
  || defined(SQLITE_PERFORMANCE_TRACE) \
  || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 sqlite3_uint64 sqlite3Hwtime(void);
+#endif
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+# define IS_STMT_SCANSTATUS(db) (db->flags & SQLITE_StmtScanStatus)
+#else
+# define IS_STMT_SCANSTATUS(db) 0
 #endif
 
 #endif /* SQLITEINT_H */
