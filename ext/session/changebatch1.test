@@ -217,6 +217,6 @@ do_test 4.1 {
   list [catch { cb add $c1 } msg] $msg
 } {1 SQLITE_RANGE}
 
-
+cb delete
 
 finish_test
