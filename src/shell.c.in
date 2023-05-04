@@ -1146,6 +1146,7 @@ static void appendText(ShellText *p, const char *zAppend, char quote){
 */
 static char quoteChar(const char *zName){
   int i;
+  if( zName==0 ) return '"';
   if( !isalpha((unsigned char)zName[0]) && zName[0]!='_' ) return '"';
   for(i=0; zName[i]; i++){
     if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ) return '"';
@@ -5599,6 +5600,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
 **    \'    -> '
 **    \\    -> backslash
 **    \NNN  -> ascii character NNN in octal
+**    \xHH  -> ascii character HH in hexadecimal
 */
 static void resolve_backslashes(char *z){
   int i, j;
@@ -5627,6 +5629,15 @@ static void resolve_backslashes(char *z){
         c = '\'';
       }else if( c=='\\' ){
         c = '\\';
+      }else if( c=='x' ){
+        int nhd = 0, hdv;
+        u8 hv = 0;
+        while( nhd<2 && (c=z[i+1+nhd])!=0 && (hdv=hexDigitValue(c))>=0 ){
+          hv = (u8)((hv<<4)|hdv);
+          ++nhd;
+        }
+        i += nhd;
+        c = (u8)hv;
       }else if( c>='0' && c<='7' ){
         c -= '0';
         if( z[i+1]>='0' && z[i+1]<='7' ){
@@ -7874,7 +7885,7 @@ FROM (\
       sqlite3_bind_int(pStmt, 1, nDigits);
       rc = sqlite3_step(pStmt);
       sqlite3_finalize(pStmt);
-      assert(rc==SQLITE_DONE);
+      if( rc!=SQLITE_DONE ) rc_err_oom_die(SQLITE_NOMEM);
     }
     assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
     rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
