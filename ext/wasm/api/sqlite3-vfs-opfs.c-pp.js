@@ -18,7 +18,7 @@
   after sqlite3-api-oo1.js and before sqlite3-api-cleanup.js.
 */
 'use strict';
-self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 /**
    installOpfsVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
@@ -76,23 +76,23 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   `opfs` property, containing several OPFS-specific utilities.
 */
 const installOpfsVfs = function callee(options){
-  if(!self.SharedArrayBuffer
-    || !self.Atomics){
+  if(!globalThis.SharedArrayBuffer
+    || !globalThis.Atomics){
     return Promise.reject(
       new Error("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. "+
                 "The server must emit the COOP/COEP response headers to enable those. "+
                 "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep")
     );
-  }else if(self.window===self && self.document){
+  }else if('undefined'===typeof WorkerGlobalScope){
     return Promise.reject(
       new Error("The OPFS sqlite3_vfs cannot run in the main thread "+
                 "because it requires Atomics.wait().")
     );
-  }else if(!self.FileSystemHandle ||
-           !self.FileSystemDirectoryHandle ||
-           !self.FileSystemFileHandle ||
-           !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-           !navigator.storage.getDirectory){
+  }else if(!globalThis.FileSystemHandle ||
+           !globalThis.FileSystemDirectoryHandle ||
+           !globalThis.FileSystemFileHandle ||
+           !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+           !navigator?.storage?.getDirectory){
     return Promise.reject(
       new Error("Missing required OPFS APIs.")
     );
@@ -100,7 +100,7 @@ const installOpfsVfs = function callee(options){
   if(!options || 'object'!==typeof options){
     options = Object.create(null);
   }
-  const urlParams = new URL(self.location.href).searchParams;
+  const urlParams = new URL(globalThis.location.href).searchParams;
   if(undefined===options.verbose){
     options.verbose = urlParams.has('opfs-verbose')
       ? (+urlParams.get('opfs-verbose') || 2) : 1;
@@ -112,16 +112,16 @@ const installOpfsVfs = function callee(options){
     options.proxyUri = callee.defaultProxyUri;
   }
 
-  //sqlite3.config.warn("OPFS options =",options,self.location);
+  //sqlite3.config.warn("OPFS options =",options,globalThis.location);
 
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
   }
-  const thePromise = new Promise(function(promiseResolve, promiseReject_){
+  const thePromise = new Promise(function(promiseResolve_, promiseReject_){
     const loggers = {
-      0:sqlite3.config.error.bind(console),
-      1:sqlite3.config.warn.bind(console),
-      2:sqlite3.config.log.bind(console)
+      0:sqlite3.config.error,
+      1:sqlite3.config.warn,
+      2:sqlite3.config.log
     };
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
@@ -149,11 +149,11 @@ const installOpfsVfs = function callee(options){
        Returns true if _this_ thread has access to the OPFS APIs.
     */
     const thisThreadHasOPFS = ()=>{
-      return self.FileSystemHandle &&
-        self.FileSystemDirectoryHandle &&
-        self.FileSystemFileHandle &&
-        self.FileSystemFileHandle.prototype.createSyncAccessHandle &&
-        navigator.storage.getDirectory;
+      return globalThis.FileSystemHandle &&
+        globalThis.FileSystemDirectoryHandle &&
+        globalThis.FileSystemFileHandle &&
+        globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle &&
+        navigator?.storage?.getDirectory;
     };
 
     /**
@@ -171,8 +171,8 @@ const installOpfsVfs = function callee(options){
           m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
           m.avgWait = (m.count && m.wait) ? (m.wait / m.count) : 0;
         }
-        sqlite3.config.log(self.location.href,
-                    "metrics for",self.location.href,":",metrics,
+        sqlite3.config.log(globalThis.location.href,
+                    "metrics for",globalThis.location.href,":",metrics,
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
         sqlite3.config.log("Serialization metrics:",metrics.s11n);
@@ -193,9 +193,15 @@ const installOpfsVfs = function callee(options){
     }/*metrics*/;
     const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
-    const promiseReject = function(err){
+    let promiseWasRejected = undefined;
+    const promiseReject = (err)=>{
+      promiseWasRejected = true;
       opfsVfs.dispose();
       return promiseReject_(err);
+    };
+    const promiseResolve = (value)=>{
+      promiseWasRejected = false;
+      return promiseResolve_(value);
     };
     const W =
 //#if target=es6-bundler-friendly
@@ -205,6 +211,18 @@ const installOpfsVfs = function callee(options){
 //#else
     new Worker(options.proxyUri);
 //#endif
+    setTimeout(()=>{
+      /* At attempt to work around a browser-specific quirk in which
+         the Worker load is failing in such a way that we neither
+         resolve nor reject it. This workaround gives that resolve/reject
+         a time limit and rejects if that timer expires. Discussion:
+         https://sqlite.org/forum/forumpost/a708c98dcb3ef */
+      if(undefined===promiseWasRejected){
+        promiseReject(
+          new Error("Timeout while waiting for OPFS async proxy worker.")
+        );
+      }
+    }, 4000);
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the
@@ -335,7 +353,6 @@ const installOpfsVfs = function callee(options){
       state.opIds.xClose = i++;
       state.opIds.xDelete = i++;
       state.opIds.xDeleteNoWait = i++;
-      state.opIds.xFileControl = i++;
       state.opIds.xFileSize = i++;
       state.opIds.xLock = i++;
       state.opIds.xOpen = i++;
@@ -700,12 +717,9 @@ const installOpfsVfs = function callee(options){
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
       },
       xFileControl: function(pFile, opId, pArg){
-        mTimeStart('xFileControl');
-        const rc = (capi.SQLITE_FCNTL_SYNC===opId)
-              ? opRun('xSync', pFile, 0)
-              : capi.SQLITE_NOTFOUND;
-        mTimeEnd();
-        return rc;
+        /*mTimeStart('xFileControl');
+          mTimeEnd();*/
+        return capi.SQLITE_NOTFOUND;
       },
       xFileSize: function(pFile,pSz64){
         mTimeStart('xFileSize');
@@ -761,8 +775,11 @@ const installOpfsVfs = function callee(options){
         return rc;
       },
       xSync: function(pFile,flags){
+        mTimeStart('xSync');
         ++metrics.xSync.count;
-        return 0; // impl'd in xFileControl()
+        const rc = opRun('xSync', pFile, flags);
+        mTimeEnd();
+        return rc;
       },
       xTruncate: function(pFile,sz64){
         mTimeStart('xTruncate');
@@ -1171,7 +1188,15 @@ const installOpfsVfs = function callee(options){
             /* Truncate journal mode is faster than delete for
                this vfs, per speedtest1. That gap seems to have closed with
                Chrome version 108 or 109, but "persist" is very roughly 5-6%
-               faster than truncate in initial tests. */
+               faster than truncate in initial tests.
+
+               For later analysis: Roy Hashimoto notes that TRUNCATE
+               and PERSIST modes may decrease OPFS concurrency because
+               multiple connections can open the journal file in those
+               modes:
+
+               https://github.com/rhashimoto/wa-sqlite/issues/68
+            */
             "pragma journal_mode=persist;",
             /*
               This vfs benefits hugely from cache on moderate/large
@@ -1261,14 +1286,18 @@ const installOpfsVfs = function callee(options){
             promiseReject(new Error(data.payload.join(' ')));
             break;
           case 'opfs-async-loaded':
-            /*Arrives as soon as the asyc proxy finishes loading.
-              Pass our config and shared state on to the async worker.*/
+            /* Arrives as soon as the asyc proxy finishes loading.
+               Pass our config and shared state on to the async
+               worker. */
             W.postMessage({type: 'opfs-async-init',args: state});
             break;
-          case 'opfs-async-inited':{
-            /*Indicates that the async partner has received the 'init'
-              and has finished initializing, so the real work can
-              begin...*/
+          case 'opfs-async-inited': {
+            /* Indicates that the async partner has received the 'init'
+               and has finished initializing, so the real work can
+               begin... */
+            if(true===promiseWasRejected){
+              break /* promise was already rejected via timer */;
+            }
             try {
               sqlite3.vfs.installVfs({
                 io: {struct: opfsIoMethods, methods: ioSyncWrappers},
@@ -1300,10 +1329,15 @@ const installOpfsVfs = function callee(options){
             }
             break;
           }
-          default:
-            promiseReject(e);
-            error("Unexpected message from the async worker:",data);
+          default: {
+            const errMsg = (
+              "Unexpected message from the OPFS async worker: " +
+              JSON.stringify(data)
+            );
+            error(errMsg);
+            promiseReject(new Error(errMsg));
             break;
+          }
       }/*switch(data.type)*/
     }/*W.onmessage()*/;
   })/*thePromise*/;
@@ -1311,7 +1345,7 @@ const installOpfsVfs = function callee(options){
 }/*installOpfsVfs()*/;
 installOpfsVfs.defaultProxyUri =
   "sqlite3-opfs-async-proxy.js";
-self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   try{
     let proxyJs = installOpfsVfs.defaultProxyUri;
     if(sqlite3.scriptInfo.sqlite3Dir){
