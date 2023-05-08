@@ -211,10 +211,10 @@ void sqlite3VtabUnlock(VTable *pVTab){
   pVTab->nRef--;
   if( pVTab->nRef==0 ){
     sqlite3_vtab *p = pVTab->pVtab;
-    sqlite3VtabModuleUnref(pVTab->db, pVTab->pMod);
     if( p ){
       p->pModule->xDisconnect(p);
     }
+    sqlite3VtabModuleUnref(pVTab->db, pVTab->pMod);
     sqlite3DbFree(db, pVTab);
   }
 }
@@ -340,7 +340,8 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 */
 void sqlite3VtabClear(sqlite3 *db, Table *p){
   assert( IsVirtual(p) );
-  if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
+  assert( db!=0 );
+  if( db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->u.vtab.azArg ){
     int i;
     for(i=0; i<p->u.vtab.nArg; i++){
@@ -609,7 +610,9 @@ static int vtabCallConstructor(
   sCtx.pPrior = db->pVtabCtx;
   sCtx.bDeclared = 0;
   db->pVtabCtx = &sCtx;
+  pTab->nTabRef++;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
+  sqlite3DeleteTable(db, pTab);
   db->pVtabCtx = sCtx.pPrior;
   if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
   assert( sCtx.pTab==pTab );
@@ -1099,7 +1102,10 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
             break;
         }
         if( xMethod && pVTab->iSavepoint>iSavepoint ){
+          u64 savedFlags = (db->flags & SQLITE_Defensive);
+          db->flags &= ~(u64)SQLITE_Defensive;
           rc = xMethod(pVTab->pVtab, iSavepoint);
+          db->flags |= savedFlags;
         }
         sqlite3VtabUnlock(pVTab);
       }
@@ -1140,7 +1146,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   if( pExpr->op!=TK_COLUMN ) return pDef;
   assert( ExprUseYTab(pExpr) );
   pTab = pExpr->y.pTab;
-  if( pTab==0 ) return pDef;
+  if( NEVER(pTab==0) ) return pDef;
   if( !IsVirtual(pTab) ) return pDef;
   pVtab = sqlite3GetVTable(db, pTab)->pVtab;
   assert( pVtab!=0 );
@@ -1326,6 +1332,10 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
       }
       case SQLITE_VTAB_DIRECTONLY: {
         p->pVTable->eVtabRisk = SQLITE_VTABRISK_High;
+        break;
+      }
+      case SQLITE_VTAB_USES_ALL_SCHEMAS: {
+        p->pVTable->bAllSchemas = 1;
         break;
       }
       default: {

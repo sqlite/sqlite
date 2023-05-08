@@ -97,7 +97,7 @@ const unsigned char *sqlite3aGTb = &sqlite3UpperToLower[256+12-OP_Ne];
 **   isalnum()                        0x06
 **   isxdigit()                       0x08
 **   toupper()                        0x20
-**   SQLite identifier character      0x40
+**   SQLite identifier character      0x40   $, _, or non-ascii
 **   Quote character                  0x80
 **
 ** Bit 0x20 is set if the mapped character requires translation to upper
@@ -291,7 +291,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    SQLITE_DEFAULT_SORTERREF_SIZE,   /* szSorterRef */
    0,                         /* iPrngSeed */
 #ifdef SQLITE_DEBUG
-   {0,0,0,0,0,0}              /* aTune */
+   {0,0,0,0,0,0},             /* aTune */
 #endif
 };
 
@@ -375,10 +375,6 @@ const char sqlite3StrBINARY[] = "BINARY";
 **
 **    sqlite3StdTypeAffinity[]    The affinity associated with each entry
 **                                in sqlite3StdType[].
-**
-**    sqlite3StdTypeMap[]         The type value (as returned from
-**                                sqlite3_column_type() or sqlite3_value_type())
-**                                for each entry in sqlite3StdType[].
 */
 const unsigned char sqlite3StdTypeLen[] = { 3, 4, 3, 7, 4, 4 };
 const char sqlite3StdTypeAffinity[] = {
@@ -388,14 +384,6 @@ const char sqlite3StdTypeAffinity[] = {
   SQLITE_AFF_INTEGER,
   SQLITE_AFF_REAL,
   SQLITE_AFF_TEXT
-};
-const char sqlite3StdTypeMap[] = {
-  0,
-  SQLITE_BLOB,
-  SQLITE_INTEGER,
-  SQLITE_INTEGER,
-  SQLITE_FLOAT,
-  SQLITE_TEXT
 };
 const char *sqlite3StdType[] = {
   "ANY",

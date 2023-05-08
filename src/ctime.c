@@ -28,7 +28,7 @@
 ** autoconf-based build
 */
 #if defined(_HAVE_SQLITE_CONFIG_H) && !defined(SQLITECONFIG_H)
-#include "config.h"
+#include "sqlite_cfg.h"
 #define SQLITECONFIG_H 1
 #endif
 
@@ -192,6 +192,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
   "DISABLE_SKIPAHEAD_DISTINCT",
+#endif
+#ifdef SQLITE_DQS
+  "DQS=" CTIMEOPT_VAL(SQLITE_DQS),
 #endif
 #ifdef SQLITE_ENABLE_8_3_NAMES
   "ENABLE_8_3_NAMES=" CTIMEOPT_VAL(SQLITE_ENABLE_8_3_NAMES),
@@ -682,9 +685,6 @@ static const char * const sqlite3azCompileOpt[] = {
 #endif
 #ifdef SQLITE_OMIT_XFER_OPT
   "OMIT_XFER_OPT",
-#endif
-#ifdef SQLITE_PCACHE_SEPARATE_HEADER
-  "PCACHE_SEPARATE_HEADER",
 #endif
 #ifdef SQLITE_PERFORMANCE_TRACE
   "PERFORMANCE_TRACE",

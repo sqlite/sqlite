@@ -41,7 +41,7 @@ typedef struct WhereRightJoin WhereRightJoin;
 */
 struct WhereMemBlock {
   WhereMemBlock *pNext;      /* Next block in the chain */
-  u8 sz;                     /* Bytes of space */
+  u64 sz;                    /* Bytes of space */
 };
 
 /*
@@ -378,7 +378,7 @@ struct WhereAndInfo {
 ** between VDBE cursor numbers and bits of the bitmasks in WhereTerm.
 **
 ** The VDBE cursor numbers are small integers contained in 
-** SrcList_item.iCursor and Expr.iTable fields.  For any given WHERE 
+** SrcItem.iCursor and Expr.iTable fields.  For any given WHERE 
 ** clause, the cursor numbers might not begin with 0 and they might
 ** contain gaps in the numbering sequence.  But we want to make maximum
 ** use of the bits in our bitmasks.  This structure provides a mapping
@@ -450,20 +450,6 @@ struct WhereLoopBuilder {
 #endif
 
 /*
-** Each instance of this object records a change to a single node
-** in an expression tree to cause that node to point to a column
-** of an index rather than an expression or a virtual column.  All
-** such transformations need to be undone at the end of WHERE clause
-** processing.
-*/
-typedef struct WhereExprMod WhereExprMod;
-struct WhereExprMod {
-  WhereExprMod *pNext;  /* Next translation on a list of them all */
-  Expr *pExpr;          /* The Expr node that was transformed */
-  Expr orig;            /* Original value of the Expr node */
-};
-
-/*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second
 ** half does the tail of the WHERE loop.  An instance of
@@ -478,10 +464,10 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pResultSet;     /* Result set of the query */
+#if WHERETRACE_ENABLED
   Expr *pWhere;             /* The complete WHERE clause */
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  Select *pLimit;           /* Used to access LIMIT expr/registers for vtabs */
 #endif
+  Select *pSelect;          /* The entire SELECT statement containing WHERE */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
@@ -500,7 +486,6 @@ struct WhereInfo {
   int iTop;                 /* The very beginning of the WHERE loop */
   int iEndWhere;            /* End of the WHERE clause itself */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  WhereExprMod *pExprMods;  /* Expression modifications */
   WhereMemBlock *pMemToFree;/* Memory to free when this object destroyed */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
@@ -612,8 +597,9 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WO_AND    0x0400       /* Two or more AND-connected terms */
 #define WO_EQUIV  0x0800       /* Of the form A==B, both columns */
 #define WO_NOOP   0x1000       /* This term does not restrict search space */
+#define WO_ROWVAL 0x2000       /* A row-value term */
 
-#define WO_ALL    0x1fff       /* Mask of all possible WO_* values */
+#define WO_ALL    0x3fff       /* Mask of all possible WO_* values */
 #define WO_SINGLE 0x01ff       /* Mask of all non-compound WO_* values */
 
 /*
@@ -647,5 +633,7 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
 #define WHERE_SELFCULL     0x00800000  /* nOut reduced by extra WHERE terms */
 #define WHERE_OMIT_OFFSET  0x01000000  /* Set offset counter to zero */
+#define WHERE_VIEWSCAN     0x02000000  /* A full-scan of a VIEW or subquery */
+#define WHERE_EXPRIDX      0x04000000  /* Uses an index-on-expressions */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

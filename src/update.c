@@ -59,11 +59,14 @@ static void updateVirtualTable(
 ** it has been converted into REAL.
 */
 void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
+  Column *pCol;
   assert( pTab!=0 );
-  if( !IsView(pTab) ){
+  assert( pTab->nCol>i );
+  pCol = &pTab->aCol[i];
+  if( pCol->iDflt ){
     sqlite3_value *pValue = 0;
     u8 enc = ENC(sqlite3VdbeDb(v));
-    Column *pCol = &pTab->aCol[i];
+    assert( !IsView(pTab) );
     VdbeComment((v, "%s.%s", pTab->zName, pCol->zCnName));
     assert( i<pTab->nCol );
     sqlite3ValueFromExpr(sqlite3VdbeDb(v), 
@@ -74,7 +77,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
     }
   }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  if( pTab->aCol[i].affinity==SQLITE_AFF_REAL && !IsVirtual(pTab) ){
+  if( pCol->affinity==SQLITE_AFF_REAL && !IsVirtual(pTab) ){
     sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
   }
 #endif
@@ -260,7 +263,8 @@ static void updateFromSelect(
     }
   }
   pSelect = sqlite3SelectNew(pParse, pList, 
-      pSrc, pWhere2, pGrp, 0, pOrderBy2, SF_UFSrcCheck|SF_IncludeHidden, pLimit2
+      pSrc, pWhere2, pGrp, 0, pOrderBy2, 
+      SF_UFSrcCheck|SF_IncludeHidden|SF_UpdateFrom, pLimit2
   );
   if( pSelect ) pSelect->selFlags |= SF_OrderByReqd;
   sqlite3SelectDestInit(&dest, eDest, iEph);
@@ -404,7 +408,7 @@ void sqlite3Update(
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
   }
-  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
+  if( sqlite3IsReadOnly(pParse, pTab, pTrigger) ){
     goto update_cleanup;
   }
 
@@ -723,12 +727,22 @@ void sqlite3Update(
       /* Begin the database scan. 
       **
       ** Do not consider a single-pass strategy for a multi-row update if
-      ** there are any triggers or foreign keys to process, or rows may
-      ** be deleted as a result of REPLACE conflict handling. Any of these
-      ** things might disturb a cursor being used to scan through the table
-      ** or index, causing a single-pass approach to malfunction.  */
+      ** there is anything that might disrupt the cursor being used to do
+      ** the UPDATE:
+      **   (1) This is a nested UPDATE
+      **   (2) There are triggers
+      **   (3) There are FOREIGN KEY constraints
+      **   (4) There are REPLACE conflict handlers
+      **   (5) There are subqueries in the WHERE clause
+      */
       flags = WHERE_ONEPASS_DESIRED;
-      if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
+      if( !pParse->nested
+       && !pTrigger
+       && !hasFK
+       && !chngKey
+       && !bReplace
+       && (sNC.ncFlags & NC_Subquery)==0
+      ){
         flags |= WHERE_ONEPASS_MULTIROW;
       }
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,0,0,0,flags,iIdxCur);
@@ -1028,7 +1042,7 @@ void sqlite3Update(
       }else{
         sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue,regOldRowid);
       }
-      VdbeCoverageNeverTaken(v);
+      VdbeCoverage(v);
     }
 
     /* Do FK constraint checks. */

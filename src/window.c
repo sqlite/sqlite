@@ -785,6 +785,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
       }
       /* no break */ deliberate_fall_through
 
+    case TK_IF_NULL_ROW:
     case TK_AGG_FUNCTION:
     case TK_COLUMN: {
       int iCol = -1;
@@ -900,7 +901,6 @@ static ExprList *exprListAppendList(
     for(i=0; i<pAppend->nExpr; i++){
       sqlite3 *db = pParse->db;
       Expr *pDup = sqlite3ExprDup(db, pAppend->a[i].pExpr, 0);
-      assert( pDup==0 || !ExprHasProperty(pDup, EP_MemToken) );
       if( db->mallocFailed ){
         sqlite3ExprDelete(db, pDup);
         break;
@@ -916,7 +916,7 @@ static ExprList *exprListAppendList(
         }
       }
       pList = sqlite3ExprListAppend(pParse, pList, pDup);
-      if( pList ) pList->a[nInit+i].sortFlags = pAppend->a[i].sortFlags;
+      if( pList ) pList->a[nInit+i].fg.sortFlags = pAppend->a[i].fg.sortFlags;
     }
   }
   return pList;
@@ -1070,7 +1070,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     pSub = sqlite3SelectNew(
         pParse, pSublist, pSrc, pWhere, pGroupBy, pHaving, pSort, 0, 0
     );
-    SELECTTRACE(1,pParse,pSub,
+    TREETRACE(0x40,pParse,pSub,
        ("New window-function subquery in FROM clause of (%u/%p)\n",
        p->selId, p));
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
@@ -1080,6 +1080,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     if( p->pSrc ){
       Table *pTab2;
       p->pSrc->a[0].pSelect = pSub;
+      p->pSrc->a[0].fg.isCorrelated = 1;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded|SF_OrderByReqd;
       pTab2 = sqlite3ResultSetOfSelect(pParse, pSub, SQLITE_AFF_NONE);
@@ -2117,7 +2118,7 @@ static void windowCodeRangeTest(
 
   assert( op==OP_Ge || op==OP_Gt || op==OP_Le );
   assert( pOrderBy && pOrderBy->nExpr==1 );
-  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_DESC ){
+  if( pOrderBy->a[0].fg.sortFlags & KEYINFO_ORDER_DESC ){
     switch( op ){
       case OP_Ge: op = OP_Le; break;
       case OP_Gt: op = OP_Lt; break;
@@ -2150,7 +2151,7 @@ static void windowCodeRangeTest(
   ** Additionally, if either reg1 or reg2 are NULL but the jump to lbl is 
   ** not taken, control jumps over the comparison operator coded below this
   ** block.  */
-  if( pOrderBy->a[0].sortFlags & KEYINFO_ORDER_BIGNULL ){
+  if( pOrderBy->a[0].fg.sortFlags & KEYINFO_ORDER_BIGNULL ){
     /* This block runs if reg1 contains a NULL. */
     int addr = sqlite3VdbeAddOp1(v, OP_NotNull, reg1); VdbeCoverage(v);
     switch( op ){
@@ -2171,10 +2172,9 @@ static void windowCodeRangeTest(
 
     /* This block runs if reg1 is not NULL, but reg2 is. */
     sqlite3VdbeJumpHere(v, addr);
-    sqlite3VdbeAddOp2(v, OP_IsNull, reg2, lbl); VdbeCoverage(v);
-    if( op==OP_Gt || op==OP_Ge ){
-      sqlite3VdbeChangeP2(v, -1, addrDone);
-    }
+    sqlite3VdbeAddOp2(v, OP_IsNull, reg2,
+                      (op==OP_Gt || op==OP_Ge) ? addrDone : lbl);
+    VdbeCoverage(v);
   }
 
   /* Register reg1 currently contains csr1.peerVal (the peer-value from csr1).
@@ -2946,8 +2946,7 @@ void sqlite3WindowCodeStep(
     VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because bound <expr> */
     VdbeCoverageNeverNullIf(v, op==OP_Le); /*   values previously checked */
     windowAggFinal(&s, 0);
-    sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
-    VdbeCoverageNeverTaken(v);
+    sqlite3VdbeAddOp1(v, OP_Rewind, s.current.csr);
     windowReturnOneRow(&s);
     sqlite3VdbeAddOp1(v, OP_ResetSorter, s.current.csr);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
@@ -2959,13 +2958,10 @@ void sqlite3WindowCodeStep(
   }
 
   if( pMWin->eStart!=TK_UNBOUNDED ){
-    sqlite3VdbeAddOp2(v, OP_Rewind, s.start.csr, 1);
-    VdbeCoverageNeverTaken(v);
+    sqlite3VdbeAddOp1(v, OP_Rewind, s.start.csr);
   }
-  sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
-  VdbeCoverageNeverTaken(v);
-  sqlite3VdbeAddOp2(v, OP_Rewind, s.end.csr, 1);
-  VdbeCoverageNeverTaken(v);
+  sqlite3VdbeAddOp1(v, OP_Rewind, s.current.csr);
+  sqlite3VdbeAddOp1(v, OP_Rewind, s.end.csr);
   if( regPeer && pOrderBy ){
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPeer, regPeer, pOrderBy->nExpr-1);
     sqlite3VdbeAddOp3(v, OP_Copy, regPeer, s.start.reg, pOrderBy->nExpr-1);

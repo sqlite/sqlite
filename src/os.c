@@ -106,9 +106,11 @@ int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
   DO_OS_MALLOC_TEST(id);
+  assert( lockType>=SQLITE_LOCK_SHARED && lockType<=SQLITE_LOCK_EXCLUSIVE );
   return id->pMethods->xLock(id, lockType);
 }
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
+  assert( lockType==SQLITE_LOCK_NONE || lockType==SQLITE_LOCK_SHARED );
   return id->pMethods->xUnlock(id, lockType);
 }
 int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
@@ -223,6 +225,7 @@ int sqlite3OsOpen(
   ** down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
   ** SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before
   ** reaching the VFS. */
+  assert( zPath || (flags & SQLITE_OPEN_EXCLUSIVE) );
   rc = pVfs->xOpen(pVfs, zPath, pFile, flags & 0x1087f7f, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );
   return rc;

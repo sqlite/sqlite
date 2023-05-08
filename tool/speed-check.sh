@@ -3,9 +3,9 @@
 # This is a template for a script used for day-to-day size and 
 # performance monitoring of SQLite.  Typical usage:
 #
-#     sh run-speed-test.sh trunk  #  Baseline measurement of trunk
-#     sh run-speed-test.sh x1     # Measure some experimental change
-#     fossil test-diff --tk cout-trunk.txt cout-x1.txt   # View chanages
+#     sh speed-check.sh trunk  #  Baseline measurement of trunk
+#     sh speed-check.sh x1     # Measure some experimental change
+#     fossil xdiff --tk cout-trunk.txt cout-x1.txt   # View chanages
 #
 # There are multiple output files, all with a base name given by
 # the first argument:
@@ -96,6 +96,9 @@ while test "$1" != ""; do
     --cachesize)
         shift; SPEEDTEST_OPTS="$SPEEDTEST_OPTS --cachesize $1"
         ;;
+    --stmtcache)
+        shift; SPEEDTEST_OPTS="$SPEEDTEST_OPTS --stmtcache $1"
+        ;;
     --checkpoint)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --checkpoint"
         ;;
@@ -143,6 +146,9 @@ while test "$1" != ""; do
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset rtree"
         CC_OPTS="$CC_OPTS -DSQLITE_ENABLE_RTREE"
         ;;
+    --persist)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --persist"
+        ;;
     --orm)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset orm"
         ;;
@@ -151,6 +157,9 @@ while test "$1" != ""; do
         ;;
     --fp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset fp"
+        ;;
+    --stmtscanstatus)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --stmtscanstatus"
         ;;
     -*)
         CC_OPTS="$CC_OPTS $1"

@@ -61,7 +61,7 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
     if( pTrig->pTabSchema==pTab->pSchema
      && pTrig->table
      && 0==sqlite3StrICmp(pTrig->table, pTab->zName)
-     && pTrig->pTabSchema!=pTmpSchema
+     && (pTrig->pTabSchema!=pTmpSchema || pTrig->bReturning)
     ){
       pTrig->pNext = pList;
       pList = pTrig;
@@ -202,6 +202,7 @@ void sqlite3BeginTrigger(
       }else{
         assert( !db->init.busy );
         sqlite3CodeVerifySchema(pParse, iDb);
+        VVA_ONLY( pParse->ifNotExists = 1; )
       }
       goto trigger_cleanup;
     }
@@ -350,6 +351,23 @@ void sqlite3FinishTrigger(
   if( !db->init.busy ){
     Vdbe *v;
     char *z;
+
+    /* If this is a new CREATE TABLE statement, and if shadow tables
+    ** are read-only, and the trigger makes a change to a shadow table,
+    ** then raise an error - do not allow the trigger to be created. */
+    if( sqlite3ReadOnlyShadowTables(db) ){
+      TriggerStep *pStep;
+      for(pStep=pTrig->step_list; pStep; pStep=pStep->pNext){
+        if( pStep->zTarget!=0
+         && sqlite3ShadowTableName(db, pStep->zTarget)
+        ){
+          sqlite3ErrorMsg(pParse, 
+            "trigger \"%s\" may not write to shadow table \"%s\"",
+            pTrig->zName, pStep->zTarget);
+          goto triggerfinish_cleanup;
+        }
+      }
+    }
 
     /* Make an entry in the sqlite_schema table */
     v = sqlite3GetVdbe(pParse);
@@ -514,7 +532,7 @@ TriggerStep *sqlite3TriggerInsertStep(
 TriggerStep *sqlite3TriggerUpdateStep(
   Parse *pParse,          /* Parser */
   Token *pTableName,   /* Name of the table to be updated */
-  SrcList *pFrom,
+  SrcList *pFrom,      /* FROM clause for an UPDATE-FROM, or NULL */
   ExprList *pEList,    /* The SET clause: list of column and new values */
   Expr *pWhere,        /* The WHERE clause */
   u8 orconf,           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
@@ -850,6 +868,14 @@ SrcList *sqlite3TriggerStepSrc(
     }
     if( pStep->pFrom ){
       SrcList *pDup = sqlite3SrcListDup(db, pStep->pFrom, 0);
+      if( pDup && pDup->nSrc>1 && !IN_RENAME_OBJECT ){
+        Select *pSubquery;
+        Token as;
+        pSubquery = sqlite3SelectNew(pParse,0,pDup,0,0,0,0,SF_NestedFrom,0);
+        as.n = 0;
+        as.z = 0;
+        pDup = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&as,pSubquery,0);
+      }
       pSrc = sqlite3SrcListAppendList(pParse, pSrc, pDup);
     }
   }else{
@@ -905,7 +931,7 @@ static ExprList *sqlite3ExpandReturning(
         if( !db->mallocFailed ){
           struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
           pItem->zEName = sqlite3DbStrDup(db, pTab->aCol[jj].zCnName);
-          pItem->eEName = ENAME_NAME;
+          pItem->fg.eEName = ENAME_NAME;
         }
       }
     }else{
@@ -914,7 +940,7 @@ static ExprList *sqlite3ExpandReturning(
       if( !db->mallocFailed && ALWAYS(pList->a[i].zEName!=0) ){
         struct ExprList_item *pItem = &pNew->a[pNew->nExpr-1];
         pItem->zEName = sqlite3DbStrDup(db, pList->a[i].zEName);
-        pItem->eEName = pList->a[i].eEName;
+        pItem->fg.eEName = pList->a[i].fg.eEName;
       }
     }
   }
@@ -958,7 +984,7 @@ static void codeReturningTrigger(
   }
   sqlite3ExprListDelete(db, sSelect.pEList);
   pNew = sqlite3ExpandReturning(pParse, pReturning->pReturnEL, pTab);
-  if( !db->mallocFailed ){
+  if( pParse->nErr==0 ){
     NameContext sNC;
     memset(&sNC, 0, sizeof(sNC));
     if( pReturning->nRetCol==0 ){
@@ -1166,7 +1192,7 @@ static TriggerPrg *codeRowTrigger(
   sSubParse.zAuthContext = pTrigger->zName;
   sSubParse.eTriggerOp = pTrigger->op;
   sSubParse.nQueryLoop = pParse->nQueryLoop;
-  sSubParse.disableVtab = pParse->disableVtab;
+  sSubParse.prepFlags = pParse->prepFlags;
 
   v = sqlite3GetVdbe(&sSubParse);
   if( v ){
@@ -1427,6 +1453,9 @@ u32 sqlite3TriggerColmask(
   Trigger *p;
 
   assert( isNew==1 || isNew==0 );
+  if( IsView(pTab) ){
+    return 0xffffffff;
+  }
   for(p=pTrigger; p; p=p->pNext){
     if( p->op==op
      && (tr_tm&p->tr_tm)

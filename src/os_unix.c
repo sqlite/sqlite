@@ -72,7 +72,7 @@
 #endif
 
 /* Use pread() and pwrite() if they are available */
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__linux__)
 # define HAVE_PREAD 1
 # define HAVE_PWRITE 1
 #endif
@@ -87,15 +87,16 @@
 /*
 ** standard include files.
 */
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/types.h>   /* amalgamator: keep */
+#include <sys/stat.h>    /* amalgamator: keep */
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
+#include <unistd.h>      /* amalgamator: keep */
 #include <time.h>
-#include <sys/time.h>
+#include <sys/time.h>    /* amalgamator: keep */
 #include <errno.h>
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
 # include <sys/mman.h>
 #endif
 
@@ -183,9 +184,46 @@
 */
 #define SQLITE_MAX_SYMLINKS 100
 
+/*
+** Remove and stub certain info for WASI (WebAssembly System
+** Interface) builds.
+*/
+#ifdef SQLITE_WASI
+# undef HAVE_FCHMOD
+# undef HAVE_FCHOWN
+# undef HAVE_MREMAP
+# define HAVE_MREMAP 0
+# ifndef SQLITE_DEFAULT_UNIX_VFS
+#  define SQLITE_DEFAULT_UNIX_VFS "unix-dotfile"
+   /* ^^^ should SQLITE_DEFAULT_UNIX_VFS be "unix-none"? */
+# endif
+# ifndef F_RDLCK
+#  define F_RDLCK 0
+#  define F_WRLCK 1
+#  define F_UNLCK 2
+#  if __LONG_MAX == 0x7fffffffL
+#   define F_GETLK 12
+#   define F_SETLK 13
+#   define F_SETLKW 14
+#  else
+#   define F_GETLK 5
+#   define F_SETLK 6
+#   define F_SETLKW 7
+#  endif
+# endif
+#else /* !SQLITE_WASI */
+# ifndef HAVE_FCHMOD
+#  define HAVE_FCHMOD
+# endif
+#endif /* SQLITE_WASI */
+
+#ifdef SQLITE_WASI
+# define osGetpid(X) (pid_t)1
+#else
 /* Always cast the getpid() return type for compatibility with
 ** kernel modules in VxWorks. */
-#define osGetpid(X) (pid_t)getpid()
+# define osGetpid(X) (pid_t)getpid()
+#endif
 
 /*
 ** Only set the lastErrno if the error code is a real error and not 
@@ -457,7 +495,11 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off64_t))\
                     aSyscall[13].pCurrent)
 
+#if defined(HAVE_FCHMOD)
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,          0  },
+#else
+  { "fchmod",       (sqlite3_syscall_ptr)0,               0  },
+#endif
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -493,14 +535,16 @@ static struct unix_syscall {
 #endif
 #define osGeteuid   ((uid_t(*)(void))aSyscall[21].pCurrent)
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
   { "mmap",         (sqlite3_syscall_ptr)mmap,            0 },
 #else
   { "mmap",         (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[22].pCurrent)
 
-#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
+#if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
+  && !defined(SQLITE_WASI)
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #else
   { "munmap",       (sqlite3_syscall_ptr)0,               0 },
@@ -686,6 +730,9 @@ static int robust_open(const char *z, int f, mode_t m){
       break;
     }
     if( fd>=SQLITE_MINIMUM_FILE_DESCRIPTOR ) break;
+    if( (f & (O_EXCL|O_CREAT))==(O_EXCL|O_CREAT) ){
+      (void)osUnlink(z);
+    }
     osClose(fd);
     sqlite3_log(SQLITE_WARNING, 
                 "attempt to open \"%s\" as file descriptor %d", z, fd);
@@ -1648,7 +1695,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
 **
 **    UNLOCKED -> SHARED
 **    SHARED -> RESERVED
-**    SHARED -> (PENDING) -> EXCLUSIVE
+**    SHARED -> EXCLUSIVE
 **    RESERVED -> (PENDING) -> EXCLUSIVE
 **    PENDING -> EXCLUSIVE
 **
@@ -1681,19 +1728,20 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** A RESERVED lock is implemented by grabbing a write-lock on the
   ** 'reserved byte'. 
   **
-  ** A process may only obtain a PENDING lock after it has obtained a
-  ** SHARED lock. A PENDING lock is implemented by obtaining a write-lock
-  ** on the 'pending byte'. This ensures that no new SHARED locks can be
-  ** obtained, but existing SHARED locks are allowed to persist. A process
-  ** does not have to obtain a RESERVED lock on the way to a PENDING lock.
-  ** This property is used by the algorithm for rolling back a journal file
-  ** after a crash.
+  ** An EXCLUSIVE lock may only be requested after either a SHARED or
+  ** RESERVED lock is held. An EXCLUSIVE lock is implemented by obtaining 
+  ** a write-lock on the entire 'shared byte range'. Since all other locks 
+  ** require a read-lock on one of the bytes within this range, this ensures 
+  ** that no other locks are held on the database. 
   **
-  ** An EXCLUSIVE lock, obtained after a PENDING lock is held, is
-  ** implemented by obtaining a write-lock on the entire 'shared byte
-  ** range'. Since all other locks require a read-lock on one of the bytes
-  ** within this range, this ensures that no other locks are held on the
-  ** database. 
+  ** If a process that holds a RESERVED lock requests an EXCLUSIVE, then
+  ** a PENDING lock is obtained first. A PENDING lock is implemented by 
+  ** obtaining a write-lock on the 'pending byte'. This ensures that no new 
+  ** SHARED locks can be obtained, but existing SHARED locks are allowed to 
+  ** persist. If the call to this function fails to obtain the EXCLUSIVE
+  ** lock in this case, it holds the PENDING lock intead. The client may
+  ** then re-attempt the EXCLUSIVE lock later on, after existing SHARED
+  ** locks have cleared.
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
@@ -1764,7 +1812,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   lock.l_len = 1L;
   lock.l_whence = SEEK_SET;
   if( eFileLock==SHARED_LOCK 
-      || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock<PENDING_LOCK)
+   || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock==RESERVED_LOCK)
   ){
     lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
@@ -1775,6 +1823,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
         storeLastErrno(pFile, tErrno);
       }
       goto end_lock;
+    }else if( eFileLock==EXCLUSIVE_LOCK ){
+      pFile->eFileLock = PENDING_LOCK;
+      pInode->eFileLock = PENDING_LOCK;
     }
   }
 
@@ -1862,13 +1913,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   }
 #endif
 
-
   if( rc==SQLITE_OK ){
     pFile->eFileLock = eFileLock;
     pInode->eFileLock = eFileLock;
-  }else if( eFileLock==EXCLUSIVE_LOCK ){
-    pFile->eFileLock = PENDING_LOCK;
-    pInode->eFileLock = PENDING_LOCK;
   }
 
 end_lock:
@@ -3274,12 +3321,6 @@ static int nfsUnlock(sqlite3_file *id, int eFileLock){
 /*
 ** Seek to the offset passed as the second argument, then read cnt 
 ** bytes into pBuf. Return the number of bytes actually read.
-**
-** NB:  If you define USE_PREAD or USE_PREAD64, then it might also
-** be necessary to define _XOPEN_SOURCE to be 500.  This varies from
-** one system to another.  Since SQLite does not define USE_PREAD
-** in any form by default, we will not attempt to define _XOPEN_SOURCE.
-** See tickets #2741 and #2681.
 **
 ** To avoid stomping the errno value on a failed read the lastErrno value
 ** is set before returning.
@@ -5855,6 +5896,7 @@ static const char *unixTempFileDir(void){
 static int unixGetTempname(int nBuf, char *zBuf){
   const char *zDir;
   int iLimit = 0;
+  int rc = SQLITE_OK;
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -5863,18 +5905,26 @@ static int unixGetTempname(int nBuf, char *zBuf){
   zBuf[0] = 0;
   SimulateIOError( return SQLITE_IOERR );
 
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   zDir = unixTempFileDir();
-  if( zDir==0 ) return SQLITE_IOERR_GETTEMPPATH;
-  do{
-    u64 r;
-    sqlite3_randomness(sizeof(r), &r);
-    assert( nBuf>2 );
-    zBuf[nBuf-2] = 0;
-    sqlite3_snprintf(nBuf, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX"%llx%c",
-                     zDir, r, 0);
-    if( zBuf[nBuf-2]!=0 || (iLimit++)>10 ) return SQLITE_ERROR;
-  }while( osAccess(zBuf,0)==0 );
-  return SQLITE_OK;
+  if( zDir==0 ){
+    rc = SQLITE_IOERR_GETTEMPPATH;
+  }else{
+    do{
+      u64 r;
+      sqlite3_randomness(sizeof(r), &r);
+      assert( nBuf>2 );
+      zBuf[nBuf-2] = 0;
+      sqlite3_snprintf(nBuf, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX"%llx%c",
+                       zDir, r, 0);
+      if( zBuf[nBuf-2]!=0 || (iLimit++)>10 ){
+        rc = SQLITE_ERROR;
+        break;
+      }
+    }while( osAccess(zBuf,0)==0 );
+  }
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  return rc;
 }
 
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
@@ -6423,86 +6473,97 @@ static int unixAccess(
 }
 
 /*
-** If the last component of the pathname in z[0]..z[j-1] is something
-** other than ".." then back it out and return true.  If the last
-** component is empty or if it is ".." then return false.
+** A pathname under construction
 */
-static int unixBackupDir(const char *z, int *pJ){
-  int j = *pJ;
-  int i;
-  if( j<=0 ) return 0;
-  for(i=j-1; i>0 && z[i-1]!='/'; i--){}
-  if( i==0 ) return 0;
-  if( z[i]=='.' && i==j-2 && z[i+1]=='.' ) return 0;
-  *pJ = i-1;
-  return 1;
+typedef struct DbPath DbPath;
+struct DbPath {
+  int rc;           /* Non-zero following any error */
+  int nSymlink;     /* Number of symlinks resolved */
+  char *zOut;       /* Write the pathname here */
+  int nOut;         /* Bytes of space available to zOut[] */
+  int nUsed;        /* Bytes of zOut[] currently being used */
+};
+
+/* Forward reference */
+static void appendAllPathElements(DbPath*,const char*);
+
+/*
+** Append a single path element to the DbPath under construction
+*/
+static void appendOnePathElement(
+  DbPath *pPath,       /* Path under construction, to which to append zName */
+  const char *zName,   /* Name to append to pPath.  Not zero-terminated */
+  int nName            /* Number of significant bytes in zName */
+){
+  assert( nName>0 );
+  assert( zName!=0 );
+  if( zName[0]=='.' ){
+    if( nName==1 ) return;
+    if( zName[1]=='.' && nName==2 ){
+      if( pPath->nUsed>1 ){
+        assert( pPath->zOut[0]=='/' );
+        while( pPath->zOut[--pPath->nUsed]!='/' ){}
+      }
+      return;
+    }
+  }
+  if( pPath->nUsed + nName + 2 >= pPath->nOut ){
+    pPath->rc = SQLITE_ERROR;
+    return;
+  }
+  pPath->zOut[pPath->nUsed++] = '/';
+  memcpy(&pPath->zOut[pPath->nUsed], zName, nName);
+  pPath->nUsed += nName;
+#if defined(HAVE_READLINK) && defined(HAVE_LSTAT)
+  if( pPath->rc==SQLITE_OK ){
+    const char *zIn;
+    struct stat buf;
+    pPath->zOut[pPath->nUsed] = 0;
+    zIn = pPath->zOut;
+    if( osLstat(zIn, &buf)!=0 ){
+      if( errno!=ENOENT ){
+        pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "lstat", zIn);
+      }
+    }else if( S_ISLNK(buf.st_mode) ){
+      ssize_t got;
+      char zLnk[SQLITE_MAX_PATHLEN+2];
+      if( pPath->nSymlink++ > SQLITE_MAX_SYMLINK ){
+        pPath->rc = SQLITE_CANTOPEN_BKPT;
+        return;
+      }
+      got = osReadlink(zIn, zLnk, sizeof(zLnk)-2);
+      if( got<=0 || got>=(ssize_t)sizeof(zLnk)-2 ){
+        pPath->rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
+        return;
+      }
+      zLnk[got] = 0;
+      if( zLnk[0]=='/' ){
+        pPath->nUsed = 0;
+      }else{
+        pPath->nUsed -= nName + 1;
+      }
+      appendAllPathElements(pPath, zLnk);
+    }
+  }
+#endif
 }
 
 /*
-** Convert a relative pathname into a full pathname.  Also
-** simplify the pathname as follows:
-**
-**    Remove all instances of /./
-**    Remove all isntances of /X/../ for any X
+** Append all path elements in zPath to the DbPath under construction.
 */
-static int mkFullPathname(
-  const char *zPath,              /* Input path */
-  char *zOut,                     /* Output buffer */
-  int nOut                        /* Allocated size of buffer zOut */
+static void appendAllPathElements(
+  DbPath *pPath,       /* Path under construction, to which to append zName */
+  const char *zPath    /* Path to append to pPath.  Is zero-terminated */
 ){
-  int nPath = sqlite3Strlen30(zPath);
-  int iOff = 0;
-  int i, j;
-  if( zPath[0]!='/' ){
-    if( osGetcwd(zOut, nOut-2)==0 ){
-      return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
+  int i = 0;
+  int j = 0;
+  do{
+    while( zPath[i] && zPath[i]!='/' ){ i++; }
+    if( i>j ){
+      appendOnePathElement(pPath, &zPath[j], i-j);
     }
-    iOff = sqlite3Strlen30(zOut);
-    zOut[iOff++] = '/';
-  }
-  if( (iOff+nPath+1)>nOut ){
-    /* SQLite assumes that xFullPathname() nul-terminates the output buffer
-    ** even if it returns an error.  */
-    zOut[iOff] = '\0';
-    return SQLITE_CANTOPEN_BKPT;
-  }
-  sqlite3_snprintf(nOut-iOff, &zOut[iOff], "%s", zPath);
-
-  /* Remove duplicate '/' characters.  Except, two // at the beginning
-  ** of a pathname is allowed since this is important on windows. */
-  for(i=j=1; zOut[i]; i++){
-    zOut[j++] = zOut[i];
-    while( zOut[i]=='/' && zOut[i+1]=='/' ) i++;
-  }
-  zOut[j] = 0;
-
-  assert( zOut[0]=='/' );
-  for(i=j=0; zOut[i]; i++){
-    if( zOut[i]=='/' ){
-      /* Skip over internal "/." directory components */
-      if( zOut[i+1]=='.' && zOut[i+2]=='/' ){
-        i += 1;
-        continue;
-      }
-
-      /* If this is a "/.." directory component then back out the
-      ** previous term of the directory if it is something other than "..".
-      */
-      if( zOut[i+1]=='.'
-       && zOut[i+2]=='.'
-       && zOut[i+3]=='/'
-       && unixBackupDir(zOut, &j)
-      ){
-        i += 2;
-        continue;
-      }
-    }
-    if( ALWAYS(j>=0) ) zOut[j] = zOut[i];
-    j++;
-  }
-  if( NEVER(j==0) ) zOut[j++] = '/';
-  zOut[j] = 0;
-  return SQLITE_OK;
+    j = i+1;
+  }while( zPath[i++] );
 }
 
 /*
@@ -6520,85 +6581,26 @@ static int unixFullPathname(
   int nOut,                     /* Size of output buffer in bytes */
   char *zOut                    /* Output buffer */
 ){
-#if !defined(HAVE_READLINK) || !defined(HAVE_LSTAT)
-  return mkFullPathname(zPath, zOut, nOut);
-#else
-  int rc = SQLITE_OK;
-  int nByte;
-  int nLink = 0;                /* Number of symbolic links followed so far */
-  const char *zIn = zPath;      /* Input path for each iteration of loop */
-  char *zDel = 0;
-
-  assert( pVfs->mxPathname==MAX_PATHNAME );
+  DbPath path;
   UNUSED_PARAMETER(pVfs);
-
-  /* It's odd to simulate an io-error here, but really this is just
-  ** using the io-error infrastructure to test that SQLite handles this
-  ** function failing. This function could fail if, for example, the
-  ** current working directory has been unlinked.
-  */
-  SimulateIOError( return SQLITE_ERROR );
-
-  do {
-
-    /* Call stat() on path zIn. Set bLink to true if the path is a symbolic
-    ** link, or false otherwise.  */
-    int bLink = 0;
-    struct stat buf;
-    if( osLstat(zIn, &buf)!=0 ){
-      if( errno!=ENOENT ){
-        rc = unixLogError(SQLITE_CANTOPEN_BKPT, "lstat", zIn);
-      }
-    }else{
-      bLink = S_ISLNK(buf.st_mode);
+  path.rc = 0;
+  path.nUsed = 0;
+  path.nSymlink = 0;
+  path.nOut = nOut;
+  path.zOut = zOut;
+  if( zPath[0]!='/' ){
+    char zPwd[SQLITE_MAX_PATHLEN+2];
+    if( osGetcwd(zPwd, sizeof(zPwd)-2)==0 ){
+      return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
-
-    if( bLink ){
-      nLink++;
-      if( zDel==0 ){
-        zDel = sqlite3_malloc(nOut);
-        if( zDel==0 ) rc = SQLITE_NOMEM_BKPT;
-      }else if( nLink>=SQLITE_MAX_SYMLINKS ){
-        rc = SQLITE_CANTOPEN_BKPT;
-      }
-
-      if( rc==SQLITE_OK ){
-        nByte = osReadlink(zIn, zDel, nOut-1);
-        if( nByte<0 ){
-          rc = unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zIn);
-        }else{
-          if( zDel[0]!='/' ){
-            int n;
-            for(n = sqlite3Strlen30(zIn); n>0 && zIn[n-1]!='/'; n--);
-            if( nByte+n+1>nOut ){
-              rc = SQLITE_CANTOPEN_BKPT;
-            }else{
-              memmove(&zDel[n], zDel, nByte+1);
-              memcpy(zDel, zIn, n);
-              nByte += n;
-            }
-          }
-          zDel[nByte] = '\0';
-        }
-      }
-
-      zIn = zDel;
-    }
-
-    assert( rc!=SQLITE_OK || zIn!=zOut || zIn[0]=='/' );
-    if( rc==SQLITE_OK && zIn!=zOut ){
-      rc = mkFullPathname(zIn, zOut, nOut);
-    }
-    if( bLink==0 ) break;
-    zIn = zOut;
-  }while( rc==SQLITE_OK );
-
-  sqlite3_free(zDel);
-  if( rc==SQLITE_OK && nLink ) rc = SQLITE_OK_SYMLINK;
-  return rc;
-#endif   /* HAVE_READLINK && HAVE_LSTAT */
+    appendAllPathElements(&path, zPwd);
+  }
+  appendAllPathElements(&path, zPath);
+  zOut[path.nUsed] = 0;
+  if( path.rc || path.nUsed<2 ) return SQLITE_CANTOPEN_BKPT;
+  if( path.nSymlink ) return SQLITE_OK_SYMLINK;
+  return SQLITE_OK;
 }
-
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
@@ -6713,7 +6715,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 ** than the argument.
 */
 static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
-#if OS_VXWORKS
+#if OS_VXWORKS || _POSIX_C_SOURCE >= 199309L
   struct timespec sp;
 
   sp.tv_sec = microseconds / 1000000;
@@ -8095,8 +8097,16 @@ int sqlite3_os_init(void){
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
+#ifdef SQLITE_DEFAULT_UNIX_VFS
+    sqlite3_vfs_register(&aVfs[i],
+           0==strcmp(aVfs[i].zName,SQLITE_DEFAULT_UNIX_VFS));
+#else
     sqlite3_vfs_register(&aVfs[i], i==0);
+#endif
   }
+#ifdef SQLITE_OS_KV_OPTIONAL
+  sqlite3KvvfsInit();
+#endif
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
 
 #ifndef SQLITE_OMIT_WAL

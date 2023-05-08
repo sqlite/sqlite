@@ -176,6 +176,26 @@ void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
 }
 
 /*
+** Check for interrupts and invoke progress callback.
+*/
+void sqlite3ProgressCheck(Parse *p){
+  sqlite3 *db = p->db;
+  if( AtomicLoad(&db->u1.isInterrupted) ){
+    p->nErr++;
+    p->rc = SQLITE_INTERRUPT;
+  }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
+    if( db->xProgress(db->pProgressArg) ){
+      p->nErr++;
+      p->rc = SQLITE_INTERRUPT;
+    }
+    p->nProgressSteps = 0;
+  }
+#endif
+}
+
+/*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
 **
 ** This function should be used to report any error that occurs while
@@ -190,7 +210,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   sqlite3 *db = pParse->db;
   assert( db!=0 );
-  assert( db->pParse==pParse );
+  assert( db->pParse==pParse || db->pParse->pToplevel==pParse );
   db->errByteOffset = -2;
   va_start(ap, zFormat);
   zMsg = sqlite3VMPrintf(db, zFormat, ap);
@@ -632,11 +652,14 @@ do_atof_calc:
 #endif
 
 /*
-** Render an signed 64-bit integer as text.  Store the result in zOut[].
+** Render an signed 64-bit integer as text.  Store the result in zOut[] and
+** return the length of the string that was stored, in bytes.  The value
+** returned does not include the zero terminator at the end of the output
+** string.
 **
 ** The caller must ensure that zOut[] is at least 21 bytes in size.
 */
-void sqlite3Int64ToText(i64 v, char *zOut){
+int sqlite3Int64ToText(i64 v, char *zOut){
   int i;
   u64 x;
   char zTemp[22];
@@ -647,12 +670,15 @@ void sqlite3Int64ToText(i64 v, char *zOut){
   }
   i = sizeof(zTemp)-2;
   zTemp[sizeof(zTemp)-1] = 0;
-  do{
-    zTemp[i--] = (x%10) + '0';
+  while( 1 /*exit-by-break*/ ){
+    zTemp[i] = (x%10) + '0';
     x = x/10;
-  }while( x );
-  if( v<0 ) zTemp[i--] = '-';
-  memcpy(zOut, &zTemp[i+1], sizeof(zTemp)-1-i);
+    if( x==0 ) break;
+    i--;
+  };
+  if( v<0 ) zTemp[--i] = '-';
+  memcpy(zOut, &zTemp[i], sizeof(zTemp)-i);
+  return sizeof(zTemp)-1-i;
 }
 
 /*
@@ -817,7 +843,9 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
       u = u*16 + sqlite3HexToInt(z[k]);
     }
     memcpy(pOut, &u, 8);
-    return (z[k]==0 && k-i<=16) ? 0 : 2;
+    if( k-i>16 ) return 2;
+    if( z[k]!=0 ) return 1;
+    return 0;
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {
@@ -853,7 +881,7 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
     u32 u = 0;
     zNum += 2;
     while( zNum[0]=='0' ) zNum++;
-    for(i=0; sqlite3Isxdigit(zNum[i]) && i<8; i++){
+    for(i=0; i<8 && sqlite3Isxdigit(zNum[i]); i++){
       u = u*16 + sqlite3HexToInt(zNum[i]);
     }
     if( (u&0x80000000)==0 && sqlite3Isxdigit(zNum[i])==0 ){
@@ -1713,3 +1741,12 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
   }while( i<mx );
   return 0;
 }
+
+/*
+** High-resolution hardware timer used for debugging and testing only.
+*/
+#if defined(VDBE_PROFILE)  \
+ || defined(SQLITE_PERFORMANCE_TRACE) \
+ || defined(SQLITE_ENABLE_STMT_SCANSTATUS) 
+# include "hwtime.h"
+#endif

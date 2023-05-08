@@ -1260,7 +1260,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memdb.lo memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
-         notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
+         notify.lo opcodes.lo os.lo os_kv.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo \
          sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
@@ -1341,6 +1341,7 @@ SRC00 = \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
+  $(TOP)\src\os_kv.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c
 
@@ -1420,20 +1421,6 @@ SRC05 = \
   $(TOP)\src\wal.h \
   $(TOP)\src\whereInt.h
 
-# Extension source code files, part 1.
-#
-SRC06 = \
-  $(TOP)\ext\fts1\fts1.c \
-  $(TOP)\ext\fts1\fts1_hash.c \
-  $(TOP)\ext\fts1\fts1_porter.c \
-  $(TOP)\ext\fts1\fts1_tokenizer1.c \
-  $(TOP)\ext\fts2\fts2.c \
-  $(TOP)\ext\fts2\fts2_hash.c \
-  $(TOP)\ext\fts2\fts2_icu.c \
-  $(TOP)\ext\fts2\fts2_porter.c \
-  $(TOP)\ext\fts2\fts2_tokenizer.c \
-  $(TOP)\ext\fts2\fts2_tokenizer1.c
-
 # Extension source code files, part 2.
 #
 SRC07 = \
@@ -1455,16 +1442,6 @@ SRC07 = \
   $(TOP)\ext\session\sqlite3session.c \
   $(TOP)\ext\rbu\sqlite3rbu.c \
   $(TOP)\ext\misc\stmt.c
-
-# Extension header files, part 1.
-#
-SRC08 = \
-  $(TOP)\ext\fts1\fts1.h \
-  $(TOP)\ext\fts1\fts1_hash.h \
-  $(TOP)\ext\fts1\fts1_tokenizer.h \
-  $(TOP)\ext\fts2\fts2.h \
-  $(TOP)\ext\fts2\fts2_hash.h \
-  $(TOP)\ext\fts2\fts2_tokenizer.h
 
 # Extension header files, part 2.
 #
@@ -1506,7 +1483,7 @@ SRC12 =
 
 # All source code files.
 #
-SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC06) $(SRC07) $(SRC08) $(SRC09) $(SRC10) $(SRC11) $(SRC12)
+SRC = $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC07) $(SRC09) $(SRC10) $(SRC11) $(SRC12)
 
 # Source code to the test files.
 #
@@ -1517,7 +1494,6 @@ TESTSRC = \
   $(TOP)\src\test4.c \
   $(TOP)\src\test5.c \
   $(TOP)\src\test6.c \
-  $(TOP)\src\test7.c \
   $(TOP)\src\test8.c \
   $(TOP)\src\test9.c \
   $(TOP)\src\test_autoext.c \
@@ -1546,7 +1522,6 @@ TESTSRC = \
   $(TOP)\src\test_quota.c \
   $(TOP)\src\test_rtree.c \
   $(TOP)\src\test_schema.c \
-  $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \
   $(TOP)\src\test_tclsh.c \
@@ -1560,7 +1535,7 @@ TESTSRC = \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
   $(TOP)\ext\rbu\test_rbu.c \
-  $(TOP)\ext\session\test_session.c 
+  $(TOP)\ext\session\test_session.c
 
 # Statically linked extensions.
 #
@@ -1569,6 +1544,7 @@ TESTEXT = \
   $(TOP)\ext\expert\test_expert.c \
   $(TOP)\ext\misc\amatch.c \
   $(TOP)\ext\misc\appendvfs.c \
+  $(TOP)\ext\misc\basexx.c \
   $(TOP)\ext\misc\carray.c \
   $(TOP)\ext\misc\cksumvfs.c \
   $(TOP)\ext\misc\closure.c \
@@ -1596,6 +1572,9 @@ TESTEXT = \
   $(TOP)\ext\misc\unionvtab.c \
   $(TOP)\ext\misc\wholenumber.c \
   $(TOP)\ext\rtree\test_rtreedoc.c \
+  $(TOP)\ext\recover\sqlite3recover.c \
+  $(TOP)\ext\recover\test_recover.c \
+  $(TOP)\ext\recover\dbdata.c \
   fts5.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -1610,7 +1589,6 @@ TESTEXT = $(TESTEXT) $(TOP)\ext\misc\zipfile.c
 TESTSRC2 = \
   $(SRC00) \
   $(SRC01) \
-  $(SRC06) \
   $(SRC07) \
   $(SRC10) \
   $(TOP)\ext\async\sqlite3async.c
@@ -1645,14 +1623,6 @@ HDR = \
 
 # Header files used by extensions
 #
-EXTHDR = $(EXTHDR) \
-  $(TOP)\ext\fts1\fts1.h \
-  $(TOP)\ext\fts1\fts1_hash.h \
-  $(TOP)\ext\fts1\fts1_tokenizer.h
-EXTHDR = $(EXTHDR) \
-  $(TOP)\ext\fts2\fts2.h \
-  $(TOP)\ext\fts2\fts2_hash.h \
-  $(TOP)\ext\fts2\fts2_tokenizer.h
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\fts3\fts3.h \
   $(TOP)\ext\fts3\fts3Int.h \
@@ -1701,6 +1671,7 @@ FUZZDATA = \
 # when the shell is not being dynamically linked.
 #
 !IF $(DYNAMIC_SHELL)==0 && $(FOR_WIN10)==0
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
@@ -1714,15 +1685,52 @@ SHELL_NOEXT_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSHELL_OMIT_EXTENSIONS=7
 #
 MPTESTER_COMPILE_OPTS = -DSQLITE_ENABLE_FTS5
 FUZZERSHELL_COMPILE_OPTS =
-FUZZCHECK_OPTS = -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ -DSQLITE_MAX_MEMORY=50000000 -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -I$(TOP)\test -I$(TOP)\ext\recover
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBPAGE_VTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBSTAT_VTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DESERIALIZE
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS3_PARENTHESIS
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS4
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS5
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_GEOPOLY
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MATH_FUNCTIONS
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MEMSYS5
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_NORMALIZE
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_PREUPDATE_HOOK
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_RTREE
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_SESSION
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_STMTVTAB
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_STAT4
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MEMORY=50000000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MMAP_SIZE=0
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRIVATE=""
+
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_MAX_MEMORY=50000000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_PRINTF_PRECISION_LIMIT=1000
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS4
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_FTS5
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_GEOPOLY
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBSTAT_VTAB
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzcheck.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\ossfuzz.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
 
-FUZZCHECK_SRC = $(TOP)\test\fuzzcheck.c $(TOP)\test\ossfuzz.c
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 KV_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ
@@ -1829,6 +1837,9 @@ dbfuzz.exe:	$(TOP)\test\dbfuzz.c $(SQLITE3C) $(SQLITE3H)
 fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+fuzzcheck-asan.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) /fsanitize=address $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
 ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -1866,9 +1877,7 @@ mptest:	mptester.exe
 	for %i in ($(SRC03)) do copy /Y %i tsrc
 	for %i in ($(SRC04)) do copy /Y %i tsrc
 	for %i in ($(SRC05)) do copy /Y %i tsrc
-	for %i in ($(SRC06)) do copy /Y %i tsrc
 	for %i in ($(SRC07)) do copy /Y %i tsrc
-	for %i in ($(SRC08)) do copy /Y %i tsrc
 	for %i in ($(SRC09)) do copy /Y %i tsrc
 	for %i in ($(SRC10)) do copy /Y %i tsrc
 	for %i in ($(SRC11)) do copy /Y %i tsrc
@@ -2074,6 +2083,9 @@ pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
 os.lo:	$(TOP)\src\os.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os.c
 
+os_kv.lo:	$(TOP)\src\os_kv.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_kv.c
+
 os_unix.lo:	$(TOP)\src\os_unix.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_unix.c
 
@@ -2235,6 +2247,8 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
+        $(TOP)\ext\misc\base64.c \
+        $(TOP)\ext\misc\base85.c \
 	$(TOP)\ext\misc\decimal.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\ieee754.c \
@@ -2245,6 +2259,9 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
+	$(TOP)/ext/recover/dbdata.c \
+	$(TOP)/ext/recover/sqlite3recover.c \
+	$(TOP)/ext/recover/sqlite3recover.h \
 	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -2264,24 +2281,6 @@ zlib:
 #
 icu.lo:	$(TOP)\ext\icu\icu.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\icu\icu.c
-
-fts2.lo:	$(TOP)\ext\fts2\fts2.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2.c
-
-fts2_hash.lo:	$(TOP)\ext\fts2\fts2_hash.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2_hash.c
-
-fts2_icu.lo:	$(TOP)\ext\fts2\fts2_icu.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2_icu.c
-
-fts2_porter.lo:	$(TOP)\ext\fts2\fts2_porter.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2_porter.c
-
-fts2_tokenizer.lo:	$(TOP)\ext\fts2\fts2_tokenizer.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2_tokenizer.c
-
-fts2_tokenizer1.lo:	$(TOP)\ext\fts2\fts2_tokenizer1.c $(HDR) $(EXTHDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts2\fts2_tokenizer1.c
 
 fts3.lo:	$(TOP)\ext\fts3\fts3.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\fts3\fts3.c
@@ -2534,6 +2533,22 @@ test:	$(TESTPROGS) sourcetest fuzztest tcltest
 tcltest: testfixture.exe
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
+
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture.exe
+	.\testfixture.exe $(TOP)\test\testrunner.tcl
+
+# Runs both fuzztest and testrunner, consecutively.
+#
+devtest:	testfixture.exe fuzztest testrunner
+
+# Testing for a release
+#
+releasetest: testfixture.exe fuzztest
+	testfixture.exe $(TOP)/test/testrunner.tcl release
+
 
 smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)

@@ -67,13 +67,13 @@ struct VdbeOp {
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   char *zComment;          /* Comment to improve readability */
 #endif
-#ifdef VDBE_PROFILE
-  u32 cnt;                 /* Number of times this instruction was executed */
-  u64 cycles;              /* Total time spent executing this instruction */
-#endif
 #ifdef SQLITE_VDBE_COVERAGE
   u32 iSrcLine;            /* Source-code line that generated this opcode
                            ** with flags in the upper 8 bits */
+#endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  u64 nExec;
+  u64 nCycle;
 #endif
 };
 typedef struct VdbeOp VdbeOp;
@@ -205,14 +205,20 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 #ifndef SQLITE_OMIT_EXPLAIN
-  void sqlite3VdbeExplain(Parse*,u8,const char*,...);
+  int sqlite3VdbeExplain(Parse*,u8,const char*,...);
   void sqlite3VdbeExplainPop(Parse*);
   int sqlite3VdbeExplainParent(Parse*);
 # define ExplainQueryPlan(P)        sqlite3VdbeExplain P
+# ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+#  define ExplainQueryPlan2(V,P)     (V = sqlite3VdbeExplain P)
+# else
+#  define ExplainQueryPlan2(V,P)     ExplainQueryPlan(P)
+# endif
 # define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
 # define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
 #else
 # define ExplainQueryPlan(P)
+# define ExplainQueryPlan2(V,P)
 # define ExplainQueryPlanPop(P)
 # define ExplainQueryPlanParent(P) 0
 # define sqlite3ExplainBreakpoint(A,B) /*no-op*/
@@ -228,6 +234,7 @@ void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
 void sqlite3VdbeChangeP3(Vdbe*, int addr, int P3);
 void sqlite3VdbeChangeP5(Vdbe*, u16 P5);
+void sqlite3VdbeTypeofColumn(Vdbe*, int);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeJumpHereOrPopInst(Vdbe*, int addr);
 int sqlite3VdbeChangeToNoop(Vdbe*, int addr);
@@ -242,6 +249,7 @@ void sqlite3VdbeAppendP4(Vdbe*, void *pP4, int p4type);
 void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
+VdbeOp *sqlite3VdbeGetLastOp(Vdbe*);
 int sqlite3VdbeMakeLabel(Parse*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeReusable(Vdbe*);
@@ -383,12 +391,20 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
+void sqlite3VdbeScanStatusRange(Vdbe*, int, int, int);
+void sqlite3VdbeScanStatusCounters(Vdbe*, int, int, int);
 #else
-# define sqlite3VdbeScanStatus(a,b,c,d,e)
+# define sqlite3VdbeScanStatus(a,b,c,d,e,f)
+# define sqlite3VdbeScanStatusRange(a,b,c,d)
+# define sqlite3VdbeScanStatusCounters(a,b,c,d)
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
+#endif
+
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr);
 #endif
 
 #endif /* SQLITE_VDBE_H */

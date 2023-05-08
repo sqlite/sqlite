@@ -70,43 +70,68 @@ void sqlite3OpenTable(
 ** is managed along with the rest of the Index structure. It will be
 ** released when sqlite3DeleteIndex() is called.
 */
-const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
+static SQLITE_NOINLINE const char *computeIndexAffStr(sqlite3 *db, Index *pIdx){
+  /* The first time a column affinity string for a particular index is
+  ** required, it is allocated and populated here. It is then stored as
+  ** a member of the Index structure for subsequent use.
+  **
+  ** The column affinity string will eventually be deleted by
+  ** sqliteDeleteIndex() when the Index structure itself is cleaned
+  ** up.
+  */
+  int n;
+  Table *pTab = pIdx->pTable;
+  pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
   if( !pIdx->zColAff ){
-    /* The first time a column affinity string for a particular index is
-    ** required, it is allocated and populated here. It is then stored as
-    ** a member of the Index structure for subsequent use.
-    **
-    ** The column affinity string will eventually be deleted by
-    ** sqliteDeleteIndex() when the Index structure itself is cleaned
-    ** up.
-    */
-    int n;
-    Table *pTab = pIdx->pTable;
-    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
-    if( !pIdx->zColAff ){
-      sqlite3OomFault(db);
-      return 0;
-    }
-    for(n=0; n<pIdx->nColumn; n++){
-      i16 x = pIdx->aiColumn[n];
-      char aff;
-      if( x>=0 ){
-        aff = pTab->aCol[x].affinity;
-      }else if( x==XN_ROWID ){
-        aff = SQLITE_AFF_INTEGER;
-      }else{
-        assert( x==XN_EXPR );
-        assert( pIdx->aColExpr!=0 );
-        aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
-      }
-      if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
-      if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
-      pIdx->zColAff[n] = aff;
-    }
-    pIdx->zColAff[n] = 0;
+    sqlite3OomFault(db);
+    return 0;
   }
- 
+  for(n=0; n<pIdx->nColumn; n++){
+    i16 x = pIdx->aiColumn[n];
+    char aff;
+    if( x>=0 ){
+      aff = pTab->aCol[x].affinity;
+    }else if( x==XN_ROWID ){
+      aff = SQLITE_AFF_INTEGER;
+    }else{
+      assert( x==XN_EXPR );
+      assert( pIdx->bHasExpr );
+      assert( pIdx->aColExpr!=0 );
+      aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
+    }
+    if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
+    if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
+    pIdx->zColAff[n] = aff;
+  }
+  pIdx->zColAff[n] = 0;
   return pIdx->zColAff;
+}
+const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
+  if( !pIdx->zColAff ) return computeIndexAffStr(db, pIdx);
+  return pIdx->zColAff;
+}
+
+
+/*
+** Compute an affinity string for a table.   Space is obtained
+** from sqlite3DbMalloc().  The caller is responsible for freeing
+** the space when done.
+*/
+char *sqlite3TableAffinityStr(sqlite3 *db, const Table *pTab){
+  char *zColAff;
+  zColAff = (char *)sqlite3DbMallocRaw(db, pTab->nCol+1);
+  if( zColAff ){
+    int i, j;
+    for(i=j=0; i<pTab->nCol; i++){
+      if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
+        zColAff[j++] = pTab->aCol[i].affinity;
+      }
+    }
+    do{
+      zColAff[j--] = 0;
+    }while( j>=0 && zColAff[j]<=SQLITE_AFF_BLOB );
+  }
+  return zColAff;  
 }
 
 /*
@@ -150,7 +175,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 ** Apply the type checking to that array of registers.
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
-  int i, j;
+  int i;
   char *zColAff;
   if( pTab->tabFlags & TF_Strict ){
     if( iReg==0 ){
@@ -159,7 +184,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
       ** OP_MakeRecord is found */
       VdbeOp *pPrev;
       sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
-      pPrev = sqlite3VdbeGetOp(v, -1);
+      pPrev = sqlite3VdbeGetLastOp(v);
       assert( pPrev!=0 );
       assert( pPrev->opcode==OP_MakeRecord || sqlite3VdbeDb(v)->mallocFailed );
       pPrev->opcode = OP_TypeCheck;
@@ -173,22 +198,11 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   }
   zColAff = pTab->zColAff;
   if( zColAff==0 ){
-    sqlite3 *db = sqlite3VdbeDb(v);
-    zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
+    zColAff = sqlite3TableAffinityStr(0, pTab);
     if( !zColAff ){
-      sqlite3OomFault(db);
+      sqlite3OomFault(sqlite3VdbeDb(v));
       return;
     }
-
-    for(i=j=0; i<pTab->nCol; i++){
-      assert( pTab->aCol[i].affinity!=0 || sqlite3VdbeParser(v)->nErr>0 );
-      if( (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
-        zColAff[j++] = pTab->aCol[i].affinity;
-      }
-    }
-    do{
-      zColAff[j--] = 0;
-    }while( j>=0 && zColAff[j]<=SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   assert( zColAff!=0 );
@@ -197,7 +211,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     if( iReg ){
       sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);
     }else{
-      assert( sqlite3VdbeGetOp(v, -1)->opcode==OP_MakeRecord
+      assert( sqlite3VdbeGetLastOp(v)->opcode==OP_MakeRecord
               || sqlite3VdbeDb(v)->mallocFailed );
       sqlite3VdbeChangeP4(v, -1, zColAff, i);
     }
@@ -283,7 +297,7 @@ void sqlite3ComputeGeneratedColumns(
   */
   sqlite3TableAffinity(pParse->pVdbe, pTab, iRegStore);
   if( (pTab->tabFlags & TF_HasStored)!=0 ){
-    pOp = sqlite3VdbeGetOp(pParse->pVdbe,-1);
+    pOp = sqlite3VdbeGetLastOp(pParse->pVdbe);
     if( pOp->opcode==OP_Affinity ){
       /* Change the OP_Affinity argument to '@' (NONE) for all stored
       ** columns.  '@' is the no-op affinity and those columns have not
@@ -782,7 +796,7 @@ void sqlite3Insert(
 
   /* Cannot insert into a read-only table.
   */
-  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
+  if( sqlite3IsReadOnly(pParse, pTab, pTrigger) ){
     goto insert_cleanup;
   }
 
@@ -1189,7 +1203,12 @@ void sqlite3Insert(
         sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+k, iRegStore);
       }
     }else{
-      sqlite3ExprCode(pParse, pList->a[k].pExpr, iRegStore);
+      Expr *pX = pList->a[k].pExpr;
+      int y = sqlite3ExprCodeTarget(pParse, pX, iRegStore);
+      if( y!=iRegStore ){
+        sqlite3VdbeAddOp2(v,
+          ExprHasProperty(pX, EP_Subquery) ? OP_Copy : OP_SCopy, y, iRegStore);
+      }
     }
   }
 
@@ -1224,7 +1243,7 @@ void sqlite3Insert(
     }
 
     /* Copy the new data already generated. */
-    assert( pTab->nNVCol>0 );
+    assert( pTab->nNVCol>0 || pParse->nErr>0 );
     sqlite3VdbeAddOp3(v, OP_Copy, regRowid+1, regCols+1, pTab->nNVCol-1);
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
@@ -1326,7 +1345,9 @@ void sqlite3Insert(
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
           regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace, 0, pUpsert
       );
-      sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
+      if( db->flags & SQLITE_ForeignKeys ){
+        sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
+      }
 
       /* Set the OPFLAG_USESEEKRESULT flag if either (a) there are no REPLACE
       ** constraints or (b) there are no triggers and this table is not a
@@ -1410,7 +1431,7 @@ insert_cleanup:
   sqlite3UpsertDelete(db, pUpsert);
   sqlite3SelectDelete(db, pSelect);
   sqlite3IdListDelete(db, pColumn);
-  sqlite3DbFree(db, aRegIdx);
+  if( aRegIdx ) sqlite3DbNNFreeNN(db, aRegIdx);
 }
 
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
@@ -1774,6 +1795,7 @@ void sqlite3GenerateConstraintChecks(
           case OE_Fail: {
             char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
                                         pCol->zCnName);
+            testcase( zMsg==0 && db->mallocFailed==0 );
             sqlite3VdbeAddOp3(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL,
                               onError, iReg);
             sqlite3VdbeAppendP4(v, zMsg, P4_DYNAMIC);

@@ -393,6 +393,8 @@ struct sqlite3rbu {
   int nPagePerSector;             /* Pages per sector for pTargetFd */
   i64 iOalSz;
   i64 nPhaseOneStep;
+  void *pRenameArg;
+  int (*xRename)(void*, const char*, const char*);
 
   /* The following state variables are used as part of the incremental
   ** checkpoint stage (eStage==RBU_STAGE_CKPT). See comments surrounding
@@ -2781,7 +2783,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
     if( p->zState==0 ){
       const char *zFile = sqlite3_db_filename(p->dbRbu, "main");
-      p->zState = rbuMPrintf(p, "file://%s-vacuum?modeof=%s", zFile, zFile);
+      p->zState = rbuMPrintf(p, "file:///%s-vacuum?modeof=%s", zFile, zFile);
     }
   }
 
@@ -3029,11 +3031,11 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
   **     no-ops. These locks will not be released until the connection
   **     is closed.
   **
-  **   * Attempting to xSync() the database file causes an SQLITE_INTERNAL 
+  **   * Attempting to xSync() the database file causes an SQLITE_NOTICE 
   **     error.
   **
   ** As a result, unless an error (i.e. OOM or SQLITE_BUSY) occurs, the
-  ** checkpoint below fails with SQLITE_INTERNAL, and leaves the aFrame[]
+  ** checkpoint below fails with SQLITE_NOTICE, and leaves the aFrame[]
   ** array populated with a set of (frame -> page) mappings. Because the 
   ** WRITER, CHECKPOINT and READ0 locks are still held, it is safe to copy 
   ** data from the wal file into the database file according to the 
@@ -3043,7 +3045,7 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     int rc2;
     p->eStage = RBU_STAGE_CAPTURE;
     rc2 = sqlite3_exec(p->dbMain, "PRAGMA main.wal_checkpoint=restart", 0, 0,0);
-    if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
+    if( rc2!=SQLITE_NOTICE ) p->rc = rc2;
   }
 
   if( p->rc==SQLITE_OK && p->nFrame>0 ){
@@ -3089,7 +3091,7 @@ static int rbuCaptureWalRead(sqlite3rbu *pRbu, i64 iOff, int iAmt){
 
   if( pRbu->mLock!=mReq ){
     pRbu->rc = SQLITE_BUSY;
-    return SQLITE_INTERNAL;
+    return SQLITE_NOTICE_RBU;
   }
 
   pRbu->pgsz = iAmt;
@@ -3139,6 +3141,11 @@ static void rbuCheckpointFrame(sqlite3rbu *p, RbuFrame *pFrame){
   p->rc = pDb->pMethods->xWrite(pDb, p->aBuf, p->pgsz, iOff);
 }
 
+/*
+** This value is copied from the definition of ZIPVFS_CTRL_FILE_POINTER
+** in zipvfs.h. 
+*/
+#define RBU_ZIPVFS_CTRL_FILE_POINTER 230439
 
 /*
 ** Take an EXCLUSIVE lock on the database file. Return SQLITE_OK if
@@ -3147,7 +3154,11 @@ static void rbuCheckpointFrame(sqlite3rbu *p, RbuFrame *pFrame){
 static int rbuLockDatabase(sqlite3 *db){
   int rc = SQLITE_OK;
   sqlite3_file *fd = 0;
-  sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+
+  sqlite3_file_control(db, "main", RBU_ZIPVFS_CTRL_FILE_POINTER, &fd);
+  if( fd==0 ){
+    sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+  }
 
   if( fd->pMethods ){
     rc = fd->pMethods->xLock(fd, SQLITE_LOCK_SHARED);
@@ -3241,32 +3252,7 @@ static void rbuMoveOalFile(sqlite3rbu *p){
     }
 
     if( p->rc==SQLITE_OK ){
-#if defined(_WIN32_WCE)
-      {
-        LPWSTR zWideOal;
-        LPWSTR zWideWal;
-
-        zWideOal = rbuWinUtf8ToUnicode(zOal);
-        if( zWideOal ){
-          zWideWal = rbuWinUtf8ToUnicode(zWal);
-          if( zWideWal ){
-            if( MoveFileW(zWideOal, zWideWal) ){
-              p->rc = SQLITE_OK;
-            }else{
-              p->rc = SQLITE_IOERR;
-            }
-            sqlite3_free(zWideWal);
-          }else{
-            p->rc = SQLITE_IOERR_NOMEM;
-          }
-          sqlite3_free(zWideOal);
-        }else{
-          p->rc = SQLITE_IOERR_NOMEM;
-        }
-      }
-#else
-      p->rc = rename(zOal, zWal) ? SQLITE_IOERR : SQLITE_OK;
-#endif
+      p->rc = p->xRename(p->pRenameArg, zOal, zWal);
     }
 
     if( p->rc!=SQLITE_OK 
@@ -3853,7 +3839,8 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 static void rbuDeleteOalFile(sqlite3rbu *p){
   char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
   if( zOal ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    sqlite3_vfs *pVfs = 0;
+    sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_VFS_POINTER, &pVfs);
     assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
     pVfs->xDelete(pVfs, zOal, 0);
     sqlite3_free(zOal);
@@ -4005,6 +3992,7 @@ static sqlite3rbu *openRbuHandle(
 
     /* Create the custom VFS. */
     memset(p, 0, sizeof(sqlite3rbu));
+    sqlite3rbu_rename_handler(p, 0, 0);
     rbuCreateVfs(p);
 
     /* Open the target, RBU and state databases */
@@ -4396,6 +4384,54 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
   return rc;
 }
 
+/*
+** Default xRename callback for RBU.
+*/
+static int xDefaultRename(void *pArg, const char *zOld, const char *zNew){
+  int rc = SQLITE_OK;
+#if defined(_WIN32_WCE)
+  {
+    LPWSTR zWideOld;
+    LPWSTR zWideNew;
+
+    zWideOld = rbuWinUtf8ToUnicode(zOld);
+    if( zWideOld ){
+      zWideNew = rbuWinUtf8ToUnicode(zNew);
+      if( zWideNew ){
+        if( MoveFileW(zWideOld, zWideNew) ){
+          rc = SQLITE_OK;
+        }else{
+          rc = SQLITE_IOERR;
+        }
+        sqlite3_free(zWideNew);
+      }else{
+        rc = SQLITE_IOERR_NOMEM;
+      }
+      sqlite3_free(zWideOld);
+    }else{
+      rc = SQLITE_IOERR_NOMEM;
+    }
+  }
+#else
+  rc = rename(zOld, zNew) ? SQLITE_IOERR : SQLITE_OK;
+#endif
+  return rc;
+}
+
+void sqlite3rbu_rename_handler(
+  sqlite3rbu *pRbu, 
+  void *pArg,
+  int (*xRename)(void *pArg, const char *zOld, const char *zNew)
+){
+  if( xRename ){
+    pRbu->xRename = xRename;
+    pRbu->pRenameArg = pArg;
+  }else{
+    pRbu->xRename = xDefaultRename;
+    pRbu->pRenameArg = 0;
+  }
+}
+
 /**************************************************************************
 ** Beginning of RBU VFS shim methods. The VFS shim modifies the behaviour
 ** of a standard VFS in the following ways:
@@ -4452,7 +4488,7 @@ int sqlite3rbu_savestate(sqlite3rbu *p){
 **     database file are recorded. xShmLock() calls to unlock the same
 **     locks are no-ops (so that once obtained, these locks are never
 **     relinquished). Finally, calls to xSync() on the target database
-**     file fail with SQLITE_INTERNAL errors.
+**     file fail with SQLITE_NOTICE errors.
 */
 
 static void rbuUnlockShm(rbu_file *p){
@@ -4561,9 +4597,12 @@ static int rbuVfsClose(sqlite3_file *pFile){
   sqlite3_free(p->zDel);
 
   if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
+    const sqlite3_io_methods *pMeth = p->pReal->pMethods;
     rbuMainlistRemove(p);
     rbuUnlockShm(p);
-    p->pReal->pMethods->xShmUnmap(p->pReal, 0);
+    if( pMeth->iVersion>1 && pMeth->xShmUnmap ){
+      pMeth->xShmUnmap(p->pReal, 0);
+    }
   }
   else if( (p->openFlags & SQLITE_OPEN_DELETEONCLOSE) && p->pRbu ){
     rbuUpdateTempSize(p, 0);
@@ -4731,7 +4770,7 @@ static int rbuVfsSync(sqlite3_file *pFile, int flags){
   rbu_file *p = (rbu_file *)pFile;
   if( p->pRbu && p->pRbu->eStage==RBU_STAGE_CAPTURE ){
     if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
-      return SQLITE_INTERNAL;
+      return SQLITE_NOTICE_RBU;
     }
     return SQLITE_OK;
   }
@@ -5022,6 +5061,25 @@ static int rbuVfsOpen(
     rbuVfsShmUnmap,               /* xShmUnmap */
     0, 0                          /* xFetch, xUnfetch */
   };
+  static sqlite3_io_methods rbuvfs_io_methods1 = {
+    1,                            /* iVersion */
+    rbuVfsClose,                  /* xClose */
+    rbuVfsRead,                   /* xRead */
+    rbuVfsWrite,                  /* xWrite */
+    rbuVfsTruncate,               /* xTruncate */
+    rbuVfsSync,                   /* xSync */
+    rbuVfsFileSize,               /* xFileSize */
+    rbuVfsLock,                   /* xLock */
+    rbuVfsUnlock,                 /* xUnlock */
+    rbuVfsCheckReservedLock,      /* xCheckReservedLock */
+    rbuVfsFileControl,            /* xFileControl */
+    rbuVfsSectorSize,             /* xSectorSize */
+    rbuVfsDeviceCharacteristics,  /* xDeviceCharacteristics */
+    0, 0, 0, 0, 0, 0
+  };
+
+
+
   rbu_vfs *pRbuVfs = (rbu_vfs*)pVfs;
   sqlite3_vfs *pRealVfs = pRbuVfs->pRealVfs;
   rbu_file *pFd = (rbu_file *)pFile;
@@ -5076,10 +5134,15 @@ static int rbuVfsOpen(
     rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, oflags, pOutFlags);
   }
   if( pFd->pReal->pMethods ){
+    const sqlite3_io_methods *pMeth = pFd->pReal->pMethods;
     /* The xOpen() operation has succeeded. Set the sqlite3_file.pMethods
     ** pointer and, if the file is a main database file, link it into the
     ** mutex protected linked list of all such files.  */
-    pFile->pMethods = &rbuvfs_io_methods;
+    if( pMeth->iVersion<2 || pMeth->xShmLock==0 ){
+      pFile->pMethods = &rbuvfs_io_methods1;
+    }else{
+      pFile->pMethods = &rbuvfs_io_methods;
+    }
     if( flags & SQLITE_OPEN_MAIN_DB ){
       rbuMainlistAdd(pFd);
     }

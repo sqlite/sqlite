@@ -296,17 +296,19 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 //
 %token_class id  ID|INDEXED.
 
-
 // And "ids" is an identifer-or-string.
 //
 %token_class ids  ID|STRING.
 
+// An identifier or a join-keyword
+//
+%token_class idj  ID|INDEXED|JOIN_KW.
+
 // The name of a column or table can be any of the following:
 //
 %type nm {Token}
-nm(A) ::= id(A).
+nm(A) ::= idj(A).
 nm(A) ::= STRING(A).
-nm(A) ::= JOIN_KW(A).
 
 // A typetoken is really zero or more tokens that form a type name such
 // as can be found after the column name in a CREATE TABLE statement.
@@ -713,7 +715,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP as(Z) on_using(N). {
     if( A==0 && Z.n==0 && N.pOn==0 && N.pUsing==0 ){
       A = F;
-    }else if( F->nSrc==1 ){
+    }else if( ALWAYS(F!=0) && F->nSrc==1 ){
       A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,0,&N);
       if( A ){
         SrcItem *pNew = &A->a[A->nSrc-1];
@@ -924,7 +926,18 @@ where_opt_ret(A) ::= WHERE expr(X) RETURNING selcollist(Y).
 cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
         where_opt_ret(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
-  X = sqlite3SrcListAppendList(pParse, X, F);
+  if( F ){
+    SrcList *pFromClause = F;
+    if( pFromClause->nSrc>1 ){
+      Select *pSubquery;
+      Token as;
+      pSubquery = sqlite3SelectNew(pParse,0,pFromClause,0,0,0,0,SF_NestedFrom,0);
+      as.n = 0;
+      as.z = 0;
+      pFromClause = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&as,pSubquery,0);
+    }
+    X = sqlite3SrcListAppendList(pParse, X, pFromClause);
+  }
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
 #ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
   if( O || L ){
@@ -940,7 +953,18 @@ cmd ::= with UPDATE orconf(R) xfullname(X) indexed_opt(I) SET setlist(Y) from(F)
         where_opt_ret(W). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  X = sqlite3SrcListAppendList(pParse, X, F);
+  if( F ){
+    SrcList *pFromClause = F;
+    if( pFromClause->nSrc>1 ){
+      Select *pSubquery;
+      Token as;
+      pSubquery = sqlite3SelectNew(pParse,0,pFromClause,0,0,0,0,SF_NestedFrom,0);
+      as.n = 0;
+      as.z = 0;
+      pFromClause = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&as,pSubquery,0);
+    }
+    X = sqlite3SrcListAppendList(pParse, X, pFromClause);
+  }
   sqlite3Update(pParse,X,Y,W,R,0,0,0);
 }
 %endif
@@ -1062,8 +1086,7 @@ idlist(A) ::= nm(Y).
 
 expr(A) ::= term(A).
 expr(A) ::= LP expr(X) RP. {A = X;}
-expr(A) ::= id(X).          {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
-expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
+expr(A) ::= idj(X).          {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
 expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = tokenExpr(pParse,TK_ID,X);
   Expr *temp2 = tokenExpr(pParse,TK_ID,Y);
@@ -1116,19 +1139,19 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
 %endif  SQLITE_OMIT_CAST
 
 
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP. {
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP. {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
 }
-expr(A) ::= id(X) LP STAR RP. {
+expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
-expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
   sqlite3WindowAttach(pParse, A, Z);
 }
-expr(A) ::= id(X) LP STAR RP filter_over(Z). {
+expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
@@ -1218,6 +1241,14 @@ expr(A) ::= expr(A) IS NOT expr(Y). {
   A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
   binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
 }
+expr(A) ::= expr(A) IS NOT DISTINCT FROM expr(Y).     {
+  A = sqlite3PExpr(pParse,TK_IS,A,Y);
+  binaryToUnaryIfNull(pParse, Y, A, TK_ISNULL);
+}
+expr(A) ::= expr(A) IS DISTINCT FROM expr(Y). {
+  A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
+  binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
+}
 
 expr(A) ::= NOT(B) expr(X).  
               {A = sqlite3PExpr(pParse, @B, X, 0);/*A-overwrites-B*/}
@@ -1263,7 +1294,8 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** regardless of the value of expr1.
       */
       sqlite3ExprUnmapAndDelete(pParse, A);
-      A = sqlite3Expr(pParse->db, TK_INTEGER, N ? "1" : "0");
+      A = sqlite3Expr(pParse->db, TK_STRING, N ? "true" : "false");
+      if( A ) sqlite3ExprIdToTrueFalse(A);
     }else{
       Expr *pRHS = Y->a[0].pExpr;
       if( Y->nExpr==1 && sqlite3ExprIsConstant(pRHS) && A->op!=TK_VECTOR ){
@@ -1271,6 +1303,11 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
         sqlite3ExprListDelete(pParse->db, Y);
         pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0);
         A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
+      }else if( Y->nExpr==1 && pRHS->op==TK_SELECT ){
+        A = sqlite3PExpr(pParse, TK_IN, A, 0);
+        sqlite3PExprAddSelect(pParse, A, pRHS->x.pSelect);
+        pRHS->x.pSelect = 0;
+        sqlite3ExprListDelete(pParse->db, Y);
       }else{
         A = sqlite3PExpr(pParse, TK_IN, A, 0);
         if( A==0 ){
@@ -1341,7 +1378,7 @@ case_else(A) ::=  ELSE expr(X).         {A = X;}
 case_else(A) ::=  .                     {A = 0;} 
 %type case_operand {Expr*}
 %destructor case_operand {sqlite3ExprDelete(pParse->db, $$);}
-case_operand(A) ::= expr(X).            {A = X; /*A-overwrites-X*/} 
+case_operand(A) ::= expr(A).
 case_operand(A) ::= .                   {A = 0;} 
 
 %type exprlist {ExprList*}

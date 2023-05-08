@@ -77,6 +77,7 @@ struct DateTime {
   char validTZ;       /* True (1) if tz is valid */
   char tzSet;         /* Timezone was set explicitly */
   char isError;       /* An overflow has occurred */
+  char useSubsec;     /* Display subsecond precision */
 };
 
 
@@ -276,7 +277,7 @@ static void computeJD(DateTime *p){
   p->iJD = (sqlite3_int64)((X1 + X2 + D + B - 1524.5 ) * 86400000);
   p->validJD = 1;
   if( p->validHMS ){
-    p->iJD += p->h*3600000 + p->m*60000 + (sqlite3_int64)(p->s*1000);
+    p->iJD += p->h*3600000 + p->m*60000 + (sqlite3_int64)(p->s*1000 + 0.5);
     if( p->validTZ ){
       p->iJD -= p->tz*60000;
       p->validYMD = 0;
@@ -391,6 +392,11 @@ static int parseDateOrTime(
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8)>0 ){
     setRawDateNumber(p, r);
     return 0;
+  }else if( (sqlite3StrICmp(zDate,"subsec")==0
+             || sqlite3StrICmp(zDate,"subsecond")==0)
+           && sqlite3NotPureFunc(context) ){
+    p->useSubsec = 1;
+    return setDateTimeToCurrent(context, p);
   }
   return 1;
 }
@@ -749,7 +755,7 @@ static int parseModifier(
           i64 iOrigJD;              /* Original localtime */
           i64 iGuess;               /* Guess at the corresponding utc time */
           int cnt = 0;              /* Safety to prevent infinite loop */
-          int iErr;                 /* Guess is off by this much */
+          i64 iErr;                 /* Guess is off by this much */
 
           computeJD(p);
           iGuess = iOrigJD = p->iJD;
@@ -785,7 +791,7 @@ static int parseModifier(
       */
       if( sqlite3_strnicmp(z, "weekday ", 8)==0
                && sqlite3AtoF(&z[8], &r, sqlite3Strlen30(&z[8]), SQLITE_UTF8)>0
-               && (n=(int)r)==r && n>=0 && r<7 ){
+               && r>=0.0 && r<7.0 && (n=(int)r)==r ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
         p->validTZ = 0;
@@ -805,8 +811,22 @@ static int parseModifier(
       **
       ** Move the date backwards to the beginning of the current day,
       ** or month or year.
+      **
+      **    subsecond
+      **    subsec
+      **
+      ** Show subsecond precision in the output of datetime() and
+      ** unixepoch() and strftime('%s').
       */
-      if( sqlite3_strnicmp(z, "start of ", 9)!=0 ) break;
+      if( sqlite3_strnicmp(z, "start of ", 9)!=0 ){
+        if( sqlite3_stricmp(z, "subsec")==0
+         || sqlite3_stricmp(z, "subsecond")==0
+        ){
+          p->useSubsec = 1;
+          rc = 0;
+        }
+        break;
+      }        
       if( !p->validJD && !p->validYMD && !p->validHMS ) break;
       z += 9;
       computeYMD(p);
@@ -1004,7 +1024,11 @@ static void unixepochFunc(
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
     computeJD(&x);
-    sqlite3_result_int64(context, x.iJD/1000 - 21086676*(i64)10000);
+    if( x.useSubsec ){
+      sqlite3_result_double(context, (x.iJD - 21086676*(i64)10000000)/1000.0);
+    }else{
+      sqlite3_result_int64(context, x.iJD/1000 - 21086676*(i64)10000);
+    }
   }
 }
 
@@ -1020,8 +1044,8 @@ static void datetimeFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
-    int Y, s;
-    char zBuf[24];
+    int Y, s, n;
+    char zBuf[32];
     computeYMD_HMS(&x);
     Y = x.Y;
     if( Y<0 ) Y = -Y;
@@ -1042,15 +1066,28 @@ static void datetimeFunc(
     zBuf[15] = '0' + (x.m/10)%10;
     zBuf[16] = '0' + (x.m)%10;
     zBuf[17] = ':';
-    s = (int)x.s;
-    zBuf[18] = '0' + (s/10)%10;
-    zBuf[19] = '0' + (s)%10;
-    zBuf[20] = 0;
+    if( x.useSubsec ){
+      s = (int)1000.0*x.s;
+      zBuf[18] = '0' + (s/10000)%10;
+      zBuf[19] = '0' + (s/1000)%10;
+      zBuf[20] = '.';
+      zBuf[21] = '0' + (s/100)%10;
+      zBuf[22] = '0' + (s/10)%10;
+      zBuf[23] = '0' + (s)%10;
+      zBuf[24] = 0;
+      n = 24;
+    }else{
+      s = (int)x.s;
+      zBuf[18] = '0' + (s/10)%10;
+      zBuf[19] = '0' + (s)%10;
+      zBuf[20] = 0;
+      n = 20;
+    }
     if( x.Y<0 ){
       zBuf[0] = '-';
-      sqlite3_result_text(context, zBuf, 20, SQLITE_TRANSIENT);
+      sqlite3_result_text(context, zBuf, n, SQLITE_TRANSIENT);
     }else{
-      sqlite3_result_text(context, &zBuf[1], 19, SQLITE_TRANSIENT);
+      sqlite3_result_text(context, &zBuf[1], n-1, SQLITE_TRANSIENT);
     }
   }
 }
@@ -1067,7 +1104,7 @@ static void timeFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
-    int s;
+    int s, n;
     char zBuf[16];
     computeHMS(&x);
     zBuf[0] = '0' + (x.h/10)%10;
@@ -1076,11 +1113,24 @@ static void timeFunc(
     zBuf[3] = '0' + (x.m/10)%10;
     zBuf[4] = '0' + (x.m)%10;
     zBuf[5] = ':';
-    s = (int)x.s;
-    zBuf[6] = '0' + (s/10)%10;
-    zBuf[7] = '0' + (s)%10;
-    zBuf[8] = 0;
-    sqlite3_result_text(context, zBuf, 8, SQLITE_TRANSIENT);
+    if( x.useSubsec ){
+      s = (int)1000.0*x.s;
+      zBuf[6] = '0' + (s/10000)%10;
+      zBuf[7] = '0' + (s/1000)%10;
+      zBuf[8] = '.';
+      zBuf[9] = '0' + (s/100)%10;
+      zBuf[10] = '0' + (s/10)%10;
+      zBuf[11] = '0' + (s)%10;
+      zBuf[12] = 0;
+      n = 12;
+    }else{
+      s = (int)x.s;
+      zBuf[6] = '0' + (s/10)%10;
+      zBuf[7] = '0' + (s)%10;
+      zBuf[8] = 0;
+      n = 8;
+    }
+    sqlite3_result_text(context, zBuf, n, SQLITE_TRANSIENT);
   }
 }
 
@@ -1211,8 +1261,13 @@ static void strftimeFunc(
         break;
       }
       case 's': {
-        i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
-        sqlite3_str_appendf(&sRes,"%lld",iS);
+        if( x.useSubsec ){
+          sqlite3_str_appendf(&sRes,"%.3f",
+                (x.iJD - 21086676*(i64)10000000)/1000.0);
+        }else{
+          i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
+          sqlite3_str_appendf(&sRes,"%lld",iS);
+        }
         break;
       }
       case 'S': {

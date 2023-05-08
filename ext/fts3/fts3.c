@@ -2888,7 +2888,7 @@ static int fts3TermSelectMerge(
     **
     ** Similar padding is added in the fts3DoclistOrMerge() function.
     */
-    pTS->aaOutput[0] = sqlite3_malloc(nDoclist + FTS3_VARINT_MAX + 1);
+    pTS->aaOutput[0] = sqlite3_malloc64((i64)nDoclist + FTS3_VARINT_MAX + 1);
     pTS->anOutput[0] = nDoclist;
     if( pTS->aaOutput[0] ){
       memcpy(pTS->aaOutput[0], aDoclist, nDoclist);
@@ -4308,8 +4308,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
   char *aPoslist = 0;             /* Position list for deferred tokens */
   int nPoslist = 0;               /* Number of bytes in aPoslist */
   int iPrev = -1;                 /* Token number of previous deferred token */
-
-  assert( pPhrase->doclist.bFreeList==0 );
+  char *aFree = (pPhrase->doclist.bFreeList ? pPhrase->doclist.pList : 0);
 
   for(iToken=0; iToken<pPhrase->nToken; iToken++){
     Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
@@ -4323,6 +4322,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 
       if( pList==0 ){
         sqlite3_free(aPoslist);
+        sqlite3_free(aFree);
         pPhrase->doclist.pList = 0;
         pPhrase->doclist.nList = 0;
         return SQLITE_OK;
@@ -4343,6 +4343,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nPoslist = (int)(aOut - aPoslist);
         if( nPoslist==0 ){
           sqlite3_free(aPoslist);
+          sqlite3_free(aFree);
           pPhrase->doclist.pList = 0;
           pPhrase->doclist.nList = 0;
           return SQLITE_OK;
@@ -4375,13 +4376,14 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nDistance = iPrev - nMaxUndeferred;
       }
 
-      aOut = (char *)sqlite3_malloc(nPoslist+8);
+      aOut = (char *)sqlite3Fts3MallocZero(nPoslist+FTS3_BUFFER_PADDING);
       if( !aOut ){
         sqlite3_free(aPoslist);
         return SQLITE_NOMEM;
       }
       
       pPhrase->doclist.pList = aOut;
+      assert( p1 && p2 );
       if( fts3PoslistPhraseMerge(&aOut, nDistance, 0, 1, &p1, &p2) ){
         pPhrase->doclist.bFreeList = 1;
         pPhrase->doclist.nList = (int)(aOut - pPhrase->doclist.pList);
@@ -4394,6 +4396,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
     }
   }
 
+  if( pPhrase->doclist.pList!=aFree ) sqlite3_free(aFree);
   return SQLITE_OK;
 }
 #endif /* SQLITE_DISABLE_FTS4_DEFERRED */
@@ -4742,7 +4745,7 @@ static int fts3EvalIncrPhraseNext(
       if( bEof==0 ){
         int nList = 0;
         int nByte = a[p->nToken-1].nList;
-        char *aDoclist = sqlite3_malloc(nByte+FTS3_BUFFER_PADDING);
+        char *aDoclist = sqlite3_malloc64((i64)nByte+FTS3_BUFFER_PADDING);
         if( !aDoclist ) return SQLITE_NOMEM;
         memcpy(aDoclist, a[p->nToken-1].pList, nByte+1);
         memset(&aDoclist[nByte], 0, FTS3_BUFFER_PADDING);
@@ -5284,9 +5287,8 @@ static void fts3EvalNextRow(
   Fts3Expr *pExpr,                /* Expr. to advance to next matching row */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  if( *pRc==SQLITE_OK ){
+  if( *pRc==SQLITE_OK && pExpr->bEof==0 ){
     int bDescDoclist = pCsr->bDesc;         /* Used by DOCID_CMP() macro */
-    assert( pExpr->bEof==0 );
     pExpr->bStart = 1;
 
     switch( pExpr->eType ){
@@ -5568,11 +5570,10 @@ static int fts3EvalTestExpr(
 
       default: {
 #ifndef SQLITE_DISABLE_FTS4_DEFERRED
-        if( pCsr->pDeferred 
-         && (pExpr->iDocid==pCsr->iPrevId || pExpr->bDeferred)
-        ){
+        if( pCsr->pDeferred && (pExpr->bDeferred || (
+            pExpr->iDocid==pCsr->iPrevId && pExpr->pPhrase->doclist.pList
+        ))){
           Fts3Phrase *pPhrase = pExpr->pPhrase;
-          assert( pExpr->bDeferred || pPhrase->doclist.bFreeList==0 );
           if( pExpr->bDeferred ){
             fts3EvalInvalidatePoslist(pPhrase);
           }
@@ -5764,6 +5765,22 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr, int nCol){
 }
 
 /*
+** This is an sqlite3Fts3ExprIterate() callback. If the Fts3Expr.aMI[] array
+** has not yet been allocated, allocate and zero it. Otherwise, just zero
+** it.
+*/
+static int fts3AllocateMSI(Fts3Expr *pExpr, int iPhrase, void *pCtx){
+  Fts3Table *pTab = (Fts3Table*)pCtx;
+  UNUSED_PARAMETER(iPhrase);
+  if( pExpr->aMI==0 ){
+    pExpr->aMI = (u32 *)sqlite3_malloc64(pTab->nColumn * 3 * sizeof(u32));
+    if( pExpr->aMI==0 ) return SQLITE_NOMEM;
+  }
+  memset(pExpr->aMI, 0, pTab->nColumn * 3 * sizeof(u32));
+  return SQLITE_OK;
+}
+
+/*
 ** Expression pExpr must be of type FTSQUERY_PHRASE.
 **
 ** If it is not already allocated and populated, this function allocates and
@@ -5784,7 +5801,6 @@ static int fts3EvalGatherStats(
   if( pExpr->aMI==0 ){
     Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
     Fts3Expr *pRoot;                /* Root of NEAR expression */
-    Fts3Expr *p;                    /* Iterator used for several purposes */
 
     sqlite3_int64 iPrevId = pCsr->iPrevId;
     sqlite3_int64 iDocid;
@@ -5792,7 +5808,9 @@ static int fts3EvalGatherStats(
 
     /* Find the root of the NEAR expression */
     pRoot = pExpr;
-    while( pRoot->pParent && pRoot->pParent->eType==FTSQUERY_NEAR ){
+    while( pRoot->pParent 
+        && (pRoot->pParent->eType==FTSQUERY_NEAR || pRoot->bDeferred) 
+    ){
       pRoot = pRoot->pParent;
     }
     iDocid = pRoot->iDocid;
@@ -5800,14 +5818,8 @@ static int fts3EvalGatherStats(
     assert( pRoot->bStart );
 
     /* Allocate space for the aMSI[] array of each FTSQUERY_PHRASE node */
-    for(p=pRoot; p; p=p->pLeft){
-      Fts3Expr *pE = (p->eType==FTSQUERY_PHRASE?p:p->pRight);
-      assert( pE->aMI==0 );
-      pE->aMI = (u32 *)sqlite3_malloc64(pTab->nColumn * 3 * sizeof(u32));
-      if( !pE->aMI ) return SQLITE_NOMEM;
-      memset(pE->aMI, 0, pTab->nColumn * 3 * sizeof(u32));
-    }
-
+    rc = sqlite3Fts3ExprIterate(pRoot, fts3AllocateMSI, (void*)pTab);
+    if( rc!=SQLITE_OK ) return rc;
     fts3EvalRestart(pCsr, pRoot, &rc);
 
     while( pCsr->isEof==0 && rc==SQLITE_OK ){
@@ -5963,6 +5975,7 @@ int sqlite3Fts3EvalPhrasePoslist(
     u8 bTreeEof = 0;
     Fts3Expr *p;                  /* Used to iterate from pExpr to root */
     Fts3Expr *pNear;              /* Most senior NEAR ancestor (or pExpr) */
+    Fts3Expr *pRun;               /* Closest non-deferred ancestor of pNear */
     int bMatch;
 
     /* Check if this phrase descends from an OR expression node. If not, 
@@ -5977,25 +5990,30 @@ int sqlite3Fts3EvalPhrasePoslist(
       if( p->bEof ) bTreeEof = 1;
     }
     if( bOr==0 ) return SQLITE_OK;
+    pRun = pNear;
+    while( pRun->bDeferred ){
+      assert( pRun->pParent );
+      pRun = pRun->pParent;
+    }
 
     /* This is the descendent of an OR node. In this case we cannot use
     ** an incremental phrase. Load the entire doclist for the phrase
     ** into memory in this case.  */
     if( pPhrase->bIncr ){
-      int bEofSave = pNear->bEof;
-      fts3EvalRestart(pCsr, pNear, &rc);
-      while( rc==SQLITE_OK && !pNear->bEof ){
-        fts3EvalNextRow(pCsr, pNear, &rc);
-        if( bEofSave==0 && pNear->iDocid==iDocid ) break;
+      int bEofSave = pRun->bEof;
+      fts3EvalRestart(pCsr, pRun, &rc);
+      while( rc==SQLITE_OK && !pRun->bEof ){
+        fts3EvalNextRow(pCsr, pRun, &rc);
+        if( bEofSave==0 && pRun->iDocid==iDocid ) break;
       }
       assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
-      if( rc==SQLITE_OK && pNear->bEof!=bEofSave ){
+      if( rc==SQLITE_OK && pRun->bEof!=bEofSave ){
         rc = FTS_CORRUPT_VTAB;
       }
     }
     if( bTreeEof ){
-      while( rc==SQLITE_OK && !pNear->bEof ){
-        fts3EvalNextRow(pCsr, pNear, &rc);
+      while( rc==SQLITE_OK && !pRun->bEof ){
+        fts3EvalNextRow(pCsr, pRun, &rc);
       }
     }
     if( rc!=SQLITE_OK ) return rc;

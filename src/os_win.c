@@ -1918,10 +1918,12 @@ int sqlite3_win32_set_directory8(
   const char *zValue  /* New value for directory being set or reset */
 ){
   char **ppDirectory = 0;
+  int rc;
 #ifndef SQLITE_OMIT_AUTOINIT
-  int rc = sqlite3_initialize();
+  rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   if( type==SQLITE_WIN32_DATA_DIRECTORY_TYPE ){
     ppDirectory = &sqlite3_data_directory;
   }else if( type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE ){
@@ -1936,14 +1938,19 @@ int sqlite3_win32_set_directory8(
     if( zValue && zValue[0] ){
       zCopy = sqlite3_mprintf("%s", zValue);
       if ( zCopy==0 ){
-        return SQLITE_NOMEM_BKPT;
+        rc = SQLITE_NOMEM_BKPT;
+        goto set_directory8_done;
       }
     }
     sqlite3_free(*ppDirectory);
     *ppDirectory = zCopy;
-    return SQLITE_OK;
+    rc = SQLITE_OK;
+  }else{
+    rc = SQLITE_ERROR;
   }
-  return SQLITE_ERROR;
+set_directory8_done:
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  return rc;
 }
 
 /*
@@ -4718,6 +4725,19 @@ static int winMakeEndInDirSep(int nBuf, char *zBuf){
 }
 
 /*
+** If sqlite3_temp_directory is defined, take the mutex and return true.
+**
+** If sqlite3_temp_directory is NULL (undefined), omit the mutex and
+** return false.
+*/
+static int winTempDirDefined(void){
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  if( sqlite3_temp_directory!=0 ) return 1;
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  return 0;
+}
+
+/*
 ** Create a temporary file name and store the resulting pointer into pzBuf.
 ** The pointer returned in pzBuf must be freed via sqlite3_free().
 */
@@ -4753,20 +4773,23 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   */
   nDir = nMax - (nPre + 15);
   assert( nDir>0 );
-  if( sqlite3_temp_directory ){
+  if( winTempDirDefined() ){
     int nDirLen = sqlite3Strlen30(sqlite3_temp_directory);
     if( nDirLen>0 ){
       if( !winIsDirSep(sqlite3_temp_directory[nDirLen-1]) ){
         nDirLen++;
       }
       if( nDirLen>nDir ){
+        sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
         sqlite3_free(zBuf);
         OSTRACE(("TEMP-FILENAME rc=SQLITE_ERROR\n"));
         return winLogError(SQLITE_ERROR, 0, "winGetTempname1", 0);
       }
       sqlite3_snprintf(nMax, zBuf, "%s", sqlite3_temp_directory);
     }
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   }
+
 #if defined(__CYGWIN__)
   else{
     static const char *azDirs[] = {
@@ -5174,7 +5197,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5191,7 +5214,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5211,7 +5234,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5434,6 +5457,13 @@ static int winAccess(
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
            zFilename, flags, pResOut));
 
+  if( zFilename==0 ){
+    *pResOut = 0;
+    OSTRACE(("ACCESS name=%s, pResOut=%p, *pResOut=%d, rc=SQLITE_OK\n",
+             zFilename, pResOut, *pResOut));
+    return SQLITE_OK;
+  }
+
   zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("ACCESS name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
@@ -5555,7 +5585,7 @@ static BOOL winIsVerbatimPathname(
 ** pathname into zOut[].  zOut[] will be at least pVfs->mxPathname
 ** bytes in size.
 */
-static int winFullPathname(
+static int winFullPathnameNoMutex(
   sqlite3_vfs *pVfs,            /* Pointer to vfs object */
   const char *zRelative,        /* Possibly relative input path */
   int nFull,                    /* Size of output buffer in bytes */
@@ -5733,6 +5763,20 @@ static int winFullPathname(
     return SQLITE_IOERR_NOMEM_BKPT;
   }
 #endif
+}
+static int winFullPathname(
+  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
+  const char *zRelative,        /* Possibly relative input path */
+  int nFull,                    /* Size of output buffer in bytes */
+  char *zFull                   /* Output buffer */
+){
+  int rc;
+  MUTEX_LOGIC( sqlite3_mutex *pMutex; )
+  MUTEX_LOGIC( pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR); )
+  sqlite3_mutex_enter(pMutex);
+  rc = winFullPathnameNoMutex(pVfs, zRelative, nFull, zFull);
+  sqlite3_mutex_leave(pMutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

@@ -86,7 +86,7 @@ struct VdbeCursor {
   Bool isEphemeral:1;     /* True for an ephemeral table */
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
-  Bool hasBeenDuped:1;    /* This cursor was source or target of OP_OpenDup */
+  Bool noReuse:1;         /* OpenEphemeral may not reuse this cursor */
   u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
   union {                 /* pBtx for isEphermeral.  pAltMap otherwise */
     Btree *pBtx;            /* Separate file holding temporary table */
@@ -171,7 +171,6 @@ struct VdbeFrame {
   Vdbe *v;                /* VM this frame belongs to */
   VdbeFrame *pParent;     /* Parent of this frame, or NULL if parent is main */
   Op *aOp;                /* Program instructions for parent frame */
-  i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   u8 *aOnce;              /* Bitmask used by OP_Once */
@@ -387,10 +386,19 @@ typedef unsigned bft;  /* Bit Field Type */
 
 /* The ScanStatus object holds a single value for the
 ** sqlite3_stmt_scanstatus() interface.
+**
+** aAddrRange[]:
+**   This array is used by ScanStatus elements associated with EQP 
+**   notes that make an SQLITE_SCANSTAT_NCYCLE value available. It is
+**   an array of up to 3 ranges of VM addresses for which the Vdbe.anCycle[]
+**   values should be summed to calculate the NCYCLE value. Each pair of
+**   integer addresses is a start and end address (both inclusive) for a range
+**   instructions. A start value of 0 indicates an empty range.
 */
 typedef struct ScanStatus ScanStatus;
 struct ScanStatus {
   int addrExplain;                /* OP_Explain for loop */
+  int aAddrRange[6];
   int addrLoop;                   /* Address of "loops" counter */
   int addrVisit;                  /* Address of "rows visited" counter */
   int iSelectID;                  /* The "Select-ID" for this loop */
@@ -420,7 +428,7 @@ struct DblquoteStr {
 */
 struct Vdbe {
   sqlite3 *db;            /* The database connection that owns this statement */
-  Vdbe *pPrev,*pNext;     /* Linked list of VDBEs with the same Vdbe.db */
+  Vdbe **ppVPrev,*pVNext; /* Linked list of VDBEs with the same Vdbe.db */
   Parse *pParse;          /* Parsing context used to create this Vdbe */
   ynVar nVar;             /* Number of entries in aVar[] */
   int nMem;               /* Number of memory locations currently allocated */
@@ -446,7 +454,7 @@ struct Vdbe {
   int nOp;                /* Number of instructions in the program */
   int nOpAlloc;           /* Slots allocated for aOp[] */
   Mem *aColName;          /* Column names to return */
-  Mem *pResultSet;        /* Pointer to an array of results */
+  Mem *pResultRow;        /* Current output row */
   char *zErrMsg;          /* Error message written here */
   VList *pVList;          /* Name of variables */
 #ifndef SQLITE_OMIT_TRACE
@@ -483,7 +491,6 @@ struct Vdbe {
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  i64 *anExec;            /* Number of times each op has been executed */
   int nScan;              /* Entries in aScan[] */
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
@@ -649,6 +656,8 @@ int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *);
 int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
+
+void sqlite3VdbeValueListFree(void*);
 
 #ifdef SQLITE_DEBUG
   void sqlite3VdbeIncrWriteCounter(Vdbe*, VdbeCursor*);

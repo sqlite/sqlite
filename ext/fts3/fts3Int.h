@@ -558,7 +558,7 @@ struct Fts3MultiSegReader {
   int nAdvance;                   /* How many seg-readers to advance */
   Fts3SegFilter *pFilter;         /* Pointer to filter object */
   char *aBuffer;                  /* Buffer to merge doclists in */
-  int nBuffer;                    /* Allocated size of aBuffer[] in bytes */
+  i64 nBuffer;                    /* Allocated size of aBuffer[] in bytes */
 
   int iColFilter;                 /* If >=0, filter for this column */
   int bRestart;
@@ -649,6 +649,8 @@ int sqlite3FtsUnicodeFold(int, int);
 int sqlite3FtsUnicodeIsalnum(int);
 int sqlite3FtsUnicodeIsdiacritic(int);
 #endif
+
+int sqlite3Fts3ExprIterate(Fts3Expr*, int (*x)(Fts3Expr*,int,void*), void*);
 
 #endif /* !SQLITE_CORE || SQLITE_ENABLE_FTS3 */
 #endif /* _FTSINT_H */

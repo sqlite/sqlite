@@ -172,7 +172,7 @@
 ** byte are used.  The integer consists of all bytes that have bit 8 set and
 ** the first byte with bit 8 clear.  The most significant byte of the integer
 ** appears first.  A variable-length integer may not be more than 9 bytes long.
-** As a special case, all 8 bytes of the 9th byte are used as data.  This
+** As a special case, all 8 bits of the 9th byte are used as data.  This
 ** allows a 64-bit integer to be encoded in 9 bytes.
 **
 **    0x00                      becomes  0x00000000
@@ -674,15 +674,15 @@ struct BtCursor {
 ** So, this macro is defined instead.
 */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-#define ISAUTOVACUUM (pBt->autoVacuum)
+#define ISAUTOVACUUM(pBt) (pBt->autoVacuum)
 #else
-#define ISAUTOVACUUM 0
+#define ISAUTOVACUUM(pBt) 0
 #endif
 
 
 /*
-** This structure is passed around through all the sanity checking routines
-** in order to keep track of some global state information.
+** This structure is passed around through all the PRAGMA integrity_check
+** checking routines in order to keep track of some global state information.
 **
 ** The aRef[] array is allocated so that there is 1 bit for each page in
 ** the database. As the integrity-check proceeds, for each page used in
@@ -698,10 +698,12 @@ struct IntegrityCk {
   Pgno nPage;       /* Number of pages in the database */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
   int nErr;         /* Number of messages written to zErrMsg so far */
-  int bOomFault;    /* A memory allocation error has occurred */
+  int rc;           /* SQLITE_OK, SQLITE_NOMEM, or SQLITE_INTERRUPT */
+  u32 nStep;        /* Number of steps into the integrity_check process */
   const char *zPfx; /* Error message prefix */
-  Pgno v1;          /* Value for first %u substitution in zPfx */
-  int v2;           /* Value for second %d substitution in zPfx */
+  Pgno v0;          /* Value for first %u substitution in zPfx (root page) */
+  Pgno v1;          /* Value for second %u substitution in zPfx (current pg) */
+  int v2;           /* Value for third %d substitution in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
   u32 *heap;        /* Min-heap used for analyzing cell coverage */
   sqlite3 *db;      /* Database connection running the check */

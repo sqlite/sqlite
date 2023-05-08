@@ -2605,6 +2605,8 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
   int rc = SQLITE_OK;
   assert( pPager->eState!=PAGER_ERROR );
   assert( pPager->eState!=PAGER_READER );
+  PAGERTRACE(("Truncate %d npage %u\n", PAGERID(pPager), nPage));
+
   
   if( isOpen(pPager->fd) 
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN) 
@@ -2623,6 +2625,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
         memset(pTmp, 0, szPage);
         testcase( (newSize-szPage) == currentSize );
         testcase( (newSize-szPage) >  currentSize );
+        sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &newSize);
         rc = sqlite3OsWrite(pPager->fd, pTmp, szPage, newSize-szPage);
       }
       if( rc==SQLITE_OK ){
@@ -2934,7 +2937,7 @@ end_playback:
     ** see if it is possible to delete the super-journal.
     */
     assert( zSuper==&pPager->pTmpSpace[4] );
-    memset(&zSuper[-4], 0, 4);
+    memset(pPager->pTmpSpace, 0, 4);
     rc = pager_delsuper(pPager, zSuper);
     testcase( rc!=SQLITE_OK );
   }
@@ -3555,7 +3558,6 @@ void sqlite3PagerShrink(Pager *pPager){
 ** Numeric values associated with these states are OFF==1, NORMAL=2,
 ** and FULL=3.
 */
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 void sqlite3PagerSetFlags(
   Pager *pPager,        /* The pager to set safety level for */
   unsigned pgFlags      /* Various flags */
@@ -3590,7 +3592,6 @@ void sqlite3PagerSetFlags(
     pPager->doNotSpill |= SPILLFLAG_OFF;
   }
 }
-#endif
 
 /*
 ** The following global variable is incremented whenever the library
@@ -4692,7 +4693,6 @@ int sqlite3PagerOpen(
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
   const char *zUri = 0;    /* URI args to copy */
   int nUriByte = 1;        /* Number of bytes of URI args at *zUri */
-  int nUri = 0;            /* Number of URI parameters */
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal).  */
@@ -4740,7 +4740,6 @@ int sqlite3PagerOpen(
     while( *z ){
       z += strlen(z)+1;
       z += strlen(z)+1;
-      nUri++;
     }
     nUriByte = (int)(&z[1] - zUri);
     assert( nUriByte>=1 );
@@ -4996,18 +4995,7 @@ act_like_temp_file:
   pPager->memDb = (u8)memDb;
   pPager->readOnly = (u8)readOnly;
   assert( useJournal || pPager->tempFile );
-  pPager->noSync = pPager->tempFile;
-  if( pPager->noSync ){
-    assert( pPager->fullSync==0 );
-    assert( pPager->extraSync==0 );
-    assert( pPager->syncFlags==0 );
-    assert( pPager->walSyncFlags==0 );
-  }else{
-    pPager->fullSync = 1;
-    pPager->extraSync = 0;
-    pPager->syncFlags = SQLITE_SYNC_NORMAL;
-    pPager->walSyncFlags = SQLITE_SYNC_NORMAL | (SQLITE_SYNC_NORMAL<<2);
-  }
+  sqlite3PagerSetFlags(pPager, (SQLITE_DEFAULT_SYNCHRONOUS+1)|PAGER_CACHESPILL);
   /* pPager->pFirst = 0; */
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
@@ -5536,6 +5524,10 @@ static int getPageNormal(
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
+        if( pgno<=pPager->dbSize ){
+          sqlite3PcacheRelease(pPg);
+          pPg = 0;
+        }
         goto pager_acquire_err;
       }
       if( noContent ){
@@ -5700,10 +5692,12 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 /*
 ** Release a page reference.
 **
-** The sqlite3PagerUnref() and sqlite3PagerUnrefNotNull() may only be
-** used if we know that the page being released is not the last page.
+** The sqlite3PagerUnref() and sqlite3PagerUnrefNotNull() may only be used
+** if we know that the page being released is not the last reference to page1.
 ** The btree layer always holds page1 open until the end, so these first
-** to routines can be used to release any page other than BtShared.pPage1.
+** two routines can be used to release any page other than BtShared.pPage1.
+** The assert() at tag-20230419-2 proves that this constraint is always
+** honored.
 **
 ** Use sqlite3PagerUnrefPageOne() to release page1.  This latter routine
 ** checks the total number of outstanding pages and if the number of
@@ -5719,7 +5713,7 @@ void sqlite3PagerUnrefNotNull(DbPage *pPg){
     sqlite3PcacheRelease(pPg);
   }
   /* Do not use this routine to release the last reference to page1 */
-  assert( sqlite3PcacheRefCount(pPager->pPCache)>0 );
+  assert( sqlite3PcacheRefCount(pPager->pPCache)>0 ); /* tag-20230419-2 */
 }
 void sqlite3PagerUnref(DbPage *pPg){
   if( pPg ) sqlite3PagerUnrefNotNull(pPg);
@@ -5785,6 +5779,7 @@ static int pager_open_journal(Pager *pPager){
 
         if( pPager->tempFile ){
           flags |= (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL);
+          flags |= SQLITE_OPEN_EXCLUSIVE;
           nSpill = sqlite3Config.nStmtSpill;
         }else{
           flags |= SQLITE_OPEN_MAIN_JOURNAL;
@@ -5820,6 +5815,7 @@ static int pager_open_journal(Pager *pPager){
   if( rc!=SQLITE_OK ){
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
+    pPager->journalOff = 0;
   }else{
     assert( pPager->eState==PAGER_WRITER_LOCKED );
     pPager->eState = PAGER_WRITER_CACHEMOD;
@@ -6266,7 +6262,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 # define DIRECT_MODE isDirectMode
 #endif
 
-  if( !pPager->changeCountDone && ALWAYS(pPager->dbSize>0) ){
+  if( !pPager->changeCountDone && pPager->dbSize>0 ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
 
     assert( !pPager->tempFile && isOpen(pPager->fd) );
@@ -7006,7 +7002,11 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 */
 const char *sqlite3PagerFilename(const Pager *pPager, int nullIfMemDb){
   static const char zFake[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-  return (nullIfMemDb && pPager->memDb) ? &zFake[4] : pPager->zFilename;
+  if( nullIfMemDb && (pPager->memDb || sqlite3IsMemdb(pPager->pVfs)) ){
+    return &zFake[4];
+  }else{
+    return pPager->zFilename;
+  }
 }
 
 /*
@@ -7473,13 +7473,15 @@ int sqlite3PagerWalSupported(Pager *pPager){
 */
 static int pagerExclusiveLock(Pager *pPager){
   int rc;                         /* Return code */
+  u8 eOrigLock;                   /* Original lock */
 
-  assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK );
+  assert( pPager->eLock>=SHARED_LOCK );
+  eOrigLock = pPager->eLock;
   rc = pagerLockDb(pPager, EXCLUSIVE_LOCK);
   if( rc!=SQLITE_OK ){
     /* If the attempt to grab the exclusive lock failed, release the 
     ** pending lock that may have been obtained instead.  */
-    pagerUnlockDb(pPager, SHARED_LOCK);
+    pagerUnlockDb(pPager, eOrigLock);
   }
 
   return rc;

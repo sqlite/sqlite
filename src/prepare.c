@@ -306,7 +306,14 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #else
       encoding = SQLITE_UTF8;
 #endif
-      sqlite3SetTextEncoding(db, encoding);
+      if( db->nVdbeActive>0 && encoding!=ENC(db)
+       && (db->mDbFlags & DBFLAG_Vacuum)==0
+      ){
+        rc = SQLITE_LOCKED;
+        goto initone_error_out;
+      }else{
+        sqlite3SetTextEncoding(db, encoding);
+      }
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( (meta[BTREE_TEXT_ENCODING-1] & 3)!=ENC(db) ){
@@ -520,8 +527,8 @@ static void schemaIsValid(Parse *pParse){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+      if( DbHasProperty(db, iDb, DB_SchemaLoaded) ) pParse->rc = SQLITE_SCHEMA;
       sqlite3ResetOneSchema(db, iDb);
-      pParse->rc = SQLITE_SCHEMA;
     }
 
     /* Close the transaction, if one was opened. */
@@ -574,15 +581,15 @@ void sqlite3ParseObjectReset(Parse *pParse){
   assert( db->pParse==pParse );
   assert( pParse->nested==0 );
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  sqlite3DbFree(db, pParse->aTableLock);
+  if( pParse->aTableLock ) sqlite3DbNNFreeNN(db, pParse->aTableLock);
 #endif
   while( pParse->pCleanup ){
     ParseCleanup *pCleanup = pParse->pCleanup;
     pParse->pCleanup = pCleanup->pNext;
     pCleanup->xCleanup(db, pCleanup->pPtr);
-    sqlite3DbFreeNN(db, pCleanup);
+    sqlite3DbNNFreeNN(db, pCleanup);
   }
-  sqlite3DbFree(db, pParse->aLabel);
+  if( pParse->aLabel ) sqlite3DbNNFreeNN(db, pParse->aLabel);
   if( pParse->pConstExpr ){
     sqlite3ExprListDelete(db, pParse->pConstExpr);
   }
@@ -664,6 +671,14 @@ void sqlite3ParseObjectInit(Parse *pParse, sqlite3 *db){
 }
 
 /*
+** Maximum number of times that we will try again to prepare a statement
+** that returns SQLITE_ERROR_RETRY.
+*/
+#ifndef SQLITE_MAX_PREPARE_RETRY
+# define SQLITE_MAX_PREPARE_RETRY 25
+#endif
+
+/*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
 static int sqlite3Prepare(
@@ -687,7 +702,11 @@ static int sqlite3Prepare(
   sParse.db = db;
   sParse.pReprepare = pReprepare;
   assert( ppStmt && *ppStmt==0 );
-  if( db->mallocFailed ) sqlite3ErrorMsg(&sParse, "out of memory");
+  if( db->mallocFailed ){
+    sqlite3ErrorMsg(&sParse, "out of memory");
+    db->errCode = rc = SQLITE_NOMEM;
+    goto end_prepare;
+  }
   assert( sqlite3_mutex_held(db->mutex) );
 
   /* For a long-term use prepared statement avoid the use of
@@ -697,7 +716,7 @@ static int sqlite3Prepare(
     sParse.disableLookaside++;
     DisableLookaside;
   }
-  sParse.disableVtab = (prepFlags & SQLITE_PREPARE_NO_VTAB)!=0;
+  sParse.prepFlags = prepFlags & 0xff;
 
   /* Check to verify that it is possible to get a read lock on all
   ** database schemas.  The inability to get a read lock indicates that
@@ -738,7 +757,9 @@ static int sqlite3Prepare(
     }
   }
 
-  sqlite3VtabUnlockList(db);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( db->pDisconnect ) sqlite3VtabUnlockList(db);
+#endif
 
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
@@ -837,7 +858,7 @@ static int sqlite3LockAndPrepare(
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
     if( rc==SQLITE_OK || db->mallocFailed ) break;
-  }while( rc==SQLITE_ERROR_RETRY
+  }while( (rc==SQLITE_ERROR_RETRY && (cnt++)<SQLITE_MAX_PREPARE_RETRY)
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
   sqlite3BtreeLeaveAll(db);
   rc = sqlite3ApiExit(db, rc);

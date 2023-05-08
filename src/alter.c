@@ -741,13 +741,14 @@ static void renameTokenCheckAll(Parse *pParse, const void *pPtr){
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( pParse->nErr==0 ){
     const RenameToken *p;
-    u8 i = 0;
+    u32 i = 1;
     for(p=pParse->pRename; p; p=p->pNext){
       if( p->p ){
         assert( p->p!=pPtr );
-        i += *(u8*)(p->p);
+        i += *(u8*)(p->p) | 1;
       }
     }
+    assert( i>0 );
   }
 }
 #else
@@ -880,7 +881,7 @@ static int renameUnmapSelectCb(Walker *pWalker, Select *p){
   if( ALWAYS(p->pEList) ){
     ExprList *pList = p->pEList;
     for(i=0; i<pList->nExpr; i++){
-      if( pList->a[i].zEName && pList->a[i].eEName==ENAME_NAME ){
+      if( pList->a[i].zEName && pList->a[i].fg.eEName==ENAME_NAME ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pList->a[i].zEName);
       }
     }
@@ -929,7 +930,7 @@ void sqlite3RenameExprlistUnmap(Parse *pParse, ExprList *pEList){
     sWalker.xExprCallback = renameUnmapExprCb;
     sqlite3WalkExprList(&sWalker, pEList);
     for(i=0; i<pEList->nExpr; i++){
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME) ){
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME) ){
         sqlite3RenameTokenRemap(pParse, 0, (void*)pEList->a[i].zEName);
       }
     }
@@ -1087,7 +1088,7 @@ static void renameColumnElistNames(
     int i;
     for(i=0; i<pEList->nExpr; i++){
       const char *zName = pEList->a[i].zEName;
-      if( ALWAYS(pEList->a[i].eEName==ENAME_NAME)
+      if( ALWAYS(pEList->a[i].fg.eEName==ENAME_NAME)
        && ALWAYS(zName!=0)
        && 0==sqlite3_stricmp(zName, zOld)
       ){
@@ -1279,6 +1280,19 @@ static int renameEditSql(
 }
 
 /*
+** Set all pEList->a[].fg.eEName fields in the expression-list to val.
+*/
+static void renameSetENames(ExprList *pEList, int val){
+  if( pEList ){
+    int i;
+    for(i=0; i<pEList->nExpr; i++){
+      assert( val==ENAME_NAME || pEList->a[i].fg.eEName==ENAME_NAME );
+      pEList->a[i].fg.eEName = val;
+    }
+  }
+}
+
+/*
 ** Resolve all symbols in the trigger at pParse->pNewTrigger, assuming
 ** it was read from the schema of database zDb. Return SQLITE_OK if 
 ** successful. Otherwise, return an SQLite error code and leave an error
@@ -1317,27 +1331,43 @@ static int renameResolveTrigger(Parse *pParse){
     if( rc==SQLITE_OK && pStep->zTarget ){
       SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
       if( pSrc ){
-        int i;
-        for(i=0; i<pSrc->nSrc && rc==SQLITE_OK; i++){
-          SrcItem *p = &pSrc->a[i];
-          p->iCursor = pParse->nTab++;
-          if( p->pSelect ){
-            sqlite3SelectPrep(pParse, p->pSelect, 0);
-            sqlite3ExpandSubquery(pParse, p);
-            assert( i>0 );
-            assert( pStep->pFrom->a[i-1].pSelect );
-            sqlite3SelectPrep(pParse, pStep->pFrom->a[i-1].pSelect, 0);
-          }else{
-            p->pTab = sqlite3LocateTableItem(pParse, 0, p);
-            if( p->pTab==0 ){
-              rc = SQLITE_ERROR;
-            }else{
-              p->pTab->nTabRef++;
-              rc = sqlite3ViewGetColumnNames(pParse, p->pTab);
+        Select *pSel = sqlite3SelectNew(
+            pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
+        );
+        if( pSel==0 ){
+          pStep->pExprList = 0;
+          pSrc = 0;
+          rc = SQLITE_NOMEM;
+        }else{
+          /* pStep->pExprList contains an expression-list used for an UPDATE
+          ** statement. So the a[].zEName values are the RHS of the
+          ** "<col> = <expr>" clauses of the UPDATE statement. So, before
+          ** running SelectPrep(), change all the eEName values in
+          ** pStep->pExprList to ENAME_SPAN (from their current value of
+          ** ENAME_NAME). This is to prevent any ids in ON() clauses that are
+          ** part of pSrc from being incorrectly resolved against the
+          ** a[].zEName values as if they were column aliases.  */
+          renameSetENames(pStep->pExprList, ENAME_SPAN);
+          sqlite3SelectPrep(pParse, pSel, 0);
+          renameSetENames(pStep->pExprList, ENAME_NAME);
+          rc = pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
+          assert( pStep->pExprList==0 || pStep->pExprList==pSel->pEList );
+          assert( pSrc==pSel->pSrc );
+          if( pStep->pExprList ) pSel->pEList = 0;
+          pSel->pSrc = 0;
+          sqlite3SelectDelete(db, pSel);
+        }
+        if( pStep->pFrom ){
+          int i;
+          for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
+            SrcItem *p = &pStep->pFrom->a[i];
+            if( p->pSelect ){
+              sqlite3SelectPrep(pParse, p->pSelect, 0);
             }
           }
         }
-        if( rc==SQLITE_OK && db->mallocFailed ){
+
+        if(  db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
         sNC.pSrcList = pSrc;
@@ -1788,6 +1818,15 @@ static void renameTableFunc(
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
               if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
                 renameTokenFind(&sParse, &sCtx, pStep->zTarget);
+              }
+              if( pStep->pFrom ){
+                int i;
+                for(i=0; i<pStep->pFrom->nSrc; i++){
+                  SrcItem *pItem = &pStep->pFrom->a[i];
+                  if( 0==sqlite3_stricmp(pItem->zName, zOld) ){
+                    renameTokenFind(&sParse, &sCtx, pItem->zName);
+                  }
+                }
               }
             }
           }

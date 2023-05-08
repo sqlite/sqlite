@@ -740,7 +740,7 @@ static int patternCompare(
       ** c but in the other case and search the input string for either
       ** c or cx.
       */
-      if( c<=0x80 ){
+      if( c<0x80 ){
         char zStop[3];
         int bMatch;
         if( noCase ){
@@ -823,7 +823,13 @@ static int patternCompare(
 ** non-zero if there is no match.
 */
 int sqlite3_strglob(const char *zGlobPattern, const char *zString){
-  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[');
+  if( zString==0 ){
+    return zGlobPattern!=0;
+  }else if( zGlobPattern==0 ){
+    return 1;
+  }else {
+    return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[');
+  }
 }
 
 /*
@@ -831,7 +837,13 @@ int sqlite3_strglob(const char *zGlobPattern, const char *zString){
 ** a miss - like strcmp().
 */
 int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
-  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc);
+  if( zStr==0 ){
+    return zPattern!=0;
+  }else if( zPattern==0 ){
+    return 1;
+  }else{
+    return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc);
+  }
 }
 
 /*
@@ -1070,7 +1082,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
     }
     case SQLITE_BLOB: {
       char const *zBlob = sqlite3_value_blob(pValue);
-      int nBlob = sqlite3_value_bytes(pValue);
+      i64 nBlob = sqlite3_value_bytes(pValue);
       assert( zBlob==sqlite3_value_blob(pValue) ); /* No encoding change */
       sqlite3StrAccumEnlarge(pStr, nBlob*2 + 4);
       if( pStr->accError==0 ){
@@ -1210,6 +1222,96 @@ static void hexFunc(
     sqlite3_result_text(context, zHex, n*2, sqlite3_free);
   }
 }
+
+/*
+** Buffer zStr contains nStr bytes of utf-8 encoded text. Return 1 if zStr
+** contains character ch, or 0 if it does not.
+*/
+static int strContainsChar(const u8 *zStr, int nStr, u32 ch){
+  const u8 *zEnd = &zStr[nStr];
+  const u8 *z = zStr;
+  while( z<zEnd ){
+    u32 tst = Utf8Read(z);
+    if( tst==ch ) return 1;
+  }
+  return 0;
+}
+
+/*
+** The unhex() function. This function may be invoked with either one or
+** two arguments. In both cases the first argument is interpreted as text
+** a text value containing a set of pairs of hexadecimal digits which are
+** decoded and returned as a blob.
+**
+** If there is only a single argument, then it must consist only of an
+** even number of hexadeximal digits. Otherwise, return NULL.
+**
+** Or, if there is a second argument, then any character that appears in
+** the second argument is also allowed to appear between pairs of hexadecimal
+** digits in the first argument. If any other character appears in the
+** first argument, or if one of the allowed characters appears between 
+** two hexadecimal digits that make up a single byte, NULL is returned.
+**
+** The following expressions are all true:
+**
+**     unhex('ABCD')       IS x'ABCD'
+**     unhex('AB CD')      IS NULL
+**     unhex('AB CD', ' ') IS x'ABCD'
+**     unhex('A BCD', ' ') IS NULL
+*/
+static void unhexFunc(
+  sqlite3_context *pCtx,
+  int argc,
+  sqlite3_value **argv
+){
+  const u8 *zPass = (const u8*)"";
+  int nPass = 0;
+  const u8 *zHex = sqlite3_value_text(argv[0]);
+  int nHex = sqlite3_value_bytes(argv[0]);
+#ifdef SQLITE_DEBUG
+  const u8 *zEnd = zHex ? &zHex[nHex] : 0;
+#endif
+  u8 *pBlob = 0;
+  u8 *p = 0;
+
+  assert( argc==1 || argc==2 );
+  if( argc==2 ){
+    zPass = sqlite3_value_text(argv[1]);
+    nPass = sqlite3_value_bytes(argv[1]);
+  }
+  if( !zHex || !zPass ) return;
+
+  p = pBlob = contextMalloc(pCtx, (nHex/2)+1);
+  if( pBlob ){
+    u8 c;                         /* Most significant digit of next byte */
+    u8 d;                         /* Least significant digit of next byte */
+
+    while( (c = *zHex)!=0x00 ){
+      while( !sqlite3Isxdigit(c) ){
+        u32 ch = Utf8Read(zHex);
+        assert( zHex<=zEnd );
+        if( !strContainsChar(zPass, nPass, ch) ) goto unhex_null;
+        c = *zHex;
+        if( c==0x00 ) goto unhex_done;
+      }
+      zHex++;
+      assert( *zEnd==0x00 );
+      assert( zHex<=zEnd );
+      d = *(zHex++);
+      if( !sqlite3Isxdigit(d) ) goto unhex_null;
+      *(p++) = (sqlite3HexToInt(c)<<4) | sqlite3HexToInt(d);
+    }
+  }
+
+ unhex_done:
+  sqlite3_result_blob(pCtx, pBlob, (p - pBlob), sqlite3_free);
+  return;
+
+ unhex_null:
+  sqlite3_free(pBlob);
+  return;
+}
+
 
 /*
 ** The zeroblob(N) function returns a zero-filled blob of size N bytes.
@@ -1416,7 +1518,7 @@ static void trimFunc(
 /*
 ** The "unknown" function is automatically substituted in place of
 ** any unrecognized function name when doing an EXPLAIN or EXPLAIN QUERY PLAN
-** when the SQLITE_ENABLE_UNKNOWN_FUNCTION compile-time option is used.
+** when the SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION compile-time option is used.
 ** When the "sqlite3" command-line shell is built using this functionality,
 ** that allows an EXPLAIN or EXPLAIN QUERY PLAN for complex queries
 ** involving application-defined functions to be examined in a generic
@@ -1428,6 +1530,9 @@ static void unknownFunc(
   sqlite3_value **argv
 ){
   /* no-op */
+  (void)context;
+  (void)argc;
+  (void)argv;
 }
 #endif /*SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION*/
 
@@ -2057,6 +2162,18 @@ static double xCeil(double x){ return ceil(x); }
 static double xFloor(double x){ return floor(x); }
 
 /*
+** Some systems do not have log2() and log10() in their standard math
+** libraries.
+*/
+#if defined(HAVE_LOG10) && HAVE_LOG10==0
+# define log10(X) (0.4342944819032517867*log(X))
+#endif
+#if defined(HAVE_LOG2) && HAVE_LOG2==0
+# define log2(X) (1.442695040888963456*log(X))
+#endif
+
+
+/*
 ** Implementation of SQL functions:
 **
 **   ln(X)       - natural logarithm
@@ -2094,17 +2211,15 @@ static void logFunc(
     }
     ans = log(x)/b;
   }else{
-    ans = log(x);
     switch( SQLITE_PTR_TO_INT(sqlite3_user_data(context)) ){
       case 1:
-        /* Convert from natural logarithm to log base 10 */
-        ans *= 1.0/M_LN10;
+        ans = log10(x);
         break;
       case 2:
-        /* Convert from natural logarithm to log base 2 */
-        ans *= 1.0/M_LN2;
+        ans = log2(x);
         break;
       default:
+        ans = log(x);
         break;
     }
   }
@@ -2173,6 +2288,7 @@ static void piFunc(
   sqlite3_value **argv
 ){
   assert( argc==0 );
+  (void)argv;
   sqlite3_result_double(context, M_PI);
 }
 
@@ -2241,8 +2357,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     INLINE_FUNC(likelihood,      2, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
     INLINE_FUNC(likely,          1, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-    {1, SQLITE_FUNC_BUILTIN|SQLITE_UTF8|SQLITE_FUNC_OFFSET|SQLITE_FUNC_TYPEOF,
-     0, 0, noopFunc, 0, 0, 0, "sqlite_offset", {0} },
+    INLINE_FUNC(sqlite_offset,   1, INLINEFUNC_sqlite_offset, 0 ),
 #endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
@@ -2274,6 +2389,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
+    FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
+    FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),

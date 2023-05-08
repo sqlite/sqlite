@@ -163,6 +163,7 @@ static int statConnect(
   StatTable *pTab = 0;
   int rc = SQLITE_OK;
   int iDb;
+  (void)pAux;
 
   if( argc>=4 ){
     Token nm;
@@ -216,6 +217,7 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iSchema = -1;
   int iName = -1;
   int iAgg = -1;
+  (void)tab;
 
   /* Look for a valid schema=? constraint.  If found, change the idxNum to
   ** 1 and request the value of that constraint be sent to xFilter.  And
@@ -741,6 +743,8 @@ static int statFilter(
   int iArg = 0;           /* Count of argv[] parameters used so far */
   int rc = SQLITE_OK;     /* Result of this operation */
   const char *zName = 0;  /* Only provide analysis of this table */
+  (void)argc;
+  (void)idxStr;
 
   statResetCsr(pCsr);
   sqlite3_finalize(pCsr->pStmt);
@@ -824,16 +828,16 @@ static int statColumn(
       }
       break;
     case 4:            /* ncell */
-      sqlite3_result_int(ctx, pCsr->nCell);
+      sqlite3_result_int64(ctx, pCsr->nCell);
       break;
     case 5:            /* payload */
-      sqlite3_result_int(ctx, pCsr->nPayload);
+      sqlite3_result_int64(ctx, pCsr->nPayload);
       break;
     case 6:            /* unused */
-      sqlite3_result_int(ctx, pCsr->nUnused);
+      sqlite3_result_int64(ctx, pCsr->nUnused);
       break;
     case 7:            /* mx_payload */
-      sqlite3_result_int(ctx, pCsr->nMxPayload);
+      sqlite3_result_int64(ctx, pCsr->nMxPayload);
       break;
     case 8:            /* pgoffset */
       if( !pCsr->isAgg ){
@@ -841,7 +845,7 @@ static int statColumn(
       }
       break;
     case 9:            /* pgsize */
-      sqlite3_result_int(ctx, pCsr->szPage);
+      sqlite3_result_int64(ctx, pCsr->szPage);
       break;
     case 10: {         /* schema */
       sqlite3 *db = sqlite3_context_db_handle(ctx);
