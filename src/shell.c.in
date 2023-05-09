@@ -15262,7 +15262,7 @@ static void dot_command_scan(char *zCmd, DCmd_ScanState *pScanState,
 ** The return is TRUE for dot-command ready to run, else false.
 */
 static int line_join_done(DCmd_ScanState dcss, char *zLine,
-                          int *pnLength, char *pcLE){
+                          i64 *pnLength, char *pcLE){
   /* It is ready only if has no open argument or escaped newline. */
   int bOpen = DCSS_IsOpen(dcss);
   if( !DCSS_EndEscaped(dcss) ){
