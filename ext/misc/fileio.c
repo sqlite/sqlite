@@ -93,7 +93,7 @@ SQLITE_EXTENSION_INIT1
 #  include <utime.h>
 #  include <sys/time.h>
 #else
-#  include "windows.h"
+#  include <windows.h>
 #  include <io.h>
 #  include <direct.h>
 #  include "test_windirent.h"

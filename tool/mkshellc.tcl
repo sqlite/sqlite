@@ -177,9 +177,10 @@ if {$runMode eq "normal"} {
   set ::outStrm stdout
 }
 
-# Given a path relative to <project>/src, return its full pathname.
-proc project_path {relPath} {
-  return "$::topDir/src/$relPath"
+# Given an include path relative to some file path from within which the
+# file is to be included, return includee's full pathname.
+proc project_path {relPath fromPath} {
+  return [file normalize [file join [file dirname $fromPath] $relPath]]
 }
 
 if {$::lineTags >= 3} {
@@ -478,7 +479,7 @@ proc INCLUDE {inSrc tailCaptureIncType ostrm} {
   if {$it ne ""} {
     if {[info exists ::incTypes($it)]} {
       set rfpath $::incTypes($it)
-      if {![file exists [project_path $rfpath]]} {
+      if {![file exists [project_path $rfpath $srcFile]]} {
         set saySkip "/* INCLUDE($it), of missing \"$rfpath\" skipped. */"
       }
     } else {
@@ -488,7 +489,7 @@ proc INCLUDE {inSrc tailCaptureIncType ostrm} {
   if {$saySkip ne ""} {
     emit_sync [list $saySkip] $ostrm $srcPrecLines $srcFile
   } else {
-    process_file [project_path $rfpath] $ostrm
+    process_file [project_path $rfpath $srcFile] $ostrm
     incr srcPrecLines
     emit_sync {} $ostrm $srcPrecLines $srcFile
   }
@@ -754,20 +755,21 @@ proc transform_line {lineVar nesting} {
   # other sources, to the detriment of clarity and robustness. Presently,
   # topLevelGen 1 is used for shell.c and other C source(s), and 0 is used
   # for generated .h files.
-  if {[regexp {^# *include } $line]} {
+  if {[regexp {^ *# *include } $line]} {
     if {$::topLevelGen} {
       set noInc [regexp {^# *include "test_windirent.h"} $line]
-      incr noInc [regexp {^#include "sqlite.*"} $line]
+      set hf "test_windirent.h"
+      incr noInc [regexp {^ *# *include "(sqlite3(ext)?\.h)"} $line _ hf]
       if {$noInc > 0} {
         set line "/* $line */"
         return 1
       }
     } else {
-      set pass [regexp {^# *include "sqlite3.h"} $line]
+      set pass [regexp {^ *# *include "(sqlite3(ext)?\.h)"} $line _ hf]
       if {$pass} {
-        set block [info exists ::includesDone(sqlite3.h)]
+       set block [info exists ::includesDone($hf)]
         if {!$block} {
-          set ::includesDone(sqlite3.h) 1
+          set ::includesDone($hf) 1
         } else {
           set line "/* $line */"
         }
@@ -775,7 +777,7 @@ proc transform_line {lineVar nesting} {
       }
     }
   }
-  if {[regexp {^#include "([\w\.]+)"} $line _ incRelPath]} {
+  if {[regexp {^ *# *include "([\w\.]+)"} $line _ incRelPath]} {
     set fromPath [lindex $::incFileStack end]
     set incPath [file join [file dirname $fromPath] $incRelPath]
     set inTree [file exists $incPath]
