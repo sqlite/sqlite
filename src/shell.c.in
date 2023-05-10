@@ -6457,7 +6457,7 @@ static void tryToCloneSchema(
                 sqlite3_errmsg(DBX(psx)), zQuery);
     goto end_schema_xfer;
   }
-  while( sqlite3_step(pQuery)==SQLITE_ROW ){
+  while( (rc = sqlite3_step(pQuery))==SQLITE_ROW ){
     zName = sqlite3_column_text(pQuery, 0);
     zSql = sqlite3_column_text(pQuery, 1);
     if( zName==0 || zSql==0 ) continue;
@@ -6494,7 +6494,7 @@ static void tryToCloneSchema(
       zName = sqlite3_column_text(pQuery, 0);
       zSql = sqlite3_column_text(pQuery, 1);
       if( zName==0 || zSql==0 ) continue;
-      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ) continue;
+      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")==0 ) continue;
       /* Consider directing ... */
       fprintf(STD_OUT, "%s... ", zName); fflush(STD_OUT);
       sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
@@ -6532,12 +6532,14 @@ static void tryToClone(ShellExState *psx, const char *zNewDb){
     utf8_printf(STD_ERR, "Cannot create output database: %s\n",
             sqlite3_errmsg(newDb));
   }else{
-    sqlite3_exec(DBX(psx), "PRAGMA writable_schema=ON;", 0, 0, 0);
+    // sqlite3_exec(DBX(psx), "PRAGMA writable_schema=ON;", 0, 0, 0);
+    sqlite3_db_config(newDb, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+    sqlite3_db_config(newDb, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
     sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
     tryToCloneSchema(psx, newDb, "type='table'", tryToCloneData);
     tryToCloneSchema(psx, newDb, "type!='table'", 0);
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
-    sqlite3_exec(DBX(psx), "PRAGMA writable_schema=OFF;", 0, 0, 0);
+    // sqlite3_exec(DBX(psx), "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
   close_db(newDb);
 }
@@ -15105,33 +15107,34 @@ static int runOneSqlLine(ShellExState *psx, char *zSql,
   if( ShellHasFlag(psx,SHFLG_Backslash) ) resolve_backslashes(zSql);
   if( ISS(psx)->flgProgress & SHELL_PROGRESS_RESET ) ISS(psx)->nProgress = 0;
   BEGIN_TIMER;
-  /* This shell_exec call will also echo the submitted SQL when echo is on. */
   rc = shell_exec(psx, zSql, &zErrMsg);
   END_TIMER;
   if( rc || zErrMsg ){
     char zPrefix[100];
     const char *zErrorTail;
     const char *zErrorType;
-    if( zErrMsg==0 ){
-      zErrorType = "Error";
-      zErrorTail = sqlite3_errmsg(DBX(psx));
-    }else if( cli_strncmp(zErrMsg, "in prepare, ",12)==0 ){
-      zErrorType = "Parse error";
-      zErrorTail = &zErrMsg[12];
-    }else if( cli_strncmp(zErrMsg, "stepping, ", 10)==0 ){
-      zErrorType = "Runtime error";
-      zErrorTail = &zErrMsg[10];
-    }else{
-      zErrorType = "Error";
-      zErrorTail = zErrMsg;
+    if( psx->shellAbruptExit==0 ){
+      if( zErrMsg==0 ){
+        zErrorType = "Error";
+        zErrorTail = sqlite3_errmsg(DBX(psx));
+      }else if( cli_strncmp(zErrMsg, "in prepare, ",12)==0 ){
+        zErrorType = "Parse error";
+        zErrorTail = &zErrMsg[12];
+      }else if( cli_strncmp(zErrMsg, "stepping, ", 10)==0 ){
+        zErrorType = "Runtime error";
+        zErrorTail = &zErrMsg[10];
+      }else{
+        zErrorType = "Error";
+        zErrorTail = zErrMsg;
+      }
+      if( bAltIn || !stdin_is_interactive ){
+        sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+                         "%s near line %d:", zErrorType, startline);
+      }else{
+        sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
+      }
+      utf8_printf(STD_ERR, "%s %s\n", zPrefix, zErrorTail);
     }
-    if( bAltIn || !stdin_is_interactive ){
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix,
-                       "%s near line %d:", zErrorType, startline);
-    }else{
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
-    }
-    utf8_printf(STD_ERR, "%s %s\n", zPrefix, zErrorTail);
     sqlite3_free(zErrMsg);
     return 1;
   }else if( ShellHasFlag(psx, SHFLG_CountChanges) ){
@@ -15542,7 +15545,7 @@ static DotCmdRC process_input(ShellInState *psi){
     case Runnable:
       switch( inKind ){
       case Sql:
-        /* runOneSqlLine() does its own echo when requested. */
+        echo_group_input(psi, *pzLineUse);
         nErrors += runOneSqlLine(XSS(psi), *pzLineUse,
                                  INSOURCE_IS_INTERACTIVE(psi->pInSource),
                                  iStartline);
@@ -15561,6 +15564,7 @@ static DotCmdRC process_input(ShellInState *psi){
         char *zErr = 0;
         DotCmdRC dcr;
         assert(pSS!=0);
+        /* Consider: Should echo flag be honored here? */
         pSS->pMethods->resetCompletionScan(pSS);
         dcr = pSS->pMethods->runScript(pSS, *pzLineUse+nLeadWhite,
                                        XSS(psi), &zErr);

@@ -192,15 +192,17 @@ do_test shell2-1.4.7 {
 do_test shell2-1.4.8 {
   catchcmd "-safe :memory:" {
  SELECT edit('DoNotCare');}
-} {1 {line 2: cannot use the edit() function in safe mode}}
+} {1 {line 2: cannot use the edit() function in safe mode
+Abnormal exit (2)}}
 do_test shell2-1.4.9 {
   catchcmd "-safe :memory:" {
  SELECT writefile('DoNotCare', x'');}
-} {1 {line 2: cannot use the writefile() function in safe mode}}
+} {1 {line 2: cannot use the writefile() function in safe mode
+Abnormal exit (2)}}
 
 # Verify that .clone handles sequence table.
 # See https://sqlite.org/forum/forumpost/71ff9e6c4c
-do_test shell2-1.4.9 {
+do_test shell2-1.4.10 {
   forcedelete clone.db
   set res [catchcmd :memory: [string trim {
  CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT);
@@ -214,7 +216,7 @@ done
 
 # Verify that generate_series stays sane near 64-bit range boundaries.
 # See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
-do_test shell2-1.4.10 {
+do_test shell2-1.4.11 {
  set res [catchcmd :memory: [string trim {
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
@@ -245,7 +247,7 @@ do_test shell2-1.4.10 {
 
 # Bug discovered while messing around, .import hangs with
 # bit 7 set in column separator.
-do_test shell2-1.4.11 {
+do_test shell2-1.4.12 {
   forcedelete dummy.csv
   set df [open dummy.csv w]
   puts $df dog,cat
