@@ -137,7 +137,7 @@ int sqlite3_tclshext_init(sqlite3*, char**, const sqlite3_api_routines*);
 #ifdef SHELL_ENABLE_TK
 #include "tk.h" /* Only used if option -tk passed during load. */
 #endif
-INCLUDE tclsqlite.c
+INCLUDE ../../src/tclsqlite.c
 
 #if defined(_WIN32) || defined(WIN32)
 # include <direct.h>

@@ -1,5 +1,5 @@
-C Passes\sshell{1-8}.test\s.
-D 2023-05-10T00:15:05.614
+C Get\sTCL\sextension\sto\sbuild\sand\sextensible\sshell\stests\sto\spass.
+D 2023-05-10T00:45:17.703
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -316,7 +316,7 @@ F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 53e7d48f68d699a24f1a92e68e71eca8b3a9ff991fe9588c2a05bde103c6e7b7
 F ext/misc/stmt.c bc30d60d55e70d0133f10ac6103fe9336543f673740b73946f98758a2bb16dd7
-F ext/misc/tclshext.c.in d288a729637bf8d55497b72f0cefeec09c3a3ab9c5826f75ab7597b04ba6e523
+F ext/misc/tclshext.c.in 1a49bd7d9e2e06f7ed5f409dab829724b9e91a5c766275313fc142e30d441012
 F ext/misc/templatevtab.c 8a16a91a5ceaccfcbd6aaaa56d46828806e460dd194965b3f77bf38f14b942c4
 F ext/misc/totype.c fa4aedeb07f66169005dffa8de3b0a2b621779fd44f85c103228a42afa71853b
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
@@ -2077,8 +2077,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2749aea2086f257f98e58d349ef67d88d355b7d02157cc07e89a1e6b62265572
-R fbc3b599c85b3746cf34731dd10d97f1
+P 76734a4b6c61ab004703df40e2197e4f6e5c0b3d5937aed7ea41193ebe2721a1
+R e17d2c7e426cf79f5b6c9ff2d31408ec
 U larrybr
-Z dd13c293aab5fd9ae5f70003e8cea702
+Z c2f2477a954fb9c881959c41cc321353
 # Remove this line to create a well-formed Fossil manifest.
