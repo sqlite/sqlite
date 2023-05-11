@@ -46,6 +46,7 @@
 # define RIP_TO_HERE(jb) 0
 #endif
 #include <stdio.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,9 +56,14 @@ extern "C" {
 
 /* Type used for marking positions within a held-resource stack */
 typedef unsigned short ResourceMark;
+typedef unsigned short ResourceCount;
 
 /* Current position of the held-resource stack */
 extern ResourceMark holder_mark();
+
+/* Assure no allocation failure for some more xxx_holder() calls.
+** Note that this call may fail with an OOM abrupt exit. */
+extern void more_holders(ResourceCount more);
 
 /* Routines for holding resources on held-resource stack together
 ** with enough information for them to be freed by this package.
@@ -84,7 +90,10 @@ extern void pipe_holder(FILE *);
 #endif
 
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */
-extern void* take_held(ResourceMark mark, unsigned short offset);
+extern void* take_held(ResourceMark mark, ResourceCount offset);
+
+/* Swap a held resource pointer for a new one. */
+extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
 
 /* Free all held resources in excess of given resource stack mark. */
 extern void holder_free(ResourceMark mark);
@@ -108,6 +117,9 @@ extern void forget_exit_ripper(jmp_buf *pjb);
 ** prep done (or possible), strip the whole stack and exit the process.
 */
 extern void quit_moan(const char *zMoan, int errCode);
+
+/* What the complaint will be for OOM failures and abrupt exits. */
+extern const char *resmanage_oom_message;
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

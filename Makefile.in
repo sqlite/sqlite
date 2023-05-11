@@ -1162,6 +1162,8 @@ SHELL_SRC = \
   $(TOP)/ext/misc/memtrace.c \
   $(TOP)/src/shext_linkage.h \
   $(TOP)/src/obj_interfaces.h \
+  $(TOP)/src/resmanage.h \
+  $(TOP)/src/resmanage.c \
   $(TOP)/ext/recover/dbdata.c \
   $(TOP)/ext/misc/zipfile.c \
   $(TOP)/src/test_windirent.c
