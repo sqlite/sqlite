@@ -26,6 +26,9 @@ typedef enum FreeableResourceKind {
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
   FRK_Pipe,
 #endif
+#ifdef SHELL_MANAGE_TEXT
+  FRK_Text,
+#endif
   FRK_CustomBase /* series of values for custom freers */
 } FreeableResourceKind;
 
@@ -48,6 +51,9 @@ typedef struct ResourceHeld {
     sqlite3_stmt *p_stmt;
     void *p_s3mem;
     FILE *p_stream;
+#ifdef SHELL_MANAGE_TEXT
+    ShellText *p_text;
+#endif
   } held;
   FreeableResourceKind frk;
 } ResourceHeld;
@@ -117,6 +123,11 @@ static void free_rk( ResourceHeld *pRH ){
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
   case FRK_Pipe:
     pclose(pRH->held.p_stream);
+    break;
+#endif
+#ifdef SHELL_MANAGE_TEXT
+  case FRK_Text:
+    freeText(pRH->held.p_text);
     break;
 #endif
   default:
@@ -204,6 +215,12 @@ void file_holder(FILE *pf){
 /* Hold an open C runtime pipe */
 void pipe_holder(FILE *pp){
   if( pp!=0 ) res_hold(pp, FRK_Pipe);
+}
+#endif
+#ifdef SHELL_MANAGE_TEXT
+/* a reference to a ShellText object, (storage for which not managed) */
+static void text_holder(ShellText *pt){
+  res_hold(pt, FRK_Text);
 }
 #endif
 /* Hold anything together with arbitrary freeing function */

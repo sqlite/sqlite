@@ -88,6 +88,10 @@ extern void file_holder(FILE *);
 /* an open C runtime pipe */
 extern void pipe_holder(FILE *);
 #endif
+#ifdef SHELL_MANAGE_TEXT
+/* a reference to a ShellText object, (storage for which not managed) */
+static void text_holder(ShellText *);
+#endif
 
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */
 extern void* take_held(ResourceMark mark, ResourceCount offset);
