@@ -1,5 +1,5 @@
-C WIP,\sCLI\sresource\smanager\sworked\sin,\sbarely\sused\syet.\s(Leaking\sone\sobject.)
-D 2023-05-11T03:11:20.248
+C For\sCLI:\sCure\san\sold\sleak\sand\sone\ssegfault.\sGet\sall\sshell\stests\sto\spass\s(by\saltering\sexpected\serror\soutput\sin\ssome\scases.)\sReady\snow\sfor\sfull\suse\sof\sCLI\sresource\smanager.
+D 2023-05-11T17:04:15.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -642,7 +642,7 @@ F src/resmanage.h 41e38ab8308611055582b031fdcbd179344025fce2f9814e3061b79f53efc3
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f9333ef8181192c22662f5cb8d257efc4a2880f9ee4853c6c4616f783d27e1b5
-F src/shell.c.in 154be768b7c1f1ba3de689f7567386647931e36030c50608d35e7e52d5d786c0
+F src/shell.c.in e20a50b2c8313d5e69ef7a3f6ab6c6ef6bdb3a3d7e3804ea7a60938defc40067
 F src/shext_linkage.h 27dcf7624df05b2a7a6d367834339a6db3636f3035157f641f7db2ec499f8f6d
 F src/sqlite.h.in 27ca1d4b2eda8feee468af5735182390e8fe4696522751eec0136d17323201ad
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1509,9 +1509,9 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 62896b0179d402468b54855209cb730e9f15df4896f9ef168113e69b7eec97bf
+F test/shell1.test cac1fd2d681e0b79de9488069e4b2287da30788ce96a34788cbffbfe57e7b0a4
 F test/shell2.test 71f2f0dbc9fc042f78bc4403b8d4cf0d5ff2ae5eb14285fdec6c1abc945bc87c
-F test/shell3.test 9dd38fe5d98047dca5e71a09e64272b3fb75d8131bfb9137122785ed2c8c3802
+F test/shell3.test 5dc710deede6e811e7af2bd91867d4128f023edc5a6cff6b8ad89e32af54c033
 F test/shell4.test 8116d7b9dbefe6e2237908afbd6738637e0426486373231d3ad8984471d4e04c
 F test/shell5.test ec82248dda87329f7dfced8637515b68db4ee75d94c8129dc017376fb61a8247
 F test/shell6.test 1ceb51b2678c472ba6cf1e5da96679ce8347889fe2c3bf93a0e0fa73f00b00d3
@@ -2079,8 +2079,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1527d429d66505d4f4bb8635c4d9d7ab926037b136554605d67835ee5d19d2de
-R 80825c1180825bb4f4ec0bb8962d01e6
+P dbd00bcaa081ec73c2cb6eef0be5f82c890c8293aa90876942bc049e71f3c83a
+R 65a7c5b59b4918085541edb8d4653073
 U larrybr
-Z a4f9d6999be83f832b2f293999c7ee60
+Z 63232a4eaf0029d816f1a2d739e94039
 # Remove this line to create a well-formed Fossil manifest.

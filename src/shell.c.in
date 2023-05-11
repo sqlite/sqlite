@@ -988,11 +988,18 @@ typedef struct InSource {
   ((pIS)==&termInSource && stdin_is_interactive )
 
 /* This instance's address is taken as part of interactive input test. */
-static InSource termInSource = { 0 /*stdin*/, 0, 0, 0, "<terminal>", 0};
-static InSource stdInSource = { 0 /*stdin*/, 0, 0, 0, "<stdin>", 0};
+static InSource termInSource = { 0, 0, 0, 0, "<terminal>", 0};
+static InSource stdInSource = { 0, 0, 0, 0, "<stdin>", 0};
+static InSource cmdInSource = { 0, 0, 0, 0, "<cmdLine>", 0};
 static void init_std_inputs(FILE *pIn ){
   termInSource.inFile = pIn;
   stdInSource.inFile = pIn;
+  cmdInSource.lineno = 0;
+}
+static void set_invocation_cmd(char *zDo){
+  cmdInSource.iReadOffset = 0;
+  cmdInSource.zStrIn = zDo;
+  ++cmdInSource.lineno;
 }
 
 static char *strLineGet(char *zBuf, int ncMax, InSource *pInSrc){
@@ -1067,7 +1074,7 @@ static char *local_getline(char *zLine, InSource *pInSrc){
   /* For interactive input on Windows systems, without -utf8,
   ** translate the multi-byte characterset characters into UTF-8.
   ** This is the translation that predates the -utf8 option. */
-  if( stdin_is_interactive && pInSrc==&stdInSource
+  if( stdin_is_interactive && pInSrc==&termInSource
 # if SHELL_WIN_UTF8_OPT
       && !console_utf8
 # endif /* SHELL_WIN_UTF8_OPT */
@@ -2034,6 +2041,7 @@ static int failIfSafeMode(
     va_end(ap);
     raw_printf(STD_ERR, "line %d: ", ISS(psx)->pInSource->lineno);
     utf8_printf(STD_ERR, "%s\n", zMsg);
+    sqlite3_free(zMsg);
     psx->shellAbruptExit = 0x202;
     return 1;
   }
@@ -15499,6 +15507,7 @@ static DotCmdRC process_input(ShellInState *psi){
           grow_line_buffer(&zLineAccum, &naAccum, ncLineIn+2);
           /* Copy line just input */
           memcpy(zLineAccum, zLineInput, ncLineIn);
+          zLineAccum[ncLineIn] = 0;
           ncLineAcc = ncLineIn;
           pzLineUse = &zLineAccum;
           pncLineUse = &ncLineAcc;
@@ -15508,8 +15517,21 @@ static DotCmdRC process_input(ShellInState *psi){
                                     nGroupLines>0, &shellPrompts);
         if( zLineInput==0 ){
           bInputEnd = 1;
-          inKind = Eof;
+          if( inKind==Sql && psi->pInSource==&cmdInSource ){
+            /* As a special dispensation, SQL arguments on the command line
+            ** do not need to end with ';' (or a lone go.) */
+            if( nGroupLines>1 ){
+              grow_line_buffer(&zLineAccum, &naAccum, ncLineAcc+2);
+            }
+            strcpy( zLineAccum+ncLineAcc, ";" );
+            if( 1==sqlite3_complete(*pzLineUse) ){
+              zLineAccum[ncLineAcc] = 0;
+              disposition = Runnable;
+              continue;
+            }
+          }
           disposition = Erroneous;
+          inKind = Eof;
           if( bInteractive ) printf("\n");
           continue;
         }
@@ -15611,9 +15633,11 @@ static DotCmdRC process_input(ShellInState *psi){
   free(zLineInput); /* Allocated via malloc() by readline or equivalents. */
   sqlite3_free(zLineAccum);
 
-  /* Translate DCR_Return because it has been done here, not to propagate. */
-  if( termKind==DCR_Return ) termKind = DCR_Ok;
-
+  /* Translate DCR_Return because it has been done here, not to propagate
+   * unless input is from shell invocation argument. */
+  if( termKind==DCR_Return && psi->pInSource!=&cmdInSource ){
+    termKind = DCR_Ok;
+  }
   return termKind|(nErrors>0);
 }
 
@@ -15700,7 +15724,7 @@ static int run_single_query(ShellExState *psx, char *zSql){
     /* Some kind of error, to result in exit before REPL. */
     if( zErrMsg!=0 ){
       utf8_printf(STD_ERR,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite3_free(zErrMsg);
     }else{
       utf8_printf(STD_ERR,"Error: unable to process SQL \"%s\"\n", zSql);
     }
@@ -15894,7 +15918,7 @@ static void verify_uninitialized(void){
 ** Initialize the state information in data and datax.
 ** Does no heap allocation.
 */
-  static void main_init(ShellInState *pData, ShellExState *pDatax) {
+static void main_init(ShellInState *pData, ShellExState *pDatax) {
   memset(pData, 0, sizeof(*pData));
   memset(pDatax, 0, sizeof(*pDatax));
   pDatax->sizeofThis = sizeof(*pDatax);
@@ -15922,6 +15946,8 @@ static void verify_uninitialized(void){
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
   init_std_inputs(stdin);
+  /* Source at EOF (for now), saying it is command line. */
+  pData->pInSource = &cmdInSource;
 }
 
 /*
@@ -16034,7 +16060,7 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         */
         stdin_is_interactive = 0;
       }else if( cli_strcmp(z,"-heap")==0 ){
-  #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
+#if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
         const char *zSize;
         sqlite3_int64 szHeap;
 
@@ -16043,9 +16069,9 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
         verify_uninitialized();
         sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
-  #else
+#else
         (void)cmdline_option_value(argc, argv, ++i);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-pagecache")==0 ){
         sqlite3_int64 n, sz;
         void *pvCache = 0;
@@ -16079,7 +16105,7 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
            case 2:  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);   break;
            default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
         }
-  #ifdef SQLITE_ENABLE_VFSTRACE
+#ifdef SQLITE_ENABLE_VFSTRACE
       }else if( cli_strcmp(z,"-vfstrace")==0 ){
         extern int vfstrace_register(
            const char *zTraceName,
@@ -16089,54 +16115,54 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
            int makeDefault
         );
         vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,STD_ERR,1);
-  #endif
-  #ifdef SQLITE_ENABLE_MULTIPLEX
+#endif
+#ifdef SQLITE_ENABLE_MULTIPLEX
       }else if( cli_strcmp(z,"-multiplex")==0 ){
         extern int sqlite3_multiple_initialize(const char*,int);
         sqlite3_multiplex_initialize(0, 1);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-mmap")==0 ){
         sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
         verify_uninitialized();
         sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
-  #ifdef SQLITE_ENABLE_SORTER_REFERENCES
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
       }else if( cli_strcmp(z,"-sorterref")==0 ){
         sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
         verify_uninitialized();
         sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, (int)sz);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-vfs")==0 ){
         pad->zVfs = cmdline_option_value(argc, argv, ++i);
-  #ifdef SQLITE_HAVE_ZLIB
+#ifdef SQLITE_HAVE_ZLIB
       }else if( cli_strcmp(z,"-zip")==0 ){
         psi->openMode = SHELL_OPEN_ZIPFILE;
-  #endif
+#endif
       }else if( cli_strcmp(z,"-append")==0 ){
         psi->openMode = SHELL_OPEN_APPENDVFS;
-  #ifndef SQLITE_OMIT_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
       }else if( cli_strcmp(z,"-deserialize")==0 ){
         psi->openMode = SHELL_OPEN_DESERIALIZE;
       }else if( cli_strcmp(z,"-maxsize")==0 && i+1<argc ){
         psi->szMax = integerValue(argv[++i]);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-readonly")==0 ){
         psi->openMode = SHELL_OPEN_READONLY;
       }else if( cli_strcmp(z,"-nofollow")==0 ){
         psi->openFlags = SQLITE_OPEN_NOFOLLOW;
-  #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
       }else if( cli_strncmp(z, "-A",2)==0 ){
         /* All remaining command-line arguments are passed to the ".archive"
         ** command, so ignore them */
         break;
-  #endif
+#endif
       }else if( cli_strcmp(z, "-memtrace")==0 ){
         sqlite3MemTraceActivate(STD_ERR);
       }else if( cli_strcmp(z,"-bail")==0 ){
         bail_on_error = 1;
-  #if SHELL_EXTENSIONS
+#if SHELL_EXTENSIONS
       }else if( cli_strcmp(z,"-shxopts")==0 ){
         psi->bExtendedDotCmds = (u8)integerValue(argv[++i]);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-nonce")==0 ){
         free(psi->zNonce);
         psi->zNonce = strdup(argv[++i]);
@@ -16181,18 +16207,18 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         zModeSet = z;
       }else if( cli_strcmp(z,"-tabs")==0 ){
         zModeSet = z;
-  #ifdef SQLITE_HAVE_ZLIB
+#ifdef SQLITE_HAVE_ZLIB
       }else if( cli_strcmp(z,"-zip")==0 ){
         psi->openMode = SHELL_OPEN_ZIPFILE;
-  #endif
+#endif
       }else if( cli_strcmp(z,"-append")==0 ){
         psi->openMode = SHELL_OPEN_APPENDVFS;
-  #ifndef SQLITE_OMIT_DESERIALIZE
+#ifndef SQLITE_OMIT_DESERIALIZE
       }else if( cli_strcmp(z,"-deserialize")==0 ){
         psi->openMode = SHELL_OPEN_DESERIALIZE;
       }else if( cli_strcmp(z,"-maxsize")==0 && i+1<argc ){
         psi->szMax = integerValue(argv[++i]);
-  #endif
+#endif
       }else if( cli_strcmp(z,"-readonly")==0 ){
         psi->openMode = SHELL_OPEN_READONLY;
       }else if( cli_strcmp(z,"-nofollow")==0 ){
@@ -16231,10 +16257,10 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         ShellSetFlagI(psi, SHFLG_Backslash);
       }else if( cli_strcmp(z,"-bail")==0 ){
         /* No-op.  The bail_on_error flag should already be set. */
-  #if SHELL_EXTENSIONS
+#if SHELL_EXTENSIONS
       }else if( cli_strcmp(z,"-shxopts")==0 ){
         i++; /* Handled on first pass. */
-  #endif
+#endif
       }else if( cli_strcmp(z,"-version")==0 ){
         fprintf(STD_OUT, "%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
         rc = 2;
@@ -16243,9 +16269,9 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
       }else if( cli_strcmp(z,"-batch")==0 ){
         stdin_is_interactive = 0;
       }else if( cli_strcmp(z,"-utf8")==0 ){
-  #if SHELL_WIN_UTF8_OPT
+#if SHELL_WIN_UTF8_OPT
         console_utf8 = 1;
-  #endif /* SHELL_WIN_UTF8_OPT */
+#endif /* SHELL_WIN_UTF8_OPT */
       }else if( cli_strcmp(z,"-heap")==0 ){
         i++;
       }else if( cli_strcmp(z,"-pagecache")==0 ){
@@ -16260,20 +16286,20 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         i++;
       }else if( cli_strcmp(z,"-memtrace")==0 ){
         i++;
-  #ifdef SQLITE_ENABLE_SORTER_REFERENCES
+#ifdef SQLITE_ENABLE_SORTER_REFERENCES
       }else if( cli_strcmp(z,"-sorterref")==0 ){
         i++;
-  #endif
+#endif
       }else if( cli_strcmp(z,"-vfs")==0 ){
         i++;
-  #ifdef SQLITE_ENABLE_VFSTRACE
+#ifdef SQLITE_ENABLE_VFSTRACE
       }else if( cli_strcmp(z,"-vfstrace")==0 ){
         i++;
-  #endif
-  #ifdef SQLITE_ENABLE_MULTIPLEX
+#endif
+#ifdef SQLITE_ENABLE_MULTIPLEX
       }else if( cli_strcmp(z,"-multiplex")==0 ){
         i++;
-  #endif
+#endif
       }else if( cli_strcmp(z,"-help")==0 ){
         usage(1);
       }else if( cli_strcmp(z,"-cmd")==0 ){
@@ -16282,17 +16308,13 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         ** be better if all commands ran in the order that they appear.  But
         ** we retain the goofy behavior for historical compatibility. */
         if( i==argc-1 ) break; /* Pretend specified command is empty. */
-        z = cmdline_option_value(argc,argv,++i);
-        if( z[0]=='.' ){
-          drc = do_dot_command(z, psi->pSXS);
-          rc = (drc>2)? 2 : drc;
-        }else{
-          rc = run_single_query(psi->pSXS, z);
-        }
-        if( rc && bail_on_error ){
+        set_invocation_cmd(cmdline_option_value(argc,argv,++i));
+        drc = process_input(psi);
+        rc = (drc>2)? 2 : drc;
+        if( rc>0 ){
           break;
         }
-  #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
       }else if( cli_strncmp(z, "-A", 2)==0 ){
         if( pca->nCmd>0 ){
           utf8_printf(STD_ERR, "Error: cannot mix regular SQL or dot-commands"
@@ -16310,7 +16332,7 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         rc = (drc>2)? 2 : drc;
         pad->readStdin = 0;
         break;
-  #endif
+#endif
       }else if( cli_strcmp(z,"-safe")==0 ){
         psi->bSafeMode = psi->bSafeModeFuture = 1;
       }else if( cli_strcmp(z,"-unsafe-testing")==0 ){
@@ -16466,7 +16488,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     ** subsequent sqlite3_config() calls will work.  So copy all results into
     ** memory that does not come from the SQLite memory allocator.
     */
-  #if !SQLITE_SHELL_IS_UTF8
+#if !SQLITE_SHELL_IS_UTF8
     sqlite3_initialize();
     argvToFree = malloc(sizeof(argv[0])*argc*2);
     shell_check_oom(argvToFree);
@@ -16484,16 +16506,16 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       sqlite3_free(z);
     }
     sqlite3_shutdown();
-  #endif
+#endif
 
     assert( argc>=1 && argv && argv[0] );
     Argv0 = argv[0];
-  #if SHELL_DYNAMIC_EXTENSION
+#if SHELL_DYNAMIC_EXTENSION
     initStartupDir();
     if( isExtendedBasename(Argv0) ) data.bExtendedDotCmds = SHELL_ALL_EXTENSIONS;
-  #endif
+#endif
 
-  #ifdef SQLITE_SHELL_DBNAME_PROC
+#ifdef SQLITE_SHELL_DBNAME_PROC
     {
       /* If the SQLITE_SHELL_DBNAME_PROC macro is defined, then it is the name
       ** of a C-function that will provide the name of the database file.  Use
@@ -16503,22 +16525,22 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       SQLITE_SHELL_DBNAME_PROC(&data.pAuxDb->zDbFilename);
       warnInmemoryDb = 0;
     }
-  #endif
+#endif
 
     /* Do an initial pass through the command-line argument to locate
     ** the name of the database file, the name of the initialization file,
     ** the size of the alternative malloc heap,
     ** and the first command to execute.
     */
-  #ifndef SQLITE_SHELL_FIDDLE
+#ifndef SQLITE_SHELL_FIDDLE
     verify_uninitialized();
-  #endif
+#endif
     i = scanInvokeArgs(argc, argv, 1, &data, &cmdArgs, &argsData);
-  #ifndef SQLITE_SHELL_FIDDLE
+#ifndef SQLITE_SHELL_FIDDLE
     verify_uninitialized();
-  #endif
+#endif
 
-  #ifdef SQLITE_SHELL_INIT_PROC
+#ifdef SQLITE_SHELL_INIT_PROC
     {
       /* If the SQLITE_SHELL_INIT_PROC macro is defined, then it is the name
       ** of a C-function that will perform initialization actions on SQLite that
@@ -16527,21 +16549,21 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       extern void SQLITE_SHELL_INIT_PROC(void);
       SQLITE_SHELL_INIT_PROC();
     }
-  #else
+#else
     /* All the sqlite3_config() calls have now been made. So it is safe
     ** to call sqlite3_initialize() and process any command line -vfs option. */
     sqlite3_initialize();
-  #endif
+#endif
 
     /* Register the control-C (SIGINT) handler.
     ** Make sure we have a valid signal handler early, before anything
     ** is done that might take long. */
     pGlobalDbLock = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  #ifdef SIGINT
+#ifdef SIGINT
     signal(SIGINT, interrupt_handler);
-  #elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
     SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
-  #endif
+#endif
 
     if( argsData.zVfs ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(argsData.zVfs);
@@ -16555,19 +16577,19 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     }
 
     if( data.pAuxDb->zDbFilename==0 ){
-  #ifndef SQLITE_OMIT_MEMORYDB
+#ifndef SQLITE_OMIT_MEMORYDB
       data.pAuxDb->zDbFilename = ":memory:";
       warnInmemoryDb = argc==1;
-  #else
+#else
       utf8_printf(STD_ERR,"%s: Error: no database filename specified\n", Argv0);
       rc = 1;
       goto shell_bail;
-  #endif
+#endif
     }
     data.out = STD_OUT;
-  #ifndef SQLITE_SHELL_FIDDLE
+#ifndef SQLITE_SHELL_FIDDLE
     sqlite3_appendvfs_init(0,0,0);
-  #endif
+#endif
 
     /* Go ahead and open the database file if it already exists.  If the
     ** file does not exist, delay opening it.  This prevents empty database
@@ -16590,33 +16612,27 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     ** settings in the initialization file.
     */
     rc = scanInvokeArgs(argc, argv, 2, &data, &cmdArgs, &argsData);
-    if( (rc && bail_on_error) || rc>1 ){
-      if( rc==2 ) rc = 0;
+    if( rc>0 ){
       goto shell_bail;
     }
 
-  #if SHELL_WIN_UTF8_OPT
+#if SHELL_WIN_UTF8_OPT
     if( console_utf8 && stdin_is_interactive ){
       console_prepare();
     }else{
       setBinaryMode(stdin, 0);
       console_utf8 = 0;
     }
-  #endif
+#endif
 
     if( !argsData.readStdin ){
-      /* Run all arguments that do not begin with '-' as if they were separate
-      ** command-line inputs, except for the argToSkip argument which contains
-      ** the database filename.
-      */
+      /* Run all arguments that are not the DB name or do not begin with '-'
+      ** as if they were separate command-line inputs. */
       for(i=0; i<cmdArgs.nCmd && rc<2; i++){
-        if( cmdArgs.azCmd[i][0]=='.' ){
-          drc = do_dot_command(cmdArgs.azCmd[i], &datax);
-          rc = (drc>2)? 2 : drc;
-        }else{
-          rc = run_single_query(&datax, cmdArgs.azCmd[i]);
-        }
-        if( rc && bail_on_error ){
+        set_invocation_cmd(cmdArgs.azCmd[i]);
+        drc = process_input(&data);
+        rc = (drc>2)? 2 : drc;
+        if( rc>0 ){
           goto shell_bail;
         }
       }
@@ -16653,11 +16669,11 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
             }
           }
           if( zHistory ){ shell_read_history(zHistory); }
-  #if HAVE_READLINE || HAVE_EDITLINE
+#if HAVE_READLINE || HAVE_EDITLINE
           rl_attempted_completion_function = readline_completion;
-  #elif HAVE_LINENOISE
+#elif HAVE_LINENOISE
           linenoiseSetCompletionCallback(linenoise_completion);
-  #endif
+#endif
         }
         data.pInSource = &termInSource; /* read from stdin interactively */
         drc = process_input(&data);
