@@ -462,6 +462,12 @@ static void endTimer(void){
 */
 #define UNUSED_PARAMETER(x) (void)(x)
 
+#ifdef SQLITE_DEBUG
+# define CHECK_RETURN_EQUAL(val, func) assert((val)==(func))
+#else
+# define CHECK_RETURN_EQUAL(val, func) func
+#endif
+
 /*
 ** Number of elements in an array
 */
@@ -506,6 +512,9 @@ static int stdout_is_console = 1;
 ** by the SIGINT handler to interrupt database processing.
 */
 static sqlite3 *globalDb = 0;
+/*
+** Mutex used to access *globalDb from main thread or ^C handler.
+*/
 static sqlite3_mutex *pGlobalDbLock = 0;
 
 /*
@@ -644,6 +653,10 @@ static struct ConsoleState {
   HANDLE hConsoleIn; /* Console input handle */
   DWORD consoleMode; /* Console mode upon shell start */
 } conState = { 0, 0, 0, 0, INVALID_HANDLE_VALUE, 0 };
+
+#ifndef _O_U16TEXT /* For build environments lacking this constant: */
+# define _O_U16TEXT 0x20000
+#endif
 
 /*
 ** Prepare console, (if known to be a WIN32 console), for UTF-8
@@ -2033,7 +2046,8 @@ static void shellLog(void *pArg, int iErrCode, const char *zMsg){
 ** SQL function:  shell_putsnl(X)
 **
 ** Write the text X to the screen (or whatever output is being directed)
-** adding a newline at the end, and then return X.
+** adding a newline at the end, and then return X. If X is the NULL
+** equivalent (due to OOM or otherwise), it acts as an empty string.
 */
 static void shellPutsFunc(
   sqlite3_context *pCtx,
@@ -2041,8 +2055,9 @@ static void shellPutsFunc(
   sqlite3_value **apVal
 ){
   ShellExState *psx = (ShellExState*)sqlite3_user_data(pCtx);
+  const unsigned char *s = sqlite3_value_text(apVal[0]);
   (void)nVal;
-  utf8_printf(ISS(psx)->out, "%s\n", sqlite3_value_text(apVal[0]));
+  utf8_printf(ISS(psx)->out, "%s\n", (s!=0)?(char*)s:"");
   sqlite3_result_value(pCtx, apVal[0]);
 }
 
@@ -2068,7 +2083,7 @@ static int failIfSafeMode(
     va_list ap;
     char *zMsg;
     va_start(ap, zErrMsg);
-    zMsg = sqlite3_vmprintf(zErrMsg, ap);
+    shell_check_oom(zMsg = sqlite3_vmprintf(zErrMsg, ap));
     va_end(ap);
     raw_printf(STD_ERR, "line %d: ", ISS(psx)->pInSource->lineno);
     utf8_printf(STD_ERR, "%s\n", zMsg);
@@ -2132,8 +2147,13 @@ static void editFunc(
 
   if( argc==2 ){
     zEditor = (const char*)sqlite3_value_text(argv[1]);
+    /* If that failed for OOM, just pretend it is not there. */
   }else{
     zEditor = getenv("VISUAL");
+    /* Note that this code NOT threadsafe due to use of the getenv()
+    ** result. Because the shell is single-threaded, this is fine.
+    ** But if the CLI is called as a subroutine in a multi-threaded
+    ** program, adjustments may have to be made. */
   }
   if( zEditor==0 ){
     sqlite3_result_error(context, "no editor for edit()", -1);
@@ -2144,7 +2164,6 @@ static void editFunc(
     return;
   }
   db = sqlite3_context_db_handle(context);
-  zTempFile = 0;
   sqlite3_file_control(db, 0, SQLITE_FCNTL_TEMPFILENAME, &zTempFile);
   if( zTempFile==0 ){
     sqlite3_uint64 r = 0;
@@ -2217,6 +2236,7 @@ static void editFunc(
     if( !hasCRNL ){
       /* If the file did not originally contain \r\n then convert any new
       ** \r\n back into \n */
+      p[sz] = 0;
       for(i=j=0; i<sz; i++){
         if( p[i]=='\r' && p[i+1]=='\n' ) i++;
         p[j++] = p[i];
@@ -2263,7 +2283,9 @@ static struct {
 #undef SS_MEMBER_COPY
 };
 
-/* Allocate a buffer, copy requested output mode data to it, and return it. */
+/* Allocate a buffer, copy requested output mode data to it, and return it.
+ * This never fails under OOM conditions. Instead, it returns 0.
+ */
 static OutputModeSave *outputModeSave(ShellInState *psi, SaveWhatMode w){
   u16 what = (u16)w;
   int i, nAlloc = sizeof(what)+1, mask = 1;
@@ -2309,6 +2331,7 @@ static void outputModeRestore(ShellInState *psi, OutputModeSave *pSaved){
 
 /*
 ** Save or restore the current output mode, in whole or in part.
+** A save may abort on OOM.
 */
 static void outputModePushSome(ShellInState *psi, SaveWhatMode w){
   OutputModeSave *pOMS;
@@ -2359,7 +2382,9 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 **
 ** Try to use zA and zB first.  If both of those are already found in z[]
 ** then make up some string and store it in the buffer zBuf.
+** The length of this buffer must be no less than SHELL_QESC_GENLEN .
 */
+#define SHELL_QESC_GENLEN 20
 static const char *unused_string(
   const char *z,                    /* Result must not appear anywhere in z */
   const char *zA, const char *zB,   /* Try these first */
@@ -2369,7 +2394,7 @@ static const char *unused_string(
   if( strstr(z, zA)==0 ) return zA;
   if( strstr(z, zB)==0 ) return zB;
   do{
-    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
+    sqlite3_snprintf(SHELL_QESC_GENLEN, zBuf,"(%s%u)", zA, i++);
   }while( strstr(z,zBuf)!=0 );
   return zBuf;
 }
@@ -2431,7 +2456,7 @@ static void output_quoted_escaped_string(FILE *out, const char *z){
     const char *zCR = 0;
     int nNL = 0;
     int nCR = 0;
-    char zBuf1[20], zBuf2[20];
+    char zBuf1[SHELL_QESC_GENLEN], zBuf2[SHELL_QESC_GENLEN];
     for(i=0; z[i]; i++){
       if( z[i]=='\n' ) nNL++;
       if( z[i]=='\r' ) nCR++;
@@ -2606,6 +2631,7 @@ static const char needCsvQuote[] = {
 ** the separator, which may or may not be a comma.  p->nullValue is
 ** the null value.  Strings are quoted if necessary.  The separator
 ** is only issued if bSep is true.
+** This routine may abort under OOM conditions.
 */
 static void output_csv(ShellExState *psx, const char *z, int bSep){
   FILE *out = ISS(psx)->out;
@@ -2641,13 +2667,23 @@ static void output_csv(ShellExState *psx, const char *z, int bSep){
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
   if( ++seenInterrupt>1 ){
-    sqlite3_mutex_free(pGlobalDbLock);
     exit(1);
   }
   if( globalDb ){
-    sqlite3_mutex_enter(pGlobalDbLock);
-    sqlite3_interrupt(globalDb);
-    sqlite3_mutex_leave(pGlobalDbLock);
+    int itry = 0;
+    while( itry < 10 ){
+      if( sqlite3_mutex_try(pGlobalDbLock)==SQLITE_OK ){
+        sqlite3_interrupt(globalDb);
+        sqlite3_mutex_leave(pGlobalDbLock);
+        return;
+      }else{
+        sqlite3_sleep(50);
+        ++itry;
+      }
+    }
+    /* Apparently, no polite interruption is working. (Something is
+    ** very busy under mutex protection.) So quit altother. */
+    exit(1);
   }
 }
 
@@ -2780,11 +2816,11 @@ static void printSchemaLine(FILE *out, const char *z, const char *zTail){
   if( zTail[0]==';' && (strstr(z, "/*")!=0 || strstr(z,"--")!=0) ){
     const char *zOrig = z;
     static const char *azTerm[] = { "", "*/", "\n" };
-    int i;
+    int i, rc;
     for(i=0; i<ArraySize(azTerm); i++){
-      char *zNew = sqlite3_mprintf("%s%s;", zOrig, azTerm[i]);
+      char *zNew = smprintf("%s%s;", zOrig, azTerm[i]);
       shell_check_oom(zNew);
-      if( sqlite3_complete(zNew) ){
+      if( 1==(rc = sqlite3_complete(zNew)) ){
         size_t n = strlen(zNew);
         zNew[n-1] = 0;
         zToFree = zNew;
@@ -2792,6 +2828,7 @@ static void printSchemaLine(FILE *out, const char *z, const char *zTail){
         break;
       }
       sqlite3_free(zNew);
+      if( rc==SQLITE_NOMEM ) shell_out_of_memory();
     }
   }
   if( sqlite3_strglob("CREATE TABLE ['\"]*", z)==0 ){
@@ -3656,6 +3693,7 @@ static int run_table_dump_query(
 
 /*
 ** Allocate space and save off string indicating current error.
+** The return must be passed to sqlite3_free() sometime.
 */
 static char *save_err_msg(
   sqlite3 *db,           /* Database to query */
@@ -4977,11 +5015,13 @@ static int shell_exec(
 ){
   ShellInState *psi = ISS(psx);
   sqlite3_stmt *pStmt = NULL;     /* Statement to execute. */
+  sqlite3_stmt *pExplain = NULL;  /* For explain generate */
+  char *zEQP = NULL;              /* For explain report */
   int rc = SQLITE_OK;             /* Return Code */
   int rc2;
   const char *zLeftover;          /* Tail of unprocessed SQL */
   sqlite3 *db = DBX(psx);
-
+  ResourceMark mark = holder_mark();
   if( pzErrMsg ){
     *pzErrMsg = NULL;
   }
@@ -4992,13 +5032,17 @@ static int shell_exec(
     return expertFinish(psi, (rc!=SQLITE_OK), pzErrMsg);
   }
 #endif
-
+  stmt_holder(pStmt);    /* offset 0 */
+  stmt_holder(pExplain); /* offset 1 */
+  sstr_holder(zEQP);     /* offset 2 */
   while( zSql[0] && (SQLITE_OK == rc) ){
     static const char *zStmtSql;
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     if( SQLITE_OK != rc ){
+      if( rc==SQLITE_NOMEM ) shell_out_of_memory();
       if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db, "in prepare", rc, zSql);
+        shell_check_oom(*pzErrMsg);
       }
     }else{
       if( !pStmt ){
@@ -5006,6 +5050,7 @@ static int shell_exec(
         zSql = skipWhite(zLeftover);
         continue;
       }
+      swap_held(mark, 0, pStmt);
       zStmtSql = sqlite3_sql(pStmt);
       if( zStmtSql==0 ) zStmtSql = "";
       else zStmtSql = skipWhite(zStmtSql);
@@ -5018,8 +5063,6 @@ static int shell_exec(
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       if( psx && psi->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
-        sqlite3_stmt *pExplain;
-        char *zEQP;
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
@@ -5028,8 +5071,10 @@ static int shell_exec(
         }
         zEQP = smprintf("EXPLAIN QUERY PLAN %s", zStmtSql);
         shell_check_oom(zEQP);
+        swap_held(mark, 2, zEQP);
         rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
         if( rc==SQLITE_OK ){
+          swap_held(mark, 1, pExplain);
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
@@ -5041,13 +5086,17 @@ static int shell_exec(
           eqp_render(psi, 0);
         }
         sqlite3_finalize(pExplain);
+        swap_held(mark, 1, 0);
         sqlite3_free(zEQP);
+        swap_held(mark, 2, 0);
         if( psi->autoEQP>=AUTOEQP_full ){
           /* Also do an EXPLAIN for ".eqp full" mode */
           zEQP = smprintf("EXPLAIN %s", zStmtSql);
           shell_check_oom(zEQP);
+          swap_held(mark, 2, zEQP);
           rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
           if( rc==SQLITE_OK ){
+            swap_held(mark, 1, pExplain);
             explain_data_prepare(psi, pExplain);
             psi->cMode = MODE_Explain;
 #if SHELL_DATAIO_EXT
@@ -5063,13 +5112,16 @@ static int shell_exec(
             explain_data_delete(psi);
           }
           sqlite3_finalize(pExplain);
+          swap_held(mark, 1, 0);
           sqlite3_free(zEQP);
+          swap_held(mark, 2, 0);
         }
         if( psi->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
           /* Reprepare pStmt before reactiving trace modes */
           sqlite3_finalize(pStmt);
           sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+          swap_held(mark, 0, pStmt);
           if( psx ) psi->pStmt = pStmt;
         }
         restore_debug_trace_modes();
@@ -5112,6 +5164,7 @@ static int shell_exec(
       ** copy of the error message. Otherwise, set zSql to point to the
       ** next statement to execute. */
       rc2 = sqlite3_finalize(pStmt);
+      swap_held(mark, 0, 0);
       if( rc!=SQLITE_NOMEM ) rc = rc2;
       if( rc==SQLITE_OK ){
         zSql = skipWhite(zLeftover);
@@ -5125,6 +5178,7 @@ static int shell_exec(
       }
     }
   } /* end while */
+  CHECK_RETURN_EQUAL(0, holder_free(mark));
 
   return rc;
 }
@@ -5903,6 +5957,7 @@ static void open_db(ShellExState *psx, int openFlags){
 void close_db(sqlite3 *db){
   int rc;
   if( db==globalDb ){
+    /* This should only block for the time needed to handle ^C interrupt. */
     sqlite3_mutex_enter(pGlobalDbLock);
     globalDb = 0;
     rc = sqlite3_close(db);
@@ -15155,6 +15210,7 @@ static int line_is_complete(char *zSql, int nSql){
   zSql[nSql] = ';';
   zSql[nSql+1] = 0;
   rc = sqlite3_complete(zSql);
+  if( rc==SQLITE_NOMEM ) shell_out_of_memory();
   zSql[nSql] = 0;
   return rc;
 }
@@ -15203,7 +15259,7 @@ static int runOneSqlLine(ShellExState *psx, char *zSql,
     sqlite3_free(zErrMsg);
     return 1;
   }else if( ShellHasFlag(psx, SHFLG_CountChanges) ){
-    char zLineBuf[2000];
+    char zLineBuf[36+2*20];
     sqlite3_snprintf(sizeof(zLineBuf), zLineBuf,
             "changes: %lld   total_changes: %lld",
             sqlite3_changes64(DBX(psx)), sqlite3_total_changes64(DBX(psx)));
@@ -15441,6 +15497,7 @@ static DotCmdRC process_input(ShellInState *psi){
     i64 *pncLineUse = &ncLineIn;      /* ref that line's char count */
     int iStartline = 0;               /* starting line number of group */
 
+    seenInterrupt = 0;
     fflush(psi->out);
     CONTINUE_PROMPT_RESET;
     zLineInput = one_input_line(psi->pInSource, zLineInput,
@@ -15530,7 +15587,7 @@ static DotCmdRC process_input(ShellInState *psi){
 #endif
       case Sql:
         /* Check to see if it is complete and ready to run. */
-        if( SSS_SEMITERM(sqScanState) && sqlite3_complete(*pzLineUse)){
+        if( SSS_SEMITERM(sqScanState) && 1==sqlite3_complete(*pzLineUse)){
           disposition = Runnable;
         }else if( SSS_PLAINWHITE(sqScanState) ){
           /* It is a leading single-line or multi-line comment. */
@@ -16039,6 +16096,12 @@ static char *cmdline_option_value(int argc, char **argv, int i){
   return argv[i];
 }
 
+static void zapGlobalDbLock(void){
+  if( pGlobalDbLock ){
+    sqlite3_mutex_free(pGlobalDbLock);
+    pGlobalDbLock = 0;
+  }
+}
 static void sayAbnormalExit(void){
   if( seenInterrupt ) fprintf(stderr, "Program interrupted.\n");
 }
@@ -16609,10 +16672,12 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     sqlite3_initialize();
 #endif
 
+    /* Create a mutex for thread-safe query execution interruption. */
+    pGlobalDbLock = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    atexit(zapGlobalDbLock);
     /* Register the control-C (SIGINT) handler.
     ** Make sure we have a valid signal handler early, before anything
     ** is done that might take long. */
-    pGlobalDbLock = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
 #ifdef SIGINT
     signal(SIGINT, interrupt_handler);
 #elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
@@ -16763,8 +16828,11 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
 # endif
     close_db(datax.dbUser);
   }
+# ifdef SQLITE_DEBUG
+  /* Do this redundantly with atexit() to aid memory leak reporting. */
   sqlite3_mutex_free(pGlobalDbLock);
   pGlobalDbLock = 0;
+# endif
   for(i=0; i<ArraySize(datai.aAuxDb); i++){
     sqlite3_free(datai.aAuxDb[i].zFreeOnClose);
     if( datai.aAuxDb[i].db ){

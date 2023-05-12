@@ -199,22 +199,22 @@ void* mmem_holder(void *pm){
 }
 /* Hold a C string in the malloc() heap */
 char* mstr_holder(char *z){
-  if( z!=0 ) res_hold(z, FRK_Malloc);
+  res_hold(z, FRK_Malloc);
   return z;
 }
 /* Hold a C string in the SQLite heap */
 char* sstr_holder(char *z){
-  if( z!=0 ) res_hold(z, FRK_DbMem);
+  res_hold(z, FRK_DbMem);
   return z;
 }
 /* Hold an open C runtime FILE */
 void file_holder(FILE *pf){
-  if( pf!=0 ) res_hold(pf, FRK_File);
+  res_hold(pf, FRK_File);
 }
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
 /* Hold an open C runtime pipe */
 void pipe_holder(FILE *pp){
-  if( pp!=0 ) res_hold(pp, FRK_Pipe);
+  res_hold(pp, FRK_Pipe);
 }
 #endif
 #ifdef SHELL_MANAGE_TEXT
@@ -235,7 +235,8 @@ void* any_holder(void *pm, void (*its_freer)(void*)){
     FreerFunction *pcf;
     pcf = (FreerFunction *)realloc(aCustomFreers, ncf*sizeof(FreerFunction));
     if( pcf!=0 ){
-      numCustomAlloc = ncf;
+      assert(ncf < (1<<16));
+      numCustomAlloc = (ResourceCount)ncf;
       aCustomFreers = pcf;
       aCustomFreers[numCustom++] = its_freer;
     }else{
@@ -259,10 +260,16 @@ void stmt_holder(sqlite3_stmt *pstmt){
   res_hold(pstmt, FRK_DbStmt);
 }
 
-/* Free all held resources in excess of given resource stack mark. */
-void holder_free(ResourceMark mark){
+/* Free all held resources in excess of given resource stack mark,
+** then return how many needed freeing. */
+int holder_free(ResourceMark mark){
+  int rv = 0;
   while( numResHold > mark ){
-    free_rk(&pResHold[--numResHold]);
+    --numResHold;
+    if( pResHold[numResHold].held.p_any!=0 ){
+      free_rk(&pResHold[numResHold]);
+      ++rv;
+    }
   }
   if( mark==0 ){
     if( numResAlloc>0 ){
@@ -277,6 +284,7 @@ void holder_free(ResourceMark mark){
       numCustomAlloc = 0;
     }
   }
+  return rv;
 }
 
 #ifndef SHELL_OMIT_LONGJMP

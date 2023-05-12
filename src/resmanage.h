@@ -99,8 +99,9 @@ extern void* take_held(ResourceMark mark, ResourceCount offset);
 /* Swap a held resource pointer for a new one. */
 extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
 
-/* Free all held resources in excess of given resource stack mark. */
-extern void holder_free(ResourceMark mark);
+/* Free all held resources in excess of given resource stack mark.
+** Return count of number actually freed (rather than being 0.) */
+extern int holder_free(ResourceMark mark);
 
 #ifndef SHELL_OMIT_LONGJMP
 /* Remember a longjmp() destination together with a resource stack
