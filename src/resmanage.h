@@ -39,11 +39,6 @@
 
 #ifndef SHELL_OMIT_LONGJMP
 # include <setjmp.h>
-# define RIP_STATE(jb) jmp_buf jb
-# define RIP_TO_HERE(jb) setjmp(jb)
-#else
-# define RIP_STATE(jb)
-# define RIP_TO_HERE(jb) 0
 #endif
 #include <stdio.h>
 #include <assert.h>
@@ -57,6 +52,24 @@ extern "C" {
 /* Type used for marking/conveying positions within a held-resource stack */
 typedef unsigned short ResourceMark;
 typedef unsigned short ResourceCount;
+
+/* Type used to record a possible succession of recovery destinations */
+typedef struct RipStackDest {
+  struct RipStackDest *pPrev;
+  ResourceMark resDest;
+#ifndef SHELL_OMIT_LONGJMP
+  jmp_buf exeDest;
+#endif
+} RipStackDest;
+#define RIP_STACK_DEST_INIT {0}
+
+/* This macro effects stack mark and potential rip-back, keeping needed
+** details in a RipStackDest object (independent of SHELL_OMIT_LONGJMP.) */
+#ifndef SHELL_OMIT_LONGJMP
+# define RIP_TO_HERE(RSD) (RSD.resDest=holder_mark(), setjmp(RSD.exeDest))
+#else
+# define RIP_TO_HERE(RSD) (RSD.resDest=holder_mark(), 0)
+#endif
 
 /* Type used for generic free functions (to fib about their signature.) */
 typedef void (*GenericFreer)(void*);
@@ -136,19 +149,12 @@ extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
 ** Return count of number actually freed (rather than being 0.) */
 extern int holder_free(ResourceMark mark);
 
-#ifndef SHELL_OMIT_LONGJMP
-/* Remember a longjmp() destination together with a resource stack
-** mark which determines how far the resource stack may be stripped.
-** This info determines how far the execution and resource stacks
-** will be stripped back should quit_moan(...) be called.
+/* Remember execution and resource stack postion/state. This determines
+** how far these stacks may be stripped should quit_moan(...) be called.
 */
-extern void register_exit_ripper(jmp_buf *pjb, ResourceMark rip_mark);
+extern void register_exit_ripper(RipStackDest *);
 /* Forget whatever register_exit_ripper() has been recorded. */
-extern void forget_exit_ripper(jmp_buf *pjb);
-#else
-#define register_exit_ripper(jb, rm)
-#define forget_exit_ripper()
-#endif
+extern void forget_exit_ripper(RipStackDest *);
 
 /* Strip resource stack and execute previously registered longjmp() as
 ** previously prepared by register_exit_ripper() call. Or, if no such

@@ -78,10 +78,7 @@ static FreerFunction *aCustomFreers = 0; /* content of set */
 const char *resmanage_oom_message = "out of memory, aborting";
 
 /* Info recorded in support of quit_moan(...) and stack-ripping */
-static ResourceMark exit_mark = 0;
-#ifndef SHELL_OMIT_LONGJMP
-static jmp_buf *p_exit_ripper = 0;
-#endif
+static RipStackDest *pRipStack = 0;
 
 /* Current position of the held-resource stack */
 ResourceMark holder_mark(){
@@ -90,14 +87,17 @@ ResourceMark holder_mark(){
 
 /* Strip resource stack then strip call stack (or exit.) */
 void quit_moan(const char *zMoan, int errCode){
+  RipStackDest *pRSD = pRipStack;
   int nFreed;
   if( zMoan ){
     fprintf(stderr, "Error: Terminating due to %s.\n", zMoan);
   }
-  fprintf(stderr, "Auto-freed %d resources.\n", holder_free(exit_mark));
+  fprintf(stderr, "Auto-freed %d resources.\n",
+          holder_free( (pRSD)? pRSD->resDest : 0 ));
+  pRipStack = (pRSD)? pRSD->pPrev : 0;
 #ifndef SHELL_OMIT_LONGJMP
-  if( p_exit_ripper!=0 ){
-    longjmp(*p_exit_ripper, errCode);
+  if( pRSD!=0 ){
+    longjmp(pRSD->exeDest, errCode);
   } else
 #endif
     exit(errCode);
@@ -324,16 +324,18 @@ int holder_free(ResourceMark mark){
   return rv;
 }
 
-#ifndef SHELL_OMIT_LONGJMP
 /* Record a resource stack and call stack rip-to position */
-void register_exit_ripper(jmp_buf *pjb, ResourceMark rip_mark){
-  exit_mark = rip_mark;
-  p_exit_ripper = pjb;
+void register_exit_ripper(RipStackDest *pRSD){
+  assert(pRSD!=0);
+  pRSD->pPrev = pRipStack;
+  pRSD->resDest = holder_mark();
+  pRipStack = pRSD;
 }
-/* Undo register_exit_ripper effect, back to default state. */
-void forget_exit_ripper(jmp_buf *pjb){
-  exit_mark = 0;
-  assert(p_exit_ripper == pjb);
-  p_exit_ripper = 0;
+/* Undo register_exit_ripper effect, back to previous state. */
+void forget_exit_ripper(RipStackDest *pRSD){
+  if( pRSD==0 ) pRipStack = 0;
+  else{
+    pRipStack = pRSD->pPrev;
+    pRSD->pPrev = 0;
+  }
 }
-#endif

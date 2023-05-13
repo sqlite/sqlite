@@ -16153,11 +16153,11 @@ static void sayAbnormalExit(void){
   if( seenInterrupt ) fprintf(stderr, "Program interrupted.\n");
 }
 
-/* A vector of command strings collected from . */
+/* A vector of command strings collected from the command line. */
 typedef struct CmdArgs {
-  /* Array is malloc'ed, but not its elements except by wmain()'s futzing. */
   char **azCmd;  /* the strings */
   int nCmd;      /* how many collected */
+  u8 bArgsHeld;  /* whether "the strings" are owned by this object */
 } CmdArgs;
 /* Data collected during args scanning. */
 typedef struct ArgsData {
@@ -16167,6 +16167,19 @@ typedef struct ArgsData {
   const char *zVfs;      /* -vfs command-line option */
   short bQuiet;          /* -quiet option */
 } ArgsData;
+
+static void freeCmdArgs(CmdArgs *pca){
+  int i;
+  if( !pca ) return;
+  if( pca->bArgsHeld ){
+    for( i=0; i<pca->nCmd; ++i ){
+      free(pca->azCmd[i]);
+    }
+  }
+  free(pca->azCmd);
+  pca->azCmd = 0;
+  pca->nCmd = 0;
+}
 /*
 ** Perform CLI invocation argument processing.
 ** This code is collected here for convenience, to declutter main()
@@ -16549,23 +16562,21 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   BuiltInFFExporter ffExporter = BI_FF_EXPORTER_INIT( &datai );
   BuiltInCMExporter cmExporter = BI_CM_EXPORTER_INIT( &datai );
 #endif
-  RIP_STATE(exit_jb);
+  RipStackDest mainRipDest = RIP_STACK_DEST_INIT;
   const char *zInitFile = 0;
   int bQuiet = 0; /* for testing, to suppress banner and history actions */
   int i, aec;
   int rc = 0;
   DotCmdRC drc = DCR_Ok;
   int warnInmemoryDb = 0;
-  /* azCmd, nCmd */
-  CmdArgs cmdArgs = {0,0};
+  /* azCmd, nCmd, bArgsHeld */
+  CmdArgs cmdArgs = {0,0,0};
   /* readStdin, nOptsEnd, zInitFile, zVfs, bQuiet */
   ArgsData argsData = { 1, argc, 0,0,0 };
-  int nOptsEnd = argc;
 #if !SQLITE_SHELL_IS_UTF8
-  char **argvToFree = 0;
-  int argcToFree = 0;
+  CmdArgs argsUtf8 = {0,0,1};
+  AnyResourceHolder caRH = {&argsUtf8, freeCmdArgs};
 #endif
-  main_resource_mark = holder_mark();
 
   setvbuf(STD_ERR, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
 #ifdef SQLITE_SHELL_FIDDLE
@@ -16635,8 +16646,9 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   ** stack and the call stack are ripped back to this point; or just
   ** the held resource stack is ripped back and a process exit occurs.
   */
-  register_exit_ripper(&exit_jb, main_resource_mark);
-  if( 0==RIP_TO_HERE(exit_jb) ){
+  register_exit_ripper(&mainRipDest);
+  if( 0==RIP_TO_HERE(mainRipDest) ){
+    main_resource_mark = mainRipDest.resDest;
 
     /* On Windows, we must translate command-line arguments into UTF-8.
     ** The SQLite memory allocator subsystem has to be enabled in order to
@@ -16646,22 +16658,27 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     */
 #if !SQLITE_SHELL_IS_UTF8
     sqlite3_initialize();
-    argvToFree = malloc(sizeof(argv[0])*argc*2);
-    shell_check_oom(argvToFree);
-    argcToFree = argc;
-    argv = argvToFree + argc;
+    argsUtf8.azCmd = malloc(sizeof(argv[0])*argc);
+    shell_check_oom(argsUtf8.azCmd);
+    argsUtf8.nCmd = 0;
+    any_ref_holder(&caRH);
+    ++main_resource_mark;
     for(i=0; i<argc; i++){
       char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
       i64 n;
       shell_check_oom(z);
+      ++main_resource_mark;
+      sstr_holder(z);
       n = strlen(z);
-      argv[i] = malloc( n+1 );
-      shell_check_oom(argv[i]);
-      memcpy(argv[i], z, n+1);
-      argvToFree[i] = argv[i];
-      sqlite3_free(z);
+      argsUtf8.azCmd[i] = malloc( n+1 );
+      if( argsUtf8.azCmd[i] ) ++argsUtf8.nCmd;
+      else shell_out_of_memory();
+      sqlite3_free(pop_holder());
+      --main_resource_mark;
+      memcpy(argsUtf8.azCmd[i], z, n+1);
     }
     sqlite3_shutdown();
+    argv = argsUtf8.azCmd;
 #endif
 
     assert( argc>=1 && argv && argv[0] );
@@ -16913,10 +16930,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
   notify_subscribers(&datai, NK_ShutdownImminent, 0);
   /* Forcefull unsubscribe static extension event listeners. */
   subscribe_events(&datax, 0, &datax, NK_Unsubscribe, 0);
-# endif
-# if !SQLITE_SHELL_IS_UTF8
-  for(i=0; i<argcToFree; i++) free(argvToFree[i]);
-  free(argvToFree);
 # endif
   free(datax.pSpecWidths);
   free(datai.zNonce);
