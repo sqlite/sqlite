@@ -880,7 +880,7 @@ proc catchcmd {db {cmd ""}} {
   set out [open cmds.txt w]
   puts $out $cmd
   close $out
-  set line "exec $CLI $db < cmds.txt"
+  set line "exec $CLI --unsafe-testing $db < cmds.txt"
   set rc [catch { eval $line } msg]
   list $rc $msg
 }
