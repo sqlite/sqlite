@@ -16,10 +16,25 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix json502
 
+ifcapable vtab {
+
 do_execsql_test 1.1 {
   CREATE TABLE t1(x JSON);
   INSERT INTO t1(x) VALUES('{a:{b:{c:"hello",},},}');
   SELECT fullkey FROM t1, json_tree(x);
 } {{$} {$.a} {$.a.b} {$.a.b.c}}
+
+}
+
+do_execsql_test 2.1 {
+  SELECT json_error_position('{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}');
+} 9
+do_catchsql_test 2.2 {
+  SELECT json('{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}');
+} {1 {malformed JSON}}
+do_catchsql_test 2.3 {
+  SELECT '{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}'->'$h[#-1]';
+} {1 {malformed JSON}}
+
 
 finish_test
