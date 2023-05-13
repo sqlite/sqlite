@@ -144,10 +144,10 @@ struct JsonParse {
 ** Maximum nesting depth of JSON for this implementation.
 **
 ** This limit is needed to avoid a stack overflow in the recursive
-** descent parser.  A depth of 2000 is far deeper than any sane JSON
-** should go.
+** descent parser.  A depth of 1000 is far deeper than any sane JSON
+** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
-#define JSON_MAX_DEPTH  2000
+#define JSON_MAX_DEPTH  1000
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -1085,6 +1085,7 @@ json_parse_restart:
       return -1;
     }
     for(j=i+1;;j++){
+      u32 nNode = pParse->nNode;
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
@@ -1111,7 +1112,7 @@ json_parse_restart:
         }
       }
       if( pParse->oom ) return -1;
-      pNode = &pParse->aNode[pParse->nNode-1];
+      pNode = &pParse->aNode[nNode];
       if( pNode->eType!=JSON_STRING ){
         pParse->iErr = j;
         return -1;
