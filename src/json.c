@@ -144,10 +144,10 @@ struct JsonParse {
 ** Maximum nesting depth of JSON for this implementation.
 **
 ** This limit is needed to avoid a stack overflow in the recursive
-** descent parser.  A depth of 2000 is far deeper than any sane JSON
-** should go.
+** descent parser.  A depth of 1000 is far deeper than any sane JSON
+** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
-#define JSON_MAX_DEPTH  2000
+#define JSON_MAX_DEPTH  1000
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
@@ -1080,17 +1080,17 @@ json_parse_restart:
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        pParse->iErr = j;
-        return -1;
-      }
+      u32 nNode = pParse->nNode;
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
           j = pParse->iErr;
           if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
-          pParse->iDepth--;
           break;
         }
         j += json5Whitespace(&z[j]);
@@ -1112,7 +1112,7 @@ json_parse_restart:
         }
       }
       if( pParse->oom ) return -1;
-      pNode = &pParse->aNode[pParse->nNode-1];
+      pNode = &pParse->aNode[nNode];
       if( pNode->eType!=JSON_STRING ){
         pParse->iErr = j;
         return -1;
@@ -1138,7 +1138,6 @@ json_parse_restart:
       }
     parse_object_value:
       x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -1171,20 +1170,20 @@ json_parse_restart:
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
     return j+1;
   }
   case '[': {
     /* Parse array */
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
     memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        pParse->iErr = j;
-        return -1;
-      }
       x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
@@ -1222,6 +1221,7 @@ json_parse_restart:
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
     return j+1;
   }
   case '\'': {
