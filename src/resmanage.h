@@ -54,9 +54,12 @@ extern "C" {
 
 #include "sqlite3.h"
 
-/* Type used for marking positions within a held-resource stack */
+/* Type used for marking/conveying positions within a held-resource stack */
 typedef unsigned short ResourceMark;
 typedef unsigned short ResourceCount;
+
+/* Type used for generic free functions (to fib about their signature.) */
+typedef void (*GenericFreer)(void*);
 
 /* Current position of the held-resource stack */
 extern ResourceMark holder_mark();
@@ -65,8 +68,18 @@ extern ResourceMark holder_mark();
 ** Note that this call may fail with an OOM abrupt exit. */
 extern void more_holders(ResourceCount more);
 
-/* Routines for holding resources on held-resource stack together
+/* Lose one or more holders, without freeing anything. */
+extern void* pop_holder(void);
+extern void pop_holders(ResourceCount num);
+
+/*
+** Routines for holding resources on held-resource stack together
 ** with enough information for them to be freed by this package.
+*/
+
+/* xxxx_holder(...)
+** The referenced objects are directly freed; they are stored in
+** the heap with lifetime not bound to the caller's activation.
 */
 /* anything together with arbitrary freeing function */
 extern void* any_holder(void *pm, void (*its_freer)(void*));
@@ -88,9 +101,29 @@ extern void file_holder(FILE *);
 /* an open C runtime pipe */
 extern void pipe_holder(FILE *);
 #endif
+
+/* xxxx_ptr_holder(...) or xxxx_ref_holder(...)
+** The referenced objects are indirectly freed; they are stored
+** in the caller's stack frame, with lifetime limited to the
+** the caller's activation. It is a grave error to use these
+** then fail to call holder_free() before returning. For abrupt
+** exits, this condition is met because holder_free() is called
+** by the abrupt exiter before the execution stack is stripped.
+*/
+typedef struct AnyResourceHolder {
+  void *pAny;
+  GenericFreer its_freer;
+} AnyResourceHolder;
+
+/* a reference to an AnyResourceHolder (whose storage is not managed) */
+extern void any_ref_holder(AnyResourceHolder *parh);
+/* a C string in the SQLite heap, reference to */
+extern void sstr_ptr_holder(char **pz);
+/* a SQLite prepared statement, reference to */
+extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
 #ifdef SHELL_MANAGE_TEXT
-/* a reference to a ShellText object, (storage for which not managed) */
-static void text_holder(ShellText *);
+/* a ShellText object, reference to (storage for which not managed) */
+static void text_ref_holder(ShellText *);
 #endif
 
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */

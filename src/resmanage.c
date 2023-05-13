@@ -21,6 +21,7 @@
 
 /* Track how to free various held resources. */
 typedef enum FreeableResourceKind {
+  FRK_Indirect = 1<<15,
   FRK_Malloc = 0, FRK_DbConn = 1, FRK_DbStmt = 2,
   FRK_DbMem = 3, FRK_File = 4,
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
@@ -29,6 +30,7 @@ typedef enum FreeableResourceKind {
 #ifdef SHELL_MANAGE_TEXT
   FRK_Text,
 #endif
+  FRK_AnyRef,
   FRK_CustomBase /* series of values for custom freers */
 } FreeableResourceKind;
 
@@ -54,6 +56,7 @@ typedef struct ResourceHeld {
 #ifdef SHELL_MANAGE_TEXT
     ShellText *p_text;
 #endif
+    AnyResourceHolder *p_any_rh;
   } held;
   FreeableResourceKind frk;
 } ResourceHeld;
@@ -87,11 +90,11 @@ ResourceMark holder_mark(){
 
 /* Strip resource stack then strip call stack (or exit.) */
 void quit_moan(const char *zMoan, int errCode){
+  int nFreed;
   if( zMoan ){
-    fprintf(stderr, "Quitting due to %s, freeing %d resources.\n",
-            zMoan, numResHold);
+    fprintf(stderr, "Error: Terminating due to %s.\n", zMoan);
   }
-  holder_free(exit_mark);
+  fprintf(stderr, "Auto-freed %d resources.\n", holder_free(exit_mark));
 #ifndef SHELL_OMIT_LONGJMP
   if( p_exit_ripper!=0 ){
     longjmp(*p_exit_ripper, errCode);
@@ -101,8 +104,15 @@ void quit_moan(const char *zMoan, int errCode){
 }
 
 /* Free a single resource item. (ignorant of stack) */
-static void free_rk( ResourceHeld *pRH ){
-  if( pRH->held.p_any == 0 ) return;
+static int free_rk( ResourceHeld *pRH ){
+  int rv = 0;
+  if( pRH->held.p_any == 0 ) return rv;
+  if( pRH->frk & FRK_Indirect ){
+    pRH->held.p_any = *(void**)pRH->held.p_any;
+    if( pRH->held.p_any == 0 ) return rv;
+    pRH->frk &= ~FRK_Indirect;
+  }
+  ++rv;
   switch( pRH->frk ){
   case FRK_Malloc:
     free(pRH->held.p_malloced);
@@ -130,16 +140,20 @@ static void free_rk( ResourceHeld *pRH ){
     freeText(pRH->held.p_text);
     break;
 #endif
+  case FRK_AnyRef:
+    (pRH->held.p_any_rh->its_freer)(pRH->held.p_any_rh->pAny);
+    break;
   default:
     {
       int ck = pRH->frk - FRK_CustomBase;
       assert(ck>=0);
       if( ck < numCustom ){
         aCustomFreers[ck]( pRH->held.p_any );
-      }
+      }else --rv;
     }
   }
   pRH->held.p_any = 0;
+  return rv;
 }
 
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */
@@ -172,6 +186,18 @@ static int more_holders_try(ResourceCount count){
   pResHold = prh;
   numResAlloc = newAlloc;
   return 1;
+}
+
+/* Lose one or more holders. */
+void* pop_holder(void){
+  assert(numResHold>0);
+  if( numResHold>0 ) return pResHold[--numResHold].held.p_any;
+  return 0;
+}
+void pop_holders(ResourceCount num){
+  assert(numResHold>=num);
+  if( numResHold>=num ) numResHold -= num;
+  else numResHold = 0;
 }
 
 /* Shared resource-stack pushing code */
@@ -207,6 +233,11 @@ char* sstr_holder(char *z){
   res_hold(z, FRK_DbMem);
   return z;
 }
+/* Hold a C string in the SQLite heap, reference to */
+void sstr_ptr_holder(char **pz){
+  assert(pz!=0);
+  res_hold(pz, FRK_DbMem|FRK_Indirect);
+}
 /* Hold an open C runtime FILE */
 void file_holder(FILE *pf){
   res_hold(pf, FRK_File);
@@ -218,8 +249,8 @@ void pipe_holder(FILE *pp){
 }
 #endif
 #ifdef SHELL_MANAGE_TEXT
-/* a reference to a ShellText object, (storage for which not managed) */
-static void text_holder(ShellText *pt){
+/* a ShellText object, reference to (storage for which not managed) */
+static void text_ref_holder(ShellText *pt){
   res_hold(pt, FRK_Text);
 }
 #endif
@@ -259,17 +290,23 @@ void conn_holder(sqlite3 *pdb){
 void stmt_holder(sqlite3_stmt *pstmt){
   res_hold(pstmt, FRK_DbStmt);
 }
+/* Hold a SQLite prepared statement, reference to */
+void stmt_ptr_holder(sqlite3_stmt **ppstmt){
+  assert(ppstmt!=0);
+  res_hold(ppstmt, FRK_DbStmt|FRK_Indirect);
+}
+/* Hold a reference to an AnyResourceHolder (in stack frame) */
+void any_ref_holder(AnyResourceHolder *parh){
+  assert(parh!=0 && parh->its_freer!=0);
+  res_hold(parh, FRK_AnyRef);
+}
 
 /* Free all held resources in excess of given resource stack mark,
 ** then return how many needed freeing. */
 int holder_free(ResourceMark mark){
   int rv = 0;
   while( numResHold > mark ){
-    --numResHold;
-    if( pResHold[numResHold].held.p_any!=0 ){
-      free_rk(&pResHold[numResHold]);
-      ++rv;
-    }
+    rv += free_rk(&pResHold[--numResHold]);
   }
   if( mark==0 ){
     if( numResAlloc>0 ){
