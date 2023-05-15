@@ -200,6 +200,12 @@ void pop_holders(ResourceCount num){
   else numResHold = 0;
 }
 
+/* Drop a holder while freeing its holdee. */
+void release_holder(void){
+  assert(numResHold>0);
+  free_rk(&pResHold[--numResHold]);
+}
+
 /* Shared resource-stack pushing code */
 static void res_hold(void *pv, FreeableResourceKind frk){
   ResourceHeld rh = { pv, frk };

@@ -859,6 +859,12 @@ static void shell_out_of_memory(void){
 static void shell_check_oom(const void *p){
   if( p==0 ) shell_out_of_memory();
 }
+/* Check a SQLite result code for out-of-memory indication.
+** If that is so, terminate with an out-of-memory error.
+*/
+static void shell_check_nomem(int rc){
+  if( SQLITE_NOMEM==rc ) shell_out_of_memory();
+}
 /* This pattern is ubiquitous and subject to change, so encapsulate it. */
 #define SHELL_ASSIGN_OOM_CHECK(lv, pv) \
   do{ lv = pv; shell_check_oom(lv); }while(0)
@@ -1592,8 +1598,10 @@ INCLUDE ../ext/expert/sqlite3expert.c
 #endif
 #if SQLITE_SHELL_HAVE_RECOVER
 INCLUDE ../ext/recover/sqlite3recover.h
+# ifndef SQLITE_HAVE_SQLITE3R
 INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.c
+# endif /* !defined(SQLITE_HAVE_SQLITE3R) */
 #endif
 #ifdef SQLITE_SHELL_EXTSRC
 # include SHELL_STRINGIFY(SQLITE_SHELL_EXTSRC)
@@ -1738,8 +1746,9 @@ typedef struct ShExtInfo {
   ExportHandler **ppExportHandlers;
   int numImportHandlers;
   ImportHandler **ppImportHandlers;
-  DotCommand *pUnknown;  /* .unknown registered for this extension */
+  DotCommand *pUnknown;  /* .unknown registered for this extension (unowned) */
 } ShExtInfo;
+#define SHEXT_INFO_INIT {0,0,NULL, 0,NULL, 0,NULL, 0,NULL, NULL}
 #endif
 
 /* Parameters affecting columnar mode result display (defaulting together) */
@@ -5897,9 +5906,6 @@ static void open_db(ShellExState *psx, int openFlags){
     sqlite3_fileio_init(globalDb, 0, 0);
     sqlite3_completion_init(globalDb, 0, 0);
 #endif
-#if SQLITE_SHELL_HAVE_RECOVER
-    sqlite3_dbdata_init(globalDb, 0, 0);
-#endif
 #ifdef SQLITE_HAVE_ZLIB
     if( !psi->bSafeModeFuture ){
       sqlite3_zipfile_init(globalDb, 0, 0);
@@ -9084,6 +9090,17 @@ static void shell_linkage(
   else sqlite3_result_pointer(context, pv, SHELLEXT_API_POINTERS, 0);
 }
 
+/* Free the memory held by a ShExtInfo object but not the object itself.
+ * No notifications associated with takedown and termination are done. */
+static void free_ShExtInfo( ShExtInfo *psei ){
+  if( psei ){
+    if( psei->ppDotCommands ) sqlite3_free(psei->ppDotCommands);
+    if( psei->ppExportHandlers ) sqlite3_free(psei->ppExportHandlers);
+    if( psei->ppImportHandlers ) sqlite3_free(psei->ppImportHandlers);
+    memset(psei, 0, sizeof(ShExtInfo));
+  }
+}
+
 /* Do the initialization needed for use of dbShell for command lookup
  * and dispatch and for I/O handler lookup and dispatch.
  */
@@ -9094,7 +9111,11 @@ static int begin_db_dispatch(ShellExState *psx){
   int rc = 0;
   char *zErr = 0;
   const char *zSql;
-  ShExtInfo sei = {0};
+  ShExtInfo sei = SHEXT_INFO_INIT;
+  AnyResourceHolder arh_sei = {&sei, (GenericFreer)free_ShExtInfo};
+  ResourceMark mark = holder_mark();
+
+  sstr_ptr_holder(&zErr);
   /* Consider: Store these dynamic arrays in the DB as indexed-into blobs. */
   assert(psx->dbShell==0 || (psi->numExtLoaded==0 && psi->pShxLoaded==0));
   rc = ensure_shell_db(psx);
@@ -9105,6 +9126,10 @@ static int begin_db_dispatch(ShellExState *psx){
   if( ensure_dispatch_table(psx)!=SQLITE_OK ) return 1;
 
   psi->pShxLoaded = (ShExtInfo *)sqlite3_malloc(2*sizeof(ShExtInfo));
+  shell_check_oom(psi->pShxLoaded);
+  /* The ShellInState object now owns above allocation, so initialize it. */
+  memset(psi->pShxLoaded, 0, 2*sizeof(ShExtInfo));
+  any_ref_holder(&arh_sei); /* protect against early aborts */
   sei.ppDotCommands
     = (DotCommand **)sqlite3_malloc((numCommands+2)*sizeof(DotCommand *));
   sei.ppExportHandlers
@@ -9121,59 +9146,70 @@ static int begin_db_dispatch(ShellExState *psx){
     sei.ppDotCommands[ic] = builtInCommand(ic);
   }
   sei.numDotCommands = ic;
-  psi->pShxLoaded[psi->numExtLoaded++] = sei;
   zSql = "INSERT INTO "SHELL_DISP_TAB"(name, extIx, cmdIx) VALUES(?, 0, ?)";
-  rc1 = sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0);
+  shell_check_nomem(rc1=sqlite3_prepare_v2(psx->dbShell, zSql, -1, &pStmt, 0));
+  stmt_holder(pStmt);
   rc2 = sqlite3_exec(psx->dbShell, "BEGIN TRANSACTION", 0, 0, &zErr);
-  if( rc1!=SQLITE_OK || rc2!=SQLITE_OK ) return 1;
-  assert(sei.numDotCommands>0);
-  for( ic=0; ic<sei.numDotCommands; ++ic ){
-    DotCommand *pmc = sei.ppDotCommands[ic];
-    const char *zName = pmc->pMethods->name(pmc);
-    sqlite3_reset(pStmt);
-    sqlite3_bind_text(pStmt, 1, zName, -1, 0);
-    sqlite3_bind_int(pStmt, 2, ic);
-    rc = sqlite3_step(pStmt);
+  shell_check_nomem(rc2);
+  if( rc1!=SQLITE_OK || rc2!=SQLITE_OK ){
+    rc = SQLITE_ERROR;
+  }else{
+    assert(sei.numDotCommands>0);
+    for( ic=0; ic<sei.numDotCommands; ++ic ){
+      DotCommand *pmc = sei.ppDotCommands[ic];
+      const char *zName = pmc->pMethods->name(pmc);
+      sqlite3_reset(pStmt);
+      shell_check_nomem(sqlite3_bind_text(pStmt, 1, zName, -1, 0));
+      sqlite3_bind_int(pStmt, 2, ic);
+      shell_check_nomem(rc = sqlite3_step(pStmt));
+      if( rc!=SQLITE_DONE ){
+        sqlite3_exec(psx->dbShell, "ABORT", 0, 0, 0);
+        break;
+      }
+    }
     if( rc!=SQLITE_DONE ){
-      sqlite3_exec(psx->dbShell, "ABORT", 0, 0, 0);
-      break;
+      rc = SQLITE_ERROR;
+      zSql = "ABORT";
+    }else{
+      rc = SQLITE_OK;
+      zSql = "COMMIT";
+    }
+    shell_check_nomem(rc2 = sqlite3_exec(psx->dbShell, zSql, 0, 0, &zErr));
+    if( SQLITE_OK==rc ){
+      /* Transfer just-built ShExtInfo to ShellInState use and ownership. */
+      psi->pShxLoaded[psi->numExtLoaded++] = sei;
+      arh_sei.pAny = 0;
+      sqlite3_enable_load_extension(psx->dbShell, 1);
+      psi->bDbDispatch = 1;
     }
   }
-  sqlite3_finalize(pStmt);
-  if( rc!=SQLITE_DONE ) return 1;
-  rc = sqlite3_exec(psx->dbShell, "COMMIT", 0, 0, &zErr);
-  sqlite3_enable_load_extension(psx->dbShell, 1);
-  sqlite3_free(zErr);
-  psi->bDbDispatch = 1;
+  holder_free(mark);
 
-  return SQLITE_OK;
+  return rc;
 }
 
-/* Call one loaded extension's destructors, in reverse order
- * of their objects' creation, then free the tracking dyna-arrays.
+/* Call one loaded extension's destructors, in reverse order of their
+ * objects' creation.
  */
-static void free_one_shext_tracking(ShExtInfo *psei){
+static void run_one_shext_dtors(ShExtInfo *psei){
   int j;
   if( psei->ppDotCommands!=0 ){
     for( j=psei->numDotCommands; j>0; --j ){
       DotCommand *pmc = psei->ppDotCommands[j-1];
       if( pmc->pMethods->destruct!=0 ) pmc->pMethods->destruct(pmc);
     }
-    sqlite3_free(psei->ppDotCommands);
   }
   if( psei->ppExportHandlers!=0 ){
     for( j=psei->numExportHandlers; j>0; --j ){
       ExportHandler *peh = psei->ppExportHandlers[j-1];
       if( peh->pMethods->destruct!=0 ) peh->pMethods->destruct(peh);
     }
-    sqlite3_free(psei->ppExportHandlers);
   }
   if( psei->ppImportHandlers!=0 ){
     for( j=psei->numImportHandlers; j>0; --j ){
       ImportHandler *pih = psei->ppImportHandlers[j-1];
       if( pih->pMethods->destruct!=0 ) pih->pMethods->destruct(pih);
     }
-    sqlite3_free(psei->ppImportHandlers);
   }
   if( psei->extDtor!=0 ){
     psei->extDtor(psei->pvExtObj);
@@ -9189,7 +9225,8 @@ static void free_all_shext_tracking(ShellInState *psi){
     int i = psi->numExtLoaded;
     while( i>1 ){
       ShExtInfo *psei = &psi->pShxLoaded[--i];
-      free_one_shext_tracking(psei);
+      run_one_shext_dtors(psei);
+      free_ShExtInfo(psei);
       if( psi->scriptXid!=0 && psi->scriptXid==psei->extId ){
         assert(psi->script!=0);
         if (psi->script->pMethods->destruct){
@@ -9199,6 +9236,7 @@ static void free_all_shext_tracking(ShellInState *psi){
         psi->scriptXid = 0;
       }
     }
+    free_ShExtInfo(psi->pShxLoaded);
     sqlite3_free(psi->pShxLoaded);
     psi->pShxLoaded = 0;
     psi->numExtLoaded = 0;
@@ -9260,7 +9298,8 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
   }else{
     /* Release all resources extension might have registered before failing. */
     if( psi->ixExtPending < psi->numExtLoaded ){
-      free_one_shext_tracking(psi->pShxLoaded+psi->ixExtPending);
+      run_one_shext_dtors(psi->pShxLoaded+psi->ixExtPending);
+      free_ShExtInfo(psi->pShxLoaded+psi->ixExtPending);
       --psi->numExtLoaded;
     }
     /* And make it unwind any scripting linkage it might have setup. */

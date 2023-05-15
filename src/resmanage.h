@@ -85,6 +85,9 @@ extern void more_holders(ResourceCount more);
 extern void* pop_holder(void);
 extern void pop_holders(ResourceCount num);
 
+/* Drop a holder while freeing its holdee. */
+extern void release_holder(void);
+
 /*
 ** Routines for holding resources on held-resource stack together
 ** with enough information for them to be freed by this package.
