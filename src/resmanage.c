@@ -97,6 +97,7 @@ void quit_moan(const char *zMoan, int errCode){
   pRipStack = (pRSD)? pRSD->pPrev : 0;
 #ifndef SHELL_OMIT_LONGJMP
   if( pRSD!=0 ){
+    pRSD->pPrev = 0;
     longjmp(pRSD->exeDest, errCode);
   } else
 #endif
