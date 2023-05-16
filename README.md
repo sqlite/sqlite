@@ -290,7 +290,7 @@ Key files:
      is not part of the core SQLite library.  But as most of the tests in this
      repository are written in Tcl, the Tcl language bindings are important.
 
-  *  **test*.c** - Files in the src/ folder that begin with "test" go into
+  *  **test\*.c** - Files in the src/ folder that begin with "test" go into
      building the "testfixture.exe" program.  The testfixture.exe program is
      an enhanced Tcl shell.  The testfixture.exe program runs scripts in the
      test/ folder to validate the core SQLite code.  The testfixture program
