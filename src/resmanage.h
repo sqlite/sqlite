@@ -97,8 +97,6 @@ extern void release_holder(void);
 ** The referenced objects are directly freed; they are stored in
 ** the heap with lifetime not bound to the caller's activation.
 */
-/* anything together with arbitrary freeing function */
-extern void* any_holder(void *pm, void (*its_freer)(void*));
 /* anything in the malloc() heap */
 extern void* mmem_holder(void *pm);
 /* a C string in the malloc() heap */
@@ -126,10 +124,20 @@ extern void pipe_holder(FILE *);
 ** exits, this condition is met because holder_free() is called
 ** by the abrupt exiter before the execution stack is stripped.
 */
+
+/* An arbitrary data pointer paired with its freer function */
 typedef struct AnyResourceHolder {
   void *pAny;
   GenericFreer its_freer;
 } AnyResourceHolder;
+
+/* An object of a class having its dtor as the Nth v-table entry.
+** This is only useful when it is embedded in a bigger object. */
+typedef struct VirtualDtorNthObject VirtualDtorNthObject;
+typedef void (*VirtualDtorNth)(VirtualDtorNthObject *);
+struct VirtualDtorNthObject {
+  VirtualDtorNth *p_its_freer;
+};
 
 /* a reference to an AnyResourceHolder (whose storage is not managed) */
 extern void any_ref_holder(AnyResourceHolder *parh);
@@ -137,6 +145,8 @@ extern void any_ref_holder(AnyResourceHolder *parh);
 extern void sstr_ptr_holder(char **pz);
 /* a SQLite prepared statement, reference to */
 extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
+/* an object with v-table (ref) whose dtor is the 0th member, reference to */
+extern void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n);
 #ifdef SHELL_MANAGE_TEXT
 /* a ShellText object, reference to (storage for which not managed) */
 static void text_ref_holder(ShellText *);

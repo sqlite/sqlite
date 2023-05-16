@@ -30,8 +30,8 @@ typedef enum FreeableResourceKind {
 #ifdef SHELL_MANAGE_TEXT
   FRK_Text,
 #endif
-  FRK_AnyRef,
-  FRK_CustomBase /* series of values for custom freers */
+  FRK_AnyRef, FRK_VdtorRef,
+  FRK_CountOf
 } FreeableResourceKind;
 
 #if defined(_WIN32) || defined(WIN32)
@@ -57,23 +57,16 @@ typedef struct ResourceHeld {
     ShellText *p_text;
 #endif
     AnyResourceHolder *p_any_rh;
+    VirtualDtorNthObject *p_vdfo;
   } held;
-  FreeableResourceKind frk;
+  unsigned short frk; /* a FreeableResourceKind value */
+  unsigned short offset;
 } ResourceHeld;
 
 /* The held-resource stack. This is for single-threaded use only. */
 static ResourceHeld *pResHold = 0;
 static ResourceCount numResHold = 0;
 static ResourceCount numResAlloc = 0;
-
-/* A small set of custom freers. It is linearly searched, used for
-** layered heap-allocated (and other-allocated) data structures, so
-** tends to have use limited to where slow things are happening.
-*/
-static ResourceCount numCustom = 0; /* number of the set */
-static ResourceCount numCustomAlloc = 0; /* allocated space */
-typedef void (*FreerFunction)(void *);
-static FreerFunction *aCustomFreers = 0; /* content of set */
 
 const char *resmanage_oom_message = "out of memory, aborting";
 
@@ -144,14 +137,14 @@ static int free_rk( ResourceHeld *pRH ){
   case FRK_AnyRef:
     (pRH->held.p_any_rh->its_freer)(pRH->held.p_any_rh->pAny);
     break;
-  default:
+  case FRK_VdtorRef:
     {
-      int ck = pRH->frk - FRK_CustomBase;
-      assert(ck>=0);
-      if( ck < numCustom ){
-        aCustomFreers[ck]( pRH->held.p_any );
-      }else --rv;
+      VirtualDtorNthObject *po = pRH->held.p_vdfo;
+      (po->p_its_freer[pRH->offset])(po);
     }
+    break;
+  default:
+    assert(pRH->frk < FRK_CountOf);
   }
   pRH->held.p_any = 0;
   return rv;
@@ -209,7 +202,7 @@ void release_holder(void){
 
 /* Shared resource-stack pushing code */
 static void res_hold(void *pv, FreeableResourceKind frk){
-  ResourceHeld rh = { pv, frk };
+  ResourceHeld rh = { pv, frk, 0 };
   if( numResHold == numResAlloc ){
     ResourceCount nrn = (ResourceCount)((numResAlloc>>2) + 5);
     if( !more_holders_try(nrn) ){
@@ -261,29 +254,7 @@ static void text_ref_holder(ShellText *pt){
   res_hold(pt, FRK_Text);
 }
 #endif
-/* Hold anything together with arbitrary freeing function */
-void* any_holder(void *pm, void (*its_freer)(void*)){
-  int i = 0;
-  while( i < numCustom ){
-    if( its_freer == aCustomFreers[i] ) break;
-    ++i;
-  }
-  if( i == numCustom ){
-    size_t ncf = numCustom + 2;
-    FreerFunction *pcf;
-    pcf = (FreerFunction *)realloc(aCustomFreers, ncf*sizeof(FreerFunction));
-    if( pcf!=0 ){
-      assert(ncf < (1<<16));
-      numCustomAlloc = (ResourceCount)ncf;
-      aCustomFreers = pcf;
-      aCustomFreers[numCustom++] = its_freer;
-    }else{
-      quit_moan(resmanage_oom_message,1);
-    }
-  }
-  res_hold(pm, i + FRK_CustomBase);
-  return pm;
-}
+
 /* Hold some SQLite-allocated memory */
 void* smem_holder(void *pm){
   res_hold(pm, FRK_DbMem);
@@ -307,6 +278,19 @@ void any_ref_holder(AnyResourceHolder *parh){
   assert(parh!=0 && parh->its_freer!=0);
   res_hold(parh, FRK_AnyRef);
 }
+/* Hold a reference to a VirtualDtorNthObject (in stack frame) */
+void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n){
+  ResourceHeld rh = { (void*)pvdfo, FRK_VdtorRef, n };
+  assert(pvdfo!=0 && pvdfo->p_its_freer!=0 && *(pvdfo->p_its_freer)!=0);
+  if( numResHold == numResAlloc ){
+    ResourceCount nrn = (ResourceCount)((numResAlloc>>2) + 5);
+    if( !more_holders_try(nrn) ){
+      free_rk(&rh);
+      quit_moan(resmanage_oom_message,1);
+    }
+  }
+  pResHold[numResHold++] = rh;
+}
 
 /* Free all held resources in excess of given resource stack mark,
 ** then return how many needed freeing. */
@@ -320,12 +304,6 @@ int holder_free(ResourceMark mark){
       free(pResHold);
       pResHold = 0;
       numResAlloc = 0;
-    }
-    if( numCustomAlloc>0 ){
-      free(aCustomFreers);
-      aCustomFreers = 0;
-      numCustom = 0;
-      numCustomAlloc = 0;
     }
   }
   return rv;

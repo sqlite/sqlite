@@ -1039,40 +1039,67 @@ static FILE * openChrSource(const char *zFile){
 /*
 ** Arrange for shell input from either a FILE or a string.
 ** For applicable invariants, see strLineGet(...) which is
-** the only modifier of this struct. (3rd and 4th members)
+** the only modifier of this struct. (4rd and 5th members)
 ** All other members are simply initialized to select the
 ** input stream and track input sources, set by whatever
 ** routines redirect the input.
 */
 typedef struct InSource {
+  struct InSource *pFrom; /* Aid redirect tracking and auto-unnesting.   */
   FILE *inFile;     /* Will be 0 when input is to be taken from string.  */
   char *zStrIn;     /* Will be 0 when no input is available from string. */
-  int iReadOffset;  /* Offset into zStrIn where next "read" to be done.  */
+  int iReadOffset;  /* Offset into zStrIn where next "read" to be done   */
   int lineno;       /* How many lines have been read from this source    */
-  const char *zSourceSay; /* For complaints, keep a name for this source */
-  struct InSource *pFrom; /* and redirect tracking to aid unraveling.    */
+  const char *zSourceSay; /* For complaints, a name kept for this source */
+  union {
+    int (*stream)(FILE *);
+    void (*ptext)(char *);
+  } closer;  /* Closer for the file or freer for the text, set by opener */
 } InSource;
-#define INSOURCE_STR_REDIR(str, tagTo, isFrom) {0, str, 0, 0, tagTo, isFrom}
-#define INSOURCE_FILE_REDIR(fh, tagTo, isFrom) {fh, 0, 0, 0, tagTo, isFrom}
+#define INSOURCE_STR_REDIR(str, tagTo, isFrom) {isFrom, 0, str, 0, 0, tagTo }
+#define INSOURCE_FILE_REDIR(fh, tagTo, isFrom) {isFrom, fh,  0, 0, 0, tagTo }
 #define INSOURCE_IS_INTERACTIVE(pIS) \
   ((pIS)==&termInSource && stdin_is_interactive )
 #define INSOURCE_IS_INVOKEARG(pIS) \
   ((pIS)==&cmdInSource)
-/* This instance's address is taken as part of interactive input test. */
-static InSource termInSource = { 0, 0, 0, 0, "<terminal>", 0};
-static InSource stdInSource = { 0, 0, 0, 0, "<stdin>", 0};
-static InSource cmdInSource = { 0, 0, 0, 0, "<cmdLine>", 0};
+/* These instances' addresses are taken as part of interactive input test
+ * or test for other special handling as a command-line argument. */
+static InSource termInSource = { 0, 0, 0, 0, 0, "<terminal>", 0 };
+static InSource stdInSource = { 0, 0, 0, 0, 0, "<stdin>", 0 };
+static InSource cmdInSource = { 0, 0, 0, 0, 0, "<cmdLine>", 0 };
+
+/* Initializer for just above 3 InSource objects */
 static void init_std_inputs(FILE *pIn ){
   termInSource.inFile = pIn;
   stdInSource.inFile = pIn;
   cmdInSource.lineno = 0;
 }
+/* Setup cmdInSource to supply given text as input. */
 static void set_invocation_cmd(char *zDo){
   cmdInSource.iReadOffset = 0;
   cmdInSource.zStrIn = zDo;
   ++cmdInSource.lineno;
 }
 
+/* Close an InSource object and unlink it from redirect nesting. */
+static void finish_InSource( InSource **ppIS ){
+  if( ppIS!=0 && *ppIS!=0 ){
+    InSource *pIS = *ppIS;
+    if( pIS->closer.stream != 0 ){
+      if( pIS->inFile != 0 ){
+        (pIS->closer.stream)(pIS->inFile);
+        pIS->inFile = 0;
+      }else if( pIS->zStrIn != 0 ){
+        (pIS->closer.ptext)(pIS->zStrIn);
+        pIS->zStrIn = 0;
+      }
+    }
+    *ppIS = pIS->pFrom;
+    pIS->pFrom = 0;
+  }
+}
+
+/* Similar to fgets(buffer, limit, file) but for InSource holding a string. */
 static char *strLineGet(char *zBuf, int ncMax, InSource *pInSrc){
   if( pInSrc->inFile!=0 ){
     char *zRet = fgets(zBuf, ncMax, pInSrc->inFile );
@@ -5736,6 +5763,7 @@ static unsigned char *readHexDb(ShellInState *psi, int *pnData){
   const char *zDbFilename = psi->pAuxDb->zDbFilename;
   /* Need next two objects only if redirecting input to get the hex. */
   InSource inRedir = INSOURCE_FILE_REDIR(0, zDbFilename, psi->pInSource);
+  AnyResourceHolder arh = { &psi->pInSource, (GenericFreer)finish_InSource };
   unsigned int x[16];
   char zLine[1000];
   if( zDbFilename ){
@@ -5745,6 +5773,8 @@ static unsigned char *readHexDb(ShellInState *psi, int *pnData){
       return 0;
     }
     psi->pInSource = &inRedir;
+    inRedir.closer.stream = fclose;
+    any_ref_holder(&arh);
   }else{
     /* Will read hex DB lines inline from present input, without redirect. */
     if( INSOURCE_IS_INTERACTIVE(psi->pInSource) ){
@@ -5762,7 +5792,7 @@ static unsigned char *readHexDb(ShellInState *psi, int *pnData){
   n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
   a = sqlite3_malloc( n ? n : 1 );
   shell_check_ooms(a);
-  smem_holder(a); /* offset 0 */
+  smem_holder(a);
   memset(a, 0, n);
   if( pgsz<512 || pgsz>65536 || (pgsz & (pgsz-1))!=0 ){
     utf8_printf(STD_ERR, "invalid pagesize\n");
@@ -5789,12 +5819,8 @@ static unsigned char *readHexDb(ShellInState *psi, int *pnData){
     }
   }
   *pnData = n; /* Record success and size. */
-  swap_held(mark, 0, 0);
+  pop_holder();
  readHexDb_cleanup:
-  if( psi->pInSource==&inRedir ){
-    fclose( inRedir.inFile );
-    psi->pInSource = inRedir.pFrom;
-  }
   holder_free(mark);
   return a;
 
@@ -9496,13 +9522,15 @@ DISPATCHABLE_COMMAND( binary 3 2 2 ){
 DISPATCHABLE_COMMAND( cd ? 2 2 ){
   int rc=0;
   if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  else{
 #if defined(_WIN32) || defined(WIN32)
-  wchar_t *z = sqlite3_win32_utf8_to_unicode(azArg[1]);
-  rc = !SetCurrentDirectoryW(z);
-  sqlite3_free(z);
+    wchar_t *z = sqlite3_win32_utf8_to_unicode(azArg[1]);
+    rc = (z)? !SetCurrentDirectoryW(z) : 1;
+    sqlite3_free(z);
 #else
-  rc = chdir(azArg[1]);
+    rc = chdir(azArg[1]);
 #endif
+  }
   if( rc ){
     utf8_printf(STD_ERR, "Cannot change to directory \"%s\"\n", azArg[1]);
     rc = 1;
@@ -9589,14 +9617,14 @@ DISPATCHABLE_COMMAND( connection ? 1 4 ){
   }else if( nArg==2 && IsDigit(azArg[1][0]) && azArg[1][1]==0 ){
     int i = azArg[1][0] - '0';
     if( psi->pAuxDb != &psi->aAuxDb[i] && i>=0 && i<ArraySize(psi->aAuxDb) ){
-      psi->pAuxDb->db = DBI(psi);
+      psi->pAuxDb->db = DBX(p);
       psi->pAuxDb = &psi->aAuxDb[i];
 #if SHELL_DYNAMIC_EXTENSION
-      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserVanishing, DBI(psi));
+      if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbUserVanishing, DBX(p));
 #endif
-      globalDb = DBI(psi) = psi->pAuxDb->db;
+      globalDb = DBX(p) = psi->pAuxDb->db;
 #if SHELL_DYNAMIC_EXTENSION
-      if( DBI(psi)!=0 ) notify_subscribers(psi, NK_DbUserAppeared, DBI(psi));
+      if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbUserAppeared, DBX(p));
 #endif
       psi->pAuxDb->db = 0;
     }
@@ -9639,6 +9667,7 @@ DISPATCHABLE_COMMAND( databases 2 1 0 ){
   open_db(p, 0);
   db = DBX(p);
   rc = sqlite3_prepare_v2(db, "PRAGMA database_list", -1, &pStmt, 0);
+  shell_check_nomem(rc);
   if( rc ){
     *pzErr = smprintf("%s\n", sqlite3_errmsg(db));
     rc = 1;
@@ -14283,9 +14312,11 @@ static DotCmdRC shellEvalText(char *zIn, const char *zName, ShellExState *psx){
   ShellInState *psi = ISS(psx);
   InSource inRedir
     = INSOURCE_STR_REDIR(zIn, zName, psi->pInSource);
+  AnyResourceHolder arh = { &psi->pInSource, (GenericFreer)finish_InSource };
   psi->pInSource = &inRedir;
+  any_ref_holder(&arh);
   rv = process_input(psi);
-  psi->pInSource = inRedir.pFrom;
+  release_holder();
   return rv;
 }
 
@@ -14316,9 +14347,10 @@ DISPATCHABLE_COMMAND( eval 3 1 0 ){
 
 DISPATCHABLE_COMMAND( read 3 2 2 ){
   DotCmdRC rc = DCR_Ok;
+  ShellInState *psi = ISS(p);
   FILE *inUse = 0;
   int (*fCloser)(FILE *) = 0;
-  if( ISS(p)->bSafeMode ) return DCR_AbortError;
+  if( psi->bSafeMode ) return DCR_AbortError;
   if( azArg[1][0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
     *pzErr = smprintf("pipes are not supported in this OS\n");
@@ -14341,14 +14373,15 @@ DISPATCHABLE_COMMAND( read 3 2 2 ){
   }
   if( inUse!=0 ){
     InSource inSourceRedir
-      = INSOURCE_FILE_REDIR(inUse, azArg[1], ISS(p)->pInSource);
-    ISS(p)->pInSource = &inSourceRedir;
-    rc = process_input(ISS(p));
+      = INSOURCE_FILE_REDIR(inUse, azArg[1], psi->pInSource);
+    AnyResourceHolder arh = { &(psi->pInSource),(GenericFreer)finish_InSource };
+    psi->pInSource = &inSourceRedir;
+    inSourceRedir.closer.stream = fCloser;
+    any_ref_holder(&arh);
+    rc = process_input(psi);
     /* If error(s) occured during process, leave complaining to them. */
     if( rc==DCR_Error ) rc = DCR_CmdErred;
-    assert(fCloser!=0);
-    fCloser(inUse);
-    ISS(p)->pInSource = inSourceRedir.pFrom;
+    release_holder();
   }
   return rc;
 }
@@ -15086,7 +15119,9 @@ static DotCmdRC runDotCommand(DotCommand *pmc, char *azArg[], int nArg,
                                ShellExState *psx){
   char *zErr = 0;
   DotCmdRC dcr = pmc->pMethods->argsCheck(pmc, &zErr, nArg, azArg);
+  ResourceMark mark = holder_mark();
 
+  sstr_ptr_holder(&zErr);
   command_prep(ISS(psx));
   if( dcr==DCR_Ok ){
     dcr = pmc->pMethods->execute(pmc, psx, &zErr, nArg, azArg);
@@ -15094,7 +15129,7 @@ static DotCmdRC runDotCommand(DotCommand *pmc, char *azArg[], int nArg,
   if( dcr!=DCR_Ok ){
     dcr = dot_command_errors(zErr, azArg, nArg, dcr, psx);
   }
-  sqlite3_free(zErr);
+  holder_free(mark);
   command_post(ISS(psx));
   return dcr;
 }
@@ -15118,6 +15153,7 @@ static DotCmdRC do_dot_command(char *zLine, ShellExState *psx){
   int ncLineIn = strlen30(zLine);
   u8 bExpVars = SHEXT_VAREXP(ISS(psx));
 #endif
+  RipStackDest dotRipDest = RIP_STACK_DEST_INIT;
 
   /* Parse the input line into tokens which are 0-terminated and left in-place.
   */
@@ -15148,33 +15184,37 @@ static DotCmdRC do_dot_command(char *zLine, ShellExState *psx){
   /* Process the input line. If it was empty, do nothing and declare success.
    * Note that "empty" includes a leading '.' followed by nothing else.
    */
-  if( nArg>0 ){
-    int nFound;
-    DotCommand *pmc = findDotCommand(azArg[0], psx, &nFound);
-    if( pmc==0 || nFound>1 ){
-      if( nFound==0 ){
-        dcr = DCR_Unknown;
+  register_exit_ripper(&dotRipDest);
+  if( 0==RIP_TO_HERE(dotRipDest) ){
+    if( nArg>0 ){
+      int nFound;
+      DotCommand *pmc = findDotCommand(azArg[0], psx, &nFound);
+      if( pmc==0 || nFound>1 ){
+        if( nFound==0 ){
+          dcr = DCR_Unknown;
 #if SHELL_DYNAMIC_EXTENSION
-        pmc = ISS(psx)->pUnknown;
-        if( pmc ) dcr = runDotCommand(pmc, azArg, nArg, psx);
+          pmc = ISS(psx)->pUnknown;
+          if( pmc ) dcr = runDotCommand(pmc, azArg, nArg, psx);
 #endif
-      }else{
-        dcr = DCR_Ambiguous;
+        }else{
+          dcr = DCR_Ambiguous;
+        }
+        if( dcr > DCR_ArgIxMask ){
+          /* Issue error for unknown or inadequately specified dot command. */
+          dcr = dot_command_errors(0, azArg, nArg, dcr, psx);
+        }
       }
-      if( dcr > DCR_ArgIxMask ){
-        /* Issue error for unknown or inadequately specified dot command. */
-        dcr = dot_command_errors(0, azArg, nArg, dcr, psx);
+      else{
+        char *arg0 = azArg[0];
+        azArg[0] = (char *)(pmc->pMethods->name(pmc));
+        /* Run found command and issue or handle any errors it may report. */
+        dcr = runDotCommand(pmc, azArg, nArg, psx);
+        azArg[0] = arg0;
       }
     }
-    else{
-      char *arg0 = azArg[0];
-      azArg[0] = (char *)(pmc->pMethods->name(pmc));
-      /* Run found command and issue or handle any errors it may report. */
-      dcr = runDotCommand(pmc, azArg, nArg, psx);
-      azArg[0] = arg0;
-    }
+  }else{
+    dcr = DCR_Abort|DCR_Error;
   }
-
 #if SHELL_VARIABLE_EXPANSION
   if( bExpVars ){
     /* Free any arguments that are allocated rather than tokenized in place. */
@@ -16016,6 +16056,7 @@ static void process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *inUse;
+  ResourceMark mark = holder_mark();
 
   if( sqliterc == NULL ){
     sqliterc = find_xdg_config();
@@ -16030,27 +16071,31 @@ static void process_sqliterc(
     zBuf = smprintf("%s/.sqliterc",home_dir);
     shell_check_ooms(zBuf);
     sqliterc = zBuf;
+    sstr_holder(zBuf);
   }
   inUse = fopen(sqliterc,"rb");
   if( inUse!=0 ){
     InSource inSourceRedir
       = INSOURCE_FILE_REDIR(inUse, sqliterc, psi->pInSource);
+    AnyResourceHolder arh = { &psi->pInSource, (GenericFreer)finish_InSource };
     DotCmdRC rc;
     psi->pInSource = &inSourceRedir;
+    inSourceRedir.closer.stream = fclose;
     if( stdin_is_interactive ){
       utf8_printf(STD_ERR,"-- Loading resources from %s\n",sqliterc);
     }
+    any_ref_holder(&arh);
     rc = process_input(psi);
-    fclose(inUse);
-    psi->pInSource = inSourceRedir.pFrom;
     if( rc>DCR_Ok && bail_on_error ){
       XSS(psi)->shellAbruptExit = 0x100|((rc>>1)&0x3);
     }
   }else if( sqliterc_override!=0 ){
     utf8_printf(STD_ERR,"cannot open: \"%s\"\n", sqliterc);
-    if( bail_on_error ) exit(1); /* Future: Exit shell rather than process. */
+    if( bail_on_error ){
+      XSS(psi)->shellAbruptExit = 0x102;
+    }
   }
-  sqlite3_free(zBuf);
+  holder_free(mark);
 }
 
 /*
