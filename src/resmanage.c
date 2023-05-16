@@ -194,10 +194,17 @@ void pop_holders(ResourceCount num){
   else numResHold = 0;
 }
 
-/* Drop a holder while freeing its holdee. */
+/* Drop one or more holders while freeing their holdees. */
 void release_holder(void){
   assert(numResHold>0);
   free_rk(&pResHold[--numResHold]);
+}
+void release_holders(ResourceCount num){
+  assert(num<=numResHold);
+  while( num>0 ){
+    free_rk(&pResHold[--numResHold]);
+    --num;
+  }
 }
 
 /* Shared resource-stack pushing code */
@@ -272,6 +279,11 @@ void stmt_holder(sqlite3_stmt *pstmt){
 void stmt_ptr_holder(sqlite3_stmt **ppstmt){
   assert(ppstmt!=0);
   res_hold(ppstmt, FRK_DbStmt|FRK_Indirect);
+}
+/* Hold a SQLite database ("connection"), reference to */
+void conn_ptr_holder(sqlite3 **ppdb){
+  assert(ppdb!=0);
+  res_hold(ppdb, FRK_DbConn|FRK_Indirect);
 }
 /* Hold a reference to an AnyResourceHolder (in stack frame) */
 void any_ref_holder(AnyResourceHolder *parh){

@@ -85,8 +85,9 @@ extern void more_holders(ResourceCount more);
 extern void* pop_holder(void);
 extern void pop_holders(ResourceCount num);
 
-/* Drop a holder while freeing its holdee. */
+/* Drop one or more holders while freeing their holdees. */
 extern void release_holder(void);
+extern void release_holders(ResourceCount num);
 
 /*
 ** Routines for holding resources on held-resource stack together
@@ -145,6 +146,8 @@ extern void any_ref_holder(AnyResourceHolder *parh);
 extern void sstr_ptr_holder(char **pz);
 /* a SQLite prepared statement, reference to */
 extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
+/* a SQLite database ("connection"), reference to */
+extern void conn_ptr_holder(sqlite3 **ppdb);
 /* an object with v-table (ref) whose dtor is the 0th member, reference to */
 extern void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n);
 #ifdef SHELL_MANAGE_TEXT

@@ -1,5 +1,5 @@
-C Use\sCLI\sresmanage\sto\sensure\sinput\sredirection\sis\sunwound\son\sabort.\sRemove\sunused\sresmanage\sfeature.\sExtend\sno-leak-on-abort\sfraction.\sFix\sunlikely\s(and\sold)\sGPF\supon\sOOM.
-D 2023-05-16T14:45:19.983
+C Further\sextend\suse\sof\sCLI\sresmanage.\s(40%\sof\sdot\scommands)
+D 2023-05-16T20:37:38.246
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,12 +638,12 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 6350675966bd0e7ac3a464af9dbfe26db6f0d4237f4e1f1acdb17b12ad371e6e
 F src/printf.c b9320cdbeca0b336c3f139fd36dd121e4167dd62b35fbe9ccaa9bab44c0af38d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resmanage.c 6b1e468adaa4343537e5b3b6746325b111961d7ff6122735a73f49e208d01df0
-F src/resmanage.h e4fd319ae38bc1c363190b3fb374788c40b5986f92183db779269cb8b9340c15
+F src/resmanage.c 5bea79cfe8b41b68489aed39f135270c937133338937088d2336dea3c005215d
+F src/resmanage.h 28a5f41d55cc6d159cb14977e162de3c265ae8798d51ccd942fd218624195d99
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738c3a3d6929f8be66c319bad17f6b297bd60a4eb14006075c48a28487dc7786
-F src/shell.c.in 071bd4ae867d42a372e517fd101b77cb10372a914eee5dd0c9dec4f4c753fe85
+F src/shell.c.in a12f9ed7617194f2a09493d4fa83ac232303dd9a0a607988c2f05190aa842818
 F src/shext_linkage.h 27dcf7624df05b2a7a6d367834339a6db3636f3035157f641f7db2ec499f8f6d
 F src/sqlite.h.in c14a4471fcd897a03631ac7ad3d05505e895e7b6419ec5b96cae9bc4df7a9fc6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2008,7 +2008,7 @@ F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc180
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 38e3db33210a200aae791635125052a643a27aa0619a0debf19aa9c55e1b2dde x
 F tool/mkkeywordhash.c 9822bd1f58a70e5f84179df3045bba4791df69180e991bec88662703f2e93761
-F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
+F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
@@ -2081,8 +2081,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3cec1488f4f1a375d9c97e073a4fe2e2099113e03a88a401a26e9331c783da86
-R 30833777a1a668ffdffa491e9ac5d3af
+P 243085279c6f8c51ad85bdc1e7c07ef6f858067640a7330f77d0bf94ed11b438 831d0fb2836b71c9bc51067c49fee4b8f18047814f2ff22d817d25195cf350b0
+R 932236b86f0cebfd2719e06bd539117f
 U larrybr
-Z 5728435be9055029d5aa1c859c1dfc28
+Z 2527b5a4612bc8b8d004f77ba865da77
 # Remove this line to create a well-formed Fossil manifest.
