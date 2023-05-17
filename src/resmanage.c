@@ -22,8 +22,8 @@
 /* Track how to free various held resources. */
 typedef enum FreeableResourceKind {
   FRK_Indirect = 1<<15,
-  FRK_Malloc = 0, FRK_DbConn = 1, FRK_DbStmt = 2,
-  FRK_DbMem = 3, FRK_File = 4,
+  FRK_Malloc = 0, FRK_DbConn, FRK_DbStmt, FRK_SqStr,
+  FRK_DbMem, FRK_File,
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
   FRK_Pipe,
 #endif
@@ -56,6 +56,7 @@ typedef struct ResourceHeld {
 #ifdef SHELL_MANAGE_TEXT
     ShellText *p_text;
 #endif
+    sqlite3_str *p_sqst;
     AnyResourceHolder *p_any_rh;
     VirtualDtorNthObject *p_vdfo;
   } held;
@@ -100,10 +101,12 @@ void quit_moan(const char *zMoan, int errCode){
 /* Free a single resource item. (ignorant of stack) */
 static int free_rk( ResourceHeld *pRH ){
   int rv = 0;
-  if( pRH->held.p_any == 0 ) return rv;
+  if( pRH->held.p_any == 0 ) return 0;
   if( pRH->frk & FRK_Indirect ){
-    pRH->held.p_any = *(void**)pRH->held.p_any;
-    if( pRH->held.p_any == 0 ) return rv;
+    void **ppv = (void**)pRH->held.p_any;
+    pRH->held.p_any = *ppv;
+    *ppv = (void*)0;
+    if( pRH->held.p_any == 0 ) return 0;
     pRH->frk &= ~FRK_Indirect;
   }
   ++rv;
@@ -134,6 +137,12 @@ static int free_rk( ResourceHeld *pRH ){
     freeText(pRH->held.p_text);
     break;
 #endif
+  case FRK_SqStr:
+    {
+      char *z = sqlite3_str_finish(pRH->held.p_sqst);
+      if( z!=0 ) sqlite3_free(z);
+    }
+    break;
   case FRK_AnyRef:
     (pRH->held.p_any_rh->its_freer)(pRH->held.p_any_rh->pAny);
     break;
@@ -183,12 +192,12 @@ static int more_holders_try(ResourceCount count){
 }
 
 /* Lose one or more holders. */
-void* pop_holder(void){
+void* drop_holder(void){
   assert(numResHold>0);
   if( numResHold>0 ) return pResHold[--numResHold].held.p_any;
   return 0;
 }
-void pop_holders(ResourceCount num){
+void drop_holders(ResourceCount num){
   assert(numResHold>=num);
   if( numResHold>=num ) numResHold -= num;
   else numResHold = 0;
@@ -235,10 +244,20 @@ char* mstr_holder(char *z){
   res_hold(z, FRK_Malloc);
   return z;
 }
+/* Hold a SQLite dynamic string */
+sqlite3_str * sqst_holder(sqlite3_str *psqst){
+  res_hold(psqst, FRK_SqStr);
+  return psqst;
+}
 /* Hold a C string in the SQLite heap */
 char* sstr_holder(char *z){
   res_hold(z, FRK_DbMem);
   return z;
+}
+/* Hold a SQLite dynamic string, reference to */
+void sqst_ptr_holder(sqlite3_str **ppsqst){
+  assert(ppsqst!=0);
+  res_hold(ppsqst, FRK_SqStr|FRK_Indirect);
 }
 /* Hold a C string in the SQLite heap, reference to */
 void sstr_ptr_holder(char **pz){

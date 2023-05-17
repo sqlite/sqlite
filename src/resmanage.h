@@ -82,8 +82,8 @@ extern ResourceMark holder_mark();
 extern void more_holders(ResourceCount more);
 
 /* Lose one or more holders, without freeing anything. */
-extern void* pop_holder(void);
-extern void pop_holders(ResourceCount num);
+extern void* drop_holder(void);
+extern void drop_holders(ResourceCount num);
 
 /* Drop one or more holders while freeing their holdees. */
 extern void release_holder(void);
@@ -110,6 +110,8 @@ extern char* sstr_holder(char *z);
 extern void conn_holder(sqlite3 *pdb);
 /* a SQLite prepared statement */
 extern void stmt_holder(sqlite3_stmt *pstmt);
+/* a SQLite dynamic string */
+extern sqlite3_str *sqst_holder(sqlite3_str *psqst);
 /* an open C runtime FILE */
 extern void file_holder(FILE *);
 #if (!defined(_WIN32) && !defined(WIN32)) || !SQLITE_OS_WINRT
@@ -148,7 +150,9 @@ extern void sstr_ptr_holder(char **pz);
 extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
 /* a SQLite database ("connection"), reference to */
 extern void conn_ptr_holder(sqlite3 **ppdb);
-/* an object with v-table (ref) whose dtor is the 0th member, reference to */
+/* a SQLite dynamic string, reference to */
+extern void sqst_ptr_holder(sqlite3_str **ppsqst);
+/* an object with (by-ref) v-table whose dtor is nth member, reference to */
 extern void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n);
 #ifdef SHELL_MANAGE_TEXT
 /* a ShellText object, reference to (storage for which not managed) */
