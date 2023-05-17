@@ -76,18 +76,23 @@ typedef void (*GenericFreer)(void*);
 
 /* Current position of the held-resource stack */
 extern ResourceMark holder_mark();
+#define RESOURCE_MARK(mark) ResourceMark mark = holder_mark()
 
 /* Assure no allocation failure for some more xxx_holder() calls.
 ** Note that this call may fail with an OOM abrupt exit. */
 extern void more_holders(ResourceCount more);
 
-/* Lose one or more holders, without freeing anything. */
+/* Pop one or more holders, without freeing anything. */
 extern void* drop_holder(void);
 extern void drop_holders(ResourceCount num);
 
-/* Drop one or more holders while freeing their holdees. */
+/* Pop one or more holders while freeing their holdees. */
 extern void release_holder(void);
 extern void release_holders(ResourceCount num);
+
+/* Free all held resources in excess of given resource stack mark.
+** Return count of number actually freed (rather than being 0.) */
+extern int release_holders_mark(ResourceMark mark);
 
 /*
 ** Routines for holding resources on held-resource stack together
@@ -123,8 +128,8 @@ extern void pipe_holder(FILE *);
 ** The referenced objects are indirectly freed; they are stored
 ** in the caller's stack frame, with lifetime limited to the
 ** the caller's activation. It is a grave error to use these
-** then fail to call holder_free() before returning. For abrupt
-** exits, this condition is met because holder_free() is called
+** then fail to call release_xxx() before returning. For abrupt
+** exits, this condition is met because release_xxx() is called
 ** by the abrupt exiter before the execution stack is stripped.
 */
 
@@ -164,10 +169,6 @@ extern void* take_held(ResourceMark mark, ResourceCount offset);
 
 /* Swap a held resource pointer for a new one. */
 extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
-
-/* Free all held resources in excess of given resource stack mark.
-** Return count of number actually freed (rather than being 0.) */
-extern int holder_free(ResourceMark mark);
 
 /* Remember execution and resource stack postion/state. This determines
 ** how far these stacks may be stripped should quit_moan(...) be called.

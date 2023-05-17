@@ -87,7 +87,7 @@ void quit_moan(const char *zMoan, int errCode){
     fprintf(stderr, "Error: Terminating due to %s.\n", zMoan);
   }
   fprintf(stderr, "Auto-freed %d resources.\n",
-          holder_free( (pRSD)? pRSD->resDest : 0 ));
+          release_holders_mark( (pRSD)? pRSD->resDest : 0 ));
   pRipStack = (pRSD)? pRSD->pPrev : 0;
 #ifndef SHELL_OMIT_LONGJMP
   if( pRSD!=0 ){
@@ -325,7 +325,7 @@ void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n){
 
 /* Free all held resources in excess of given resource stack mark,
 ** then return how many needed freeing. */
-int holder_free(ResourceMark mark){
+int release_holders_mark(ResourceMark mark){
   int rv = 0;
   while( numResHold > mark ){
     rv += free_rk(&pResHold[--numResHold]);
