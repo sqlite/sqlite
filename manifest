@@ -1,5 +1,5 @@
-C More\sCLI\sresmanage\suse\s(75%\sLOC)
-D 2023-05-17T15:22:17.870
+C CLI\sresmanage\suse\sto\s100%\sby\scommands,\s84%\sby\sLOC.\sWIP
+D 2023-05-18T23:42:43.540
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -643,7 +643,7 @@ F src/resmanage.h e210da1810bb3e3ff000b4e6aa317cd5bc42a9e027ee5991144d9a998bee8b
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 738c3a3d6929f8be66c319bad17f6b297bd60a4eb14006075c48a28487dc7786
-F src/shell.c.in df0b2965b3fea71ff4a4bc03a099c3d145ee0f343b43d0ce7059f2bc4650b6b0
+F src/shell.c.in a3d2cd270c5b7525811d984840406f7739cd46329dc43ed1132552ae4616bd5f
 F src/shext_linkage.h 27dcf7624df05b2a7a6d367834339a6db3636f3035157f641f7db2ec499f8f6d
 F src/sqlite.h.in c14a4471fcd897a03631ac7ad3d05505e895e7b6419ec5b96cae9bc4df7a9fc6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2081,8 +2081,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c010e1a7b2120d44c096b7d4216a8a51601972581f232d537b577617dfa6195a
-R bb1e7d9087e2e9880da47ae6212d55b1
+P 3428ce82476e996c0bf06b623c93e6d5ba1a4542e1384350321405f8bd0d0e74
+R 4c4f46d47ea8ae2acb4edb9aaf04a323
 U larrybr
-Z 3b7afacf0d05d6b1d7df00452922197f
+Z 3ba5774db546cb7251b89a558e4743f3
 # Remove this line to create a well-formed Fossil manifest.
