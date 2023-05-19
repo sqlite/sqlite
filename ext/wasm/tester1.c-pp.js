@@ -1166,7 +1166,8 @@ self.sqlite3InitModule = sqlite3InitModule;
       try{db.checkRc(rc)}
       catch(e){ex = e}
       T.assert(ex instanceof sqlite3.SQLite3Error)
-        .assert(0===ex.message.indexOf("sqlite3 result code"))
+        .assert(capi.SQLITE_MISUSE===ex.resultCode)
+        .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
         .assert(ex.message.indexOf("Invalid SQL")>0);
       T.assert(db === db.checkRc(0))
         .assert(db === sqlite3.oo1.DB.checkRc(db,0))
@@ -1334,8 +1335,8 @@ self.sqlite3InitModule = sqlite3InitModule;
         sql:['CREATE TABLE t(a,b);',
              // ^^^ using TEMP TABLE breaks the db export test
              "INSERT INTO t(a,b) VALUES(1,2),(3,4),",
-             "(?,?),('blob',X'6869')"/*intentionally missing semicolon to test for
-                                       off-by-one bug in string-to-WASM conversion*/],
+             "(?,?)"/*intentionally missing semicolon to test for
+                      off-by-one bug in string-to-WASM conversion*/],
         saveSql: list,
         bind: [5,6]
       });
@@ -1343,12 +1344,20 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(rc === db)
         .assert(2 === list.length)
         .assert('string'===typeof list[1])
-        .assert(4===db.changes())
+        .assert(3===db.changes())
         .assert(this.progressHandlerCount > 0,
                 "Expecting progress callback.")
       if(wasm.bigIntEnabled){
-        T.assert(4n===db.changes(false,true));
+        T.assert(3n===db.changes(false,true));
       }
+      rc = db.exec({
+        sql: "INSERT INTO t values('blob',X'6869') RETURNING 13",
+        rowMode: 0
+      });
+      T.assert(Array.isArray(rc))
+        .assert(1===rc.length)
+        .assert(13 === rc[0])
+        .assert(1===db.changes());
 
       let vals = db.selectValues('select a from t order by a limit 2');
       T.assert( 2 === vals.length )
