@@ -151,6 +151,8 @@ struct VirtualDtorNthObject {
 extern void any_ref_holder(AnyResourceHolder *parh);
 /* a C string in the SQLite heap, reference to */
 extern void sstr_ptr_holder(char **pz);
+/* anything in the SQLite heap, reference to */
+extern void smem_ptr_holder(void **ppv);
 /* a SQLite prepared statement, reference to */
 extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
 /* a SQLite database ("connection"), reference to */
@@ -164,11 +166,13 @@ extern void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n);
 static void text_ref_holder(ShellText *);
 #endif
 
+#if 0 /* Next 2 routines are obviated by the xxxx_ptr_holder(...) scheme. */
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */
 extern void* take_held(ResourceMark mark, ResourceCount offset);
 
 /* Swap a held resource pointer for a new one. */
 extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
+#endif
 
 /* Remember execution and resource stack postion/state. This determines
 ** how far these stacks may be stripped should quit_moan(...) be called.

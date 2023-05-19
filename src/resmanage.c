@@ -159,6 +159,7 @@ static int free_rk( ResourceHeld *pRH ){
   return rv;
 }
 
+#if 0 /* obviated by the xxxx_ptr_holder(...) scheme. */
 /* Take back a held resource pointer, leaving held as NULL. (no-op) */
 void* take_held(ResourceMark mark, ResourceCount offset){
   return swap_held(mark,offset,0);
@@ -174,6 +175,7 @@ void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew){
     return rv;
   }else return 0;
 }
+#endif
 
 /* Reserve room for at least count additional holders, with no chance
 ** of an OOM abrupt exit. This is used internally only by this package.
@@ -263,6 +265,11 @@ void sqst_ptr_holder(sqlite3_str **ppsqst){
 void sstr_ptr_holder(char **pz){
   assert(pz!=0);
   res_hold(pz, FRK_DbMem|FRK_Indirect);
+}
+/* Hold anything in the SQLite heap, reference to */
+void smem_ptr_holder(void **ppv){
+  assert(ppv!=0);
+  res_hold(ppv, FRK_DbMem|FRK_Indirect);
 }
 /* Hold an open C runtime FILE */
 void file_holder(FILE *pf){
