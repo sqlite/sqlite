@@ -93,6 +93,7 @@ extern void release_holders(ResourceCount num);
 /* Free all held resources in excess of given resource stack mark.
 ** Return count of number actually freed (rather than being 0.) */
 extern int release_holders_mark(ResourceMark mark);
+#define RESOURCE_FREE(mark) release_holders_mark(mark)
 
 /*
 ** Routines for holding resources on held-resource stack together
