@@ -507,6 +507,16 @@ static int console_utf8 = 0;
 static int stdout_is_console = 1;
 
 /*
+** Disable certain features for FIDDLE build.
+*/
+#ifdef SQLITE_SHELL_FIDDLE
+# undef SQLITE_OMIT_DYNAPROMPT
+# undef SHELL_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_DYNAPROMPT 1
+# define SHELL_OMIT_LOAD_EXTENSION 1
+#endif
+
+/*
 ** This statically allocated variable is used to strip a resource
 ** stack upon abrupt exits (involving OOM or -safe mode violations.
 */
@@ -1105,28 +1115,48 @@ typedef struct InSource {
 } InSource;
 #define INSOURCE_STR_REDIR(str, tagTo, isFrom) {isFrom, 0, str, 0, 0, tagTo }
 #define INSOURCE_FILE_REDIR(fh, tagTo, isFrom) {isFrom, fh,  0, 0, 0, tagTo }
-#define INSOURCE_IS_INTERACTIVE(pIS) \
-  ((pIS)==&termInSource && stdin_is_interactive )
 #define INSOURCE_IS_INVOKEARG(pIS) \
   ((pIS)==&cmdInSource)
+#ifndef SQLITE_SHELL_FIDDLE
+# define INSOURCE_IS_INTERACTIVE(pIS) \
+   ((pIS)==&termInSource && stdin_is_interactive )
+#else
+# define INSOURCE_IS_INTERACTIVE(pIS) 0
+#endif
+
 /* These instances' addresses are taken as part of interactive input test
  * or test for other special handling as a command-line argument. */
+static InSource cmdInSource = { 0, 0, 0, 0, 0, "<cmdLine>", 0 };
+#ifndef SQLITE_SHELL_FIDDLE
 static InSource termInSource = { 0, 0, 0, 0, 0, "<terminal>", 0 };
 static InSource stdInSource = { 0, 0, 0, 0, 0, "<stdin>", 0 };
-static InSource cmdInSource = { 0, 0, 0, 0, 0, "<cmdLine>", 0 };
+#else
+static InSource fiddleInSource = { 0, 0, 0, 0, 0, "<fiddle>", 0 };
+#endif /* defined(SQLITE_SHELL_FIDDLE) */
 
-/* Initializer for just above 3 InSource objects */
+/* Initializer for just above 3 (non-FIDDLE) InSource objects */
+#ifndef SQLITE_SHELL_FIDDLE
 static void init_std_inputs(FILE *pIn ){
   termInSource.inFile = pIn;
   stdInSource.inFile = pIn;
   cmdInSource.lineno = 0;
 }
+#else
+# define init_std_inputs(x)
+#endif
 /* Setup cmdInSource to supply given text as input. */
 static void set_invocation_cmd(char *zDo){
   cmdInSource.iReadOffset = 0;
   cmdInSource.zStrIn = zDo;
   ++cmdInSource.lineno;
 }
+#ifdef SQLITE_SHELL_FIDDLE
+static void set_fiddle_input_text(char *zDo){
+  fiddleInSource.iReadOffset = 0;
+  fiddleInSource.zStrIn = zDo;
+  if( zDo ) ++fiddleInSource.lineno;
+}
+#endif /* defined(SQLITE_SHELL_FIDDLE) */
 
 /* Close an InSource object and unlink it from redirect nesting. */
 static void finish_InSource( InSource **ppIS ){
@@ -1244,7 +1274,6 @@ static char *local_getline(char *zLine, InSource *pInSrc){
   return zLine;
 }
 
-#ifndef SQLITE_SHELL_FIDDLE
 /*
 ** Retrieve a single line of input text from designated input source.
 **
@@ -1305,38 +1334,6 @@ static char *one_input_line(InSource *pInSrc, char *zPrior,
     return zResult;
   }
 }
-#else /* !defined(SQLITE_SHELL_FIDDLE) */
-/*
-** Alternate one_input_line() impl for wasm mode. This is not in the primary
-** impl because we need the global shellState and cannot access it from that
-** function without moving lots of code around (creating a larger/messier diff).
-*/
-static char *one_input_line(InSource *psrc, char *zPrior, int isContinuation){
-  /* Parse the next line from shellState.wasm.zInput. */
-  const char *zBegin = shellState.wasm.zPos;
-  const char *z = zBegin;
-  char *zLine = 0;
-  i64 nZ = 0;
-
-  UNUSED_PARAMETER(psrc);
-  UNUSED_PARAMETER(isContinuation);
-  if(!z || !*z){
-    return 0;
-  }
-  while(*z && isspace(*z)) ++z;
-  zBegin = z;
-  for(; *z && '\n'!=*z; ++nZ, ++z){}
-  if(nZ>0 && '\r'==zBegin[nZ-1]){
-    --nZ;
-  }
-  shellState.wasm.zPos = z;
-  zLine = realloc(zPrior, nZ+1);
-  shell_check_oomm(zLine);
-  memcpy(zLine, zBegin, nZ);
-  zLine[nZ] = 0;
-  return zLine;
-}
-#endif /* SQLITE_SHELL_FIDDLE */
 
 /* For use by shell extensions. See footnote [a] to one_input_line(). */
 void free_input_line(char *z){
@@ -1967,11 +1964,7 @@ typedef struct ShellInState {
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 
 #ifdef SQLITE_SHELL_FIDDLE
-  struct {
-    const char * zInput; /* Input string from wasm/JS proxy */
-    const char * zPos;   /* Cursor pos into zInput */
-    const char * zDefaultDbName; /* Default name for db file */
-  } wasm;
+  const char * zDefaultDbName; /* Default name for db file (? not used here) */
 #endif
 
 #if SHELL_DYNAMIC_EXTENSION
@@ -5210,7 +5203,6 @@ static int shell_exec(
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
         }
         zEQP = smprintf("EXPLAIN QUERY PLAN %s", zStmtSql);
-        shell_check_ooms(zEQP);
         rc = s3_prep_noom_free(db, &zEQP, &pExplain);
         if( rc==SQLITE_OK ){
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
@@ -7308,8 +7300,13 @@ void shellReset(
 }
 #endif /* !defined SQLITE_OMIT_VIRTUALTABLE */
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) \
-  && !defined(SQLITE_SHELL_FIDDLE)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
+# define ARCHIVE_ENABLE 1
+#else
+# define ARCHIVE_ENABLE 0
+#endif
+
+#if ARCHIVE_ENABLE && !defined(SQLITE_SHELL_FIDDLE)
 /******************************************************************************
 ** The ".archive" or ".ar" command.
 */
@@ -8072,7 +8069,7 @@ end_ar_command:
 }
 /* End of the ".archive" or ".ar" command logic
 *******************************************************************************/
-#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB) */
+#endif /* ARCHIVE_ENABLE && !defined(SQLITE_SHELL_FIDDLE) */
 
 #if SQLITE_SHELL_HAVE_RECOVER
 /*
@@ -9446,12 +9443,6 @@ DISPATCHABLE_COMMAND( seeargs ? 0 0 azArg nArg p ){
     raw_printf(ISS(p)->out, "%s%s", azArg[ia], (ia==nArg-1)? "|\n" : "|");
   return DCR_Ok;
 }
-
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
-# define ARCHIVE_ENABLE 1
-#else
-# define ARCHIVE_ENABLE 0
-#endif
 
 CONDITION_COMMAND(archive ARCHIVE_ENABLE && !defined(SQLITE_SHELL_FIDDLE));
 /*****************
@@ -16299,14 +16290,13 @@ static void main_init(ShellInState *pDatai, ShellExState *pDatax) {
 #ifndef SQLITE_SHELL_FIDDLE
   verify_uninitialized();
 #else
-  datai.wasm.zDefaultDbName = "/fiddle.sqlite3";
+  datai.zDefaultDbName = "/fiddle.sqlite3";
 #endif
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, pDatai);
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
-  init_std_inputs(stdin);
   /* Source at EOF (for now), saying it is command line. */
   pDatai->pInSource = &cmdInSource;
 }
@@ -16916,6 +16906,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
 
   /**** Data initialization. ****/
   main_init(&datai,&datax);
+  init_std_inputs(stdin);
 #if SHELL_DATAIO_EXT
   datai.pFreeformExporter = (ExportHandler*)&ffExporter;
   datai.pColumnarExporter = (ExportHandler*)&cmExporter;
@@ -17104,7 +17095,12 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       ** (Former are arguments not naming the DB or beginning with '-'.)
       ** Run whichever kind there are. */
 #if ARCHIVE_ENABLE
-      if( !argsData.bArCmd ){
+      if( argsData.bArCmd ){
+        open_db(&datax, OPEN_DB_ZIPFILE);
+        drc = arDotCommand(&datax, 1, cmdArgsBare.azCmd, cmdArgsBare.nCmd);
+      }else
+#endif /* ARCHIVE_ENABLE */
+      {
         /* Run bare command arguments like separate command-line inputs. */
         for(i=0; i<cmdArgsBare.nCmd && rc<2; i++){
           set_invocation_cmd(cmdArgsBare.azCmd[i]);
@@ -17112,17 +17108,13 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
           rc = (drc>2)? 2 : drc;
           if( drc > DCR_Ok ) break;
         }
-      }else
-#endif /* ARCHIVE_ENABLE */
-      {
-        open_db(&datax, OPEN_DB_ZIPFILE);
-        drc = arDotCommand(&datax, 1, cmdArgsBare.azCmd, cmdArgsBare.nCmd);
       }
       rc = (drc>2)? 2 : drc;
       if( rc>0 ) goto shell_bail;
     }else{
-      /* Run commands received from standard input
+      /* Run commands received from standard input (however defined.)
       */
+#ifndef SQLITE_SHELL_FIDDLE
       if( stdin_is_interactive ){
         char *zHome;
         char *zHistory = 0;
@@ -17161,7 +17153,6 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
         }
         datai.pInSource = &termInSource; /* read from stdin interactively */
         drc = process_input(&datai);
-        rc = (drc>2)? 2 : drc;
         if( !argsData.bQuiet ){
           if( zHistory ){
             shell_stifle_history(2000);
@@ -17172,8 +17163,12 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
       }else{
         datai.pInSource = &stdInSource; /* read from stdin without prompts */
         drc = process_input(&datai);
-        rc = (drc>2)? 2 : drc;
       }
+#else /* !defined(SQLITE_SHELL_FIDDLE) */
+      datai.pInSource = &fiddleInSource; /* read per set_fiddle_input_text() */
+      drc = process_input(&datai);
+#endif /* defined(SQLITE_SHELL_FIDDLE) */
+      rc = (drc>2)? 2 : drc;
     }
     forget_exit_ripper(&mainRipDest);
   }else{
@@ -17342,10 +17337,9 @@ int fiddle_export_db( int (*xCallback)(unsigned const char *zOut, int n) ){
 void fiddle_exec(const char * zSql){
   if(zSql && *zSql){
     if('.'==*zSql) puts(zSql);
-    shellStateI.wasm.zInput = zSql;
-    shellStateI.wasm.zPos = zSql;
+    set_fiddle_input_text(zSql);
     process_input(&shellStateI);
-    shellStateI.wasm.zInput = shellStateI.wasm.zPos = 0;
+    set_fiddle_input_text(0);
   }
 }
 #endif /* defined(SQLITE_SHELL_FIDDLE) */
