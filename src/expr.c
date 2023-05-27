@@ -67,6 +67,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     if( op==TK_SELECT_COLUMN ){
       assert( pExpr->pLeft!=0 && ExprUseXSelect(pExpr->pLeft) );
       assert( pExpr->iColumn < pExpr->iTable );
+      assert( pExpr->iColumn >= 0 );
       assert( pExpr->iTable==pExpr->pLeft->x.pSelect->pEList->nExpr );
       return sqlite3ExprAffinity(
           pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
@@ -2191,7 +2192,7 @@ int sqlite3ExprIdToTrueFalse(Expr *pExpr){
 ** and 0 if it is FALSE.
 */
 int sqlite3ExprTruthValue(const Expr *pExpr){
-  pExpr = sqlite3ExprSkipCollate((Expr*)pExpr);
+  pExpr = sqlite3ExprSkipCollateAndLikely((Expr*)pExpr);
   assert( pExpr->op==TK_TRUEFALSE );
   assert( !ExprHasProperty(pExpr, EP_IntValue) );
   assert( sqlite3StrICmp(pExpr->u.zToken,"true")==0
@@ -6413,6 +6414,7 @@ static void findOrCreateAggInfoColumn(
   assert( pAggInfo->iFirstReg==0 );
   pCol = pAggInfo->aCol;
   for(k=0; k<pAggInfo->nColumn; k++, pCol++){
+    if( pCol->pCExpr==pExpr ) return;
     if( pCol->iTable==pExpr->iTable
      && pCol->iColumn==pExpr->iColumn
      && pExpr->op!=TK_IF_NULL_ROW
