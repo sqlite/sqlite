@@ -4131,7 +4131,7 @@ static int exprCodeInlineFunction(
       pA1 = pFarg->a[1].pExpr;
       if( pA1->op==TK_COLUMN ){
         sqlite3VdbeAddOp2(v, OP_Integer, 
-           sqlite3ExprImpliesNonNullRow(pFarg->a[0].pExpr,pA1->iTable),
+           sqlite3ExprImpliesNonNullRow(pFarg->a[0].pExpr,pA1->iTable,1),
            target);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
@@ -5991,10 +5991,28 @@ int sqlite3ExprImpliesExpr(
   return 0;
 }
 
+/* This is a helper functino to impliesNotNullRow().  In this routine,
+** set pWalker->eCode to one only if *both* of the input expressions
+** separately have the implies-not-null-row property.
+*/
+static void bothImplyNotNullRow(Walker *pWalker, Expr *pE1, Expr *pE2){
+  if( pWalker->eCode==0 ){
+    sqlite3WalkExpr(pWalker, pE1);
+    if( pWalker->eCode ){
+      pWalker->eCode = 0;
+      sqlite3WalkExpr(pWalker, pE2);
+    }
+  }
+}
+
 /*
 ** This is the Expr node callback for sqlite3ExprImpliesNonNullRow().
 ** If the expression node requires that the table at pWalker->iCur
 ** have one or more non-NULL column, then set pWalker->eCode to 1 and abort.
+**
+** pWalker->mWFlags is non-zero if this inquiry is being undertaking on
+** behalf of a RIGHT JOIN (or FULL JOIN).  That makes a difference when
+** evaluting terms in the ON claue of an inner join.
 **
 ** This routine controls an optimization.  False positives (setting
 ** pWalker->eCode to 1 when it should not be) are deadly, but false-negatives
@@ -6004,28 +6022,33 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   testcase( pExpr->op==TK_AGG_COLUMN );
   testcase( pExpr->op==TK_AGG_FUNCTION );
   if( ExprHasProperty(pExpr, EP_OuterON) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_InnerON) && pWalker->mWFlags ){
+    /* If iCur is used in an inner-join ON clause to the left of a
+    ** RIGHT JOIN, that does *not* mean that the table must be non-null.
+    ** But it is difficult to check for that condition precisely.
+    ** To keep things simple, any use of iCur from any inner-join is
+    ** ignored while attempting to simplify a RIGHT JOIN. */
+    return WRC_Prune;
+  }
   switch( pExpr->op ){
     case TK_ISNOT:
     case TK_ISNULL:
     case TK_NOTNULL:
     case TK_IS:
-    case TK_OR:
     case TK_VECTOR:
-    case TK_CASE:
-    case TK_IN:
     case TK_FUNCTION:
     case TK_TRUTH:
+    case TK_CASE:
       testcase( pExpr->op==TK_ISNOT );
       testcase( pExpr->op==TK_ISNULL );
       testcase( pExpr->op==TK_NOTNULL );
       testcase( pExpr->op==TK_IS );
-      testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_VECTOR );
-      testcase( pExpr->op==TK_CASE );
-      testcase( pExpr->op==TK_IN );
       testcase( pExpr->op==TK_FUNCTION );
       testcase( pExpr->op==TK_TRUTH );
+      testcase( pExpr->op==TK_CASE );
       return WRC_Prune;
+
     case TK_COLUMN:
       if( pWalker->u.iCur==pExpr->iTable ){
         pWalker->eCode = 1;
@@ -6033,21 +6056,38 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       }
       return WRC_Prune;
 
+    case TK_OR:
     case TK_AND:
-      if( pWalker->eCode==0 ){
+      /* Both sides of an AND or OR must separately imply non-null-row.
+      ** Consider these cases:
+      **    1.  NOT (x AND y)
+      **    2.  x OR y
+      ** If only one of x or y is non-null-row, then the overall expression
+      ** can be true if the other arm is false (case 1) or true (case 2).
+      */
+      testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_AND );
+      bothImplyNotNullRow(pWalker, pExpr->pLeft, pExpr->pRight);
+      return WRC_Prune;
+        
+    case TK_IN:
+      /* Beware of "x NOT IN ()" and "x NOT IN (SELECT 1 WHERE false)",
+      ** both of which can be true.  But apart from these cases, if
+      ** the left-hand side of the IN is NULL then the IN itself will be
+      ** NULL. */
+      if( ExprUseXList(pExpr) && ALWAYS(pExpr->x.pList->nExpr>0) ){
         sqlite3WalkExpr(pWalker, pExpr->pLeft);
-        if( pWalker->eCode ){
-          pWalker->eCode = 0;
-          sqlite3WalkExpr(pWalker, pExpr->pRight);
-        }
       }
       return WRC_Prune;
 
     case TK_BETWEEN:
-      if( sqlite3WalkExpr(pWalker, pExpr->pLeft)==WRC_Abort ){
-        assert( pWalker->eCode );
-        return WRC_Abort;
-      }
+      /* In "x NOT BETWEEN y AND z" either x must be non-null-row or else
+      ** both y and z must be non-null row */
+      assert( ExprUseXList(pExpr) );
+      assert( pExpr->x.pList->nExpr==2 );
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      bothImplyNotNullRow(pWalker, pExpr->x.pList->a[0].pExpr,
+                                   pExpr->x.pList->a[1].pExpr);
       return WRC_Prune;
 
     /* Virtual tables are allowed to use constraints like x=NULL.  So
@@ -6109,7 +6149,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** be non-NULL, then the LEFT JOIN can be safely converted into an
 ** ordinary join.
 */
-int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
+int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab, int isRJ){
   Walker w;
   p = sqlite3ExprSkipCollateAndLikely(p);
   if( p==0 ) return 0;
@@ -6117,7 +6157,7 @@ int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
     p = p->pLeft;
   }else{
     while( p->op==TK_AND ){
-      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
+      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab, isRJ) ) return 1;
       p = p->pRight;
     }
   }
@@ -6125,6 +6165,7 @@ int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   w.xSelectCallback = 0;
   w.xSelectCallback2 = 0;
   w.eCode = 0;
+  w.mWFlags = isRJ!=0;
   w.u.iCur = iTab;
   sqlite3WalkExpr(&w, p);
   return w.eCode;

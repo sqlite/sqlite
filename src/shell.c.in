@@ -15,7 +15,7 @@
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
 /* This needs to come before any includes for MSVC compiler */
-#define _CRT_SECURE_NO_WARNINGS
+# define _CRT_SECURE_NO_WARNINGS
 #endif
 
 /*
@@ -24,8 +24,8 @@
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
 */
-# define SHELL_STRINGIFY_(f) #f
-# define SHELL_STRINGIFY(f) SHELL_STRINGIFY_(f)
+#define SHELL_STRINGIFY_(f) #f
+#define SHELL_STRINGIFY(f) SHELL_STRINGIFY_(f)
 #ifdef SQLITE_CUSTOM_INCLUDE
 # include SHELL_STRINGIFY(SQLITE_CUSTOM_INCLUDE)
 #endif
@@ -867,6 +867,10 @@ void utf8_printf(FILE *out, const char *zFormat, ...){
 ** Provide an abrupt exit/termination for routines that cannot proceed
 ** or whose failure means the CLI cannot usefully continue.
 */
+#ifdef SHELL_TERMINATE
+ResourceMark exit_mark = 0; /* May be set by CLI-hosting application. */
+#endif
+
 static void shell_terminate(const char *zWhy){
 #ifndef SHELL_TERMINATE
   quit_moan(zWhy, 2);
@@ -882,7 +886,7 @@ static void shell_out_of_memory(void){
 }
 
 #ifdef SQLITE_DEBUG
-int fake_oom_countdown = 0;
+static int fake_oom_countdown = 0;
 
 static void maybe_fake_oom(void){
   if( fake_oom_countdown>0 && --fake_oom_countdown==0 ){
@@ -1352,6 +1356,10 @@ static char *one_input_line(InSource *pInSrc, char *zPrior,
       ++pInSrc->lineno;
     }
 #endif
+    if( seenInterrupt>0 ){
+      printf("^C\n");
+      fflush(stdout);
+    }
     return zResult;
   }
 }
@@ -1806,7 +1814,9 @@ struct EQPGraph {
 # define SHEXT_VAREXP(psi) 0
 #endif
 
-/* Enable use of ExportHandler and ImportHandler interfaces for built-in I/O */
+/* Enable use of ExportHandler and ImportHandler interfaces for built-in I/O.
+** (This deactivates "shuffled" older code which can be deleted some day. The
+** code has been partitioned and moved as part of built-in exporters.) */
 #define SHELL_DATAIO_EXT 1
 
 #if SHELL_DYNAMIC_EXTENSION
@@ -2136,17 +2146,17 @@ static void updateSafeMode(ShellInState *psi){
 
 static struct {
   const char *zModeName;
-  u8 bDepluralize;
+  u8 bMayPluralize;
   u8 bUserBlocked;
   u8 iAliasFor;
 } modeDescr[] = {
-  { "lines", 1, 0, MODE_Line },
-  { "columns", 1, 0, MODE_Column },
+  { "line", 1, 0, MODE_Line },
+  { "column", 1, 0, MODE_Column },
   { "list", 0, 0, MODE_List },
   { "html", 0, 0, MODE_Html },
   { "tcl", 0, 0, MODE_Tcl },
   { "csv", 0, 0, MODE_Csv },
-  { "tabs", 1, 0, MODE_List },
+  { "tab", 1, 0, MODE_List },
   { "insert", 0, 0, MODE_Insert },
   { "quote", 0, 0, MODE_Quote },
   { "ascii", 0, 0, MODE_Ascii },
@@ -2832,7 +2842,6 @@ static void interrupt_handler(int NotUsed){
     /* Apparently, no polite interruption is working. (Something is
     ** very busy under mutex protection.) So quit altogether. */
     utf8_printf(STD_ERR, "Forced ^C exit.\n");
-    terminate_actions();
     exit(1);
   }
 }
@@ -5255,16 +5264,16 @@ static int shell_exec(
           if( rc==SQLITE_OK ){
             explain_data_prepare(psi, pExplain);
             psi->cMode = MODE_Explain;
-#if SHELL_DATAIO_EXT
             {
+#if SHELL_DATAIO_EXT
               ExportHandler *pexSave = psi->pActiveExporter;
               psi->pActiveExporter = psi->pFreeformExporter;
-              exec_prepared_stmt(psx, pExplain);
-              psi->pActiveExporter = pexSave;
-            }
-#else
-            exec_prepared_stmt(psx, pExplain);
 #endif
+              exec_prepared_stmt(psx, pExplain);
+#if SHELL_DATAIO_EXT
+              psi->pActiveExporter = pexSave;
+#endif
+            }
             explain_data_delete(psi);
           }
           sqlite3_finalize(pExplain);
@@ -8398,6 +8407,8 @@ static void EH_CM_destruct(ExportHandler *pMe);
 static const char *EH_FF_name(ExportHandler *pMe);
 static const char *EH_CM_name(ExportHandler *pMe);
 static const char *EH_help(ExportHandler *pMe, const char *zWhat);
+static int EH_FF_config(ExportHandler *pMe, int io, char **pzTell);
+static int EH_CM_config(ExportHandler *pMe, int io, char **pzTell);
 static int EH_openResultsOutStream(ExportHandler *pMe,
                                    ShellExState *pSES, char **pzErr,
                                    int numArgs, char *azArgs[],
@@ -8428,6 +8439,7 @@ static VTABLE_NAME(ExportHandler) exporter_Vtab_FF = {
   EH_FF_destruct,
   EH_FF_name,
   EH_help,
+  EH_FF_config,
   EH_openResultsOutStream,
   EH_FF_prependResultsOut,
   EH_FF_rowResultsOut,
@@ -8439,6 +8451,7 @@ static VTABLE_NAME(ExportHandler) exporter_Vtab_CM = {
   EH_CM_destruct,
   EH_CM_name,
   EH_help,
+  EH_CM_config,
   EH_openResultsOutStream,
   EH_CM_prependResultsOut,
   EH_CM_rowResultsOut,
@@ -8508,6 +8521,24 @@ static void EH_CM_destruct(ExportHandler *pMe){
   pbie->nRow = 0;
   pbie->colSep = 0;
   pbie->rowSep = 0;
+}
+
+
+static int EH_FF_config(ExportHandler *pMe, int io, char **pzTell){
+  BuiltInCMExporter *pThis = (BuiltInCMExporter*)pMe;
+  UNUSED_PARAMETER(io);
+  UNUSED_PARAMETER(pzTell);
+  return SQLITE_OK;
+}
+static int EH_CM_config(ExportHandler *pMe, int io, char **pzTell){
+  BuiltInFFExporter *pThis = (BuiltInFFExporter*)pMe;
+  ShellInState *psi = pThis->psi;
+  if( io==0 && pzTell!=0 ){
+    *pzTell = smprintf("--wrap %d --wordwrap %s --%squote", psi->cmOpts.iWrap,
+                       psi->cmOpts.bWordWrap ? "on" : "off",
+                       psi->cmOpts.bQuote ? "" : "no");
+  }
+  return SQLITE_OK;
 }
 
 static const char *zModeName(ShellInState *psi){
@@ -8608,6 +8639,7 @@ static int EH_CM_prependResultsOut(ExportHandler *pMe,
     }
     if( wx<0 ) wx = -wx;
     uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    if( uz==0 ) uz = (u8*)"";
     azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
   }
   while( bNextLine || SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -11409,10 +11441,13 @@ DISPATCHABLE_COMMAND( mode ? 1 0 ){
         goto flag_unknown;
       }else{
         int im, nza = strlen30(zArg);
+        int isPlural = (nza>0 && zArg[nza-1]=='s');
         if( foundMode!=MODE_COUNT_OF ) goto mode_badarg;
         for( im=0; im<MODE_COUNT_OF; ++im ){
+          int nz = nza - (modeDescr[im].bMayPluralize && isPlural);
           if( modeDescr[im].bUserBlocked ) continue;
-          if( cli_strncmp(zArg,modeDescr[im].zModeName,nza)==0 ){
+          if( cli_strncmp(zArg,modeDescr[im].zModeName,nz)==0 ){
+            if( nz<nza && nz!=strlen30(modeDescr[im].zModeName) ) continue;
             foundMode = (u8)im;
             setMode = modeDescr[im].iAliasFor;
             break;
@@ -11429,21 +11464,32 @@ DISPATCHABLE_COMMAND( mode ? 1 0 ){
   if( foundMode==MODE_COUNT_OF ){
     FILE *out = psi->out;
     const char *zMode;
-    int nms;
+#if SHELL_DATAIO_EXT
+    char *zTell = 0;
+    int mrc;
+    zMode = psi->pActiveExporter->pMethods->name(psi->pActiveExporter);
+    mrc = psi->pActiveExporter->pMethods->config(psi->pActiveExporter,0,&zTell);
+    if( zTell!=0 ){
+      raw_printf(out, "current output mode: %s %s\n", zMode, zTell);
+      sqlite3_free(zTell);
+    }else{
+      raw_printf(out, "current output mode: %s\n", zMode);
+    }
+#else
     i = psi->mode;
     assert(i>=0 && i<MODE_COUNT_OF);
     zMode = modeDescr[i].zModeName;
-    nms = strlen30(zMode)-modeDescr[i].bDepluralize;
     /* Mode not specified. Show present mode (and toss any options set.) */
     if( MODE_IS_COLUMNAR(psi->mode) ){
       raw_printf
-        (out, "current output mode: %.*s --wrap %d --wordwrap %s --%squote\n",
-         nms, zMode, psi->cmOpts.iWrap,
+        (out, "current output mode: %s --wrap %d --wordwrap %s --%squote\n",
+         zMode, psi->cmOpts.iWrap,
          psi->cmOpts.bWordWrap ? "on" : "off",
          psi->cmOpts.bQuote ? "" : "no");
     }else{
       raw_printf(out, "current output mode: %.*s\n", nms, zMode);
     }
+#endif
   }else{
     effectMode(psi, foundMode, setMode);
     if( MODE_IS_COLUMNAR(setMode) ){
@@ -13421,6 +13467,7 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
   ShellInState *psi = ISS(p);
   FILE *out = psi->out;
   int i;
+
   utf8_printf(out, "%12.12s: %s\n","echo",
               azBool[ShellHasFlag(p, SHFLG_Echo)]);
   utf8_printf(out, "%12.12s: %s\n","eqp", azBool[psi->autoEQP&3]);
@@ -13429,15 +13476,14 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
               ? "on" : psi->autoExplain ? "auto" : "off");
   utf8_printf(out,"%12.12s: %s\n","headers", azBool[psi->showHeader!=0]);
   zOut = modeDescr[psi->mode].zModeName;
-  i = strlen30(zOut) - modeDescr[psi->mode].bDepluralize;
   if( MODE_IS_COLUMNAR(psi->mode) ){
     utf8_printf
-      (out, "%12.12s: %.*s --wrap %d --wordwrap %s --%squote\n", "mode",
-       i, zOut, psi->cmOpts.iWrap,
+      (out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
+       zOut, psi->cmOpts.iWrap,
        psi->cmOpts.bWordWrap ? "on" : "off",
        psi->cmOpts.bQuote ? "" : "no");
   }else{
-    utf8_printf(out, "%12.12s: %.*s\n","mode", i, zOut);
+    utf8_printf(out, "%12.12s: %s\n","mode", zOut);
   }
   utf8_printf(out, "%12.12s: ", "nullvalue");
   output_c_string(out, psi->nullValue);
@@ -16752,7 +16798,8 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
 #endif
       }else if( cli_strcmp(z,"-nonce")==0 ){
         free(psi->zNonce);
-        shell_check_oomm(psi->zNonce = strdup(argv[++i]));
+        z = cmdline_option_value(argc,argv,++i);
+        shell_check_oomm(psi->zNonce = strdup(z));
       }else if( cli_strcmp(z,"-quiet")==0 ){
         pad->bQuiet = (int)integerValue(cmdline_option_value(argc,argv,++i));
       }else if( cli_strcmp(z,"-unsafe-testing")==0 ){

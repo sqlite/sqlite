@@ -32,6 +32,9 @@
 ** process exit to ease error handling is unsuitable for use as a called
 ** routine within a larger application. That use is most of the reason for
 ** this package's existence.
+**
+** The package is designed for single-threaded use only. It is unsafe to
+** use it from multiple threads, which includes signal handlers.
 */
 
 #ifndef RES_MANAGE_H

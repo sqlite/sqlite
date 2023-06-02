@@ -78,7 +78,7 @@ typedef struct ShellExState {
    * Extensions should not store a copy of this pointer without
    * provisions for maintaining validity of the copy. The shell
    * may alter this pointer apart from opening or closing a DB.
-   * See ShellEvenNotify, NoticeKind and subscribeEvents below
+   * See ShellEventNotify, NoticeKind and subscribeEvents below
    * for means of maintaining valid copies.  */
   sqlite3 *dbUser;
 
@@ -149,6 +149,7 @@ INTERFACE_END( DotCommand );
 INTERFACE_BEGIN( ExportHandler );
 PURE_VMETHOD(const char *, name, ExportHandler, 0,());
 PURE_VMETHOD(const char *, help, ExportHandler, 1,(const char *zWhat));
+PURE_VMETHOD(int, config, ExportHandler, 2,(int io, char **pzTell));
 PURE_VMETHOD(int, openResultsOutStream, ExportHandler,
              5,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[], const char * zName ));
@@ -168,6 +169,7 @@ INTERFACE_END( ExportHandler );
 INTERFACE_BEGIN( ImportHandler );
 PURE_VMETHOD(const char *, name, ImportHandler, 0,());
 PURE_VMETHOD(const char *, help, ImportHandler, 1,(const char *zWhat));
+PURE_VMETHOD(int, config, ImportHandler, 2,(int io, char **pzTell));
 PURE_VMETHOD(int,  openDataInStream, ImportHandler,
              5,( ShellExState *pSES, char **pzErr,
                  int numArgs, char *azArgs[], const char * zName ));
