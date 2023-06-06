@@ -921,8 +921,8 @@ static void shell_check_ooms(const void *p){
   }
 }
 #else
-# define shell_check_ooms(p) do{ if((p)==0) shell_out_of_memory(); }while 0
-# define shell_check_oomm(p) do{ if((p)==0) shell_out_of_memory(); }while 0
+# define shell_check_ooms(p) do{ if((p)==0) shell_out_of_memory(); }while(0)
+# define shell_check_oomm(p) do{ if((p)==0) shell_out_of_memory(); }while(0)
 # define maybe_fake_oom()
 #endif
 
@@ -8523,7 +8523,6 @@ static void EH_CM_destruct(ExportHandler *pMe){
   pbie->rowSep = 0;
 }
 
-
 static int EH_FF_config(ExportHandler *pMe, int io, char **pzTell){
   BuiltInCMExporter *pThis = (BuiltInCMExporter*)pMe;
   UNUSED_PARAMETER(io);
@@ -9535,7 +9534,7 @@ COLLECT_HELP_TEXT[
   "   See also:",
   "      http://sqlite.org/cli.html#sqlite_archive_support",
 ];
-DISPATCHABLE_COMMAND( archive ? 0 0 azArg nArg p ){
+DISPATCHABLE_COMMAND( archive ? 2 0 azArg nArg p ){
   open_db(p, 0);
   if( ISS(p)->bSafeMode ) return DCR_AbortError;
   return arDotCommand(p, 0, azArg, nArg);
@@ -13475,16 +13474,30 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
               psi->mode==MODE_Explain
               ? "on" : psi->autoExplain ? "auto" : "off");
   utf8_printf(out,"%12.12s: %s\n","headers", azBool[psi->showHeader!=0]);
+#if SHELL_DATAIO_EXT
+  {
+    char *zTell = 0;
+    int mrc;
+    zOut = psi->pActiveExporter->pMethods->name(psi->pActiveExporter);
+    mrc = psi->pActiveExporter->pMethods->config(psi->pActiveExporter,0,&zTell);
+    if( zTell!=0 ){
+      utf8_printf(out, "%12.12s: %s %s\n", "mode", zOut, zTell);
+    }else{
+      utf8_printf(out, "%12.12s: %s\n", "mode", zOut);
+    }
+    sqlite3_free(zTell);
+  }
+#else
   zOut = modeDescr[psi->mode].zModeName;
   if( MODE_IS_COLUMNAR(psi->mode) ){
-    utf8_printf
-      (out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
-       zOut, psi->cmOpts.iWrap,
-       psi->cmOpts.bWordWrap ? "on" : "off",
-       psi->cmOpts.bQuote ? "" : "no");
+    utf8_printf(out, "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
+                zOut, psi->cmOpts.iWrap,
+                psi->cmOpts.bWordWrap ? "on" : "off",
+                psi->cmOpts.bQuote ? "" : "no");
   }else{
     utf8_printf(out, "%12.12s: %s\n","mode", zOut);
   }
+#endif
   utf8_printf(out, "%12.12s: ", "nullvalue");
   output_c_string(out, psi->nullValue);
   raw_printf(out, "\n");
