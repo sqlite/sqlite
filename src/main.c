@@ -3358,7 +3358,7 @@ static int openDatabase(
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS)
                  | SQLITE_StmtScanStatus
 #endif
-#if defined(SQLITE_STRICT_AGGREGATES)
+#if defined(SQLITE_STRICT_AGGREGATE)
                  | SQLITE_StrictAgg
 #endif
       ;
