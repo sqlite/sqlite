@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains code to implement the "sqlite" or "sqlitex"
+** This file contains code to implement the "sqlite3" or "sqlite3x"
 ** command line utilities for accessing SQLite databases.
 */
 
@@ -242,7 +242,7 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 /* Get the shell extension interfaces and structs. (ShellExState ...) */
 INCLUDE shext_linkage.h
 
-/* Forward declarations for use by resmanage. */
+/* Forward declarations for use by resmanage.c package. */
 typedef struct ShellText ShellText;
 static void freeText(ShellText *p);
 #define SHELL_MANAGE_TEXT /* Cause text_holder() to be available. */
@@ -522,7 +522,7 @@ static int stdout_is_console = 1;
 ** by the SIGINT handler to interrupt database processing.
 */
 static volatile sqlite3 *globalDb = 0;
-/* Shorten voltatile cast-away for this. */
+/* Shorten volatile cast-away for this. */
 #define GLOBAL_DB ((sqlite3 *)globalDb)
 
 /*
@@ -1315,7 +1315,7 @@ static char *local_getline(char *zLine, InSource *pInSrc){
 **   following this one exists, also exposed to shell extensions. ]
 **
 ** If this function is called until it returns NULL, and the prior return
-** has been passed in for resuse, then the caller need/must not free it.
+** has been passed in for reuse, then the caller need/must not free it.
 ** Otherwise, (in case of an early termination of reading from the given
 ** input), the caller is responsible for freeing a prior, non-NULL return.
 **
@@ -1840,7 +1840,7 @@ static int isExtendedBasename(const char *zPgm){
   int ixe = (zPgm)? (int)strlen(zPgm)-1 : 0;
   if( ixe==0 ) return 0;
   while( ixe>=0 && !IS_PATH_SEP(zPgm[ixe]) ) --ixe;
-  /* ixe is just before the basename with extension(s) */
+  /* index is just before the basename with extension(s) */
   return sqlite3_strnicmp(&zPgm[ixe+1], "sqlite3x", 8)==0;
 }
 # else
@@ -1860,7 +1860,7 @@ typedef struct ShExtInfo {
   /* Each shell extension library registers 0 or more of its extension
    * implementations, interfaces to which are kept in below dynamic.
    * arrays. The dbShell DB keeps indices into these arrays and into
-   * an array of this struct's instances to facilitate lookup by name
+   * an array of instances of this struct to facilitate lookup by name
    * of pointers to the implementations. */
   int numDotCommands;
   DotCommand **ppDotCommands;
@@ -1885,7 +1885,7 @@ typedef struct ColModeOpts {
 /*
 ** Stored output mode state, for partial save and later restore.
 ** Returned by:
-**   outputModeSave *outputModeSave(ShellInState *p, SaveModeWhat ws).
+**   outputModeSave *outputModeSave(ShellInState *p, SaveModeWhat what).
 ** Accepted by:
 **   outputModeRestore(ShellInState *p, OutputModeSave *pSaved).
 ** See enum SaveWhatMode regarding what to save and restore.
@@ -1900,7 +1900,7 @@ typedef struct OutputModeSave{
 
 /*
 ** Shell state information is contained in an instance of the following struct
-** and in a ShellExState struct defined in shext_linkage.h, partitioned thusly:
+** and in a ShellExState struct defined in shext_linkage.h, partitioned thus:
 **
 ** Data not exposed for shell extension use, (and which need not be stable),
 ** are kept in a ShellInState instance. These include facts about the database
@@ -1928,7 +1928,7 @@ typedef struct ShellInState {
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   u8 autoExplain;        /* Automatically turn on .explain mode */
-  u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
+  u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to each SQL stmt */
   u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 autoEQPtrace;       /* autoEQP is in trace mode */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
@@ -1949,13 +1949,13 @@ typedef struct ShellInState {
   /* Output mode state-keep for systematic save/restore: (See OM_STATE.) */
   u8 nSavedModes;        /* number of valid items in next array */
   OutputModeSave *pModeStack[MODE_STACK_MAX]; /* saved mode data buffers */
-  /* Output mode state-keep for certain ad-hoc save/restore ops: */
+  /* Output mode state-keep for certain save/restore operations: */
   u8 cMode;              /* temporary output mode for the current query */
   u8 normalMode;         /* Output mode before ".explain on" */
   char nullValue[20];    /* Text to print for NULL retrieved from database */
 
   unsigned statsOn;      /* True to display memory stats before each finalize */
-  unsigned mEqpLines;    /* Mask of veritical lines in the EQP output graph */
+  unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
   int outCount;          /* Revert to stdout when reaching zero */
 
   int inputNesting;      /* Track nesting level of .read and other redirects */
@@ -2018,7 +2018,7 @@ typedef struct ShellInState {
 #endif
 
 #if SHELL_DATAIO_EXT
-  ExportHandler *pFreeformExporter;  /* Default freeform mode exporter */
+  ExportHandler *pFreeformExporter;  /* Default free-form mode exporter */
   ExportHandler *pColumnarExporter;  /* Default columnar mode exporter */
   ExportHandler *pActiveExporter;    /* Presently active exporter */
 #endif
@@ -2086,7 +2086,7 @@ static void updateSafeMode(ShellInState *psi){
 
 /* Bits in the ShellInState.flgProgress variable */
 #define SHELL_PROGRESS_QUIET 0x01  /* Omit announcing every progress callback */
-#define SHELL_PROGRESS_RESET 0x02  /* Reset the count when the progres
+#define SHELL_PROGRESS_RESET 0x02  /* Reset the count when the progress
                                    ** callback limit is reached, and for each
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
@@ -2222,7 +2222,7 @@ static void shellPutsFunc(
 ** is indicated by the external shell state member, shellAbruptExit
 ** being set non-zero), and aborts any further input processing.
 **
-** The return is 1 if failing for a forbidded unsafe act, 0 otherwise.
+** The return is 1 if failing for a forbidden unsafe act, 0 otherwise.
 */
 static int failIfSafeMode(
   ShellExState *psx,
@@ -2834,7 +2834,7 @@ static int active_db_interrupt(void){
 /*
 ** This routine runs when the user presses Ctrl-C
 ** This may need some changes for embedability, perhaps a client-
-** defined action when/if DB operation becomes uninterruptable.
+** defined action when/if DB operation becomes uninterruptible.
 */
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
@@ -3867,7 +3867,7 @@ static int run_table_dump_query(
 */
 static char *save_err_msg(
   sqlite3 *db,           /* Database to query */
-  const char *zPhase,    /* When the error occcurs */
+  const char *zPhase,    /* When the error occurs */
   int rc,                /* Error code returned from API */
   const char *zSql       /* SQL string, or NULL */
 ){
@@ -4290,7 +4290,7 @@ static void explain_data_prepare(ShellInState *psi, sqlite3_stmt *pSql){
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
       if( iOp==0 ){
-        /* Do further verfication that this is explain output.  Abort if
+        /* Do further verification that this is explain output.  Abort if
         ** it is not */
         static const char *explainCols[] = {
            "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment" };
@@ -4389,7 +4389,9 @@ typedef enum {
 #define SPTU_Script SHELL_STRINGIFY(1)
   PTU_Entry   = 2, /* Value as entered for non-text binding parameters */
 #define SPTU_Entry SHELL_STRINGIFY(2)
-  PTU_Nil     = 3  /* Unspecified */
+  PTU_Ref     = 3, /* Name was recently referenced */
+#define SPTU_Ref SHELL_STRINGIFY(3)
+  PTU_Nil     = 4  /* Unspecified */
 } ParamTableUse;
 
 static ParamTableUse classify_param_name( const char *zName ){
@@ -4401,9 +4403,9 @@ static ParamTableUse classify_param_name( const char *zName ){
 }
 
 #ifndef SQLITE_NOHAVE_SYSTEM
-/* Possibly using a -editor=X argument and env-var VISUAL, attempt
- * to get the zEditor shell state member set iff not already set.
- * If there is no such argument, the env-var is retrieved if set.
+/* Possibly using a -editor=X argument and environment variable VISUAL,
+ * attempt to get the zEditor shell state member set iff not already set.
+ * If there is no such argument, said variable is retrieved if set.
  * If the argument is -editor=X or --editor=X, use that and leave
  * the zEditor member set accordingly. Returns are:
  * 0 => editor set, zEd was not the -editor option
@@ -4464,10 +4466,11 @@ static void param_table_init(sqlite3 *db){
   DbProtectState dps = allow_sys_schema_change(db);
   s3_exec_noom(db,
     "CREATE TABLE IF NOT EXISTS "PARAM_TABLE_SNAME"(\n"
-    "  key TEXT PRIMARY KEY,\n"
+    "  key TEXT,\n"
     "  value,\n"
-    "  uses INT DEFAULT ("SPTU_Binding")"
-    ") WITHOUT ROWID;",
+    "  uses INT DEFAULT ("SPTU_Binding"),"
+    "  UNIQUE(key,uses) ON CONFLICT REPLACE"
+    ")",
     0, 0, 0);
   restore_sys_schema_protection( db, &dps );
 }
@@ -4486,7 +4489,7 @@ static int shvars_table_init(sqlite3 *db){
     "  key TEXT PRIMARY KEY,\n"
     "  value,\n"
     "  uses INT DEFAULT ("SPTU_Script")"
-    ") WITHOUT ROWID;",
+    ") WITHOUT ROWID",
     0, 0, 0);
   restore_sys_schema_protection( db, &dps );
   return rc!=SQLITE_OK;
@@ -4519,22 +4522,38 @@ static int ensure_shvars_table(sqlite3 *dbs){
 ** uses=PTU_Binding are eligible for parameter binding.
 ** Whether the table exists or not, parameter names like _NAN or _INF are
 ** bound to the similarly named floating point "values".
+**
+** If noteUses is non-zero, binding attempts and success are recorded in the
+** sqlite_parameters table with uses = PTU_Binding. Failed attempts get value
+** 0 and successful findings get value 1.
 */
-static void bind_prepared_stmt(sqlite3 *db, sqlite3_stmt *pStmt){
+static void bind_prepared_stmt(sqlite3 *db, sqlite3_stmt *pStmt, u8 noteUses){
   int nVar = sqlite3_bind_parameter_count(pStmt);
   int i;
   int rc;
   int haveParams = param_table_exists(db);
   sqlite3_stmt *pQ = 0;
+  sqlite3_stmt *pU = 0;
 
   if( nVar==0 ) return;  /* Nothing to do */
   if( haveParams ){
     rc = s3_prepare_v2_noom(db,
-                            "SELECT value FROM temp.sqlite_parameters"
-                            " WHERE key=?1", -1, &pQ, 0);
+                            "SELECT value FROM temp."PARAM_TABLE_NAME
+                            " WHERE key=?1 AND uses="SPTU_Binding, -1, &pQ, 0);
     if( rc!=SQLITE_OK || pQ==0 ) haveParams = 0;
+    else if( noteUses ){
+      rc = s3_prepare_v2_noom(db,
+                              "INSERT INTO temp."PARAM_TABLE_NAME
+                              "(key, value, uses) VALUES (?1,?2,"SPTU_Ref")",
+                              -1, &pU, 0);
+      s3_exec_noom(db,
+                   "DELETE FROM temp."PARAM_TABLE_NAME" WHERE uses="SPTU_Ref,
+                   0,0,0);
+      if( rc!=SQLITE_OK ) noteUses = 0;
+    }
   }
   stmt_holder(pQ);
+  stmt_holder(pU);
   for(i=1; i<=nVar; i++){
     char zNum[30];
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
@@ -4543,8 +4562,17 @@ static void bind_prepared_stmt(sqlite3 *db, sqlite3_stmt *pStmt){
       zVar = zNum;
     }
     sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
+    if( haveParams && noteUses ){
+      sqlite3_reset(pU);
+      sqlite3_bind_text(pU, 1, zVar, -1, SQLITE_STATIC);
+      sqlite3_bind_int(pU, 2, 0);
+    }
     if( haveParams && s3_step_noom(pQ)==SQLITE_ROW ){
       sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+      if( noteUses ){
+        sqlite3_bind_int(pU, 2, 1);
+        s3_step_noom(pU);
+      }
 #ifdef NAN
     }else if( sqlite3_strlike("_NAN", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, NAN);
@@ -4554,11 +4582,12 @@ static void bind_prepared_stmt(sqlite3 *db, sqlite3_stmt *pStmt){
       sqlite3_bind_double(pStmt, i, INFINITY);
 #endif
     }else{
+      if( haveParams && noteUses ) s3_step_noom(pU);
       sqlite3_bind_null(pStmt, i);
     }
     sqlite3_reset(pQ); /* Undocumented: NULL pQ is ok. */
   }
-  release_holder();
+  release_holders(2);
 }
 
 /*
@@ -4761,7 +4790,7 @@ static char *quoted_column(sqlite3_stmt *pStmt, int i){
 */
 static void exec_prepared_stmt(
   ShellExState *psx,  /* Pointer to shell state */
-  sqlite3_stmt *pStmt /* Statment to run */
+  sqlite3_stmt *pStmt /* Statement to run */
 ){
   ShellInState *psi = ISS(psx);
   ExportHandler *pExporter = psi->pActiveExporter;
@@ -4791,7 +4820,7 @@ static void exec_prepared_stmt(
 */
 static void exec_prepared_stmt_columnar(
   ShellExState *psx,                    /* Pointer to shell state */
-  sqlite3_stmt *pStmt                   /* Statment to run */
+  sqlite3_stmt *pStmt                   /* Statement to run */
 ){
   ShellInState *psi = ISS(psx);
   sqlite3_int64 nRow = 0;
@@ -5020,7 +5049,7 @@ columnar_end:
 */
 static void exec_prepared_stmt(
   ShellExState *pArg,                              /* Pointer to shell state */
-  sqlite3_stmt *pStmt                              /* Statment to run */
+  sqlite3_stmt *pStmt                              /* Statement to run */
 ){
   int rc;
   ShellInState *psi = ISS(pArg);
@@ -5228,7 +5257,7 @@ static int shell_exec(
       if( zStmtSql==0 ) zStmtSql = "";
       else zStmtSql = skipWhite(zStmtSql);
 
-      /* save off the prepared statment handle and reset row count */
+      /* save off the prepared statement handle and reset row count */
       if( psx ){
         psi->pStmt = pStmt;
         psx->resultCount = 0;
@@ -5281,7 +5310,7 @@ static int shell_exec(
         }
         if( psi->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
-          /* Reprepare pStmt before reactiving trace modes */
+          /* Reprepare pStmt before reactivating trace modes */
           sqlite3_finalize(pStmt);
           pStmt = 0;
           s3_prepare_v2_noom(db, zSql, -1, &pStmt, 0);
@@ -5308,7 +5337,7 @@ static int shell_exec(
         }
       }
 
-      bind_prepared_stmt(DBX(psx), pStmt);
+      bind_prepared_stmt(DBX(psx), pStmt, 1);
       exec_prepared_stmt(psx, pStmt);
       explain_data_delete(psi);
       eqp_render(psi, 0);
@@ -5433,7 +5462,7 @@ static char **tableColumnList(sqlite3 *db, const char *zTab, int preserveRowid){
   */
   if( preserveRowid && isIPK ){
     /* If a single PRIMARY KEY column with type INTEGER was seen, then it
-    ** might be an alise for the ROWID.  But it might also be a WITHOUT ROWID
+    ** might be an alias for the ROWID.  But it might also be a WITHOUT ROWID
     ** table or a INTEGER PRIMARY KEY DESC column, neither of which are
     ** ROWID aliases.  To distinguish these cases, check to see if
     ** there is a "pk" entry in "PRAGMA index_list".  There will be
@@ -5691,7 +5720,7 @@ static DotCommand *builtInCommand(int ix);
 ** NULL is returned if any error is encountered. The final value of *pnByte
 ** is undefined in this case.
 **
-** This function always returns; no abrubt OOM exits are taken.
+** This function always returns; no abrupt OOM exits are taken.
 */
 static char *readFile(const char *zName, int *pnByte){
   FILE *in = fopen(zName, "rb");
@@ -6079,7 +6108,7 @@ static void open_db(ShellExState *psx, int openFlags){
     /* Let custom-included extensions get their ..._init() called.
      * The WHATEVER_INIT( db, pzErrorMsg, pApi ) macro should cause
      * the extension's sqlite3_*_init( db, pzErrorMsg, pApi )
-     * inititialization routine to be called.
+     * initialization routine to be called.
      */
     {
       int irc = SHELL_SUBMACRO(SQLITE_SHELL_EXTFUNCS, INIT)(p->db);
@@ -6899,7 +6928,7 @@ static char *db_text(sqlite3 *db, const char *zSql, int bBind){
   char *zRes = 0;
   if( s3_prepare_v2_noom(db, zSql, -1, &pStmt, 0)==SQLITE_OK && pStmt!=0 ){
     stmt_holder(pStmt);
-    if( bBind ) bind_prepared_stmt(db, pStmt);
+    if( bBind ) bind_prepared_stmt(db, pStmt, 0);
     if( s3_step_noom(pStmt)==SQLITE_ROW ){
       shell_check_ooms(zRes = smprintf("%s", sqlite3_column_text(pStmt,0)));
     }
@@ -8399,7 +8428,7 @@ FROM (\
 /*
 ** Standard ExportHandlers
 ** These implement the built-in renderers of query results.
-** Two are provided, one for freeform results, the other for columnar results.
+** Two are provided, one for free-form results, the other for columnar results.
 */
 
 static void EH_FF_destruct(ExportHandler *pMe);
@@ -9031,10 +9060,10 @@ static int register_scripting(ShellExState *p, ExtensionId eid,
 }
 
 /* See registerAdHocCommand API in shext_linkage.h re detailed behavior.
- * Depending on zHelp==0, either register or unregister ad-hoc treatment
- * of zName for this extension (identified by eid.)
+ * Depending on zHelp==0, either register or unregister treatment of
+ * of zName for this extension (identified by eId.)
  */
-static int register_adhoc_command(ShellExState *p, ExtensionId eid,
+static int register_adhoc_command(ShellExState *p, ExtensionId eId,
                                   const char *zName, const char *zHelp){
   ShellInState *psi = ISS(p);
   u8 bRegNotRemove = zHelp!=0;
@@ -9047,7 +9076,7 @@ static int register_adhoc_command(ShellExState *p, ExtensionId eid,
 
   assert(psi->pShxLoaded!=0 && p->dbShell!=0);
   for( ie=psi->numExtLoaded-1; ie>0; --ie ){
-    if( psi->pShxLoaded[ie].extId==eid ) break;
+    if( psi->pShxLoaded[ie].extId==eId ) break;
   }
   if( !zName || ie==0 || psi->pShxLoaded[ie].pUnknown==0 ) return SQLITE_MISUSE;
   rc = s3_prepare_v2_noom(p->dbShell, zSql, -1, &pStmt, 0);
@@ -9076,9 +9105,9 @@ static int register_adhoc_command(ShellExState *p, ExtensionId eid,
  * Return SQLITE_OK on success, or one of these error codes:
  * SQLITE_ERROR when the nkMin value is unsupported by this host;
  * SQLITE_NOMEM when a required allocation failed; or
- * SQLITE_MISUSE when the provided eid or eventHandler is invalid.
+ * SQLITE_MISUSE when the provided eId or eventHandler is invalid.
  */
-static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
+static int subscribe_events(ShellExState *p, ExtensionId eId, void *pvUserData,
                             NoticeKind nkMin, ShellEventNotify eventHandler){
   ShellInState *psi = ISS(p);
   struct EventSubscription *pes = psi->pSubscriptions;
@@ -9087,8 +9116,8 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
     /* unsubscribe (if now subscribed) */
     while( pes < pesLim ){
       if( (eventHandler==0 || eventHandler==pes->eventHandler)
-          && (pes->eid==0 || pes->eid==eid)
-          && (eid!=0 || eventHandler!=0 ||/*for shell use*/ pvUserData==p ) ){
+          && (pes->eid==0 || pes->eid==eId)
+          && (eId!=0 || eventHandler!=0 ||/*for shell use*/ pvUserData==p ) ){
         int nLeft = pesLim - pes;
         assert(pes->eventHandler!=0);
         pes->eventHandler(pes->pvUserData, NK_Unsubscribe, pes->eid, p);
@@ -9107,10 +9136,10 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
   }else{
     /* subscribe only if minimum NoticeKind supported by this host */
     if( nkMin > NK_CountOf ) return SQLITE_ERROR;
-    if( eventHandler==0 || eid==0 ) return SQLITE_MISUSE;
+    if( eventHandler==0 || eId==0 ) return SQLITE_MISUSE;
     while( pes < pesLim ){
       /* Never add duplicate handlers, but may renew their user data. */
-      if( pes->eid==eid && pes->eventHandler==eventHandler ){
+      if( pes->eid==eId && pes->eventHandler==eventHandler ){
         pes->pvUserData = pvUserData;
         return SQLITE_OK;
       }
@@ -9122,7 +9151,7 @@ static int subscribe_events(ShellExState *p, ExtensionId eid, void *pvUserData,
     if( pes==0 ) return SQLITE_NOMEM;
     psi->pSubscriptions = pes;
     pes += (psi->numSubscriptions++);
-    pes->eid = eid;
+    pes->eid = eId;
     pes->pvUserData = pvUserData;
     pes->eventHandler = eventHandler;
     return SQLITE_OK;
@@ -9362,7 +9391,7 @@ static void run_one_shext_dtors(ShExtInfo *psei){
 
 /* Call all existent loaded extension destructors, in reverse order of their
  * objects' creation, except for scripting support which is done last,
- * then free the tracking dyna-arrays.
+ * then free the tracking dynamic arrays.
  */
 static void free_all_shext_tracking(ShellInState *psi){
   if( psi->pShxLoaded!=0 ){
@@ -9430,7 +9459,7 @@ static int load_shell_extension(ShellExState *psx, const char *zFile,
   rc = sqlite3_load_extension(psx->dbShell, zFile, zProc, &shxLink.zErrMsg);
   sqlite3_create_function(psx->dbShell, "shext_pointer", 1,
                           SQLITE_DIRECTONLY|SQLITE_UTF8,
-                          0, 0, 0, 0); /* deregister */
+                          0, 0, 0, 0); /* unregister */
   if( pzErr!=0 ) *pzErr = shxLink.zErrMsg;
   if( rc==SQLITE_OK ){
     /* Keep extension's id and destructor for later disposal. */
@@ -9471,7 +9500,7 @@ COMMENT  effect of this configuration can be seen in generated output or by
 COMMENT  executing tool/mkshellc.tcl --parameters (or --details or --help).
 COMMENT  Generally, this section defines dispatchable functions inline and
 COMMENT  causes collection of command_table entry initializers, to be later
-COMMENT  emitted by a mkshellc macro. (See EMIT_DOTCMD_INIT further on.)
+COMMENT  emitted by a macro invocation. (See EMIT_DOTCMD_INIT further on.)
 ** All dispatchable dot-command execute functions have this signature:
 static int someCommand(char *azArg[], int nArg, ShellExState *p, char **pzErr);
 */
@@ -11780,7 +11809,7 @@ static int kv_xfr_table(sqlite3 *db, const char *zStoreDbName,
                 bSaveNotLoad? "open/create" : "read", zStoreDbName);
     return rc;
   }
-  /* Ensure it has the kv store table, or handle its absence. */
+  /* Ensure it has the key/value store table, or handle its absence. */
   assert(dbStore!=0);
   conn_ptr_holder(&dbStore);
   if( sqlite3_table_column_metadata
@@ -11831,14 +11860,14 @@ static int kv_xfr_table(sqlite3 *db, const char *zStoreDbName,
   return rc;
 }
 
-/* Default locations of kv store DBs for .parameters and .vars save/load. */
+/* Default locations of key/value DBs for .parameters and .vars save/load. */
 static const char *zDefaultParamStore = "~/sqlite_params.sdb";
 static const char *zDefaultVarStore = "~/sqlite_vars.sdb";
 
 /* Possibly generate a derived path from input spec, with defaulting
  * and conversion of leading (or only) tilde as home directory.
  * The above-set default is used for zSpec NULL, "" or "~".
- * When return is 0, there is an error; what needs doing cannnot be done.
+ * When return is 0, there is an error; what needs doing cannot be done.
  * The return must eventually be sqlite3_free()'ed.
  */
 static char *kv_store_path(const char *zSpec, ParamTableUse ptu){
@@ -11856,7 +11885,7 @@ static char *kv_store_path(const char *zSpec, ParamTableUse ptu){
   return smprintf("%s", zSpec);
 }
 
-/* Load some or all kv pairs. Arguments are "load FILE ?NAMES?". */
+/* Load some or all key/value pairs. Arguments are "load FILE ?NAMES?". */
 static int kv_pairs_load(sqlite3 *db, ParamTableUse ptu,
                          const char *azArg[], int nArg){
   char *zStore = kv_store_path((nArg>1)? azArg[1] : 0, ptu);
@@ -11893,21 +11922,44 @@ static int kv_pairs_save(sqlite3 *db, ParamTableUse ptu,
 }
 
 #ifndef SQLITE_NOHAVE_SYSTEM
+/* Remove leading comment line of form "-- tag\n" from a by-ref string.
+ * The *pz_nt argument is dynamically allocated (ala sqlite3_malloc() and is
+ * replaced if the removal is done. This is a helper for 2nd next function.
+ */
+static void remove_name_tag(char **pz_nt, char *tag){
+  int tagLen;
+  char *zUntag;
+  assert(pz_nt!=0 && tag!=0);
+  if( *pz_nt==0 || strstr(*pz_nt, "-- ")!=*pz_nt ) return;
+  if( strstr((*pz_nt)+3, tag)!=(*pz_nt)+3 ) return;
+  tagLen = strlen30(tag)+3;
+  if( (*pz_nt)[tagLen] != '\n' ) return;
+  zUntag = smprintf("%s", *pz_nt+tagLen+1);
+  shell_check_ooms(zUntag);
+  sqlite3_free(*pz_nt);
+  *pz_nt = zUntag;
+}
+
 /*
  * Edit one named value in the parameters or shell variables table.
  * If it does not yet exist, create it. If eval is true, the value
  * is treated as a bare expression, otherwise it is a text value.
  * The "uses" argument sets the 3rd column in the selected table,
  * and serves to select which of the two tables is modified.
+ *
+ * During editing, the 1st line of the text shows the variable name.
+ * If that is left as-is, it is removed after editing is done.
  */
 static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
-                           ParamTableUse uses, const char * zEditor){
+                           ParamTableUse uses, const char * zEd, char **pzErr){
   struct keyval_row kvRow = {0,0,0};
   int rc;
   char * zVal = 0;
   const char *zTab = 0;
   char * zSql = 0;
+  const char *zFmt;
 
+  sstr_ptr_holder(&zVal); /* +1 */
   switch( uses ){
   case PTU_Script:  zTab = SHVAR_TABLE_SNAME; break;
   case PTU_Binding: zTab = PARAM_TABLE_SNAME; break;
@@ -11916,51 +11968,51 @@ static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
   zSql = smprintf("SELECT value, uses FROM %s "
                   "WHERE key=%Q AND uses=%d", zTab, name, uses);
   shell_check_ooms(zSql);
-  sstr_ptr_holder(&kvRow.value);
-  sstr_holder(zSql);
+  sstr_ptr_holder(&kvRow.value); /* +2 */
+  sstr_holder(zSql); /* +3 */
   s3_exec_noom(db, zSql, kv_find_callback, &kvRow, 0);
-  release_holder();
+  release_holder(); /* zSql =2 */
   assert(kvRow.hits<2);
   if( kvRow.hits==1 && kvRow.uses==uses){
     /* Editing an existing value of same kind. */
-    release_holder(); /* kvRow.value */
-    if( eval!=0 ){
-      zSql = smprintf("SELECT edit(value, %Q) FROM %s "
-                      "WHERE key=%Q AND uses=%d", zEditor, zTab, name, uses);
-      shell_check_ooms(zSql);
-      sstr_holder(zSql);
-      zVal = db_text(db, zSql, 1);
-      release_holder();
-      sqlite3_free(zSql);
-      zSql = smprintf("UPDATE %s SET value=(SELECT %s) "
-                      "WHERE key=%Q AND uses=%d", zTab, zVal, name, uses);
-    }else{
-      zSql = smprintf("UPDATE %s SET value=edit(value, %Q) WHERE"
-                      " key=%Q AND uses=%d", zTab, zEditor, name, uses);
-    }
+    release_holder(); /* kvRow.value =1 */
+    zSql = smprintf("SELECT edit('-- %s\n'||value, %Q) FROM %s "
+                    "WHERE key=%Q AND uses=%d", name, zEd, zTab, name, uses);
+    shell_check_ooms(zSql);
+    sstr_holder(zSql);
+    zVal = db_text(db, zSql, 0);
+    release_holder(); /* zSql =1 */
+    remove_name_tag(&zVal, name);
+    zFmt = (!eval)? "UPDATE %s SET value=%Q) WHERE key=%Q AND uses=%d"
+      : "UPDATE %s SET value=(SELECT %s) WHERE key=%Q AND uses=%d";
+    zSql = smprintf(zFmt, zTab, zVal, name, uses);
   }else{
     /* Editing a new value of same kind. */
     assert(kvRow.value==0 || kvRow.uses!=uses);
-    drop_holder(); /* kvRow.value */
-    if( eval!=0 ){
-      zSql = smprintf("SELECT edit('-- %q%s', %Q)", name, "\n", zEditor);
-      sstr_holder(zSql);
-      zVal = db_text(db, zSql, 1);
-      release_holder();
-      zSql = smprintf("INSERT INTO %s(key,value,uses)"
-         " VALUES (%Q,(SELECT %s LIMIT 1),%d)",
-         zTab, name, zVal, uses);
-    }else{
-      zSql = smprintf("INSERT INTO %s(key,value,uses)"
-                      " VALUES (%Q,edit('-- %q;%s', %Q),%d)",
-                      zTab, name, name, "\n", zEditor, uses);
-    }
+    drop_holder(); /* kvRow.value =1 */
+    zSql = smprintf("SELECT edit('-- %s\n', %Q)", name, zEd);
+    shell_check_ooms(zSql);
+    sstr_holder(zSql);
+    zVal = db_text(db, zSql, 1);
+    release_holder(); /* zSql =1 */
+    remove_name_tag(&zVal, name);
+    zFmt = (!eval)? "INSERT INTO %s(key,value,uses) VALUES (%Q,%Q,%d)"
+      : "INSERT INTO %s(key,value,uses) VALUES(%Q,(SELECT %s LIMIT 1),%d)";
+    zSql = smprintf(zFmt, zTab, name, zVal, uses);
   }
   shell_check_ooms(zSql);
-  sstr_holder(zSql);
-  sstr_holder(zVal);
+  sstr_holder(zSql); /* +2 */
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  release_holders(2);
+  if( rc!=SQLITE_OK && pzErr!=0 ){
+    if( eval ){
+      *pzErr = smprintf("Cannot evaluate SELECT %s\n(Fails with %s)\n",
+                        zVal, sqlite3_errmsg(db));
+    }else{
+      *pzErr = smprintf("Cannot execute %s\n(Fails with %s)\n",
+                        zSql, sqlite3_errmsg(db));
+    }
+  }
+  release_holders(2); /* =0 */
   return rc!=SQLITE_OK;
 }
 #endif
@@ -12199,7 +12251,7 @@ static void append_glob_terms(sqlite3_str *pStr, const char *zColName,
  * An empty IN list is the same as always true (for non-NULL LHS)
  * for this clause, which assumes a trailing LHS operand and space.
  * If that is not the right result, guard the call against it.
- * This is used for ".parameter dostuff ?NAMES?" options,
+ * This is used for ".parameter mumble ?NAMES?" options,
  * where a missing list means all the qualifying entries.
  *
  * The empty list may be signified by azBeg and azLim both 0.
@@ -12226,8 +12278,9 @@ COLLECT_HELP_TEXT[
   ".parameter CMD ...       Manage per-DB SQL parameter bindings table",
   "   clear ?NAMES?           Erase all or only given named parameters",
 #ifndef SQLITE_NOHAVE_SYSTEM
-  "   edit ?OPT? NAME ...     Use edit() to create or alter parameter NAME",
-  "      OPT may be -t to use edited value as text or -e to evaluate it.",
+  "   edit ?OPT? ?NAME? ...   Use edit() to create or alter parameter(s)",
+  "      OPT may be -t to use edited value(s) as text or -e to evaluate it,",
+  "      or -r or -m to edit referenced or missing parameters from last query.",
 #endif
   "   init                    Initialize TEMP table for bindings and scripts",
   "   list ?PATTERNS?         List current DB parameters table binding values",
@@ -12272,8 +12325,11 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   */
   if( cli_strcmp(azArg[1],"edit")==0 ){
     ShellInState *psi = ISS(p);
+    char *zErr = 0;
     int ia = 2;
     int eval = 0;
+    int reffed = 0;
+    int missing = 0;
     int edSet;
 
     if( !INSOURCE_IS_INTERACTIVE(psi->pInSource) ){
@@ -12297,6 +12353,8 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
         switch( cf ){
         case 'e': eval = 1; continue;
         case 't': eval = 0; continue;
+        case 'm': missing = 1; reffed = 0; continue;
+        case 'r': reffed = 1; missing = 0; continue;
         default:
           utf8_printf(STD_ERR, "Error: bad .parameter name: %s\n", zA);
           return DCR_Error;
@@ -12308,9 +12366,41 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
                     "%s cannot be a binding parameter name.\n", zA);
         return DCR_Error;
       }
-      rc = edit_one_kvalue(db, zA, eval, ptu, psi->zEditor);
+      rc = edit_one_kvalue(db, zA, eval, ptu, psi->zEditor, &zErr);
       ++ia;
+      if( zErr!=0 ){
+        utf8_printf(STD_ERR, "%s", zErr);
+        sqlite3_free(zErr);
+        zErr = 0;
+      }
       if( rc!=0 ) return DCR_Error;
+    }
+    if( reffed|missing ){
+      char acSqlCount[] = "SELECT count(*) FROM "PARAM_TABLE_SNAME
+        " WHERE uses="SPTU_Ref" AND value<=0";
+      const char *zSqlName = "SELECT key FROM "PARAM_TABLE_SNAME
+        " WHERE uses="SPTU_Ref" AND value<=%d ORDER BY rowid"
+        " LIMIT 1 OFFSET %d";
+      int nve, vix;
+      acSqlCount[sizeof(acSqlCount)-2] = (reffed)? '1' : '0';
+      nve = db_int(db, acSqlCount);
+      for( vix=0; vix<nve; ++vix ){
+        char *zQV = smprintf(zSqlName, (int)reffed, vix);
+        char *zVar = 0;
+        sstr_holder(zQV);
+        sstr_ptr_holder(&zVar);
+        shell_check_ooms(zQV);
+        zVar = db_text(db, zQV, 0);
+        rc = edit_one_kvalue(db, zVar, eval, PTU_Binding, psi->zEditor, &zErr);
+        release_holders(2);
+        if( zErr!=0 ){
+          utf8_printf(STD_ERR, "%s", zErr);
+          sqlite3_free(zErr);
+          zErr = 0;
+        }
+        if( rc!=0 ) return DCR_Error;
+      }
+      /* Edit */
     }
   }else
 #endif
@@ -14225,6 +14315,7 @@ COLLECT_HELP_TEXT[
 ];
 DISPATCHABLE_COMMAND( vars 2 1 0 ){
   DotCmdRC rv = DCR_Ok;
+  char *zErr = 0;
   sqlite3 *dbs = p->dbShell;
   const char *zCmd = (nArg>1)? azArg[1] : "ls";
   int rc = 0;
@@ -14298,8 +14389,13 @@ DISPATCHABLE_COMMAND( vars 2 1 0 ){
                     "Error: %s cannot be a shell variable name.\n", zA);
         return DCR_Error;
       }
-      rc = edit_one_kvalue(dbs, zA, eval, ptu, psi->zEditor);
+      rc = edit_one_kvalue(dbs, zA, eval, ptu, psi->zEditor, &zErr);
       ++ia;
+      if( zErr!=0 ){
+        utf8_printf(STD_ERR, "%s", zErr);
+        sqlite3_free(zErr);
+        zErr = 0;
+      }
       if( rc!=0 ) return DCR_Error;
     }
 #endif
@@ -14557,7 +14653,7 @@ DISPATCHABLE_COMMAND( read 3 2 2 ){
     psi->pInSource = &inSourceRedir;
     any_ref_holder(&arh);
     rc = process_input(psi);
-    /* If error(s) occured during process, leave complaining to them. */
+    /* If error(s) occurred during process, leave complaining to them. */
     if( rc==DCR_Error ) rc = DCR_CmdErred;
     release_holder();
   }
@@ -14756,7 +14852,7 @@ static DotCmdRC
 
 /*****************
 ** DotCommand iteration by name match, used by the .help dot-command.
-** DotCommands, or their ad-hoc stand-ins, having matching names are produced
+** DotCommands, or improvised stand-ins, having matching names are produced
 ** in lexical order, with the iterator indicating which has been produced.
 ** If .zAdhocHelpName == 0, it is a regular DotCommand. Otherwise, the
 ** ".unknown" DotCommand is returned, whose help() method is to be used.
@@ -14773,7 +14869,7 @@ typedef struct CmdMatchIter {
 #endif
   } cursor;
 #if SHELL_DYNAMIC_EXTENSION
-  char *zAdhocHelpText; /* registered extension ad-hoc help */
+  char *zAdhocHelpText; /* registered extension improvised help */
 #endif
 } CmdMatchIter;
 
@@ -14957,7 +15053,7 @@ DotCommand *findDotCommand(const char *cmdName, ShellExState *psx,
 
 /*
 ** Given a DotCommand, desired help level,
-** ( possibly retreived ad-hoc help text for extensible shell, )
+** ( possibly retrieved improvised help text for extensible shell, )
 ** and an optional all-text search pattern, then
 **   when level==0 and primary help available, output it
 **   when level==1 and primary or secondary help available, output it
@@ -15057,7 +15153,7 @@ static void showPrimaryHelp(FILE *out, const char *zCmd, ShellExState *psx){
 ** 4. HO_OneX  For a single matched command, complete help text.
 ** 5. HO_LikeT For commands whose help contains a pattern, complete help text.
 ** 6. HO_Undoc For all internal "undocumented" (without normal help) commands.
-** These variations are indicated thusly:
+** These variations are indicated thus:
 ** 1. zPattern is NULL
 ** 2. zPattern is ""
 ** 3. zPattern is a prefix matching more than one command
@@ -15621,7 +15717,7 @@ static int runOneSqlLine(ShellExState *psx, char *zSql,
 }
 
 #if SHELL_EXTENDED_PARSING
-/* Resumable line classsifier for dot-commands
+/* Resumable line classifier for dot-commands
 **
 ** Determines if a dot-command is open, having either an unclosed
 ** quoted argument or an escape sequence opener ('\') at its end.
@@ -15755,15 +15851,15 @@ static int line_join_done(DCmd_ScanState dcss, char *zLine,
 
 /*
 ** Grow the accumulation line buffer to accommodate ncNeed chars.
-** In/out parameters pz and pna reference the buffer and its size.
+** In/out parameters pzBuf and pnAccum reference the buffer and its size.
 ** The buffer must eventually be sqlite3_free()'ed by the caller.
 */
-static void grow_line_buffer(char **pz, i64 *pna, int ncNeed){
+static void grow_line_buffer(char **pzBuf, i64 *pnAccum, int ncNeed){
 
-  if( ncNeed > *pna ){
-    *pna += *pna + (*pna>>1) + 100;
-    *pz = sqlite3_realloc(*pz, *pna);
-    shell_check_ooms(*pz);
+  if( ncNeed > *pnAccum ){
+    *pnAccum += *pnAccum + (*pnAccum>>1) + 100;
+    *pzBuf = sqlite3_realloc(*pzBuf, *pnAccum);
+    shell_check_ooms(*pzBuf);
   }
 }
 
@@ -16357,7 +16453,7 @@ static void sayInterrupted(void){
 }
 
 /*
-** Initialize the state information in datai and datax.
+** Initialize the internal and external shell state information.
 ** Does no heap allocation, so will do no OOM abort.
 */
 static void main_init(ShellInState *pDatai, ShellExState *pDatax) {
@@ -16394,7 +16490,7 @@ static void main_init(ShellInState *pDatai, ShellExState *pDatax) {
 }
 
 /*
-** Takedown and deallocate data structures held in datai and datax.
+** Takedown and deallocate data structures held in shell state structs.
 ** Does no heap allocation, so will do no OOM abort. It leaves those
 ** structs zero-initialized to aid valgrind memory leak reporting.
 */
@@ -16436,7 +16532,7 @@ static void main_cleanup(ShellInState *psi, ShellExState *psx) {
   sqlite3_close(psx->dbShell);
   /* This notification can only reach statically linked extensions. */
   notify_subscribers(psi, NK_ShutdownImminent, 0);
-  /* Forcefull unsubscribe static extension event listeners. */
+  /* Forcefully unsubscribe static extension event listeners. */
   subscribe_events(psx, 0, psx, NK_Unsubscribe, 0);
 #endif /* SHELL_DYNAMIC_EXTENSION */
   free(psx->pSpecWidths);
@@ -16664,7 +16760,7 @@ typedef struct ArgsData {
 **
 ** Returns are: 0 => normal, 1 => error, 2 => quit
 **
-** This function may terminate abrubtly under OOM conditions.
+** This function may terminate abruptly under OOM conditions.
 */
 static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
                           CmdArgs *pcaCmd, CmdArgs *pcaBare, ArgsData *pad){
@@ -16680,7 +16776,7 @@ static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
         }else{
           growCmdArgs(pcaBare, pcaBare->nCmd+1);
           pcaBare->azCmd[pcaBare->nCmd++] = z;
-          /* Excesss, non-option-like arguments are interpreted as SQL (or
+          /* Excess, non-option-like arguments are interpreted as SQL (or
           ** dot-commands) and mean that nothing is to be read from stdin. */
           pad->readStdin = 0;
         }
@@ -17337,7 +17433,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     datax.shellAbruptExit = 0x102;
   }
 
-  /* Extract this code to preserve its value before datax disposal. */
+  /* Extract this code to preserve its value before disposal. */
   iAbruptExitCode = datax.shellAbruptExit;
 
   /**** Termination cleanup. ****/
@@ -17365,7 +17461,7 @@ int SQLITE_CDECL SHELL_MAIN(int argc, wchar_t **wargv){
     rc = iAbruptExitCode & 0xff;
     if( iAbruptExitCode>0x1ff ) raw_printf(STD_ERR,"Abnormal exit (%d)\n",rc);
   }else{
-    /* rc is one of 0,1,2, mapping to 0,1,0 shellexit codes. */
+    /* rc is one of 0,1,2, mapping to 0,1,0 shell exit codes. */
     rc &= ~2;
   }
   terminate_actions();

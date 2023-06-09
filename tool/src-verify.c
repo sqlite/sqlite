@@ -1,17 +1,44 @@
 /*
 ** This utility program reads the "manifest" and "manifest.uuid" files
-** of the SQLite source tree and uses the content therein to verify that
-** all of the other files in the source tree are correct.
+** in a Fossil-generated source tree (where the repository has the
+** "manifest" setting turned on - this is true for SQLite and Fossil itself)
+** and verifies that the source code files are complete and unaltered by
+** checking the SHA1 and SHA3 hashes of the source files contained in the
+** "manifest" file.
 **
-** Limitations:
+** On success it prints:  "OK $HASH" where $HASH is the SHA3-256 hash of
+** the check-in for the source tree.  If it finds any discrepencies, it
+** prints "Derived from $HASH with changes to:" followed by a list of files
+** which have been altered.
 **
-**    *   Does not handle special characters in the filenames.  The
-**        SQLite source tree has no filenames containing special
-**        characters, so that should not be an issue.
+** USAGE:
 **
-**    *   Filename length is limited to 1000 characters.  The SQLite
-**        source tree has no files more than 100 characters in length
-**        so that also should not be an issue.
+**     src-verify [-x] [-v] $(ROOT)
+**
+** Where ROOT is the root of the source tree - the directory that contains
+** the "manifest" and "manifest.uuid" files.  Add the "-v" option for
+** some debugging output.  With the -x option, the output is in a format
+** that is intended to be read by a script rather by a human.  The -x output
+** format always has the SHA3 hash of the source check-in on the first line
+** and lists files that have changed on subsequent lines.
+**
+** Additional debugging options:
+**
+**     src-verify --sha1 FILE ...
+**     src-verify --sha3 FILE ...
+**
+** Compute the SHA1 or SHA3-256 hashes for all of the FILEs named
+**
+** COMPILING:
+**
+** This utility is self-contained.  It uses only the standard library.
+** There are no other dependencies.  Just compile it and run it.
+**
+** LIMITATIONS:
+**
+**   *   This utility assumes that the check-in hash uses SHA3-256.
+**       It is ok for individual file hashes to be SHA1, but the
+**       check-in itself must use a SHA3-256 hash.
 */
 #include <stdio.h>
 #include <string.h>
@@ -721,6 +748,34 @@ void sha1sum_file(const char *zFilename, char *zCksum){
   SHA1Final(zResult, &ctx);
   DigestToBase16(zResult, zCksum, 20);
 }
+	
+/*
+** Decode a fossilized string in-place.
+*/
+void defossilize(char *z){
+  int i, j, cc;
+  char *zSlash = strchr(z, '\\');
+  if( zSlash==0 ) return;
+  i = zSlash - z;
+  for(j=i; (cc=z[i])!=0; i++){
+    if( cc=='\\' && z[i+1] ){
+      i++;
+      switch( z[i] ){
+        case 'n':  cc = '\n';  break;
+        case 's':  cc = ' ';   break;
+        case 't':  cc = '\t';  break;
+        case 'r':  cc = '\r';  break;
+        case 'v':  cc = '\v';  break;
+        case 'f':  cc = '\f';  break;
+        case '0':  cc = 0;     break;
+        case '\\': cc = '\\';  break;
+        default:   cc = z[i];  break;
+      }
+    }
+    z[j++] = cc;
+  }
+  if( z[j] ) z[j] = 0;
+}
 
 /*
 ** Report that a single file is incorrect.
@@ -732,46 +787,69 @@ static void errorMsg(int *pnErr, const char *zVers, const char *zFile){
   printf("    %s\n", zFile);
   (*pnErr)++;
 }
+static void errorMsgNH(int *pnErr, const char *zVers, const char *zFile){
+  if( *pnErr==0 ){
+    printf("%s\n", zVers);
+  }
+  printf("%s\n", zFile);
+  (*pnErr)++;
+}
 
 int main(int argc, char **argv){
   int i, j;
   int nDir;
   FILE *in;
   int bDebug = 0;
+  int bNonHuman = 0;
+  int bSeenManifestErr = 0;
   int nErr = 0;
   SHA3Context ctx3;
-  const char *zDir;
+  const char *zDir = 0;
+  void (*xErr)(int*,const char*,const char*);
   char zHash[100];
   char zCk[100];
   char zVers[100];
-  char zLine[4000];
-  char zFile[2000];
-  if( argc>=3 && strcmp(argv[1],"--sha1")==0 ){
-    /* For testing purposes, if the first argument is --sha1, then simply
-    ** compute and print the SHA1 checksum of all subsequent arguments. */
-    for(i=2; i<argc; i++){
-      sha1sum_file(argv[i], zHash);
-      printf("%s  %s\n", zHash, argv[i]);
+  char zLine[40000];
+  char zFile[40000];
+  xErr = errorMsg;
+  for(i=1; i<argc; i++){
+    const char *z = argv[i];
+    if( z[0]!='-' ){
+      if( zDir!=0 ){
+        fprintf(stderr, "bad argument: %s\n", z);
+        return 1;
+      }
+      zDir = z;
+      continue;
     }
-    return 0;
-  }
-  if( argc>=3 && strcmp(argv[1], "--sha3")==0 ){
-    /* For testing purposes, if the first argument is --sha3, then simply
-    ** compute and print the SHA3-256 checksum of all subsequent arguments. */
-    for(i=2; i<argc; i++){
-      sha3sum_file(argv[i], zHash);
-      printf("%s  %s\n", zHash, argv[i]);
+    if( z[1]=='-' && z[2]!=0 ) z++;
+    if( strcmp(argv[1],"-sha1")==0 ){
+      /* For testing purposes, if the first argument is --sha1, then simply
+      ** compute and print the SHA1 checksum of all subsequent arguments. */
+      for(i++; i<argc; i++){
+        sha1sum_file(argv[i], zHash);
+        printf("%s  %s\n", zHash, argv[i]);
+      }
+      return 0;
     }
-    return 0;
-  }
-  if( argc==3 && strcmp(argv[0], "-v")==0 ){
-    bDebug = 1;
-    zDir = argv[2];
-    argc = 2;
-  }else{
-    zDir = argv[1];
-  }
-  if( argc!=2 ){
+    if( strcmp(argv[1], "-sha3")==0 ){
+      /* For testing purposes, if the first argument is --sha3, then simply
+      ** compute and print the SHA3-256 checksum of all subsequent arguments. */
+      for(i++; i<argc; i++){
+        sha3sum_file(argv[i], zHash);
+        printf("%s  %s\n", zHash, argv[i]);
+      }
+      return 0;
+    }
+    if( strcmp(z,"-v")==0 ){
+      bDebug = 1;
+      continue;
+    }
+    if( strcmp(z,"-x")==0 ){
+      bNonHuman = 1;
+      xErr = errorMsgNH;
+      continue;
+    }
     fprintf(stderr, "Usage: %s DIRECTORY\n"
                     "   or: %s --sha1 FILE ...\n"
                     "   or: %s --sha3 FILE ...\n",
@@ -779,12 +857,12 @@ int main(int argc, char **argv){
     return 1;
   }
   if( strlen(zDir)>1000 ){
-    fprintf(stderr, "First argument too big: [%s]\n", zDir);
+    fprintf(stderr, "Directory argument too big: [%s]\n", zDir);
     return 1;
   }
   nDir = (int)strlen(zDir);
   if( nDir<0 ){
-    fprintf(stderr, "First argument too short.\n");
+    fprintf(stderr, "Directory argument too short.\n");
     return 1;
   }
   memcpy(zFile, zDir, nDir);
@@ -797,7 +875,7 @@ int main(int argc, char **argv){
   }
   in = fopen(zFile, "rb");
   if( in==0 ){
-    printf("missing manifest: \"%s\"\n", zFile);
+    fprintf(stderr, "missing manifest: \"%s\"\n", zFile);
     return 1;
   }
   SHA3Init(&ctx3, 256);
@@ -816,9 +894,10 @@ int main(int argc, char **argv){
     }
     if( j<sizeof(zFile) ) zFile[j] = 0;
     zFile[sizeof(zFile)-1] = 0;
+    defossilize(&zFile[nDir]);
     if( zLine[i]!=' ' ){
-      errorMsg(&nErr, zVers, "manifest");
-      return 1;
+      bSeenManifestErr = 1;
+      continue;
     }
     for(i++, j=0; zLine[i]>='0' && zLine[i]<='f'; i++, j++){
       if( j<sizeof(zHash) ) zHash[j] = zLine[i];
@@ -829,26 +908,27 @@ int main(int argc, char **argv){
       printf("%s %s\n", zFile, zHash);
     }
     if( access(zFile, R_OK)!=0 ){
-      errorMsg(&nErr, zVers, &zFile[nDir]);
+      xErr(&nErr, zVers, &zFile[nDir]);
       continue;
     }
     if( strlen(zHash)==40 ){
       sha1sum_file(zFile, zCk);
       if( strcmp(zHash, zCk)!=0 ){
-        errorMsg(&nErr, zVers, &zFile[nDir]);
+        xErr(&nErr, zVers, &zFile[nDir]);
       }
     }else if( strlen(zHash)==64 ){
       sha3sum_file(zFile, zCk);
       if( strcmp(zHash, zCk)!=0 ){
-        errorMsg(&nErr, zVers, &zFile[nDir]);
+        xErr(&nErr, zVers, &zFile[nDir]);
       }
     }else{
-      errorMsg(&nErr, zVers, "manifest");
-      return 1;
+      bSeenManifestErr = 1;
+      xErr(&nErr, zVers, &zFile[nDir]);
     }
   }
   fclose(in);
   in = 0;
+  if( bSeenManifestErr ) xErr(&nErr, zVers, "manifest");
   memcpy(&zFile[nDir], "manifest.uuid", 14);
   if( access(zFile, R_OK)!=0
    || (in = fopen(zFile,"rb"))==0
@@ -857,11 +937,16 @@ int main(int argc, char **argv){
    || zLine[64]!='\n'
    || memcmp(zLine, zVers, 64)!=0
   ){
-    errorMsg(&nErr, zVers, &zFile[nDir]);
+    xErr(&nErr, zVers, &zFile[nDir]);
   }
   if( in ) fclose(in); 
-    
-  if( nErr ) return nErr;
-  printf("OK %.25s\n", zVers);
+   
+  if( bNonHuman ){
+    if( nErr ) return 0;
+    printf("%s\n", zVers);
+  }else{
+    if( nErr ) return nErr;
+    printf("OK %.25s\n", zVers);
+  }
   return 0;
 }

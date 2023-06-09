@@ -53,7 +53,7 @@ typedef enum DotCmdRC {
   DCR_ArgIxMask = 0xfff,  /* mask to retain/exclude argument index */
   /* Below codes may be or'ed with the offending argument index */
   DCR_Unknown   = 0x1000, /* unknown command, subcommand or option */
-  DCR_Ambiguous = 0x2000, /* ambiguous (sub)command (too abreviated) */
+  DCR_Ambiguous = 0x2000, /* ambiguous (sub)command (too abbreviated) */
   DCR_Unpaired  = 0x3000, /* option value indicated but missing */
   DCR_TooMany   = 0x4000, /* excess arguments were provided */
   DCR_TooFew    = 0x5000, /* insufficient arguments provided */
@@ -325,7 +325,7 @@ AGGTYPE_BEGIN(ExtensionHelpers) {
  * which call will fail if the hosting shell's NK_CountOf value is lower.
  */
 typedef enum {
-  NK_Unsubscribe,      /* Event handler is being unsubsribed, pvSubject
+  NK_Unsubscribe,      /* Event handler is being unsubscribed, pvSubject
                         * is the ExtensionId used to subscribe. Sent last.
                         * All event handlers eventually get this event, so
                         * it can be used to free a handler's resources.
@@ -376,7 +376,7 @@ AGGTYPE_BEGIN(ShellExtensionAPI) {
      * See above NoticeKind enum and ShellEventNotify callback typedef. */
     int (*subscribeEvents)(ShellExState *p, ExtensionId eid, void *pvUserData,
                            NoticeKind nkMin, ShellEventNotify eventHandler);
-    /* Notify host shell that an ad-hoc dot command exists and provide for
+    /* Notify host shell that an impromptu dot command exists and provide for
      * its help text to appear in .help output. Only an extension which has
      * registered an "unknown" DotCommand may use this.
      * If zHelp==0, any such provision is removed. If zHelp!=0, original or

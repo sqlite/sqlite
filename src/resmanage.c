@@ -205,7 +205,7 @@ void drop_holders(ResourceCount num){
   else numResHold = 0;
 }
 
-/* Drop one or more holders while freeing their holdees. */
+/* Drop one or more holders while freeing their held resource. */
 void release_holder(void){
   assert(numResHold>0);
   free_rk(&pResHold[--numResHold]);

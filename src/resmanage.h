@@ -14,7 +14,7 @@
 ** termination of a function from somewhere in a call tree. The package is
 ** designed to be used with setjmp()/longjmp() to effect a pattern similar
 ** to the try/throw/catch available in some programming languages. (But see
-** below regarding usage when the setmp()/longjmp() pair is unavailable.)
+** below regarding usage when the setjmp()/longjmp() pair is unavailable.)
 **
 ** The general scheme is that routines whose pre-return code might be
 ** bypassed, thereby leaking resources, do not rely on pre-return code
@@ -23,7 +23,7 @@
 ** its holder_mark() and holder_free(...) functions to release locally
 ** acquired resources.
 **
-** For environments where setmp()/longjmp() are unavailable, (indicated by
+** For environments where setjmp()/longjmp() are unavailable, (indicated by
 ** SHELL_OMIT_LONGJMP defined), the package substitutes a process exit for
 ** resumption of execution at a chosen code location. The resources in the
 ** package's held resource stack are still released. And the ability to
@@ -89,7 +89,7 @@ extern void more_holders(ResourceCount more);
 extern void* drop_holder(void);
 extern void drop_holders(ResourceCount num);
 
-/* Pop one or more holders while freeing their holdees. */
+/* Pop one or more holders while freeing their held resource. */
 extern void release_holder(void);
 extern void release_holders(ResourceCount num);
 
@@ -134,7 +134,7 @@ extern void pipe_holder(FILE *);
 ** the caller's activation. It is a grave error to use these
 ** then fail to call release_xxx() before returning. For abrupt
 ** exits, this condition is met because release_xxx() is called
-** by the abrupt exiter before the execution stack is stripped.
+** by abrupt exit code before the execution stack is stripped.
 */
 
 /* An arbitrary data pointer paired with its freer function */
@@ -143,7 +143,7 @@ typedef struct AnyResourceHolder {
   GenericFreer its_freer;
 } AnyResourceHolder;
 
-/* An object of a class having its dtor as the Nth v-table entry.
+/* An object of a class having its destructor as the Nth v-table entry.
 ** This is only useful when it is embedded in a bigger object. */
 typedef struct VirtualDtorNthObject VirtualDtorNthObject;
 typedef void (*VirtualDtorNth)(VirtualDtorNthObject *);
@@ -163,7 +163,7 @@ extern void stmt_ptr_holder(sqlite3_stmt **ppstmt);
 extern void conn_ptr_holder(sqlite3 **ppdb);
 /* a SQLite dynamic string, reference to */
 extern void sqst_ptr_holder(sqlite3_str **ppsqst);
-/* an object with (by-ref) v-table whose dtor is nth member, reference to */
+/* object with (by-ref) v-table whose destructor is nth member, reference to */
 extern void dtor_ref_holder(VirtualDtorNthObject *pvdfo, unsigned char n);
 #ifdef SHELL_MANAGE_TEXT
 /* a ShellText object, reference to (storage for which not managed) */
@@ -178,7 +178,7 @@ extern void* take_held(ResourceMark mark, ResourceCount offset);
 extern void* swap_held(ResourceMark mark, ResourceCount offset, void *pNew);
 #endif
 
-/* Remember execution and resource stack postion/state. This determines
+/* Remember execution and resource stack position/state. This determines
 ** how far these stacks may be stripped should quit_moan(...) be called.
 */
 extern void register_exit_ripper(RipStackDest *);

@@ -108,7 +108,7 @@
 
 /* Some preprocessing to make struct type definitions usable for C and C++
  * code using just the typename. Usage:
- *   AGGTYPE_BEGIN(Framus) { member; ... } AGGTYPE_END(Framus);
+ *   AGGTYPE_BEGIN(Whatever) { member; ... } AGGTYPE_END(Whatever);
  */
 #ifndef __cplusplus
 #define AGGTYPE_BEGIN(tname) typedef struct tname
