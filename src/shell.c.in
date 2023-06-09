@@ -4525,7 +4525,7 @@ static int ensure_shvars_table(sqlite3 *dbs){
 **
 ** If noteUses is non-zero, binding attempts and success are recorded in the
 ** sqlite_parameters table with uses = PTU_Binding. Failed attempts get value
-** 0 and successful findings get value 1.
+** 0 and successful bindings get value 1.
 */
 static void bind_prepared_stmt(sqlite3 *db, sqlite3_stmt *pStmt, u8 noteUses){
   int nVar = sqlite3_bind_parameter_count(pStmt);
@@ -11728,7 +11728,6 @@ static int kv_find_callback(void *pData, int nc, char **pV, char **pC){
   assert(nc>=1);
   assert(cli_strcmp(pC[0],"value")==0);
   struct keyval_row *pParam = (struct keyval_row *)pData;
-  assert(pParam->value==0); /* key values are supposedly unique. */
   if( pParam->value!=0 ) sqlite3_free( pParam->value );
   pParam->value = smprintf("%s", pV[0]); /* source owned by statement */
   if( nc>1 ) pParam->uses = (int)integerValue(pV[1]);
@@ -11958,6 +11957,7 @@ static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
   const char *zTab = 0;
   char * zSql = 0;
   const char *zFmt;
+  char * zEntrySql = 0;
 
   sstr_ptr_holder(&zVal); /* +1 */
   switch( uses ){
@@ -11965,25 +11965,31 @@ static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
   case PTU_Binding: zTab = PARAM_TABLE_SNAME; break;
   default: assert(0);
   }
-  zSql = smprintf("SELECT value, uses FROM %s "
-                  "WHERE key=%Q AND uses=%d", zTab, name, uses);
+  if( eval ){
+    zSql = smprintf("SELECT value, uses FROM %s WHERE key=%Q"
+                    " AND uses IN (%d, "SPTU_Entry") ORDER BY uses",
+                    zTab, name, uses);
+  }else{
+    zSql = smprintf("SELECT value, uses FROM %s "
+                    "WHERE key=%Q AND uses=%d", zTab, name, uses);
+  }
   shell_check_ooms(zSql);
   sstr_ptr_holder(&kvRow.value); /* +2 */
   sstr_holder(zSql); /* +3 */
   s3_exec_noom(db, zSql, kv_find_callback, &kvRow, 0);
   release_holder(); /* zSql =2 */
-  assert(kvRow.hits<2);
-  if( kvRow.hits==1 && kvRow.uses==uses){
+  assert(kvRow.hits<3);
+  if( kvRow.hits>=1 ){
     /* Editing an existing value of same kind. */
-    release_holder(); /* kvRow.value =1 */
-    zSql = smprintf("SELECT edit('-- %s\n'||value, %Q) FROM %s "
-                    "WHERE key=%Q AND uses=%d", name, zEd, zTab, name, uses);
+    zVal = kvRow.value;
+    drop_holder(); /* kvRow.value =1 */
+    zSql = smprintf("SELECT edit('-- %s\n'||%Q, %Q)", name, zVal, zEd);
     shell_check_ooms(zSql);
     sstr_holder(zSql);
     zVal = db_text(db, zSql, 0);
     release_holder(); /* zSql =1 */
     remove_name_tag(&zVal, name);
-    zFmt = (!eval)? "UPDATE %s SET value=%Q) WHERE key=%Q AND uses=%d"
+    zFmt = (!eval)? "UPDATE %s SET value=%Q WHERE key=%Q AND uses=%d"
       : "UPDATE %s SET value=(SELECT %s) WHERE key=%Q AND uses=%d";
     zSql = smprintf(zFmt, zTab, zVal, name, uses);
   }else{
@@ -12002,6 +12008,17 @@ static int edit_one_kvalue(sqlite3 *db, char *name, int eval,
   }
   shell_check_ooms(zSql);
   sstr_holder(zSql); /* +2 */
+  if( eval ){
+    zEntrySql = smprintf("INSERT OR REPLACE INTO %s(key,value,uses)"
+                         " VALUES(%Q,%Q,"SPTU_Entry")", zTab, name,zVal);
+  }else{
+    zEntrySql = smprintf("DELETE FROM %s WHERE key=%Q AND uses="SPTU_Entry,
+                         zTab, name);
+  }
+  if( zEntrySql ){
+    sqlite3_exec(db, zEntrySql, 0, 0, 0);
+    sqlite3_free(zEntrySql);
+  }
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   if( rc!=SQLITE_OK && pzErr!=0 ){
     if( eval ){
@@ -12033,15 +12050,18 @@ static struct ParamSetOpts {
   const char cCast;
   const char *zTypename;
   int evalKind;
+  const char *zRegEx; /* if 0, anything goes */
 } param_set_opts[] = {
-  /* { 'q', 0, 2 }, */
-  /* { 'x', 0, 1 }, */
-  { 'i', "INT", 1 },
-  { 'r', "REAL", 1 },
-  { 'b', "BLOB", 1 },
-  { 't', "TEXT", 0 },
-  { 'n', "NUMERIC", 1 }
+#define INT_RE "(\\d+)|(0[xX][0-9a-fA-F]+)"
+#define REAL_RE "(\\d+(\\.\\d+)?([eE][-+]?\\d{1,4})?)|(\\.\\d+)"
+  { 'i', "INT", 1, "^[-+]?" INT_RE "$" },
+  { 'r', "REAL", 1, "^[-+]?" REAL_RE"$" },
+  { 'b', "BLOB", 1, "^(0[xX][0-9a-fA-F]+)|([xX]'([0-9a-fA-F][0-9a-fA-F])+')$" },
+  { 't', "TEXT", 0, 0 },
+  { 'n', "NUMERIC", 1, "^[-+]?(" INT_RE ")|(" REAL_RE ")$" }
 };
+#undef INT_RE
+#undef REAL_RE
 
 /* Return an option character if it is single and prefixed by - or --,
  * else return 0.
@@ -12280,7 +12300,7 @@ COLLECT_HELP_TEXT[
 #ifndef SQLITE_NOHAVE_SYSTEM
   "   edit ?OPT? ?NAME? ...   Use edit() to create or alter parameter(s)",
   "      OPT may be -t to use edited value(s) as text or -e to evaluate it,",
-  "      or -r or -m to edit referenced or missing parameters from last query.",
+  "      or -m or -r to edit missing or referenced parameters from last query.",
 #endif
   "   init                    Initialize TEMP table for bindings and scripts",
   "   list ?PATTERNS?         List current DB parameters table binding values",
@@ -12289,10 +12309,11 @@ COLLECT_HELP_TEXT[
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
   "   save ?FILE? ?NAMES?     Save some or all named parameters into FILE",
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
-  "   set ?TOPT? NAME VALUE   Give SQL parameter NAME a value of VALUE",
+  "   set ?OPT? NAME VALUE    Give SQL parameter NAME a value of VALUE",
   "      NAME must begin with one of $,:,@,? for bindings, VALUE is the space-",
-  "      joined argument list. TOPT may be one of {-b -i -n -r -t} to cast the",
-  "      effective value to BLOB, INT, NUMERIC, REAL or TEXT respectively.",
+  "      joined argument list. OPT may be one of {-b -i -n -r -t} to cast the",
+  "      effective value to BLOB, INT, NUMERIC, REAL or TEXT respectively,",
+  "      and -e may be used to evaluate VALUE as a SQL expression.",
   "   unset ?NAMES?           Remove named parameter(s) from parameters table",
 ];
 DISPATCHABLE_COMMAND( parameter 2 2 0 ){
