@@ -403,10 +403,16 @@ do_test select1-4.13 {
 
 # ORDER BY ignored on an aggregate query
 #
+sqlite3_db_config db STRICT_AGGREGATE off
 do_test select1-5.1 {
   set v [catch {execsql {SELECT max(f1) FROM test1 ORDER BY f2}} msg]
   lappend v $msg
 } {0 33}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_test select1-5.2 {
+  set v [catch {execsql {SELECT max(f1) FROM test1 ORDER BY f2}} msg]
+  lappend v $msg
+} {1 {bare column in aggregate query}}
 
 execsql {CREATE TABLE test2(t1 text, t2 text)}
 execsql {INSERT INTO test2 VALUES('abc','xyz')}
@@ -1197,6 +1203,7 @@ do_execsql_test select1-20.10 {
    WHERE ((SELECT t1.a FROM t1 AS x GROUP BY b) AND b=0)
       OR a = 10;
 } {10 Y}
+sqlite3_db_config db STRICT_AGGREGATE off
 do_execsql_test select1-20.20 {
   SELECT ifnull(a, max((SELECT 123))), count(a) FROM t1 ;
 } {10 1}

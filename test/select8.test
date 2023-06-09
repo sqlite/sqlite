@@ -19,7 +19,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 execsql {
-  CREATE TABLE songs(songid, artist, timesplayed);
+  CREATE TABLE songs(songid INT, artist TEXT, timesplayed INT);
   INSERT INTO songs VALUES(1,'one',1);
   INSERT INTO songs VALUES(2,'one',2);
   INSERT INTO songs VALUES(3,'two',3);
@@ -27,6 +27,20 @@ execsql {
   INSERT INTO songs VALUES(5,'one',7);
   INSERT INTO songs VALUES(6,'two',11);
 }
+sqlite3_db_config db STRICT_AGGREGATE on
+do_catchsql_test select8-0.9.1 {
+  SELECT DISTINCT artist, sum(timesplayed) AS total
+    FROM songs
+   GROUP BY lower(artist);
+} {1 {bare column in aggregate query}}
+do_catchsql_test select8-0.9.2 {
+  SELECT DISTINCT lower(artist), sum(timesplayed) AS total
+    FROM songs
+   GROUP BY lower(artist)
+   ORDER BY lower(artist);
+} {0 {one 10 three 5 two 14}}
+
+sqlite3_db_config db STRICT_AGGREGATE off
 set result [execsql {
   SELECT DISTINCT artist,sum(timesplayed) AS total      
   FROM songs      

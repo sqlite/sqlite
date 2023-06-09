@@ -267,6 +267,7 @@ do_test select6-4.3 {
     SELECT DISTINCT y FROM (SELECT y FROM t1) WHERE y<5 ORDER BY y
   }
 } {1 2 3 4}
+sqlite3_db_config db STRICT_AGGREGATE off
 do_test select6-4.4 {
   execsql {
     SELECT avg(y) FROM (SELECT DISTINCT y FROM t1) WHERE y<5 ORDER BY y
@@ -277,6 +278,13 @@ do_test select6-4.5 {
     SELECT avg(y) FROM (SELECT DISTINCT y FROM t1 WHERE y<5) ORDER BY y
   }
 } {2.5}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_catchsql_test select6-4.6 {
+  SELECT avg(y) FROM (SELECT DISTINCT y FROM t1) WHERE y<5 ORDER BY y
+} {1 {bare column in aggregate query}}
+do_catchsql_test select6-4.7 {
+  SELECT avg(y) FROM (SELECT DISTINCT y FROM t1 WHERE y<5) ORDER BY y
+} {1 {bare column in aggregate query}}
 
 do_test select6-5.1 {
   execsql {

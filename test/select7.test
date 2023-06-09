@@ -61,16 +61,24 @@ do_test select7-2.1 {
 # an aggregate query, whether it contains aggregates or not.
 #
 ifcapable subquery {
-  # do_test select7-3.1 {
+  # do_test select7-3.1.0 {
   #   catchsql {
   #     SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
   #   }
   # } {1 {GROUP BY may only be used on aggregate queries}}
-  do_test select7-3.1 {
+  sqlite3_db_config db STRICT_AGGREGATE on
+  do_test select7-3.1.1 {
+    catchsql {
+      SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
+    }
+  } [list 1 {bare column in aggregate query}]
+  sqlite3_db_config db STRICT_AGGREGATE off
+  do_test select7-3.1.2 {
     catchsql {
       SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
     }
   } [list 0 [execsql {SELECT * FROM sqlite_master ORDER BY name}]]
+  sqlite3_db_config db STRICT_AGGREGATE on
 }
 
 # Ticket #2018 - Make sure names are resolved correctly on all
@@ -194,7 +202,7 @@ do_test select7-7.7 {
   execsql {
     CREATE TABLE t5(a TEXT, b INT);
     INSERT INTO t5 VALUES(123, 456);
-    SELECT typeof(a), a FROM t5 GROUP BY a HAVING a<b;
+    SELECT typeof(a), a FROM t5 GROUP BY a, b HAVING a<b;
   }
 } {text 123}
 

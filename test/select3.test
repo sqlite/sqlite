@@ -12,7 +12,6 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.23 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -121,6 +120,7 @@ do_test select3-2.14 {
 # 
 # Update: As of 3.39.0, you can.
 #
+sqlite3_db_config db STRICT_AGGREGATE off
 do_execsql_test select3-3.1 {
   SELECT log, count(*) FROM t1 HAVING log>=4
 } {}
@@ -318,17 +318,34 @@ reset_db
 do_execsql_test select3-9.100 {
   CREATE TABLE t0(c0 REAL, c1 REAL GENERATED ALWAYS AS (c0));
   INSERT INTO t0(c0) VALUES (1);
+}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_catchsql_test select3-9.110 {
   SELECT * FROM t0 GROUP BY c0;
-} {1.0 1.0}
+} {1 {bare column in aggregate query}}
+sqlite3_db_config db STRICT_AGGREGATE off
+do_catchsql_test select3-9.120 {
+  SELECT * FROM t0 GROUP BY c0;
+} {0 {1.0 1.0}}
 
 reset_db
-do_execsql_test select3.10.100 {
+do_execsql_test select3-10.100 {
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(c, d);
+}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_catchsql_test select3-10.110 {
   SELECT max(t1.a), 
          (SELECT 'xyz' FROM (SELECT * FROM t2 WHERE 0) WHERE t1.b=1) 
   FROM t1;
-} {{} {}}
+} {1 {bare column in aggregate query}}
+sqlite3_db_config db STRICT_AGGREGATE off
+db null NULL
+do_catchsql_test select3-10.120 {
+  SELECT max(t1.a), 
+         (SELECT 'xyz' FROM (SELECT * FROM t2 WHERE 0) WHERE t1.b=1) 
+  FROM t1;
+} {0 {NULL NULL}}
 
 #-------------------------------------------------------------------------
 # dbsqlfuzz crash-8e17857db2c5a9294c975123ac807156a6559f13.txt
@@ -354,6 +371,7 @@ foreach {tn sql} {
   }
 } {
   reset_db
+  sqlite3_db_config db STRICT_AGGREGATE off
   do_execsql_test select3-11.$tn.1 $sql 
   do_execsql_test select3.11.$tn.2 {
     SELECT max(a), val FROM t1 LEFT JOIN (
@@ -375,14 +393,15 @@ foreach {tn sql} {
 }
 
 reset_db
-do_execsql_test 12.0 {
+sqlite3_db_config db STRICT_AGGREGATE off
+do_execsql_test select3-12.0 {
   CREATE TABLE t1(a);
   CREATE TABLE t2(x);
 }
-do_execsql_test 12.1 {
+do_execsql_test select3-12.1 {
   SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 }
-do_execsql_test 12.2 {
+do_execsql_test select3-12.2 {
   INSERT INTO t1 VALUES(1), (1), (2), (3);
   SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 } {
@@ -390,7 +409,7 @@ do_execsql_test 12.2 {
   0 {}
   0 {}
 }
-do_execsql_test 12.3 {
+do_execsql_test select3-12.3 {
   INSERT INTO t2 VALUES(45);
   SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 } {
@@ -398,7 +417,7 @@ do_execsql_test 12.3 {
   1 59
   1 59
 }
-do_execsql_test 12.4 {
+do_execsql_test select3-12.4 {
   INSERT INTO t2 VALUES(210);
   SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 } {
@@ -406,7 +425,7 @@ do_execsql_test 12.4 {
   2 59
   2 59
 }
-do_execsql_test 12.5 {
+do_execsql_test select3-12.5 {
   INSERT INTO t2 VALUES(NULL);
   SELECT count(x), m FROM t1 LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 } {
@@ -414,19 +433,19 @@ do_execsql_test 12.5 {
   2 59
   2 59
 }
-do_execsql_test 12.6 {
+do_execsql_test select3-12.6 {
   DELETE FROM t2;
   DELETE FROM t1;
   INSERT INTO t1 VALUES('value');
   INSERT INTO t2 VALUES('hello');
 } {}
-do_execsql_test 12.7 {
+do_execsql_test select3-12.7 {
   SELECT group_concat(x), m FROM t1 
     LEFT JOIN (SELECT x, 59 AS m FROM t2) GROUP BY a;
 } {
   hello 59
 }
-do_execsql_test 12.8 {
+do_execsql_test select3-12.8 {
   SELECT group_concat(x), m, n FROM t1 
     LEFT JOIN (SELECT x, 59 AS m, 60 AS n FROM t2) GROUP BY a;
 } {
@@ -434,4 +453,3 @@ do_execsql_test 12.8 {
 }
 
 finish_test
-

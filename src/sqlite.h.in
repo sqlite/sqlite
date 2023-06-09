@@ -2510,7 +2510,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
 #define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_STRICT_AGGREGATE      1020 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1020 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

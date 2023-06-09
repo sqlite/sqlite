@@ -8281,6 +8281,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
         { "reverse_scanorder",  SQLITE_DBCONFIG_REVERSE_SCANORDER     },
         { "stmt_scanstatus",    SQLITE_DBCONFIG_STMT_SCANSTATUS       },
+        { "strict_aggregate",   SQLITE_DBCONFIG_STRICT_AGGREGATE      },
         { "trigger_eqp",        SQLITE_DBCONFIG_TRIGGER_EQP           },
         { "trusted_schema",     SQLITE_DBCONFIG_TRUSTED_SCHEMA        },
         { "writable_schema",    SQLITE_DBCONFIG_WRITABLE_SCHEMA       },

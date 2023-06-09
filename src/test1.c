@@ -8336,6 +8336,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "DQS_DDL",            SQLITE_DBCONFIG_DQS_DDL },
     { "LEGACY_FILE_FORMAT", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT },
     { "STMT_SCANSTATUS",    SQLITE_DBCONFIG_STMT_SCANSTATUS },
+    { "STRICT_AGGREGATE",   SQLITE_DBCONFIG_STRICT_AGGREGATE },
   };
   int i;
   int v = 0;
@@ -8360,7 +8361,16 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     return TCL_ERROR;
   }
   if( objc==4 ){
-    if( Tcl_GetIntFromObj(interp, objv[3], &v) ) return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[3], &v) ){
+      const char *zVal = Tcl_GetString(objv[3]);
+      if( strcmp(zVal,"on")==0 || strcmp(zVal,"true")==0 ){
+        v = 1;
+      }else if( strcmp(zVal,"off")==0 || strcmp(zVal,"false")==0 ){
+        v = 0;
+      }else{
+        return TCL_ERROR;
+      }
+    }
   }else{
     v = -1;
   }

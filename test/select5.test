@@ -149,11 +149,18 @@ do_test select5-5.4 {
     SELECT a, b FROM t2 GROUP BY a, b;
   } 
 } {1 2 1 4 6 4}
+sqlite3_db_config db STRICT_AGGREGATE off
 do_test select5-5.5 {
   execsql {
     SELECT a, b FROM t2 GROUP BY a;
   } 
 } {1 2 6 4}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_test select5-5.6 {
+  catchsql {
+    SELECT a, b FROM t2 GROUP BY a;
+  } 
+} {1 {bare column in aggregate query}}
 
 # Test rendering of columns for the GROUP BY clause.
 #
@@ -256,6 +263,13 @@ do_execsql_test select5-9.1 {
   CREATE TABLE t1(a INT, b INT);
   INSERT INTO t1(a,b) VALUES(1,null),(null,null),(1,null);
   CREATE UNIQUE INDEX t1b ON t1(abs(b));
+}
+sqlite3_db_config db STRICT_AGGREGATE on
+do_catchsql_test select5-9.2 {
+  SELECT quote(a), quote(b), '|' FROM t1 GROUP BY a, abs(b);
+} {1 {bare column in aggregate query}}
+sqlite3_db_config db STRICT_AGGREGATE off
+do_execsql_test select5-9.3 {
   SELECT quote(a), quote(b), '|' FROM t1 GROUP BY a, abs(b);
 } {NULL NULL | 1 NULL |}
 

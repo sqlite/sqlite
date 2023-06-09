@@ -7872,6 +7872,13 @@ int sqlite3Select(
     VVA_ONLY( sNC.ncFlags = NC_UAggInfo; )
     pAggInfo->nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
     pAggInfo->pGroupBy = pGroupBy;
+    if( db->flags & SQLITE_StrictAgg ){
+      /* nAccumulator<0 indicates that bare columns on a table to be
+      ** aggregated should be considered an error.  nAccumulator will
+      ** become non-negative before we start processing the arguments of
+      ** aggregate queries further below. */
+      pAggInfo->nAccumulator = -1;
+    }
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
     if( pHaving ){

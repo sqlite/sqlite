@@ -1761,8 +1761,7 @@ struct sqlite3 {
 #define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
 #define SQLITE_TrustedSchema  0x00000080  /* Allow unsafe functions and
                                           ** vtabs in the schema definition */
-#define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
-                                          /*   result set is empty */
+#define SQLITE_StrictAgg      0x00000100  /* No bare columns in agg queries */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
 #define SQLITE_StmtScanStatus 0x00000400  /* Enable stmt_scanstats() counters */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
@@ -1791,6 +1790,8 @@ struct sqlite3 {
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_NullCallback   HI(0x00008) /* Invoke the callback once if the */
+                                          /*   result set is empty */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG

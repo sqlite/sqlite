@@ -6493,6 +6493,11 @@ static void findOrCreateAggInfoColumn(
     }
   }
   if( pCol->iSorterColumn<0 ){
+    if( pAggInfo->nAccumulator<0 ){
+      assert( pParse->db->flags & SQLITE_StrictAgg );
+      sqlite3ErrorMsg(pParse, "bare column in aggregate query");
+      sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
+    }
     pCol->iSorterColumn = pAggInfo->nSortingColumn++;
   }
 fix_up_expr:
@@ -6519,10 +6524,33 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
 
   assert( pNC->ncFlags & NC_UAggInfo );
   assert( pAggInfo->iFirstReg==0 );
+
+
   switch( pExpr->op ){
     default: {
       IndexedExpr *pIEpr;
       Expr tmp;
+
+      /* If this expression node matches an entry in the GROUP BY clause
+      ** then disable bare-column error reporting for all subexpressions
+      ** within this expression. */
+      if( pAggInfo->nAccumulator<0 && pAggInfo->pGroupBy!=0 ){
+        int j, n;
+        ExprList *pGB = pAggInfo->pGroupBy;
+        struct ExprList_item *pTerm = pGB->a;
+        n = pGB->nExpr;
+        for(j=0; j<n; j++, pTerm++){
+          if( sqlite3ExprCompare(0, pTerm->pExpr, pExpr, 0)==0 ){
+            pAggInfo->nAccumulator = 0;
+            sqlite3WalkExpr(pWalker, pExpr);
+            pAggInfo->nAccumulator = -1;
+            return WRC_Prune;
+          }
+        }
+      }
+
+      /* Check to see if the current expression can be satisfied using
+      ** and index on an expression. */
       assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;

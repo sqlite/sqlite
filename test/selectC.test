@@ -205,6 +205,7 @@ do_test selectC-3.2 {
     SELECT a, max(b || a) FROM t2 WHERE (b||b||b)!='value' GROUP BY a;
   }
 } {abc xxxabc def yyydef}
+sqlite3_db_config db STRICT_AGGREGATE off
 do_test selectC-3.3 {
   execsql {
     SELECT b, max(a || b) FROM t2 WHERE (b||b||b)!='value' GROUP BY a;
