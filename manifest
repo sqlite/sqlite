@@ -1,5 +1,5 @@
-C Experimental\schange\sto\sadd\sa\sper-connection\soption\sthat\sraises\san\serror\sif\na\sbare\scolumn\sappears\sin\san\saggregate\squery.
-D 2023-06-09T13:08:36.651
+C The\s-DSQLITE_STRICT_AGGREGATES\scompile-time\soption\senables\nSQLITE_DBCONFIG_STRICT_AGGREGATE\sby\sdefault.
+D 2023-06-09T18:30:36.634
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/insert.c a38bbb944a4f2771d70140db9c5d57e36c37e28d5a366497b4f93272a6d2567e
 F src/json.c 14c474fb1249a46eb44e878e2361f36abfe686b134039b0d1883d93d61505b4a
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
-F src/main.c 4c04e6c772ce42663e9f2f73fe053f4a38fefcdd0e98511ade49fb7ed3065a33
+F src/main.c 52bcc36b18075e5aaf5afa89eaee5e2560baaea77a89bffddbf93930bf1d36da
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2040,11 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 106ec745766ac59131f975d5ab5487c8a24b9c3be1766411c018b42c6ae4672a
-R d727d1de40f238a882594204f8ca1f35
-T *branch * newbie-safe-aggregates
-T *sym-newbie-safe-aggregates *
-T -sym-trunk *
+P f587891134158fa4c48b3a31b6e1b9d7688823953a8b434752199160f3a95ffd
+R bbc50aa018c726a7ea5bfe740b7684c6
 U drh
-Z a5115ea6cc9f8846539ef3c6d5cf6027
+Z 132812c6ae0b1896198d5fe69b87f33e
 # Remove this line to create a well-formed Fossil manifest.

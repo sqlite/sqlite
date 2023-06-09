@@ -3358,6 +3358,9 @@ static int openDatabase(
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS)
                  | SQLITE_StmtScanStatus
 #endif
+#if defined(SQLITE_STRICT_AGGREGATES)
+                 | SQLITE_StrictAgg
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
