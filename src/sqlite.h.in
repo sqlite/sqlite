@@ -2486,6 +2486,22 @@ struct sqlite3_mem_methods {
 ** then 0 or 1 is written into the integer that the second argument points to
 ** depending on if the reverse scan order flag is set after processing the
 ** first argument.
+**
+** [[SQLITE_DBCONFIG_STRICT_AGGREGATE]]
+** <dt>SQLITE_DBCONFIG_STRICT_AGGREGATE</dt>
+** <dd>The SQLITE_DBCONFIG_STRICT_AGGREGATE disables the SQLite-specific
+** enhancement that allows bare columns that are not mentioned in the GROUP BY
+** clause and that are not contained within an aggregate function to appear
+** in aggregate queries.  With that enhancement disabled, SQLite works more like
+** other SQL database engines such as PostgreSQL.  The strict-aggregate flag
+** is off by default, meaning that the enhanced capabilities of SQLite are
+** enabled by default.  This [sqlite3_db_config()] option takes
+** two arguments which are an integer and a pointer to an integer.  The first
+** argument is 1, 0, or -1 to enable, disable, or leave unchanged the
+** strict-aggregate flag, respectively.  If the second argument is not NULL,
+** then 0 or 1 is written into the integer that the second argument points to
+** depending on if the strict-aggregate flag is set after processing the
+** first argument.
 ** </dd>
 **
 ** </dl>
