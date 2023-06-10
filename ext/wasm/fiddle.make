@@ -22,7 +22,8 @@ $(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
 	$(MAKE) -C $(dir.top) shell.c
 # /shell.c
 ########################################################################
-
+# Additional CFLAGS for fiddle.wasm can be passed on the CLI using
+# CFLAGS_FIDDLE="the flags".
 EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 fiddle.emcc-flags = \
   $(emcc.cflags) $(emcc_opt_full) \
@@ -40,6 +41,7 @@ fiddle.emcc-flags = \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT) $(SHELL_OPT) \
+  $(CFLAGS_FIDDLE) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 

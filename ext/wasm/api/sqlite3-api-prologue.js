@@ -1570,6 +1570,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
         case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
         case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
+        case capi.SQLITE_DBCONFIG_STRICT_AGGREGATE:
           return this.ip(pDb, op, args[0], args[1] || 0);
         case capi.SQLITE_DBCONFIG_LOOKASIDE:
           return this.pii(pDb, op, args[0], args[1], args[2]);

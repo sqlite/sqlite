@@ -570,6 +570,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DBCONFIG_STMT_SCANSTATUS);
     DefInt(SQLITE_DBCONFIG_REVERSE_SCANORDER);
     DefInt(SQLITE_DBCONFIG_MAX);
+    DefInt(SQLITE_DBCONFIG_STRICT_AGGREGATE);
   } _DefGroup;
 
   DefGroup(dbStatus){
@@ -1549,6 +1550,7 @@ int sqlite3_wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
     case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
     case SQLITE_DBCONFIG_STMT_SCANSTATUS:
     case SQLITE_DBCONFIG_REVERSE_SCANORDER:
+    case SQLITE_DBCONFIG_STRICT_AGGREGATE:
       return sqlite3_db_config(pDb, op, arg1, pArg2);
     default: return SQLITE_MISUSE;
   }
