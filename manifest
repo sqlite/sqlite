@@ -1,5 +1,5 @@
-C Add\sCFLAGS_FIDDLE\sto\sext/wasm/fiddle.make\sas\sa\sway\sto\spass\son\sadditional\scompilation\sflags\sto\sthe\sfiddle\sbuild\sfrom\sthe\sCLI,\se.g.\sCFLAGS_FIDDLE=-DSQLITE_STRICT_AGGREGATE.\sExpose\sSQLITE_DBCONFIG_STRICT_AGGREGATE\sto\sJS.
-D 2023-06-10T08:19:10.191
+C Fix\sa\spotential\sUAF\sin\sthe\sparser\scaused\sby\sthe\schanges\son\sthis\sbranch.
+D 2023-06-10T09:24:29.722
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -625,7 +625,7 @@ F src/os_win.c 79ff2345aafe92be324e8d9062050c6c5ae714c2db6b4b5334d7d28e70ea81e6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 0dfe6a9c76ca8ad8eb91a3867dd20ba1f5c854bc5e9cd9cde62112bdee1822be
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y c4fff9e1b2e5113097d034c7e30c2b64c4248f9e2fa8c498306f0be89481f174
+F src/parse.y b1ac02e59fdd76d7613c4d75855fb51854f6566c5aa2c372f94023a12d7945f7
 F src/pcache.c 4cd4a0043167da9ba7e19b4d179a0e6354e7fe32c16f781ecf9bf0a5ff63b40b
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 275d056e461fa7f42a3df872cc9027799e8009a7296ea3546058e2c434886f68
-R d3223aeabd569363f4f978e158d7e34b
-U stephan
-Z d26735695ae3bb3135e2f8a6e3721345
+P 0b0172087954d62fec532afce4532beb6a3882736e089bdd46aa5954bca2dbcd
+R 8d8f51f057e655134315380759665ca2
+U drh
+Z fd58e797b8cc173f8b54b4a0f1bd74a8
 # Remove this line to create a well-formed Fossil manifest.
