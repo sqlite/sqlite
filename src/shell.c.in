@@ -469,9 +469,10 @@ static void endTimer(void){
 #endif
 
 /*
-** Number of elements in an array
+** Number of elements in an array and one past its end
 */
 #define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
+#define PastArray(X) ((X)+ArraySize(X))
 
 /*
 ** If the following flag is set, then command execution stops
@@ -6005,7 +6006,7 @@ static void close_db(sqlite3 *db){
 ** Make sure the database is open.  If it is not, then open it.  If
 ** the database fails to open, print an error message and exit.
 */
-static void open_db(ShellExState *psx, int openFlags){
+static sqlite3 * open_db(ShellExState *psx, int openFlags){
   ShellInState *psi = ISS(psx);
   if( DBX(psx)==0 ){
     sqlite3 **pDb = &DBX(psx);
@@ -6149,8 +6150,7 @@ static void open_db(ShellExState *psx, int openFlags){
       release_holder();
     }
 #ifndef SQLITE_OMIT_DESERIALIZE
-    else
-    if( psi->openMode==SHELL_OPEN_DESERIALIZE
+    else if( psi->openMode==SHELL_OPEN_DESERIALIZE
         || psi->openMode==SHELL_OPEN_HEXDB ){
       int rc;
       int nData = 0;
@@ -6160,7 +6160,7 @@ static void open_db(ShellExState *psx, int openFlags){
       }else{
         aData = readHexDb(psi, &nData);
         if( aData==0 ){
-          return;
+          return GLOBAL_DB;
         }
       }
       rc = sqlite3_deserialize(DBX(psx), "main", aData, nData, nData,
@@ -6186,6 +6186,7 @@ static void open_db(ShellExState *psx, int openFlags){
     notify_subscribers(psi, NK_DbUserAppeared, DBX(psx));
 #endif
   }
+  return GLOBAL_DB;
 }
 
 #if HAVE_READLINE || HAVE_EDITLINE
@@ -9783,10 +9784,8 @@ DISPATCHABLE_COMMAND( databases 2 1 0 ){
   char **azName = 0;
   int nName = 0;
   sqlite3_stmt *pStmt = 0;
-  sqlite3 *db;
+  sqlite3 *db = open_db(p, 0);
   int i;
-  open_db(p, 0);
-  db = DBX(p);
   rc = s3_prepare_v2_noom(db, "PRAGMA database_list", -1, &pStmt, 0);
   stmt_holder(pStmt);
   if( rc || pStmt==0 ){
@@ -10961,8 +10960,7 @@ DISPATCHABLE_COMMAND( imposter ? 3 3 ){
     ** storage order. */
     return DCR_SayUsage;
   }
-  open_db(p, 0);
-  db = DBX(p);
+  db = open_db(p, 0);
   if( nArg==2 ){
     sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, "main", 0, 1);
     return DCR_Ok;
@@ -11147,8 +11145,7 @@ DISPATCHABLE_COMMAND( lint 3 1 0 ){
        "    fkey-indexes\n", azArg[0]);
     return DCR_SayUsage;
   }
-  open_db(p, 0);
-  db = DBX(p);
+  db = open_db(p, 0);
 
   /*
   ** This SELECT statement returns one row for each foreign key constraint
@@ -11323,8 +11320,7 @@ DISPATCHABLE_COMMAND( load ? 2 3 ){
     else if( zProc==0 ) zProc = zA;
     else return DCR_TooMany|ai;
   }
-  open_db(p, 0);
-  rc = sqlite3_load_extension(DBX(p), zFile, zProc, pzErr);
+  rc = sqlite3_load_extension(open_db(p, 0), zFile, zProc, pzErr);
   return DCR_Ok|(rc!=SQLITE_OK);
 }
 
@@ -12046,22 +12042,18 @@ char *values_join( char **valBeg, char **valLim ){
   return z;
 }
 
-static struct ParamSetOpts {
-  const char cCast;
-  const char *zTypename;
-  int evalKind;
-  const char *zRegEx; /* if 0, anything goes */
-} param_set_opts[] = {
-#define INT_RE "(\\d+)|(0[xX][0-9a-fA-F]+)"
-#define REAL_RE "(\\d+(\\.\\d+)?([eE][-+]?\\d{1,4})?)|(\\.\\d+)"
-  { 'i', "INT", 1, "^[-+]?" INT_RE "$" },
-  { 'r', "REAL", 1, "^[-+]?" REAL_RE"$" },
-  { 'b', "BLOB", 1, "^(0[xX][0-9a-fA-F]+)|([xX]'([0-9a-fA-F][0-9a-fA-F])+')$" },
-  { 't', "TEXT", 0, 0 },
-  { 'n', "NUMERIC", 1, "^[-+]?(" INT_RE ")|(" REAL_RE ")$" }
+#define INT_RE "((\\d+)|(0[xX][0-9a-fA-F]+))"
+#define REAL_RE "((\\d+(\\.\\d+)?([eE][-+]?\\d{1,4})?)|(\\.\\d+))"
+#define HEXP_RE "([0-9a-fA-F]{2,2})"
+const char *param_set_literals[] = {
+  /* int */ "^[-+]?" INT_RE "$",
+  /* real */ "^[-+]?" REAL_RE "$",
+  /* blob */ "^[xX]'"HEXP_RE"*'$",
+  /* text */ "^'([^']|'')*'$"
 };
 #undef INT_RE
 #undef REAL_RE
+#undef HEXP_RE
 
 /* Return an option character if it is single and prefixed by - or --,
  * else return 0.
@@ -12097,53 +12089,76 @@ static int shvar_set(sqlite3 *db, char *name, char **valBeg, char **valLim){
 }
 
 
-/* Most of the .parameter set subcommand (per help text)
- * Return SQLITE_OK on success, else SQLITE_ERROR.
+/* Effect most of the .parameter set subcommand (per help text.)
+ * Return SQLITE_OK on success, else SQLITE_ERROR. Error
+ * explanation is placed in *pzErr, to be later sqlite3_free()'ed.
  */
-static int param_set(sqlite3 *db, char cCast,
-                     char *name, char **valBeg, char **valLim){
+static int param_set(sqlite3 *db, u8 bEval, char *name,
+                     char **valBeg, char **valLim, char **pzErr){
   char *zSql = 0;
   char *zValGlom = (valLim-valBeg>1)? values_join(valBeg, valLim) : 0;
   sqlite3_stmt *pStmtSet = 0;
   /* Above objects are managed. */
-  const char *zCastTo = 0;
-  int rc = SQLITE_OK, retries = 0, needsEval = 1;
+  const char **pSL;
+  u8 bLitMatch = 0;
+  int rc = SQLITE_OK, retries = 0;
   char *zValue = (zValGlom==0)? *valBeg : zValGlom;
 
   sstr_holder(zValGlom); /* +1 */
-  if( cCast ){
-    struct ParamSetOpts *pSO = param_set_opts;
-    for(; pSO-param_set_opts < ArraySize(param_set_opts); ++pSO ){
-      if( cCast==pSO->cCast ){
-        zCastTo = pSO->zTypename;
-        needsEval = pSO->evalKind > 0;
-        break;
-      }
-    }
-  }
-  stmt_ptr_holder(&pStmtSet); /* +2 */
-  if( needsEval ){
-    if( zCastTo!=0 ){
-      zSql = smprintf
-        ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          " VALUES(%Q,CAST((%s) AS %s),"SPTU_Binding");",
-          name, zValue, zCastTo );
-    }else{
-      zSql = smprintf
-        ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-          "VALUES(%Q,(%s),"SPTU_Binding");", name, zValue );
-    }
+  if( !bEval ){
+    /* No eval specified; see if the value matches a common literal form. */
+    zSql = smprintf("SELECT regexp($re,%Q)", zValue);
     rc = s3_prep_noom_free(db, &zSql, &pStmtSet);
+    stmt_ptr_holder(&pStmtSet); /* +2 */
+    for( pSL=param_set_literals; pSL<PastArray(param_set_literals); ++pSL ){
+      sqlite3_reset(pStmtSet);
+      rc = sqlite3_bind_text(pStmtSet,1,*pSL,-1,SQLITE_STATIC);
+      shell_check_nomem(rc);
+      rc = shell_check_nomem(sqlite3_step(pStmtSet));
+      assert(rc==SQLITE_ROW);
+      if( 0!=(bLitMatch = sqlite3_column_int(pStmtSet, 0)) ) break;
+    }
+    release_holder(); /* =1 */
   }
-  if( !needsEval || rc!=SQLITE_OK ){
-    /* Reach here when value either requested to be cast to text, or must be. */
-    sqlite3_finalize(pStmtSet);
-    pStmtSet = 0;
+  /* These possible conditions may exist, to be handled thus:
+   * 1. No evaluation was specified.
+   *   Value must be a recognizable literal or will be treated as text.
+   *   Success is assured (absent OOM.)
+   * 2. Evaluation was specified.
+   *   Just do it and take whatever type results.
+   *   Report failure if that occurs.
+   * In both cases, a PTU_Entry row is set to the input value.
+   */
+  stmt_ptr_holder(&pStmtSet); /* +2 */
+  if( bEval || bLitMatch ){
     zSql = smprintf
       ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
-        "VALUES(%Q,%Q,"SPTU_Binding");", name, zValue );
+        " VALUES(%Q,(%s),"SPTU_Binding")", name, zValue );
+  }else{
+    zSql = smprintf
+      ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+        "VALUES(%Q,%Q,"SPTU_Binding")", name, zValue );
+  }
+  rc = s3_prep_noom_free(db, &zSql, &pStmtSet);
+  if( rc!=SQLITE_OK ){
+    /* Reach here when value matches no literal and fails evaluation. */
+    sqlite3_finalize(pStmtSet);
+    pStmtSet = 0;
+    if( pzErr ){
+      *pzErr = smprintf("Parameter %s set as text.\nCompiling \"%s\" fails.\n"
+                        "(%s)", name, zValue, sqlite3_errmsg(db));
+    }
+    zSql = smprintf
+      ( "REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+        "VALUES(%Q,%Q,"SPTU_Binding")", name, zValue );
     rc = s3_prep_noom_free(db, &zSql, &pStmtSet);
     assert(rc==SQLITE_OK);
+  }
+  zSql = smprintf("INSERT OR REPLACE INTO "PARAM_TABLE_SNAME"(key,value,uses)"
+                  " VALUES(%Q,%Q,"SPTU_Entry")", name, zValue);
+  if( zSql ){
+    sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
   }
   sqlite3_step(pStmtSet);
   release_holders(2);
@@ -12207,7 +12222,10 @@ static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
     if( !bShort ){
       int nBindings = 0, nScripts = 0;
       zSql = smprintf("SELECT key, uses,"
-                      " iif(typeof(value)='text', quote(value), value) as v"
+                      "CASE typeof(value)"
+                      " WHEN 'text' THEN quote(value)"
+                      " WHEN 'blob' THEN 'x'''||hex(value)||''''"
+                      " ELSE value END"
                       " %s ORDER BY uses, key", zFromWhere);
       rc = s3_prep_noom_free(db, &zSql, &pStmt);
       sqlite3_bind_int(pStmt, 1, ptu);
@@ -12311,15 +12329,13 @@ COLLECT_HELP_TEXT[
   "      If FILE missing, empty or '~', it defaults to ~/sqlite_params.sdb",
   "   set ?OPT? NAME VALUE    Give SQL parameter NAME a value of VALUE",
   "      NAME must begin with one of $,:,@,? for bindings, VALUE is the space-",
-  "      joined argument list. OPT may be one of {-b -i -n -r -t} to cast the",
-  "      effective value to BLOB, INT, NUMERIC, REAL or TEXT respectively,",
-  "      and -e may be used to evaluate VALUE as a SQL expression.",
+  "      joined arguments. OPT may -e to evaluate VALUE as a SQL expression.",
   "   unset ?NAMES?           Remove named parameter(s) from parameters table",
 ];
 DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   int rc = 0;
-  open_db(p,0);
-  sqlite3 *db = DBX(p);
+  char *zErr = 0;
+  sqlite3 *db = open_db(p,0);
 
   /* .parameter clear  and  .parameter unset ?NAMES?
   **  Delete some or all parameters from the TEMP table that holds them.
@@ -12346,7 +12362,6 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   */
   if( cli_strcmp(azArg[1],"edit")==0 ){
     ShellInState *psi = ISS(p);
-    char *zErr = 0;
     int ia = 2;
     int eval = 0;
     int reffed = 0;
@@ -12466,24 +12481,35 @@ DISPATCHABLE_COMMAND( parameter 2 2 0 ){
   ** understood to be a text string.
   */
   if( nArg>=4 && cli_strcmp(azArg[1],"set")==0 ){
-    char cCast = option_char(azArg[2]);
-    int inv = 2 + (cCast != 0);
-    ParamTableUse ptu = classify_param_name(azArg[inv]);
+    int inv = 2;
+    u8 bEval = 0;
+    char cOpt;
+    ParamTableUse ptu;
+
+    while( inv<nArg && (cOpt = option_char(azArg[inv]))!=0 ){
+      if( cOpt!='e' ) goto param_fail;
+      bEval = 1;
+      ++inv;
+    }
+    if( nArg-inv < 2 ) goto param_fail;
+    ptu = classify_param_name(azArg[inv]);
     if( ptu!=PTU_Binding ){
       utf8_printf(STD_ERR,
                   "Error: %s is not a usable parameter name.\n", azArg[inv]);
       rc = 1;
     }else{
       param_table_init(db);
-      rc = param_set(db, cCast, azArg[inv], &azArg[inv+1], &azArg[nArg]);
-      if( rc!=SQLITE_OK ){
-        utf8_printf(STD_ERR, "Error: %s\n", sqlite3_errmsg(db));
-        rc = 1;
+      rc = param_set(db, bEval, azArg[inv], &azArg[inv+1], &azArg[nArg], &zErr);
+      if( rc!=SQLITE_OK || zErr ){
+        utf8_printf(STD_ERR, "%s: %s\n", (rc)? "Error" : "Warning",
+                    (zErr)? zErr : sqlite3_errmsg(db));
+        sqlite3_free(zErr);
       }
     }
   }else
 
   {  /* If no command name and arg count matches, show a syntax error */
+  param_fail:
     showHelp(ISS(p)->out, "parameter", p);
     return DCR_CmdErred;
   }
@@ -12593,10 +12619,7 @@ DISPATCHABLE_COMMAND( recover ? 1 7 ){
   sqlite3_recover *pr = 0;
   int i = 0;
   FILE *out = ISS(p)->out;
-  sqlite3 *db;
-
-  open_db(p, 0);
-  db = DBX(p);
+  sqlite3 *db = open_db(p, 0);
 
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
@@ -12923,6 +12946,7 @@ DISPATCHABLE_COMMAND( session 3 2 0 ){
   int iSes = 0;
   int nCmd = nArg - 1;
   int i;
+
   open_db(p, 0);
   if( nArg>=3 ){
     for(iSes=0; iSes<pAuxDb->nSession; iSes++){
@@ -14156,6 +14180,7 @@ DISPATCHABLE_COMMAND( trace ? 0 0 ){
   ShellInState *psi = ISS(p);
   int mType = 0;
   int jj;
+
   open_db(p, 0);
   for(jj=1; jj<nArg; jj++){
     const char *z = azArg[jj];
@@ -14232,6 +14257,7 @@ DISPATCHABLE_COMMAND( unmodule ? 2 0 ){
   int ii;
   int lenOpt;
   char *zOpt;
+
   open_db(p, 0);
   zOpt = azArg[1];
   if( zOpt[0]=='-' && zOpt[1]=='-' && zOpt[2]!=0 ) zOpt++;

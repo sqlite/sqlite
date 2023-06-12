@@ -1,5 +1,5 @@
-C More\s.parameter\simprovements,\sa\sWIP\sfor\s".parameter\sset\s<cast_op>\s..."
-D 2023-06-09T06:04:32.582
+C Finish\s.parameter\simprovements.\s(no\sset\s<cast_op>\sanymore,\snot\suseful\senough\sfor\sits\sapparent\scomplexity)
+D 2023-06-12T18:11:11.214
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -643,7 +643,7 @@ F src/resmanage.h eb801fdd1d49ed6c44bb103d6e077a2835d7592cf0c20af6b2f0d8eaeb42b3
 F src/resolve.c c1457b920aeb33ed106bf478fad31b7473a8950a755ea898980c428928f3a514
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 1ddfe4450101c3d4890ecb2d6b97ab80b78764d5a3e7022b171721df1620c419
-F src/shell.c.in 31eaceccba858c6660cb7a6f1bba6839ac1530434b1552ff127da16f32cb6da5
+F src/shell.c.in a1cca1616759d744de488f9592a86557b85caf65ff5aa7fe5fb2aa75f14bad75
 F src/shext_linkage.h 4a686427844d5d2b71f2095cb032280fb262490795f0710487ebbedb3732f1cb
 F src/sqlite.h.in 3076d78836b6dac53b3ab0875fc8fd15bca8077aad4d33c85336e05af6aef8c7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d73f065b939eaf7f468c43efe21d66dd20109d8b0ffc8b7ffa4bd491072a50dc
-R e4aca1b14e2956bf46044ec12581c3c6
+P 2b51dcdad8fdace33daefdf8ad00fc2f3ab069d5832a1ecf2ac95f580556685d
+R 7f6c971903ba5136fa3683c4ad7b5994
 U larrybr
-Z 94503d1135e22616d7387ca3011166ce
+Z 3736662b08f2dafb93e1b2029bd03d30
 # Remove this line to create a well-formed Fossil manifest.
