@@ -53,20 +53,25 @@ among others familiar to sqlite3 shell users.
 A variant of the SQLite shell can be built, called "sqlite3x" here,
 whose long name is "The SQLite Extensible Shell".
 It may be built on Unix-like systems by running "make sqlite3x".
-(Build setup for Windows systems will be provided soon.)
+On Windows systems, using MSVC, with suitable environment setup,
+it may be built by running "nmake -f Makefile.msc sqlite3x.exe".
 
 The Tcl extension for sqlite3x, called "tclshext" here,
 may be built for Unix-like systems,
 after configure is run with a "--enable-tcl" option
 (and a "--with-tcl=..." option if necessary),
 by invoking make with "tcl_shell_extension" as a target.
+On Windows systems, using MSVC, with nmake variables TCLDIR and TCLSUFFIX set
+appropriately, it may be built by running
+"nmake -f Makefile.msc tcl_shell_extension".
+
 It may be necessary to first install the Tcl development package or library
 in order for configure to find the Tcl interpreter
-and specify how get it linked into the extension.
+and specify how get it as a library to be linked into the extension.
 
 To manually get a Tcl-extended-shell started,
-(assuming the above-mentioned images were built
-and have been placed where the shell and OS loader can find them),
+(assuming the above-mentioned images were built and have
+been placed where the shell and OS loader can find them [^ loader ]),
 either of these inputs is needed:<br>
 ```
   From a running shell:
@@ -76,10 +81,11 @@ either of these inputs is needed:<br>
   At shell invocation:
     sqlite3x -cmd '.shxload tclshext'
 ```
-(footnote: A directory path may need to be prepended to the extension's
-name for the OS loader to find it unless it is in one of the locations
-designated to the loader as a candidate for dynamic libraries. How such
-designation is made is beyond the scope of this introduction.)
+[^loader]: A directory path may need to be prepended to the extension's
+  name for the OS loader to find it unless it is in one of the locations
+  designated to the loader as a candidate for dynamic libraries. How such
+  designation is made is beyond the scope of this introduction.)
+
 Provided this results in another prompt without any error message(s),
 the Tcl-extended shell is ready to go.
 For brevity, the shell in this state will be called "sqlite3xt".
@@ -166,7 +172,7 @@ in directories named in the PATH environment variable,
 will be executed in a sub-process
 (unless blocked by auto_noexec having been set.)
 
-* The command word and arguments are collected, 
+* The command word and arguments are collected,
 parsed and expanded according to the usual
 [rules for the Tcl language](https://www.tcl.tk/about/language.html).
 In particular, input line groups are collected until deemed "complete"
@@ -183,7 +189,7 @@ There are a few differences however. These are:<br>
 
 * A single '.' on an input line which is not inside of an incomplete
 Tcl line group is treated as a (momentary) end-of-input by the REPL.
-(footnote: "REPL" is short for "Read, Evaluate, Print Loop.)
+(^ "REPL" is short for "Read, Evaluate, Print Loop.)
 
 * The shell's dot commands, while not visible via \[info commands\],
 are discoverable by the "unknown" command and will be executed
@@ -207,7 +213,7 @@ like ones created in Tcl via "sqlite3&nbsp;someDbName&nbsp;itsFilename".
 
  + Commands sqlite_shell_REPL, get_tcl_group and now_interactive
 permit input to be collected in the same manner (and from the same
-sources) as the shell's REPL does. Here, "collected in the same manner" 
+sources) as the shell's REPL does. Here, "collected in the same manner"
 does not include the execution environment switching or SQL execution
 that the shell execution environment implements.
 

@@ -9,10 +9,12 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** Test extension for testing the shell's .load <extName> -shext function.
+** Test extension for testing the shell's .shxload <extName> function.
 ** To build from the SQLite project root:
-     g++ -shared -fPIC -Wall -I. -g src/test_shellext_cpp.cpp \
-      -o test_shellext_cpp.so
+** on *Nix:
+** g++ -shared -fPIC -Wall -I. src/test_shellext_cpp.cpp -o test_shellext_cpp.so
+** on Windows with MSVC:
+** cl -I. src/test_shellext_cpp.cpp -LD -Fetest_shellext_cpp.dll
 */
 #include <stdio.h>
 #include "shx_link.h"

@@ -9,9 +9,12 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** Test extension for testing the shell's .load -shellext ... function.
+** Test extension for testing the shell's .shxload ... function.
 ** To build from the SQLite project root:
-** gcc -shared -fPIC -Wall -I. -g src/test_shellext_c.c -o test_shellext_c.so
+** on *Nix:
+** gcc -shared -fPIC -Wall -I. src/test_shellext_c.c -o test_shellext_c.so
+** on Windows with MSVC:
+** cl -I. src/test_shellext_c.c -LD -Fetest_shellext_c.dll
 */
 #include <stdio.h>
 #include "shx_link.h"
@@ -62,7 +65,7 @@ DERIVED_METHOD(DotCmdRC, execute, DotCommand,BatBeing, 4,
 /* Define a DotCommand v-table initialized to reference above methods. */
 DotCommand_IMPLEMENT_VTABLE(BatBeing, batty_methods);
 
-/* Define/initialize BatBeing as a DotCommand subclass using above v-table. 
+/* Define/initialize BatBeing as a DotCommand subclass using above v-table.
  * This compiles in a type-safe manner because the batty_methods v-table
  * and methods it incorporates strictly match the DotCommand interface.
  */

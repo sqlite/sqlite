@@ -51,20 +51,20 @@
       <h2>Extensible Features</h2>
     <p>Only certain categories of features may be
       added or modified via extension, namely:
-      
+
       <h3>New or Revised Meta-Commands</h3>
     <p>The "dot" commands implemented by the shell,
       along with help text for them, may be augmented or overridden.
       A meta-command effected with an extension may be used
       in the same ways as one available in the core, non-extended shell.
-      
-      <h3>New or Revised Import Modes</h3>
+
+      <h3>New or Revised Import Modes (work-in-progress)</h3>
     <p>The ways in which data may be imported to a DB table
       may be augmented or overriden. Once that is done, the .import
       meta-command will either have a new option to specify a new import
       handler or an existing .import option can be overridden for this.
 
-      <h3>New or Revised Query Result Handling</h3>
+      <h3>New or Revised Query Result Handling (work-in-progress)</h3>
     <p>The display formatting or other disposition of query results
       may be augmented or overriden. Once that is done, the .mode
       meta-command will either have a new option to specify a new result
@@ -79,19 +79,29 @@
       the data is up to the handler, as may be affected
       by arguments to the .import or most recent .mode command.
 
+      <h3>Scriptability</h3>
+    <p>An shell extension may provide for integration of a scripting
+      subsystem with the shell. Such a subsystem may participate in
+      classification of input, extending the recognized classes from
+      { meta-command SQL-statement(s) comment } to add { script }, and
+      then handle input in the "script" input class. The shell exposes
+      some its internal data and code to script implementations so that
+      they may act in a manner providing adaptation or enhancement of
+      shell features rather than entirely independent new features.
+
       <h2>Extension Methods, Dynamic or Static</h2>
     <p>Shell extension may be effected at different times
       in different ways according to convenience and need.
 
       <h3>Runtime Extension</h3>
     <p>Extension at runtime (when the shell is running)
-      is effected via the .load command with a --shell flag.
+      is effected via the .shxload command.
       In this way, a dynamically loaded library (DLL) is loaded with
       provision made for its sqlite3_X_init() function to obtain
       the shell extension API entry points and thereby
       register with the shell core any
       new meta-commands, or import or query result handlers
-      that it implements.
+      or scripting support that it implements.
 
       <h3>Build-Time Extension</h3>
     <p>Extension when the shell is built is effected by specifying
@@ -104,7 +114,7 @@
       the same source code can be used either
       to produce most of a runtime shell extension DLL or to
       be incorporated into shell.c as a built-in shell extension.
-      (See the extension code samples for details.)
+      (See the extension code samples for details. (Not fully implemented.))
 
       <h3>Build-Time Diminuation</h3>
     <p>Just as new meta-commands can be readily incorporated into
@@ -124,15 +134,16 @@
       and shell extensions written in C/C++.
       Comments in that header tersely summarize these explanations:
 
-      <h3>struct ShellStateX and ShellExState</h3>
-    <p>The ShellStateX object, (maintained by the shell and known as
-      shellState), consists of a public portion, which is available and
-      stable for use in shell/extension interactions, and a private
-      portion which may not be stable. Shell extension code used only for
-      build-time extension might use the private part, (to which it has
-      access because such code is compiled within the same translation unit
-      as the core shell code), but such usage generally precludes (or makes
-      hazardous) use of runtime loadable extensions built from such code.
+      <h3>struct ShellInState and ShellExState</h3>
+    <p>The Shell{In,Ex}State objects, are maintained by the shell and known
+      as shell state. The shell state consists of a public portion, which
+      is available and stable for use in shell/extension interactions,
+      and a private portion which may not be stable. Shell extension code
+      used only for build-time extension might use the private part,
+      (to which it has access because such code is compiled within the same
+      translation unit as the core shell code),
+      but such usage generally precludes (or makes hazardous)
+      use of runtime loadable extensions built from such code.
 
       <h3>ExtensionId typedef and eid Member</h3>
     <p>An object of this type serves to uniquely identify an extension
@@ -159,7 +170,7 @@
 
       <h3>extensionDestruct member</h3>
     <p>The function addressed by this member will be called prior to
-      the extension being unloaded (if the pointer is non-zero.)
+      exit or the extension being unloaded (if the pointer is non-zero.)
       This is an out parameter from the sqlite3_X_init() function.
       It may perform any cleanup or deallocations necessitated by
       successful initialization generally (and will never be called
@@ -168,7 +179,7 @@
       <h3>Notes Regarding Object Interfaces for C vs C++ Writers</h3>
     <p>The objects registered with the shell core to provided extension
       functionality may be implemented in C or C++ (or anything else
-      producing the same ABI.) In the below descriptions of their
+      presenting the same ABI.) In the below descriptions of their
       interfaces, it should be understood that: C++ implementations
       need not explicitly deal with anything like a Whatsit_Vtable
       struct and will refer to the object pointer, passed implicitly,
@@ -182,25 +193,26 @@
       so destruct()'s responsibility should be limited to reversing
       the per-registered-object effects of sqlite3_X_init().
     <p>A registered object is deactivated when either: the extension
-      is immanently going to be unloaded; or the registered object is
+      is immanently going to be unloaded; the registered object is
       being overridden by some like-named object (such that it can no
-      longer be reached by the core shell.)
+      longer be reached by the core shell); or the shell is about to
+      return or exit.
 
-      <h3>MetaCommand typedef</h3>
+      <h3>DotCommand typedef</h3>
     <p>These objects represent an extension meta-command, including a
       dispatch table for the public interface and any accompanying
       data (which is opaque to the core shell.) Such objects are created
       by extensions and passed to the core shell only by reference.
-      They are made known to the shell core via registerMetaCommand() calls.
+      They are made known to the shell core via registerDotCommand() calls.
 
-      <h3>MetaCommand_Vtable typedef</h3>
-    <p>These objects represent the dispatch table of a MetaCommand object.
+      <h3>DotCommand_Vtable typedef</h3>
+    <p>These objects represent the dispatch table of a DotCommand object.
     <p>All methods are given the same leading (or lone) argument:<br>
-      (1) the address of the registered MetaCommand object.
+      (1) the address of the registered DotCommand object.
 
       <h4>destruct method</h4>
     <p>This method is called prior to unloading a runtime extension
-      for any registered MetaCommand object, provided its dispatch
+      for any registered DotCommand object, provided its dispatch
       table entry is non-zero.
       It should free resources allocated during the sqlite3_X_init() call
       associated with creation or preparation of the object.
@@ -208,89 +220,82 @@
       <h4>name method</h4>
     <p>This method returns the name of the meta-command (sans leading '.'.)
       The returned pointer must remain valid throughout the lifetime of
-      the registered MetaCommand object.
+      the registered DotCommand object.
 
       <h4>help method</h4>
     <p>This method returns help text for the meta-command. This text
       should be formatted and aligned with the built-in meta-command
       help text so that it can be displayed seamlessly.
     <p>There is one additional argument:<br>
-      (2) an integer directing what help text to return, with
+      (2) a const char * directing what help text to return, with
       0 indicating primary, single-line help, or
-      1 indicating any more detailed help beyond the primary level.
-    <p>The return is either a C string or null pointer. The C string
-      will not be freed by the core shell, and must remain valid
-      during the lifetime of the MetaCommand object.
+      &"" indicating more detailed help beyond the primary level, or
+      &"(other)" reserved for expansion.
+    <p>The return for the first 2 forms is either a C string or
+      null pointer. The C string will not be freed by the core shell, and
+      must remain valid during the lifetime of the DotCommand object.
 
-      <h4>argsRange method</h4>
-    <p>This method returns a pair of unsigned integers indicating the range
-      of valid argument counts for the meta-command.
-    <p>The returned .minArgs value indicates the minimum number of
-      arguments required for a successful execute call.
-      The returned .maxArgs value indicates the maximum number of
-      arguments allowed for a successful execute call, with ~0
-      indicating no (practical) upper limit. The execute method will
-      never be called with an argument count not within this range.
-      (This significantly simplifies argument checking.)
+      <h4>argsCheck method</h4>
+    <p>This method returns a DotCmdRC value indicating the validity
+      (or invalidity) of arguments for the meta-command, using the
+      coding scheme defined for the DotCmdRC type.
+    <p>There are three additional arguments:<br>
+      (2) a char** to possibly receive an error message, which the
+      caller must eventually pass to sqlite3_free().<br>
+      (3) a count of all provided arguments; and<br>
+      (4) a char* array of given arguments, led by meta-command's name.
 
       <h4>execute method</h4>
     <p>This method performs whatever work the meta-command is supposed
       to do when invoked. It has 4 additional arguments:<br>
-      (2) present ShellStateX, passed by reference (an in/out parameter);<br>
+      (2) present ShellExState, passed by reference (an in/out parameter);<br>
       (3) an error message pointer, passed by reference, set upon error but
       otherwise not modified, to be freed by the shell core;<br>
-      (4) the number of invocation arguments;<br>
+      (4) the number of invocation arguments; and<br>
       (5) an array of C strings constituting the invocation arguments;<br>
-    <p>The return is 0 for success, or anything else to indicate error.
-      The special value SHELL_INVALID_ARGS (aka SQLITE_MISUSE) should be
-      returned when argument checking shows an invalid call. This will
-      cause the command dispatcher to issue usage help (in interactive
-      shell sessions) without further fuss by the execute() method itself.
-      (And if an extension causes this error to be returned from the SQLite
-      library, which is a serious error by itself, it must either translate
-      it for return or trouble its users with a misleading error message
-      from the dispatcher.) If the output error message is set, it will
-      be issued in lieu of the standard error message for invalid calls.
+    <p>The return is a DotCmdRC value, indicating success, error, or
+      other disposition as documented for the DotCmdRC type.
 
-      <h3>OutModeHandler typedef</h3>
+      <h3>ExportHandler typedef</h3>
     <p>These objects represent an extension query result handler, including
       a dispatch table for the public interface and any accompanying
       data which is opaque to the core shell. Such objects are created
       by extensions and passed to the core shell only by reference.
-      They are made known to the shell core via registerOutMode() calls.
+      They are made known to the shell core via registerExporter() calls.
 
-      <h3>OutModeHandler_Vtable typedef</h3>
-    <p>These objects represent the dispatch table of an OutModeHandler object.
+      <h3>ExportHandler_Vtable typedef</h3>
+    <p>These objects represent the dispatch table of an ExportHandler object.
       All methods in the dispatch table are given at
       least this leading argument:<br>
-      (1) The OutModeHandler address registered via registerOutMode();<br>
+      (1) The ExportHandler address registered via registerExporter();<br>
 
       <h4>destruct method</h4>
-    <p>This method is called prior to unloading a runtime extension
-      for any registered OutModeHandler object, provided its dispatch
-      table entry is non-zero.
+    <p>This method is called prior to the shell's return or exit or
+      unloading the runtime extension for a registered ExportHandler object,
+      provided its dispatch table entry is non-zero.
       It should free resources allocated during the sqlite3_X_init() call
       associated with creation or preparation of the object.
 
       <h4>name method</h4>
-    <p>This method returns the name of the OutModeHandler, which users
+    <p>This method returns the name of the ExportHandler, which users
       specify to the .mode command (as the mode's name) to designate use
-      of the registered OutModeHandler for subsequent query results.
+      of the registered ExportHandler for subsequent query results.
       The returned pointer must remain valid throughout the lifetime of
-      the registered MetaCommand object.
+      the registered ExportHandler object.
 
       <h4>help method</h4>
-    <p>This method returns help text for the OutModeHandler.
+    <p>This method returns help text for the ExportHandler.
     <p>There is one additional argument:<br>
-      (2) an integer directing what help text to return, with
+      (2) a const char * directing what help text to return, with
       0 indicating primary, single-line help, or
-      1 indicating any more detailed help beyond the primary level.
-      The primary help is included in the .mode command's own
+      &"" indicating more detailed help beyond the primary level, or
+      &"(other)" reserved for expansion.
+    <p>The primary help is included in the .mode command's own
       detailed help text, so it should be aligned accordingly.
       The detailed help is shown by the .mode command's --help option.
     <p>The return is either a C string or null pointer. The C string
       will not be freed by the core shell, and must remain valid
-      during the lifetime of the MetaCommand object.
+      during the lifetime of the ExportHandler object.
 
       <h4>Common arguments</h4>
     <p>The following methods are given these 2 additional arguments:<br>
@@ -307,7 +312,7 @@
     <p>When the extension handler is activated via a .mode command,
       parsing that command and behaving accordingly is the responsibility
       of this method alone. (The command is parsed and acted upon by the
-      default .mode implementation only when no OutModeHandler is used.)
+      default .mode implementation only when no ExportHandler is used.)
     <p>Once this method is called and succeeds, it is guaranteed that the
       closeResultsOutStream method will be called.
     <p>This method should return SQLITE_OK only upon success.
@@ -335,7 +340,7 @@
     <p>This method should return SQLITE_OK only upon success
       without having completed stepping. If this method completes stepping,
       (by making its own calls to sqlite3_step() until it returns SQLITE_DONE),
-      it must return SQLITE_DONE. Any other return will abort the next call
+      it must return SQLITE_DONE. Any other return will avoid the next call
       in the handling sequence.
 
       <h4>appendResultsOut method</h4>
@@ -347,8 +352,8 @@
 
       <h4>closeResultsOutStream method</h4>
     <p>This method is called when a new .mode command is invoked specifying
-      some output mode not using this OutModeHandler or when the extension
-      is about to be unloaded with this OutModeHandler selected for output.
+      some output mode not using this ExportHandler or when the extension
+      is about to be unloaded with this ExportHandler selected for output.
       It should free resources allocated or held as a result of the
       previous openResultsOutStream call.
 
@@ -365,9 +370,9 @@
       (1) The ImportHandler address registered via registerImporter().
 
       <h4>destruct method</h4>
-    <p>This method is called prior to unloading a runtime extension
-      for any registered OutModeHandler object, provided its dispatch
-      table entry is non-zero.
+    <p>This method is called prior to the shell's return or exit or
+      unloading the runtime extension for a registered ImportHandler object,
+      provided its dispatch table entry is non-zero.
       It should free resources allocated during the sqlite3_X_init() call
       associated with creation or preparation of the object.
 
@@ -376,20 +381,21 @@
       be passed with leading '--' (or '-') to the .import command
       to specify use of the registered importer for that invocation.
       The returned pointer must remain valid throughout the lifetime of
-      the registered MetaCommand object.
+      the registered ImportHandler object.
 
       <h4>help method</h4>
-    <p>This method returns help text for the importer.
+    <p>This method returns help text for the ImportHandler.
     <p>There is one additional argument:<br>
-      (2) an integer directing what help text to return, with
+      (2) a const char * directing what help text to return, with
       0 indicating primary, single-line help, or
-      1 indicating any more detailed help beyond the primary level.
-      The primary help is included in the .import command's own
+      &"" indicating more detailed help beyond the primary level, or
+      &"(other)" reserved for expansion.
+    <p>The primary help is included in the .import command's own
       detailed help text, so it should be aligned accordingly.
       The detailed help is shown by the .import command's --help option.
     <p>The return is either a C string or null pointer. The C string
       will not be freed by the core shell, and must remain valid
-      during the lifetime of the MetaCommand object.
+      during the lifetime of the ImportHandler object.
 
       <h4>Common arguments</h4>
     <p>The following methods are given these 2 additional arguments:<br>
@@ -474,6 +480,68 @@
       It should free resources allocated or held as a result of the
       previous openDataInStream call.
 
+      <h3>ScriptSupport typedef</h3>
+    <p>An object of this type is passed by an extension to registerScripting()
+      to enable the shell core to gain scripting functionality provided by
+      the extension.
+    <p>All methods in the dispatch table have this 1 leading argument:<br>
+      (1) The object address registered via registerScripting().
+    <p>The object's v-table contains these methods:
+
+      <h4>destruct method</h4>
+    <p>This method is called prior to the shell's return or exit or unloading
+      the runtime extension, provided its dispatch table entry is non-zero.
+      It should free resources allocated during the sqlite3_X_init() call
+      associated with creation or preparation of the object.
+
+      <h4>name</h4>
+    <p>This method returns the name of the ScriptSupport object.
+      There is no presently planned scheme for using this to switch among
+      scripting providers or even to identify one that is loaded.
+
+      <h4>help</h4>
+    <p>This method returns help text for the ExportHandler.
+      There is no presently implemented use for this method's return.
+    <p>There is one additional argument:<br>
+      (2) a const char * directing what help text to return.
+
+      <h4>configure</h4>
+    <p>This method allows load-time configuration of the extension.
+      It returns a DotCmdRC code indicating status of the extension
+      load and subsequent configuration.
+      It has these 4 additional arguments:<br>
+      (2) ShellExState reference, for general use by the extension;<br>
+      (3) A char ** for an error message associated with configuration;<br>
+      (4) Count of arguments passed in next parameter; and<br>
+      (5) A char * array of arguments passed in the .shxload command tail.
+
+      <h4>isScriptLeader</h4>
+    <p>This method returns TRUE if the provided line text should be
+      considered part of an input line group to be handled by the extension
+      (rather than being treated as a dot-command or SQL), otherwise FALSE.
+      There is one additional argument:<br>
+      (2) char * zLineLead, the initial line of a shell input group.
+
+      <h4>scriptIsComplete</h4>
+    <p>This method returns TRUE if the provided line group text should be
+      considered ready to execute, otherwise FALSE.
+      There are two additional arguments:<br>
+      (2) char * zScript, the possibly ready-to-exectue text; and<br>
+      (3) char ** pzWhyNot, for possibly saying why it is not ready.
+
+      <h4>resetCompletionScan</h4>
+    <p>This method is called by the shell, with no additional arguments,
+      to (possibly) restore the extension's input line scanning state.
+      It has no return.
+
+      <h4>runScript</h4>
+    <p>This method executes the provided script text, returning a
+      DotCmdRC value to indicate success, error, or other dispositions.
+      It has three additional arguments:<br>
+      (2) char * zScript, the to-be-executed text;<br>
+      (3) ShellExState *, (same struct as is passed to configure); and<br>
+      (4) A char ** for an error message associated with the execution.
+
       <h3>ShellExtensionLink typedef</h3>
     <p>An object of this type is passed (somewhat indirectly) to the
       sqlite3_X_init(...) function which is called when a runtime
@@ -481,38 +549,27 @@
       It is used to establish linkage between the loaded extension
       and a shell core API exposed specifically for extensibility.
     <p>At present, the extension API is limited to registration of
-      meta-commands, query result handlers, and import handlers
-      implemented by extensions. This API may be extended in future
-      versions of the core shell, in a backwards-compatible manner.
+      meta-commands, query result handlers, import handlers, and
+      scripting support implemented by extensions. This API may be
+      extended in future versions of the core shell, in a backwards-
+      compatible manner.
       (See the pExtra sentinel, whose offset may increase.)
 
       <h4>Establishing Shell/Extension Linkage</h4>
-    <p>The 1st or 2nd parameter passed to the sqlite3_X_init() function
-      as an extension is dynamically loaded is used to obtain a pointer
-      to the ShellExtensionLink object (provided that .load was
-      invoked with the --shell flag.) To verify that the correct
-      object type was passed and reference it if so, the extension's
-      sqlite3_X_init() function can use one of these two means:
-    <p>The least code-intensive means is implemented by a macro,
-      EXTENSION_LINKAGE_PTR(pzem), parameter of which is the char**
-      passed as the 2nd sqlite3_X_init() argument. This is reliable
-      except in the case of a maliciously written shell core (which
-      portends worse problems than the undefined behavior which
-      could arise from invoking .load from such a shell.)
-    <p>A more code-intensive means, (which is no safer in the
-      case of a maliciously written shell core), is to use
-      a C macro, DEFINE_SHDB_TO_SHEXT_API(function_name),
-      in the extension source to define a function named per
-      the macro argument. Then that function may be called with its
-      lone argument being the sqlite3 * (db) pointer which was passed
-      as the 1st argument to sqlite3_X_init().
-    <p>Either means will return (or yield) either a null pointer
-      or a verified ShellExtensionLink pointer. In the former
-      case, sqlite3_X_init() may return SHELL_INVALID_ARGS to induce
-      the emission of help on using the .load command. (Said help
-      will mention the need to use the --shell flag for extensions.)
-      In the latter case, the obtained pointer may be called to
-      register the extension's feature implementor(s) as described.
+    <p>An extension's sqlite3_X_init() function is called soon after
+      the extension is dynamically loaded. It may obtain a pointer
+      to the ShellExtensionLink object by the following means. (Or,
+      without reference to that object, it can do nothing useful.) 
+    <p>During extension build, a macro provided by shext_linkage.h,
+      SHDB_TO_SHEXTLINK(link_function_name), is used to define a
+      function named per its argument. This function accepts a
+      sqlite3 *, as passed into sqlite3_X_init(db, ...), and reads
+      that DB to retrieve the address of a ShellExtensionLink object,
+      which it returns. (Or, it returns NULL if somebody has loaded
+      the extension erroneously using the .load meta-command.)
+    <p>The sqlite3_X_init() function may call this macro-written
+      function to obtain a reference to a ShellExtensionLink object
+      which will remain valid while the extension is loaded.
 
       <h2>Development Aspects of Extensibility and Its Evolution</h2>
 
