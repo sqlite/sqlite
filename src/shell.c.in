@@ -8278,6 +8278,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
         { "no_ckpt_on_close",   SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE      },
+        { "random_scanorder",   SQLITE_DBCONFIG_RANDOM_SCANORDER      },
         { "reset_database",     SQLITE_DBCONFIG_RESET_DATABASE        },
         { "reverse_scanorder",  SQLITE_DBCONFIG_REVERSE_SCANORDER     },
         { "stmt_scanstatus",    SQLITE_DBCONFIG_STMT_SCANSTATUS       },

@@ -2488,6 +2488,25 @@ struct sqlite3_mem_methods {
 ** first argument.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_RANDOM_SCANORDER]]
+** <dt>SQLITE_DBCONFIG_RANDOM_SCANORDER</dt>
+** <dd>The SQLITE_DBCONFIG_RANDOM_SCANORDER option is similar to the
+** [SQLITE_DBCOFNIG_REVERSE_SCANORDER] option in that it changes the order
+** in which tables and indexes are scanned when in cases where there is no
+** ORDER BY clause.  The difference is that this option causes the scan order
+** to be selected at random, whereas REVERSE_SCANORDER causes scans to always
+** go from the end toward the beginning.  This option is recommended for all
+** applications during development and testing in order to help locate cases
+** where the scan order is important but unconstrainted.
+** This option takes
+** two arguments which are an integer and a pointer to an integer.  The first
+** argument is 1, 0, or -1 to enable, disable, or leave unchanged the
+** reverse scan order flag, respectively.  If the second argument is not NULL,
+** then 0 or 1 is written into the integer that the second argument points to
+** depending on if the reverse scan order flag is set after processing the
+** first argument.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2510,7 +2529,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
 #define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_RANDOM_SCANORDER      1020 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1020 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

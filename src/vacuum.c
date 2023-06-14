@@ -195,7 +195,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
   db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(u64)(SQLITE_ForeignKeys | SQLITE_ReverseOrder
-                   | SQLITE_Defensive | SQLITE_CountRows);
+                   | SQLITE_RandomOrder | SQLITE_Defensive | SQLITE_CountRows);
   db->mTrace = 0;
 
   zDbMain = db->aDb[iDb].zDbSName;

@@ -6120,8 +6120,14 @@ WhereInfo *sqlite3WhereBegin(
        if( db->mallocFailed ) goto whereBeginError;
     }
   }
-  if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = ALLBITS;
+  if( pWInfo->pOrderBy==0
+   && (db->flags & (SQLITE_ReverseOrder|SQLITE_RandomOrder))!=0
+  ){
+    if( db->flags & SQLITE_RandomOrder ){
+      sqlite3_randomness(sizeof(pWInfo->revMask), &pWInfo->revMask);
+    }else{
+      pWInfo->revMask = ALLBITS;
+    }
   }
   if( pParse->nErr ){
     goto whereBeginError;

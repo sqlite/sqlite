@@ -1767,7 +1767,7 @@ struct sqlite3 {
 #define SQLITE_StmtScanStatus 0x00000400  /* Enable stmt_scanstats() counters */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
 #define SQLITE_ReverseOrder   0x00001000  /* Reverse unordered SELECTs */
-#define SQLITE_RecTriggers    0x00002000  /* Enable recursive triggers */
+#define SQLITE_RandomOrder    0x00002000  /* Random scan order */
 #define SQLITE_ForeignKeys    0x00004000  /* Enforce foreign key constraints  */
 #define SQLITE_AutoIndex      0x00008000  /* Enable automatic indexes */
 #define SQLITE_LoadExtension  0x00010000  /* Enable load_extension */
@@ -1791,6 +1791,7 @@ struct sqlite3 {
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_RecTriggers    HI(0x00008) /* Enable recursive triggers */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
