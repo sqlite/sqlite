@@ -64,6 +64,7 @@
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4305)
 #pragma warning(disable : 4306)
+#pragma warning(disable : 4324)
 #pragma warning(disable : 4702)
 #pragma warning(disable : 4706)
 #endif /* defined(_MSC_VER) */
@@ -99,9 +100,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include "sqlite3.h"
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
+typedef uint32_t u32;
 typedef unsigned char u8;
 typedef unsigned short u16;
 #if SQLITE_USER_AUTHENTICATION
@@ -5683,7 +5686,6 @@ static int run_schema_dump_query(
       rc = SQLITE_CORRUPT;
     }
   }
- bail:
   RESOURCE_FREE(mark);
   return rc;
 }
@@ -9785,7 +9787,7 @@ DISPATCHABLE_COMMAND( databases 2 1 0 ){
   int nName = 0;
   sqlite3_stmt *pStmt = 0;
   sqlite3 *db = open_db(p, 0);
-  int i;
+
   rc = s3_prepare_v2_noom(db, "PRAGMA database_list", -1, &pStmt, 0);
   stmt_holder(pStmt);
   if( rc || pStmt==0 ){
@@ -11442,7 +11444,7 @@ DISPATCHABLE_COMMAND( mode ? 1 0 ){
   ShellInState *psi = ISS(p);
   const char *zTabname = 0;
   const char *zArg;
-  int i, aix;
+  int aix;
   u8 foundMode = MODE_COUNT_OF, setMode = MODE_COUNT_OF;
   ColModeOpts cmOpts = ColModeOpts_default;
   for(aix=1; aix<nArg; aix++){
@@ -11500,7 +11502,7 @@ DISPATCHABLE_COMMAND( mode ? 1 0 ){
       raw_printf(out, "current output mode: %s\n", zMode);
     }
 #else
-    i = psi->mode;
+    int i = psi->mode;
     assert(i>=0 && i<MODE_COUNT_OF);
     zMode = modeDescr[i].zModeName;
     /* Mode not specified. Show present mode (and toss any options set.) */
@@ -12231,8 +12233,8 @@ static void list_pov_entries(ShellExState *psx, ParamTableUse ptu, u8 bShort,
       sqlite3_bind_int(pStmt, 1, ptu);
       while( rc==SQLITE_OK && s3_step_noom(pStmt)==SQLITE_ROW ){
         ParamTableUse ptux = sqlite3_column_int(pStmt,1);
-        const char *zName = sqlite3_column_text(pStmt,0);
-        const char *zValue = sqlite3_column_text(pStmt,2);
+        const char *zName = (const char*)sqlite3_column_text(pStmt,0);
+        const char *zValue = (const char*)sqlite3_column_text(pStmt,2);
         if( !zName ) zName = "?";
         if( !zValue ) zValue = "?";
         switch( ptux ){
@@ -13609,7 +13611,6 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
   const char *zOut;
   ShellInState *psi = ISS(p);
   FILE *out = psi->out;
-  int i;
 
   utf8_printf(out, "%12.12s: %s\n","echo",
               azBool[ShellHasFlag(p, SHFLG_Echo)]);
@@ -16819,8 +16820,8 @@ typedef struct ArgsData {
 static int scanInvokeArgs(int argc, char **argv, int pass, ShellInState *psi,
                           CmdArgs *pcaCmd, CmdArgs *pcaBare, ArgsData *pad){
   int rc = 0;
-  DotCmdRC drc;
   int i;
+
   if( pass==1 ){
     for(i=1; i<argc && rc<2; i++){
       char *z = argv[i];

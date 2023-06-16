@@ -59,10 +59,10 @@ typedef unsigned short ResourceCount;
 /* Type used to record a possible succession of recovery destinations */
 typedef struct RipStackDest {
   struct RipStackDest *pPrev;
-  ResourceMark resDest;
 #ifndef SHELL_OMIT_LONGJMP
   jmp_buf exeDest;
 #endif
+  ResourceMark resDest;
 } RipStackDest;
 #define RIP_STACK_DEST_INIT {0}
 

@@ -82,7 +82,6 @@ ResourceMark holder_mark(){
 /* Strip resource stack then strip call stack (or exit.) */
 void quit_moan(const char *zMoan, int errCode){
   RipStackDest *pRSD = pRipStack;
-  int nFreed;
   if( zMoan ){
     fprintf(stderr, "Error: Terminating due to %s.\n", zMoan);
   }
