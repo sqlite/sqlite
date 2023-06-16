@@ -1046,7 +1046,7 @@ static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
   UserDb *pudb = (UserDb*)cd;
   static const char *azDoHere[] = { "close", 0 };
   enum DbDoWhat { DDW_Close };
-  int doWhat;
+  int doWhat = -1;
   int whichDb = -1;
   const char *zMoan;
 
@@ -1057,12 +1057,13 @@ static int UserDbObjCmd(void *cd, Tcl_Interp *interp,
   }
   if( whichDb>0 ) whichDb = pudb->ixuSdb;
   /* Delegate all subcommands except above to the now-visible SqliteDb. */
-  if( objc>=2 && !Tcl_GetIndexFromObj(interp, objv[1], azDoHere,
-                                      "subcommand", 0, &doWhat)){
+  if( objc>=2
+      && TCL_OK==Tcl_GetIndexFromObj(0, objv[1], azDoHere, "", 0, &doWhat)){
     switch( doWhat ){
     case DDW_Close:
-      zMoan = " close is disallowd. It is a wrapped DB.\n";
+      zMoan = " close disallowed. It is a wrapped DB belonging to the shell.";
       goto complain_fail;
+    default: ; /* Fine */
     }
   }
   if( pudb->numSdb==0 || whichDb<0 ){

@@ -57,7 +57,10 @@ On Windows systems, using MSVC, with suitable environment setup,
 it may be built by running "nmake -f Makefile.msc sqlite3x.exe".
 
 The Tcl extension for sqlite3x, called "tclshext" here,
-may be built for Unix-like systems,
+may be built from the top directory of a SQLite project checkout.
+(See [Obtaining Code ...](https://sqlite.org/getthecode.html#obtaining_code_directly_from_the_version_control_system).)
+
+Build the extension for Unix-like systems,
 after configure is run with a "--enable-tcl" option
 (and a "--with-tcl=..." option if necessary),
 by invoking make with "tcl_shell_extension" as a target.
@@ -67,7 +70,7 @@ appropriately, it may be built by running
 
 It may be necessary to first install the Tcl development package or library
 in order for configure to find the Tcl interpreter
-and specify how get it as a library to be linked into the extension.
+and specify how to locate it as a library to be linked with the extension.
 
 To manually get a Tcl-extended-shell started,
 (assuming the above-mentioned images were built and have
@@ -79,12 +82,12 @@ either of these inputs is needed:<br>
     .shxload tclshext
  or
   At shell invocation:
-    sqlite3x -cmd '.shxload tclshext'
+    sqlite3x -cmd ".shxload tclshext"
 ```
 [^loader]: A directory path may need to be prepended to the extension's
   name for the OS loader to find it unless it is in one of the locations
   designated to the loader as a candidate for dynamic libraries. How such
-  designation is made is beyond the scope of this introduction.)
+  designation is made is beyond the scope of this introduction.
 
 Provided this results in another prompt without any error message(s),
 the Tcl-extended shell is ready to go.
@@ -92,9 +95,12 @@ For brevity, the shell in this state will be called "sqlite3xt".
 
 ## Yet Another Prompt -- Now What? ##
 
-When sqlite3xt is ready, it acts very much like the sqlite3 shell.
+When sqlite3xt is ready for input, it acts very much like the sqlite3 shell.
+(^ The sqlite3x shell passes a test suite which is substantially
+identical to that used for the traditional shell, differing only
+in the content and format of error messages.)
 When given sensible inputs (as discussed below in "Parsing"),
-that are recognized by sqlite3,
+that are recognized by and valid for the sqlite3 shell,
 the same outputs and effects will occur as would with sqlite3.
 This condition,
 where SQL and dot commands recognized by sqlite3 may be input
@@ -106,9 +112,10 @@ For sqlite3xt, that is just the beginning.
 
 The effect of loading tclshext can be briefly summarized as
 the introduction of an alternative "execution environment",
+together with a way of entering and leaving it,
 explication of which follows this on the primary "execution environment":
 
-### shell execution environment ###
+### Shell execution environment ###
 
 The "shell execution environment", in effect upon sqlite3xt startup,
 has these characteristics pertinent here:
@@ -126,9 +133,10 @@ then submitted to the SQL execution (prepare/step) engine.
 
 * Whitespace-delimited arguments after the leading token
 are parsed according to the section on "Dot-command arguments"
-[here](https://sqlite.org/cli.html), with one exception as noted next.
+[here](https://sqlite.org/cli.html#rules_for_dot_commands_sql_and_more),
+with exceptions as noted next.
 
-The exception to legacy argument parsing is that open quote
+The main exception to legacy argument parsing is that open quote
 constructs are not auto-closed by the end of an input line.
 (This legacy behavior may be reinstated if desired by: entering
 ".shxopts -parsing" at the prompt; renaming the sqlite3x image
@@ -138,18 +146,19 @@ Instead, arguments are collected, potentially across multiple lines,
 until an input line ends outside of any open quote construct.
 (Input which does not depend on the legacy, auto-close-on-newline
 behavior is what the term "sensible inputs" means as used above.)
-As examples, this would not be sensible input to sqlite3:<br>
+For example, this would not be sensible input to sqlite3:<br>
 ```
    .print 'Hello.
    This was entered as multi-line input.'
 ```
-as it would result in an error, while this input:<br>
+as it would result in an error, (malformed SQL), while this input:<br>
 ```
-   .print "I'm not fond of closing my quotations.
+   .print &quot;I'm not fond of closing my quotations.
 ```
-is acceptable to sqlite3, but deemed not "sensible" here.
+is acceptable to sqlite3, but deemed "not sensible" here.
 When either is input to sqlite3x, a continuation prompt will be issued
-(in interactive mode.)
+(in interactive mode) and the rest of the multi-line input
+will be taken as part of the .print dot-command.
 
 Of course, this is (mostly) review to those familiar with the sqlite3 shell.
 
@@ -164,13 +173,15 @@ In this alternative execution environment, these critical differences exist:
 * An expanded set of command words is available and readily expanded further.
 
 * The available command words generally do not begin with '.'.
+(^In the Tcl execution environment, enter
+"info&nbsp;commands" to see the available command words.)
 
 * When in interactive mode, commands whose
 initial token is not defined as a Tcl command,
-but can be found as an executable
-in directories named in the PATH environment variable,
+but which can be found as an executable
+in a directory named in the PATH environment variable,
 will be executed in a sub-process
-(unless blocked by auto_noexec having been set.)
+(unless blocked by Tcl global variable auto_noexec having been set.)
 
 * The command word and arguments are collected,
 parsed and expanded according to the usual
@@ -184,23 +195,23 @@ and [variables can be set](https://www.tcl.tk/man/tcl8.6/TclCmd/set.html),
 either of which may affect argument expansion
 per the usual Tcl rules.
 
-This environment will be quite familiar to those who use Tcl.
+This environment will be familiar to those who use Tcl.
 There are a few differences however. These are:<br>
 
 * A single '.' on an input line which is not inside of an incomplete
 Tcl line group is treated as a (momentary) end-of-input by the REPL.
-(^ "REPL" is short for "Read, Evaluate, Print Loop.)
+(^ "REPL" is an acronym for "Read, Evaluate, Print Loop".)
 
 * The shell's dot commands, while not visible via \[info commands\],
 are discoverable by the "unknown" command and will be executed
 if their names (with the '.' prefix) would be found and resolved
 unambiguously in the shell execution environment.
-Commands whose names begin with '.' which are not found uniquely in the
+Commands whose names begin with '.' which are not found as unique in the
 shell execution environment produce an "invalid command name" error.
 Except for that treatment, the unknown command in effect
 acts like the standard Tcl version.
-(footnote: That version remains available as _original_unkown,
-to which non-dot commands are delegated .)
+(That standard version remains available as _original_unkown,
+to which handling of non-dot-prefixed commands is delegated.)
 
 * A few non-standard-Tcl commands are available. In particular:
 
@@ -231,7 +242,9 @@ evident below. With no arguments,
 it does nothing, quietly and successfully, with the empty result.
 
 * The present implementation does not run the event loop processing
-that Tcl often uses for certain functionality (such as sockets.)
+that the standard Tcl REPL uses to support certain functionality
+(such as sockets, asynchronous I/O and the Tk GUI subsystem.)
+A future enhancement is to support use of event loop and Tk.
 
 ## Switching Execution Environments ##
 
@@ -278,9 +291,8 @@ becomes part of the shell's repertoire.
 When entered without any argument(s)
 from the shell execution environment,
 the .tcl command has the same effect as .. by itself.
-(footnote:
-When run from the Tcl execution environment with no arguments,
-it acts as a no-op rather than entering a recursive REPL.)
+(^When run from the Tcl execution environment with no arguments,
+.tcl acts as a no-op rather than entering a recursive REPL.)
 With arguments, it will read file content into the Tcl interpreter
 just as Tcl's source command would.
 This may be useful for getting the Tcl execution environment
@@ -314,9 +326,8 @@ the shell execution environment remains in effect afterward.
 
 This temporary use of the Tcl interpreter serves two purposes.
 One is to exploit the more powerful capabilities of Tcl for argument processing.
-Within the text of arguments as provided, 
-variables can be accessed,
-computations can be done,
+Within the text of arguments as provided,
+variables can be accessed, computations can be done,
 and Tcl commands can be invoked to yield results (or produce side effects),
 all of which can affect what the expanded arguments finally contain.
 The other (miniscule) effect is to avoid the need for extra
@@ -350,11 +361,11 @@ in the namespace(s) searched by the interpreter, it is
 passed to the Tcl command named "unknown".
 In the tclshext-augmented Tcl environment,
 that procedure is implemented by C code which treats
-a purported command with a leading '.' specially, 
+a purported command with a leading '.' specially,
 by attempting to find it in the shell's repertoire of dot commands.
 If found (unambiguously), it is then executed
 and the result (such as it is) returned to the caller.
-(footnote: The sqlite3 dot commands return the empty result on success.)
+(The sqlite3 shell dot-commands return the empty result on success.)
 So, assuming there is a dot command invokable as .dotcmd,
 (which there could be if another extension provided it),
 it can be found and executed from the Tcl execution environment
@@ -409,7 +420,7 @@ execution environment. For example:<br>
 
 It should be noted, for those new to Tcl, that brace-quoting in Tcl
 means "Whatever is between these matching braces is the (single) value."
-It can be used for nearly any content, except for mismatched braces.
+It can be used for nearly any content, excepting explicit mismatched braces.
 
 ## Summary, More to Come ##
 

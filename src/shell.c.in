@@ -13536,6 +13536,7 @@ DISPATCHABLE_COMMAND( shxload 4 2 0 ){
   }
   if( zFile==0 ) return DCR_Missing;
   if( pzExtArgs==0 ) pzExtArgs = azArg + ai;
+  open_db(p, 0);
   rc = load_shell_extension(p, zFile, zProc, pzErr, nArg-ai, pzExtArgs);
   return DCR_Ok|(rc!=SQLITE_OK);
 }
@@ -13595,6 +13596,14 @@ DISPATCHABLE_COMMAND( shxopts 3 0 0 ){
   return DCR_CmdErred;
 }
 
+static void showWidths(ShellExState *p){
+  int i = 0;
+  while( i < p->numWidths ){
+    raw_printf(ISS(p)->out," %d",p->pSpecWidths[i++]);
+  }
+  raw_printf(ISS(p)->out,"\n");
+}
+
 DISPATCHABLE_COMMAND( show ? 1 1 ){
   static const char *azBool[] = { "off", "on", "trigger", "full"};
   const char *zOut;
@@ -13651,11 +13660,8 @@ DISPATCHABLE_COMMAND( show ? 1 1 ){
   case 3:  zOut = "vmstep";  break;
   }
   utf8_printf(out, "%12.12s: %s\n","stats", zOut);
-  utf8_printf(out, "%12.12s: ", "width");
-  for (i=0;i<p->numWidths;i++) {
-    raw_printf(out, "%d ", p->pSpecWidths[i]);
-  }
-  raw_printf(out, "\n");
+  utf8_printf(out, "%12.12s:", "width");
+  showWidths(p);
   utf8_printf(out, "%12.12s: %s\n", "filename",
               psi->pAuxDb->zDbFilename ? psi->pAuxDb->zDbFilename : "");
   return DCR_Ok;
@@ -14573,10 +14579,11 @@ static void setColumnWidths(ShellExState *p, char *azWidths[], int nWidths){
 }
 COLLECT_HELP_TEXT[
   ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
-  "   Negative values right-justify",
+  "   Negative values right-justify. A lone ? shows the current values.",
 ];
 DISPATCHABLE_COMMAND( width ? 1 0 ){
-  setColumnWidths(p, azArg+1, nArg-1);
+  if( nArg==2 && cli_strcmp(azArg[1],"?")==0 ) showWidths(p);
+  else setColumnWidths(p, azArg+1, nArg-1);
   return DCR_Ok;
 }
 

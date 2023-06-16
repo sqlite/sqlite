@@ -32,14 +32,16 @@ subcommands will store or retrieve all or named parameters into/from a file.
 
 **.shxopts** either shows or alters extended shell features. Presently,
 this allows shell input parsing to be enhanced as described below or to be
-reverted to the traditional rule where dot-commands always occupy one line.
+reverted to the traditional rule where dot-commands always occupy one line
+and neither dot-commands nor #-prefixed comments may have leading whitespace.
 
 **.tables** has new options to show only tables, views, or system tables.
 
 **.vars** is used to create or modify "shell" variables. These are
 key/value pairs which are associated with the shell session rather than
 a specific database such as .databases would list. These variables may
-be the subject of "edit", "set", "save" and "load" subcommands.
+be the subject of "edit", "set", "save" and "load" subcommands with
+effect similar to what they do with the .parameter dot-command.
 
 **.x** is a general purpose, "run these" command. By default, its arguments
 are treated as shell variable names, values of which are interpreted as
@@ -52,10 +54,20 @@ Other new shell features are:
 By default, when invoked as "sqlite3x", or after ".shxopts +parsing" is run,
 the shell effects enhanced command parsing whereby quoted dot-command arguments
 may span multiple lines or dot-command input lines may be spliced together
-with trailing backslash.
+with trailing backslash, and all shell input may have leading whitespace.
 
 When not invoked as "sqlite3x", or after ".shxopts -parsing" is run, any
 dot-command arguments and the dot-command itself end at the first newline.
+Also, input lines with leading whitespace will not be accepted as dot-commands
+or #-prefixed comments.
 This might be needed to run legacy shell scripts having some dot-command(s)
 with a final argument that has an initial quote but no closing quote or
 which happen to end with backslash.
+
+The shell's handling of certain fatal conditions has been changed to make
+it more suitable being embedded into other applications. It no longer calls
+exit() for OOM conditions or -safe mode violations. This feature has not
+yet been fully tested; work remains to be sure that the shell can be called,
+then return to its caller, repeatedly without leaking resources or leaving
+the console in an odd state. But the infrastructure is in place to make
+that all work with only minor (or possibly no) revisions.
