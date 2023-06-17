@@ -997,12 +997,15 @@ static int udbEventHandle(void *pv, NoticeKind nk, void *pvSubject,
     case NK_DbAboutToClose:
       if( ix>=0 ) udbRemove(pudb, ix);
       break;
+
+      /* Only above need handling. (So, clever tools, be quiet!) */
+    default: break;
     }
   }
   return 0;
 }
 
-/* Create the UserDb object supporting TCL "udb" command operations. 
+/* Create the UserDb object supporting TCL "udb" command operations.
  * It's not wholly created because it is a singleton. Any subsequent
  * creation is ignored; instead, the singleton is returned. This
  * object is made to release resources only upon shutdown. If a TCL
