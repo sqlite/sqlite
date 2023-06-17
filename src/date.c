@@ -110,8 +110,8 @@ struct DateTime {
 */
 static int getDigits(const char *zDate, const char *zFormat, ...){
   /* The aMx[] array translates the 3rd character of each format
-  ** spec into a max size:    a   b   c   d   e     f */
-  static const u16 aMx[] = { 12, 14, 24, 31, 59, 9999 };
+  ** spec into a max size:    a   b   c   d   e      f */
+  static const u16 aMx[] = { 12, 14, 24, 31, 59, 14712 };
   va_list ap;
   int cnt = 0;
   char nextC;
@@ -448,6 +448,32 @@ static void computeYMD(DateTime *p){
   p->validYMD = 1;
 }
 
+/* GCC (and sometimes Clang too) will sometimes be off by 1 millisecond
+** in computeHMS() on 32-bit platforms with optimization enabled.
+** I don't know if this is a compiler bug or a bug in the code.  It is hard
+** to debug because with optimization enabled, gdb skips around so much
+** you cannot see what is happening, and if you try adding debug printf()s
+** to the code, the problem goes away.
+**
+** For now, I will work around the problem by disabling optimizations in
+** the computeHMS() routine.
+**
+** Problem seen using gcc-5.4.0, gcc-9.4.0, clang-10.  Works ok on
+** MSVC, clang-3.4, and clang-6.0.
+**
+** Whatever the problem is, it causes some answers to be off by one
+** millisecond.  So we get results like "2021-03-05 03:04:05.599" instead
+** of the desired result of "2021-03-05 03:04:05.600".
+**
+** To reproduce the problem using TH3:
+**
+**    ./th3make debug.rc -O1 -m32 cfg/c1.cfg cov1/date8.test
+*/
+#if SQLITE_PTRSIZE==4 && GCC_VERSION>0
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
+
 /*
 ** Compute the Hour, Minute, and Seconds from the julian day number.
 */
@@ -466,6 +492,11 @@ static void computeHMS(DateTime *p){
   p->rawS = 0;
   p->validHMS = 1;
 }
+
+/* Reactivate GCC optimization */
+#if SQLITE_PTRSIZE==4 && GCC_VERSION>0
+#pragma GCC pop_options
+#endif
 
 /*
 ** Compute both YMD and HMS
@@ -872,13 +903,17 @@ static int parseModifier(
       int i;
       int Y,M,D,h,m,x;
       const char *z2 = z;
+      char z0 = z[0];
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
         if( sqlite3Isspace(z[n]) ) break;
-        if( z[n]=='-' && n==5 && getDigits(&z[1], "40f", &Y)==1 ) break;
+        if( z[n]=='-' ){
+          if( n==5 && getDigits(&z[1], "40f", &Y)==1 ) break;
+          if( n==6 && getDigits(&z[1], "50f", &Y)==1 ) break;
+        }
       }
       if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
-        rc = 1;
+        assert( rc==1 );
         break;
       }
       if( z[n]=='-' ){
@@ -886,14 +921,19 @@ static int parseModifier(
         ** specified number of years, months, and days.  MM is limited to
         ** the range 0-11 and DD is limited to 0-30.
         */
-        if( z[0]!='+' && z[0]!='-' ) break;  /* Must start with +/- */
-        if( NEVER(n!=5) ) break;             /* Must be 4-digit YYYY */
-        if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
+        if( z0!='+' && z0!='-' ) break;  /* Must start with +/- */
+        if( n==5 ){
+          if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
+        }else{
+          assert( n==6 );
+          if( getDigits(&z[1], "50f-20a-20d", &Y, &M, &D)!=3 ) break;
+          z++;
+        }
         if( M>=12 ) break;                   /* M range 0..11 */
         if( D>=31 ) break;                   /* D range 0..30 */
         computeYMD_HMS(p);
         p->validJD = 0;
-        if( z[0]=='-' ){
+        if( z0=='-' ){
           p->Y -= Y;
           p->M -= M;
           D = -D;
@@ -937,7 +977,7 @@ static int parseModifier(
         tx.iJD -= 43200000;
         day = tx.iJD/86400000;
         tx.iJD -= day*86400000;
-        if( z[0]=='-' ) tx.iJD = -tx.iJD;
+        if( z0=='-' ) tx.iJD = -tx.iJD;
         computeJD(p);
         clearYMD_HMS_TZ(p);
         p->iJD += tx.iJD;
@@ -953,7 +993,7 @@ static int parseModifier(
       if( n>10 || n<3 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
-      rc = 1;
+      assert( rc==1 );
       rRounder = r<0 ? -0.5 : +0.5;
       for(i=0; i<ArraySize(aXformType); i++){
         if( aXformType[i].nName==n
@@ -1397,14 +1437,15 @@ static void cdateFunc(
 */
 static void timediffFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed1,
   sqlite3_value **argv
 ){
   char sign;
   int Y, M;
   DateTime d1, d2;
   sqlite3_str sRes;
-  if( isDate(context, 1, argv, &d1)     ) return;
+  UNUSED_PARAMETER(NotUsed1);
+  if( isDate(context, 1, &argv[0], &d1) ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
   computeYMD_HMS(&d1);
   computeYMD_HMS(&d2);
@@ -1426,7 +1467,7 @@ static void timediffFunc(
       d2.validJD = 0;
       computeJD(&d2);
     }
-    if( d1.iJD<d2.iJD ){
+    while( d1.iJD<d2.iJD ){
       M--;
       if( M<0 ){
         M = 11;
@@ -1442,7 +1483,7 @@ static void timediffFunc(
     }
     d1.iJD -= d2.iJD;
     d1.iJD += 148699540800000;
-  }else{
+  }else /* d1<d2 */{
     sign = '-';
     Y = d2.Y - d1.Y;
     if( Y ){
@@ -1460,7 +1501,7 @@ static void timediffFunc(
       d2.validJD = 0;
       computeJD(&d2);
     }
-    if( d1.iJD>d2.iJD ){
+    while( d1.iJD>d2.iJD ){
       M--;
       if( M<0 ){
         M = 11;

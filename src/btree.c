@@ -1635,7 +1635,7 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
   iCellStart = get2byte(&data[hdr+5]);
   if( nCell>0 ){
     temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
-    memcpy(&temp[iCellStart], &data[iCellStart], usableSize - iCellStart);
+    memcpy(temp, data, usableSize);
     src = temp;
     for(i=0; i<nCell; i++){
       u8 *pAddr;     /* The i-th cell pointer */
@@ -2640,6 +2640,9 @@ int sqlite3BtreeOpen(
     assert( sizeof(u32)==4 );
     assert( sizeof(u16)==2 );
     assert( sizeof(Pgno)==4 );
+
+    /* Suppress false-positive compiler warning from PVS-Studio */
+    memset(&zDbHeader[16], 0, 8);
  
     pBt = sqlite3MallocZero( sizeof(*pBt) );
     if( pBt==0 ){
@@ -3339,7 +3342,6 @@ static int lockBtree(BtShared *pBt){
     ){
       goto page1_init_failed;
     }
-    pBt->btsFlags |= BTS_PAGESIZE_FIXED;
     assert( (pageSize & 7)==0 );
     /* EVIDENCE-OF: R-59310-51205 The "reserved space" size in the 1-byte
     ** integer at offset 20 is the number of bytes of space at the end of
@@ -3359,6 +3361,7 @@ static int lockBtree(BtShared *pBt){
       releasePageOne(pPage1);
       pBt->usableSize = usableSize;
       pBt->pageSize = pageSize;
+      pBt->btsFlags |= BTS_PAGESIZE_FIXED;
       freeTempSpace(pBt);
       rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize,
                                    pageSize-usableSize);
@@ -3378,6 +3381,7 @@ static int lockBtree(BtShared *pBt){
     if( usableSize<480 ){
       goto page1_init_failed;
     }
+    pBt->btsFlags |= BTS_PAGESIZE_FIXED;
     pBt->pageSize = pageSize;
     pBt->usableSize = usableSize;
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -7486,7 +7490,7 @@ static int rebuildPage(
   if( NEVER(j>(u32)usableSize) ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
-  for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
+  for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i; k++){}
   pSrcEnd = pCArray->apEnd[k];
 
   pData = pEnd;
@@ -7569,7 +7573,7 @@ static int pageInsertArray(
   u8 *pEnd;                       /* Maximum extent of cell data */
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   if( iEnd<=iFirst ) return 0;
-  for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
+  for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i ; k++){}
   pEnd = pCArray->apEnd[k];
   while( 1 /*Exit by break*/ ){
     int sz, rc;
@@ -8679,7 +8683,7 @@ static int balance_nonroot(
     iOvflSpace += sz;
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
-    for(k=0; b.ixNx[k]<=j && ALWAYS(k<NB*2); k++){}
+    for(k=0; ALWAYS(k<NB*2) && b.ixNx[k]<=j; k++){}
     pSrcEnd = b.apEnd[k];
     if( SQLITE_WITHIN(pSrcEnd, pCell, pCell+sz) ){
       rc = SQLITE_CORRUPT_BKPT;
@@ -8715,6 +8719,8 @@ static int balance_nonroot(
   for(i=1-nNew; i<nNew; i++){
     int iPg = i<0 ? -i : i;
     assert( iPg>=0 && iPg<nNew );
+    assert( iPg>=1 || i>=0 );
+    assert( iPg<ArraySize(cntOld) );
     if( abDone[iPg] ) continue;         /* Skip pages already processed */
     if( i>=0                            /* On the upwards pass, or... */
      || cntOld[iPg-1]>=cntNew[iPg-1]    /* Condition (1) is true */
