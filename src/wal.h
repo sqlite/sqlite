@@ -139,7 +139,7 @@ void sqlite3WalSnapshotUnlock(Wal *pWal);
 
 #ifndef SQLITE_OMIT_CONCURRENT
 /* Tell the wal layer that we want to commit a concurrent transaction */
-int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead, Pgno*);
+int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead, u32*);
 
 /* Upgrade the state of the client to take into account changes written
 ** by other connections */

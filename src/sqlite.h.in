@@ -10620,6 +10620,98 @@ int sqlite3_deserialize(
 #define SQLITE_DESERIALIZE_READONLY    4 /* Database is read-only */
 
 /*
+** Access details of recent COMMIT commands. This function allows various
+** details related to the most recent COMMIT command to be accessed. 
+** The requested value is always returned via output parameter (*piVal).
+** The specific value requested is identified by parameter op (see
+** below).
+**
+** SQLITE_OK is returned if successful, or SQLITE_ERROR if the "op" or
+** "zDb" paramters are unrecognized.
+*/
+int sqlite3_commit_status(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Name of database - "main" etc. */
+  int op,                         /* SQLITE_COMMIT_XXX constant */
+  unsigned int *piVal             /* OUT: Write requested value here */
+);
+
+/*
+** The following describes the five requests supported by
+** sqlite3_commit_status(), each identified by an SQLITE_COMMIT_XXX 
+** constant:
+** 
+** SQLITE_COMMIT_FIRSTFRAME:
+**   In this case argument zDb must be "main", or "temp", or else the name of
+**   an attached database. If zDb does not correspond to any attached database, 
+**   SQLITE_ERROR is returned.
+**
+**   The final value of (*piVal) for this request is only defined if (a) the
+**   most recent attempt to write to the database connection was successful,
+**   (b) the most recent attempt to write to the database did write to database 
+**   zDb, and (c) zDb is a wal mode database.
+**
+**   If the above conditions are true, then output parameter (*piVal) is
+**   set to the frame number of the first frame written by the recent 
+**   transaction. In wal mode, or in wal2 mode when a transaction is
+**   written into the *-wal file, the frame number indicates the frame's 
+**   position in the wal file - frames are numbered starting from 1. In 
+**   wal2 mode, when a transaction is written to the *-wal2 file, the frame
+**   number is the frame's position in the *-wal2 file, plus (1 << 31).
+**
+**   Note: Although the a database may have up to (1<<32) pages, each wal
+**   file may contain at most (1<<31) frames.
+**
+** SQLITE_COMMIT_NFRAME:
+**   zDb is interpreted in the same way as, and the final value of (*piVal)
+**   is undefined, for SQLITE_COMMIT_FIRSTFRAME.
+**
+**   Otherwise, (*piVal) is set to the number of frames written by the 
+**   recent transaction.
+**
+** SQLITE_COMMIT_CONFLICT_DB:
+**   Parameter zDb is ignored for this request. The results of this
+**   request are only defined if the most recent attempt to write to
+**   the database handle was a BEGIN CONCURRENT transaction that 
+**   failed with an SQLITE_BUSY_SNAPSHOT error.
+**
+**   In other cases, (*piVal) is set to the index of the database
+**   on which the SQLITE_BUSY_SNAPSHOT error occurred (0 for main,
+**   a value of 2 or greater for an attached database). This value
+**   may be used with the sqlite3_db_name() API to find the name
+**   of the conflicting database.
+**
+** SQLITE_COMMIT_CONFLICT_FRAME:
+**   Parameter zDb is ignored for this request. The results of this
+**   request are only defined if the most recent attempt to write to
+**   the database handle was a BEGIN CONCURRENT transaction that 
+**   failed with an SQLITE_BUSY_SNAPSHOT error.
+**
+**   (*piVal) is set to the frame number of the conflicting frame for 
+**   the recent SQLITE_BUSY_SNAPSHOT error. The conflicting transaction may
+**   be found by comparing this value with the FIRSTFRAME and
+**   NFRAME values for recent succesfully committed transactions on
+**   the same db. If the CONFLICT_FRAME value is F, then the conflicting 
+**   transaction is the most recent successful commit for which 
+**   (FIRSTFRAME <= F <= FIRSTFRAME+NFRAME) is true.
+**
+** SQLITE_COMMIT_CONFLICT_PGNO:
+**   Parameter zDb is ignored for this request. The results of this
+**   request are only defined if the previous attempt to write to
+**   the database using database handle db failed with 
+**   SQLITE_BUSY_SNAPSHOT.
+**
+**   Return the page number of the conflicting page for the most
+**   recent SQLITE_BUSY_SNAPSHOT error.
+*/
+#define SQLITE_COMMIT_FIRSTFRAME     0
+#define SQLITE_COMMIT_NFRAME         1
+#define SQLITE_COMMIT_CONFLICT_DB    2
+#define SQLITE_COMMIT_CONFLICT_FRAME 3
+#define SQLITE_COMMIT_CONFLICT_PGNO  4
+
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

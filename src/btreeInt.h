@@ -364,6 +364,12 @@ struct Btree {
 #ifndef SQLITE_OMIT_SHARED_CACHE
   BtLock lock;       /* Object used to lock page 1 */
 #endif
+#ifndef SQLITE_OMIT_CONCURRENT
+  /* Return values for sqlite3_commit_status() requests:
+  ** SQLITE_COMMIT_FIRSTFRAME, COMMIT_NFRAME.
+  */
+  u32 aCommit[2];
+#endif
 };
 
 /*

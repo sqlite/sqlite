@@ -2416,6 +2416,57 @@ static int SQLITE_TCLAPI test_create_null_module(
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+/*
+** tclcmd:  sqlite3_commit_status db DBNAME OP
+*/
+static int SQLITE_TCLAPI test_commit_status(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  struct Op {
+    const char *zOp;
+    int op;
+  } aOp[] = {
+    { "FIRSTFRAME",     SQLITE_COMMIT_FIRSTFRAME },
+    { "NFRAME",         SQLITE_COMMIT_NFRAME },
+    { "CONFLICT_DB",    SQLITE_COMMIT_CONFLICT_DB },
+    { "CONFLICT_FRAME", SQLITE_COMMIT_CONFLICT_FRAME },
+    { "CONFLICT_PGNO",  SQLITE_COMMIT_CONFLICT_PGNO },
+    { 0, 0 }
+  };
+  sqlite3 *db = 0;
+  const char *zDb = 0;
+  int op = 0;
+  int rc = SQLITE_OK;
+  unsigned int val = 0;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME OP");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[2]);
+  if( Tcl_GetIndexFromObjStruct(
+        interp, objv[3], aOp, sizeof(aOp[0]), "OP", 0, &op
+  )){
+    return TCL_ERROR;
+  }
+  op = aOp[op].op;
+
+  rc = sqlite3_commit_status(db, zDb, op, &val);
+  if( rc==SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((i64)val));
+    return TCL_OK;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_ERROR;
+}
+
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** Usage: sqlite3_snapshot_get DB DBNAME
@@ -9046,6 +9097,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
      { "create_null_module",       test_create_null_module,     0 },
 #endif
+     { "sqlite3_commit_status",    test_commit_status,     0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

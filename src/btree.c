@@ -4654,6 +4654,9 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
     BtShared *pBt = p->pBt;
     sqlite3BtreeEnter(p);
 
+#ifndef SQLITE_OMIT_CONCURRENT
+    memset(p->aCommit, 0, sizeof(p->aCommit));
+#endif
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       assert( ISCONCURRENT==0 );
@@ -4673,6 +4676,19 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zSuperJrnl, 0);
     }
+#ifndef SQLITE_OMIT_CONCURRENT
+    if( rc==SQLITE_OK ){
+      u32 iPrev = 0;
+      u32 iCurrent = 0;
+      sqlite3PagerWalInfo(pBt->pPager, &iPrev, &iCurrent);
+      if( (iPrev&0x80000000)!=(iCurrent&0x80000000) ){
+        iPrev = (iPrev & 0x7FFFFFFF) | (iCurrent & 0x80000000);
+      }
+
+      p->aCommit[SQLITE_COMMIT_FIRSTFRAME] = iPrev+1;
+      p->aCommit[SQLITE_COMMIT_NFRAME] = iCurrent-iPrev;
+    }
+#endif
     sqlite3BtreeLeave(p);
   }
   return rc;
@@ -11802,22 +11818,29 @@ int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 ** is returned.
 */
 int sqlite3BtreeExclusiveLock(Btree *p){
+  sqlite3 *db = p->db;
   int rc;
   Pgno pgno = 0;
   BtShared *pBt = p->pBt;
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
+  memset(db->aCommit, 0, sizeof(db->aCommit));
   sqlite3BtreeEnter(p);
   rc = sqlite3PagerExclusiveLock(pBt->pPager, 
-    (p->db->eConcurrent==CONCURRENT_SCHEMA) ? 0 : pBt->pPage1->pDbPage,
-    &pgno
+    (db->eConcurrent==CONCURRENT_SCHEMA) ? 0 : pBt->pPage1->pDbPage,
+    db->aCommit
   );
 #ifdef SQLITE_OMIT_CONCURRENT
-  assert( pgno==0 );
+  assert( db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]==0 );
 #else
-  if( rc==SQLITE_BUSY_SNAPSHOT && pgno ){
+  if( (rc==SQLITE_BUSY_SNAPSHOT)
+   && (pgno = db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]) 
+  ){
+    int iDb;
     PgHdr *pPg = 0;
-    int rc2 = sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
-    if( rc2==SQLITE_OK ){
+    for(iDb=0; db->aDb[iDb].pBt!=p; iDb++);
+    db->aCommit[SQLITE_COMMIT_CONFLICT_DB] = (u32)iDb;
+    (void)sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
+    if( pPg ){
       int bWrite = -1;
       const char *zObj = 0;
       const char *zTab = 0;
@@ -11909,3 +11932,38 @@ int sqlite3BtreeConnectionCount(Btree *p){
   return p->pBt->nRef;
 }
 #endif
+
+/*
+** Access details of recent COMMIT commands. This function allows various
+** details related to the most recent COMMIT command to be accessed. 
+** The requested value is always returned via output parameter (*piVal).
+** The specific value requested is identified by parameter op (see
+** below).
+**
+** SQLITE_OK is returned if successful, or SQLITE_ERROR if the "op" or
+** "zDb" paramters are unrecognized.
+*/
+int sqlite3_commit_status(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Name of database - "main" etc. */
+  int op,                         /* SQLITE_COMMIT_XXX constant */
+  unsigned int *piVal             /* OUT: Write requested value here */
+){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_CONCURRENT
+  if( op<0 || op>SQLITE_COMMIT_CONFLICT_PGNO ){
+    rc = SQLITE_ERROR;
+  }else if( op==SQLITE_COMMIT_FIRSTFRAME || op==SQLITE_COMMIT_NFRAME ){
+    int iDb = sqlite3FindDbName(db, zDb);
+    if( iDb<0 ){
+      rc = SQLITE_ERROR;
+    }else{
+      *piVal = db->aDb[iDb].pBt->aCommit[op];
+    }
+  }else{
+    *piVal = db->aCommit[op];
+  }
+#endif
+  return rc;
+}
+

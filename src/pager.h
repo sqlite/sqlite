@@ -180,7 +180,7 @@ void *sqlite3PagerGetExtra(DbPage *);
 void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
 int sqlite3PagerCommitPhaseOne(Pager*,const char *zSuper, int);
-int sqlite3PagerExclusiveLock(Pager*, DbPage *pPage1, Pgno*);
+int sqlite3PagerExclusiveLock(Pager*, DbPage *pPage1, u32*);
 int sqlite3PagerSync(Pager *pPager, const char *zSuper);
 int sqlite3PagerCommitPhaseTwo(Pager*);
 int sqlite3PagerRollback(Pager*);

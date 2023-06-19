@@ -3684,6 +3684,15 @@ int sqlite3WalSnapshotRecover(Wal *pWal){
 #endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
+** Return the current last frame in the wal-index - mxFrame for *-wal, 
+** or mxFrame2 for *-wal2. If the last frame is current in wal2, return
+** mxFrame2 without clearing the 0x80000000 bit.
+*/
+static u32 walGetPriorFrame(WalIndexHdr *pHdr){
+  return (walidxGetFile(pHdr) ? pHdr->mxFrame2 : pHdr->mxFrame);
+}
+
+/*
 ** Begin a read transaction on the database.
 **
 ** This routine used to be called sqlite3OpenSnapshot() and with good reason:
@@ -3745,7 +3754,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
     rc = walOpenWal2(pWal);
   }
 
-  pWal->nPriorFrame = pWal->hdr.mxFrame;
+  pWal->nPriorFrame = walGetPriorFrame(&pWal->hdr);
 #ifdef SQLITE_ENABLE_SNAPSHOT
   if( rc==SQLITE_OK ){
     if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
@@ -4149,6 +4158,24 @@ static int walUpgradeReadlock(Wal *pWal){
 
 
 #ifndef SQLITE_OMIT_CONCURRENT
+
+/*
+** A concurrent transaction has conflicted with external frame iExternal.
+** Transform this value to the one required by SQLITE_COMMIT_CONFLICT_FRAME -
+** the frame offset within its wal file, with the 0x80000000 bit set for
+** wal2, clear for the default wal file.
+*/
+static u32 walConflictFrame(Wal *pWal, u32 iExternal){
+  u32 iRet = iExternal;
+  if( isWalMode2(pWal) ){
+    int bFile = walExternalDecode(iExternal, &iRet);
+    iRet = (iRet | (bFile ? 0x80000000 : 0));
+  }
+  return iRet;
+}
+
+
+
 /* 
 ** This function is only ever called when committing a "BEGIN CONCURRENT"
 ** transaction. It may be assumed that no frames have been written to
@@ -4181,7 +4208,7 @@ int sqlite3WalLockForCommit(
   Wal *pWal, 
   PgHdr *pPg1, 
   Bitvec *pAllRead, 
-  Pgno *piConflict
+  u32 *aConflict
 ){
   int rc = walWriteLock(pWal);
 
@@ -4213,7 +4240,10 @@ int sqlite3WalLockForCommit(
       if( pPg1==0 ){
         /* If pPg1==0, then the current transaction modified the database
         ** schema. This means it conflicts with all other transactions. */
-        *piConflict = 1;
+        u32 bFile = walidxGetFile(&pWal->hdr);
+        u32 iFrame = walidxGetMxFrame(&head, bFile) | (bFile << 31);
+        aConflict[SQLITE_COMMIT_CONFLICT_PGNO] = 1;
+        aConflict[SQLITE_COMMIT_CONFLICT_FRAME] = iFrame;
         rc = SQLITE_BUSY_SNAPSHOT;
       }
 
@@ -4276,15 +4306,20 @@ int sqlite3WalLockForCommit(
                 if( bWal2 ){
                   iWal = walExternalDecode(iFrame, &iFrame);
                 }
-                sz = pWal->hdr.szPage;
+                sz = head.szPage;
                 sz = (sz&0xfe00) + ((sz&0x0001)<<16);
                 iOff = walFrameOffset(iFrame, sz) + WAL_FRAME_HDRSIZE + 40;
                 rc = sqlite3OsRead(pWal->apWalFd[iWal],aNew,sizeof(aNew),iOff);
                 if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
+                  u32 iFrame = walConflictFrame(pWal, sLoc.iZero+i);
+                  aConflict[SQLITE_COMMIT_CONFLICT_PGNO] = 1;
+                  aConflict[SQLITE_COMMIT_CONFLICT_FRAME] = iFrame;
                   rc = SQLITE_BUSY_SNAPSHOT;
                 }
               }else if( sqlite3BitvecTestNotNull(pAllRead, sLoc.aPgno[i-1]) ){
-                *piConflict = sLoc.aPgno[i-1];
+                u32 iFrame = walConflictFrame(pWal, sLoc.iZero+i);
+                aConflict[SQLITE_COMMIT_CONFLICT_PGNO] = sLoc.aPgno[i-1];
+                aConflict[SQLITE_COMMIT_CONFLICT_FRAME] = iFrame;
                 rc = SQLITE_BUSY_SNAPSHOT;
               }else
               if( (pPg = sqlite3PagerLookup(pPg1->pPager, sLoc.aPgno[i-1])) ){
@@ -4318,7 +4353,7 @@ int sqlite3WalLockForCommit(
     }
   }
 
-  pWal->nPriorFrame = pWal->hdr.mxFrame;
+  pWal->nPriorFrame = walGetPriorFrame(&pWal->hdr);
   return rc;
 }
 
@@ -4591,6 +4626,7 @@ static int walRestartLog(Wal *pWal){
     rc = walUpgradeReadlock(pWal);
   }
 
+  pWal->nPriorFrame = walGetPriorFrame(&pWal->hdr);
   return rc;
 }
 
@@ -5346,7 +5382,7 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
   int rc = SQLITE_OK;
   if( pWal ){
     *pnPrior = pWal->nPriorFrame;
-    *pnFrame = walidxGetMxFrame(&pWal->hdr, walidxGetFile(&pWal->hdr));
+    *pnFrame = walGetPriorFrame(&pWal->hdr);
   }
   return rc;
 }

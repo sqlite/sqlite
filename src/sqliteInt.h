@@ -1740,6 +1740,12 @@ struct sqlite3 {
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
 #endif
+#ifndef SQLITE_OMIT_CONCURRENT
+  /* Return values for sqlite3_commit_status() requests:
+  ** SQLITE_COMMIT_CONFLICT_DB, CONFLICT_FRAME and CONFLICT_PGNO.  
+  */
+  u32 aCommit[5];
+#endif
 };
 
 /*

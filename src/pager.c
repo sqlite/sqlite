@@ -6437,7 +6437,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zSuper){
 ** is returned. Otherwise, if some other error occurs (IO error, OOM etc.),
 ** and SQLite error code is returned.
 */
-int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, Pgno *piConflict){
+int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, u32 *aConflict){
   int rc = pPager->errCode;
   assert( assert_pager_state(pPager) );
   if( rc==SQLITE_OK ){
@@ -6458,7 +6458,7 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, Pgno *piConflict){
         ** non-zero.  */
         do {
           rc = sqlite3WalLockForCommit(
-              pPager->pWal, pPage1, pPager->pAllRead, piConflict
+              pPager->pWal, pPage1, pPager->pAllRead, aConflict
           );
         }while( rc==SQLITE_BUSY 
              && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
