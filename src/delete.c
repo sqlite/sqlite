@@ -33,7 +33,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   Table *pTab;
   assert( pItem && pSrc->nSrc>=1 );
   pTab = sqlite3LocateTableItem(pParse, 0, pItem);
-  sqlite3DeleteTable(pParse->db, pItem->pTab);
+  if( pItem->pTab ) sqlite3DeleteTable(pParse->db, pItem->pTab);
   pItem->pTab = pTab;
   pItem->fg.notCte = 1;
   if( pTab ){
@@ -862,9 +862,11 @@ void sqlite3GenerateRowDelete(
   sqlite3FkActions(pParse, pTab, 0, iOld, 0, 0);
 
   /* Invoke AFTER DELETE trigger programs. */
-  sqlite3CodeRowTrigger(pParse, pTrigger,
-      TK_DELETE, 0, TRIGGER_AFTER, pTab, iOld, onconf, iLabel
-  );
+  if( pTrigger ){
+    sqlite3CodeRowTrigger(pParse, pTrigger,
+        TK_DELETE, 0, TRIGGER_AFTER, pTab, iOld, onconf, iLabel
+    );
+  }
 
   /* Jump here if the row had already been deleted before any BEFORE
   ** trigger programs were invoked. Or if a trigger program throws a

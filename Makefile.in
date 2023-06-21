@@ -1166,6 +1166,7 @@ SHELL_SRC = \
   $(TOP)/ext/misc/sqlar.c \
   $(TOP)/ext/misc/uint.c \
   $(TOP)/ext/misc/memtrace.c \
+  $(TOP)/ext/misc/pcachetrace.c \
   $(TOP)/src/shext_linkage.h \
   $(TOP)/src/obj_interfaces.h \
   $(TOP)/src/resmanage.h \
