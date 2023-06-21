@@ -5900,6 +5900,7 @@ int sqlite3BtreeIndexMoveto(
 ){
   int rc;
   RecordCompare xRecordCompare;
+  int bNeedUnref;          /* Deferred Unref() calls for pCur->apPage[] */
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -5949,19 +5950,43 @@ int sqlite3BtreeIndexMoveto(
       if( !pCur->pPage->isInit ){
         return SQLITE_CORRUPT_BKPT;
       }
+      bNeedUnref = 0;
       goto bypass_moveto_root;  /* Start search on the current page */
     }
     pIdxKey->errCode = SQLITE_OK;
   }
 
-  rc = moveToRoot(pCur);
-  if( rc ){
-    if( rc==SQLITE_EMPTY ){
-      assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
-      *pRes = -1;
-      return SQLITE_OK;
+  if( pCur->eState==CURSOR_VALID
+   && pCur->iPage>0
+   && pCur->apPage[0]->nCell>0
+  ){
+    /* This block is similar to moveToRoot() except that it does not
+    ** call releasePageNotNull() on the child pages found in the cursor.
+    ** The pCur->apPage[x] pointers for x>=1 up to x==bNeedUnref 
+    ** remain valid and available for reuse.  This means that the state of
+    ** the BtCursor object is technical invalid when bNeedUnref>0.  This
+    ** routine must invoke releasePageNotNull() on apPage[] entries that
+    ** are not reused prior to existing this function, in order to bring
+    ** the cursor back into a valid state.
+    */
+    bNeedUnref = pCur->iPage;
+    pCur->apPage[bNeedUnref] = pCur->pPage;
+    pCur->iPage = 0;
+    pCur->pPage = pCur->apPage[0];
+    pCur->ix = 0;
+    pCur->info.nSize = 0;
+    pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidNKey|BTCF_ValidOvfl);
+  }else{
+    bNeedUnref = 0;
+    rc = moveToRoot(pCur);
+    if( rc ){
+      if( rc==SQLITE_EMPTY ){
+        assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
+        *pRes = -1;
+        return SQLITE_OK;
+      }
+      return rc;
     }
-    return rc;
   }
 
 bypass_moveto_root:
@@ -6087,12 +6112,48 @@ bypass_moveto_root:
     }else{
       chldPg = get4byte(findCell(pPage, lwr));
     }
-    pCur->ix = (u16)lwr;
-    rc = moveToChild(pCur, chldPg);
-    if( rc ) break;
+
+    /* The following is similar to an in-lined version of
+    **
+    **    pCur->ix = (u16)lwr;
+    **    rc = moveToChild(pCur, chldPg);
+    **
+    ** But with the additional feature that pCur->apPage[] entries
+    ** that have had their Unref() calls deferred might be reused.
+    ** Reusing an apPage[] entry bypasses a lot of look-up and
+    ** initialization logic and hence saves many CPU cycles.
+    */
+    pCur->info.nSize = 0;
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+    if( pCur->iPage>=(BTCURSOR_MAX_DEPTH-1) ){
+      assert( bNeedUnref==0 );
+      return SQLITE_CORRUPT_BKPT;
+    }
+    pCur->aiIdx[pCur->iPage] = (u16)lwr;
+    pCur->apPage[pCur->iPage] = pCur->pPage;
+    pCur->ix = 0;
+    pCur->iPage++;
+    if( bNeedUnref && pCur->apPage[pCur->iPage]->pgno==chldPg ){
+      pCur->pPage = pCur->apPage[pCur->iPage];
+    }else{
+      if( bNeedUnref ){
+        while( bNeedUnref>=pCur->iPage ){
+          releasePageNotNull(pCur->apPage[bNeedUnref--]);
+        }
+        bNeedUnref = 0;
+      }
+      rc = getAndInitPage(pCur->pBt, chldPg, &pCur->pPage, pCur,
+                          pCur->curPagerFlags);
+      if( rc ) break;
+    }
   }
 moveto_index_finish:
   pCur->info.nSize = 0;
+  if( bNeedUnref ){
+    while( bNeedUnref>pCur->iPage ){
+      releasePageNotNull(pCur->apPage[bNeedUnref--]);
+    }
+  }
   assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
   return rc;
 }
