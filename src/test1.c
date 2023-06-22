@@ -2787,7 +2787,7 @@ static int SQLITE_TCLAPI test_atomic_batch_write(
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
-** Return the next statment in sequence after STMT.
+** Return the next statement in sequence after STMT.
 */
 static int SQLITE_TCLAPI test_next_stmt(
   void * clientData,
@@ -3510,10 +3510,10 @@ bad_args:
 /*
 ** Usage:         sqlite3_test_errstr <err code>
 **
-** Test that the english language string equivalents for sqlite error codes
+** Test that the English language string equivalents for sqlite error codes
 ** are sane. The parameter is an integer representing an sqlite error code.
 ** The result is a list of two elements, the string representation of the
-** error code and the english language explanation.
+** error code and the English language explanation.
 */
 static int SQLITE_TCLAPI test_errstr(
   void * clientData,
@@ -3699,7 +3699,7 @@ static int SQLITE_TCLAPI test_intarray_addr(
       }
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
 /*
@@ -3735,7 +3735,7 @@ static int SQLITE_TCLAPI test_int64array_addr(
       p[i] = v;
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
 /*
@@ -3769,7 +3769,7 @@ static int SQLITE_TCLAPI test_doublearray_addr(
       }
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
 /*
@@ -3802,7 +3802,7 @@ static int SQLITE_TCLAPI test_textarray_addr(
     }
   }
   n = objc-1;
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((sqlite3_int64)p));
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
 
@@ -6166,7 +6166,7 @@ static int SQLITE_TCLAPI vfs_unlink_test(
   assert( sqlite3_vfs_find("__two")==&two );
 
   /* Calling sqlite_vfs_register with non-zero second parameter changes the
-  ** default VFS, even if the 1st parameter is an existig VFS that is
+  ** default VFS, even if the 1st parameter is an existing VFS that is
   ** previously registered as the non-default.
   */
   sqlite3_vfs_register(&one, 1);
@@ -7465,6 +7465,26 @@ static int testLocaltime(const void *aliasT, void *aliasTM){
   pTm->tm_min = (S/60)%60;
   pTm->tm_sec = S % 60;
   return t==959609760; /* Special case: 2000-05-29 14:16:00 fails */
+}
+
+/*
+** .treetrace N
+*/
+static int SQLITE_TCLAPI test_treetrace(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  unsigned int v = 0;
+  if( objc>=2 ){
+    if( Tcl_GetIntFromObj(interp, objv[1], (int*)&v)==TCL_OK ){
+      sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &v);
+    }
+  }
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &v);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj((int)v));
+  return TCL_OK;
 }
 
 /*
@@ -9053,6 +9073,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
      { "sqlite3_test_control", test_test_control },
+     { ".treetrace",           test_treetrace    },
 #if SQLITE_OS_UNIX
      { "getrusage", test_getrusage },
 #endif
