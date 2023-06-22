@@ -4636,7 +4636,7 @@ static void fts5SecureDeleteOverflow(
       pLeaf = 0;
     }else if( bDetailNone ){
       break;
-    }else if( iNext>=pLeaf->szLeaf || iNext<4 ){
+    }else if( iNext>=pLeaf->szLeaf || pLeaf->nn<pLeaf->szLeaf || iNext<4 ){
       p->rc = FTS5_CORRUPT;
       break;
     }else{
@@ -4840,7 +4840,9 @@ static void fts5DoSecureDelete(
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>nPrefix ){
+        if( nPrefix2>pSeg->term.n ){
+          p->rc = FTS5_CORRUPT;
+        }else if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
         }
