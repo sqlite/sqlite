@@ -96,6 +96,11 @@ typedef unsigned int u32;
 #endif
 #endif /* !defined(SQLITE_AMALGAMATION) */
 
+/* Macro to check for 4-byte alignment.  Only used inside of assert() */
+#ifdef SQLITE_DEBUG
+# define FOUR_BYTE_ALIGNED(X)  ((((char*)(X) - (char*)0) & 3)==0)
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -502,7 +507,7 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
-  assert( (((sqlite3_uint64)p)&3)==0 );  /* p is always 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(p) );
 #if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   pCoord->u = _byteswap_ulong(*(u32*)p);
 #elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
@@ -556,7 +561,7 @@ static void writeInt16(u8 *p, int i){
 }
 static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
-  assert( (((sqlite3_uint64)p)&3)==0 );  /* p is always 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(p) );
   assert( sizeof(RtreeCoord)==4 );
   assert( sizeof(u32)==4 );
 #if SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
@@ -1284,7 +1289,7 @@ static void rtreeNonleafConstraint(
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
       || p->op==RTREE_FALSE );
-  assert( (((sqlite3_uint64)pCellData)&3)==0 );  /* 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(pCellData) );
   switch( p->op ){
     case RTREE_TRUE:  return;   /* Always satisfied */
     case RTREE_FALSE: break;    /* Never satisfied */
@@ -1337,7 +1342,7 @@ static void rtreeLeafConstraint(
       || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
       || p->op==RTREE_FALSE );
   pCellData += 8 + p->iCoord*4;
-  assert( (((sqlite3_uint64)pCellData)&3)==0 );  /* 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(pCellData) );
   RTREE_DECODE_COORD(eInt, pCellData, xN);
   switch( p->op ){
     case RTREE_TRUE:  return;   /* Always satisfied */
@@ -1907,7 +1912,20 @@ static int rtreeFilter(
             p->pInfo->nCoord = pRtree->nDim2;
             p->pInfo->anQueue = pCsr->anQueue;
             p->pInfo->mxLevel = pRtree->iDepth + 1;
-          }else if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+          }else if( eType==SQLITE_INTEGER ){
+            sqlite3_int64 iVal = sqlite3_value_int64(argv[ii]);
+#ifdef SQLITE_RTREE_INT_ONLY
+            p->u.rValue = iVal;
+#else
+            p->u.rValue = (double)iVal;
+            if( iVal>=((sqlite3_int64)1)<<48
+             || -iVal>=((sqlite3_int64)1)<<48
+            ){
+              if( p->op==RTREE_LT ) p->op = RTREE_LE;
+              if( p->op==RTREE_GT ) p->op = RTREE_GE;
+            }
+#endif
+          }else if( eType==SQLITE_FLOAT ){
 #ifdef SQLITE_RTREE_INT_ONLY
             p->u.rValue = sqlite3_value_int64(argv[ii]);
 #else
@@ -2038,11 +2056,12 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         || p->op==SQLITE_INDEX_CONSTRAINT_MATCH)
     ){
       u8 op;
+      u8 doOmit = 1;
       switch( p->op ){
-        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    break;
-        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    break;
+        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    doOmit = 0; break;
+        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    break;
-        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    break;
+        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    break;
         case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
         default:                            op = 0;           break;
@@ -2051,7 +2070,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zIdxStr[iIdx++] = op;
         zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
         pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-        pIdxInfo->aConstraintUsage[ii].omit = 1;
+        pIdxInfo->aConstraintUsage[ii].omit = doOmit;
       }
     }
   }

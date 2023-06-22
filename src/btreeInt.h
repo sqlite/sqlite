@@ -264,7 +264,7 @@ typedef struct BtreePtrmap BtreePtrmap;
 ** page that has been loaded into memory.  The information in this object
 ** is derived from the raw on-disk page content.
 **
-** As each database page is loaded into memory, the pager allocats an
+** As each database page is loaded into memory, the pager allocates an
 ** instance of this object and zeros the first 8 bytes.  (This is the
 ** "extra" information associated with each page of the pager.)
 **
@@ -733,7 +733,7 @@ struct IntegrityCk {
 
 /*
 ** get2byteAligned(), unlike get2byte(), requires that its argument point to a
-** two-byte aligned address.  get2bytea() is only used for accessing the
+** two-byte aligned address.  get2byteAligned() is only used for accessing the
 ** cell addresses in a btree header.
 */
 #if SQLITE_BYTEORDER==4321
