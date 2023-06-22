@@ -98,6 +98,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
+      //cbReverse.setAttribute('checked','checked');
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
@@ -1166,7 +1167,8 @@ self.sqlite3InitModule = sqlite3InitModule;
       try{db.checkRc(rc)}
       catch(e){ex = e}
       T.assert(ex instanceof sqlite3.SQLite3Error)
-        .assert(0===ex.message.indexOf("sqlite3 result code"))
+        .assert(capi.SQLITE_MISUSE===ex.resultCode)
+        .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
         .assert(ex.message.indexOf("Invalid SQL")>0);
       T.assert(db === db.checkRc(0))
         .assert(db === sqlite3.oo1.DB.checkRc(db,0))
@@ -1219,6 +1221,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       );
       //debug("statement =",st);
       this.progressHandlerCount = 0;
+      let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
           .mustThrowMatching(()=>st.pointer=1, /read-only/)
@@ -1229,6 +1232,8 @@ self.sqlite3InitModule = sqlite3InitModule;
             ) === 0)
           .assert(!st._mayGet)
           .assert('a' === st.getColumnName(0))
+          .mustThrowMatching(()=>st.columnCount=2,
+                             /columnCount property is read-only/)
           .assert(1===st.columnCount)
           .assert(0===st.parameterCount)
           .mustThrow(()=>st.bind(1,null))
@@ -1264,10 +1269,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
           assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
       }finally{
-        st.finalize();
+        rc = st.finalize();
       }
       T.assert(!st.pointer)
-        .assert(0===this.db.openStatementCount());
+        .assert(0===this.db.openStatementCount())
+        .assert(0===rc);
 
       T.mustThrowMatching(()=>new sqlite3.oo1.Stmt("hi"), function(err){
         return (err instanceof sqlite3.SQLite3Error)
@@ -1332,8 +1338,8 @@ self.sqlite3InitModule = sqlite3InitModule;
         sql:['CREATE TABLE t(a,b);',
              // ^^^ using TEMP TABLE breaks the db export test
              "INSERT INTO t(a,b) VALUES(1,2),(3,4),",
-             "(?,?),('blob',X'6869')"/*intentionally missing semicolon to test for
-                                       off-by-one bug in string-to-WASM conversion*/],
+             "(?,?)"/*intentionally missing semicolon to test for
+                      off-by-one bug in string-to-WASM conversion*/],
         saveSql: list,
         bind: [5,6]
       });
@@ -1341,12 +1347,20 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(rc === db)
         .assert(2 === list.length)
         .assert('string'===typeof list[1])
-        .assert(4===db.changes())
+        .assert(3===db.changes())
         .assert(this.progressHandlerCount > 0,
                 "Expecting progress callback.")
       if(wasm.bigIntEnabled){
-        T.assert(4n===db.changes(false,true));
+        T.assert(3n===db.changes(false,true));
       }
+      rc = db.exec({
+        sql: "INSERT INTO t(a,b) values('blob',X'6869') RETURNING 13",
+        rowMode: 0
+      });
+      T.assert(Array.isArray(rc))
+        .assert(1===rc.length)
+        .assert(13 === rc[0])
+        .assert(1===db.changes());
 
       let vals = db.selectValues('select a from t order by a limit 2');
       T.assert( 2 === vals.length )
@@ -1374,9 +1388,9 @@ self.sqlite3InitModule = sqlite3InitModule;
             3 === this._myState
             /* Recall that "this" is the options object. */
           ).assert(
+            this.columnNames===colNames
+          ).assert(
             this.columnNames[0]==='a' && this.columnNames[1]==='b'
-            /* options.columnNames is filled out before the first
-               Stmt.step(). */
           ).assert(
             (row.a%2 && row.a<6) || 'blob'===row.a
           );
@@ -1386,6 +1400,14 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert('a' === colNames[0])
         .assert(4 === counter)
         .assert(4 === list.length);
+      colNames = [];
+      db.exec({
+        /* Ensure that columnNames is populated for empty result sets. */
+        sql: "SELECT a a, b B FROM t WHERE 0",
+        columnNames: colNames
+      });
+      T.assert(2===colNames.length)
+        .assert('a'===colNames[0] && 'B'===colNames[1]);
       list.length = 0;
       db.exec("SELECT a a, b b FROM t",{
         rowMode: 'array',
@@ -1438,11 +1460,14 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
+        T.assert(0===st.columnCount);
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
-        st.bindAsBlob(ndx, "ima blob").reset(true);
+        st.bindAsBlob(ndx, "ima blob")
+          /*step() skipped intentionally*/.reset(true);
       } finally {
-        st.finalize();
+        T.assert(0===st.finalize())
+          .assert(undefined===st.finalize());        
       }
 
       try {
@@ -1604,7 +1629,19 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert(3===rc[1].a)
         .assert(4===rc[1].b);
     })
-
+  ////////////////////////////////////////////////////////////////////////
+    .t('selectArray/Object/Values() via INSERT/UPDATE...RETURNING', function(sqlite3){
+      let rc = this.db.selectObject("INSERT INTO t(a,b) VALUES(83,84) RETURNING a as AA");
+      T.assert(83===rc.AA);
+      rc = this.db.selectArray("UPDATE T set a=85 WHERE a=83 RETURNING b as BB");
+      T.assert(Array.isArray(rc)).assert(84===rc[0]);
+      //log("select * from t:",this.db.selectObjects("select * from t order by a"));
+      rc = this.db.selectValues("UPDATE T set a=a*1 RETURNING a");
+      T.assert(Array.isArray(rc))
+        .assert(5 === rc.length)
+        .assert('number'===typeof rc[0])
+        .assert(rc[0]|0 === rc[0] /* is small integer */);
+    })
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'sqlite3_js_db_export()',
@@ -2970,6 +3007,45 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     })/*session API sanity tests*/
   ;/*end of session API group*/;
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Bug Reports')
+    .t({
+      name: 'Delete via bound parameter in subquery',
+      test: function(sqlite3){
+        // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
+        // with the exception that that post uses "external content"
+        // for the FTS index.
+        const db = new sqlite3.oo1.DB();//(':memory:','wt');
+        db.exec([
+          "create virtual table f using fts5 (path);",
+          "insert into f(path) values('abc'),('def'),('ghi');"
+        ]);
+        const fetchEm = ()=> db.exec({
+          sql: "SELECT * FROM f order by path",
+          rowMode: 'array'
+        });
+        const dump = function(lbl){
+          let rc = fetchEm();
+          log((lbl ? (lbl+' results') : ''),rc);
+        };
+        //dump('Full fts table');
+        let rc = fetchEm();
+        T.assert(3===rc.length);
+        db.exec(`
+          delete from f where rowid in (
+          select rowid from f where path = :path
+           )`,
+          {bind: {":path": "def"}}
+        );
+        //dump('After deleting one entry via subquery');
+        rc = fetchEm();
+        T.assert(2===rc.length)
+          .assert('abcghi'===rc.join(''));
+        //log('rc =',rc);
+        db.close();
+      }
+    })
+  ;/*end of Bug Reports group*/;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
