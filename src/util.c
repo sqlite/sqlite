@@ -468,7 +468,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int esign = 1;   /* sign of exponent */
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
-  double result;
+  LONGDOUBLE_TYPE result;
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
 
@@ -597,7 +597,7 @@ do_atof_calc:
     s = sign<0 ? -s : s;
 
     if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
-      result = (double)s;
+      result = (LONGDOUBLE_TYPE)s;
     }else{
       /* attempt to handle extremely small/large numbers better */
       if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
@@ -605,10 +605,10 @@ do_atof_calc:
           LONGDOUBLE_TYPE scale = sqlite3Pow10(e-308);
           if( esign<0 ){
             result = s / scale;
-            result /= 1.0e+308;
+            result /= 1.0e+308L;
           }else{
             result = s * scale;
-            result *= 1.0e+308;
+            result *= 1.0e+308L;
           }
         }else{ assert( e>=342 );
           if( esign<0 ){
@@ -1750,3 +1750,43 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
  || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 # include "hwtime.h"
 #endif
+
+/***************************************************************************
+** Double-Double arithmetic.
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+
+/* Compute z = (i64)x */
+void sqlite3DDFromInt(i64 x, double *z){
+  z[0] = (double)x;
+  z[1] = (double)(x - (i64)z[0]);
+}
+
+/* Compute z = x + y */
+void sqlite3DDAdd(double x, double xx, double y, double yy, double *z){
+  double r, s;
+  r = x + y;
+  if( fabs(x)>fabs(y) ){
+    s = x - r + y + yy + xx;
+  }else{
+    s = y - r + x + xx + yy;
+  }
+  z[0] = r+s;
+  z[1] = r - z[0] + s;
+}
+
+/* Compute z = x - y */
+void sqlite3DDSub(double x, double xx, double y, double yy, double *z){
+  double r, s;
+  r = x - y;
+  if( fabs(x)>fabs(y) ){
+    s = x - r - y - yy + xx;
+  }else{
+    s = -y - r + x + xx - yy;
+  }
+  z[0] = r+s;
+  z[1] = r - z[0] + s;
+}

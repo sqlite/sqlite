@@ -662,7 +662,9 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
 #endif
 
 #if TCL_REPL==3
-/* C implementation of TCL proc, get_tcl_group 
+/* C implementation of TCL proc, get_tcl_group
+ * It accepts one or two optional arguments, a primary prompt
+ * and a continuation prompt, defaulting to "tcl% " and "   > ".
  * This routine returns a 2 element list consisting of:
  *   the collected input lines, joined with "\n", as a string
  * and
@@ -678,13 +680,19 @@ static int getInputLine(void *pvSS, Tcl_Interp *interp,
  */
 static int getTclGroup(void *pvSS, Tcl_Interp *interp,
                        int objc, Tcl_Obj *const objv[]){
-  if( objc==1 ){
-    static Prompts cueTcl = { "tcl% ", "   > " };
+  if( objc>=1 && objc<=3 ){
+    Prompts cueTcl = { "tcl% ", "   > " };
     ShellExState *psx = (ShellExState *)pvSS;
     struct InSource *pis = SHX_HELPER(currentInputSource)(psx);
     int isComplete = 0;
     char *zIn = 0;
     int isContinuation = 0;
+
+    switch( objc ){
+    case 3: cueTcl.zContinue = (const char*)Tcl_GetStringFromObj(objv[2],0);
+    case 2: cueTcl.zMain = (const char*)Tcl_GetStringFromObj(objv[1],0);
+    default: break;
+    }
     do {
       zIn = SHX_HELPER(oneInputLine)(pis, zIn, isContinuation, &cueTcl);
       if( isContinuation ){

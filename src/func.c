@@ -150,6 +150,42 @@ static void lengthFunc(
 }
 
 /*
+** Implementation of the octet_length() function
+*/
+static void bytelengthFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_BLOB: {
+      sqlite3_result_int(context, sqlite3_value_bytes(argv[0]));
+      break;
+    }
+    case SQLITE_INTEGER:
+    case SQLITE_FLOAT: {
+      i64 m = sqlite3_context_db_handle(context)->enc<=SQLITE_UTF8 ? 1 : 2;
+      sqlite3_result_int64(context, sqlite3_value_bytes(argv[0])*m);
+      break;
+    }
+    case SQLITE_TEXT: {
+      if( sqlite3_value_encoding(argv[0])<=SQLITE_UTF8 ){
+        sqlite3_result_int(context, sqlite3_value_bytes(argv[0]));
+      }else{
+        sqlite3_result_int(context, sqlite3_value_bytes16(argv[0]));
+      }
+      break;
+    }
+    default: {
+      sqlite3_result_null(context);
+      break;
+    }
+  }
+}
+
+/*
 ** Implementation of the abs() function.
 **
 ** IMP: R-23979-26855 The abs(X) function returns the absolute value of
@@ -1634,11 +1670,9 @@ static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
 */
 typedef struct SumCtx SumCtx;
 struct SumCtx {
-  double rSum;      /* Floating point sum */
-  i64 iSum;         /* Integer sum */  
+  double rSum[2];   /* Running sum as a Dekker double-double */
   i64 cnt;          /* Number of elements summed */
-  u8 overflow;      /* True if integer overflow seen */
-  u8 approx;        /* True if non-integer value was input to the sum */
+  u8 approx;        /* True if any non-integer value was input to the sum */
 };
 
 /*
@@ -1659,17 +1693,17 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   p = sqlite3_aggregate_context(context, sizeof(*p));
   type = sqlite3_value_numeric_type(argv[0]);
   if( p && type!=SQLITE_NULL ){
+    double y[2];
     p->cnt++;
     if( type==SQLITE_INTEGER ){
       i64 v = sqlite3_value_int64(argv[0]);
-      p->rSum += v;
-      if( (p->approx|p->overflow)==0 && sqlite3AddInt64(&p->iSum, v) ){
-        p->approx = p->overflow = 1;
-      }
+      sqlite3DDFromInt(v, y);
     }else{
-      p->rSum += sqlite3_value_double(argv[0]);
+      y[0] = sqlite3_value_double(argv[0]);
+      y[1] = 0.0;
       p->approx = 1;
     }
+    sqlite3DDAdd(p->rSum[0], p->rSum[1], y[0], y[1], p->rSum);
   }
 }
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1683,16 +1717,17 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   /* p is always non-NULL because sumStep() will have been called first
   ** to initialize it */
   if( ALWAYS(p) && type!=SQLITE_NULL ){
+    double y[2];
     assert( p->cnt>0 );
     p->cnt--;
-    assert( type==SQLITE_INTEGER || p->approx );
-    if( type==SQLITE_INTEGER && p->approx==0 ){
+    if( type==SQLITE_INTEGER ){
       i64 v = sqlite3_value_int64(argv[0]);
-      p->rSum -= v;
-      p->iSum -= v;
+      sqlite3DDFromInt(v, y);
     }else{
-      p->rSum -= sqlite3_value_double(argv[0]);
+      y[0] = sqlite3_value_double(argv[0]);
+      y[1] = 0.0;
     }
+    sqlite3DDSub(p->rSum[0], p->rSum[1], y[0], y[1], p->rSum);
   }
 }
 #else
@@ -1702,12 +1737,18 @@ static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>0 ){
-    if( p->overflow ){
-      sqlite3_result_error(context,"integer overflow",-1);
-    }else if( p->approx ){
-      sqlite3_result_double(context, p->rSum);
+    if( p->approx ){
+      sqlite3_result_double(context, p->rSum[0]+p->rSum[1]);
     }else{
-      sqlite3_result_int64(context, p->iSum);
+      i64 v = (i64)p->rSum[0] + (i64)p->rSum[1];
+      double y[2], z[2];
+      sqlite3DDFromInt(v, y);
+      sqlite3DDSub(y[0], y[1], p->rSum[0], p->rSum[1], z);
+      if( z[0] + z[1] != 0.0 ){
+        sqlite3_result_error(context,"integer overflow",-1);
+      }else{
+        sqlite3_result_int64(context, v);
+      }
     }
   }
 }
@@ -1715,14 +1756,14 @@ static void avgFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>0 ){
-    sqlite3_result_double(context, p->rSum/(double)p->cnt);
+    sqlite3_result_double(context, (p->rSum[0]+p->rSum[1])/(double)p->cnt);
   }
 }
 static void totalFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
   /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
-  sqlite3_result_double(context, p ? p->rSum : (double)0);
+  sqlite3_result_double(context, p ? p->rSum[0]+p->rSum[1] : (double)0);
 }
 
 /*
@@ -2376,6 +2417,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(subtype,           1, 0, 0, subtypeFunc, SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
+    FUNCTION2(octet_length,      1, 0, 0, bytelengthFunc,SQLITE_FUNC_BYTELEN),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(printf,            -1, 0, 0, printfFunc       ),
     FUNCTION(format,            -1, 0, 0, printfFunc       ),
