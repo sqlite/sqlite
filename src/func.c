@@ -2373,6 +2373,33 @@ static void signFunc(
 
 #ifdef SQLITE_DEBUG
 /*
+** Implementation of fptest(x) function.
+*/
+static void fptestFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  double r, r2, r3;
+  sqlite3_uint64 x;
+  FpDecode s1, s2;
+  char zBuf[100];
+
+  UNUSED_PARAMETER(argc);
+  r = sqlite3_value_double(argv[0]);
+  memcpy(&x, &r, 8);
+  x &= 0xffffffffffff0000LL;
+  memcpy(&r2, &x, 8);
+  r3 = r - r2;
+  
+  sqlite3FpDecode(&s1, r2, 0, 99);
+  sqlite3FpDecode(&s2, r3, 0, 99);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d+%c%.*s/%d",
+       s1.sign, s1.n, s1.z, s1.iDP,
+       s2.sign, s2.n, s2.z, s2.iDP);
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+/*
 ** Implementation of fpdecode(x,y,z) function.
 **
 ** x is a real number that is to be decoded.  y is the precision.
@@ -2474,6 +2501,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
 #ifdef SQLITE_DEBUG
+    FUNCTION(fptest,             1, 0, 0, fptestFunc       ),
     FUNCTION(fpdecode,           3, 0, 0, fpdecodeFunc     ),
 #endif
 #ifndef SQLITE_OMIT_FLOATING_POINT

@@ -941,7 +941,7 @@ void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
-  long double r;
+  double r;
   p->isSpecial = 0;
   if( rr<0.0 ){
     p->sign = '-';
@@ -971,13 +971,13 @@ void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
   ** an unsigned 64-bit integer v, and extract digits from v.
   */
   if( r>=1.0e+19 ){
-    while( r>=1.0e+119L ){ exp+=100; r *= 1.0e-100L; }
-    while( r>=1.0e+29L  ){ exp+=10;  r *= 1.0e-10L;  }
-    while( r>=1.0e+19L  ){ exp++;    r *= 1.0e-1L;   }
+    while( r>=1.0e+119 ){ exp+=100; r *= 1.0e-100; }
+    while( r>=1.0e+29  ){ exp+=10;  r *= 1.0e-10;  }
+    while( r>=1.0e+19  ){ exp++;    r *= 1.0e-1;   }
   }else{
-    while( r<1.0e-97L   ){ exp-=100; r *= 1.0e+100L; }
-    while( r<1.0e+07L   ){ exp-=10;  r *= 1.0e+10L;  }
-    while( r<1.0e+17L   ){ exp--;    r *= 1.0e+1L;   }
+    while( r<1.0e-97   ){ exp-=100; r *= 1.0e+100; }
+    while( r<1.0e+07   ){ exp-=10;  r *= 1.0e+10;  }
+    while( r<1.0e+17   ){ exp--;    r *= 1.0e+1;   }
   }
   v = (u64)r;
   i = sizeof(p->z)-1;
