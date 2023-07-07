@@ -361,6 +361,8 @@ struct sqlite3_api_routines {
   int (*value_encoding)(sqlite3_value*);
   /* Version 3.41.0 and later */
   int (*is_interrupted)(sqlite3*);
+  /* Version 3.43.0 and later */
+  int (*function_needed)(sqlite3*,void*,const char*,int,int);
 };
 
 /*
@@ -689,6 +691,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_encoding         sqlite3_api->value_encoding
 /* Version 3.41.0 and later */
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
+/* Version 3.43.0 and later */
+#define sqlite3_function_needed        sqlite3_api->function_needed
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

@@ -1674,6 +1674,9 @@ struct sqlite3 {
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
 #endif
+  int(*xFuncNeeded)(void*,sqlite3*,const char*,int,int);
+  void *pFuncNeededArg;
+  void(*xFuncNeededFree)(void*);
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
   void *pCollNeededArg;

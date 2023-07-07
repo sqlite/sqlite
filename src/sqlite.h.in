@@ -6207,6 +6207,54 @@ int sqlite3_create_collation16(
 );
 
 /*
+** CAPI3REF: Function Needed Callbacks
+** METHOD: sqlite3
+**
+** The sqlite3_function_needed(D,P,C,X) interface registers a callback
+** function C which is invoked whenever the SQL parser encounters an
+** unknown SQL function.  The callback may optionally register a suitable
+** implementation for that unknown function (using [sqlite3_create_function()]
+** or similar), in which case parsing will continue normally.  In this way,
+** applications with hundreds or thousands of seldom-used application defined
+** SQL functions can avoid having register them at start-up and instead
+** register each function if and only if it it actually gets used.
+**
+** ^If the callback function C has been registered using the
+** sqlite3_function_needed(D,P,C,X), then whenever the SQL parser encounters
+** an unknown SQL function, it will invoke the C callback with 5 arguments:
+** P, D, F, N, E.  P is a copy of the generic pointer P parameter to
+** the original sqlite3_function_needed() call that registered the
+** callback.  D is the database connection.  F is the name of the unknown
+** function (UTF-8 encoded and zero-terminated but in an arbitrary case).
+** N is the number of arguments on the F function.
+** E is the preferred text encoding.
+**
+** If the C callback registers a new function with the correct
+** name and number of arguments and if the callback returns SQLITE_OK, then
+** the newly registered function is used and parsing continues.  If an
+** appropriate function does not get registered, or if the callback returns
+** anything other than SQLITE_OK, then an "unknown function" error is generated
+** as normal.
+**
+** Only a single function-needed callback is supported per database connection.
+** Each call to sqlite3_function_needed() replaces the callback identified
+** by the previous call to sqlite3_function_needed().  The function-needed
+** callback mechanism may be disabled by invoking sqlite3_function_needed(D,P,C,X)
+** using a NULL pointer for the C parameter.
+**
+** The X argument to sqlite3_function_needed(D,P,C,X) is an optional
+** destructor for generic pointer parameter P.  If X and C are both not NULL,
+** then X(P) is invoked when the database connection closes or at the next
+** call to sqlite3_function_needed().
+*/
+int sqlite3_function_needed(
+  sqlite3*,
+  void*,
+  int(*)(void*,sqlite3*,const char*,int,int),
+  void(*)(void*)
+);
+
+/*
 ** CAPI3REF: Collation Needed Callbacks
 ** METHOD: sqlite3
 **

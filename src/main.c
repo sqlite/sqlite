@@ -1219,6 +1219,9 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     db->trace.xV2(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
   }
 
+  /* Free the function-needed payload pointer */
+  if( db->xFuncNeededFree ) db->xFuncNeededFree(db->pFuncNeededArg);
+
   /* Force xDisconnect calls on all virtual tables */
   disconnectAllVtab(db);
 
@@ -3704,6 +3707,28 @@ int sqlite3_collation_needed16(
   return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_UTF16 */
+
+/*
+** Register a collation sequence factory callback with the database handle
+** db. Replace any previously installed collation sequence factory.
+*/
+int sqlite3_function_needed(
+  sqlite3 *db,
+  void *pFuncNeededArg,
+  int (*xFuncNeeded)(void*,sqlite3*,const char*,int,int),
+  void (*xFuncNeededFree)(void*)
+){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  if( db->xFuncNeededFree ) db->xFuncNeededFree(db->pFuncNeededArg);
+  db->pFuncNeededArg = pFuncNeededArg;
+  db->xFuncNeeded = xFuncNeeded;
+  db->xFuncNeededFree = xFuncNeededFree;
+  sqlite3_mutex_leave(db->mutex);
+  return SQLITE_OK;
+}
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*

@@ -474,7 +474,28 @@ FuncDef *sqlite3FindFunction(
 
   if( pBest && (pBest->xSFunc || createFlag) ){
     return pBest;
+  }else if( db->xFuncNeeded!=0 ){
+    int rc;
+    int (*xFN)(void*,sqlite3*,const char*,int,int) = db->xFuncNeeded;
+    db->xFuncNeeded = 0;
+    rc = xFN(db->pFuncNeededArg,db,zName,nArg,enc);
+    db->xFuncNeeded = xFN;
+    pBest = 0;
+    bestScore = 0;
+    if( rc==SQLITE_OK ){
+      p = (FuncDef*)sqlite3HashFind(&db->aFunc,zName);
+      while( p ){
+        int score = matchQuality(p, nArg, enc);
+        if( score>bestScore ){
+          pBest = p;
+          bestScore = score;
+        }
+        p = p->pNext;
+      }
+      return pBest;
+    }
   }
+       
   return 0;
 }
 
