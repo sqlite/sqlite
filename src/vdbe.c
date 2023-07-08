@@ -3056,10 +3056,14 @@ op_column_restart:
       pDest->flags = aFlag[t&1];
     }
   }else{
+    u8 p5;
     pDest->enc = encoding;
     /* This branch happens only when content is on overflow pages */
-    if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
-          && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))
+    if( ((p5 = (pOp->p5 & OPFLAG_BYTELENARG))!=0
+          && (p5==OPFLAG_TYPEOFARG
+              || (t>=12 && ((t&1)==0 || p5==OPFLAG_BYTELENARG))
+             )
+        )
      || (len = sqlite3VdbeSerialTypeLen(t))==0
     ){
       /* Content is irrelevant for
@@ -5883,7 +5887,7 @@ case OP_SorterCompare: {
 ** parameter P3.  Clearing the P3 column cache as part of this opcode saves
 ** us from having to issue a separate NullRow instruction to clear that cache.
 */
-case OP_SorterData: {
+case OP_SorterData: {       /* ncycle */
   VdbeCursor *pC;
 
   pOut = &aMem[pOp->p2];
@@ -6158,8 +6162,8 @@ case OP_IfSmaller: {        /* jump */
 ** regression tests can determine whether or not the optimizer is
 ** correctly optimizing out sorts.
 */
-case OP_SorterSort:    /* jump */
-case OP_Sort: {        /* jump */
+case OP_SorterSort:    /* jump ncycle */
+case OP_Sort: {        /* jump ncycle */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
   sqlite3_search_count--;
