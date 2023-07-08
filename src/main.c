@@ -4470,6 +4470,21 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
+    **
+    **   X<0     Make no changes to the bUseLongDouble.  Just report value.
+    **   X==0    Disable bUseLongDouble
+    **   X==1    Enable bUseLongDouble
+    **   X==2    Set bUseLongDouble to its default value for this platform
+    */
+    case SQLITE_TESTCTRL_USELONGDOUBLE: {
+      int b = va_arg(ap, int);
+      if( b==2 ) b = sizeof(LONGDOUBLE_TYPE)>8;
+      if( b>=0 ) sqlite3Config.bUseLongDouble = b>0;
+      rc = sqlite3Config.bUseLongDouble!=0;
+      break;
+    }
+
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
