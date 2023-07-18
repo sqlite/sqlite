@@ -153,6 +153,13 @@ typedef struct VdbeOpList VdbeOpList;
 #endif
 
 /*
+** zName argument lifetimes for calls to sqlite3VdbeSetColName().
+*/
+#define COLNAME_DYNAMIC    0
+#define COLNAME_TRANSIENT  1
+#deifne COLNAME_STATIC     2
+
+/*
 ** The following macro converts a label returned by sqlite3VdbeMakeLabel()
 ** into an index into the Parse.aLabel[] array that contains the resolved
 ** address of that label.
@@ -265,7 +272,7 @@ void sqlite3VdbeResetStepResult(Vdbe*);
 void sqlite3VdbeRewind(Vdbe*);
 int sqlite3VdbeReset(Vdbe*);
 void sqlite3VdbeSetNumCols(Vdbe*,int);
-int sqlite3VdbeSetColName(Vdbe*, int, int, const char *, void(*)(void*));
+int sqlite3VdbeSetColName(Vdbe*, int, int, const char*, int);
 void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);
 u8 sqlite3VdbePrepareFlags(Vdbe*);

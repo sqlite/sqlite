@@ -2046,13 +2046,13 @@ static void generateColumnTypes(
     ** column specific strings, in case the schema is reset before this
     ** virtual machine is deleted.
     */
-    sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, SQLITE_TRANSIENT);
-    sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, SQLITE_TRANSIENT);
-    sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, SQLITE_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, COLNAME_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, COLNAME_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, COLNAME_TRANSIENT);
 #else
     zType = columnType(&sNC, p, 0, 0, 0);
 #endif
-    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, COLNAME_TRANSIENT);
   }
 #endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 }
@@ -2130,7 +2130,7 @@ void sqlite3GenerateColumnNames(
     if( pEList->a[i].zEName && pEList->a[i].fg.eEName==ENAME_NAME ){
       /* An AS clause always takes first priority */
       char *zName = pEList->a[i].zEName;
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, COLNAME_TRANSIENT);
     }else if( srcName && p->op==TK_COLUMN ){
       char *zCol;
       int iCol = p->iColumn;
@@ -2145,15 +2145,19 @@ void sqlite3GenerateColumnNames(
       }
       if( fullName ){
         char *zName = 0;
-        zName = sqlite3MPrintf(db, "%s.%s", pTab->zName, zCol);
-        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_DYNAMIC);
+        zName = sqlite3MPrintf(db, "\001%s.%s", pTab->zName, zCol);
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, COLNAME_DYNAMIC);
       }else{
-        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, SQLITE_TRANSIENT);
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, COLNAME_TRANSIENT);
       }
     }else{
       const char *z = pEList->a[i].zEName;
-      z = z==0 ? sqlite3MPrintf(db, "column%d", i+1) : sqlite3DbStrDup(db, z);
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, z, SQLITE_DYNAMIC);
+      if( z==0 ){
+        z = sqlite3MPrintf(db, "\001column%d", i+1);
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, z, COLNAME_DYNAMIC);
+      }else{
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, z, COLNAME_TRANSIENT);
+      }
     }
   }
   generateColumnTypes(pParse, pTabList, pEList);

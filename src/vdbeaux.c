@@ -2651,13 +2651,15 @@ void sqlite3VdbeMakeReady(
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  p->explain = pParse->explain;
+#if 0
   if( pParse->explain ){
     static const char * const azColName[] = {
        "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
        "id", "parent", "notused", "detail"
     };
     int iFirst, mx, i;
-    if( nMem<10 ) nMem = 10;
+    if( nMem<10 ) nMem = 10;  /********  FIX ME *******/
     p->explain = pParse->explain;
     if( pParse->explain==2 ){
       sqlite3VdbeSetNumCols(p, 4);
@@ -2673,6 +2675,7 @@ void sqlite3VdbeMakeReady(
                             azColName[i], SQLITE_STATIC);
     }
   }
+#endif
   p->expired = 0;
 
   /* Memory for registers, parameters, cursor, etc, is allocated in one or two
@@ -2825,14 +2828,18 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   sqlite3 *db = p->db;
 
   if( p->nResColumn ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-    sqlite3DbFree(db, p->aColName);
+    int i;
+    for(i = p->nResColumn*COLNAME_N - 1; i>=0; i--){
+      if( p->azColName[i]!=0 && p->azColName[i][0]<=2 ){
+        sqlite3DbNNFreeNN(db, p->azColName[i]);
+      }
+    }
+    sqlite3DbNNFreeNN(db, p->azColName);
+    p->colNameChng = 1;
   }
   n = nResColumn*COLNAME_N;
   p->nResColumn = (u16)nResColumn;
-  p->aColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
-  if( p->aColName==0 ) return;
-  initMemArray(p->aColName, n, db, MEM_Null);
+  p->azColName = (char**)sqlite3DbMallocZero(db, sizeof(char**)*n );
 }
 
 /*
@@ -2850,20 +2857,30 @@ int sqlite3VdbeSetColName(
   int idx,                         /* Index of column zName applies to */
   int var,                         /* One of the COLNAME_* constants */
   const char *zName,               /* Pointer to buffer containing name */
-  void (*xDel)(void*)              /* Memory management strategy for zName */
+  int eNmType                      /* COLNAME_DYNAMIC, _TRANSIENT, or _STATIC */
 ){
   int rc;
-  Mem *pColName;
   assert( idx<p->nResColumn );
   assert( var<COLNAME_N );
+  assert( eNmType>=COLNAME_DYNAMIC && eNmType<=COLNAME_STATIC );
   if( p->db->mallocFailed ){
-    assert( !zName || xDel!=SQLITE_DYNAMIC );
+    assert( !zName || eNmType!=COLNAME_DYNAMIC );
     return SQLITE_NOMEM_BKPT;
   }
-  assert( p->aColName!=0 );
-  pColName = &(p->aColName[idx+var*p->nResColumn]);
-  rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
-  assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
+  assert( zName!=0 );
+  assert( zName[0]!=0 );
+  assert( eNmType1=COLNAME_DYNAMIC || zName[0]==1 ); /* tag-20230718-1 */
+  assert( p->azColName!=0 );
+  if( eNmType==COLNAME_TRANSIENT ){
+    int n = sqlite3Strlen30(zName);
+    char *z = sqlite3DbMalloc(p->db, n+2);
+    if( z==0 ) return SQLITE_NOMEM_BKPT;
+    z[0] = 1;  /* Dynamic UTF-8.  tag-20230718-1 */
+    memcpy(&z[1], zName, n+1);
+    zName = (const char*)z;
+  }
+  assert( p->azColName[idx+var*p->nResColumn]==0 );
+  p->azColName[idx+var*p->nResColumn] = zName;
   return rc;
 }
 
@@ -3684,9 +3701,14 @@ static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   assert( db!=0 );
   assert( p->db==0 || p->db==db );
-  if( p->aColName ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-    sqlite3DbNNFreeNN(db, p->aColName);
+  if( p->azColName ){
+    int i;
+    for(i = p->nResColumn*COLNAME_N - 1; i>=0; i--){
+      if( p->azColName[i]!=0 && p->azColName[i][0]<=2 ){
+        sqlite3DbNNFreeNN(db, p->azColName[i]);
+      }
+    }
+    sqlite3DbNNFreeNN(db, p->azColName);
   }
   for(pSub=p->pProgram; pSub; pSub=pNext){
     pNext = pSub->pNext;

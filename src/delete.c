@@ -52,7 +52,7 @@ void sqlite3CodeChangeCount(Vdbe *v, int regCounter, const char *zColName){
   sqlite3VdbeAddOp0(v, OP_FkCheck);
   sqlite3VdbeAddOp2(v, OP_ResultRow, regCounter, 1);
   sqlite3VdbeSetNumCols(v, 1);
-  sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zColName, SQLITE_STATIC);
+  sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zColName, COLNAME_STATIC);
 }
 
 /* Return true if table pTab is read-only.
