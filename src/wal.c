@@ -2327,23 +2327,15 @@ static int walIteratorInit(
   nByte = sizeof(WalIterator)
         + (nSegment-1)*sizeof(struct WalSegment)
         + iLast*sizeof(ht_slot);
-  p = (WalIterator *)sqlite3_malloc64(nByte);
+  p = (WalIterator *)sqlite3_malloc64(nByte
+      + sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
+  );
   if( !p ){
     return SQLITE_NOMEM_BKPT;
   }
   memset(p, 0, nByte);
   p->nSegment = nSegment;
-
-  /* Allocate temporary space used by the merge-sort routine. This block
-  ** of memory will be freed before this function returns.
-  */
-  aTmp = (ht_slot *)sqlite3_malloc64(
-      sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
-  );
-  if( !aTmp ){
-    rc = SQLITE_NOMEM_BKPT;
-  }
-
+  aTmp = (ht_slot*)&(((u8*)p)[nByte]);
   i = iMode==2 ? iWal : walFramePage(nBackfill+1);
   for(; rc==SQLITE_OK && i<=iLastSeg; i+=iMode){
     WalHashLoc sLoc;
@@ -2381,8 +2373,6 @@ static int walIteratorInit(
       p->aSegment[i/iMode].aPgno = (u32*)sLoc.aPgno;
     }
   }
-  sqlite3_free(aTmp);
-
   if( rc!=SQLITE_OK ){
     walIteratorFree(p);
     p = 0;

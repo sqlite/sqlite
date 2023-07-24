@@ -1229,6 +1229,7 @@ static void charFunc(
       *zOut++ = 0x80 + (u8)(c & 0x3F);
     }                                                    \
   }
+  *zOut = 0;
   sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
 }
 
@@ -1766,11 +1767,10 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
           p->ovrfl = 1;
           kahanBabuskaNeumaierInit(p, p->iSum);
           p->approx = 1;
-          kahanBabuskaNeumaierStep(p, sqlite3_value_double(argv[0]));
+          kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
         }
       }
     }else{
-      p->approx = 1;
       if( type==SQLITE_INTEGER ){
         kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
       }else{
