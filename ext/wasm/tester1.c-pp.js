@@ -728,12 +728,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
       //log("xWrap()...");
       {
-        T.mustThrowMatching(()=>w.xWrap('sqlite3_libversion',null,'i32'),
-                            /requires 0 arg/).
-          assert(w.xWrap.resultAdapter('i32') instanceof Function).
-          assert(w.xWrap.argAdapter('i32') instanceof Function);
         let fw = w.xWrap('sqlite3_libversion','utf8');
-        T.mustThrowMatching(()=>fw(1), /requires 0 arg/);
+        if(w.xWrap.doArgcCheck){
+          T.mustThrowMatching(()=>w.xWrap('sqlite3_libversion',null,'i32'),
+                              /requires 0 arg/).
+            assert(w.xWrap.resultAdapter('i32') instanceof Function).
+            assert(w.xWrap.argAdapter('i32') instanceof Function);
+          T.mustThrowMatching(()=>fw(1), /requires 0 arg/);
+        }
         let rc = fw();
         T.assert('string'===typeof rc).assert(rc.length>5);
         rc = w.xCallWrapped('sqlite3_wasm_enum_json','*');

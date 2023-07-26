@@ -5,6 +5,12 @@
    Emscripten's --pre-js=THIS_FILE flag (or equivalent).
 */
 
+//#if jspi
+// Only to assist in debugging problems which cause loading of the lib
+// to break.
+globalThis.$EmscriptenModule = Module;
+//#endif
+
 // See notes in extern-post-js.js
 const sqlite3InitModuleState = globalThis.sqlite3InitModuleState
       || Object.assign(Object.create(null),{

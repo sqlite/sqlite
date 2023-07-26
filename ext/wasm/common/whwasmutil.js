@@ -1391,7 +1391,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.xCall = function(fname, ...args){
     const f = target.xGet(fname);
     if(!(f instanceof Function)) toss("Exported symbol",fname,"is not a function.");
-    if(f.length!==args.length) __argcMismatch(fname,f.length)
+    if(target.xWrap.doArgcCheck && f.length!==args.length) __argcMismatch(fname,f.length)
     /* This is arguably over-pedantic but we want to help clients keep
        from shooting themselves in the foot when calling C APIs. */;
     return (2===arguments.length && Array.isArray(arguments[1]))
@@ -1949,7 +1949,7 @@ globalThis.WhWasmUtilInstaller = function(target){
        abstracting it into this API (and taking on the associated
        costs) may well not make good sense.
   */
-  target.xWrap = function(fArg, resultType, ...argTypes){
+  target.xWrap = function fw(fArg, resultType, ...argTypes){
     if(3===arguments.length && Array.isArray(arguments[2])){
       argTypes = arguments[2];
     }
@@ -1960,10 +1960,16 @@ globalThis.WhWasmUtilInstaller = function(target){
     const fIsFunc = (fArg instanceof Function);
     const xf = fIsFunc ? fArg : target.xGet(fArg);
     if(fIsFunc) fArg = xf.name || 'unnamed function';
-    if(argTypes.length!==xf.length) __argcMismatch(fArg, xf.length);
-    if((null===resultType) && 0===xf.length){
+    if(fw.doArgcCheck && argTypes.length!==xf.length){
+      __argcMismatch(fArg, xf.length);
+    }
+    if((null===resultType) && 0===xf.length && fw.doArgcCheck){
       /* Func taking no args with an as-is return. We don't need a wrapper.
          We forego the argc check here, though. */
+      /* We have to skip this option when !fw.doArgcCheck for the
+         sake of emcc -sASYNCIFY=2, which adds a nullary wrapper
+         function to all exports, leading to ALL functions getting
+         this treatment. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
@@ -1973,14 +1979,14 @@ globalThis.WhWasmUtilInstaller = function(target){
       else __xArgAdapterCheck(t);
     }
     const cxw = cache.xWrap;
-    if(0===xf.length){
+    if(0===xf.length && fw.doArgcCheck/*see notes above*/){
       // No args to convert, so we can create a simpler wrapper...
       return (...args)=>(args.length
                          ? __argcMismatch(fArg, xf.length)
                          : cxw.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
-      if(args.length!==xf.length) __argcMismatch(fArg, xf.length);
+      if(fw.doArgcCheck && args.length!==xf.length) __argcMismatch(fArg, xf.length);
       const scope = target.scopedAllocPush();
       try{
         /*
@@ -2008,6 +2014,15 @@ globalThis.WhWasmUtilInstaller = function(target){
       }
     };
   }/*xWrap()*/;
+  /**
+     By default xWrap() asserts that wrapper functions have the
+     same arity as the native functions being wrapped. This sanity
+     check has saved many grey hairs in development and generally
+     should not be disabled. However, Emscripten's -sASYNCIFY=2 flag
+     adds a level of wrapper to exported functions, giving them all
+     an arity of 0. This check must be suppressed for that case.
+  */
+  target.xWrap.doArgcCheck = true;
 
   /** Internal impl for xWrap.resultAdapter() and argAdapter(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){

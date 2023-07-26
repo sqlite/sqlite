@@ -429,6 +429,10 @@ emcc.flags += -v
 # -v is _very_ loud but also informative about what it's doing
 endif
 
+# ENABLE_JSPI does not yet work. This flag is only for use during
+# experimentation with it.
+ENABLE_JSPI ?= 1
+
 ########################################################################
 # emcc flags for .c/.o.
 emcc.cflags :=
@@ -451,7 +455,9 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
-#emcc.jsflags += -sASYNCIFY=2
+ifeq (1,$(ENABLE_JSPI))
+  emcc.jsflags += -sASYNCIFY=2
+endif
 # ^^^ ASYNCIFY=2 is for experimental JSPI support
 # (https://v8.dev/blog/jspi), but enabling it causes the lib-level
 # init code to throw inexplicable complaints about C-level function
@@ -780,11 +786,19 @@ sqlite3-bundler-friendly.mjs := $(dir.dout)/sqlite3-bundler-friendly.mjs
 sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
 sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 #$(info $(call SETUP_LIB_BUILD_MODE,sqlite3,vanilla,0, $(sqlite3-api.js), $(sqlite3.js)))
+ifeq (1,$(ENABLE_JSPI))
+  c-pp.D.jspi := -Djspi
+else
+  c-pp.D.jspi :=
+endif
+
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,vanilla,0,\
-         $(sqlite3-api.js), $(sqlite3.js)))
+         $(sqlite3-api.js), $(sqlite3.js),\
+       $(c-pp.D.jspi)))
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,esm,1,\
          $(sqlite3-api.mjs), $(sqlite3.mjs), \
-       -Dtarget=es6-module, -sEXPORT_ES6 -sUSE_ES6_IMPORT_META))
+         -Dtarget=es6-module $(c-pp.D.jspi),\
+         -sEXPORT_ES6 -sUSE_ES6_IMPORT_META))
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,bundler-friendly,1,\
        $(sqlite3-api-bundler-friendly.mjs),$(sqlite3-bundler-friendly.mjs),\
        $(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly))
