@@ -728,10 +728,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Populate api object with sqlite3_...() by binding the "raw" wasm
        exports into type-converting proxies using wasm.xWrap().
     */
-//#if jspi
-    wasm.xWrap.doArgcCheck = false;
-    console.warn("Disabling sqlite3.wasm.xWrap.doArgcCheck for JSPI's sake.");
-//#endif
+    if(0 === wasm.exports.sqlite3_open_v2.length){
+      /* This environment wraps exports in nullary functions, which means
+         we must disable the arg-count validation we otherwise perform
+         on the wrappers. */
+      wasm.xWrap.doArgcCheck = false;
+      sqlite3.config.warn("Disabling sqlite3.wasm.xWrap.doArgcCheck due to environmental quirks.");
+    }
     for(const e of wasm.bindingSignatures){
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
