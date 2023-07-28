@@ -572,6 +572,7 @@ static void jsonResult(JsonString *p){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             (void(*)(void*))sqlite3RCStrUnref,
                             SQLITE_UTF8);
+      sqlite3_result_zeroterminated(p->pCtx);
     }
   }
   if( p->bErr==1 ){
@@ -993,6 +994,7 @@ static void jsonReturn(
         } /* end for() */
         zOut[j] = 0;
         sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
+        sqlite3_result_zeroterminated(pCtx);
       }
       break;
     }
@@ -3086,17 +3088,19 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   if( pStr ){
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
+    jsonAppendChar(pStr, 0);
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else if( isFinal ){
-      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed-1,
                           pStr->bStatic ? SQLITE_TRANSIENT :
                               (void(*)(void*))sqlite3RCStrUnref);
+      sqlite3_result_zeroterminated(ctx);
       pStr->bStatic = 1;
     }else{
-      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed-1,SQLITE_TRANSIENT);
+      pStr->nUsed -= 2;
     }
   }else{
     sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
@@ -3195,17 +3199,19 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
     jsonAppendChar(pStr, '}');
+    jsonAppendChar(pStr, 0);
     if( pStr->bErr ){
       if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else if( isFinal ){
-      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed-1,
                           pStr->bStatic ? SQLITE_TRANSIENT :
                           (void(*)(void*))sqlite3RCStrUnref);
+      sqlite3_result_zeroterminated(ctx);
       pStr->bStatic = 1;
     }else{
-      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed-1,SQLITE_TRANSIENT);
+      pStr->nUsed -= 2;
     }
   }else{
     sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);

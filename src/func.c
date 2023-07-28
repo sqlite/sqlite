@@ -329,6 +329,7 @@ static void printfFunc(
     n = str.nChar;
     sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
                         SQLITE_DYNAMIC);
+    sqlite3_result_zeroterminated(context);
   }
 }
 
@@ -516,7 +517,9 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       for(i=0; i<n; i++){
         z1[i] = (char)sqlite3Toupper(z2[i]);
       }
+      z1[i] = 0;
       sqlite3_result_text(context, z1, n, sqlite3_free);
+      sqlite3_result_zeroterminated(context);
     }
   }
 }
@@ -535,7 +538,9 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       for(i=0; i<n; i++){
         z1[i] = sqlite3Tolower(z2[i]);
       }
+      z1[i] = 0;
       sqlite3_result_text(context, z1, n, sqlite3_free);
+      sqlite3_result_zeroterminated(context);
     }
   }
 }
@@ -1168,6 +1173,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3QuoteValue(&str,argv[0]);
   sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
                       SQLITE_DYNAMIC);
+  sqlite3_result_zeroterminated(context);
   if( str.accError!=SQLITE_OK ){
     sqlite3_result_null(context);
     sqlite3_result_error_code(context, str.accError);
@@ -1229,6 +1235,7 @@ static void charFunc(
   }
   *zOut = 0;
   sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_zeroterminated(context);
 }
 
 /*
@@ -1257,6 +1264,7 @@ static void hexFunc(
     }
     *z = 0;
     sqlite3_result_text(context, zHex, n*2, sqlite3_free);
+    sqlite3_result_zeroterminated(context);
   }
 }
 
@@ -1463,6 +1471,7 @@ static void replaceFunc(
   assert( j<=nOut );
   zOut[j] = 0;
   sqlite3_result_text(context, (char*)zOut, j, sqlite3_free);
+  sqlite3_result_zeroterminated(context);
 }
 
 /*

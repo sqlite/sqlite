@@ -546,6 +546,11 @@ void sqlite3_result_text16le(
   setResultStrOrError(pCtx, z, n & ~(u64)1, SQLITE_UTF16LE, xDel);
 }
 #endif /* SQLITE_OMIT_UTF16 */
+void sqlite3_result_zeroterminated(sqlite3_context *pCtx){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( (pCtx->pOut->flags & MEM_Str)==0 || pCtx->pOut->z[pCtx->pOut->n]==0 );
+  pCtx->pOut->flags |= MEM_Term;
+}
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );

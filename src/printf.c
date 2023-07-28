@@ -1076,7 +1076,9 @@ void sqlite3ResultStrAccum(sqlite3_context *pCtx, StrAccum *p){
     sqlite3_result_error_code(pCtx, p->accError);
     sqlite3_str_reset(p);
   }else if( isMalloced(p) ){
+    p->zText[p->nChar] = 0;
     sqlite3_result_text(pCtx, p->zText, p->nChar, SQLITE_DYNAMIC);
+    sqlite3_result_zeroterminated(pCtx);
   }else{
     sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
     sqlite3_str_reset(p);

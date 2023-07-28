@@ -6103,6 +6103,55 @@ int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 void sqlite3_result_subtype(sqlite3_context*,unsigned int);
 
 /*
+** CAPI3REF: Indicate That A Text Result Is Zero-Terminated
+** METHOD: sqlite3_context
+**
+** There are five interfaces that can be used by an
+** [application-defined SQL function] or [virtual table] to indicate that
+** a result value returned to SQLite is TEXT.  Specifically:
+**
+** <ul>
+** <li> [sqlite3_result_text(C,P,N,D)]
+** <li> [sqlite3_result_text64(C,P,N,D,E)]
+** <li> [sqlite3_result_text16(C,P,N,D)]
+** <li> [sqlite3_result_text16le(C,P,N,D)]
+** <li> [sqlite3_result_text16be(C,P,N,D)]
+** </ul>
+**
+** In all cases, the N parameter is the size of the TEXT value in bytes.
+**
+** The sqlite3_result_zeroterminated(C) indicates to SQLite that the TEXT
+** value passed in the previous call to one or the sqlite3_result_text()
+** interfaces contains one additional zero character (either a single 0x00
+** bytes for UTF-8 or two 0x00 bytes for UTF-16) following the N bytes
+** specified.  Knowing this can sometimes help SQLite avoid having to
+** make copies of the TEXT value.
+**
+** This interface is an optimization.  Application-defined functions and
+** virtual tables can use this interface to help SQLite run faster by
+** avoiding unnecessary copying of TEXT values.  But the same result should
+** be obtained regardless of whether or not this function is used.
+**
+** If the N argument to the prior sqlite3_result_text() method is negative,
+** then it is pointless (though harmless) to call sqlite3_result_zeroterminated()
+** because in that case SQLite already knows that the TEXT result is
+** zero terminated.  (NB:  Negative N values are not allowed for
+** sqlite3_result_text64().)  Likewise, if the D argument to the prior
+** sqlite3_result_text() method is SQLITE_TRANSIENT, then SQLite has already
+** made a copy of the TEXT value and inserted its own zero terminator in
+** that copy, so a call to sqlite3_result_zeroterminated() is pointless.
+**
+** It is a harmless no-op to invoke the sqlite3_result_zeroterminated(C)
+** method if the result of the SQL function or virtual table is something
+** other than TEXT.
+**
+** Note that sqlite3_result_zeroterminated() must be call after the call
+** the sqlite3_result_text() method.  If sqlite3_result_zeroterminated()
+** is called before the sqlite3_result_text() method, it will have no effect.
+*/
+void sqlite3_result_zeroterminated(sqlite3_context*);
+
+/*
 ** CAPI3REF: Define New Collating Sequences
 ** METHOD: sqlite3
 **
