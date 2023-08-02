@@ -7008,6 +7008,54 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 }
 
 /*
+** If the ORDER BY clause on the outer query pOuter only refers directly
+** to columns of the subquery pSub, then drop the ORDER BY clause on the
+** outer query and create a new equivalent ORDER BY clause on the
+** subquery.
+**
+** Return non-zero on success.  Return zero if the ORDER BY transfer
+** could not occur, either because conditions were not met or because
+** of an OOM.
+*/
+static SQLITE_NOINLINE int transferOrderByIntoSubquery(
+  Parse *pParse,      /* Parsing context */
+  int iCursor,        /* Cursor number for the subquery */
+  Select *pSub,       /* The sub query */
+  Select *pOuter      /* The outer query */
+){
+  int i;
+  ExprList *pEL = pOuter->pOrderBy;
+  ExprList *pNew;
+
+  for(i=pEL->nExpr-1; i>=0; i--){
+    Expr *pExpr = pEL->a[i].pExpr;
+    if( pExpr->op!=TK_COLUMN ) return 0;
+    if( pExpr->iTable!=iCursor ) return 0;
+  }
+  /* If we get to this point, it means that the ORDER BY should be
+  ** transferred. */
+  pNew = 0;
+  for(i=0; i<pEL->nExpr; i++){
+    int iCol = pEL->a[0].pExpr->iColumn;
+    pNew = sqlite3ExprListAppend(pParse, pNew,
+               sqlite3ExprDup(pParse->db, pSub->pEList->a[iCol].pExpr, 0));
+    if( pParse->nErr ) break;
+    pNew->a[i].u.x.iOrderByCol = iCol+1;
+  }
+  if( pParse->nErr ){
+    sqlite3ExprListDelete(pParse->db, pNew);
+    return 0;
+  }
+  sqlite3ParserAddCleanup(pParse,
+      (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
+       pOuter->pOrderBy);
+  pOuter->pOrderBy = 0;
+  pSub->pOrderBy = pNew;
+  return 1;
+}
+
+
+/*
 ** Return TRUE (non-zero) if the i-th entry in the pTabList SrcList can
 ** be implemented as a co-routine.  The i-th entry is guaranteed to be
 ** a subquery.
@@ -7291,6 +7339,21 @@ int sqlite3Select(
     ** a MATERIALIZED common table expression is an optimization fence.
     */
     if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ){
+      /* If the MATERIALIZED common table expression is the left-most
+      ** term of the outer query, and if it has no ORDER BY clause, but
+      ** there is an ORDER BY clause on the outer query that only references
+      ** the common table expression, then transfer the ORDER BY clause over
+      ** to the common table expression.
+      */
+      if( i==0
+       && pSub->pOrderBy==0
+       && sSort.pOrderBy!=0
+       && transferOrderByIntoSubquery(pParse, pItem->iCursor, pSub, p)
+      ){
+        sSort.pOrderBy = 0;
+        TREETRACE(0x800,pParse,p,
+                ("transfer ORDER BY into left-most subquery"));
+      }
       continue;
     }
 
