@@ -56,22 +56,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   });
 
-  /* JS-to-WASM arg adapter for xCreateFunction()'s xDestroy arg. */
-  const xDestroyArgAdapter = new wasm.xWrap.FuncPtrAdapter({
-    name: 'fts5_api::xCreateFunction(xDestroy)',
-    signature: 'v(p)',
-    contextKey: xFunctionArgAdapter.contextKey,
-    callProxy: (callback)=>{
-      return (pArg)=>{
-        try{ callback(pArg) }
-        catch(e){
-          sqlite3.config.warn("FTS5 function xDestroy() threw. Ignoring.",e);
-        }
-      }
-    }
-  });
-
-
   /** Map of (sqlite3*) to fts.fts5_api. */
   const __ftsApiToStruct = Object.create(null);
   const __fts5_api_from_db = function(pDb, createIfNeeded){
@@ -86,11 +70,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Arrange for WASM functions dynamically created via this API to be
      uninstalled when the db they were installed for is closed... */
-  const __addCleanupForFunc = function(sfapi, name){
-    if(!sfapi.$$funcNames){
-      sfapi.$$funcNames = new Set;
+  const __addCleanupForFunc = function(sfapi, name, pDestroy){
+    if(!sfapi.$$cleanup){
+      sfapi.$$cleanup = new Set;
     }
-    sfapi.$$funcNames.add(name.toLowerCase());
+    sfapi.$$cleanup.add([name.toLowerCase(), pDestroy]);
   };
 
   /**
@@ -103,17 +87,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const sfapi = __fts5_api_from_db(pDb, false);
     if(sfapi){
       delete __ftsApiToStruct[pDb];
-      if(sfapi.$$funcNames){
+      if(sfapi.$$cleanup){
         const fapi = sfapi.pointer;
         const scope = wasm.scopedAllocPush();
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
         try{
-          for(const name of sfapi.$$funcNames){
+          for(const [name, pDestroy] of sfapi.$$cleanup){
             try{
+              /* Uninstall xFunctionArgAdapter's bindings via a
+                 roundabout approach... */
               const zName = wasm.scopedAllocCString(name);
               const argv = [fapi, zName, 0, 0, 0];
               xFunctionArgAdapter.convertArg(0, argv, 3);
-              xDestroyArgAdapter.convertArg(0, argv, 4);
+              if(pDestroy) wasm.uninstallFunction(pDestroy);
             }catch(e){
               sqlite3.config.error("Error removing FTS func",name,e);
             }
@@ -142,7 +128,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        installed for the life of the given db handle. The function
        must return void and accept args in the form
        (ptrToFts5ExtensionApi, ptrToFts5Context, ptrToSqlite3Context,
-       array-of-values).
+       array-of-JS-values).
 
      - xDestroy optional Function or pointer to WASM function to call
        when the binding is destroyed (when the db handle is
@@ -171,16 +157,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const fapi = fts.fts5_api_from_db(db)
           || toss("Internal error - cannot get FTS5 API object for db.");
     const sfapi = __fts5_api_from_db(db, true);
+    let pDestroy = 0;
     try{
+      /** Because of how fts5_api::xCreateFunction() replaces
+          functions (by prepending new ones to a linked list but
+          retaining old ones), we cannot use a FuncPtrAdapter to
+          automatically convert xDestroy, lest we end up uninstalling
+          a bound-to-wasm JS function's wasm pointer before fts5
+          cleans it up when the db is closed. */
+      if(xDestroy instanceof Function){
+        pDestroy = wasm.installFunction(xDestroy, 'v(p)');
+      }
       const xcf = sfapi.$$xCreateFunction || (
         sfapi.$$xCreateFunction = wasm.xWrap(sfapi.$xCreateFunction, 'int', [
-          '*', 'string', '*', xFunctionArgAdapter, xDestroyArgAdapter
+          '*', 'string', '*', xFunctionArgAdapter, '*'
         ])
       );
-      const rc = xcf(fapi, name, 0, xFunction || 0, xDestroy || 0 );
+      const rc = xcf(fapi, name, 0, xFunction || 0, pDestroy || xDestroy || 0 );
       if(rc) toss(rc,"FTS5::xCreateFunction() failed.");
-      __addCleanupForFunc(sfapi, name);
+      __addCleanupForFunc(sfapi, name, pDestroy);
     }catch(e){
+      if(pDestroy) wasm.uninstallFunction(pDestroy);
       sfapi.dispose();
       throw e;
     }
