@@ -96,8 +96,8 @@
 #ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
 #endif
-#ifndef SQLITE_ENABLE_FTS4
-#  define SQLITE_ENABLE_FTS4 1
+#ifndef SQLITE_ENABLE_FTS5
+#  define SQLITE_ENABLE_FTS5 1
 #endif
 #ifndef SQLITE_ENABLE_MATH_FUNCTIONS
 #  define SQLITE_ENABLE_MATH_FUNCTIONS 1
@@ -402,7 +402,10 @@ void sqlite3_wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_EXPORT
 const char * sqlite3_wasm_enum_json(void){
-  static char aBuffer[1024 * 20] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 22] = {0}
+    /* where the JSON goes. If this buffer is not large enough, this
+       function will assert (in debug builds) and return 0. When it does
+       so, this value needs to be increased. */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
@@ -651,6 +654,16 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_LOCK_EXCLUSIVE);
   } _DefGroup;
 
+#ifdef SQLITE_ENABLE_FTS5
+  DefGroup(fts5) {
+    DefInt(FTS5_TOKENIZE_QUERY);
+    DefInt(FTS5_TOKENIZE_PREFIX);
+    DefInt(FTS5_TOKENIZE_DOCUMENT);
+    DefInt(FTS5_TOKENIZE_AUX);
+    DefInt(FTS5_TOKEN_COLOCATED);
+  } _DefGroup;
+#endif
+
   DefGroup(ioCap) {
     DefInt(SQLITE_IOCAP_ATOMIC);
     DefInt(SQLITE_IOCAP_ATOMIC512);
@@ -876,7 +889,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_STMTSTATUS_FILTER_HIT);
     DefInt(SQLITE_STMTSTATUS_MEMUSED);
   } _DefGroup;
-  
+
   DefGroup(syncFlags) {
     DefInt(SQLITE_SYNC_NORMAL);
     DefInt(SQLITE_SYNC_FULL);
@@ -1094,7 +1107,7 @@ const char * sqlite3_wasm_enum_json(void){
       M(xShadowName,    "i(s)");
     } _StructBinder;
 #undef CurrentStruct
-    
+
     /**
      ** Workaround: in order to map the various inner structs from
      ** sqlite3_index_info, we have to uplift those into constructs we
@@ -1170,6 +1183,87 @@ const char * sqlite3_wasm_enum_json(void){
       M(colUsed,            "j");
     } _StructBinder;
 #undef CurrentStruct
+
+#ifdef SQLITE_ENABLE_FTS5
+#define CurrentStruct Fts5PhraseIter
+    StructBinder {
+      M(a,              "p");
+      M(b,              "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct Fts5ExtensionApi
+    StructBinder {
+      M(iVersion,           "i");
+      M(xUserData,          "p(p)");// void *(*)(Fts5Context*);
+      M(xColumnCount,       "i(p)");// int (*)(Fts5Context*);
+      M(xRowCount,          "i(pp)");
+      //^^^ int (*)(Fts5Context*, sqlite3_int64 *pnRow);
+      M(xColumnTotalSize,   "i(pip)");
+      //^^^ int (*)(Fts5Context*, int iCol, sqlite3_int64 *pnToken);
+      M(xTokenize,          "i(ppipp)");
+      //^^^ int (*)(Fts5Context*,
+      //  const char *pText, int nText, /* Text to tokenize */
+      //  void *pCtx,                   /* Context passed to xToken() */
+      //  int (*xToken)(void*, int, const char*, int, int, int) /* Callback */
+      //);
+      M(xPhraseCount,       "i(p)"); // int (*)(Fts5Context*);
+      M(xPhraseSize,        "i(pi)"); // int (*)(Fts5Context*, int iPhrase);
+      M(xInstCount,         "i(pp)"); // int (*)(Fts5Context*, int *pnInst);
+      M(xInst,              "i(pippp)");
+      //^^^ int (*)(Fts5Context*, int iIdx, int *piPhrase, int *piCol, int *piOff);
+      M(xRowid,             "j(p)"); // sqlite3_int64 (*)(Fts5Context*);
+      M(xColumnText,        "i(pipp)");
+      //^^^ int (*)(Fts5Context*, int iCol, const char **pz, int *pn);
+      M(xColumnSize,        "i(pip)");
+      //^^^ int (*)(Fts5Context*, int iCol, int *pnToken);
+      M(xQueryPhrase,       "i(pipp)");
+      //^^^ int (*xQueryPhrase)(Fts5Context*, int iPhrase, void *pUserData,
+      //    int(*)(const Fts5ExtensionApi*,Fts5Context*,void*)
+      // );
+      M(xSetAuxdata,        "i(ppp)");
+      //^^^ int (*)(Fts5Context*, void *pAux, void(*xDelete)(void*));
+      M(xGetAuxdata,        "p(pi)"); // void *(*)(Fts5Context*, int bClear);
+      M(xPhraseFirst,       "i(pippp)");
+      //^^^ int (*)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*, int*);
+      M(xPhraseNext,        "v(pppp)");
+      //^^^ void (*)(Fts5Context*, Fts5PhraseIter*, int *piCol, int *piOff);
+      M(xPhraseFirstColumn, "i(pipp)");
+      //^^^ int (*)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*);
+      M(xPhraseNextColumn,  "v(ppp)");
+      //^^^ void (*)(Fts5Context*, Fts5PhraseIter*, int *piCol);
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct fts5_api
+    StructBinder {
+      M(iVersion,         "i");/* Currently always 2 */
+      M(xCreateTokenizer, "i(ppppp)");
+      //^^^ int (*)(
+      //      fts5_api *pApi,
+      //      const char *zName,
+      //      void *pContext,
+      //      fts5_tokenizer *pTokenizer,
+      //      void (*xDestroy)(void*)
+      // );
+      M(xFindTokenizer,    "i(pppp)");
+      //^^^ int (*)(
+      //      fts5_api *pApi,
+      //      const char *zName,
+      //      void **ppContext,
+      //      fts5_tokenizer *pTokenizer
+      //    );
+      M(xCreateFunction,    "i(ppppp)");
+      //^^^ int (*)(
+      //      fts5_api *pApi,
+      //      const char *zName,
+      //      void *pContext,
+      //      fts5_extension_function xFunction,
+      //      void (*xDestroy)(void*)
+      //    );
+    } _StructBinder;
+#undef CurrentStruct
+#endif /* SQLITE_ENABLE_FTS5 */
 
 #if SQLITE_WASM_TESTS
 #define CurrentStruct WasmTestStruct

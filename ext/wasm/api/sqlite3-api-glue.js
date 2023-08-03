@@ -823,6 +823,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                           'version' ];
     if(wasm.bigIntEnabled){
       defineGroups.push('serialize', 'session', 'vtab');
+      if(!!wasm.ctype.fts5){
+        defineGroups.push('fts5');
+      }
     }
     for(const t of defineGroups){
       for(const e of Object.entries(wasm.ctype[t])){
