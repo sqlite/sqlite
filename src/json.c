@@ -175,7 +175,7 @@ struct JsonNode {
 **   2.  Zero or more changes are made (via json_remove() or json_replace()
 **       or similar) to the aNode[] array.
 **
-**   3.  A new, edited and mimified JSON string is generated from aNode
+**   3.  A new, edited and minified JSON string is generated from aNode
 **       and stored in zAlt.  The JsonParse object always owns zAlt.
 **
 ** Step 1 always happens.  Step 2 and 3 may or may not happen, depending
@@ -194,7 +194,7 @@ struct JsonParse {
   u32 nAlloc;        /* Number of slots of aNode[] allocated */
   JsonNode *aNode;   /* Array of nodes containing the parse */
   char *zJson;       /* Original JSON string (before edits) */
-  char *zAlt;        /* Revised and/or mimified JSON */
+  char *zAlt;        /* Revised and/or minified JSON */
   u32 *aUp;          /* Index of parent of each node */
   JsonCleanup *pClup;/* Cleanup operations prior to freeing this object */
   u16 iDepth;        /* Nesting depth */

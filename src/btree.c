@@ -496,7 +496,7 @@ static int cursorHoldsMutex(BtCursor *p){
 }
 
 /* Verify that the cursor and the BtShared agree about what is the current
-** database connetion. This is important in shared-cache mode. If the database
+** database connection. This is important in shared-cache mode. If the database
 ** connection pointers get out-of-sync, it is possible for routines like
 ** btreeInitPage() to reference an stale connection pointer that references a
 ** a connection that has already closed.  This routine is used inside assert()
@@ -578,8 +578,8 @@ static void invalidateIncrblobCursors(
 **   1) When all data is deleted from a page and the page becomes
 **      a free-list leaf page, the page is not written to the database
 **      (as free-list leaf pages contain no meaningful data). Sometimes
-**      such a page is not even journalled (as it will not be modified,
-**      why bother journalling it?).
+**      such a page is not even journaled (as it will not be modified,
+**      why bother journaling it?).
 **
 **   2) When a free-list leaf page is reused, its content is not read
 **      from the database or written to the journal file (why should it
@@ -588,8 +588,8 @@ static void invalidateIncrblobCursors(
 ** By themselves, these optimizations work fine and provide a handy
 ** performance boost to bulk delete or insert operations. However, if
 ** a page is moved to the free-list and then reused within the same
-** transaction, a problem comes up. If the page is not journalled when
-** it is moved to the free-list and it is also not journalled when it
+** transaction, a problem comes up. If the page is not journaled when
+** it is moved to the free-list and it is also not journaled when it
 ** is extracted from the free-list and reused, then the original data
 ** may be lost. In the event of a rollback, it may not be possible
 ** to restore the database to its original configuration.

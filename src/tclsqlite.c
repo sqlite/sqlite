@@ -3287,7 +3287,7 @@ deserialize_error:
   }
 
   /*
-  **     $db timeout MILLESECONDS
+  **     $db timeout MILLISECONDS
   **
   ** Delay for the number of milliseconds specified when a file is locked.
   */

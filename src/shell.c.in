@@ -1941,7 +1941,7 @@ static void output_quoted_string(FILE *out, const char *z){
 
 /*
 ** Output the given string as a quoted string using SQL quoting conventions.
-** Additionallly , escape the "\n" and "\r" characters so that they do not
+** Additionally , escape the "\n" and "\r" characters so that they do not
 ** get corrupted by end-of-line translation facilities in some operating
 ** systems.
 **

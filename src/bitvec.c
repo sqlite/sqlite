@@ -13,11 +13,11 @@
 ** bitmap.  Bits are numbered starting with 1.
 **
 ** A bitmap is used to record which pages of a database file have been
-** journalled during a transaction, or which pages have the "dont-write"
+** journaled during a transaction, or which pages have the "dont-write"
 ** property.  Usually only a few pages are meet either condition.
 ** So the bitmap is usually sparse and has low cardinality.
 ** But sometimes (for example when during a DROP of a large table) most
-** or all of the pages in a database can get journalled.  In those cases,
+** or all of the pages in a database can get journaled.  In those cases,
 ** the bitmap becomes dense with high cardinality.  The algorithm needs
 ** to handle both cases well.
 **

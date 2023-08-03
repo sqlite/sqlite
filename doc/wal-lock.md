@@ -12,7 +12,7 @@ facilitates transfer of OS priority between processes when a high priority
 process is blocked by a lower priority one.
 
 Only read/write clients use blocking locks. Clients that have read-only access
-to the \*-shm file nevery use blocking locks.
+to the \*-shm file never use blocking locks.
 
 Threads or processes that access a single database at a time never deadlock as
 a result of blocking database locks. But it is of course possible for threads

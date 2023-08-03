@@ -4745,7 +4745,7 @@ struct WhereConst {
   int nConst;      /* Number for COLUMN=CONSTANT terms */
   int nChng;       /* Number of times a constant is propagated */
   int bHasAffBlob; /* At least one column in apExpr[] as affinity BLOB */
-  u32 mExcludeOn;  /* Which ON expressions to exclude from considertion.
+  u32 mExcludeOn;  /* Which ON expressions to exclude from consideration.
                    ** Either EP_OuterON or EP_InnerON|EP_OuterON */
   Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is VALUE */
 };

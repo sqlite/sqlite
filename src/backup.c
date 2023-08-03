@@ -441,7 +441,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         ** fix the size of the file. However it is important to call
         ** sqlite3PagerTruncateImage() here so that any pages in the 
         ** destination file that lie beyond the nDestTruncate page mark are
-        ** journalled by PagerCommitPhaseOne() before they are destroyed
+        ** journaled by PagerCommitPhaseOne() before they are destroyed
         ** by the file truncation.
         */
         assert( pgszSrc==sqlite3BtreeGetPageSize(p->pSrc) );

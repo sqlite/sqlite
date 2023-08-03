@@ -3521,7 +3521,7 @@ void sqlite3PagerShrink(Pager *pPager){
 **    NORMAL    The journal is synced once before writes begin on the
 **              database.  This is normally adequate protection, but
 **              it is theoretically possible, though very unlikely,
-**              that an inopertune power failure could leave the journal
+**              that an inopportune power failure could leave the journal
 **              in a state which would cause damage to the database
 **              when it is rolled back.
 **
@@ -5921,7 +5921,7 @@ static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
   pData2 = pPg->pData;
   cksum = pager_cksum(pPager, (u8*)pData2);
 
-  /* Even if an IO or diskfull error occurs while journalling the
+  /* Even if an IO or diskfull error occurs while journaling the
   ** page in the block above, set the need-sync flag for the page.
   ** Otherwise, when the transaction is rolled back, the logic in
   ** playback_one_page() will think that the page needs to be restored
@@ -6024,7 +6024,7 @@ static int pager_write(PgHdr *pPg){
 
   /* The PGHDR_DIRTY bit is set above when the page was added to the dirty-list
   ** and before writing the page into the rollback journal.  Wait until now,
-  ** after the page has been successfully journalled, before setting the
+  ** after the page has been successfully journaled, before setting the
   ** PGHDR_WRITEABLE bit that indicates that the page can be safely modified.
   */
   pPg->flags |= PGHDR_WRITEABLE;
@@ -6047,7 +6047,7 @@ static int pager_write(PgHdr *pPg){
 ** This is a variant of sqlite3PagerWrite() that runs when the sector size
 ** is larger than the page size.  SQLite makes the (reasonable) assumption that
 ** all bytes of a sector are written together by hardware.  Hence, all bytes of
-** a sector need to be journalled in case of a power loss in the middle of
+** a sector need to be journaled in case of a power loss in the middle of
 ** a write.
 **
 ** Usually, the sector size is less than or equal to the page size, in which

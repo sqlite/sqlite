@@ -149,7 +149,7 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
   }
   /* NEED_SYNC can be set independently of WRITEABLE.  This can happen,
   ** for example, when using the sqlite3PagerDontWrite() optimization:
-  **    (1)  Page X is journalled, and gets WRITEABLE and NEED_SEEK.
+  **    (1)  Page X is journaled, and gets WRITEABLE and NEED_SEEK.
   **    (2)  Page X moved to freelist, WRITEABLE is cleared
   **    (3)  Page X reused, WRITEABLE is set again
   ** If NEED_SYNC had been cleared in step 2, then it would not be reset
@@ -158,10 +158,10 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
   ** loss.
   **
   ** Another example is when the database page size is smaller than the
-  ** disk sector size.  When any page of a sector is journalled, all pages
+  ** disk sector size.  When any page of a sector is journaled, all pages
   ** in that sector are marked NEED_SYNC even if they are still CLEAN, just
   ** in case they are later modified, since all pages in the same sector
-  ** must be journalled and synced before any of those pages can be safely
+  ** must be journaled and synced before any of those pages can be safely
   ** written.
   */
   return 1;

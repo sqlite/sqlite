@@ -45,7 +45,7 @@ void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
 **
 ** To state it another way:  This routine returns a list of all triggers
 ** that fire off of pTab.  The list will include any TEMP triggers on
-** pTab as well as the triggers lised in pTab->pTrigger.
+** pTab as well as the triggers listed in pTab->pTrigger.
 */
 Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Schema *pTmpSchema;       /* Schema of the pTab table */

@@ -190,7 +190,7 @@ struct WhereOrSet {
 ** that implement some or all of a query plan.
 **
 ** Think of each WhereLoop object as a node in a graph with arcs
-** showing dependencies and costs for travelling between nodes.  (That is
+** showing dependencies and costs for traveling between nodes.  (That is
 ** not a completely accurate description because WhereLoop costs are a
 ** vector, not a scalar, and because dependencies are many-to-one, not
 ** one-to-one as are graph nodes.  But it is a useful visualization aid.)
