@@ -349,6 +349,12 @@ EXPORTED_FUNCTIONS.api.in := $(EXPORTED_FUNCTIONS.api.main)
 ifeq (1,$(SQLITE_C_IS_SEE))
   EXPORTED_FUNCTIONS.api.in += $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see)
 endif
+ifeq (1,$(emcc.WASM_BIGINT))
+  ifneq (,$(filter -DSQLITE_ENABLE_FTS5,$(SQLITE_OPT)))
+    EXPORTED_FUNCTIONS.api.in += $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-fts5)
+  endif
+endif
+
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
 $(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
@@ -375,6 +381,9 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
+ifneq (,$(filter -DSQLITE_ENABLE_FTS5,$(SQLITE_OPT)))
+  sqlite3-api.jses += $(dir.api)/sqlite3-fts5-helper.js
+endif
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 # SOAP.js is an external API file which is part of our distribution

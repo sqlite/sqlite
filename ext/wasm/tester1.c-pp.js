@@ -2899,6 +2899,56 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }
     })/*session API sanity tests*/
   ;/*end of session API group*/;
+  ////////////////////////////////////////////////////////////////////////
+  T.g('FTS5')
+    .t({
+      name: "Sanity checks",
+      predicate: (sqlite3)=>sqlite3.fts5 || "Missing sqlite3.fts5 namespace.",
+      test: function(sqlite3){
+        const db = new sqlite3.oo1.DB();
+        db.exec([
+          "create virtual table ft using fts5(a,b);",
+          "insert into ft(a,b) values",
+          "('a1','b1'),",
+          "('a2','b2'),",
+          "('a3','b3');"
+        ]);
+        const fts = sqlite3.fts5;
+        let pApi = fts.fts5_api_from_db(db);
+        T.assert( !!pApi );
+        let fApi = new fts.fts5_api(pApi);
+        T.assert( fApi.$iVersion >= 2 );
+        fApi.dispose();
+        fApi = undefined;
+        let destroyCalled = false;
+        fts.createFunction(db,{
+          name: 'mymatch',
+          xFunction: function(pFtsX, pFtsCx, pCtx, argv){
+            //log("mymatch!", argv.length, argv);
+            // Both of these return-value approaches are equivalent:
+            if(0){
+              return "MY+"+argv.join(':');
+            }else{
+              capi.sqlite3_result_text(pCtx, "MY+"+argv.join(':'), -1, 0);
+              // implicit return of undefined
+            }
+          },
+          xDestroy: function(){
+            destroyCalled = true;
+          }
+        });
+        let list = db.selectValues(
+          "select mymatch(ft,a,b) from ft where b match 'b2'"
+          //^^^ results in a "no such cursor: 0" error
+          //"select a from ft where b match 'b2'"
+        );
+        T.assert( 1 === list.length )
+          .assert( 'MY+a2:b2' === list[0] );
+        db.close();
+        T.assert( destroyCalled );
+        //toss("Testing");
+      }
+    })/*FTS5*/
 
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS: Origin-Private File System',

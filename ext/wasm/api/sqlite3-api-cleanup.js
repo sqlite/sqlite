@@ -52,9 +52,10 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
     delete globalThis.sqlite3ApiBootstrap;
     delete globalThis.sqlite3ApiConfig;
   }
-
+  delete sqlite3.__dbCleanupMap;
   Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
                               pass the sqlite3 object off to the client. */;
+  sqlite3.wasm.xWrap.FuncPtrAdapter.warnOnUse = true;
 }else{
   console.warn("This is not running in an Emscripten module context, so",
                "globalThis.sqlite3ApiBootstrap() is _not_ being called due to lack",

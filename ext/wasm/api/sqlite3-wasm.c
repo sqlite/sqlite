@@ -363,6 +363,27 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   return err_code;
 }
 
+#ifdef SQLITE_ENABLE_FTS5
+/*
+** Return a pointer to the fts5_api pointer for database connection db.
+** If an error occurs, return NULL and leave an error in the database
+** handle (accessible using sqlite3_errcode()/errmsg()).
+**
+** This function was taken verbatim from the /fts5.html docs.
+*/
+SQLITE_WASM_EXPORT
+fts5_api *fts5_api_from_db(sqlite3 *db){
+  fts5_api *pRet = 0;
+  sqlite3_stmt *pStmt = 0;
+  if( SQLITE_OK==sqlite3_prepare(db, "SELECT fts5(?1)", -1, &pStmt, 0) ){
+    sqlite3_bind_pointer(pStmt, 1, (void*)&pRet, "fts5_api_ptr", NULL);
+    sqlite3_step(pStmt);
+  }
+  sqlite3_finalize(pStmt);
+  return pRet;
+}
+#endif /*SQLITE_ENABLE_FTS5*/
+
 #if SQLITE_WASM_TESTS
 struct WasmTestStruct {
   int v4;

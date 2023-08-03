@@ -10,7 +10,7 @@
 */
 
 /**
-   This file installs sqlite3.vfs, and object which exists to assist
+   This file installs sqlite3.vfs, an object which exists to assist
    in the creation of JavaScript implementations of sqlite3_vfs, along
    with its virtual table counterpart, sqlite3.vtab.
 */

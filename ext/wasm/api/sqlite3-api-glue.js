@@ -261,6 +261,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }),
       "*"/*pUserData*/
     ]],
+    /**
+       Achtung: when specifying an xDestroy() method via
+       sqlite3_set_auxdata(), it is up to the client to re-set it to
+       0/NULL at the end of its lifetime (e.g. in the associated UDF's
+       xFinal() impl), The C library will be able to call the
+       destructor but _not_ uninstall the temporary WASM-bound proxy
+       function because it does not have enough information to do
+       so. Alternately, clients may create the function pointer
+       themselves using wasm.createFunction() and pass that pointer
+       here, in which case they avoid creating a stranded "temporary"
+       function binding.
+    */
     ["sqlite3_set_auxdata", undefined, [
       "sqlite3_context*", "int", "*",
       new wasm.xWrap.FuncPtrAdapter({
@@ -421,8 +433,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   // Add session/changeset APIs...
   if(wasm.bigIntEnabled && !!wasm.exports.sqlite3changegroup_add){
-    /* ACHTUNG: 2022-12-23: the session/changeset API bindings are
-       COMPLETELY UNTESTED. */
     /**
        FuncPtrAdapter options for session-related callbacks with the
        native signature "i(ps)". This proxy converts the 2nd argument
@@ -597,6 +607,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ]);
   }/*session/changeset APIs*/
 
+  if(wasm.bigIntEnabled && !!wasm.exports.fts5_api_from_db){
+    wasm.bindingSignatures.int64.push(
+      ['fts5_api_from_db', 'fts5_api*', 'sqlite3*']
+    );
+  }/* fts5 APIs */
+
   /**
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
@@ -659,8 +675,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       function(v){
         if(wasm.isPtr(v)) return v;
         v = ''+v;
-        let rc = this[v];
-        return rc || (this[v] = wasm.allocCString(v));
+        const rc = this[v];
+        return (undefined===rc) ? (this[v] = wasm.allocCString(v)) : rc;
       }.bind(Object.create(null))
     );
 
@@ -717,7 +733,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
 
     const __xRcPtr = wasm.xWrap.resultAdapter('*');
-    wasm.xWrap.resultAdapter('sqlite3*', __xRcPtr)
+    wasm.xWrap.resultAdapter
+    ('fts5_api*', __xRcPtr)
+    ('sqlite3*', __xRcPtr)
     ('sqlite3_context*', __xRcPtr)
     ('sqlite3_stmt*', __xRcPtr)
     ('sqlite3_value*', __xRcPtr)
@@ -909,9 +927,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      UDFs and collations so that sqlite3_close_v2() can clean up any
      automated JS-to-WASM function conversions installed by those.
   */
-  const __argPDb = (pDb)=>wasm.xWrap.argAdapter('sqlite3*')(pDb);
+  const __argPDb = wasm.xWrap.argAdapter('sqlite3*');
   const __argStr = (str)=>wasm.isPtr(str) ? wasm.cstrToJs(str) : str;
-  const __dbCleanupMap = function(
+  const __dbCleanupMap = sqlite3.__dbCleanupMap = function(
     pDb, mode/*0=remove, >0=create if needed, <0=do not create if missing*/
   ){
     pDb = __argPDb(pDb);
@@ -976,6 +994,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   __dbCleanupMap.cleanup = function(pDb){
     pDb = __argPDb(pDb);
+    //console.warn("db cleanup",pDb);
     //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
     /**
        Installing NULL functions in the C API will remove those
@@ -1003,6 +1022,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       catch(e){
         console.warn("close-time call of",name+"(",closeArgs,") threw:",e);
       }
+    }
+    for(const callback of __dbCleanupMap.extraCallbacks){
+      callback(pDb);
     }
     const m = __dbCleanupMap(pDb, 0);
     if(!m) return;
@@ -1040,6 +1062,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     delete m.udf;
     delete m.wudf;
   }/*__dbCleanupMap.cleanup()*/;
+  /**
+     Downstream code, namely sqlite3-fts5-helper.js, should add any custom
+     cleanup handlers to __dbCleanupMap.extraCallbacks. Each function in this
+     array will be called during sqlite3_close_v2() and passed a pointer to
+     the being-destroyed (sqlite3*) object.
+  */
+  __dbCleanupMap.extraCallbacks = [];
 
   {/* Binding of sqlite3_close_v2() */
     const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
@@ -1157,6 +1186,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        JS proxies for the various sqlite3_create[_window]_function()
        callbacks, structured in a form usable by wasm.xWrap.FuncPtrAdapter.
+
+       TODO: explore an API option which more closely resembles the
+       /ext/jni mapping, which is much friendlier at the client level.
     */
     const __cfProxy = Object.assign(Object.create(null), {
       xInverseAndStep: {
@@ -1668,5 +1700,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }/*pKvvfs*/
 
-  wasm.xWrap.FuncPtrAdapter.warnOnUse = true;
 });
