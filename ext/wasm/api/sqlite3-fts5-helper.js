@@ -72,9 +72,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      uninstalled when the db they were installed for is closed... */
   const __addCleanupForFunc = function(sfapi, name, pDestroy){
     if(!sfapi.$$cleanup){
-      sfapi.$$cleanup = new Set;
+      sfapi.$$cleanup = [];
     }
-    sfapi.$$cleanup.add([name.toLowerCase(), pDestroy]);
+    sfapi.$$cleanup.push([name.toLowerCase(), pDestroy]);
   };
 
   /**
@@ -95,10 +95,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           for(const [name, pDestroy] of sfapi.$$cleanup){
             try{
               /* Uninstall xFunctionArgAdapter's bindings via a
-                 roundabout approach... */
+                 roundabout approach: its scoping rules uninstall each
+                 new installation at the earliest opportunity, so we
+                 simply need to fake a call with a 0-pointer for the
+                 xFunction callback to uninstall the most recent
+                 one. */
               const zName = wasm.scopedAllocCString(name);
               const argv = [fapi, zName, 0, 0, 0];
-              xFunctionArgAdapter.convertArg(0, argv, 3);
+              xFunctionArgAdapter.convertArg(argv[3], argv, 3);
+              /* xDestroy, on the other hand, requires some
+                 hand-holding to ensure we don't prematurely
+                 uninstall these when a function is replaced
+                 (shadowed). */
               if(pDestroy) wasm.uninstallFunction(pDestroy);
             }catch(e){
               sqlite3.config.error("Error removing FTS func",name,e);

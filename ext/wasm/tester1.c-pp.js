@@ -2924,12 +2924,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         fts.createFunction(db, {
           name: 'mymatch',
           xFunction: function(pFtsX, pFtsCx, pCtx, argv){
-            //log("mymatch!", argv.length, argv);
             // Both of these return-value approaches are equivalent:
+            const rv = "MY+"+argv.join(':');
             if(0){
-              return "MY+"+argv.join(':');
+              return rv;
             }else{
-              capi.sqlite3_result_text(pCtx, "MY+"+argv.join(':'), -1, 0);
+              capi.sqlite3_result_text(pCtx, rv, -1, capi.SQLITE_TRANSIENT);
               // implicit return of undefined
             }
           },
