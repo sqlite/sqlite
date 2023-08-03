@@ -1178,7 +1178,7 @@ globalThis.WhWasmUtilInstaller = function(target){
     cache.scopedAlloc.splice(n,1);
     for(let p; (p = state.pop()); ){
       if(target.functionEntry(p)){
-        //console.warn("scopedAllocPop() uninstalling transient function",p);
+        //console.warn("scopedAllocPop() uninstalling function",p);
         target.uninstallFunction(p);
       }
       else target.dealloc(p);
@@ -1639,6 +1639,7 @@ globalThis.WhWasmUtilInstaller = function(target){
                      'and is not intended to be invoked from',
                      'client-level code. Invoked with:',opt);
       }
+      this.name = opt.name || "unnamed";
       this.signature = opt.signature;
       if(opt.contextKey instanceof Function){
         this.contextKey = opt.contextKey;
@@ -1700,14 +1701,16 @@ globalThis.WhWasmUtilInstaller = function(target){
        exactly the 2nd and 3rd arguments are.
     */
     convertArg(v,argv,argIndex){
-      //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
+      //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,this.signature,this.transient,v);
       let pair = this.singleton;
       if(!pair && this.isContext){
         pair = this.contextMap(this.contextKey(argv,argIndex));
+        //FuncPtrAdapter.debugOut(this.name, this.signature, "contextKey() =",this.contextKey(argv,argIndex), pair);
       }
       if(pair && pair[0]===v) return pair[1];
       if(v instanceof Function){
         /* Install a WASM binding and return its pointer. */
+        //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,this.signature,this.transient,v,pair);
         if(this.callProxy) v = this.callProxy(v);
         const fp = __installFunction(v, this.signature, this.isTransient);
         if(FuncPtrAdapter.debugFuncInstall){
@@ -1740,13 +1743,14 @@ globalThis.WhWasmUtilInstaller = function(target){
         }
         return fp;
       }else if(target.isPtr(v) || null===v || undefined===v){
+        //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,this.signature,this.transient,v,pair);
         if(pair && pair[1] && pair[1]!==v){
           /* uninstall stashed mapping and replace stashed mapping with v. */
           if(FuncPtrAdapter.debugFuncInstall){
             FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
                                     this.contextKey(argv,argIndex), '@'+pair[1], v);
           }
-          try{target.uninstallFunction(pair[1])}
+          try{ cache.scopedAlloc[cache.scopedAlloc.length-1].push(pair[1]) }
           catch(e){/*ignored*/}
           pair[0] = pair[1] = (v | 0);
         }
