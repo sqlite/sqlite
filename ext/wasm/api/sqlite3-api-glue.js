@@ -1069,15 +1069,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      the being-destroyed (sqlite3*) object.
   */
   __dbCleanupMap.extraCallbacks = [];
+  /**
+     Downstream code, namely sqlite3-fts5-helper.js, should add any
+     custom cleanup handlers to __dbCleanupMap.postCloseCallbacks.
+     Each function in this array will be called during
+     sqlite3_close_v2(), AFTER the db is closed, and passed a pointer
+     to the being-destroyed (sqlite3*) object. The memory is NOT A
+     VALID OBJECT but its address is still valid as a lookup key.
+  */
+  __dbCleanupMap.postCloseCallbacks = [];
 
   {/* Binding of sqlite3_close_v2() */
     const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
+    const __xArgDb = wasm.xWrap.argAdapter('sqlite3*');
     capi.sqlite3_close_v2 = function(pDb){
       if(1!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_close_v2', 1);
+      pDb = __xArgDb(pDb);
       if(pDb){
         try{__dbCleanupMap.cleanup(pDb)} catch(e){/*ignored*/}
       }
-      return __sqlite3CloseV2(pDb);
+      const rc = __sqlite3CloseV2(pDb);
+      if(pDb/*noting that it's not valid anymore*/){
+        for(const f of __dbCleanupMap.postCloseCallbacks){
+          try{f(pDb)}catch(e){/*ingored*/}
+        }
+      }
+      return rc;
     };
   }/*sqlite3_close_v2()*/
 

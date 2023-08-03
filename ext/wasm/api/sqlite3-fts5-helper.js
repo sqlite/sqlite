@@ -16,14 +16,15 @@
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
-  const __dbCleanupMap = sqlite3.__dbCleanupMap
-        || toss("Maintenance needed: can't reach sqlite3.__dbCleanupMap.");
   if(!capi.fts5_api_from_db){
     return /*this build does not have FTS5*/;
   }
   const fts = sqlite3.fts5 = Object.create(null);
+  const xArgDb = wasm.xWrap.argAdapter('sqlite3*');
+
   /**
-     Move FTS-specific APIs from sqlite3.capi to sqlite3.fts.
+     Move FTS-specific APIs (installed via automation) from
+     sqlite3.capi to sqlite3.fts.
   */
   for(const c of [
     'Fts5ExtensionApi', 'Fts5PhraseIter', 'fts5_api',
@@ -33,8 +34,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     delete capi[c];
   }
 
-  const cache = Object.create(null);
-
+  /* JS-to-WASM arg adapter for xCreateFunction()'s xFunction arg. */
   const xFunctionArgAdapter = new wasm.xWrap.FuncPtrAdapter({
     name: 'fts5_api::xCreateFunction(xFunction)',
     signature: 'v(pppip)',
@@ -56,6 +56,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   });
 
+  /* JS-to-WASM arg adapter for xCreateFunction()'s xDestroy arg. */
   const xDestroyArgAdapter = new wasm.xWrap.FuncPtrAdapter({
     name: 'fts5_api::xCreateFunction(xDestroy)',
     signature: 'v(p)',
@@ -70,58 +71,61 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   });
 
+
+  /** Map of (sqlite3*) to fts.fts5_api. */
+  const __ftsApiToStruct = Object.create(null);
+  const __fts5_api_from_db = function(pDb, createIfNeeded){
+    let rc = __ftsApiToStruct[pDb];
+    if(!rc && createIfNeeded){
+      rc = new fts.fts5_api(fts.fts5_api_from_db(pDb));
+      __ftsApiToStruct[pDb] = rc;
+    }
+    return rc;
+  };
+
   /**
      Arrange for WASM functions dynamically created via this API to be
      uninstalled when the db they were installed for is closed... */
-  const __fts5FuncsPerDb = Object.create(null);
-  const __cleanupForDb = function(pDb){
-    return (__fts5FuncsPerDb[pDb] || (__fts5FuncsPerDb[pDb] = new Set));
+  const __addCleanupForFunc = function(sfapi, name){
+    if(!sfapi.$$funcNames){
+      sfapi.$$funcNames = new Set;
+    }
+    sfapi.$$funcNames.add(name.toLowerCase());
   };
-  __dbCleanupMap._addFts5Function = function ff(pDb, name){
-    __cleanupForDb(pDb).add(name.toLowerCase());
-  };
-  __dbCleanupMap.extraCallbacks.push(function(pDb){
-    const list = __fts5FuncsPerDb[pDb];
-    if(list){
-      const fapi = fts.fts5_api_from_db(pDb)
-      const sfapi = new fts.fts5_api(fapi);
-      const scope = wasm.scopedAllocPush();
-      //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-      try{
-        const xCF = wasm.functionEntry(sfapi.$xCreateFunction);
-        for(const name of list){
-          //sqlite3.config.warn("Clearing FTS function",pDb,name);
-          try{
-            const zName = wasm.scopedAllocCString(name);
-            /* In order to clean up properly we first have to invoke
-               the low-level (unwrapped) sfapi.$xCreateFunction and
-               then fake some calls into the Function-to-funcptr
-               apapters. If we just call cache.xcf(...) then the
-               adapter ends up uninstalling the xDestroy pointer which
-               sfapi.$xCreateFunction is about to invoke, leading to
-               an invalid memory access. */
-            xCF(fapi, zName, 0, 0, 0);
-            // Now clean up our FuncPtrAdapters in a round-about way...
-            const argv = [fapi, zName, 0, 0, 0];
-            xFunctionArgAdapter.convertArg(argv[3], argv, 3);
-            // xDestroyArgAdapter leads to an invalid memory access
-            // for as-yet-unknown reasons. For the time being we're
-            // leaking these.
-            //xDestroyArgAdapter.convertArg(argv[4], argv, 4);
-          }catch(e){
-            sqlite3.config.error("Error removing FTS func",name,e);
+
+  /**
+     Callback to be invoked via the JS binding of sqlite3_close_v2(),
+     after the db has been closed, meaing that the argument to this
+     function is not a valid object. We use its address only as a
+     lookup key.
+  */
+  sqlite3.__dbCleanupMap.postCloseCallbacks.push(function(pDb){
+    const sfapi = __fts5_api_from_db(pDb, false);
+    if(sfapi){
+      delete __ftsApiToStruct[pDb];
+      if(sfapi.$$funcNames){
+        const fapi = sfapi.pointer;
+        const scope = wasm.scopedAllocPush();
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        try{
+          for(const name of sfapi.$$funcNames){
+            try{
+              const zName = wasm.scopedAllocCString(name);
+              const argv = [fapi, zName, 0, 0, 0];
+              xFunctionArgAdapter.convertArg(0, argv, 3);
+              xDestroyArgAdapter.convertArg(0, argv, 4);
+            }catch(e){
+              sqlite3.config.error("Error removing FTS func",name,e);
+            }
           }
+        }finally{
+          wasm.scopedAllocPop(scope);
         }
-      }finally{
-        sfapi.dispose();
-        delete __fts5FuncsPerDb[pDb];
-        wasm.scopedAllocPop(scope);
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
       }
-      //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+      sfapi.dispose();
     }
   });
-
-  const xArgDb = wasm.xWrap.argAdapter('sqlite3*');
 
   /**
      Convenience wrapper to fts5_api::xCreateFunction.
@@ -166,19 +170,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if( !name || 'string' !== typeof name ) toss("Invalid name argument.");
     const fapi = fts.fts5_api_from_db(db)
           || toss("Internal error - cannot get FTS5 API object for db.");
-    const sfapi = new fts.fts5_api(fapi);
+    const sfapi = __fts5_api_from_db(db, true);
     try{
-      const xcf = cache.xcf || (
-        cache.xcf = wasm.xWrap(sfapi.$xCreateFunction,'int',[
+      const xcf = sfapi.$$xCreateFunction || (
+        sfapi.$$xCreateFunction = wasm.xWrap(sfapi.$xCreateFunction, 'int', [
           '*', 'string', '*', xFunctionArgAdapter, xDestroyArgAdapter
         ])
-      )/* this cache entry is only legal as long as nobody replaces
-          the xCreateFunction() method */;
+      );
       const rc = xcf(fapi, name, 0, xFunction || 0, xDestroy || 0 );
       if(rc) toss(rc,"FTS5::xCreateFunction() failed.");
-      __dbCleanupMap._addFts5Function(db, name);
-    }finally{
+      __addCleanupForFunc(sfapi, name);
+    }catch(e){
       sfapi.dispose();
+      throw e;
     }
   };
 

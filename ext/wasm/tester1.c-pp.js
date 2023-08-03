@@ -2921,7 +2921,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         fApi.dispose();
         fApi = undefined;
         let destroyCalled = false;
-        fts.createFunction(db,{
+        fts.createFunction(db, {
           name: 'mymatch',
           xFunction: function(pFtsX, pFtsCx, pCtx, argv){
             //log("mymatch!", argv.length, argv);
@@ -2939,8 +2939,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         });
         let list = db.selectValues(
           "select mymatch(ft,a,b) from ft where b match 'b2'"
-          //^^^ results in a "no such cursor: 0" error
-          //"select a from ft where b match 'b2'"
         );
         T.assert( 1 === list.length )
           .assert( 'MY+a2:b2' === list[0] );
