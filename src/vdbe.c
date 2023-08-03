@@ -708,6 +708,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int iCol,             /* The column to read */
   int t,                /* The serial-type code for the column value */
   i64 iOffset,          /* Offset to the start of the content value */
+  u32 cacheStatus,      /* Current Vdbe.cacheCtr value */
+  u32 colCacheCtr,      /* Current value of the column cache counter */
   Mem *pDest            /* Store the value into this register. */
 ){
   int rc;
@@ -716,12 +718,16 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int len = sqlite3VdbeSerialTypeLen(t);
   assert( pC->eCurType==CURTYPE_BTREE );
   if( len>db->aLimit[SQLITE_LIMIT_LENGTH] ) return SQLITE_TOOBIG;
-  if( len > 4000 ){
+  if( len > 4000 && pC->pKeyInfo==0 ){
     /* Cache large column values that are on overflow pages using
     ** an RCStr (reference counted string) so that if they are reloaded,
     ** that do not have to be copied a second time.  The overhead of
     ** creating and managing the cache is such that this is only
     ** profitable for larger TEXT and BLOB values.
+    **
+    ** Only do this on table-btrees so that writes to index-btrees do not
+    ** need to clear the cache.  This buys performance in the common case
+    ** in exchange for generality.
     */
     VdbeTxtBlbCache *pCache;
     char *pBuf;
@@ -733,6 +739,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     pCache = pC->pCache;
     if( pCache->pCValue==0
      || pCache->iCol!=iCol
+     || pCache->cacheStatus!=cacheStatus
+     || pCache->colCacheCtr!=colCacheCtr
      || pCache->iOffset!=sqlite3BtreeOffset(pC->uc.pCursor)
     ){
       if( pCache->pCValue ) sqlite3RCStrUnref(pCache->pCValue);
@@ -744,6 +752,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
       pBuf[len+1] = 0;
       pBuf[len+2] = 0;
       pCache->iCol = iCol;
+      pCache->cacheStatus = cacheStatus;
+      pCache->colCacheCtr = colCacheCtr;
       pCache->iOffset = sqlite3BtreeOffset(pC->uc.pCursor);
     }else{
       pBuf = pCache->pCValue;
@@ -814,6 +824,7 @@ int sqlite3VdbeExec(
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
+  u32 colCacheCtr = 0;       /* Column cache counter */
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
   u64 *pnCycle = 0;
   int bStmtScanStatus = IS_STMT_SCANSTATUS(db)!=0;
@@ -3145,7 +3156,7 @@ op_column_restart:
               || (t>=12 && ((t&1)==0 || p5==OPFLAG_BYTELENARG))
              )
         )
-     || (len = sqlite3VdbeSerialTypeLen(t))==0
+     || sqlite3VdbeSerialTypeLen(t)==0
     ){
       /* Content is irrelevant for
       **    1. the typeof() function,
@@ -3162,7 +3173,8 @@ op_column_restart:
       */
       sqlite3VdbeSerialGet((u8*)sqlite3CtypeMap, t, pDest);
     }else{
-      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2], pDest);
+      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2],
+                p->cacheCtr, colCacheCtr, pDest);
       if( rc ){
         if( rc==SQLITE_NOMEM ) goto no_mem;
         if( rc==SQLITE_TOOBIG ) goto too_big;
@@ -5700,6 +5712,7 @@ case OP_Insert: {
   );
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
@@ -5860,6 +5873,7 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
   pC->seekResult = 0;
   if( rc ) goto abort_due_to_error;
 

@@ -1874,6 +1874,7 @@ struct sqlite3 {
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
 #define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
 #define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
+#define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3790,7 +3791,7 @@ struct Parse {
     int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
     Returning *pReturning; /* The RETURNING clause */
   } u1;
-  u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
+  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
