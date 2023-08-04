@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\swal2\sbranch.
-D 2023-08-03T23:22:28.907
+C Merge\sthe\sjson_remove()\sbug\sfix\sfrom\strunk\sinto\sthe\swal2\sbranch.
+D 2023-08-04T13:24:40.223
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -86,7 +86,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6dbd6348ef0cfc324a7
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca2a
+F ext/fts5/fts5.h f6051cafb7304576a2ec270d8b7c53d5bf81b35f381f3637665a97ca38b2ba19
 F ext/fts5/fts5Int.h 78a63cc0795186cde5384816a9403a68c65774b35d952e05b81a1b4b158e07c8
 F ext/fts5/fts5_aux.c 572d5ec92ba7301df2fea3258576332f2f4d2dfd66d8263afd157d9deceac480
 F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b729225eeaf6a5
@@ -520,7 +520,7 @@ F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js db6368ee57af90ee6691b6fb3ca97ee8064d12482e06a29113127c67b08f956e
+F ext/wasm/common/whwasmutil.js 4c64594eecc7af4ae64259e95a71ba2a7edf118881aaff0bba86d0c7164e78e4
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js 38aa8faec4d0ace1c973bc8a7a1533584463ebeecd4c420daa7d9687beeb9cb5
@@ -605,7 +605,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c d2b7f613a1792043f8e758fdcfe9469f9b81f522999b508f436517752a5d7071
+F src/json.c 9c231a853268ce6aee2e300e26d4445ba42117374a2275f8e9537b2f912909d6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c fde8f13c876a658b4e8b74b77d875ca887915c174ea6a2f3122d80966f93d865
@@ -1235,7 +1235,7 @@ F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd286
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh 8b7babf530faa58bd59d6d362cec8e9036a68c5457ff46f3b1f1511d21af6737 x
 F test/json101.test 94126d4291d4a00e45f6988ce885c410de69243490e46e70e9946cb6e6f9ea02
-F test/json102.test 13dc9e7b7f359ecb861e02f9bd7019f7342a63d1c354273b0a8f3904050560a8
+F test/json102.test 24f6f204f9cde45b971016691d0b92a9b4c58040d699e36d6b12cb165f9083ff
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test 11670a4387f4308ae0318cadcbd6a918ea7edcd19fbafde020720a073952675d
@@ -2063,8 +2063,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1fa1cb5e0c420614481636f3ce2dd9ad2142274bb7b37d39e5c26228317f992 65a8716d8a1b7c5cffe9cdd25e4cbfa6528fcb146ff0fe67b0ce771b0537473d
-R 13b5f6b13ebbc83b88c57882557cc6aa
+P 6fa71e11197111ab52d1983b35190899a5881dcb9ed822488c92bc839c72cb55 ba7a66db13b28da0b41f03be825a593608474a5ebda89e12d58d89db709b8f65
+R cef0de709be49642d9e25d028826ad6e
 U drh
-Z 55ba709fa89a3677efea29f788630ff5
+Z e02f148a6f9cb0e9347800ebbe37eb6f
 # Remove this line to create a well-formed Fossil manifest.
