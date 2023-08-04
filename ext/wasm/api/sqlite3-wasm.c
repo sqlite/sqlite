@@ -1284,6 +1284,31 @@ const char * sqlite3_wasm_enum_json(void){
       //    );
     } _StructBinder;
 #undef CurrentStruct
+
+#define CurrentStruct fts5_tokenizer
+    StructBinder {
+      M(xCreate,     "i(ppip)");
+      //^^^  int (*)(void*, const char **azArg, int nArg, Fts5Tokenizer **ppOut);
+      M(xDelete,     "v(p)");
+      //^^^ void(Fts5Tokenizer*)
+      M(xTokenize,   "i(ppipip)");
+      /**^^^ int (*xTokenize)(Fts5Tokenizer*,
+         void *pCtx,
+         int flags,
+         const char *pText,
+         int nText,
+         int (*xToken)(
+           void *pCtx,
+           int tflags,
+           const char *pToken,
+           int nToken,
+           int iStart,
+           int iEnd
+         )
+      ); */
+    } _StructBinder;
+#undef CurrentStruct
+
 #endif /* SQLITE_ENABLE_FTS5 */
 
 #if SQLITE_WASM_TESTS

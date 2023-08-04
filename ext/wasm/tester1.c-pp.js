@@ -2942,6 +2942,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         );
         T.assert( 1 === list.length )
           .assert( 'MY+a2:b2' === list[0] );
+
+        //const fTok = new fts.fts5_tokenizer();
+        //fTok.installMethods({});
+
         db.close();
         T.assert( destroyCalled );
         //toss("Testing");
