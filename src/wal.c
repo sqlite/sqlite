@@ -3119,12 +3119,14 @@ int sqlite3WalClose(
 
         if( isWalMode2(pWal)==0 ) break;
 
-        walCkptInfo(pWal)->nBackfill = 0;
-        walidxSetFile(&pWal->hdr, !walidxGetFile(&pWal->hdr));
-        pWal->writeLock = 1;
-        walIndexWriteHdr(pWal);
-        pWal->writeLock = 0;
-
+        SEH_TRY {
+          walCkptInfo(pWal)->nBackfill = 0;
+          walidxSetFile(&pWal->hdr, !walidxGetFile(&pWal->hdr));
+          pWal->writeLock = 1;
+          walIndexWriteHdr(pWal);
+          pWal->writeLock = 0;
+        } 
+        SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
       }
     }
 

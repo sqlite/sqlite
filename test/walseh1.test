@@ -56,15 +56,22 @@ proc test_system_errno {db expect} {
   }  
 }
 
-do_execsql_test 1.0 {
-  PRAGMA journal_mode = wal;
+foreach {tn jmode} {
+  1 wal
+  2 wal2
+} {
+
+reset_db
+
+do_execsql_test $tn.1.0 "
+  PRAGMA journal_mode = $jmode;
   CREATE TABLE t1(x, y);
   INSERT INTO t1 VALUES(1, 2);
   INSERT INTO t1 VALUES(3, 4);
-} {wal}
+" $jmode
 faultsim_save_and_close
 
-do_faultsim_test 1 -faults seh -prep {
+do_faultsim_test $tn.1 -faults seh -prep {
   catch { db2 close }
   faultsim_restore_and_reopen
   execsql { SELECT * FROM sqlite_schema } 
@@ -79,7 +86,7 @@ catch { db2 close }
 
 faultsim_save_and_close
 
-do_faultsim_test 2 -faults seh -prep {
+do_faultsim_test $tn.2 -faults seh -prep {
   catch { db close }
   faultsim_restore_and_reopen
 } -body {
@@ -89,7 +96,7 @@ do_faultsim_test 2 -faults seh -prep {
   if {$testrc} { test_system_errno db $::seh_errno }
 }
 
-do_faultsim_test 3 -faults seh -prep {
+do_faultsim_test $tn.3 -faults seh -prep {
   catch { db close }
   faultsim_restore_and_reopen
 } -body {
@@ -100,7 +107,7 @@ do_faultsim_test 3 -faults seh -prep {
   if {$testrc} { test_system_errno db $::seh_errno }
 }
 
-do_faultsim_test 4 -faults seh -prep {
+do_faultsim_test $tn.4 -faults seh -prep {
   catch { db close }
   faultsim_restore_and_reopen
 } -body {
@@ -113,7 +120,7 @@ do_faultsim_test 4 -faults seh -prep {
 }
 catch { db close }
 
-do_faultsim_test 5 -faults seh -prep {
+do_faultsim_test $tn.5 -faults seh -prep {
   catch { db close }
   faultsim_restore_and_reopen
   execsql {
@@ -132,7 +139,7 @@ do_faultsim_test 5 -faults seh -prep {
 }
 catch { db close }
 
-do_faultsim_test 6 -faults seh -prep {
+do_faultsim_test $tn.6 -faults seh -prep {
   catch { db close }
   faultsim_restore_and_reopen
 } -body {
@@ -144,6 +151,8 @@ do_faultsim_test 6 -faults seh -prep {
   if {$testrc} { test_system_errno db $::seh_errno }
 }
 catch { db close }
+
+}
 
 finish_test
 
