@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2023-08-10T17:03:33.071
+C Mark\stest\sscript\swal2big.test\sas\s"TESTRUNNER:\sslow".
+D 2023-08-10T17:04:29.698
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1832,7 +1832,7 @@ F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7e
 F test/vtabrhs1.test 9b5ecbc74a689500c33a4b2b36761f9bcc22fcc4e3f9d21066ee0c9c74cf5f6c
 F test/wal.test 07d61ee522bc203235a7979645d6c5d84f86882afad5b678532ee37b5b85b133
 F test/wal2.test 31f6e2c404b9f2cdf9ca19b105a1742fdc19653c2c936da39e3658c617524046
-F test/wal2big.test 0b4ec526f9ca4bbabc355042c38045ae2e253fb46eb327bb7693d0122bc6968b
+F test/wal2big.test 829141cbecdda4329db8fa38705424c4a73db72a06b9540b06811a825d330409
 F test/wal2fault.test 2e8e60cacd5bcd451618aeffd05f676894d17202d3e2986e288d36e2c5993249
 F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d3822060437793552
 F test/wal2openclose.test 2b26be723ea7f4263c8d5d70b37efd1c359561a0526e39466c45fe8e6478daee
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6c066cae4ed5d698820c0c1ea8840773146e9d1a665551d8d51bb9df121cdb7 aa6de539c09faa320b68c63659e602107145c4263fa680d5b40fe4d7d7ac4534
-R f99f5fc942bd03ff500daadad5540cf1
+P 72f7807b34eee1fcfd94f72d27535e5273ed1f7ff3d464179a774b7c7241f5f5
+R 26af008ae6d036cbeb33f554ac503b68
 U dan
-Z ffac72e58a992aabc015a8c1dc573638
+Z 4fd2c88d6b68e9363568fe5cf8860077
 # Remove this line to create a well-formed Fossil manifest.
