@@ -164,6 +164,10 @@ int sqlite3WalWriteLock(Wal *pWal, int bLock);
 void sqlite3WalDb(Wal *pWal, sqlite3 *db);
 #endif
 
+#ifdef SQLITE_USE_SEH
+int sqlite3WalSystemErrno(Wal*);
+#endif
+
 /* sqlite3_wal_info() data */
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
 
