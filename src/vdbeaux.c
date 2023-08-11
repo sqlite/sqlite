@@ -3390,6 +3390,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3VdbeLeave(p);
           return rc;
         }else if( rc!=SQLITE_OK ){
+          sqlite3SystemError(db, rc);
           p->rc = rc;
           sqlite3RollbackAll(db, SQLITE_OK);
           p->nChange = 0;
