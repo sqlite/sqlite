@@ -3980,6 +3980,15 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
   if( p->sharable
    || p->inTrans==TRANS_NONE
    || (p->inTrans==TRANS_READ && wrflag!=0)
+#ifndef SQLITE_OMIT_CONCURRENT
+   /* Always use the full version for "BEGIN CONCURRENT" transactions. This
+   ** is to ensure that any required calls to btreePtrmapBegin() are made.
+   ** These calls are not present on trunk (they're part of the
+   ** begin-concurrent patch), and so they are not present in the fast path
+   ** below. And it's easier just to call the full version every time than
+   ** to complicate the code below by adding btreePtrmapBegin() calls. */
+   || p->db->eConcurrent!=CONCURRENT_NONE
+#endif
   ){
     return btreeBeginTrans(p,wrflag,pSchemaVersion);
   }
