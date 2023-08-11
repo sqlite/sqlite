@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sthe\sbedrock\sbranch.
-D 2023-08-11T11:46:08.044
+C Fix\sa\sproblem\swith\shandling\ssavepoints\sin\sBEGIN\sCONCURRENT\stransactions.
+D 2023-08-11T18:31:17.859
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 501daeef838fa82a9fb53540d72f29e3d9172c8867f1e19f94f681e2e20b966e
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 728b0fa125e113553489389ffb6992ce2e0bda0431a1e9f2f8baac952bd07e01
+F src/btree.c 7dd3b66e14a392a8de28c31c5b8bd466c62dc7028d53cd80021324d5d26ec397
 F src/btree.h d906e4d53f483c83d471d99479fa73fcdf20696305d578876f46ee283f3507cb
 F src/btreeInt.h 9c6d726acb6357b12683908530073836d9eb515bdeda3e32ee998edc3542a750
 F src/build.c d1f3d6478799b6eef9bb39214fc5495c8ee940fe2e70bf0b65ad8b6984bf0db9
@@ -2062,7 +2062,7 @@ F tool/tserver_test.tcl 64415a134749ac3f38c9abd2bb95c7387a9b44e5116419487fd008cf
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
-F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5 w ext/wasm/version-info.c
+F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
@@ -2087,8 +2087,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8872aa588dd1367997924ea65267af6bd85e076e00f40fe150e3f33ef6d0dda fe1bf30ca0c529c3c68f2531e28aca5659aef5d15c2e3a6925ecd35a5098386b
-R ab0a1b2c504b1a33018836a307f072ca
-U drh
-Z 110e8af89c7468de9c56495b3391e1e3
+P 859932ebce830c757cf4e889f2efc54807bd4d7947cf5d64a5d9e570bf75ed80
+Q +4a5c0439ae3ce6c98cea26f7e96c5bce543e76b9ad2a3a275601d6e5060899c8
+R 59a166515a93559c326932ec5fd38f12
+U dan
+Z 76630078e009601b5939323665b2f41d
 # Remove this line to create a well-formed Fossil manifest.
