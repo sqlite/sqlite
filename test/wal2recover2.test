@@ -163,6 +163,7 @@ do_test 1.4 {
 } [list $L $M]
 
 do_test 1.5 {
+  db2 close
   forcecopy test.db test.db2
   forcecopy test.db-wal2 test.db2-wal
   forcecopy test.db-wal test.db2-wal2
@@ -173,6 +174,7 @@ do_test 1.5 {
   } db2
 } [list $H $M]
 
+db2 close
 foreach {tn file field} {
   1 test.db2-wal    salt0
   2 test.db2-wal    salt1
