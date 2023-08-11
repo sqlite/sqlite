@@ -162,6 +162,7 @@ do_test 2.7 {
     PRAGMA integrity_check;
   } db2
 } {0 0 ok}
+db2 close
 
 #-------------------------------------------------------------------------
 #
@@ -204,28 +205,33 @@ do_test 3.3 {
   list [file size test.db2] [file size test.db2-wal] [file size test.db2-wal2]
 } {5120 15752 23088}
 
-do_test 3.4 {
-  set fd [open test.db2-shm]
-  fconfigure $fd -encoding binary -translation binary
-  set data [read $fd]
-  close $fd
 
-  set fd [open test.db-shm w]
-  fconfigure $fd -encoding binary -translation binary
-  puts -nonewline $fd $data
-  close $fd
-
-  execsql {
-    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s where i < 10)
-      INSERT INTO t1 SELECT i, i, i FROM s;
-    SELECT count(*) FROM t1;
-    PRAGMA integrity_check;
-  }
-} {211 ok}
-
-do_test 3.5 {
-  list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
-} {5120 15752 18896}
+if {$tcl_platform(platform)!="windows"} {
+  # These cannot be run under windows, as the *-shm file may not be read
+  # while it is locked by the database connection. 
+  do_test 3.4 {
+    set fd [open test.db2-shm]
+    fconfigure $fd -encoding binary -translation binary
+    set data [read $fd]
+    close $fd
+  
+    set fd [open test.db-shm w]
+    fconfigure $fd -encoding binary -translation binary
+    puts -nonewline $fd $data
+    close $fd
+  
+    execsql {
+      WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s where i < 10)
+        INSERT INTO t1 SELECT i, i, i FROM s;
+      SELECT count(*) FROM t1;
+      PRAGMA integrity_check;
+    }
+  } {211 ok}
+  
+  do_test 3.5 {
+    list [file size test.db] [file size test.db-wal] [file size test.db-wal2]
+  } {5120 15752 18896}
+}
 
 #-------------------------------------------------------------------------
 #
@@ -244,6 +250,7 @@ do_test 4.1 {
 } {1 {unable to open database file}}
 db close
 file delete test.db-wal2
+db2 close
 
 do_test 4.2 {
   sqlite3 db test.db

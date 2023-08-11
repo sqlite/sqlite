@@ -1,5 +1,5 @@
-C Mark\stest\sscript\swal2big.test\sas\s"TESTRUNNER:\sslow".
-D 2023-08-10T17:04:29.698
+C Update\stest\sscripts\sspecific\sto\sthis\sbranch\sso\sthat\sthey\swork\son\swindows.
+D 2023-08-11T11:23:35.025
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1836,8 +1836,8 @@ F test/wal2big.test 829141cbecdda4329db8fa38705424c4a73db72a06b9540b06811a825d33
 F test/wal2fault.test 2e8e60cacd5bcd451618aeffd05f676894d17202d3e2986e288d36e2c5993249
 F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d3822060437793552
 F test/wal2openclose.test 2b26be723ea7f4263c8d5d70b37efd1c359561a0526e39466c45fe8e6478daee
-F test/wal2recover.test ba8f4bc9397c838734619f9e759bd98b00e355347b3cf80a2e677610d231d5d8
-F test/wal2recover2.test 0c46afc759e4392a3c12fba17432b880c93a13bf4246d1be5101b00bae4c5f01
+F test/wal2recover.test 28b3fa0acb4e8725211a02803cd51116cd048841a876224f244af78039ba34fa
+F test/wal2recover2.test af7e3bc08690918257da1bb37c94029a780bb17a65113c11b1a8bc9498fe82af
 F test/wal2recover3.test 4a91689e165a38bc401736e6518188c2b0ff4fa1566d1810b8867536db128177
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
 F test/wal2rollback.test 23adc4a099b23f6aaea8b04fdca1c35861d887dd80f8be7da2d5273eb777e428
@@ -2064,8 +2064,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72f7807b34eee1fcfd94f72d27535e5273ed1f7ff3d464179a774b7c7241f5f5
-R 26af008ae6d036cbeb33f554ac503b68
+P ae7f3bcb5babfa50084f5b4d3c5663489dbf306440706152642b7f0fb47fa1f5
+R 205333c8221bc744810ff95e8d8d4646
 U dan
-Z 4fd2c88d6b68e9363568fe5cf8860077
+Z 92ca64233ed526e0d8ac0035acb73143
 # Remove this line to create a well-formed Fossil manifest.
