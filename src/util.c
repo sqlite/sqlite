@@ -141,6 +141,23 @@ void sqlite3ErrorClear(sqlite3 *db){
 */
 void sqlite3SystemError(sqlite3 *db, int rc){
   if( rc==SQLITE_IOERR_NOMEM ) return;
+#ifdef SQLITE_USE_SEH
+  if( rc==SQLITE_IOERR_IN_PAGE ){
+    int ii;
+    int iErr;
+    sqlite3BtreeEnterAll(db);
+    for(ii=0; ii<db->nDb; ii++){
+      if( db->aDb[ii].pBt ){
+        iErr = sqlite3PagerWalSystemErrno(sqlite3BtreePager(db->aDb[ii].pBt));
+        if( iErr ){
+          db->iSysErrno = iErr;
+        }
+      }
+    }
+    sqlite3BtreeLeaveAll(db);
+    return;
+  }
+#endif
   rc &= 0xff;
   if( rc==SQLITE_CANTOPEN || rc==SQLITE_IOERR ){
     db->iSysErrno = sqlite3OsGetLastError(db->pVfs);
@@ -591,7 +608,12 @@ do_atof_calc:
       while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
       while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
     }
-    *pResult = r;
+    assert( r>=0.0 );
+    if( r>+1.7976931348623157081452742373e+308L ){
+      *pResult = +INFINITY;
+    }else{
+      *pResult = (double)r;
+    }
   }else{
     double rr[2];
     u64 s2;

@@ -179,7 +179,6 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_UTF16 \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_OMIT_WAL \
   -DSQLITE_THREADSAFE=0 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_OS_KV_OPTIONAL=1 \
@@ -187,6 +186,12 @@ SQLITE_OPT = \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_WASM_ENABLE_C_TESTS \
   -DSQLITE_C=$(sqlite3.c)
+#SQLITE_OPT += -DSQLITE_DEBUG
+# Enabling SQLITE_DEBUG will break sqlite3_wasm_vfs_create_file()
+# (and thus sqlite3_js_vfs_create_file()). Those functions are
+# deprecated and alternatives are in place, but this crash behavior
+# can be used to find errant uses of sqlite3_js_vfs_create_file()
+# in client code.
 
 .NOTPARALLEL: $(sqlite3.h)
 $(sqlite3.h):
@@ -241,10 +246,10 @@ endif
 # embedding in the JS files and in building the distribution zip file.
 # It must NOT be in $(dir.tmp) because we need it to survive the
 # cleanup process for the dist build to work properly.
-bin.version-info := $(dir.wasm)/version-info
-$(bin.version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
-	$(CC) -O0 -I$(dir $(sqlite3.c)) -o $@ $<
-DISTCLEAN_FILES += $(bin.version-info)
+bin.version-info := $(dir.top)/version-info
+.NOTPARALLEL: $(bin.version-info)
+$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
+	$(MAKE) -C $(dir.top) version-info
 
 # bin.stripcomments is used for stripping C/C++-style comments from JS
 # files. The JS files contain large chunks of documentation which we
