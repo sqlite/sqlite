@@ -262,7 +262,7 @@ do_test 1.8.6 {
   forcecopy test.db-wal2 test.db2-wal2
   sqlite3 db2 test.db2
   catchsql { SELECT * FROM sqlite_master } db2
-} {1 {malformed database schema (?)}}
+} {1 {database disk image is malformed}}
 db2 close
 
 #-------------------------------------------------------------------------

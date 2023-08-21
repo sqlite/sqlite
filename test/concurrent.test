@@ -163,6 +163,7 @@ do_execsql_test 1.7.1.x {
   {CREATE INDEX yyi1 ON yy(a)} 
   {CREATE TABLE zz(a, b)}
 }
+db2 close
 
 #-------------------------------------------------------------------------
 # If an auto-vacuum database is written within an CONCURRENT transaction, it

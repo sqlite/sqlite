@@ -108,6 +108,13 @@ proc newdoc {} {
 }
 db func newdoc newdoc
 
+proc random {} {
+  set res [expr { int(rand() * 0x7FFFFFFFFFFFFFFF) }]
+  if { int(rand() * 2) } { set res [expr $res*-1] }
+  return $res
+}
+db func random random
+
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE fff USING fts5(y);
   INSERT INTO fff(fff, rank) VALUES('pgsz', 64);
