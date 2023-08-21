@@ -1315,6 +1315,9 @@ testrunner:	testfixture$(TEXE)
 #
 devtest:	testfixture$(TEXE) fuzztest testrunner
 
+mdevtest:
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest
+
 # Testing for a release
 #
 releasetest: testfixture$(TEXE)

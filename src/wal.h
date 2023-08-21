@@ -46,6 +46,7 @@
 # define sqlite3WalFindFrame(x,y,z)              0
 # define sqlite3WalFile(x)                       0
 # define sqlite3WalJournalMode(x)                0
+# undef SQLITE_USE_SEH
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
