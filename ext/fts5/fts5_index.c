@@ -5421,7 +5421,8 @@ static void fts5FlushOneHash(Fts5Index *p){
               writer.bFirstRowidInPage = 0;
               fts5WriteDlidxAppend(p, &writer, iRowid);
             }else{
-              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid-iPrev);
+              u64 iDelta = (u64)iRowid - (u64)iPrev;
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
             }
             if( p->rc!=SQLITE_OK ) break;
             assert( pBuf->n<=pBuf->nSpace );
@@ -7815,7 +7816,7 @@ static void fts5DecodeFunction(
     fts5DecodeRowidList(&rc, &s, &a[4], iTermOff-4);
 
     iOff = iTermOff;
-    while( iOff<szLeaf ){
+    while( iOff<szLeaf && rc==SQLITE_OK ){
       int nAppend;
 
       /* Read the term data for the next term*/
@@ -7835,8 +7836,11 @@ static void fts5DecodeFunction(
       }else{
         iTermOff = szLeaf;
       }
-
-      fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      if( iTermOff>szLeaf ){
+        rc = FTS5_CORRUPT;
+      }else{
+        fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      }
       iOff = iTermOff;
       if( iOff<szLeaf ){
         iOff += fts5GetVarint32(&a[iOff], nKeep);

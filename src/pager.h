@@ -274,7 +274,7 @@ int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
 # define enable_simulated_io_errors()
 #endif
 
-#ifdef SQLITE_USE_SEH
+#if defined(SQLITE_USE_SEH) && !defined(SQLITE_OMIT_WAL)
 int sqlite3PagerWalSystemErrno(Pager*);
 #endif
 
