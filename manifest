@@ -1,11 +1,11 @@
-C Merge\slatest\strunk\schanges,\sincluding\ssupport\sfor\shandling\sof\sstructured-exceptions\sin\sMSVC\sbuilds,\swith\sthis\sbranch.
-D 2023-08-11T19:38:35.227
+C Fix\sMSVC\stestfixture.exe\sbuilds.
+D 2023-08-21T17:26:36.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 85d32b973dc01fc0763ae2aea661a8b304364d319636071ab3485688e39d8989
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc daad4a19e0b3c3c3b79b64d4ddbf75e3f506405e8d3f3f604d6f48b26043c51f
+F Makefile.msc bae1e6a3b3902ca11af484a16e3d987bb0dcd3c6b242723cb0602965d1b2be92
 F README.md c1c4218efcc4071a6e26db2b517fdbc1035696a29b370edd655faddbef02b224
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -730,7 +730,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c 57fa8f56478e5b5cb558cb425e7878515e0a105c54f96f1d1bbf4b9433529254
 F src/vtab.c 1ecf8c3745d29275688d583e12822fa984d421e0286b5ef50c137bc3bf6d7a64
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 403ccb4a7c7ecc7903926468063ec20b2ef4905ff2df64f0b7c6bc78454e21fc
+F src/wal.c 2b15d68f836e6bf4f15b5872642ee23c38b61fd0bc01dfa86762a51938c37aaa
 F src/wal.h bd964b88717cc604081d5496a076e8f0d10a40b3efccd8059a3d01815fc7a8ad
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c b8917792f1e0dbfa28fb29e6cd3d560060d69667be0ba4c491cbc772363264f5
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a5c0439ae3ce6c98cea26f7e96c5bce543e76b9ad2a3a275601d6e5060899c8 8a6b0c24937e855b710f97b4aea973eff53e6d43e1182842731547aa4b37db2a
-R 99cfcf873e3f4eea5a1d2e7a30e7020a
+P cb3cf9bab0a75260c683454fb6c677f34b6c4b3555af2494678fd4811f586ac3
+R f6905675cb3ff4cc966b5b28569a5476
 U dan
-Z 4b488e51ed86e4e34326a2fa271daeb2
+Z 6fd8a726183c6b983cbfb4ef6113c52c
 # Remove this line to create a well-formed Fossil manifest.

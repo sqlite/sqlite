@@ -4470,7 +4470,7 @@ int sqlite3WalCheckpoint(
       /* If no error occurred, set the output variables. */
       if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
         if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
-        SEH_INJECT_FAULT
+        SEH_INJECT_FAULT;
         if( pnCkpt ) *pnCkpt = (int)(walCkptInfo(pWal)->nBackfill);
       }
     }
