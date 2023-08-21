@@ -533,6 +533,8 @@ struct Wal {
 #ifdef SQLITE_USE_SEH
   u32 lockMask;              /* Mask of locks held */
   void *pFree;               /* Pointer to sqlite3_free() if exception thrown */
+  u32 *pWiValue;             /* Value to write into apWiData[iWiPg] */
+  int iWiPg;                 /* Write pWiValue into apWiData[iWiPg] */
   int iSysErrno;             /* System error code following exception */
 #endif
 #ifdef SQLITE_DEBUG
@@ -704,11 +706,24 @@ static void sehInjectFault(Wal *pWal){
 #define SEH_FREE_ON_ERROR(X,Y) \
   assert( (X==0 || Y==0) && pWal->pFree==X ); pWal->pFree = Y
 
+/*
+** There are two ways to use this macro. To arrange for pWal->apWiData[iPg]
+** to be set to pValue if an exception is thrown:
+**
+**   SEH_SET_ON_ERROR(iPg, pValue);
+**
+** and to cancel the same:
+**
+**   SEH_SET_ON_ERROR(0, 0);
+*/
+#define SEH_SET_ON_ERROR(X,Y)  pWal->iWiPg = X; pWal->pWiValue = Y
+
 #else
 # define SEH_TRY          VVA_ONLY(pWal->nSehTry++);
 # define SEH_EXCEPT(X)    VVA_ONLY(pWal->nSehTry--); assert( pWal->nSehTry==0 );
 # define SEH_INJECT_FAULT assert( pWal->nSehTry>0 );
 # define SEH_FREE_ON_ERROR(X,Y)
+# define SEH_SET_ON_ERROR(X,Y)
 #endif /* ifdef SQLITE_USE_SEH */
 
 
@@ -1469,6 +1484,7 @@ static int walIndexRecover(Wal *pWal){
       rc = walIndexPage(pWal, iPg, (volatile u32**)&aShare);
       assert( aShare!=0 || rc!=SQLITE_OK );
       if( aShare==0 ) break;
+      SEH_SET_ON_ERROR(iPg, aShare);
       pWal->apWiData[iPg] = aPrivate;
 
       for(iFrame=iFirst; iFrame<=iLast; iFrame++){
@@ -1496,6 +1512,7 @@ static int walIndexRecover(Wal *pWal){
         }
       }
       pWal->apWiData[iPg] = aShare;
+      SEH_SET_ON_ERROR(0,0);
       nHdr = (iPg==0 ? WALINDEX_HDR_SIZE : 0);
       nHdr32 = nHdr / sizeof(u32);
 #ifndef SQLITE_SAFER_WALINDEX_RECOVERY
@@ -2390,7 +2407,9 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 **
 **   2) Frees the pointer at Wal.pFree, if any, using sqlite3_free().
 **
-**   3) Returns SQLITE_IOERR.
+**   3) Set pWal->apWiData[pWal->iWiPg] to pWal->pWiValue if not NULL
+**
+**   4) Returns SQLITE_IOERR.
 */
 static int walHandleException(Wal *pWal){
   if( pWal->exclusiveMode==0 ){
@@ -2409,6 +2428,10 @@ static int walHandleException(Wal *pWal){
   }
   sqlite3_free(pWal->pFree);
   pWal->pFree = 0;
+  if( pWal->pWiValue ){
+    pWal->apWiData[pWal->iWiPg] = pWal->pWiValue;
+    pWal->pWiValue = 0;
+  }
   return SQLITE_IOERR_IN_PAGE;
 }
 
@@ -3176,7 +3199,8 @@ static int walSnapshotRecover(
 
       rc = walHashGet(pWal, walFramePage(i), &sLoc);
       if( rc!=SQLITE_OK ) break;
-      pgno = sLoc.aPgno[i-sLoc.iZero];
+      assert( i - sLoc.iZero - 1 >=0 );
+      pgno = sLoc.aPgno[i-sLoc.iZero-1];
       iDbOff = (i64)(pgno-1) * szPage;
 
       if( iDbOff+szPage<=szDb ){
