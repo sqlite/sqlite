@@ -3657,35 +3657,12 @@ static int walUpgradeReadlock(Wal *pWal){
 
 
 #ifndef SQLITE_OMIT_CONCURRENT
-/* 
-** This function is only ever called when committing a "BEGIN CONCURRENT"
-** transaction. It may be assumed that no frames have been written to
-** the wal file. The second parameter is a pointer to the in-memory 
-** representation of page 1 of the database (which may or may not be
-** dirty). The third is a bitvec with a bit set for each page in the
-** database file that was read by the current concurrent transaction.
-**
-** This function performs three tasks:
-**
-**   1) It obtains the WRITER lock on the wal file,
-**
-**   2) It checks that there are no conflicts between the current
-**      transaction and any transactions committed to the wal file since
-**      it was opened, and
-**
-**   3) It ejects any non-dirty pages from the page-cache that have been
-**      written by another client since the CONCURRENT transaction was started
-**      (so as to avoid ending up with an inconsistent cache after the
-**      current transaction is committed).
-**
-** If no error occurs and the caller may proceed with committing the 
-** transaction, SQLITE_OK is returned. SQLITE_BUSY is returned if the WRITER
-** lock cannot be obtained. Or, if the WRITER lock can be obtained but there
-** are conflicts with a committed transaction, SQLITE_BUSY_SNAPSHOT. Finally,
-** if an error (i.e. an OOM condition or IO error), an SQLite error code
-** is returned.
+/*
+** This function does the work of sqlite3WalLockForCommit(). The difference
+** between this function and sqlite3WalLockForCommit() is that the latter
+** encloses everything in a SEH_TRY {} block.
 */
-int sqlite3WalLockForCommit(
+static int walLockForCommit(
   Wal *pWal, 
   PgHdr *pPg1, 
   Bitvec *pAllRead, 
@@ -3788,6 +3765,47 @@ int sqlite3WalLockForCommit(
   return rc;
 }
 
+/* 
+** This function is only ever called when committing a "BEGIN CONCURRENT"
+** transaction. It may be assumed that no frames have been written to
+** the wal file. The second parameter is a pointer to the in-memory 
+** representation of page 1 of the database (which may or may not be
+** dirty). The third is a bitvec with a bit set for each page in the
+** database file that was read by the current concurrent transaction.
+**
+** This function performs three tasks:
+**
+**   1) It obtains the WRITER lock on the wal file,
+**
+**   2) It checks that there are no conflicts between the current
+**      transaction and any transactions committed to the wal file since
+**      it was opened, and
+**
+**   3) It ejects any non-dirty pages from the page-cache that have been
+**      written by another client since the CONCURRENT transaction was started
+**      (so as to avoid ending up with an inconsistent cache after the
+**      current transaction is committed).
+**
+** If no error occurs and the caller may proceed with committing the 
+** transaction, SQLITE_OK is returned. SQLITE_BUSY is returned if the WRITER
+** lock cannot be obtained. Or, if the WRITER lock can be obtained but there
+** are conflicts with a committed transaction, SQLITE_BUSY_SNAPSHOT. Finally,
+** if an error (i.e. an OOM condition or IO error), an SQLite error code
+** is returned.
+*/
+int sqlite3WalLockForCommit(
+  Wal *pWal, 
+  PgHdr *pPg1, 
+  Bitvec *pAllRead, 
+  Pgno *piConflict
+){
+  int rc = SQLITE_OK;
+  SEH_TRY {
+    rc = walLockForCommit(pWal, pPg1, pAllRead, piConflict);
+  } SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+  return rc;
+}
+
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
 ** This function is called as part of committing an CONCURRENT transaction.
@@ -3805,18 +3823,20 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal){
   int rc = SQLITE_OK;
   assert( pWal->writeLock );
 
-  assert( pWal->szPage==pWal->hdr.szPage );
-  memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
-  assert( pWal->szPage==pWal->hdr.szPage || pWal->szPage==0 );
-  pWal->szPage = pWal->hdr.szPage;
+  SEH_TRY {
+    assert( pWal->szPage==pWal->hdr.szPage );
+    memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
+    assert( pWal->szPage==pWal->hdr.szPage || pWal->szPage==0 );
+    pWal->szPage = pWal->hdr.szPage;
 
-  /* If this client has its read-lock on slot aReadmark[0] and the entire
-  ** wal has not been checkpointed, switch it to a different slot. Otherwise
-  ** any reads performed between now and committing the transaction will
-  ** read from the old snapshot - not the one just upgraded to.  */
-  if( pWal->readLock==0 && pWal->hdr.mxFrame!=walCkptInfo(pWal)->nBackfill ){
-    rc = walUpgradeReadlock(pWal);
-  }
+    /* If this client has its read-lock on slot aReadmark[0] and the entire
+    ** wal has not been checkpointed, switch it to a different slot. Otherwise
+    ** any reads performed between now and committing the transaction will
+    ** read from the old snapshot - not the one just upgraded to.  */
+    if( pWal->readLock==0 && pWal->hdr.mxFrame!=walCkptInfo(pWal)->nBackfill ){
+      rc = walUpgradeReadlock(pWal);
+    }
+  } SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   return rc;
 }
 #endif   /* SQLITE_OMIT_CONCURRENT */
