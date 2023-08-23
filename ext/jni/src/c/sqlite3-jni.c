@@ -240,6 +240,8 @@ static const struct {
   const S3NphRef OutputPointer_sqlite3;
   const S3NphRef OutputPointer_sqlite3_stmt;
   const S3NphRef OutputPointer_sqlite3_value;
+  const S3NphRef OutputPointer_sqlite3_vtab;
+  const S3NphRef OutputPointer_sqlite3_vtab_cursor;
 #ifdef SQLITE_ENABLE_FTS5
   const S3NphRef Fts5Context;
   const S3NphRef Fts5ExtensionApi;
@@ -260,12 +262,14 @@ static const struct {
   NREF(8,  "OutputPointer$sqlite3"),
   NREF(9,  "OutputPointer$sqlite3_stmt"),
   NREF(10, "OutputPointer$sqlite3_value"),
+  NREF(11, "OutputPointer$sqlite3_vtab"),
+  NREF(12, "OutputPointer$sqlite3_vtab_cursor"),
 #ifdef SQLITE_ENABLE_FTS5
-  NREF(11, "Fts5Context"),
-  NREF(12, "Fts5ExtensionApi"),
-  NREF(13, "fts5_api"),
-  NREF(14, "fts5_tokenizer"),
-  NREF(15, "Fts5Tokenizer")
+  NREF(13, "Fts5Context"),
+  NREF(14, "Fts5ExtensionApi"),
+  NREF(15, "fts5_api"),
+  NREF(16, "fts5_tokenizer"),
+  NREF(17, "Fts5Tokenizer")
 #endif
 #undef NREF
 };
@@ -501,6 +505,9 @@ struct S3JniGlobalType {
     void const * locker /* env mutex is held on this object's behalf.
                            Used only for sanity checking. */;
   } envCache;
+  /*
+  ** Per-db state.
+  */
   struct {
     S3JniDb * aUsed  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;

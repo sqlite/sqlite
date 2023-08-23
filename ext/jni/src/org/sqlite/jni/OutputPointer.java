@@ -109,6 +109,48 @@ public final class OutputPointer {
   }
 
   /**
+     Output pointer for use with virtual table methods which return a
+     sqlite3_vtab handle via an output pointer. These pointers can
+     only be set by the JNI layer, not by client-level code.
+  */
+  public static final class sqlite3_vtab {
+    private org.sqlite.jni.sqlite3_vtab value;
+    //! Initializes with a null value.
+    public sqlite3_vtab(){value = null;}
+    //! Sets the current value to null.
+    public void clear(){value = null;}
+    //! Returns the current value.
+    public final org.sqlite.jni.sqlite3_vtab get(){return value;}
+    //! Equivalent to calling get() then clear().
+    public final org.sqlite.jni.sqlite3_vtab take(){
+      final org.sqlite.jni.sqlite3_vtab v = value;
+      value = null;
+      return v;
+    }
+  }
+
+  /**
+     Output pointer for use with virtual table methods which return a
+     sqlite3_vtab_cursor handle via an output pointer. These pointers can
+     only be set by the JNI layer, not by client-level code.
+  */
+  public static final class sqlite3_vtab_cursor {
+    private org.sqlite.jni.sqlite3_vtab_cursor value;
+    //! Initializes with a null value.
+    public sqlite3_vtab_cursor(){value = null;}
+    //! Sets the current value to null.
+    public void clear(){value = null;}
+    //! Returns the current value.
+    public final org.sqlite.jni.sqlite3_vtab_cursor get(){return value;}
+    //! Equivalent to calling get() then clear().
+    public final org.sqlite.jni.sqlite3_vtab_cursor take(){
+      final org.sqlite.jni.sqlite3_vtab_cursor v = value;
+      value = null;
+      return v;
+    }
+  }
+
+  /**
      Output pointer for use with native routines which return integers via
      output pointers.
   */

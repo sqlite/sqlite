@@ -72,8 +72,11 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   sqlite3_context.java \
   sqlite3.java \
   SQLite3Jni.java \
+  sqlite3_module.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
+  sqlite3_vtab.java \
+  sqlite3_vtab_cursor.java \
   Tester1.java \
   Tracer.java \
   UpdateHook.java \
