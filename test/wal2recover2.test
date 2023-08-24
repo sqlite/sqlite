@@ -256,13 +256,19 @@ do_test 1.8.5 {
   fix_wal_cksums test.db-wal2
 } {}
 
+ifcapable oversize_cell_check {
+  set msg {database disk image is malformed}
+} else {
+  set msg {malformed database schema (?)}
+}
+
 do_test 1.8.6 {
   forcecopy test.db test.db2
   forcecopy test.db-wal test.db2-wal
   forcecopy test.db-wal2 test.db2-wal2
   sqlite3 db2 test.db2
   catchsql { SELECT * FROM sqlite_master } db2
-} {1 {database disk image is malformed}}
+} [list 1 $msg]
 db2 close
 
 #-------------------------------------------------------------------------
