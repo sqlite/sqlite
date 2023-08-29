@@ -1,5 +1,5 @@
-C Version\s3.43.0\sfor\sthe\swal2\sbranch.
-D 2023-08-24T13:19:33.412
+C (no\scomment)
+D 2023-08-29T20:19:42.109
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1877,7 +1877,7 @@ F test/wal2fault.test 2e8e60cacd5bcd451618aeffd05f676894d17202d3e2986e288d36e2c5
 F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d3822060437793552
 F test/wal2openclose.test 2b26be723ea7f4263c8d5d70b37efd1c359561a0526e39466c45fe8e6478daee
 F test/wal2recover.test 28b3fa0acb4e8725211a02803cd51116cd048841a876224f244af78039ba34fa
-F test/wal2recover2.test fbbbf251639ab22eba0f0f09721a6824fadfb8f0214afdece2c5cf704e7fbc43
+F test/wal2recover2.test 3fe5d5932b16a3a38304a85bafed1f965faef40c230fd450838a0502e61343bb
 F test/wal2recover3.test 4a91689e165a38bc401736e6518188c2b0ff4fa1566d1810b8867536db128177
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
 F test/wal2rollback.test 23adc4a099b23f6aaea8b04fdca1c35861d887dd80f8be7da2d5273eb777e428
@@ -2106,8 +2106,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 135bf72c6b5f436b11463dd40b3a73bcc610bf9c2dcbe6646dbedd0d9325f6a9 0f80b798b3f4b81a7bb4233c58294edd0f1156f36b6ecf5ab8e83631d468778c
-R 33a2875f37184973dbcbb44062d51184
+P b5970fc4599d4fe81312e049420724b14e3d2c1de04769844fb1ab8d953170cd
+Q +81361769e17b3d1589c5d0f9991a139963c6633d26bc72f189a69e0391d8f52f
+R 8f5a9b50c5e3fa2227873acfebc2f61e
 U drh
-Z dd8dd44d4178e619a8d6fbb3f97be763
+Z 403917b750ada434e8ac9e682d39ef1a
 # Remove this line to create a well-formed Fossil manifest.
