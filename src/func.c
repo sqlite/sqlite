@@ -1834,7 +1834,8 @@ static void avgFinalize(sqlite3_context *context){
   if( p && p->cnt>0 ){
     double r;
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -1847,7 +1848,8 @@ static void totalFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   if( p ){
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
