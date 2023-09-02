@@ -338,8 +338,8 @@ typedef enum {
                         * pvSubject is the newly set .dbUser value. */
   NK_DbUserVanishing,  /* Current ShellExState .dbUser will soon vanish,
                         * pvSubject is the vanishing .dbUser value. */
-  NK_DbAboutToClose,   /* A possibly ShellExState-visible DB will soon be
-                        * closed, pvSubject is the DB's sqlite3 pointer. */
+  NK_DbAboutToClose,   /* Possibly (or not) ShellExState-visible DB will soon
+                        * be closed, pvSubject is the DB's sqlite3 pointer. */
   NK_ExtensionUnload,  /* The ShellExState .dbShell DB will soon be closed,
                         * soon to be followed by unloading of all dynamic
                         * extensions; pvSubject is the DB's sqlite3 pointer. */

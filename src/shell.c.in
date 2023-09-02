@@ -6014,8 +6014,11 @@ static void shellUSleepFunc(
 ** Attempt to close the database connection. Report errors.
 ** The close is done under mutex protection for globalDb.
 */
-static void close_db(sqlite3 *db){
+static void close_db(ShellInState *psi, sqlite3 *db){
   int rc;
+#if SHELL_DYNAMIC_EXTENSION
+  if( db!=0 ) notify_subscribers(psi, NK_DbAboutToClose, db);
+#endif
   if( db==globalDb ){
     /* This should only block for the time needed to handle ^C interrupt. */
     sqlite3_mutex_enter(pGlobalDbLock);
@@ -6095,7 +6098,7 @@ static sqlite3 * open_db(ShellExState *psx, int openFlags){
       const char *zWhy = (DBX(psx)==0)? "(?)" : sqlite3_errmsg(DBX(psx));
       utf8_printf(STD_ERR,"Error: unable to open database \"%s\": %s\n",
           zDbFilename, zWhy);
-      close_db(DBX(psx));
+      close_db(psi,DBX(psx));
       if( bail_on_error && !stdin_is_interactive ){
         shell_terminate("-bail used in batch mode.");
       }
@@ -6904,7 +6907,7 @@ static void tryToClone(ShellExState *psx, const char *zNewDb){
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
     // sqlite3_exec(DBX(psx), "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
-  close_db(newDb);
+  close_db(ISS(psx),newDb);
 }
 
 /*
@@ -8180,7 +8183,7 @@ static DotCmdRC arDotCommand(
   }
 end_ar_command:
   if( cmd.db!=DBX(pState) ){
-    close_db(cmd.db);
+    close_db(ISS(pState),cmd.db);
   }
   sqlite3_free(cmd.zSrcTable);
 
@@ -8243,7 +8246,7 @@ writeDb( char *azArg[], int nArg, ShellExState *psx, char **pzErr ){
                        SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zVfs);
   if( rc!=SQLITE_OK ){
     *pzErr = smprintf("cannot open \"%s\"\n", zDestFile);
-    close_db(pDest);
+    close_db(ISS(psx),pDest);
     return DCR_Error;
   }
   if( bAsync ){
@@ -8254,7 +8257,7 @@ writeDb( char *azArg[], int nArg, ShellExState *psx, char **pzErr ){
   pBackup = sqlite3_backup_init(pDest, "main", DBX(psx), zDb);
   if( pBackup==0 ){
     *pzErr = smprintf("%s failed, %s\n", azArg[0], sqlite3_errmsg(pDest));
-    close_db(pDest);
+    close_db(ISS(psx),pDest);
     return DCR_Error;
   }
   while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
@@ -8265,7 +8268,7 @@ writeDb( char *azArg[], int nArg, ShellExState *psx, char **pzErr ){
     *pzErr = smprintf("%s\n", sqlite3_errmsg(pDest));
     rc = 1;
   }
-  close_db(pDest);
+  close_db(ISS(psx),pDest);
   return DCR_Ok|rc;
 }
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
@@ -9808,7 +9811,7 @@ DISPATCHABLE_COMMAND( connection ? 1 4 ){
       return DCR_Error;
     }else if( psi->aAuxDb[i].db ){
       session_close_all(psi, i);
-      close_db(psi->aAuxDb[i].db);
+      close_db(psi,psi->aAuxDb[i].db);
       psi->aAuxDb[i].db = 0;
     }
   }else{
@@ -11692,10 +11695,7 @@ DISPATCHABLE_COMMAND( open 3 1 0 ){
 
   /* Close the existing database */
   session_close_all(psi, -1);
-#if SHELL_DYNAMIC_EXTENSION
-  if( DBX(p)!=0 ) notify_subscribers(psi, NK_DbAboutToClose, DBX(p));
-#endif
-  close_db(DBX(p));
+  close_db(psi,DBX(p));
   DBX(p) = 0;
   psi->pAuxDb->zDbFilename = 0;
   sqlite3_free(psi->pAuxDb->zFreeOnClose);
@@ -16596,13 +16596,13 @@ static void main_cleanup(ShellInState *psi, ShellExState *psx) {
 #if SHELL_DYNAMIC_EXTENSION
     notify_subscribers(psi, NK_DbAboutToClose, psx->dbUser);
 #endif
-    close_db(psx->dbUser);
+    close_db(psi,psx->dbUser);
   }
   for(i=0; i<ArraySize(psi->aAuxDb); i++){
     sqlite3_free(psi->aAuxDb[i].zFreeOnClose);
     if( psi->aAuxDb[i].db ){
       session_close_all(psi, i);
-      close_db(psi->aAuxDb[i].db);
+      close_db(psi,psi->aAuxDb[i].db);
     }
   }
   find_home_dir(1);
