@@ -17,7 +17,7 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl
+#      tclsh mksqlite3c.tcl [flags] [extra source files]
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
@@ -42,6 +42,7 @@ set linemacros 0
 set useapicall 0
 set enable_recover 0
 set srcdir tsrc
+set extrasrc [list]
 
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
@@ -63,8 +64,10 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   } elseif {[regexp {^-?-((help)|\?)$} $x]} {
     puts $help
     exit 0
-  } else {
+  } elseif {[regexp {^-?-} $x]} {
     error "unknown command-line option: $x"
+  } else {
+    lappend extrasrc $x
   }
 }
 set in [open $srcdir/sqlite3.h]
@@ -470,12 +473,15 @@ set flist {
    sqlite3session.c
    fts5.c
    stmt.c
-} 
+}
 if {$enable_recover} {
   lappend flist sqlite3recover.c dbdata.c
 }
 foreach file $flist {
   copy_file $srcdir/$file
+}
+foreach file $extrasrc {
+  copy_file $file
 }
 
 puts $out \
