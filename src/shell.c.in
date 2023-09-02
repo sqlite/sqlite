@@ -16593,9 +16593,6 @@ static void main_cleanup(ShellInState *psi, ShellExState *psx) {
   set_table_name(psx, 0);
   if( psx->dbUser ){
     session_close_all(psi, -1);
-#if SHELL_DYNAMIC_EXTENSION
-    notify_subscribers(psi, NK_DbAboutToClose, psx->dbUser);
-#endif
     close_db(psi,psx->dbUser);
   }
   for(i=0; i<ArraySize(psi->aAuxDb); i++){

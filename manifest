@@ -1,5 +1,5 @@
-C Issue\sNK_DbAboutToClose\snotifications\sfor\sany\sshell\sDB\sabout\sto\sbe\sclosed,\swhether\spresently\svisible\sin\sShellExState\sor\snot.
-D 2023-09-02T22:00:48.464
+C Eliminate\sa\sredundant\sNK_DbAboutToClose\snotification.
+D 2023-09-02T22:07:23.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -645,7 +645,7 @@ F src/resmanage.h eb63130e49d7b696a33c6d39d1c437a050bbef42b4f6f4405a15fc563c7dd6
 F src/resolve.c 37953a5f36c60bea413c3c04efcd433b6177009f508ef2ace0494728912fe2e9
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97 x
 F src/select.c 383b9dba12493c365ee2036bcadd73013b7c0f7d2afcda0c378317c335d60ac2 x
-F src/shell.c.in 4528d910b082e4cf251de767cd04bda10f3795d1e2d7f28eb14d5267a6ba969a
+F src/shell.c.in 0dddcf40a018fa1ce1cddbd070c8e54959fa3630f012fd7027fecbeeb0fdefd0
 F src/shext_linkage.h f7c8331f6e3c4a53a7bd70d2aa3d28fec9b206638140d804d35fdaaade54496c x
 F src/sqlite.h.in 3076d78836b6dac53b3ab0875fc8fd15bca8077aad4d33c85336e05af6aef8c7 x
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2053,8 +2053,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe9aa2e9c17f33a8f6045e9cf755f8251d261c34f89a59d658b72f7c99a6a12c
-R d5f163c7f28125775ba39d501d65bd13
+P 8e6e54e48c1739c76db3e7979669cf17f7cee471b1d37836adbf72f42e8b8972
+R db9f200e78afd22e89e390013ee62ac1
 U larrybr
-Z 2b8a61033c96da67076a31e0f7c46650
+Z 37d4318428ec7c3e6ea82cfaff778402
 # Remove this line to create a well-formed Fossil manifest.
