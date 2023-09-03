@@ -352,6 +352,21 @@ proc copy_file {filename} {
   section_comment "End of $tail"
 }
 
+# Read the source file named $filename and write it into the
+# sqlite3.c output file. The only transformation is the trimming
+# of EOL whitespace.
+#
+proc copy_file_verbatim {filename} {
+  global out
+  set in [open $filename r]
+  set tail [file tail $filename]
+  section_comment "Begin EXTRA_SRC file $tail"
+  while {![eof $in]} {
+    set line [string trimright [gets $in]]
+    puts $out $line
+  }
+  section_comment "End of EXTRA_SRC $tail"
+}
 
 # Process the source files.  Process files containing commonly
 # used subroutines first in order to help the compiler find
@@ -481,7 +496,7 @@ foreach file $flist {
   copy_file $srcdir/$file
 }
 foreach file $extrasrc {
-  copy_file $file
+  copy_file_verbatim $file
 }
 
 puts $out \
