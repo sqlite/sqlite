@@ -4930,6 +4930,155 @@ static void fts5SecureDeleteIdxEntry(
 }
 
 /*
+** Buffer aData[], which is nData bytes in size, contains an fts5 leaf page.
+** Call sqlite3_log() with error code SQLITE_CORRUPT a bunch of times to log
+** the entire contents of the page.
+*/
+static void fts5SDLogPage(const u8 *aData, int nData){
+  int iOff;
+  for(iOff=0; iOff<nData; iOff+=16){
+    int iChar;
+    sqlite3_str *pStr = sqlite3_str_new(0);
+    char *zStr = 0;
+
+    sqlite3_str_appendf(pStr, "0x%.4x: ", iOff);
+    for(iChar=iOff; iChar<iOff+16; iChar++){
+      if( iChar<nData ){
+        sqlite3_str_appendf(
+            pStr, "%.2X%s", (int)aData[iChar], (iChar&0x01?" ":"")
+        );
+      }else{
+        sqlite3_str_appendf(pStr, "%s%s", "  ", (iChar&0x01?" ":""));
+      }
+    }
+    for(iChar=iOff; iChar<MIN(nData, iOff+16); iChar++){
+      u8 c = aData[iChar];
+      if( c>=0x7F || c<=0x20 ){
+        c = 0x2E; /* '.' */
+      }
+      sqlite3_str_appendf(pStr, "%c", (char)c);
+    }
+
+    zStr = sqlite3_str_finish(pStr);
+    sqlite3_log(SQLITE_CORRUPT, "%s", zStr);
+    sqlite3_free(zStr);
+  }
+}
+
+/*
+** Log both the new version (buffer pData, nData bytes in size) and the
+** old version (rowid iRowid on disk) via sqlite3_log(). And a header
+** line with information from parameters pSeg and eCall.
+*/
+static void fts5SDLogCorruptPage(
+  Fts5Index *p, 
+  Fts5SegIter *pSeg,
+  int eCall,
+  i64 iRowid, 
+  const u8 *pData,                /* Buffer containing new, corrupt, page */
+  int nData                       /* Size of buffer in bytes */
+){
+  char *zStr = 0;
+  sqlite3_str *pStr = 0;
+  Fts5Data *pOrig = 0;
+  pOrig = fts5LeafRead(p, iRowid);
+
+  pStr = sqlite3_str_new(0);
+
+  sqlite3_str_appendf(pStr, "fts5 secure-delete corruption(%d)", eCall);
+  if( pSeg ){
+    sqlite3_str_appendf(
+        pStr, "(iLeafOffset=%d, nPos=%d)", pSeg->iLeafOffset, pSeg->nPos
+    );
+  }
+  zStr = sqlite3_str_finish(pStr);
+  sqlite3_log(SQLITE_CORRUPT, "%s", zStr);
+  sqlite3_free(zStr);
+  
+  sqlite3_log(SQLITE_CORRUPT, "Original Page:");
+  fts5SDLogPage(pOrig->p, pOrig->nn);
+
+  sqlite3_log(SQLITE_CORRUPT, "Corrupt Page:");
+  fts5SDLogPage(pData, nData);
+}
+
+/*
+** Check that the position list that begins at offset iPos of buffer
+** aData[] looks like it might end at offset iKeyOff. If so, return 0.
+** Otherwise, if the position-list cannot end at offset iKeyOff, 
+** return 1.
+*/
+static int fts5SDCheckPoslistEnds(const u8 *aData, int iPos, int iKeyOff){
+  u64 iDelta = 0;
+  u32 iVal = 0;
+  int iOff = iPos;
+
+  while( iOff<iKeyOff ){
+    iOff += fts5GetVarint(&aData[iOff], &iDelta);
+    iOff += fts5GetVarint32(&aData[iOff], iVal);
+    iOff += (iVal/2);
+    if( iOff>iKeyOff ){
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+/*
+** Debugging wrapper around fts5DataWrite() used by secure-delete code when
+** modifying leaf pages. It checks whether or not the page about to be written
+** looks corrupt, and calls sqlite3_log() with lots of diagnostic information
+** if it does.
+*/
+static void fts5SDDataWrite(
+  Fts5Index *p, 
+  Fts5SegIter *pSeg,
+  int eCall,
+  i64 iRowid, 
+  const u8 *pData, 
+  int nData
+){
+  if( p->pConfig->eDetail!=FTS5_DETAIL_NONE ){
+    int bNotFirst = 0;
+    int iPos = 0;
+    int iPgidx = 0;
+    const u8 *aIdx = 0;
+    int nIdx = 0;
+    int iIdx = 0;
+    int iKeyOff = 0;
+
+    iPos = fts5GetU16(&pData[0]);
+    iPgidx = fts5GetU16(&pData[2]);
+
+    nIdx = nData - iPgidx;
+    aIdx = &pData[iPgidx];
+
+    while( iIdx<nIdx ){
+      u32 iVal = 0;
+      iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+      iKeyOff += iVal;
+      if( iPos ){
+        if( fts5SDCheckPoslistEnds(pData, iPos, iKeyOff) ){
+          fts5SDLogCorruptPage(p, pSeg, eCall, iRowid, pData, nData);
+          p->rc = FTS5_CORRUPT;
+          return;
+        }
+      }
+      iPos = iKeyOff;
+      if( bNotFirst ){
+        iPos += fts5GetVarint32(&pData[iKeyOff], iVal);
+      }
+      iPos += fts5GetVarint32(&pData[iPos], iVal);
+      iPos += iVal;
+      bNotFirst = 1;
+    }
+  }
+
+  fts5DataWrite(p, iRowid, pData, nData);
+}
+
+/*
 ** This is called when a secure-delete operation removes a position-list
 ** that overflows onto segment page iPgno of segment pSeg. This function
 ** rewrites node iPgno, and possibly one or more of its right-hand peers,
@@ -5026,12 +5175,13 @@ static void fts5SecureDeleteOverflow(
 
       /* Write the new page to disk and exit the loop */
       assert( nPg>4 || fts5GetU16(aPg)==0 );
-      fts5DataWrite(p, iRowid, aPg, nPg);
+      fts5SDDataWrite(p, 0, 0, iRowid, aPg, nPg);
       break;
     }
   }
   fts5DataRelease(pLeaf);
 }
+
 
 /*
 ** Completely remove the entry that pSeg currently points to from 
@@ -5262,7 +5412,7 @@ static void fts5DoSecureDelete(
         memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
         fts5PutU16(&pTerm->p[2], iTermOff);
 
-        fts5DataWrite(p, iId, pTerm->p, iTermOff+nTermIdx);
+        fts5SDDataWrite(p, pSeg, 1, iId, pTerm->p, iTermOff+nTermIdx);
         if( nTermIdx==0 ){
           fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iTermLeafPgno);
         }
@@ -5301,7 +5451,7 @@ static void fts5DoSecureDelete(
     }
 
     assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
-    fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg, nPg);
+    fts5SDDataWrite(p, pSeg, 2, FTS5_SEGMENT_ROWID(iSegid, pSeg->iLeafPgno), aPg, nPg);
   }
   sqlite3_free(aIdx);
 }

@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sSQLITE_MISUSE\sreturns\sso\sthat\sthey\scall\ssqlite3MisuseError().
-D 2023-09-05T15:03:23.029
+C Add\sdebugging\sroutines\sto\scheck\seach\spage\sfor\scorruption\safter\sit\sit\sis\smanipulated\sby\sthe\sfts5\ssecure-delete\scode,\sand\sto\slog\ssaid\spage\svia\ssqlite3_log()\sif\sit\sis\sfound\sto\sbe\scorrupt.
+D 2023-09-05T15:43:05.156
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -94,7 +94,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 054359543566cbff1ba65a188330660a5457299513ac71c53b3a07d934c7b081
 F ext/fts5/fts5_expr.c bd3b81ce669c4104e34ffe66570af1999a317b142c15fccb112de9fb0caa57a6
 F ext/fts5/fts5_hash.c 65e7707bc8774706574346d18c20218facf87de3599b995963c3e6d6809f203d
-F ext/fts5/fts5_index.c 47c290589fa38f6a1860b4fc26716ed30d79ddc283b38813d1c8c1d702108ab8
+F ext/fts5/fts5_index.c df64d8f5ccfdd5ef3fe1b2f5c5ccec5fba49e569453fb044cdb59c9147c68550
 F ext/fts5/fts5_main.c 7070031993ba5b5d89b13206ec4ef624895f2f7c0ec72725913d301e4d382445
 F ext/fts5/fts5_storage.c 3c9b41fce41b6410f2e8f82eb035c6a29b2560483f773e6dc98cf3cb2e4ddbb5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2116,8 +2116,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b12afff4efe4de84388d102060e8c312abd2f9eca8270b3c0f01ac6d1f2e329a
-R c33ff09bfe39aecbb90b639f6158696c
-U drh
-Z 799fbc495b6d502c0a1ef040c8c3f7ec
+P 93f74490faf8cc07e107afdab6737c6e5141ae1f01a05142bfcede2dd1b2ba4e
+R dc5f859705ed941ece53becdd24b1f2d
+T *branch * fts5-secure-delete-debug
+T *sym-fts5-secure-delete-debug *
+T -sym-trunk *
+U dan
+Z dd8b7a29381f854b929481e9966446fa
 # Remove this line to create a well-formed Fossil manifest.
