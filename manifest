@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sthe\ssessions\sextension\sthat\scould\soccur\swhen\sprocessing\sa\scorrupt\schangeset.
-D 2023-09-07T14:04:01.612
+C Fix\sa\sbad\sassert()\sin\sFTS3.
+D 2023-09-07T14:10:33.329
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -77,7 +77,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c d28d9ef383ef848a7b77df4b9964abcc90d67a2b584120c0ad465972dce416e6
+F ext/fts3/fts3_write.c b28f4cde90ed560245ecb76a882b45aa62da16ff6f61e9884eae5c7c5eff16ea
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -2092,9 +2092,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fdfe4d60b3226516d497a57a3fb1c5ce52b8da368e7b9b9a301df7c6e0c9ebfd
-Q +0e4e7a05c4204b47a324d67e18e76d2a98e26b2723d19d5c655ec9fd2e41f4b7
-R a09136cd70a89c18a41573ca96bad88a
+P 6009c871a48555efd2451b8b44d441548b9bdbc71141a52b81c1f4c7d99d3790
+Q +52bbf44f2d9addc2b5f68b0fe33542470852310ce3a283e2c7ff4c52831d0ed1
+R 48bcb6dcead77bc122d9c797b438e6bb
 U drh
-Z 44d0eda7edac6bacd1af52ef5035e91e
+Z c4735a82ad1aaa68f948cf2c1b63129a
 # Remove this line to create a well-formed Fossil manifest.
