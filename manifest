@@ -1,5 +1,5 @@
-C In\sthe\sOPFS\sVFS'\simportDb()\smethods,\soverwrite\sthe\sheader\sbytes\s18\sand\s19\swith\s1\sinstead\sof\s0.\sCorrect\sa\spotentially\sleaked/unclosed\sSharedAccessHandle\swhen\simportDb()\sthrows.
-D 2023-09-01T11:30:55.444
+C Version\snumber\sto\s3.43.1.
+D 2023-09-07T11:48:29.585
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 1e9105ffed727b1557ce59f0941c5d271e276ec00bc9823f03d77a89e131b918
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 26c2d196391a285c279adb10fd6001774d9b243af94b700b681e4a49cd476684
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
-F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
+F VERSION 536457fc6444f62ad9e5082a82e4e190f7ba3f4d903a63b835835230f7a8f853
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 9dc3300339f4d6b3c3b108de60cc6ae6b3c547e25c7e6df280b4775db4de3a1b x
+F configure 8f9bd15e5edda5730621f630be36c7273a2ad7dfa080bfdcb7abb8f063967c52 x
 F configure.ac 4654d32ac0a0d0b48f1e1e79bdc3d777b723cf2f63c33eb1d7c4ed8b435938e8
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d50d27197f3566f65c2c37f175765a6c6e534d20c34994115a04a040fc3e446
-R 57948f00ac73a7d97591515b08bd7205
-U stephan
-Z 8540e6e6cb52ed83dae4e906d0c8ac7a
+P 6795a6107bc8e6965c078fb4ddecbaae1f6a8e273effe4c8c0555358f0fbf32b
+R 8d7e90bc1f6e281aa35f60d7ac955d3b
+U drh
+Z 5d0b66d6cac77c919d22e7ed60fa887b
 # Remove this line to create a well-formed Fossil manifest.
