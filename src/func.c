@@ -1818,8 +1818,10 @@ static void sumFinalize(sqlite3_context *context){
     if( p->approx ){
       if( p->ovrfl ){
         sqlite3_result_error(context,"integer overflow",-1);
-      }else{
+      }else if( !sqlite3IsNaN(p->rErr) ){
         sqlite3_result_double(context, p->rSum+p->rErr);
+      }else{
+        sqlite3_result_double(context, p->rSum);
       }
     }else{
       sqlite3_result_int64(context, p->iSum);
@@ -1832,7 +1834,8 @@ static void avgFinalize(sqlite3_context *context){
   if( p && p->cnt>0 ){
     double r;
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -1845,7 +1848,8 @@ static void totalFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   if( p ){
     if( p->approx ){
-      r = p->rSum+p->rErr;
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
