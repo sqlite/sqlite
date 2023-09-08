@@ -4711,7 +4711,6 @@ static void fts5DoSecureDelete(
   int iIdx = 0;
   int iStart = 0;
   int iKeyOff = 0;
-  int iPrevKeyOff = 0;
   int iDelKeyOff = 0;       /* Offset of deleted key, if any */
 
   nIdx = nPg-iPgIdx;
@@ -4895,26 +4894,24 @@ static void fts5DoSecureDelete(
     }
 
     if( p->rc==SQLITE_OK ){
-      const int nMove = nPg - iNextOff;
-      int nShift = 0;
+      const int nMove = nPg - iNextOff;     /* Number of bytes to move */
+      int nShift = iNextOff - iOff;         /* Distance to move them */
+      int iPrevKeyOut = 0;
+      int iKeyIn = 0;
 
       memmove(&aPg[iOff], &aPg[iNextOff], nMove);
-      iPgIdx -= (iNextOff - iOff);
+      iPgIdx -= nShift;
       nPg = iPgIdx;
       fts5PutU16(&aPg[2], iPgIdx);
 
-      nShift = iNextOff - iOff;
-      for(iIdx=0, iKeyOff=0, iPrevKeyOff=0; iIdx<nIdx; /* no-op */){
+      for(iIdx=0; iIdx<nIdx; /* no-op */){
         u32 iVal = 0;
         iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-        iKeyOff += iVal;
-        if( iKeyOff!=iDelKeyOff ){
-          if( iKeyOff>iOff ){
-            iKeyOff -= nShift;
-            nShift = 0;
-          }
-          nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
-          iPrevKeyOff = iKeyOff;
+        iKeyIn += iVal;
+        if( iKeyIn!=iDelKeyOff ){
+          int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
+          nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOut - iPrevKeyOut);
+          iPrevKeyOut = iKeyOut;
         }
       }
 
