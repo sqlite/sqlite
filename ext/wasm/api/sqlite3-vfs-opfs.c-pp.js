@@ -1192,16 +1192,25 @@ const installOpfsVfs = function callee(options){
           toss("Input does not contain an SQLite database header.");
         }
       }
+      let sah;
       const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
-      const hFile = await hDir.getFileHandle(fnamePart, {create:true});
-      const sah = await hFile.createSyncAccessHandle();
-      sah.truncate(0);
-      const nWrote = sah.write(bytes, {at: 0});
-      sah.close();
-      if(nWrote != n){
-        toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+      try {
+        const hFile = await hDir.getFileHandle(fnamePart, {create:true});
+        sah = await hFile.createSyncAccessHandle();
+        sah.truncate(0);
+        const nWrote = sah.write(bytes, {at: 0});
+        if(nWrote != n){
+          toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+        }
+        sah.write(new Uint8Array([1,1]), {at: 18}) /* force db out of WAL mode */;
+        return nWrote;
+      }catch(e){
+        if( sah ){ await sah.close(); sah = undefined; }
+        await hDir.removeEntry( fnamePart ).catch(()=>{});
+        throw e;
+      }finally{
+        if( sah ) await sah.close();
       }
-      return nWrote;
     };
 
     if(sqlite3.oo1){
