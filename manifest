@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sproblem\sin\swal2recover2.test.
-D 2023-08-24T13:42:10.775
+C Fix\san\sapparently\sharmless\sbuffer-overrun\sthat\scould\soccur\son\sthis\sbranch\swhen\scommitting\smulti-file\stransactions\sin\swal2\smode.
+D 2023-09-08T16:07:05.266
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -766,7 +766,7 @@ F src/vdbe.c 3ef180bab789aa99aec753fd26ecb8f3d56c9f6870997cafd8c5fc2b7c989a43
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 37341acd781fda162e8cf4d9fc2eaea2febad3b365877a9d7233b8c6d0960d85
-F src/vdbeaux.c 2c87c99975ac23e777e9c270d979eca38f2a021b1f14f061c83faab5b24d5576
+F src/vdbeaux.c 412226979ab0e067ff3e4f6fa5300cb40b6389a8b5bb409fbe453548d98321ba
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
 F src/vdbemem.c 317b9f48708139db6239ade40c7980b4bc8233168383690d588dad6d8437f722
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
@@ -2129,8 +2129,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7b1ee1a999ced9aaae66d3bf51d93c20909541a83ecba79a19e5573fa7d649e
-R 5c80d9074b4faf9a507a418409423616
+P 81361769e17b3d1589c5d0f9991a139963c6633d26bc72f189a69e0391d8f52f dde9fcbde16bf71c4ab708e2db769b9cefacd0d7bce8223a46bf1264ae7ddecd
+R 19ff7a131d343dc477708a452967dee1
 U dan
-Z a39e6907c614cd72c8ea05cb8a6c50e5
+Z 29534f98092129c003c3c418eb514733
 # Remove this line to create a well-formed Fossil manifest.
