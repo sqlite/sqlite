@@ -582,8 +582,8 @@ static void walidxSetMxFrame(WalIndexHdr *pHdr, int iWal, u32 mxFrame){
 
 #define walidxGetFile(pHdr) ((pHdr)->mxFrame2 >> 31)
 
-#define walidxSetFile(pHdr, iWal) (                                   \
-    (pHdr)->mxFrame2 = ((pHdr)->mxFrame2 & 0x7FFFFFFF) | ((iWal)<<31) \
+#define walidxSetFile(pHdr, iWal) (                                          \
+    (pHdr)->mxFrame2 = ((pHdr)->mxFrame2 & 0x7FFFFFFF) | (((u32)(iWal))<<31) \
 )
 
 /*
