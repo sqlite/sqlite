@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sfts5\ssecure-delete\smode\scausing\sfts5\sto\scorrupt\sits\srecords.
-D 2023-09-08T19:35:02.613
+C Version\s3.43.1
+D 2023-09-11T12:01:27.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2092,9 +2092,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61d2074c695b011c51ea0e0e22051889e843e67dbc4b91c71f5b1b9177d0b9c8
-Q +4b60a1c358c966f161601e749ccb0a7c5f4126e20350f4d6c83b6f35841fbe0a
+P fb24ca17fa1be739395fc471a8d4c9f876874c1709d41803925027b56587cf83
 R 00850c800fbae2990176d31bf7ab6581
+T +sym-release *
+T +sym-version-3.43.1 *
 U drh
-Z 297579d39e29a6a4e3cfd2fbbcf73399
+Z afe4b484bf2298bff989f42abbf408e9
 # Remove this line to create a well-formed Fossil manifest.
