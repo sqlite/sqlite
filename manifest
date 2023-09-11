@@ -1,5 +1,5 @@
-C Merge\scandidate\spatches\sfor\sversion\s3.43.1\sinto\sthe\sreuse-schema-3.43\sbranch.
-D 2023-09-08T20:24:30.776
+C Merge\sversion\s3.43.1\sinto\sthe\sreuse-schema-3.43\ssubbranch.
+D 2023-09-11T13:06:54.520
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2102,11 +2102,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6f1bcd6a1a4165bcf44d1a213aee8cf8005b8469fed69818ebdec8f1325950f5 fb24ca17fa1be739395fc471a8d4c9f876874c1709d41803925027b56587cf83
+P c94be4600d6772876a15b53874142c88793b3731fd92d5d427ea931c0cfcf70c 2d3a40c05c49e1a49264912b1a05bc2143ac0e7c3df588276ce80a4cbc9bd1b0
 R e3563cfbe47c72d68040d8859034ad2f
-T *branch * reuse-schema-3.43
-T *sym-reuse-schema-3.43 *
-T -sym-reuse-schema *
 U drh
-Z e63fdd4b3e1e00917968c348c4b69618
+Z 75a2c405caf6fc25ec51e50fc8c273b6
 # Remove this line to create a well-formed Fossil manifest.
