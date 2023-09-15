@@ -3102,9 +3102,6 @@ static int whereLoopAddBtree(
 #else
       pNew->rRun = rSize + 16;
 #endif
-      if( (pTab->tabFlags & TF_Ephemeral)!=0 ){
-        pNew->wsFlags |= WHERE_VIEWSCAN;
-      }
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew, rSize);
       rc = whereLoopInsert(pBuilder, pNew);
@@ -4256,13 +4253,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           rUnsorted -= 2;  /* TUNING:  Slight bias in favor of no-sort plans */
         }
 
-        /* TUNING:  A full-scan of a VIEW or subquery in the outer loop
-        ** is not so bad. */
-        if( iLoop==0 && (pWLoop->wsFlags & WHERE_VIEWSCAN)!=0 ){
-          rCost += -10;
-          nOut += -30;
-        }
-
         /* Check to see if pWLoop should be added to the set of
         ** mxChoice best-so-far paths.
         **
@@ -4966,6 +4956,16 @@ WhereInfo *sqlite3WhereBegin(
        wherePathSolver(pWInfo, pWInfo->nRowOut+1);
        if( db->mallocFailed ) goto whereBeginError;
     }
+
+    /* TUNING:  Assume that a DISTINCT clause on a subquery reduces
+    ** the output size by a factor of 8 (LogEst -30).
+    */
+    if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
+      WHERETRACE(0x0080,("nRowOut reduced from %d to %d due to DISTINCT\n",
+                         pWInfo->nRowOut, pWInfo->nRowOut-30));
+      pWInfo->nRowOut -= 30;
+    }
+
   }
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
      pWInfo->revMask = ALLBITS;
