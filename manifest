@@ -1,5 +1,5 @@
-C Pointer-casting-related\sfixes\sfor\sJNI\son\s32-bit\sARM\s(pi4\sarmv7l).
-D 2023-10-02T14:44:28.216
+C Revisit\sthe\sopfs-sahpool's\shandling\sof\ssqlite3_vfs::xGetLastError().\sThis\simpl\sseems\sto\sbe\sin\sline\swith\swhat\sthe\slibrary\sinternal\sexpects\sbut\sit\srequires\smore\stesting\s(via\spurposely-induced\sI/O\serrors)\sbefore\smerging.
+D 2023-10-02T15:37:55.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F ext/wasm/api/sqlite3-api-worker1.js 9f32af64df1a031071912eea7a201557fe39b17386
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f86aeae9ef8d2719ed25
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 327a8c363a8c84c61770dc3c46cc83d7cc0eb6b59a3b29728bddf087651d3b77
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 537620185958adaa7f3175ef8fb1d0c17b8cf07d5689594cb76ac1bea02e4bc8
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
 F ext/wasm/api/sqlite3-wasm.c 65d60439671e24d50d9119ca805ac1c68fb36129e164377eb46f8d037bd88b07
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
@@ -2122,8 +2122,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2532e5662a2bbb3e6b4c4be3fad035734b684bdf59b178cb64b444ca6d8b956b
-R a83650bf5f7797eddfc74482addb44c4
+P 54441039ae3ebe39e42f008f77ce1be117cbda6daeed8b01739ad42a3c1f0754
+R 39ee253208408e390f1544305ad866da
+T *branch * wasm-xGetLastError
+T *sym-wasm-xGetLastError *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z c1992b9ab6d0229ceafa8f585205277d
+Z d4859ccc3c97fee14c139b7fed420589
 # Remove this line to create a well-formed Fossil manifest.
