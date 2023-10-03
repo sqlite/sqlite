@@ -2608,21 +2608,63 @@ static void jsonBlobChangePayloadSize(
   if( pParse->oom ) return;
   a = &pParse->aBlob[i];
   szType = a[0]>>4;
+restart:
   if( szType<=11 ){
     assert( szPayload<=11 );
     a[0] = (a[0] & 0x0f) | (szPayload<<4);
   }else if( szType==0xc ){
     assert( szPayload<=0xff );
     assert( i+1<pParse->nBlob );
-    a[1] = szPayload & 0xff;
+    if( szPayload<=11 ){
+      if( i+2<pParse->nBlob ){
+        memmove(&a[1], &a[2], pParse->nBlob - (i+2));
+      }
+      pParse->nBlob--;
+      a[0] = (a[0] & 0x0f) | (szPayload<<4);
+    }else{
+      a[1] = szPayload & 0xff;
+    }
   }else if( szType==0xd ){
     assert( szPayload<=0xffff );
     assert( i+2<pParse->nBlob );
+    if( szPayload<=0xff ){
+      u8 d;
+      if( szPayload<=11 ){
+        d = 2;
+        szType = szPayload;
+      }else{
+        d = 1;
+        szType = 0x0c;
+      }
+      if( i+3<pParse->nBlob ){
+        memmove(&a[3-d], &a[3], pParse->nBlob - (i+3));
+      }
+      pParse->nBlob -= d;
+      goto restart;
+    }
     a[1] = (szPayload >> 8) & 0xff;
     a[2] = szPayload & 0xff;
   }else{
     assert( szType==0xe );
     assert( i+4<pParse->nBlob );
+    if( szPayload<=0xffff ){
+      u8 d;
+      if( szPayload<=11 ){
+        d = 4;
+        szType = szPayload;
+      }else if( szPayload<=255 ){
+        d = 3;
+        szType = 0x0c;
+      }else{
+        d = 2;
+        szType = 0x0d;
+      }
+      if( i+5<pParse->nBlob ){
+        memmove(&a[5-d], &a[5], pParse->nBlob - (i+5));
+      }
+      pParse->nBlob -= d;
+      goto restart;
+    }
     a[1] = (szPayload >> 24) & 0xff;
     a[2] = (szPayload >> 16) & 0xff;
     a[3] = (szPayload >> 8) & 0xff;
