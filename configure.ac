@@ -122,11 +122,16 @@ USE_AMALGAMATION=1
 # 
 AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.7 tclsh8.6 tclsh8.5 tclsh], none)
 if test "$TCLSH_CMD" = "none"; then
-  # If we can't find a local tclsh, then building the amalgamation will fail.
-  # We act as though --disable-amalgamation has been used.
-  echo "Warning: can't find tclsh - defaulting to non-amalgamation build."
-  USE_AMALGAMATION=0
-  TCLSH_CMD="tclsh"
+  echo 'ERROR: SQLite requires tclsh to build from canonical sources.'
+  echo 'Use the alternative "amalgamation tarball" distribution to build'
+  echo 'without using tclsh.  Note, however, that the amalgmatation'
+  echo 'tarball does not contain all of the build targets that this'
+  echo 'package supports.  If you want to build everything associated'
+  echo 'with SQLite (such as runnings tests or building auxiliary tools'
+  echo 'like "sqldiff" or "sqlite3_analyzer") then you really do need'
+  echo 'to install tclsh version 8.5 or later.'
+  echo 'ERROR: configure failed'
+  exit 1
 fi
 AC_SUBST(TCLSH_CMD)
 
