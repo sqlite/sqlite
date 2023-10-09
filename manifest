@@ -1,9 +1,9 @@
-C Change\sthe\sTEA\sversion\snumber\sto\s3.43.2\salso.
-D 2023-10-09T14:12:44.057
+C Add\sa\sTCL\sscript\sthat\sdoes\svarious\sverification\schecks\son\sthe\ssource\stree\nto\smake\ssure\sthat\sgenerated\scode\shas\sbeen\supdated\scorrectly.
+D 2023-10-09T14:59:42.436
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 1e9105ffed727b1557ce59f0941c5d271e276ec00bc9823f03d77a89e131b918
+F Makefile.in 0f17b4b3550aae10deb5475429a2388a0960ebe85a29d1dd97aa0a2444b0bf48
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 26c2d196391a285c279adb10fd6001774d9b243af94b700b681e4a49cd476684
 F README.md 963d30019abf0cc06b263cd2824bce022893f3f93a531758f6f04ff2194a16a8
@@ -2060,6 +2060,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c 41c586dee84d0b190ad13e0282ed83d4a65ec9fefde9adf4943efdf6558eea7f
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
+F tool/srctree-check.tcl cef630bc4ff21a460d72479c43a42bf1c1ed61897659305c35c8d72e91bcb176
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2092,8 +2093,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0bd1199bb3f7bd3fcc421d2c3834d04c35cbfd611457554e4f9f9a992c4bf1f5
-R 403b7b035b1547c58c8b57126da2b7ff
+P 170ab8d102424994fd3f1e7d9ef94a3f6814de70cdc6ded4e571df264825b620
+Q +1f1a358af77f4386f98010eeae8487e6d39548a6dfe58c2664552490e7661122
+R 89563523ab0148d5d3a451bbeb90479c
 U drh
-Z a2f56ed9610a3a58185ed78c1d4a3642
+Z 0e34d5404a7b921b7b91e30a39418f64
 # Remove this line to create a well-formed Fossil manifest.
