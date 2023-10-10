@@ -5057,7 +5057,6 @@ static void fts5DoSecureDelete(
   int iIdx = 0;
   int iStart = 0;
   int iKeyOff = 0;
-  int iPrevKeyOff = 0;
   int iDelKeyOff = 0;       /* Offset of deleted key, if any */
 
   nIdx = nPg-iPgIdx;
