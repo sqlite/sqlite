@@ -1,5 +1,5 @@
-C Version\s3.43.2
-D 2023-10-10T12:14:04.911
+C Fix\sa\sbug\sin\sthe\smkautoconfamal.sh\sscript\nso\sthat\sthe\s"snapshot-tarball"\sand\s"amalgamation-tarball"\smakefile\stargets\nwork\sagain\swhen\srun\sfrom\soutside\sof\sthe\ssource\stree.
+D 2023-10-10T15:34:17.824
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2012,7 +2012,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
-F tool/mkautoconfamal.sh 7077151b62ecb2848c5b2d36cdbcd8caa0b58f2c12dcdac6e982da39d29d213c
+F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl aca4b83e49aecf10368cd5d11bc4847061041ade026db5bd8da17ef201f1403b x
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
@@ -2093,10 +2093,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88a118905b95bd82e15c3c1e63a7620071ab9ab3517b77820553fcd7e600b0c8
-R 066b49c963926ac90c34ea41a60520db
-T +sym-release *
-T +sym-version-3.43.2 *
+P 4310099cce5a487035fa535dd3002c59ac7f1d1bec68d7cf317fd3e769484790
+Q +65ccf5fef812d43aed9e00af36c90e1a499d197e30148753790445e25ee1324c
+R c9c0a04075c9b32c5c361001c4315d93
 U drh
-Z 8f5f6e60777c4954f5d2670202697dfe
+Z 4a14c303310ac27c4c9cc6aa5451cc27
 # Remove this line to create a well-formed Fossil manifest.
