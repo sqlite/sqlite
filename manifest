@@ -1,5 +1,5 @@
-C Use\ssnprintf()\sin\splace\sof\ssprintf()\sin\sa\sdebugging\sfunction\sin\sthe\sCLI.
-D 2023-10-09T22:50:30.682
+C Version\s3.43.2
+D 2023-10-10T12:14:04.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2093,9 +2093,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc8681c4864f1973ce6d667cc4670e3800bc8e39b44944da7de74faa715bc434
-Q +5e5e4d2b4958c329578d1e5af4ed25c1b774f0ed2d15fa6747d7d7fbbba4fa46
+P 88a118905b95bd82e15c3c1e63a7620071ab9ab3517b77820553fcd7e600b0c8
 R 066b49c963926ac90c34ea41a60520db
+T +sym-release *
+T +sym-version-3.43.2 *
 U drh
-Z 16def1c1f9d79f4e2e0fc113ee41d421
+Z 8f5f6e60777c4954f5d2670202697dfe
 # Remove this line to create a well-formed Fossil manifest.
