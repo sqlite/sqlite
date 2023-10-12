@@ -2691,7 +2691,6 @@ static int fts5MultiIterDoCompare(Fts5Iter *pIter, int iOut){
       assert_nc( i2!=0 );
       pRes->bTermEq = 1;
       if( p1->iRowid==p2->iRowid ){
-        p1->bDel = p2->bDel;
         return i2;
       }
       res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : +1;
@@ -4774,28 +4773,33 @@ static void fts5DoSecureDelete(
   }
 
   iOff = iStart;
-  if( iNextOff>=iPgIdx ){
-    int pgno = pSeg->iLeafPgno+1;
-    fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
-    iNextOff = iPgIdx;
-  }else{
-    /* Set bLastInDoclist to true if the entry being removed is the last
-    ** in its doclist.  */
-    for(iIdx=0, iKeyOff=0; iIdx<nIdx; /* no-op */){
-      u32 iVal = 0;
-      iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-      iKeyOff += iVal;
-      if( iKeyOff==iNextOff ){
-        bLastInDoclist = 1;
+  if( pSeg->bDel==0 ){
+    if( iNextOff>=iPgIdx ){
+      int pgno = pSeg->iLeafPgno+1;
+      fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
+      iNextOff = iPgIdx;
+    }else{
+      /* Set bLastInDoclist to true if the entry being removed is the last
+      ** in its doclist.  */
+      for(iIdx=0, iKeyOff=0; iIdx<nIdx; /* no-op */){
+        u32 iVal = 0;
+        iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+        iKeyOff += iVal;
+        if( iKeyOff==iNextOff ){
+          bLastInDoclist = 1;
+        }
       }
+    }
+
+    if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist||iNextOff==iPgIdx) ){
+      fts5PutU16(&aPg[0], 0);
     }
   }
 
-  if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist||iNextOff==iPgIdx) ){
-    fts5PutU16(&aPg[0], 0);
-  }
-
-  if( bLastInDoclist==0 ){
+  if( pSeg->bDel ){
+    iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta);
+    aPg[iOff++] = 0x01;
+  }else if( bLastInDoclist==0 ){
     if( iNextOff!=iPgIdx ){
       iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
       iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
@@ -5090,10 +5094,16 @@ static void fts5FlushOneHash(Fts5Index *p){
               fts5WriteFlushLeaf(p, &writer);
             }
           }else{
-            int bDummy;
-            int nPos;
-            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-            nCopy += nPos;
+            int bDel = 0;
+            int nPos = 0;
+            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDel);
+            if( bDel && bSecureDelete ){
+              fts5BufferAppendVarint(&p->rc, pBuf, nPos*2);
+              iOff += nCopy;
+              nCopy = nPos;
+            }else{
+              nCopy += nPos;
+            }
             if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
               /* The entire poslist will fit on the current leaf. So copy
               ** it in one go. */
