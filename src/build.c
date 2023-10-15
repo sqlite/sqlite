@@ -2302,7 +2302,7 @@ static int isDupColumn(Index *pIdx, int nKey, Index *pPk, int iCol){
 ** The colNotIdxed mask is AND-ed with the SrcList.a[].colUsed mask
 ** to determine if the index is covering index.
 */
-static void recomputeColumnsNotIndexed(Parse *pParse, Index *pIdx){
+static void recomputeColumnsNotIndexed(Index *pIdx){
   Bitmask m = 0;
   int j;
   Table *pTab = pIdx->pTable;
@@ -2493,7 +2493,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }
   assert( pPk->nColumn==j );
   assert( pTab->nNVCol<=j );
-  recomputeColumnsNotIndexed(pParse, pPk);
+  recomputeColumnsNotIndexed(pPk);
 }
 
 
@@ -2920,6 +2920,17 @@ void sqlite3EndTable(
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
+
+    /* Test for cycles in generated columns and illegal expressions
+    ** in CHECK constraints and in DEFAULT clauses. */
+    if( p->tabFlags & TF_HasGenerated ){
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
+                   db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
+    }
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
+                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -4273,7 +4284,7 @@ void sqlite3CreateIndex(
   ** it as a covering index */
   assert( HasRowid(pTab)
       || pTab->iPKey<0 || sqlite3TableColumnToIndex(pIndex, pTab->iPKey)>=0 );
-  recomputeColumnsNotIndexed(pParse, pIndex);
+  recomputeColumnsNotIndexed(pIndex);
   if( pTblName!=0 && pIndex->nColumn>=pTab->nCol ){
     pIndex->isCovering = 1;
     for(j=0; j<pTab->nCol; j++){

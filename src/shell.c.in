@@ -455,7 +455,6 @@ static int stdin_is_interactive = 1;
   static int console_utf8 = sizeof(char*)/4 - 1;
 #else
 # define SHELL_WIN_UTF8_OPT 0
-  static const int console_utf8 = 0;
 #endif
 
 /*
@@ -1229,7 +1228,7 @@ static void shellDtostr(
   char z[400];
   if( n<1 ) n = 1;
   if( n>350 ) n = 350;
-  sprintf(z, "%#+.*e", n, r);
+  snprintf(z, sizeof(z)-1, "%#+.*e", n, r);
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
@@ -8773,8 +8772,10 @@ static int do_meta_command(char *zLine, ShellState *p){
                "SELECT rowid FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
                -1, &pStmt, 0);
-      doStats = sqlite3_step(pStmt)==SQLITE_ROW;
-      sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){
+        doStats = sqlite3_step(pStmt)==SQLITE_ROW;
+        sqlite3_finalize(pStmt);
+      }
     }
     if( doStats==0 ){
       raw_printf(p->out, "/* No STAT tables available */\n");

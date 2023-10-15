@@ -2843,11 +2843,13 @@ static void jsonReplaceNode(
          break;
       }
       if( sqlite3_value_subtype(pValue)!=JSON_SUBTYPE ){
-        char *zCopy = sqlite3DbStrDup(0, z);
+        char *zCopy = sqlite3_malloc64( n+1 );
         int k;
         if( zCopy ){
+          memcpy(zCopy, z, n);
+          zCopy[n] = 0;
           jsonParseAddCleanup(p, sqlite3_free, zCopy);
-       }else{
+        }else{
           p->oom = 1;
           sqlite3_result_error_nomem(pCtx);
         }
@@ -2902,6 +2904,7 @@ static void jsonReplaceFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     pParse->useMod = 1;
@@ -2914,6 +2917,7 @@ static void jsonReplaceFunc(
   jsonReturnJson(pParse, pParse->aNode, ctx, 1);
 replace_err:
   jsonDebugPrintParse(pParse);
+  jsonParseFree(pParse);
 }
 
 
@@ -2948,6 +2952,7 @@ static void jsonSetFunc(
   }
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
   if( pParse==0 ) return;
+  pParse->nJPRef++;
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     bApnd = 0;
@@ -2964,9 +2969,8 @@ static void jsonSetFunc(
   }
   jsonDebugPrintParse(pParse);
   jsonReturnJson(pParse, pParse->aNode, ctx, 1);
-
 jsonSetDone:
-  /* no cleanup required */;
+  jsonParseFree(pParse);
 }
 
 /*
@@ -3758,7 +3762,8 @@ static sqlite3_module jsonEachModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xIntegrity */
 };
 
 /* The methods of the json_tree virtual table. */
@@ -3786,7 +3791,8 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xSavepoint */
   0,                         /* xRelease */
   0,                         /* xRollbackTo */
-  0                          /* xShadowName */
+  0,                         /* xShadowName */
+  0                          /* xIntegrity */
 };
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 #endif /* !defined(SQLITE_OMIT_JSON) */

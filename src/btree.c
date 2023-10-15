@@ -1,4 +1,3 @@
-
 /*
 ** 2004 April 6
 **
@@ -7493,6 +7492,7 @@ static int rebuildPage(
   int k;                          /* Current slot in pCArray->apEnd[] */
   u8 *pSrcEnd;                    /* Current pCArray->apEnd[k] value */
 
+  assert( nCell>0 );
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
   if( j>(u32)usableSize ){ j = 0; }
@@ -7799,6 +7799,7 @@ static int editPage(
   return SQLITE_OK;
  editpage_fail:
   /* Unable to edit this page. Rebuild it from scratch instead. */
+  if( nNew<1 ) return SQLITE_CORRUPT_BKPT;
   populateCellCache(pCArray, iNew, nNew);
   return rebuildPage(pCArray, iNew, nNew, pPg);
 }
@@ -10707,6 +10708,7 @@ static int checkTreePage(
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
+    if( rc==SQLITE_IOERR_NOMEM ) pCheck->rc = SQLITE_NOMEM;
     goto end_of_check;
   }
 

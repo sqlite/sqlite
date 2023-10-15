@@ -12,7 +12,7 @@
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
 package org.sqlite.jni;
-import static org.sqlite.jni.SQLite3Jni.*;
+import static org.sqlite.jni.CApi.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -254,6 +254,12 @@ public class Tester1 implements Runnable {
       /* This function has different mangled names in jdk8 vs jdk19,
          and this call is here to ensure that the build fails
          if it cannot find both names. */;
+
+    affirm( 0==sqlite3_db_readonly(db,"main") );
+    affirm( 0==sqlite3_db_readonly(db,null) );
+    affirm( 0>sqlite3_db_readonly(db,"nope") );
+    affirm( 0>sqlite3_db_readonly(null,null) );
+    affirm( 0==sqlite3_last_insert_rowid(null) );
 
     // These interrupt checks are only to make sure that the JNI binding
     // has the proper exported symbol names. They don't actually test
@@ -934,7 +940,7 @@ public class Tester1 implements Runnable {
   private void listBoundMethods(){
     if(false){
       final java.lang.reflect.Field[] declaredFields =
-        SQLite3Jni.class.getDeclaredFields();
+        CApi.class.getDeclaredFields();
       outln("Bound constants:\n");
       for(java.lang.reflect.Field field : declaredFields) {
         if(java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
@@ -943,7 +949,7 @@ public class Tester1 implements Runnable {
       }
     }
     final java.lang.reflect.Method[] declaredMethods =
-      SQLite3Jni.class.getDeclaredMethods();
+      CApi.class.getDeclaredMethods();
     final java.util.List<String> funcList = new java.util.ArrayList<>();
     for(java.lang.reflect.Method m : declaredMethods){
       if((m.getModifiers() & java.lang.reflect.Modifier.STATIC) != 0){
@@ -1028,8 +1034,11 @@ public class Tester1 implements Runnable {
     affirm( 0 == rc );
     affirm( outDb.get() != db1 );
     final sqlite3 db2 = outDb.get();
+
+    affirm( "main".equals( sqlite3_db_name(db1, 0) ) );
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
+    affirm( "foo".equals( sqlite3_db_name(db1, 0) ) );
 
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
     BusyHandlerCallback handler = new BusyHandlerCallback(){
@@ -1456,7 +1465,7 @@ public class Tester1 implements Runnable {
     affirm( "noCase".equals(zCollSeq.value) );
     affirm( "duck".equals(zDataType.value) );
 
-    final TableColumnMetadata m =
+    TableColumnMetadata m =
       sqlite3_table_column_metadata(db, "main", "t", "a");
     affirm( null != m );
     affirm( bPrimaryKey.value == m.isPrimaryKey() );
@@ -1466,6 +1475,16 @@ public class Tester1 implements Runnable {
     affirm( zDataType.value.equals(m.getDataType()) );
 
     affirm( null == sqlite3_table_column_metadata(db, "nope", "t", "a") );
+    affirm( null == sqlite3_table_column_metadata(db, "main", "nope", "a") );
+
+    m = sqlite3_table_column_metadata(db, "main", "t", null)
+      /* Check only for existence of table */;
+    affirm( null != m );
+    affirm( m.isPrimaryKey() );
+    affirm( !m.isAutoincrement() );
+    affirm( !m.isNotNull() );
+    affirm( "BINARY".equalsIgnoreCase(m.getCollation()) );
+    affirm( "INTEGER".equalsIgnoreCase(m.getDataType()) );
 
     sqlite3_close_v2(db);
   }
@@ -1925,29 +1944,24 @@ public class Tester1 implements Runnable {
     sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;
-    int nCanonical = 0;
     final java.lang.reflect.Method[] declaredMethods =
-      SQLite3Jni.class.getDeclaredMethods();
+      CApi.class.getDeclaredMethods();
     for(java.lang.reflect.Method m : declaredMethods){
       final int mod = m.getModifiers();
       if( 0!=(mod & java.lang.reflect.Modifier.STATIC) ){
         final String name = m.getName();
         if(name.startsWith("sqlite3_")){
           ++nMethods;
-          if( m.isAnnotationPresent( org.sqlite.jni.annotation.Canonical.class ) ){
-            ++nCanonical;
-          }
           if( 0!=(mod & java.lang.reflect.Modifier.NATIVE) ){
             ++nNatives;
           }
         }
       }
     }
-    outln("\tSQLite3Jni.sqlite3_*() methods: "+
+    outln("\tCApi.sqlite3_*() methods: "+
           nMethods+" total, with "+
           nNatives+" native, "+
-          (nMethods - nNatives)+" Java, ",
-          nCanonical," @Canonical"
+          (nMethods - nNatives)+" Java"
     );
     outln("\tTotal test time = "
           +(timeEnd - timeStart)+"ms");
