@@ -1,5 +1,5 @@
-C Drop\ssupport\sfor\sthe\sview-scan\soptimization\sas\nit\swas\scausing\smultiple\sperformance\sregressions.\s\sIn\sits\splace,\sreduce\sthe\nestimated\srow\scount\sfor\sDISTINCT\ssubsqueries\sby\sa\sfactor\sof\s8.
-D 2023-09-15T20:04:31.903
+C Ensure\sthat\swhen\san\sephemeral\scursor\sis\sreopened\swith\sa\ssecond\sinvocation\sof\sto\sOP_OpenEphemeral,\sthe\ssequence\scounter\sis\sreset\sand\sthe\scache\smarked\sas\sstale.\sFix\sfor\s[9cdc5c46].
+D 2023-10-19T21:05:31.821
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/upsert.c 0dd81b40206841814d46942a7337786932475f085716042d0cb2fc7791bf8ca4
 F src/utf.c 2f0fac345c7660d5c5bd3df9e9d8d33d4c27f366bcfb09e07443064d751a0507
 F src/util.c e12939405e77906d06ab0b78c5f513dcd2b7cec2fbb553877b0abfece6067141
 F src/vacuum.c 72690ccb6877a88f8473a893cf9f6d7592236f3eebfebfa840b19c708acde574
-F src/vdbe.c c80fd12dc2b291f6650c272ccec8b7f0607f6972744efbfba2fa79674bb3db87
+F src/vdbe.c 654cdbf00078dd08fdbdb2dd30cccb8423cd32f90dd7ec02b6adc935bd512f1b
 F src/vdbe.h 712bca562eaed1c25506b9faf9680bdc75fc42e2f4a1cd518d883fa79c7a4237
 F src/vdbeInt.h 1a928793190675799194bdee2778f13b10ee42bc20bc03b6635687e4d3d80874
 F src/vdbeapi.c 2ddd60f4a351f15ee98d841e346af16111ad59dfa4d25d2dd4012e9875bf7d92
@@ -1354,7 +1354,7 @@ F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec7
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test 3f46cc25b0284ddb7aeba0c69681f13a0c1f3fc56d1e5b658aa76dc378908752
-F test/subquery2.test 8250dfd6a773b04c7a5c37ac63276f62b329157ce171244d0cbe1acc365e3303
+F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
@@ -1820,9 +1820,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83a7f13edb74c95f0bccafb931e612ecca568211c3e720db168bd1ff32b3181a
-Q +f911f1c4977fbcae041243955cf2b98d8cc8baa337885a69be0f2b9bd2efa6f3
-R 0e56265885eb0cd9b75aadb6c1b32d5f
+P 796a65fa61373b5def9bf94e068e2dae9381a084c7e2c1e5df26929e9b07ca07
+Q +5fd20e09a522b62a529cf4d76fbdf0a09426f67ffa30430cac6b81ebf32ba43e
+R cecdd5f86db90ae25ad03aa25626bcc5
 U drh
-Z 1555b53e0c6a7deb6142f68b0bfb4eb6
+Z 03343c85d2a759eecb7b879a9fc450b0
 # Remove this line to create a well-formed Fossil manifest.

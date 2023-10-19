@@ -3686,11 +3686,15 @@ case OP_OpenEphemeral: {
   if( pCx ){
     /* If the ephermeral table is already open, erase all existing content
     ** so that the table is empty again, rather than creating a new table. */
-    rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+    assert( pCx->isEphemeral );
+    pCx->seqCount = 0;
+    pCx->cacheStatus = CACHE_STALE;
+    if( pCx->pBtx ){
+      rc = sqlite3BtreeClearTable(pCx->pBtx, pCx->pgnoRoot, 0);
+    }
   }else{
     pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, CURTYPE_BTREE);
     if( pCx==0 ) goto no_mem;
-    pCx->nullRow = 1;
     pCx->isEphemeral = 1;
     rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBtx, 
                           BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5,
@@ -3726,6 +3730,7 @@ case OP_OpenEphemeral: {
     pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   }
   if( rc ) goto abort_due_to_error;
+  pCx->nullRow = 1;
   break;
 }
 
