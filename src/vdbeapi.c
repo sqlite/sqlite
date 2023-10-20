@@ -375,7 +375,7 @@ void sqlite3_value_free(sqlite3_value *pOld){
 ** is too big or if an OOM occurs.
 **
 ** The invokeValueDestructor(P,X) routine invokes destructor function X()
-** on value P is not going to be used and need to be destroyed.
+** on value P if P is not going to be used and need to be destroyed.
 */
 static void setResultStrOrError(
   sqlite3_context *pCtx,  /* Function context */
@@ -415,9 +415,14 @@ static int invokeValueDestructor(
   }else{
     xDel((void*)p);
   }
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( pCtx!=0 ){
     sqlite3_result_error_toobig(pCtx);
   }
+#else
+  assert( pCtx!=0 );
+  sqlite3_result_error_toobig(pCtx);
+#endif
   return SQLITE_TOOBIG;
 }
 void sqlite3_result_blob(
@@ -2351,7 +2356,11 @@ int sqlite3_stmt_scanstatus_v2(
   int idx;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( p==0 ) return 1;
+  if( p==0 || pOut==0
+      || iScanStatusOp<SQLITE_SCANSTAT_NLOOP
+      || iScanStatusOp>SQLITE_SCANSTAT_NCYCLE ){
+    return 1;
+  }
 #endif
   aOp = p->aOp;
   nOp = p->nOp;

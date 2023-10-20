@@ -762,11 +762,11 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     sqlite3RCStrRef(pBuf);
     if( t&1 ){
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, encoding,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
       pDest->flags |= MEM_Term;
     }else{
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
-                                (void(*)(void*))sqlite3RCStrUnref);
+                                sqlite3RCStrUnref);
     }
   }else{
     rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);
@@ -6927,7 +6927,7 @@ case OP_SqlExec: {
   db->nSqlExec--;
   db->xAuth = xAuth;
   db->mTrace = mTrace;
-  if( rc || zErr ){
+  if( zErr || rc ){
     sqlite3VdbeError(p, "%s", zErr);
     sqlite3_free(zErr);
     if( rc==SQLITE_NOMEM ) goto no_mem;

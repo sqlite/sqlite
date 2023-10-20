@@ -2372,7 +2372,7 @@ void *sqlite3_preupdate_hook(
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( db==0 || xCallback==0 ){
-    return;
+    return 0;
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
@@ -5012,7 +5012,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   int nOpt;
   const char **azCompileOpt;
 
-#if SQLITE_ENABLE_API_ARMOR
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( zOptName==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
