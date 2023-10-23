@@ -248,19 +248,14 @@ void sqlite3FinishCoding(Parse *pParse){
     */
     if( pParse->pAinc ) sqlite3AutoincrementBegin(pParse);
 
-    /* Code constant expressions that where factored out of inner loops.
-    **
-    ** The pConstExpr list might also contain expressions that we simply
-    ** want to keep around until the Parse object is deleted.  Such
-    ** expressions have iConstExprReg==0.  Do not generate code for
-    ** those expressions, of course.
+    /* Code constant expressions that were factored out of inner loops. 
     */
     if( pParse->pConstExpr ){
       ExprList *pEL = pParse->pConstExpr;
       pParse->okConstFactor = 0;
       for(i=0; i<pEL->nExpr; i++){
-        int iReg = pEL->a[i].u.iConstExprReg;
-        sqlite3ExprCode(pParse, pEL->a[i].pExpr, iReg);
+        assert( pEL->a[i].u.iConstExprReg>0 );
+        sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
       }
     }
 
@@ -2927,6 +2922,17 @@ void sqlite3EndTable(
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
            sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName),0);
+
+    /* Test for cycles in generated columns and illegal expressions
+    ** in CHECK constraints and in DEFAULT clauses. */
+    if( p->tabFlags & TF_HasGenerated ){
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+             sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
+                   db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
+    }
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
+                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.
