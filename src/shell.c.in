@@ -452,15 +452,9 @@ static int stdin_is_interactive = 1;
 #if (defined(_WIN32) || defined(WIN32)) && SHELL_USE_LOCAL_GETLINE \
   && !defined(SHELL_OMIT_WIN_UTF8)
 # define SHELL_WIN_UTF8_OPT 1
+  static int console_utf8 = sizeof(char*)/4 - 1;
 #else
 # define SHELL_WIN_UTF8_OPT 0
-#endif
-
-#if SHELL_WIN_UTF8_OPT
-/*
-** Setup console for UTF-8 input/output when following variable true.
-*/
-static int console_utf8 = 0;
 #endif
 
 /*
@@ -734,11 +728,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
 void utf8_printf(FILE *out, const char *zFormat, ...){
   va_list ap;
   va_start(ap, zFormat);
-  if( stdout_is_console && (out==stdout || out==stderr)
-# if SHELL_WIN_UTF8_OPT
-      && !console_utf8
-# endif
-  ){
+  if( stdout_is_console && (out==stdout || out==stderr) && !console_utf8 ){
     char *z1 = sqlite3_vmprintf(zFormat, ap);
     char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
     sqlite3_free(z1);
@@ -952,11 +942,7 @@ static char *local_getline(char *zLine, FILE *in){
   /* For interactive input on Windows systems, without -utf8,
   ** translate the multi-byte characterset characters into UTF-8.
   ** This is the translation that predates the -utf8 option. */
-  if( stdin_is_interactive && in==stdin
-# if SHELL_WIN_UTF8_OPT
-      && !console_utf8
-# endif /* SHELL_WIN_UTF8_OPT */
-  ){
+  if( stdin_is_interactive && in==stdin && !console_utf8 ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
       i64 nTrans = strlen(zTrans)+1;
@@ -1242,7 +1228,7 @@ static void shellDtostr(
   char z[400];
   if( n<1 ) n = 1;
   if( n>350 ) n = 350;
-  sprintf(z, "%#+.*e", n, r);
+  snprintf(z, sizeof(z)-1, "%#+.*e", n, r);
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
@@ -8328,7 +8314,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       azArg[nArg++] = &zLine[h];
       while( zLine[h] && !IsSpace(zLine[h]) ){ h++; }
       if( zLine[h] ) zLine[h++] = 0;
-      resolve_backslashes(azArg[nArg-1]);
     }
   }
   azArg[nArg] = 0;
@@ -9067,8 +9052,10 @@ static int do_meta_command(char *zLine, ShellState *p){
                "SELECT rowid FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
                -1, &pStmt, 0);
-      doStats = sqlite3_step(pStmt)==SQLITE_ROW;
-      sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){
+        doStats = sqlite3_step(pStmt)==SQLITE_ROW;
+        sqlite3_finalize(pStmt);
+      }
     }
     if( doStats==0 ){
       raw_printf(p->out, "/* No STAT tables available */\n");
@@ -9357,6 +9344,14 @@ static int do_meta_command(char *zLine, ShellState *p){
         ** the remaining columns.
         */
         if( p->mode==MODE_Ascii && (z==0 || z[0]==0) && i==0 ) break;
+        /*
+        ** For CSV mode, per RFC 4180, accept EOF in lieu of final
+        ** record terminator but only for last field of multi-field row.
+        ** (If there are too few fields, it's not valid CSV anyway.)
+        */
+        if( z==0 && (xRead==csv_read_one_field) && i==nCol-1 && i>0 ){
+          z = "";
+        }
         sqlite3_bind_text(pStmt, i+1, z, -1, SQLITE_TRANSIENT);
         if( i<nCol-1 && sCtx.cTerm!=sCtx.cColSep ){
           utf8_printf(stderr, "%s:%d: expected %d columns but found %d - "
@@ -11203,6 +11198,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"byteorder",          SQLITE_TESTCTRL_BYTEORDER, 0,  ""                },
     {"extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,0,"BOOLEAN"  },
   /*{"fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, 1,""              },*/
+    {"fk_no_action",       SQLITE_TESTCTRL_FK_NO_ACTION, 0, "BOOLEAN"       },
     {"imposter",         SQLITE_TESTCTRL_IMPOSTER,1,"SCHEMA ON/OFF ROOTPAGE"},
     {"internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS,0,""          },
     {"localtime_fault",    SQLITE_TESTCTRL_LOCALTIME_FAULT,0,"BOOLEAN"      },
@@ -11273,6 +11269,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, db, int) */
         case SQLITE_TESTCTRL_OPTIMIZATIONS:
+        case SQLITE_TESTCTRL_FK_NO_ACTION:
           if( nArg==3 ){
             unsigned int opt = (unsigned int)strtol(azArg[2], 0, 0);
             rc2 = sqlite3_test_control(testctrl, p->db, opt);
@@ -12225,6 +12222,9 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
+#if SHELL_WIN_UTF8_OPT
+  "   -no-utf8             do not try to set up UTF-8 output (for legacy)\n"
+#endif     
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
@@ -12796,6 +12796,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if SHELL_WIN_UTF8_OPT
       console_utf8 = 1;
 #endif /* SHELL_WIN_UTF8_OPT */
+    }else if( cli_strcmp(z,"-no-utf8")==0 ){
+#if SHELL_WIN_UTF8_OPT
+      console_utf8 = 0;
+#endif /* SHELL_WIN_UTF8_OPT */
     }else if( cli_strcmp(z,"-heap")==0 ){
       i++;
     }else if( cli_strcmp(z,"-pagecache")==0 ){
@@ -12920,11 +12924,15 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( stdin_is_interactive ){
       char *zHome;
       char *zHistory;
+      const char *zCharset = "";
       int nHistory;
+#if SHELL_WIN_UTF8_OPT
+      if( console_utf8 ) zCharset = " (utf8)";
+#endif
       printf(
-        "SQLite version %s %.19s\n" /*extra-version-info*/
+        "SQLite version %s %.19s%s\n" /*extra-version-info*/
         "Enter \".help\" for usage hints.\n",
-        sqlite3_libversion(), sqlite3_sourceid()
+        sqlite3_libversion(), sqlite3_sourceid(), zCharset
       );
       if( warnInmemoryDb ){
         printf("Connected to a ");
