@@ -2521,6 +2521,32 @@ static int SQLITE_TCLAPI test_create_null_module(
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
+** Usage: sqlite3_randomess NBYTE
+*/
+static int SQLITE_TCLAPI test_sqlite3_randomness(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int nByte = 0;
+  u8 *aBuf = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &nByte) ) return TCL_ERROR;
+
+  aBuf = ckalloc(nByte);
+  sqlite3_randomness(nByte, aBuf);
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(aBuf, nByte));
+  ckfree(aBuf);
+
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  sqlite3_commit_status db DBNAME OP
 */
 static int SQLITE_TCLAPI test_commit_status(
@@ -9338,6 +9364,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "create_null_module",       test_create_null_module,     0 },
 #endif
      { "sqlite3_commit_status",    test_commit_status,     0 },
+     { "sqlite3_randomness",       test_sqlite3_randomness,     0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
