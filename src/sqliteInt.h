@@ -4098,6 +4098,7 @@ struct Returning {
   int iRetCur;          /* Transient table holding RETURNING results */
   int nRetCol;          /* Number of in pReturnEL after expansion */
   int iRetReg;          /* Register array for holding a row of RETURNING */
+  char zName[40];       /* Name of trigger: "sqlite_returning_%p" */
 };
 
 /*
