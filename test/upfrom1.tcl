@@ -110,6 +110,13 @@ errorsql_test 2.3.2 {
   UPDATE t5 AS apples SET b=1 FROM t5 AS apples;
 }
 
+errorsql_test 2.3.3 {
+  UPDATE m1 SET y = min(v) FROM m2;
+}
+errorsql_test 2.3.4 {
+  UPDATE m1 SET y = min(v) OVER () FROM m2;
+}
+
 
 finish_test
 

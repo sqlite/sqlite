@@ -1845,7 +1845,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
     ** resolve the result-set expression list.
     */
-    sNC.ncFlags = NC_AllowAgg|NC_AllowWin;
+    if( (p->selFlags & SF_UpdateFrom)==0 ){
+      sNC.ncFlags = NC_AllowAgg|NC_AllowWin;
+    }
     sNC.pSrcList = p->pSrc;
     sNC.pNext = pOuterNC;
  

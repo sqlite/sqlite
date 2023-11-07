@@ -2253,19 +2253,9 @@ do_execsql_test 73.3 {
   4 2 4 15
   4 4 4 15
 }
-do_execsql_test 73.4 {
+do_catchsql_test 73.4 {
   UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
-} {
-  4 15
-  4 15
-  4 15
-  4 15
-  4 15
-  4 15
-  4 15
-  4 15
-  4 15
-}
+} {1 {misuse of window function nth_value()}}
 do_execsql_test 73.5 {
   DROP TRIGGER x1;
 }
