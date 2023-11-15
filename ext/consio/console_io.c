@@ -284,6 +284,13 @@ SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
 }
 #undef setModeFlushQ
 
+#else /* defined(SQLITE_SHELL_FIDDLE) */
+# define setBinaryMode(f, bFlush) do{ if((bFlush)) fflush(f); }while(0)
+# define setTextMode(f, bFlush) do{ if((bFlush)) fflush(f); }while(0)
+#endif /* defined(SQLITE_SHELL_FIDDLE) */
+
+#ifndef SQLITE_SHELL_FIDDLE
+
 #if SHELL_CON_TRANSLATE
 /* Write buffer cBuf as output to stream known to reach console,
 ** limited to ncTake char's. Return ncTake on success, else 0. */
@@ -508,7 +515,8 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 ** sequence z:return (inclusive:exclusive) is validated UTF-8.
 ** Limit: nAccept>=0 => char count, nAccept<0 => character
  */
-static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
+SQLITE_INTERNAL_LINKAGE const char*
+zSkipValidUtf8(const char *z, int nAccept, long ccm){
   int ng = (nAccept<0)? -nAccept : 0;
   const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
   assert(z!=0);
@@ -537,21 +545,20 @@ static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
 }
 
 #ifdef SQLITE_SHELL_FIDDLE
-# define fPutbUtf8(f, cB, nA, cM) \
-  ((f)? fwrite(cB,1,nA,f) : zSkipValidUtf8(cB,nA,cM))
+# define oPutbUtf8(z,n,cM) fwrite(z,1,n,stdout)
 
-static int oprintf(const char zFmt, ...){
+static int oprintf(const char *zFmt, ...){
   va_list ap;
   int rv;
-  va_start(ap, zFormat);
+  va_start(ap, zFmt);
   rv = vfprintf(stdout, zFmt, ap);
   va_end(ap);
   return rv;
 }
-static int eprintf(const char zFmt, ...){
+static int eprintf(const char *zFmt, ...){
   va_list ap;
   int rv;
-  va_start(ap, zFormat);
+  va_start(ap, zFmt);
   rv = vfprintf(stderr, zFmt, ap);
   va_end(ap);
   return rv;

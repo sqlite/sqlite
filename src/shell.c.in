@@ -1728,8 +1728,10 @@ static const char *unused_string(
 static void output_quoted_string(const char *z){
   int i;
   char c;
+#ifndef SQLITE_SHELL_FIDDLE
   FILE *pfO = setOutputStream(invalidFileStream);
   setBinaryMode(pfO, 1);
+#endif
   if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
   if( c==0 ){
@@ -1754,7 +1756,11 @@ static void output_quoted_string(const char *z){
     }
     oputz("'");
   }
+#ifndef SQLITE_SHELL_FIDDLE
   setTextMode(pfO, 1);
+#else
+  setTextMode(stdout, 1);
+#endif
 }
 
 /*
@@ -1769,8 +1775,10 @@ static void output_quoted_string(const char *z){
 static void output_quoted_escaped_string(const char *z){
   int i;
   char c;
+#ifndef SQLITE_SHELL_FIDDLE
   FILE *pfO = setOutputStream(invalidFileStream);
   setBinaryMode(pfO, 1);
+#endif
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
     oputf("'%s'",z);
@@ -1822,7 +1830,11 @@ static void output_quoted_escaped_string(const char *z){
       oputf(",'%s',char(10))", zNL);
     }
   }
+#ifndef SQLITE_SHELL_FIDDLE
   setTextMode(pfO, 1);
+#else
+  setTextMode(stdout, 1);
+#endif
 }
 
 /*
@@ -1855,7 +1867,7 @@ static void output_c_string(const char *z){
   oputz(zq);
   while( *z!=0 ){
     const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~(size_t)0);
-    const char *pcPast = z + fPutbUtf8(0, z, INT_MAX, ctrlMask);
+    const char *pcPast = zSkipValidUtf8(z, INT_MAX, ctrlMask);
     const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
     if( pcEnd > z ) oPutbUtf8(z, (int)(pcEnd-z), 0);
     if( (c = *pcEnd)==0 ) break;
@@ -1901,7 +1913,7 @@ static void output_json_string(const char *z, i64 n){
   oputz(zq);
   while( z < pcLimit ){
     const char *pcDQBS = anyOfInStr(z, zDQBS, pcLimit-z);
-    const char *pcPast = z + fPutbUtf8(0, z, (int)(pcLimit-z), ctrlMask);
+    const char *pcPast = zSkipValidUtf8(z, (int)(pcLimit-z), ctrlMask);
     const char *pcEnd = (pcDQBS && pcDQBS < pcPast)? pcDQBS : pcPast;
     if( pcEnd > z ){
       oPutbUtf8(z, (int)(pcEnd-z), 0);
@@ -6098,6 +6110,7 @@ static void tryToClone(ShellState *p, const char *zNewDb){
   close_db(newDb);
 }
 
+#ifndef SQLITE_SHELL_FIDDLE
 /*
 ** Change the output stream (file or pipe or console) to something else.
 */
@@ -6153,6 +6166,10 @@ static void output_reset(ShellState *p){
   p->out = stdout;
   setOutputStream(stdout);
 }
+#else
+# define output_redir(SS,pfO)
+# define output_reset(SS)
+#endif
 
 /*
 ** Run an SQL command and return the single integer result.

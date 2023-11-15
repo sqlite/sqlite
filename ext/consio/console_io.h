@@ -264,3 +264,12 @@ shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
 ** in a way that interferes with the above functionality.
 */
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
+
+/* Skip over as much z[] input char sequence as is valid UTF-8,
+** limited per nAccept char's or whole characters and containing
+** no char cn such that ((1<<cn) & ccm)!=0. On return, the
+** sequence z:return (inclusive:exclusive) is validated UTF-8.
+** Limit: nAccept>=0 => char count, nAccept<0 => character
+ */
+SQLITE_INTERNAL_LINKAGE const char*
+zSkipValidUtf8(const char *z, int nAccept, long ccm);
