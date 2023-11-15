@@ -242,8 +242,10 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 INCLUDE ../ext/consio/console_io.h
 INCLUDE ../ext/consio/console_io.c
 
+#ifndef SQLITE_SHELL_FIDDLE
+
 /* From here onward, fgets() is redirected to the console_io library. */
-#define fgets(b,n,f) fGetsUtf8(b,n,f)
+# define fgets(b,n,f) fGetsUtf8(b,n,f)
 /*
  * Define macros for emitting output text in various ways:
  *  sputz(s, z)      => emit 0-terminated string z to given stream s
@@ -252,24 +254,28 @@ INCLUDE ../ext/consio/console_io.c
  *  oputf(f, ...)    => emit varargs per format f to default stream
  *  eputz(z)         => emit 0-terminated string z to error stream
  *  eputf(f, ...)    => emit varargs per format f to error stream
- *  sputc(s, c)  => emit single ASCII character to given stream s
- *  oputc(c)     => emit single ASCII character to default stream
- *  eputc(c)     => emit single ASCII character to error stream
  *
  * Note that the default stream is whatever has been last set via:
  *   setOutputStream(FILE *pf)
  * This is normally the stream that CLI normal output goes to.
  * For the stand-alone CLI, it is stdout with no .output redirect.
  */
-#define sputz(s,z) fPutsUtf8(z,s)
-#define sputf fPrintfUtf8
-#define oputz(z) oPutsUtf8(z)
-#define oputf oPrintfUtf8
-#define eputz(z) ePutsUtf8(z)
-#define eputf ePrintfUtf8
-#define sputc(f,c) fPutcUtf8(c,f)
-#define oputc(c) oPutcUtf8(c)
-#define eputc(c) ePutcUtf8(c)
+# define sputz(s,z) fPutsUtf8(z,s)
+# define sputf fPrintfUtf8
+# define oputz(z) oPutsUtf8(z)
+# define oputf oPrintfUtf8
+# define eputz(z) ePutsUtf8(z)
+# define eputf ePrintfUtf8
+
+#else
+/* For Fiddle, all console handling and emit redirection is omitted. */
+# define sputz(s,z) fputs(z,s)
+# define sputf fprintf
+# define oputz(z) fputs(z,stdout)
+# define oputf oprintf
+# define eputz(z) fputs(z,stderr)
+# define eputf eprintf
+#endif
 
 /* True if the timer is enabled */
 static int enableTimer = 0;

@@ -18,6 +18,8 @@
 # define SQLITE_CDECL
 #endif
 
+#ifndef SQLITE_SHELL_FIDDLE
+
 #ifndef SHELL_NO_SYSINC
 # include <stdarg.h>
 # include <string.h>
@@ -498,6 +500,8 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 #endif
 }
 
+#endif /* !defined(SQLITE_SHELL_FIDDLE) */
+
 /* Skip over as much z[] input char sequence as is valid UTF-8,
 ** limited per nAccept char's or whole characters and containing
 ** no char cn such that ((1<<cn) & ccm)!=0. On return, the
@@ -508,7 +512,7 @@ static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
   int ng = (nAccept<0)? -nAccept : 0;
   const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
   assert(z!=0);
-  while( (pcLimit)? (z<pcLimit) : (ng-- > 0) ){
+  while( (pcLimit)? (z<pcLimit) : (ng-- != 0) ){
     char c = *z;
     if( (c & 0x80) == 0 ){
       if( ccm != 0L && c < 0x20 && ((1L<<c) & ccm) != 0 ) return z;
@@ -531,6 +535,28 @@ static const char* zSkipValidUtf8(const char *z, int nAccept, long ccm){
   }
   return z;
 }
+
+#ifdef SQLITE_SHELL_FIDDLE
+# define fPutbUtf8(f, cB, nA, cM) \
+  ((f)? fwrite(cB,1,nA,f) : zSkipValidUtf8(cB,nA,cM))
+
+static int oprintf(const char zFmt, ...){
+  va_list ap;
+  int rv;
+  va_start(ap, zFormat);
+  rv = vfprintf(stdout, zFmt, ap);
+  va_end(ap);
+  return rv;
+}
+static int eprintf(const char zFmt, ...){
+  va_list ap;
+  int rv;
+  va_start(ap, zFormat);
+  rv = vfprintf(stderr, zFmt, ap);
+  va_end(ap);
+  return rv;
+}
+#else
 
 SQLITE_INTERNAL_LINKAGE int
 fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept, long ctrlMask){
@@ -662,3 +688,4 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 }
 
 #undef SHELL_INVALID_FILE_PTR
+#endif /* !defined(SQLITE_SHELL_FIDDLE) */

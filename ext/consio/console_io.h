@@ -42,6 +42,7 @@ typedef enum StreamsAreConsole {
   SAC_AnyConsole = 0x7
 } StreamsAreConsole;
 
+#ifndef SQLITE_SHELL_FIDDLE
 /*
 ** Classify the three standard I/O streams according to whether
 ** they are connected to a console attached to the process.
@@ -262,3 +263,4 @@ shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
 ** may have to establish console operating mode, possibly
 ** in a way that interferes with the above functionality.
 */
+#endif /* !defined(SQLITE_SHELL_FIDDLE) */
