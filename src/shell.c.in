@@ -237,13 +237,20 @@ extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
+/* Use console I/O package as a direct INCLUDE. */
 #define SQLITE_INTERNAL_LINKAGE static
 
+#ifdef SQLITE_SHELL_FIDDLE
+/* Deselect most features from the console I/O package for Fiddle. */
+# define SQLITE_CIO_NO_REDIRECT
+# define SQLITE_CIO_NO_CLASSIFY
+# define SQLITE_CIO_NO_TRANSLATE
+# define SQLITE_CIO_NO_SETMODE
+#endif
 INCLUDE ../ext/consio/console_io.h
 INCLUDE ../ext/consio/console_io.c
 
 #ifndef SQLITE_SHELL_FIDDLE
-
 /* From here onward, fgets() is redirected to the console_io library. */
 # define fgets(b,n,f) fGetsUtf8(b,n,f)
 /*
@@ -254,6 +261,7 @@ INCLUDE ../ext/consio/console_io.c
  *  oputf(f, ...)    => emit varargs per format f to default stream
  *  eputz(z)         => emit 0-terminated string z to error stream
  *  eputf(f, ...)    => emit varargs per format f to error stream
+ *  oputb(b, n)      => emit char buffer b[0..n-1] to default stream
  *
  * Note that the default stream is whatever has been last set via:
  *   setOutputStream(FILE *pf)
@@ -266,15 +274,16 @@ INCLUDE ../ext/consio/console_io.c
 # define oputf oPrintfUtf8
 # define eputz(z) ePutsUtf8(z)
 # define eputf ePrintfUtf8
-
+# define oputb(buf,na) oPutbUtf8(buf,na)
 #else
 /* For Fiddle, all console handling and emit redirection is omitted. */
-# define sputz(s,z) fputs(z,s)
-# define sputf fprintf
+# define sputz(fp,z) fputs(z,fp)
+# define sputf(fp,fmt, ...) fprintf(fp,fmt,__VA_ARGS__)
 # define oputz(z) fputs(z,stdout)
-# define oputf oprintf
+# define oputf(fmt, ...) printf(fmt,__VA_ARGS__)
 # define eputz(z) fputs(z,stderr)
-# define eputf eprintf
+# define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
+# define oputb(buf,na) fwrite(buf,1,na,stdout)
 #endif
 
 /* True if the timer is enabled */
@@ -1869,7 +1878,7 @@ static void output_c_string(const char *z){
     const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~(size_t)0);
     const char *pcPast = zSkipValidUtf8(z, INT_MAX, ctrlMask);
     const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
-    if( pcEnd > z ) oPutbUtf8(z, (int)(pcEnd-z), 0);
+    if( pcEnd > z ) oputb(z, (int)(pcEnd-z));
     if( (c = *pcEnd)==0 ) break;
     ++pcEnd;
     switch( c ){
@@ -1916,7 +1925,7 @@ static void output_json_string(const char *z, i64 n){
     const char *pcPast = zSkipValidUtf8(z, (int)(pcLimit-z), ctrlMask);
     const char *pcEnd = (pcDQBS && pcDQBS < pcPast)? pcDQBS : pcPast;
     if( pcEnd > z ){
-      oPutbUtf8(z, (int)(pcEnd-z), 0);
+      oputb(z, (int)(pcEnd-z));
       z = pcEnd;
     }
     if( z >= pcLimit ) break;
@@ -9188,7 +9197,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        && cli_strcmp(zFile,"on")!=0
        && cli_strcmp(zFile,"off")!=0
       ){
-        sputf(stdout, "cannot set .log to anything other"
+        sputz(stdout, "cannot set .log to anything other"
               " than \"on\" or \"off\"\n");
         zFile = "off";
       }
@@ -11875,7 +11884,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 }
 
 static void sayAbnormalExit(void){
-  if( seenInterrupt ) eputf("Program interrupted.\n");
+  if( seenInterrupt ) eputz("Program interrupted.\n");
 }
 
 #ifndef SQLITE_SHELL_IS_UTF8
