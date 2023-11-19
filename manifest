@@ -1,5 +1,5 @@
-C Merge\schanges\sto\sdo\sWindows\sconsole\sI/O\swith\sUTF-16.
-D 2023-11-18T22:10:40.520
+C Fix\stest\s5.0\sin\sshell1.test\sfor\sWindows.\s(A\sdouble-quote\swrapped\ssingle-quote\sneeds\sno\sfurther\streatment\sto\sbe\srecognized\sas\sa\ssingle\ssingle-quote.)
+D 2023-11-19T17:33:51.197
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1563,7 +1563,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 2191c892d8256b1b6cccb4fca894cfc2e748450cf422e6ec80a320a0d538b6df
+F test/shell1.test 0bb36232873d7df2ba627ed25cff1332f6d98c0f7f244b425702c1ab1850bd15
 F test/shell2.test 35226c070a8c7f64fd016dfac2a0db2a40f709b3131f61daacd9dad61536c9cb
 F test/shell3.test 91febeac0412812bf6370abb8ed72700e32bf8f9878849414518f662dfd55e8a
 F test/shell4.test 9abd0c12a7e20a4c49e84d5be208d2124fa6c09e728f56f1f4bee0f02853935f
@@ -2141,8 +2141,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c069c5d664dca7908167e5759f952e407382b2669b25191167ad8d8fb03daa2 b20c9f1785e94af4b81dcbbc63c49a883ab4095ff251b19e814ab6ef7ff06f2b
-R 2c3119b61f0ce5b2f260088452fe4792
+P f782054e7ccdfb421a73acde6994f5046b99884924a508316a0d4a0dc9b03318
+R 11d2bcc161a0975aa5cf4d6ce76505d3
 U larrybr
-Z 19899b72aafe03035ed190fc31c60183
+Z 2a234c2eb86a6d8b0395f3285359f0b0
 # Remove this line to create a well-formed Fossil manifest.
