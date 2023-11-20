@@ -1,5 +1,5 @@
-C Convert\san\sassert\sin\sOP_VCheck\sinto\sa\sbranch\sthat\saborts\sthe\sopcode,\sas\sthis\ncan\shappen\son\ssome\svery\sobscure\sconditions,\sas\sdiscovered\sby\sdbsqlfuzz.
-D 2023-11-20T13:12:05.822
+C Arrange\sto\snot\scompile\sunused\sconsole\sI/O\sfunction.
+D 2023-11-20T13:59:44.266
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -50,8 +50,8 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c 48536ed2f2add0abd8be80f72cae46e19738fa671b69daa88197df53a55da7c4 x
-F ext/consio/console_io.h b8dce7fa926b51f19b5d1c516219ac91b5c1ccddd467b2510e2557c900830f7d
+F ext/consio/console_io.c 2645b9557c620d18d4668a496937a2274fc44867d4243b67f5b21d904858dcbd x
+F ext/consio/console_io.h b0fbd99ba1bec2564340cef532dfa37465c1ad1ee82a2e0166aa2d82f29fcdd3
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 0dd5cb096d66bed593e33053a3b364f6ef52ed72064bf5cf298364636dbf3cd6
@@ -2141,9 +2141,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d8a8b700237d738e7b16dd844cf2514f0df7e2275bd9eab8de0a780e3687298
-Q +7946c79567b0ccd3a00d12390e99896d7dc11407d0b52bc39338a16a493f56f6
-R bb2cf92924f38c41f46f11defab4a340
-U drh
-Z 4427cff825170849dc464ca4f3fa6502
+P 0d5f68717c829d4066c6af925c3a71f673ea34f14b1805388d1bdef152864d52
+R 5a128fe1e38bc325e7fe4c619bf0a182
+U larrybr
+Z 7c3a3bc03ec84870be771a21465f9ca6
 # Remove this line to create a well-formed Fossil manifest.

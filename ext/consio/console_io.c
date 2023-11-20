@@ -549,6 +549,8 @@ zSkipValidUtf8(const char *z, int nAccept, long ccm){
 #endif /*!(defined(SQLITE_CIO_NO_UTF8SCAN)&&defined(SQLITE_CIO_NO_TRANSLATE))*/
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
+
+#ifdef CONSIO_SPUTB
 SQLITE_INTERNAL_LINKAGE int
 fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept){
   assert(pfO!=0);
@@ -568,6 +570,7 @@ fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept){
   }
 # endif
 }
+#endif /* defined(CONSIO_SPUTB) */
 
 SQLITE_INTERNAL_LINKAGE int
 oPutbUtf8(const char *cBuf, int nAccept){
