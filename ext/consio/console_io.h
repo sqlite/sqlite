@@ -22,6 +22,11 @@
 **
 ** The symbols and functionality exposed here are not a public API.
 ** This code may change in tandem with other project code as needed.
+**
+** When this .h file and its companion .c are directly incorporated into
+** a source conglomeration (such as shell.c), the preprocessor symbol
+** CIO_WIN_WC_XLATE is defined as 0 or 1, reflecting whether console I/O
+** translation for Windows is effected for the build.
 */
 
 #ifndef SQLITE_INTERNAL_LINKAGE
