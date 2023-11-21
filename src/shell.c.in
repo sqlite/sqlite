@@ -479,9 +479,9 @@ static int bail_on_error = 0;
 static int stdin_is_interactive = 1;
 
 /*
-** On Windows systems we have to know if standard output is a console
-** in order to translate UTF-8 into MBCS.  The following variable is
-** true if translation is required.
+** On Windows systems we need to know if standard output is a console
+** in order to show that UTF-16 translation is done in the sign-on
+** banner. The following variable is true if it is the console.
 */
 static int stdout_is_console = 1;
 
@@ -10077,8 +10077,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
         if( pChng
           && fwrite(pChng, szChng, 1, out)!=1 ){
-          eputf("ERROR: Failed to write entire %d-byte output\n",
-                szChng);
+          eputf("ERROR: Failed to write entire %d-byte output\n", szChng);
         }
         sqlite3_free(pChng);
         fclose(out);
@@ -11861,7 +11860,7 @@ static void printBold(const char *zText){
          FOREGROUND_RED|FOREGROUND_INTENSITY
   );
 #endif
-  oputf("%s", zText);
+  oputz(zText);
 #if !SQLITE_OS_WINRT
   SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
 #endif
@@ -11878,8 +11877,7 @@ static void printBold(const char *zText){
 */
 static char *cmdline_option_value(int argc, char **argv, int i){
   if( i==argc ){
-    eputf("%s: Error: missing argument to %s\n",
-          argv[0], argv[argc-1]);
+    eputf("%s: Error: missing argument to %s\n", argv[0], argv[argc-1]);
     exit(1);
   }
   return argv[i];
@@ -11971,7 +11969,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   signal(SIGINT, interrupt_handler);
 #elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
   if( !SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE) ){
-    eputf("No ^C handler.\n");
+    eputz("No ^C handler.\n");
   }
 #endif
 
@@ -12463,16 +12461,15 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( stdin_is_interactive ){
       char *zHome;
       char *zHistory;
-      const char *zCharset = "";
       int nHistory;
-#if SHELL_CON_TRANSLATE==1
-      zCharset = " (UTF-16 console I/O)";
-#elif SHELL_CON_TRANSLATE==2
-      zCharset = " (MBCS console I/O)";
+#if CIO_WIN_WC_XLATE
+# define SHELL_CIO_CHAR_SET (stdout_is_console? " (UTF-16 console I/O)" : "")
+#else
+# define SHELL_CIO_CHAR_SET ""
 #endif
       oputf("SQLite version %s %.19s%s\n" /*extra-version-info*/
             "Enter \".help\" for usage hints.\n",
-            sqlite3_libversion(), sqlite3_sourceid(), zCharset);
+            sqlite3_libversion(), sqlite3_sourceid(), SHELL_CIO_CHAR_SET);
       if( warnInmemoryDb ){
         oputz("Connected to a ");
         printBold("transient in-memory database");

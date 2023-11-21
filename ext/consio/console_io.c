@@ -673,5 +673,4 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 }
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
 
-#undef CIO_WIN_WC_XLATE
 #undef SHELL_INVALID_FILE_PTR
