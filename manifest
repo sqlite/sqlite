@@ -1,5 +1,5 @@
-C Pickup\sminor\sstylistic\schanges\srelated\sto\sconsole\sI/O\sand,\sfor\sWindows\sbuilds,\sget\sfact\sof\sUTF-16\stranslation\sinto\sthe\ssign-on\sbanner.\s(a\sstraight\scherry-pick)
-D 2023-11-21T18:46:17.353
+C Version\s3.44.1
+D 2023-11-22T14:18:12.046
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2141,9 +2141,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 89658abbcd04e6f6d5a2139fa92091df1de72e56bdbb12aacebf9e9178c58e3b
-Q +24774e77c78705de9e10b9091b9d140cc7581de476b3d3e8febaff08c804a9c4
+P d7a59e79467cf7aa13291c58f1cc4c1e2a51494bdd28661039421868f61088bd
 R 47f0b8f3fa8f56fafbe88d65af3f6dd7
-U larrybr
-Z c0e72472eb26493856ab138691a9f910
+T +sym-relase *
+T +sym-version-3.44.1 *
+U drh
+Z 46255c7e598cee75d905df6a18e31ed7
 # Remove this line to create a well-formed Fossil manifest.
