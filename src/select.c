@@ -6372,10 +6372,11 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   SrcList *pTabList;
   SrcItem *pFrom;
 
-  assert( p->selFlags & SF_Resolved );
   if( p->selFlags & SF_HasTypeInfo ) return;
   p->selFlags |= SF_HasTypeInfo;
   pParse = pWalker->pParse;
+  testcase( (p->selFlags & SF_Resolved)==0 );
+  assert( (p->selFlags & SF_Resolved) || IN_RENAME_OBJECT );
   pTabList = p->pSrc;
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab = pFrom->pTab;
@@ -7397,6 +7398,7 @@ int sqlite3Select(
           TREETRACE(0x1000,pParse,p,
                     ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
           pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+          unsetJoinExpr(p->pWhere, pItem->iCursor, 0);
         }
       }
       if( pItem->fg.jointype & JT_LTORJ ){
@@ -7411,17 +7413,15 @@ int sqlite3Select(
               TREETRACE(0x1000,pParse,p,
                         ("RIGHT-JOIN simplifies to JOIN on term %d\n",j));
               pI2->fg.jointype &= ~(JT_RIGHT|JT_OUTER);
+              unsetJoinExpr(p->pWhere, pI2->iCursor, 1);
             }
           }
         }
-        for(j=pTabList->nSrc-1; j>=i; j--){
+        for(j=pTabList->nSrc-1; j>=0; j--){
           pTabList->a[j].fg.jointype &= ~JT_LTORJ;
           if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
         }
       }
-      assert( pItem->iCursor>=0 );
-      unsetJoinExpr(p->pWhere, pItem->iCursor,
-                    pTabList->a[0].fg.jointype & JT_LTORJ);
     }
 
     /* No further action if this term of the FROM clause is not a subquery */
