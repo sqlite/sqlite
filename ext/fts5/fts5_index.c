@@ -2719,6 +2719,14 @@ static void fts5SegIterHashInit(
         pLeaf->p = (u8*)pList;
       }
     }
+
+    /* The call to sqlite3Fts5HashScanInit() causes the hash table to
+    ** fill the size field of all existing position lists. This means they
+    ** can no longer be appended to. Since the only scenario in which they
+    ** can be appended to is if the previous operation on this table was
+    ** a DELETE, by clearing the Fts5Index.bDelete flag we can avoid this
+    ** possibility altogether.  */
+    p->bDelete = 0;
   }else{
     p->rc = sqlite3Fts5HashQuery(p->pHash, sizeof(Fts5Data), 
         (const char*)pTerm, nTerm, (void**)&pLeaf, &nList
@@ -4396,7 +4404,7 @@ static void fts5WriteAppendPoslistData(
   const u8 *a = aData;
   int n = nData;
   
-  assert( p->pConfig->pgsz>0 );
+  assert( p->pConfig->pgsz>0 || p->rc!=SQLITE_OK );
   while( p->rc==SQLITE_OK 
      && (pPage->buf.n + pPage->pgidx.n + n)>=p->pConfig->pgsz 
   ){
@@ -5656,8 +5664,9 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  assert( p->nContentlessDelete==0 );
+  assert( p->rc!=SQLITE_OK || p->nContentlessDelete==0 );
   pStruct = fts5StructureRead(p);
+  assert( p->rc!=SQLITE_OK || pStruct!=0 );
   fts5StructureInvalidate(p);
 
   if( pStruct ){
@@ -6204,7 +6213,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
   /* Flush the hash table to disk if required */
   if( iRowid<p->iWriteRowid 
    || (iRowid==p->iWriteRowid && p->bDelete==0)
-   || (p->nPendingData > p->pConfig->nHashSize) 
+   || (p->nPendingData > p->pConfig->nHashSize)
   ){
     fts5IndexFlush(p);
   }
