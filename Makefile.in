@@ -1139,6 +1139,8 @@ SHELL_SRC = \
 	$(TOP)/src/shell.c.in \
         $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/completion.c \
+        $(TOP)/ext/consio/console_io.c \
+        $(TOP)/ext/consio/console_io.h \
         $(TOP)/ext/misc/decimal.c \
         $(TOP)/ext/misc/basexx.c \
         $(TOP)/ext/misc/base64.c \
