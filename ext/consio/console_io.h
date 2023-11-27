@@ -179,11 +179,10 @@ ePutbUtf8(const char *cBuf, int nAccept);
 ** from the console on platforms that require same. Defers to the
 ** C library fgets() when input is not from the console. Newline
 ** translation may be done as set by set{Binary,Text}Mode(). As a
-** convenience, pfIn==NULL is treated as stdin.
+** convenience, pfIn==NULL is treated as stdin. Argument ncMax
+** must be 5 or greater, otherwise 0 (EOF indicator) is returned.
 */
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn);
-/* Like fGetsUtf8 except stream is always the designated input. */
-/* SQLITE_INTERNAL_LINKAGE char* iGetsUtf8(char *cBuf, int ncMax); */
 
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
 

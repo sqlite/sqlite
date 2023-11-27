@@ -128,7 +128,7 @@ static short streamOfConsole(FILE *pf, /* out */ PerStreamTags *ppst){
 # if CIO_WIN_WC_XLATE
 /* Define console modes for use with the Windows Console API. */
 #  define SHELL_CONI_MODE \
-  (ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT | 0x80 \
+  (ENABLE_ECHO_INPUT | ENABLE_INSERT_MODE | ENABLE_LINE_INPUT \
   | ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT)
 #  define SHELL_CONO_MODE (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT \
   | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
@@ -607,56 +607,56 @@ ePutbUtf8(const char *cBuf, int nAccept){
 }
 # endif /* defined(CONSIO_EPUTB) */
 
+# if CIO_WIN_WC_XLATE
+
+
+/* Read up to two UTF-16 words.
+** Return 0 at EOF, 1 for ordinary UTF-16, or 2 for UTF-16 surrogate pair.
+** Buffer at *pwc must have at least 2 WCHAR slots remaining.
+*/
+static DWORD readConsoleCharacter(PerStreamTags *ppst, WCHAR *pwc){
+  DWORD ncr = 0;
+  BOOL bRC = ReadConsoleW(ppst->hx, pwc, 1, &ncr, 0);
+  if( !bRC || ncr == 0 ) return 0;
+  assert(ncr==1);
+  if( (pwc[0] & 0xF800)==0xD800 ){
+    DWORD ncrx;
+    /* WHAR just read leads a UTF-16 surrogate pair. Grab its mate. */
+    bRC = ReadConsoleW(ppst->hx, pwc+1, 1, &ncrx, 0);
+    if( !bRC || ncrx == 0 ) return 1;
+    ncr += ncrx;
+  }
+  return ncr;
+}
+# endif
+
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 # if CIO_WIN_WC_XLATE
   if( pfIn == consoleInfo.pstSetup[0].pf
       && (consoleInfo.sacSetup & SAC_InConsole)!=0 ){
 #  if CIO_WIN_WC_XLATE==1
-#   define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
-    WCHAR wcBuf[SHELL_GULP+1];
+    WCHAR wcBuf[2];
     int lend = 0, noc = 0;
     if( ncMax > 0 ) cBuf[0] = 0;
-    while( noc < ncMax-8-1 && !lend ){
-      /* There is room for at least 2 more characters and a 0-terminator. */
-      int na = (ncMax > SHELL_GULP*4+1 + noc)? SHELL_GULP : (ncMax-1 - noc)/4;
-#   undef SHELL_GULP
-      DWORD nbr = 0;
-      BOOL bRC = ReadConsoleW(consoleInfo.pstSetup[0].hx, wcBuf, na, &nbr, 0);
-      if( bRC && nbr>0 && (wcBuf[nbr-1]&0xF800)==0xD800 ){
-        /* Last WHAR read is first of a UTF-16 surrogate pair. Grab its mate. */
-        DWORD nbrx;
-        bRC &= ReadConsoleW(consoleInfo.pstSetup[0].hx, wcBuf+nbr, 1, &nbrx, 0);
-        if( bRC ) nbr += nbrx;
+    while( noc < ncMax-4-1 && !lend ){
+      /* Have room for at least 1 more UTF-8 character and a 0-terminator. */
+      DWORD ncr = readConsoleCharacter(&consoleInfo.pstSetup[0], wcBuf);
+      WCHAR wc = wcBuf[0];
+      if( ncr==0 ) break;
+      assert(ncr <= 2);
+      if( wc>=L'\x80' || ncr>1 ){
+        int nmb = WideCharToMultiByte(CP_UTF8, 0, wcBuf,ncr,cBuf+noc,4,0,0);
+        noc += nmb;
+      }else{
+        switch( wc ){
+        case L'\n': lend = 1; break;
+        case L'\x1a': lend = 1; continue;
+        case L'\r': continue;
+        default: break;
+        }
+        cBuf[noc++] = (char)wc;
       }
-      if( !bRC || (noc==0 && nbr==0) ) return 0;
-      if( nbr > 0 ){
-        int nmb = WideCharToMultiByte(CP_UTF8, 0, wcBuf,nbr,0,0,0,0);
-        if( nmb != 0 && noc+nmb <= ncMax ){
-          int iseg = noc;
-          nmb = WideCharToMultiByte(CP_UTF8, 0, wcBuf,nbr,cBuf+noc,nmb,0,0);
-          noc += nmb;
-          /* Fixup line-ends as coded by Windows for CR (or "Enter".)
-          ** This is done without regard for any setMode{Text,Binary}()
-          ** call that might have been done on the interactive input.
-          */
-          if( noc > 0 ){
-            if( cBuf[noc-1]=='\n' ){
-              lend = 1;
-              if( noc > 1 && cBuf[noc-2]=='\r' ) cBuf[--noc-1] = '\n';
-            }
-          }
-          /* Check for ^Z (anywhere in line) too, to act as EOF. */
-          while( iseg < noc ){
-            if( cBuf[iseg]=='\x1a' ){
-              noc = iseg; /* Chop ^Z and anything following. */
-              lend = 1; /* Counts as end of line too. */
-              break;
-            }
-            ++iseg;
-          }
-        }else break; /* Drop apparent garbage in. (Could assert.) */
-      }else break;
     }
     /* If got nothing, (after ^Z chop), must be at end-of-file. */
     if( noc > 0 ){
