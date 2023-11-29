@@ -1348,10 +1348,18 @@ static With *withDup(sqlite3 *db, With *p){
 ** objects found there, assembling them onto the linked list at Select->pWin.
 */
 static int gatherSelectWindowsCallback(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_FUNCTION && pExpr->y.pWin!=0 ){
-    assert( ExprHasProperty(pExpr, EP_WinFunc) );
-    pExpr->y.pWin->pNextWin = pWalker->u.pSelect->pWin;
-    pWalker->u.pSelect->pWin = pExpr->y.pWin;
+  if( pExpr->op==TK_FUNCTION && ExprHasProperty(pExpr, EP_WinFunc) ){
+    Select *pSelect = pWalker->u.pSelect;
+    Window *pWin = pExpr->y.pWin;
+    assert( pWin );
+    assert( pWin->ppThis==0 );
+    assert( pWin->ppThis==0 );
+    if( pSelect->pWin ){
+      pSelect->pWin->ppThis = &pWin->pNextWin;
+    }
+    pWin->pNextWin = pSelect->pWin;
+    pWin->ppThis = &pSelect->pWin;
+    pSelect->pWin = pWin;
   }
   return WRC_Continue;
 }
