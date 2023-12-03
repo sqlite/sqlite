@@ -141,6 +141,23 @@ void sqlite3ErrorClear(sqlite3 *db){
 */
 void sqlite3SystemError(sqlite3 *db, int rc){
   if( rc==SQLITE_IOERR_NOMEM ) return;
+#ifdef SQLITE_USE_SEH
+  if( rc==SQLITE_IOERR_IN_PAGE ){
+    int ii;
+    int iErr;
+    sqlite3BtreeEnterAll(db);
+    for(ii=0; ii<db->nDb; ii++){
+      if( db->aDb[ii].pBt ){
+        iErr = sqlite3PagerWalSystemErrno(sqlite3BtreePager(db->aDb[ii].pBt));
+        if( iErr ){
+          db->iSysErrno = iErr;
+        }
+      }
+    }
+    sqlite3BtreeLeaveAll(db);
+    return;
+  }
+#endif
   rc &= 0xff;
   if( rc==SQLITE_CANTOPEN || rc==SQLITE_IOERR ){
     db->iSysErrno = sqlite3OsGetLastError(db->pVfs);
@@ -185,12 +202,16 @@ void sqlite3ProgressCheck(Parse *p){
     p->rc = SQLITE_INTERRUPT;
   }
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
-    if( db->xProgress(db->pProgressArg) ){
-      p->nErr++;
-      p->rc = SQLITE_INTERRUPT;
+  if( db->xProgress ){
+    if( p->rc==SQLITE_INTERRUPT ){
+      p->nProgressSteps = 0;
+    }else if( (++p->nProgressSteps)>=db->nProgressOps ){
+      if( db->xProgress(db->pProgressArg) ){
+        p->nErr++;
+        p->rc = SQLITE_INTERRUPT;
+      }
+      p->nProgressSteps = 0;
     }
-    p->nProgressSteps = 0;
   }
 #endif
 }
@@ -386,43 +407,40 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
-/*
-** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
-** E==2 results in 100.  E==50 results in 1.0e50.
+/* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
 **
-** This routine only works for values of E between 1 and 341.
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
 */
-static LONGDOUBLE_TYPE sqlite3Pow10(int E){
-#if defined(_MSC_VER)
-  static const LONGDOUBLE_TYPE x[] = {
-    1.0e+001L,
-    1.0e+002L,
-    1.0e+004L,
-    1.0e+008L,
-    1.0e+016L,
-    1.0e+032L,
-    1.0e+064L,
-    1.0e+128L,
-    1.0e+256L
-  };
-  LONGDOUBLE_TYPE r = 1.0;
-  int i;
-  assert( E>=0 && E<=307 );
-  for(i=0; E!=0; i++, E >>=1){
-    if( E & 1 ) r *= x[i];
-  }
-  return r;
-#else
-  LONGDOUBLE_TYPE x = 10.0;
-  LONGDOUBLE_TYPE r = 1.0;
-  while(1){
-    if( E & 1 ) r *= x;
-    E >>= 1;
-    if( E==0 ) break;
-    x *= x;
-  }
-  return r;
-#endif
+static void dekkerMul2(volatile double *x, double y, double yy){
+  /*
+  ** The "volatile" keywords on parameter x[] and on local variables
+  ** below are needed force intermediate results to be truncated to
+  ** binary64 rather than be carried around in an extended-precision
+  ** format.  The truncation is necessary for the Dekker algorithm to
+  ** work.  Intel x86 floating point might omit the truncation without
+  ** the use of volatile. 
+  */
+  volatile double tx, ty, p, q, c, cc;
+  double hx, hy;
+  u64 m;
+  memcpy(&m, (void*)&x[0], 8);
+  m &= 0xfffffffffc000000LL;
+  memcpy(&hx, &m, 8);
+  tx = x[0] - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000LL;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x[0]*yy + x[1]*y + cc;
+  x[0] = c + cc;
+  x[1] = c - x[0];
+  x[1] += cc;
 }
 
 /*
@@ -463,12 +481,11 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   const char *zEnd;
   /* sign * significand * (10 ^ (esign * exponent)) */
   int sign = 1;    /* sign of significand */
-  i64 s = 0;       /* significand */
+  u64 s = 0;       /* significand */
   int d = 0;       /* adjust exponent for shifting decimal point */
   int esign = 1;   /* sign of exponent */
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
-  LONGDOUBLE_TYPE result;
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
 
@@ -508,7 +525,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   while( z<zEnd && sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
     z+=incr; nDigit++;
-    if( s>=((LARGEST_INT64-9)/10) ){
+    if( s>=((LARGEST_UINT64-9)/10) ){
       /* skip non-significant significand digits
       ** (increase exponent by d to shift decimal left) */
       while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
@@ -523,7 +540,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
     while( z<zEnd && sqlite3Isdigit(*z) ){
-      if( s<((LARGEST_INT64-9)/10) ){
+      if( s<((LARGEST_UINT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
         nDigit++;
@@ -563,78 +580,88 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
 
 do_atof_calc:
+  /* Zero is a special case */
+  if( s==0 ){
+    *pResult = sign<0 ? -0.0 : +0.0;
+    goto atof_return;
+  }
+
   /* adjust exponent by d, and update sign */
   e = (e*esign) + d;
-  if( e<0 ) {
-    esign = -1;
-    e *= -1;
-  } else {
-    esign = 1;
+
+  /* Try to adjust the exponent to make it smaller */
+  while( e>0 && s<(LARGEST_UINT64/10) ){
+    s *= 10;
+    e--;
+  }
+  while( e<0 && (s%10)==0 ){
+    s /= 10;
+    e++;
   }
 
-  if( s==0 ) {
-    /* In the IEEE 754 standard, zero is signed. */
-    result = sign<0 ? -(double)0 : (double)0;
-  } else {
-    /* Attempt to reduce exponent.
-    **
-    ** Branches that are not required for the correct answer but which only
-    ** help to obtain the correct answer faster are marked with special
-    ** comments, as a hint to the mutation tester.
-    */
-    while( e>0 ){                                       /*OPTIMIZATION-IF-TRUE*/
-      if( esign>0 ){
-        if( s>=(LARGEST_INT64/10) ) break;             /*OPTIMIZATION-IF-FALSE*/
-        s *= 10;
-      }else{
-        if( s%10!=0 ) break;                           /*OPTIMIZATION-IF-FALSE*/
-        s /= 10;
-      }
-      e--;
-    }
-
-    /* adjust the sign of significand */
-    s = sign<0 ? -s : s;
-
-    if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
-      result = (LONGDOUBLE_TYPE)s;
+  if( e==0 ){
+    *pResult = s;
+  }else if( sqlite3Config.bUseLongDouble ){
+    LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
+    if( e>0 ){
+      while( e>=100  ){ e-=100; r *= 1.0e+100L; }
+      while( e>=10   ){ e-=10;  r *= 1.0e+10L;  }
+      while( e>=1    ){ e-=1;   r *= 1.0e+01L;  }
     }else{
-      /* attempt to handle extremely small/large numbers better */
-      if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
-        if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
-          LONGDOUBLE_TYPE scale = sqlite3Pow10(e-308);
-          if( esign<0 ){
-            result = s / scale;
-            result /= 1.0e+308L;
-          }else{
-            result = s * scale;
-            result *= 1.0e+308L;
-          }
-        }else{ assert( e>=342 );
-          if( esign<0 ){
-            result = 0.0*s;
-          }else{
+      while( e<=-100 ){ e+=100; r *= 1.0e-100L; }
+      while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
+      while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
+    }
+    assert( r>=0.0 );
+    if( r>+1.7976931348623157081452742373e+308L ){
 #ifdef INFINITY
-            result = INFINITY*s;
+      *pResult = +INFINITY;
 #else
-            result = 1e308*1e308*s;  /* Infinity */
+      *pResult = 1.0e308*10.0;
 #endif
-          }
-        }
-      }else{
-        LONGDOUBLE_TYPE scale = sqlite3Pow10(e);
-        if( esign<0 ){
-          result = s / scale;
-        }else{
-          result = s * scale;
-        }
+    }else{
+      *pResult = (double)r;
+    }
+  }else{
+    double rr[2];
+    u64 s2;
+    rr[0] = (double)s;
+    s2 = (u64)rr[0];
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+    if( e>0 ){
+      while( e>=100  ){
+        e -= 100;
+        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
+      }
+      while( e>=10   ){
+        e -= 10;
+        dekkerMul2(rr, 1.0e+10, 0.0);
+      }
+      while( e>=1    ){
+        e -= 1;
+        dekkerMul2(rr, 1.0e+01, 0.0);
+      }
+    }else{
+      while( e<=-100 ){
+        e += 100;
+        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
+      }
+      while( e<=-10  ){
+        e += 10;
+        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+      }
+      while( e<=-1   ){
+        e += 1;
+        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
       }
     }
+    *pResult = rr[0]+rr[1];
+    if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
   }
+  if( sign<0 ) *pResult = -*pResult;
+  assert( !sqlite3IsNaN(*pResult) );
 
-  /* store the result */
-  *pResult = result;
-
+atof_return:
   /* return true if number and no extra non-whitespace characters after */
   if( z==zEnd && nDigit>0 && eValid && eType>0 ){
     return eType;
@@ -849,7 +876,9 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {
-    return sqlite3Atoi64(z, pOut, sqlite3Strlen30(z), SQLITE_UTF8);
+    int n = (int)(0x3fffffff&strspn(z,"+- \n\t0123456789"));
+    if( z[n] ) n++;
+    return sqlite3Atoi64(z, pOut, n, SQLITE_UTF8);
   }
 }
 
@@ -926,6 +955,153 @@ int sqlite3Atoi(const char *z){
   int x = 0;
   sqlite3GetInt32(z, &x);
   return x;
+}
+
+/*
+** Decode a floating-point value into an approximate decimal
+** representation.
+**
+** Round the decimal representation to n significant digits if
+** n is positive.  Or round to -n signficant digits after the
+** decimal point if n is negative.  No rounding is performed if
+** n is zero.
+**
+** The significant digits of the decimal representation are
+** stored in p->z[] which is a often (but not always) a pointer
+** into the middle of p->zBuf[].  There are p->n significant digits.
+** The p->z[] array is *not* zero-terminated.
+*/
+void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
+  int i;
+  u64 v;
+  int e, exp = 0;
+  p->isSpecial = 0;
+  p->z = p->zBuf;
+
+  /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
+  ** NaN. */
+  if( r<0.0 ){
+    p->sign = '-';
+    r = -r;
+  }else if( r==0.0 ){
+    p->sign = '+';
+    p->n = 1;
+    p->iDP = 1;
+    p->z = "0";
+    return;
+  }else{
+    p->sign = '+';
+  }
+  memcpy(&v,&r,8);
+  e = v>>52;
+  if( (e&0x7ff)==0x7ff ){
+    p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
+    p->n = 0;
+    p->iDP = 0;
+    return;
+  }
+
+  /* Multiply r by powers of ten until it lands somewhere in between
+  ** 1.0e+19 and 1.0e+17.
+  */
+  if( sqlite3Config.bUseLongDouble ){
+    LONGDOUBLE_TYPE rr = r;
+    if( rr>=1.0e+19 ){
+      while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
+      while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
+      while( rr>=1.0e+19L  ){ exp++;    rr *= 1.0e-1L;   }
+    }else{
+      while( rr<1.0e-97L   ){ exp-=100; rr *= 1.0e+100L; }
+      while( rr<1.0e+07L   ){ exp-=10;  rr *= 1.0e+10L;  }
+      while( rr<1.0e+17L   ){ exp--;    rr *= 1.0e+1L;   }
+    }
+    v = (u64)rr;
+  }else{
+    /* If high-precision floating point is not available using "long double",
+    ** then use Dekker-style double-double computation to increase the
+    ** precision.
+    **
+    ** The error terms on constants like 1.0e+100 computed using the
+    ** decimal extension, for example as follows:
+    **
+    **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
+    */
+    double rr[2];
+    rr[0] = r;
+    rr[1] = 0.0;
+    if( rr[0]>9.223372036854774784e+18 ){
+      while( rr[0]>9.223372036854774784e+118 ){
+        exp += 100;
+        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
+      }
+      while( rr[0]>9.223372036854774784e+28 ){
+        exp += 10;
+        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+      }
+      while( rr[0]>9.223372036854774784e+18 ){
+        exp += 1;
+        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+      }
+    }else{
+      while( rr[0]<9.223372036854774784e-83  ){
+        exp -= 100;
+        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
+      }
+      while( rr[0]<9.223372036854774784e+07  ){
+        exp -= 10;
+        dekkerMul2(rr, 1.0e+10, 0.0);
+      }
+      while( rr[0]<9.22337203685477478e+17  ){
+        exp -= 1;
+        dekkerMul2(rr, 1.0e+01, 0.0);
+      }
+    }
+    v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
+  }
+
+
+  /* Extract significant digits. */
+  i = sizeof(p->zBuf)-1;
+  assert( v>0 );
+  while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  assert( i>=0 && i<sizeof(p->zBuf)-1 );
+  p->n = sizeof(p->zBuf) - 1 - i;
+  assert( p->n>0 );
+  assert( p->n<sizeof(p->zBuf) );
+  p->iDP = p->n + exp;
+  if( iRound<0 ){
+    iRound = p->iDP - iRound;
+    if( iRound==0 && p->zBuf[i+1]>='5' ){
+      iRound = 1;
+      p->zBuf[i--] = '0';
+      p->n++;
+      p->iDP++;
+    }
+  }
+  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
+    char *z = &p->zBuf[i+1];
+    if( iRound>mxRound ) iRound = mxRound;
+    p->n = iRound;
+    if( z[iRound]>='5' ){
+      int j = iRound-1;
+      while( 1 /*exit-by-break*/ ){
+        z[j]++;
+        if( z[j]<='9' ) break;
+        z[j] = '0';
+        if( j==0 ){
+          p->z[i--] = '1';
+          p->n++;
+          p->iDP++;
+          break;
+        }else{
+          j--;
+        }
+      }
+    }
+  }
+  p->z = &p->zBuf[i+1];
+  assert( i+p->n < sizeof(p->zBuf) );
+  while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
 }
 
 /*
@@ -1191,121 +1367,32 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 ** this function assumes the single-byte case has already been handled.
 */
 u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
-  u32 a,b;
+  u64 v64;
+  u8 n;
 
-  /* The 1-byte case.  Overwhelmingly the most common.  Handled inline
-  ** by the getVarin32() macro */
-  a = *p;
-  /* a: p0 (unmasked) */
-#ifndef getVarint32
-  if (!(a&0x80))
-  {
-    /* Values between 0 and 127 */
-    *v = a;
-    return 1;
-  }
-#endif
+  /* Assume that the single-byte case has already been handled by
+  ** the getVarint32() macro */
+  assert( (p[0] & 0x80)!=0 );
 
-  /* The 2-byte case */
-  p++;
-  b = *p;
-  /* b: p1 (unmasked) */
-  if (!(b&0x80))
-  {
-    /* Values between 128 and 16383 */
-    a &= 0x7f;
-    a = a<<7;
-    *v = a | b;
+  if( (p[1] & 0x80)==0 ){
+    /* This is the two-byte case */
+    *v = ((p[0]&0x7f)<<7) | p[1];
     return 2;
   }
-
-  /* The 3-byte case */
-  p++;
-  a = a<<14;
-  a |= *p;
-  /* a: p0<<14 | p2 (unmasked) */
-  if (!(a&0x80))
-  {
-    /* Values between 16384 and 2097151 */
-    a &= (0x7f<<14)|(0x7f);
-    b &= 0x7f;
-    b = b<<7;
-    *v = a | b;
+  if( (p[2] & 0x80)==0 ){
+    /* This is the three-byte case */
+    *v = ((p[0]&0x7f)<<14) | ((p[1]&0x7f)<<7) | p[2];
     return 3;
   }
-
-  /* A 32-bit varint is used to store size information in btrees.
-  ** Objects are rarely larger than 2MiB limit of a 3-byte varint.
-  ** A 3-byte varint is sufficient, for example, to record the size
-  ** of a 1048569-byte BLOB or string.
-  **
-  ** We only unroll the first 1-, 2-, and 3- byte cases.  The very
-  ** rare larger cases can be handled by the slower 64-bit varint
-  ** routine.
-  */
-#if 1
-  {
-    u64 v64;
-    u8 n;
-
-    n = sqlite3GetVarint(p-2, &v64);
-    assert( n>3 && n<=9 );
-    if( (v64 & SQLITE_MAX_U32)!=v64 ){
-      *v = 0xffffffff;
-    }else{
-      *v = (u32)v64;
-    }
-    return n;
-  }
-
-#else
-  /* For following code (kept for historical record only) shows an
-  ** unrolling for the 3- and 4-byte varint cases.  This code is
-  ** slightly faster, but it is also larger and much harder to test.
-  */
-  p++;
-  b = b<<14;
-  b |= *p;
-  /* b: p1<<14 | p3 (unmasked) */
-  if (!(b&0x80))
-  {
-    /* Values between 2097152 and 268435455 */
-    b &= (0x7f<<14)|(0x7f);
-    a &= (0x7f<<14)|(0x7f);
-    a = a<<7;
-    *v = a | b;
-    return 4;
-  }
-
-  p++;
-  a = a<<14;
-  a |= *p;
-  /* a: p0<<28 | p2<<14 | p4 (unmasked) */
-  if (!(a&0x80))
-  {
-    /* Values  between 268435456 and 34359738367 */
-    a &= SLOT_4_2_0;
-    b &= SLOT_4_2_0;
-    b = b<<7;
-    *v = a | b;
-    return 5;
-  }
-
-  /* We can only reach this point when reading a corrupt database
-  ** file.  In that case we are not in any hurry.  Use the (relatively
-  ** slow) general-purpose sqlite3GetVarint() routine to extract the
-  ** value. */
-  {
-    u64 v64;
-    u8 n;
-
-    p -= 4;
-    n = sqlite3GetVarint(p, &v64);
-    assert( n>5 && n<=9 );
+  /* four or more bytes */
+  n = sqlite3GetVarint(p, &v64);
+  assert( n>3 && n<=9 );
+  if( (v64 & SQLITE_MAX_U32)!=v64 ){
+    *v = 0xffffffff;
+  }else{
     *v = (u32)v64;
-    return n;
   }
-#endif
+  return n;
 }
 
 /*
@@ -1750,43 +1837,3 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
  || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 # include "hwtime.h"
 #endif
-
-/***************************************************************************
-** Double-Double arithmetic.
-**
-** Reference:
-**   T. J. Dekker, "A Floating-Point Technique for Extending the
-**   Available Precision".  1971-07-26.
-*/
-
-/* Compute z = (i64)x */
-void sqlite3DDFromInt(i64 x, double *z){
-  z[0] = (double)x;
-  z[1] = (double)(x - (i64)z[0]);
-}
-
-/* Compute z = x + y */
-void sqlite3DDAdd(double x, double xx, double y, double yy, double *z){
-  double r, s;
-  r = x + y;
-  if( fabs(x)>fabs(y) ){
-    s = x - r + y + yy + xx;
-  }else{
-    s = y - r + x + xx + yy;
-  }
-  z[0] = r+s;
-  z[1] = r - z[0] + s;
-}
-
-/* Compute z = x - y */
-void sqlite3DDSub(double x, double xx, double y, double yy, double *z){
-  double r, s;
-  r = x - y;
-  if( fabs(x)>fabs(y) ){
-    s = x - r - y - yy + xx;
-  }else{
-    s = -y - r + x + xx - yy;
-  }
-  z[0] = r+s;
-  z[1] = r - z[0] + s;
-}

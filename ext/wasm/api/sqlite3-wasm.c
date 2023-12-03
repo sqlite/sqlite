@@ -84,6 +84,14 @@
 
 /**********************************************************************/
 /* SQLITE_ENABLE_... */
+/*
+** Unconditionally enable API_ARMOR in the WASM build. It ensures that
+** public APIs behave predictable in the face of passing illegal NULLs
+** or ranges which might otherwise invoke undefined behavior.
+*/
+#undef SQLITE_ENABLE_API_ARMOR
+#define SQLITE_ENABLE_API_ARMOR 1
+
 #ifndef SQLITE_ENABLE_BYTECODE_VTAB
 #  define SQLITE_ENABLE_BYTECODE_VTAB 1
 #endif
@@ -122,12 +130,6 @@
 #endif
 
 /**********************************************************************/
-/* SQLITE_M... */
-#ifndef SQLITE_MAX_ALLOCATION_SIZE
-# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
-#endif
-
-/**********************************************************************/
 /* SQLITE_O... */
 #ifndef SQLITE_OMIT_DEPRECATED
 # define SQLITE_OMIT_DEPRECATED 1
@@ -141,9 +143,6 @@
 #ifndef SQLITE_OMIT_UTF16
 # define SQLITE_OMIT_UTF16 1
 #endif
-#ifndef SQLITE_OMIT_WAL
-# define SQLITE_OMIT_WAL 1
-#endif
 #ifndef SQLITE_OS_KV_OPTIONAL
 # define SQLITE_OS_KV_OPTIONAL 1
 #endif
@@ -151,7 +150,7 @@
 /**********************************************************************/
 /* SQLITE_T... */
 #ifndef SQLITE_TEMP_STORE
-# define SQLITE_TEMP_STORE 3
+# define SQLITE_TEMP_STORE 2
 #endif
 #ifndef SQLITE_THREADSAFE
 # define SQLITE_THREADSAFE 0
@@ -295,7 +294,7 @@ SQLITE_WASM_EXPORT void * sqlite3_wasm_pstack_ptr(void){
 */
 SQLITE_WASM_EXPORT void sqlite3_wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
-  assert(0==(p & 0x7));
+  assert(0==((unsigned long long)p & 0x7));
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
     PStack.pPos = p;
   }
@@ -355,7 +354,9 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   if( db!=0 ){
     if( 0!=zMsg ){
       const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3_mutex_enter(sqlite3_db_mutex(db));
       sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
     }else{
       sqlite3ErrorWithMsg(db, err_code, NULL);
     }
@@ -876,7 +877,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_STMTSTATUS_FILTER_HIT);
     DefInt(SQLITE_STMTSTATUS_MEMUSED);
   } _DefGroup;
-  
+
   DefGroup(syncFlags) {
     DefInt(SQLITE_SYNC_NORMAL);
     DefInt(SQLITE_SYNC_FULL);
@@ -900,6 +901,8 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DETERMINISTIC);
     DefInt(SQLITE_DIRECTONLY);
     DefInt(SQLITE_INNOCUOUS);
+    DefInt(SQLITE_SUBTYPE);
+    DefInt(SQLITE_RESULT_SUBTYPE);
   } _DefGroup;
 
   DefGroup(version) {
@@ -1353,6 +1356,13 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
+** ACHTUNG: it was discovered on 2023-08-11 that, with SQLITE_DEBUG,
+** this function's out-of-scope use of the sqlite3_vfs/file/io_methods
+** APIs leads to triggering of assertions in the core library. Its use
+** is now deprecated and VFS-specific APIs for importing files need to
+** be found to replace it. sqlite3_wasm_posix_create_file() is
+** suitable for the "unix" family of VFSes.
+**
 ** Creates a new file using the I/O API of the given VFS, containing
 ** the given number of bytes of the given data. If the file exists, it
 ** is truncated to the given length and populated with the given
@@ -1398,7 +1408,14 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   int rc;
   sqlite3_file *pFile = 0;
   sqlite3_io_methods const *pIo;
-  const int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+  const int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+#if 0 && defined(SQLITE_DEBUG)
+    | SQLITE_OPEN_MAIN_JOURNAL
+    /* ^^^^ This is for testing a horrible workaround to avoid
+       triggering a specific assert() in os_unix.c:unixOpen(). Please
+       do not enable this in real builds. */
+#endif
+    ;
   int flagsOut = 0;
   int fileExisted = 0;
   int doUnlock = 0;
@@ -1462,6 +1479,34 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   RC;
 #undef RC
   return rc;
+}
+
+/**
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Creates or overwrites a file using the POSIX file API,
+** i.e. Emscripten's virtual filesystem. Creates or truncates
+** zFilename, appends pData bytes to it, and returns 0 on success or
+** SQLITE_IOERR on error.
+*/
+SQLITE_WASM_EXPORT
+int sqlite3_wasm_posix_create_file( const char *zFilename,
+                                    const unsigned char * pData,
+                                    int nData ){
+  int rc;
+  FILE * pFile = 0;
+  int fileExisted = 0;
+  size_t nWrote = 1;
+
+  if( !zFilename || nData<0 || (pData==0 && nData>0) ) return SQLITE_MISUSE;
+  pFile = fopen(zFilename, "w");
+  if( 0==pFile ) return SQLITE_IOERR;
+  if( nData>0 ){
+    nWrote = fwrite(pData, (size_t)nData, 1, pFile);
+  }
+  fclose(pFile);
+  return 1==nWrote ? 0 : SQLITE_IOERR;
 }
 
 /*
@@ -1760,6 +1805,118 @@ char * sqlite3_wasm_test_str_hello(int fail){
   }
   return s;
 }
+
+/*
+** For testing using SQLTester scripts.
+**
+** Return non-zero if string z matches glob pattern zGlob and zero if the
+** pattern does not match.
+**
+** To repeat:
+**
+**         zero == no match
+**     non-zero == match
+**
+** Globbing rules:
+**
+**      '*'       Matches any sequence of zero or more characters.
+**
+**      '?'       Matches exactly one character.
+**
+**     [...]      Matches one character from the enclosed list of
+**                characters.
+**
+**     [^...]     Matches one character not in the enclosed list.
+**
+**      '#'       Matches any sequence of one or more digits with an
+**                optional + or - sign in front, or a hexadecimal
+**                literal of the form 0x...
+*/
+static int sqlite3_wasm_SQLTester_strnotglob(const char *zGlob, const char *z){
+  int c, c2;
+  int invert;
+  int seen;
+  typedef int (*recurse_f)(const char *,const char *);
+  static const recurse_f recurse = sqlite3_wasm_SQLTester_strnotglob;
+
+  while( (c = (*(zGlob++)))!=0 ){
+    if( c=='*' ){
+      while( (c=(*(zGlob++))) == '*' || c=='?' ){
+        if( c=='?' && (*(z++))==0 ) return 0;
+      }
+      if( c==0 ){
+        return 1;
+      }else if( c=='[' ){
+        while( *z && recurse(zGlob-1,z)==0 ){
+          z++;
+        }
+        return (*z)!=0;
+      }
+      while( (c2 = (*(z++)))!=0 ){
+        while( c2!=c ){
+          c2 = *(z++);
+          if( c2==0 ) return 0;
+        }
+        if( recurse(zGlob,z) ) return 1;
+      }
+      return 0;
+    }else if( c=='?' ){
+      if( (*(z++))==0 ) return 0;
+    }else if( c=='[' ){
+      int prior_c = 0;
+      seen = 0;
+      invert = 0;
+      c = *(z++);
+      if( c==0 ) return 0;
+      c2 = *(zGlob++);
+      if( c2=='^' ){
+        invert = 1;
+        c2 = *(zGlob++);
+      }
+      if( c2==']' ){
+        if( c==']' ) seen = 1;
+        c2 = *(zGlob++);
+      }
+      while( c2 && c2!=']' ){
+        if( c2=='-' && zGlob[0]!=']' && zGlob[0]!=0 && prior_c>0 ){
+          c2 = *(zGlob++);
+          if( c>=prior_c && c<=c2 ) seen = 1;
+          prior_c = 0;
+        }else{
+          if( c==c2 ){
+            seen = 1;
+          }
+          prior_c = c2;
+        }
+        c2 = *(zGlob++);
+      }
+      if( c2==0 || (seen ^ invert)==0 ) return 0;
+    }else if( c=='#' ){
+      if( z[0]=='0'
+       && (z[1]=='x' || z[1]=='X')
+       && sqlite3Isxdigit(z[2])
+      ){
+        z += 3;
+        while( sqlite3Isxdigit(z[0]) ){ z++; }
+      }else{
+        if( (z[0]=='-' || z[0]=='+') && sqlite3Isdigit(z[1]) ) z++;
+        if( !sqlite3Isdigit(z[0]) ) return 0;
+        z++;
+        while( sqlite3Isdigit(z[0]) ){ z++; }
+      }
+    }else{
+      if( c!=(*(z++)) ) return 0;
+    }
+  }
+  return *z==0;
+}
+
+SQLITE_WASM_EXPORT
+int sqlite3_wasm_SQLTester_strglob(const char *zGlob, const char *z){
+ return !sqlite3_wasm_SQLTester_strnotglob(zGlob, z);
+}
+
+
 #endif /* SQLITE_WASM_TESTS */
 
 #undef SQLITE_WASM_EXPORT

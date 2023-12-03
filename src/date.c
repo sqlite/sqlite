@@ -1043,6 +1043,12 @@ static int isDate(
   }
   computeJD(p);
   if( p->isError || !validJulianDay(p->iJD) ) return 1;
+  if( argc==1 && p->validYMD && p->D>28 ){
+    /* Make sure a YYYY-MM-DD is normalized.
+    ** Example: 2023-02-31 -> 2023-03-03 */
+    assert( p->validJD );
+    p->validYMD = 0;  
+  }
   return 0;
 }
 
@@ -1270,13 +1276,16 @@ static void strftimeFunc(
   computeJD(&x);
   computeYMD_HMS(&x);
   for(i=j=0; zFmt[i]; i++){
+    char cf;
     if( zFmt[i]!='%' ) continue;
     if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
     i++;
     j = i + 1;
-    switch( zFmt[i] ){
-      case 'd': {
-        sqlite3_str_appendf(&sRes, "%02d", x.D);
+    cf = zFmt[i];
+    switch( cf ){
+      case 'd':  /* Fall thru */
+      case 'e': {
+        sqlite3_str_appendf(&sRes, cf=='d' ? "%02d" : "%2d", x.D);
         break;
       }
       case 'f': {
@@ -1285,8 +1294,21 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes, "%06.3f", s);
         break;
       }
-      case 'H': {
-        sqlite3_str_appendf(&sRes, "%02d", x.h);
+      case 'F': {
+        sqlite3_str_appendf(&sRes, "%04d-%02d-%02d", x.Y, x.M, x.D);
+        break;
+      }
+      case 'H':
+      case 'k': {
+        sqlite3_str_appendf(&sRes, cf=='H' ? "%02d" : "%2d", x.h);
+        break;
+      }
+      case 'I': /* Fall thru */
+      case 'l': {
+        int h = x.h;
+        if( h>12 ) h -= 12;
+        if( h==0 ) h = 12;
+        sqlite3_str_appendf(&sRes, cf=='I' ? "%02d" : "%2d", h);
         break;
       }
       case 'W': /* Fall thru */
@@ -1298,7 +1320,7 @@ static void strftimeFunc(
         y.D = 1;
         computeJD(&y);
         nDay = (int)((x.iJD-y.iJD+43200000)/86400000);
-        if( zFmt[i]=='W' ){
+        if( cf=='W' ){
           int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
           wd = (int)(((x.iJD+43200000)/86400000)%7);
           sqlite3_str_appendf(&sRes,"%02d",(nDay+7-wd)/7);
@@ -1319,6 +1341,19 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes,"%02d",x.m);
         break;
       }
+      case 'p': /* Fall thru */
+      case 'P': {
+        if( x.h>=12 ){
+          sqlite3_str_append(&sRes, cf=='p' ? "PM" : "pm", 2);
+        }else{
+          sqlite3_str_append(&sRes, cf=='p' ? "AM" : "am", 2);
+        }
+        break;
+      }
+      case 'R': {
+        sqlite3_str_appendf(&sRes, "%02d:%02d", x.h, x.m);
+        break;
+      }
       case 's': {
         if( x.useSubsec ){
           sqlite3_str_appendf(&sRes,"%.3f",
@@ -1333,9 +1368,15 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes,"%02d",(int)x.s);
         break;
       }
+      case 'T': {
+        sqlite3_str_appendf(&sRes,"%02d:%02d:%02d", x.h, x.m, (int)x.s);
+        break;
+      }
+      case 'u': /* Fall thru */
       case 'w': {
-        sqlite3_str_appendchar(&sRes, 1,
-                       (char)(((x.iJD+129600000)/86400000) % 7) + '0');
+        char c = (char)(((x.iJD+129600000)/86400000) % 7) + '0';
+        if( c=='0' && cf=='u' ) c = '7';
+        sqlite3_str_appendchar(&sRes, 1, c);
         break;
       }
       case 'Y': {

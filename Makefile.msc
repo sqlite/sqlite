@@ -52,6 +52,13 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
+# Use the USE_SEH=0 option on the nmake command line to omit structured
+# exception handling (SEH) support.  SEH is on by default.
+#
+!IFNDEF USE_SEH
+USE_SEH = 1
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -218,6 +225,12 @@ WIN32HEAP = 0
 OSTRACE = 0
 !ENDIF
 
+# enable address sanitizer using ASAN=1 on the command-line.
+#
+!IFNDEF ASAN
+ASAN = 0
+!ENDIF
+
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
 # levels.  Currently, the recognized values for DEBUG are:
@@ -362,6 +375,7 @@ SQLITE_TCL_DEP =
 !IFNDEF OPT_FEATURE_FLAGS
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_GEOPOLY=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
@@ -388,6 +402,14 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
 #
 !IF $(RBU)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
+!ENDIF
+
+# Should structured exception handling (SEH) be enabled for WAL mode in
+# the core library?  It is on by default.  Only omit it if the
+# USE_SEH=0 option is provided on the nmake command-line.
+#
+!IF $(USE_SEH)==0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_OMIT_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -876,6 +898,13 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
+!ENDIF
+
+
+# Address sanitizer if ASAN=1
+#
+!IF $(ASAN)>0
+TCC = $(TCC) /fsanitize=address
 !ENDIF
 
 # <<mark>>
@@ -1574,8 +1603,7 @@ TESTEXT = \
   $(TOP)\ext\rtree\test_rtreedoc.c \
   $(TOP)\ext\recover\sqlite3recover.c \
   $(TOP)\ext\recover\test_recover.c \
-  $(TOP)\ext\recover\dbdata.c \
-  fts5.c
+  $(TOP)\ext\recover\dbdata.c 
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
@@ -1591,7 +1619,8 @@ TESTSRC2 = \
   $(SRC01) \
   $(SRC07) \
   $(SRC10) \
-  $(TOP)\ext\async\sqlite3async.c
+  $(TOP)\ext\async\sqlite3async.c \
+  fts5.c
 
 # Header files used by all library source files.
 #
@@ -1675,6 +1704,8 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 !ENDIF
 
 # 
@@ -1813,8 +1844,8 @@ $(SQLITE3XEXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLI
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2251,6 +2282,8 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source files that go into making shell.c
 SHELL_SRC = \
   $(TOP)\src\shell.c.in \
+  $(TOP)\ext\consio\console_io.c \
+  $(TOP)\ext\consio\console_io.h \
   $(TOP)\ext\misc\appendvfs.c \
   $(TOP)\ext\misc\completion.c \
   $(TOP)\ext\misc\base64.c \
@@ -2501,6 +2534,9 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
+
 coretestprogs:	$(TESTPROGS)
 
 testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
@@ -2552,6 +2588,9 @@ testrunner:	testfixture.exe
 # Runs both fuzztest and testrunner, consecutively.
 #
 devtest:	testfixture.exe fuzztest testrunner
+
+mdevtest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
 # Testing for a release
 #

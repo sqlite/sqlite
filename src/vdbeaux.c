@@ -211,10 +211,11 @@ static int growOpArray(Vdbe *v, int nOp){
 **   sqlite3CantopenError(lineno)
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* so that n is used, preventing a warning */
 }
 #endif
 
@@ -538,7 +539,7 @@ int sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
     if( bPush){
       pParse->addrExplain = iThis;
     }
-    sqlite3VdbeScanStatus(v, iThis, 0, 0, 0, 0);
+    sqlite3VdbeScanStatus(v, iThis, -1, -1, 0, 0);
   }
   return addr;
 }
@@ -1002,6 +1003,10 @@ void sqlite3VdbeNoJumpsOutsideSubrtn(
       int iDest = pOp->p2;   /* Jump destination */
       if( iDest==0 ) continue;
       if( pOp->opcode==OP_Gosub ) continue;
+      if( pOp->p3==20230325 && pOp->opcode==OP_NotNull ){
+        /* This is a deliberately taken illegal branch.  tag-20230325-2 */
+        continue;
+      }
       if( iDest<0 ){
         int j = ADDR(iDest);
         assert( j>=0 );
@@ -1250,8 +1255,8 @@ void sqlite3VdbeScanStatusCounters(
       pScan = 0;
     }
     if( pScan ){
-      pScan->addrLoop = addrLoop;
-      pScan->addrVisit = addrVisit;
+      if( addrLoop>0 ) pScan->addrLoop = addrLoop;
+      if( addrVisit>0 ) pScan->addrVisit = addrVisit;
     }
   }
 }
@@ -1498,7 +1503,6 @@ void sqlite3VdbeReleaseRegisters(
 }
 #endif /* SQLITE_DEBUG */
 
-
 /*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -1523,7 +1527,7 @@ static void SQLITE_NOINLINE vdbeChangeP4Full(
   int n
 ){
   if( pOp->p4type ){
-    freeP4(p->db, pOp->p4type, pOp->p4.p);
+    assert( pOp->p4type > P4_FREE_IF_LE );
     pOp->p4type = 0;
     pOp->p4.p = 0;
   }
@@ -2418,8 +2422,8 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetInt64(pMem, pOp->p1);
         sqlite3VdbeMemSetInt64(pMem+1, pOp->p2);
         sqlite3VdbeMemSetInt64(pMem+2, pOp->p3);
-        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);    
-        p->nResColumn = 4;
+        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);
+        assert( p->nResColumn==4 );
       }else{
         sqlite3VdbeMemSetInt64(pMem+0, i);
         sqlite3VdbeMemSetStr(pMem+1, (char*)sqlite3OpcodeName(pOp->opcode),
@@ -2438,7 +2442,7 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetNull(pMem+7);
 #endif
         sqlite3VdbeMemSetStr(pMem+5, zP4, -1, SQLITE_UTF8, sqlite3_free);
-        p->nResColumn = 8;
+        assert( p->nResColumn==8 );
       }
       p->pResultRow = pMem;
       if( db->mallocFailed ){
@@ -2652,26 +2656,9 @@ void sqlite3VdbeMakeReady(
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain ){
-    static const char * const azColName[] = {
-       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "id", "parent", "notused", "detail"
-    };
-    int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;
-    if( pParse->explain==2 ){
-      sqlite3VdbeSetNumCols(p, 4);
-      iFirst = 8;
-      mx = 12;
-    }else{
-      sqlite3VdbeSetNumCols(p, 8);
-      iFirst = 0;
-      mx = 8;
-    }
-    for(i=iFirst; i<mx; i++){
-      sqlite3VdbeSetColName(p, i-iFirst, COLNAME_NAME,
-                            azColName[i], SQLITE_STATIC);
-    }
+    p->nResColumn = 12 - 4*p->explain;
   }
   p->expired = 0;
 
@@ -2723,7 +2710,23 @@ void sqlite3VdbeMakeReady(
 void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx ) sqlite3VdbeFreeCursorNN(p,pCx);
 }
+static SQLITE_NOINLINE void freeCursorWithCache(Vdbe *p, VdbeCursor *pCx){
+  VdbeTxtBlbCache *pCache = pCx->pCache;
+  assert( pCx->colCache );
+  pCx->colCache = 0;
+  pCx->pCache = 0;
+  if( pCache->pCValue ){
+    sqlite3RCStrUnref(pCache->pCValue);
+    pCache->pCValue = 0;
+  }
+  sqlite3DbFree(p->db, pCache);
+  sqlite3VdbeFreeCursorNN(p, pCx);
+}
 void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
+  if( pCx->colCache ){
+    freeCursorWithCache(p, pCx);
+    return;
+  }
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
@@ -2824,12 +2827,12 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   int n;
   sqlite3 *db = p->db;
 
-  if( p->nResColumn ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  if( p->nResAlloc ){
+    releaseMemArray(p->aColName, p->nResAlloc*COLNAME_N);
     sqlite3DbFree(db, p->aColName);
   }
   n = nResColumn*COLNAME_N;
-  p->nResColumn = (u16)nResColumn;
+  p->nResColumn = p->nResAlloc = (u16)nResColumn;
   p->aColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
   if( p->aColName==0 ) return;
   initMemArray(p->aColName, n, db, MEM_Null);
@@ -2854,14 +2857,14 @@ int sqlite3VdbeSetColName(
 ){
   int rc;
   Mem *pColName;
-  assert( idx<p->nResColumn );
+  assert( idx<p->nResAlloc );
   assert( var<COLNAME_N );
   if( p->db->mallocFailed ){
     assert( !zName || xDel!=SQLITE_DYNAMIC );
     return SQLITE_NOMEM_BKPT;
   }
   assert( p->aColName!=0 );
-  pColName = &(p->aColName[idx+var*p->nResColumn]);
+  pColName = &(p->aColName[idx+var*p->nResAlloc]);
   rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
   assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
   return rc;
@@ -3374,6 +3377,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3VdbeLeave(p);
           return SQLITE_BUSY;
         }else if( rc!=SQLITE_OK ){
+          sqlite3SystemError(db, rc);
           p->rc = rc;
           sqlite3RollbackAll(db, SQLITE_OK);
           p->nChange = 0;
@@ -3685,7 +3689,7 @@ static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   assert( db!=0 );
   assert( p->db==0 || p->db==db );
   if( p->aColName ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+    releaseMemArray(p->aColName, p->nResAlloc*COLNAME_N);
     sqlite3DbNNFreeNN(db, p->aColName);
   }
   for(pSub=p->pProgram; pSub; pSub=pNext){
@@ -4462,20 +4466,33 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   return n1 - n2;
 }
 
+/* The following two functions are used only within testcase() to prove
+** test coverage.  These functions do no exist for production builds.
+** We must use separate SQLITE_NOINLINE functions here, since otherwise
+** optimizer code movement causes gcov to become very confused.
+*/
+#if  defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+static int SQLITE_NOINLINE doubleLt(double a, double b){ return a<b; }
+static int SQLITE_NOINLINE doubleEq(double a, double b){ return a==b; }
+#endif
+
 /*
 ** Do a comparison between a 64-bit signed integer and a 64-bit floating-point
 ** number.  Return negative, zero, or positive if the first (i64) is less than,
 ** equal to, or greater than the second (double).
 */
 int sqlite3IntFloatCompare(i64 i, double r){
-  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+  if( sqlite3IsNaN(r) ){
+    /* SQLite considers NaN to be a NULL. And all integer values are greater
+    ** than NULL */
+    return 1;
+  }
+  if( sqlite3Config.bUseLongDouble ){
     LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
     testcase( x<r );
     testcase( x>r );
     testcase( x==r );
-    if( x<r ) return -1;
-    if( x>r ) return +1;  /*NO_TEST*/ /* work around bugs in gcov */
-    return 0;             /*NO_TEST*/ /* work around bugs in gcov */
+    return (x<r) ? -1 : (x>r);
   }else{
     i64 y;
     double s;
@@ -4485,9 +4502,10 @@ int sqlite3IntFloatCompare(i64 i, double r){
     if( i<y ) return -1;
     if( i>y ) return +1;
     s = (double)i;
-    if( s<r ) return -1;
-    if( s>r ) return +1;
-    return 0;
+    testcase( doubleLt(s,r) );
+    testcase( doubleLt(r,s) );
+    testcase( doubleEq(r,s) );
+    return (s<r) ? -1 : (s>r);
   }
 }
 

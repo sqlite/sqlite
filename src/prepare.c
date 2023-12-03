@@ -598,8 +598,6 @@ void sqlite3ParseObjectReset(Parse *pParse){
   db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   assert( pParse->db->pParse==pParse );
   db->pParse = pParse->pOuterParse;
-  pParse->db = 0;
-  pParse->disableLookaside = 0;
 }
 
 /*
@@ -700,7 +698,12 @@ static int sqlite3Prepare(
   sParse.pOuterParse = db->pParse;
   db->pParse = &sParse;
   sParse.db = db;
-  sParse.pReprepare = pReprepare;
+  if( pReprepare ){
+    sParse.pReprepare = pReprepare;
+    sParse.explain = sqlite3_stmt_isexplain((sqlite3_stmt*)pReprepare);
+  }else{
+    assert( sParse.pReprepare==0 );
+  }
   assert( ppStmt && *ppStmt==0 );
   if( db->mallocFailed ){
     sqlite3ErrorMsg(&sParse, "out of memory");
@@ -865,6 +868,7 @@ static int sqlite3LockAndPrepare(
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;
   sqlite3_mutex_leave(db->mutex);
+  assert( rc==SQLITE_OK || (*ppStmt)==0 );
   return rc;
 }
 

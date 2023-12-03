@@ -148,8 +148,8 @@ ecmd ::= SEMI.
 ecmd ::= cmdx SEMI.
 %ifndef SQLITE_OMIT_EXPLAIN
 ecmd ::= explain cmdx SEMI.       {NEVER-REDUCE}
-explain ::= EXPLAIN.              { pParse->explain = 1; }
-explain ::= EXPLAIN QUERY PLAN.   { pParse->explain = 2; }
+explain ::= EXPLAIN.              { if( pParse->pReprepare==0 ) pParse->explain = 1; }
+explain ::= EXPLAIN QUERY PLAN.   { if( pParse->pReprepare==0 ) pParse->explain = 2; }
 %endif  SQLITE_OMIT_EXPLAIN
 cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 
@@ -1144,6 +1144,10 @@ expr(A) ::= CAST LP expr(E) AS typetoken(T) RP. {
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP. {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
 }
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) ORDER BY sortlist(O) RP. {
+  A = sqlite3ExprFunction(pParse, Y, &X, D);
+  sqlite3ExprAddFunctionOrderBy(pParse, A, O);
+}
 expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
@@ -1152,6 +1156,11 @@ expr(A) ::= idj(X) LP STAR RP. {
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
   sqlite3WindowAttach(pParse, A, Z);
+}
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) ORDER BY sortlist(O) RP filter_over(Z). {
+  A = sqlite3ExprFunction(pParse, Y, &X, D);
+  sqlite3WindowAttach(pParse, A, Z);
+  sqlite3ExprAddFunctionOrderBy(pParse, A, O);
 }
 expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);

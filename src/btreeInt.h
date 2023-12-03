@@ -180,7 +180,7 @@
 **    0x81 0x00                 becomes  0x00000080
 **    0x82 0x00                 becomes  0x00000100
 **    0x80 0x7f                 becomes  0x0000007f
-**    0x8a 0x91 0xd1 0xac 0x78  becomes  0x12345678
+**    0x81 0x91 0xd1 0xac 0x78  becomes  0x12345678
 **    0x81 0x81 0x81 0x81 0x01  becomes  0x10204081
 **
 ** Variable length integers are used for rowids and to hold the number of
@@ -695,7 +695,7 @@ struct IntegrityCk {
   BtShared *pBt;    /* The tree being checked out */
   Pager *pPager;    /* The associated pager.  Also accessible by pBt->pPager */
   u8 *aPgRef;       /* 1 bit per page in the db (see above) */
-  Pgno nPage;       /* Number of pages in the database */
+  Pgno nCkPage;     /* Pages in the database.  0 for partial check */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
   int nErr;         /* Number of messages written to zErrMsg so far */
   int rc;           /* SQLITE_OK, SQLITE_NOMEM, or SQLITE_INTERRUPT */

@@ -461,7 +461,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }else if( n==0 ){ 
     r = (double)((sqlite_int64)(r+(r<0?-0.5:+0.5)));
   }else{
-    zBuf = sqlite3_mprintf("%.*f",n,r);
+    zBuf = sqlite3_mprintf("%!.*f",n,r);
     if( zBuf==0 ){
       sqlite3_result_error_nomem(context);
       return;
@@ -1227,6 +1227,7 @@ static void charFunc(
       *zOut++ = 0x80 + (u8)(c & 0x3F);
     }                                                    \
   }
+  *zOut = 0;
   sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
 }
 
@@ -1255,7 +1256,8 @@ static void hexFunc(
       *(z++) = hexdigits[c&0xf];
     }
     *z = 0;
-    sqlite3_result_text(context, zHex, n*2, sqlite3_free);
+    sqlite3_result_text64(context, zHex, (u64)(z-zHex),
+                          sqlite3_free, SQLITE_UTF8);
   }
 }
 
@@ -1549,6 +1551,81 @@ static void trimFunc(
   sqlite3_result_text(context, (char*)zIn, nIn, SQLITE_TRANSIENT);
 }
 
+/* The core implementation of the CONCAT(...) and CONCAT_WS(SEP,...)
+** functions.
+**
+** Return a string value that is the concatenation of all non-null
+** entries in argv[].  Use zSep as the separator.
+*/
+static void concatFuncCore(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv,
+  int nSep,
+  const char *zSep
+){
+  i64 j, k, n = 0;
+  int i;
+  char *z;
+  for(i=0; i<argc; i++){
+    n += sqlite3_value_bytes(argv[i]);
+  }
+  n += (argc-1)*nSep;
+  z = sqlite3_malloc64(n+1);
+  if( z==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  j = 0;
+  for(i=0; i<argc; i++){
+    k = sqlite3_value_bytes(argv[i]);
+    if( k>0 ){
+      const char *v = (const char*)sqlite3_value_text(argv[i]);
+      if( v!=0 ){
+        if( j>0 && nSep>0 ){
+          memcpy(&z[j], zSep, nSep);
+          j += nSep;
+        }
+        memcpy(&z[j], v, k);
+        j += k;
+      }
+    }
+  }
+  z[j] = 0;
+  assert( j<=n );
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+}
+
+/*
+** The CONCAT(...) function.  Generate a string result that is the
+** concatentation of all non-null arguments.
+*/
+static void concatFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  concatFuncCore(context, argc, argv, 0, "");
+}
+
+/*
+** The CONCAT_WS(separator, ...) function.
+**
+** Generate a string that is the concatenation of 2nd through the Nth
+** argument.  Use the first argument (which must be non-NULL) as the
+** separator.
+*/
+static void concatwsFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int nSep = sqlite3_value_bytes(argv[0]);
+  const char *zSep = (const char*)sqlite3_value_text(argv[0]);
+  if( zSep==0 ) return;
+  concatFuncCore(context, argc-1, argv+1, nSep, zSep);
+}
+
 
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 /*
@@ -1670,10 +1747,67 @@ static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
 */
 typedef struct SumCtx SumCtx;
 struct SumCtx {
-  double rSum[2];   /* Running sum as a Dekker double-double */
+  double rSum;      /* Running sum as as a double */
+  double rErr;      /* Error term for Kahan-Babushka-Neumaier summation */
+  i64 iSum;         /* Running sum as a signed integer */
   i64 cnt;          /* Number of elements summed */
   u8 approx;        /* True if any non-integer value was input to the sum */
+  u8 ovrfl;         /* Integer overflow seen */
 };
+
+/*
+** Do one step of the Kahan-Babushka-Neumaier summation.
+**
+** https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+**
+** Variables are marked "volatile" to defeat c89 x86 floating point
+** optimizations can mess up this algorithm.
+*/
+static void kahanBabuskaNeumaierStep(
+  volatile SumCtx *pSum,
+  volatile double r
+){
+  volatile double s = pSum->rSum;
+  volatile double t = s + r;
+  if( fabs(s) > fabs(r) ){
+    pSum->rErr += (s - t) + r;
+  }else{
+    pSum->rErr += (r - t) + s;
+  }
+  pSum->rSum = t;
+}
+
+/*
+** Add a (possibly large) integer to the running sum.
+*/
+static void kahanBabuskaNeumaierStepInt64(volatile SumCtx *pSum, i64 iVal){
+  if( iVal<=-4503599627370496LL || iVal>=+4503599627370496LL ){
+    i64 iBig, iSm;
+    iSm = iVal % 16384;
+    iBig = iVal - iSm;
+    kahanBabuskaNeumaierStep(pSum, iBig);
+    kahanBabuskaNeumaierStep(pSum, iSm);
+  }else{
+    kahanBabuskaNeumaierStep(pSum, (double)iVal);
+  }
+}
+
+/*
+** Initialize the Kahan-Babaska-Neumaier sum from a 64-bit integer
+*/
+static void kahanBabuskaNeumaierInit(
+  volatile SumCtx *p,
+  i64 iVal
+){
+  if( iVal<=-4503599627370496LL || iVal>=+4503599627370496LL ){
+    i64 iSm = iVal % 16384;
+    p->rSum = (double)(iVal - iSm);
+    p->rErr = (double)iSm;
+  }else{
+    p->rSum = (double)iVal;
+    p->rErr = 0.0;
+  }
+}
 
 /*
 ** Routines used to compute the sum, average, and total.
@@ -1693,17 +1827,31 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   p = sqlite3_aggregate_context(context, sizeof(*p));
   type = sqlite3_value_numeric_type(argv[0]);
   if( p && type!=SQLITE_NULL ){
-    double y[2];
     p->cnt++;
-    if( type==SQLITE_INTEGER ){
-      i64 v = sqlite3_value_int64(argv[0]);
-      sqlite3DDFromInt(v, y);
+    if( p->approx==0 ){
+      if( type!=SQLITE_INTEGER ){
+        kahanBabuskaNeumaierInit(p, p->iSum);
+        p->approx = 1;
+        kahanBabuskaNeumaierStep(p, sqlite3_value_double(argv[0]));
+      }else{
+        i64 x = p->iSum;
+        if( sqlite3AddInt64(&x, sqlite3_value_int64(argv[0]))==0 ){
+          p->iSum = x;
+        }else{
+          p->ovrfl = 1;
+          kahanBabuskaNeumaierInit(p, p->iSum);
+          p->approx = 1;
+          kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
+        }
+      }
     }else{
-      y[0] = sqlite3_value_double(argv[0]);
-      y[1] = 0.0;
-      p->approx = 1;
+      if( type==SQLITE_INTEGER ){
+        kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
+      }else{
+        p->ovrfl = 0;
+        kahanBabuskaNeumaierStep(p, sqlite3_value_double(argv[0]));
+      }
     }
-    sqlite3DDAdd(p->rSum[0], p->rSum[1], y[0], y[1], p->rSum);
   }
 }
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -1717,17 +1865,21 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   /* p is always non-NULL because sumStep() will have been called first
   ** to initialize it */
   if( ALWAYS(p) && type!=SQLITE_NULL ){
-    double y[2];
     assert( p->cnt>0 );
     p->cnt--;
-    if( type==SQLITE_INTEGER ){
-      i64 v = sqlite3_value_int64(argv[0]);
-      sqlite3DDFromInt(v, y);
+    if( !p->approx ){
+      p->iSum -= sqlite3_value_int64(argv[0]);
+    }else if( type==SQLITE_INTEGER ){
+      i64 iVal = sqlite3_value_int64(argv[0]);
+      if( iVal!=SMALLEST_INT64 ){
+        kahanBabuskaNeumaierStepInt64(p, -iVal);
+      }else{
+        kahanBabuskaNeumaierStepInt64(p, LARGEST_INT64);
+        kahanBabuskaNeumaierStepInt64(p, 1);
+      }       
     }else{
-      y[0] = sqlite3_value_double(argv[0]);
-      y[1] = 0.0;
+      kahanBabuskaNeumaierStep(p, -sqlite3_value_double(argv[0]));
     }
-    sqlite3DDSub(p->rSum[0], p->rSum[1], y[0], y[1], p->rSum);
   }
 }
 #else
@@ -1738,17 +1890,15 @@ static void sumFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>0 ){
     if( p->approx ){
-      sqlite3_result_double(context, p->rSum[0]+p->rSum[1]);
-    }else{
-      i64 v = (i64)p->rSum[0] + (i64)p->rSum[1];
-      double y[2], z[2];
-      sqlite3DDFromInt(v, y);
-      sqlite3DDSub(y[0], y[1], p->rSum[0], p->rSum[1], z);
-      if( z[0] + z[1] != 0.0 ){
+      if( p->ovrfl ){
         sqlite3_result_error(context,"integer overflow",-1);
+      }else if( !sqlite3IsNaN(p->rErr) ){
+        sqlite3_result_double(context, p->rSum+p->rErr);
       }else{
-        sqlite3_result_int64(context, v);
+        sqlite3_result_double(context, p->rSum);
       }
+    }else{
+      sqlite3_result_int64(context, p->iSum);
     }
   }
 }
@@ -1756,14 +1906,29 @@ static void avgFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>0 ){
-    sqlite3_result_double(context, (p->rSum[0]+p->rSum[1])/(double)p->cnt);
+    double r;
+    if( p->approx ){
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
+    }else{
+      r = (double)(p->iSum);
+    }
+    sqlite3_result_double(context, r/(double)p->cnt);
   }
 }
 static void totalFinalize(sqlite3_context *context){
   SumCtx *p;
+  double r = 0.0;
   p = sqlite3_aggregate_context(context, 0);
-  /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
-  sqlite3_result_double(context, p ? p->rSum[0]+p->rSum[1] : (double)0);
+  if( p ){
+    if( p->approx ){
+      r = p->rSum;
+      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
+    }else{
+      r = (double)(p->iSum);
+    }
+  }
+  sqlite3_result_double(context, r);
 }
 
 /*
@@ -1882,6 +2047,7 @@ static void minMaxFinalize(sqlite3_context *context){
 
 /*
 ** group_concat(EXPR, ?SEPARATOR?)
+** string_agg(EXPR, SEPARATOR)
 **
 ** The SEPARATOR goes before the EXPR string.  This is tragic.  The
 ** groupConcatInverse() implementation would have been easier if the
@@ -2069,8 +2235,10 @@ void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3 *db){
 ** sensitive.
 */
 void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
+  FuncDef *pDef;
   struct compareInfo *pInfo;
   int flags;
+  int nArg;
   if( caseSensitive ){
     pInfo = (struct compareInfo*)&likeInfoAlt;
     flags = SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE;
@@ -2078,10 +2246,13 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
     pInfo = (struct compareInfo*)&likeInfoNorm;
     flags = SQLITE_FUNC_LIKE;
   }
-  sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
-  sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
-  sqlite3FindFunction(db, "like", 2, SQLITE_UTF8, 0)->funcFlags |= flags;
-  sqlite3FindFunction(db, "like", 3, SQLITE_UTF8, 0)->funcFlags |= flags;
+  for(nArg=2; nArg<=3; nArg++){
+    sqlite3CreateFunc(db, "like", nArg, SQLITE_UTF8, pInfo, likeFunc, 
+                      0, 0, 0, 0, 0);
+    pDef = sqlite3FindFunction(db, "like", nArg, SQLITE_UTF8, 0);
+    pDef->funcFlags |= flags;
+    pDef->funcFlags &= ~SQLITE_FUNC_UNSAFE;
+  }
 }
 
 /*
@@ -2353,6 +2524,37 @@ static void signFunc(
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Implementation of fpdecode(x,y,z) function.
+**
+** x is a real number that is to be decoded.  y is the precision.
+** z is the maximum real precision.
+*/
+static void fpdecodeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  FpDecode s;
+  double x;
+  int y, z;
+  char zBuf[100];
+  UNUSED_PARAMETER(argc);
+  assert( argc==3 );
+  x = sqlite3_value_double(argv[0]);
+  y = sqlite3_value_int(argv[1]);
+  z = sqlite3_value_int(argv[2]);
+  sqlite3FpDecode(&s, x, y, z);
+  if( s.isSpecial==2 ){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");
+  }else{
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d", s.sign, s.n, s.z, s.iDP);
+  }
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
@@ -2424,6 +2626,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
+#ifdef SQLITE_DEBUG
+    FUNCTION(fpdecode,           3, 0, 0, fpdecodeFunc     ),
+#endif
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
     FUNCTION(round,              2, 0, 0, roundFunc        ),
@@ -2433,6 +2638,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
+    FUNCTION(concat,            -1, 0, 0, concatFunc       ),
+    FUNCTION(concat,             0, 0, 0, 0                ),
+    FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
+    FUNCTION(concat_ws,          0, 0, 0, 0                ),
+    FUNCTION(concat_ws,          1, 0, 0, 0                ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
@@ -2461,6 +2671,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(group_concat, 1, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(group_concat, 2, 0, 0, groupConcatStep,
+        groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+    WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),

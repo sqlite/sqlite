@@ -1205,10 +1205,12 @@ int runCombinedDbSqlInput(
   iSql = decodeDatabase((unsigned char*)aData, (int)nByte, &aDb, &nDb);
   if( iSql<0 ) return 0;
   if( nDb>=75 ){
-    dbFlags = (aDb[72]<<24) + (aDb[73]<<16) + (aDb[74]<<8) + aDb[75];
+    dbFlags = ((unsigned int)aDb[72]<<24) + ((unsigned int)aDb[73]<<16) +
+              ((unsigned int)aDb[74]<<8) + (unsigned int)aDb[75];
   }
   if( nDb>=79 ){
-    dbOpt = (aDb[76]<<24) + (aDb[77]<<16) + (aDb[78]<<8) + aDb[79];
+    dbOpt = ((unsigned int)aDb[76]<<24) + ((unsigned int)aDb[77]<<16) +
+            ((unsigned int)aDb[78]<<8) + (unsigned int)aDb[79];
   }
   nSql = (int)(nByte - iSql);
   if( bScript ){
@@ -2031,7 +2033,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"version")==0 ){
         int ii;
         const char *zz;
-        printf("SQLite %s %s\n", sqlite3_libversion(), sqlite3_sourceid());
+        printf("SQLite %s %s (%d-bit)\n",
+            sqlite3_libversion(), sqlite3_sourceid(),
+            8*(int)sizeof(char*));
         for(ii=0; (zz = sqlite3_compileoption_get(ii))!=0; ii++){
           printf("%s\n", zz);
         }
@@ -2536,9 +2540,10 @@ int main(int argc, char **argv){
       printf("fuzzcheck: %u query invariants checked\n", g.nInvariant);
     }
     printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\n"
-           "SQLite %s %s\n",
+           "SQLite %s %s (%d-bit)\n",
            nTest, (int)(iElapse/1000), (int)(iElapse%1000),
-           sqlite3_libversion(), sqlite3_sourceid());
+           sqlite3_libversion(), sqlite3_sourceid(),
+           8*(int)sizeof(char*));
   }
   free(azSrcDb);
   free(pHeap);

@@ -52,6 +52,13 @@ MINIMAL_AMALGAMATION = 0
 USE_STDCALL = 0
 !ENDIF
 
+# Use the USE_SEH=0 option on the nmake command line to omit structured
+# exception handling (SEH) support.  SEH is on by default.
+#
+!IFNDEF USE_SEH
+USE_SEH = 1
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -180,6 +187,12 @@ WIN32HEAP = 0
 OSTRACE = 0
 !ENDIF
 
+# enable address sanitizer using ASAN=1 on the command-line.
+#
+!IFNDEF ASAN
+ASAN = 0
+!ENDIF
+
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
 # levels.  Currently, the recognized values for DEBUG are:
@@ -283,6 +296,7 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !IFNDEF OPT_FEATURE_FLAGS
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_GEOPOLY=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
@@ -309,6 +323,14 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_MATH_FUNCTIONS
 #
 !IF $(RBU)!=0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RBU=1
+!ENDIF
+
+# Should structured exception handling (SEH) be enabled for WAL mode in
+# the core library?  It is on by default.  Only omit it if the
+# USE_SEH=0 option is provided on the nmake command-line.
+#
+!IF $(USE_SEH)==0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_OMIT_SEH=1
 !ENDIF
 
 # These are the "extended" SQLite compilation options used when compiling for
@@ -718,6 +740,13 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
 
 
+# Address sanitizer if ASAN=1
+#
+!IF $(ASAN)>0
+TCC = $(TCC) /fsanitize=address
+!ENDIF
+
+
 # Compiler options needed for programs that use the readline() library.
 #
 !IFNDEF READLINE_FLAGS
@@ -959,6 +988,8 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 !ENDIF
 
 
