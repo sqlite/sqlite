@@ -746,7 +746,7 @@ void sqlite3ColumnSetExpr(
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
-  if( NEVER(!IsOrdinaryTable(pTab)) ) return 0;
+  if( !IsOrdinaryTable(pTab) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
   return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
@@ -898,6 +898,9 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   if( !pTable ) return;
   if( db->pnBytesFreed==0 && (--pTable->nTabRef)>0 ) return;
   deleteTable(db, pTable);
+}
+void sqlite3DeleteTableGeneric(sqlite3 *db, void *pTable){
+  sqlite3DeleteTable(db, (Table*)pTable);
 }
 
 
@@ -1436,7 +1439,8 @@ void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
 /*
 ** Clean up the data structures associated with the RETURNING clause.
 */
-static void sqlite3DeleteReturning(sqlite3 *db, Returning *pRet){
+static void sqlite3DeleteReturning(sqlite3 *db, void *pArg){
+  Returning *pRet = (Returning*)pArg;
   Hash *pHash;
   pHash = &(db->aDb[1].pSchema->trigHash);
   sqlite3HashInsert(pHash, pRet->zName, 0);
@@ -1478,8 +1482,7 @@ void sqlite3AddReturning(Parse *pParse, ExprList *pList){
   pParse->u1.pReturning = pRet;
   pRet->pParse = pParse;
   pRet->pReturnEL = pList;
-  sqlite3ParserAddCleanup(pParse,
-     (void(*)(sqlite3*,void*))sqlite3DeleteReturning, pRet);
+  sqlite3ParserAddCleanup(pParse, sqlite3DeleteReturning, pRet);
   testcase( pParse->earlyCleanup );
   if( db->mallocFailed ) return;
   sqlite3_snprintf(sizeof(pRet->zName), pRet->zName,
@@ -5719,5 +5722,8 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
     }
     sqlite3DbFree(db, pWith);
   }
+}
+void sqlite3WithDeleteGeneric(sqlite3 *db, void *pWith){
+  sqlite3WithDelete(db, (With*)pWith);
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */

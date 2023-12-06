@@ -2031,14 +2031,15 @@ struct FuncDestructor {
 #define SQLITE_FUNC_SLOCHNG  0x2000 /* "Slow Change". Value constant during a
                                     ** single query - might change over time */
 #define SQLITE_FUNC_TEST     0x4000 /* Built-in testing functions */
-/*                           0x8000 -- available for reuse */
+#define SQLITE_FUNC_RUNONLY  0x8000 /* Cannot be used by valueFromFunction */
 #define SQLITE_FUNC_WINDOW   0x00010000 /* Built-in window-only function */
 #define SQLITE_FUNC_INTERNAL 0x00040000 /* For use by NestedParse() only */
 #define SQLITE_FUNC_DIRECT   0x00080000 /* Not for use in TRIGGERs or VIEWs */
-#define SQLITE_FUNC_SUBTYPE  0x00100000 /* Result likely to have sub-type */
+/* SQLITE_SUBTYPE            0x00100000 // Consumer of subtypes */
 #define SQLITE_FUNC_UNSAFE   0x00200000 /* Function has side effects */
 #define SQLITE_FUNC_INLINE   0x00400000 /* Functions implemented in-line */
 #define SQLITE_FUNC_BUILTIN  0x00800000 /* This is a built-in function */
+/*  SQLITE_RESULT_SUBTYPE    0x01000000 // Generator of subtypes */
 #define SQLITE_FUNC_ANYORDER 0x08000000 /* count/min/max aggregate */
 
 /* Identifier numbers for each in-line function */
@@ -2130,10 +2131,11 @@ struct FuncDestructor {
 #define MFUNCTION(zName, nArg, xPtr, xFunc) \
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
-#define JFUNCTION(zName, nArg, iArg, xFunc) \
-  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|\
-   SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
-   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
+#define JFUNCTION(zName, nArg, bUseCache, bWS, bRS, bJsonB, iArg, xFunc) \
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|SQLITE_FUNC_CONSTANT|\
+   SQLITE_UTF8|((bUseCache)*SQLITE_FUNC_RUNONLY)|\
+   ((bRS)*SQLITE_SUBTYPE)|((bWS)*SQLITE_RESULT_SUBTYPE), \
+   SQLITE_INT_TO_PTR(iArg|((bJsonB)*JSON_BLOB)),0,xFunc,0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \
   {nArg, SQLITE_FUNC_BUILTIN|\
    SQLITE_UTF8|SQLITE_FUNC_INLINE|SQLITE_FUNC_CONSTANT|(mFlags), \
@@ -3417,6 +3419,7 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nNcErr;          /* Number of errors encountered while resolving names */
   int ncFlags;         /* Zero or more NC_* flags defined below */
+  u32 nNestedSelect;   /* Number of nested selects using this NC */
   Select *pWinSelect;  /* SELECT statement for any window functions */
 };
 
@@ -4136,6 +4139,9 @@ struct sqlite3_str {
 **
 **   3.  Make a (read-only) copy of a read-only RCStr string using
 **       sqlite3RCStrRef().
+**
+** "String" is in the name, but an RCStr object can also be used to hold
+** binary data.
 */
 struct RCStr {
   u64 nRCRef;            /* Number of references */
@@ -4821,6 +4827,7 @@ void sqlite3ExprOrderByAggregateError(Parse*,Expr*);
 void sqlite3ExprFunctionUsable(Parse*,const Expr*,const FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
+void sqlite3ExprDeleteGeneric(sqlite3*,void*);
 void sqlite3ExprDeferredDelete(Parse*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
@@ -4830,6 +4837,7 @@ void sqlite3ExprListSetSortOrder(ExprList*,int,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,const Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
+void sqlite3ExprListDeleteGeneric(sqlite3*,void*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
@@ -4920,6 +4928,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3CodeDropTable(Parse*, Table*, int, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
+void sqlite3DeleteTableGeneric(sqlite3*, void*);
 void sqlite3FreeIndex(sqlite3*, Index*);
 #ifndef SQLITE_OMIT_AUTOINCREMENT
   void sqlite3AutoincrementBegin(Parse *pParse);
@@ -4956,6 +4965,7 @@ int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,u32,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
+void sqlite3SelectDeleteGeneric(sqlite3*,void*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, Trigger*);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
@@ -5551,6 +5561,7 @@ const char *sqlite3JournalModename(int);
   void sqlite3CteDelete(sqlite3*,Cte*);
   With *sqlite3WithAdd(Parse*,With*,Cte*);
   void sqlite3WithDelete(sqlite3*,With*);
+  void sqlite3WithDeleteGeneric(sqlite3*,void*);
   With *sqlite3WithPush(Parse*, With*, u8);
 #else
 # define sqlite3CteNew(P,T,E,S)   ((void*)0)

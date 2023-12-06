@@ -1223,9 +1223,7 @@ void sqlite3ExprAddFunctionOrderBy(
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList==0 || NEVER(pExpr->x.pList->nExpr==0) ){
     /* Ignore ORDER BY on zero-argument aggregates */
-    sqlite3ParserAddCleanup(pParse,
-        (void(*)(sqlite3*,void*))sqlite3ExprListDelete,
-        pOrderBy);
+    sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pOrderBy);
     return;
   }
   if( IsWindowFunc(pExpr) ){
@@ -1406,6 +1404,9 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
+void sqlite3ExprDeleteGeneric(sqlite3 *db, void *p){
+  if( p ) sqlite3ExprDeleteNN(db, (Expr*)p);
+}
 
 /*
 ** Clear both elements of an OnOrUsing object
@@ -1431,9 +1432,7 @@ void sqlite3ClearOnOrUsing(sqlite3 *db, OnOrUsing *p){
 ** pExpr to the pParse->pConstExpr list with a register number of 0.
 */
 void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
-  sqlite3ParserAddCleanup(pParse,
-    (void(*)(sqlite3*,void*))sqlite3ExprDelete,
-    pExpr);
+  sqlite3ParserAddCleanup(pParse, sqlite3ExprDeleteGeneric, pExpr);
 }
 
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
@@ -2238,6 +2237,9 @@ static SQLITE_NOINLINE void exprListDeleteNN(sqlite3 *db, ExprList *pList){
 }
 void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);
+}
+void sqlite3ExprListDeleteGeneric(sqlite3 *db, void *pList){
+  if( pList ) exprListDeleteNN(db, (ExprList*)pList);
 }
 
 /*
@@ -6043,8 +6045,8 @@ int sqlite3ExprListCompare(const ExprList *pA, const ExprList *pB, int iTab){
 */
 int sqlite3ExprCompareSkip(Expr *pA,Expr *pB, int iTab){
   return sqlite3ExprCompare(0,
-             sqlite3ExprSkipCollateAndLikely(pA),
-             sqlite3ExprSkipCollateAndLikely(pB),
+             sqlite3ExprSkipCollate(pA),
+             sqlite3ExprSkipCollate(pB),
              iTab);
 }
 
@@ -6769,13 +6771,14 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     case TK_AGG_FUNCTION: {
       if( (pNC->ncFlags & NC_InAggFunc)==0
        && pWalker->walkerDepth==pExpr->op2
+       && pExpr->pAggInfo==0
       ){
         /* Check to see if pExpr is a duplicate of another aggregate
         ** function that is already in the pAggInfo structure
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
-          if( pItem->pFExpr==pExpr ) break;
+          if( NEVER(pItem->pFExpr==pExpr) ) break;
           if( sqlite3ExprCompare(0, pItem->pFExpr, pExpr, -1)==0 ){
             break;
           }
