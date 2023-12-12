@@ -1,5 +1,5 @@
-C Different\sfix\sfor\sthe\sfts5\sCOMMIT-following-OOM\sproblem\sfirst\sfixed\sby\s[fba3129d].\sThis\sone\sdoes\snot\scause\sproblems\sif\san\sfts5\stable\sis\srenamed\sand\sthen\sdropped\swithin\sthe\ssame\stransaction.
-D 2023-12-11T13:48:30.842
+C Worker1\sPromiser\sAPI:\swhen\smultiple\sdb\sconnections\sare\sactive\sthen\suse\sthe\srequested\sconnection\sinstead\sof\salways\sthe\sfirst-opened\sconnection.\sBug\sreported\sin\s[forum:894c330e7f23b177|forum\spost\s894c330e7f23b177].
+D 2023-12-12T17:55:20.991
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -592,7 +592,7 @@ F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 595953994aa3ae2287c889c4da39ab3d6f17b6461ecf4bec334b7a3faafddb02
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
 F ext/wasm/api/sqlite3-wasm.c d0e09eb5ed3743c00294e30019e591c3aa150572ae7ffe8a8994568a7377589f
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 569d4e859968e65f55dec5fac0b879828a23c8b179162cc7812fec19f844dd21
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js a94e3f0ca25a777bb73779368f97be0e103e02d067ad3ee3e9c4cc5bcefbd01c
 F ext/wasm/api/sqlite3-worker1.c-pp.js a541112aa51e16705f13a99bb943c64efe178aa28c86704a955f8fd9afe4ba37
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 0dad6a02ad796f1003d3b7048947d275c4d6277f63767b8e685c27df8fdac93e
@@ -2142,9 +2142,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb4d35e2628320e187f96ca671cbbf68df51e423e93678b56f18983e93f91b9f
-Q +d8c6b246944934a7a6e027b3f5b986fd64a19dd5c5c5175f4ea8586da59a6764
-R 49bac9388d9f3eb10eb870cac25827d4
-U dan
-Z 4b49770b75f78517a33bfe7f7c556b1b
+P 67da596d82ec0ed3c679da3be9d7379c557cd2fb83d7d833556107caf31327f6
+Q +194276e18e0268829061c09317e7f9f527a703eb45f1755ff1dd30bd99dc1b68
+R c3422221817dedf3fb4f695e7474155b
+U stephan
+Z 9be55331700e3fc8a76d7c7e2273b7a8
 # Remove this line to create a well-formed Fossil manifest.
