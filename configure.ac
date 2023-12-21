@@ -310,6 +310,7 @@ matches *cygwin*])dnl
 AC_CANONICAL_HOST
 case $host_os in
   *cygwin* ) CYGWIN=yes;;
+  *kfbsd* ) AC_DEFINE([FREEBSD_KERNEL], [1], [Define to 1 if compiling for FreeBSD Kernel]);;
 	 * ) CYGWIN=no;;
 esac
 
