@@ -1,5 +1,5 @@
-C When\sunable\sto\sresolve\san\sidentifier,\schange\sthe\sExpr\snode\sinto\sTK_NULL\nrather\sthan\sTK_COLUMN,\sto\sprevent\sany\sdownstream\smisuse\sof\sthe\snon-existent\ncolumn.
-D 2023-12-19T13:00:21.649
+C Update\s#ifdef\schecks\sin\spager.c\sand\sutil.c\sto\saccount\sfor\s[0462a2612d1fc1d0]\sto\sresolve\sthe\sbuild\sproblem\sreported\sin\s[forum:9819032aac|forum\spost\s9819032aac].
+D 2023-12-22T15:42:09.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -711,7 +711,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c cb116fde9e3ca3c1bbfdf89d6928f776a2a34da168e2667426523a4db353b271
 F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 987ab3a2cd9065d62e9955474470ff733445e2357432a67e3d0f5a8f9313e334
+F src/pager.c d19325084b4ada4a9139175c6c09d5534bb63a8017c85fe542dee08602794637
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -792,7 +792,7 @@ F src/trigger.c 0905b96b04bb6658509f711a8207287f1315cdbc3df1a1b13ba6483c8e341c81
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c b22cc9f203a8c0b9ee5338a67f8860347d14845864c10248bebe84518a781677
+F src/util.c 078f040366d5bd5f47658d045f901c768c1c636c6eaea121f3a1cbd63c3edb5b
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c b0617c320ae426b0561954dcdb63427fce72d08a4723eb411e3e2b5a7515aa4f
 F src/vdbe.h 88e19a982df9027ec1c177c793d1a5d34dc23d8f06e3b2d997f43688b05ee0eb
@@ -2142,9 +2142,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e0e2ee7c723582be5ad9126f5cd642c3cecf615c609bc0b87e914a6f5c0c904
-Q +d2e6117e4f97ab98b01deb5fcad5520f8181d00bed8d904d34963c01d73df857
-R 82683641f262a28f5c6af14a8b17f6ce
-U drh
-Z a4561e880378ee6eb7a3b44167666c55
+P 8f770d14d3dca5eb38faa89c4cba269233aa45cc4a56176fdae22f14974ceeb2
+Q +0f22d809a1c6c80e381f6bcd931fe4ec36dca0e28d07ab4f4f7f83c813424f60
+R 7e717efc5d266a25a7aae4d16300c30b
+U stephan
+Z 79ce9f752d302ff3883055797a230a93
 # Remove this line to create a well-formed Fossil manifest.
