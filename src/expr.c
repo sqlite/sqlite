@@ -1405,7 +1405,7 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p ) sqlite3ExprDeleteNN(db, p);
 }
 void sqlite3ExprDeleteGeneric(sqlite3 *db, void *p){
-  if( p ) sqlite3ExprDeleteNN(db, (Expr*)p);
+  if( ALWAYS(p) ) sqlite3ExprDeleteNN(db, (Expr*)p);
 }
 
 /*
@@ -2239,7 +2239,7 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   if( pList ) exprListDeleteNN(db, pList);
 }
 void sqlite3ExprListDeleteGeneric(sqlite3 *db, void *pList){
-  if( pList ) exprListDeleteNN(db, (ExprList*)pList);
+  if( ALWAYS(pList) ) exprListDeleteNN(db, (ExprList*)pList);
 }
 
 /*
@@ -2740,9 +2740,10 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_COLUMN:
       assert( ExprUseYTab(p) );
       return ExprHasProperty(p, EP_CanBeNull) ||
-             p->y.pTab==0 ||  /* Reference to column of index on expression */
+             NEVER(p->y.pTab==0) ||  /* Reference to column of index on expr */
              (p->iColumn>=0
               && p->y.pTab->aCol!=0 /* Possible due to prior error */
+              && ALWAYS(p->iColumn<p->y.pTab->nCol)
               && p->y.pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
@@ -5324,8 +5325,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   if( inReg!=target ){
     u8 op;
-    if( ALWAYS(pExpr)
-     && (ExprHasProperty(pExpr,EP_Subquery) || pExpr->op==TK_REGISTER)
+    Expr *pX = sqlite3ExprSkipCollateAndLikely(pExpr);
+    testcase( pX!=pExpr );
+    if( ALWAYS(pX)
+     && (ExprHasProperty(pX,EP_Subquery) || pX->op==TK_REGISTER)
     ){
       op = OP_Copy;
     }else{
@@ -6821,6 +6824,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               }else{
                 pItem->bOBPayload = 1;
               }
+              pItem->bUseSubtype =
+                    (pItem->pFunc->funcFlags & SQLITE_SUBTYPE)!=0;
             }else{
               pItem->iOBTab = -1;
             }
