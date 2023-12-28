@@ -360,6 +360,7 @@ struct Fts5Index {
 
   /* Error state. */
   int rc;                         /* Current error code */
+  int flushRc;
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
@@ -1546,9 +1547,9 @@ static int fts5DlidxLvlNext(Fts5DlidxLvl *pLvl){
     }
 
     if( iOff<pData->nn ){
-      i64 iVal;
+      u64 iVal;
       pLvl->iLeafPgno += (iOff - pLvl->iOff) + 1;
-      iOff += fts5GetVarint(&pData->p[iOff], (u64*)&iVal);
+      iOff += fts5GetVarint(&pData->p[iOff], &iVal);
       pLvl->iRowid += iVal;
       pLvl->iOff = iOff;
     }else{
@@ -4120,6 +4121,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
     sqlite3Fts5HashClear(p->pHash);
     p->nPendingData = 0;
     p->nPendingRow = 0;
+    p->flushRc = SQLITE_OK;
   }
   p->nContentlessDelete = 0;
 }
@@ -5701,6 +5703,10 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
+  if( p->flushRc ){
+    p->rc = p->flushRc;
+    return;
+  }
   if( p->nPendingData || p->nContentlessDelete ){
     assert( p->pHash );
     fts5FlushOneHash(p);
@@ -5709,6 +5715,8 @@ static void fts5IndexFlush(Fts5Index *p){
       p->nPendingData = 0;
       p->nPendingRow = 0;
       p->nContentlessDelete = 0;
+    }else if( p->nPendingData || p->nContentlessDelete ){
+      p->flushRc = p->rc;
     }
   }
 }
@@ -6879,7 +6887,7 @@ static Fts5Iter *fts5SetupTokendataIter(
   fts5IndexFlush(p);
   pStruct = fts5StructureRead(p);
 
-  while( 1 ){
+  while( p->rc==SQLITE_OK ){
     Fts5Iter *pPrev = pSet ? pSet->apIter[pSet->nIter-1] : 0;
     Fts5Iter *pNew = 0;
     Fts5SegIter *pNewIter = 0;
@@ -6888,13 +6896,15 @@ static Fts5Iter *fts5SetupTokendataIter(
     int iLvl, iSeg, ii;
 
     pNew = fts5MultiIterAlloc(p, pStruct->nSegment);
-    if( pNew==0 ) break;
-
     if( pSmall ){
       fts5BufferSet(&p->rc, &bSeek, pSmall->n, pSmall->p);
       fts5BufferAppendBlob(&p->rc, &bSeek, 1, (const u8*)"\0");
     }else{
       fts5BufferSet(&p->rc, &bSeek, nToken, pToken);
+    }
+    if( p->rc ){
+      sqlite3Fts5IterClose((Fts5IndexIter*)pNew);
+      break;
     }
 
     pNewIter = &pNew->aSeg[0];
@@ -6930,6 +6940,7 @@ static Fts5Iter *fts5SetupTokendataIter(
 
         pNewIter++;
         if( pPrevIter ) pPrevIter++;
+        if( p->rc ) break;
       }
     }
     fts5TokendataSetTermIfEof(pPrev, pSmall);
@@ -7021,6 +7032,10 @@ int sqlite3Fts5IndexQuery(
     int bTokendata = pConfig->bTokendata;
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
+    if( flags & (FTS5INDEX_QUERY_NOTOKENDATA|FTS5INDEX_QUERY_SCAN) ){
+      bTokendata = 0;
+    }
+
     /* Figure out which index to search and set iIdx accordingly. If this
     ** is a prefix query for which there is no prefix index, set iIdx to
     ** greater than pConfig->nPrefix to indicate that the query will be
@@ -7032,7 +7047,6 @@ int sqlite3Fts5IndexQuery(
     ** for internal sanity checking by the integrity-check in debug 
     ** mode only.  */
 #ifdef SQLITE_DEBUG
-    if( flags & FTS5INDEX_QUERY_NOTOKENDATA ) bTokendata = 0;
     if( pConfig->bPrefixIndex==0 || (flags & FTS5INDEX_QUERY_TEST_NOIDX) ){
       assert( flags & FTS5INDEX_QUERY_PREFIX );
       iIdx = 1+pConfig->nPrefix;
@@ -7211,7 +7225,7 @@ int sqlite3Fts5IterToken(
 */
 void sqlite3Fts5IndexIterClearTokendata(Fts5IndexIter *pIndexIter){
   Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-  if( pIter->pTokenDataIter ){
+  if( pIter && pIter->pTokenDataIter ){
     pIter->pTokenDataIter->nMap = 0;
   }
 }
@@ -7930,7 +7944,7 @@ static void fts5IndexIntegrityCheckEmpty(
 }
 
 static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
-  int iTermOff = 0;
+  i64 iTermOff = 0;
   int ii;
 
   Fts5Buffer buf1 = {0,0,0};
@@ -7939,7 +7953,7 @@ static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
   ii = pLeaf->szLeaf;
   while( ii<pLeaf->nn && p->rc==SQLITE_OK ){
     int res;
-    int iOff;
+    i64 iOff;
     int nIncr;
 
     ii += fts5GetVarint32(&pLeaf->p[ii], nIncr);
