@@ -891,7 +891,12 @@ static void statGet(
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
     }
-    if( iVal>=1000 && iVal*10>=1000 ){
+    if( iVal>=1000 && iVal*10>=nRow ){
+      /* If this index always matches 1000 or more rows even if all columns
+      ** match, and if the the number of rows matched is 1/10th or more of
+      ** the index, then this is a very low selectivity index.  Mark it as
+      ** "noquery" so that the query planner won't waste any time trying to
+      ** use it. */
       sqlite3_str_appendf(&sStat, " noquery");
     }
     sqlite3ResultStrAccum(context, &sStat);
