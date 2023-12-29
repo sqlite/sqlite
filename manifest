@@ -1,5 +1,5 @@
-C Minor\sdoc\stouchup\sin\sthe\sJS\sbits.
-D 2023-12-29T04:29:07.096
+C Attempt\sto\simprove\sthe\sANALYZE\scommand\sso\sthat\sit\sdoes\sa\sbetter\sjob\sof\ndetecting\slopsided\sindexes\sand\smakes\sappropriate\schanges\sto\sthe\ssqlite_stat1\ntable.
+D 2023-12-29T19:03:01.857
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 30c2333b8bb3af71e4eb9adeadee8aa20edb15917ed44b8422e5cd15f3dfcddc
-F src/analyze.c d4cc28738c29e009640ec20ebb6936ba6fcefff0d11aa93398d9bb9a5ead6c1f
+F src/analyze.c dd9f25aa96ab1ca1a52743a433fbc53888f41059d909a4360382835414733f82
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2156,8 +2156,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 630604a4e604bfb36c31602917bfa8d42c10c82966d0819932bf8f827b9158b8
-R 0182e48a4eb943a57927e95defc2f847
-U stephan
-Z 19ca2e7863b05c35a59e90f21d5378b3
+P 8d2120c35425081e2158d6a8a6b083c4adf8d694046b2d98f5fd235520920432
+R b58bf97977b7e8d817610de3abc3e459
+T *branch * enhanced-stat1
+T *sym-enhanced-stat1 *
+T -sym-trunk *
+U drh
+Z 87510e89218beaa47ade1953d2d2ed80
 # Remove this line to create a well-formed Fossil manifest.

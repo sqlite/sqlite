@@ -266,6 +266,7 @@ typedef struct StatSample StatSample;
 struct StatSample {
   tRowcnt *anEq;                  /* sqlite_stat4.nEq */
   tRowcnt *anDLt;                 /* sqlite_stat4.nDLt */
+  tRowcnt *amxEq;                 /* Maximum length run of equal values */
 #ifdef SQLITE_ENABLE_STAT4
   tRowcnt *anLt;                  /* sqlite_stat4.nLt */
   union {
@@ -425,6 +426,7 @@ static void statInit(
   /* Allocate the space required for the StatAccum object */
   n = sizeof(*p) 
     + sizeof(tRowcnt)*nColUp                  /* StatAccum.anEq */
+    + sizeof(tRowcnt)*nColUp                  /* StatAccum.amxEq */
     + sizeof(tRowcnt)*nColUp;                 /* StatAccum.anDLt */
 #ifdef SQLITE_ENABLE_STAT4
   if( mxSample ){
@@ -447,7 +449,8 @@ static void statInit(
   p->nKeyCol = nKeyCol;
   p->nSkipAhead = 0;
   p->current.anDLt = (tRowcnt*)&p[1];
-  p->current.anEq = &p->current.anDLt[nColUp];
+  p->current.amxEq = &p->current.anDLt[nColUp];
+  p->current.anEq = &p->current.amxEq[nColUp];
 
 #ifdef SQLITE_ENABLE_STAT4
   p->mxSample = p->nLimit==0 ? mxSample : 0;
@@ -716,7 +719,10 @@ static void statPush(
 
   if( p->nRow==0 ){
     /* This is the first call to this function. Do initialization. */
-    for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
+    for(i=0; i<p->nCol; i++){
+      p->current.anEq[i] = 1;
+      p->current.amxEq[i] = 1;
+    }
   }else{
     /* Second and subsequent calls get processed here */
 #ifdef SQLITE_ENABLE_STAT4
@@ -733,6 +739,9 @@ static void statPush(
 #ifdef SQLITE_ENABLE_STAT4
       if( p->mxSample ) p->current.anLt[i] += p->current.anEq[i];
 #endif
+      if( p->current.amxEq[i]<p->current.anEq[i] ){
+        p->current.amxEq[i] = p->current.anEq[i];
+      }
       p->current.anEq[i] = 1;
     }
   }
@@ -841,20 +850,18 @@ static void statGet(
     ** a key with the corresponding number of fields. In other words,
     ** if the index is on columns (a,b) and the sqlite_stat1 value is 
     ** "100 10 2", then SQLite estimates that:
-    **
-    **   * the index contains 100 rows,
-    **   * "WHERE a=?" matches 10 rows, and
-    **   * "WHERE a=? AND b=?" matches 2 rows.
+    **   |   | |
+    **   |   | `--  "WHERE a=? AND b=?" matches approximately 2 rows
+    **   |   `----  "WHERE a=?" matches approximately 10 rows
+    **   `--------  There are approximately 100 rows in the index total
     **
     ** If D is the count of distinct values and K is the total number of 
     ** rows, then each estimate is usually computed as:
     **
     **        I = (K+D-1)/D
     **
-    ** In other words, I is K/D rounded up to the next whole integer.
-    ** However, if I is between 1.0 and 1.1 (in other words if I is
-    ** close to 1.0 but just a little larger) then do not round up but
-    ** instead keep the I value at 1.0.
+    ** Adjustments to the I value are made in some cases.  See comments
+    ** in-line below.
     */
     sqlite3_str sStat;   /* Text of the constructed "stat" line */
     int i;               /* Loop counter */
@@ -863,9 +870,23 @@ static void statGet(
     sqlite3_str_appendf(&sStat, "%llu", 
         p->nSkipAhead ? (u64)p->nEst : (u64)p->nRow);
     for(i=0; i<p->nKeyCol; i++){
-      u64 nDistinct = p->current.anDLt[i] + 1;
-      u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
-      if( iVal==2 && p->nRow*10 <= nDistinct*11 ) iVal = 1;
+      u64 nDistinct, iVal, mx;
+      nDistinct = p->current.anDLt[i] + 1;
+      iVal = (p->nRow + nDistinct - 1) / nDistinct;
+      mx = p->current.amxEq[i];
+      if( nDistinct==1 && p->nLimit>0 ){
+        /* If we never saw more than a single value in a PRAGMA analysis_limit
+        ** search, then set the estimated number of matching rows to the
+        ** estimated number of rows in the index. */
+        iVal = p->nEst;
+      }else if( iVal<mx/8 ){
+        /* Never let the estimated number of matching rows be less than
+        ** 1/8th the greatest number of identical rows */
+        iVal = mx/8;
+      }else if( iVal==2 && p->nRow*10 <= nDistinct*11 ){
+        /* If the value is less than or equal to 1.1, round it down to 1.0 */
+        iVal = 1;
+      }
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
     }
