@@ -891,12 +891,13 @@ static void statGet(
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
     }
-    if( iVal>=1000 && iVal*10>=nRow ){
-      /* If this index always matches 1000 or more rows even if all columns
-      ** match, and if the the number of rows matched is 1/10th or more of
-      ** the index, then this is a very low selectivity index.  Mark it as
-      ** "noquery" so that the query planner won't waste any time trying to
-      ** use it. */
+    if( iVal>=150 && iVal>=(nRow*10)/sqlite3LogEst(nRow) ){
+      /* If this index is likely to match 150 or more rows even if all columns
+      ** match, and if the the number of rows matched is such a large fraction
+      ** of the index that a full scan of the table would be faster than
+      ** doing a binary search for each row identified by the index,
+      ** then this is a very low selectivity index.  Mark it as "noquery"
+      ** so that the query planner won't waste any time trying to use it. */
       sqlite3_str_appendf(&sStat, " noquery");
     }
     sqlite3ResultStrAccum(context, &sStat);
