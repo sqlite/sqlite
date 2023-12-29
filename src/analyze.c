@@ -865,12 +865,13 @@ static void statGet(
     */
     sqlite3_str sStat;   /* Text of the constructed "stat" line */
     int i;               /* Loop counter */
+    u64 nRow, iVal = 0;
 
     sqlite3StrAccumInit(&sStat, 0, 0, 0, (p->nKeyCol+1)*100);
-    sqlite3_str_appendf(&sStat, "%llu", 
-        p->nSkipAhead ? (u64)p->nEst : (u64)p->nRow);
+    nRow = p->nSkipAhead ? p->nEst : p->nRow;
+    sqlite3_str_appendf(&sStat, "%llu", nRow);
     for(i=0; i<p->nKeyCol; i++){
-      u64 nDistinct, iVal, mx;
+      u64 nDistinct, mx;
       nDistinct = p->current.anDLt[i] + 1;
       iVal = (p->nRow + nDistinct - 1) / nDistinct;
       mx = p->current.amxEq[i];
@@ -889,6 +890,9 @@ static void statGet(
       }
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
+    }
+    if( iVal>=1000 && iVal*10>=1000 ){
+      sqlite3_str_appendf(&sStat, " noquery");
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1568,6 +1572,8 @@ static void decodeIntArray(
         pIndex->szIdxRow = sqlite3LogEst(sz);
       }else if( sqlite3_strglob("noskipscan*", z)==0 ){
         pIndex->noSkipScan = 1;
+      }else if( sqlite3_strglob("noquery*", z)==0 ){
+        pIndex->bNoQuery = 1;
       }
 #ifdef SQLITE_ENABLE_COSTMULT
       else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
