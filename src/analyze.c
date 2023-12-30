@@ -865,11 +865,12 @@ static void statGet(
     */
     sqlite3_str sStat;   /* Text of the constructed "stat" line */
     int i;               /* Loop counter */
-    int bUneven = 0;     /* True if there is an uneven distribution of values */
+    int iUneven = 1;     /* max/avg */
+    u64 nRow;            /* Number of rows in the index */
 
     sqlite3StrAccumInit(&sStat, 0, 0, 0, (p->nKeyCol+1)*100);
-    sqlite3_str_appendf(&sStat, "%llu", 
-        p->nSkipAhead ? (u64)p->nEst : (u64)p->nRow);
+    nRow =  p->nSkipAhead ? p->nEst : p->nRow;
+    sqlite3_str_appendf(&sStat, "%llu", nRow);
     for(i=0; i<p->nKeyCol; i++){
       u64 nDistinct = p->current.anDLt[i] + 1;
       u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
@@ -879,20 +880,31 @@ static void statGet(
         ** search, then set the estimated number of matching rows to the
         ** estimated number of rows in the index. */
         iVal = p->nEst;
-      }else if( iVal<mx/8 ){
-        /* Never let the estimated number of matching rows be less than
-        ** 1/8th the greatest number of identical rows */
-        iVal = mx/8;
-        bUneven = 1;
+      }else if( iVal<mx/10 ){
+        /* Report uneven= if the maximum run of identical values ever
+        ** reaches or exceeds 10 times the average run */
+        int iRatio = mx/iVal;
+        if( iUneven<iRatio ) iUneven = iRatio;
       }else if( iVal==2 && p->nRow*10 <= nDistinct*11 ){
         /* If the value is less than or equal to 1.1, round it down to 1.0 */
         iVal = 1;
       }
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
+
+      /* Add the "slow" argument if the peak number of rows obtained
+      ** from a full equality match is so large that a full table scan
+      ** seems likely to be faster.
+      */
+      if( i==p->nKeyCol-1
+       && nRow > 1000
+       && nRow <= iVal*iUneven + sqlite3LogEst(nRow*2/3)
+      ){
+        sqlite3_str_appendf(&sStat, " slow");
+      }
     }
-    if( bUneven ){
-      sqlite3_str_appendf(&sStat, " uneven");
+    if( iUneven>1 ){
+      sqlite3_str_appendf(&sStat, " uneven=%d", iUneven);
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1556,6 +1568,7 @@ static void decodeIntArray(
 #endif
     if( *z==' ' ) z++;
   }
+  while( i<nOut ){ aLog[i++] = 10; }
 #ifndef SQLITE_ENABLE_STAT4
   assert( pIndex!=0 ); {
 #else
@@ -1563,6 +1576,7 @@ static void decodeIntArray(
 #endif
     pIndex->bUnordered = 0;
     pIndex->noSkipScan = 0;
+    pIndex->bSlow = 0;
     while( z[0] ){
       if( sqlite3_strglob("unordered*", z)==0 ){
         pIndex->bUnordered = 1;
@@ -1572,8 +1586,24 @@ static void decodeIntArray(
         pIndex->szIdxRow = sqlite3LogEst(sz);
       }else if( sqlite3_strglob("noskipscan*", z)==0 ){
         pIndex->noSkipScan = 1;
-      }else if( sqlite3_strglob("uneven*", z)==0 ){
-        pIndex->bUneven = 1;
+      }else if( sqlite3_strglob("slow*", z)==0 ){
+        pIndex->bSlow = 1;
+      }else if( sqlite3_strglob("uneven=[0-9]*", z)==0 ){
+        /* An argument of "uneven=NNN" means that the maximum length
+        ** run of the same value is NNN times longer than the average.
+        ** Go through the iaRowLogEst[] values for the index and increase
+        ** them so that so that they are each no less than 1/8th the
+        ** maximum value. */
+        LogEst scale = sqlite3LogEst(sqlite3Atoi(z+7)) - 30;
+        if( scale>0 ){
+          LogEst mx = aLog[0];
+          int jj;
+          for(jj=1; jj<pIndex->nKeyCol; jj++){
+            LogEst x = aLog[jj] + scale;
+            if( x>mx ) x = mx;
+            aLog[jj] = x;
+          }
+        }
       }
 #ifdef SQLITE_ENABLE_COSTMULT
       else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){

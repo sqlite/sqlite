@@ -1,5 +1,5 @@
-C Omit\sthe\s"noquery"\sargument\sin\ssqlite_stat1.\s\sInstead,\sadd\sthe\s"uneven"\sargument\nfor\sindexes\sthat\shave\san\suneven\sdistribution\sof\svalues.\s\sModify\sthe\squery\nplanner\sto\savoid\sdoing\sequality\slook-ups\son\suneven\sindexes.
-D 2023-12-30T15:07:31.646
+C In\ssqlite_stat1,\srevert\sthe\snumber\sof\srows\sto\sthe\saverage,\snot\sadjusted\sfor\nthe\smaximum.\s\sInstead\sadd\s"uneven=NNN"\swhere\sNNN\sis\sa\smultiplier\sto\sapply\sto\nthe\saverage\sto\sget\sthe\smaximum.\s\s"uneven"\sis\sonly\sreported\sif\sNNN\sis\s10\sor\smore.\nAlso\sadd\sthe\s"slow"\sargument\sis\sthe\smaximum\snumber\sof\srows\sreported\sby\sa\nfull\sequality\smatch\sis\sso\slarge\sthat\sa\stable\sscan\sseems\slikely\sto\sbe\sfaster.
+D 2023-12-30T22:00:37.851
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 30c2333b8bb3af71e4eb9adeadee8aa20edb15917ed44b8422e5cd15f3dfcddc
-F src/analyze.c 1841ee237180db76d8732f6041b21fc09318268090f80c332a6b3524009ebc58
+F src/analyze.c 3d8c2c02b6a84d5aa02e59a0167c1a5685e4432053c69220aef8b6c4ef69d075
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -742,7 +742,7 @@ F src/shell.c.in 85f8d52fa4f7773823736dd39d0a268fd739207fcae95883c9ec8ce4af59f7d
 F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 1a06a2255168e6ca09ab8c4a158ef21454fd75d4916e5c2aa0d48253fe205639
+F src/sqliteInt.h 1c0b1e779ee9bc83f3f913e1d63e2fe5d2f2b5bc630030f81670f47ca42a0b01
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -822,7 +822,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c e5247a3406531b705b44630e9ccf9ca0e5c74955ef19c06fbb146d765c500c20
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 927a1c803e4c7c20be17d292975581681c78b3182bf3d763fedf664f6ae48fc2
+F src/where.c 38ca04a808ee25d6cf12e80f1461a79e350ca554e34e024c2355e29c1e4fd637
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f516ef80a0ba87fa3b74da0fc899a7d14ad3de61fac6b467e36e7fa9fe76dcdf
-R c297d3ac74063268f6b81923ab4cb3f5
+P 0ec4b880bbf276f905d5c09fcb09cee4748c92c83baf241910223e59b723b86e
+R d9406ab6f9c66a4061c3d7768c2ae251
 U drh
-Z f5c75810e499792105e5109c0faf69d2
+Z b993debd702dce70b35f515365efee54
 # Remove this line to create a well-formed Fossil manifest.

@@ -2973,9 +2973,9 @@ static int whereLoopAddBtreeIndex(
     assert( pNew->u.btree.nBtm==0 );
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
   }
-  if( pProbe->bUnordered || pProbe->bUneven ){
+  if( pProbe->bUnordered || pProbe->bSlow ){
     if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
-    if( pProbe->bUneven ) opMask &= ~(WO_EQ|WO_IN|WO_IS);
+    if( pProbe->bSlow )      opMask &= ~(WO_EQ|WO_IN|WO_IS);
   }
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
