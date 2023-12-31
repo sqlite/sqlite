@@ -1551,7 +1551,7 @@ static void decodeIntArray(
 #else
   assert( z!=0 );
 #endif
-  for(i=0; *z && i<nOut; i++){
+  for(i=0; i<nOut; i++){
     v = 0;
     while( (c=z[0])>='0' && c<='9' ){
       v = v*10 + c - '0';
@@ -1568,7 +1568,6 @@ static void decodeIntArray(
 #endif
     if( *z==' ' ) z++;
   }
-  while( i<nOut ){ aLog[i++] = 10; }
 #ifndef SQLITE_ENABLE_STAT4
   assert( pIndex!=0 ); {
 #else
