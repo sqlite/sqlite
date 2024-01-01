@@ -1613,10 +1613,10 @@ static void decodeIntArray(
         int kk = 4;
         LogEst mx = aLog[0];
         while( sqlite3Isdigit(z[kk]) ){
-          u64 v = z[kk++] - '0';
+          u64 vx = z[kk++] - '0';
           LogEst scale;
-          while( sqlite3Isdigit(z[kk]) ){ v = v*10 + z[kk++]-'0'; }
-          scale = sqlite3LogEst(v);
+          while( sqlite3Isdigit(z[kk]) ){ vx = vx*10 + z[kk++]-'0'; }
+          scale = sqlite3LogEst(vx);
           if( scale>33 ){
                 /*  ^^----- TUNING --------------vv    See tag 20231231-02 */
             LogEst adjusted = aLog[jj] + scale - 33;
