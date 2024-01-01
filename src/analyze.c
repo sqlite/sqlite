@@ -1612,7 +1612,7 @@ static void decodeIntArray(
         int jj = 1;
         int kk = 4;
         LogEst mx = aLog[0];
-        while( sqlite3Isdigit(z[kk]) ){
+        for(jj=1; sqlite3Isdigit(z[kk]) && jj<nOut; jj++){
           u64 vx = z[kk++] - '0';
           LogEst scale;
           while( sqlite3Isdigit(z[kk]) ){ vx = vx*10 + z[kk++]-'0'; }
@@ -1623,9 +1623,7 @@ static void decodeIntArray(
             if( adjusted>mx ) adjusted = mx;
             aLog[jj] = adjusted;
           }
-          if( jj==pIndex->nKeyCol ) break;
           if( z[kk]==',' ) kk++;
-          jj++;
         }
       }
 #ifdef SQLITE_ENABLE_COSTMULT
@@ -1707,6 +1705,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
     }
   }else{
     Index fakeIdx;
+    memset(&fakeIdx, 0, sizeof(fakeIdx));
     fakeIdx.szIdxRow = pTable->szTabRow;
 #ifdef SQLITE_ENABLE_COSTMULT
     fakeIdx.pTable = pTable;
