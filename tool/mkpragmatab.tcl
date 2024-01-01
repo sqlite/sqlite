@@ -247,7 +247,7 @@ set pragma_def {
 
   NAME: stats
   FLAG: NeedSchema Result0 SchemaReq
-  COLS: tbl idx wdth hght flgs
+  COLS: tbl idx wdth hght flgs est
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) && defined(SQLITE_DEBUG)
 
   NAME: index_info

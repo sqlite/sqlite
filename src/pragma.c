@@ -1298,26 +1298,50 @@ void sqlite3Pragma(
   break;
 
 #ifdef SQLITE_DEBUG
+  /* The output of this pragma is undocumented in the official documentation
+  ** because it is subject to change, and we don't want people coming to
+  ** rely on it.
+  **
+  ** Columns:
+  **    tbl              Name of a table that is being described
+  **    idx              Name of an index (belonging to tbl) being described
+  **    wdth             LogEst of the on-disk estimated bytes per row
+  **    hght             LogEst of the estimated number of rows
+  **    flgs             tabFlags for tables
+  **    est              aiRowLogEst[] values for indexes + "slow" flag
+  */
   case PragTyp_STATS: {
     Index *pIdx;
     HashElem *i;
-    pParse->nMem = 5;
+    sqlite3_str est;
+    sqlite3StrAccumInit(&est, 0, 0, 0, SQLITE_MAX_LENGTH);
+    pParse->nMem = 6;
     sqlite3CodeVerifySchema(pParse, iDb);
     for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
       Table *pTab = sqliteHashData(i);
-      sqlite3VdbeMultiLoad(v, 1, "ssiii",
+      sqlite3VdbeMultiLoad(v, 1, "ssiiis",
            sqlite3PreferredTableName(pTab->zName),
            0,
            pTab->szTabRow,
            pTab->nRowLogEst,
-           pTab->tabFlags);
+           pTab->tabFlags,
+           0);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqlite3VdbeMultiLoad(v, 2, "siiiX",
+        int j;
+        est.nChar = 0;
+        for(j=1; j<pIdx->nKeyCol+1; j++){
+          if( j>1 ) sqlite3_str_append(&est, " ", 1);
+          sqlite3_str_appendf(&est, "%d", pIdx->aiRowLogEst[j]);
+        }
+        if( pIdx->bSlow ) sqlite3_str_append(&est, " slow", 5);
+        sqlite3VdbeMultiLoad(v, 2, "siiisX",
            pIdx->zName,
            pIdx->szIdxRow,
            pIdx->aiRowLogEst[0],
-           pIdx->hasStat1);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 5);
+           pIdx->hasStat1,
+           sqlite3_str_value(&est));
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
+        sqlite3_str_reset(&est);
       }
     }
   }

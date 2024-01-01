@@ -865,7 +865,7 @@ static void statGet(
     */
     sqlite3_str sStat;   /* Text of the constructed "stat" line */
     int i;               /* Loop counter */
-    int iUneven = 1;     /* max/avg */
+    int bUneven = 0;     /* True if the uneven=... argument is needed */
     u64 nRow;            /* Number of rows in the index */
 
     sqlite3StrAccumInit(&sStat, 0, 0, 0, (p->nKeyCol+1)*100);
@@ -881,15 +881,16 @@ static void statGet(
         ** estimated number of rows in the index. */
         iVal = p->nEst;
       }else if( iVal<mx/10 ){
-        /*              ^^-- TUNING: threshold for when uneven=NNN is reported
-        ** tag-20231231-01:  Report uneven= if the maximum run of identical
-        ** values ever reaches or exceeds 10 (or so) times the average run.
+        /*              ^^-- TUNING: threshold for when var=... is reported.
+        ** tag-20231231-01:  Report var=... if the maximum run of identical
+        ** values ever reaches or exceeds 10 (or so) times the average run
+        ** for any column of the index.
+        **
         ** The reporting threshold of 10 is tunable, but if changed, one
         ** should also consider changing the aiRowLogEst adjustment factor at
         ** tag-20231231-02.
         */
-        int iRatio = mx/iVal;
-        if( iUneven<iRatio ) iUneven = iRatio;
+        bUneven = 1;
       }else if( iVal==2 && p->nRow*10 <= nDistinct*11 ){
         /* If the value is less than or equal to 1.1, round it down to 1.0 */
         iVal = 1;
@@ -897,29 +898,18 @@ static void statGet(
       sqlite3_str_appendf(&sStat, " %llu", iVal);
       assert( p->current.anEq[i] );
 
-      /* Add the "slow" argument if the peak number of rows obtained
-      ** from a full equality match is so large that a full table scan
-      ** seems likely to be faster than using the index.  The query planner
-      ** will use the "slow" argument as a hint to avoid using this index
-      ** for equality lookups.
-      **
-      ** We let ANALYZE determine "slow" rather than the query planner for
-      ** two reasons: (1) It leaves a visible trace in the sqlite_stat1 table
-      ** that an index is not useful, and hence serves as a hint to the
-      ** application developers that the index is a good candidate to be
-      ** dropped.  (2) Being able to use UPDATE to control the presence or
-      ** absence of the "slow" argument in sqlite_stat1 enables greater
-      ** control over the query planner during testing.
-      */
-      if( i==p->nKeyCol-1
-       && nRow > 1000 && nRow <= iVal*iUneven + sqlite3LogEst(nRow) - 6 
-              /* ^^^^------------- TUNING ----------------------------^ */
-      ){
-        sqlite3_str_appendf(&sStat, " slow");
-      }
     }
-    if( iUneven>1 ){
-      sqlite3_str_appendf(&sStat, " uneven=%d", iUneven);
+    if( bUneven ){
+      char cSep = '=';
+      sqlite3_str_appendf(&sStat, " var");
+      for(i=0; i<p->nKeyCol; i++){
+        u64 nDistinct = p->current.anDLt[i] + 1;
+        u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
+        u64 mx = p->current.amxEq[i];
+        int iRatio = mx/iVal;
+        sqlite3_str_appendf(&sStat, "%c%d", cSep, iRatio);
+        cSep = ',';
+      }
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1601,36 +1591,41 @@ static void decodeIntArray(
         pIndex->szIdxRow = sqlite3LogEst(sz);
       }else if( sqlite3_strglob("noskipscan*", z)==0 ){
         pIndex->noSkipScan = 1;
-      }else if( sqlite3_strglob("slow*", z)==0 ){
-        pIndex->bSlow = 1;
-      }else if( sqlite3_strglob("uneven=[0-9]*", z)==0 ){
-        /* An argument of "uneven=NNN" means that the maximum length
-        ** run of the same value is NNN times longer than the average.
-        ** Go through the iaRowLogEst[] values for the index and increase
-        ** them by 0.1*NNN, so that so that they are each about 1/10th of
-        ** of the maximum value.
+      }else if( sqlite3_strglob("var=[0-9]*", z)==0 ){
+        /* An argument like "var=N1,N2,...NN" means that the maximum length
+        ** run of the same value is Nx times longer than the average for
+        ** the X-th column of the index.
         **
-        ** The stat column continues to hold the average run length, and
-        ** then the average is adjusted by the uneven=NNN value.  We do this
-        ** instead of adjusting the run length values in the main body of
-        ** the stat column for backwards compatibility to older versions of
-        ** SQLite that expect values in state to be the true the average.
-        ** Also because the file format specifies that the values in the main
-        ** body of the stat column should be the true average.
+        ** For this implementation, go through the iaRowLogEst[] array and
+        ** increase each value by 1/10th of the average value, to account
+        ** for the variability of the estimate.
         **
-        ** tag-20231231-02: The 1/10th threshold is tunable.  But if changed,
-        ** one should make a similar adjustment to the uneven=NNN threashold
-        ** at tag-20231231-01:                TUNING ----vv        */
-        LogEst scale = sqlite3LogEst(sqlite3Atoi(z+7)) - 33;
-        assert( sqlite3LogEst(10)==33 );
-        if( scale>0 ){
-          LogEst mx = aLog[0];
-          int jj;
-          for(jj=1; jj<pIndex->nKeyCol; jj++){
-            LogEst x = aLog[jj] + scale;
-            if( x>mx ) x = mx;
-            aLog[jj] = x;
+        ** tag-20231231-02:  The 1/10th value is tunable.  See the tuning
+        ** comment in the body of the loop.  The ANALYZE command only
+        ** inserts a var=... argument if one or more of the Nx values is
+        ** within the tuning range, so if changing the tuning factor here,
+        ** consider also changing it at tag-20232131-01.
+        **
+        ** The stat column continue to hold the average run length for the
+        ** initial integers, for backwards compatibility.
+        */
+        int jj = 1;
+        int kk = 4;
+        LogEst mx = aLog[0];
+        while( sqlite3Isdigit(z[kk]) ){
+          u64 v = z[kk++] - '0';
+          LogEst scale;
+          while( sqlite3Isdigit(z[kk]) ){ v = v*10 + z[kk++]-'0'; }
+          scale = sqlite3LogEst(v);
+          if( scale>33 ){
+                /*  ^^----- TUNING --------------vv    See tag 20231231-02 */
+            LogEst adjusted = aLog[jj] + scale - 33;
+            if( adjusted>mx ) adjusted = mx;
+            aLog[jj] = adjusted;
           }
+          if( jj==pIndex->nKeyCol ) break;
+          if( z[kk]==',' ) kk++;
+          jj++;
         }
       }
 #ifdef SQLITE_ENABLE_COSTMULT
@@ -1640,6 +1635,16 @@ static void decodeIntArray(
 #endif
       while( z[0]!=0 && z[0]!=' ' ) z++;
       while( z[0]==' ' ) z++;
+    }
+
+    /* Set the bSlow flag if the peak number of rows obtained
+    ** from a full equality match is so large that a full table scan
+    ** seems likely to be faster than using the index.
+    */
+    if( aLog[0] > 66                       /* Index has more than 100 rows */
+     && aLog[0] <= aLog[pIndex->nKeyCol]   /* And only a single value seen */
+    ){
+      pIndex->bSlow = 1;
     }
   }
 }

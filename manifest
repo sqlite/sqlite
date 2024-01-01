@@ -1,5 +1,5 @@
-C Better\scomments.\s\sSlight\stuning\sof\sparameters.
-D 2023-12-31T20:04:32.564
+C Omit\sthe\suneven=N\sargument\sin\ssqlite_stat1\sand\sreplace\sit\swith\svar=N1,N2,...\nso\sthat\sthe\svariation\sin\seach\scolumn\sis\sreported\sseparately.\s\sOmit\sthe\s"slow"\nargument\sfrom\ssqlite_stat1,\scomputing\sthat\sflag\sinternally.\s\sPRAGMA\sstats\sis\nenhanced\swith\sa\snew\scolumn\s"est"\sthat\sshows\sthe\saiRowLogEst\sarray\sfor\seach\nindex\safter\sit\shas\sbeen\smodified\sby\s"var=..."\sand\salso\sthe\s"slow"\sflag.
+D 2024-01-01T14:13:59.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -670,7 +670,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 30c2333b8bb3af71e4eb9adeadee8aa20edb15917ed44b8422e5cd15f3dfcddc
-F src/analyze.c 47711a594b1e9784164d32715725f01bdb9fed52fd6cfaa2432730e8c3c2b746
+F src/analyze.c 15eef780c7263f1f5a6b00bc6f2c92a4ac5261b7be95e6ef00263d6c461a5e87
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -730,8 +730,8 @@ F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c b5b4cff830575e6188cd56a295a57448d2b9dbc53f0dae58e22b97354cda3781
-F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
+F src/pragma.c 4b33fdfd0198481f74fa52c91c4583631fbec41615c989fd0fcc51204d9a8450
+F src/pragma.h f95996cd3ab16a1b04b59a70df92d7e4ced1dfd70f18553bb639838d4208b31e
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 18fbdf028345c8fbe6044f5f5bfda5a10d48d6287afef088cc21b0ca57985640
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -2082,7 +2082,7 @@ F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 32e359ccb21011958a821955254bd7a5fa7915d01a8c16fed91ffc8b40cb4adf
+F tool/mkpragmatab.tcl d014814d2a03f9191d00182c2fb5652f20b3744433eafed128b5192877f310ee
 F tool/mkshellc.tcl b7adf08b82de60811d2cb6af05ff59fc17e5cd6f3e98743c14eaaa3f8971fed0
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -2156,8 +2156,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c216921b115169ebfd239267b4ab5ad0fc960ffadce09044b68812f49110d607
-R df3f6be38a64508c745873953ba288dd
+P 1cc32eccda8d126264c644df72e308e25c1e41cf4fb68c2f1b6d6d98cbc23ca5
+R 19a9761f2b89c57ab0cba5358f19e101
 U drh
-Z 151bd3600feff84e5eb2b344bddccb6f
+Z 02e04e5291abe3d83162489e3488139a
 # Remove this line to create a well-formed Fossil manifest.
