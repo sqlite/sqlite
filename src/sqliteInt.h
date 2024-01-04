@@ -329,6 +329,19 @@
 #endif
 
 /*
+** Enable SQLITE_DIRECT_OVERFLOW_READ, unless the build explicitly
+** disables it using -DSQLITE_DIRECT_OVERFLOW_READ=0
+*/
+#if defined(SQLITE_DIRECT_OVERFLOW_READ) && SQLITE_DIRECT_OVERFLOW_READ+1==1
+  /* Disable if -DSQLITE_DIRECT_OVERFLOW_READ=0 */
+# undef SQLITE_DIRECT_OVERFLOW_READ
+#else
+  /* In all other cases, enable */
+# define SQLITE_DIRECT_OVERFLOW_READ 1
+#endif
+
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
@@ -2778,6 +2791,7 @@ struct Index {
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
+  unsigned bLowQual:1;     /* sqlite_stat1 says this is a low-quality index */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
