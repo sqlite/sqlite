@@ -4144,6 +4144,7 @@ static int walSearchHash(
       *piRead = iFrame;
     }
     if( (nCollide--)==0 ){
+      *piRead = 0;
       return SQLITE_CORRUPT_BKPT;
     }
     iKey = walNextHash(iKey);
