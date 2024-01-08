@@ -43,8 +43,9 @@
 #    which generates the makefile code, rather than using $(call) and
 #    $(eval), or at least centralize the setup of the numerous vars
 #    related to each build variant $(JS_BUILD_MODES). (Update: an
-#    external script was attempted but it's even less legible than the
-#    $(eval) indirection going on in this file.
+#    external script was attempted but generating properly-escaped
+#    makefile code from within a shell script is even less legible
+#    than the $(eval) indirection going on in this file.)
 #
 default: all
 #default: quick

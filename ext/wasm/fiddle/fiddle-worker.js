@@ -374,9 +374,7 @@
                  "for use in the dev console.", sqlite3);
     globalThis.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
-    fiddleModule.fsUnlink = (fn)=>{
-      return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
-    };
+    fiddleModule.fsUnlink = (fn)=>fiddleModule.FS.unlink(fn);
     wMsg('fiddle-ready');
   }).catch(e=>{
     console.error("Fiddle worker init failed:",e);

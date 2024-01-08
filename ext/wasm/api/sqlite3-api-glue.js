@@ -601,16 +601,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
-     sqlite3.wasm. Some of them get exposed to clients via variants
-     named sqlite3_js_...().
+     sqlite3.util. Some of them get exposed to clients via variants
+     in wasm.sqlite3_js_...().
   */
-  wasm.bindingSignatures.wasm = [
-    ["sqlite3_wasm_db_reset", "int", "sqlite3*"],
-    ["sqlite3_wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
-    ["sqlite3_wasm_vfs_create_file", "int",
+  wasm.bindingSignatures.wasmInternal = [
+    ["sqlite3__wasm_db_reset", "int", "sqlite3*"],
+    ["sqlite3__wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
+    ["sqlite3__wasm_vfs_create_file", "int",
      "sqlite3_vfs*","string","*", "int"],
-    ["sqlite3_wasm_posix_create_file", "int", "string","*", "int"],
-    ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
+    ["sqlite3__wasm_posix_create_file", "int", "string","*", "int"],
+    ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
   ];
 
   /**
@@ -742,8 +742,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     for(const e of wasm.bindingSignatures){
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
-    for(const e of wasm.bindingSignatures.wasm){
-      wasm[e[0]] = wasm.xWrap.apply(null, e);
+    for(const e of wasm.bindingSignatures.wasmInternal){
+      util[e[0]] = wasm.xWrap.apply(null, e);
     }
 
     /* For C API functions which cannot work properly unless
@@ -765,9 +765,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        implicitly making it part of the public interface. */
     delete wasm.bindingSignatures;
 
-    if(wasm.exports.sqlite3_wasm_db_error){
+    if(wasm.exports.sqlite3__wasm_db_error){
       const __db_err = wasm.xWrap(
-        'sqlite3_wasm_db_error', 'int', 'sqlite3*', 'int', 'string'
+        'sqlite3__wasm_db_error', 'int', 'sqlite3*', 'int', 'string'
       );
       /**
          Sets the given db's error state. Accepts:
@@ -785,7 +785,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          Returns the resulting code. Pass (pDb,0,0) to clear the error
          state.
        */
-      util.sqlite3_wasm_db_error = function(pDb, resultCode, message){
+      util.sqlite3__wasm_db_error = function(pDb, resultCode, message){
         if(resultCode instanceof sqlite3.WasmAllocError){
           resultCode = capi.SQLITE_NOMEM;
           message = 0 /*avoid allocating message string*/;
@@ -796,17 +796,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return pDb ? __db_err(pDb, resultCode, message) : resultCode;
       };
     }else{
-      util.sqlite3_wasm_db_error = function(pDb,errCode,msg){
-        console.warn("sqlite3_wasm_db_error() is not exported.",arguments);
+      util.sqlite3__wasm_db_error = function(pDb,errCode,msg){
+        console.warn("sqlite3__wasm_db_error() is not exported.",arguments);
         return errCode;
       };
     }
   }/*xWrap() bindings*/
 
   {/* Import C-level constants and structs... */
-    const cJson = wasm.xCall('sqlite3_wasm_enum_json');
+    const cJson = wasm.xCall('sqlite3__wasm_enum_json');
     if(!cJson){
-      toss("Maintenance required: increase sqlite3_wasm_enum_json()'s",
+      toss("Maintenance required: increase sqlite3__wasm_enum_json()'s",
            "static buffer size!");
     }
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
@@ -877,7 +877,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         delete capi[k];
       }
       capi.sqlite3_vtab_config = wasm.xWrap(
-        'sqlite3_wasm_vtab_config','int',[
+        'sqlite3__wasm_vtab_config','int',[
           'sqlite3*', 'int', 'int']
       );
     }/* end vtab-related setup */
@@ -889,7 +889,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      consistency with non-special-case wrappings.
   */
   const __dbArgcMismatch = (pDb,f,n)=>{
-    return util.sqlite3_wasm_db_error(pDb, capi.SQLITE_MISUSE,
+    return util.sqlite3__wasm_db_error(pDb, capi.SQLITE_MISUSE,
                                       f+"() requires "+n+" argument"+
                                       (1===n?"":'s')+".");
   };
@@ -898,7 +898,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       argument and require SQLITE_UTF8.  Sets the db error code to
       SQLITE_FORMAT and returns that code. */
   const __errEncoding = (pDb)=>{
-    return util.sqlite3_wasm_db_error(
+    return util.sqlite3__wasm_db_error(
       pDb, capi.SQLITE_FORMAT, "SQLITE_UTF8 is the only supported encoding."
     );
   };
@@ -1128,7 +1128,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         return rc;
       }catch(e){
-        return util.sqlite3_wasm_db_error(pDb, e);
+        return util.sqlite3__wasm_db_error(pDb, e);
       }
     };
 
@@ -1254,7 +1254,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return rc;
       }catch(e){
         console.error("sqlite3_create_function_v2() setup threw:",e);
-        return util.sqlite3_wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
+        return util.sqlite3__wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
       }
     };
 
@@ -1299,7 +1299,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return rc;
       }catch(e){
         console.error("sqlite3_create_window_function() setup threw:",e);
-        return util.sqlite3_wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
+        return util.sqlite3__wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
       }
     };
     /**
@@ -1394,7 +1394,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
           case 'number': return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
           default:
-            return util.sqlite3_wasm_db_error(
+            return util.sqlite3__wasm_db_error(
               pDb, capi.SQLITE_MISUSE,
               "Invalid SQL argument type for sqlite3_prepare_v2/v3()."
             );
@@ -1438,7 +1438,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }else if('string'===typeof text){
           [p, n] = wasm.allocCString(text);
         }else{
-          return util.sqlite3_wasm_db_error(
+          return util.sqlite3__wasm_db_error(
             capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,
             "Invalid 3rd argument type for sqlite3_bind_text()."
           );
@@ -1446,7 +1446,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __bindText(pStmt, iCol, p, n, capi.SQLITE_WASM_DEALLOC);
       }catch(e){
         wasm.dealloc(p);
-        return util.sqlite3_wasm_db_error(
+        return util.sqlite3__wasm_db_error(
           capi.sqlite3_db_handle(pStmt), e
         );
       }
@@ -1472,7 +1472,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }else if('string'===typeof pMem){
           [p, n] = wasm.allocCString(pMem);
         }else{
-          return util.sqlite3_wasm_db_error(
+          return util.sqlite3__wasm_db_error(
             capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,
             "Invalid 3rd argument type for sqlite3_bind_blob()."
           );
@@ -1480,7 +1480,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __bindBlob(pStmt, iCol, p, n, capi.SQLITE_WASM_DEALLOC);
       }catch(e){
         wasm.dealloc(p);
-        return util.sqlite3_wasm_db_error(
+        return util.sqlite3__wasm_db_error(
           capi.sqlite3_db_handle(pStmt), e
         );
       }
@@ -1504,11 +1504,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           case capi.SQLITE_CONFIG_SORTERREF_SIZE: // 28  /* int nByte */
           case capi.SQLITE_CONFIG_STMTJRNL_SPILL: // 26  /* int nByte */
           case capi.SQLITE_CONFIG_URI:// 17  /* int */
-            return wasm.exports.sqlite3_wasm_config_i(op, args[0]);
+            return wasm.exports.sqlite3__wasm_config_i(op, args[0]);
           case capi.SQLITE_CONFIG_LOOKASIDE: // 13  /* int int */
-            return wasm.exports.sqlite3_wasm_config_ii(op, args[0], args[1]);
+            return wasm.exports.sqlite3__wasm_config_ii(op, args[0], args[1]);
           case capi.SQLITE_CONFIG_MEMDB_MAXSIZE: // 29  /* sqlite3_int64 */
-            return wasm.exports.sqlite3_wasm_config_j(op, args[0]);
+            return wasm.exports.sqlite3__wasm_config_j(op, args[0]);
           case capi.SQLITE_CONFIG_GETMALLOC: // 5 /* sqlite3_mem_methods* */
           case capi.SQLITE_CONFIG_GETMUTEX: // 11  /* sqlite3_mutex_methods* */
           case capi.SQLITE_CONFIG_GETPCACHE2: // 19  /* sqlite3_pcache_methods2* */
@@ -1574,11 +1574,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if( pKvvfs ){/* kvvfs-specific glue */
     if(util.isUIThread()){
       const kvvfsMethods = new capi.sqlite3_kvvfs_methods(
-        wasm.exports.sqlite3_wasm_kvvfs_methods()
+        wasm.exports.sqlite3__wasm_kvvfs_methods()
       );
       delete capi.sqlite3_kvvfs_methods;
 
-      const kvvfsMakeKey = wasm.exports.sqlite3_wasm_kvvfsMakeKeyOnPstack,
+      const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKeyOnPstack,
             pstack = wasm.pstack;
 
       const kvvfsStorage = (zClass)=>
@@ -1587,7 +1587,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
       /**
          Implementations for members of the object referred to by
-         sqlite3_wasm_kvvfs_methods(). We swap out the native
+         sqlite3__wasm_kvvfs_methods(). We swap out the native
          implementations with these, which use localStorage or
          sessionStorage for their backing store.
       */
