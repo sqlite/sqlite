@@ -246,6 +246,7 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 # define SQLITE_CIO_NO_CLASSIFY
 # define SQLITE_CIO_NO_TRANSLATE
 # define SQLITE_CIO_NO_SETMODE
+# define SQLITE_CIO_NO_FLUSH
 #endif
 INCLUDE ../ext/consio/console_io.h
 INCLUDE ../ext/consio/console_io.c
@@ -276,6 +277,7 @@ INCLUDE ../ext/consio/console_io.c
 # define eputz(z) ePutsUtf8(z)
 # define eputf ePrintfUtf8
 # define oputb(buf,na) oPutbUtf8(buf,na)
+# define fflush(s) fFlushBuffer(s);
 
 #else
 /* For Fiddle, all console handling and emit redirection is omitted. */
@@ -286,6 +288,7 @@ INCLUDE ../ext/consio/console_io.c
 # define eputz(z) fputs(z,stderr)
 # define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
 # define oputb(buf,na) fwrite(buf,1,na,stdout)
+# undef fflush
 #endif
 
 /* True if the timer is enabled */
