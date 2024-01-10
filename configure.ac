@@ -686,10 +686,18 @@ fi
 AC_SUBST(USE_AMALGAMATION)
 
 #########
-# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-AC_CHECK_HEADERS(zlib.h)
-AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
-AC_SUBST(HAVE_ZLIB)
+
+
+# Exclude certain checks when in the FreeBSD kernel environment
+AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
+    # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+    AC_CHECK_HEADERS(zlib.h)
+    AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
+    AC_SUBST(HAVE_ZLIB)
+], [
+    # Define to 0 for FreeBSD kernel environment
+    AC_DEFINE([HAVE_ZLIB_H], [0], [Not available in FreeBSD Kernel])
+])
 
 #########
 # See whether we should allow loadable extensions

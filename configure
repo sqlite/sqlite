@@ -13554,15 +13554,21 @@ fi
 
 
 #########
-# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+
+
+# Exclude certain checks when in the FreeBSD kernel environment
+if test "x$freebsd_kernel_env" != "xyes"
+then :
+
+    # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+    ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing deflate" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing deflate" >&5
 printf %s "checking for library containing deflate... " >&6; }
 if test ${ac_cv_search_deflate+y}
 then :
@@ -13624,6 +13630,15 @@ else $as_nop
 fi
 
 
+
+else $as_nop
+
+    # Define to 0 for FreeBSD kernel environment
+
+printf "%s\n" "#define HAVE_ZLIB_H 0" >>confdefs.h
+
+
+fi
 
 #########
 # See whether we should allow loadable extensions
