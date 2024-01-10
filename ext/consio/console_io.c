@@ -637,9 +637,9 @@ cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
         if( pnl ) nbo = pnl - (const char*)buf;
         else genCR = 0;
       }
-      if( dwno>0 ) wrc = WriteFile(fai.hf, buf, dwno, 0,0);
+      if( dwno>0 ) wrc = WriteFile(fai.fh, buf, dwno, 0,0);
       if( genCR && wrc ){
-        wrc = WriteFile(fai.hf, "\r\n", 2, 0,0);
+        wrc = WriteFile(fai.fh, "\r\n", 2, 0,0);
         ++dwno; /* Skip over the LF */
       }
       if( !wrc ) return rv;
@@ -659,11 +659,9 @@ cfGets(char *cBuf, int n, FILE *pf){
   BOOL eatCR = (fmode & _O_TEXT)!=0;
   _setmode(fai.fd, fmode);
   while( nci < n-1 ){
-    char cin;
     DWORD nr;
-    if( !ReadFile(fai.hf, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
-    if( eatCR && cin=='\r' ) continue;
-    cBuf[nci++] = cin;
+    if( !ReadFile(fai.fh, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
+    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ) nci += nr;
   }
   if( nci < n ) cBuf[nci] = 0;
   return (nci>0)? cBuf : 0;

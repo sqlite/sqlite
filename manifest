@@ -1,5 +1,5 @@
-C For\sCLI\sshell\sand\sother\sutilities,\soptionally\savoid\sC\sruntime\sfile\sI/O\son\sWindows\sin\sfavor\sof\sWIN32\scalls,\swhile\snominally\spreserving\sFILE*\sAPI\sinterfaces.\s(a\sWIP,\sawaiting\sbuild\sand\stesting)
-D 2024-01-10T05:52:02.536
+C Fix\sa\sfew\scompiler\sgripes.
+D 2024-01-10T20:13:38.259
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -51,7 +51,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c 23c4ce0448a93803eb93e47ed46e4ffd5efb9001d7e18230737082612b1573de x
+F ext/consio/console_io.c 3f635b6dd2ddbc722aeaa738d415768c9a40dedff53894975816dcbd7711145f x
 F ext/consio/console_io.h b5ebe34aa15b357621ebbea3d3f2e2b24750d4280b5802516409e23947fd9ee5
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
@@ -2157,11 +2157,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 97709ce2a1f5ae05495e412ca27108048e5b8a63a1e3bca4be13933f7527da7b
-R 1d946ec61d5c9d01acdd2c0e650e9027
-T *branch * win-dupe-crt-fio
-T *sym-win-dupe-crt-fio *
-T -sym-trunk *
+P 6be68be17927e72b1f1c4b93e781b7e9235876b3ad9512fe168e5b9d0b7b763a
+R 2f77944a93e4bc36153f9450a52f3c42
 U larrybr
-Z 0b0925e801b21e9b8c7d51a5b0a1c236
+Z 5b64f41a30f93cac02d6a6331bee0468
 # Remove this line to create a well-formed Fossil manifest.
