@@ -6,10 +6,10 @@
 /* Not available in FreeBSD Kernel */
 #undef HAVE_DLFCN_H
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
 /* Define to 1 if the system has the type `int16_t'. */
@@ -30,28 +30,28 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `isnan' function. */
 #undef HAVE_ISNAN
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `localtime_s' function. */
 #undef HAVE_LOCALTIME_S
 
 /* Not available in FreeBSD Kernel */
 #undef HAVE_MALLOC_H
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `malloc_usable_size' function. */
 #undef HAVE_MALLOC_USABLE_SIZE
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
 /* Define to 1 if you have the `pread64' function. */
 #undef HAVE_PREAD64
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
 /* Define to 1 if you have the `pwrite64' function. */
@@ -66,7 +66,7 @@
 /* Not available in FreeBSD Kernel */
 #undef HAVE_STDLIB_H
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `strchrnul' function. */
 #undef HAVE_STRCHRNUL
 
 /* Not available in FreeBSD Kernel */
@@ -99,10 +99,10 @@
 /* Not available in FreeBSD Kernel */
 #undef HAVE_UNISTD_H
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
 
-/* Not available in FreeBSD Kernel */
+/* Define to 1 if you have the `utime' function. */
 #undef HAVE_UTIME
 
 /* Define to 1 if you have the <zlib.h> header file. */

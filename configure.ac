@@ -102,13 +102,46 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
                 uint16_t, uint32_t, uint64_t, uintptr_t])
 
 #########
-# Check for needed/wanted headers
-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h])
+# Initialize a variable to indicate a FreeBSD kernel environment.
+freebsd_kernel_env=no
 
-#########
-# Figure out whether or not we have these functions
-#
-AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64])
+# Check if we are cross-compiling for FreeBSD kernel.
+case "$host" in
+*kfbsd*)
+    freebsd_kernel_env=yes
+    ;;
+esac
+
+# Exclude certain checks when in the FreeBSD kernel environment
+AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
+    # Standard environment checks
+    AC_CHECK_HEADERS([dlfcn.h stdint.h stdlib.h string.h strings.h sys/stat.h sys/types.h unistd.h malloc.h stdio.h])
+
+    # Figure or not if we have these functions
+    AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r malloc_usable_size strchrnul pread pread64 pwrite pwrite64 usleep utime])
+], [
+    # Define to 0 for FreeBSD kernel environment
+    AC_DEFINE([HAVE_DLFCN_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STDINT_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STDLIB_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STRING_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STRINGS_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_UNISTD_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_MALLOC_H], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STDIO_H], [0], [Not available in FreeBSD Kernel])
+    
+    AC_DEFINE([HAVE_FDATASYNC], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_GMTIME_R], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_ISNAN], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_LOCALTIME_R], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_LOCALTIME_S], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_MALLOC_USABLE_SIZE], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_PREAD], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_PWRITE], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_STRCHRNUL], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_USLEEP], [0], [Not available in FreeBSD Kernel])
+    AC_DEFINE([HAVE_UTIME], [0], [Not available in FreeBSD Kernel])
+])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)

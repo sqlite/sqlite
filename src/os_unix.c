@@ -140,6 +140,12 @@
 # include <limits.h>
 #endif /* OS_VXWORKS */
 
+#if FREEBSD_KERNEL
+# include <sys/ioctl.h>
+# include <sys/sema.h>
+# include <sys/limits.h>
+#endif /* FREEBSD_KERNEL */
+
 #if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/mount.h>
 #endif
