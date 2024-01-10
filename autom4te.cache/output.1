@@ -12378,6 +12378,19 @@ fi
 else $as_nop
   
     # Define to 0 for FreeBSD kernel environment
+    ac_fn_c_check_header_compile "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_stat_h" = xyes
+then :
+  printf "%s\n" "@%:@define HAVE_SYS_STAT_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_types_h" = xyes
+then :
+  printf "%s\n" "@%:@define HAVE_SYS_TYPES_H 1" >>confdefs.h
+
+fi
+
     
 printf "%s\n" "@%:@define HAVE_DLFCN_H 0" >>confdefs.h
 

@@ -121,6 +121,7 @@ AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
     AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r malloc_usable_size strchrnul pread pread64 pwrite pwrite64 usleep utime])
 ], [
     # Define to 0 for FreeBSD kernel environment
+    AC_CHECK_HEADERS([sys/stat.h sys/types.h])
     AC_DEFINE([HAVE_DLFCN_H], [0], [Not available in FreeBSD Kernel])
     AC_DEFINE([HAVE_STDINT_H], [0], [Not available in FreeBSD Kernel])
     AC_DEFINE([HAVE_STDLIB_H], [0], [Not available in FreeBSD Kernel])
