@@ -329,6 +329,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }
 
   if(wasm.exports.sqlite3_activate_see instanceof Function){
+    /**
+       This code is capable of using an SEE build but note that an SEE
+       WASM build is generally incompatible with SEE's license
+       conditions. It is permitted for use internally in organizations
+       which have licensed SEE, but not for public sites because
+       exposing an SEE build of sqlite3.wasm effectively provides all
+       clients with a working copy of the commercial SEE code.
+    */
     wasm.bindingSignatures.push(
       ["sqlite3_key", "int", "sqlite3*", "string", "int"],
       ["sqlite3_key_v2","int","sqlite3*","string","*","int"],
@@ -341,6 +349,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Functions which require BigInt (int64) support are separated from
      the others because we need to conditionally bind them or apply
      dummy impls, depending on the capabilities of the environment.
+     (That said: we never actually build without BigInt support,
+     and such builds are untested.)
 
      Note that not all of these functions directly require int64
      but are only for use with APIs which require int64. For example,
@@ -359,7 +369,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Careful! Short version: de/serialize() are problematic because they
        might use a different allocator than the user for managing the
        deserialized block. de/serialize() are ONLY safe to use with
-       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
+       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. Because
+       of this, the canonical builds of sqlite3.wasm/js guarantee that
+       sqlite3.wasm.alloc() and friends use those allocators. Custom builds
+       may not guarantee that, however. */,
     ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
     ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
     ["sqlite3_malloc64", "*","i64"],
@@ -422,8 +435,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   // Add session/changeset APIs...
   if(wasm.bigIntEnabled && !!wasm.exports.sqlite3changegroup_add){
-    /* ACHTUNG: 2022-12-23: the session/changeset API bindings are
-       COMPLETELY UNTESTED. */
     /**
        FuncPtrAdapter options for session-related callbacks with the
        native signature "i(ps)". This proxy converts the 2nd argument
@@ -602,7 +613,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Functions which are intended solely for API-internal use by the
      WASM components, not client code. These get installed into
      sqlite3.util. Some of them get exposed to clients via variants
-     in wasm.sqlite3_js_...().
+     in sqlite3_js_...().
+
+     2024-01-11: these were renamed, with two underscores in the
+     prefix, to ensure that clients do not accidentally depend on
+     them.  They have always been documented as internal-use-only, so
+     no clients "should" be depending on the old names.
   */
   wasm.bindingSignatures.wasmInternal = [
     ["sqlite3__wasm_db_reset", "int", "sqlite3*"],
@@ -652,7 +668,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        Use case: sqlite3_bind_pointer() and sqlite3_result_pointer()
        call for "a static string and preferably a string
-       literal". This converter is used to ensure that the string
+       literal." This converter is used to ensure that the string
        value seen by those functions is long-lived and behaves as they
        need it to.
     */
@@ -674,14 +690,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
     */
     const __xArgPtr = wasm.xWrap.argAdapter('*');
-    const nilType = function(){}/*a class no value can ever be an instance of*/;
+    const nilType = function(){
+      /*a class which no value can ever be an instance of*/
+    };
     wasm.xWrap.argAdapter('sqlite3_filename', __xArgPtr)
     ('sqlite3_context*', __xArgPtr)
     ('sqlite3_value*', __xArgPtr)
     ('void*', __xArgPtr)
     ('sqlite3_changegroup*', __xArgPtr)
     ('sqlite3_changeset_iter*', __xArgPtr)
-    //('sqlite3_rebaser*', __xArgPtr)
     ('sqlite3_session*', __xArgPtr)
     ('sqlite3_stmt*', (v)=>
       __xArgPtr((v instanceof (sqlite3?.oo1?.Stmt || nilType))
@@ -1667,5 +1684,181 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }/*pKvvfs*/
 
+  /* Warn if client-level code makes use of FuncPtrAdapter. */
   wasm.xWrap.FuncPtrAdapter.warnOnUse = true;
+
+  const StructBinder = sqlite3.StructBinder
+  /* we require a local alias b/c StructBinder is removed from the sqlite3
+     object during the final steps of the API cleanup. */;
+  /**
+     Installs a StructBinder-bound function pointer member of the
+     given name and function in the given StructBinder.StructType
+     target object.
+
+     It creates a WASM proxy for the given function and arranges for
+     that proxy to be cleaned up when tgt.dispose() is called. Throws
+     on the slightest hint of error, e.g. tgt is-not-a StructType,
+     name does not map to a struct-bound member, etc.
+
+     As a special case, if the given function is a pointer, then
+     `wasm.functionEntry()` is used to validate that it is a known
+     function. If so, it is used as-is with no extra level of proxying
+     or cleanup, else an exception is thrown. It is legal to pass a
+     value of 0, indicating a NULL pointer, with the caveat that 0
+     _is_ a legal function pointer in WASM but it will not be accepted
+     as such _here_. (Justification: the function at address zero must
+     be one which initially came from the WASM module, not a method we
+     want to bind to a virtual table or VFS.)
+
+     This function returns a proxy for itself which is bound to tgt
+     and takes 2 args (name,func). That function returns the same
+     thing as this one, permitting calls to be chained.
+
+     If called with only 1 arg, it has no side effects but returns a
+     func with the same signature as described above.
+
+     ACHTUNG: because we cannot generically know how to transform JS
+     exceptions into result codes, the installed functions do no
+     automatic catching of exceptions. It is critical, to avoid
+     undefined behavior in the C layer, that methods mapped via
+     this function do not throw. The exception, as it were, to that
+     rule is...
+
+     If applyArgcCheck is true then each JS function (as opposed to
+     function pointers) gets wrapped in a proxy which asserts that it
+     is passed the expected number of arguments, throwing if the
+     argument count does not match expectations. That is only intended
+     for dev-time usage for sanity checking, and may leave the C
+     environment in an undefined state.
+  */
+  const installMethod = function callee(
+    tgt, name, func, applyArgcCheck = callee.installMethodArgcCheck
+  ){
+    if(!(tgt instanceof StructBinder.StructType)){
+      toss("Usage error: target object is-not-a StructType.");
+    }else if(!(func instanceof Function) && !wasm.isPtr(func)){
+      toss("Usage errror: expecting a Function or WASM pointer to one.");
+    }
+    if(1===arguments.length){
+      return (n,f)=>callee(tgt, n, f, applyArgcCheck);
+    }
+    if(!callee.argcProxy){
+      callee.argcProxy = function(tgt, funcName, func,sig){
+        return function(...args){
+          if(func.length!==arguments.length){
+            toss("Argument mismatch for",
+                 tgt.structInfo.name+"::"+funcName
+                 +": Native signature is:",sig);
+          }
+          return func.apply(this, args);
+        }
+      };
+      /* An ondispose() callback for use with
+         StructBinder-created types. */
+      callee.removeFuncList = function(){
+        if(this.ondispose.__removeFuncList){
+          this.ondispose.__removeFuncList.forEach(
+            (v,ndx)=>{
+              if('number'===typeof v){
+                try{wasm.uninstallFunction(v)}
+                catch(e){/*ignore*/}
+              }
+              /* else it's a descriptive label for the next number in
+                 the list. */
+            }
+          );
+          delete this.ondispose.__removeFuncList;
+        }
+      };
+    }/*static init*/
+    const sigN = tgt.memberSignature(name);
+    if(sigN.length<2){
+      toss("Member",name,"does not have a function pointer signature:",sigN);
+    }
+    const memKey = tgt.memberKey(name);
+    const fProxy = (applyArgcCheck && !wasm.isPtr(func))
+    /** This middle-man proxy is only for use during development, to
+        confirm that we always pass the proper number of
+        arguments. We know that the C-level code will always use the
+        correct argument count. */
+          ? callee.argcProxy(tgt, memKey, func, sigN)
+          : func;
+    if(wasm.isPtr(fProxy)){
+      if(fProxy && !wasm.functionEntry(fProxy)){
+        toss("Pointer",fProxy,"is not a WASM function table entry.");
+      }
+      tgt[memKey] = fProxy;
+    }else{
+      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
+      tgt[memKey] = pFunc;
+      if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
+        tgt.addOnDispose('ondispose.__removeFuncList handler',
+                         callee.removeFuncList);
+        tgt.ondispose.__removeFuncList = [];
+      }
+      tgt.ondispose.__removeFuncList.push(memKey, pFunc);
+    }
+    return (n,f)=>callee(tgt, n, f, applyArgcCheck);
+  }/*installMethod*/;
+  installMethod.installMethodArgcCheck = false;
+
+  /**
+     Installs methods into the given StructBinder.StructType-type
+     instance. Each entry in the given methods object must map to a
+     known member of the given StructType, else an exception will be
+     triggered.  See installMethod() for more details, including the
+     semantics of the 3rd argument.
+
+     As an exception to the above, if any two or more methods in the
+     2nd argument are the exact same function, installMethod() is
+     _not_ called for the 2nd and subsequent instances, and instead
+     those instances get assigned the same method pointer which is
+     created for the first instance. This optimization is primarily to
+     accommodate special handling of sqlite3_module::xConnect and
+     xCreate methods.
+
+     On success, returns its first argument. Throws on error.
+  */
+  const installMethods = function(
+    structInstance, methods, applyArgcCheck = installMethod.installMethodArgcCheck
+  ){
+    const seen = new Map /* map of <Function, memberName> */;
+    for(const k of Object.keys(methods)){
+      const m = methods[k];
+      const prior = seen.get(m);
+      if(prior){
+        const mkey = structInstance.memberKey(k);
+        structInstance[mkey] = structInstance[structInstance.memberKey(prior)];
+      }else{
+        installMethod(structInstance, k, m, applyArgcCheck);
+        seen.set(m, k);
+      }
+    }
+    return structInstance;
+  };
+
+  /**
+     Equivalent to calling installMethod(this,...arguments) with a
+     first argument of this object. If called with 1 or 2 arguments
+     and the first is an object, it's instead equivalent to calling
+     installMethods(this,...arguments).
+  */
+  StructBinder.StructType.prototype.installMethod = function callee(
+    name, func, applyArgcCheck = installMethod.installMethodArgcCheck
+  ){
+    return (arguments.length < 3 && name && 'object'===typeof name)
+      ? installMethods(this, ...arguments)
+      : installMethod(this, ...arguments);
+  };
+
+  /**
+     Equivalent to calling installMethods() with a first argument
+     of this object.
+  */
+  StructBinder.StructType.prototype.installMethods = function(
+    methods, applyArgcCheck = installMethod.installMethodArgcCheck
+  ){
+    return installMethods(this, methods, applyArgcCheck);
+  };
+
 });
