@@ -10,8 +10,8 @@
 */
 
 /**
-   This file installs sqlite3.vfs, an object which exists to assist
-   in the creation of JavaScript implementations of sqlite3_vfs.
+   This file installs sqlite3.vfs, a namespace of helpers for use in
+   the creation of JavaScript implementations of sqlite3_vfs.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
@@ -21,9 +21,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Uses sqlite3_vfs_register() to register this
-     sqlite3.capi.sqlite3_vfs. This object must have already been
-     filled out properly. If the first argument is truthy, the VFS is
-     registered as the default VFS, else it is not.
+     sqlite3.capi.sqlite3_vfs instance. This object must have already
+     been filled out properly. If the first argument is truthy, the
+     VFS is registered as the default VFS, else it is not.
 
      On success, returns this object. Throws on error.
   */

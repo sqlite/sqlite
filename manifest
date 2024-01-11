@@ -1,5 +1,5 @@
-C Split\sthe\sJS\svfs/vtab\shelper\scode\sinto\sdiscreet\sunits\sas\sa\sstep\stowards\sa\sbuild\swhich\soptionally\selides\sthose\spieces.\sThis\sis\san\sinternal\srestructuring\schange\sand\sdoes\snot\saffect\sthe\sAPI.
-D 2024-01-11T12:31:58.929
+C Remove\ssome\sdead\sJS\scode.\sMinor\sdoc\scleanups.
+D 2024-01-11T12:56:03.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,10 +599,10 @@ F ext/wasm/api/sqlite3-api-prologue.js fffcee629bf020a8ccf5c367fbe6a169f5d5d73df
 F ext/wasm/api/sqlite3-api-worker1.js 8d9c0562831f62218170a3373468d8a0b7a6503b5985e309b69bf71187b525cf
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
-F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 6c02e969ad988e083415221e84445711730a321c748d8555bb61aebec6b4a37c w ext/wasm/api/sqlite3-v-helper.js
+F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 595953994aa3ae2287c889c4da39ab3d6f17b6461ecf4bec334b7a3faafddb02
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 46c4afa6c50d7369252c104f274ad977a97e91ccfafc38b400fe36e90bdda88e
-F ext/wasm/api/sqlite3-vtab-helper.c-pp.js ebbabbd33915904d3135680a0ea25f374adb60d6f39d664994bc48ac1673c280
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js ebf6c7e997cd8948b35b3afc550b0503dd53febd9d2b56354efd11d985e5f0f2
+F ext/wasm/api/sqlite3-vtab-helper.c-pp.js a2fcbc3fecdd0eea229283584ebc122f29d98194083675dbe5cb2cf3a17fe309
 F ext/wasm/api/sqlite3-wasm.c d33a16495ca871781e78812d3a18fed78b797468fffee657b8d7199b277ff359
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js f234191fe6bf41a5a1e59c9f43ed816e74a522b3d60d3f556f66c3085c448503
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
@@ -2157,8 +2157,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0eddc20f37988df6bce5f407b69e4a315e5cca4af104586e6fe942f0d656cccd
-R 1d7e7db8e9c4453b4e333bcfcd1a037e
+P ede945fd2360097d9961b8a4b8fb48fea57399cb9163534ed1c3c6b86588b0a5
+R 3773101454a60b5af14ffec3a5e82fe8
 U stephan
-Z d03852f251d26d93c85f34544dbc6738
+Z 63b0feac805925513bf1a514b58f7275
 # Remove this line to create a well-formed Fossil manifest.

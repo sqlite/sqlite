@@ -10,12 +10,8 @@
 */
 
 /**
-   This file installs sqlite3.vtab, an object which exists to assist
-   in the creation of JavaScript implementations virtual tables.
-
-   Maintenance note: 2024-01-11: this file requires that StructBinder
-   has been extended with the installMethod(s)() methods, which
-   currently happens in sqlite3-api-glue.js.
+   This file installs sqlite3.vtab, a namespace of helpers for use in
+   the creation of JavaScript implementations virtual tables.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
