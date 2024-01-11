@@ -1769,11 +1769,15 @@ static void kahanBabuskaNeumaierStep(
 ){
   volatile double s = pSum->rSum;
   volatile double t = s + r;
+  #ifdef FREEBSD_KERNEL
+  //todo: STELIOS
+  #else
   if( fabs(s) > fabs(r) ){
     pSum->rErr += (s - t) + r;
   }else{
     pSum->rErr += (r - t) + s;
   }
+  #endif
   pSum->rSum = t;
 }
 

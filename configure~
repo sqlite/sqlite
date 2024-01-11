@@ -2610,6 +2610,150 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+#########
+# Initialize a variable to indicate a FreeBSD kernel environment.
+freebsd_kernel_env=no
+
+# Check if we are cross-compiling for FreeBSD kernel.
+case "$host" in
+*kfbsd*)
+    freebsd_kernel_env=yes
+    ;;
+esac
+
+if test "x$freebsd_kernel_env" == "xyes"
+then :
+
+  if test ${ac_cv_header_dlfcn_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_dlfcn_h=no
+fi
+
+  if test ${ac_cv_header_stdio_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_stdio_h=no
+fi
+
+  if test ${ac_cv_header_stdlib_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_stdlib_h=no
+fi
+
+  if test ${ac_cv_header_string_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_string_h=no
+fi
+
+  if test ${ac_cv_header_inttypes_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_inttypes_h=no
+fi
+
+  if test ${ac_cv_header_stdint_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_stdint_h=no
+fi
+
+  if test ${ac_cv_header_strings_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_strings_h=no
+fi
+
+  if test ${ac_cv_header_unistd_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_header_unistd_h=no
+fi
+
+  if test ${ac_cv_type_int16_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_int16_t=no
+fi
+
+  if test ${ac_cv_type_int8_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_int8_t=no
+fi
+
+  if test ${ac_cv_type_int32_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_int32_t=no
+fi
+
+  if test ${ac_cv_type_int64_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_int64_t=no
+fi
+
+  if test ${ac_cv_type_intptr_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_intptr_t=no
+fi
+
+  if test ${ac_cv_type_uint16_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_uint16_t=no
+fi
+
+  if test ${ac_cv_type_uint8_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_uint8_t=no
+fi
+
+  if test ${ac_cv_type_uint32_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_uint32_t=no
+fi
+
+  if test ${ac_cv_type_uint64_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_uint64_t=no
+fi
+
+  if test ${ac_cv_type_uintptr_t+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_type_uintptr_t=no
+fi
+
+
+fi
+
+
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
 if test "$PACKAGE_VERSION" != "$sqlite_version_sanity_check" ; then
 as_fn_error $? "configure script is out of date:
@@ -12218,16 +12362,6 @@ printf "%s\n" "#define HAVE_UINTPTR_T 1" >>confdefs.h
 fi
 
 
-#########
-# Initialize a variable to indicate a FreeBSD kernel environment.
-freebsd_kernel_env=no
-
-# Check if we are cross-compiling for FreeBSD kernel.
-case "$host" in
-*kfbsd*)
-    freebsd_kernel_env=yes
-    ;;
-esac
 
 # Exclude certain checks when in the FreeBSD kernel environment
 if test "x$freebsd_kernel_env" != "xyes"
@@ -12373,7 +12507,7 @@ fi
 
 else $as_nop
 
-    # Define to 0 for FreeBSD kernel environment
+    # Leave all other macros undefined for FreeBSD kernel
     ac_fn_c_check_header_compile "$LINENO" "sys/stat.h" "ac_cv_header_sys_stat_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_stat_h" = xyes
 then :
@@ -12386,64 +12520,6 @@ then :
   printf "%s\n" "#define HAVE_SYS_TYPES_H 1" >>confdefs.h
 
 fi
-
-
-printf "%s\n" "#define HAVE_DLFCN_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STDINT_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STDLIB_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STRING_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STRINGS_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_UNISTD_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_MALLOC_H 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STDIO_H 0" >>confdefs.h
-
-
-
-printf "%s\n" "#define HAVE_FDATASYNC 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_GMTIME_R 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_ISNAN 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_LOCALTIME_R 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_LOCALTIME_S 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_MALLOC_USABLE_SIZE 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_PREAD 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_PWRITE 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_STRCHRNUL 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_USLEEP 0" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_UTIME 0" >>confdefs.h
 
 
 fi
@@ -12902,8 +12978,22 @@ if test "$CYGWIN" != "yes"; then
 case $host_os in
   *cygwin* ) CYGWIN=yes;;
   *kfbsd* )
+
 printf "%s\n" "#define FREEBSD_KERNEL 1" >>confdefs.h
-;;
+
+
+printf "%s\n" "#define assert(X) //STELIOS: todo" >>confdefs.h
+
+
+printf "%s\n" "#define SQLITE_OMIT_DATETIME_FUNCS 1" >>confdefs.h
+
+
+printf "%s\n" "#define SQLITE_OMIT_FLOATING_POINT 1" >>confdefs.h
+
+
+printf "%s\n" "#define SQLITE_OS_OTHER 1" >>confdefs.h
+
+    ;;
 	 * ) CYGWIN=no;;
 esac
 
@@ -13554,15 +13644,21 @@ fi
 
 
 #########
-# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+
+
+# Exclude certain checks when in the FreeBSD kernel environment
+if test "x$freebsd_kernel_env" != "xyes"
+then :
+
+    # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+    ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing deflate" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing deflate" >&5
 printf %s "checking for library containing deflate... " >&6; }
 if test ${ac_cv_search_deflate+y}
 then :
@@ -13624,6 +13720,12 @@ else $as_nop
 fi
 
 
+
+else $as_nop
+
+    # Keep undefined for a FreeBSD kernel environment
+
+fi
 
 #########
 # See whether we should allow loadable extensions

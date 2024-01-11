@@ -32,7 +32,49 @@
 */
 #ifndef SQLITE3_H
 #define SQLITE3_H
+
+#include "sqlite_cfg.h"
+
+#ifdef FREEBSD_KERNEL
+//STELIOS: todo
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/event.h>
+#include <sys/fcntl.h> 
+#include <sys/file.h> 
+#include <sys/filedesc.h> 
+#include <sys/filio.h>
+#include <sys/kernel.h>
+#include <sys/kthread.h>
+#include <sys/libkern.h>
+#include <sys/lock.h>
+#include <sys/mutex.h>
+#include <sys/ttycom.h>
+#include <sys/module.h>
+#include <sys/namei.h>
+#include <sys/poll.h>
+#include <sys/proc.h>
+#include <sys/random.h>
+#include <sys/selinfo.h>
+#include <sys/signalvar.h>
+#include <sys/stat.h>
+#include <sys/stdint.h>
+#include <sys/syscallsubr.h>
+#include <sys/sysctl.h>
+#include <sys/sysproto.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <sys/unistd.h>
+#include <sys/user.h>
+#include <machine/stdarg.h> 
+MALLOC_DECLARE(M_SQLITE);
+#include <sys/malloc.h>
+#else
 #include <stdarg.h>     /* Needed for the definition of va_list */
+#endif
 
 /*
 ** Make sure we can call this stuff from C++.

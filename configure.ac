@@ -74,7 +74,41 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
+
 AC_INIT([sqlite],m4_esyscmd(cat VERSION | tr -d '\n'))
+
+#########
+# Initialize a variable to indicate a FreeBSD kernel environment.
+freebsd_kernel_env=no
+
+# Check if we are cross-compiling for FreeBSD kernel.
+case "$host" in
+*kfbsd*)
+    freebsd_kernel_env=yes
+    ;;
+esac
+
+AS_IF([test "x$freebsd_kernel_env" == "xyes"], [
+  AC_CACHE_VAL([ac_cv_header_dlfcn_h], [ac_cv_header_dlfcn_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdio_h], [ac_cv_header_stdio_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdlib_h], [ac_cv_header_stdlib_h=no])
+  AC_CACHE_VAL([ac_cv_header_string_h], [ac_cv_header_string_h=no])
+  AC_CACHE_VAL([ac_cv_header_inttypes_h], [ac_cv_header_inttypes_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdint_h], [ac_cv_header_stdint_h=no])
+  AC_CACHE_VAL([ac_cv_header_strings_h], [ac_cv_header_strings_h=no])
+  AC_CACHE_VAL([ac_cv_header_unistd_h], [ac_cv_header_unistd_h=no])
+  AC_CACHE_VAL([ac_cv_type_int16_t], [ac_cv_type_int16_t=no])
+  AC_CACHE_VAL([ac_cv_type_int8_t], [ac_cv_type_int8_t=no])
+  AC_CACHE_VAL([ac_cv_type_int32_t], [ac_cv_type_int32_t=no])
+  AC_CACHE_VAL([ac_cv_type_int64_t], [ac_cv_type_int64_t=no])
+  AC_CACHE_VAL([ac_cv_type_intptr_t], [ac_cv_type_intptr_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint16_t], [ac_cv_type_uint16_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint8_t], [ac_cv_type_uint8_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint32_t], [ac_cv_type_uint32_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint64_t], [ac_cv_type_uint64_t=no])
+  AC_CACHE_VAL([ac_cv_type_uintptr_t], [ac_cv_type_uintptr_t=no])
+])
+
 
 dnl Make sure the local VERSION file matches this configure script
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
@@ -101,16 +135,6 @@ AC_SYS_LARGEFILE
 AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
                 uint16_t, uint32_t, uint64_t, uintptr_t])
 
-#########
-# Initialize a variable to indicate a FreeBSD kernel environment.
-freebsd_kernel_env=no
-
-# Check if we are cross-compiling for FreeBSD kernel.
-case "$host" in
-*kfbsd*)
-    freebsd_kernel_env=yes
-    ;;
-esac
 
 # Exclude certain checks when in the FreeBSD kernel environment
 AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
@@ -120,28 +144,8 @@ AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
     # Figure or not if we have these functions
     AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r malloc_usable_size strchrnul pread pread64 pwrite pwrite64 usleep utime])
 ], [
-    # Define to 0 for FreeBSD kernel environment
+    # Leave all other macros undefined for FreeBSD kernel
     AC_CHECK_HEADERS([sys/stat.h sys/types.h])
-    AC_DEFINE([HAVE_DLFCN_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STDINT_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STDLIB_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STRING_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STRINGS_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_UNISTD_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_MALLOC_H], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STDIO_H], [0], [Not available in FreeBSD Kernel])
-    
-    AC_DEFINE([HAVE_FDATASYNC], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_GMTIME_R], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_ISNAN], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_LOCALTIME_R], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_LOCALTIME_S], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_MALLOC_USABLE_SIZE], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_PREAD], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_PWRITE], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_STRCHRNUL], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_USLEEP], [0], [Not available in FreeBSD Kernel])
-    AC_DEFINE([HAVE_UTIME], [0], [Not available in FreeBSD Kernel])
 ])
 
 #########
@@ -344,7 +348,14 @@ matches *cygwin*])dnl
 AC_CANONICAL_HOST
 case $host_os in
   *cygwin* ) CYGWIN=yes;;
-  *kfbsd* ) AC_DEFINE([FREEBSD_KERNEL], [1], [Define to 1 if compiling for FreeBSD Kernel]);;
+  *kfbsd* ) 
+    AC_DEFINE([FREEBSD_KERNEL], [1], [Define to 1 if compiling for FreeBSD Kernel])
+    AC_DEFINE([assert(X)], [//STELIOS: todo], [Assert definition: todo for later])
+    AC_DEFINE([SQLITE_OMIT_DATETIME_FUNCS], [1], [FreeBSD Kernel uses no datetime functions])
+    AC_DEFINE([SQLITE_OMIT_FLOATING_POINT], [1], [FreeBSD Kernel uses no floating point functions])
+    AC_DEFINE([SQLITE_OS_OTHER], [1], [FreeBSD Kernel is a different OS])
+    AC_DEFINE([FILENAME_MAX], [255], [Maximum filename for FreeBSD Kernel])
+    ;;
 	 * ) CYGWIN=no;;
 esac
 
@@ -695,8 +706,7 @@ AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
     AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
     AC_SUBST(HAVE_ZLIB)
 ], [
-    # Define to 0 for FreeBSD kernel environment
-    AC_DEFINE([HAVE_ZLIB_H], [0], [Not available in FreeBSD Kernel])
+    # Keep undefined for a FreeBSD kernel environment
 ])
 
 #########

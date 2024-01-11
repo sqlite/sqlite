@@ -615,11 +615,16 @@
 
 #include "hash.h"
 #include "parse.h"
+
+#ifdef FREEBSD_KERNEL
+//STELIOS: todo
+#else
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
+#endif
 
 /*
 ** Use a macro to replace memcpy() if compiled with SQLITE_INLINE_MEMCPY.
@@ -2879,9 +2884,15 @@ struct AggInfo {
 ** assignAggregateRegisters() that computes the value of pAggInfo->iFirstReg.
 ** The assert()s that are part of this macro verify that constraint.
 */
+#ifdef FREEBSD_KERNEL
+//todo: STELIOS
+#define AggInfoColumnReg(A,I) (((A)->iFirstReg),(A)->iFirstReg+(I))
+#define AggInfoFuncReg(A,I) (((A)->iFirstReg),(A)->iFirstReg+(A)->nColumn+(I))
+#else
 #define AggInfoColumnReg(A,I)  (assert((A)->iFirstReg),(A)->iFirstReg+(I))
 #define AggInfoFuncReg(A,I)    \
                       (assert((A)->iFirstReg),(A)->iFirstReg+(A)->nColumn+(I))
+#endif
 
 /*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.

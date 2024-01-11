@@ -4450,7 +4450,11 @@ expr_code_doover:
       }
       pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
+        #ifdef FREEBSD_KERNEL
+        //todo: STELIOS
+        #else
         return AggInfoColumnReg(pAggInfo, pExpr->iAgg);
+        #endif
       }else if( pAggInfo->useSortingIdx ){
         Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
@@ -4771,7 +4775,11 @@ expr_code_doover:
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %#T()", pExpr);
       }else{
+        #ifdef FREEBSD_KERNEL
+        //todo: STELIOS
+        #else
         return AggInfoFuncReg(pInfo, pExpr->iAgg);
+        #endif
       }
       break;
     }
@@ -5061,7 +5069,11 @@ expr_code_doover:
       if( pAggInfo ){
         assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
         if( !pAggInfo->directMode ){
+          #ifdef FREEBSD_KERNEL
+          //todo: STELIOS
+          #else
           inReg = AggInfoColumnReg(pAggInfo, pExpr->iAgg);
+          #endif
           break;
         }
         if( pExpr->pAggInfo->useSortingIdx ){

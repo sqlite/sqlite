@@ -272,9 +272,17 @@ void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   if( sqlite3Config.iPrngSeed ){
+    #ifdef FREEBSD_KERNEL
+    //todo: STELIOS
+    #else
     memset(zBufOut, 0, nByte);
+    #endif
     if( ALWAYS(nByte>(signed)sizeof(unsigned)) ) nByte = sizeof(unsigned int);
+    #ifdef FREEBSD_KERNEL
+    //todo: STELIOS
+    #else
     memcpy(zBufOut, &sqlite3Config.iPrngSeed, nByte);
+    #endif
     return SQLITE_OK;
   }else{
     return pVfs->xRandomness(pVfs, nByte, zBufOut);
@@ -374,7 +382,11 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   sqlite3_mutex_enter(mutex);
   for(pVfs = vfsList; pVfs; pVfs=pVfs->pNext){
     if( zVfs==0 ) break;
+    #ifdef FREEBSD_KERNEL
+    //todo: STELIOS
+    #else
     if( strcmp(zVfs, pVfs->zName)==0 ) break;
+    #endif
   }
   sqlite3_mutex_leave(mutex);
   return pVfs;
