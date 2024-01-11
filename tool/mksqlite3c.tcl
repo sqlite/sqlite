@@ -384,6 +384,7 @@ set flist {
    hash.c
    opcodes.c
 
+   os_kfbsd.c
    os_kv.c
    os_unix.c
    os_win.c
