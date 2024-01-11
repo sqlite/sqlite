@@ -14,7 +14,8 @@
   previous steps of the sqlite3-api.js bootstrapping process:
   sqlite3-api-prologue.js, whwasmutil.js, and jaccwabyt.js. It
   initializes the main API pieces so that the downstream components
-  (e.g. sqlite3-api-oo1.js) have all that they need.
+  (e.g. sqlite3-api-oo1.js) have all of the infrastructure that they
+  need.
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
