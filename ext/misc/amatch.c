@@ -1406,6 +1406,7 @@ static int amatchBestIndex(
   }
   pIdxInfo->estimatedCost = (double)10000;
   
+  
   return SQLITE_OK;
 }
 

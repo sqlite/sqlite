@@ -4451,6 +4451,7 @@ expr_code_doover:
       pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
         #ifdef FREEBSD_KERNEL
+        printf("Warning: sqlite3ExprCodeTarget - This code should not be called! The function is not ready yet!\n");
         //todo: STELIOS
         #else
         return AggInfoColumnReg(pAggInfo, pExpr->iAgg);

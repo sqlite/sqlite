@@ -24,7 +24,9 @@ int sqlite3_os_end(void){
   return SQLITE_OK;
 }
 
-
+/*
+** Specific code for Kernel VFS implementation.
+*/
 static int kern_vfs_open(sqlite3_vfs *vfs, sqlite3_filename zName, sqlite3_file *file,
                          int flags, int *pOutFlags) {
     struct thread *td;

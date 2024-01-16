@@ -384,6 +384,7 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
     if( zVfs==0 ) break;
     #ifdef FREEBSD_KERNEL
     //todo: STELIOS
+    printf("Warning: sqlite3_vfs_find - This code is not ready yet!\n");
     #else
     if( strcmp(zVfs, pVfs->zName)==0 ) break;
     #endif
