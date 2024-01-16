@@ -1,1 +1,7 @@
 bld/
+aclocal.m4
+autom4te.cache/
+configure
+configure~
+ltmain.sh
+sqlite_cfg.h.in~
