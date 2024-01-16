@@ -440,6 +440,10 @@ static void torealFunc(
     case SQLITE_INTEGER: {
       sqlite3_int64 iVal = sqlite3_value_int64(argv[0]);
       double rVal = (double)iVal;
+      #ifdef FREEBSD_KERNEL
+      fpu_kern_leave(curthread, ctx);
+      fpu_kern_free_ctx(ctx);
+      #endif
       if( iVal==(sqlite3_int64)rVal ){
         sqlite3_result_double(context, rVal);
       }

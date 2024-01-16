@@ -998,7 +998,6 @@ int do_speed_tests(int nArg, char **azArg){
 
         t = testTimeGet();
         tdb_fetch(pDb, 0, 0, 0, 0);
-
         printf("%s: %d selects/second\n", 
             aSys[j].zLibrary, (int)((double)nSelTest*1000.0/t)
         );

@@ -1,5 +1,8 @@
 /* sqlite_cfg.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Maximum filename for FreeBSD Kernel */
+#undef FILENAME_MAX
+
 /* Define to 1 if compiling for FreeBSD Kernel */
 #undef FREEBSD_KERNEL
 
@@ -126,11 +129,32 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Define */
+#undef SQLITE_DEFAULT_CKPTFULLFSYNC
+
+/* Define */
+#undef SQLITE_ENABLE_API_ARMOR
+
+/* Stat4 support */
+#undef SQLITE_ENABLE_STAT4
+
+/* Use your own */
+#undef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
+
+/* Database will be initialized before */
+#undef SQLITE_OMIT_AUTOINIT
+
 /* FreeBSD Kernel uses no datetime functions */
 #undef SQLITE_OMIT_DATETIME_FUNCS
 
+/* Solves issues with initialization of SQLite */
+#undef SQLITE_OMIT_DESERIALIZE
+
 /* FreeBSD Kernel uses no floating point functions */
 #undef SQLITE_OMIT_FLOATING_POINT
+
+/* Define */
+#undef SQLITE_OMIT_WAL
 
 /* FreeBSD Kernel is a different OS */
 #undef SQLITE_OS_OTHER

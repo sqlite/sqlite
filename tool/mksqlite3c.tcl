@@ -170,6 +170,7 @@ foreach hdr {
    mutex.h
    opcodes.h
    os_common.h
+   os_kfbsd.h
    os_setup.h
    os_win.h
    os.h

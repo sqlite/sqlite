@@ -70,6 +70,7 @@
 #include <sys/unistd.h>
 #include <sys/user.h>
 #include <machine/stdarg.h> 
+#include <machine/fpu.h>
 MALLOC_DECLARE(M_SQLITE);
 #include <sys/malloc.h>
 #else

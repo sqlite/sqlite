@@ -336,6 +336,7 @@ static void showSegmentStats(sqlite3 *db, const char *zTab){
   printf("Total size of all leaf segments.......... %9lld\n", szSeg-szIdx);
   printf("Total size of all index segments......... %9lld\n", szIdx);
   printf("Total size of all root segments.......... %9lld\n", szRoot);
+
   if( nSeg>0 ){
     printf("Average size of all segments............. %11.1f\n",
             (double)(szSeg+szRoot)/(double)(nSeg+nRoot));

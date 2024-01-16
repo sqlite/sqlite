@@ -353,6 +353,7 @@ case $host_os in
     AC_DEFINE([assert(X)], [//STELIOS: todo], [Assert definition: todo for later])
     AC_DEFINE([SQLITE_OMIT_DATETIME_FUNCS], [1], [FreeBSD Kernel uses no datetime functions])
     AC_DEFINE([SQLITE_OMIT_FLOATING_POINT], [1], [FreeBSD Kernel uses no floating point functions])
+    AC_DEFINE([SQLITE_OMIT_DESERIALIZE], [1], [Solves issues with initialization of SQLite])
     AC_DEFINE([SQLITE_OS_OTHER], [1], [FreeBSD Kernel is a different OS])
     AC_DEFINE([FILENAME_MAX], [255], [Maximum filename for FreeBSD Kernel])
     ;;

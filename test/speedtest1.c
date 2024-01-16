@@ -1865,7 +1865,9 @@ void testset_orm(void){
           sqlite3_bind_int64(g.pStmt, j+2, x1);
           break;
         case 'F':
+        
           sqlite3_bind_double(g.pStmt, j+2, (double)x1);
+
           break;
         case 'V':
         case 'B':

@@ -204,7 +204,6 @@ static int prefixesBestIndex(
   ** (original_string) and use it if at all possible */
   int i;
   const struct sqlite3_index_constraint *p;
-
   for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
     if( p->iColumn!=1 ) continue;
     if( p->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
