@@ -1604,7 +1604,7 @@ static void currentTimeFunc(
     sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
   */
-  printf("Warning: zBuf[0] = '0'; is about to be called. This should not happen!\n");
+  printf("Warning: currentTimeFunc - function is not implemented on FreeBSD Kernel. This code should not be executed!\n");
   zBuf[0] = '0';
   for (int i = 1; i < 20; i++) zBuf[i] = zBuf[i-1];
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
