@@ -139,10 +139,10 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 # Exclude certain checks when in the FreeBSD kernel environment
 AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
     # Standard environment checks
-    AC_CHECK_HEADERS([dlfcn.h stdint.h stdlib.h string.h strings.h sys/stat.h sys/types.h unistd.h malloc.h stdio.h])
+    AC_CHECK_HEADERS([dlfcn.h inttypes.h stdint.h stdlib.h string.h strings.h sys/stat.h sys/types.h unistd.h malloc.h stdio.h])
 
     # Figure or not if we have these functions
-    AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r malloc_usable_size strchrnul pread pread64 pwrite pwrite64 usleep utime])
+    AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64])
 ], [
     # Leave all other macros undefined for FreeBSD kernel
     AC_CHECK_HEADERS([sys/stat.h sys/types.h])

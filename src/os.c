@@ -273,6 +273,7 @@ void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
 int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   if( sqlite3Config.iPrngSeed ){
     #ifdef FREEBSD_KERNEL
+    printf("Warning: sqlite3OsRandomness - The function is not yet implemented for FreeBSD Kernel!");
     //todo: STELIOS
     #else
     memset(zBufOut, 0, nByte);
