@@ -43,8 +43,9 @@
 #    which generates the makefile code, rather than using $(call) and
 #    $(eval), or at least centralize the setup of the numerous vars
 #    related to each build variant $(JS_BUILD_MODES). (Update: an
-#    external script was attempted but it's even less legible than the
-#    $(eval) indirection going on in this file.
+#    external script was attempted but generating properly-escaped
+#    makefile code from within a shell script is even less legible
+#    than the $(eval) indirection going on in this file.)
 #
 default: all
 #default: quick
@@ -432,8 +433,10 @@ sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 # sqlite3-api-worker.js = the Worker1 API:
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
-# sqlite3-v-helper = helper APIs for VFSes and VTABLEs:
-sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
+# sqlite3-vfs-helper = helper APIs for VFSes:
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
+# sqlite3-vtab-helper = helper APIs for VTABLEs:
+sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 # sqlite3-vfs-opfs.c-pp.js = the first OPFS VFS:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 # sqlite3-vfs-opfs-sahpool.c-pp.js = the second OPFS VFS:
@@ -652,6 +655,9 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 ########################################################################
 # $(sqlite3-license-version.js) contains the license header and
 # in-comment build version info.
+#
+# Maintenance reminder: there are awk binaries out there which do not
+# support -e SCRIPT.
 $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) \
   $(MAKEFILE)
 	@echo "Making $@..."; { \
@@ -659,8 +665,8 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
     echo '/*'; \
     echo '** This code was built from sqlite3 version...'; \
     echo "**"; \
-    awk -e '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' \
-        -e '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
+    awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
+    awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
     echo "**"; \
     echo "** Using the Emscripten SDK version $(emcc.version)."; \
     echo '*/'; \

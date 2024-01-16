@@ -245,7 +245,8 @@ const installOpfsVfs = function callee(options){
     opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/*sure, why not?*/;
+    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
+                                 is undocumented/unspecified. */;
     opfsVfs.$zName = wasm.allocCString("opfs");
     // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
     opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
@@ -992,27 +993,6 @@ const installOpfsVfs = function callee(options){
        defaulting to 16.
     */
     opfsUtil.randomFilename = randomFilename;
-
-    /**
-       Re-registers the OPFS VFS. This is intended only for odd use
-       cases which have to call sqlite3_shutdown() as part of their
-       initialization process, which will unregister the VFS
-       registered by installOpfsVfs(). If passed a truthy value, the
-       OPFS VFS is registered as the default VFS, else it is not made
-       the default. Returns the result of the the
-       sqlite3_vfs_register() call.
-
-       Design note: the problem of having to re-register things after
-       a shutdown/initialize pair is more general. How to best plug
-       that in to the library is unclear. In particular, we cannot
-       hook in to any C-side calls to sqlite3_initialize(), so we
-       cannot add an after-initialize callback mechanism.
-    */
-    opfsUtil.registerVfs = (asDefault=false)=>{
-      return wasm.exports.sqlite3_vfs_register(
-        opfsVfs.pointer, asDefault ? 1 : 0
-      );
-    };
 
     /**
        Returns a promise which resolves to an object which represents

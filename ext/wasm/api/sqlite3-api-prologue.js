@@ -1061,7 +1061,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        are undefined if the passed-in value did not come from
        this.pointer.
     */
-    restore: wasm.exports.sqlite3_wasm_pstack_restore,
+    restore: wasm.exports.sqlite3__wasm_pstack_restore,
     /**
        Attempts to allocate the given number of bytes from the
        pstack. On success, it zeroes out a block of memory of the
@@ -1083,7 +1083,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if('string'===typeof n && !(n = wasm.sizeofIR(n))){
         WasmAllocError.toss("Invalid value for pstack.alloc(",arguments[0],")");
       }
-      return wasm.exports.sqlite3_wasm_pstack_alloc(n)
+      return wasm.exports.sqlite3__wasm_pstack_alloc(n)
         || WasmAllocError.toss("Could not allocate",n,
                                "bytes from the pstack.");
     },
@@ -1163,10 +1163,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     pointer: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_ptr
+      get: wasm.exports.sqlite3__wasm_pstack_ptr
       //Whether or not a setter as an alternative to restore() is
       //clearer or would just lead to confusion is unclear.
-      //set: wasm.exports.sqlite3_wasm_pstack_restore
+      //set: wasm.exports.sqlite3__wasm_pstack_restore
     },
     /**
        sqlite3.wasm.pstack.quota to the total number of bytes
@@ -1175,7 +1175,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     quota: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_quota
+      get: wasm.exports.sqlite3__wasm_pstack_quota
     },
     /**
        sqlite3.wasm.pstack.remaining resolves to the amount of space
@@ -1183,7 +1183,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     remaining: {
       configurable: false, iterable: true, writeable: false,
-      get: wasm.exports.sqlite3_wasm_pstack_remaining
+      get: wasm.exports.sqlite3__wasm_pstack_remaining
     }
   })/*wasm.pstack properties*/;
 
@@ -1256,14 +1256,14 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
     try{
       if(pdir && 0===wasm.xCallWrapped(
-        'sqlite3_wasm_init_wasmfs', 'i32', ['string'], pdir
+        'sqlite3__wasm_init_wasmfs', 'i32', ['string'], pdir
       )){
         return __wasmfsOpfsDir = pdir;
       }else{
         return __wasmfsOpfsDir = "";
       }
     }catch(e){
-      // sqlite3_wasm_init_wasmfs() is not available
+      // sqlite3__wasm_init_wasmfs() is not available
       return __wasmfsOpfsDir = "";
     }
   };
@@ -1365,7 +1365,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const zSchema = schema
             ? (wasm.isPtr(schema) ? schema : wasm.scopedAllocCString(''+schema))
             : 0;
-      let rc = wasm.exports.sqlite3_wasm_db_serialize(
+      let rc = wasm.exports.sqlite3__wasm_db_serialize(
         pDb, zSchema, ppOut, pSize, 0
       );
       if(rc){
@@ -1391,7 +1391,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      or not provided, then "main" is assumed.
   */
   capi.sqlite3_js_db_vfs =
-    (dbPointer, dbName=0)=>wasm.sqlite3_wasm_db_vfs(dbPointer, dbName);
+    (dbPointer, dbName=0)=>util.sqlite3__wasm_db_vfs(dbPointer, dbName);
 
   /**
      A thin wrapper around capi.sqlite3_aggregate_context() which
@@ -1449,7 +1449,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if(!util.isInt32(dataLen) || dataLen<0){
         SQLite3Error.toss("Invalid 3rd argument for sqlite3_js_posix_create_file().");
       }
-      const rc = wasm.sqlite3_wasm_posix_create_file(filename, pData, dataLen);
+      const rc = util.sqlite3__wasm_posix_create_file(filename, pData, dataLen);
       if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
                                capi.sqlite3_js_rc_str(rc));
     }finally{
@@ -1551,7 +1551,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       SQLite3Error.toss("Invalid 4th argument for sqlite3_js_vfs_create_file().");
     }
     try{
-      const rc = wasm.sqlite3_wasm_vfs_create_file(vfs, filename, pData, dataLen);
+      const rc = util.sqlite3__wasm_vfs_create_file(vfs, filename, pData, dataLen);
       if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
                                capi.sqlite3_js_rc_str(rc));
     }finally{
@@ -1672,12 +1672,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_db_config = function(pDb, op, ...args){
     if(!this.s){
-      this.s = wasm.xWrap('sqlite3_wasm_db_config_s','int',
+      this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
                           ['sqlite3*', 'int', 'string:static']
                           /* MAINDBNAME requires a static string */);
-      this.pii = wasm.xWrap('sqlite3_wasm_db_config_pii', 'int',
+      this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
                             ['sqlite3*', 'int', '*','int', 'int']);
-      this.ip = wasm.xWrap('sqlite3_wasm_db_config_ip','int',
+      this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
                            ['sqlite3*', 'int', 'int','*']);
     }
     switch(op){
