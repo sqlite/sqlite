@@ -3654,11 +3654,16 @@ case OP_MakeRecord: {
         switch( len ){
           default: zPayload[7] = (u8)(v&0xff); v >>= 8;
                    zPayload[6] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 6:  zPayload[5] = (u8)(v&0xff); v >>= 8;
                    zPayload[4] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 4:  zPayload[3] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 3:  zPayload[2] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 2:  zPayload[1] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 1:  zPayload[0] = (u8)(v&0xff);
         }
         zPayload += len;

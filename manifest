@@ -1,5 +1,5 @@
-C Remove\sthe\sLLONG_MAX\spreprocessor\smacro\sfrom\sthe\sseries.c\sextension\sas\sit\nis\sapparently\sonly\sC99\sand\slater.\n[forum:/forumpost/4af649419b|Forum\spost\s4af649419b].
-D 2024-01-16T14:54:54.485
+C Clutter\sthe\scode\swith\s"fall-through"\scomments\sin\sorder\sto\ssuppress\snuisance\ncompiler\swarnings.\s\sNo\slogic\schanges.
+D 2024-01-16T15:04:19.943
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -698,7 +698,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 4913fd22c4f0fa30643afb93a4d78d289cd490620e782b31016c3d4b2049b1cc
+F src/json.c 624824b0c405dc64bb371107f21baf1d00a6b609cbdb16feaa2338a335bf981b
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -808,7 +808,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 078f040366d5bd5f47658d045f901c768c1c636c6eaea121f3a1cbd63c3edb5b
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 96ac876e57f480bd35ec8d74ed992bca6ae9deebe8b527a3a718e7b4714d6c2e
+F src/vdbe.c 4a42916b14548112cb1ee9b9dea3c0ba6c21d08fa0c660cd1561c1871e25908f
 F src/vdbe.h 88e19a982df9027ec1c177c793d1a5d34dc23d8f06e3b2d997f43688b05ee0eb
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
@@ -2158,8 +2158,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 835bd4a11e56ede378235379604ac01350ee92433f952a23c761f7be492fd475
-R 637840d72f118d7c04eecbf407fe77d2
+P f106bc0d21b7a815f0d23a97b6fd63c54d3f5353e965dfa550fa715e698ec6e3
+R da8805f28e584450d69243ce8bdddb6a
 U drh
-Z 9da67d078ad71f5567c52e74dbe3905e
+Z 0ea920a6e11610b2206c6aeee95b6afa
 # Remove this line to create a well-formed Fossil manifest.

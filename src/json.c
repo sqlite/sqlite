@@ -1911,6 +1911,7 @@ json_parse_restart:
       return i+4;
     }
     /* fall-through into the default case that checks for NaN */
+    /* no break */ deliberate_fall_through
   }
   default: {
     u32 k;
