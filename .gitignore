@@ -1,4 +1,3 @@
 bld/
 autom4te.cache/
-configure~
-sqlite_cfg.h.in~
+*~
