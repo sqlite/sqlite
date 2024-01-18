@@ -24,7 +24,7 @@ ifcapable {!datetime} {
 }
 
 if {$tcl_platform(os)=="Linux"} {
-  set FMT {%d,%e,%F,%H,%k,%I,%l,%j,%m,%M,%u,%w,%W,%Y,%%,%P,%p}
+  set FMT {%d,%e,%F,%H,%k,%I,%l,%j,%m,%M,%u,%w,%W,%Y,%%,%P,%p,%U,%V,%G,%g}
 } else {
   set FMT {%d,%e,%F,%H,%I,%j,%p,%R,%u,%w,%W,%%}
 }

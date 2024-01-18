@@ -209,8 +209,8 @@ datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
 
-foreach c {a b c g h i n o q r t v x y z
-           A B C D E G K L N O Q V Z
+foreach c {a b c h i n o q r t v x y z
+           A B C D E K L N O Q Z
            0 1 2 3 4 5 6 6 7 9 _} {
   datetest 3.18.$c "strftime('%$c','2003-10-31')" NULL
 }

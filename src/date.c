@@ -1237,21 +1237,97 @@ static void dateFunc(
 }
 
 /*
+** Compute the one-based day of the year for the DateTime pDate.
+** Jan01 = 1,  Jan02 = 2, ... Dec31 = 356 or 366.
+*/
+static int dayOfYear(DateTime *pDate){
+  DateTime jan01 = *pDate;
+  assert( jan01.validYMD );
+  assert( jan01.validHMS );
+  assert( pDate->validJD );
+  jan01.validJD = 0;
+  jan01.M = 1;
+  jan01.D = 1;
+  computeJD(&jan01);
+  return (int)((pDate->iJD-jan01.iJD+45300000)/86400000) + 1;
+}
+
+/*
+** Return the day of the week.  1==Monday, 2=Tues, ..., 7=Sunday.
+*/
+static int dayOfWeek(DateTime *pDate){
+  int w;
+  assert( pDate->validJD );
+  w = ((pDate->iJD+129600000)/86400000) % 7;
+  if( w==0 ) w = 7;
+  return w;
+}
+
+/*
+** Compute the day-of-week (0=Sunday, 1=Monday, ..., 6=Saturday) for
+** the last day of the calendar year Y.
+*/
+static int lastDayOfYear(int Y){
+  return (Y + (Y/4) - (Y/100) + (Y/400))%7;
+}
+
+/*
+** Return the number of ISO weeks in calendar year Y.  The answer is
+** either 52 or 53.
+*/
+static int weeksInYear(int Y){
+  if( lastDayOfYear(Y)==4 || lastDayOfYear(Y-1)==3 ){
+    return 53;
+  }else{
+    return 52;
+  }
+}
+
+/*
+** Compute the number days since the start of the ISO-week year for pDate.
+** The ISO-week year starts on the first day of the week (always a Monday)
+** that contains the first Thursday on or after January 1.
+*/
+static int isoWeekNumber(DateTime *pDate){
+  int wn = (10 + dayOfYear(pDate) - dayOfWeek(pDate))/7;
+  if( wn<1 ){
+    wn = weeksInYear(pDate->Y-1);
+  }else if( wn>weeksInYear(pDate->Y) ){
+    wn = 1;
+  }
+  return wn;
+}
+
+/*
 **    strftime( FORMAT, TIMESTRING, MOD, MOD, ...)
 **
 ** Return a string described by FORMAT.  Conversions as follows:
 **
-**   %d  day of month
+**   %d  day of month  01-31
+**   %e  day of month  1-31
 **   %f  ** fractional seconds  SS.SSS
+**   %F  ISO date.  YYYY-MM-DD
+**   %G  ISO year corresponding to %V 0000-9999.
+**   %g  2-digit ISO year corresponding to %V 00-99
 **   %H  hour 00-24
-**   %j  day of year 000-366
+**   %k  hour  0-24  (leading zero converted to space)
+**   %I  hour 01-12
+**   %j  day of year 001-366
 **   %J  ** julian day number
+**   %l  hour  1-12  (leading zero converted to space)
 **   %m  month 01-12
 **   %M  minute 00-59
+**   %p  "am" or "pm"
+**   %P  "AM" or "PM"
+**   %R  time as HH:MM
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
-**   %w  day of week 0-6  Sunday==0
-**   %W  week of year 00-53
+**   %T  time as HH:MM:SS
+**   %u  day of week 1-7  Monday==1, Sunday==7
+**   %w  day of week 0-6  Sunday==0, Monday==1
+**   %U  week of year 00-53  (First Sunday is start of week 01)
+**   %V  week of year 01-53  (First week containing Thursday is week 01)
+**   %W  week of year 00-53  (First Monday is start of week 01)
 **   %Y  year 0000-9999
 **   %%  %
 */
@@ -1288,7 +1364,7 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes, cf=='d' ? "%02d" : "%2d", x.D);
         break;
       }
-      case 'f': {
+      case 'f': {  /* Fractional seconds.  (Non-standard) */
         double s = x.s;
         if( s>59.999 ) s = 59.999;
         sqlite3_str_appendf(&sRes, "%06.3f", s);
@@ -1296,6 +1372,21 @@ static void strftimeFunc(
       }
       case 'F': {
         sqlite3_str_appendf(&sRes, "%04d-%02d-%02d", x.Y, x.M, x.D);
+        break;
+      }
+      case 'G': /* Fall thru */
+      case 'g': {
+        int Y = x.Y;
+        if( x.M==12 && isoWeekNumber(&x)==1 ){
+          Y++;
+        }else if( x.M==1 && isoWeekNumber(&x)>=52 ){
+          Y--;
+        }
+        if( cf=='g' ){
+          sqlite3_str_appendf(&sRes, "%02d", Y%100);
+        }else{
+          sqlite3_str_appendf(&sRes, "%04d", Y);
+        }
         break;
       }
       case 'H':
@@ -1311,25 +1402,12 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes, cf=='I' ? "%02d" : "%2d", h);
         break;
       }
-      case 'W': /* Fall thru */
-      case 'j': {
-        int nDay;             /* Number of days since 1st day of year */
-        DateTime y = x;
-        y.validJD = 0;
-        y.M = 1;
-        y.D = 1;
-        computeJD(&y);
-        nDay = (int)((x.iJD-y.iJD+43200000)/86400000);
-        if( cf=='W' ){
-          int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
-          wd = (int)(((x.iJD+43200000)/86400000)%7);
-          sqlite3_str_appendf(&sRes,"%02d",(nDay+7-wd)/7);
-        }else{
-          sqlite3_str_appendf(&sRes,"%03d",nDay+1);
-        }
+      case 'j': {  /* Day of year.  Jan01==1, Jan02==2, and so forth */
+        int nDay = dayOfYear(&x);
+        sqlite3_str_appendf(&sRes,"%03d",nDay);
         break;
       }
-      case 'J': {
+      case 'J': {  /* Julian day number.  (Non-standard) */
         sqlite3_str_appendf(&sRes,"%.16g",x.iJD/86400000.0);
         break;
       }
@@ -1372,11 +1450,31 @@ static void strftimeFunc(
         sqlite3_str_appendf(&sRes,"%02d:%02d:%02d", x.h, x.m, (int)x.s);
         break;
       }
-      case 'u': /* Fall thru */
-      case 'w': {
+      case 'u':    /* Day of week.  1 to 7.  Monday==1, Sunday==7 */
+      case 'w': {  /* Day of week.  0 to 6.  Sunday==0, Monday==1 */
         char c = (char)(((x.iJD+129600000)/86400000) % 7) + '0';
         if( c=='0' && cf=='u' ) c = '7';
         sqlite3_str_appendchar(&sRes, 1, c);
+        break;
+      }
+      case 'U': {  /* Week num. 00-53. First Sun of the year is week 01 */
+        int wd;    /* 0=Sunday, 1=Monday, 2=Tuesday, ... 7=Saturday */
+        int nDay;  /* Day of the year.  0..364 or 0..365 for leapyears */
+        nDay = dayOfYear(&x);
+        wd = (int)(((x.iJD+43200000)/86400000 + 1)%7);
+        sqlite3_str_appendf(&sRes,"%02d",(nDay+6-wd)/7);
+        break;
+      }
+      case 'V': {  /* Week num. 01-53. First week with a Thur is week 01 */
+        sqlite3_str_appendf(&sRes,"%02d", isoWeekNumber(&x));
+        break;
+      }
+      case 'W': {  /* Week num. 00-53. First Mon of the year is week 01 */
+        int wd;    /* 0=Monday, 1=Tuesday, ... 6=Sunday */
+        int nDay;  /* Day of the year.  0..364 or 0..365 for leapyears */
+        nDay = dayOfYear(&x);
+        wd = (int)(((x.iJD+43200000)/86400000)%7);
+        sqlite3_str_appendf(&sRes,"%02d",(nDay+6-wd)/7);
         break;
       }
       case 'Y': {
