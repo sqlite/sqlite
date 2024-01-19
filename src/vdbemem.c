@@ -1631,14 +1631,20 @@ static int valueFromExpr(
   }
 
   /* Handle negative integers in a single step.  This is needed in the
-  ** case when the value is -9223372036854775808.
-  */
-  if( op==TK_UMINUS
-   && (pExpr->pLeft->op==TK_INTEGER || pExpr->pLeft->op==TK_FLOAT) ){
-    pExpr = pExpr->pLeft;
-    op = pExpr->op;
-    negInt = -1;
-    zNeg = "-";
+  ** case when the value is -9223372036854775808. Except - do not do this
+  ** for hexadecimal literals.  */
+  if( op==TK_UMINUS ){
+    Expr *pLeft = pExpr->pLeft;
+    if( (pLeft->op==TK_INTEGER || pLeft->op==TK_FLOAT) ){
+      if( ExprHasProperty(pLeft, EP_IntValue)
+       || pLeft->u.zToken[0]!='0' || (pLeft->u.zToken[1] & ~0x20)!='X'
+      ){
+        pExpr = pLeft;
+        op = pExpr->op;
+        negInt = -1;
+        zNeg = "-";
+      }
+    }
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
@@ -1647,9 +1653,14 @@ static int valueFromExpr(
     if( ExprHasProperty(pExpr, EP_IntValue) ){
       sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
     }else{
-      zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
-      if( zVal==0 ) goto no_mem;
-      sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+      i64 iVal;
+      if( op==TK_INTEGER && 0==sqlite3DecOrHexToI64(pExpr->u.zToken, &iVal) ){
+        sqlite3VdbeMemSetInt64(pVal, iVal*negInt);
+      }else{
+        zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
+        if( zVal==0 ) goto no_mem;
+        sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+      }
     }
     if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_BLOB ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
