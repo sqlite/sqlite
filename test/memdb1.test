@@ -278,5 +278,6 @@ do_test 900 {
   set len [string length [dbempty serialize]]
   expr {$len>0}
 } 1
+dbempty close
 
 finish_test
