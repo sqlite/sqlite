@@ -635,10 +635,13 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
     if( tokenType>=TK_WINDOW ){
       assert( tokenType==TK_SPACE || tokenType==TK_OVER || tokenType==TK_FILTER
            || tokenType==TK_ILLEGAL || tokenType==TK_WINDOW 
+           || tokenType==TK_QNUMBER
       );
 #else
     if( tokenType>=TK_SPACE ){
-      assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
+      assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL 
+           || tokenType==TK_QNUMBER 
+      );
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( AtomicLoad(&db->u1.isInterrupted) ){
         pParse->rc = SQLITE_INTERRUPT;
@@ -671,7 +674,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
         assert( n==6 );
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif /* SQLITE_OMIT_WINDOWFUNC */
-      }else{
+      }else if( tokenType!=TK_QNUMBER ){
         Token x;
         x.z = zSql;
         x.n = n;
