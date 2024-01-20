@@ -267,4 +267,17 @@ if {[wal_is_capable]} {
   } {1 {database disk image is malformed}}
 }
 
+# 2024-01-20
+# https://sqlite.org/forum/forumpost/498777780e16880a
+#
+# Make sure a database is initialized before serializing it.
+#
+reset_db
+sqlite3 dbempty :memory:
+do_test 900 {
+  set len [string length [dbempty serialize]]
+  expr {$len>0}
+} 1
+dbempty close
+
 finish_test

@@ -1662,8 +1662,17 @@ static int valueFromExpr(
         sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
       }
     }
-    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_BLOB ){
-      sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
+    if( affinity==SQLITE_AFF_BLOB ){
+      if( op==TK_FLOAT ){
+        assert( pVal && pVal->z && pVal->flags==(MEM_Str|MEM_Term) );
+        sqlite3AtoF(pVal->z, &pVal->u.r, pVal->n, SQLITE_UTF8);
+        pVal->flags = MEM_Real;
+      }else if( op==TK_INTEGER ){
+        /* This case is required by -9223372036854775808 and other strings
+        ** that look like integers but cannot be handled by the
+        ** sqlite3DecOrHexToI64() call above.  */
+        sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
+      }
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
     }
