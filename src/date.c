@@ -1249,7 +1249,7 @@ static int dayOfYear(DateTime *pDate){
   jan01.M = 1;
   jan01.D = 1;
   computeJD(&jan01);
-  return (int)((pDate->iJD-jan01.iJD+45300000)/86400000) + 1;
+  return (int)((pDate->iJD-jan01.iJD+43200000)/86400000) + 1;
 }
 
 /*
@@ -1261,41 +1261,6 @@ static int dayOfWeek(DateTime *pDate){
   w = ((pDate->iJD+129600000)/86400000) % 7;
   if( w==0 ) w = 7;
   return w;
-}
-
-/*
-** Compute the day-of-week (0=Sunday, 1=Monday, ..., 6=Saturday) for
-** the last day of the calendar year Y.
-*/
-static int lastDayOfYear(int Y){
-  return (Y + (Y/4) - (Y/100) + (Y/400))%7;
-}
-
-/*
-** Return the number of ISO weeks in calendar year Y.  The answer is
-** either 52 or 53.
-*/
-static int weeksInYear(int Y){
-  if( lastDayOfYear(Y)==4 || lastDayOfYear(Y-1)==3 ){
-    return 53;
-  }else{
-    return 52;
-  }
-}
-
-/*
-** Compute the number days since the start of the ISO-week year for pDate.
-** The ISO-week year starts on the first day of the week (always a Monday)
-** that contains the first Thursday on or after January 1.
-*/
-static int isoWeekNumber(DateTime *pDate){
-  int wn = (10 + dayOfYear(pDate) - dayOfWeek(pDate))/7;
-  if( wn<1 ){
-    wn = weeksInYear(pDate->Y-1);
-  }else if( wn>weeksInYear(pDate->Y) ){
-    wn = 1;
-  }
-  return wn;
 }
 
 /*
@@ -1376,16 +1341,16 @@ static void strftimeFunc(
       }
       case 'G': /* Fall thru */
       case 'g': {
-        int Y = x.Y;
-        if( x.M==12 && isoWeekNumber(&x)==1 ){
-          Y++;
-        }else if( x.M==1 && isoWeekNumber(&x)>=52 ){
-          Y--;
-        }
+        DateTime y = x;
+        assert( y.validJD );
+        /* Move y so that it is the Thursday in the same week as x */
+        y.iJD += (4 - dayOfWeek(&x))*86400000;
+        y.validYMD = 0;
+        computeYMD(&y);
         if( cf=='g' ){
-          sqlite3_str_appendf(&sRes, "%02d", Y%100);
+          sqlite3_str_appendf(&sRes, "%02d", y.Y%100);
         }else{
-          sqlite3_str_appendf(&sRes, "%04d", Y);
+          sqlite3_str_appendf(&sRes, "%04d", y.Y);
         }
         break;
       }
@@ -1466,7 +1431,13 @@ static void strftimeFunc(
         break;
       }
       case 'V': {  /* Week num. 01-53. First week with a Thur is week 01 */
-        sqlite3_str_appendf(&sRes,"%02d", isoWeekNumber(&x));
+        DateTime y = x;
+        /* Adjust y so that is the Thursday in the same week as x */
+        assert( y.validJD );
+        y.iJD += (4 - dayOfWeek(&x))*86400000;
+        y.validYMD = 0;
+        computeYMD(&y);
+        sqlite3_str_appendf(&sRes,"%02d", (dayOfYear(&y)-1)/7+1);
         break;
       }
       case 'W': {  /* Week num. 00-53. First Mon of the year is week 01 */
