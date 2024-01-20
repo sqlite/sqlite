@@ -312,6 +312,27 @@ void sqlite3DequoteExpr(Expr *p){
 }
 
 /*
+** Expression p is a QINTEGER or QFLOAT (quoted integer or float). Dequote
+** the value in p->u.zToken and set the type to INTEGER or FLOAT. "Quoted"
+** integers or floats are those that contain '_' characters that must
+** be removed before further processing.
+*/
+void sqlite3DequoteNumber(Expr *p){
+  if( p ){
+    const char *pIn = p->u.zToken;
+    char *pOut = p->u.zToken;
+    assert( p->op==TK_QNUMBER );
+    p->op = TK_INTEGER;
+    do {
+      if( *pIn!=SQLITE_DIGIT_SEPARATOR ){
+        *pOut++ = *pIn;
+        if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
+      }
+    }while( *pIn++ );
+  }
+}
+
+/*
 ** If the input token p is quoted, try to adjust the token to remove
 ** the quotes.  This is not always possible:
 **

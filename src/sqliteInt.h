@@ -609,6 +609,8 @@
 # define SQLITE_OMIT_ALTERTABLE
 #endif
 
+#define SQLITE_DIGIT_SEPARATOR '_'
+
 /*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
@@ -4792,6 +4794,7 @@ int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
 void sqlite3DequoteToken(Token*);
+void sqlite3DequoteNumber(Expr*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*);

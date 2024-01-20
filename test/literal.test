@@ -44,4 +44,7 @@ test_literal 1.12 '-0xFF'            text -0xFF
 test_literal 1.13 -'0xFF'            integer 0
 
 
+test_literal 2.1  1_000 integer 1000
+
+
 finish_test
