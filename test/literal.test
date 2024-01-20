@@ -43,5 +43,11 @@ test_literal 1.11 '0xFF'             text 0xFF
 test_literal 1.12 '-0xFF'            text -0xFF
 test_literal 1.13 -'0xFF'            integer 0
 
+test_literal 1.14 -9223372036854775808 integer -9223372036854775808
+
+test_literal 2.1  1e12    real    1000000000000.0
+test_literal 2.2  1.0     real    1.0
+test_literal 2.3  1e1000  real    Inf
+test_literal 2.4  -1e1000  real   -Inf
 
 finish_test
