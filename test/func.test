@@ -1042,6 +1042,9 @@ do_test func-21.8 {
     SELECT replace('aaaaaaa', 'a', '0123456789');
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
+do_execsql_test func-21.9 {
+  SELECT typeof(replace(1,'',0));
+} {text}
 
 ifcapable tclvar {
   do_test func-21.9 {
