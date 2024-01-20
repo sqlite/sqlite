@@ -1,5 +1,5 @@
-C When\sdoing\sa\stext-affinity\scomparison\sbetween\stwo\svalues\swhere\sone\sor\sboth\nhave\sboth\sa\stext\sand\sa\snumeric\stype,\smake\ssure\sthe\snumeric\stype\sdoes\snot\nconfuse\sthe\sanswer.\s\sThis\sis\sa\sdeeper\sfix\sto\sthe\sproblem\sobserved\sby\n[forum:/forumpost/3776b48e71|forum\spose\s3776b48e71].\s\sThe\sproblem\sbisects\nto\s[25f2246be404f38b]\son\s2014-08-24,\sprior\sto\sversion\s3.8.7.
-D 2024-01-20T15:13:13.896
+C Rig\ssqlite3_serialize()\sso\sthat\sit\swill\sinitialize\sa\spreviously\suninitialized\ndatabase\sprior\sto\sserializing\sit,\sso\sthat\sit\sdoes\snot\shave\sa\szero-byte\ssize\nand\sdoes\snot\sreturn\sNULL\s(except\sfor\sOOM).\n[forum:/forumpost/498777780e16880a|Forum\sthread\s498777780e16880a].
+D 2024-01-20T16:29:19.033
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
-F src/memdb.c 559c42e61eb70cd6d4bc692b042497133c6d96c09a3d514d92f3dac72268e223
+F src/memdb.c 16679def118b5fd75292a253166d3feba3ec9c6189205bf209643ecdb2174ecc
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
 F src/mutex.c 1b4c7e5e3621b510e0c18397210be27cd54c8084141144fbbafd003fde948e88
@@ -1396,7 +1396,7 @@ F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca721
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test 2c4e9cc10d21c6bf4e217d72b7f6b8ba9b2605971bb2c5e6df76018e189f98f5
+F test/memdb1.test bef8623da0c0c2d8d4e0426dee5a52008a5714860901f8bca7638830b2645dbe
 F test/memdb2.test 4ba1fc09e2f51df80d148a540e4a3fa66d0462e91167b27497084de4d1f6b5b4
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memjournal2.test dbc2c5cb5f7b38950f4f6dc3e73fcecf0fcbed3fc32c7ce913bba164d288da1e
@@ -2159,8 +2159,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 01868ebcd25fadb2034da234c0636e82d07c5abc902ef66493cadfc988e74d7b
-R c017e3ff6a3cf5fef0c29004a344e6f7
+P 709841f88c77276f09701bf38e25503c64b3a0afbe2fbf878136db12f31cbe21
+R 6b35ed1d4541fe33e619d0defc51d4d4
 U drh
-Z f4a73b0af78f34dd85f781f1eb7187c3
+Z 0850c6fe7ffc6bdccabb75e3570a33ee
 # Remove this line to create a well-formed Fossil manifest.
