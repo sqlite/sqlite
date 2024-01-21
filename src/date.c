@@ -1242,7 +1242,8 @@ static void dateFunc(
 ** In other words, compute the zero-based day number for the
 ** current year:
 **
-**   Jan01 = 0,  Jan02 = 2, ... Dec31 = 364 or 365.
+**   Jan01 = 0,  Jan02 = 1, ..., Jan31 = 30, Feb01 = 31, ...
+**   Dec31 = 364 or 365.
 */
 static int daysAfterJan01(DateTime *pDate){
   DateTime jan01 = *pDate;

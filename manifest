@@ -1,5 +1,5 @@
-C Ensure\sthat\svalues\sgenerated\sby\sDEFAULT\sclauses\sthat\sspecify\sreal\snumbers\sthat\scan\sbe\sexpressed\sas\s64-bit\sintegers\s(e.g.\s-1234.0)\sare\snot\ssilently\sconverted\sto\sintegers.
-D 2024-01-20T18:41:13.528
+C Fix\sa\sharmless\stypo\sin\sa\scomment.
+D 2024-01-21T21:20:33.306
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -684,7 +684,7 @@ F src/build.c e7d9044592eeeea8e78d8ae53ca8d31fd6e92ca0d4f53e2f2e8ccf7352e0b04b
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
-F src/date.c 48a110a2a267398ad9b04fe3db69dfa194f91719f94fa55cd560e03510f963e6
+F src/date.c 90df32c2d8b2a38dd2e83d32e47802629305c4882fb2ec75c9ecdcd75b68bcb2
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
@@ -2159,8 +2159,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aaa5a044d8a4942278eb4269fa8c7252f9f1dc161408e618e7c97c55a12283ff
-R 363a8d4d24bb7774a5f7eceb24c4f650
-U dan
-Z ee966b48b47570fa6886cd7583990b8c
+P 298d6977285c71be917896bc875a8a26d985dcf0a74069b7c4d290e8ff0ac618
+R 6efa1c82cfa2e7d17b14637b7f3e1900
+U drh
+Z 096bcae3083b69021bc23dacf629858d
 # Remove this line to create a well-formed Fossil manifest.
