@@ -328,7 +328,7 @@ void sqlite3DequoteNumber(Expr *p){
         if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
       }
     }while( *pIn++ );
-    if( p->u.zToken[0]=='0' && p->u.zToken[1]=='x' ){
+    if( p->u.zToken[0]=='0' && (p->u.zToken[1]=='x' || p->u.zToken[1]=='X') ){
       p->op = TK_INTEGER;
     }
   }
