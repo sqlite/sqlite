@@ -443,8 +443,14 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 #endif
       for(i=0; 1; i++){
         if( sqlite3Isdigit(z[i])==0 ){
-          if( z[i]==SQLITE_DIGIT_SEPARATOR ){ *tokenType = TK_QNUMBER; }
-          else{ break; }
+          if( z[i]==SQLITE_DIGIT_SEPARATOR
+           && sqlite3Isdigit(z[i-1])
+           && sqlite3Isdigit(z[i+1])
+          ){
+            *tokenType = TK_QNUMBER;
+          }else{
+            break;
+          }
         }
       }
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -452,8 +458,14 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         if( *tokenType==TK_INTEGER ) *tokenType = TK_FLOAT;
         for(i++; 1; i++){
           if( sqlite3Isdigit(z[i])==0 ){
-            if( z[i]==SQLITE_DIGIT_SEPARATOR ){ *tokenType = TK_QNUMBER; }
-            else{ break; }
+            if( z[i]==SQLITE_DIGIT_SEPARATOR
+             && sqlite3Isdigit(z[i-1])
+             && sqlite3Isdigit(z[i+1])
+            ){
+              *tokenType = TK_QNUMBER;
+            }else{
+              break;
+            }
           }
         }
       }
