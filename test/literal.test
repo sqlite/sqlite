@@ -19,12 +19,21 @@ set ::testprefix literal
 proc test_literal {tn lit type val} {
   do_execsql_test $tn.1 "SELECT typeof( $lit ), $lit" [list $type $val]
 
-  do_execsql_test $tn.2 "
+  ifcapable altertable {
+    do_execsql_test $tn.2 "
+      DROP TABLE IF EXISTS x1;
+      CREATE TABLE x1(a);
+      INSERT INTO x1 VALUES(123);
+      ALTER TABLE x1 ADD COLUMN b DEFAULT $lit ;
+      SELECT typeof(b), b FROM x1;
+    " [list $type $val]
+  }
+
+  do_execsql_test $tn.3 "
     DROP TABLE IF EXISTS x1;
-    CREATE TABLE x1(a);
-    INSERT INTO x1 VALUES(123);
-    ALTER TABLE x1 ADD COLUMN b DEFAULT $lit ;
-    SELECT typeof(b), b FROM x1;
+    CREATE TABLE x1(a DEFAULT $lit);
+    INSERT INTO x1 DEFAULT VALUES;
+    SELECT typeof(a), a FROM x1;
   " [list $type $val]
 }
 
