@@ -22,6 +22,14 @@ errorsql_test 1.1 { SELECT 123__456 }
 
 execsql_float_test 2.1 { SELECT 1.0e1_2 }
 
+
+execsql_test  3.0 { SELECT 0xFF_FF }
+execsql_test  3.1 { SELECT 0xFF_EF }
+
+errorsql_test  3.2 { SELECT 0xFF__EF }
+# errorsql_test   3.3 { SELECT 0x_FFEF }
+errorsql_test  3.4 { SELECT 0xFFEF_ }
+
 finish_test
 
 

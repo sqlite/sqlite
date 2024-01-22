@@ -312,10 +312,9 @@ void sqlite3DequoteExpr(Expr *p){
 }
 
 /*
-** Expression p is a QINTEGER or QFLOAT (quoted integer or float). Dequote
-** the value in p->u.zToken and set the type to INTEGER or FLOAT. "Quoted"
-** integers or floats are those that contain '_' characters that must
-** be removed before further processing.
+** Expression p is a QNUMBER (quoted number). Dequote the value in p->u.zToken
+** and set the type to INTEGER or FLOAT. "Quoted" integers or floats are those
+** that contain '_' characters that must be removed before further processing.
 */
 void sqlite3DequoteNumber(Expr *p){
   if( p ){
@@ -329,6 +328,9 @@ void sqlite3DequoteNumber(Expr *p){
         if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
       }
     }while( *pIn++ );
+    if( p->u.zToken[0]=='0' && p->u.zToken[1]=='x' ){
+      p->op = TK_INTEGER;
+    }
   }
 }
 
