@@ -1596,6 +1596,10 @@ struct FuncDefHash {
 };
 #define SQLITE_FUNC_HASH(C,L) (((C)+(L))%SQLITE_FUNC_HASH_SZ)
 
+#if defined(SQLITE_USER_AUTHENTICATION)
+# warning  "The SQLITE_USER_AUTHENTICATION extension is deprecated. \
+ See ext/userauth/user-auth.txt for details."
+#endif
 #ifdef SQLITE_USER_AUTHENTICATION
 /*
 ** Information held in the "sqlite3" database connection object and used

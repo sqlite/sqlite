@@ -4,8 +4,8 @@
 * tree.                                                                       *
 *                                                                             *
 * If you are using this extension and think it should be supported moving     *
-* forward, visit the SQLite Forum (https://sqlite.org/forum) and make your    *
-* case.                                                                       *
+* forward, visit the SQLite Forum (https://sqlite.org/forum) and argue your   *
+* case there.                                                                 *
 *                                                                             *
 * This deprecation notice was added on 2024-01-22.                            *
 *******************************************************************************

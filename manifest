@@ -1,5 +1,5 @@
-C Add\sa\snotice\sto\sthe\suser-authentication\sdocumentation\sto\ssay\sthat\sthe\nextension\sis\sdeprecated\sand\smay\sdisappear\sin\sthe\sfuture.
-D 2024-01-22T12:30:17.497
+C Fix\suserauth\sso\sthat\sit\sworks\stogether\swith\sSQLITE_OMIT_SHARED_CACHE.\n([forum:/forumpost/0bfc5888a384d430|Forum\spost\s0bfc5888a384d430]).\nHowever,\salso\schange\sto\scode\sto\sissue\sa\sdeprecation\swarning\swhenever\nSQLITE_USER_AUTHENTICATION\sis\sused.
+D 2024-01-22T12:56:58.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -572,7 +572,7 @@ F ext/session/sqlite3session.c 829d468f0f3d2710aace56b0116a7ca3f414683ce78e3125a
 F ext/session/sqlite3session.h 4cf19a51975746d7cff2fdd74db8b769c570958e1c3639ac150d824ac1553b3e
 F ext/session/test_session.c 7b94ad945cd4afe6c73ee935aeb3d44b4446186e1729362af616c7695a5283d9
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
-F ext/userauth/user-auth.txt 9a3bdae6b5d2746056d7611ae1d81fa888772ef716b05d20497cdb4f7992e997
+F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile 867c903a27fa0d53a3bf1b01d8c7bb713456f87e0939c3cac9f07faa68f58734
@@ -680,7 +680,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c dee25e097b749275333b55d64a5ffc079249576f8e88a2ee476468cf67510f4b
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
-F src/build.c e7d9044592eeeea8e78d8ae53ca8d31fd6e92ca0d4f53e2f2e8ccf7352e0b04b
+F src/build.c 05c9eb387638982092988d2ef4c00a91b0c29baa1b85923f082ce0cf2903ea7e
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -743,7 +743,7 @@ F src/shell.c.in 5ea8c6b0057bfe3bcdff31949fe72aa231ae429047c421ea1b168af6825a489
 F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 73800d73e21180e6b3df8d0fe7d11758dc24367fd2b0b0075b48fc116de406bb
+F src/sqliteInt.h 03e64e4a973f56035772421e94be7bf092ceceeb3dc91a74a2147030a822c392
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2159,8 +2159,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 488caed24453fcef6fddcf40353e3b44cf37fb9d21e0ed743d39d60cbff020a7
-R ea5433aac763e6ce8bcfabec2e6890c2
+P fe6fc7b91ad1771a2d2d4e3d9d60831b3056d528a700932bf11a336c7e3414a2
+R c9a2f047c14d9ac32442399617ab89a7
 U drh
-Z 559db82f0095218d6f000421c012f60a
+Z 8584c8666b4931dfcdafd4fc01ba8536
 # Remove this line to create a well-formed Fossil manifest.
