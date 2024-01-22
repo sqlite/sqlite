@@ -3218,6 +3218,38 @@ jsonInsertIntoBlob_patherror:
 }
 
 /*
+** If pArg is a blob that seems like a JSONB blob, then initialize
+** p to point to that JSONB and return TRUE.  If pArg does not seem like
+** a JSONB blob, then return FALSE;
+**
+** This routine is only called if it is already known that pArg is a
+** blob.  The only open question is whether or not the blob appears
+** to be a JSONB blob.
+*/
+static int jsonArgIsJsonb(sqlite3_value *pArg, JsonParse *p){
+  u32 n, sz = 0;
+  p->aBlob = (u8*)sqlite3_value_blob(pArg);
+  p->nBlob = (u32)sqlite3_value_bytes(pArg);
+  if( p->nBlob==0 ){
+    p->aBlob = 0;
+    return 0;
+  }
+  if( NEVER(p->aBlob==0) ){
+    return 0;
+  }
+  if( (p->aBlob[0] & 0x0f)<=JSONB_OBJECT
+   && (n = jsonbPayloadSize(p, 0, &sz))>0
+   && sz+n==p->nBlob
+   && ((p->aBlob[0] & 0x0f)>JSONB_FALSE || sz==0)
+  ){
+    return 1;
+  }
+  p->aBlob = 0;
+  p->nBlob = 0;
+  return 0;
+}
+
+/*
 ** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
 ** from the SQL function argument pArg.  Return a pointer to the new
 ** JsonParse object.
@@ -3273,29 +3305,26 @@ rebuild_from_cache:
     return p;
   }
   if( eType==SQLITE_BLOB ){
-    u32 n, sz = 0;
-    p->aBlob = (u8*)sqlite3_value_blob(pArg);
-    p->nBlob = (u32)sqlite3_value_bytes(pArg);
-    if( p->nBlob==0 ){
-      goto json_pfa_malformed;
+    if( jsonArgIsJsonb(pArg,p) ){
+      if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
+        goto json_pfa_oom;
+      }
+      return p;
     }
-    if( NEVER(p->aBlob==0) ){
-      goto json_pfa_oom;
-    }
-    if( (p->aBlob[0] & 0x0f)>JSONB_OBJECT ){
-      goto json_pfa_malformed;
-    }
-    n = jsonbPayloadSize(p, 0, &sz);
-    if( n==0 
-     || sz+n!=p->nBlob
-     || ((p->aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0)
-    ){
-      goto json_pfa_malformed;
-    }
-    if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
-      goto json_pfa_oom;
-    }
-    return p;
+#if defined(SQLITE_JSON_BLOB_INPUT_BUG_COMPATIBLE)
+    /* If the input is a BLOB that is not JSONB, fall through into trying
+    ** to process that BLOB as if it where text.  This goes against all
+    ** historical documentation about how the SQLite JSON functions are 
+    ** suppose to work.  Nevertheless, many SQLite implementations prior to
+    ** version 3.45.0 contained a bug such that they did behave this way
+    ** and some applications came to depend upon this buggy behavior.  The
+    ** SQLITE_JSON_BLOB_INPUT_BUG_COMPATIBLE compile-time option provides
+    ** a mechanism for those applications to continue working even after
+    ** the bug was fixed.  See
+    ** https://sqlite.org/forum/forumpost/012136abd5292b8d */
+#else
+    goto json_pfa_malformed;
+#endif
   }
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);

@@ -1,5 +1,5 @@
-C Fix\stest\sscript\sliteral.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_ALTER_TABLE\sbuilds.
-D 2024-01-22T14:01:07.189
+C The\s-DSQLITE_JSON_BLOB_INPUT_BUG_COMPATIBLE\scompile-time\soption\scauses\sblob\ninputs\sto\sJSON\sfunctions\sthat\sare\snot\sJSONB\sto\sbe\sprocessed\sas\sif\sthey\nwhere\stext,\simmulating\shistorical\sbugging\sbehavior\swhich\ssome\sapplications\nhave\scome\sto\srely\supon.\s\sSee\n[forum:/forumpost/012136abd5292b8d|forum\sthread\s012136abd5292b8d]\sfor\ndiscussion.
+D 2024-01-22T14:16:10.354
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -698,7 +698,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 5405e50cf0d7aeae12ac5b46e0fc9b3757b3b9cb4885f1a73ec7afeac99b9759
+F src/json.c 99f2825b44327811bdf47808e57077388b83bcc6a253c1269d13fd1b3237138d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -2159,9 +2159,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 249048b0cbc37058c229a785182e07b46029584aff9c385269b0b93503153476
-Q +b57327be4be9638f5ee834a6c9e06135aaef9e499516f8b53f927ffe81033f61
-R 30b53374dcbd0df72ff4a36d2f8af72e
-U dan
-Z 80e756b96db0b6ae94203f53b2e0b98b
+P 4dc00f577632c7b13135505007804d42a12f81a9ebd58d4c380727256b054b7e
+R 59af26cba445671768ccc033868954ad
+U drh
+Z 9f8b0dd9fdc4264b889c936f6659e28d
 # Remove this line to create a well-formed Fossil manifest.
