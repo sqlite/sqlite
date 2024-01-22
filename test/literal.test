@@ -37,6 +37,10 @@ proc test_literal {tn lit type val} {
   " [list $type $val]
 }
 
+proc test_literal_error {tn lit unrec} {
+  do_catchsql_test $tn "SELECT $lit" "1 {unrecognized token: \"$unrec\"}"
+}
+
 
 test_literal 1.0 45                  integer 45
 test_literal 1.1 0xFF                integer 255
@@ -62,9 +66,31 @@ test_literal 3.1  1_000   integer 1000
 test_literal 3.2  1.1_1   real    1.11
 test_literal 3.3  1_0.1_1 real    10.11
 test_literal 3.4  1e1_000 real    Inf
-test_literal 3.5  123______456.7_8__9_ real 123456.789
+test_literal 3.5  12_3_456.7_8_9 real 123456.789
 test_literal 3.6  9_223_372_036_854_775_807 integer 9223372036854775807
 test_literal 3.7  9_223_372_036_854_775_808 real 9.22337203685478e+18
 test_literal 3.8  -9_223_372_036_854_775_808 integer -9223372036854775808
+
+foreach {tn lit unrec} {
+  0    123a456       123a456
+  1    1_            1_
+  2    1_.4          1_
+  3    1e_4          1e_4
+  4    1_e4          1_e4
+  5    1.4_e4        1.4_e4
+  6    1.4e+_4       1.4e
+  7    1.4e-_4       1.4e
+  8    1.4e4_        1.4e4_
+  9    1.4_e4        1.4_e4
+  10   1.4e_4        1.4e_4
+  11   12__34        12__34
+  12   1234_         1234_
+  13   12._34        12._34
+  14   12_.34        12_
+  15   12.34_        12.34_
+  16   1.0e1_______2 1.0e1_______2 
+} {
+  test_literal_error 4.$tn $lit $unrec
+}
 
 finish_test
