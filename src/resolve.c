@@ -755,9 +755,9 @@ static int lookupName(
     }else if( zTab ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zErr, zTab, zCol);
     }else if( cnt==0 && ExprHasProperty(pRight,EP_DblQuoted) ){
-      sqlite3ErrorMsg(pParse, "no such column: \"%s\" - should this be a"
+      sqlite3ErrorMsg(pParse, "%s: \"%s\" - should this be a"
                               " string literal in single-quotes?",
-                              zCol);
+                              zErr, zCol);
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
