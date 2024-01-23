@@ -1,5 +1,5 @@
-C Update\s#ifdef\schecks\sin\spager.c\sand\sutil.c\sto\saccount\sfor\s[0462a2612d1fc1d0]\sto\sresolve\sthe\sbuild\sproblem\sreported\sin\s[forum:9819032aac|forum\spost\s9819032aac].
-D 2023-12-22T15:42:09.883
+C In\sos_unix.c\sand\sos_win.c,\sdo\snot\sallow\sxFetch()\sto\sreturn\sa\spointer\sto\sa\spage\sbuffer\sthat\sis\sright\sat\sthe\send\sof\sthe\smapped\sregion\s-\sif\sthe\sdatabase\sis\scorrupted\sin\sa\sspecific\sway\ssuch\sa\spage\sbuffer\smight\sbe\soverread\sby\sseveral\sbytes.
+D 2024-01-23T16:21:07.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,8 +708,8 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c cb116fde9e3ca3c1bbfdf89d6928f776a2a34da168e2667426523a4db353b271
-F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
+F src/os_unix.c 085610579629d469f7325cced82856ade34ba221c31a0cf034aedd009544ad41
+F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c d19325084b4ada4a9139175c6c09d5534bb63a8017c85fe542dee08602794637
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
@@ -1399,10 +1399,11 @@ F test/misc7.test d912f3d45c2989191b797504a220ca225d6be80b21acad22ba0d35f4a9ee45
 F test/misc8.test 4db9f8be59834cea08c87e9658014080efa02678ef54a088f84fa5647e81fee0
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 28a08d5cb5fb5b5702a46e19176e45e964e0800d1f894677169e79f34030e152
-F test/mmap1.test 5c1f768828094b0dd94e55ae7f10489a1ded74772682be2c4c78679d0acaf7ef
+F test/mmap1.test e154d0442c9b43646f86b8ddc38b656bb8bc79284209a9367076473cec5d0eef
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
+F test/mmapcorrupt.test 0d89724591f22a376019f3df60d075b838dd2ba6dae6effb0be465c49cf86d4a
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
@@ -2142,9 +2143,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f770d14d3dca5eb38faa89c4cba269233aa45cc4a56176fdae22f14974ceeb2
-Q +0f22d809a1c6c80e381f6bcd931fe4ec36dca0e28d07ab4f4f7f83c813424f60
-R 7e717efc5d266a25a7aae4d16300c30b
-U stephan
-Z 79ce9f752d302ff3883055797a230a93
+P 7374c2342e66b352c2098d401e7660b18a0cdf1a69c24386953b1331c2afcbbf
+Q +2684feac3bc9c5463604900d72710be861527614f4957224c74a16a3b3c702f5
+R 86a85b3699f5b9622e162135ce47f00b
+U drh
+Z df1c658218b007327b2e6af0986064b1
 # Remove this line to create a well-formed Fossil manifest.
