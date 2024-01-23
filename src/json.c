@@ -3311,20 +3311,18 @@ rebuild_from_cache:
       }
       return p;
     }
-#if defined(SQLITE_JSON_BLOB_INPUT_BUG_COMPATIBLE)
-    /* If the input is a BLOB that is not JSONB, fall through into trying
-    ** to process that BLOB as if it where text.  This goes against all
-    ** historical documentation about how the SQLite JSON functions are 
-    ** suppose to work.  Nevertheless, many SQLite implementations prior to
-    ** version 3.45.0 contained a bug such that they did behave this way
-    ** and some applications came to depend upon this buggy behavior.  The
-    ** SQLITE_JSON_BLOB_INPUT_BUG_COMPATIBLE compile-time option provides
-    ** a mechanism for those applications to continue working even after
-    ** the bug was fixed.  See
-    ** https://sqlite.org/forum/forumpost/012136abd5292b8d */
-#else
-    goto json_pfa_malformed;
-#endif
+    /* If the blob is not valid JSONB, fall through into trying to cast
+    ** the blob into text which is then interpreted as JSON.  (tag-20240123-a)
+    **
+    ** This goes against all historical documentation about how the SQLite
+    ** JSON functions were suppose to work.  From the beginning, blob was
+    ** reserved for expansion and a blob value should have raised an error.
+    ** But it did not, due to a bug.  And many applications came to depend
+    ** upon this buggy behavior, espeically when using the CLI and reading
+    ** JSON text using readfile(), which returns a blob.  For this reason
+    ** we will continue to support the bug moving forward.
+    ** See for example https://sqlite.org/forum/forumpost/012136abd5292b8d
+    */
   }
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
@@ -4300,12 +4298,12 @@ static void jsonValidFunc(
       return;
     }
     case SQLITE_BLOB: {
-      if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
+      if( jsonFuncArgMightBeBinary(argv[0]) ){
         if( flags & 0x04 ){
           /* Superficial checking only - accomplished by the
           ** jsonFuncArgMightBeBinary() call above. */
           res = 1;
-        }else{
+        }else if( flags & 0x08 ){
           /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
           ** no errors occur, call that a "strict check". */
           JsonParse px;
@@ -4316,8 +4314,11 @@ static void jsonValidFunc(
           iErr = jsonbValidityCheck(&px, 0, px.nBlob, 1);
           res = iErr==0;
         }
+        break;
       }
-      break;
+      /* Fall through into interpreting the input as text.  See note
+      ** above at tag-20240124-a. */
+      /* no break */ deliberate_fall_through
     }
     default: {
       JsonParse px;
@@ -5053,13 +5054,9 @@ static int jsonEachFilter(
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
   p->sParse.db = p->db;
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
-    if( jsonFuncArgMightBeBinary(argv[0]) ){
-      p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
-      p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-    }else{
-      goto json_each_malformed_input;
-    }
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
+    p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
     p->sParse.nJson = sqlite3_value_bytes(argv[0]);
