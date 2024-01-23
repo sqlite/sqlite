@@ -1,5 +1,5 @@
-C When\sa\sJSON\sinput\sis\sa\sblob,\sbut\sit\slooks\slike\svalid\sJSON\swhen\scast\sto\stext,\nthen\saccept\sit\sas\svalid\sJSON.\s\sThis\sreplicates\sa\slong-standing\sbug\sin\sthe\nbehavior\sof\sJSON\sroutines,\sand\sthus\savoids\sbreaking\slegacy\sapps.\n[forum:/forumpost/012136abd5292b8d|Forum\sthread\s012136abd5292b8d].
-D 2024-01-23T13:51:55.791
+C Improved\serror\smessage\swhen\sa\sdouble-quoted\sidentifier\sname\scannot\sbe\nresolved\s-\sask\sthe\suser\sif\sthey\sintended\sto\suse\sa\sstring\sliteral.
+D 2024-01-23T14:45:22.468
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -736,7 +736,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 18fbdf028345c8fbe6044f5f5bfda5a10d48d6287afef088cc21b0ca57985640
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resolve.c e25f51a473a5f30a0d978e4df2aaa98aeec84eac29ecae1ad4708a6c3e669345
+F src/resolve.c 0ed10ebb70d15dcf3f1882051931ccfaf9c3f4debe67dbd114047d9e2adb9523
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f1a81ff4f8e9e76c224e2ab3a4baa799add0db22158c7fcede65d8cc4a6fa2da
 F src/shell.c.in c6cb773b7703d76677529de19d1c40584520701966422c33da3e9334498a7099
@@ -1498,7 +1498,7 @@ F test/quickcheck.test a4b7e878cd97e46108291c409b0bf8214f29e18fddd68a42bc5c1375a
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
-F test/quote.test ffb40f0eb7a25c1d8cfe11ee2fe67f8e85fbf3fed348810834114be1fdada142
+F test/quote.test 7b01b2a261bc26d9821aea9f4941ce1e08191d62fc55ba8862440fb3a59197a4
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
@@ -2160,9 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df563a18578c5cf1aaecf5818c93967aaa70475598d3c099779622ac8911f926 1f09541eb4203ccce476f6040ff134353850f22f07fb84f96a1d2c27b304a91b
-R 7dbf13a4c43e7e089cdf91f0d441d241
-T +closed 1f09541eb4203ccce476f6040ff134353850f22f07fb84f96a1d2c27b304a91b
+P e5dc81d5c7ee97866feb688dfa9b6fc225dabff2b020b9b96b49a8fea5640aec 59eb9d29e796886db17a578b64e75fd2797aebf969cbeeda70ecf2fda378c98f
+R c6b194554d1ef13c7fd9b0cfa6d21ae1
+T +closed 59eb9d29e796886db17a578b64e75fd2797aebf969cbeeda70ecf2fda378c98f
 U drh
-Z 49b5d29fcb274cc9d83fe4cb64ac5dc9
+Z e1ae068dffaf45ea92f1b3624e579582
 # Remove this line to create a well-formed Fossil manifest.

@@ -277,7 +277,7 @@ static int lookupName(
   Parse *pParse,       /* The parsing context */
   const char *zDb,     /* Name of the database containing table, or NULL */
   const char *zTab,    /* Name of table containing column, or NULL */
-  const char *zCol,    /* Name of the column. */
+  const Expr *pRight,  /* Name of the column. */
   NameContext *pNC,    /* The name context used to resolve the name */
   Expr *pExpr          /* Make this EXPR node point to the selected column */
 ){
@@ -294,6 +294,7 @@ static int lookupName(
   Table *pTab = 0;                  /* Table holding the row */
   Column *pCol;                     /* A column of pTab */
   ExprList *pFJMatch = 0;           /* Matches for FULL JOIN .. USING */
+  const char *zCol = pRight->u.zToken;
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
@@ -753,6 +754,10 @@ static int lookupName(
       sqlite3ErrorMsg(pParse, "%s: %s.%s.%s", zErr, zDb, zTab, zCol);
     }else if( zTab ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zErr, zTab, zCol);
+    }else if( cnt==0 && ExprHasProperty(pRight,EP_DblQuoted) ){
+      sqlite3ErrorMsg(pParse, "%s: \"%s\" - should this be a"
+                              " string literal in single-quotes?",
+                              zErr, zCol);
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
@@ -1000,7 +1005,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     */
     case TK_ID:
     case TK_DOT: {
-      const char *zColumn;
       const char *zTable;
       const char *zDb;
       Expr *pRight;
@@ -1009,7 +1013,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         zDb = 0;
         zTable = 0;
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
-        zColumn = pExpr->u.zToken;
+        pRight = pExpr;
       }else{
         Expr *pLeft = pExpr->pLeft;
         testcase( pNC->ncFlags & NC_IdxExpr );
@@ -1028,14 +1032,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
         assert( ExprUseUToken(pLeft) && ExprUseUToken(pRight) );
         zTable = pLeft->u.zToken;
-        zColumn = pRight->u.zToken;
         assert( ExprUseYTab(pExpr) );
         if( IN_RENAME_OBJECT ){
           sqlite3RenameTokenRemap(pParse, (void*)pExpr, (void*)pRight);
           sqlite3RenameTokenRemap(pParse, (void*)&pExpr->y.pTab, (void*)pLeft);
         }
       }
-      return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
+      return lookupName(pParse, zDb, zTable, pRight, pNC, pExpr);
     }
 
     /* Resolve function names
