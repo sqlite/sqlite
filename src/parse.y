@@ -1926,7 +1926,7 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
 
 term(A) ::= QNUMBER(X). {
   A=tokenExpr(pParse,@X,X);
-  sqlite3DequoteNumber(A);
+  sqlite3DequoteNumber(pParse, A);
 }
 
 /* There must be no more than 255 tokens defined above.  If this grammar

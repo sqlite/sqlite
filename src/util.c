@@ -316,21 +316,26 @@ void sqlite3DequoteExpr(Expr *p){
 ** and set the type to INTEGER or FLOAT. "Quoted" integers or floats are those
 ** that contain '_' characters that must be removed before further processing.
 */
-void sqlite3DequoteNumber(Expr *p){
+void sqlite3DequoteNumber(Parse *pParse, Expr *p){
   if( p ){
     const char *pIn = p->u.zToken;
     char *pOut = p->u.zToken;
+    int bHex = (pIn[0]=='0' && (pIn[1]=='x' || pIn[1]=='X'));
     assert( p->op==TK_QNUMBER );
     p->op = TK_INTEGER;
     do {
       if( *pIn!=SQLITE_DIGIT_SEPARATOR ){
         *pOut++ = *pIn;
         if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
+      }else{
+        if( (bHex==0 && (!sqlite3Isdigit(pIn[-1]) || !sqlite3Isdigit(pIn[1])))
+         || (bHex==1 && (!sqlite3Isxdigit(pIn[-1]) || !sqlite3Isxdigit(pIn[1])))
+        ){
+          sqlite3ErrorMsg(pParse, "unrecognized token: \"%s\"", p->u.zToken);
+        }
       }
     }while( *pIn++ );
-    if( p->u.zToken[0]=='0' && (p->u.zToken[1]=='x' || p->u.zToken[1]=='X') ){
-      p->op = TK_INTEGER;
-    }
+    if( bHex ) p->op = TK_INTEGER;
   }
 }
 

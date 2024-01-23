@@ -439,10 +439,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       if( z[0]=='0' && (z[1]=='x' || z[1]=='X') && sqlite3Isxdigit(z[2]) ){
         for(i=3; 1; i++){
           if( sqlite3Isxdigit(z[i])==0 ){
-            if( z[i]==SQLITE_DIGIT_SEPARATOR
-             && sqlite3Isxdigit(z[i-1])
-             && sqlite3Isxdigit(z[i+1])
-            ){
+            if( z[i]==SQLITE_DIGIT_SEPARATOR ){
               *tokenType = TK_QNUMBER;
             }else{
               break;
@@ -454,10 +451,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         {
         for(i=0; 1; i++){
           if( sqlite3Isdigit(z[i])==0 ){
-            if( z[i]==SQLITE_DIGIT_SEPARATOR
-             && sqlite3Isdigit(z[i-1])
-             && sqlite3Isdigit(z[i+1])
-            ){
+            if( z[i]==SQLITE_DIGIT_SEPARATOR ){
               *tokenType = TK_QNUMBER;
             }else{
               break;
@@ -469,10 +463,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
           if( *tokenType==TK_INTEGER ) *tokenType = TK_FLOAT;
           for(i++; 1; i++){
             if( sqlite3Isdigit(z[i])==0 ){
-              if( z[i]==SQLITE_DIGIT_SEPARATOR
-               && sqlite3Isdigit(z[i-1])
-               && sqlite3Isdigit(z[i+1])
-              ){
+              if( z[i]==SQLITE_DIGIT_SEPARATOR ){
                 *tokenType = TK_QNUMBER;
               }else{
                 break;
@@ -488,10 +479,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
           if( *tokenType==TK_INTEGER ) *tokenType = TK_FLOAT;
           for(i+=2; 1; i++){
             if( sqlite3Isdigit(z[i])==0 ){
-              if( z[i]==SQLITE_DIGIT_SEPARATOR
-               && sqlite3Isdigit(z[i-1])
-               && sqlite3Isdigit(z[i+1])
-              ){
+              if( z[i]==SQLITE_DIGIT_SEPARATOR ){
                 *tokenType = TK_QNUMBER;
               }else{
                 break;

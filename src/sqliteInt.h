@@ -4794,7 +4794,7 @@ int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
 void sqlite3DequoteToken(Token*);
-void sqlite3DequoteNumber(Expr*);
+void sqlite3DequoteNumber(Parse*, Expr*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*);
