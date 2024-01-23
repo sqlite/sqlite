@@ -4317,7 +4317,7 @@ static void jsonValidFunc(
         break;
       }
       /* Fall through into interpreting the input as text.  See note
-      ** above at tag-20240124-a. */
+      ** above at tag-20240123-a. */
       /* no break */ deliberate_fall_through
     }
     default: {
