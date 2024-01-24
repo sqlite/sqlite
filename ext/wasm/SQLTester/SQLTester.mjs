@@ -174,11 +174,17 @@ const Rx = newObj({
   squiggly: /[{}]/
 });
 
+
+
 const Util = newObj({
   toss,
 
-  unlink: function(fn){
-    return 0==sqlite3.wasm.sqlite3_wasm_vfs_unlink(0,fn);
+  unlink: function f(fn){
+    if(!f.unlink){
+      f.unlink = sqlite3.wasm.xWrap('sqlite3__wasm_vfs_unlink','int',
+                                    ['*','string']);
+    }
+    return 0==f.unlink(0,fn);
   },
 
   argvToString: (list)=>{
@@ -197,7 +203,7 @@ const Util = newObj({
 
   utf8Encode: (str)=>__utf8Encoder.encode(str),
 
-  strglob: sqlite3.wasm.xWrap('sqlite3_wasm_SQLTester_strglob','int',
+  strglob: sqlite3.wasm.xWrap('sqlite3__wasm_SQLTester_strglob','int',
                               ['string','string'])
 })/*Util*/;
 

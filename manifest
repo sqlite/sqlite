@@ -1,5 +1,5 @@
-C Slight\sadjustment\sto\stest\sresults\sfor\sWindows\sin\smmap1.test\sdue\sto\nthe\sprevious\scheck-in.
-D 2024-01-23T21:10:01.121
+C Update\sext/wasm/SQLTester\sfor\srecent\sinternal-API\sreorgs.
+D 2024-01-24T19:54:49.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -579,7 +579,7 @@ F ext/wasm/GNUmakefile 867c903a27fa0d53a3bf1b01d8c7bb713456f87e0939c3cac9f07faa6
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
-F ext/wasm/SQLTester/SQLTester.mjs ec2f6ba63a0f2f0562941a0fb8e46b7dc55589711513f1952349785966edfe50
+F ext/wasm/SQLTester/SQLTester.mjs ce765c0ad7d57f93553d12ef4dca574deb00300134a26d472daacab49031e1fb
 F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ceabe40849784e24e41c84638
 F ext/wasm/SQLTester/index.html 3f8a016df0776be76605abf20e815ecaafbe055abac0e1fe5ea080e7846b760d
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2684feac3bc9c5463604900d72710be861527614f4957224c74a16a3b3c702f5
-R 914fcc8566f9cd381eed502f3475f2e9
-U drh
-Z 4b9eeb9a5957633229a8e3aa9d4bef67
+P 5cf9ea9b1fff4625a50a2343d0fd3812da6612d6b24c07e10edb6c1ff03ca2df
+R e306e6e13da3ca6b74df7f0d8d78804a
+U stephan
+Z be34d47cda2dc0f9c45c17c4b0edc6bd
 # Remove this line to create a well-formed Fossil manifest.
