@@ -21,6 +21,10 @@
 */
 }
 
+// Function used to enlarge the parser stack, if needed
+%realloc sqlite3_realloc64
+%free    sqlite3_free
+
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
 
