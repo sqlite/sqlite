@@ -293,7 +293,7 @@ static const char *const yyRuleName[] = {
 ** of errors.  Return 0 on success.
 */
 static int yyGrowStack(yyParser *p){
-  int oldSize = 1 + (int)(p->yystackEnd - p->yystack)/sizeof(p->yystack[0]);
+  int oldSize = 1 + (int)(p->yystackEnd - p->yystack);
   int newSize;
   int idx;
   yyStackEntry *pNew;
@@ -303,7 +303,7 @@ static int yyGrowStack(yyParser *p){
   if( p->yystack==p->yystk0 ){
     pNew = YYREALLOC(0, newSize*sizeof(pNew[0]));
     if( pNew==0 ) return 1;
-    memcpy(pNew, p->yystk0, sizeof(p->yystk0));
+    memcpy(pNew, p->yystack, oldSize*sizeof(pNew[0]));
   }else{
     pNew = YYREALLOC(p->yystack, newSize*sizeof(pNew[0]));
     if( pNew==0 ) return 1;

@@ -581,9 +581,9 @@ do_test misc5-7.1 {
     append sql "(1+"
     append tail ")"
   }
-  append sql 2$tail
+  append sql 2$tail)
   catchsql $sql
-} {1 {parser stack overflow}}
+} {0 {}}
 
 # Parser stack overflow is silently ignored when it occurs while parsing the
 # schema and PRAGMA writable_schema is turned on.
