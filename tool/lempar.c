@@ -301,7 +301,7 @@ static int yyGrowStack(yyParser *p){
   yyStackEntry *pNew;
 
   newSize = oldSize*2 + 100;
-  idx = p->yytos ? (int)(p->yytos - p->yystack) : 0;
+  idx = (int)(p->yytos - p->yystack);
   if( p->yystack==p->yystk0 ){
     pNew = YYREALLOC(0, newSize*sizeof(pNew[0]));
     if( pNew==0 ) return 1;
@@ -452,7 +452,7 @@ void ParseFinalize(void *p){
         yyTokenName[yytos->major]);
     }
 #endif
-    if( yytos->major>=YY_MIN_DSTRCTR && yytos->major<=YY_MAX_DSTRCTR ){
+    if( yytos->major>=YY_MIN_DSTRCTR ){
       yy_destructor(pParser, yytos->major, &yytos->minor);
     }
     yytos--;

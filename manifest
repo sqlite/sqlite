@@ -1,5 +1,5 @@
-C Use\san\salternative\smemory\sallocator\sfor\sparser\sstack\sspace\sthat\sincludes\na\scall\sto\ssqlite3FaultSim()\sto\sfacilitate\stesting.
-D 2024-01-27T12:25:07.473
+C Performance\senhancements\sto\sthe\sparser\stemplate.
+D 2024-01-27T12:47:51.250
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2073,7 +2073,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c db6c77d899f565ab42217d924e5daee5b267724433c7747fb6d3329b3c919fa1
-F tool/lempar.c c85839df516cf3cee74829df59e968646275d327763c64c9e776bac92671f0ac
+F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d87a2054774aa6ce54d9ccd78899b638f1eaf4f9a1d847bf22500018049c9f8d
-R c777a6ad74adc955afb0be27604d5bbb
+P 7c36d560ff4e8e1b3f8fad972ec7f07837e4fa4e6861fafde970ffccfda5a2f1
+R 04bb01319eb99c590d86659f5806b074
 U drh
-Z 010b198501e478def188acd882fee6aa
+Z cbc91e2ee0fe61a39c4ed5ed8e1fb955
 # Remove this line to create a well-formed Fossil manifest.
