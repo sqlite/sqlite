@@ -1,5 +1,5 @@
-C Performance\senhancements\sto\sthe\sparser\stemplate.
-D 2024-01-27T12:47:51.250
+C Improvements\sto\sparser\sstack\soverflow\stesting.\n[forum:/forumpost/99e181b5bf|Forum\spost\s99e181b5bf].
+D 2024-01-27T20:17:05.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1413,7 +1413,7 @@ F test/misc1.test 8d138a4926ab90617c1aa29ce26e7785ae2b83a4d3a195d543b7374e05589d
 F test/misc2.test 71e746af479119386ac2ed7ab7d81d99970e75b49ffd3e8efffee100b4b5f350
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
-F test/misc5.test 48de5f4220ff1a27922b14b8cf1b977f73c5a49f82b2ccd66bd86c0e53c447d4
+F test/misc5.test 027cf0ac10314ea534173f335a33bb4059907ddabbac2c16786766d6f26c8923
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d912f3d45c2989191b797504a220ca225d6be80b21acad22ba0d35f4a9ee4579
 F test/misc8.test 4db9f8be59834cea08c87e9658014080efa02678ef54a088f84fa5647e81fee0
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7c36d560ff4e8e1b3f8fad972ec7f07837e4fa4e6861fafde970ffccfda5a2f1
-R 04bb01319eb99c590d86659f5806b074
+P 2db8b30acdeaeaf7ec92dc0382a25f96bca4561fb68a72713ff963e27f39c63b
+R 605333aa92af75374c12db2870558f0c
 U drh
-Z cbc91e2ee0fe61a39c4ed5ed8e1fb955
+Z 624bf4ea7db4f65352370ddfed55f7bd
 # Remove this line to create a well-formed Fossil manifest.
