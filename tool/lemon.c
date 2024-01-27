@@ -418,6 +418,8 @@ struct lemon {
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
+  char *reallocFunc;       /* Function to use to allocate stack space */
+  char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
   int nactiontab;          /* Number of entries in the yy_action[] table */
   int nlookaheadtab;       /* Number of entries in yy_lookahead[] */
@@ -2531,6 +2533,12 @@ static void parseonetoken(struct pstate *psp)
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
           psp->insertLineMacro = 0;
+        }else if( strcmp(x,"realloc")==0 ){
+          psp->declargslot = &(psp->gp->reallocFunc);
+          psp->insertLineMacro = 0;
+        }else if( strcmp(x,"free")==0 ){
+          psp->declargslot = &(psp->gp->freeFunc);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"stack_size")==0 ){
           psp->declargslot = &(psp->gp->stacksize);
           psp->insertLineMacro = 0;
@@ -4309,7 +4317,7 @@ void ReportTable(
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, n, sz;
+  int i, j, n, sz, mn, mx;
   int nLookAhead;
   int szActionType;     /* sizeof(YYACTIONTYPE) */
   int szCodeType;       /* sizeof(YYCODETYPE)   */
@@ -4501,6 +4509,21 @@ void ReportTable(
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
   }
+  if( lemp->reallocFunc ){
+    fprintf(out,"#define YYREALLOC %s\n", lemp->reallocFunc); lineno++;
+  }else{
+    fprintf(out,"#define YYREALLOC realloc\n"); lineno++;
+  }
+  if( lemp->freeFunc ){
+    fprintf(out,"#define YYFREE %s\n", lemp->freeFunc); lineno++;
+  }else{
+    fprintf(out,"#define YYFREE free\n"); lineno++;
+  }
+  if( lemp->reallocFunc && lemp->freeFunc ){
+    fprintf(out,"#define YYDYNSTACK 1\n"); lineno++;
+  }else{
+    fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
+  }
   if( lemp->ctx && lemp->ctx[0] ){
     i = lemonStrlen(lemp->ctx);
     while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
@@ -4624,6 +4647,22 @@ void ReportTable(
   fprintf(out,"#define YY_MIN_REDUCE        %d\n", lemp->minReduce); lineno++;
   i = lemp->minReduce + lemp->nrule;
   fprintf(out,"#define YY_MAX_REDUCE        %d\n", i-1); lineno++;
+
+  /* Minimum and maximum token values that have a destructor */
+  mn = mx = 0;
+  for(i=0; i<lemp->nsymbol; i++){
+    struct symbol *sp = lemp->symbols[i];
+
+    if( sp && sp->type!=TERMINAL && sp->destructor ){
+      if( mn==0 || sp->index<mn ) mn = sp->index;
+      if( sp->index>mx ) mx = sp->index;
+    }
+  }
+  if( lemp->tokendest ) mn = 0;
+  if( lemp->vardest ) mx = lemp->nsymbol-1;
+  fprintf(out,"#define YY_MIN_DSTRCTR       %d\n", mn);  lineno++;
+  fprintf(out,"#define YY_MAX_DSTRCTR       %d\n", mx);  lineno++;    
+
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Now output the action table and its associates:
