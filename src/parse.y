@@ -49,7 +49,7 @@
   }
 }
 %stack_overflow {
-  sqlite3ErrorMsg(pParse, "parser stack overflow");
+  sqlite3OomFault(pParse->db);
 }
 
 // The name of the generated procedure that implements the parser

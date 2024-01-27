@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\sfunction\sthat\sexpands\sthe\sparser\sstack.
-D 2024-01-26T20:57:19.823
+C Omit\sthe\s"parser\sstack\soverflow"\serror\smessage,\ssince\sit\sno\slonger\soccurs.\nReplace\sit\swith\san\sordinary\s"out\sof\smemory".
+D 2024-01-27T01:35:07.422
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -727,7 +727,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff60e98138d2499082ac6230f01ac508aba545315debccfca2fd6042f5f10fcd
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 41926c507955f2c13b10bb344883874cde82ea3ed16cb3b7867a43298d040d79
+F src/parse.y 7505b34ab81f17c5af10cc2c4c40e94ece3035ef151fe544e21b9a3b0e4e8531
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fd062905fc20507b7cfc97fa976ac5b57c5b68926bf9136bd5ea4265d2d6528
-R 201c8ebb7c943c92d1f840025296ad42
+P e91179fe849760771c3508b1e7d75325183e5c3b029752d0a97dbdbd57188b97
+R a326e9a9ce6869e2191b567c898735a6
 U drh
-Z 19d016796a5696ebb7583ab93b83b409
+Z 3729898b234031ff25c57e8984e9d7de
 # Remove this line to create a well-formed Fossil manifest.
