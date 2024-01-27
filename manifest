@@ -1,5 +1,5 @@
-C Omit\sthe\s"parser\sstack\soverflow"\serror\smessage,\ssince\sit\sno\slonger\soccurs.\nReplace\sit\swith\san\sordinary\s"out\sof\smemory".
-D 2024-01-27T01:35:07.422
+C Optimizations\sto\sParseFinalize()\sto\smake\sup\sfor\sthe\sextra\scleanup\sassociated\nwith\sthe\sallocated\sparser\sstack.\s\sThis\sbranch\snow\sruns\sfaster\sthan\strunk\nand\sis\sless\sthan\s300\sbytes\slarger.
+D 2024-01-27T02:21:25.832
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2072,8 +2072,8 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 7e5c3c27062c94a40b73a980b8045a4201cb3335165b72ae476040dc513aa533
-F tool/lempar.c e560057d6e0f578be64894e70e3d86beee6ae26f4aa5a6fb74fdfff8e75ccb35
+F tool/lemon.c db6c77d899f565ab42217d924e5daee5b267724433c7747fb6d3329b3c919fa1
+F tool/lempar.c c85839df516cf3cee74829df59e968646275d327763c64c9e776bac92671f0ac
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e91179fe849760771c3508b1e7d75325183e5c3b029752d0a97dbdbd57188b97
-R a326e9a9ce6869e2191b567c898735a6
+P 33f17ec24880937892d47a5a321c43785ca18e03dde28a9a0d50ae86edb29679
+R 20cc75bdc335ec49c6e2f7e4614d84da
 U drh
-Z 3729898b234031ff25c57e8984e9d7de
+Z 297b67eb6c1efaf54d4488f8dcd81ddc
 # Remove this line to create a well-formed Fossil manifest.

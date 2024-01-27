@@ -4317,7 +4317,7 @@ void ReportTable(
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, n, sz;
+  int i, j, n, sz, mn, mx;
   int nLookAhead;
   int szActionType;     /* sizeof(YYACTIONTYPE) */
   int szCodeType;       /* sizeof(YYCODETYPE)   */
@@ -4647,6 +4647,22 @@ void ReportTable(
   fprintf(out,"#define YY_MIN_REDUCE        %d\n", lemp->minReduce); lineno++;
   i = lemp->minReduce + lemp->nrule;
   fprintf(out,"#define YY_MAX_REDUCE        %d\n", i-1); lineno++;
+
+  /* Minimum and maximum token values that have a destructor */
+  mn = mx = 0;
+  for(i=0; i<lemp->nsymbol; i++){
+    struct symbol *sp = lemp->symbols[i];
+
+    if( sp && sp->type!=TERMINAL && sp->destructor ){
+      if( mn==0 || sp->index<mn ) mn = sp->index;
+      if( sp->index>mx ) mx = sp->index;
+    }
+  }
+  if( lemp->tokendest ) mn = 0;
+  if( lemp->vardest ) mx = lemp->nsymbol-1;
+  fprintf(out,"#define YY_MIN_DSTRCTR       %d\n", mn);  lineno++;
+  fprintf(out,"#define YY_MAX_DSTRCTR       %d\n", mx);  lineno++;    
+
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Now output the action table and its associates:
