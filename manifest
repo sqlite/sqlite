@@ -1,5 +1,5 @@
-C Apply\sthe\ssame\sfix\sfound\sin\s[99057383acc8f920]\sto\sdescending\sscans.\ndbsqlfuzz\safd1d61fc27d14938a0d78a50970fa1e9fbfee5.
-D 2024-01-28T00:31:47.406
+C Automatically\sdisable\sthe\sDISTINCT\soptimization\sduring\squery\splanning\sif\sthe\nORDER\sBY\sclause\sexceeds\s63\sterms.\ndbsqlfuzz\safd1d61fc27d14938a0d78a50970fa1e9fbfee58.
+D 2024-01-28T17:39:31.983
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -823,7 +823,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 217fe82a26c0fb6a3c7fd01865d821e752f9c01fb72f114af3f0b77ce234d1fb
+F src/where.c 56277e7110e6c81918434908bb7d597b917adfa9a176f5d95eb954b93dbc57b8
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 556c43a937f1d1c19117da24e6d892852241189f4e47e1c86aa1e8c36461c5de
-R e3e119e442083642e5cebf8de0f05474
+P e1d463c2d6e93e0ae0a60a05a79cd346bd07142de2fe631b370a9b946763b5d6
+R 1851f2761162021fbdb85251d9cef861
 U drh
-Z fd7b7cdec324b3b49688cdf78a121ede
+Z 6fb9920f7dfa3ef526a5d4c61ad97c08
 # Remove this line to create a well-formed Fossil manifest.
