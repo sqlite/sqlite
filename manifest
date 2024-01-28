@@ -1,5 +1,5 @@
-C Improvements\sto\sparser\sstack\soverflow\stesting.\n[forum:/forumpost/99e181b5bf|Forum\spost\s99e181b5bf].
-D 2024-01-27T20:17:05.552
+C Apply\sthe\ssame\sfix\sfound\sin\s[99057383acc8f920]\sto\sdescending\sscans.\ndbsqlfuzz\safd1d61fc27d14938a0d78a50970fa1e9fbfee5.
+D 2024-01-28T00:31:47.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -677,7 +677,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c dee25e097b749275333b55d64a5ffc079249576f8e88a2ee476468cf67510f4b
+F src/btree.c c64df2b1623501e397128261de58d3ab44c301e4eb993a4055aa971444420200
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h 3e2589726c4f105e653461814f65857465da68be1fac688de340c43b873f4062
 F src/build.c 05c9eb387638982092988d2ef4c00a91b0c29baa1b85923f082ce0cf2903ea7e
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2db8b30acdeaeaf7ec92dc0382a25f96bca4561fb68a72713ff963e27f39c63b
-R 605333aa92af75374c12db2870558f0c
+P 556c43a937f1d1c19117da24e6d892852241189f4e47e1c86aa1e8c36461c5de
+R e3e119e442083642e5cebf8de0f05474
 U drh
-Z 624bf4ea7db4f65352370ddfed55f7bd
+Z fd7b7cdec324b3b49688cdf78a121ede
 # Remove this line to create a well-formed Fossil manifest.
