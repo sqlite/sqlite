@@ -1,5 +1,5 @@
-C Automatically\sdisable\sthe\sDISTINCT\soptimization\sduring\squery\splanning\sif\sthe\nORDER\sBY\sclause\sexceeds\s63\sterms.\ndbsqlfuzz\safd1d61fc27d14938a0d78a50970fa1e9fbfee58.
-D 2024-01-28T17:39:31.983
+C Use\s__ppc__\sinstead\sof\s__POWERPC__\sto\sidentify\s32-bit\sPowerPC\sprocessors.\n[forum:/forumpost/34794846ce|Forum\spost\s34794846ce].
+D 2024-01-28T20:42:12.641
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -743,7 +743,7 @@ F src/shell.c.in c6cb773b7703d76677529de19d1c40584520701966422c33da3e9334498a709
 F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 03e64e4a973f56035772421e94be7bf092ceceeb3dc91a74a2147030a822c392
+F src/sqliteInt.h 5013ac1f5642df4c0b76314f507f4c7b6f8efee0e1d7c2e93bf8b445ceea29bb
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1d463c2d6e93e0ae0a60a05a79cd346bd07142de2fe631b370a9b946763b5d6
-R 1851f2761162021fbdb85251d9cef861
+P d4c193f0b49f4950b20c2f0e6aa037d2ed7d8c0b4687c14923b3a0d0d4a1b3fd
+R 46f9da2da907badd19298ace66a20031
 U drh
-Z 6fb9920f7dfa3ef526a5d4c61ad97c08
+Z c2041b302fcfe4f462cbcda587ab473e
 # Remove this line to create a well-formed Fossil manifest.
