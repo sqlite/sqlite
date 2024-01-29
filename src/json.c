@@ -2274,6 +2274,7 @@ static u32 jsonTranslateBlobToText(
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
+      if( j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, ']');
       break;
@@ -2287,7 +2288,7 @@ static u32 jsonTranslateBlobToText(
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
-      if( x & 1 ) pOut->eErr |= JSTRING_MALFORMED;
+      if( (x & 1)!=0 || j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, '}');
       break;
