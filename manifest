@@ -1,5 +1,5 @@
-C Consider\san\sindex\sfor\squeries\slike\s"SELECT\scount(DISTINCT\scol)\sFROM\s...",\seven\sif\sthe\sindex\srecords\sare\snot\ssmaller\sthan\sthe\stable\srecords.
-D 2024-01-29T19:30:16.573
+C When\sgenerated\stext\sJSON\sfrom\sJSONB,\sdo\snot\scontinue\sdescending\sinto\nnested\sstructures\safter\san\serror\sis\sseen.\s\sThis\savoids\slong\sloops\sand\swait\ntimes.
+D 2024-01-29T20:36:17.909
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -698,7 +698,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 1658ff90bc260a5dbbfcbfafa0b18f34076d3dbf1ac84e31dc4a1cd0c569e7e8
+F src/json.c 25472b53ce9a07f2fd1388714596ab0a1cf626c9af8829fe1d9f6e2040a8d6f5
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 738473dc0ac353731080d0785cc7dc9810b564906c176916bd91d6cfbb1a7b18
-R f1c37c0e5edda3118ed05f6a7a2d3df0
-U dan
-Z 6c6c135247ccb8a93d3af9a3896ff5b2
+P ad06868807a27f0c96fa5649ebd981e07909eb2c5e03781377c876fdec49abdc
+R 62cbadfc42bb4fb45ef8f78c92a43c6e
+U drh
+Z 909c63b99a1f269d1aa20de0ece0fbe3
 # Remove this line to create a well-formed Fossil manifest.
