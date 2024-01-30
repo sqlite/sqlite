@@ -6759,7 +6759,10 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur){
   }
 
   pPage = pCur->pPage;
-  assert( pPage->isInit );
+  if( sqlite3FaultSim(412) ) pPage->isInit = 0;
+  if( !pPage->isInit ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( !pPage->leaf ){
     int idx = pCur->ix;
     rc = moveToChild(pCur, get4byte(findCell(pPage, idx)));
