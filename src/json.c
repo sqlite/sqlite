@@ -589,6 +589,16 @@ static void jsonAppendChar(JsonString *p, char c){
   }
 }
 
+/* Remove a single character from the end of the string
+*/
+static void jsonStringTrimOneChar(JsonString *p){
+  if( p->eErr==0 ){
+    assert( p->nUsed>0 );
+    p->nUsed--;
+  }
+}
+
+
 /* Make sure there is a zero terminator on p->zBuf[]
 **
 ** Return true on success.  Return false if an OOM prevents this
@@ -596,7 +606,7 @@ static void jsonAppendChar(JsonString *p, char c){
 */
 static int jsonStringTerminate(JsonString *p){
   jsonAppendChar(p, 0);
-  p->nUsed--;
+  jsonStringTrimOneChar(p);
   return p->eErr==0;
 }
 
@@ -2062,8 +2072,8 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
          (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
     n = 9;
   }
-  if( i+sz+n > pParse->nBlob
-   && i+sz+n > pParse->nBlob-pParse->delta
+  if( (i64)i+sz+n > pParse->nBlob
+   && (i64)i+sz+n > pParse->nBlob-pParse->delta
   ){
     sz = 0;
     n = 0;
@@ -2113,6 +2123,7 @@ static u32 jsonTranslateBlobToText(
     }
     case JSONB_INT:
     case JSONB_FLOAT: {
+      if( sz==0 ) goto malformed_jsonb;
       jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
       break;
     }
@@ -2121,6 +2132,7 @@ static u32 jsonTranslateBlobToText(
       sqlite3_uint64 u = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
       int bOverflow = 0;
+      if( sz==0 ) goto malformed_jsonb;
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
@@ -2143,6 +2155,7 @@ static u32 jsonTranslateBlobToText(
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       u32 k = 0;
       const char *zIn = (const char*)&pParse->aBlob[i+n];
+      if( sz==0 ) goto malformed_jsonb;
       if( zIn[0]=='-' ){
         jsonAppendChar(pOut, '-');
         k++;
@@ -2256,11 +2269,12 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '[');
       j = i+n;
       iEnd = j+sz;
-      while( j<iEnd ){
+      while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
-      if( sz>0 ) pOut->nUsed--;
+      if( j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
+      if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, ']');
       break;
     }
@@ -2269,17 +2283,18 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '{');
       j = i+n;
       iEnd = j+sz;
-      while( j<iEnd ){
+      while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
-      if( x & 1 ) pOut->eErr |= JSTRING_MALFORMED;
-      if( sz>0 ) pOut->nUsed--;
+      if( (x & 1)!=0 || j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
+      if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, '}');
       break;
     }
 
     default: {
+      malformed_jsonb:
       pOut->eErr |= JSTRING_MALFORMED;
       break;
     }
@@ -3207,6 +3222,38 @@ jsonInsertIntoBlob_patherror:
 }
 
 /*
+** If pArg is a blob that seems like a JSONB blob, then initialize
+** p to point to that JSONB and return TRUE.  If pArg does not seem like
+** a JSONB blob, then return FALSE;
+**
+** This routine is only called if it is already known that pArg is a
+** blob.  The only open question is whether or not the blob appears
+** to be a JSONB blob.
+*/
+static int jsonArgIsJsonb(sqlite3_value *pArg, JsonParse *p){
+  u32 n, sz = 0;
+  p->aBlob = (u8*)sqlite3_value_blob(pArg);
+  p->nBlob = (u32)sqlite3_value_bytes(pArg);
+  if( p->nBlob==0 ){
+    p->aBlob = 0;
+    return 0;
+  }
+  if( NEVER(p->aBlob==0) ){
+    return 0;
+  }
+  if( (p->aBlob[0] & 0x0f)<=JSONB_OBJECT
+   && (n = jsonbPayloadSize(p, 0, &sz))>0
+   && sz+n==p->nBlob
+   && ((p->aBlob[0] & 0x0f)>JSONB_FALSE || sz==0)
+  ){
+    return 1;
+  }
+  p->aBlob = 0;
+  p->nBlob = 0;
+  return 0;
+}
+
+/*
 ** Generate a JsonParse object, containing valid JSONB in aBlob and nBlob,
 ** from the SQL function argument pArg.  Return a pointer to the new
 ** JsonParse object.
@@ -3262,29 +3309,24 @@ rebuild_from_cache:
     return p;
   }
   if( eType==SQLITE_BLOB ){
-    u32 n, sz = 0;
-    p->aBlob = (u8*)sqlite3_value_blob(pArg);
-    p->nBlob = (u32)sqlite3_value_bytes(pArg);
-    if( p->nBlob==0 ){
-      goto json_pfa_malformed;
+    if( jsonArgIsJsonb(pArg,p) ){
+      if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
+        goto json_pfa_oom;
+      }
+      return p;
     }
-    if( NEVER(p->aBlob==0) ){
-      goto json_pfa_oom;
-    }
-    if( (p->aBlob[0] & 0x0f)>JSONB_OBJECT ){
-      goto json_pfa_malformed;
-    }
-    n = jsonbPayloadSize(p, 0, &sz);
-    if( n==0 
-     || sz+n!=p->nBlob
-     || ((p->aBlob[0] & 0x0f)<=JSONB_FALSE && sz>0)
-    ){
-      goto json_pfa_malformed;
-    }
-    if( (flgs & JSON_EDITABLE)!=0 && jsonBlobMakeEditable(p, 0)==0 ){
-      goto json_pfa_oom;
-    }
-    return p;
+    /* If the blob is not valid JSONB, fall through into trying to cast
+    ** the blob into text which is then interpreted as JSON.  (tag-20240123-a)
+    **
+    ** This goes against all historical documentation about how the SQLite
+    ** JSON functions were suppose to work.  From the beginning, blob was
+    ** reserved for expansion and a blob value should have raised an error.
+    ** But it did not, due to a bug.  And many applications came to depend
+    ** upon this buggy behavior, espeically when using the CLI and reading
+    ** JSON text using readfile(), which returns a blob.  For this reason
+    ** we will continue to support the bug moving forward.
+    ** See for example https://sqlite.org/forum/forumpost/012136abd5292b8d
+    */
   }
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
@@ -4260,12 +4302,12 @@ static void jsonValidFunc(
       return;
     }
     case SQLITE_BLOB: {
-      if( (flags & 0x0c)!=0 && jsonFuncArgMightBeBinary(argv[0]) ){
+      if( jsonFuncArgMightBeBinary(argv[0]) ){
         if( flags & 0x04 ){
           /* Superficial checking only - accomplished by the
           ** jsonFuncArgMightBeBinary() call above. */
           res = 1;
-        }else{
+        }else if( flags & 0x08 ){
           /* Strict checking.  Check by translating BLOB->TEXT->BLOB.  If
           ** no errors occur, call that a "strict check". */
           JsonParse px;
@@ -4276,8 +4318,11 @@ static void jsonValidFunc(
           iErr = jsonbValidityCheck(&px, 0, px.nBlob, 1);
           res = iErr==0;
         }
+        break;
       }
-      break;
+      /* Fall through into interpreting the input as text.  See note
+      ** above at tag-20240123-a. */
+      /* no break */ deliberate_fall_through
     }
     default: {
       JsonParse px;
@@ -4402,7 +4447,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       if( isFinal ){
         if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
-        pStr->nUsed--;
+        jsonStringTrimOneChar(pStr);
       }
       return;
     }else if( isFinal ){
@@ -4412,7 +4457,7 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      jsonStringTrimOneChar(pStr);
     }
   }else{
     sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
@@ -4522,7 +4567,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       if( isFinal ){
         if( !pStr->bStatic ) sqlite3RCStrUnref(pStr->zBuf);
       }else{
-        pStr->nUsed--;
+        jsonStringTrimOneChar(pStr);
       }
       return;
     }else if( isFinal ){
@@ -4532,7 +4577,7 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
-      pStr->nUsed--;
+      jsonStringTrimOneChar(pStr);
     }
   }else{
     sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);
@@ -5013,13 +5058,9 @@ static int jsonEachFilter(
   memset(&p->sParse, 0, sizeof(p->sParse));
   p->sParse.nJPRef = 1;
   p->sParse.db = p->db;
-  if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
-    if( jsonFuncArgMightBeBinary(argv[0]) ){
-      p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
-      p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
-    }else{
-      goto json_each_malformed_input;
-    }
+  if( jsonFuncArgMightBeBinary(argv[0]) ){
+    p->sParse.nBlob = sqlite3_value_bytes(argv[0]);
+    p->sParse.aBlob = (u8*)sqlite3_value_blob(argv[0]);
   }else{
     p->sParse.zJson = (char*)sqlite3_value_text(argv[0]);
     p->sParse.nJson = sqlite3_value_bytes(argv[0]);
