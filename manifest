@@ -1,5 +1,5 @@
-C Allow\scontrol\scharacters\sin\sJSON5\sstring\sliterals.\n[forum:/forumpost/05182119f69c3a92|Forum\sthread\s05182119f69c3a92].
-D 2024-01-31T13:46:44.886
+C Fix\sfailure\sto\sdetect\sunterminated\sstring\sliterals\sin\sjson_valid()\sin\sthe\nprevious\scheck-in.
+D 2024-01-31T14:44:59.052
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -698,7 +698,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 366c4502167672d9ded0d45b1a955acb487ddabb531e889a7b8901fd3e46d013
+F src/json.c 24f2517b5dc7e678ee3006eaa0c0e6b13ff90e71849f8c4064134eb28a97f618
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32ce7dacf58bbf35cf70da8b03fa25f97fcea970edbc1f8aa12739ac4c8608fb
-R c7867d5f34f471f1c203d9ecfab6ff98
+P 34709c7cc910539e23a830ad8b589a97a88be25e924a59670c1017fb51447dad
+R b63eb752943f01d1de6f4800dabd8585
 U drh
-Z a250ac8f403a1bdc996f04e6b4453df0
+Z f52460ed1f18979ad0fa2f0cc99e3abc
 # Remove this line to create a well-formed Fossil manifest.

@@ -1719,6 +1719,10 @@ json_parse_restart:
           return -1;
         }
       }else if( c<=0x1f ){
+        if( c==0 ){
+          pParse->iErr = j;
+          return -1;
+        }
         /* Control characters are not allowed in canonical JSON string
         ** literals, but are allowed in JSON5 string literals. */
         opcode = JSONB_TEXT5;
