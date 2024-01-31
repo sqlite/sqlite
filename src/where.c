@@ -5464,10 +5464,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
         pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
       }
-      if( pWInfo->pSelect->pOrderBy
-       && pWInfo->nOBSat > pWInfo->pSelect->pOrderBy->nExpr ){
-        pWInfo->nOBSat = pWInfo->pSelect->pOrderBy->nExpr;
-      }
+      /* vvv--- See check-in [12ad822d9b827777] on 2023-03-16 ---vvv */
+      assert( pWInfo->pSelect->pOrderBy==0
+           || pWInfo->nOBSat <= pWInfo->pSelect->pOrderBy->nExpr );
     }else{
       pWInfo->revMask = pFrom->revLoop;
       if( pWInfo->nOBSat<=0 ){
