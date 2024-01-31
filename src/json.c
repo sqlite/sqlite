@@ -3552,11 +3552,12 @@ static void jsonParseFunc(
   if( p==0 ) return;
   if( argc==1 ){
     jsonDebugPrintBlob(p, 0, p->nBlob, 0, &out);
-    sqlite3_result_text64(ctx, out.zText, out.nChar, SQLITE_DYNAMIC, SQLITE_UTF8);
+    sqlite3_result_text64(ctx,out.zText,out.nChar,SQLITE_TRANSIENT,SQLITE_UTF8);
   }else{
     jsonShowParse(p);
   }
   jsonParseFree(p);
+  sqlite3_str_reset(&out);
 }
 #endif /* SQLITE_DEBUG */
 
