@@ -1425,7 +1425,7 @@ static u32 jsonbValidityCheck(
           }else if( z[j]<=0x1f ){
             /* Control characters in JSON5 string literals are ok */
             if( x==JSONB_TEXTJ ) return j+1;
-          }else if( z[j]!='\\' || j+1>=k ){
+          }else if( NEVER(z[j]!='\\') || j+1>=k ){
             return j+1;
           }else if( strchr("\"\\/bfnrt",z[j+1])!=0 ){
             j++;
@@ -2223,7 +2223,7 @@ static u32 jsonTranslateBlobToText(
           continue;
         }
         if( zIn[0]<=0x1f ){
-          if( pOut->nUsed+7<pOut->nAlloc && jsonStringGrow(pOut,7) ) break;
+          if( pOut->nUsed+7>pOut->nAlloc && jsonStringGrow(pOut,7) ) break;
           jsonAppendControlChar(pOut, zIn[0]);
           zIn++;
           sz2--;
@@ -4419,7 +4419,7 @@ static void jsonErrorFunc(
         /* Convert byte-offset s.iErr into a character offset */
         u32 k;
         assert( s.zJson!=0 );  /* Because s.oom is false */
-        for(k=0; k<s.iErr && s.zJson[k]; k++){
+        for(k=0; k<s.iErr && ALWAYS(s.zJson[k]); k++){
           if( (s.zJson[k] & 0xc0)!=0x80 ) iErrPos++;
         }
         iErrPos++;
