@@ -1,5 +1,5 @@
-C In\sPRAGMA\sintegrity_check,\sdefer\srunning\sxIntegrity\son\svirtual\stables\suntil\nafter\sall\sordinary\stables\shave\sbeen\schecked.
-D 2024-02-01T14:57:24.429
+C Ensure\sthe\sfts3\sxIntegrity\smethod\scorrectly\sreturns\serror\scodes\sunrelated\sto\scorruption\sor\smissing\sSQL\selements.
+D 2024-02-01T15:21:55.952
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -63,7 +63,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c fd64a588471ce00b19da08acb0d6f904277a21ac1d15141d5913c83591afa027
+F ext/fts3/fts3.c c922380b62bd15bce953dae3350337acbd0fff07c10cdc805819409791eb480a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 968f7d7cae541a6926146e9fd3fb2b2ccbd3845b7890a8ed03de0c06ac776682
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
@@ -81,7 +81,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c c2d7a8dfb6e7a00c6c88ce626785cf4c50ed18eba34b5fbd53cacd60af96d0f2
+F ext/fts3/fts3_write.c 81cd8f7e8003e427a1801e04842776b731af26dd93af206e4e66ea5ae319cad1
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -1168,7 +1168,7 @@ F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
 F test/fts3fault.test f4e1342acfe6d216a001490e8cd52afac1f9ffe4a11bbcdcb296129a45c5df45
 F test/fts3fault2.test 7b2741e5095367238380b0fcdb837f36c24484c7a5f353659b387df63cf039ec
-F test/fts3fault3.test 4a39a1618546776255dc1de306213b600aef87eca589ca8428a70c00fd11961b
+F test/fts3fault3.test ccdd2292dd2d4e21e30fc5f4c8e064f79e516087eec5ff57ab6bc4f6a7714097
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3fuzz001.test c78afcd8ad712ea0b8d2ed50851a8aab3bc9dc52c64a536291e07112f519357c
 F test/fts3integrity.test 0c6fe7353d7b24d78862f4272ee9df4da2f32b3ff30fa3396945cda8119580a8
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2b943f97ad7e47848ac6df3a3a1eba134b9e63c4a631f8eaf8bda77cc02ba7b
-R 570d0c161255e22a4bbedff4048d62e5
-U drh
-Z bbe0d55da8a6fc00ff4106f6aecfdfa4
+P 8f4b1ceafe4a271b23e17493a244a34c1732a3d35c5533c37394b9f3dc158435
+R 5c2528728c1ae6f17248d6aeeec1d716
+U dan
+Z 9a20d0bd91d2ec45e34040ddfece9f98
 # Remove this line to create a well-formed Fossil manifest.
