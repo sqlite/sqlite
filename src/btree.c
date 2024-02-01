@@ -151,7 +151,46 @@ int corruptPageError(int lineno, MemPage *p){
 # define SQLITE_CORRUPT_PAGE(pMemPage) SQLITE_CORRUPT_PGNO(pMemPage->pgno)
 #endif
 
+/* Default value for SHARED_LOCK_TRACE macro if shared-cache is disabled
+** or if the lock tracking is disabled.  This is always the value for
+** release builds.
+*/
+#define SHARED_LOCK_TRACE(X,MSG,TAB,TYPE)  /*no-op*/
+
 #ifndef SQLITE_OMIT_SHARED_CACHE
+
+#if 0
+/*  ^----  Change to 1 and recompile to enable shared-lock tracing
+**         for debugging purposes.
+**
+** Print all shared-cache locks on a BtShared.  Debugging use only.
+*/
+static void sharedLockTrace(
+  BtShared *pBt,
+  const char *zMsg,
+  int iRoot,
+  int eLockType
+){
+  BtLock *pLock;
+  if( iRoot>0 ){
+    printf("%s-%p %u%s:", zMsg, pBt, iRoot, eLockType==READ_LOCK?"R":"W");
+  }else{
+    printf("%s-%p:", zMsg, pBt);
+  }
+  for(pLock=pBt->pLock; pLock; pLock=pLock->pNext){
+    printf(" %p/%u%s", pLock->pBtree, pLock->iTable,
+           pLock->eLock==READ_LOCK ? "R" : "W");
+    while( pLock->pNext && pLock->pBtree==pLock->pNext->pBtree ){
+      pLock = pLock->pNext;
+      printf(",%u%s", pLock->iTable, pLock->eLock==READ_LOCK ? "R" : "W");
+    }
+  }
+  printf("\n");
+  fflush(stdout);
+}
+#undef SHARED_LOCK_TRACE
+#define SHARED_LOCK_TRACE(X,MSG,TAB,TYPE)  sharedLockTrace(X,MSG,TAB,TYPE)
+#endif /* Shared-lock tracing */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -228,6 +267,8 @@ static int hasSharedCacheTableLock(
   }else{
     iTab = iRoot;
   }
+
+  SHARED_LOCK_TRACE(pBtree->pBt,"hasLock",iRoot,eLockType);
 
   /* Search for the required lock. Either a write-lock on root-page iTab, a
   ** write-lock on the schema table, or (if the client is reading) a
@@ -362,6 +403,8 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pLock = 0;
   BtLock *pIter;
 
+  SHARED_LOCK_TRACE(pBt,"setLock", iTable, eLock);
+
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
   assert( p->db!=0 );
@@ -429,6 +472,8 @@ static void clearAllSharedCacheTableLocks(Btree *p){
   assert( p->sharable || 0==*ppIter );
   assert( p->inTrans>0 );
 
+  SHARED_LOCK_TRACE(pBt, "clearAllLocks", 0, 0);
+
   while( *ppIter ){
     BtLock *pLock = *ppIter;
     assert( (pBt->btsFlags & BTS_EXCLUSIVE)==0 || pBt->pWriter==pLock->pBtree );
@@ -467,6 +512,9 @@ static void clearAllSharedCacheTableLocks(Btree *p){
 */
 static void downgradeAllSharedCacheTableLocks(Btree *p){
   BtShared *pBt = p->pBt;
+
+  SHARED_LOCK_TRACE(pBt, "downgradeLocks", 0, 0);
+
   if( pBt->pWriter==p ){
     BtLock *pLock;
     pBt->pWriter = 0;
