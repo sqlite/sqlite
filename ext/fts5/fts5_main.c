@@ -2979,6 +2979,7 @@ static int fts5IntegrityMethod(
   if( (rc&0xff)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
                 zSchema, zTabname);
+     rc = (*pzErr) ? SQLITE_OK : SQLITE_NOMEM;
   }else if( rc!=SQLITE_OK ){
     *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
                              " FTS5 table %s.%s: %s",
@@ -2986,7 +2987,7 @@ static int fts5IntegrityMethod(
   }
   sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
 
-  return SQLITE_OK;
+  return rc;
 }
 
 static int fts5Init(sqlite3 *db){
