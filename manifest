@@ -1,5 +1,5 @@
-C Add\stracing\slogic\sto\sthe\sshared-cache\slocks\sin\sbtree.c.\s\sThe\stracing\sis\noff\sby\sdefault.\s\sEnable\sby\schanging\sa\ssingle\s"#if\s0"\sinto\s"#if\s1"\sand\nrecompiling.\s\sDebugging\scode\sonly\s-\sno\schanges\sto\srelease\sbuilds.
-D 2024-02-01T14:17:01.624
+C In\sPRAGMA\sintegrity_check,\sdefer\srunning\sxIntegrity\son\svirtual\stables\suntil\nafter\sall\sordinary\stables\shave\sbeen\schecked.
+D 2024-02-01T14:57:24.429
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -731,7 +731,7 @@ F src/parse.y bfd6da46fc895cd8237400ff485d04ab0b32e47eb56de20982bb7f53e56c1f42
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c b5b4cff830575e6188cd56a295a57448d2b9dbc53f0dae58e22b97354cda3781
+F src/pragma.c f9b6bb9a044a0dfda1f31c2d1523c7970f850688b450f06e61e23672d70adac0
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 18fbdf028345c8fbe6044f5f5bfda5a10d48d6287afef088cc21b0ca57985640
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e45df7dcd6b5766d7593ee87e59dd422a217cce0a1a8d369c03144bb21859428
-R 1c4d155f92c2e065cfacf61f3e9f41bd
+P f2b943f97ad7e47848ac6df3a3a1eba134b9e63c4a631f8eaf8bda77cc02ba7b
+R 570d0c161255e22a4bbedff4048d62e5
 U drh
-Z 977fd1472c72116436cf99418d5cf571
+Z bbe0d55da8a6fc00ff4106f6aecfdfa4
 # Remove this line to create a well-formed Fossil manifest.
