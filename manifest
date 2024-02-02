@@ -1,5 +1,5 @@
-C Ensure\sthe\sfts5\sxIntegrity\smethod\scorrectly\sreturns\serror\scodes\sunrelated\sto\scorruption\sor\smissing\sSQL\selements.
-D 2024-02-01T15:42:22.671
+C Fix\stypo\sin\svdbe.c\scomment.\sNo\schanges\sto\scode.
+D 2024-02-02T11:37:03.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -808,7 +808,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 078f040366d5bd5f47658d045f901c768c1c636c6eaea121f3a1cbd63c3edb5b
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 92910d536e0b77505599cd6ae5d9d449e4a5d31ada61da4c0bb84f6ccb2c3189
+F src/vdbe.c dd340f5add924a8397401f7fe4faf2304ffd49ab5853d32ffc1736093b9c5080
 F src/vdbe.h 88e19a982df9027ec1c177c793d1a5d34dc23d8f06e3b2d997f43688b05ee0eb
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
@@ -2161,8 +2161,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1bdb8cbaf7e733e0731de2ecd7a05ddf44db5d8595dcc7aaf0927ed0aa5b33d3
-R 1556903ce72520c2bcec86245b58e4bf
+P d18d9a05c2d6f290d7b16eafced0cde4eb8dd3f869778a49103812d35a0cee65
+R aba3b7802d437f5dcd3a746bf90a6079
 U dan
-Z ab6b3bfbcf0d40402d16029c30c5525d
+Z 006ae05388cb62c50458a12f4ef45e94
 # Remove this line to create a well-formed Fossil manifest.

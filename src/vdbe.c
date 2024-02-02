@@ -7101,8 +7101,8 @@ case OP_DropTrigger: {
 **
 ** The register P3 contains one less than the maximum number of allowed errors.
 ** At most reg(P3) errors will be reported.
-** In other words, the analysis stops as soon as reg(P1) errors are
-** seen.  Reg(P1) is updated with the number of errors remaining.
+** In other words, the analysis stops as soon as reg(P3) errors are
+** seen.  Reg(P3) is updated with the number of errors remaining.
 **
 ** The root page numbers of all tables in the database are integers
 ** stored in P4_INTARRAY argument.
