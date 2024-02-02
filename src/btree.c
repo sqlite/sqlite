@@ -10791,6 +10791,9 @@ static int checkTreePage(
   ** number of cells on the page. */
   nCell = get2byte(&data[hdr+3]);
   assert( pPage->nCell==nCell );
+  if( pPage->leaf || pPage->intKey==0 ){
+    pCheck->nRow += nCell;
+  }
 
   /* EVIDENCE-OF: R-23882-45353 The cell pointer array of a b-tree page
   ** immediately follows the b-tree page header. */
@@ -11001,6 +11004,7 @@ int sqlite3BtreeIntegrityCheck(
   sqlite3 *db,  /* Database connection that is running the check */
   Btree *p,     /* The btree to be checked */
   Pgno *aRoot,  /* An array of root pages numbers for individual trees */
+  Mem *aCnt,    /* Memory cells to write counts for each tree to */
   int nRoot,    /* Number of entries in aRoot[] */
   int mxErr,    /* Stop reporting errors after this many */
   int *pnErr,   /* OUT: Write number of errors seen to this variable */
@@ -11087,15 +11091,20 @@ int sqlite3BtreeIntegrityCheck(
   testcase( pBt->db->flags & SQLITE_CellSizeCk );
   pBt->db->flags &= ~(u64)SQLITE_CellSizeCk;
   for(i=0; (int)i<nRoot && sCheck.mxErr; i++){
-    i64 notUsed;
-    if( aRoot[i]==0 ) continue;
+    sCheck.nRow = 0;
+    if( aRoot[i] && sCheck.mxErr ){
+      i64 notUsed;
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->autoVacuum && aRoot[i]>1 && !bPartial ){
-      checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
-    }
+      if( pBt->autoVacuum && aRoot[i]>1 && !bPartial ){
+        checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
+      }
 #endif
-    sCheck.v0 = aRoot[i];
-    checkTreePage(&sCheck, aRoot[i], &notUsed, LARGEST_INT64);
+      sCheck.v0 = aRoot[i];
+      checkTreePage(&sCheck, aRoot[i], &notUsed, LARGEST_INT64);
+    }
+    if( aCnt ){
+      sqlite3MemSetArrayInt64(aCnt, i, sCheck.nRow);
+    }
   }
   pBt->db->flags = savedDbFlags;
 
