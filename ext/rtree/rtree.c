@@ -170,6 +170,7 @@ struct Rtree {
   u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
   u32 nCursor;                /* Number of open cursors */
+  u32 iGeneration;            /* Cursors with smaller iGeneration are stale */
   u32 nNodeRef;               /* Number RtreeNodes with positive nRef */
   char *zReadAuxSql;          /* SQL for statement to read aux data */
 
@@ -286,6 +287,7 @@ struct RtreeCursor {
   u8 atEOF;                         /* True if at end of search */
   u8 bPoint;                        /* True if sPoint is valid */
   u8 bAuxValid;                     /* True if pReadAux is valid */
+  u32 iGeneration;                  /* Stale if too small */
   int iStrategy;                    /* Copy of idxNum search parameter */
   int nConstraint;                  /* Number of entries in aConstraint */
   RtreeConstraint *aConstraint;     /* Search constraints. */
@@ -1087,6 +1089,7 @@ static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   if( pCsr ){
     memset(pCsr, 0, sizeof(RtreeCursor));
     pCsr->base.pVtab = pVTab;
+    pCsr->iGeneration = pRtree->iGeneration;
     rc = SQLITE_OK;
     pRtree->nCursor++;
   }
@@ -1627,6 +1630,9 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
   int eInt;
   RtreeSearchPoint x;
 
+  if( pCur->iGeneration<pRtree->iGeneration ){
+    return SQLITE_ABORT_ROLLBACK;
+  }
   eInt = pRtree->eCoordType==RTREE_COORD_INT32;
   while( (p = rtreeSearchPointFirst(pCur))!=0 && p->iLevel>0 ){
     u8 *pCellData;
@@ -1854,6 +1860,7 @@ static int rtreeFilter(
 
   /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
   resetCursor(pCsr);
+  pCsr->iGeneration = pRtree->iGeneration;
 
   pCsr->iStrategy = idxNum;
   if( idxNum==1 ){
@@ -3234,6 +3241,16 @@ static int rtreeEndTransaction(sqlite3_vtab *pVtab){
   nodeBlobReset(pRtree);
   return SQLITE_OK;
 }
+static int rtreeRollback(sqlite3_vtab *pVtab){
+  Rtree *pRtree = (Rtree *)pVtab;
+  pRtree->iGeneration++;
+  return rtreeEndTransaction(pVtab);  
+}
+static int rtreeRollbackTo(sqlite3_vtab *pVtab, int notUsed){
+  Rtree *pRtree = (Rtree *)pVtab;
+  pRtree->iGeneration++;
+  return SQLITE_OK;
+}
 
 /*
 ** The xRename method for rtree module virtual tables.
@@ -3352,12 +3369,12 @@ static sqlite3_module rtreeModule = {
   rtreeBeginTransaction,      /* xBegin - begin transaction */
   rtreeEndTransaction,        /* xSync - sync transaction */
   rtreeEndTransaction,        /* xCommit - commit transaction */
-  rtreeEndTransaction,        /* xRollback - rollback transaction */
+  rtreeRollback,              /* xRollback - rollback transaction */
   0,                          /* xFindFunction - function overloading */
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
-  0,                          /* xRollbackTo */
+  rtreeRollbackTo,            /* xRollbackTo */
   rtreeShadowName,            /* xShadowName */
   rtreeIntegrity              /* xIntegrity */
 };
