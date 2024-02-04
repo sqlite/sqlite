@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
-D 2024-02-04T04:01:11.343
+C Fix\sa\sminor\stest\sfile\slocking\sissue\son\sWindows.
+D 2024-02-04T04:18:29.898
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1398,7 +1398,7 @@ F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca721
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test cd6b6b1632cf2f76c8a6f35be013f4011f3ab2c8d74d3d1424576f29bfa4a9a1
+F test/memdb1.test 2fb27d5dadd4e7784d2229e570f6368b059fc0b7fe88ca25e46e17150ba8ad4c
 F test/memdb2.test 4ba1fc09e2f51df80d148a540e4a3fa66d0462e91167b27497084de4d1f6b5b4
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memjournal2.test dbc2c5cb5f7b38950f4f6dc3e73fcecf0fcbed3fc32c7ce913bba164d288da1e
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af5c425114f32c2f84aea20edd4fa46eb1bfdeb3747fce357540e15978a070c8
-R a9037c628a989a39c2fbbc040b232de2
+P e52c87420b072fa68d921eda66069542d50accbfaf1110ac4cc1543a4162200d
+R b26d5bf3c069446abfcc515c5650300e
 U mistachkin
-Z 153e5721794f58c625079135ecdb0115
+Z 46cb4b90611f7a098915a0eaa15bb642
 # Remove this line to create a well-formed Fossil manifest.
