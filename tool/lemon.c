@@ -4806,7 +4806,7 @@ void ReportTable(
   /* Generate the table of fallback tokens.
   */
   if( lemp->has_fallback ){
-    int mx = lemp->nterminal - 1;
+    mx = lemp->nterminal - 1;
     /* 2019-08-28:  Generate fallback entries for every token to avoid
     ** having to do a range check on the index */
     /* while( mx>0 && lemp->symbols[mx]->fallback==0 ){ mx--; } */
