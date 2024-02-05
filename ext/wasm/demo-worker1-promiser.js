@@ -49,6 +49,8 @@
       error("Unhandled worker message:",ev.data);
     },
     onready: function(){
+      T.affirm(arguments[0] === workerPromise
+               /* as of version 3.46. Prior to that this callback had no arguments */);
       self.sqlite3TestModule.setStatus(null)/*hide the HTML-side is-loading spinner*/;
       runTests();
     },

@@ -156,6 +156,7 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
   if(!config.worker) config.worker = callee.defaultConfig.worker;
   if('function'===typeof config.worker) config.worker = config.worker();
   let dbId;
+  let promiserFunc;
   config.worker.onmessage = function(ev){
     ev = ev.data;
     debug('worker1.onmessage',ev);
@@ -163,7 +164,7 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
     if(!msgHandler){
       if(ev && 'sqlite3-api'===ev.type && 'worker1-ready'===ev.result) {
         /*fired one time when the Worker1 API initializes*/
-        if(config.onready) config.onready();
+        if(config.onready) config.onready(promiserFunc);
         return;
       }
       msgHandler = handlerMap[ev.type] /* check for exec per-row callback */;
@@ -192,7 +193,7 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
     try {msgHandler.resolve(ev)}
     catch(e){msgHandler.reject(e)}
   }/*worker.onmessage()*/;
-  return function(/*(msgType, msgArgs) || (msgEnvelope)*/){
+  return promiserFunc = function(/*(msgType, msgArgs) || (msgEnvelope)*/){
     let msg;
     if(1===arguments.length){
       msg = arguments[0];
