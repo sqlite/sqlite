@@ -170,7 +170,6 @@ struct Rtree {
   u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
   u32 nCursor;                /* Number of open cursors */
-  u32 iGeneration;            /* Cursors with smaller iGeneration are stale */
   u32 nNodeRef;               /* Number RtreeNodes with positive nRef */
   char *zReadAuxSql;          /* SQL for statement to read aux data */
 
@@ -287,7 +286,6 @@ struct RtreeCursor {
   u8 atEOF;                         /* True if at end of search */
   u8 bPoint;                        /* True if sPoint is valid */
   u8 bAuxValid;                     /* True if pReadAux is valid */
-  u32 iGeneration;                  /* Stale if too small */
   int iStrategy;                    /* Copy of idxNum search parameter */
   int nConstraint;                  /* Number of entries in aConstraint */
   RtreeConstraint *aConstraint;     /* Search constraints. */
@@ -948,6 +946,7 @@ static void nodeGetCoord(
   int iCoord,                  /* Which coordinate to extract */
   RtreeCoord *pCoord           /* OUT: Space to write result to */
 ){
+  assert( iCell<NCELL(pNode) );
   readCoord(&pNode->zData[12 + pRtree->nBytesPerCell*iCell + 4*iCoord], pCoord);
 }
 
@@ -1089,7 +1088,6 @@ static int rtreeOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   if( pCsr ){
     memset(pCsr, 0, sizeof(RtreeCursor));
     pCsr->base.pVtab = pVTab;
-    pCsr->iGeneration = pRtree->iGeneration;
     rc = SQLITE_OK;
     pRtree->nCursor++;
   }
@@ -1630,9 +1628,6 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
   int eInt;
   RtreeSearchPoint x;
 
-  if( pCur->iGeneration<pRtree->iGeneration ){
-    return SQLITE_ABORT_ROLLBACK;
-  }
   eInt = pRtree->eCoordType==RTREE_COORD_INT32;
   while( (p = rtreeSearchPointFirst(pCur))!=0 && p->iLevel>0 ){
     u8 *pCellData;
@@ -1726,7 +1721,11 @@ static int rtreeRowid(sqlite3_vtab_cursor *pVtabCursor, sqlite_int64 *pRowid){
   int rc = SQLITE_OK;
   RtreeNode *pNode = rtreeNodeOfFirstSearchPoint(pCsr, &rc);
   if( rc==SQLITE_OK && ALWAYS(p) ){
-    *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
+    if( p->iCell>=NCELL(pNode) ){
+      rc = SQLITE_ABORT;
+    }else{
+      *pRowid = nodeGetRowid(RTREE_OF_CURSOR(pCsr), pNode, p->iCell);
+    }
   }
   return rc;
 }
@@ -1744,6 +1743,7 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
 
   if( rc ) return rc;
   if( NEVER(p==0) ) return SQLITE_OK;
+  if( p->iCell>=NCELL(pNode) ) return SQLITE_ABORT;
   if( i==0 ){
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){
@@ -1860,7 +1860,6 @@ static int rtreeFilter(
 
   /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
   resetCursor(pCsr);
-  pCsr->iGeneration = pRtree->iGeneration;
 
   pCsr->iStrategy = idxNum;
   if( idxNum==1 ){
@@ -3242,14 +3241,7 @@ static int rtreeEndTransaction(sqlite3_vtab *pVtab){
   return SQLITE_OK;
 }
 static int rtreeRollback(sqlite3_vtab *pVtab){
-  Rtree *pRtree = (Rtree *)pVtab;
-  pRtree->iGeneration++;
   return rtreeEndTransaction(pVtab);  
-}
-static int rtreeRollbackTo(sqlite3_vtab *pVtab, int notUsed){
-  Rtree *pRtree = (Rtree *)pVtab;
-  pRtree->iGeneration++;
-  return SQLITE_OK;
 }
 
 /*
@@ -3374,7 +3366,7 @@ static sqlite3_module rtreeModule = {
   rtreeRename,                /* xRename - rename the table */
   rtreeSavepoint,             /* xSavepoint */
   0,                          /* xRelease */
-  rtreeRollbackTo,            /* xRollbackTo */
+  0,                          /* xRollbackTo */
   rtreeShadowName,            /* xShadowName */
   rtreeIntegrity              /* xIntegrity */
 };
