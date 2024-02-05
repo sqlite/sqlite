@@ -44,7 +44,7 @@ do_test 1.2 {
     }
   } msg]
   list $rc $msg
-} {1 {abort due to ROLLBACK}}
+} {1 {query aborted}}
 
 do_execsql_test 1.3 {
   SELECT * FROM t1;
@@ -118,7 +118,7 @@ do_test 1.8 {
     }
   } msg]
   list $rc $msg
-} {1 {abort due to ROLLBACK}}
+} {1 {query aborted}}
 
 do_execsql_test 1.9 {
   COMMIT;
@@ -155,5 +155,118 @@ do_execsql_test 1.12 {
   COMMIT;
   SELECT * FROM t1;
 } {1 1.0 1.0 2 2.0 2.0 3 3.0 3.0}
+
+#----------------------------------------------------------------------
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2);
+  INSERT INTO t1 VALUES(1, 1, 1), (2, 2, 2);
+  CREATE TABLE t2(x);
+} {}
+
+do_test 2.1 {
+  db eval {
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 3, 3);
+    PRAGMA writable_schema = RESET;
+  }
+
+  set rc [catch {
+    db eval { SELECT x1, x2 FROM t1 } {
+      if {$x1==1} {
+        db eval { ROLLBACK }
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+
+do_execsql_test 2.1 {
+  CREATE TABLE bak_node(nodeno, data);
+  CREATE TABLE bak_parent(nodeno, parentnode);
+  CREATE TABLE bak_rowid(rowid, nodeno);
+}
+proc save_t1 {} {
+  db eval {
+    DELETE FROM bak_node;
+    DELETE FROM bak_parent;
+    DELETE FROM bak_rowid;
+    INSERT INTO bak_node SELECT * FROM t1_node;
+    INSERT INTO bak_parent SELECT * FROM t1_parent;
+    INSERT INTO bak_rowid SELECT * FROM t1_rowid;
+  }
+}
+proc restore_t1 {} {
+  db eval {
+    DELETE FROM t1_node;
+    DELETE FROM t1_parent;
+    DELETE FROM t1_rowid;
+    INSERT INTO t1_node SELECT * FROM bak_node;
+    INSERT INTO t1_parent SELECT * FROM bak_parent;
+    INSERT INTO t1_rowid SELECT * FROM bak_rowid;
+  }
+}
+
+do_test 2.3 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set rc [catch {
+    db eval { SELECT rowid, x1, x2 FROM t1 } {
+      if {$x1==1} {
+        restore_t1
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+do_execsql_test 2.4 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+do_test 2.5 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set rc [catch {
+    db eval { SELECT x1 FROM t1 } {
+      if {$x1==1} {
+        restore_t1
+      }
+      lappend res $x1 $x2
+    }
+  } msg]
+  list $rc $msg
+}  {1 {query aborted}}
+do_execsql_test 2.6 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
+do_test 2.7 {
+  save_t1
+  db eval {
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+  set ::res [list]
+  set rc [catch {
+    db eval { SELECT 'abc' FROM t1 } {
+      if {$::res==[list]} {
+        restore_t1
+        set ::bDone 1
+      }
+      lappend res abc
+    }
+  } msg]
+  set res
+} {abc abc abc}
+do_execsql_test 2.6 {
+  SELECT * FROM t1
+} {1 1.0 1.0 2 2.0 2.0}
+
 
 finish_test

@@ -1,5 +1,5 @@
-C Extend\s[d294a23ed6d]\sto\sapply\sto\sall\swasm\sspeedtest1\sbuilds.
-D 2024-02-05T03:56:02.476
+C Return\sSQLITE_ABORT\sif\sthe\sunderlying\sshadow\stables\schange\sin\sthe\smiddle\sof\san\srtree\squery\sin\ssuch\sa\sway\sas\sto\sinvalidate\san\srtree\sinternal\spriority\squeue\sentry.
+D 2024-02-05T17:35:36.153
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c 32e67b122e37138694d9f499cdc72241e372058560ac2d4577cfd68ccd692953
+F ext/rtree/rtree.c d96c5d34eafcd46bc4b7645c26a4bcc3169d9e70e9df707ef91c2e90870d00d9
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 2b5b8c719c6a4abe377f57766f428a49af36a93061cb146cccfdc3b30000c0a4
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -515,7 +515,7 @@ F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd
 F ext/rtree/rtreeG.test 1b9ca6e3effb48f4161edaa463ddeaa8fca4b2526d084f9cbf5dbe4e0184939c
 F ext/rtree/rtreeH.test 0885151ee8429242625600ae47142cca935332c70a06737f35af53a7bd7aaf90
 F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
-F ext/rtree/rtreeJ.test bafa7616d6b29448bf19132ce4963a69b629b9ca6ab29f4b76889c8d542b8dfc
+F ext/rtree/rtreeJ.test ba4e25c409ebed4b96bf1270e72760c1344d0a464478d221dbe91e8471ac9ac6
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 202ca70df1f0645ef9d5a2170e62d378a28098d9407f0569e85c9c1cf1bd020a
 F ext/rtree/rtreecheck.test 934546ad9b563e090ee0c5cbdc69ad014189ad76e5df7320526797a9a345661f
@@ -2162,8 +2162,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8a8b9ee2eddf5f875c7c4399e750ccf1941f767560ebc2c88c083560f5aaae0
-R 8054a7da52bc11a97b67caaa9fc96227
-U stephan
-Z 47b7f55b1ab54c273898a455c5270730
+P 26f848e5e0ac34e545d2f27cf33abc46eac13e04ed9cd71084b0f7d47136ff97
+R ac07ea666046dd35038bc77784e8d419
+T *branch * rtree-fix
+T *sym-rtree-fix *
+T -sym-trunk *
+U dan
+Z 6f11e0396699443c7473bed77f9c3651
 # Remove this line to create a well-formed Fossil manifest.
