@@ -1193,6 +1193,9 @@ const installOpfsVfs = function callee(options){
        Asynchronously imports the given bytes (a byte array or
        ArrayBuffer) into the given database file.
 
+       Results are undefined if the given db name refers to an opened
+       db.
+
        If passed a function for its second argument, its behaviour
        changes to async and it imports its data in chunks fed to it by
        the given callback function. It calls the callback (which may
