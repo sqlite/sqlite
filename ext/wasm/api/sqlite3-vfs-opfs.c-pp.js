@@ -1197,15 +1197,14 @@ const installOpfsVfs = function callee(options){
        db.
 
        If passed a function for its second argument, its behaviour
-       changes to async and it imports its data in chunks fed to it by
-       the given callback function. It calls the callback (which may
-       be async) repeatedly, expecting either a Uint8Array or
-       ArrayBuffer (to denote new input) or undefined (to denote
-       EOF). For so long as the callback continues to return
-       non-undefined, it will append incoming data to the given
-       VFS-hosted database file. When called this way, the resolved
-       value of the returned Promise is the number of bytes written to
-       the target file.
+       changes: imports its data in chunks fed to it by the given
+       callback function. It calls the callback (which may be async)
+       repeatedly, expecting either a Uint8Array or ArrayBuffer (to
+       denote new input) or undefined (to denote EOF). For so long as
+       the callback continues to return non-undefined, it will append
+       incoming data to the given VFS-hosted database file. When
+       called this way, the resolved value of the returned Promise is
+       the number of bytes written to the target file.
 
        It very specifically requires the input to be an SQLite3
        database and throws if that's not the case.  It does so in
