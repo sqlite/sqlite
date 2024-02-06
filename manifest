@@ -1,5 +1,5 @@
-C Correct\sdocs\sabout\sthe\sfirst\sOFPS\sVFS's\simportDb()\smethod\sbeing\ssynchronous\s(it's\snot,\swhereas\sthe\ssecond\sVFS's\simportDb()\sis).
-D 2024-02-06T08:59:59.394
+C Slight\schange\sto\sOOM\shandling\sin\sJSON\sto\scatch\sa\scorner\scase\sfound\sby\ndbsqlfuzz.
+D 2024-02-06T18:33:01.726
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -699,7 +699,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c ae8847ccf8e212650d8a79277750f2123a03ae040d21d96ff5010114bd5b1040
+F src/json.c 0c98979fac084ea5055738fb3467cd431543aaa94acf374d412cac4b89b1acbf
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f28b9924b401b359e59a73918a34b29cde719164a6b4ac5a9d23da6294b701bd
-R d8475422eb55a236e4813bd575b83968
-U stephan
-Z 87c60489a9bd431cc3758cc39138e437
+P ae7505fa5e112f39a329befb35eff6ddf46a53f5deb610906550bf67f56fc157
+R bb17ade8dce33fbd8ddcb5bbd3943bbd
+U drh
+Z 8a6aaa8f9831a5f71eadc202a02ba963
 # Remove this line to create a well-formed Fossil manifest.

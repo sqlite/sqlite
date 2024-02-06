@@ -3359,8 +3359,9 @@ rebuild_from_cache:
   }
   p->zJson = (char*)sqlite3_value_text(pArg);
   p->nJson = sqlite3_value_bytes(pArg);
+  if( db->mallocFailed ) goto json_pfa_oom;
   if( p->nJson==0 ) goto json_pfa_malformed;
-  if( NEVER(p->zJson==0) ) goto json_pfa_oom;
+  assert( p->zJson!=0 );
   if( jsonConvertTextToBlob(p, (flgs & JSON_KEEPERROR) ? 0 : ctx) ){
     if( flgs & JSON_KEEPERROR ){
       p->nErr = 1;
