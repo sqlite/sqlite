@@ -1,5 +1,5 @@
-C Detect\sand\srespond\sto\san\sOOM\son\sthe\sjsonStringTerminate()\scall\sof\njsonReturnStringAsBlob()\sroutine.
-D 2024-02-07T14:05:38.048
+C Turns\sout\sthe\sbranch\sis\sreachable,\sso\sback\sout\sthe\sNEVER().
+D 2024-02-07T19:17:44.741
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -816,7 +816,7 @@ F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
 F src/vdbeaux.c c5a471b34e9c4cfc0295a3e10734fd197670ffaebcb742f284c8e17e8026ceea
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 3e37dab421b74e9ce55c1e88fbc7bc6fead590b5ab258bc684f8b70abb1d6e71
-F src/vdbesort.c 00c1fb15171205063556c2f1cf454e24c0b41c1effb0c876b850dce91f21bc64
+F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
 F src/vtab.c 11948e105f56e84099ca17f1f434b1944539ea84de26d0d767eadfbc670ce1ea
@@ -2162,8 +2162,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a2b3266c586d12b51e11fe63cda5881be9373207aa16671ab77f547830eb790
-R f921e7ed48eb9865e88c87b2fd0e4d7e
+P 881f814c09b6896a448a2360b0b43dc99592ea3a1d72ac359770cbb0a2c7d38a
+Q -9411337a7b3237366768fc708396da53d67a7a17b6cdc5c6f8932c5ab32217a9
+R f3327a0935c4e5c636d36e7e0586529c
 U drh
-Z 643b9a87bc06a07fb41a72f9a7566e9f
+Z a7ed96a42f4b8ee08a15aed5a446fbe9
 # Remove this line to create a well-formed Fossil manifest.
