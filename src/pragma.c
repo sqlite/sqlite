@@ -2116,10 +2116,9 @@ void sqlite3Pragma(
         a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
         integrityCheckResultRow(v);
         sqlite3VdbeJumpHere(v, a1);
-#endif
         continue;
       }
-
+#endif
     }
     {
       static const int iLn = VDBE_OFFSET_LINENO(2);
