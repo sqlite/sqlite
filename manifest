@@ -1,5 +1,5 @@
-C Turns\sout\sthe\sbranch\sis\sreachable,\sso\sback\sout\sthe\sNEVER().
-D 2024-02-07T19:17:44.741
+C Bring\stest\scases\sinto\salignment\swith\sthe\slatest\senhancements.
+D 2024-02-07T19:52:03.118
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -515,7 +515,7 @@ F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd
 F ext/rtree/rtreeG.test 1b9ca6e3effb48f4161edaa463ddeaa8fca4b2526d084f9cbf5dbe4e0184939c
 F ext/rtree/rtreeH.test 0885151ee8429242625600ae47142cca935332c70a06737f35af53a7bd7aaf90
 F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
-F ext/rtree/rtreeJ.test ba4e25c409ebed4b96bf1270e72760c1344d0a464478d221dbe91e8471ac9ac6
+F ext/rtree/rtreeJ.test 93227ccd4d6c328f5ac46a902b8880041509dd2d68f6ce71560f0d8ab5bb507a
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 202ca70df1f0645ef9d5a2170e62d378a28098d9407f0569e85c9c1cf1bd020a
 F ext/rtree/rtreecheck.test 934546ad9b563e090ee0c5cbdc69ad014189ad76e5df7320526797a9a345661f
@@ -1633,7 +1633,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 1b7ab4f312442c5cc6b3a5f299fa8ca051416d1dd173cb1126fd51bf64f2c3fb
-F test/sqllimits1.test b28e5cc8d337aaf290614d96a47e8fbfb720bb7ad35620c9d5432996fd413ac4
+F test/sqllimits1.test 5880a2f107185744ba4d93637f44c78d17706a9899a38b694d50f209735c81cc
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 123212a20ceb496893d5254a5f6c76442ce549fdc08d1702d8288a2bbaac8408
@@ -2162,9 +2162,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 881f814c09b6896a448a2360b0b43dc99592ea3a1d72ac359770cbb0a2c7d38a
-Q -9411337a7b3237366768fc708396da53d67a7a17b6cdc5c6f8932c5ab32217a9
-R f3327a0935c4e5c636d36e7e0586529c
+P 0af36a3223d2dabda887830390a603ab4781baca7e2f1698ec6c5f2cf03faf04
+Q +81bd7aee093ddb7405bf12e9c9a915d410fb3103d3b19cce21be63d97256904c
+R 8fc57b3ff811df04d2f88b3e6328966f
 U drh
-Z a7ed96a42f4b8ee08a15aed5a446fbe9
+Z e908575b96347b2a10ba2f1656de4a56
 # Remove this line to create a well-formed Fossil manifest.
