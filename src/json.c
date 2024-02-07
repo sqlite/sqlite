@@ -1607,6 +1607,7 @@ json_parse_restart:
   case '[': {
     /* Parse array */
     iThis = pParse->nBlob;
+    assert( i<=pParse->nJson );
     jsonBlobAppendNode(pParse, JSONB_ARRAY, pParse->nJson - i, 0);
     iStart = pParse->nBlob;
     if( pParse->oom ) return -1;
@@ -2005,6 +2006,10 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
   JsonParse px;
   memset(&px, 0, sizeof(px));
   jsonStringTerminate(pStr);
+  if( pStr->eErr ){
+    sqlite3_result_error_nomem(pStr->pCtx);
+    return;
+  }
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
   px.db = sqlite3_context_db_handle(pStr->pCtx);
