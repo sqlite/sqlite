@@ -1,5 +1,5 @@
-C Fix\san\s#endif\s(added\sin\sthe\swrong\splace\sby\s[8f4b1ceafe4a271b])\sso\sthat\nthe\sbuild\sworks\swith\sSQLITE_OMIT_VIRTUAL_TABLE.
-D 2024-02-07T20:45:38.362
+C Mention\slimited\slifetime\sof\sstring\sarrays\spassed\sto\ssqlite3_exec()\scallback.
+D 2024-02-08T01:19:46.361
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -741,7 +741,7 @@ F src/resolve.c 0ed10ebb70d15dcf3f1882051931ccfaf9c3f4debe67dbd114047d9e2adb9523
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f1a81ff4f8e9e76c224e2ab3a4baa799add0db22158c7fcede65d8cc4a6fa2da
 F src/shell.c.in c6cb773b7703d76677529de19d1c40584520701966422c33da3e9334498a7099
-F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
+F src/sqlite.h.in ebb9636c0e99d692bdc22e70df3766dc615120aeddde81214547f51998bbd21d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 5013ac1f5642df4c0b76314f507f4c7b6f8efee0e1d7c2e93bf8b445ceea29bb
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd017c28d516399e25b5ee9e8fcd7390ca2be9128c7c41f1007f37bc01a35717
-R 2d9fa4a2af3419f8f53f008b15026f33
-U drh
-Z e59ddf9aaf84b24c6fc5197c4cee87c1
+P 7070924eebce1d089fde911dc0427ab8f3764d57ace24caff2b79954b42d1b51
+R 2754c4cd5c9c2d2fe3f97bd6f57b4998
+U larrybr
+Z bdbab30aa887dd5009861f5b93382dca
 # Remove this line to create a well-formed Fossil manifest.
