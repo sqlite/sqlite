@@ -1,5 +1,5 @@
-C Detect\sand\srespond\sto\san\sOOM\son\sthe\sjsonStringTerminate()\scall\sof\njsonReturnStringAsBlob()\sroutine.
-D 2024-02-07T14:16:47.416
+C Mention\slimited\slifetime\sof\sstring\sarrays\spassed\sto\ssqlite3_exec()\scallback.
+D 2024-02-08T01:23:22.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -740,7 +740,7 @@ F src/resolve.c e25f51a473a5f30a0d978e4df2aaa98aeec84eac29ecae1ad4708a6c3e669345
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f1a81ff4f8e9e76c224e2ab3a4baa799add0db22158c7fcede65d8cc4a6fa2da
 F src/shell.c.in d1ed426aae2d547932971e8019939cacb4dfda8258e45b8924b250e488e2d53d
-F src/sqlite.h.in 61a60b4ea04db8ead15e1579b20b64cb56e9f55d52c5f9f9694de630110593a3
+F src/sqlite.h.in ebb9636c0e99d692bdc22e70df3766dc615120aeddde81214547f51998bbd21d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 73800d73e21180e6b3df8d0fe7d11758dc24367fd2b0b0075b48fc116de406bb
@@ -2160,9 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 061af0d74a436efa24b348e9a0f9fe6d6d52c02e5c03929e6f9c7f0e2ef3e2a0
-Q +881f814c09b6896a448a2360b0b43dc99592ea3a1d72ac359770cbb0a2c7d38a
-R aba56b933267409e00584c8071f0325b
-U drh
-Z 06edd1d9ec9ddbfbd15039dd1ad47493
+P 77431aca6ec0aaeacdc9173ca19e996498650ad19934fc77681203c0c9f06632
+Q +717f67f3189a59842f5c17a25e8db0e24ec4405886fc22ab6eeb3954fba5a964
+R da85343c42b83940f4a33cf1356e9953
+U larrybr
+Z 8fa9a80f8b8bfbafa0083995304af9e0
 # Remove this line to create a well-formed Fossil manifest.
