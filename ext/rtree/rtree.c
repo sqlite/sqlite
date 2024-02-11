@@ -3225,8 +3225,7 @@ constraint:
 */
 static int rtreeBeginTransaction(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
-  assert( pRtree->inWrTrans==0 );
-  pRtree->inWrTrans++;
+  pRtree->inWrTrans = 1;
   return SQLITE_OK;
 }
 
