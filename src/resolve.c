@@ -79,6 +79,8 @@ static void resolveAlias(
   assert( iCol>=0 && iCol<pEList->nExpr );
   pOrig = pEList->a[iCol].pExpr;
   assert( pOrig!=0 );
+  assert( !ExprHasProperty(pExpr, EP_Reduced|EP_TokenOnly) );
+  if( pExpr->pAggInfo ) return;
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( db->mallocFailed ){
