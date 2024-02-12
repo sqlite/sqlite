@@ -7885,6 +7885,38 @@ static int outputDumpWarning(ShellState *p, const char *zLike){
 }
 
 /*
+** Fault-Simulator state and logic.
+*/
+static struct {
+  int iId;           /* ID that triggers a simulated fault.  -1 means "any" */
+  int iErr;          /* The error code to return on a fault */
+  int iCnt;          /* Trigger the fault only if iCnt is already zero */
+  int iInterval;     /* Reset iCnt to this value after each fault */
+  int eVerbose;      /* When to print output */
+} faultsim_state = {-1, 0, 0, 0, 0};
+
+/*
+** This is the fault-sim callback
+*/
+static int faultsim_callback(int iArg){
+  if( faultsim_state.iId>0 && faultsim_state.iId!=iArg ){
+    return SQLITE_OK;
+  }
+  if( faultsim_state.iCnt>0 ){
+    faultsim_state.iCnt--;
+    if( faultsim_state.eVerbose>=2 ){
+      oputf("FAULT-SIM id=%d no-fault (cnt=%d)\n", iArg, faultsim_state.iCnt);
+    }
+    return SQLITE_OK;
+  }
+  if( faultsim_state.eVerbose>=1 ){
+    oputf("FAULT-SIM id=%d returns %d\n", iArg, faultsim_state.iErr);
+  }
+  faultsim_state.iCnt = faultsim_state.iInterval;
+  return faultsim_state.iErr;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -10772,7 +10804,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   /*{"bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST, 1,  ""              },*/
     {"byteorder",          SQLITE_TESTCTRL_BYTEORDER, 0,  ""                },
     {"extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,0,"BOOLEAN"  },
-  /*{"fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, 1,""              },*/
+    {"fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, 1,"args..."       },
     {"fk_no_action",       SQLITE_TESTCTRL_FK_NO_ACTION, 0, "BOOLEAN"       },
     {"imposter",         SQLITE_TESTCTRL_IMPOSTER,1,"SCHEMA ON/OFF ROOTPAGE"},
     {"internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS,0,""          },
@@ -11005,6 +11037,64 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           sqlite3_test_control(testctrl, &rc2);
           break;
+        case SQLITE_TESTCTRL_FAULT_INSTALL: {
+          int kk;
+          int bShowHelp = nArg<=2;
+          isOk = 3;
+          for(kk=2; kk<nArg; kk++){
+            const char *z = azArg[kk];
+            if( z[0]=='-' && z[1]=='-' ) z++;
+            if( cli_strcmp(z,"off")==0 ){
+              sqlite3_test_control(testctrl, 0);
+            }else if( cli_strcmp(z,"on")==0 ){
+              faultsim_state.iCnt = faultsim_state.iInterval;
+              if( faultsim_state.iErr==0 ) faultsim_state.iErr = 1;
+              sqlite3_test_control(testctrl, faultsim_callback);
+            }else if( cli_strcmp(z,"reset")==0 ){
+              faultsim_state.iCnt = faultsim_state.iInterval;
+            }else if( cli_strcmp(z,"status")==0 ){
+              oputf("faultsim.iId:       %d\n", faultsim_state.iId);
+              oputf("faultsim.iErr:      %d\n", faultsim_state.iErr);
+              oputf("faultsim.iCnt:      %d\n", faultsim_state.iCnt);
+              oputf("faultsim.iInterval: %d\n", faultsim_state.iInterval);
+              oputf("faultsim.eVerbose:  %d\n", faultsim_state.eVerbose);
+            }else if( cli_strcmp(z,"-v")==0 ){
+              if( faultsim_state.eVerbose<2 ) faultsim_state.eVerbose++;
+            }else if( cli_strcmp(z,"-q")==0 ){
+              if( faultsim_state.eVerbose>0 ) faultsim_state.eVerbose--;
+            }else if( cli_strcmp(z,"-id")==0 && kk+1<nArg ){
+              faultsim_state.iId = atoi(azArg[++kk]);
+            }else if( cli_strcmp(z,"-errcode")==0 && kk+1<nArg ){
+              faultsim_state.iErr = atoi(azArg[++kk]);
+            }else if( cli_strcmp(z,"-interval")==0 && kk+1<nArg ){
+              faultsim_state.iInterval = atoi(azArg[++kk]);
+            }else if( cli_strcmp(z,"-?")==0 || sqlite3_strglob("*help*",z)==0){
+              bShowHelp = 1;
+            }else{
+              eputf("Unrecognized fault_install argument: \"%s\"\n",
+                  azArg[kk]);
+              rc = 1;
+              bShowHelp = 1;
+              break;
+            }
+          }
+          if( bShowHelp ){
+            oputf(
+               "Usage: .testctrl fault_install ARGS\n"
+               "Possible arguments:\n"
+               "   off               Disable faultsim\n"
+               "   on                Activate faultsim\n"
+               "   reset             Reset the trigger counter\n"
+               "   status            Show current status\n"
+               "   -v                Increase verbosity\n"
+               "   -q                Decrease verbosity\n"
+               "   --errcode N       When triggered, return N as error code\n"
+               "   --id ID           Trigger only for the ID specified\n"
+               "   --interval N      Trigger only after every N-th call\n"
+            );
+          }
+          break;
+        }
       }
     }
     if( isOk==0 && iCtrl>=0 ){
