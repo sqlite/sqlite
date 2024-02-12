@@ -5128,9 +5128,12 @@ static int accessPayload(
       if( pCur->aOverflow==0
        || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
-        Pgno *aNew = (Pgno*)sqlite3Realloc(
-            pCur->aOverflow, nOvfl*2*sizeof(Pgno)
-        );
+        Pgno *aNew;
+        if( sqlite3FaultSim(413) ){
+          aNew = 0;
+        }else{
+          aNew = (Pgno*)sqlite3Realloc(pCur->aOverflow, nOvfl*2*sizeof(Pgno));
+        }
         if( aNew==0 ){
           return SQLITE_NOMEM_BKPT;
         }else{
