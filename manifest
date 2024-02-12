@@ -1,5 +1,5 @@
-C Cherrypick\smultiple\sfixes\sfor\strifling\sfaults\sfrom\strunk,\sso\sthat\sall\s834\ndbsqlfuzz\srun\sclean\swith\sASAN\son\sbranch-3.45.\ndbsqlfuzz.
-D 2024-02-11T23:25:02.530
+C Have\srtree\savoid\skeeping\sa\sblob\shandle\sopen\sfollowing\san\serror.
+D 2024-02-12T17:01:33.655
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -495,7 +495,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c 1b6422e7b9aff51583477bf8c49b51655b19bd9905b4d8fe48f4c1f0c95b2359
+F ext/rtree/rtree.c bdf97fac91b37b3a6041ab4a0dd06e81c7ba1541601733b40f97fb51e76e79ce
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 2b5b8c719c6a4abe377f57766f428a49af36a93061cb146cccfdc3b30000c0a4
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2160,12 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 044ce823a45f024fe3dfe8a44bab8f25affb7bc54cfbe01a00719217b93ff6f8
-Q +6a2b3266c586d12b51e11fe63cda5881be9373207aa16671ab77f547830eb790
-Q +8f4b1ceafe4a271b23e17493a244a34c1732a3d35c5533c37394b9f3dc158435
-Q +d4ec2a5d2297cd9ead0a8768dcf003ea76c74d8d68d88c40f62363f484a4a4d3
-Q +f023cb541b5dd72c996f0574210344179217666a2229bc8d3fe057fdbc5c2245
-R be9f9b69cbb7bede7932040f1ae3e643
+P c080560c2d0d753c41c265c154c8185b7b5065ba1f2457476aa39c687675d91f
+Q +1cd5d4623f44af25ab4f5af580354b3ae22cf5de4109e008ca41055125bb708d
+R bf548d6e6c4444b93913a0cceb232a13
 U drh
-Z 02642eb263675a6243726d6511e24fd2
+Z 51be5899906312843dcd6190eb8e78df
 # Remove this line to create a well-formed Fossil manifest.
