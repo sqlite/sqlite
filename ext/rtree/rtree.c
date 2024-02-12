@@ -694,11 +694,9 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 ** Clear the Rtree.pNodeBlob object
 */
 static void nodeBlobReset(Rtree *pRtree){
-  if( pRtree->pNodeBlob && pRtree->inWrTrans==0 && pRtree->nCursor==0 ){
-    sqlite3_blob *pBlob = pRtree->pNodeBlob;
-    pRtree->pNodeBlob = 0;
-    sqlite3_blob_close(pBlob);
-  }
+  sqlite3_blob *pBlob = pRtree->pNodeBlob;
+  pRtree->pNodeBlob = 0;
+  sqlite3_blob_close(pBlob);
 }
 
 /*
@@ -742,7 +740,6 @@ static int nodeAcquire(
                            &pRtree->pNodeBlob);
   }
   if( rc ){
-    nodeBlobReset(pRtree);
     *ppNode = 0;
     /* If unable to open an sqlite3_blob on the desired row, that can only
     ** be because the shadow tables hold erroneous data. */
@@ -802,6 +799,7 @@ static int nodeAcquire(
     }
     *ppNode = pNode;
   }else{
+    nodeBlobReset(pRtree);
     if( pNode ){
       pRtree->nNodeRef--;
       sqlite3_free(pNode);
@@ -1136,7 +1134,9 @@ static int rtreeClose(sqlite3_vtab_cursor *cur){
   sqlite3_finalize(pCsr->pReadAux);
   sqlite3_free(pCsr);
   pRtree->nCursor--;
-  nodeBlobReset(pRtree);
+  if( pRtree->nCursor==0 && pRtree->inWrTrans==0 ){
+    nodeBlobReset(pRtree);
+  }
   return SQLITE_OK;
 }
 
