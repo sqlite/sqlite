@@ -1897,6 +1897,7 @@ void sqlite3Pragma(
               ** is REAL, we have to load the actual data using OP_Column
               ** to reliably determine if the value is a NULL. */
               sqlite3VdbeAddOp3(v, OP_Column, p1, p3, 3);
+              sqlite3ColumnDefault(v, pTab, j, 3);
               jmp3 = sqlite3VdbeAddOp2(v, OP_NotNull, 3, labelOk);
               VdbeCoverage(v);
             }           
