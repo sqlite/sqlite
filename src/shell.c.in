@@ -280,9 +280,9 @@ INCLUDE ../ext/consio/console_io.c
 #else
 /* For Fiddle, all console handling and emit redirection is omitted. */
 # define sputz(fp,z) fputs(z,fp)
-# define sputf(fp,fmt, ...) fprintf(fp,fmt,__VA_ARGS__)
+# define sputf fprintf
 # define oputz(z) fputs(z,stdout)
-# define oputf(fmt, ...) printf(fmt,__VA_ARGS__)
+# define oputf printf
 # define eputz(z) fputs(z,stderr)
 # define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
 # define oputb(buf,na) fwrite(buf,1,na,stdout)
