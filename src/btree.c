@@ -6557,6 +6557,7 @@ bypass_moveto_root:
       pCur->pPage = pCur->apPage[--pCur->iPage];
       break;
     }
+    setMempageRoot(pCur->pPage, pCur->pgnoRoot);
     /*
     ***** End of in-lined moveToChild() call */
  }
