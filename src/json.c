@@ -4914,6 +4914,9 @@ static int jsonEachColumn(
     case JEACH_VALUE: {
       u32 i = jsonSkipLabel(p);
       jsonReturnFromBlob(&p->sParse, i, ctx, 1);
+      if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY ){
+        sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+      }
       break;
     }
     case JEACH_TYPE: {
