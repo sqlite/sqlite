@@ -2453,17 +2453,20 @@ void sqlite3Pragma(
         if( (pTab->tabFlags & TF_MaybeReanalyze)==0 ) continue;
 
         /* Reanalyze if the table is 25 times larger than the last analysis */
-        szThreshold = pTab->nRowLogEst + 46; assert( sqlite3LogEst(25)==46 );
+        szThreshold = pTab->nRowLogEst;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( !pIdx->hasStat1 ){
-            szThreshold = 0; /* Always analyze if any index lacks statistics */
+            szThreshold = -1; /* Always analyze if any index lacks statistics */
             break;
           }
         }
-        if( szThreshold ){
+        if( szThreshold>=0 ){
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
-          sqlite3VdbeAddOp3(v, OP_IfSmaller, iTabCur,
-                         sqlite3VdbeCurrentAddr(v)+2+(opMask&1), szThreshold);
+          sqlite3VdbeAddOp4Int(v, OP_IfSizeBetween, iTabCur,
+                         sqlite3VdbeCurrentAddr(v)+3+(opMask&1),
+                         szThreshold>=46 ? szThreshold-46 : -1,
+                         szThreshold+46);
+          sqlite3VdbeAddOp1(v, OP_Close, iTabCur);
           VdbeCoverage(v);
         }
         zSubSql = sqlite3MPrintf(db, "ANALYZE \"%w\".\"%w\"",

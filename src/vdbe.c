@@ -6192,28 +6192,37 @@ case OP_Last: {              /* jump, ncycle */
   break;
 }
 
-/* Opcode: IfSmaller P1 P2 P3 * *
+/* Opcode: IfSizeBetween P1 P2 P3 P4 *
 **
-** Estimate the number of rows in the table P1.  Jump to P2 if that
-** estimate is less than approximately 2**(0.1*P3).
+** Let N be the approximate number of rows in the table or index
+** with cursor P1 and let X be 10*log2(N) if N is positive or -1
+** if N is zero. Thus X will be within the range of -1 to 640, inclusive
+** Jump to P2 if X is in between P3 and P4, inclusive.
 */
-case OP_IfSmaller: {        /* jump */
+case OP_IfSizeBetween: {        /* jump */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
   i64 sz;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p4type==P4_INT32 );
+  assert( pOp->p3>=-1 && pOp->p3<=640 );
+  assert( pOp->p4.i>=-1 && pOp->p4.i<=640 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->uc.pCursor;
   assert( pCrsr );
   rc = sqlite3BtreeFirst(pCrsr, &res);
   if( rc ) goto abort_due_to_error;
-  if( res==0 ){
+  if( res!=0 ){
+    sz = -1;  /* -Infinity encoding */
+  }else{
     sz = sqlite3BtreeRowCountEst(pCrsr);
-    if( ALWAYS(sz>=0) && sqlite3LogEst((u64)sz)<pOp->p3 ) res = 1;
+    assert( sz>0 );
+    sz = sqlite3LogEst((u64)sz);
   }
+  res = sz>=pOp->p3 && sz<=pOp->p4.i;
   VdbeBranchTaken(res!=0,2);
   if( res ) goto jump_to_p2;
   break;
