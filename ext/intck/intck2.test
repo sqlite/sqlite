@@ -1,0 +1,70 @@
+# 2008 Feb 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the r-tree extension.
+#
+
+source [file join [file dirname [info script]] intck_common.tcl]
+set testprefix intck2
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  CREATE INDEX i1 ON t1(b);
+}
+
+proc imposter_edit {obj create sql} {
+  sqlite3 xdb test.db
+  set pgno [xdb one {SELECT rootpage FROM sqlite_schema WHERE name=$obj}]
+
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER xdb main 1 $pgno
+  xdb eval $create
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER xdb main 0 0
+  xdb eval $sql
+  xdb close
+}
+
+imposter_edit i1 {
+  CREATE TABLE imp(b, a, PRIMARY KEY(b)) WITHOUT ROWID;
+} {
+  DELETE FROM imp WHERE b='two';
+  INSERT INTO imp(b, a) VALUES('four', 4);
+}
+
+do_intck_test 1.1 {
+  {entry ('two',2) missing from index i1}
+  {surplus entry ('four',4) in index i1}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, "c d");
+  CREATE INDEX x1a ON x1(a COLLATE nocase DESC , b ASC);
+  CREATE INDEX x1b ON x1( a || b || ' "''" ' COLLATE binary ASC );
+  CREATE INDEX x1c ON x1( format('%s', a)ASC, format('%d', "c d" ) );
+  INSERT INTO x1 VALUES('one', 2, 3);
+  INSERT INTO x1 VALUES('One', 4, 5);
+  INSERT INTO x1 VALUES('ONE', 6, 7);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+}
+
+do_intck_test 2.1 {}
+puts [intck_sql db x1]
+
+
+
+finish_test
+
+

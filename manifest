@@ -1,11 +1,11 @@
-C Fix\srounding\sin\szero-precision\s%f\sand\s%g\sprintf\sconversions.\n[forum:/info/393708f4a8|Forum\spost\s393708f4a8].\s\sThis\sbug\swas\nintroduced\sby\scheck-in\s[32befb224b254639]\sand\sfirst\sappeared\sin\sversion\s3.43.0.
-D 2024-02-17T03:32:31.878
+C Add\sstart\sof\sextension\sfor\sincremental\sintegrity-checks\sto\sext/intck/.
+D 2024-02-17T20:55:01.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 24be65ae641c5727bbc247d60286a15ecc24fb80f14f8fb2d32533bf0ec96e79
+F Makefile.in 216eea0cc5a9613d9f4f21402a4b759c2fce2a0cb9567513933562b65e30670b
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc df56c06ef05add5ebcdcc9d4823fb2ec66ac16b06acb6971a7420859025886fa
+F Makefile.msc a496ca640052c1e102daaa6e2d2216ae482f22995498c7c9492fd7f841481400
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION c84541c6a9e8426462176fbb1f9ecb5cfd7d1bb56228053ff7eeba8841673eb6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -248,6 +248,12 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
+F ext/intck/intck1.test 0fcf3696b59aff6c344553647d612921dd529600796ff7172c02679955cecdcf
+F ext/intck/intck2.test dd06719eca145b317ae380c81f04cd8a096a7cfdb71074cc6b6e7f195058b0d0
+F ext/intck/intck_common.tcl 1f2599d50033d21d5df89f5ed54cc29af472d86e3927e116db50c5ba94d903b9
+F ext/intck/sqlite3intck.c 14300998e91cd8788f483d97e53be9406f2c0be8af1867f399b80fef5e3721fb
+F ext/intck/sqlite3intck.h 342ee2e2c7636b4daf29fa195d0a3a658272b76b283d586fba50f6bc80fc143d
+F ext/intck/test_intck.c 3f9a950978842340df7492f0a4190022979f23ff904e90873a5e262adf30b78c
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
 F ext/jni/README.md d899789a9082a07b99bf30b1bbb6204ae57c060efcaa634536fa669323918f42
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
@@ -659,7 +665,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ef8d6b0e76b27d2b32d7b71ea30a2b2626b668f998a4f32f6171c9623a310a53
+F main.mk 678f023e03c5dca755570ed964a8355e44a6435f679e3763a6f9fe3d309f9986
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -790,7 +796,7 @@ F src/test_schema.c cbfd7a9a9b6b40d4377d0c76a6c5b2a58387385977f26edab4e77eb5f90a
 F src/test_sqllog.c 540feaea7280cd5f926168aee9deb1065ae136d0bbbe7361e2ef3541783e187a
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
 F src/test_syscall.c 9fdb13b1df05e639808d44fcb8f6064aaded32b6565c00b215cfd05a060d1aca
-F src/test_tclsh.c 3ff5d188a72f00807425954ea3b493dfd3a4b890ecc6700ea83bad2fd1332ecf
+F src/test_tclsh.c aaf0d1de4a518a8db5ad38e5262be3e48b4a74ad1909f2dba753cecb30979d5d
 F src/test_tclvar.c 3273f9d59395b336e381b53cfc68ec6ebdaada4e93106a2e976ffb0550504e1c
 F src/test_thread.c 7ddcf0c8b79fa3c1d172f82f322302c963d923cdb503c6171f3c8081586d0b01
 F src/test_vdbecov.c f60c6f135ec42c0de013a1d5136777aa328a776d33277f92abac648930453d43
@@ -2162,8 +2168,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c33c5db2e05019d1a375109f79ad8588a3c17f81e4f4b8d66c880c3c860e87e
-R e3e534a124d08ab0760f858683268942
-U drh
-Z 25ef9b1be0189ee473aa53bd8732a56c
+P 7fca1bc482fc2456d75392eb42f768fda72631c9070de46b8123b1126e78306f
+R f8dccfe308ed2507020014beca90ae47
+T *branch * incr-integrity-check
+T *sym-incr-integrity-check *
+T -sym-trunk *
+U dan
+Z 8b8b6eda2ec7249d41ba58db982258fb
 # Remove this line to create a well-formed Fossil manifest.
