@@ -1,5 +1,5 @@
-C Add\snew\sMASK\sbits\sto\sPRAGMA\soptimize:\s\s0x70000.
-D 2024-02-17T16:39:52.117
+C Hold\sa\stransaction\sduring\sPRAGMA\soptimize,\sfor\sperformance.
+D 2024-02-18T01:12:22.988
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/parse.y bfd6da46fc895cd8237400ff485d04ab0b32e47eb56de20982bb7f53e56c1f42
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c c5b767e7538a808fac4f17f8891acb1f14b4eed3458d971ddea4dd82f7623e0c
+F src/pragma.c c7ef49d3332badd6e17ac46e0aca762d7973c1e28156bc480c47aa3e56ae4d03
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 18fbdf028345c8fbe6044f5f5bfda5a10d48d6287afef088cc21b0ca57985640
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40532ffba91cf332c1ea4add80184031a9d6e10514d2d9b9a6cfd613091b81f7
-R 518017150456f4f932816e90c763b561
+P dd4497062569eec9ddfdaa7d6394c83ff40a7a59c6697a161bc4ff6d8af3bb29
+R 5aca31e5331abdce830c908f0aade7ae
 U drh
-Z 4ff4c253b76c891ec5769cfa9bfe8766
+Z 497aafa2ad4da05132856bc0e0f3518f
 # Remove this line to create a well-formed Fossil manifest.

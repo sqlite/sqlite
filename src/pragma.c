@@ -2446,6 +2446,7 @@ void sqlite3Pragma(
     char *zSubSql;         /* SQL statement for the OP_SqlExec opcode */
     u32 opMask;            /* Mask of operations to perform */
     int nLimit;            /* Analysis limit to use */
+    int once = 0;          /* One-time initialization done */
 
 #ifndef SQLITE_DEFAULT_OPTIMIZE_LIMIT
 # define SQLITE_DEFAULT_OPTIMIZE_LIMIT 400
@@ -2486,6 +2487,12 @@ void sqlite3Pragma(
          && (opMask & 0x10000)==0
         ){
           continue;
+        }
+
+        /* Hold a write transaction open for efficiency */
+        if( !once ){
+          sqlite3BeginWriteOperation(pParse, 0, iDb);
+          once = 1;
         }
 
         /* Reanalyze if the table is 25 times larger than the last analysis */
