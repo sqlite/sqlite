@@ -2569,6 +2569,7 @@ void sqlite3Pragma(
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
           sqlite3VdbeAddOp2(v, OP_Rewind, iTabCur,
                          sqlite3VdbeCurrentAddr(v)+2+(opMask&1));
+          VdbeCoverage(v);
         }
         zSubSql = sqlite3MPrintf(db, "ANALYZE \"%w\".\"%w\"",
                                  db->aDb[iDb].zDbSName, pTab->zName);
@@ -2587,10 +2588,10 @@ void sqlite3Pragma(
     /* In a schema with a large number of tables and indexes, scale back
     ** the analysis_limit to avoid excess run-time in the worst case.
     */
-    if( !db->mallocFailed && nBtree>100 ){
+    if( !db->mallocFailed && nLimit>0 && nBtree>100 ){
       int iAddr, iEnd;
       VdbeOp *aOp;
-      int nLimit = 100*SQLITE_DEFAULT_OPTIMIZE_LIMIT/nBtree;
+      nLimit = 100*nLimit/nBtree;
       if( nLimit<100 ) nLimit = 100;
       aOp = sqlite3VdbeGetOp(v, 0);
       iEnd = sqlite3VdbeCurrentAddr(v);
