@@ -1,5 +1,5 @@
-C Hold\sa\stransaction\sduring\sPRAGMA\soptimize,\sfor\sperformance.
-D 2024-02-18T01:12:22.988
+C Change\sthe\s0x20000\sbit\s(use\sanalysis\slimit)\sto\s0x10,\smeaning\sthat\sthis\sfeature\nis\son\sby\sdefault.\s\sThe\sdefault\sanalysis\slimit\sis\schanged\sto\s2000\swhich\sis\nalmost\salways\ssufficient\sfor\saccurate\sanalysis\sresults.
+D 2024-02-19T13:06:27.586
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/parse.y bfd6da46fc895cd8237400ff485d04ab0b32e47eb56de20982bb7f53e56c1f42
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c c7ef49d3332badd6e17ac46e0aca762d7973c1e28156bc480c47aa3e56ae4d03
+F src/pragma.c b877efa88ea41560ee5dd95daa30c8cadb743381c59b8921a5143bf0792c6e3b
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 18fbdf028345c8fbe6044f5f5bfda5a10d48d6287afef088cc21b0ca57985640
@@ -947,7 +947,7 @@ F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btree01.test fef17d9e999ac4f04095948e3438fbe674f4e07bb2c63bb1cad41d87baee077f
 F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1d6cc
 F test/btreefault.test a82a23b0578bc587afbf9a622c8f54a54f63762f062ba8a35613cfee38ab42f9
-F test/busy.test 510dc6daaad18bcbbc085bcc6217d6dc418def5e73f72ce1475eea0cb7834727
+F test/busy.test caff7164c16ce06a53af51f9e4c2753d4cc64250e00790a5e48b9c4f4be37597
 F test/busy2.test 20823a5d7c42fb257d9f108c66312d90b1bb4ec3d80ba6b4e371073727560f98
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd4497062569eec9ddfdaa7d6394c83ff40a7a59c6697a161bc4ff6d8af3bb29
-R 5aca31e5331abdce830c908f0aade7ae
+P d13b79eae6df7f9d1f3b8062ddc75a12ff038196b3d752d2672a9925fa45ca56
+R e258fa6228ef566d2b5670b2822a20d1
 U drh
-Z 497aafa2ad4da05132856bc0e0f3518f
+Z e864b92d6fb5e0c6f09ca55fa83dd960
 # Remove this line to create a well-formed Fossil manifest.

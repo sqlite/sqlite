@@ -31,6 +31,34 @@
 #include "pragma.h"
 
 /*
+** When the 0x10 bit of PRAGMA optimize is set, any ANALYZE commands
+** will be run with an analysis_limit set to the lessor of the value of
+** the following macro or to the actual analysis_limit if it is non-zero,
+** in order to prevent PRAGMA optimize from running for too long.
+**
+** The value of 2000 is chosen emperically so that the worst-case run-time
+** for PRAGMA optimize does not exceed 100 milliseconds against a variety
+** of test databases on a RaspberryPI-4 compiled using -Os and without
+** -DSQLITE_DEBUG.  Of course, your mileage may vary.  For the purpose of
+** his paragraph, "worst-case" means that ANALYZE ends up being
+** run on every table in the database.  The worst case typically only
+** happens if PRAGMA optimize is run on a database file for which ANALYZE
+** has not been previously run and the 0x10000 flag is included so that
+** all tables are analyzed.  The usual case for PRAGMA optimize is that
+** no ANALYZE commands will be run at all, or if any ANALYZE happens it
+** will be against a single table, so that expected timing for PRAGMA
+** optimize on a PI-4 is more like 1 millisecond or less with the 0x10000
+** flag or less than 100 microseconds without the 0x10000 flag.
+**
+** An analysis limit of 2000 is almost always sufficient for the query
+** planner to fully characterize an index.  The additional accuracy from
+** a larger analysis is not usually helpful.
+*/
+#ifndef SQLITE_DEFAULT_OPTIMIZE_LIMIT
+# define SQLITE_DEFAULT_OPTIMIZE_LIMIT 2000
+#endif
+
+/*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
 ** 1 for ON or NORMAL, 2 for FULL, and 3 for EXTRA.  Return 1 for an empty or
 ** unrecognized string argument.  The FULL and EXTRA option is disallowed
@@ -2390,19 +2418,18 @@ void sqlite3Pragma(
   **    0x00002    Run ANALYZE on tables that might benefit.  On by default.
   **               See below for additional information.
   **
+  **    0x00010    Run all ANALYZE operations using an analysis_limit that
+  **               is the lessor of the current analysis_limit and the
+  **               SQLITE_DEFAULT_OPTIMIZE_LIMIT compile-time option.
+  **               The default value of SQLITE_DEFAULT_OPTIMIZE_LIMIT is
+  **               currently (2024-02-19) set to 2000, which is such that
+  **               the worst case run-time for PRAGMA optimize on a 100MB
+  **               database will usually be less than 100 milliseconds on
+  **               a RaspberryPI-4 class machine.  Off by default.
+  **
   **    0x10000    Look at tables to see if they need to be reanalyzed
   **               even if they have not been queried during the current
   **               connection.  Off by default.
-  **
-  **    0x20000    Run all ANALYZE operations using an analysis_limit that
-  **               is the lessor of the current analysis_limit and the
-  **               SQLITE_DEFAULT_OPTIMIZE_LIMIT compile-time option,
-  **               nominally 400.  Off by default.
-  **
-  **    0x40000    Tables become candidates for reanalysis if their size
-  **               grows or shrinks by 10x.  Without this option, they
-  **               become candidates for reanalysis if their size grows
-  **               or shrinks by 25x.  Off (25x mode) by default.
   **
   ** The default MASK is and always shall be 0x0fffe.  In the current
   ** implementation, the default mask only covers the 0x00002 optimization,
@@ -2422,9 +2449,9 @@ void sqlite3Pragma(
   **     at some point during the lifetime of the current connection.
   **
   ** (3) One or more indexes of the table are currently unanalyzed OR
-  **     the number of rows in the table has increased or decreased
-  **     25 times or more (10 times or more if the 0x40000 bit is set)
-  **     since the last time ANALYZE was run.
+  **     the number of rows in the table has increased or decreased by
+  **     10-fold (the new size is either greater than 10 times the old
+  **     size or less than 1/10th of the old size).
   **
   ** (4) The table is an ordinary table, not a virtual table or view.
   **
@@ -2448,17 +2475,13 @@ void sqlite3Pragma(
     int nLimit;            /* Analysis limit to use */
     int once = 0;          /* One-time initialization done */
 
-#ifndef SQLITE_DEFAULT_OPTIMIZE_LIMIT
-# define SQLITE_DEFAULT_OPTIMIZE_LIMIT 400
-#endif
-
     if( zRight ){
       opMask = (u32)sqlite3Atoi(zRight);
       if( (opMask & 0x02)==0 ) break;
     }else{
       opMask = 0xfffe;
     }
-    if( (opMask & 0x20000)==0 ){
+    if( (opMask & 0x10)==0 ){
       nLimit = 0;
     }else if( db->nAnalysisLimit>0
            && db->nAnalysisLimit<SQLITE_DEFAULT_OPTIMIZE_LIMIT ){
@@ -2490,12 +2513,13 @@ void sqlite3Pragma(
         }
 
         /* Hold a write transaction open for efficiency */
-        if( !once ){
+        if( !once || 1 ){
           sqlite3BeginWriteOperation(pParse, 0, iDb);
           once = 1;
         }
 
-        /* Reanalyze if the table is 25 times larger than the last analysis */
+        /* Reanalyze if the table is 10 times larger or smaller than
+        ** the last analysis */
         szThreshold = pTab->nRowLogEst;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( !pIdx->hasStat1 ){
@@ -2504,7 +2528,7 @@ void sqlite3Pragma(
           }
         }
         if( szThreshold>=0 ){
-          LogEst iRange = (opMask & 0x40000) ? 33 : 46;
+          LogEst iRange = 33;   /* 10x size change */
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
           sqlite3VdbeAddOp4Int(v, OP_IfSizeBetween, iTabCur,
                          sqlite3VdbeCurrentAddr(v)+3+(opMask&1),
