@@ -19,15 +19,11 @@
 struct sqlite3_intck {
   sqlite3 *db;
   const char *zDb;                /* Copy of zDb parameter to _open() */
-
   char *zObj;                     /* Current object. Or NULL. */
-  char *zKey;                     /* Key saved by _suspect() call. */
-
-  sqlite3_stmt *pCheck;
-
-  int rc;                         /* SQLite error code */
+  char *zKey;                     /* Key saved by _intck_suspend() call. */
+  sqlite3_stmt *pCheck;           /* Current check statement */
+  int rc;                         /* Error code */
   char *zErr;                     /* Error message */
-
   char *zTestSql;                 /* Returned by sqlite3_intck_test_sql() */
 };
 
@@ -109,7 +105,7 @@ static void intckFindObject(sqlite3_intck *p){
   pStmt = intckPrepare(p, 
     "WITH tables(table_name) AS (" 
     "  SELECT name"
-    "  FROM %Q.sqlite_schema WHERE type='table' OR type='index'"
+    "  FROM %Q.sqlite_schema WHERE (type='table' OR type='index') AND rootpage"
     "  UNION ALL "
     "  SELECT 'sqlite_schema'"
     ")"
@@ -400,9 +396,9 @@ static char *intckCheckObjectSql(
       ""
       ", idx(name, match_expr, partial, partial_alias, idx_ps, idx_idx) AS ("
       "  SELECT idx_name,"
-      "    format('(%s) IS (%s)', "
-      "           group_concat(i.col_expr, ', '),"
-      "           group_concat('o.'||i.col_alias, ', ')"
+      "    format('(%s,%s) IS (%s,%s)', "
+      "           group_concat(i.col_expr, ', '), i_pk,"
+      "           group_concat('o.'||i.col_alias, ', '), o_pk"
       "    ), "
       "    parse_create_index("
       "        (SELECT sql FROM sqlite_schema WHERE name=idx_name), -1"
@@ -512,13 +508,12 @@ static char *intckCheckObjectSql(
       ** is set to an expression that evaluates to NULL if the required
       ** entry is present in the index, or an error message otherwise.  */
       ", expr(e, p) AS ("
-      "  SELECT format('CASE WHEN (%%s) IN\n"
-      "    (SELECT %%s FROM %%Q.%%Q AS i INDEXED BY %%Q WHERE %%s%%s)\n"
+      "  SELECT format('CASE WHEN EXISTS \n"
+      "    (SELECT 1 FROM %%Q.%%Q AS i INDEXED BY %%Q WHERE %%s%%s)\n"
       "    THEN NULL\n"
       "    ELSE format(''entry (%%s,%%s) missing from index %%s'', %%s, %%s)\n"
       "  END\n'"
-      "    , t.o_pk, t.i_pk, t.db, t.tab, i.name, i.match_expr, "
-      "    ' AND (' || partial || ')',"
+      "    , t.db, t.tab, i.name, i.match_expr, ' AND (' || partial || ')',"
       "      i.idx_ps, t.ps_pk, i.name, i.idx_idx, t.pk_pk),"
       "    CASE WHEN partial IS NULL THEN NULL ELSE i.partial_alias END"
       "  FROM tabpk t, idx i"
@@ -626,30 +621,35 @@ int sqlite3_intck_open(
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
+    sqlite3_create_function(db, "parse_create_index", 
+        2, SQLITE_UTF8, 0, parseCreateIndexFunc, 0, 0
+    );
     memset(pNew, 0, sizeof(*pNew));
     pNew->db = db;
     pNew->zDb = (const char*)&pNew[1];
     memcpy(&pNew[1], zDb, nDb+1);
-    sqlite3_create_function(db, "parse_create_index", 
-        2, SQLITE_UTF8, 0, parseCreateIndexFunc, 0, 0
-    );
   }
 
   *ppOut = pNew;
   return rc;
 }
 
-void sqlite3_intck_close(sqlite3_intck *p){
-  if( p && p->db ){
-    sqlite3_create_function(
-        p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
-    );
+int sqlite3_intck_close(sqlite3_intck *p){
+  int rc = SQLITE_OK;
+  if( p ){
+    rc = (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
+    if( p->db ){
+      sqlite3_create_function(
+          p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
+      );
+    }
+    sqlite3_free(p->zObj);
+    sqlite3_free(p->zKey);
+    sqlite3_free(p->zTestSql);
+    sqlite3_free(p->zErr);
+    sqlite3_free(p);
   }
-  sqlite3_free(p->zObj);
-  sqlite3_free(p->zKey);
-  sqlite3_free(p->zTestSql);
-  sqlite3_free(p->zErr);
-  sqlite3_free(p);
+  return rc;
 }
 
 int sqlite3_intck_step(sqlite3_intck *p){

@@ -179,7 +179,60 @@ static int test_sqlite3_intck(
   return TCL_OK;
 }
 
+/*
+** tclcmd: test_do_intck DB DBNAME
+*/
+static int test_do_intck(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  const char *zDb = 0;
+  int rc = SQLITE_OK;
+  sqlite3_intck *pCk = 0;
+  Tcl_Obj *pRet = 0;
+  const char *zErr = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[2]);
+
+  pRet = Tcl_NewObj();
+  Tcl_IncrRefCount(pRet);
+
+  rc = sqlite3_intck_open(db, zDb, 0, &pCk);
+  if( rc==SQLITE_OK ){
+    while( sqlite3_intck_step(pCk)==SQLITE_OK ){
+      const char *zMsg = sqlite3_intck_message(pCk);
+      if( zMsg ){
+        Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zMsg, -1));
+      }
+    }
+    rc = sqlite3_intck_error(pCk, &zErr);
+  }
+  if( rc!=SQLITE_OK ){
+    if( zErr ){
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(zErr, -1));
+    }else{
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    }
+  }else{
+    Tcl_SetObjResult(interp, pRet);
+  }
+  Tcl_DecrRefCount(pRet);
+  sqlite3_intck_close(pCk);
+  return rc ? TCL_ERROR : TCL_OK;
+}
+
 int Sqlitetestintck_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_intck", test_sqlite3_intck, 0, 0);
+  Tcl_CreateObjCommand(interp, "test_do_intck", test_do_intck, 0, 0);
   return TCL_OK;
 }

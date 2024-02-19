@@ -29,7 +29,7 @@ int sqlite3_intck_open(
   sqlite3_intck **ppOut
 );
 
-void sqlite3_intck_close(sqlite3_intck*);
+int sqlite3_intck_close(sqlite3_intck*);
 
 int sqlite3_intck_step(sqlite3_intck *pCk);
 
