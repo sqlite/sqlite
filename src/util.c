@@ -1069,7 +1069,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   assert( p->n>0 );
   assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
-  if( iRound<0 ){
+  if( iRound<=0 ){
     iRound = p->iDP - iRound;
     if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;
