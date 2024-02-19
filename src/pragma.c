@@ -2425,11 +2425,15 @@ void sqlite3Pragma(
   **               currently (2024-02-19) set to 2000, which is such that
   **               the worst case run-time for PRAGMA optimize on a 100MB
   **               database will usually be less than 100 milliseconds on
-  **               a RaspberryPI-4 class machine.  Off by default.
+  **               a RaspberryPI-4 class machine.  On by default.
+  **
+  **    0x00020    Run ANALYZE on any table that has a complete index
+  **               (an index without a WHERE clause) that lacks an entry
+  **               in the sqlite_stat1 table.  On by default.
   **
   **    0x10000    Look at tables to see if they need to be reanalyzed
-  **               even if they have not been queried during the current
-  **               connection.  Off by default.
+  **               due to growth or shrinkage even if they have not been
+  **               queried during the current connection.  Off by default.
   **
   ** The default MASK is and always shall be 0x0fffe.  In the current
   ** implementation, the default mask only covers the 0x00002 optimization,
@@ -2444,18 +2448,25 @@ void sqlite3Pragma(
   **
   ** (1) MASK bit 0x00002 is set.
   **
-  ** (2) Either the 0x10000 MASK bit is set or else the query planner used
-  **     sqlite_stat1-style statistics for one or more indexes of the table
-  **     at some point during the lifetime of the current connection.
+  ** (2) The table is an ordinary table, not a virtual table or view.
   **
-  ** (3) One or more indexes of the table are currently unanalyzed OR
-  **     the number of rows in the table has increased or decreased by
-  **     10-fold (the new size is either greater than 10 times the old
-  **     size or less than 1/10th of the old size).
+  ** (3) The table name does not begin with "sqlite_".
   **
-  ** (4) The table is an ordinary table, not a virtual table or view.
+  ** (4) One or more of the following is true:
+  **      (4a) The 0x10000 MASK bit is set.
+  **      (4b) One or more complete indexes on the table lacks an entry
+  **           in the sqlite_stat1 table.
+  **      (4c) The query planner used sqlite_stat1-style statistics for one
+  **           or more indexes of the tableat some point during the lifetime
+  **           of the current connection.
   **
-  ** (5) The table name does not begin with "sqlite_".
+  ** (5) One or more of the following is true:
+  **      (5a) One or mroe complete indexes on the table lacks an entry
+  **           in the sqlite_stat1 table.  (Same as 4a)
+  **      (5b) The number of rows in the table has increased or decreased by
+  **           10-fold.  In other words, the current size of the table is
+  **           10 times larger than the size in sqlite_stat1 or else the
+  **           current size is less than 1/10th the size in sqlite_stat1.
   **
   ** The rules for when tables are analyzed are likely to change in
   ** future releases.  Future versions of SQLite might accept a string
@@ -2473,7 +2484,7 @@ void sqlite3Pragma(
     char *zSubSql;         /* SQL statement for the OP_SqlExec opcode */
     u32 opMask;            /* Mask of operations to perform */
     int nLimit;            /* Analysis limit to use */
-    int once = 0;          /* One-time initialization done */
+    int nCheck = 0;        /* Number of tables to be optimized */
 
     if( zRight ){
       opMask = (u32)sqlite3Atoi(zRight);
@@ -2503,30 +2514,42 @@ void sqlite3Pragma(
         /* Do not scan system tables */
         if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) ) continue;
 
-        /* If table pTab has not been used in a way that would benefit from
-        ** having analysis statistics during the current session, then skip it,
-        ** unless the 0x10000 MASK bit is set. */
-        if( (pTab->tabFlags & TF_MaybeReanalyze)==0
-         && (opMask & 0x10000)==0
-        ){
-          continue;
-        }
-
-        /* Hold a write transaction open for efficiency */
-        if( !once || 1 ){
-          sqlite3BeginWriteOperation(pParse, 0, iDb);
-          once = 1;
-        }
-
-        /* Reanalyze if the table is 10 times larger or smaller than
-        ** the last analysis */
+        /* Find the size of the table as last recorded in sqlite_stat1.
+        ** If any complete index (index without a WHERE clause) is unanalyzed,
+        ** then the threshold is -1 to indicate a new, unanalyzed index
+        */
         szThreshold = pTab->nRowLogEst;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( !pIdx->hasStat1 ){
+          if( !pIdx->hasStat1 && pIdx->pPartIdxWhere==0 ){
             szThreshold = -1; /* Always analyze if any index lacks statistics */
             break;
           }
         }
+
+        /* If table pTab has not been used in a way that would benefit from
+        ** having analysis statistics during the current session, then skip it,
+        ** unless the 0x10000 MASK bit is set. */
+        if( (pTab->tabFlags & TF_MaybeReanalyze)!=0 ){
+          /* Check for size change if stat1 has been used for a query */
+        }else if( opMask & 0x10000 ){
+          /* Check for size change if 0x10000 is set */
+        }else if( pTab->pIndex!=0 && szThreshold<0 ){
+          /* Do analysis if unanalyzed complete indexes exists */
+        }else{
+          /* Otherwise, we can skip this table */
+          continue;
+        }
+
+        nCheck++;
+        if( nCheck==2 ){
+          /* If ANALYZE might be invoked two or more times, hold a write
+          ** transaction for efficiency */
+          sqlite3BeginWriteOperation(pParse, 0, iDb);
+        }
+
+        /* Reanalyze if the table is 10 times larger or smaller than
+        ** the last analysis.  Unconditional reanalysis if there are
+        ** unanalyzed complete indexes. */
         if( szThreshold>=0 ){
           LogEst iRange = 33;   /* 10x size change */
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
