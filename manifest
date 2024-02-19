@@ -1,5 +1,5 @@
-C Fix\srounding\sin\szero-precision\s%f\sand\s%g\sprintf\sconversions.\n[forum:/info/393708f4a8|Forum\spost\s393708f4a8].\s\sThis\sbug\swas\nintroduced\sby\scheck-in\s[32befb224b254639]\sand\sfirst\sappeared\sin\sversion\s3.43.0.
-D 2024-02-17T03:32:31.878
+C Extend\sthe\sstrerror_r()\sresult\stype\sdiscrepancy\scheck\sin\sos_unix.c\sto\sinclude\sthe\sAndroid\sNDK,\sas\sreported\sin\s[forum\spost\s3f13857fa4062301|forum:3f13857fa4062301].\sThe\sNDK's\sstrerror_r()\ssignature\sis\sversion-dependent,\swhereas\sthis\schange\sassumes\sint\sreturn\s(POSIX\ssemantic)\sacross\sall\sversions.
+D 2024-02-19T12:20:46.413
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -723,7 +723,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c fa9b81b642e60e77ffaf98bd1a2e5fde16c1c2317614ec178bf3bd5864772356
+F src/os_unix.c 8d7533b3b4d0d2d6ddd34d1ebc92f50a91f04e722a3a9295a000bc3c25128e2f
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff60e98138d2499082ac6230f01ac508aba545315debccfca2fd6042f5f10fcd
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c33c5db2e05019d1a375109f79ad8588a3c17f81e4f4b8d66c880c3c860e87e
-R e3e534a124d08ab0760f858683268942
-U drh
-Z 25ef9b1be0189ee473aa53bd8732a56c
+P 7fca1bc482fc2456d75392eb42f768fda72631c9070de46b8123b1126e78306f
+R a2e48d1032c74dc590366e533d9ce522
+U stephan
+Z f46d908a23e6be0d034c20949f0d6956
 # Remove this line to create a well-formed Fossil manifest.
