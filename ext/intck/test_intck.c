@@ -113,7 +113,7 @@ static int testIntckCmd(
 
     case 5: assert( 0==strcmp("test_sql", aCmd[iIdx].zName) ); {
       const char *zObj = Tcl_GetString(objv[2]);
-      const char *zSql = sqlite3_intck_test_sql(p->intck, zObj);
+      const char *zSql = sqlite3_intck_test_sql(p->intck, zObj[0] ? zObj : 0);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(zSql, -1));
       break;
     }

@@ -20,10 +20,10 @@ struct sqlite3_intck {
   sqlite3 *db;
   const char *zDb;                /* Copy of zDb parameter to _open() */
 
-  sqlite3_stmt *pListTables;
+  char *zObj;                     /* Current object. Or NULL. */
+  char *zKey;                     /* Key saved by _suspect() call. */
 
   sqlite3_stmt *pCheck;
-  int nCheck;
 
   int rc;                         /* SQLite error code */
   char *zErr;                     /* Error message */
@@ -58,11 +58,15 @@ static sqlite3_stmt *intckPrepare(sqlite3_intck *p, const char *zFmt, ...){
       p->rc = sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
       fflush(stdout);
       if( p->rc!=SQLITE_OK ){
+#if 1
       printf("ERROR: %s\n", zSql);
       printf("MSG: %s\n", sqlite3_errmsg(p->db));
+#endif
       if( sqlite3_error_offset(p->db)>=0 ){
+#if 1
         int iOff = sqlite3_error_offset(p->db);
         printf("AT: %.40s\n", &zSql[iOff]);
+#endif
       }
       fflush(stdout);
         intckSaveErrmsg(p);
@@ -82,27 +86,6 @@ static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
   }
 }
 
-/*
-** Return an SQL statement that will itself return a single row for each
-** table in the target schema. The row contains two columns:
-**
-**   0: table_name - name of table
-**   1: without_rowid - true for WITHOUT ROWID tables, false otherwise.
-**
-*/
-static sqlite3_stmt *intckListTables(sqlite3_intck *p){
-  return intckPrepare(p, 
-    "WITH tables(table_name) AS (" 
-    "  SELECT name"
-    "  FROM %Q.sqlite_schema WHERE type='table' OR type='index'"
-    "  UNION ALL "
-    "  SELECT 'sqlite_schema'"
-    ")"
-    "SELECT * FROM tables"
-    , p->zDb
-  );
-}
-
 static char *intckStrdup(sqlite3_intck *p, const char *zIn){
   char *zOut = 0;
   if( p->rc==SQLITE_OK ){
@@ -115,6 +98,42 @@ static char *intckStrdup(sqlite3_intck *p, const char *zIn){
     }
   }
   return zOut;
+}
+
+static void intckFindObject(sqlite3_intck *p){
+  sqlite3_stmt *pStmt = 0;
+  char *zPrev = p->zObj;
+  p->zObj = 0;
+
+  assert( p->rc==SQLITE_OK );
+  pStmt = intckPrepare(p, 
+    "WITH tables(table_name) AS (" 
+    "  SELECT name"
+    "  FROM %Q.sqlite_schema WHERE type='table' OR type='index'"
+    "  UNION ALL "
+    "  SELECT 'sqlite_schema'"
+    ")"
+    "SELECT table_name FROM tables "
+    "WHERE ?1 IS NULL OR table_name%s?1 "
+    "ORDER BY 1"
+    , p->zDb, (p->zKey ? ">=" : ">")
+  );
+
+  if( p->rc==SQLITE_OK ){
+    sqlite3_bind_text(pStmt, 1, zPrev, -1, SQLITE_TRANSIENT);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      p->zObj = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+    }
+  }
+  intckFinalize(p, pStmt);
+
+  /* If this is a new object, ensure the previous key value is cleared. */
+  if( sqlite3_stricmp(p->zObj, zPrev) ){
+    sqlite3_free(p->zKey);
+    p->zKey = 0;
+  }
+
+  sqlite3_free(zPrev);
 }
 
 /*
@@ -314,7 +333,11 @@ static void intckExec(sqlite3_intck *p, const char *zSql){
   intckFinalize(p, pStmt);
 }
 
-static char *intckCheckObjectSql(sqlite3_intck *p, const char *zObj){
+static char *intckCheckObjectSql(
+  sqlite3_intck *p, 
+  const char *zObj,
+  const char *zPrev
+){
   char *zRet = 0;
   sqlite3_stmt *pStmt = 0;
   int bAutoIndex = 0;
@@ -427,45 +450,61 @@ static char *intckCheckObjectSql(sqlite3_intck *p, const char *zObj){
       /* Table idxname contains a single row. The first column, "db", contains
       ** the name of the db containing the table (e.g. "main") and the second,
       ** "tab", the name of the table itself.  */
-      "WITH tabname(db, tab, idx) AS ("
-      "  SELECT %Q, (SELECT tbl_name FROM %Q.sqlite_schema WHERE name=%Q), %Q "
+      "WITH tabname(db, tab, idx, prev) AS ("
+      "  SELECT %Q, (SELECT tbl_name FROM %Q.sqlite_schema WHERE name=%Q), "
+      "         %Q, %Q "
       ")"
       "%s" /* zCommon */
       ""
       ", case_statement(c) AS ("
       "  SELECT "
-      "    'CASE WHEN (' || group_concat(col_alias, ', ') || ') IS (\n  ' "
+      "    'CASE WHEN (' || group_concat(col_alias, ', ') || ') IS (\n    ' "
       "    || 'SELECT ' || group_concat(col_expr, ', ') || ' FROM '"
-      "    || format('%%Q.%%Q NOT INDEXED WHERE %%s\n)', t.db, t.tab, p.eq_pk)"
-      "    || '\nTHEN NULL\n'"
+      "    || format('%%Q.%%Q NOT INDEXED WHERE %%s\n', t.db, t.tab, p.eq_pk)"
+      "    || '  )\n  THEN NULL\n  '"
       "    || 'ELSE format(''surplus entry ('"
       "    ||   group_concat('%%s', ',') || ',' || p.ps_pk"
       "    || ') in index ' || t.idx || ''', ' "
       "    ||   group_concat('quote('||i.col_alias||')', ', ') || ', ' || p.pk_pk"
       "    || ')'"
-      "    || '\nEND'"
+      "    || '\nEND AS error_message'"
       "  FROM tabname t, tabpk p, idx_cols i WHERE i.idx_name=t.idx"
+      ")"
       ""
+      ", thiskey(k) AS ("
+      "    SELECT format('format(''(%%s,%%s)'', %%s, %%s) AS thiskey', "
+      "        group_concat('%%s', ','), p.ps_pk, "
+      "        group_concat('quote('||i.col_alias||')',', '), p.pk_pk"
+      "    ) FROM tabpk p, idx_cols i WHERE i.idx_name=p.idx"
+      ")"
+      ""
+      ", whereclause(w_c) AS ("
+      "    SELECT CASE WHEN prev!='' THEN "
+      "    '\nWHERE (' || group_concat(i.col_alias, ',') || ',' "
+      "                || o_pk || ') > ' || prev"
+      "    ELSE ''"
+      "    END"
+      "    FROM tabpk, tabname, idx_cols i WHERE i.idx_name=tabpk.idx"
       ")"
       ""
       ", main_select(m) AS ("
       "  SELECT format("
-      "      'WITH %%s\nSELECT %%s\nFROM intck_wrapper AS o',"
-      "      ww.s, c"
+      "      'WITH %%s\nSELECT %%s,\n%%s\nFROM intck_wrapper AS o%%s',"
+      "      ww.s, c, t.k, whereclause.w_c"
       "  )"
-      "  FROM case_statement, wrapper_with ww"
+      "  FROM case_statement, wrapper_with ww, thiskey t, whereclause"
       ")"
 
       "SELECT m FROM main_select"
       , p->zDb, p->zDb, zObj, zObj
-      , zCommon
+      , zPrev, zCommon
       );
   }else{
     pStmt = intckPrepare(p,
       /* Table tabname contains a single row. The first column, "db", contains
       ** the name of the db containing the table (e.g. "main") and the second,
       ** "tab", the name of the table itself.  */
-      "WITH tabname(db, tab, idx) AS (SELECT %Q, %Q, NULL)"
+      "WITH tabname(db, tab, idx, prev) AS (SELECT %Q, %Q, NULL, %Q)"
       ""
       "%s" /* zCommon */
 
@@ -505,18 +544,41 @@ static char *intckCheckObjectSql(sqlite3_intck *p, const char *zObj){
       "    '\nEND AS error_message'"
       "    FROM numbered"
       ")"
+      ""
 
+      /* This table contains a single row consisting of a single value -
+      ** the text of an SQL expression that may be used by the main SQL
+      ** statement to output an SQL literal that can be used to resume
+      ** the scan if it is suspended. e.g. for a rowid table, an expression
+      ** like:
+      **
+      **     format('(%d,%d)', _rowid_, n.ii)
+      */
+      ", thiskey(k) AS ("
+      "    SELECT 'format(''(' || ps_pk || ',%%d)'', ' || pk_pk || ', n.ii)'"
+      "    FROM tabpk"
+      ")"
+      ""
+      ", whereclause(w_c) AS ("
+      "    SELECT CASE WHEN prev!='' THEN "
+      "    '\nWHERE (' || o_pk ||', n.ii) > ' || prev"
+      "    ELSE ''"
+      "    END"
+      "    FROM tabpk, tabname"
+      ")"
+      ""
       ", main_select(m) AS ("
       "  SELECT format("
-      "      '%%s, %%s\nSELECT %%s\nFROM intck_wrapper AS o"
-               ", intck_counter AS n ORDER BY %%s', "
-      "      w, ww.s, c, t.o_pk"
+      "      '%%s, %%s\nSELECT %%s,\n%%s AS thiskey\nFROM intck_wrapper AS o"
+               ", intck_counter AS n%%s\nORDER BY %%s', "
+      "      w, ww.s, c, thiskey.k, whereclause.w_c, t.o_pk"
       "  )"
-      "  FROM case_statement, tabpk t, counter_with, wrapper_with ww"
+      "  FROM case_statement, tabpk t, counter_with, "
+      "       wrapper_with ww, thiskey, whereclause"
       ")"
 
       "SELECT m FROM main_select",
-      p->zDb, zObj, zCommon
+      p->zDb, zObj, zPrev, zCommon
     );
   }
 
@@ -542,10 +604,11 @@ static char *intckCheckObjectSql(sqlite3_intck *p, const char *zObj){
 }
 
 static void intckCheckObject(sqlite3_intck *p){
-  const char *zTab = (const char*)sqlite3_column_text(p->pListTables, 0);
-  char *zSql = intckCheckObjectSql(p, zTab);
+  char *zSql = intckCheckObjectSql(p, p->zObj, p->zKey);
   p->pCheck = intckPrepare(p, "%s", zSql);
   sqlite3_free(zSql);
+  sqlite3_free(p->zKey);
+  p->zKey = 0;
 }
 
 int sqlite3_intck_open(
@@ -582,6 +645,8 @@ void sqlite3_intck_close(sqlite3_intck *p){
         p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
     );
   }
+  sqlite3_free(p->zObj);
+  sqlite3_free(p->zKey);
   sqlite3_free(p->zTestSql);
   sqlite3_free(p->zErr);
   sqlite3_free(p);
@@ -589,26 +654,19 @@ void sqlite3_intck_close(sqlite3_intck *p){
 
 int sqlite3_intck_step(sqlite3_intck *p){
   if( p->rc==SQLITE_OK ){
-    if( p->pListTables==0 ){
-      p->pListTables = intckListTables(p);
-    }
-    assert( p->pListTables || p->rc!=SQLITE_OK );
-
-    if( p->rc==SQLITE_OK && p->pCheck==0 ){
-      if( sqlite3_step(p->pListTables)==SQLITE_ROW ){
-        intckCheckObject(p);
-      }else{
-        int rc = sqlite3_finalize(p->pListTables);
-        if( rc==SQLITE_OK ){
-          p->rc = SQLITE_DONE;
+    if( p->pCheck==0 ){
+      intckFindObject(p);
+      if( p->rc==SQLITE_OK ){
+        if( p->zObj ){
+          intckCheckObject(p);
         }else{
-          intckSaveErrmsg(p);
+          p->rc = SQLITE_DONE;
         }
-        p->pListTables = 0;
       }
     }
 
     if( p->rc==SQLITE_OK ){
+      assert( p->pCheck );
       if( sqlite3_step(p->pCheck)==SQLITE_ROW ){
         /* Fine, whatever... */
       }else{
@@ -635,13 +693,28 @@ int sqlite3_intck_error(sqlite3_intck *p, const char **pzErr){
   return (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
 }
 
-int sqlite3_intck_suspend(sqlite3_intck *pCk){
-  return SQLITE_OK;
+int sqlite3_intck_suspend(sqlite3_intck *p){
+  if( p->pCheck && p->rc==SQLITE_OK ){
+    assert( p->zKey==0 );
+    p->zKey = intckStrdup(p, (const char*)sqlite3_column_text(p->pCheck, 1));
+    intckFinalize(p, p->pCheck);
+    p->pCheck = 0;
+  }
+  return p->rc;
 }
 
 const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
   sqlite3_free(p->zTestSql);
-  p->zTestSql = intckCheckObjectSql(p, zObj);
+  if( zObj ){
+    p->zTestSql = intckCheckObjectSql(p, zObj, 0);
+  }else{
+    if( p->zObj ){
+      p->zTestSql = intckCheckObjectSql(p, p->zObj, p->zKey);
+    }else{
+      sqlite3_free(p->zTestSql);
+      p->zTestSql = 0;
+    }
+  }
   return p->zTestSql;
 }
 

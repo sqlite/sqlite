@@ -15,7 +15,7 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
-proc do_intck {db} {
+proc do_intck {db {bSuspend 0}} {
   set ic [sqlite3_intck $db main ""]
 
   set ret [list]
@@ -24,6 +24,7 @@ proc do_intck {db} {
     if {$msg!=""} {
       lappend ret $msg
     }
+    if {$bSuspend} { $ic suspend }
   }
 
   set err [$ic error]
@@ -43,7 +44,8 @@ proc intck_sql {db tbl} {
 }
 
 proc do_intck_test {tn expect} {
-  uplevel [list do_test $tn [list do_intck db] [list {*}$expect]]
+  uplevel [list do_test $tn.a [list do_intck db] [list {*}$expect]]
+  uplevel [list do_test $tn.b [list do_intck db 1] [list {*}$expect]]
 }
 
 

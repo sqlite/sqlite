@@ -167,8 +167,8 @@ do_test 3.2 {
   sqlite3 db test.db
 } {}
 
-puts "[intck_sql db x1a]"
-execsql_pp "EXPLAIN QUERY PLAN [intck_sql db x1a]"
+#puts "[intck_sql db x1a]"
+#execsql_pp "EXPLAIN QUERY PLAN [intck_sql db x1a]"
 do_intck_test 3.3 { 
   {entry (4,'six',5) missing from index x1a}
 }
@@ -184,6 +184,11 @@ do_execsql_test 4.0 {
   CREATE INDEX w1 ON www( (x+1), z );
   INSERT INTO www VALUES(1, 1, 1), (2, 2, 2);
 }
+
+#puts [intck_sql db w1]
+#execsql_pp [intck_sql db www]
+#execsql_pp [intck_sql db w1]
+#puts [intck_sql db w1]
 
 do_intck_test 4.1 { }
 
