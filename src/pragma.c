@@ -2529,7 +2529,6 @@ void sqlite3Pragma(
             hasStat1 = 1;
           }else{
             szThreshold = -1; /* Always analyze if any index lacks statistics */
-            break;
           }
         }
 
