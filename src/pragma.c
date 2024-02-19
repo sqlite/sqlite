@@ -2427,9 +2427,8 @@ void sqlite3Pragma(
   **               database will usually be less than 100 milliseconds on
   **               a RaspberryPI-4 class machine.  On by default.
   **
-  **    0x00020    Run ANALYZE on any table that has a complete index
-  **               (an index without a WHERE clause) that lacks an entry
-  **               in the sqlite_stat1 table.  On by default.
+  **    0x00020    Run ANALYZE on any table that has a index that lacks an
+  **               entry in the sqlite_stat1 table.  On by default.
   **
   **    0x10000    Look at tables to see if they need to be reanalyzed
   **               due to growth or shrinkage even if they have not been
@@ -2454,14 +2453,14 @@ void sqlite3Pragma(
   **
   ** (4) One or more of the following is true:
   **      (4a) The 0x10000 MASK bit is set.
-  **      (4b) One or more complete indexes on the table lacks an entry
+  **      (4b) One or more indexes on the table lacks an entry
   **           in the sqlite_stat1 table.
   **      (4c) The query planner used sqlite_stat1-style statistics for one
   **           or more indexes of the tableat some point during the lifetime
   **           of the current connection.
   **
   ** (5) One or more of the following is true:
-  **      (5a) One or mroe complete indexes on the table lacks an entry
+  **      (5a) One or mroe indexes on the table lacks an entry
   **           in the sqlite_stat1 table.  (Same as 4a)
   **      (5b) The number of rows in the table has increased or decreased by
   **           10-fold.  In other words, the current size of the table is
@@ -2515,12 +2514,12 @@ void sqlite3Pragma(
         if( 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) ) continue;
 
         /* Find the size of the table as last recorded in sqlite_stat1.
-        ** If any complete index (index without a WHERE clause) is unanalyzed,
-        ** then the threshold is -1 to indicate a new, unanalyzed index
+        ** If any index is unanalyzed, then the threshold is -1 to
+        ** indicate a new, unanalyzed index
         */
         szThreshold = pTab->nRowLogEst;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( !pIdx->hasStat1 && pIdx->pPartIdxWhere==0 ){
+          if( !pIdx->hasStat1 ){
             szThreshold = -1; /* Always analyze if any index lacks statistics */
             break;
           }
@@ -2534,7 +2533,7 @@ void sqlite3Pragma(
         }else if( opMask & 0x10000 ){
           /* Check for size change if 0x10000 is set */
         }else if( pTab->pIndex!=0 && szThreshold<0 ){
-          /* Do analysis if unanalyzed complete indexes exists */
+          /* Do analysis if unanalyzed indexes exists */
         }else{
           /* Otherwise, we can skip this table */
           continue;
@@ -2549,7 +2548,7 @@ void sqlite3Pragma(
 
         /* Reanalyze if the table is 10 times larger or smaller than
         ** the last analysis.  Unconditional reanalysis if there are
-        ** unanalyzed complete indexes. */
+        ** unanalyzed indexes. */
         if( szThreshold>=0 ){
           LogEst iRange = 33;   /* 10x size change */
           sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
