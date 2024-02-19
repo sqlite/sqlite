@@ -2460,7 +2460,7 @@ void sqlite3Pragma(
   **           of the current connection.
   **
   ** (5) One or more of the following is true:
-  **      (5a) One or mroe indexes on the table lacks an entry
+  **      (5a) One or more indexes on the table lacks an entry
   **           in the sqlite_stat1 table.  (Same as 4a)
   **      (5b) The number of rows in the table has increased or decreased by
   **           10-fold.  In other words, the current size of the table is
@@ -2484,6 +2484,8 @@ void sqlite3Pragma(
     u32 opMask;            /* Mask of operations to perform */
     int nLimit;            /* Analysis limit to use */
     int nCheck = 0;        /* Number of tables to be optimized */
+    int nBtree = 0;        /* Number of btrees to scan */
+    int nIndex;            /* Number of indexes on the current table */
 
     if( zRight ){
       opMask = (u32)sqlite3Atoi(zRight);
@@ -2518,7 +2520,9 @@ void sqlite3Pragma(
         ** indicate a new, unanalyzed index
         */
         szThreshold = pTab->nRowLogEst;
+        nIndex = 0;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          nIndex++;
           if( !pIdx->hasStat1 ){
             szThreshold = -1; /* Always analyze if any index lacks statistics */
             break;
@@ -2545,6 +2549,7 @@ void sqlite3Pragma(
           ** transaction for efficiency */
           sqlite3BeginWriteOperation(pParse, 0, iDb);
         }
+        nBtree += nIndex+1;
 
         /* Reanalyze if the table is 10 times larger or smaller than
         ** the last analysis.  Unconditional reanalysis if there are
@@ -2572,6 +2577,21 @@ void sqlite3Pragma(
       }
     }
     sqlite3VdbeAddOp0(v, OP_Expire);
+
+    /* In a schema with a large number of tables and indexes, scale back
+    ** the analysis_limit to avoid excess run-time in the worst case.
+    */
+    if( !db->mallocFailed && nBtree>100 ){
+      int iAddr, iEnd;
+      VdbeOp *aOp;
+      int nLimit = 100*SQLITE_DEFAULT_OPTIMIZE_LIMIT/nBtree;
+      if( nLimit<100 ) nLimit = 100;
+      aOp = sqlite3VdbeGetOp(v, 0);
+      iEnd = sqlite3VdbeCurrentAddr(v);
+      for(iAddr=0; iAddr<iEnd; iAddr++){
+        if( aOp[iAddr].opcode==OP_SqlExec ) aOp[iAddr].p2 = nLimit;
+      }
+    }
     break;
   }
 
