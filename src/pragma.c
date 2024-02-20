@@ -2486,7 +2486,6 @@ void sqlite3Pragma(
     int nCheck = 0;        /* Number of tables to be optimized */
     int nBtree = 0;        /* Number of btrees to scan */
     int nIndex;            /* Number of indexes on the current table */
-    int hasStat1;          /* True if any STAT1 info available for the table */
 
     if( zRight ){
       opMask = (u32)sqlite3Atoi(zRight);
@@ -2521,13 +2520,10 @@ void sqlite3Pragma(
         ** indicate a new, unanalyzed index
         */
         szThreshold = pTab->nRowLogEst;
-        hasStat1 = (pTab->tabFlags & TF_HasStat1)!=0;
         nIndex = 0;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           nIndex++;
-          if( pIdx->hasStat1 ){
-            hasStat1 = 1;
-          }else{
+          if( !pIdx->hasStat1 ){
             szThreshold = -1; /* Always analyze if any index lacks statistics */
           }
         }
