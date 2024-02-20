@@ -16,12 +16,25 @@
 #include <assert.h>
 #include <stdio.h>
 
+/*
+** apKeyVal:
+**   If sqlite3_intck_suspend() is called when there is a running pCheck
+**   statement, this array is allocated and populated with the key values 
+**   required to restart the check. If the intck object has not been
+**   suspended, this is set to NULL.
+**
+** nKeyVal:
+**   The size of the apKeyVal[] array, if it is allocated.
+*/
 struct sqlite3_intck {
   sqlite3 *db;
   const char *zDb;                /* Copy of zDb parameter to _open() */
   char *zObj;                     /* Current object. Or NULL. */
-  char *zKey;                     /* Key saved by _intck_suspend() call. */
+
   sqlite3_stmt *pCheck;           /* Current check statement */
+  int nKeyVal;
+  sqlite3_value **apKeyVal;
+
   int rc;                         /* Error code */
   char *zErr;                     /* Error message */
   char *zTestSql;                 /* Returned by sqlite3_intck_test_sql() */
@@ -82,18 +95,117 @@ static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
   }
 }
 
-static char *intckStrdup(sqlite3_intck *p, const char *zIn){
-  char *zOut = 0;
+/*
+** Wrapper around sqlite3_malloc64() that uses the sqlite3_intck error
+** code convention.
+*/
+static void *intckMalloc(sqlite3_intck *p, sqlite3_int64 nByte){
+  void *pRet = 0;
+  assert( nByte>0 );
   if( p->rc==SQLITE_OK ){
-    int nIn = strlen(zIn);
-    zOut = sqlite3_malloc(nIn+1);
-    if( zOut==0 ){
+    pRet = sqlite3_malloc64(nByte);
+    if( pRet==0 ){
       p->rc = SQLITE_NOMEM;
-    }else{
-      memcpy(zOut, zIn, nIn+1);
     }
   }
+  return pRet;
+}
+
+/*
+** If p->rc is other than SQLITE_OK when this function is called, it
+** immediately returns NULL. Otherwise, it attempts to create a copy of
+** nul-terminated string zIn in a buffer obtained from sqlite3_malloc().
+** If successful, a pointer to this buffer is returned and it becomes
+** the responsibility of the caller to release it using sqlite3_free()
+** at some point in the future.
+**
+** Or, if an allocation fails within this function, p->rc is set to
+** SQLITE_NOMEM and NULL is returned.
+*/
+static char *intckStrdup(sqlite3_intck *p, const char *zIn){
+  char *zOut = 0;
+  int nIn = strlen(zIn);
+  zOut = (char*)intckMalloc(p, nIn+1);
+  if( zOut ){
+    memcpy(zOut, zIn, nIn+1);
+  }
   return zOut;
+}
+
+/*
+** A wrapper around sqlite3_mprintf() that:
+**
+**   + Always returns 0 if p->rc is other than SQLITE_OK when it is called, and
+**   + Sets p->rc to SQLITE_NOMEM if an allocation fails.
+*/
+static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
+  va_list ap;
+  char *zRet = 0;
+  va_start(ap, zFmt);
+  zRet = sqlite3_vmprintf(zFmt, ap);
+  if( p->rc==SQLITE_OK ){
+    if( zRet==0 ){
+      p->rc = SQLITE_NOMEM;
+    }
+  }else{
+    sqlite3_free(zRet);
+    zRet = 0;
+  }
+  return zRet;
+}
+
+/*
+** Free the sqlite3_intck.apKeyVal, if it is allocated and populated.
+*/
+static void intckSavedKeyClear(sqlite3_intck *p){
+  if( p->apKeyVal ){
+    int ii;
+    for(ii=0; ii<p->nKeyVal; ii++){
+      sqlite3_value_free(p->apKeyVal[ii]);
+    }
+    sqlite3_free(p->apKeyVal);
+    p->apKeyVal = 0;
+  }
+}
+
+/*
+** If the apKeyVal array is currently allocated and populated, return
+** a pointer to a buffer containing a nul-terminated string representing
+** the values as an SQL vector. e.g.
+**
+**   "('abc', NULL, 2)"
+**
+** If apKeyVal is not allocated, return NULL. Or, if an error (e.g. OOM) 
+** occurs within this function, set sqlite3_intck.rc before returning
+** and return NULL.
+*/
+static char *intckSavedKeyToText(sqlite3_intck *p){
+  char *zRet = 0;
+  if( p->apKeyVal ){
+    int ii;
+    const char *zSep = "SELECT '(' || ";
+    char *zSql = 0;
+    sqlite3_stmt *pStmt = 0;
+
+    for(ii=0; ii<p->nKeyVal; ii++){
+      zSql = intckMprintf(p, "%z%squote(?)", zSql, zSep);
+      zSep = " || ', ' || ";
+    }
+    zSql = intckMprintf(p, "%z || ')'", zSql);
+
+    pStmt = intckPrepare(p, "%s", zSql);
+    if( p->rc==SQLITE_OK ){
+      for(ii=0; ii<p->nKeyVal; ii++){
+        sqlite3_bind_value(pStmt, ii+1, p->apKeyVal[ii]);
+      }
+      if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        zRet = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+      }
+      intckFinalize(p, pStmt);
+    }
+    sqlite3_free(zSql);
+  }
+  return zRet;
 }
 
 static void intckFindObject(sqlite3_intck *p){
@@ -112,7 +224,7 @@ static void intckFindObject(sqlite3_intck *p){
     "SELECT table_name FROM tables "
     "WHERE ?1 IS NULL OR table_name%s?1 "
     "ORDER BY 1"
-    , p->zDb, (p->zKey ? ">=" : ">")
+    , p->zDb, (p->apKeyVal ? ">=" : ">")
   );
 
   if( p->rc==SQLITE_OK ){
@@ -125,8 +237,7 @@ static void intckFindObject(sqlite3_intck *p){
 
   /* If this is a new object, ensure the previous key value is cleared. */
   if( sqlite3_stricmp(p->zObj, zPrev) ){
-    sqlite3_free(p->zKey);
-    p->zKey = 0;
+    intckSavedKeyClear(p);
   }
 
   sqlite3_free(zPrev);
@@ -332,7 +443,8 @@ static void intckExec(sqlite3_intck *p, const char *zSql){
 static char *intckCheckObjectSql(
   sqlite3_intck *p, 
   const char *zObj,
-  const char *zPrev
+  const char *zPrev,
+  int *pnKeyVal                   /* OUT: Number of key-values for this scan */
 ){
   char *zRet = 0;
   sqlite3_stmt *pStmt = 0;
@@ -377,7 +489,16 @@ static char *intckCheckObjectSql(
       ")"
       ""
       ""
-      ", tabpk(db, tab, idx, o_pk, i_pk, q_pk, eq_pk, ps_pk, pk_pk) AS ("
+      /*
+      ** For a PK declared as "PRIMARY KEY(a, b) ... WITHOUT ROWID", where
+      ** the intck_wrapper aliases of "a" and "b" are "c1" and "c2":
+      **
+      **   o_pk:   "o.c1, o.c2"
+      **   i_pk:   "i.'a', i.'b'"
+      **   ...
+      **   n_pk:   2
+      */ 
+      ", tabpk(db, tab, idx, o_pk, i_pk, q_pk, eq_pk, ps_pk, pk_pk, n_pk) AS ("
       "    WITH pkfields(f, a) AS ("
       "      SELECT i.col_name, i.col_alias FROM idx_cols i WHERE i.idx_ispk"
       "    )"
@@ -390,7 +511,8 @@ static char *intckCheckObjectSql(
       "               group_concat(format('\"%w\"', f), ', ')"
       "           ),"
       "           group_concat('%s', ','),"
-      "           group_concat('quote('||a||')', ', ')  "
+      "           group_concat('quote('||a||')', ', '),  "
+      "           count(*)"
       "    FROM tabname t, pkfields"
       ")"
       ""
@@ -467,11 +589,10 @@ static char *intckCheckObjectSql(
       "  FROM tabname t, tabpk p, idx_cols i WHERE i.idx_name=t.idx"
       ")"
       ""
-      ", thiskey(k) AS ("
-      "    SELECT format('format(''(%%s,%%s)'', %%s, %%s) AS thiskey', "
-      "        group_concat('%%s', ','), p.ps_pk, "
-      "        group_concat('quote('||i.col_alias||')',', '), p.pk_pk"
-      "    ) FROM tabpk p, idx_cols i WHERE i.idx_name=p.idx"
+      ", thiskey(k, n) AS ("
+      "    SELECT group_concat(i.col_alias, ', ') || ', ' || p.o_pk, "
+      "           count(*) + p.n_pk "
+      "    FROM tabpk p, idx_cols i WHERE i.idx_name=p.idx"
       ")"
       ""
       ", whereclause(w_c) AS ("
@@ -483,15 +604,15 @@ static char *intckCheckObjectSql(
       "    FROM tabpk, tabname, idx_cols i WHERE i.idx_name=tabpk.idx"
       ")"
       ""
-      ", main_select(m) AS ("
+      ", main_select(m, n) AS ("
       "  SELECT format("
       "      'WITH %%s\nSELECT %%s,\n%%s\nFROM intck_wrapper AS o%%s',"
       "      ww.s, c, t.k, whereclause.w_c"
-      "  )"
+      "  ), t.n"
       "  FROM case_statement, wrapper_with ww, thiskey t, whereclause"
       ")"
 
-      "SELECT m FROM main_select"
+      "SELECT m, n FROM main_select"
       , p->zDb, p->zDb, zObj, zObj
       , zPrev, zCommon
       );
@@ -549,9 +670,8 @@ static char *intckCheckObjectSql(
       **
       **     format('(%d,%d)', _rowid_, n.ii)
       */
-      ", thiskey(k) AS ("
-      "    SELECT 'format(''(' || ps_pk || ',%%d)'', ' || pk_pk || ', n.ii)'"
-      "    FROM tabpk"
+      ", thiskey(k, n) AS ("
+      "    SELECT o_pk || ', n.ii', n_pk+1 FROM tabpk"
       ")"
       ""
       ", whereclause(w_c) AS ("
@@ -562,17 +682,17 @@ static char *intckCheckObjectSql(
       "    FROM tabpk, tabname"
       ")"
       ""
-      ", main_select(m) AS ("
+      ", main_select(m, n) AS ("
       "  SELECT format("
       "      '%%s, %%s\nSELECT %%s,\n%%s AS thiskey\nFROM intck_wrapper AS o"
                ", intck_counter AS n%%s\nORDER BY %%s', "
       "      w, ww.s, c, thiskey.k, whereclause.w_c, t.o_pk"
-      "  )"
+      "  ), thiskey.n"
       "  FROM case_statement, tabpk t, counter_with, "
       "       wrapper_with ww, thiskey, whereclause"
       ")"
 
-      "SELECT m FROM main_select",
+      "SELECT m, n FROM main_select",
       p->zDb, zObj, zPrev, zCommon
     );
   }
@@ -590,6 +710,9 @@ static char *intckCheckObjectSql(
     fflush(stdout);
 #else
     zRet = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+    if( pnKeyVal ){
+      *pnKeyVal = sqlite3_column_int(pStmt, 1);
+    }
 #endif
   }
   intckFinalize(p, pStmt);
@@ -599,11 +722,14 @@ static char *intckCheckObjectSql(
 }
 
 static void intckCheckObject(sqlite3_intck *p){
-  char *zSql = intckCheckObjectSql(p, p->zObj, p->zKey);
+  char *zSql = 0;
+  char *zKey = 0;
+  zKey = intckSavedKeyToText(p);
+  zSql = intckCheckObjectSql(p, p->zObj, zKey, &p->nKeyVal);
   p->pCheck = intckPrepare(p, "%s", zSql);
   sqlite3_free(zSql);
-  sqlite3_free(p->zKey);
-  p->zKey = 0;
+  sqlite3_free(zKey);
+  intckSavedKeyClear(p);
 }
 
 int sqlite3_intck_open(
@@ -644,7 +770,7 @@ int sqlite3_intck_close(sqlite3_intck *p){
       );
     }
     sqlite3_free(p->zObj);
-    sqlite3_free(p->zKey);
+    intckSavedKeyClear(p);
     sqlite3_free(p->zTestSql);
     sqlite3_free(p->zErr);
     sqlite3_free(p);
@@ -668,12 +794,13 @@ int sqlite3_intck_step(sqlite3_intck *p){
     if( p->rc==SQLITE_OK ){
       assert( p->pCheck );
       if( sqlite3_step(p->pCheck)==SQLITE_ROW ){
-        /* Fine, whatever... */
+        /* Normal case, do nothing. */
       }else{
         if( sqlite3_finalize(p->pCheck)!=SQLITE_OK ){
           intckSaveErrmsg(p);
         }
         p->pCheck = 0;
+        p->nKeyVal = 0;
       }
     }
   }
@@ -693,10 +820,27 @@ int sqlite3_intck_error(sqlite3_intck *p, const char **pzErr){
   return (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
 }
 
+
+static sqlite3_value *intckValueDup(sqlite3_intck *p, sqlite3_value *pIn){
+  sqlite3_value *pRet = 0;
+  if( p->rc==SQLITE_OK ){
+    pRet = sqlite3_value_dup(pIn);
+    if( pRet==0 ){
+      p->rc = SQLITE_NOMEM;
+    }
+  }
+  return pRet;
+}
+
 int sqlite3_intck_suspend(sqlite3_intck *p){
   if( p->pCheck && p->rc==SQLITE_OK ){
-    assert( p->zKey==0 );
-    p->zKey = intckStrdup(p, (const char*)sqlite3_column_text(p->pCheck, 1));
+    const int nByte = sizeof(sqlite3_value*) * p->nKeyVal;
+    int ii;
+    assert( p->apKeyVal==0 && p->nKeyVal>0 );
+    p->apKeyVal = (sqlite3_value**)intckMalloc(p, nByte);
+    for(ii=0; p->rc==SQLITE_OK && ii<p->nKeyVal; ii++){
+      p->apKeyVal[ii] = intckValueDup(p, sqlite3_column_value(p->pCheck, ii+1));
+    }
     intckFinalize(p, p->pCheck);
     p->pCheck = 0;
   }
@@ -706,10 +850,12 @@ int sqlite3_intck_suspend(sqlite3_intck *p){
 const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
   sqlite3_free(p->zTestSql);
   if( zObj ){
-    p->zTestSql = intckCheckObjectSql(p, zObj, 0);
+    p->zTestSql = intckCheckObjectSql(p, zObj, 0, 0);
   }else{
     if( p->zObj ){
-      p->zTestSql = intckCheckObjectSql(p, p->zObj, p->zKey);
+      char *zKey = intckSavedKeyToText(p);
+      p->zTestSql = intckCheckObjectSql(p, p->zObj, zKey, 0);
+      sqlite3_free(zKey);
     }else{
       sqlite3_free(p->zTestSql);
       p->zTestSql = 0;

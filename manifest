@@ -1,5 +1,5 @@
-C Consider\susing\s"="\sand\sIS\soperators\swith\seven\slow-quality\sindexes\sin\scases\swhere\sthey\sare\sselected\sexplicitly\susing\san\sINDEXED\sBY\sclause.
-D 2024-02-20T16:04:27.694
+C Use\sfewer\scycles\sto\sgenerate\sthe\s"next\skey"\svalue\sused\sby\ssqlite3_intck_suspend()\sfunction\sin\sthe\sintck\sextension.
+D 2024-02-20T18:17:06.096
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -251,7 +251,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/intck/intck1.test 5b3c9800e119b4dd50a381974f34cee6cfd5b7434286fb8da83b7c8ff1d6bb3c
 F ext/intck/intck2.test b65d7f627342f767e1d2c447d25619666cec36f516786dd56568bd741e5d7e67
 F ext/intck/intck_common.tcl 2895854e7aaf5e199a15f6f82538a00999fd8fc55553bc1f04619af7aa86c0d0
-F ext/intck/sqlite3intck.c 5f319b7c72b0c01cfa28bb5fdd19be5781eb11f5a5216af2a0870dc7e001414d
+F ext/intck/sqlite3intck.c 7a795f23424a29f656f3d4c7b83d23484746b57cdc25d3fb98ec805d017fc935
 F ext/intck/sqlite3intck.h d9501ea480b7c41c0555f39f4f1b7c3e8d54fc1ea6d115de5e1211e0bc11d3e7
 F ext/intck/test_intck.c 06206b35f1428961015c060dd35201246c849625cfdff461e0eeaaf76bda545c
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
@@ -2168,8 +2168,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c01e008c28895e50b14531b2a1f3f1110aab3b54df41ebdbd416fbac7b1bba94
-R 8db173421c176ccb487011bd9440e123
+P 43cbbea82132db2d0ddb4f34cc2b6910b3a1243ae6d4e837b1b27bfe91b84834
+R 9dcf98c64d0302d62dce4c3c1b529641
 U dan
-Z d4e70ffeb295fbc1a103b9adca306ecc
+Z c2dbf2f2090bfeaba66446a197f3ad62
 # Remove this line to create a well-formed Fossil manifest.
