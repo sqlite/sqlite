@@ -2557,16 +2557,15 @@ void sqlite3Pragma(
         /* Reanalyze if the table is 10 times larger or smaller than
         ** the last analysis.  Unconditional reanalysis if there are
         ** unanalyzed indexes. */
+        sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
         if( szThreshold>=0 ){
           const LogEst iRange = 33;   /* 10x size change */
-          sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
           sqlite3VdbeAddOp4Int(v, OP_IfSizeBetween, iTabCur,
                          sqlite3VdbeCurrentAddr(v)+2+(opMask&1),
                          szThreshold>=iRange ? szThreshold-iRange : -1,
                          szThreshold+iRange);
           VdbeCoverage(v);
-        }else if( !hasStat1 ){
-          sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
+        }else{
           sqlite3VdbeAddOp2(v, OP_Rewind, iTabCur,
                          sqlite3VdbeCurrentAddr(v)+2+(opMask&1));
           VdbeCoverage(v);
