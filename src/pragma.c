@@ -2427,9 +2427,6 @@ void sqlite3Pragma(
   **               database will usually be less than 100 milliseconds on
   **               a RaspberryPI-4 class machine.  On by default.
   **
-  **    0x00020    Run ANALYZE on any table that has a index that lacks an
-  **               entry in the sqlite_stat1 table.  On by default.
-  **
   **    0x10000    Look at tables to see if they need to be reanalyzed
   **               due to growth or shrinkage even if they have not been
   **               queried during the current connection.  Off by default.
@@ -2456,7 +2453,7 @@ void sqlite3Pragma(
   **      (4b) One or more indexes on the table lacks an entry
   **           in the sqlite_stat1 table.
   **      (4c) The query planner used sqlite_stat1-style statistics for one
-  **           or more indexes of the tableat some point during the lifetime
+  **           or more indexes of the table at some point during the lifetime
   **           of the current connection.
   **
   ** (5) One or more of the following is true:
