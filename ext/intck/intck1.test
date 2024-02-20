@@ -106,7 +106,7 @@ do_eqp_test 1.6.2 {
 reset_db
 
 do_test 2.0 {
-  set ic [sqlite3_intck db main ""]
+  set ic [sqlite3_intck db main]
   $ic close
 } {}
 

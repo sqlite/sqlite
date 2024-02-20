@@ -16,7 +16,7 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 
 proc do_intck {db {bSuspend 0}} {
-  set ic [sqlite3_intck $db main ""]
+  set ic [sqlite3_intck $db main]
 
   set ret [list]
   while {"SQLITE_OK"==[$ic step]} {
@@ -37,7 +37,7 @@ proc do_intck {db {bSuspend 0}} {
 }
 
 proc intck_sql {db tbl} {
-  set ic [sqlite3_intck $db main ""]
+  set ic [sqlite3_intck $db main]
   set sql [$ic test_sql $tbl]
   $ic close
   return $sql

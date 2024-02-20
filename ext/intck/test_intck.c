@@ -132,7 +132,7 @@ static void testIntckFree(void *clientData){
 }
 
 /*
-** tclcmd: sqlite3_intck DB DBNAME PATH
+** tclcmd: sqlite3_intck DB DBNAME
 */
 static int test_sqlite3_intck(
   void * clientData,
@@ -149,8 +149,8 @@ static int test_sqlite3_intck(
   const char *zFile = 0;
   int rc = SQLITE_OK;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME PATH");
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
     return TCL_ERROR;
   }
 
@@ -161,9 +161,8 @@ static int test_sqlite3_intck(
     return TCL_ERROR;
   }
   zDb = Tcl_GetString(objv[2]);
-  zFile = Tcl_GetString(objv[3]);
 
-  rc = sqlite3_intck_open(db, zDb, zFile, &p->intck);
+  rc = sqlite3_intck_open(db, zDb, &p->intck);
   if( rc!=SQLITE_OK ){
     ckfree(p);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3_errstr(rc), -1));
@@ -207,7 +206,7 @@ static int test_do_intck(
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
 
-  rc = sqlite3_intck_open(db, zDb, 0, &pCk);
+  rc = sqlite3_intck_open(db, zDb, &pCk);
   if( rc==SQLITE_OK ){
     while( sqlite3_intck_step(pCk)==SQLITE_OK ){
       const char *zMsg = sqlite3_intck_message(pCk);

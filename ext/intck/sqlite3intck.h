@@ -25,11 +25,10 @@ typedef struct sqlite3_intck sqlite3_intck;
 int sqlite3_intck_open(
   sqlite3 *db, 
   const char *zDb, 
-  const char *zFile, 
   sqlite3_intck **ppOut
 );
 
-int sqlite3_intck_close(sqlite3_intck*);
+void sqlite3_intck_close(sqlite3_intck*);
 
 int sqlite3_intck_step(sqlite3_intck *pCk);
 

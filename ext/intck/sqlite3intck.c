@@ -35,6 +35,9 @@ struct sqlite3_intck {
   int nKeyVal;
   sqlite3_value **apKeyVal;
 
+  char *zMessage;
+  int bCorruptSchema;
+
   int rc;                         /* Error code */
   char *zErr;                     /* Error message */
   char *zTestSql;                 /* Returned by sqlite3_intck_test_sql() */
@@ -67,12 +70,12 @@ static sqlite3_stmt *intckPrepare(sqlite3_intck *p, const char *zFmt, ...){
       p->rc = sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
       fflush(stdout);
       if( p->rc!=SQLITE_OK ){
-#if 1
+#if 0
       printf("ERROR: %s\n", zSql);
       printf("MSG: %s\n", sqlite3_errmsg(p->db));
 #endif
       if( sqlite3_error_offset(p->db)>=0 ){
-#if 1
+#if 0
         int iOff = sqlite3_error_offset(p->db);
         printf("AT: %.40s\n", &zSql[iOff]);
 #endif
@@ -208,12 +211,19 @@ static char *intckSavedKeyToText(sqlite3_intck *p){
   return zRet;
 }
 
+/*
+** Find the next database object (table or index) to check. If successful,
+** set sqlite3_intck.zObj to point to a nul-terminated buffer containing
+** the object's name before returning.
+*/
 static void intckFindObject(sqlite3_intck *p){
   sqlite3_stmt *pStmt = 0;
   char *zPrev = p->zObj;
   p->zObj = 0;
 
   assert( p->rc==SQLITE_OK );
+  assert( p->pCheck==0 );
+
   pStmt = intckPrepare(p, 
     "WITH tables(table_name) AS (" 
     "  SELECT name"
@@ -735,7 +745,6 @@ static void intckCheckObject(sqlite3_intck *p){
 int sqlite3_intck_open(
   sqlite3 *db,                    /* Database handle to operate on */
   const char *zDbArg,             /* "main", "temp" etc. */
-  const char *zFile,              /* Path to save-state db on disk (or NULL) */
   sqlite3_intck **ppOut           /* OUT: New integrity-check handle */
 ){
   sqlite3_intck *pNew = 0;
@@ -760,10 +769,8 @@ int sqlite3_intck_open(
   return rc;
 }
 
-int sqlite3_intck_close(sqlite3_intck *p){
-  int rc = SQLITE_OK;
+void sqlite3_intck_close(sqlite3_intck *p){
   if( p ){
-    rc = (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
     if( p->db ){
       sqlite3_create_function(
           p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
@@ -775,11 +782,19 @@ int sqlite3_intck_close(sqlite3_intck *p){
     sqlite3_free(p->zErr);
     sqlite3_free(p);
   }
-  return rc;
 }
 
 int sqlite3_intck_step(sqlite3_intck *p){
   if( p->rc==SQLITE_OK ){
+
+    if( p->zMessage ){
+      sqlite3_free(p->zMessage);
+      p->zMessage = 0;
+    }
+
+    if( p->bCorruptSchema ){
+      p->rc = SQLITE_DONE;
+    }else
     if( p->pCheck==0 ){
       intckFindObject(p);
       if( p->rc==SQLITE_OK ){
@@ -788,19 +803,29 @@ int sqlite3_intck_step(sqlite3_intck *p){
         }else{
           p->rc = SQLITE_DONE;
         }
+      }else if( p->rc==SQLITE_CORRUPT ){
+        p->rc = SQLITE_OK;
+        p->zMessage = intckStrdup(p, 
+            "corruption found while reading database schema"
+        );
+        p->bCorruptSchema = 1;
       }
     }
 
-    if( p->rc==SQLITE_OK ){
-      assert( p->pCheck );
+    if( p->pCheck ){
+      assert( p->rc==SQLITE_OK );
       if( sqlite3_step(p->pCheck)==SQLITE_ROW ){
         /* Normal case, do nothing. */
       }else{
-        if( sqlite3_finalize(p->pCheck)!=SQLITE_OK ){
-          intckSaveErrmsg(p);
-        }
+        intckFinalize(p, p->pCheck);
         p->pCheck = 0;
         p->nKeyVal = 0;
+        if( p->rc==SQLITE_CORRUPT ){
+          p->rc = SQLITE_OK;
+          p->zMessage = intckMprintf(p, 
+              "corruption found while scanning database object %s", p->zObj
+          );
+        }
       }
     }
   }
@@ -809,6 +834,10 @@ int sqlite3_intck_step(sqlite3_intck *p){
 }
 
 const char *sqlite3_intck_message(sqlite3_intck *p){
+  assert( p->pCheck==0 || p->zMessage==0 );
+  if( p->zMessage ){
+    return p->zMessage;
+  }
   if( p->pCheck ){
     return (const char*)sqlite3_column_text(p->pCheck, 0);
   }

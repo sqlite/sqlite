@@ -1,5 +1,5 @@
-C Use\sfewer\scycles\sto\sgenerate\sthe\s"next\skey"\svalue\sused\sby\ssqlite3_intck_suspend()\sfunction\sin\sthe\sintck\sextension.
-D 2024-02-20T18:17:06.096
+C Have\sthe\sintck\sextension\sbetter\shandle\scorruption\sat\sthe\sb-tree\slayer.
+D 2024-02-20T20:18:02.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -248,12 +248,13 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/intck/intck1.test 5b3c9800e119b4dd50a381974f34cee6cfd5b7434286fb8da83b7c8ff1d6bb3c
+F ext/intck/intck1.test 15e94ee868e939c6d3aef6884c5652d969b28d3eac940a15585511cf8aec71ad
 F ext/intck/intck2.test b65d7f627342f767e1d2c447d25619666cec36f516786dd56568bd741e5d7e67
-F ext/intck/intck_common.tcl 2895854e7aaf5e199a15f6f82538a00999fd8fc55553bc1f04619af7aa86c0d0
-F ext/intck/sqlite3intck.c 7a795f23424a29f656f3d4c7b83d23484746b57cdc25d3fb98ec805d017fc935
-F ext/intck/sqlite3intck.h d9501ea480b7c41c0555f39f4f1b7c3e8d54fc1ea6d115de5e1211e0bc11d3e7
-F ext/intck/test_intck.c 06206b35f1428961015c060dd35201246c849625cfdff461e0eeaaf76bda545c
+F ext/intck/intck_common.tcl 6e5df126e55d6a0d7e3be9757400d5fb87bd291726d01b72a9fe77a7201967e4
+F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
+F ext/intck/sqlite3intck.c 0f9674952f84084741eb4e945d7532b02996ba8ea938b060228d7874f15557f9
+F ext/intck/sqlite3intck.h dec4a37584024154ad5734cf6ee98dc484ce25c26af88652a096be402fe51833
+F ext/intck/test_intck.c eb84e825a3a0fd43ae1e4280305280a19c9ef42c2bdef3110b282b115de60463
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
 F ext/jni/README.md d899789a9082a07b99bf30b1bbb6204ae57c060efcaa634536fa669323918f42
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
@@ -2168,8 +2169,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43cbbea82132db2d0ddb4f34cc2b6910b3a1243ae6d4e837b1b27bfe91b84834
-R 9dcf98c64d0302d62dce4c3c1b529641
+P 95f01426f948cf435d0b400dc7ae06fa699eee32cff498fe77e74a1257a4e09b
+R 2f81579b76b29691695c15522ce87fed
 U dan
-Z c2dbf2f2090bfeaba66446a197f3ad62
+Z 5af5831e9af2fce3b2d0c2673f03eefa
 # Remove this line to create a well-formed Fossil manifest.
