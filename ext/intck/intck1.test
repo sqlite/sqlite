@@ -88,6 +88,20 @@ do_catchsql_test 1.5.4 {
 } {1 {unsupported use of NULLS FIRST}}
 
 
+reset_db
+do_execsql_test 1.6.1 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  ANALYZE;
+  INSERT INTO sqlite_stat1 VALUES('t1', 'i1', '10000 10000');
+  ANALYZE sqlite_schema;
+} {}
+do_eqp_test 1.6.2 {
+  SELECT 1 FROM t1 INDEXED BY i1 WHERE (b, i) IS (?, ?);
+} {SEARCH}
+
+
+
 #-------------------------------------------------------------------------
 reset_db
 

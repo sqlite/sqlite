@@ -1,5 +1,5 @@
-C Use\smore\sefficient\sSQL\sto\sverify\sthat\sindexes\scontain\sentries\sthat\smatch\stheir\stables.
-D 2024-02-19T20:15:44.802
+C Consider\susing\s"="\sand\sIS\soperators\swith\seven\slow-quality\sindexes\sin\scases\swhere\sthey\sare\sselected\sexplicitly\susing\san\sINDEXED\sBY\sclause.
+D 2024-02-20T16:04:27.694
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -248,7 +248,7 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/intck/intck1.test c831bc6ff67da3c5b6c9568640f87ad0442d4fc98ef97bc837133b94bcc645b3
+F ext/intck/intck1.test 5b3c9800e119b4dd50a381974f34cee6cfd5b7434286fb8da83b7c8ff1d6bb3c
 F ext/intck/intck2.test b65d7f627342f767e1d2c447d25619666cec36f516786dd56568bd741e5d7e67
 F ext/intck/intck_common.tcl 2895854e7aaf5e199a15f6f82538a00999fd8fc55553bc1f04619af7aa86c0d0
 F ext/intck/sqlite3intck.c 5f319b7c72b0c01cfa28bb5fdd19be5781eb11f5a5216af2a0870dc7e001414d
@@ -830,7 +830,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 0e7bf004a578eb70d54300503fdbcaaea857de6ba0204aae1adf572edb79c2c6
+F src/where.c 33eaaeef3aef10c2b9e82096e70a174d6636e35cb0b180321b8ddf804590e5cd
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2168,8 +2168,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c36ada868da74e030ff5002de1f3b31b639b0c43714b91c2e5ca0eda16bb6bc2
-R 830041ceb0564db12655be53580aeb6a
+P c01e008c28895e50b14531b2a1f3f1110aab3b54df41ebdbd416fbac7b1bba94
+R 8db173421c176ccb487011bd9440e123
 U dan
-Z f8e44044aacffa331f677c80763fe8b6
+Z d4e70ffeb295fbc1a103b9adca306ecc
 # Remove this line to create a well-formed Fossil manifest.
