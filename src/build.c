@@ -2923,11 +2923,11 @@ void sqlite3EndTable(
     /* Test for cycles in generated columns and illegal expressions
     ** in CHECK constraints and in DEFAULT clauses. */
     if( p->tabFlags & TF_HasGenerated ){
-      sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+      sqlite3VdbeAddOp4(v, OP_SqlExec, 0x0001, 0, 0,
              sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
                    db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
     }
-    sqlite3VdbeAddOp4(v, OP_SqlExec, 1, 0, 0,
+    sqlite3VdbeAddOp4(v, OP_SqlExec, 0x0001, 0, 0,
            sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
                  db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
