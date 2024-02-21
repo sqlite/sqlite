@@ -1,5 +1,5 @@
-C Fixes\sto\scomments\sassociated\swith\sthe\srecent\sPRAGMA\soptimize\senhancements.\nNo\schanges\sto\scode.
-D 2024-02-20T15:38:36.661
+C Fix\stypo\sin\scomment.\s[https://fossil-scm.org/forum/forumpost/cc20266bf2|Fossil\sforum\spost\scc20266bf2].
+D 2024-02-21T20:21:46.267
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/parse.y bfd6da46fc895cd8237400ff485d04ab0b32e47eb56de20982bb7f53e56c1f42
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c f5cb82c15b7455d42e748cad8a6c367db18ada0fadc9b4adba03de953a81d46a
+F src/pragma.c 65ec09bbe7322ebbe2ca3a77405ae8df3c85d2c58c122f544a173813940ce3fc
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 10e8bad30042f8bd6114a013b4afc229ec8ad255ab27518d7d9f52e8cbc5cd0a
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c9886b692706723f4b68f58dfef07ab19b192fd19b953917f23b55655af3e02
-R 40f50207938b86842b8686e871138379
+P 27a2113d78b35e324e9aedda7403c96c56ad0bed8c6b139fc5a179e8800b9109
+R 1a616a32dc6ef4389da85028142db3e7
 U drh
-Z 751534f3f8e8461179e5c9344b944b7a
+Z 046bb5ba6f502774560061e8a489ed3b
 # Remove this line to create a well-formed Fossil manifest.
