@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2024-02-21T16:12:23.138
+C Ensure\sintck\stests\sare\srun\sby\stestrunner.tcl.
+D 2024-02-21T16:15:50.181
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1487,7 +1487,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test 6aa33756b950c4529f79c4f3817a9a1e4025bd0d9961571a05c0279bd183d9c6
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test f7caf8dd5c7b1da74842a48df116f7f193399c656d4ffc805cd0d9658568c675
+F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test cddd4b534d7fb5cf113d1308dea4231f3548e8a7f3a65d7d1cf4810c87090b5a
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2169,8 +2169,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ecd775d108f77d39a1303316c1e0f0b0ae3ffc5218222e1ebfe2ef6783829b85 27a2113d78b35e324e9aedda7403c96c56ad0bed8c6b139fc5a179e8800b9109
-R 73b41ee05e607fc52a1cc8e54ddf3838
+P 63e8846ac1dc1cf1f7071c4634ccbfec3c13560db6afec376cd91515b62430d3
+R f5edb7901b3b1288ef6973d26c0dbe97
 U dan
-Z 458475bfe24db2c8e52b55b2e9078f6a
+Z 5466cb7224bcaecbaa43fd497cf85347
 # Remove this line to create a well-formed Fossil manifest.
