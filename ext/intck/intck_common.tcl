@@ -24,7 +24,7 @@ proc do_intck {db {bSuspend 0}} {
     if {$msg!=""} {
       lappend ret $msg
     }
-    if {$bSuspend} { $ic suspend }
+    if {$bSuspend} { $ic unlock }
   }
 
   set err [$ic error]

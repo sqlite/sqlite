@@ -49,7 +49,7 @@ static int testIntckCmd(
     {"step", 0, ""},         /* 1 */
     {"message", 0, ""},      /* 2 */
     {"error", 0, ""},        /* 3 */
-    {"suspend", 0, ""},      /* 4 */
+    {"unlock", 0, ""},      /* 4 */
     {"test_sql", 1, ""},     /* 5 */
     {0 , 0}
   };
@@ -105,8 +105,8 @@ static int testIntckCmd(
       break;
     }
 
-    case 4: assert( 0==strcmp("suspend", aCmd[iIdx].zName) ); {
-      int rc = sqlite3_intck_suspend(p->intck);
+    case 4: assert( 0==strcmp("unlock", aCmd[iIdx].zName) ); {
+      int rc = sqlite3_intck_unlock(p->intck);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       break;
     }
@@ -146,7 +146,6 @@ static int test_sqlite3_intck(
   TestIntck *p = 0;
   sqlite3 *db = 0;
   const char *zDb = 0;
-  const char *zFile = 0;
   int rc = SQLITE_OK;
 
   if( objc!=3 ){

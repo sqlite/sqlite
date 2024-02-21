@@ -18,7 +18,7 @@
 
 /*
 ** apKeyVal:
-**   If sqlite3_intck_suspend() is called when there is a running pCheck
+**   If sqlite3_intck_unlock() is called when there is a running pCheck
 **   statement, this array is allocated and populated with the key values 
 **   required to restart the check. If the intck object has not been
 **   suspended, this is set to NULL.
@@ -845,7 +845,7 @@ const char *sqlite3_intck_message(sqlite3_intck *p){
 }
 
 int sqlite3_intck_error(sqlite3_intck *p, const char **pzErr){
-  *pzErr = p->zErr;
+  if( pzErr ) *pzErr = p->zErr;
   return (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
 }
 
@@ -861,7 +861,7 @@ static sqlite3_value *intckValueDup(sqlite3_intck *p, sqlite3_value *pIn){
   return pRet;
 }
 
-int sqlite3_intck_suspend(sqlite3_intck *p){
+int sqlite3_intck_unlock(sqlite3_intck *p){
   if( p->pCheck && p->rc==SQLITE_OK ){
     const int nByte = sizeof(sqlite3_value*) * p->nKeyVal;
     int ii;
