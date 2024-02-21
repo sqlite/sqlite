@@ -1,5 +1,5 @@
-C Simplify\sthe\sway\sthe\srestart\skey\sis\ssaved\sinternally\sby\sthe\sintck\sextension.
-D 2024-02-21T19:31:00.293
+C Fix\svarious\sissues\sin\ssqlite3intck.c.
+D 2024-02-21T20:58:48.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -252,7 +252,7 @@ F ext/intck/intck1.test 15e94ee868e939c6d3aef6884c5652d969b28d3eac940a15585511cf
 F ext/intck/intck2.test b65d7f627342f767e1d2c447d25619666cec36f516786dd56568bd741e5d7e67
 F ext/intck/intck_common.tcl b8a63ae820dbcdf50ddaba474f130b43c26ba81f4b7720ff1d8b9a6592bdd420
 F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
-F ext/intck/sqlite3intck.c c437aaa1f4af77621ba984718a62c57722ad9d071151be79335fd87f2c2c2dde
+F ext/intck/sqlite3intck.c 3fa96647dde4c719a477f7dbdd1edf76b2f245549b1a4de7f7d60447b24a14df
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c dec07fc82e2626a1450e58be474e351643627b04ee08ce8fae6495a533b87e85
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
@@ -2169,8 +2169,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4cc19bd74f05fe92658cc392a1d1afa173d93181a77303af6bc5684436ae832e
-R 735ea6d5058bc579028d0f5e808c7418
+P 0e39962baae8a82a3021077676b792ac30c79426bcd8c075b5e92bee55e8c3a5
+R 2d481f6c889817bf845056ed7696633c
 U dan
-Z b84fa961179c349189e714cd49d2cd34
+Z 13c318cbe203f9a86dd5c12df0ee017f
 # Remove this line to create a well-formed Fossil manifest.

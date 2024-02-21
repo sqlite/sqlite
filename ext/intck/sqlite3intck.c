@@ -14,12 +14,25 @@
 #include "sqlite3intck.h"
 #include <string.h>
 #include <assert.h>
-#include <stdio.h>
 
 /*
 ** nKeyVal:
 **   The number of values that make up the 'key' for the current pCheck
 **   statement.
+**
+** rc:
+**   Error code returned by most recent sqlite3_intck_step() or 
+**   sqlite3_intck_unlock() call. This is set to SQLITE_DONE when
+**   the integrity-check operation is finished.
+**
+** zErr:
+**   If the object has entered the error state, this is the error message.
+**   Is freed using sqlite3_free() when the object is deleted.
+**
+** zTestSql:
+**   The value returned by the most recent call to sqlite3_intck_testsql().
+**   Each call to testsql() frees the previous zTestSql value (using
+**   sqlite3_free()) and replaces it with the new value it will return.
 */
 struct sqlite3_intck {
   sqlite3 *db;
@@ -52,45 +65,73 @@ static void intckSaveErrmsg(sqlite3_intck *p){
   }
 }
 
-static sqlite3_stmt *intckPrepare(sqlite3_intck *p, const char *zFmt, ...){
+/*
+** If the handle passed as the first argument is already in the error state,
+** then this function is a no-op (returns NULL immediately). Otherwise, if an
+** error occurs within this function, it leaves an error in said handle.
+**
+** Otherwise, this function attempts to prepare SQL statement zSql and
+** return the resulting statement handle to the user.
+*/
+static sqlite3_stmt *intckPrepare(sqlite3_intck *p, const char *zSql){
+  sqlite3_stmt *pRet = 0;
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
+    if( p->rc!=SQLITE_OK ){
+      intckSaveErrmsg(p);
+      assert( pRet==0 );
+    }
+  }
+  return pRet;
+}
+
+/*
+** If the handle passed as the first argument is already in the error state,
+** then this function is a no-op (returns NULL immediately). Otherwise, if an
+** error occurs within this function, it leaves an error in said handle.
+**
+** Otherwise, this function treats argument zFmt as a printf() style format
+** string. It formats it according to the trailing arguments and then 
+** attempts to prepare the results and return the resulting prepared
+** statement.
+*/
+static sqlite3_stmt *intckPrepareFmt(sqlite3_intck *p, const char *zFmt, ...){
   sqlite3_stmt *pRet = 0;
   va_list ap;
   char *zSql = 0;
   va_start(ap, zFmt);
   zSql = sqlite3_vmprintf(zFmt, ap);
-  if( p->rc==SQLITE_OK ){
-    if( zSql==0 ){
-      p->rc = SQLITE_NOMEM;
-    }else{
-      p->rc = sqlite3_prepare_v2(p->db, zSql, -1, &pRet, 0);
-      fflush(stdout);
-      if( p->rc!=SQLITE_OK ){
-#if 0
-      printf("ERROR: %s\n", zSql);
-      printf("MSG: %s\n", sqlite3_errmsg(p->db));
-#endif
-      if( sqlite3_error_offset(p->db)>=0 ){
-#if 0
-        int iOff = sqlite3_error_offset(p->db);
-        printf("AT: %.40s\n", &zSql[iOff]);
-#endif
-      }
-      fflush(stdout);
-        intckSaveErrmsg(p);
-        assert( pRet==0 );
-      }
-    }
+  if( p->rc==SQLITE_OK && zSql==0 ){
+    p->rc = SQLITE_NOMEM;
   }
+  pRet = intckPrepare(p, zSql);
   sqlite3_free(zSql);
   va_end(ap);
   return pRet;
 }
 
+/*
+** Finalize SQL statement pStmt. If an error occurs and the handle passed
+** as the first argument does not already contain an error, store the
+** error in the handle.
+*/
 static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
   int rc = sqlite3_finalize(pStmt);
   if( p->rc==SQLITE_OK && rc!=SQLITE_OK ){
     intckSaveErrmsg(p);
   }
+}
+
+/*
+** Execute SQL statement zSql. There is no way to obtain any results 
+** returned by the statement. This function uses the sqlite3_intck error
+** code convention.
+*/
+static void intckExec(sqlite3_intck *p, const char *zSql){
+  sqlite3_stmt *pStmt = 0;
+  pStmt = intckPrepare(p, zSql);
+  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) );
+  intckFinalize(p, pStmt);
 }
 
 /*
@@ -110,15 +151,8 @@ static void *intckMalloc(sqlite3_intck *p, sqlite3_int64 nByte){
 }
 
 /*
-** If p->rc is other than SQLITE_OK when this function is called, it
-** immediately returns NULL. Otherwise, it attempts to create a copy of
-** nul-terminated string zIn in a buffer obtained from sqlite3_malloc().
-** If successful, a pointer to this buffer is returned and it becomes
-** the responsibility of the caller to release it using sqlite3_free()
-** at some point in the future.
-**
-** Or, if an allocation fails within this function, p->rc is set to
-** SQLITE_NOMEM and NULL is returned.
+** Like strdup(), but uses the sqlite3_intck error code convention. Any
+** returned buffer should eventually be freed using sqlite3_free().
 */
 static char *intckStrdup(sqlite3_intck *p, const char *zIn){
   char *zOut = 0;
@@ -131,10 +165,8 @@ static char *intckStrdup(sqlite3_intck *p, const char *zIn){
 }
 
 /*
-** A wrapper around sqlite3_mprintf() that:
-**
-**   + Always returns 0 if p->rc is other than SQLITE_OK when it is called, and
-**   + Sets p->rc to SQLITE_NOMEM if an allocation fails.
+** A wrapper around sqlite3_mprintf() that uses the sqlite3_intck error
+** code convention.
 */
 static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
   va_list ap;
@@ -153,25 +185,11 @@ static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
 }
 
 /*
-** Free the sqlite3_intck.apKeyVal, if it is allocated and populated.
+** This is used by sqlite3_intck_unlock() to save the vector key value 
+** required to restart the current pCheck query as a nul-terminated string 
+** in p->zKey. 
 */
-static void intckSavedKeyClear(sqlite3_intck *p){
-  sqlite3_free(p->zKey);
-  p->zKey = 0;
-}
-
-/*
-** If the apKeyVal array is currently allocated and populated, return
-** a pointer to a buffer containing a nul-terminated string representing
-** the values as an SQL vector. e.g.
-**
-**   "('abc', NULL, 2)"
-**
-** If apKeyVal is not allocated, return NULL. Or, if an error (e.g. OOM) 
-** occurs within this function, set sqlite3_intck.rc before returning
-** and return NULL.
-*/
-static void intckSavedKeySave(sqlite3_intck *p){
+static void intckSaveKey(sqlite3_intck *p){
   int ii;
   const char *zSep = "SELECT '(' || ";
   char *zSql = 0;
@@ -180,14 +198,13 @@ static void intckSavedKeySave(sqlite3_intck *p){
   assert( p->pCheck );
   assert( p->zKey==0 );
 
-
   for(ii=0; ii<p->nKeyVal; ii++){
     zSql = intckMprintf(p, "%z%squote(?)", zSql, zSep);
     zSep = " || ', ' || ";
   }
   zSql = intckMprintf(p, "%z || ')'", zSql);
 
-  pStmt = intckPrepare(p, "%s", zSql);
+  pStmt = intckPrepare(p, zSql);
   if( p->rc==SQLITE_OK ){
     for(ii=0; ii<p->nKeyVal; ii++){
       sqlite3_bind_value(pStmt, ii+1, sqlite3_column_value(p->pCheck, ii+1));
@@ -213,7 +230,7 @@ static void intckFindObject(sqlite3_intck *p){
   assert( p->rc==SQLITE_OK );
   assert( p->pCheck==0 );
 
-  pStmt = intckPrepare(p, 
+  pStmt = intckPrepareFmt(p, 
     "WITH tables(table_name) AS (" 
     "  SELECT name"
     "  FROM %Q.sqlite_schema WHERE (type='table' OR type='index') AND rootpage"
@@ -236,7 +253,8 @@ static void intckFindObject(sqlite3_intck *p){
 
   /* If this is a new object, ensure the previous key value is cleared. */
   if( sqlite3_stricmp(p->zObj, zPrev) ){
-    intckSavedKeyClear(p);
+    sqlite3_free(p->zKey);
+    p->zKey = 0;
   }
 
   sqlite3_free(zPrev);
@@ -274,20 +292,11 @@ static int intckGetToken(const char *z){
   return iRet;
 }
 
+/*
+** Return true if argument c is an ascii whitespace character.
+*/
 static int intckIsSpace(char c){
   return (c==' ' || c=='\t' || c=='\n' || c=='\r');
-}
-
-static int intckTokenMatch(
-  const char *zToken, 
-  int nToken, 
-  const char *z1, 
-  const char *z2
-){
-  return (
-      (strlen(z1)==nToken && 0==sqlite3_strnicmp(zToken, z1, nToken))
-   || (z2 && strlen(z2)==nToken && 0==sqlite3_strnicmp(zToken, z2, nToken))
-  );
 }
 
 /*
@@ -350,7 +359,9 @@ static const char *intckParseCreateIndex(const char *z, int iCol, int *pnByte){
     if( z[iOff]==')' ) nOpen--;
     nToken = intckGetToken(zToken);
 
-    if( intckTokenMatch(zToken, nToken, "ASC", "DESC") ){
+    if( (nToken==3 && 0==sqlite3_strnicmp(zToken, "ASC", nToken))
+     || (nToken==4 && 0==sqlite3_strnicmp(zToken, "DESC", nToken))
+    ){
       iEndOfCol = iOff;
     }else if( 0==intckIsSpace(zToken[0]) ){
       iEndOfCol = 0;
@@ -383,7 +394,12 @@ static const char *intckParseCreateIndex(const char *z, int iCol, int *pnByte){
   return zRet;
 }
 
-static void parseCreateIndexFunc(
+/*
+** User-defined SQL function wrapper for intckParseCreateIndex():
+**
+**     SELECT parse_create_index(<sql>, <icol>);
+*/
+static void intckParseCreateIndexFunc(
   sqlite3_context *pCtx, 
   int nVal, 
   sqlite3_value **apVal
@@ -421,7 +437,7 @@ static int intckGetAutoIndex(sqlite3_intck *p){
 static int intckIsIndex(sqlite3_intck *p, const char *zObj){
   int bRet = 0;
   sqlite3_stmt *pStmt = 0;
-  pStmt = intckPrepare(p, 
+  pStmt = intckPrepareFmt(p, 
       "SELECT 1 FROM %Q.sqlite_schema WHERE name=%Q AND type='index'",
       p->zDb, zObj
   );
@@ -432,17 +448,20 @@ static int intckIsIndex(sqlite3_intck *p, const char *zObj){
   return bRet;
 }
 
-static void intckExec(sqlite3_intck *p, const char *zSql){
-  sqlite3_stmt *pStmt = 0;
-  pStmt = intckPrepare(p, "%s", zSql);
-  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) );
-  intckFinalize(p, pStmt);
-}
-
+/*
+** Return a pointer to a nul-terminated buffer containing the SQL statement
+** used to check database object zObj (a table or index) for corruption.
+** If parameter zPrev is not NULL, then it must be a string containing the
+** vector key required to restart the check where it left off last time.
+** If pnKeyVal is not NULL, then (*pnKeyVal) is set to the number of
+** columns in the vector key value for the specified object.
+**
+** This function uses the sqlite3_intck error code convention.
+*/
 static char *intckCheckObjectSql(
-  sqlite3_intck *p, 
-  const char *zObj,
-  const char *zPrev,
+  sqlite3_intck *p,               /* Integrity check object */
+  const char *zObj,               /* Object (table or index) to scan */
+  const char *zPrev,              /* Restart key vector, if any */
   int *pnKeyVal                   /* OUT: Number of key-values for this scan */
 ){
   char *zRet = 0;
@@ -563,7 +582,7 @@ static char *intckCheckObjectSql(
 
   bIsIndex = intckIsIndex(p, zObj);
   if( bIsIndex ){
-    pStmt = intckPrepare(p,
+    pStmt = intckPrepareFmt(p,
       /* Table idxname contains a single row. The first column, "db", contains
       ** the name of the db containing the table (e.g. "main") and the second,
       ** "tab", the name of the table itself.  */
@@ -616,7 +635,7 @@ static char *intckCheckObjectSql(
       , zPrev, zCommon
       );
   }else{
-    pStmt = intckPrepare(p,
+    pStmt = intckPrepareFmt(p,
       /* Table tabname contains a single row. The first column, "db", contains
       ** the name of the db containing the table (e.g. "main") and the second,
       ** "tab", the name of the table itself.  */
@@ -697,22 +716,10 @@ static char *intckCheckObjectSql(
   }
 
   while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-#if 0
-    int nField = sqlite3_column_count(pStmt);
-    int ii;
-    for(ii=0; ii<nField; ii++){
-      const char *zName = sqlite3_column_name(pStmt, ii);
-      const char *zVal = (const char*)sqlite3_column_text(pStmt, ii);
-      printf("FIELD %s = %s\n", zName, zVal ? zVal : "(null)");
-    }
-    printf("\n");
-    fflush(stdout);
-#else
     zRet = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
     if( pnKeyVal ){
       *pnKeyVal = sqlite3_column_int(pStmt, 1);
     }
-#endif
   }
   intckFinalize(p, pStmt);
 
@@ -720,14 +727,9 @@ static char *intckCheckObjectSql(
   return zRet;
 }
 
-static void intckCheckObject(sqlite3_intck *p){
-  char *zSql = 0;
-  zSql = intckCheckObjectSql(p, p->zObj, p->zKey, &p->nKeyVal);
-  p->pCheck = intckPrepare(p, "%s", zSql);
-  sqlite3_free(zSql);
-  intckSavedKeyClear(p);
-}
-
+/*
+** Open a new integrity-check object.
+*/
 int sqlite3_intck_open(
   sqlite3 *db,                    /* Database handle to operate on */
   const char *zDbArg,             /* "main", "temp" etc. */
@@ -743,7 +745,7 @@ int sqlite3_intck_open(
     rc = SQLITE_NOMEM;
   }else{
     sqlite3_create_function(db, "parse_create_index", 
-        2, SQLITE_UTF8, 0, parseCreateIndexFunc, 0, 0
+        2, SQLITE_UTF8, 0, intckParseCreateIndexFunc, 0, 0
     );
     memset(pNew, 0, sizeof(*pNew));
     pNew->db = db;
@@ -755,6 +757,9 @@ int sqlite3_intck_open(
   return rc;
 }
 
+/*
+** Free the integrity-check object.
+*/
 void sqlite3_intck_close(sqlite3_intck *p){
   if( p ){
     if( p->db ){
@@ -763,13 +768,16 @@ void sqlite3_intck_close(sqlite3_intck *p){
       );
     }
     sqlite3_free(p->zObj);
-    intckSavedKeyClear(p);
+    sqlite3_free(p->zKey);
     sqlite3_free(p->zTestSql);
     sqlite3_free(p->zErr);
     sqlite3_free(p);
   }
 }
 
+/*
+** Step the integrity-check object.
+*/
 int sqlite3_intck_step(sqlite3_intck *p){
   if( p->rc==SQLITE_OK ){
 
@@ -785,7 +793,12 @@ int sqlite3_intck_step(sqlite3_intck *p){
       intckFindObject(p);
       if( p->rc==SQLITE_OK ){
         if( p->zObj ){
-          intckCheckObject(p);
+          char *zSql = 0;
+          zSql = intckCheckObjectSql(p, p->zObj, p->zKey, &p->nKeyVal);
+          p->pCheck = intckPrepare(p, zSql);
+          sqlite3_free(zSql);
+          sqlite3_free(p->zKey);
+          p->zKey = 0;
         }else{
           p->rc = SQLITE_DONE;
         }
@@ -819,6 +832,10 @@ int sqlite3_intck_step(sqlite3_intck *p){
   return p->rc;
 }
 
+/*
+** Return a message describing the corruption encountered by the most recent
+** call to sqlite3_intck_step(), or NULL if no corruption was encountered.
+*/
 const char *sqlite3_intck_message(sqlite3_intck *p){
   assert( p->pCheck==0 || p->zMessage==0 );
   if( p->zMessage ){
@@ -830,21 +847,32 @@ const char *sqlite3_intck_message(sqlite3_intck *p){
   return 0;
 }
 
+/*
+** Return the error code and message.
+*/
 int sqlite3_intck_error(sqlite3_intck *p, const char **pzErr){
   if( pzErr ) *pzErr = p->zErr;
   return (p->rc==SQLITE_DONE ? SQLITE_OK : p->rc);
 }
 
+/*
+** Close any read transaction the integrity-check object is holding open
+** on the database.
+*/
 int sqlite3_intck_unlock(sqlite3_intck *p){
   if( p->pCheck && p->rc==SQLITE_OK ){
     assert( p->zKey==0 && p->nKeyVal>0 );
-    intckSavedKeySave(p);
+    intckSaveKey(p);
     intckFinalize(p, p->pCheck);
     p->pCheck = 0;
   }
   return p->rc;
 }
 
+/*
+** Return the SQL statement used to check object zObj. Or, if zObj is 
+** NULL, the current SQL statement.
+*/
 const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
   sqlite3_free(p->zTestSql);
   if( zObj ){
