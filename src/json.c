@@ -1623,7 +1623,7 @@ json_parse_restart:
   case '[': {
     /* Parse array */
     iThis = pParse->nBlob;
-    assert( i<=pParse->nJson );
+    assert( i<=(u32)pParse->nJson );
     jsonBlobAppendNode(pParse, JSONB_ARRAY, pParse->nJson - i, 0);
     iStart = pParse->nBlob;
     if( pParse->oom ) return -1;

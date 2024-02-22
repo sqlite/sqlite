@@ -1,5 +1,5 @@
-C Fix\sdebugging\scode\sso\sthat\sit\scompiles\son\sMSVC.
-D 2024-02-22T00:50:54.956
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2024-02-22T18:15:08.241
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -699,7 +699,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c a412d7f1550a8597470d30e1d9f8d3dcf111b96ef3877b74bb1c363086bcfb51
+F src/json.c 3b4e2778d95d923d6d77e8a5efd51a6265017b466782d597303f5f094fcd68af
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 438b95162acfa17b7d218f586f5bde11d6ae82bcf030c9611fc537556870ad6b
@@ -2162,8 +2162,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7e3c46eed1290964a3e25662686c6ba1149bf8687d05719b684772e65d660c09
-R 365ecee93146612474dc5afdd7dbd0ae
-U drh
-Z a2e66d96e9a847508f80a325e0644c11
+P ce5df19dc4aff3fde03ef62261a5e095a16a8f4e46e2924becea4fed56ce49e3
+R 63d9d369c3456decb924739dc3e48ce6
+U mistachkin
+Z 5c46c4e87cc4943d1671979de864e7c2
 # Remove this line to create a well-formed Fossil manifest.
