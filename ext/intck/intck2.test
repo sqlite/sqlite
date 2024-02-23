@@ -1,4 +1,4 @@
-# 2008 Feb 19
+# 2024 Feb 19
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -142,6 +142,35 @@ do_intck_test 3.5 {
   {surplus entry (NULL,NULL,NULL,4) in index x1all}
 }
 
-finish_test
+reset_db
 
+do_execsql_test 3.6 {
+  CREATE TABLE w1(a PRIMARY KEY, b, c);
+  INSERT INTO w1 VALUES(1.0, NULL, NULL);
+  INSERT INTO w1 VALUES(33.0, NULL, NULL);
+  INSERT INTO w1 VALUES(100.0, NULL, NULL);
+  CREATE INDEX w1bc ON w1(b, c);
+}
+
+do_intck_test 3.7 {
+}
+
+imposter_edit w1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE a=33;
+  INSERT INTO imp(a) VALUES(1234.5);
+  INSERT INTO imp(a) VALUES(-1234.5);
+}
+
+do_intck_test 3.8 {
+  {surplus entry (33.0,2) in index sqlite_autoindex_w1_1}
+  {entry (1234.5,4) missing from index sqlite_autoindex_w1_1} 
+  {entry (NULL,NULL,4) missing from index w1bc} 
+  {entry (-1234.5,5) missing from index sqlite_autoindex_w1_1} 
+  {entry (NULL,NULL,5) missing from index w1bc} 
+  {surplus entry (NULL,NULL,2) in index w1bc}
+}
+
+finish_test
 
