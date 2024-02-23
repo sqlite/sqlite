@@ -61,6 +61,58 @@ do_execsql_test 2.0 {
 }
 
 do_intck_test 2.1 {}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE c=7;
+}
+puts [intck_sql db x1b]
+do_intck_test 2.2 {
+  {surplus entry ('ONE',6,3) in index x1a}
+  {surplus entry ('ONE6 "''" ',3) in index x1b}
+  {surplus entry ('ONE','7',3) in index x1c}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a, b, c);
+  CREATE INDEX x1all ON x1(a DESC, b ASC, c DESC);
+  INSERT INTO x1 VALUES(2, 1, 2);
+  INSERT INTO x1 VALUES(2, 1, 1);
+  INSERT INTO x1 VALUES(2, 2, 2);
+  INSERT INTO x1 VALUES(2, 2, 1);
+  INSERT INTO x1 VALUES(1, 1, 2);
+  INSERT INTO x1 VALUES(1, 1, 1);
+  INSERT INTO x1 VALUES(1, 2, 2);
+  INSERT INTO x1 VALUES(1, 2, 1);
+}
+
+do_intck_test 3.1 {
+}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE 1;
+}
+
+db close
+sqlite3 db test.db
+
+do_intck_test 3.2 {
+  {surplus entry (2,1,2,1) in index x1all} 
+  {surplus entry (2,1,1,2) in index x1all}
+  {surplus entry (2,2,2,3) in index x1all} 
+  {surplus entry (2,2,1,4) in index x1all}
+  {surplus entry (1,1,2,5) in index x1all} 
+  {surplus entry (1,1,1,6) in index x1all} 
+  {surplus entry (1,2,2,7) in index x1all}
+  {surplus entry (1,2,1,8) in index x1all}
+}
+
+#puts [intck_sql db x1all]
 #puts [intck_sql db x1]
 
 finish_test

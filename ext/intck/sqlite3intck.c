@@ -15,6 +15,9 @@
 #include <string.h>
 #include <assert.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 /*
 ** nKeyVal:
 **   The number of values that make up the 'key' for the current pCheck
@@ -187,22 +190,87 @@ static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
 /*
 ** This is used by sqlite3_intck_unlock() to save the vector key value 
 ** required to restart the current pCheck query as a nul-terminated string 
-** in p->zKey. 
+** in p->zKey.
 */
 static void intckSaveKey(sqlite3_intck *p){
   int ii;
-  const char *zSep = "SELECT '(' || ";
   char *zSql = 0;
   sqlite3_stmt *pStmt = 0;
+  sqlite3_stmt *pXinfo = 0;
+  const char *zDir = 0;
 
   assert( p->pCheck );
   assert( p->zKey==0 );
 
-  for(ii=0; ii<p->nKeyVal; ii++){
-    zSql = intckMprintf(p, "%z%squote(?)", zSql, zSep);
-    zSep = " || ', ' || ";
+  pXinfo = intckPrepareFmt(p, 
+      "SELECT group_concat(desc, '') FROM %Q.sqlite_schema s, "
+      "pragma_index_xinfo(%Q, %Q) "
+      "WHERE s.type='index' AND s.name=%Q",
+      p->zDb, p->zObj, p->zDb, p->zObj
+  );
+  if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXinfo) ){
+    zDir = (const char*)sqlite3_column_text(pXinfo, 0);
   }
-  zSql = intckMprintf(p, "%z || ')'", zSql);
+
+  if( zDir==0 ){
+    /* Object is a table, not an index. This is the easy case,as there are 
+    ** no DESC columns or NULL values in a primary key.  */
+    const char *zSep = "SELECT '(' || ";
+    for(ii=0; ii<p->nKeyVal; ii++){
+      zSql = intckMprintf(p, "%z%squote(?)", zSql, zSep);
+      zSep = " || ', ' || ";
+    }
+    zSql = intckMprintf(p, "%z || ')'", zSql);
+  }else{
+
+    /* Object is an index. */
+    assert( p->nKeyVal>1 );
+    for(ii=p->nKeyVal; ii>0; ii--){
+      int bLastIsDesc = zDir[ii-1]=='1';
+      int bLastIsNull = sqlite3_column_type(p->pCheck, ii)==SQLITE_NULL;
+      const char *zLast = sqlite3_column_name(p->pCheck, ii);
+      char *zLhs = 0;
+      char *zRhs = 0;
+      char *zWhere = 0;
+
+      if( bLastIsNull ){
+        if( bLastIsDesc ) continue;
+        zWhere = intckMprintf(p, "'%s IS NOT NULL'", zLast);
+      }else{
+        const char *zOp = bLastIsDesc ? "<" : ">";
+        zWhere = intckMprintf(p, "'%s %s ' || quote(?%d)", zLast, zOp, ii);
+      }
+
+      if( ii>1 ){
+        const char *zLhsSep = "";
+        const char *zRhsSep = "";
+        int jj;
+        for(jj=0; jj<ii-1; jj++){
+          const char *zAlias = (const char*)sqlite3_column_name(p->pCheck,jj+1);
+          zLhs = intckMprintf(p, "%z%s%s", zLhs, zLhsSep, zAlias);
+          zRhs = intckMprintf(p, "%z%squote(?%d)", zRhs, zRhsSep, jj+1);
+          zLhsSep = ",";
+          zRhsSep = " || ',' || ";
+        }
+
+        zWhere = intckMprintf(p, 
+            "'(%z) IS (' || %z || ') AND ' || %z",
+            zLhs, zRhs, zWhere);
+      }
+      zWhere = intckMprintf(p, "'WHERE ' || %z", zWhere);
+
+      zSql = intckMprintf(p, "%z%s(quote( %z ) )",
+          zSql,
+          (zSql==0 ? "VALUES" : ",\n      "),
+          zWhere
+      );
+    }
+    zSql = intckMprintf(p, 
+        "WITH wc(q) AS (\n%z\n)"
+        "SELECT 'VALUES' || group_concat('(' || q || ')', ',\n      ') FROM wc"
+        , zSql
+    );
+  }
 
   pStmt = intckPrepare(p, zSql);
   if( p->rc==SQLITE_OK ){
@@ -214,7 +282,9 @@ static void intckSaveKey(sqlite3_intck *p){
     }
     intckFinalize(p, pStmt);
   }
+
   sqlite3_free(zSql);
+  intckFinalize(p, pXinfo);
 }
 
 /*
@@ -521,7 +591,7 @@ static char *intckCheckObjectSql(
       "      SELECT i.col_name, i.col_alias FROM idx_cols i WHERE i.idx_ispk"
       "    )"
       "    SELECT t.db, t.tab, t.idx, "
-      "           group_concat('o.'||a, ', '), "
+      "           group_concat(a, ', '), "
       "           group_concat('i.'||quote(f), ', '), "
       "           group_concat('quote(o.'||a||')', ' || '','' || '),  "
       "           format('(%s)==(%s)',"
@@ -586,24 +656,26 @@ static char *intckCheckObjectSql(
       /* Table idxname contains a single row. The first column, "db", contains
       ** the name of the db containing the table (e.g. "main") and the second,
       ** "tab", the name of the table itself.  */
-      "WITH tabname(db, tab, idx, prev) AS ("
-      "  SELECT %Q, (SELECT tbl_name FROM %Q.sqlite_schema WHERE name=%Q), "
-      "         %Q, %Q "
+      "WITH tabname(db, tab, idx) AS ("
+      "  SELECT %Q, (SELECT tbl_name FROM %Q.sqlite_schema WHERE name=%Q), %Q "
       ")"
+      ""
+      ", whereclause(w_c) AS (%s)"
+      ""
       "%s" /* zCommon */
       ""
       ", case_statement(c) AS ("
       "  SELECT "
-      "    'CASE WHEN (' || group_concat(col_alias, ', ') || ') IS (\n    ' "
+      "    'CASE WHEN (' || group_concat(col_alias, ', ') || ') IS (\n      ' "
       "    || 'SELECT ' || group_concat(col_expr, ', ') || ' FROM '"
       "    || format('%%Q.%%Q NOT INDEXED WHERE %%s\n', t.db, t.tab, p.eq_pk)"
-      "    || '  )\n  THEN NULL\n  '"
+      "    || '    )\n  THEN NULL\n    '"
       "    || 'ELSE format(''surplus entry ('"
       "    ||   group_concat('%%s', ',') || ',' || p.ps_pk"
       "    || ') in index ' || t.idx || ''', ' "
       "    ||   group_concat('quote('||i.col_alias||')', ', ') || ', ' || p.pk_pk"
       "    || ')'"
-      "    || '\nEND AS error_message'"
+      "    || '\n  END AS error_message'"
       "  FROM tabname t, tabpk p, idx_cols i WHERE i.idx_name=t.idx"
       ")"
       ""
@@ -613,26 +685,25 @@ static char *intckCheckObjectSql(
       "    FROM tabpk p, idx_cols i WHERE i.idx_name=p.idx"
       ")"
       ""
-      ", whereclause(w_c) AS ("
-      "    SELECT CASE WHEN prev!='' THEN "
-      "    '\nWHERE (' || group_concat(i.col_alias, ',') || ',' "
-      "                || o_pk || ') > ' || prev"
-      "    ELSE ''"
-      "    END"
-      "    FROM tabpk, tabname, idx_cols i WHERE i.idx_name=tabpk.idx"
-      ")"
-      ""
       ", main_select(m, n) AS ("
       "  SELECT format("
-      "      'WITH %%s\nSELECT %%s,\n%%s\nFROM intck_wrapper AS o%%s',"
-      "      ww.s, c, t.k, whereclause.w_c"
+      "      'WITH %%s\n' ||"
+      "      ', idx_checker AS (\n' ||"
+      "      '  SELECT %%s,\n' ||"
+      "      '  %%s\n' || "
+      "      '  FROM intck_wrapper AS o\n' ||"
+      "      ')\n',"
+      "      ww.s, c, t.k"
       "  ), t.n"
-      "  FROM case_statement, wrapper_with ww, thiskey t, whereclause"
+      "  FROM case_statement, wrapper_with ww, thiskey t"
       ")"
 
-      "SELECT m, n FROM main_select"
+      "SELECT m || "
+      "    group_concat('SELECT * FROM idx_checker ' || w_c, ' UNION ALL '), n"
+      " FROM "
+      "main_select, whereclause "
       , p->zDb, p->zDb, zObj, zObj
-      , zPrev, zCommon
+      , zPrev ? zPrev : "VALUES('')", zCommon
       );
   }else{
     pStmt = intckPrepareFmt(p,
@@ -689,7 +760,7 @@ static char *intckCheckObjectSql(
       **     format('(%d,%d)', _rowid_, n.ii)
       */
       ", thiskey(k, n) AS ("
-      "    SELECT o_pk || ', n.ii', n_pk+1 FROM tabpk"
+      "    SELECT o_pk || ', ii', n_pk+1 FROM tabpk"
       ")"
       ""
       ", whereclause(w_c) AS ("
@@ -702,7 +773,7 @@ static char *intckCheckObjectSql(
       ""
       ", main_select(m, n) AS ("
       "  SELECT format("
-      "      '%%s, %%s\nSELECT %%s,\n%%s AS thiskey\nFROM intck_wrapper AS o"
+      "      '%%s, %%s\nSELECT %%s,\n%%s\nFROM intck_wrapper AS o"
                ", intck_counter AS n%%s\nORDER BY %%s', "
       "      w, ww.s, c, thiskey.k, whereclause.w_c, t.o_pk"
       "  ), thiskey.n"

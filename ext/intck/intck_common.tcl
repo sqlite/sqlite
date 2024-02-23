@@ -24,7 +24,12 @@ proc do_intck {db {bSuspend 0}} {
     if {$msg!=""} {
       lappend ret $msg
     }
-    if {$bSuspend} { $ic unlock }
+    if {$bSuspend} { 
+      $ic unlock 
+      #puts "SQL: [$ic test_sql {}]"
+      #execsql_pp "EXPLAIN query plan [$ic test_sql {}]"
+      #explain_i [$ic test_sql {}]
+    }
   }
 
   set err [$ic error]
