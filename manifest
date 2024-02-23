@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sresuming\sintegrity-check\soperations\son\sindexes\swith\smixed\sASC\sand\sDESC\scolumns,\sand\son\sindexes\sthat\scontain\sNULL\svalues.
-D 2024-02-23T15:13:53.489
+C Fix\sdetection\sof\ssurplus\sindex\sentries\swhen\sall\sindexed\sfields\sare\sNULL.
+D 2024-02-23T17:10:39.995
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -249,10 +249,10 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test e73c4f87b54176291b9a01b52dbc9dd88f42f3ec8aea48c8e0bd7f87a1440a40
-F ext/intck/intck2.test 9d083ccb06c9239400569846b077fb9867a19b12233ce9dcbc124540e12d38df
+F ext/intck/intck2.test 348a8c505bfe843eceaedd911f91ba4516b5e9c2d4aa83a300a6e84de6ff0955
 F ext/intck/intck_common.tcl 9e51458126576783f11051ac0fd25bea3f6b17f570a55884223737f3200b214b
 F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
-F ext/intck/sqlite3intck.c b7dd8354b4c3255cecc8cc190f7f980a667d3aec7409900703248296472b358f
+F ext/intck/sqlite3intck.c c8515c1ed1bc725e156fc5053e8f9c8cff3c440f3bca47a8309e76d2411fc73d
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c dec07fc82e2626a1450e58be474e351643627b04ee08ce8fae6495a533b87e85
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
@@ -2169,8 +2169,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8a7bfa74525a495f45b1ea212b1718633b637295090d514dd777f9263477d514
-R afa6cae1c52ecb818ac1cff0c8856821
+P 0f68b35a000ef9f4691c59797c66ed6c3435fc5c503e9d24f891afec6aceeada
+R 67e774420e8bc9ef111ef98dbd2b2abc
 U dan
-Z d57af7b6bfe17ed12101d02b696a832f
+Z f383f29167401158528bd4b4e88fca49
 # Remove this line to create a well-formed Fossil manifest.

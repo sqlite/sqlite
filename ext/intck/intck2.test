@@ -67,7 +67,6 @@ imposter_edit x1 {
 } {
   DELETE FROM imp WHERE c=7;
 }
-puts [intck_sql db x1b]
 do_intck_test 2.2 {
   {surplus entry ('ONE',6,3) in index x1a}
   {surplus entry ('ONE6 "''" ',3) in index x1b}
@@ -112,8 +111,36 @@ do_intck_test 3.2 {
   {surplus entry (1,2,1,8) in index x1all}
 }
 
-#puts [intck_sql db x1all]
-#puts [intck_sql db x1]
+do_execsql_test 3.3 {
+  DELETE FROM x1;
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+  INSERT INTO x1 VALUES(NULL, NULL, NULL);
+}
+
+do_intck_test 3.4 {
+}
+
+imposter_edit x1 {
+  CREATE TABLE imp(a, b, c);
+} {
+  DELETE FROM imp WHERE 1;
+  INSERT INTO imp(rowid) VALUES(-123);
+  INSERT INTO imp(rowid) VALUES(456);
+}
+
+db close
+sqlite3 db test.db
+
+do_intck_test 3.5 {
+  {entry (NULL,NULL,NULL,-123) missing from index x1all}
+  {entry (NULL,NULL,NULL,456) missing from index x1all}
+  {surplus entry (NULL,NULL,NULL,1) in index x1all}
+  {surplus entry (NULL,NULL,NULL,2) in index x1all}
+  {surplus entry (NULL,NULL,NULL,3) in index x1all}
+  {surplus entry (NULL,NULL,NULL,4) in index x1all}
+}
 
 finish_test
 
