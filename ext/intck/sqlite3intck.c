@@ -159,10 +159,12 @@ static void *intckMalloc(sqlite3_intck *p, sqlite3_int64 nByte){
 */
 static char *intckStrdup(sqlite3_intck *p, const char *zIn){
   char *zOut = 0;
-  int nIn = strlen(zIn);
-  zOut = (char*)intckMalloc(p, nIn+1);
-  if( zOut ){
-    memcpy(zOut, zIn, nIn+1);
+  if( zIn ){
+    int nIn = strlen(zIn);
+    zOut = (char*)intckMalloc(p, nIn+1);
+    if( zOut ){
+      memcpy(zOut, zIn, nIn+1);
+    }
   }
   return zOut;
 }
@@ -815,13 +817,17 @@ int sqlite3_intck_open(
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    sqlite3_create_function(db, "parse_create_index", 
-        2, SQLITE_UTF8, 0, intckParseCreateIndexFunc, 0, 0
-    );
     memset(pNew, 0, sizeof(*pNew));
     pNew->db = db;
     pNew->zDb = (const char*)&pNew[1];
     memcpy(&pNew[1], zDb, nDb+1);
+    rc = sqlite3_create_function(db, "parse_create_index", 
+        2, SQLITE_UTF8, 0, intckParseCreateIndexFunc, 0, 0
+    );
+    if( rc!=SQLITE_OK ){
+      sqlite3_intck_close(pNew);
+      pNew = 0;
+    }
   }
 
   *ppOut = pNew;
