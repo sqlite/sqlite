@@ -1,5 +1,5 @@
-C Typo\sfixes\s[forum:c19bbf245d|reported\sin\sthe\sforum].\sNo\scode\schanges.
-D 2024-02-23T18:02:31.402
+C Add\stwo\sGIFs\sthat\scontain\sthe\sfeather\slogo.
+D 2024-02-24T19:58:15.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -9,6 +9,8 @@ F Makefile.msc df56c06ef05add5ebcdcc9d4823fb2ec66ac16b06acb6971a7420859025886fa
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION c84541c6a9e8426462176fbb1f9ecb5cfd7d1bb56228053ff7eeba8841673eb6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
+F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
+F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
@@ -2162,8 +2164,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e5db08993127dfc18cc2b621a13cbfef52974f0f504f4d8208093bfad1ffdcc5
-R fbd01c060093cc83561018ffcc839787
-U stephan
-Z 3309f779a4e95b40300e717423266d54
+P 67d8bae0f695c0839e724c1aadea0a22f736fdd9664d40a29b4d82c91fb89ab3
+R dab9490920c21cf9a17070c8cfa63576
+U drh
+Z 37fca3febc4fffca5469b7a46e713d26
 # Remove this line to create a well-formed Fossil manifest.
