@@ -60,12 +60,9 @@ struct sqlite3_intck {
 ** and error code currently held by the database handle in p->rc and p->zErr.
 */
 static void intckSaveErrmsg(sqlite3_intck *p){
-  const char *zDberr = sqlite3_errmsg(p->db);
   p->rc = sqlite3_errcode(p->db);
-  if( zDberr ){
-    sqlite3_free(p->zErr);
-    p->zErr = sqlite3_mprintf("%s", zDberr);
-  }
+  sqlite3_free(p->zErr);
+  p->zErr = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
 }
 
 /*
@@ -126,6 +123,15 @@ static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
 }
 
 /*
+** If there is already an error in handle p, return it. Otherwise, call
+** sqlite3_step() on the statement handle and return that value.
+*/
+static int intckStep(sqlite3_intck *p, sqlite3_stmt *pStmt){
+  if( p->rc ) return p->rc;
+  return sqlite3_step(pStmt);
+}
+
+/*
 ** Execute SQL statement zSql. There is no way to obtain any results 
 ** returned by the statement. This function uses the sqlite3_intck error
 ** code convention.
@@ -133,40 +139,8 @@ static void intckFinalize(sqlite3_intck *p, sqlite3_stmt *pStmt){
 static void intckExec(sqlite3_intck *p, const char *zSql){
   sqlite3_stmt *pStmt = 0;
   pStmt = intckPrepare(p, zSql);
-  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) );
+  intckStep(p, pStmt);
   intckFinalize(p, pStmt);
-}
-
-/*
-** Wrapper around sqlite3_malloc64() that uses the sqlite3_intck error
-** code convention.
-*/
-static void *intckMalloc(sqlite3_intck *p, sqlite3_int64 nByte){
-  void *pRet = 0;
-  assert( nByte>0 );
-  if( p->rc==SQLITE_OK ){
-    pRet = sqlite3_malloc64(nByte);
-    if( pRet==0 ){
-      p->rc = SQLITE_NOMEM;
-    }
-  }
-  return pRet;
-}
-
-/*
-** Like strdup(), but uses the sqlite3_intck error code convention. Any
-** returned buffer should eventually be freed using sqlite3_free().
-*/
-static char *intckStrdup(sqlite3_intck *p, const char *zIn){
-  char *zOut = 0;
-  if( zIn ){
-    int nIn = strlen(zIn);
-    zOut = (char*)intckMalloc(p, nIn+1);
-    if( zOut ){
-      memcpy(zOut, zIn, nIn+1);
-    }
-  }
-  return zOut;
 }
 
 /*
@@ -280,7 +254,7 @@ static void intckSaveKey(sqlite3_intck *p){
       sqlite3_bind_value(pStmt, ii+1, sqlite3_column_value(p->pCheck, ii+1));
     }
     if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      p->zKey = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+      p->zKey = intckMprintf(p,"%s",(const char*)sqlite3_column_text(pStmt, 0));
     }
     intckFinalize(p, pStmt);
   }
@@ -318,7 +292,7 @@ static void intckFindObject(sqlite3_intck *p){
   if( p->rc==SQLITE_OK ){
     sqlite3_bind_text(pStmt, 1, zPrev, -1, SQLITE_TRANSIENT);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      p->zObj = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+      p->zObj = intckMprintf(p,"%s",(const char*)sqlite3_column_text(pStmt, 0));
     }
   }
   intckFinalize(p, pStmt);
@@ -347,7 +321,7 @@ static int intckGetToken(const char *z){
     while( 1 ){
       if( z[iRet]==c ){
         iRet++;
-        if( z[iRet+1]!=c ) break;
+        if( z[iRet]!=c ) break;
       }
       iRet++;
     }
@@ -496,7 +470,7 @@ static int intckGetAutoIndex(sqlite3_intck *p){
   int bRet = 0;
   sqlite3_stmt *pStmt = 0;
   pStmt = intckPrepare(p, "PRAGMA automatic_index");
-  if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+  if( SQLITE_ROW==intckStep(p, pStmt) ){
     bRet = sqlite3_column_int(pStmt, 0);
   }
   intckFinalize(p, pStmt);
@@ -789,7 +763,7 @@ static char *intckCheckObjectSql(
   }
 
   while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-    zRet = intckStrdup(p, (const char*)sqlite3_column_text(pStmt, 0));
+    zRet = intckMprintf(p, "%s", (const char*)sqlite3_column_text(pStmt, 0));
     if( pnKeyVal ){
       *pnKeyVal = sqlite3_column_int(pStmt, 1);
     }
@@ -839,15 +813,15 @@ int sqlite3_intck_open(
 */
 void sqlite3_intck_close(sqlite3_intck *p){
   if( p ){
-    if( p->db ){
-      sqlite3_create_function(
-          p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
-      );
-    }
+    sqlite3_finalize(p->pCheck);
+    sqlite3_create_function(
+        p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
+    );
     sqlite3_free(p->zObj);
     sqlite3_free(p->zKey);
     sqlite3_free(p->zTestSql);
     sqlite3_free(p->zErr);
+    sqlite3_free(p->zMessage);
     sqlite3_free(p);
   }
 }
@@ -881,7 +855,7 @@ int sqlite3_intck_step(sqlite3_intck *p){
         }
       }else if( p->rc==SQLITE_CORRUPT ){
         p->rc = SQLITE_OK;
-        p->zMessage = intckStrdup(p, 
+        p->zMessage = intckMprintf(p, "%s",
             "corruption found while reading database schema"
         );
         p->bCorruptSchema = 1;
@@ -937,7 +911,7 @@ int sqlite3_intck_error(sqlite3_intck *p, const char **pzErr){
 ** on the database.
 */
 int sqlite3_intck_unlock(sqlite3_intck *p){
-  if( p->pCheck && p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && p->pCheck ){
     assert( p->zKey==0 && p->nKeyVal>0 );
     intckSaveKey(p);
     intckFinalize(p, p->pCheck);

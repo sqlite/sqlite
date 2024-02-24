@@ -200,9 +200,132 @@ reset_db
 do_execsql_test 5.0 {
   CREATE TABLE t1(a, b);             
   CREATE INDEX i1 ON t1(a COLLATE NOCASE);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
 }
 
-#puts [intck_sql db i1]
+do_test 5.1 {
+  set ic [sqlite3_intck db nosuchdb]
+  $ic step
+} {SQLITE_ERROR}
+
+do_test 5.2 {
+  $ic close
+  set ic [sqlite3_intck db {}]
+  while {[$ic step]=="SQLITE_OK"} {}
+  set res [$ic error]
+  $ic close
+  set res
+} {SQLITE_OK {}}
+
+do_test 5.3 { test_do_intck db "main" } {}
+
+do_test 5.4 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  db eval [$ic test_sql t1] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+do_test 5.5 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  db eval [$ic test_sql {}] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+db cache flush
+
+do_test 5.6 {
+  set ret {}
+  set ic [sqlite3_intck db main]
+  $ic step
+  db eval [$ic test_sql {}] {
+    if {$error_message!=""} { lappend ret $error_message }
+  }
+  $ic close
+  set ret
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x, y, PRIMARY KEY(x)) WITHOUT ROWID;
+  CREATE INDEX i1 ON t1(y, x);
+  INSERT INTO t1 VALUES(X'0000', X'1111');
+}
+
+do_intck_test 6.1 {}
+
+do_execsql_test 6.2.1 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1' WHERE name='i1';
+} {}
+do_intck_test 6.2.2 {}
+
+do_execsql_test 6.3.1 {
+  UPDATE sqlite_schema SET sql = 'CREATE INDEX i1(y' WHERE name='i1';
+} {}
+do_intck_test 6.3.2 {}
+
+do_execsql_test 6.4.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(y) hello world' 
+  WHERE name='i1';
+} {}
+do_intck_test 6.4.2 {}
+
+do_execsql_test 6.5.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(y, x) WHERE 1     ' 
+  WHERE name='i1';
+} {}
+do_intck_test 6.5.2 {}
+
+do_execsql_test 6.6.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1(  ,  ) WHERE 1     ' 
+  WHERE name='i1';
+} {}
+
+do_test 6.7.2 {
+  set ic [sqlite3_intck db main]
+  $ic step
+} {SQLITE_ERROR}
+do_test 6.5.3 {
+  $ic error
+} {SQLITE_ERROR {near "AS": syntax error}}
+$ic close
+
+do_execsql_test 6.6.1 {
+  UPDATE sqlite_schema 
+  SET sql = 'CREATE INDEX i1([y'
+  WHERE name='i1';
+} {}
+do_intck_test 6.6.2 {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE x1("1", "22", "3333", four);
+  CREATE INDEX i1 ON x1(  "1"  , "22", NULL);
+  INSERT INTO x1 VALUES(1, 22, 3333, NULL);
+  INSERT INTO x1 VALUES(1, 22, 3333, NULL);
+}
+do_execsql_test 7.1 " CREATE INDEX i2 ON x1(  \"1\"\r\n\t ) "
+do_execsql_test 7.2 { CREATE INDEX i3 ON x1( "22" || 'abc''def' || `1` ) }
+do_execsql_test 7.3 { CREATE INDEX i4 ON x1( [22] + [1] ) }
+do_execsql_test 7.4 { CREATE INDEX i5 ON x1( four||'hello' ) }
+
+do_intck_test 7.5 {}
+
 
 finish_test
 
