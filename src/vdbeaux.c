@@ -4516,17 +4516,15 @@ int sqlite3IntFloatCompare(i64 i, double r){
     return (x<r) ? -1 : (x>r);
   }else{
     i64 y;
-    double s;
     if( r<-9223372036854775808.0 ) return +1;
     if( r>=9223372036854775808.0 ) return -1;
     y = (i64)r;
     if( i<y ) return -1;
     if( i>y ) return +1;
-    s = (double)i;
-    testcase( doubleLt(s,r) );
-    testcase( doubleLt(r,s) );
-    testcase( doubleEq(r,s) );
-    return (s<r) ? -1 : (s>r);
+    testcase( doubleLt(((double)i),r) );
+    testcase( doubleLt(r,((double)i)) );
+    testcase( doubleEq(r,((double)i)) );
+    return (((double)i)<r) ? -1 : (((double)i)>r);
   }
 }
 
