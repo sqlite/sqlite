@@ -375,7 +375,9 @@ TESTSRC += \
   $(TOP)/ext/rtree/test_rtreedoc.c \
   $(TOP)/ext/recover/sqlite3recover.c \
   $(TOP)/ext/recover/dbdata.c \
-  $(TOP)/ext/recover/test_recover.c
+  $(TOP)/ext/recover/test_recover.c \
+  $(TOP)/ext/intck/test_intck.c  \
+  $(TOP)/ext/intck/sqlite3intck.c 
 
 
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
