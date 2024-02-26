@@ -40,7 +40,7 @@
 ** for PRAGMA optimize does not exceed 100 milliseconds against a variety
 ** of test databases on a RaspberryPI-4 compiled using -Os and without
 ** -DSQLITE_DEBUG.  Of course, your mileage may vary.  For the purpose of
-** his paragraph, "worst-case" means that ANALYZE ends up being
+** this paragraph, "worst-case" means that ANALYZE ends up being
 ** run on every table in the database.  The worst case typically only
 ** happens if PRAGMA optimize is run on a database file for which ANALYZE
 ** has not been previously run and the 0x10000 flag is included so that
