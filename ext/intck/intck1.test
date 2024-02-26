@@ -9,7 +9,8 @@
 #
 #***********************************************************************
 #
-# The focus of this file is testing the r-tree extension.
+# The focus of this file is testing the incremental integrity check
+# (intck) extension.
 #
 
 source [file join [file dirname [info script]] intck_common.tcl]
@@ -328,5 +329,3 @@ do_intck_test 7.5 {}
 
 
 finish_test
-
-

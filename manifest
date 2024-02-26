@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2024-02-26T10:56:54.404
+C Fix\sheader\scomments\son\stest\sscripts.
+D 2024-02-26T11:51:21.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -250,8 +250,8 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/intck/intck1.test 866f0937911bf3a10491af6ce319b75bcd587c39dc8decf2444746b946aa4f3e
-F ext/intck/intck2.test 97daaf43b8a3c870ba7c2fd421dc1887053f5b30188896fa64677ce8174c206f
+F ext/intck/intck1.test 8a879640c90fdff5e91e6c2c41d509485ee634e8077fe0ca9f76be4cbd441fa3
+F ext/intck/intck2.test 47afb44681d13d11072cd8906e6aa877c967e65be788b01f6139922fd91474ef
 F ext/intck/intck_common.tcl 9e51458126576783f11051ac0fd25bea3f6b17f570a55884223737f3200b214b
 F ext/intck/intckbusy.test 0732fe3efbb9e0a53ffdcc240073f6ff2777ea82c3e08812b16494f650763fe1
 F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
@@ -2173,8 +2173,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c253e276b29de28a18270d01b60d95157ce3fc4b37e246d991f9119d26e718d7 7e4c743f9e6ef33500795543e6db9a77c533025bf00c2ee97abd433a3871b5a1
-R d91900a2b738ceadf979774120590e4a
-U dan
-Z 9b2321809e4d89643b001730f06f9a2c
+P b6371ff9f5c3d4e87a5b1127a82970202f74c790b828dda20df88dd727bcc9b4
+R 3add559ac6b3cdeca1489f677e09e848
+U drh
+Z 4a33c5af1c72f813c7944d5f457e89df
 # Remove this line to create a well-formed Fossil manifest.
