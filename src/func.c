@@ -1101,13 +1101,13 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
       double r1, r2;
       const char *zVal;
       r1 = sqlite3_value_double(pValue);
-      sqlite3_str_appendf(pStr, "%!.15g", r1);
+      sqlite3_str_appendf(pStr, "%!0.15g", r1);
       zVal = sqlite3_str_value(pStr);
       if( zVal ){
         sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
         if( r1!=r2 ){
           sqlite3_str_reset(pStr);
-          sqlite3_str_appendf(pStr, "%!.20e", r1);
+          sqlite3_str_appendf(pStr, "%!0.20e", r1);
         }
       }
       break;
