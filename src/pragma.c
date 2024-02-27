@@ -1720,7 +1720,6 @@ void sqlite3Pragma(
       Hash *pTbls;     /* Set of all tables in the schema */
       int *aRoot;      /* Array of root page numbers of all btrees */
       int cnt = 0;     /* Number of entries in aRoot[] */
-      int mxIdx = 0;   /* Maximum number of indexes for any table */
 
       if( OMIT_TEMPDB && i==1 ) continue;
       if( iDb>=0 && i!=iDb ) continue;
@@ -1742,7 +1741,6 @@ void sqlite3Pragma(
         if( pObjTab && pObjTab!=pTab ) continue;
         if( HasRowid(pTab) ) cnt++;
         for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){ cnt++; }
-        if( nIdx>mxIdx ) mxIdx = nIdx;
       }
       if( cnt==0 ) continue;
       if( pObjTab ) cnt++;
@@ -1762,11 +1760,11 @@ void sqlite3Pragma(
       aRoot[0] = cnt;
 
       /* Make sure sufficient number of registers have been allocated */
-      sqlite3TouchRegister(pParse, 8+mxIdx);
+      sqlite3TouchRegister(pParse, 8+cnt);
       sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */
-      sqlite3VdbeAddOp4(v, OP_IntegrityCk, 2, cnt, 1, (char*)aRoot,P4_INTARRAY);
+      sqlite3VdbeAddOp4(v, OP_IntegrityCk, 1, cnt, 8, (char*)aRoot,P4_INTARRAY);
       sqlite3VdbeChangeP5(v, (u8)i);
       addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2); VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
@@ -1775,6 +1773,36 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp3(v, OP_Concat, 2, 3, 3);
       integrityCheckResultRow(v);
       sqlite3VdbeJumpHere(v, addr);
+
+      /* Check that the indexes all have the right number of rows */
+      cnt = pObjTab ? 1 : 0;
+      sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
+      for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+        int iTab = 0;
+        Table *pTab = sqliteHashData(x);
+        Index *pIdx;
+        if( pObjTab && pObjTab!=pTab ) continue;
+        if( HasRowid(pTab) ){
+          iTab = cnt++;
+        }else{
+          iTab = cnt;
+          for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+            if( IsPrimaryKeyIndex(pIdx) ) break;
+            iTab++;
+          }
+        }
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( pIdx->pPartIdxWhere==0 ){
+            addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+cnt, 0, 8+iTab);
+            VdbeCoverage(v);
+            sqlite3VdbeLoadString(v, 4, pIdx->zName);
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
+            integrityCheckResultRow(v);
+            sqlite3VdbeJumpHere(v, addr);
+          }
+          cnt++;
+        }
+      }
 
       /* Make sure all the indices are constructed correctly.
       */
@@ -2099,21 +2127,9 @@ void sqlite3Pragma(
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);
-        if( !isQuick ){
-          sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
-          for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-            if( pPk==pIdx ) continue;
-            sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
-            addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+j, 0, 3); VdbeCoverage(v);
-            sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
-            sqlite3VdbeLoadString(v, 4, pIdx->zName);
-            sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
-            integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, addr);
-          }
-          if( pPk ){
-            sqlite3ReleaseTempRange(pParse, r2, pPk->nKeyCol);
-          }
+        if( pPk ){
+          assert( !isQuick );
+          sqlite3ReleaseTempRange(pParse, r2, pPk->nKeyCol);
         }
       }
 

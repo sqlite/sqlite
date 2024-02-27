@@ -943,6 +943,11 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   }
 }
 
+void sqlite3MemSetArrayInt64(sqlite3_value *aMem, int iIdx, i64 val){
+  aMem[iIdx].u.i = val;
+  aMem[iIdx].flags = MEM_Int;
+}
+
 /* A no-op destructor */
 void sqlite3NoopDestructor(void *p){ UNUSED_PARAMETER(p); }
 
