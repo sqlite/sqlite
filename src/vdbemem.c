@@ -943,9 +943,11 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   }
 }
 
+/*
+** Set the iIdx'th entry of array aMem[] to contain integer value val.
+*/
 void sqlite3MemSetArrayInt64(sqlite3_value *aMem, int iIdx, i64 val){
-  aMem[iIdx].u.i = val;
-  aMem[iIdx].flags = MEM_Int;
+  sqlite3VdbeMemSetInt64(&aMem[iIdx], val);
 }
 
 /* A no-op destructor */
