@@ -10914,6 +10914,7 @@ static int checkTreePage(
         btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
       }
     }
+    assert( heap!=0 );
     /* Add the freeblocks to the min-heap
     **
     ** EVIDENCE-OF: R-20690-50594 The second field of the b-tree page header
