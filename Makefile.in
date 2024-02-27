@@ -817,7 +817,8 @@ has_tclsh85:
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) \
+		$(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
@@ -828,7 +829,8 @@ sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS)
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover \
+		$(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .

@@ -230,7 +230,6 @@ SRC += \
 SRC += \
   $(TOP)/ext/misc/stmt.c
 
-
 # FTS5 things
 #
 FTS5_HDR = \
@@ -661,7 +660,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 	touch target_source
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl src-verify
-	tclsh $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
@@ -673,7 +672,7 @@ sqlite3ext.h:	target_source
 	cp tsrc/sqlite3ext.h .
 
 sqlite3.c-debug:	target_source $(TOP)/tool/mksqlite3c.tcl src-verify
-	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros=1
+	tclsh $(TOP)/tool/mksqlite3c.tcl --linemacros=1 $(EXTRA_SRC)
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c

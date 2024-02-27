@@ -18,6 +18,13 @@ USE_AMALGAMATION = 1
 !ENDIF
 # <</mark>>
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c.
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
@@ -1915,7 +1922,7 @@ mptest:	mptester.exe
 	echo > .target_source
 
 sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe
-	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
+	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS) $(EXTRA_SRC)
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
