@@ -9185,7 +9185,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( iArg==0 ) iArg = -1;
     }
     if( (nArg!=1 && nArg!=2) || iArg<0 ){
-      eputf("Usage: .intck STEPS_PER_UNLOCK\n");
+      eputf("%s","Usage: .intck STEPS_PER_UNLOCK\n");
       rc = 1;
       goto meta_command_exit;
     }
