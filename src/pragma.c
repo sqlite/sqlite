@@ -1786,7 +1786,7 @@ void sqlite3Pragma(
           iTab = cnt++;
         }else{
           iTab = cnt;
-          for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          for(pIdx=pTab->pIndex; ALWAYS(pIdx); pIdx=pIdx->pNext){
             if( IsPrimaryKeyIndex(pIdx) ) break;
             iTab++;
           }

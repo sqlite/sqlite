@@ -7142,9 +7142,11 @@ case OP_IntegrityCk: {
   Mem *pnErr;     /* Register keeping track of errors remaining */
 
   assert( p->bIsReader );
+  assert( pOp->p4type==P4_INTARRAY );
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
+  assert( aRoot!=0 );
   assert( aRoot[0]==(Pgno)nRoot );
   assert( pOp->p1>0 && (pOp->p1+1)<=(p->nMem+1 - p->nCursor) );
   pnErr = &aMem[pOp->p1];

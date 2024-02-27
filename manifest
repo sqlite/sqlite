@@ -1,5 +1,5 @@
-C Ensure\smemory\scells\sare\sproperly\sfreed\sbefore\sthey\sare\soverwritten\sby\sOP_IntegrityCk.
-D 2024-02-27T14:31:31.983
+C Remove\sunreachable\sbranches\sfrom\sthe\sPRAGMA\sintegrity_check\senhancement\sof\n[b736519d3d2e93c7].
+D 2024-02-27T15:33:54.328
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -689,7 +689,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 28a97cee62ec9d701ee4d45d034dab1a113a81f0db53773db4c298d79a1dbce1
+F src/btree.c 9f2278fa80de5cd7ef31de42a1ed636c9c5d39d0a0053b1a0bd011f0a6374ad1
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 04f1bcee189f045ab086d84fee95db42cb49df82ff8e84af8136309ff3c8a75f
@@ -743,7 +743,7 @@ F src/parse.y 6209f01e8e7495379571454744fa82a5cfc2e7eeb89e46dee3f410d73ea6252d
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c 3b6ffa36e3b7520e35e958814f1865d4474e53d5cac87773e2a6b11c2a26adc8
+F src/pragma.c 35d3d604e5a2770b4ac9d7fc22092a06ca8c71784dc0c388d474760af28cfcf8
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 10e8bad30042f8bd6114a013b4afc229ec8ad255ab27518d7d9f52e8cbc5cd0a
@@ -820,7 +820,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 7a49c6a5442757bb6344e7839e0b1f6ba8e54df4e4d092b439c6f6b7035bb01a
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c f1097e0a5faf9c3939d1431beade2536487be9704ee020416c74eddea46dc4bc
+F src/vdbe.c 523a88b3df328810fbcbb407738c352dd9d5163b7af4c953e6e9887a4b582859
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b736519d3d2e93c76fa36253143f2664b9dd12e26acba555f0bf9c4d44705499
-R 725744da1444e5fefe1d2ce5b7ed4e0a
-U dan
-Z 55bcecaeff9ae7b0e1973c81cc615ff2
+P e50acaf934f44f8833bc588e0ae1abd59df907b9a42d4cafd5518427a8c7b627
+R 65aed5a318a1485a77b2828f417462c5
+U drh
+Z 14ec372b01ad9570d9528860ace49e84
 # Remove this line to create a well-formed Fossil manifest.
