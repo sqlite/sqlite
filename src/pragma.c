@@ -1794,7 +1794,7 @@ void sqlite3Pragma(
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( pIdx->pPartIdxWhere==0 ){
             addr = sqlite3VdbeAddOp3(v, OP_Eq, 8+cnt, 0, 8+iTab);
-            VdbeCoverage(v);
+            VdbeCoverageNeverNull(v);
             sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
             integrityCheckResultRow(v);

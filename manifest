@@ -1,5 +1,5 @@
-C Remove\sunreachable\sbranches\sfrom\sthe\sPRAGMA\sintegrity_check\senhancement\sof\n[b736519d3d2e93c7].
-D 2024-02-27T15:33:54.328
+C Adjust\sa\sVdbeCoverage()\smacro\sin\sPRAGMA\sintegrity_check\sto\saccount\sfor\sthe\nfact\sthat\sarguments\sto\sthe\sOP_Eq\sopcode\sused\sare\snever\sNULL.
+D 2024-02-27T16:36:40.485
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -743,7 +743,7 @@ F src/parse.y 6209f01e8e7495379571454744fa82a5cfc2e7eeb89e46dee3f410d73ea6252d
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c 35d3d604e5a2770b4ac9d7fc22092a06ca8c71784dc0c388d474760af28cfcf8
+F src/pragma.c e8221d6310c9923c80f6fa6d09b7ea7c5263a671f53db8d0894df23efcdb617b
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 10e8bad30042f8bd6114a013b4afc229ec8ad255ab27518d7d9f52e8cbc5cd0a
@@ -2176,8 +2176,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e50acaf934f44f8833bc588e0ae1abd59df907b9a42d4cafd5518427a8c7b627
-R 65aed5a318a1485a77b2828f417462c5
+P 6d02fb233fb86f9907cc374d06a7ed71a638091d6e75abc199001c42eab51e5c
+Q +8c788fc4b2ff21e4f051c9ddc6103ecddf2bbbaf2b6448f1b6dd465d6bd7630d
+R aa090c9c9f482341f70a36ba64dc71b9
 U drh
-Z 14ec372b01ad9570d9528860ace49e84
+Z f5f75171aadd4bf4f2a1819642f85884
 # Remove this line to create a well-formed Fossil manifest.
