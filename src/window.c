@@ -1038,7 +1038,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       assert( ExprUseXList(pWin->pOwner) );
       assert( pWin->pWFunc!=0 );
       pArgs = pWin->pOwner->x.pList;
-      if( pWin->pWFunc->funcFlags & SQLITE_FUNC_SUBTYPE ){
+      if( pWin->pWFunc->funcFlags & SQLITE_SUBTYPE ){
         selectWindowRewriteEList(pParse, pMWin, pSrc, pArgs, pTab, &pSublist);
         pWin->iArgCol = (pSublist ? pSublist->nExpr : 0);
         pWin->bExprArgs = 1;
@@ -1312,8 +1312,9 @@ void sqlite3WindowAttach(Parse *pParse, Expr *p, Window *pWin){
   if( p ){
     assert( p->op==TK_FUNCTION );
     assert( pWin );
+    assert( ExprIsFullSize(p) );
     p->y.pWin = pWin;
-    ExprSetProperty(p, EP_WinFunc);
+    ExprSetProperty(p, EP_WinFunc|EP_FullSize);
     pWin->pOwner = p;
     if( (p->flags & EP_Distinct) && pWin->eFrmType!=TK_FILTER ){
       sqlite3ErrorMsg(pParse,

@@ -673,7 +673,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
   }
 
   if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN, &pScan, 0);
+    rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN, &pScan, pConfig->pzErrmsg);
   }
 
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pScan) ){
@@ -1184,7 +1184,9 @@ int sqlite3Fts5StorageSync(Fts5Storage *p){
   i64 iLastRowid = sqlite3_last_insert_rowid(p->pConfig->db);
   if( p->bTotalsValid ){
     rc = fts5StorageSaveTotals(p);
-    p->bTotalsValid = 0;
+    if( rc==SQLITE_OK ){
+      p->bTotalsValid = 0;
+    }
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3Fts5IndexSync(p->pIndex);

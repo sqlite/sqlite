@@ -265,6 +265,7 @@ struct Fts3Table {
   int nPgsz;                      /* Page size for host database */
   char *zSegmentsTbl;             /* Name of %_segments table */
   sqlite3_blob *pSegments;        /* Blob handle open on %_segments table */
+  int iSavepoint;
 
   /* 
   ** The following array of hash tables is used to buffer pending index 
@@ -651,6 +652,8 @@ int sqlite3FtsUnicodeIsdiacritic(int);
 #endif
 
 int sqlite3Fts3ExprIterate(Fts3Expr*, int (*x)(Fts3Expr*,int,void*), void*);
+
+int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk);
 
 #endif /* !SQLITE_CORE || SQLITE_ENABLE_FTS3 */
 #endif /* _FTSINT_H */

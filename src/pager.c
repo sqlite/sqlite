@@ -688,7 +688,7 @@ struct Pager {
   char *zJournal;             /* Name of the journal file */
   int (*xBusyHandler)(void*); /* Function to call when busy */
   void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
-  int aStat[4];               /* Total cache hits, misses, writes, spills */
+  u32 aStat[4];               /* Total cache hits, misses, writes, spills */
 #ifdef SQLITE_TEST
   int nRead;                  /* Database pages read */
 #endif
@@ -818,9 +818,8 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
     u32 iRead = 0;
-    int rc;
-    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-    return (rc==SQLITE_OK && iRead==0);
+    (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
+    return iRead==0;
   }
 #endif
   return 1;
@@ -1492,9 +1491,32 @@ static int writeJournalHdr(Pager *pPager){
     memset(zHeader, 0, sizeof(aJournalMagic)+4);
   }
 
+
+
   /* The random check-hash initializer */
-  sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  if( pPager->journalMode!=PAGER_JOURNALMODE_MEMORY ){
+    sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  }
+#ifdef SQLITE_DEBUG
+  else{
+    /* The Pager.cksumInit variable is usually randomized above to protect
+    ** against there being existing records in the journal file. This is
+    ** dangerous, as following a crash they may be mistaken for records
+    ** written by the current transaction and rolled back into the database
+    ** file, causing corruption. The following assert statements verify
+    ** that this is not required in "journal_mode=memory" mode, as in that
+    ** case the journal file is always 0 bytes in size at this point. 
+    ** It is advantageous to avoid the sqlite3_randomness() call if possible 
+    ** as it takes the global PRNG mutex.  */
+    i64 sz = 0;
+    sqlite3OsFileSize(pPager->jfd, &sz);
+    assert( sz==0 );
+    assert( pPager->journalOff==journalHdrOffset(pPager) );
+    assert( sqlite3JournalIsInMemory(pPager->jfd) );
+  }
+#endif
   put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
+
   /* The initial database size */
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbOrigSize);
   /* The assumed sector size for this process */
@@ -2138,6 +2160,9 @@ static int pager_end_transaction(Pager *pPager, int hasSuper, int bCommit){
   return (rc==SQLITE_OK?rc2:rc);
 }
 
+/* Forward reference */
+static int pager_playback(Pager *pPager, int isHot);
+
 /*
 ** Execute a rollback if a transaction is active and unlock the
 ** database file.
@@ -2166,6 +2191,21 @@ static void pagerUnlockAndRollback(Pager *pPager){
       assert( pPager->eState==PAGER_READER );
       pager_end_transaction(pPager, 0, 0);
     }
+  }else if( pPager->eState==PAGER_ERROR
+         && pPager->journalMode==PAGER_JOURNALMODE_MEMORY
+         && isOpen(pPager->jfd)
+  ){
+    /* Special case for a ROLLBACK due to I/O error with an in-memory
+    ** journal:  We have to rollback immediately, before the journal is
+    ** closed, because once it is closed, all content is forgotten. */
+    int errCode = pPager->errCode;
+    u8 eLock = pPager->eLock;
+    pPager->eState = PAGER_OPEN;
+    pPager->errCode = SQLITE_OK;
+    pPager->eLock = EXCLUSIVE_LOCK;
+    pager_playback(pPager, 1);
+    pPager->errCode = errCode;
+    pPager->eLock = eLock;
   }
   pager_unlock(pPager);
 }
@@ -5021,10 +5061,13 @@ act_like_temp_file:
 */
 sqlite3_file *sqlite3_database_file_object(const char *zName){
   Pager *pPager;
+  const char *p;
   while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
     zName--;
   }
-  pPager = *(Pager**)(zName - 4 - sizeof(Pager*));
+  p = zName - 4 - sizeof(Pager*);
+  assert( EIGHT_BYTE_ALIGNMENT(p) );
+  pPager = *(Pager**)p;
   return pPager->fd;
 }
 
@@ -5658,8 +5701,20 @@ int sqlite3PagerGet(
   DbPage **ppPage,    /* Write a pointer to the page here */
   int flags           /* PAGER_GET_XXX flags */
 ){
-  /* printf("PAGE %u\n", pgno); fflush(stdout); */
+#if 0   /* Trace page fetch by setting to 1 */
+  int rc;
+  printf("PAGE %u\n", pgno);
+  fflush(stdout);
+  rc = pPager->xGet(pPager, pgno, ppPage, flags);
+  if( rc ){ 
+    printf("PAGE %u failed with 0x%02x\n", pgno, rc);
+    fflush(stdout);
+  }
+  return rc;
+#else
+  /* Normal, high-speed version of sqlite3PagerGet() */
   return pPager->xGet(pPager, pgno, ppPage, flags);
+#endif
 }
 
 /*
@@ -6535,6 +6590,13 @@ int sqlite3PagerCommitPhaseOne(
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, 0);
         if( rc==SQLITE_OK ){
           rc = pager_write_pagelist(pPager, pList);
+          if( rc==SQLITE_OK && pPager->dbSize>pPager->dbFileSize ){
+            char *pTmp = pPager->pTmpSpace;
+            int szPage = (int)pPager->pageSize;
+            memset(pTmp, 0, szPage);
+            rc = sqlite3OsWrite(pPager->fd, pTmp, szPage,
+                      ((i64)pPager->dbSize*pPager->pageSize)-szPage);
+          }
           if( rc==SQLITE_OK ){
             rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, 0);
           }
@@ -6769,11 +6831,11 @@ int *sqlite3PagerStats(Pager *pPager){
   a[3] = pPager->eState==PAGER_OPEN ? -1 : (int) pPager->dbSize;
   a[4] = pPager->eState;
   a[5] = pPager->errCode;
-  a[6] = pPager->aStat[PAGER_STAT_HIT];
-  a[7] = pPager->aStat[PAGER_STAT_MISS];
+  a[6] = (int)pPager->aStat[PAGER_STAT_HIT] & 0x7fffffff;
+  a[7] = (int)pPager->aStat[PAGER_STAT_MISS] & 0x7fffffff;
   a[8] = 0;  /* Used to be pPager->nOvfl */
   a[9] = pPager->nRead;
-  a[10] = pPager->aStat[PAGER_STAT_WRITE];
+  a[10] = (int)pPager->aStat[PAGER_STAT_WRITE] & 0x7fffffff;
   return a;
 }
 #endif
@@ -6789,7 +6851,7 @@ int *sqlite3PagerStats(Pager *pPager){
 ** reset parameter is non-zero, the cache hit or miss count is zeroed before
 ** returning.
 */
-void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, int *pnVal){
+void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, u64 *pnVal){
 
   assert( eStat==SQLITE_DBSTATUS_CACHE_HIT
        || eStat==SQLITE_DBSTATUS_CACHE_MISS
@@ -7346,7 +7408,7 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         }
         assert( state==pPager->eState );
       }
-    }else if( eMode==PAGER_JOURNALMODE_OFF ){
+    }else if( eMode==PAGER_JOURNALMODE_OFF || eMode==PAGER_JOURNALMODE_MEMORY ){
       sqlite3OsClose(pPager->jfd);
     }
   }
@@ -7729,7 +7791,7 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
-#ifdef SQLITE_USE_SEH
+#if defined(SQLITE_USE_SEH) && !defined(SQLITE_OMIT_WAL)
 int sqlite3PagerWalSystemErrno(Pager *pPager){
   return sqlite3WalSystemErrno(pPager->pWal);
 }

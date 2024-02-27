@@ -252,13 +252,13 @@ do_execsql_test 8.11 {
 
 do_execsql_test 9.1 {
   WITH c(x) AS (VALUES('{x: +Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {Inf {{"x":9.0e999}}}
+} {Inf {{"x":9e999}}}
 do_execsql_test 9.2 {
   WITH c(x) AS (VALUES('{x: -Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {-Inf {{"x":-9.0e999}}}
+} {-Inf {{"x":-9e999}}}
 do_execsql_test 9.3 {
   WITH c(x) AS (VALUES('{x: Infinity}')) SELECT x->>'x', json(x) FROM c;
-} {Inf {{"x":9.0e999}}}
+} {Inf {{"x":9e999}}}
 do_execsql_test 9.4 {
   WITH c(x) AS (VALUES('{x: NaN}')) SELECT x->>'x', json(x) FROM c;
 } {{} {{"x":null}}}
@@ -299,6 +299,38 @@ do_execsql_test 12.4 {
                         0x2006,0x2007,0x2008,0x2009,0x200a,0x3000,0xfeff)
           || ' "xyz"}')->>'a';
 } xyz
+
+# 2023-11-08 forum/forumpost/ddcad3e884
+#
+do_execsql_test 13.1 {
+  SELECT json('{x:''a "b" c''}');
+} {{{"x":"a \"b\" c"}}}
+
+# 2024-01-31
+# Allow control characters within JSON5 string literals.
+#
+for {set c 1} {$c<=0x1f} {incr c} {
+  do_execsql_test 14.$c.1 {
+    SELECT json_valid('"abc' || char($c) || 'xyz"');
+  } {0}
+  do_execsql_test 14.$c.2 {
+    SELECT json_valid('"abc' || char($c) || 'xyz"', 2);
+  } {1}
+  switch $c {
+    8   {set e "\\b"}
+    9   {set e "\\t"}
+    10  {set e "\\n"}
+    12  {set e "\\f"}
+    13  {set e "\\r"}
+    default {set e [format "\\u00%02x" $c]}
+  }
+  do_execsql_test 14.$c.3 {
+    SELECT json('{label:"abc' || char($c) || 'xyz"}');
+  } "{{\"label\":\"abc${e}xyz\"}}"
+  do_execsql_test 14.$c.4 {
+    SELECT jsonb('{label:"abc' || char($c) || 'xyz"}') -> '$';
+  } "{{\"label\":\"abc${e}xyz\"}}"
+}
 
 
 finish_test

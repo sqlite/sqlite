@@ -598,8 +598,6 @@ void sqlite3ParseObjectReset(Parse *pParse){
   db->lookaside.sz = db->lookaside.bDisable ? 0 : db->lookaside.szTrue;
   assert( pParse->db->pParse==pParse );
   db->pParse = pParse->pOuterParse;
-  pParse->db = 0;
-  pParse->disableLookaside = 0;
 }
 
 /*
@@ -870,6 +868,7 @@ static int sqlite3LockAndPrepare(
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;
   sqlite3_mutex_leave(db->mutex);
+  assert( rc==SQLITE_OK || (*ppStmt)==0 );
   return rc;
 }
 

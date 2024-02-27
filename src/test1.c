@@ -992,6 +992,39 @@ static void intrealFunction(
 }
 
 /*
+** These SQL functions attempt to return a value (their first argument)
+** that has been modified to have multiple datatypes.  For example both
+** TEXT and INTEGER.
+*/
+static void addTextTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_text(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+static void addIntTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_int64(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+static void addRealTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_double(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+
+/*
 ** SQL function:  strtod(X)
 **
 ** Use the C-library strtod() function to convert string X into a double.
@@ -1101,6 +1134,22 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "intreal", 1, SQLITE_UTF8,
           0, intrealFunction, 0, 0);
+  }
+
+  /* The add_text_type(), add_int_type(), and add_real_type() functions
+  ** attempt to return a value that has multiple datatypes.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_text_type", 1, SQLITE_UTF8,
+          0, addTextTypeFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_int_type", 1, SQLITE_UTF8,
+          0, addIntTypeFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_real_type", 1, SQLITE_UTF8,
+          0, addRealTypeFunction, 0, 0);
   }
 
   /* Functions strtod() and dtostr() work as in the shell.  These routines
@@ -4222,9 +4271,11 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
   sqlite3_stmt *pStmt;
   int idx;
   int bidx;
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   const char *z3 = 0;
   sqlite3 *db = 0;
   sqlite3_value *pVal = 0;
+#endif
 
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT N NEW|OLD IDX");
@@ -4233,11 +4284,11 @@ static int SQLITE_TCLAPI test_bind_value_from_preupdate(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  z3 = Tcl_GetString(objv[3]);
   if( Tcl_GetIntFromObj(interp, objv[4], &bidx) ) return TCL_ERROR;
-  db = sqlite3_db_handle(pStmt);
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  z3 = Tcl_GetString(objv[3]);
+  db = sqlite3_db_handle(pStmt);
   if( z3[0]=='n' ){
     sqlite3_preupdate_new(db, bidx, &pVal);
   }else if( z3[0]=='o' ){
@@ -7651,6 +7702,7 @@ static int SQLITE_TCLAPI test_test_control(
     { "SQLITE_TESTCTRL_SORTER_MMAP",        SQLITE_TESTCTRL_SORTER_MMAP     }, 
     { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
     { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
+    { "SQLITE_TESTCTRL_FK_NO_ACTION",       SQLITE_TESTCTRL_FK_NO_ACTION},
     { 0, 0 }
   };
   int iVerb;
@@ -7687,6 +7739,20 @@ static int SQLITE_TCLAPI test_test_control(
       }
       if( Tcl_GetIntFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       sqlite3_test_control(iFlag, val, testLocaltime);
+      break;
+    }
+
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      int val = 0;
+      sqlite3 *db = 0;
+      if( objc!=4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB BOOLEAN");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      if( Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+
+      sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, db, val);
       break;
     }
 
@@ -8103,6 +8169,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
   extern int sqlite3_qpvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_remember_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -8135,6 +8202,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "prefixes",              sqlite3_prefixes_init             },
 #endif
     { "qpvtab",                sqlite3_qpvtab_init               },
+    { "randomjson",            sqlite3_randomjson_init           },
     { "regexp",                sqlite3_regexp_init               },
     { "remember",              sqlite3_remember_init             },
     { "series",                sqlite3_series_init               },

@@ -117,6 +117,8 @@ struct Fts5FullTable {
   Fts5Storage *pStorage;          /* Document store */
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
+  int iSavepoint;                 /* Successful xSavepoint()+1 */
+  
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
@@ -405,6 +407,13 @@ static int fts5InitVtab(
     pConfig->pzErrmsg = 0;
   }
 
+  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, (int)1);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
+  }
+
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);
     pTab = 0;
@@ -647,12 +656,15 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   }
   idxStr[iIdxStr] = '\0';
 
-  /* Set idxFlags flags for the ORDER BY clause */
+  /* Set idxFlags flags for the ORDER BY clause
+  **
+  ** Note that tokendata=1 tables cannot currently handle "ORDER BY rowid DESC".
+  */
   if( pInfo->nOrderBy==1 ){
     int iSort = pInfo->aOrderBy[0].iColumn;
     if( iSort==(pConfig->nCol+1) && bSeenMatch ){
       idxFlags |= FTS5_BI_ORDER_RANK;
-    }else if( iSort==-1 ){
+    }else if( iSort==-1 && (!pInfo->aOrderBy[0].desc || !pConfig->bTokendata) ){
       idxFlags |= FTS5_BI_ORDER_ROWID;
     }
     if( BitFlagTest(idxFlags, FTS5_BI_ORDER_RANK|FTS5_BI_ORDER_ROWID) ){
@@ -903,6 +915,16 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
           (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
   );
   assert( !CsrFlagTest(pCsr, FTS5CSR_EOF) );
+
+  /* If this cursor uses FTS5_PLAN_MATCH and this is a tokendata=1 table,
+  ** clear any token mappings accumulated at the fts5_index.c level. In
+  ** other cases, specifically FTS5_PLAN_SOURCE and FTS5_PLAN_SORTED_MATCH,
+  ** we need to retain the mappings for the entire query.  */
+  if( pCsr->ePlan==FTS5_PLAN_MATCH 
+   && ((Fts5Table*)pCursor->pVtab)->pConfig->bTokendata 
+  ){
+    sqlite3Fts5ExprClearTokens(pCsr->pExpr);
+  }
 
   if( pCsr->ePlan<3 ){
     int bSkip = 0;
@@ -1329,6 +1351,9 @@ static int fts5FilterMethod(
     pCsr->iFirstRowid = fts5GetRowidLimit(pRowidGe, SMALLEST_INT64);
   }
 
+  rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+  if( rc!=SQLITE_OK ) goto filter_out;
+
   if( pTab->pSortCsr ){
     /* If pSortCsr is non-NULL, then this call is being made as part of 
     ** processing for a "... MATCH <expr> ORDER BY rank" query (ePlan is
@@ -1351,6 +1376,7 @@ static int fts5FilterMethod(
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
   }else if( pCsr->pExpr ){
+    assert( rc==SQLITE_OK );
     rc = fts5CursorParseRank(pConfig, pCsr, pRank);
     if( rc==SQLITE_OK ){
       if( bOrderByRank ){
@@ -1522,6 +1548,7 @@ static int fts5SpecialInsert(
   Fts5Config *pConfig = pTab->p.pConfig;
   int rc = SQLITE_OK;
   int bError = 0;
+  int bLoadConfig = 0;
 
   if( 0==sqlite3_stricmp("delete-all", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
@@ -1533,6 +1560,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageDeleteAll(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NONE ){
       fts5SetVtabError(pTab, 
@@ -1542,6 +1570,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageRebuild(pTab->pStorage);
     }
+    bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("optimize", zCmd) ){
     rc = sqlite3Fts5StorageOptimize(pTab->pStorage);
   }else if( 0==sqlite3_stricmp("merge", zCmd) ){
@@ -1554,8 +1583,13 @@ static int fts5SpecialInsert(
   }else if( 0==sqlite3_stricmp("prefix-index", zCmd) ){
     pConfig->bPrefixIndex = sqlite3_value_int(pVal);
 #endif
+  }else if( 0==sqlite3_stricmp("flush", zCmd) ){
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
   }else{
-    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    }
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts5ConfigSetValue(pTab->p.pConfig, zCmd, pVal, &bError);
     }
@@ -1567,6 +1601,12 @@ static int fts5SpecialInsert(
       }
     }
   }
+
+  if( rc==SQLITE_OK && bLoadConfig ){
+    pTab->p.pConfig->iCookie--;
+    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+  }
+
   return rc;
 }
 
@@ -1685,7 +1725,7 @@ static int fts5UpdateMethod(
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
     /* Filter out attempts to run UPDATE or DELETE on contentless tables.
-    ** This is not suported. Except - DELETE is supported if the CREATE
+    ** This is not suported. Except - they are both supported if the CREATE
     ** VIRTUAL TABLE statement contained "contentless_delete=1". */
     if( eType0==SQLITE_INTEGER 
      && pConfig->eContent==FTS5_CONTENT_NONE 
@@ -1714,7 +1754,8 @@ static int fts5UpdateMethod(
       }
 
       else if( eType0!=SQLITE_INTEGER ){     
-        /* If this is a REPLACE, first remove the current entry (if any) */
+        /* An INSERT statement. If the conflict-mode is REPLACE, first remove
+        ** the current entry (if any). */
         if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
@@ -1873,7 +1914,10 @@ static int fts5ApiColumnText(
 ){
   int rc = SQLITE_OK;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  if( iCol<0 || iCol>=pTab->pConfig->nCol ){
+    rc = SQLITE_RANGE;
+  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
    || pCsr->ePlan==FTS5_PLAN_SPECIAL 
   ){
     *pz = 0;
@@ -1898,8 +1942,9 @@ static int fts5CsrPoslist(
   int rc = SQLITE_OK;
   int bLive = (pCsr->pSorter==0);
 
-  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
-
+  if( iPhrase<0 || iPhrase>=sqlite3Fts5ExprPhraseCount(pCsr->pExpr) ){
+    rc = SQLITE_RANGE;
+  }else if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_POSLIST) ){
     if( pConfig->eDetail!=FTS5_DETAIL_FULL ){
       Fts5PoslistPopulator *aPopulator;
       int i;
@@ -1923,14 +1968,20 @@ static int fts5CsrPoslist(
     CsrFlagClear(pCsr, FTS5CSR_REQUIRE_POSLIST);
   }
 
-  if( pCsr->pSorter && pConfig->eDetail==FTS5_DETAIL_FULL ){
-    Fts5Sorter *pSorter = pCsr->pSorter;
-    int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
-    *pn = pSorter->aIdx[iPhrase] - i1;
-    *pa = &pSorter->aPoslist[i1];
+  if( rc==SQLITE_OK ){
+    if( pCsr->pSorter && pConfig->eDetail==FTS5_DETAIL_FULL ){
+      Fts5Sorter *pSorter = pCsr->pSorter;
+      int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
+      *pn = pSorter->aIdx[iPhrase] - i1;
+      *pa = &pSorter->aPoslist[i1];
+    }else{
+      *pn = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, pa);
+    }
   }else{
-    *pn = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, pa);
+    *pa = 0;
+    *pn = 0;
   }
+
 
   return rc;
 }
@@ -2038,12 +2089,6 @@ static int fts5ApiInst(
   ){
     if( iIdx<0 || iIdx>=pCsr->nInstCount ){
       rc = SQLITE_RANGE;
-#if 0
-    }else if( fts5IsOffsetless((Fts5Table*)pCsr->base.pVtab) ){
-      *piPhrase = pCsr->aInst[iIdx*3];
-      *piCol = pCsr->aInst[iIdx*3 + 2];
-      *piOff = -1;
-#endif
     }else{
       *piPhrase = pCsr->aInst[iIdx*3];
       *piCol = pCsr->aInst[iIdx*3 + 1];
@@ -2298,13 +2343,56 @@ static int fts5ApiPhraseFirstColumn(
   return rc;
 }
 
+/*
+** xQueryToken() API implemenetation.
+*/
+static int fts5ApiQueryToken(
+  Fts5Context* pCtx, 
+  int iPhrase, 
+  int iToken, 
+  const char **ppOut, 
+  int *pnOut
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return sqlite3Fts5ExprQueryToken(pCsr->pExpr, iPhrase, iToken, ppOut, pnOut);
+}
+
+/*
+** xInstToken() API implemenetation.
+*/
+static int fts5ApiInstToken(
+  Fts5Context *pCtx,
+  int iIdx, 
+  int iToken,
+  const char **ppOut, int *pnOut
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int rc = SQLITE_OK;
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST)==0 
+   || SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) 
+  ){
+    if( iIdx<0 || iIdx>=pCsr->nInstCount ){
+      rc = SQLITE_RANGE;
+    }else{
+      int iPhrase = pCsr->aInst[iIdx*3];
+      int iCol = pCsr->aInst[iIdx*3 + 1];
+      int iOff = pCsr->aInst[iIdx*3 + 2];
+      i64 iRowid = fts5CursorRowid(pCsr);
+      rc = sqlite3Fts5ExprInstToken(
+          pCsr->pExpr, iRowid, iPhrase, iCol, iOff, iToken, ppOut, pnOut
+      );
+    }
+  }
+  return rc;
+}
+
 
 static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
 );
 
 static const Fts5ExtensionApi sFts5Api = {
-  2,                            /* iVersion */
+  3,                            /* iVersion */
   fts5ApiUserData,
   fts5ApiColumnCount,
   fts5ApiRowCount,
@@ -2324,6 +2412,8 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseNext,
   fts5ApiPhraseFirstColumn,
   fts5ApiPhraseNextColumn,
+  fts5ApiQueryToken,
+  fts5ApiInstToken
 };
 
 /*
@@ -2588,8 +2678,10 @@ static int fts5RenameMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
   const char *zName               /* New name of table */
 ){
+  int rc;
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  return sqlite3Fts5StorageRename(pTab->pStorage, zName);
+  rc = sqlite3Fts5StorageRename(pTab->pStorage, zName);
+  return rc;
 }
 
 int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
@@ -2603,9 +2695,15 @@ int sqlite3Fts5FlushToDisk(Fts5Table *pTab){
 ** Flush the contents of the pending-terms table to disk.
 */
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
-  fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_SAVEPOINT, iSavepoint);
-  return sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int rc = SQLITE_OK;
+
+  fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
+  rc = sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  if( rc==SQLITE_OK ){
+    pTab->iSavepoint = iSavepoint+1;
+  }
+  return rc;
 }
 
 /*
@@ -2614,9 +2712,16 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** This is a no-op.
 */
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
-  fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_RELEASE, iSavepoint);
-  return sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int rc = SQLITE_OK;
+  fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
+  if( (iSavepoint+1)<pTab->iSavepoint ){
+    rc = sqlite3Fts5FlushToDisk(&pTab->p);
+    if( rc==SQLITE_OK ){
+      pTab->iSavepoint = iSavepoint;
+    }
+  }
+  return rc;
 }
 
 /*
@@ -2626,11 +2731,14 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 */
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
-  UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
+  int rc = SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
-  pTab->p.pConfig->pgsz = 0;
-  return sqlite3Fts5StorageRollback(pTab->pStorage);
+  if( (iSavepoint+1)<=pTab->iSavepoint ){
+    pTab->p.pConfig->pgsz = 0;
+    rc = sqlite3Fts5StorageRollback(pTab->pStorage);
+  }
+  return rc;
 }
 
 /*
@@ -2850,9 +2958,41 @@ static int fts5ShadowName(const char *zName){
   return 0;
 }
 
+/*
+** Run an integrity check on the FTS5 data structures.  Return a string
+** if anything is found amiss.  Return a NULL pointer if everything is
+** OK.
+*/
+static int fts5IntegrityMethod(
+  sqlite3_vtab *pVtab,    /* the FTS5 virtual table to check */
+  const char *zSchema,    /* Name of schema in which this table lives */
+  const char *zTabname,   /* Name of the table itself */
+  int isQuick,            /* True if this is a quick-check */
+  char **pzErr            /* Write error message here */
+){
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int rc;
+
+  assert( pzErr!=0 && *pzErr==0 );
+  UNUSED_PARAM(isQuick);
+  rc = sqlite3Fts5StorageIntegrity(pTab->pStorage, 0);
+  if( (rc&0xff)==SQLITE_CORRUPT ){
+    *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
+                zSchema, zTabname);
+     rc = (*pzErr) ? SQLITE_OK : SQLITE_NOMEM;
+  }else if( rc!=SQLITE_OK ){
+    *pzErr = sqlite3_mprintf("unable to validate the inverted index for"
+                             " FTS5 table %s.%s: %s",
+                zSchema, zTabname, sqlite3_errstr(rc));
+  }
+  sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
+
+  return rc;
+}
+
 static int fts5Init(sqlite3 *db){
   static const sqlite3_module fts5Mod = {
-    /* iVersion      */ 3,
+    /* iVersion      */ 4,
     /* xCreate       */ fts5CreateMethod,
     /* xConnect      */ fts5ConnectMethod,
     /* xBestIndex    */ fts5BestIndexMethod,
@@ -2875,7 +3015,8 @@ static int fts5Init(sqlite3 *db){
     /* xSavepoint    */ fts5SavepointMethod,
     /* xRelease      */ fts5ReleaseMethod,
     /* xRollbackTo   */ fts5RollbackToMethod,
-    /* xShadowName   */ fts5ShadowName
+    /* xShadowName   */ fts5ShadowName,
+    /* xIntegrity    */ fts5IntegrityMethod
   };
 
   int rc;

@@ -786,6 +786,11 @@ do_test func-16.1 {
   }
 } {X'616263' NULL}
 
+# Test the quote function for +Inf and -Inf
+do_execsql_test func-16.2 {
+  SELECT quote(4.2e+859), quote(-7.8e+904);
+} {9.0e+999 -9.0e+999}
+
 # Correctly handle function error messages that include %.  Ticket #1354
 #
 do_test func-17.1 {
@@ -1042,6 +1047,9 @@ do_test func-21.8 {
     SELECT replace('aaaaaaa', 'a', '0123456789');
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
+do_execsql_test func-21.9 {
+  SELECT typeof(replace(1,'',0));
+} {text}
 
 ifcapable tclvar {
   do_test func-21.9 {
@@ -1136,18 +1144,18 @@ ifcapable deprecated {
   } {3}
 }
 
-# The group_concat() function.
+# The group_concat() and string_agg() functions.
 #
 do_test func-24.1 {
   execsql {
-    SELECT group_concat(t1) FROM tbl1
+    SELECT group_concat(t1), string_agg(t1,',') FROM tbl1
   }
-} {this,program,is,free,software}
+} {this,program,is,free,software this,program,is,free,software}
 do_test func-24.2 {
   execsql {
-    SELECT group_concat(t1,' ') FROM tbl1
+    SELECT group_concat(t1,' '), string_agg(t1,' ') FROM tbl1
   }
-} {{this program is free software}}
+} {{this program is free software} {this program is free software}}
 do_test func-24.3 {
   execsql {
     SELECT group_concat(t1,' ' || rowid || ' ') FROM tbl1
@@ -1160,9 +1168,9 @@ do_test func-24.4 {
 } {{}}
 do_test func-24.5 {
   execsql {
-    SELECT group_concat(t1,NULL) FROM tbl1
+    SELECT group_concat(t1,NULL), string_agg(t1,NULL) FROM tbl1
   }
-} {thisprogramisfreesoftware}
+} {thisprogramisfreesoftware thisprogramisfreesoftware}
 do_test func-24.6 {
   execsql {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1

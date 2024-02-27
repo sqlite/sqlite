@@ -211,10 +211,11 @@ static int growOpArray(Vdbe *v, int nOp){
 **   sqlite3CantopenError(lineno)
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
-  static int n = 0;
+  static u64 n = 0;
   (void)pc;
   (void)pOp;
   n++;
+  if( n==LARGEST_UINT64 ) abort(); /* so that n is used, preventing a warning */
 }
 #endif
 
@@ -1002,6 +1003,10 @@ void sqlite3VdbeNoJumpsOutsideSubrtn(
       int iDest = pOp->p2;   /* Jump destination */
       if( iDest==0 ) continue;
       if( pOp->opcode==OP_Gosub ) continue;
+      if( pOp->p3==20230325 && pOp->opcode==OP_NotNull ){
+        /* This is a deliberately taken illegal branch.  tag-20230325-2 */
+        continue;
+      }
       if( iDest<0 ){
         int j = ADDR(iDest);
         assert( j>=0 );
@@ -1395,6 +1400,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
       break;
     }
+    case P4_TABLEREF: {
+      if( db->pnBytesFreed==0 ) sqlite3DeleteTable(db, (Table*)p4);
+      break;
+    }
   }
 }
 
@@ -1522,7 +1531,7 @@ static void SQLITE_NOINLINE vdbeChangeP4Full(
   int n
 ){
   if( pOp->p4type ){
-    freeP4(p->db, pOp->p4type, pOp->p4.p);
+    assert( pOp->p4type > P4_FREE_IF_LE );
     pOp->p4type = 0;
     pOp->p4.p = 0;
   }
@@ -4051,6 +4060,23 @@ static void serialGet(
     pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
   }
 }
+static int serialGet7(
+  const unsigned char *buf,     /* Buffer to deserialize from */
+  Mem *pMem                     /* Memory cell to write value into */
+){
+  u64 x = FOUR_BYTE_UINT(buf);
+  u32 y = FOUR_BYTE_UINT(buf+4);
+  x = (x<<32) + y;
+  assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
+  swapMixedEndianFloat(x);
+  memcpy(&pMem->u.r, &x, sizeof(x));
+  if( IsNaN(x) ){
+    pMem->flags = MEM_Null;
+    return 1;
+  }
+  pMem->flags = MEM_Real;
+  return 0;
+}
 void sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
@@ -4461,32 +4487,44 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   return n1 - n2;
 }
 
+/* The following two functions are used only within testcase() to prove
+** test coverage.  These functions do no exist for production builds.
+** We must use separate SQLITE_NOINLINE functions here, since otherwise
+** optimizer code movement causes gcov to become very confused.
+*/
+#if  defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
+static int SQLITE_NOINLINE doubleLt(double a, double b){ return a<b; }
+static int SQLITE_NOINLINE doubleEq(double a, double b){ return a==b; }
+#endif
+
 /*
 ** Do a comparison between a 64-bit signed integer and a 64-bit floating-point
 ** number.  Return negative, zero, or positive if the first (i64) is less than,
 ** equal to, or greater than the second (double).
 */
 int sqlite3IntFloatCompare(i64 i, double r){
-  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+  if( sqlite3IsNaN(r) ){
+    /* SQLite considers NaN to be a NULL. And all integer values are greater
+    ** than NULL */
+    return 1;
+  }
+  if( sqlite3Config.bUseLongDouble ){
     LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
     testcase( x<r );
     testcase( x>r );
     testcase( x==r );
-    if( x<r ) return -1;
-    if( x>r ) return +1;  /*NO_TEST*/ /* work around bugs in gcov */
-    return 0;             /*NO_TEST*/ /* work around bugs in gcov */
+    return (x<r) ? -1 : (x>r);
   }else{
     i64 y;
-    double s;
     if( r<-9223372036854775808.0 ) return +1;
     if( r>=9223372036854775808.0 ) return -1;
     y = (i64)r;
     if( i<y ) return -1;
     if( i>y ) return +1;
-    s = (double)i;
-    if( s<r ) return -1;
-    if( s>r ) return +1;
-    return 0;
+    testcase( doubleLt(((double)i),r) );
+    testcase( doubleLt(r,((double)i)) );
+    testcase( doubleEq(r,((double)i)) );
+    return (((double)i)<r) ? -1 : (((double)i)>r);
   }
 }
 
@@ -4716,7 +4754,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
+        serialGet7(&aKey1[d1], &mem1);
         rc = -sqlite3IntFloatCompare(pRhs->u.i, mem1.u.r);
       }else{
         i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
@@ -4741,14 +4779,18 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else{
-        sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( serial_type==7 ){
-          if( mem1.u.r<pRhs->u.r ){
+          if( serialGet7(&aKey1[d1], &mem1) ){
+            rc = -1;  /* mem1 is a NaN */
+          }else if( mem1.u.r<pRhs->u.r ){
             rc = -1;
           }else if( mem1.u.r>pRhs->u.r ){
             rc = +1;
+          }else{
+            assert( rc==0 );
           }
         }else{
+          sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
           rc = sqlite3IntFloatCompare(mem1.u.i, pRhs->u.r);
         }
       }
@@ -4818,7 +4860,14 @@ int sqlite3VdbeRecordCompareWithSkip(
     /* RHS is null */
     else{
       serial_type = aKey1[idx1];
-      rc = (serial_type!=0 && serial_type!=10);
+      if( serial_type==0
+       || serial_type==10
+       || (serial_type==7 && serialGet7(&aKey1[d1], &mem1)!=0)
+      ){
+        assert( rc==0 );
+      }else{
+        rc = 1;
+      }
     }
 
     if( rc!=0 ){

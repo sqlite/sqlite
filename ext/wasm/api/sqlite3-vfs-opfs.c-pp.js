@@ -245,7 +245,8 @@ const installOpfsVfs = function callee(options){
     opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/*sure, why not?*/;
+    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
+                                 is undocumented/unspecified. */;
     opfsVfs.$zName = wasm.allocCString("opfs");
     // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
     opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
@@ -994,27 +995,6 @@ const installOpfsVfs = function callee(options){
     opfsUtil.randomFilename = randomFilename;
 
     /**
-       Re-registers the OPFS VFS. This is intended only for odd use
-       cases which have to call sqlite3_shutdown() as part of their
-       initialization process, which will unregister the VFS
-       registered by installOpfsVfs(). If passed a truthy value, the
-       OPFS VFS is registered as the default VFS, else it is not made
-       the default. Returns the result of the the
-       sqlite3_vfs_register() call.
-
-       Design note: the problem of having to re-register things after
-       a shutdown/initialize pair is more general. How to best plug
-       that in to the library is unclear. In particular, we cannot
-       hook in to any C-side calls to sqlite3_initialize(), so we
-       cannot add an after-initialize callback mechanism.
-    */
-    opfsUtil.registerVfs = (asDefault=false)=>{
-      return wasm.exports.sqlite3_vfs_register(
-        opfsVfs.pointer, asDefault ? 1 : 0
-      );
-    };
-
-    /**
        Returns a promise which resolves to an object which represents
        all files and directories in the OPFS tree. The top-most object
        has two properties: `dirs` is an array of directory entries
@@ -1213,16 +1193,18 @@ const installOpfsVfs = function callee(options){
        Asynchronously imports the given bytes (a byte array or
        ArrayBuffer) into the given database file.
 
+       Results are undefined if the given db name refers to an opened
+       db.
+
        If passed a function for its second argument, its behaviour
-       changes to async and it imports its data in chunks fed to it by
-       the given callback function. It calls the callback (which may
-       be async) repeatedly, expecting either a Uint8Array or
-       ArrayBuffer (to denote new input) or undefined (to denote
-       EOF). For so long as the callback continues to return
-       non-undefined, it will append incoming data to the given
-       VFS-hosted database file. When called this way, the resolved
-       value of the returned Promise is the number of bytes written to
-       the target file.
+       changes: imports its data in chunks fed to it by the given
+       callback function. It calls the callback (which may be async)
+       repeatedly, expecting either a Uint8Array or ArrayBuffer (to
+       denote new input) or undefined (to denote EOF). For so long as
+       the callback continues to return non-undefined, it will append
+       incoming data to the given VFS-hosted database file. When
+       called this way, the resolved value of the returned Promise is
+       the number of bytes written to the target file.
 
        It very specifically requires the input to be an SQLite3
        database and throws if that's not the case.  It does so in

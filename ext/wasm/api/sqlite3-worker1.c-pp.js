@@ -1,3 +1,4 @@
+//#ifnot omit-oo1
 /*
   2022-05-23
 
@@ -37,7 +38,7 @@ import {default as sqlite3InitModule} from './sqlite3-bundler-friendly.mjs';
 "use strict";
 {
   const urlParams = globalThis.location
-        ? new URL(self.location.href).searchParams
+        ? new URL(globalThis.location.href).searchParams
         : new URLSearchParams();
   let theJs = 'sqlite3.js';
   if(urlParams.has('sqlite3.dir')){
@@ -48,3 +49,6 @@ import {default as sqlite3InitModule} from './sqlite3-bundler-friendly.mjs';
 }
 //#endif
 sqlite3InitModule().then(sqlite3 => sqlite3.initWorker1API());
+//#else
+/* Built with the omit-oo1 flag. */
+//#endif ifnot omit-oo1

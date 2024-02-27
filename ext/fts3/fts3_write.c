@@ -3325,7 +3325,6 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     rc = fts3SegmentMerge(p, p->iPrevLangid, i, FTS3_SEGCURSOR_PENDING);
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   }
-  sqlite3Fts3PendingTermsClear(p);
 
   /* Determine the auto-incr-merge setting if unknown.  If enabled,
   ** estimate the number of leaf blocks of content to be written
@@ -3346,6 +3345,10 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
       }
       rc = sqlite3_reset(pStmt);
     }
+  }
+
+  if( rc==SQLITE_OK ){
+    sqlite3Fts3PendingTermsClear(p);
   }
   return rc;
 }
@@ -3978,6 +3981,8 @@ static int fts3AppendToNode(
 
   blobGrowBuffer(pPrev, nTerm, &rc);
   if( rc!=SQLITE_OK ) return rc;
+  assert( pPrev!=0 );
+  assert( pPrev->a!=0 );
 
   nPrefix = fts3PrefixCompress(pPrev->a, pPrev->n, zTerm, nTerm);
   nSuffix = nTerm - nPrefix;
@@ -4034,9 +4039,13 @@ static int fts3IncrmergeAppend(
   nSpace += sqlite3Fts3VarintLen(nDoclist) + nDoclist;
 
   /* If the current block is not empty, and if adding this term/doclist
-  ** to the current block would make it larger than Fts3Table.nNodeSize
-  ** bytes, write this block out to the database. */
-  if( pLeaf->block.n>0 && (pLeaf->block.n + nSpace)>p->nNodeSize ){
+  ** to the current block would make it larger than Fts3Table.nNodeSize bytes,
+  ** and if there is still room for another leaf page, write this block out to
+  ** the database. */
+  if( pLeaf->block.n>0 
+   && (pLeaf->block.n + nSpace)>p->nNodeSize 
+   && pLeaf->iBlock < (pWriter->iStart + pWriter->nLeafEst)
+  ){
     rc = fts3WriteSegment(p, pLeaf->iBlock, pLeaf->block.a, pLeaf->block.n);
     pWriter->nWork++;
 
@@ -4368,7 +4377,7 @@ static int fts3IncrmergeLoad(
               rc = sqlite3Fts3ReadBlock(p, reader.iChild, &aBlock, &nBlock,0);
               blobGrowBuffer(&pNode->block, 
                   MAX(nBlock, p->nNodeSize)+FTS3_NODE_PADDING, &rc
-                  );
+              );
               if( rc==SQLITE_OK ){
                 memcpy(pNode->block.a, aBlock, nBlock);
                 pNode->block.n = nBlock;
@@ -5218,7 +5227,7 @@ static u64 fts3ChecksumIndex(
   int rc;
   u64 cksum = 0;
 
-  assert( *pRc==SQLITE_OK );
+  if( *pRc ) return 0;
 
   memset(&filter, 0, sizeof(filter));
   memset(&csr, 0, sizeof(csr));
@@ -5285,7 +5294,7 @@ static u64 fts3ChecksumIndex(
 ** If an error occurs (e.g. an OOM or IO error), return an SQLite error 
 ** code. The final value of *pbOk is undefined in this case.
 */
-static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
+int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   int rc = SQLITE_OK;             /* Return code */
   u64 cksum1 = 0;                 /* Checksum based on FTS index contents */
   u64 cksum2 = 0;                 /* Checksum based on %_content contents */
@@ -5363,7 +5372,12 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
     sqlite3_finalize(pStmt);
   }
 
-  *pbOk = (cksum1==cksum2);
+  if( rc==SQLITE_CORRUPT_VTAB ){
+    rc = SQLITE_OK;
+    *pbOk = 0;
+  }else{
+    *pbOk = (rc==SQLITE_OK && cksum1==cksum2);
+  }
   return rc;
 }
 
@@ -5403,7 +5417,7 @@ static int fts3DoIntegrityCheck(
 ){
   int rc;
   int bOk = 0;
-  rc = fts3IntegrityCheck(p, &bOk);
+  rc = sqlite3Fts3IntegrityCheck(p, &bOk);
   if( rc==SQLITE_OK && bOk==0 ) rc = FTS_CORRUPT_VTAB;
   return rc;
 }
@@ -5433,8 +5447,11 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     rc = fts3DoIncrmerge(p, &zVal[6]);
   }else if( nVal>10 && 0==sqlite3_strnicmp(zVal, "automerge=", 10) ){
     rc = fts3DoAutoincrmerge(p, &zVal[10]);
+  }else if( nVal==5 && 0==sqlite3_strnicmp(zVal, "flush", 5) ){
+    rc = sqlite3Fts3PendingTermsFlush(p);
+  }
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-  }else{
+  else{
     int v;
     if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
       v = atoi(&zVal[9]);
@@ -5452,8 +5469,8 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       if( v>=4 && v<=FTS3_MERGE_COUNT && (v&1)==0 ) p->nMergeCount = v;
       rc = SQLITE_OK;
     }
-#endif
   }
+#endif
   return rc;
 }
 

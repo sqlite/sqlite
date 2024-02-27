@@ -498,6 +498,7 @@ void sqlite3_str_vappendf(
         if( xtype==etFLOAT ){
           iRound = -precision;
         }else if( xtype==etGENERIC ){
+          if( precision==0 ) precision = 1;
           iRound = precision;
         }else{
           iRound = precision+1;
@@ -533,13 +534,14 @@ void sqlite3_str_vappendf(
         }
 
         exp = s.iDP-1;
-        if( xtype==etGENERIC && precision>0 ) precision--;
 
         /*
         ** If the field type is etGENERIC, then convert to either etEXP
         ** or etFLOAT, as appropriate.
         */
         if( xtype==etGENERIC ){
+          assert( precision>0 );
+          precision--;
           flag_rtz = !flag_alternateform;
           if( exp<-4 || exp>precision ){
             xtype = etEXP;
@@ -1369,7 +1371,7 @@ void sqlite3_str_appendf(StrAccum *p, const char *zFormat, ...){
 
 
 /*****************************************************************************
-** Reference counted string storage
+** Reference counted string/blob storage
 *****************************************************************************/
 
 /*
@@ -1389,7 +1391,7 @@ char *sqlite3RCStrRef(char *z){
 ** Decrease the reference count by one.  Free the string when the
 ** reference count reaches zero.
 */
-void sqlite3RCStrUnref(char *z){
+void sqlite3RCStrUnref(void *z){
   RCStr *p = (RCStr*)z;
   assert( p!=0 );
   p--;

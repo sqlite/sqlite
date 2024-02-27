@@ -1,0 +1,62 @@
+# 2024-01-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests for SQL literals
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix literal
+
+proc test_literal {tn lit type val} {
+  do_execsql_test $tn.1 "SELECT typeof( $lit ), $lit" [list $type $val]
+
+  ifcapable altertable {
+    do_execsql_test $tn.2 "
+      DROP TABLE IF EXISTS x1;
+      CREATE TABLE x1(a);
+      INSERT INTO x1 VALUES(123);
+      ALTER TABLE x1 ADD COLUMN b DEFAULT $lit ;
+      SELECT typeof(b), b FROM x1;
+    " [list $type $val]
+  }
+
+  do_execsql_test $tn.3 "
+    DROP TABLE IF EXISTS x1;
+    CREATE TABLE x1(a DEFAULT $lit);
+    INSERT INTO x1 DEFAULT VALUES;
+    SELECT typeof(a), a FROM x1;
+  " [list $type $val]
+}
+
+
+test_literal 1.0 45                  integer 45
+test_literal 1.1 0xFF                integer 255
+test_literal 1.2 0xFFFFFFFF          integer [expr 0xFFFFFFFF]
+test_literal 1.3 0x123FFFFFFFF       integer [expr 0x123FFFFFFFF]
+test_literal 1.4 -0x123FFFFFFFF      integer [expr -1 * 0x123FFFFFFFF]
+test_literal 1.5 0xFFFFFFFFFFFFFFFF  integer -1
+test_literal 1.7 0x7FFFFFFFFFFFFFFF  integer  [expr 0x7FFFFFFFFFFFFFFF]
+test_literal 1.8 -0x7FFFFFFFFFFFFFFF integer [expr -0x7FFFFFFFFFFFFFFF]
+test_literal 1.9 +0x7FFFFFFFFFFFFFFF integer [expr +0x7FFFFFFFFFFFFFFF]
+test_literal 1.10 -45                integer -45
+test_literal 1.11 '0xFF'             text 0xFF
+test_literal 1.12 '-0xFF'            text -0xFF
+test_literal 1.13 -'0xFF'            integer 0
+
+test_literal 1.14 -9223372036854775808 integer -9223372036854775808
+
+test_literal 2.1  1e12    real    1000000000000.0
+test_literal 2.2  1.0     real    1.0
+test_literal 2.3  1e1000  real    Inf
+test_literal 2.4  -1e1000  real   -Inf
+
+finish_test

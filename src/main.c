@@ -160,6 +160,32 @@ char *sqlite3_temp_directory = 0;
 char *sqlite3_data_directory = 0;
 
 /*
+** Determine whether or not high-precision (long double) floating point
+** math works correctly on CPU currently running.
+*/
+static SQLITE_NOINLINE int hasHighPrecisionDouble(int rc){
+  if( sizeof(LONGDOUBLE_TYPE)<=8 ){
+    /* If the size of "long double" is not more than 8, then
+    ** high-precision math is not possible. */
+    return 0;
+  }else{
+    /* Just because sizeof(long double)>8 does not mean that the underlying
+    ** hardware actually supports high-precision floating point.  For example,
+    ** clearing the 0x100 bit in the floating-point control word on Intel
+    ** processors will make long double work like double, even though long
+    ** double takes up more space.  The only way to determine if long double
+    ** actually works is to run an experiment. */
+    LONGDOUBLE_TYPE a, b, c;
+    rc++;
+    a = 1.0+rc*0.1;
+    b = 1.0e+18+rc*25.0;
+    c = a+b;
+    return b!=c;
+  }
+}
+
+
+/*
 ** Initialize SQLite. 
 **
 ** This routine must be called to initialize the memory allocation,
@@ -352,6 +378,12 @@ int sqlite3_initialize(void){
     int SQLITE_EXTRA_INIT(const char*);
     rc = SQLITE_EXTRA_INIT(0);
   }
+#endif
+
+  /* Experimentally determine if high-precision floating point is
+  ** available. */
+#ifndef SQLITE_OMIT_WSD
+  sqlite3Config.bUseLongDouble = hasHighPrecisionDouble(rc);
 #endif
 
   return rc;
@@ -924,6 +956,10 @@ int sqlite3_db_cacheflush(sqlite3 *db){
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
   int rc;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(db->mutex);
   va_start(ap, op);
   switch( op ){
@@ -1252,6 +1288,14 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     sqlite3GlobalConfig.xSqllog(sqlite3GlobalConfig.pSqllogArg, db, 0, 2);
   }
 #endif
+
+  while( db->pDbData ){
+    DbClientData *p = db->pDbData;
+    db->pDbData = p->pNext;
+    assert( p->pData!=0 );
+    if( p->xDestructor ) p->xDestructor(p->pData);
+    sqlite3_free(p);
+  }
 
   /* Convert the connection into a zombie and then close it.
   */
@@ -1870,7 +1914,7 @@ int sqlite3CreateFunc(
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
   extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|
-                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS);
+                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS|SQLITE_RESULT_SUBTYPE);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
 
   /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
@@ -2327,6 +2371,12 @@ void *sqlite3_preupdate_hook(
   void *pArg                /* First callback argument */
 ){
   void *pRet;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( db==0 ){
+    return 0;
+  }
+#endif
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pPreUpdateArg;
   db->xPreUpdateCallback = xCallback;
@@ -2473,7 +2523,7 @@ int sqlite3_wal_checkpoint_v2(
   if( eMode<SQLITE_CHECKPOINT_PASSIVE || eMode>SQLITE_CHECKPOINT_TRUNCATE ){
     /* EVIDENCE-OF: R-03996-12088 The M parameter must be a valid checkpoint
     ** mode: */
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
 
   sqlite3_mutex_enter(db->mutex);
@@ -3710,6 +3760,69 @@ int sqlite3_collation_needed16(
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
+/*
+** Find existing client data.
+*/
+void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
+  DbClientData *p;
+  sqlite3_mutex_enter(db->mutex);
+  for(p=db->pDbData; p; p=p->pNext){
+    if( strcmp(p->zName, zName)==0 ){
+      void *pResult = p->pData;
+      sqlite3_mutex_leave(db->mutex);
+      return pResult;
+    }
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return 0;
+}
+
+/*
+** Add new client data to a database connection.
+*/
+int sqlite3_set_clientdata(
+  sqlite3 *db,                   /* Attach client data to this connection */
+  const char *zName,             /* Name of the client data */
+  void *pData,                   /* The client data itself */
+  void (*xDestructor)(void*)     /* Destructor */
+){
+  DbClientData *p, **pp;
+  sqlite3_mutex_enter(db->mutex);
+  pp = &db->pDbData;
+  for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){
+    pp = &p->pNext;
+  }
+  if( p ){
+    assert( p->pData!=0 );
+    if( p->xDestructor ) p->xDestructor(p->pData);
+    if( pData==0 ){
+      *pp = p->pNext;
+      sqlite3_free(p);
+      sqlite3_mutex_leave(db->mutex);
+      return SQLITE_OK;
+    }
+  }else if( pData==0 ){
+    sqlite3_mutex_leave(db->mutex);
+    return SQLITE_OK;
+  }else{
+    size_t n = strlen(zName);
+    p = sqlite3_malloc64( sizeof(DbClientData)+n+1 );
+    if( p==0 ){
+      if( xDestructor ) xDestructor(pData);
+      sqlite3_mutex_leave(db->mutex);
+      return SQLITE_NOMEM;
+    }
+    memcpy(p->zName, zName, n+1);
+    p->pNext = db->pDbData;
+    db->pDbData = p;
+  }
+  p->pData = pData;
+  p->xDestructor = xDestructor;
+  sqlite3_mutex_leave(db->mutex);
+  return SQLITE_OK;
+}
+
+
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** This function is now an anachronism. It used to be used to recover from a
@@ -4058,6 +4171,28 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
+    **
+    ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
+    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
+    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** they were NO ACTION, regardless of how they are defined.
+    **
+    ** NB:  One must usually run "PRAGMA writable_schema=RESET" after
+    ** using this test-control, before it will take full effect.  failing
+    ** to reset the schema can result in some unexpected behavior.
+    */
+    case SQLITE_TESTCTRL_FK_NO_ACTION: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int b = va_arg(ap, int);
+      if( b ){
+        db->flags |= SQLITE_FkNoAction;
+      }else{
+        db->flags &= ~SQLITE_FkNoAction;
+      }
+      break;
+    }
 
     /*
     **  sqlite3_test_control(BITVEC_TEST, size, program)
@@ -4483,11 +4618,11 @@ int sqlite3_test_control(int op, ...){
     **   X<0     Make no changes to the bUseLongDouble.  Just report value.
     **   X==0    Disable bUseLongDouble
     **   X==1    Enable bUseLongDouble
-    **   X==2    Set bUseLongDouble to its default value for this platform
+    **   X>=2    Set bUseLongDouble to its default value for this platform
     */
     case SQLITE_TESTCTRL_USELONGDOUBLE: {
       int b = va_arg(ap, int);
-      if( b==2 ) b = sizeof(LONGDOUBLE_TYPE)>8;
+      if( b>=2 ) b = hasHighPrecisionDouble(b);
       if( b>=0 ) sqlite3Config.bUseLongDouble = b>0;
       rc = sqlite3Config.bUseLongDouble!=0;
       break;
@@ -4524,6 +4659,28 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_JSON_SELFCHECK, &onOff);
+    **
+    ** Activate or deactivate validation of JSONB that is generated from
+    ** text.  Off by default, as the validation is slow.  Validation is
+    ** only available if compiled using SQLITE_DEBUG.
+    **
+    ** If onOff is initially 1, then turn it on.  If onOff is initially
+    ** off, turn it off.  If onOff is initially -1, then change onOff
+    ** to be the current setting.
+    */
+    case SQLITE_TESTCTRL_JSON_SELFCHECK: {
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
+      int *pOnOff = va_arg(ap, int*);
+      if( *pOnOff<0 ){
+        *pOnOff = sqlite3Config.bJsonSelfcheck;
+      }else{
+        sqlite3Config.bJsonSelfcheck = (u8)((*pOnOff)&0xff);
+      }
+#endif
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */
@@ -4901,7 +5058,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   int nOpt;
   const char **azCompileOpt;
 
-#if SQLITE_ENABLE_API_ARMOR
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( zOptName==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
