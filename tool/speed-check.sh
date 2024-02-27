@@ -161,6 +161,9 @@ while test "$1" != ""; do
     --fp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset fp"
         ;;
+    --parsenumber)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset parsenumber"
+        ;;
     --stmtscanstatus)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --stmtscanstatus"
         ;;
