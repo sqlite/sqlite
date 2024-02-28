@@ -1296,6 +1296,7 @@ static void analyzeOneTable(
       if( addrGotoEnd==0 ){
         sqlite3VdbeAddOp2(v, OP_Cast, regStat1, SQLITE_AFF_INTEGER);
         addrGotoEnd = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1);
+        VdbeCoverage(v);
       }
 
       if( doOnce ){

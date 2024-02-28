@@ -1,5 +1,5 @@
-C Always\sconvert\s32-bit\sinteger\sliterals\sinto\sEP_IntValue\snotation,\seven\sif\nthey\scontain\s"_"\sseparators.
-D 2024-02-28T01:12:21.520
+C Add\sin\sa\sVdbeCoverage()\smacro\sneeded\sby\sSTAT4\sthat\sshould\shave\sbeen\spart\sof\ncheck-in\s[63ef234e88857a65].
+D 2024-02-28T15:32:32.228
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -683,7 +683,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 30c2333b8bb3af71e4eb9adeadee8aa20edb15917ed44b8422e5cd15f3dfcddc
-F src/analyze.c dacc8f062bbda02c8ed3bbca0ab6122de010d094101d568df266a7b0d665d74f
+F src/analyze.c a3df28274e2565ba5656577d7e3fd262169a213e6eb0bd47890e0f0729a4031c
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2f5e257d2cfb91341f5261ed3924dc4ec2a6f854f3692fb416043f5c654a963
-R a81000c304b1245e80843833b1cb44da
+P 2dfc427f676255cbe189a26bfec2405d41d31ccc4512c55b31e6e633261d7a23
+R fc556e11bf89363bdfe386e7578ab33b
 U drh
-Z 74cbb43b6190c4a6f68e781473d23cde
+Z 7f63c0d877ef8881aed016b2612db7ff
 # Remove this line to create a well-formed Fossil manifest.
