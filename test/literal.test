@@ -93,4 +93,11 @@ foreach {tn lit unrec} {
   test_literal_error 4.$tn $lit $unrec
 }
 
+# dbsqlfuzz e3186a9e7826e9cd7f4085aa4452f8696485f9e1
+# See tag-20240224-a and -b
+#
+do_catchsql_test 5.1 {
+  SELECT 1 ORDER BY 2_3;
+} {1 {1st ORDER BY term out of range - should be between 1 and 1}}
+
 finish_test

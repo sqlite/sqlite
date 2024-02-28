@@ -914,11 +914,12 @@ void sqlite3ExprSetErrorOffset(Expr *pExpr, int iOfst){
 ** appear to be quoted.  If the quotes were of the form "..." (double-quotes)
 ** then the EP_DblQuoted flag is set on the expression node.
 **
-** Special case:  If op==TK_INTEGER and pToken points to a string that
-** can be translated into a 32-bit integer, then the token is not
-** stored in u.zToken.  Instead, the integer values is written
-** into u.iValue and the EP_IntValue flag is set.  No extra storage
+** Special case (tag-20240227-a):  If op==TK_INTEGER and pToken points to
+** a string that can be translated into a 32-bit integer, then the token is
+** not stored in u.zToken.  Instead, the integer values is written
+** into u.iValue and the EP_IntValue flag is set. No extra storage
 ** is allocated to hold the integer text and the dequote flag is ignored.
+** See also tag-20240227-b.
 */
 Expr *sqlite3ExprAlloc(
   sqlite3 *db,            /* Handle for sqlite3DbMallocRawNN() */
@@ -934,7 +935,7 @@ Expr *sqlite3ExprAlloc(
   if( pToken ){
     if( op!=TK_INTEGER || pToken->z==0
           || sqlite3GetInt32(pToken->z, &iValue)==0 ){
-      nExtra = pToken->n+1;
+      nExtra = pToken->n+1;  /* tag-20240227-a */
       assert( iValue>=0 );
     }
   }

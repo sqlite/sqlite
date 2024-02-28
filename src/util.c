@@ -317,10 +317,12 @@ void sqlite3DequoteExpr(Expr *p){
 ** that contain '_' characters that must be removed before further processing.
 */
 void sqlite3DequoteNumber(Parse *pParse, Expr *p){
+  assert( p!=0 || pParse->db->mallocFailed );
   if( p ){
     const char *pIn = p->u.zToken;
     char *pOut = p->u.zToken;
     int bHex = (pIn[0]=='0' && (pIn[1]=='x' || pIn[1]=='X'));
+    int iValue;
     assert( p->op==TK_QNUMBER );
     p->op = TK_INTEGER;
     do {
@@ -336,6 +338,14 @@ void sqlite3DequoteNumber(Parse *pParse, Expr *p){
       }
     }while( *pIn++ );
     if( bHex ) p->op = TK_INTEGER;
+
+    /* tag-20240227-a: If after dequoting, the number is an integer that
+    ** fits in 32 bits, then it must be converted into EP_IntValue.  Other
+    ** parts of the code expect this.  See also tag-20240227-b. */
+    if( p->op==TK_INTEGER && sqlite3GetInt32(p->u.zToken, &iValue) ){
+      p->u.iValue = iValue;
+      p->flags |= EP_IntValue;
+    }
   }
 }
 
