@@ -1,5 +1,5 @@
-C Add\sin\sa\sVdbeCoverage()\smacro\sneeded\sby\sSTAT4\sthat\sshould\shave\sbeen\spart\sof\ncheck-in\s[63ef234e88857a65].
-D 2024-02-28T15:32:32.228
+C Fix\stwo\s-Werror=lto-type-mismatch\swarnings\sreported\sin\s[forum:ef62b57bd5|forum\spost\sef62b57bd5].
+D 2024-02-29T10:55:02.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1244,7 +1244,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 7e1bcc242dc4b42e43e4708c8140fe268db83a6901fbc681d150c77aa185e328
+F test/fuzzcheck.c e6a40f53ac5624aa5b7c4f31c385f09ba088d524cecc4512fd3057caeed8f530
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2176,8 +2176,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2dfc427f676255cbe189a26bfec2405d41d31ccc4512c55b31e6e633261d7a23
-R fc556e11bf89363bdfe386e7578ab33b
-U drh
-Z 7f63c0d877ef8881aed016b2612db7ff
+P d51c699ae413215d534f954c129691ef5d95d540dc5d4304cbba576c976d931c 29f94610dc8319709b8d3726a60e2a7a33ffbf4998c681f772da26c9701cc0b0
+R 728f9a968510fa9cb95ea7ce7eec45f1
+T +closed 29f94610dc8319709b8d3726a60e2a7a33ffbf4998c681f772da26c9701cc0b0 Closed\sby\sintegrate-merge.
+U stephan
+Z 37dee8fa6539319388e07ab4c515c697
 # Remove this line to create a well-formed Fossil manifest.
