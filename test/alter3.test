@@ -105,9 +105,7 @@ do_test alter3-1.99 {
     DROP TABLE t2; 
   }
   execsql {
-    DROP TABLE abc; 
-    DROP TABLE t1; 
-    DROP TABLE t3; 
+    DROP TABLE abc, t1, t3; 
   }
 } {}
 
@@ -296,8 +294,7 @@ ifcapable attach {
   } {1 one 2 two}
   do_test alter3-5.99 {
     execsql {
-      DROP TABLE aux.t1;
-      DROP TABLE t1;
+      DROP TABLE aux.t1, main.t1;
     }
   } {}
 }

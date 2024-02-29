@@ -624,35 +624,34 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   const char *zDb;
   const char *zName;
   sqlite3 *db = pParse->db;
+  int ii;
 
-  if( db->mallocFailed ) goto drop_trigger_cleanup;
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
-    goto drop_trigger_cleanup;
-  }
-
-  assert( pName->nSrc==1 );
-  zDb = pName->a[0].zDatabase;
-  zName = pName->a[0].zName;
-  assert( zDb!=0 || sqlite3BtreeHoldsAllMutexes(db) );
-  for(i=OMIT_TEMPDB; i<db->nDb; i++){
-    int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
-    if( zDb && sqlite3DbIsNamed(db, j, zDb)==0 ) continue;
-    assert( sqlite3SchemaMutexHeld(db, j, 0) );
-    pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName);
-    if( pTrigger ) break;
-  }
-  if( !pTrigger ){
-    if( !noErr ){
-      sqlite3ErrorMsg(pParse, "no such trigger: %S", pName->a);
-    }else{
-      sqlite3CodeVerifyNamedSchema(pParse, zDb);
+  sqlite3ReadSchema(pParse);
+  assert( pName!=0 || pParse->nErr!=0 );
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){  
+    zDb = pName->a[ii].zDatabase;
+    zName = pName->a[ii].zName;
+    assert( zDb!=0 || sqlite3BtreeHoldsAllMutexes(db) );
+    for(i=OMIT_TEMPDB; i<db->nDb; i++){
+      int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
+      if( zDb && sqlite3DbIsNamed(db, j, zDb)==0 ) continue;
+      assert( sqlite3SchemaMutexHeld(db, j, 0) );
+      pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName);
+      if( pTrigger ) break;
     }
-    pParse->checkSchema = 1;
-    goto drop_trigger_cleanup;
+    if( !pTrigger ){
+      if( !noErr ){
+        sqlite3ErrorMsg(pParse, "no such trigger: %S", pName->a+ii);
+      }else{
+        sqlite3CodeVerifyNamedSchema(pParse, zDb);
+      }
+      testcase( ii>0 );
+      testcase( ii+1<pName->nSrc );
+      pParse->checkSchema = 1;
+    }else{
+      sqlite3DropTriggerPtr(pParse, pTrigger);
+    }
   }
-  sqlite3DropTriggerPtr(pParse, pTrigger);
-
-drop_trigger_cleanup:
   sqlite3SrcListDelete(db, pName);
 }
 

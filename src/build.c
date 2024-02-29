@@ -3480,102 +3480,112 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   Vdbe *v;
   sqlite3 *db = pParse->db;
   int iDb;
+  int ii;
 
-  if( db->mallocFailed ){
-    goto exit_drop_table;
-  }
-  assert( pParse->nErr==0 );
-  assert( pName->nSrc==1 );
-  if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
-  if( noErr ) db->suppressErr++;
-  assert( isView==0 || isView==LOCATE_VIEW );
-  pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
-  if( noErr ) db->suppressErr--;
+  sqlite3ReadSchema(pParse);
+  assert( pName!=0 || pParse->nErr!=0 );
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
+    if( noErr ) db->suppressErr++;
+    assert( isView==0 || isView==LOCATE_VIEW );
+    pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[ii]);
+    if( noErr ) db->suppressErr--;
 
-  if( pTab==0 ){
-    if( noErr ){
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
-      sqlite3ForceNotReadOnly(pParse);
+    if( pTab==0 ){
+      if( noErr ){
+        sqlite3CodeVerifyNamedSchema(pParse, pName->a[ii].zDatabase);
+        sqlite3ForceNotReadOnly(pParse);
+      }
+      testcase( ii+1<pName->nSrc );
+      continue;
     }
-    goto exit_drop_table;
-  }
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-  assert( iDb>=0 && iDb<db->nDb );
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    assert( iDb>=0 && iDb<db->nDb );
 
-  /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
-  ** it is initialized.
-  */
-  if( IsVirtual(pTab) && sqlite3ViewGetColumnNames(pParse, pTab) ){
-    goto exit_drop_table;
-  }
+    /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
+    ** it is initialized.
+    */
+    if( IsVirtual(pTab) && sqlite3ViewGetColumnNames(pParse, pTab) ){
+      break;
+    }
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  {
-    int code;
-    const char *zTab = SCHEMA_TABLE(iDb);
-    const char *zDb = db->aDb[iDb].zDbSName;
-    const char *zArg2 = 0;
-    if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb)){
-      goto exit_drop_table;
-    }
-    if( isView ){
-      if( !OMIT_TEMPDB && iDb==1 ){
-        code = SQLITE_DROP_TEMP_VIEW;
-      }else{
-        code = SQLITE_DROP_VIEW;
+    {
+      int code;
+      const char *zTab = SCHEMA_TABLE(iDb);
+      const char *zDb = db->aDb[iDb].zDbSName;
+      const char *zArg2 = 0;
+      if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb)){
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+        break;
       }
+      if( isView ){
+        if( !OMIT_TEMPDB && iDb==1 ){
+          code = SQLITE_DROP_TEMP_VIEW;
+        }else{
+          code = SQLITE_DROP_VIEW;
+        }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( IsVirtual(pTab) ){
-      code = SQLITE_DROP_VTABLE;
-      zArg2 = sqlite3GetVTable(db, pTab)->pMod->zName;
+      }else if( IsVirtual(pTab) ){
+        code = SQLITE_DROP_VTABLE;
+        zArg2 = sqlite3GetVTable(db, pTab)->pMod->zName;
 #endif
-    }else{
-      if( !OMIT_TEMPDB && iDb==1 ){
-        code = SQLITE_DROP_TEMP_TABLE;
       }else{
-        code = SQLITE_DROP_TABLE;
+        if( !OMIT_TEMPDB && iDb==1 ){
+          code = SQLITE_DROP_TEMP_TABLE;
+        }else{
+          code = SQLITE_DROP_TABLE;
+        }
+      }
+      if( sqlite3AuthCheck(pParse, code, pTab->zName, zArg2, zDb) ){
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+        break;
+      }
+      if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+        break;
       }
     }
-    if( sqlite3AuthCheck(pParse, code, pTab->zName, zArg2, zDb) ){
-      goto exit_drop_table;
-    }
-    if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
-      goto exit_drop_table;
-    }
-  }
 #endif
-  if( tableMayNotBeDropped(db, pTab) ){
-    sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
-    goto exit_drop_table;
-  }
+    if( tableMayNotBeDropped(db, pTab) ){
+      testcase( ii>0 );
+      testcase( ii+1<pName->nSrc );
+      sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
+      break;
+    }
 
 #ifndef SQLITE_OMIT_VIEW
-  /* Ensure DROP TABLE is not used on a view, and DROP VIEW is not used
-  ** on a table.
-  */
-  if( isView && !IsView(pTab) ){
-    sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTab->zName);
-    goto exit_drop_table;
-  }
-  if( !isView && IsView(pTab) ){
-    sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTab->zName);
-    goto exit_drop_table;
-  }
+    /* Ensure DROP TABLE is not used on a view, and DROP VIEW is not used
+    ** on a table.
+    */
+    if( isView && !IsView(pTab) ){
+      testcase( ii>0 );
+      testcase( ii+1<pName->nSrc );
+      sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTab->zName);
+      break;
+    }
+    if( !isView && IsView(pTab) ){
+      testcase( ii>0 );
+      testcase( ii+1<pName->nSrc );
+      sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTab->zName);
+      break;
+    }
 #endif
 
-  /* Generate code to remove the table from the schema table
-  ** on disk.
-  */
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3BeginWriteOperation(pParse, 1, iDb);
-    if( !isView ){
-      sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
-      sqlite3FkDropTable(pParse, pName, pTab);
+    /* Generate code to remove the table from the schema table
+    ** on disk.
+    */
+    v = sqlite3GetVdbe(pParse);
+    if( v ){
+      sqlite3BeginWriteOperation(pParse, 1, iDb);
+      if( !isView ){
+        sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
+        sqlite3FkDropTable(pParse, pName, pTab);
+      }
+      sqlite3CodeDropTable(pParse, pTab, iDb, isView);
     }
-    sqlite3CodeDropTable(pParse, pTab, iDb, isView);
   }
-
-exit_drop_table:
   sqlite3SrcListDelete(db, pName);
 }
 
@@ -4579,63 +4589,67 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   Vdbe *v;
   sqlite3 *db = pParse->db;
   int iDb;
+  int ii;
 
-  if( db->mallocFailed ){
-    goto exit_drop_index;
-  }
-  assert( pParse->nErr==0 );   /* Never called with prior non-OOM errors */
-  assert( pName->nSrc==1 );
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
-    goto exit_drop_index;
-  }
-  pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
-  if( pIndex==0 ){
-    if( !ifExists ){
-      sqlite3ErrorMsg(pParse, "no such index: %S", pName->a);
-    }else{
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
-      sqlite3ForceNotReadOnly(pParse);
+  sqlite3ReadSchema(pParse);
+  assert( pName!=0 || pParse->nErr!=0 );
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
+    pIndex = sqlite3FindIndex(db, pName->a[ii].zName, pName->a[ii].zDatabase);
+    if( pIndex==0 ){
+      if( !ifExists ){
+        sqlite3ErrorMsg(pParse, "no such index: %S", pName->a+ii);
+      }else{
+        sqlite3CodeVerifyNamedSchema(pParse, pName->a[ii].zDatabase);
+        sqlite3ForceNotReadOnly(pParse);
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+      }
+      pParse->checkSchema = 1;
+      continue;
     }
-    pParse->checkSchema = 1;
-    goto exit_drop_index;
-  }
-  if( pIndex->idxType!=SQLITE_IDXTYPE_APPDEF ){
-    sqlite3ErrorMsg(pParse, "index associated with UNIQUE "
-      "or PRIMARY KEY constraint cannot be dropped", 0);
-    goto exit_drop_index;
-  }
-  iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
+    if( pIndex->idxType!=SQLITE_IDXTYPE_APPDEF ){
+      sqlite3ErrorMsg(pParse, "index associated with UNIQUE "
+        "or PRIMARY KEY constraint cannot be dropped", 0);
+      testcase( ii>0 );
+      testcase( ii+1<pName->nSrc );
+      break;
+    }
+    iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  {
-    int code = SQLITE_DROP_INDEX;
-    Table *pTab = pIndex->pTable;
-    const char *zDb = db->aDb[iDb].zDbSName;
-    const char *zTab = SCHEMA_TABLE(iDb);
-    if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
-      goto exit_drop_index;
+    {
+      int code = SQLITE_DROP_INDEX;
+      Table *pTab = pIndex->pTable;
+      const char *zDb = db->aDb[iDb].zDbSName;
+      const char *zTab = SCHEMA_TABLE(iDb);
+      if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+        break;
+      }
+      if( !OMIT_TEMPDB && iDb==1 ) code = SQLITE_DROP_TEMP_INDEX;
+      if( sqlite3AuthCheck(pParse, code, pIndex->zName, pTab->zName, zDb) ){
+        testcase( ii>0 );
+        testcase( ii+1<pName->nSrc );
+        break;
+      }
     }
-    if( !OMIT_TEMPDB && iDb==1 ) code = SQLITE_DROP_TEMP_INDEX;
-    if( sqlite3AuthCheck(pParse, code, pIndex->zName, pTab->zName, zDb) ){
-      goto exit_drop_index;
-    }
-  }
 #endif
 
-  /* Generate code to remove the index and from the schema table */
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3BeginWriteOperation(pParse, 1, iDb);
-    sqlite3NestedParse(pParse,
-       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE " WHERE name=%Q AND type='index'",
-       db->aDb[iDb].zDbSName, pIndex->zName
-    );
-    sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
-    sqlite3ChangeCookie(pParse, iDb);
-    destroyRootPage(pParse, pIndex->tnum, iDb);
-    sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
+    /* Generate code to remove the index and from the schema table */
+    v = sqlite3GetVdbe(pParse);
+    if( v ){
+      sqlite3BeginWriteOperation(pParse, 1, iDb);
+      sqlite3NestedParse(pParse,
+         "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
+         " WHERE name=%Q AND type='index'",
+         db->aDb[iDb].zDbSName, pIndex->zName
+      );
+      sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
+      sqlite3ChangeCookie(pParse, iDb);
+      destroyRootPage(pParse, pIndex->tnum, iDb);
+      sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
+    }
   }
-
-exit_drop_index:
   sqlite3SrcListDelete(db, pName);
 }
 

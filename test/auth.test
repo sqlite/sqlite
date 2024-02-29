@@ -216,7 +216,7 @@ do_test auth-1.21.1 {
     }
     return SQLITE_OK
   }
-  catchsql {DROP TABLE t2}
+  catchsql {DROP TABLE IF EXISTS none1, none2, t2, none3}
 } {1 {not authorized}}
 do_test auth-1.21.2 {
   set ::authargs
@@ -483,7 +483,7 @@ do_test auth-1.63 {
     }
     return SQLITE_OK
   }
-  catchsql {DROP TABLE t2}
+  catchsql {DROP TABLE IF EXISTS none1, t2, none2}
 } {1 {not authorized}}
 do_test auth-1.64 {
   execsql {SELECT name FROM sqlite_master}
@@ -726,7 +726,7 @@ do_test auth-1.101 {
     }
     return SQLITE_OK
   }
-  catchsql {DROP VIEW v2}
+  catchsql {DROP VIEW IF EXISTS none1, v2, none2}
 } {1 {not authorized}}
 do_test auth-1.102 {
   set ::authargs
@@ -1090,7 +1090,7 @@ do_test auth-1.153 {
     }
     return SQLITE_OK
   }
-  catchsql {DROP TRIGGER r2}
+  catchsql {DROP TRIGGER IF EXISTS none1, r2, none2}
 } {1 {not authorized}}
 do_test auth-1.154 {
   set ::authargs
@@ -1389,7 +1389,7 @@ do_test auth-1.205 {
     }
     return SQLITE_OK
   }
-  catchsql {DROP INDEX i2}
+  catchsql {DROP INDEX IF EXISTS none1, i2, none2}
 } {1 {not authorized}}
 do_test auth-1.205a {
   set ::authargs

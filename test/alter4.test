@@ -114,9 +114,7 @@ do_test alter4-1.99 {
     DROP TABLE t2; 
   }
   execsql {
-    DROP TABLE abc; 
-    DROP TABLE t1; 
-    DROP TABLE t3; 
+    DROP TABLE abc, t1, t3; 
   }
 } {}
 

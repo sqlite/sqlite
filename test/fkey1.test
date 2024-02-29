@@ -71,6 +71,17 @@ do_test fkey1-2.1 {
     DROP TABLE t10;
   }
 } {}
+do_test fkey1-2.2 {
+  execsql {
+    CREATE TABLE t5(x references t4);
+    CREATE TABLE t6(x references t4);
+    CREATE TABLE t7(x references t4);
+    CREATE TABLE t8(x references t4);
+    CREATE TABLE t9(x references t4);
+    CREATE TABLE t10(x references t4);
+    DROP TABLE t7, t9, t5, t8, t6, t10;
+  }
+} {}
 
 do_test fkey1-3.1 {
   execsql {

@@ -471,7 +471,7 @@ resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //
-cmd ::= DROP TABLE ifexists(E) fullname(X). {
+cmd ::= DROP TABLE ifexists(E) fullnamelist(X). {
   sqlite3DropTable(pParse, X, 0, E);
 }
 %type ifexists {int}
@@ -485,7 +485,7 @@ cmd ::= createkw(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) eidlist_opt(C)
           AS select(S). {
   sqlite3CreateView(pParse, &X, &Y, &Z, C, S, T, E);
 }
-cmd ::= DROP VIEW ifexists(E) fullname(X). {
+cmd ::= DROP VIEW ifexists(E) fullnamelist(X). {
   sqlite3DropTable(pParse, X, 1, E);
 }
 %endif  SQLITE_OMIT_VIEW
@@ -771,6 +771,18 @@ fullname(A) ::= nm(X).  {
 }
 fullname(A) ::= nm(X) DOT nm(Y). {
   A = sqlite3SrcListAppend(pParse,0,&X,&Y);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
+}
+
+%type fullnamelist {SrcList*}
+%destructor fullnamelist {sqlite3SrcListDelete(pParse->db, $$);}
+fullnamelist(A) ::= fullname(A).
+fullnamelist(A) ::= fullnamelist(L) COMMA nm(X). {
+  A = sqlite3SrcListAppend(pParse,L,&X,0);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+}
+fullnamelist(A) ::= fullnamelist(L) COMMA nm(X) DOT nm(Y). {
+  A = sqlite3SrcListAppend(pParse,L,&X,&Y);
   if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
 }
 
@@ -1504,7 +1516,7 @@ collate(C) ::= COLLATE ids.   {C = 1;}
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //
-cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
+cmd ::= DROP INDEX ifexists(E) fullnamelist(X).   {sqlite3DropIndex(pParse, X, E);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
@@ -1661,7 +1673,7 @@ raisetype(A) ::= FAIL.      {A = OE_Fail;}
 
 ////////////////////////  DROP TRIGGER statement //////////////////////////////
 %ifndef SQLITE_OMIT_TRIGGER
-cmd ::= DROP TRIGGER ifexists(NOERR) fullname(X). {
+cmd ::= DROP TRIGGER ifexists(NOERR) fullnamelist(X). {
   sqlite3DropTrigger(pParse,X,NOERR);
 }
 %endif  !SQLITE_OMIT_TRIGGER
