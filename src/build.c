@@ -3477,11 +3477,11 @@ static int tableMayNotBeDropped(sqlite3 *db, Table *pTab){
 */
 void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   Table *pTab;
-  Vdbe *v;
   sqlite3 *db = pParse->db;
   int iDb;
   int ii;
 
+  (void)sqlite3GetVdbe(pParse);
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
   for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
@@ -3572,17 +3572,41 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       break;
     }
 #endif
+    /* If this table or view has appeared previously in the list of tables
+    ** or views to be dropped, then the prior appearance is sufficient so
+    ** skip this one. */
+    if( ii>0 ){
+      int jj;
+      for(jj=0; jj<ii && pName->a[jj].pTab!=pTab; jj++){}
+      if( jj<ii ) continue;
+    }
 
-    /* Generate code to remove the table from the schema table
-    ** on disk.
-    */
-    v = sqlite3GetVdbe(pParse);
-    if( v ){
+    /* Remember the table for use in the second pass */
+    pName->a[ii].pTab = pTab;
+    pTab->nTabRef++;
+  }
+
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
+    pTab = pName->a[ii].pTab;
+    if( pTab ){
+      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    
+      /* Generate code to clear this table from sqlite_statN and to
+      ** cascade foreign key constraints.
+      */
       sqlite3BeginWriteOperation(pParse, 1, iDb);
-      if( !isView ){
+      if( IsOrdinaryTable(pTab) ){
         sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
-        sqlite3FkDropTable(pParse, pName, pTab);
+        sqlite3FkDropTable(pParse, &pName->a[ii], pTab);
       }
+    }
+  }
+
+  /* Generate code to actually delete the tables/views in a second pass. */
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
+    pTab = pName->a[ii].pTab;
+    if( pTab ){
+      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       sqlite3CodeDropTable(pParse, pTab, iDb, isView);
     }
   }
@@ -4586,8 +4610,8 @@ void sqlite3DefaultRowEst(Index *pIdx){
 */
 void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   Index *pIndex;
-  Vdbe *v;
   sqlite3 *db = pParse->db;
+  Vdbe *v;
   int iDb;
   int ii;
 
@@ -4635,20 +4659,32 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     }
 #endif
 
+    /* Skip over redundant DROP INDEXes */
+    if( ii>0 ){
+      int jj;
+      for(jj=0; jj<ii; jj++){
+        if( pName->a[jj].addrFillSub!=iDb ) continue;
+        if( pName->a[jj].regReturn!=pIndex->tnum ) continue;
+        break;
+      }
+      if( jj<ii ) continue;
+    }
+    pName->a[ii].addrFillSub = iDb;
+    pName->a[ii].regReturn = pIndex->tnum;
+
     /* Generate code to remove the index and from the schema table */
     v = sqlite3GetVdbe(pParse);
-    if( v ){
-      sqlite3BeginWriteOperation(pParse, 1, iDb);
-      sqlite3NestedParse(pParse,
-         "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
-         " WHERE name=%Q AND type='index'",
-         db->aDb[iDb].zDbSName, pIndex->zName
-      );
-      sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
-      sqlite3ChangeCookie(pParse, iDb);
-      destroyRootPage(pParse, pIndex->tnum, iDb);
-      sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
-    }
+    if( v==0 ) break;
+    sqlite3BeginWriteOperation(pParse, 1, iDb);
+    sqlite3NestedParse(pParse,
+       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
+       " WHERE name=%Q AND type='index'",
+       db->aDb[iDb].zDbSName, pIndex->zName
+    );
+    sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
+    sqlite3ChangeCookie(pParse, iDb);
+    destroyRootPage(pParse, pIndex->tnum, iDb);
+    sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
   }
   sqlite3SrcListDelete(db, pName);
 }

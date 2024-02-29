@@ -3314,6 +3314,7 @@ struct SrcItem {
   union {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info when fg.isCte is true */
+    Trigger *pTrig;   /* Trigger in argument list of DROP TRIGGER */
   } u2;
 };
 
@@ -5574,7 +5575,7 @@ const char *sqlite3JournalModename(int);
 */
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   void sqlite3FkCheck(Parse*, Table*, int, int, int*, int);
-  void sqlite3FkDropTable(Parse*, SrcList *, Table*);
+  void sqlite3FkDropTable(Parse*, SrcItem*, Table*);
   void sqlite3FkActions(Parse*, Table*, ExprList*, int, int*, int);
   int sqlite3FkRequired(Parse*, Table*, int*, int);
   u32 sqlite3FkOldmask(Parse*, Table*);

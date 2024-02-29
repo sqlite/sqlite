@@ -732,11 +732,12 @@ void sqlite3FkClearTriggerCache(sqlite3 *db, int iDb){
 ** the table from the database. Triggers are disabled while running this
 ** DELETE, but foreign key actions are not.
 */
-void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
+void sqlite3FkDropTable(Parse *pParse, SrcItem *pName, Table *pTab){
   sqlite3 *db = pParse->db;
   if( (db->flags&SQLITE_ForeignKeys) && IsOrdinaryTable(pTab) ){
     int iSkip = 0;
     Vdbe *v = sqlite3GetVdbe(pParse);
+    SrcList *pSrc;
 
     assert( v );                  /* VDBE has already been allocated */
     assert( IsOrdinaryTable(pTab) );
@@ -756,7 +757,12 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     }
 
     pParse->disableTriggers = 1;
-    sqlite3DeleteFrom(pParse, sqlite3SrcListDup(db, pName, 0), 0, 0, 0);
+    pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+    if( pSrc ){
+      pSrc->a[0].zDatabase = sqlite3DbStrDup(db, pName->zDatabase);
+      pSrc->a[0].zName = sqlite3DbStrDup(db, pName->zName);
+      sqlite3DeleteFrom(pParse, pSrc, 0, 0, 0);
+    }
     pParse->disableTriggers = 0;
 
     /* If the DELETE has generated immediate foreign key constraint 

@@ -639,6 +639,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
       pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName);
       if( pTrigger ) break;
     }
+    pName->a[ii].u2.pTrig = pTrigger;
     if( !pTrigger ){
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "no such trigger: %S", pName->a+ii);
@@ -648,9 +649,16 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
       testcase( ii>0 );
       testcase( ii+1<pName->nSrc );
       pParse->checkSchema = 1;
-    }else{
-      sqlite3DropTriggerPtr(pParse, pTrigger);
+      continue;
     }
+    if( ii>0 ){
+      int jj;
+      for(jj=0; jj<ii; jj++){
+        if( pName->a[jj].u2.pTrig==pTrigger ) break;
+      }
+      if( jj<ii ) continue;
+    }
+    sqlite3DropTriggerPtr(pParse, pTrigger);
   }
   sqlite3SrcListDelete(db, pName);
 }
