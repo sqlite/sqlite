@@ -1,5 +1,5 @@
-C Omit\sunreachable\sbranches\sin\sthe\sparser.
-D 2024-03-01T18:05:57.096
+C RTREE\suses\smulti-DROP\sto\serase\sshadow\stables.
+D 2024-03-01T19:08:45.048
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,7 +506,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c 1baf9f6aa7251ddecdb019d914df4db46eb227720c00f89c485c66dbfdc7863d
+F ext/rtree/rtree.c c65a133bb697d20c0ac60ac09dc3a1cbf55500bfd6e9e730d2469aa6113480ed
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 2b5b8c719c6a4abe377f57766f428a49af36a93061cb146cccfdc3b30000c0a4
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33d3bb848b578d8e7d1029c6603785d90c399d6bc5075d306561fc3c1ab8f202
-R e66e9b5622230908186a9573939e74f2
+P 90de1f73f9aaab321c0f94b41b6d76ea966d8413d5ad864311d462780e1eadcc
+R e31066ea6f239b4e4ba987689c098695
 U drh
-Z 74eff69c8d64df66eda0ff6f2224583f
+Z ffc3050afb0d286b6c3634e049e1856b
 # Remove this line to create a well-formed Fossil manifest.

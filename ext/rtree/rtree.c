@@ -1053,9 +1053,9 @@ static int rtreeDestroy(sqlite3_vtab *pVtab){
   Rtree *pRtree = (Rtree *)pVtab;
   int rc;
   char *zCreate = sqlite3_mprintf(
-    "DROP TABLE '%q'.'%q_node';"
-    "DROP TABLE '%q'.'%q_rowid';"
-    "DROP TABLE '%q'.'%q_parent';",
+    "DROP TABLE '%q'.'%q_node',"
+    "'%q'.'%q_rowid',"
+    "'%q'.'%q_parent';",
     pRtree->zDb, pRtree->zName, 
     pRtree->zDb, pRtree->zName,
     pRtree->zDb, pRtree->zName
