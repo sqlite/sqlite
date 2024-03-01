@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sforeign-key\sconstraints\son\sa\smulti-drop\sof\stables.
-D 2024-03-01T14:47:01.034
+C Fix\sharmless\scompiler\swarning.
+D 2024-03-01T15:56:51.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 285b493d843e7ba8ef78b6ae7d31238e904901dbc0c484f7904de4cf18fd8802
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c 0beb76c2459701acb56522a385b444b408e99923908963ff0b7537bbcd8072f3
+F src/build.c ded762e673c249f8e0a824add7de5e4141e095e3e68497b84ac27c6639fe4970
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37d4c5e207888b49c224275b05abfc1f63a2d8d2133bcc8970188b15387926ef
-R f9987f78741bf51eb98898493f5f3c5f
+P 144e332f44b266a0e594f990088faccd1f0f08fe8e84f2efc9467d99fc14e84b
+R 9baa02b8b9c519a5e7d9423f5785dace
 U drh
-Z b38468a9eeb68f1ed1b602a2a1e00e32
+Z 62c41b55987159ca9518e953f0218c00
 # Remove this line to create a well-formed Fossil manifest.

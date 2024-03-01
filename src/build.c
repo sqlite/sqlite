@@ -4616,6 +4616,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   int iDb;
   int ii, jj;
 
+  v = sqlite3GetVdbe(pParse);
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
   for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
@@ -4673,8 +4674,6 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
 
     /* Generate code to remove the index and from the schema table and
     ** from sqlite_statN tables */
-    v = sqlite3GetVdbe(pParse);
-    if( v==0 ) break;
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3NestedParse(pParse,
        "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
