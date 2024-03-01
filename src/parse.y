@@ -779,11 +779,11 @@ fullname(A) ::= nm(X) DOT nm(Y). {
 fullnamelist(A) ::= fullname(A).
 fullnamelist(A) ::= fullnamelist(L) COMMA nm(X). {
   A = sqlite3SrcListAppend(pParse,L,&X,0);
-  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+  assert( !IN_RENAME_OBJECT ); /* Used only by DROP, which cannot be part of schema */
 }
 fullnamelist(A) ::= fullnamelist(L) COMMA nm(X) DOT nm(Y). {
   A = sqlite3SrcListAppend(pParse,L,&X,&Y);
-  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
+  assert( !IN_RENAME_OBJECT ); /* Used only by DROP, which cannot be part of schema */
 }
 
 %type xfullname {SrcList*}

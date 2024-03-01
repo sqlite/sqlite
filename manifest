@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2024-03-01T15:56:51.252
+C Omit\sunreachable\sbranches\sin\sthe\sparser.
+D 2024-03-01T18:05:57.096
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -739,7 +739,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff60e98138d2499082ac6230f01ac508aba545315debccfca2fd6042f5f10fcd
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 85e7464c09fe05a9c1e9ba85fb2fc2dcd647fbcfb6ed3e17424ec938a3daddc0
+F src/parse.y 9a77520c83950ced6e8b981c7826ebfd8e4a5c6e4b5d9743639e357910180c94
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 144e332f44b266a0e594f990088faccd1f0f08fe8e84f2efc9467d99fc14e84b
-R 9baa02b8b9c519a5e7d9423f5785dace
+P 33d3bb848b578d8e7d1029c6603785d90c399d6bc5075d306561fc3c1ab8f202
+R e66e9b5622230908186a9573939e74f2
 U drh
-Z 62c41b55987159ca9518e953f0218c00
+Z 74eff69c8d64df66eda0ff6f2224583f
 # Remove this line to create a well-formed Fossil manifest.
