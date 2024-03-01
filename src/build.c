@@ -3260,84 +3260,127 @@ void sqlite3RootPageMoved(sqlite3 *db, int iDb, Pgno iFrom, Pgno iTo){
 #endif
 
 /*
-** Write code to erase the table with root-page iTable from database iDb.
-** Also write code to modify the sqlite_schema table and internal schema
-** if a root-page of another table is moved by the btree-layer whilst
-** erasing iTable (this can happen with an auto-vacuum database).
+** The RootStack object holds a list (really a Heap) of btree root pages
+** and schema numbers that need to be deleted using OP_Destroy.
+**
+** OP_Destroy opcodes must be issued in order of decreasing root page
+** numbers in order to avoid having auto-vacuum disrupt subsequent 
+** OP_Destroy opcodes.  For that reason, all pending OP_Destroy calls
+** are accumulated in an instance of this object.  Then at the end of
+** code generation, this object is used to generate the OP_Destroy opcodes
+** in decreasing order.
+**
+** The data structure is a max-heap.  Each rootpage/schema-number combo
+** is stored as a 64-bit integer, with the schema-number in the upper 32
+** bits and the page number in the lower 32-bits.  The root of the heap
+** (RootStack.a[0]) is the largest entry in the heap.  The children of
+** heap entry i are i*2+1 and i*2+2.  The heap always stays balanced by
+** ensuring that a parent entry is larger than both children.
+** 
 */
-static void destroyRootPage(Parse *pParse, int iTable, int iDb){
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  int r1 = sqlite3GetTempReg(pParse);
-  if( iTable<2 ) sqlite3ErrorMsg(pParse, "corrupt schema");
-  sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
-  sqlite3MayAbort(pParse);
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  /* OP_Destroy stores an in integer r1. If this integer
-  ** is non-zero, then it is the root page number of a table moved to
-  ** location iTable. The following code modifies the sqlite_schema table to
-  ** reflect this.
-  **
-  ** The "#NNN" in the SQL is a special constant that means whatever value
-  ** is in register NNN.  See grammar rules associated with the TK_REGISTER
-  ** token for additional information.
-  */
-  sqlite3NestedParse(pParse,
-     "UPDATE %Q." LEGACY_SCHEMA_TABLE
-     " SET rootpage=%d WHERE #%d AND rootpage=#%d",
-     pParse->db->aDb[iDb].zDbSName, iTable, r1, r1);
-#endif
-  sqlite3ReleaseTempReg(pParse, r1);
+typedef struct RootStack RootStack;
+struct RootStack {
+  u32 nAlloc;   /* Slots allocated for a[] */
+  u32 nUsed;    /* Slots used for in a[] */
+  u64 *a;       /* Sorting heap. Each entry has iDb in the upper 32 bits and
+                ** a page number in the lower 32 bits */
+};
+
+/*
+** Add a new Pgno and iDb to the RootStack in question.
+**
+** The new entry is inserted at the of the heap (most distant child)
+** and then the heap is rebalanced.
+*/
+static void rootStackPush(Parse *pParse, RootStack *p, Pgno pgno, int iDb){
+  u64 iNew;
+  int i, j;
+  if( p->nAlloc<p->nUsed+1 ){
+    p->nAlloc = p->nAlloc*2 + 12;
+    p->a = sqlite3DbRealloc(pParse->db, p->a, sizeof(Pgno)*p->nAlloc);
+    if( p->a==0 ){
+      p->nAlloc = p->nUsed = 0;
+      return;
+    }
+  }
+  assert( pgno>0 || CORRUPT_DB );
+  assert( iDb>=0 && iDb<pParse->db->nDb );
+  iNew = (((u64)iDb)<<32) | pgno;
+  i = p->nUsed++;
+  p->a[i] = iNew;
+  while( i>=1 && p->a[j = (i-1)/2]<p->a[i] ){
+    u64 tmp = p->a[i];
+    p->a[i] = p->a[j];
+    p->a[j] = tmp;
+    i = j;
+  }
 }
 
 /*
-** Write VDBE code to erase table pTab and all associated indices on disk.
-** Code to update the sqlite_schema tables and internal schema definitions
-** in case a root-page belonging to another table is moved by the btree layer
-** is also added (this can happen with an auto-vacuum database).
+** Remove the largest entry from the RootStack heap.  Rebalance the
+** heap and then return that largest entry.
 */
-static void destroyTable(Parse *pParse, Table *pTab){
-  /* If the database may be auto-vacuum capable (if SQLITE_OMIT_AUTOVACUUM
-  ** is not defined), then it is important to call OP_Destroy on the
-  ** table and index root-pages in order, starting with the numerically
-  ** largest root-page number. This guarantees that none of the root-pages
-  ** to be destroyed is relocated by an earlier OP_Destroy. i.e. if the
-  ** following were coded:
-  **
-  ** OP_Destroy 4 0
-  ** ...
-  ** OP_Destroy 5 0
-  **
-  ** and root page 5 happened to be the largest root-page number in the
-  ** database, then root page 5 would be moved to page 4 by the
-  ** "OP_Destroy 4 0" opcode. The subsequent "OP_Destroy 5 0" would hit
-  ** a free-list page.
-  */
-  Pgno iTab = pTab->tnum;
-  Pgno iDestroyed = 0;
-
-  while( 1 ){
-    Index *pIdx;
-    Pgno iLargest = 0;
-
-    if( iDestroyed==0 || iTab<iDestroyed ){
-      iLargest = iTab;
-    }
-    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      Pgno iIdx = pIdx->tnum;
-      assert( pIdx->pSchema==pTab->pSchema );
-      if( (iDestroyed==0 || (iIdx<iDestroyed)) && iIdx>iLargest ){
-        iLargest = iIdx;
-      }
-    }
-    if( iLargest==0 ){
-      return;
-    }else{
-      int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-      assert( iDb>=0 && iDb<pParse->db->nDb );
-      destroyRootPage(pParse, iLargest, iDb);
-      iDestroyed = iLargest;
-    }
+static u64 rootStackPop(RootStack *p){
+  u64 iMax;
+  int i, j;
+  assert( p->nUsed>0 );
+  assert( p->a!=0 );
+  iMax = p->a[0];
+  p->a[0] = p->a[--p->nUsed];
+  i = 0;
+  while( (j = i*2+1)<p->nUsed ){
+    u64 tmp;
+    if( j+1<p->nUsed && p->a[j+1]>p->a[j] ) j++;
+    if( p->a[i]>p->a[j] ) break;
+    tmp = p->a[i];
+    p->a[i] = p->a[j];
+    p->a[j] = tmp;
+    i = j;
   }
+  return iMax;
+}
+
+/*
+** Generate OP_Destroy opcodes for every btree named in the given
+** RootStack object.  Issue these OP_Destroy opcodes in order of decreasing
+** root page number.  Then clean up any memory used by the RootStack.
+*/
+static void rootStackCode(Parse *pParse, RootStack *p){
+  int iLastDb = -1;
+  int r1 = sqlite3GetTempReg(pParse);
+  int r2 = sqlite3GetTempReg(pParse);
+  int regReturn = sqlite3GetTempReg(pParse);
+  Vdbe *v = pParse->pVdbe;
+  int addrSub = 0;
+  while( pParse->nErr==0 && p->nUsed>0 ){
+    u64 iNext = rootStackPop(p);
+    Pgno pgno = iNext & 0xffffffff;
+    int iDb = (iNext>>32)&0xffff;
+    if( pgno<2 ) sqlite3ErrorMsg(pParse, "corrupt schema");
+    sqlite3MayAbort(pParse);
+    if( iDb!=iLastDb ){
+      /* Code a subroutine to that will update the schema table when
+      ** a root page number changes.  The old root page is in register r1.
+      ** Root page is moved to the value in register r2. */
+      iLastDb = iDb;
+      sqlite3VdbeAddOp0(v, OP_Goto);
+      addrSub = sqlite3VdbeCurrentAddr(v);
+      sqlite3NestedParse(pParse,
+         "UPDATE %Q." LEGACY_SCHEMA_TABLE
+         " SET rootpage=#%d WHERE rootpage=#%d",
+         pParse->db->aDb[iDb].zDbSName, r2, r1);
+      sqlite3VdbeAddOp1(v, OP_Return, regReturn);
+      sqlite3VdbeJumpHere(v, addrSub-1);
+    }
+    sqlite3VdbeAddOp3(v, OP_Destroy, pgno, r1, iDb);
+    sqlite3VdbeAddOp2(v, OP_IfNot, r1, sqlite3VdbeCurrentAddr(v)+3);
+    VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_Integer, pgno, r2);
+    sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, addrSub);
+  }
+  sqlite3ReleaseTempReg(pParse, r1);
+  sqlite3ReleaseTempReg(pParse, regReturn);
+  sqlite3DbFree(pParse->db, p->a);
 }
 
 /*
@@ -3367,7 +3410,13 @@ static void sqlite3ClearStatTables(
 /*
 ** Generate code to drop a table.
 */
-void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
+static void sqlite3CodeDropTable(
+  Parse *pParse,         /* Parsing context */
+  RootStack *pStack,     /* List of pending OP_Destroys */
+  Table *pTab,           /* Table to be dropped */
+  int iDb,               /* Schema for pTab */
+  int isView             /* True if pTab is a VIEW */
+){
   Vdbe *v;
   sqlite3 *db = pParse->db;
   Trigger *pTrigger;
@@ -3420,8 +3469,13 @@ void sqlite3CodeDropTable(Parse *pParse, Table *pTab, int iDb, int isView){
       "DELETE FROM %Q." LEGACY_SCHEMA_TABLE
       " WHERE tbl_name=%Q and type!='trigger'",
       pDb->zDbSName, pTab->zName);
-  if( !isView && !IsVirtual(pTab) ){
-    destroyTable(pParse, pTab);
+  if( IsOrdinaryTable(pTab) ){
+    Index *pIdx;
+    rootStackPush(pParse, pStack, pTab->tnum, iDb);
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      if( pIdx->tnum==pTab->tnum ) continue;
+      rootStackPush(pParse, pStack, pIdx->tnum, iDb);
+    }
   }
 
   /* Remove the table entry from SQLite's internal schema and modify
@@ -3480,7 +3534,9 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   sqlite3 *db = pParse->db;
   int iDb;
   int ii, jj;
+  RootStack rootStack;
 
+  memset(&rootStack, 0, sizeof(rootStack));
   (void)sqlite3GetVdbe(pParse);
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
@@ -3596,22 +3652,14 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   /* Generate code to actually delete the tables/views in a second pass. 
   ** Btrees must be deleted largest root page first, to avoid problems
   ** caused by autovacuum page reordering. */
-  while( pParse->nErr==0 ){
-    int iBest = 0;
-    for(ii=jj=0; ii<pName->nSrc; ii++){
-      if( pName->a[ii].regReturn<=0 ) continue;
-      if( pName->a[ii].regReturn>iBest ){
-        jj = ii;
-        iBest = pName->a[ii].regReturn;
-      }
-    }
-    if( iBest==0 ) break;
-    pTab = pName->a[jj].pTab;
-    pName->a[jj].regReturn = 0;
+  for(ii=0; ii<pName->nSrc; ii++){
+    pTab = pName->a[ii].pTab;
+    if( pTab==0 ) continue;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    sqlite3CodeDropTable(pParse, pTab, iDb, isView);
+    sqlite3CodeDropTable(pParse, &rootStack, pTab, iDb, isView);
   }
   sqlite3SrcListDelete(db, pName);
+  rootStackCode(pParse, &rootStack);
 }
 
 /*
@@ -4615,7 +4663,9 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   Vdbe *v;
   int iDb;
   int ii, jj;
+  RootStack rootStack;
 
+  memset(&rootStack, 0, sizeof(rootStack));
   v = sqlite3GetVdbe(pParse);
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
@@ -4666,11 +4716,8 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
     for(jj=ii-1; jj>=0 && pName->a[jj].u2.pIdx!=pIndex; jj--){}
     if( jj>=0 ) continue;
 
-    /* Record that this index needs to be dropped.  Store the root page
-    ** number in SrcItem.regReturn so that indexes can be dropped largest
-    ** first to avoid problems with autovacuum reordering. */
+    /* Record that this index needs to be dropped. */
     pName->a[ii].u2.pIdx = pIndex;
-    pName->a[ii].regReturn = pIndex->tnum;
 
     /* Generate code to remove the index and from the schema table and
     ** from sqlite_statN tables */
@@ -4681,28 +4728,13 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
        db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
-  }
 
-  /* Drop the indexes.  Drop the ones with the largest root page first
-  ** to avoid problems with autovacuum. */
-  while( pParse->nErr==0 ){
-    int iBest = 0;
-    jj = 0;
-    for(ii=0; ii<pName->nSrc; ii++){
-      if( pName->a[ii].regReturn>iBest ){
-        jj = ii;
-        iBest = pName->a[ii].regReturn;
-      }
-    }
-    if( iBest<=0 ) break;
-    pIndex = pName->a[jj].u2.pIdx;
-    pName->a[jj].regReturn = 0;
-    iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
+    rootStackPush(pParse, &rootStack, pIndex->tnum, iDb);
     sqlite3ChangeCookie(pParse, iDb);
-    destroyRootPage(pParse, pIndex->tnum, iDb);
     sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
   }
   sqlite3SrcListDelete(db, pName);
+  rootStackCode(pParse, &rootStack);
 }
 
 /*
