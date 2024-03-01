@@ -3315,6 +3315,7 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info when fg.isCte is true */
     Trigger *pTrig;   /* Trigger in argument list of DROP TRIGGER */
+    Index *pIdx;      /* Index in argument list to DROP INDEX */
   } u2;
 };
 

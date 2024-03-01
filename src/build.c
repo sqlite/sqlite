@@ -3479,7 +3479,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   Table *pTab;
   sqlite3 *db = pParse->db;
   int iDb;
-  int ii;
+  int ii, jj;
 
   (void)sqlite3GetVdbe(pParse);
   sqlite3ReadSchema(pParse);
@@ -3575,40 +3575,41 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     /* If this table or view has appeared previously in the list of tables
     ** or views to be dropped, then the prior appearance is sufficient so
     ** skip this one. */
-    if( ii>0 ){
-      int jj;
-      for(jj=0; jj<ii && pName->a[jj].pTab!=pTab; jj++){}
-      if( jj<ii ) continue;
-    }
+    for(jj=ii-1; jj>=0 && pName->a[jj].pTab!=pTab; jj--){}
+    if( jj>=0 ) continue;
 
     /* Remember the table for use in the second pass */
     pName->a[ii].pTab = pTab;
     pTab->nTabRef++;
+    pName->a[ii].regReturn = IsOrdinaryTable(pTab) ? pTab->tnum : 1;
+
+    /* Generate code to clear this table from sqlite_statN and to
+    ** cascade foreign key constraints.
+    */
+    sqlite3BeginWriteOperation(pParse, 1, iDb);
+    if( IsOrdinaryTable(pTab) ){
+      sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
+      sqlite3FkDropTable(pParse, &pName->a[ii], pTab);
+    }
   }
 
-  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
-    pTab = pName->a[ii].pTab;
-    if( pTab ){
-      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    
-      /* Generate code to clear this table from sqlite_statN and to
-      ** cascade foreign key constraints.
-      */
-      sqlite3BeginWriteOperation(pParse, 1, iDb);
-      if( IsOrdinaryTable(pTab) ){
-        sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
-        sqlite3FkDropTable(pParse, &pName->a[ii], pTab);
+  /* Generate code to actually delete the tables/views in a second pass. 
+  ** Btrees must be deleted largest root page first, to avoid problems
+  ** caused by autovacuum page reordering. */
+  while( pParse->nErr==0 ){
+    int iBest = 0;
+    for(ii=jj=0; ii<pName->nSrc; ii++){
+      if( pName->a[ii].regReturn<=0 ) continue;
+      if( pName->a[ii].regReturn>iBest ){
+        jj = ii;
+        iBest = pName->a[ii].regReturn;
       }
     }
-  }
-
-  /* Generate code to actually delete the tables/views in a second pass. */
-  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
-    pTab = pName->a[ii].pTab;
-    if( pTab ){
-      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-      sqlite3CodeDropTable(pParse, pTab, iDb, isView);
-    }
+    if( iBest==0 ) break;
+    pTab = pName->a[jj].pTab;
+    pName->a[jj].regReturn = 0;
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    sqlite3CodeDropTable(pParse, pTab, iDb, isView);
   }
   sqlite3SrcListDelete(db, pName);
 }
@@ -4613,11 +4614,12 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   sqlite3 *db = pParse->db;
   Vdbe *v;
   int iDb;
-  int ii;
+  int ii, jj;
 
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
   for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
+    pName->a[ii].regReturn = 0;
     pIndex = sqlite3FindIndex(db, pName->a[ii].zName, pName->a[ii].zDatabase);
     if( pIndex==0 ){
       if( !ifExists ){
@@ -4660,19 +4662,17 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
 #endif
 
     /* Skip over redundant DROP INDEXes */
-    if( ii>0 ){
-      int jj;
-      for(jj=0; jj<ii; jj++){
-        if( pName->a[jj].addrFillSub!=iDb ) continue;
-        if( pName->a[jj].regReturn!=pIndex->tnum ) continue;
-        break;
-      }
-      if( jj<ii ) continue;
-    }
-    pName->a[ii].addrFillSub = iDb;
+    for(jj=ii-1; jj>=0 && pName->a[jj].u2.pIdx!=pIndex; jj--){}
+    if( jj>=0 ) continue;
+
+    /* Record that this index needs to be dropped.  Store the root page
+    ** number in SrcItem.regReturn so that indexes can be dropped largest
+    ** first to avoid problems with autovacuum reordering. */
+    pName->a[ii].u2.pIdx = pIndex;
     pName->a[ii].regReturn = pIndex->tnum;
 
-    /* Generate code to remove the index and from the schema table */
+    /* Generate code to remove the index and from the schema table and
+    ** from sqlite_statN tables */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) break;
     sqlite3BeginWriteOperation(pParse, 1, iDb);
@@ -4682,6 +4682,23 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
        db->aDb[iDb].zDbSName, pIndex->zName
     );
     sqlite3ClearStatTables(pParse, iDb, "idx", pIndex->zName);
+  }
+
+  /* Drop the indexes.  Drop the ones with the largest root page first
+  ** to avoid problems with autovacuum. */
+  while( pParse->nErr==0 ){
+    int iBest = 0;
+    jj = 0;
+    for(ii=0; ii<pName->nSrc; ii++){
+      if( pName->a[ii].regReturn>iBest ){
+        jj = ii;
+        iBest = pName->a[ii].regReturn;
+      }
+    }
+    if( iBest<=0 ) break;
+    pIndex = pName->a[jj].u2.pIdx;
+    pName->a[jj].regReturn = 0;
+    iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
     sqlite3ChangeCookie(pParse, iDb);
     destroyRootPage(pParse, pIndex->tnum, iDb);
     sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
