@@ -3589,7 +3589,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     if( IsOrdinaryTable(pTab) ){
       sqlite3ClearStatTables(pParse, iDb, "tbl", pTab->zName);
-      sqlite3FkDropTable(pParse, &pName->a[ii], pTab);
+      sqlite3FkDropTable(pParse, pName, pTab);
     }
   }
 

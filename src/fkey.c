@@ -718,8 +718,9 @@ void sqlite3FkClearTriggerCache(sqlite3 *db, int iDb){
 /*
 ** This function is called to generate code that runs when table pTab is
 ** being dropped from the database. The SrcList passed as the second argument
-** to this function contains a single entry guaranteed to resolve to
-** table pTab.
+** to this function contains entries for every table that is being dropped,
+** with the SrcItem.pTab line being set to the table being dropped.  pTab
+** will be one of those tables.
 **
 ** Normally, no code is required. However, if either
 **
@@ -728,16 +729,23 @@ void sqlite3FkClearTriggerCache(sqlite3 *db, int iDb){
 **       determined at runtime that there are outstanding deferred FK 
 **       constraint violations in the database,
 **
-** then the equivalent of "DELETE FROM <tbl>" is executed before dropping
-** the table from the database. Triggers are disabled while running this
-** DELETE, but foreign key actions are not.
+** then the equivalent of "DELETE FROM <tbl>" is executed for every table
+** being dropped, in the order specified in the DROP TABLE statement, which
+** is the same as the order in which these tables appear in pName.
+** Triggers are disabled while running these DELETEs, but foreign key
+** actions are not.
+**
+** This routine sets the SrcList.addrFillSub value for all pName entries
+** for which DELETE FROM has been run.  This prevents the DELETE FROM
+** from being run multiple times.
 */
-void sqlite3FkDropTable(Parse *pParse, SrcItem *pName, Table *pTab){
+void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
   sqlite3 *db = pParse->db;
   if( (db->flags&SQLITE_ForeignKeys) && IsOrdinaryTable(pTab) ){
     int iSkip = 0;
     Vdbe *v = sqlite3GetVdbe(pParse);
     SrcList *pSrc;
+    int ii;
 
     assert( v );                  /* VDBE has already been allocated */
     assert( IsOrdinaryTable(pTab) );
@@ -757,11 +765,16 @@ void sqlite3FkDropTable(Parse *pParse, SrcItem *pName, Table *pTab){
     }
 
     pParse->disableTriggers = 1;
-    pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
-    if( pSrc ){
-      pSrc->a[0].zDatabase = sqlite3DbStrDup(db, pName->zDatabase);
-      pSrc->a[0].zName = sqlite3DbStrDup(db, pName->zName);
-      sqlite3DeleteFrom(pParse, pSrc, 0, 0, 0);
+    for(ii=0; ii<pName->nSrc; ii++){
+      if( pName->a[ii].pTab==0 ) continue;
+      if( pName->a[ii].addrFillSub ) continue;
+      pName->a[ii].addrFillSub = 1;
+      pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+      if( pSrc ){
+        pSrc->a[0].zDatabase = sqlite3DbStrDup(db, pName->a[ii].zDatabase);
+        pSrc->a[0].zName = sqlite3DbStrDup(db, pName->a[ii].zName);
+        sqlite3DeleteFrom(pParse, pSrc, 0, 0, 0);
+      }
     }
     pParse->disableTriggers = 0;
 
