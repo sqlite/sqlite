@@ -626,16 +626,18 @@ static int toLocaltime(
 */
 static const struct {
   u8 nName;           /* Length of the name */
-  char zName[7];      /* Name of the transformation */
+  char zName[9];      /* Name of the transformation */
   float rLimit;       /* Maximum NNN value for this transform */
   float rXform;       /* Constant used for this transform */
 } aXformType[] = {
-  { 6, "second", 4.6427e+14,       1.0  },
-  { 6, "minute", 7.7379e+12,      60.0  },
-  { 4, "hour",   1.2897e+11,    3600.0  },
-  { 3, "day",    5373485.0,    86400.0  },
-  { 5, "month",  176546.0,   2592000.0  },
-  { 4, "year",   14713.0,   31536000.0  },
+  { 6, "second",   4.6427e+14,       1.0  },
+  { 6, "minute",   7.7379e+12,      60.0  },
+  { 4, "hour",     1.2897e+11,    3600.0  },
+  { 3, "day",      5373485.0,    86400.0  },
+  { 5, "month",    176546.0,   2592000.0  },
+  { 4, "year",     14713.0,   31536000.0  },
+  { 8, "pg-month", 176546.0,   2592000.0  },
+  { 7, "pg-year",  14713.0,   31536000.0  },
 };
 
 /*
@@ -966,22 +968,31 @@ static int parseModifier(
          && sqlite3_strnicmp(aXformType[i].zName, z, n)==0
          && r>-aXformType[i].rLimit && r<aXformType[i].rLimit
         ){
+          int targetMonth = 0;
           switch( i ){
+            case 6:
             case 4: { /* Special processing to add months */
-              assert( strcmp(aXformType[i].zName,"month")==0 );
+              assert( strcmp(aXformType[i].zName,"month")==0
+                   || strcmp(aXformType[i].zName,"pg-month")==0 );
               computeYMD_HMS(p);
               p->M += (int)r;
               x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
               p->Y += x;
               p->M -= x*12;
+              assert( p->M>=1 && p->M<=12 );
+              if( i==6 ) targetMonth = p->M;
               p->validJD = 0;
               r -= (int)r;
               break;
             }
+            case 7:
             case 5: { /* Special processing to add years */
               int y = (int)r;
-              assert( strcmp(aXformType[i].zName,"year")==0 );
+              assert( strcmp(aXformType[i].zName,"year")==0
+                   || strcmp(aXformType[i].zName,"pg-year")==0 );
               computeYMD_HMS(p);
+              assert( p->M>=1 && p->M<=12 );
+              if( i==7 ) targetMonth = p->M;
               p->Y += y;
               p->validJD = 0;
               r -= (int)r;
@@ -989,6 +1000,12 @@ static int parseModifier(
             }
           }
           computeJD(p);
+          if( targetMonth>0 ){
+            p->validYMD = 0;
+            computeYMD(p);
+            if( p->M==targetMonth+1 ) p->iJD -= p->D*86400000;
+            p->validYMD = 0;
+          }
           p->iJD += (sqlite3_int64)(r*1000.0*aXformType[i].rXform + rRounder);
           rc = 0;
           break;
