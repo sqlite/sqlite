@@ -624,7 +624,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   const char *zDb;
   const char *zName;
   sqlite3 *db = pParse->db;
-  int ii;
+  int ii, jj;
 
   sqlite3ReadSchema(pParse);
   assert( pName!=0 || pParse->nErr!=0 );
@@ -651,13 +651,10 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
       pParse->checkSchema = 1;
       continue;
     }
-    if( ii>0 ){
-      int jj;
-      for(jj=0; jj<ii; jj++){
-        if( pName->a[jj].u2.pTrig==pTrigger ) break;
-      }
-      if( jj<ii ) continue;
+    for(jj=ii-1; jj>=0; jj--){
+      if( pName->a[jj].u2.pTrig==pTrigger ) break;
     }
+    if( jj>=0 ) continue;
     sqlite3DropTriggerPtr(pParse, pTrigger);
   }
   sqlite3SrcListDelete(db, pName);

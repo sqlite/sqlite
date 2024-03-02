@@ -3416,8 +3416,7 @@ static void sqlite3CodeDropTable(
   Parse *pParse,         /* Parsing context */
   RootStack *pStack,     /* List of pending OP_Destroys */
   Table *pTab,           /* Table to be dropped */
-  int iDb,               /* Schema for pTab */
-  int isView             /* True if pTab is a VIEW */
+  int iDb                /* Schema holding pTab */
 ){
   Vdbe *v;
   sqlite3 *db = pParse->db;
@@ -3658,7 +3657,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     pTab = pName->a[ii].pTab;
     if( pTab==0 ) continue;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    sqlite3CodeDropTable(pParse, &rootStack, pTab, iDb, isView);
+    sqlite3CodeDropTable(pParse, &rootStack, pTab, iDb);
   }
   sqlite3SrcListDelete(db, pName);
   rootStackCode(pParse, &rootStack);
