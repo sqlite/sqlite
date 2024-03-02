@@ -3638,7 +3638,6 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     /* Remember the table for use in the second pass */
     pName->a[ii].pTab = pTab;
     pTab->nTabRef++;
-    pName->a[ii].regReturn = IsOrdinaryTable(pTab) ? pTab->tnum : 1;
 
     /* Generate code to clear this table from sqlite_statN and to
     ** cascade foreign key constraints.

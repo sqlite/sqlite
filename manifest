@@ -1,5 +1,5 @@
-C Simplifications\sto\smulti-DROP\slogic.
-D 2024-03-02T11:02:04.285
+C Remove\san\sunused\sline\sof\scode.
+D 2024-03-02T12:17:08.553
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 285b493d843e7ba8ef78b6ae7d31238e904901dbc0c484f7904de4cf18fd8802
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c b354f8d34445b4ae77d9eae11063a76f246f003f159b2225bbbca29d01ae870c
+F src/build.c 7ee3616b8a25577f2fb715d91eaa27f62a34e6ee6d0130cc8b9644c07875b759
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3992f45033d7c1eb7b2bf7790fbf301c495f3e6ef1610a8d66d7357270a227e4
-R 9aaf4c01874687216208aba3bf2dd376
+P e70d6be7511837ff11deac10b335e0f613dfa6dedcab269df9ce61c8d8495d2a
+R ffcb677589cb061417252fbc7f9600de
 U drh
-Z 91bdd07c38da40590cdb828477a28a38
+Z d61bc33dfe57d1afe99711b6d6b89ef0
 # Remove this line to create a well-formed Fossil manifest.
