@@ -626,20 +626,14 @@ oneselect(A) ::= values(A).
 
 %type values {Select*}
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
-values(A) ::= VALUES LP nexprlist(X) RP. {
+values(A) ::= VALUES(T) LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
+  if( T.z==pParse->zValuesToken && yyLookahead==TK_COMMA ){
+    sqlite3MultiValuesStart(pParse, A);
+  }
 }
 values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
-  Select *pRight, *pLeft = A;
-  pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0);
-  if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
-  if( pRight ){
-    pRight->op = TK_ALL;
-    pRight->pPrior = pLeft;
-    A = pRight;
-  }else{
-    A = pLeft;
-  }
+  A = sqlite3InsertMultiValues(pParse,A,Y);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
@@ -1005,13 +999,38 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) select(S)
-        upsert(U). {
-  sqlite3Insert(pParse, X, S, F, R, U);
+cmd ::= insert_head(H) insert_tail(T). {
+  sqlite3Insert(pParse, H.x, T.s, H.f, H.r, T.u);
 }
-cmd ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F) DEFAULT VALUES returning.
-{
-  sqlite3Insert(pParse, X, 0, F, R, 0);
+
+%destructor insert_tail {
+  sqlite3SelectDelete(pParse->db, $$.s);
+  sqlite3UpsertDelete(pParse->db, $$.u);
+}
+%destructor insert_head {
+  sqlite3SrcListDelete(pParse->db, $$.x);
+  sqlite3IdListDelete(pParse->db, $$.f);
+}
+
+%type insert_tail { struct insert_tail_arg { Select *s; Upsert *u; } }
+
+%type insert_head { struct insert_head_arg { int r; SrcList *x; IdList *f; } }
+
+insert_head(A) ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F). {
+  A.r = R;
+  A.x = X;
+  A.f = F;
+  if( yyLookahead==TK_VALUES ) pParse->zValuesToken = yyLookaheadToken.z;
+}
+
+insert_tail(A) ::= DEFAULT VALUES returning. {
+  A.s = 0;
+  A.u = 0;
+}
+
+insert_tail(A) ::= select(S) upsert(U). {
+  A.s = S;
+  A.u = U;
 }
 
 %type upsert {Upsert*}

@@ -1349,6 +1349,7 @@ typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
 typedef struct Window Window;
 typedef struct With With;
+typedef struct MultiValues MultiValues;
 
 
 /*
@@ -3907,6 +3908,8 @@ struct Parse {
 #ifndef SQLITE_OMIT_ALTERTABLE
   RenameToken *pRename;     /* Tokens subject to renaming by ALTER TABLE */
 #endif
+  MultiValues *pValues;
+  const char *zValuesToken;
 };
 
 /* Allowed values for Parse.eParseMode
@@ -5768,5 +5771,8 @@ sqlite3_uint64 sqlite3Hwtime(void);
 #else
 # define IS_STMT_SCANSTATUS(db) 0
 #endif
+
+Select *sqlite3InsertMultiValues(Parse*, Select*, ExprList*);
+void sqlite3MultiValuesStart(Parse*, Select*);
 
 #endif /* SQLITEINT_H */

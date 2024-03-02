@@ -577,6 +577,69 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+typedef struct MultiValues MultiValues;
+struct MultiValues {
+  Select *pSelect;
+  SelectDest dest;
+  int addrTop;
+  int regYield;
+};
+
+static int isConstantRow(ExprList *pRow){
+  int ii;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    if( !sqlite3ExprIsConstantOrFunction(pRow->a[ii].pExpr, 0) ) return 0;
+  }
+  return 1;
+}
+
+void sqlite3MultiValuesStart(Parse *pParse, Select *pSel){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  MultiValues *pVal = 0;
+
+  assert( pParse->pValues==0 );
+  assert( pParse->zValuesToken!=0 );
+  if( isConstantRow(pSel->pEList) ){
+    pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
+    pVal->pSelect = pSel;
+    pVal->regYield = ++pParse->nMem;
+    pVal->addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, pVal->regYield, 0, pVal->addrTop);
+    sqlite3SelectDestInit(&pVal->dest, SRT_Coroutine, pVal->regYield);
+    sqlite3Select(pParse, pSel, &pVal->dest);
+    pParse->pValues = pVal;
+    pSel->selFlags = pSel->selFlags & (~SF_Values);
+    sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);
+  }
+}
+
+Select *sqlite3InsertMultiValues(Parse *pParse, Select *pSel, ExprList *pRow){
+  MultiValues *pVal = pParse->pValues;
+  Select *pRight;
+
+  pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values|SF_MultiValue, 0);
+
+  if( pRight ){
+    if( pVal==0 || pVal->pSelect!=pSel || !isConstantRow(pRight->pEList) ){
+      pSel->selFlags &= ~SF_MultiValue;
+      pRight->op = TK_ALL;
+      pRight->pPrior = pSel;
+      pSel = pRight;
+    }else{
+      if( pRight->pEList->nExpr!=pSel->pEList->nExpr ){
+        sqlite3SelectWrongNumTermsError(pParse, pRight);
+      }else{
+        int explain = pParse->explain;
+        pParse->explain = 255;
+        sqlite3Select(pParse, pRight, &pVal->dest);
+        pParse->explain = explain;
+      }
+      sqlite3SelectDelete(pParse->db, pRight);
+    }
+  }
+
+  return pSel;
+}
 
 /* Forward declaration */
 static int xferOptimization(
@@ -915,16 +978,25 @@ void sqlite3Insert(
     ** Generate a co-routine to run the SELECT. */
     int regYield;       /* Register holding co-routine entry-point */
     int addrTop;        /* Top of the co-routine */
-    int rc;             /* Result code */
+    int rc = SQLITE_OK; /* Result code */
 
-    regYield = ++pParse->nMem;
-    addrTop = sqlite3VdbeCurrentAddr(v) + 1;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
-    sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
-    dest.iSdst = bIdListInOrder ? regData : 0;
-    dest.nSdst = pTab->nCol;
-    rc = sqlite3Select(pParse, pSelect, &dest);
-    regFromSelect = dest.iSdst;
+    if( pParse->pValues && pParse->pValues->pSelect==pSelect ){
+      MultiValues *pVal = pParse->pValues;
+      /* todo: surely we can use either regYield or dest.iSDParm... */
+      dest.iSDParm = regYield = pVal->regYield;
+      addrTop = pVal->addrTop;
+      regFromSelect = pVal->dest.iSdst;
+    }else{
+      regYield = ++pParse->nMem;
+      addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
+      dest.iSdst = bIdListInOrder ? regData : 0;
+      dest.nSdst = pTab->nCol;
+      rc = sqlite3Select(pParse, pSelect, &dest);
+      regFromSelect = dest.iSdst;
+    }
+
     assert( db->pParse==pParse );
     if( rc || pParse->nErr ) goto insert_cleanup;
     assert( db->mallocFailed==0 );
