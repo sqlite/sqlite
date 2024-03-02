@@ -148,6 +148,15 @@ datetest 2.51 {datetime('2003-10-22 12:24','nonsense')} NULL
 
 datetest 2.60 {datetime('2023-02-31')} {2023-03-03 00:00:00}
 
+datetest 2.70 {date('2024-01-31','+1 month')} {2024-03-02}
+datetest 2.71 {date('2024-01-31','+1 mnth')} {2024-02-29}
+datetest 2.72 {date('2023-01-31','+1 month')} {2023-03-03}
+datetest 2.73 {date('2023-01-31','+1 mnth')} {2023-02-28}
+datetest 2.74 {date('2024-02-29','+1 year')} {2025-03-01}
+datetest 2.75 {date('2024-02-29','+1 yr')} {2025-02-28}
+datetest 2.76 {date('2024-02-29','-110 years')} {1914-03-01}
+datetest 2.77 {date('2024-02-29','-110 yrs')} {1914-02-28}
+
 datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
 datetest 3.2.1 {strftime('pre%fpost','2003-10-31 12:34:56.432')} pre56.432post
 datetest 3.2.2 {strftime('%f','2003-10-31 12:34:59.9999999')} 59.999
