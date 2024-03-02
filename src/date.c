@@ -626,18 +626,18 @@ static int toLocaltime(
 */
 static const struct {
   u8 nName;           /* Length of the name */
-  char zName[9];      /* Name of the transformation */
+  char zName[7];      /* Name of the transformation */
   float rLimit;       /* Maximum NNN value for this transform */
   float rXform;       /* Constant used for this transform */
 } aXformType[] = {
-  { 6, "second",   4.6427e+14,       1.0  },
-  { 6, "minute",   7.7379e+12,      60.0  },
-  { 4, "hour",     1.2897e+11,    3600.0  },
-  { 3, "day",      5373485.0,    86400.0  },
-  { 5, "month",    176546.0,   2592000.0  },
-  { 4, "year",     14713.0,   31536000.0  },
-  { 8, "pg-month", 176546.0,   2592000.0  },
-  { 7, "pg-year",  14713.0,   31536000.0  },
+  /* 0 */ { 6, "second",   4.6427e+14,         1.0  },
+  /* 1 */ { 6, "minute",   7.7379e+12,        60.0  },
+  /* 2 */ { 4, "hour",     1.2897e+11,      3600.0  },
+  /* 3 */ { 3, "day",      5373485.0,      86400.0  },
+  /* 4 */ { 5, "month",    176546.0,  30.0*86400.0  },
+  /* 5 */ { 4, "mnth",     176546.0,  30.0*86400.0  },
+  /* 6 */ { 4, "year",     14713.0,  365.0*86400.0  },
+  /* 7 */ { 2, "yr",       14713.0,  365.0*86400.0  },
 };
 
 /*
@@ -958,7 +958,7 @@ static int parseModifier(
       z += n;
       while( sqlite3Isspace(*z) ) z++;
       n = sqlite3Strlen30(z);
-      if( n>10 || n<3 ) break;
+      if( n>10 || n<2 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
       assert( rc==1 );
@@ -970,26 +970,26 @@ static int parseModifier(
         ){
           int targetMonth = 0;
           switch( i ){
-            case 6:
-            case 4: { /* Special processing to add months */
-              assert( strcmp(aXformType[i].zName,"month")==0
-                   || strcmp(aXformType[i].zName,"pg-month")==0 );
+            case 4:
+            case 5: { /* Special processing to add months */
+              assert( strcmp(aXformType[4].zName,"month")==0 );
+              assert( strcmp(aXformType[5].zName,"mnth")==0 );
               computeYMD_HMS(p);
               p->M += (int)r;
               x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
               p->Y += x;
               p->M -= x*12;
               assert( p->M>=1 && p->M<=12 );
-              if( i==6 ) targetMonth = p->M;
+              if( i==5 ) targetMonth = p->M;
               p->validJD = 0;
               r -= (int)r;
               break;
             }
-            case 7:
-            case 5: { /* Special processing to add years */
+            case 6:
+            case 7: { /* Special processing to add years */
               int y = (int)r;
-              assert( strcmp(aXformType[i].zName,"year")==0
-                   || strcmp(aXformType[i].zName,"pg-year")==0 );
+              assert( strcmp(aXformType[6].zName,"year")==0 );
+              assert( strcmp(aXformType[7].zName,"yr")==0 );
               computeYMD_HMS(p);
               assert( p->M>=1 && p->M<=12 );
               if( i==7 ) targetMonth = p->M;
