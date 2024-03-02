@@ -1,5 +1,5 @@
-C When\sdoing\sDROP\sTABLE\sor\sDROP\sINDEX,\suse\sa\sheap\sto\sensure\sthat\sthe\svarious\nbtrees\sare\sdropped\sin\sthe\sright\sorder\sfor\sautovacuum.
-D 2024-03-01T22:42:16.916
+C Improved\srebustness\sagainst\sOOM\sand\scorruption.
+D 2024-03-02T00:29:11.592
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 285b493d843e7ba8ef78b6ae7d31238e904901dbc0c484f7904de4cf18fd8802
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c bbd0408e72f4b22964c2a92a29ddd0154c509fe78a01036e2cb3ff8721fceff5
+F src/build.c 2ad0f3d31b8acbae7fc70843b729784e48d333bc0f00c08960ecfa2d6768f1e3
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cf8a58d679d0cd30bf7c9208780855f0567b5e086422d59e3254b907923e0dd1
-R 91b6533837d9746e996aee053268c336
+P e5bf9556ffd1d0880cc982d389e229246d0f3ddce4264905c6a7dd9c55d735e8
+R 789ccab0c4642dd5ae1bf587e03fcd34
 U drh
-Z 805fa77be429c9dc08d49424247b72ac
+Z f71f73bd63f19dd417c879862b23542b
 # Remove this line to create a well-formed Fossil manifest.

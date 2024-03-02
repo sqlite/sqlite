@@ -3378,8 +3378,10 @@ static void rootStackCode(Parse *pParse, RootStack *p){
     sqlite3VdbeAddOp2(v, OP_Integer, pgno, r2);
     sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, addrSub);
   }
-  sqlite3ReleaseTempReg(pParse, r1);
-  sqlite3ReleaseTempReg(pParse, regReturn);
+  if( pParse->nErr==0 ){
+    sqlite3ReleaseTempReg(pParse, r1);
+    sqlite3ReleaseTempReg(pParse, regReturn);
+  }
   sqlite3DbFree(pParse->db, p->a);
 }
 
@@ -3652,7 +3654,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   /* Generate code to actually delete the tables/views in a second pass. 
   ** Btrees must be deleted largest root page first, to avoid problems
   ** caused by autovacuum page reordering. */
-  for(ii=0; ii<pName->nSrc; ii++){
+  for(ii=0; pParse->nErr==0 && ii<pName->nSrc; ii++){
     pTab = pName->a[ii].pTab;
     if( pTab==0 ) continue;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
