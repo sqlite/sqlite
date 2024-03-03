@@ -71,13 +71,14 @@ struct DateTime {
   int tz;             /* Timezone offset in minutes */
   double s;           /* Seconds */
   char validJD;       /* True (1) if iJD is valid */
-  char rawS;          /* Raw numeric value stored in s */
   char validYMD;      /* True (1) if Y,M,D are valid */
   char validHMS;      /* True (1) if h,m,s are valid */
   char validTZ;       /* True (1) if tz is valid */
-  char tzSet;         /* Timezone was set explicitly */
-  char isError;       /* An overflow has occurred */
-  char useSubsec;     /* Display subsecond precision */
+  char nFloor;            /* Days to implement "floor" */
+  unsigned rawS      : 1; /* Raw numeric value stored in s */
+  unsigned tzSet     : 1; /* Timezone was set explicitly */
+  unsigned isError   : 1; /* An overflow has occurred */
+  unsigned useSubsec : 1; /* Display subsecond precision */
 };
 
 
@@ -288,6 +289,29 @@ static void computeJD(DateTime *p){
 }
 
 /*
+** Given the YYYY-MM-DD information current in p, determine if there
+** is day-of-month overflow and set nFloor to the number of days that
+** would need to be subtracted from the date in order to bring the
+** date back to the end of the month.
+*/
+static void computeFloor(DateTime *p){
+  assert( p->validYMD || p->isError );
+  assert( (p->D>=1 && p->D<=31) || p->isError );
+  assert( (p->M>=1 && p->M<=12) || p->isError );
+  if( p->D<=28 ){
+    p->nFloor = 0;
+  }else if( (1<<p->M) & 0x15aa ){
+    p->nFloor = 0;
+  }else if( p->M!=2 ){
+    p->nFloor = (p->D==31);
+  }else if( p->Y%4!=0 || (p->Y%100==0 && p->Y%400!=0) ){
+    p->nFloor = p->D - 28;
+  }else{
+    p->nFloor = p->D - 29;
+  }
+}
+
+/*
 ** Parse dates of the form
 **
 **     YYYY-MM-DD HH:MM:SS.FFF
@@ -325,6 +349,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   p->Y = neg ? -Y : Y;
   p->M = M;
   p->D = D;
+  computeFloor(p);
   if( p->validTZ ){
     computeJD(p);
   }
@@ -635,9 +660,7 @@ static const struct {
   /* 2 */ { 4, "hour",     1.2897e+11,      3600.0  },
   /* 3 */ { 3, "day",      5373485.0,      86400.0  },
   /* 4 */ { 5, "month",    176546.0,  30.0*86400.0  },
-  /* 5 */ { 4, "mnth",     176546.0,  30.0*86400.0  },
-  /* 6 */ { 4, "year",     14713.0,  365.0*86400.0  },
-  /* 7 */ { 2, "yr",       14713.0,  365.0*86400.0  },
+  /* 5 */ { 4, "year",     14713.0,  365.0*86400.0  },
 };
 
 /*
@@ -669,14 +692,20 @@ static void autoAdjustDate(DateTime *p){
 **     NNN.NNNN seconds
 **     NNN months
 **     NNN years
+**     +/-YYYY-MM-DD HH:MM:SS.SSS
+**     ceiling
+**     floor
 **     start of month
 **     start of year
 **     start of week
 **     start of day
 **     weekday N
 **     unixepoch
+**     auto
 **     localtime
 **     utc
+**     subsec
+**     subsecond
 **
 ** Return 0 on success and 1 if there is any kind of error. If the error
 ** is in a system call (i.e. localtime()), then an error message is written
@@ -703,6 +732,37 @@ static int parseModifier(
       if( sqlite3_stricmp(z, "auto")==0 ){
         if( idx>1 ) return 1; /* IMP: R-33611-57934 */
         autoAdjustDate(p);
+        rc = 0;
+      }
+      break;
+    }
+    case 'c': {
+      /*
+      **    ceiling
+      **
+      ** Resolve day-of-month overflow by rolling forward into the next
+      ** month.  As this is the default action, this modifier is really
+      ** a no-op that is only included for symmetry.  See "floor".
+      */
+      if( sqlite3_stricmp(z, "ceiling")==0 ){
+        computeJD(p);
+        clearYMD_HMS_TZ(p);
+        rc = 0;
+        p->nFloor = 0;
+      }
+      break;
+    }
+    case 'f': {
+      /*
+      **    floor
+      **
+      ** Resolve day-of-month overflow by rolling back to the end of the
+      ** previous month.
+      */
+      if( sqlite3_stricmp(z, "floor")==0 ){
+        computeJD(p);
+        p->iJD -= p->nFloor*86400000;
+        clearYMD_HMS_TZ(p);
         rc = 0;
       }
       break;
@@ -912,6 +972,7 @@ static int parseModifier(
         x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
         p->Y += x;
         p->M -= x*12;
+        computeFloor(p);
         computeJD(p);
         p->validHMS = 0;
         p->validYMD = 0;
@@ -958,54 +1019,43 @@ static int parseModifier(
       z += n;
       while( sqlite3Isspace(*z) ) z++;
       n = sqlite3Strlen30(z);
-      if( n>10 || n<2 ) break;
+      if( n<3 || n>10 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
       assert( rc==1 );
       rRounder = r<0 ? -0.5 : +0.5;
+      p->nFloor = 0;
       for(i=0; i<ArraySize(aXformType); i++){
         if( aXformType[i].nName==n
          && sqlite3_strnicmp(aXformType[i].zName, z, n)==0
          && r>-aXformType[i].rLimit && r<aXformType[i].rLimit
         ){
-          int targetMonth = 0;
           switch( i ){
-            case 4:
-            case 5: { /* Special processing to add months */
+            case 4: { /* Special processing to add months */
               assert( strcmp(aXformType[4].zName,"month")==0 );
-              assert( strcmp(aXformType[5].zName,"mnth")==0 );
               computeYMD_HMS(p);
               p->M += (int)r;
               x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
               p->Y += x;
               p->M -= x*12;
-              assert( p->M>=1 && p->M<=12 );
-              if( i==5 ) targetMonth = p->M;
+              computeFloor(p);
               p->validJD = 0;
               r -= (int)r;
               break;
             }
-            case 6:
-            case 7: { /* Special processing to add years */
+            case 5: { /* Special processing to add years */
               int y = (int)r;
-              assert( strcmp(aXformType[6].zName,"year")==0 );
-              assert( strcmp(aXformType[7].zName,"yr")==0 );
+              assert( strcmp(aXformType[5].zName,"year")==0 );
               computeYMD_HMS(p);
               assert( p->M>=1 && p->M<=12 );
-              if( i==7 ) targetMonth = p->M;
               p->Y += y;
+              computeFloor(p);
               p->validJD = 0;
               r -= (int)r;
               break;
             }
           }
           computeJD(p);
-          if( targetMonth>0 ){
-            p->validYMD = 0;
-            computeYMD(p);
-            if( p->M==targetMonth+1 ) p->iJD -= p->D*86400000;
-            p->validYMD = 0;
-          }
           p->iJD += (sqlite3_int64)(r*1000.0*aXformType[i].rXform + rRounder);
           rc = 0;
           break;
