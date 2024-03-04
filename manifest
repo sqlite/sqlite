@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sincrement\sintegrity_check\sextension.
-D 2024-03-04T16:18:40.992
+C Change\stest\sresults\sin\scorruptC.test\sto\saccount\sfor\sthe\sadded\sdetail\sin\sthe\noutput\sof\s"PRAGMA\sintegrity_check"\sfrom\s[b736519d3d2e93c7].
+D 2024-03-04T16:44:37.718
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1009,7 +1009,7 @@ F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 112f4b2ae0b95ebf3ea63718642fb969a93acea557ace3a307234d19c245989b
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
-F test/corruptC.test 9cf32275dae3ca33f645afe5d1d3f5ba5ac2af2b0833dfb5282f9dccb6fb81bb
+F test/corruptC.test 7d6d9e907334ea3ccb7111a0656cafa30a28f8a5f2aaf1c45ad712236302856a
 F test/corruptD.test 614320aa519f6bf6c7dd2f581f9513ff7b6826954180cca1a606d0e25ea084a3
 F test/corruptE.test 4143791f2dfb443aec5b7fabfa5821e6063eccc3b49b06f212c2f014715fd476
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc569683748354a6db83438904422e802d3ea780775c48da85b474fff03ca8a1
-R 7e46f34cc8a5ab9c09b7645f58d236c7
+P 596668e6625208ff5d2ffbb4e0530530ebb3a400efa0df54bad1d91953e32694
+R e247d8c69a2f1de22f60330dc6b8c1d7
 U drh
-Z 8407adbd700d1bcd9619e8d4b35bf5f1
+Z c67139450867debeac7f30d4414de41e
 # Remove this line to create a well-formed Fossil manifest.
