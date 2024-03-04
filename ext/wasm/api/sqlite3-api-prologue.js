@@ -37,7 +37,7 @@
 
    This function expects a configuration object, intended to abstract
    away details specific to any given WASM environment, primarily so
-   that it can be used without any _direct_ dependency on
+   that it can be used without any direct dependency on
    Emscripten. (Note the default values for the config object!) The
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
@@ -98,6 +98,27 @@
 
    The returned object is the top-level sqlite3 namespace object.
 
+
+   Client code may optionally assign sqlite3ApiBootstrap.defaultConfig
+   an object-type value before calling sqlite3ApiBootstrap() (without
+   arguments) in order to tell that call to use this object as its
+   default config value. The intention of this is to provide
+   downstream clients with a reasonably flexible approach for plugging
+   in an environment-suitable configuration without having to define a
+   new global-scope symbol.
+
+   However, because clients who access this library via an
+   Emscripten-hosted module will not have an opportunity to call
+   sqlite3ApiBootstrap() themselves, nor to access it before it is
+   called, an alternative option for setting the configuration is to
+   define globalThis.sqlite3ApiConfig to an object. If it is set, it
+   is used instead of sqlite3ApiBootstrap.defaultConfig if
+   sqlite3ApiBootstrap() is called without arguments.
+
+   Both sqlite3ApiBootstrap.defaultConfig and
+   globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
+   because any changes to them made after that point would have no
+   useful effect.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
@@ -149,6 +170,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
+
+  /**
+     Eliminate any confusion about whether these config objects may
+     be used after library initialization by eliminating the outward-facing
+     objects...
+  */
+  delete globalThis.sqlite3ApiConfig;
+  delete sqlite3ApiBootstrap.defaultConfig;
+
   /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
