@@ -1,5 +1,5 @@
-C Adjust\sdate/time\sfunctions\sso\sthat\sthey\sdo\sa\sbetter\sjob\sof\skeeping\strack\nof\swhether\sthe\scurrent\stime\sis\sUTC\sor\slocaltime,\sand\sno-op\sthe\s'utc'\sand\n'localtime'\smodifiers\saccordingly.\sSee\n[forum:/info/e7a939e074|forum\spost\se7a939e074].\nAlso\sadd\sthe\sdatedebug()\sfunction,\savailable\nonly\sunder\s-DSQLITE_DEBUG,\sfor\simproved\svisibility\sof\sthe\sDateTime\sobject\nduring\sdebugging\sand\stesting.
-D 2024-03-04T13:58:09.237
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sincrement\sintegrity_check\sextension.
+D 2024-03-04T16:18:40.992
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -256,7 +256,7 @@ F ext/intck/intck_common.tcl 9e51458126576783f11051ac0fd25bea3f6b17f570a55884223
 F ext/intck/intckbusy.test 0732fe3efbb9e0a53ffdcc240073f6ff2777ea82c3e08812b16494f650763fe1
 F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
 F ext/intck/intckfault.test ba0213c9c8dce08d519d5251268a3bab076a184b4d07acdea23b65e89c9ae03c
-F ext/intck/sqlite3intck.c 52381a627637504a49e93400814b36e99afa0b972a9a24ef1732b8268bb27fa8
+F ext/intck/sqlite3intck.c 0d10df36e2b7b438aa80ecd3f5e584d41b747586b038258fe6b407f66b81e7c5
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c d63f1707432802f5db125ee40b794923af77d4686869bd8d3a7eb43332344267
 F ext/jni/GNUmakefile 59eb05f2a363bdfac8d15d66bed624bfe1ff289229184f3861b95f98a19cf4b2
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc773f6c76ec114be8b6e25b13885acb5adcc9d052dca0d8d0ff94e2a0743d64
-R 0f693fc7ce53368753332e9082e39c9c
+P dc569683748354a6db83438904422e802d3ea780775c48da85b474fff03ca8a1
+R 7e46f34cc8a5ab9c09b7645f58d236c7
 U drh
-Z b0035812b357d7d3f0f59f737bf36230
+Z 8407adbd700d1bcd9619e8d4b35bf5f1
 # Remove this line to create a well-formed Fossil manifest.

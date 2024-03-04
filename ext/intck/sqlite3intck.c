@@ -422,7 +422,7 @@ static const char *intckParseCreateIndex(const char *z, int iCol, int *pnByte){
     int n = intckGetToken(&z[iOff]);
     if( n==5 && 0==sqlite3_strnicmp(&z[iOff], "where", 5) ){
       zRet = &z[iOff+5];
-      nRet = strlen(zRet);
+      nRet = (int)strlen(zRet);
     }
     iOff += n;
   }
@@ -785,7 +785,7 @@ int sqlite3_intck_open(
   sqlite3_intck *pNew = 0;
   int rc = SQLITE_OK;
   const char *zDb = zDbArg ? zDbArg : "main";
-  int nDb = strlen(zDb);
+  int nDb = (int)strlen(zDb);
 
   pNew = (sqlite3_intck*)sqlite3_malloc(sizeof(*pNew) + nDb + 1);
   if( pNew==0 ){
@@ -938,4 +938,3 @@ const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
   }
   return p->zTestSql;
 }
-
