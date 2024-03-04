@@ -1,5 +1,5 @@
-C Remove\san\sunused\sline\sof\scode.
-D 2024-03-02T12:17:08.553
+C The\sability\sto\sDROP\smultiple\stables\s(or\sviews\sor\sindexes\sor\striggers)\sat\sonce,\nas\simplemented\sby\sthis\sbranch,\sappears\sto\swork.\s\sHowever,\sthis\sbranch\sadds\sover\n1000\sbytes\sto\sthe\scode\sfootprint.\s\sAnd\sthe\schanges\sis\ssignificant,\sadding\srisk.\nThe\sbenefit\sof\sbeing\sable\sto\sdrop\smultiple\stables\sin\sa\ssingle\sstatement\sis\snot\nseen\sto\sbe\senough\sto\sovercome\sthose\sdownsides,\sand\sso\sthere\sare\sno\simmediate\nplans\sto\smerge\sthis\sbranch.
+D 2024-03-04T18:02:36.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e70d6be7511837ff11deac10b335e0f613dfa6dedcab269df9ce61c8d8495d2a
+P 26272590691aee8569a1ea9c233f9b0e55ece63ed167696cc1ecfe3ca2548ba1
 R ffcb677589cb061417252fbc7f9600de
 U drh
-Z d61bc33dfe57d1afe99711b6d6b89ef0
+Z 148d8810a6ba162cbd3b9cd95d027cbb
 # Remove this line to create a well-formed Fossil manifest.
