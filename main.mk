@@ -718,8 +718,7 @@ opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
 	tclsh $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
-	cat parse.h $(TOP)/src/vdbe.c | \
-		tclsh $(TOP)/tool/mkopcodeh.tcl >opcodes.h
+	cat parse.h $(TOP)/src/vdbe.c | tclsh $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -742,32 +741,37 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash $(OPTS) $(TOP)/tool/mkkeywordhash.c
 	./mkkeywordhash >keywordhash.h
 
-# Source files that go into making shell.c
-SHELL_SRC = \
-	$(TOP)/src/shell.c.in \
-        $(TOP)/ext/misc/appendvfs.c \
-	$(TOP)/ext/misc/completion.c \
-        $(TOP)/ext/misc/base64.c \
-        $(TOP)/ext/misc/base85.c \
-        $(TOP)/ext/misc/decimal.c \
-	$(TOP)/ext/misc/fileio.c \
-        $(TOP)/ext/misc/ieee754.c \
-        $(TOP)/ext/misc/regexp.c \
-        $(TOP)/ext/misc/series.c \
-	$(TOP)/ext/misc/shathree.c \
-	$(TOP)/ext/misc/sqlar.c \
-        $(TOP)/ext/misc/uint.c \
-	$(TOP)/ext/expert/sqlite3expert.c \
-	$(TOP)/ext/expert/sqlite3expert.h \
-	$(TOP)/ext/misc/zipfile.c \
-	$(TOP)/ext/misc/memtrace.c \
-	$(TOP)/ext/misc/pcachetrace.c \
-	$(TOP)/ext/recover/dbdata.c \
-	$(TOP)/ext/recover/sqlite3recover.c \
-	$(TOP)/ext/recover/sqlite3recover.h \
-        $(TOP)/src/test_windirent.c
+# Source and header files that shell.c depends on
+SHELL_DEP = \
+    $(TOP)/src/shell.c.in \
+    $(TOP)/ext/consio/console_io.c \
+    $(TOP)/ext/consio/console_io.h \
+    $(TOP)/ext/expert/sqlite3expert.c \
+    $(TOP)/ext/expert/sqlite3expert.h \
+    $(TOP)/ext/intck/sqlite3intck.c \
+    $(TOP)/ext/intck/sqlite3intck.h \
+    $(TOP)/ext/misc/appendvfs.c \
+    $(TOP)/ext/misc/base64.c \
+    $(TOP)/ext/misc/base85.c \
+    $(TOP)/ext/misc/completion.c \
+    $(TOP)/ext/misc/decimal.c \
+    $(TOP)/ext/misc/fileio.c \
+    $(TOP)/ext/misc/ieee754.c \
+    $(TOP)/ext/misc/memtrace.c \
+    $(TOP)/ext/misc/pcachetrace.c \
+    $(TOP)/ext/misc/regexp.c \
+    $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/shathree.c \
+    $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/zipfile.c \
+    $(TOP)/ext/recover/dbdata.c \
+    $(TOP)/ext/recover/sqlite3recover.c \
+    $(TOP)/ext/recover/sqlite3recover.h \
+    $(TOP)/src/test_windirent.c \
+    $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl
 	tclsh $(TOP)/tool/mkshellc.tcl >shell.c
 
 

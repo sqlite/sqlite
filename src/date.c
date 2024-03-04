@@ -356,7 +356,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
     computeJD(p);
   }
   return 0;
-};
+}
 
 
 static void clearYMD_HMS_TZ(DateTime *p);  /* Forward declaration */
