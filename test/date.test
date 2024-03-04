@@ -262,7 +262,7 @@ datetest 5.15 {datetime('1994-04-16 14:00:00 +05:00 Z')} NULL
 # localtime->utc and utc->localtime conversions.
 #
 # Use SQLITE_TESTCTRL_LOCALTIME_FAULT=2 to set an alternative localtime_r()
-# implementation that is not locale-dependent.  This testing localtime_r()
+# implementation that is not locale-dependent.  The testing localtime_r()
 # operates as follows:
 #
 #     (1)  Localtime is 30 minutes earlier than (west of) UTC on
@@ -320,6 +320,38 @@ local_to_utc 6.21 {1800-10-29 12:00:00} {1800-10-29 12:30:00}
 utc_to_local 6.22 {1800-10-29 12:30:00} {1800-10-29 12:00:00}
 local_to_utc 6.23 {3000-10-30 12:00:00} {3000-10-30 11:30:00}
 utc_to_local 6.24 {3000-10-30 11:30:00} {3000-10-30 12:00:00}
+
+# If the time is specified to be ZULU, or if it has an explicit
+# timezone extension, then the time will already be UTC and subsequent
+# 'utc' modifiers are no-ops.
+#
+do_execsql_test date-6.25 {
+  SELECT datetime('2000-10-29 12:00Z','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.26 {
+  SELECT datetime('2000-10-29 12:00:00+05:00');
+} {{2000-10-29 07:00:00}}
+do_execsql_test date-6.27 {
+  SELECT datetime('2000-10-29 12:00:00+05:00', 'utc');
+} {{2000-10-29 07:00:00}}
+
+# Multiple back-and-forth UTC to LOCAL to UTC...
+do_execsql_test date-6.28 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.29 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc', 'localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.30 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc', 'localtime', 'utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.31 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'utc','localtime','utc','localtime');
+} {{2000-10-29 12:30:00}}
+do_execsql_test date-6.32 {
+  SELECT datetime('2000-10-29 12:00:00Z', 'localtime','localtime');
+} {{2000-10-29 12:30:00}}
+
 
 # Restore the use of the OS localtime_r() before going on...
 sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0

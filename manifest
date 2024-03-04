@@ -1,5 +1,5 @@
-C Fix\sassert()\sstatements\sin\sdate/time\scomputations:\sThe\smonth\sand\sday\snumbers\ncan\sbe\szero\sif\san\serror\shas\sbeen\sseen.
-D 2024-03-04T11:12:15.305
+C Adjust\sdate/time\sfunctions\sso\sthat\sthey\sdo\sa\sbetter\sjob\sof\skeeping\strack\nof\swhether\sthe\scurrent\stime\sis\sUTC\sor\slocaltime,\sand\sno-op\sthe\s'utc'\sand\n'localtime'\smodifiers\saccordingly.\sSee\n[forum:/info/e7a939e074|forum\spost\se7a939e074].\nAlso\sadd\sthe\sdatedebug()\sfunction,\savailable\nonly\sunder\s-DSQLITE_DEBUG,\sfor\simproved\svisibility\sof\sthe\sDateTime\sobject\nduring\sdebugging\sand\stesting.
+D 2024-03-04T13:58:09.237
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -696,7 +696,7 @@ F src/build.c 04f1bcee189f045ab086d84fee95db42cb49df82ff8e84af8136309ff3c8a75f
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
-F src/date.c 29cecfe69287242a12f753ffc883e4231afde3af501fb1b4a7b721b159fc4bb2
+F src/date.c a9e4382961fb26156a308645f7363519ab7eb20e412e78b7c1fe16bbfbb1689a
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
@@ -1042,7 +1042,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test 05cf0febe5c5f8a31f199401fd1c9322249e753950d55f26f9d5aca61408a270
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 99bfd3a77a3f9ae54eebd374a4301af960f2b2e9a581cf63e26445bae830a435
+F test/date.test c8ff835023f2107b57ce7a45c92265d51c98a23fc93231e998f12d850831aad6
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test 75dc8401e8c0639a228cd26a6eaa4ff5ea8ccda912b9853d1c9462c476670e17
@@ -1749,7 +1749,7 @@ F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
 F test/tkt-b75a9ca6b0.test dc6a853c242f7d0326564ae32e9e5eb462b5e8d2bc5b01ea3b18fd24f8e5894b
 F test/tkt-ba7cbfaedc.test b4c0deccc12aeb55cfdb57935b16b5d67c5a9877
-F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
+F test/tkt-bd484a090c.test e6af3e3a4242cd8f1c91c736364f09075d8e33e3b86f6492a1ee36278ea71b61
 F test/tkt-bdc6bbbb38.test fc38bb09bdd440e3513a1f5f98fc60a075182d7d
 F test/tkt-c48d99d690.test ba61977d62ab612fc515b3c488a6fbd6464a2447
 F test/tkt-c694113d5.test 82c461924ada5c14866c47e85535b0b0923ba16a2e907e370061a5ca77f65d77
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6e887203365b30cea6e9c145366345e48256a347388577edf2bada65e0655b7
-R 68522a41082e7767e1ccbf426313c9cf
+P fc773f6c76ec114be8b6e25b13885acb5adcc9d052dca0d8d0ff94e2a0743d64
+R 0f693fc7ce53368753332e9082e39c9c
 U drh
-Z cb9173c28803c9d207f1634b7853f7aa
+Z b0035812b357d7d3f0f59f737bf36230
 # Remove this line to create a well-formed Fossil manifest.
