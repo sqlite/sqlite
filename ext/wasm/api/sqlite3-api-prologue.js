@@ -125,8 +125,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
-    console.warn("sqlite3ApiBootstrap() called multiple times.",
-                 "Config and external initializers are ignored on calls after the first.");
+    (sqlite3ApiBootstrap.sqlite3.config || console).warn(
+      "sqlite3ApiBootstrap() called multiple times.",
+      "Config and external initializers are ignored on calls after the first."
+    );
     return sqlite3ApiBootstrap.sqlite3;
   }
   const config = Object.assign(Object.create(null),{
