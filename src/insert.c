@@ -577,14 +577,6 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-typedef struct MultiValues MultiValues;
-struct MultiValues {
-  Select *pSelect;
-  SelectDest dest;
-  int addrTop;
-  int regYield;
-};
-
 static int isConstantRow(ExprList *pRow){
   int ii;
   for(ii=0; ii<pRow->nExpr; ii++){
@@ -613,29 +605,42 @@ void sqlite3MultiValuesStart(Parse *pParse, Select *pSel){
   }
 }
 
+static void insertEndCoroutine(Vdbe *v, int regYield, int addrTop){
+  sqlite3VdbeEndCoroutine(v, regYield);
+  sqlite3VdbeJumpHere(v, addrTop - 1);
+}
+
 Select *sqlite3InsertMultiValues(Parse *pParse, Select *pSel, ExprList *pRow){
   MultiValues *pVal = pParse->pValues;
   Select *pRight;
 
-  pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values|SF_MultiValue, 0);
+  pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values, 0);
 
   if( pRight ){
-    if( pVal==0 || pVal->pSelect!=pSel || !isConstantRow(pRight->pEList) ){
-      pSel->selFlags &= ~SF_MultiValue;
-      pRight->op = TK_ALL;
-      pRight->pPrior = pSel;
-      pSel = pRight;
-    }else{
-      if( pRight->pEList->nExpr!=pSel->pEList->nExpr ){
-        sqlite3SelectWrongNumTermsError(pParse, pRight);
+    if( pVal && pVal->pSelect==pSel ){
+      if( isConstantRow(pRight->pEList) ){
+        if( pRight->pEList->nExpr!=pSel->pEList->nExpr ){
+          sqlite3SelectWrongNumTermsError(pParse, pRight);
+        }else{
+          int explain = pParse->explain;
+          pParse->explain = 255;
+          sqlite3Select(pParse, pRight, &pVal->dest);
+          pParse->explain = explain;
+        }
+        sqlite3SelectDelete(pParse->db, pRight);
+        return pSel;
       }else{
-        int explain = pParse->explain;
-        pParse->explain = 255;
-        sqlite3Select(pParse, pRight, &pVal->dest);
-        pParse->explain = explain;
+        assert( pVal->bEnd==0 );
+        insertEndCoroutine(pParse->pVdbe, pVal->regYield, pVal->addrTop);
+        pVal->bEnd = 1;
       }
-      sqlite3SelectDelete(pParse->db, pRight);
     }
+
+    pSel->selFlags &= ~SF_MultiValue;
+    pRight->selFlags &= ~SF_MultiValue;
+    pRight->op = TK_ALL;
+    pRight->pPrior = pSel;
+    pSel = pRight;
   }
 
   return pSel;

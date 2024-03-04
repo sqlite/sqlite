@@ -1791,7 +1791,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   pLeftmost = p;
   while( p ){
     assert( (p->selFlags & SF_Expanded)!=0 );
-    assert( (p->selFlags & SF_Resolved)==0 );
+    assert( (p->selFlags & SF_Resolved)==0 || pParse->pValues );
     p->selFlags |= SF_Resolved;
 
     /* Resolve the expressions in the LIMIT and OFFSET clauses. These

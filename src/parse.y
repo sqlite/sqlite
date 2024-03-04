@@ -622,7 +622,16 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 %endif
 
 
-oneselect(A) ::= values(A).
+oneselect(A) ::= values(A). {
+  if( pParse->pValues && pParse->pValues->pSelect==A ){
+    MultiValues *pValues = pParse->pValues;
+    if( pValues->bEnd==0 ){
+      sqlite3VdbeEndCoroutine(pParse->pVdbe, pValues->regYield);
+      sqlite3VdbeJumpHere(pParse->pVdbe, pValues->addrTop - 1);
+      pValues->bEnd = 1;
+    }
+  }
+}
 
 %type values {Select*}
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}

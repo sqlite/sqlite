@@ -4486,6 +4486,14 @@ struct Window {
                           ** due to the SQLITE_SUBTYPE flag */
 };
 
+struct MultiValues {
+  Select *pSelect;
+  SelectDest dest;
+  int addrTop;
+  int regYield;
+  int bEnd;               /* EndCoroutine already coded */
+};
+
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowUnlinkFromSelect(Window*);
