@@ -296,8 +296,8 @@ static void computeJD(DateTime *p){
 */
 static void computeFloor(DateTime *p){
   assert( p->validYMD || p->isError );
-  assert( (p->D>=1 && p->D<=31) || p->isError );
-  assert( (p->M>=1 && p->M<=12) || p->isError );
+  assert( p->D>=0 && p->D<=31 );
+  assert( p->M>=0 && p->M<=12 );
   if( p->D<=28 ){
     p->nFloor = 0;
   }else if( (1<<p->M) & 0x15aa ){
@@ -1047,7 +1047,7 @@ static int parseModifier(
               int y = (int)r;
               assert( strcmp(aXformType[5].zName,"year")==0 );
               computeYMD_HMS(p);
-              assert( p->M>=1 && p->M<=12 );
+              assert( p->M>=0 && p->M<=12 );
               p->Y += y;
               computeFloor(p);
               p->validJD = 0;
