@@ -531,6 +531,10 @@ emcc.jsflags += -sSTRICT_JS=0
 # 3.1.31.  The fix for that in newer emcc's is to throw a built-time
 # error if STRICT_JS is used together with those options.
 
+# emcc.jsflags += -sSTRICT=1
+# -sSTRICT=1 Causes failures about unknown symbols which the build
+# tools should be installing, e.g. __syscall_geteuid32
+
 # -sENVIRONMENT values for the various build modes:
 emcc.environment.vanilla := web,worker
 emcc.environment.bundler-friendly := $(emcc.environment.vanilla)
@@ -551,6 +555,11 @@ emcc.environment.node := node
 # time with 16mb+ memory and 3X time when starting with 8MB. However,
 # such test results are inconsistent due to browser internals which
 # are opaque to us.
+#
+# 2024-03-04: emsdk 3.1.55 replaces INITIAL_MEMORY with INITIAL_HEAP,
+# but also says (in its changelog): "Note that it is currently not
+# supported in all configurations (#21071)."
+# https://github.com/emscripten-core/emscripten/blob/main/ChangeLog.md
 emcc.jsflags += -sALLOW_MEMORY_GROWTH
 emcc.INITIAL_MEMORY.128 := 134217728
 emcc.INITIAL_MEMORY.96  := 100663296
