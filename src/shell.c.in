@@ -12838,7 +12838,7 @@ sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
 
 /* Only for emcc experimentation purposes. */
 sqlite3 * fiddle_db_arg(sqlite3 *arg){
-    printf("fiddle_db_arg(%p)\n", (const void*)arg);
+    oputf("fiddle_db_arg(%p)\n", (const void*)arg);
     return arg;
 }
 
@@ -12864,12 +12864,22 @@ const char * fiddle_db_filename(const char * zDbName){
 
 /*
 ** Completely wipes out the contents of the currently-opened database
-** but leaves its storage intact for reuse.
+** but leaves its storage intact for reuse. If any transactions are
+** active, they are forcibly rolled back.
 */
 void fiddle_reset_db(void){
   if( globalDb ){
-    int rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
-    if( 0==rc ) rc = sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
+    int rc;
+    while( sqlite3_txn_state(globalDb,0)>0 ){
+      /*
+      ** Resolve problem reported in
+      ** https://sqlite.org/forum/forumpost/0b41a25d65
+      */
+      oputz("Rolling back in-progress transaction.\n");
+      sqlite3_exec(globalDb,"ROLLBACK", 0, 0, 0);
+    }
+    rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    if( 0==rc ) sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
     sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
   }
 }
