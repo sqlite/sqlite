@@ -71,13 +71,14 @@ struct DateTime {
   int tz;             /* Timezone offset in minutes */
   double s;           /* Seconds */
   char validJD;       /* True (1) if iJD is valid */
-  char rawS;          /* Raw numeric value stored in s */
   char validYMD;      /* True (1) if Y,M,D are valid */
   char validHMS;      /* True (1) if h,m,s are valid */
-  char validTZ;       /* True (1) if tz is valid */
-  char tzSet;         /* Timezone was set explicitly */
-  char isError;       /* An overflow has occurred */
-  char useSubsec;     /* Display subsecond precision */
+  char nFloor;            /* Days to implement "floor" */
+  unsigned rawS      : 1; /* Raw numeric value stored in s */
+  unsigned isError   : 1; /* An overflow has occurred */
+  unsigned useSubsec : 1; /* Display subsecond precision */
+  unsigned isUtc     : 1; /* Time is known to be UTC */
+  unsigned isLocal   : 1; /* Time is known to be localtime */
 };
 
 
@@ -175,6 +176,8 @@ static int parseTimezone(const char *zDate, DateTime *p){
     sgn = +1;
   }else if( c=='Z' || c=='z' ){
     zDate++;
+    p->isLocal = 0;
+    p->isUtc = 1;
     goto zulu_time;
   }else{
     return c!=0;
@@ -187,7 +190,6 @@ static int parseTimezone(const char *zDate, DateTime *p){
   p->tz = sgn*(nMn + nHr*60);
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
-  p->tzSet = 1;
   return *zDate!=0;
 }
 
@@ -231,7 +233,6 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
   p->m = m;
   p->s = s + ms;
   if( parseTimezone(zDate, p) ) return 1;
-  p->validTZ = (p->tz!=0)?1:0;
   return 0;
 }
 
@@ -278,12 +279,37 @@ static void computeJD(DateTime *p){
   p->validJD = 1;
   if( p->validHMS ){
     p->iJD += p->h*3600000 + p->m*60000 + (sqlite3_int64)(p->s*1000 + 0.5);
-    if( p->validTZ ){
+    if( p->tz ){
       p->iJD -= p->tz*60000;
       p->validYMD = 0;
       p->validHMS = 0;
-      p->validTZ = 0;
+      p->tz = 0;
+      p->isUtc = 1;
+      p->isLocal = 0;
     }
+  }
+}
+
+/*
+** Given the YYYY-MM-DD information current in p, determine if there
+** is day-of-month overflow and set nFloor to the number of days that
+** would need to be subtracted from the date in order to bring the
+** date back to the end of the month.
+*/
+static void computeFloor(DateTime *p){
+  assert( p->validYMD || p->isError );
+  assert( p->D>=0 && p->D<=31 );
+  assert( p->M>=0 && p->M<=12 );
+  if( p->D<=28 ){
+    p->nFloor = 0;
+  }else if( (1<<p->M) & 0x15aa ){
+    p->nFloor = 0;
+  }else if( p->M!=2 ){
+    p->nFloor = (p->D==31);
+  }else if( p->Y%4!=0 || (p->Y%100==0 && p->Y%400!=0) ){
+    p->nFloor = p->D - 28;
+  }else{
+    p->nFloor = p->D - 29;
   }
 }
 
@@ -325,11 +351,15 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   p->Y = neg ? -Y : Y;
   p->M = M;
   p->D = D;
-  if( p->validTZ ){
+  computeFloor(p);
+  if( p->tz ){
     computeJD(p);
   }
   return 0;
 }
+
+
+static void clearYMD_HMS_TZ(DateTime *p);  /* Forward declaration */
 
 /*
 ** Set the time to the current time reported by the VFS.
@@ -340,6 +370,9 @@ static int setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
   p->iJD = sqlite3StmtCurrentTime(context);
   if( p->iJD>0 ){
     p->validJD = 1;
+    p->isUtc = 1;
+    p->isLocal = 0;
+    clearYMD_HMS_TZ(p);
     return 0;
   }else{
     return 1;
@@ -478,7 +511,7 @@ static void computeYMD_HMS(DateTime *p){
 static void clearYMD_HMS_TZ(DateTime *p){
   p->validYMD = 0;
   p->validHMS = 0;
-  p->validTZ = 0;
+  p->tz = 0;
 }
 
 #ifndef SQLITE_OMIT_LOCALTIME
@@ -610,7 +643,7 @@ static int toLocaltime(
   p->validHMS = 1;
   p->validJD = 0;
   p->rawS = 0;
-  p->validTZ = 0;
+  p->tz = 0;
   p->isError = 0;
   return SQLITE_OK;
 }
@@ -630,12 +663,12 @@ static const struct {
   float rLimit;       /* Maximum NNN value for this transform */
   float rXform;       /* Constant used for this transform */
 } aXformType[] = {
-  { 6, "second", 4.6427e+14,       1.0  },
-  { 6, "minute", 7.7379e+12,      60.0  },
-  { 4, "hour",   1.2897e+11,    3600.0  },
-  { 3, "day",    5373485.0,    86400.0  },
-  { 5, "month",  176546.0,   2592000.0  },
-  { 4, "year",   14713.0,   31536000.0  },
+  /* 0 */ { 6, "second",   4.6427e+14,         1.0  },
+  /* 1 */ { 6, "minute",   7.7379e+12,        60.0  },
+  /* 2 */ { 4, "hour",     1.2897e+11,      3600.0  },
+  /* 3 */ { 3, "day",      5373485.0,      86400.0  },
+  /* 4 */ { 5, "month",    176546.0,  30.0*86400.0  },
+  /* 5 */ { 4, "year",     14713.0,  365.0*86400.0  },
 };
 
 /*
@@ -667,14 +700,20 @@ static void autoAdjustDate(DateTime *p){
 **     NNN.NNNN seconds
 **     NNN months
 **     NNN years
+**     +/-YYYY-MM-DD HH:MM:SS.SSS
+**     ceiling
+**     floor
 **     start of month
 **     start of year
 **     start of week
 **     start of day
 **     weekday N
 **     unixepoch
+**     auto
 **     localtime
 **     utc
+**     subsec
+**     subsecond
 **
 ** Return 0 on success and 1 if there is any kind of error. If the error
 ** is in a system call (i.e. localtime()), then an error message is written
@@ -705,6 +744,37 @@ static int parseModifier(
       }
       break;
     }
+    case 'c': {
+      /*
+      **    ceiling
+      **
+      ** Resolve day-of-month overflow by rolling forward into the next
+      ** month.  As this is the default action, this modifier is really
+      ** a no-op that is only included for symmetry.  See "floor".
+      */
+      if( sqlite3_stricmp(z, "ceiling")==0 ){
+        computeJD(p);
+        clearYMD_HMS_TZ(p);
+        rc = 0;
+        p->nFloor = 0;
+      }
+      break;
+    }
+    case 'f': {
+      /*
+      **    floor
+      **
+      ** Resolve day-of-month overflow by rolling back to the end of the
+      ** previous month.
+      */
+      if( sqlite3_stricmp(z, "floor")==0 ){
+        computeJD(p);
+        p->iJD -= p->nFloor*86400000;
+        clearYMD_HMS_TZ(p);
+        rc = 0;
+      }
+      break;
+    }
     case 'j': {
       /*
       **    julianday
@@ -731,7 +801,9 @@ static int parseModifier(
       ** show local time.
       */
       if( sqlite3_stricmp(z, "localtime")==0 && sqlite3NotPureFunc(pCtx) ){
-        rc = toLocaltime(p, pCtx);
+        rc = p->isLocal ? SQLITE_OK : toLocaltime(p, pCtx);
+        p->isUtc = 0;
+        p->isLocal = 1;
       }
       break;
     }
@@ -756,7 +828,7 @@ static int parseModifier(
       }
 #ifndef SQLITE_OMIT_LOCALTIME
       else if( sqlite3_stricmp(z, "utc")==0 && sqlite3NotPureFunc(pCtx) ){
-        if( p->tzSet==0 ){
+        if( p->isUtc==0 ){
           i64 iOrigJD;              /* Original localtime */
           i64 iGuess;               /* Guess at the corresponding utc time */
           int cnt = 0;              /* Safety to prevent infinite loop */
@@ -779,7 +851,8 @@ static int parseModifier(
           memset(p, 0, sizeof(*p));
           p->iJD = iGuess;
           p->validJD = 1;
-          p->tzSet = 1;
+          p->isUtc = 1;
+          p->isLocal = 0;
         }
         rc = SQLITE_OK;
       }
@@ -799,7 +872,7 @@ static int parseModifier(
                && r>=0.0 && r<7.0 && (n=(int)r)==r ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
-        p->validTZ = 0;
+        p->tz = 0;
         p->validJD = 0;
         computeJD(p);
         Z = ((p->iJD + 129600000)/86400000) % 7;
@@ -839,7 +912,7 @@ static int parseModifier(
       p->h = p->m = 0;
       p->s = 0.0;
       p->rawS = 0;
-      p->validTZ = 0;
+      p->tz = 0;
       p->validJD = 0;
       if( sqlite3_stricmp(z,"month")==0 ){
         p->D = 1;
@@ -910,6 +983,7 @@ static int parseModifier(
         x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
         p->Y += x;
         p->M -= x*12;
+        computeFloor(p);
         computeJD(p);
         p->validHMS = 0;
         p->validYMD = 0;
@@ -956,11 +1030,12 @@ static int parseModifier(
       z += n;
       while( sqlite3Isspace(*z) ) z++;
       n = sqlite3Strlen30(z);
-      if( n>10 || n<3 ) break;
+      if( n<3 || n>10 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
       assert( rc==1 );
       rRounder = r<0 ? -0.5 : +0.5;
+      p->nFloor = 0;
       for(i=0; i<ArraySize(aXformType); i++){
         if( aXformType[i].nName==n
          && sqlite3_strnicmp(aXformType[i].zName, z, n)==0
@@ -968,21 +1043,24 @@ static int parseModifier(
         ){
           switch( i ){
             case 4: { /* Special processing to add months */
-              assert( strcmp(aXformType[i].zName,"month")==0 );
+              assert( strcmp(aXformType[4].zName,"month")==0 );
               computeYMD_HMS(p);
               p->M += (int)r;
               x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
               p->Y += x;
               p->M -= x*12;
+              computeFloor(p);
               p->validJD = 0;
               r -= (int)r;
               break;
             }
             case 5: { /* Special processing to add years */
               int y = (int)r;
-              assert( strcmp(aXformType[i].zName,"year")==0 );
+              assert( strcmp(aXformType[5].zName,"year")==0 );
               computeYMD_HMS(p);
+              assert( p->M>=0 && p->M<=12 );
               p->Y += y;
+              computeFloor(p);
               p->validJD = 0;
               r -= (int)r;
               break;
@@ -1607,9 +1685,7 @@ static void timediffFunc(
     d1.iJD = d2.iJD - d1.iJD;
     d1.iJD += (u64)1486995408 * (u64)100000;
   }
-  d1.validYMD = 0;
-  d1.validHMS = 0;
-  d1.validTZ = 0;
+  clearYMD_HMS_TZ(&d1);
   computeYMD_HMS(&d1);
   sqlite3StrAccumInit(&sRes, 0, 0, 0, 100);
   sqlite3_str_appendf(&sRes, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
@@ -1678,6 +1754,36 @@ static void currentTimeFunc(
 }
 #endif
 
+#if !defined(SQLITE_OMIT_DATETIME_FUNCS) && defined(SQLITE_DEBUG)
+/*
+**   datedebug(...)
+**
+** This routine returns JSON that describes the internal DateTime object.
+** Used for debugging and testing only.  Subject to change.
+*/
+static void datedebugFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  DateTime x;
+  if( isDate(context, argc, argv, &x)==0 ){
+    char *zJson;
+    zJson = sqlite3_mprintf(
+      "{iJD:%lld,Y:%d,M:%d,D:%d,h:%d,m:%d,tz:%d,"
+      "s:%.3f,validJD:%d,validYMS:%d,validHMS:%d,"
+      "nFloor:%d,rawS:%d,isError:%d,useSubsec:%d,"
+      "isUtc:%d,isLocal:%d}",
+      x.iJD, x.Y, x.M, x.D, x.h, x.m, x.tz,
+      x.s, x.validJD, x.validYMD, x.validHMS,
+      x.nFloor, x.rawS, x.isError, x.useSubsec,
+      x.isUtc, x.isLocal);
+    sqlite3_result_text(context, zJson, -1, sqlite3_free);
+  }
+}
+#endif /* !SQLITE_OMIT_DATETIME_FUNCS && SQLITE_DEBUG */
+
+
 /*
 ** This function registered all of the above C functions as SQL
 ** functions.  This should be the only routine in this file with
@@ -1693,6 +1799,9 @@ void sqlite3RegisterDateTimeFunctions(void){
     PURE_DATE(datetime,         -1, 0, 0, datetimeFunc  ),
     PURE_DATE(strftime,         -1, 0, 0, strftimeFunc  ),
     PURE_DATE(timediff,          2, 0, 0, timediffFunc  ),
+#ifdef SQLITE_DEBUG
+    PURE_DATE(datedebug,        -1, 0, 0, datedebugFunc ),
+#endif
     DFUNCTION(current_time,      0, 0, 0, ctimeFunc     ),
     DFUNCTION(current_timestamp, 0, 0, 0, ctimestampFunc),
     DFUNCTION(current_date,      0, 0, 0, cdateFunc     ),

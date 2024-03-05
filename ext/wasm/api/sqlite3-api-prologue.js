@@ -37,7 +37,7 @@
 
    This function expects a configuration object, intended to abstract
    away details specific to any given WASM environment, primarily so
-   that it can be used without any _direct_ dependency on
+   that it can be used without any direct dependency on
    Emscripten. (Note the default values for the config object!) The
    config object is only honored the first time this is
    called. Subsequent calls ignore the argument and return the same
@@ -98,14 +98,37 @@
 
    The returned object is the top-level sqlite3 namespace object.
 
+
+   Client code may optionally assign sqlite3ApiBootstrap.defaultConfig
+   an object-type value before calling sqlite3ApiBootstrap() (without
+   arguments) in order to tell that call to use this object as its
+   default config value. The intention of this is to provide
+   downstream clients with a reasonably flexible approach for plugging
+   in an environment-suitable configuration without having to define a
+   new global-scope symbol.
+
+   However, because clients who access this library via an
+   Emscripten-hosted module will not have an opportunity to call
+   sqlite3ApiBootstrap() themselves, nor to access it before it is
+   called, an alternative option for setting the configuration is to
+   define globalThis.sqlite3ApiConfig to an object. If it is set, it
+   is used instead of sqlite3ApiBootstrap.defaultConfig if
+   sqlite3ApiBootstrap() is called without arguments.
+
+   Both sqlite3ApiBootstrap.defaultConfig and
+   globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
+   because any changes to them made after that point would have no
+   useful effect.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
-    console.warn("sqlite3ApiBootstrap() called multiple times.",
-                 "Config and external initializers are ignored on calls after the first.");
+    (sqlite3ApiBootstrap.sqlite3.config || console).warn(
+      "sqlite3ApiBootstrap() called multiple times.",
+      "Config and external initializers are ignored on calls after the first."
+    );
     return sqlite3ApiBootstrap.sqlite3;
   }
   const config = Object.assign(Object.create(null),{
@@ -114,8 +137,16 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     bigIntEnabled: (()=>{
       if('undefined'!==typeof Module){
         /* Emscripten module will contain HEAPU64 when built with
-           -sWASM_BIGINT=1, else it will not. */
-        return !!Module.HEAPU64;
+           -sWASM_BIGINT=1, else it will not.
+
+           As of emsdk 3.1.55, when building in strict mode, HEAPxyz
+           are only available if _explicitly_ included in the exports,
+           else they are not. We do not (as of 2024-03-04) use -sSTRICT
+           for the canonical builds.
+        */
+        if( !!Module.HEAPU64 ) return true;
+        /* Else fall through and hope for the best. Nobody _really_
+           builds this without BigInt support, do they? */
       }
       return !!globalThis.BigInt64Array;
     })(),
@@ -149,6 +180,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
+
+  /**
+     Eliminate any confusion about whether these config objects may
+     be used after library initialization by eliminating the outward-facing
+     objects...
+  */
+  delete globalThis.sqlite3ApiConfig;
+  delete sqlite3ApiBootstrap.defaultConfig;
+
   /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members

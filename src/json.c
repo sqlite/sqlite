@@ -4993,9 +4993,9 @@ static int jsonEachColumn(
     case JEACH_JSON: {
       if( p->sParse.zJson==0 ){
         sqlite3_result_blob(ctx, p->sParse.aBlob, p->sParse.nBlob,
-                            SQLITE_STATIC);
+                            SQLITE_TRANSIENT);
       }else{
-        sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+        sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_TRANSIENT);
       }
       break;
     }
