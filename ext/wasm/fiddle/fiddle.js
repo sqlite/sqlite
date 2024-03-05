@@ -742,7 +742,7 @@
         {name: "Table list", sql: ".tables"},
         {name: "Box Mode", sql: ".mode box"},
         {name: "JSON Mode", sql: ".mode json"},
-        {name: "Mandlebrot", sql:[
+        {name: "Mandelbrot", sql:[
           "WITH RECURSIVE",
           "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),\n",
           "  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+0.1 FROM yaxis WHERE y<1.0),\n",

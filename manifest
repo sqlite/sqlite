@@ -1,5 +1,5 @@
-C Update\sfiddle.make\sto\saccount\sfor\sMakefile\schanges\sin\s[178b7d46f9].
-D 2024-03-05T07:55:20.122
+C /fiddle\s'Mandlebrot'\stypo\sfix\sreported\sin\sthe\sforum.
+D 2024-03-05T08:48:40.508
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c
 F ext/wasm/fiddle.make 3c2eace29255d6ddd219f5d8cc2728cb28b9fe717ea80b6062c2a6178947a16b
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
-F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
+F ext/wasm/fiddle/fiddle.js 3d5cbee561bfd317f1fc83c429a0f29e7d36b9494bb983b58bed25b5b49295d7
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html e91d76e4581185238fd3d42ed86ec600f7023ed3e3a944c5c356f25304bf1263
 F ext/wasm/index.html b31ce41c0da476d5ffcef23069b9d3415b419d65af5779096ebcfbcbade453a9
@@ -2176,8 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee164ca73cf4151b1a1bf351729afa9b0ec95bd5004a5d5bfce3ed46268bfbf3
-R 83071ca8acab359a5924e5d4cf357b67
+P 7a5d810549f2686ae923fd0ca03ad8f536c9080b6879128ee8f00e653bb7f3f1
+R dedcee47046ad2c820affc54bbfebf0e
 U stephan
-Z 2b4d9c85414ada098b40af0814689ab8
+Z b6cbff2ce0125252a8326bff1a4d2a0d
 # Remove this line to create a well-formed Fossil manifest.
