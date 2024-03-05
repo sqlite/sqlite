@@ -4487,13 +4487,32 @@ struct Window {
                           ** due to the SQLITE_SUBTYPE flag */
 };
 
+/*
+** A single instance of this object is used when parsing "INSERT INTO ... 
+** VALUES" statements when the VALUES clause contains a large number of
+** rows - more than the configured SQLITE_LIMIT_COMPOUND_SELECT limit.
+**
+** An INSERT with a multi-row VALUES clause begins by coding a co-routine
+** to access each row of the VALUES clause. Usually, this doesn't happen
+** until after the entire statement has been parsed. Since each row of the
+** VALUES clause is stored in-memory as a separate Select statement, the
+** parse tree for very large VALUES clauses might consume significant 
+** amounts of memory.
+**
+** In order to avoid this in extreme cases, once a VALUES clause that is
+** part of an INSERT statement grows to larger than
+** SQLITE_LIMIT_COMPOUND_SELECT rows, the co-routine is coded incrementally,
+** while parsing the remainder of the VALUES clause. An instance of this
+** object is stored in Parse.pValues while this is ongoing.
+*/
 struct MultiValues {
-  Select *pSelect;
-  SelectDest dest;
-  int addrTop;
-  int regYield;
-  int bEnd;               /* EndCoroutine already coded */
+  Select *pSelect;        /* The VALUES(...) Select object */
+  SelectDest dest;        /* Destination object for the co-routine */
+  int addrTop;            /* Address of top of co-routine */
+  int regYield;           /* Register used for co-routine */
 };
+
+Select *sqlite3InsertMultiValues(Parse*, Select*, ExprList*);
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
@@ -5780,8 +5799,5 @@ sqlite3_uint64 sqlite3Hwtime(void);
 #else
 # define IS_STMT_SCANSTATUS(db) 0
 #endif
-
-Select *sqlite3InsertMultiValues(Parse*, Select*, ExprList*);
-void sqlite3MultiValuesStart(Parse*, Select*);
 
 #endif /* SQLITEINT_H */

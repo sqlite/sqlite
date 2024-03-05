@@ -86,6 +86,11 @@ do_execsql_test 1.2.6 {
   6 6 6
 }
 
+#-------------------------------------------------------------------------
+# different number of columns error.
+# SQLITE_LIMIT_COMPOUND_SELECT set to 0.
+#
+
 
 
 finish_test

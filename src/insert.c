@@ -577,47 +577,21 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-static int isConstantRow(ExprList *pRow){
-  int ii;
-  for(ii=0; ii<pRow->nExpr; ii++){
-    if( !sqlite3ExprIsConstantOrFunction(pRow->a[ii].pExpr, 0) ) return 0;
-  }
-  return 1;
-}
-
-void sqlite3MultiValuesStart(Parse *pParse, Select *pSel){
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  MultiValues *pVal = 0;
-
-  assert( pParse->pValues==0 );
-  assert( pParse->zValuesToken!=0 );
-  if( isConstantRow(pSel->pEList) ){
-    pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
-    pVal->pSelect = pSel;
-    pVal->regYield = ++pParse->nMem;
-    pVal->addrTop = sqlite3VdbeCurrentAddr(v) + 1;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, pVal->regYield, 0, pVal->addrTop);
-    sqlite3SelectDestInit(&pVal->dest, SRT_Coroutine, pVal->regYield);
-    sqlite3Select(pParse, pSel, &pVal->dest);
-    pParse->pValues = pVal;
-    pSel->selFlags = pSel->selFlags & (~SF_Values);
-    sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);
-  }
-}
-
-static void insertEndCoroutine(Vdbe *v, int regYield, int addrTop){
-  sqlite3VdbeEndCoroutine(v, regYield);
-  sqlite3VdbeJumpHere(v, addrTop - 1);
-}
-
 Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   MultiValues *pVal = pParse->pValues;
   Select *pRight;
 
+  /* Allocate a new Select structure for the next row of the VALUES clause.
+  ** There are then three options: (a) the co-routine has already been 
+  ** started - in this case code the next row of the co-routine and then
+  ** delete the new Select, (b) the co-routine has not been started - in
+  ** this case link the new Select to the old using a TK_ALL operator, or
+  ** (c) an OOM has occured.  */
   pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values|SF_MultiValue, 0);
   pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
     if( pVal && pVal->pSelect==pLeft ){
+      /* Option (a) above */
       int explain = pParse->explain;
       pParse->explain = 255;
       sqlite3Select(pParse, pRight, &pVal->dest);
@@ -625,13 +599,18 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       sqlite3SelectDelete(pParse->db, pRight);
       pRight = pLeft;
     }else{
+      /* Option (b) above */
       pRight->op = TK_ALL;
       pRight->pPrior = pLeft;
     }
   }else{
+    /* Option (c) above - an OOM */
     pRight = pLeft;
   }
 
+  /* If the co-routine has not already been started, but more than
+  ** SQLITE_LIMIT_COMPOUND_SELECT select statements have been create during
+  ** this parse, check if the co-routine should be started now. */
   if( pVal==0 && pParse->zValuesToken 
    && (pParse->nSelect > pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])
   ){
@@ -642,6 +621,7 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     if( nSelect>pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT] 
      && (p->selFlags & SF_InsertValues)
     ){
+      /* Start coding the co-routine */
       Vdbe *v = sqlite3GetVdbe(pParse);
       pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
       if( v && pVal ){
@@ -659,8 +639,8 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
           Select *pNext = p->pNext;
           int explain = pParse->explain;
           p->selFlags = p->selFlags & (~SF_Values);
-          pParse->explain = 255;
           p->pPrior = 0;
+          pParse->explain = 255;
           sqlite3Select(pParse, p, &pVal->dest);
           pParse->explain = explain;
           if( p!=pRight ) sqlite3SelectDelete(pParse->db, p);
