@@ -1,5 +1,5 @@
-C Simplify\schanges\son\sthis\sbranch\sby\savoiding\sany\sspecial\shandling\suntil\sSQLITE_LIMIT_COMPOUND_SELECT\srows\sare\sreached.
-D 2024-03-05T17:23:13.046
+C Fix\sa\sproblem\swith\slarge\svalues\sclauses\sand\snamed\svariables.
+D 2024-03-05T17:48:20.852
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -700,7 +700,7 @@ F src/date.c 90df32c2d8b2a38dd2e83d32e47802629305c4882fb2ec75c9ecdcd75b68bcb2
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 2803f5e7e3458ced24c0de48ec3640cd7a68ec61350d99c9f30b1bcd6640bd61
+F src/expr.c 05516e8b7d7d22f98160a0360fde69edce3304a430600567ed33e66d588ca59b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 4204c56196847faefef57fa14e43b8e4d65eb8d7e65318abe463472e3fd148cb
@@ -820,7 +820,7 @@ F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 0765014847e2a06c952dd64aef0bea5144cd5b335a161eb0768ebe4f63dfe216
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 523a88b3df328810fbcbb407738c352dd9d5163b7af4c953e6e9887a4b582859
+F src/vdbe.c 7a33c5bb37e12ce35ac2d1d56a6429288b0b56c940ba660265c1428c67883729
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
@@ -1920,7 +1920,7 @@ F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
 F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce042fd
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
-F test/values.test c16b1a7efa9316152711e0f97bffb5f113b161f295875ca1dc97094855ad24e5
+F test/values.test 94f74c64ba6649de423d49c471eaebb6300ccd754213b170f82b10bbd1a143d2
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test d4c4281e1679245829db35597817282f60dc513fc39cc5439078f009bd118487
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d6797716d4be5b9d448f697b05f36a62c180e836dd142307f06b945a7ddb43c
-R b78adccb9bee7eab4f908c966fe08e61
+P 9cbceaac8f3c557f6eb266e15c57d71d3b6ad5dfdc8c0c39e5fc75e505673d17
+R bd90450bf431451c0d4f9f17277c3ef8
 U dan
-Z 5a061837657e2df4c4adc4cc28150d89
+Z 47c070dacdaf2a30943a10818d6b8541
 # Remove this line to create a well-formed Fossil manifest.
