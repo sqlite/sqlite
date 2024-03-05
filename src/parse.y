@@ -532,7 +532,7 @@ cmd ::= select(X).  {
       }
       if( (p->selFlags & SF_MultiValue)==0 && 
         (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0 &&
-        cnt>mxSelect
+        (cnt>mxSelect || (pParse->pValues && pParse->pValues->pSelect==pNext))
       ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
       }
@@ -622,24 +622,13 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 %endif
 
 
-oneselect(A) ::= values(A). {
-  if( pParse->pValues && pParse->pValues->pSelect==A ){
-    MultiValues *pValues = pParse->pValues;
-    if( pValues->bEnd==0 ){
-      sqlite3VdbeEndCoroutine(pParse->pVdbe, pValues->regYield);
-      sqlite3VdbeJumpHere(pParse->pVdbe, pValues->addrTop - 1);
-      pValues->bEnd = 1;
-    }
-  }
-}
+oneselect(A) ::= values(A).
 
 %type values {Select*}
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
 values(A) ::= VALUES(T) LP nexprlist(X) RP. {
-  A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
-  if( T.z==pParse->zValuesToken && yyLookahead==TK_COMMA ){
-    sqlite3MultiValuesStart(pParse, A);
-  }
+  int f = SF_Values | ((T.z==pParse->zValuesToken) ? SF_InsertValues : 0);
+  A = sqlite3SelectNew(pParse,X,0,0,0,0,0,f,0);
 }
 values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
   A = sqlite3InsertMultiValues(pParse,A,Y);

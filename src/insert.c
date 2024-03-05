@@ -610,40 +610,68 @@ static void insertEndCoroutine(Vdbe *v, int regYield, int addrTop){
   sqlite3VdbeJumpHere(v, addrTop - 1);
 }
 
-Select *sqlite3InsertMultiValues(Parse *pParse, Select *pSel, ExprList *pRow){
+Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   MultiValues *pVal = pParse->pValues;
   Select *pRight;
 
-  pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values, 0);
-
+  pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values|SF_MultiValue, 0);
+  pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
-    if( pVal && pVal->pSelect==pSel ){
-      if( isConstantRow(pRight->pEList) ){
-        if( pRight->pEList->nExpr!=pSel->pEList->nExpr ){
-          sqlite3SelectWrongNumTermsError(pParse, pRight);
-        }else{
-          int explain = pParse->explain;
-          pParse->explain = 255;
-          sqlite3Select(pParse, pRight, &pVal->dest);
-          pParse->explain = explain;
-        }
-        sqlite3SelectDelete(pParse->db, pRight);
-        return pSel;
-      }else{
-        assert( pVal->bEnd==0 );
-        insertEndCoroutine(pParse->pVdbe, pVal->regYield, pVal->addrTop);
-        pVal->bEnd = 1;
-      }
+    if( pVal && pVal->pSelect==pLeft ){
+      int explain = pParse->explain;
+      pParse->explain = 255;
+      sqlite3Select(pParse, pRight, &pVal->dest);
+      pParse->explain = explain;
+      sqlite3SelectDelete(pParse->db, pRight);
+      pRight = pLeft;
+    }else{
+      pRight->op = TK_ALL;
+      pRight->pPrior = pLeft;
     }
-
-    pSel->selFlags &= ~SF_MultiValue;
-    pRight->selFlags &= ~SF_MultiValue;
-    pRight->op = TK_ALL;
-    pRight->pPrior = pSel;
-    pSel = pRight;
+  }else{
+    pRight = pLeft;
   }
 
-  return pSel;
+  if( pVal==0 && pParse->zValuesToken 
+   && (pParse->nSelect > pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])
+  ){
+    int nSelect = 1;
+    Select *p;
+    pParse->zValuesToken = 0;
+    for(p=pRight; p->pPrior; p=p->pPrior ) nSelect++;
+    if( nSelect>pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT] 
+     && (p->selFlags & SF_InsertValues)
+    ){
+      Vdbe *v = sqlite3GetVdbe(pParse);
+      pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
+      if( v && pVal ){
+        pParse->pValues = pVal;
+        pVal->pSelect = p;
+        pVal->regYield = ++pParse->nMem;
+        pVal->addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+        sqlite3VdbeAddOp3(v, OP_InitCoroutine, pVal->regYield,0,pVal->addrTop);
+        sqlite3SelectDestInit(&pVal->dest, SRT_Coroutine, pVal->regYield);
+        for(p=pRight; p->pPrior; p=p->pPrior ){
+          p->pPrior->pNext = p;
+        }
+        pRight = p;
+        while( p ){
+          Select *pNext = p->pNext;
+          int explain = pParse->explain;
+          p->selFlags = p->selFlags & (~SF_Values);
+          pParse->explain = 255;
+          p->pPrior = 0;
+          sqlite3Select(pParse, p, &pVal->dest);
+          pParse->explain = explain;
+          if( p!=pRight ) sqlite3SelectDelete(pParse->db, p);
+          p = pNext;
+        }
+        sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);
+      }
+    }
+  }
+
+  return pRight;
 }
 
 /* Forward declaration */

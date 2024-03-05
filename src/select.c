@@ -1246,11 +1246,6 @@ static void selectInnerLoop(
       assert( hasDistinct==0 );
       pSort->pDeferredRowLoad = &sRowLoadInfo;
       regOrig = 0;
-    }else if( pParse->pValues && pParse->pValues->pSelect==p ){
-      MultiValues *pValues = pParse->pValues;
-      sqlite3ExprCodeMove(pParse, 
-          pValues->dest.iSdst, pDest->iSdst, pDest->nSdst
-      );
     }else{
       innerLoopLoadRow(pParse, p, &sRowLoadInfo);
     }
@@ -7965,21 +7960,10 @@ int sqlite3Select(
     }else
 #endif /* SQLITE_OMIT_WINDOWFUNC */
     {
-      MultiValues *pValues = pParse->pValues;
-      int addrYield = 0;
-      if( pValues && pValues->pSelect==p ){
-        addrYield = sqlite3VdbeAddOp1(v, OP_Yield, pValues->regYield);
-      }
-
       /* Use the standard inner loop. */
       selectInnerLoop(pParse, p, -1, &sSort, &sDistinct, pDest,
           sqlite3WhereContinueLabel(pWInfo),
           sqlite3WhereBreakLabel(pWInfo));
-
-      if( pValues && pValues->pSelect==p ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, addrYield);
-        sqlite3VdbeChangeP2(v, addrYield, sqlite3VdbeCurrentAddr(v));
-      }
 
       /* End the database scan loop.
       */
