@@ -403,8 +403,10 @@
     E('#btn-reset').addEventListener('click',()=>SF.resetDb());
     const taInput = E('#input');
     const btnClearIn = E('#btn-clear');
+    const selectExamples = E('#select-examples');
     btnClearIn.addEventListener('click',function(){
       taInput.value = '';
+      selectExamples.selectedIndex = 0;
     },false);
     // Ctrl-enter and shift-enter both run the current SQL.
     taInput.addEventListener('keydown',function(ev){
@@ -733,15 +735,14 @@
         ]},
               //{name: "Timer on", sql: ".timer on"},
               // ^^^ re-enable if emscripten re-enables getrusage()
+        {name: "Box Mode", sql: ".mode box"},
         {name: "Setup table T", sql:[
           ".nullvalue NULL\n",
           "CREATE TABLE t(a,b);\n",
           "INSERT INTO t(a,b) VALUES('abc',123),('def',456),(NULL,789),('ghi',012);\n",
           "SELECT * FROM t;\n"
         ]},
-        {name: "Table list", sql: ".tables"},
-        {name: "Box Mode", sql: ".mode box"},
-        {name: "JSON Mode", sql: ".mode json"},
+        {name: "sqlite_schema", sql: "select * from sqlite_schema"},
         {name: "Mandelbrot", sql:[
           "WITH RECURSIVE",
           "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),\n",
