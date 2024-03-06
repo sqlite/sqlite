@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\sjson_pretty()\sexamples\sto\s/fiddle.
-D 2024-03-06T14:42:06.357
+C Add\stest\scases\sfor\sjson_pretty().
+D 2024-03-06T20:38:52.875
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1353,8 +1353,9 @@ F test/json102.test 557a46e16df1aa9bdbc4076a71a45814ea0e7503d6621d87d42a8c04cbc2
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test 043838b56e68f3252a0dcf5be1689016f6f3f05056f8dcfcdc9d074f4d932988
-F test/json106.test 1d46a9294e2ced35c7f87cebbcb9626d01abab04f1969d7ded7b6f6a1d9be0f2
+F test/json106.test 4aed3afd16549045d198a8d9cea00deea96e1f2ecf55864dce96cac558b8abef
 F test/json107.test 59054e815c8f6b67d634d44ace421cf975828fb5651c4460aa66015c8e19d562
+F test/json108.test 0a5f1e2d4b35a1bc33052563d2a5ede03052e2099e58cb424547656c898e0f49
 F test/json501.test b95e2d14988b682a5cadf079dd6162f0f85fb74cd59c6b1f1624110104a974eb
 F test/json502.test 84634d3dbb521d2814e43624025b760c6198456c8197bbec6c977c0236648f5b
 F test/jsonb01.test f4cdfb4cf5a0c940091b17675ed9583f45add0c938f07d65b0de0e19d3a9a101
@@ -2176,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39552bd36c06fe9ee346cb71e0659baceccde031b67c0974f2dd14eb11ebc055
-R f12e2eeb9bae468bef7713e1648b6a8a
-U stephan
-Z 3bec70ffdc2a1f410c64a91b9d3ada78
+P d5e1687b1d49cec5daa8793ea138fdf3bd29436c1e67071707ec0594bd1c66c6
+R b5d425c8e8367f72e383ae1d2d9e4ea0
+U drh
+Z ce296be00f3b33d5cde8abdb22061e01
 # Remove this line to create a well-formed Fossil manifest.
