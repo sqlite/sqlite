@@ -563,7 +563,6 @@ static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
   }
 }
 
-
 /* Append formatted text (not to exceed N bytes) to the JsonString.
 */
 static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
@@ -2335,6 +2334,112 @@ static u32 jsonTranslateBlobToText(
   }
   return i+n+sz;
 }
+
+/* Context for recursion of json_pretty()
+*/
+typedef struct JsonPretty JsonPretty;
+struct JsonPretty {
+  JsonParse *pParse;        /* The BLOB being rendered */
+  JsonString *pOut;         /* Generate pretty output into this string */
+  const char *zIndent;      /* Use this text for indentation */
+  u32 szIndent;             /* Bytes in zIndent[] */
+  u32 nIndent;              /* Current level of indentation */
+};
+
+/* Append indentation to the pretty JSON under construction */
+static void jsonPrettyIndent(JsonPretty *pPretty){
+  u32 jj;
+  for(jj=0; jj<pPretty->nIndent; jj++){
+    jsonAppendRaw(pPretty->pOut, pPretty->zIndent, pPretty->szIndent);
+  }
+}
+
+/*
+** Translate the binary JSONB representation of JSON beginning at
+** pParse->aBlob[i] into a JSON text string.  Append the JSON
+** text onto the end of pOut.  Return the index in pParse->aBlob[]
+** of the first byte past the end of the element that is translated.
+**
+** This is a variant of jsonTranslateBlobToText() that "pretty-prints"
+** the output.  Extra whitespace is inserted to make the JSON easier
+** for humans to read.
+**
+** If an error is detected in the BLOB input, the pOut->eErr flag
+** might get set to JSTRING_MALFORMED.  But not all BLOB input errors
+** are detected.  So a malformed JSONB input might either result
+** in an error, or in incorrect JSON.
+**
+** The pOut->eErr JSTRING_OOM flag is set on a OOM.
+*/
+static u32 jsonTranslateBlobToPrettyText(
+  JsonPretty *pPretty,       /* Pretty-printing context */
+  u32 i                      /* Start rendering at this index */
+){
+  u32 sz, n, j, iEnd;
+  const JsonParse *pParse = pPretty->pParse;
+  JsonString *pOut = pPretty->pOut;
+  n = jsonbPayloadSize(pParse, i, &sz);
+  if( n==0 ){
+    pOut->eErr |= JSTRING_MALFORMED;
+    return pParse->nBlob+1;
+  }
+  switch( pParse->aBlob[i] & 0x0f ){
+    case JSONB_ARRAY: {
+      j = i+n;
+      iEnd = j+sz;
+      jsonAppendChar(pOut, '[');
+      if( j<iEnd ){
+        jsonAppendChar(pOut, '\n');
+        pPretty->nIndent++;
+        while( pOut->eErr==0 ){
+          jsonPrettyIndent(pPretty);
+          j = jsonTranslateBlobToPrettyText(pPretty, j);
+          if( j>=iEnd ) break;
+          jsonAppendRawNZ(pOut, ",\n", 2);
+        }
+        jsonAppendChar(pOut, '\n');
+        pPretty->nIndent--;
+        jsonPrettyIndent(pPretty);
+      }
+      jsonAppendChar(pOut, ']');
+      i = iEnd;
+      break;
+    }
+    case JSONB_OBJECT: {
+      j = i+n;
+      iEnd = j+sz;
+      jsonAppendChar(pOut, '{');
+      if( j<iEnd ){
+        jsonAppendChar(pOut, '\n');
+        pPretty->nIndent++;
+        while( pOut->eErr==0 ){
+          jsonPrettyIndent(pPretty);
+          j = jsonTranslateBlobToText(pParse, j, pOut);
+          if( j>iEnd ){
+            pOut->eErr |= JSTRING_MALFORMED;
+            break;
+          }
+          jsonAppendRawNZ(pOut, ": ", 2);
+          j = jsonTranslateBlobToPrettyText(pPretty, j);
+          if( j>=iEnd ) break;
+          jsonAppendRawNZ(pOut, ",\n", 2);
+        }
+        jsonAppendChar(pOut, '\n');
+        pPretty->nIndent--;
+        jsonPrettyIndent(pPretty);
+      }
+      jsonAppendChar(pOut, '}');
+      i = iEnd;
+      break;
+    }
+    default: {
+      i = jsonTranslateBlobToText(pParse, i, pOut);
+      break;
+    }
+  }
+  return i;
+}
+
 
 /* Return true if the input pJson
 **
@@ -4256,6 +4361,40 @@ json_type_done:
 }
 
 /*
+** json_pretty(JSON)
+** json_pretty(JSON, INDENT)
+**
+** Return text that is a pretty-printed rendering of the input JSON.
+** If the argument is not valid JSON, return NULL.
+**
+** The INDENT argument is text that is used for indentation.  If omitted,
+** it defaults to four spaces (the same as PostgreSQL).
+*/
+static void jsonPrettyFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString s;          /* The output string */
+  JsonPretty x;          /* Pretty printing context */
+
+  memset(&x, 0, sizeof(x));
+  x.pParse = jsonParseFuncArg(ctx, argv[0], 0);
+  if( x.pParse==0 ) return;
+  x.pOut = &s;
+  jsonStringInit(&s, ctx);
+  if( argc==1 || (x.zIndent = (const char*)sqlite3_value_text(argv[1]))==0 ){
+    x.zIndent = "    ";
+    x.szIndent = 4;
+  }else{
+    x.szIndent = (u32)strlen(x.zIndent);
+  }
+  jsonTranslateBlobToPrettyText(&x, 0);
+  jsonReturnString(&s, 0, 0);
+  jsonParseFree(x.pParse);
+}
+
+/*
 ** json_valid(JSON)
 ** json_valid(JSON, FLAGS)
 **
@@ -5269,6 +5408,8 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(jsonb_object,      -1,0,1, 1,1,0,          jsonObjectFunc),
     JFUNCTION(json_patch,         2,1,1, 0,0,0,          jsonPatchFunc),
     JFUNCTION(jsonb_patch,        2,1,0, 0,1,0,          jsonPatchFunc),
+    JFUNCTION(json_pretty,        1,1,0, 0,0,0,          jsonPrettyFunc),
+    JFUNCTION(json_pretty,        2,1,0, 0,0,0,          jsonPrettyFunc),
     JFUNCTION(json_quote,         1,0,1, 1,0,0,          jsonQuoteFunc),
     JFUNCTION(json_remove,       -1,1,1, 0,0,0,          jsonRemoveFunc),
     JFUNCTION(jsonb_remove,      -1,1,0, 0,1,0,          jsonRemoveFunc),
