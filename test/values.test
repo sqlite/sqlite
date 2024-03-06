@@ -87,9 +87,76 @@ do_execsql_test 1.2.6 {
 }
 
 #-------------------------------------------------------------------------
-# different number of columns error.
 # SQLITE_LIMIT_COMPOUND_SELECT set to 0.
 #
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, c);
+}
+
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 3
+
+do_catchsql_test 2.1.1 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10, 10)
+} {1 {all VALUES must have the same number of terms}}
+
+do_catchsql_test 2.1.2 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+} {1 {all VALUES must have the same number of terms}}
+
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 0
+
+do_execsql_test 2.2 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+} {}
+do_execsql_test 2.3 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+      UNION ALL 
+      SELECT 5, 12, 12
+      ORDER BY 1
+} {}
+
 
 
 

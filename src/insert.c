@@ -590,6 +590,9 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   pRight = sqlite3SelectNew(pParse,pRow, 0,0,0,0,0, SF_Values|SF_MultiValue, 0);
   pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
+    if( pRow->nExpr!=pLeft->pEList->nExpr ){
+      sqlite3SelectWrongNumTermsError(pParse, pRight);
+    }
     if( pVal && pVal->pSelect==pLeft ){
       /* Option (a) above */
       int explain = pParse->explain;
@@ -608,45 +611,45 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     pRight = pLeft;
   }
 
-  /* If the co-routine has not already been started, but more than
-  ** SQLITE_LIMIT_COMPOUND_SELECT select statements have been create during
-  ** this parse, check if the co-routine should be started now. */
-  if( pVal==0 && pParse->zValuesToken 
-   && (pParse->nSelect > pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])
-  ){
-    int nSelect = 1;
-    Select *p;
-    pParse->zValuesToken = 0;
-    for(p=pRight; p->pPrior; p=p->pPrior ) nSelect++;
-    if( nSelect>pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT] 
-     && (p->selFlags & SF_InsertValues)
-    ){
-      /* Start coding the co-routine */
-      Vdbe *v = sqlite3GetVdbe(pParse);
-      pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
-      if( v && pVal ){
-        pParse->pValues = pVal;
-        pVal->pSelect = p;
-        pVal->regYield = ++pParse->nMem;
-        pVal->addrTop = sqlite3VdbeCurrentAddr(v) + 1;
-        sqlite3VdbeAddOp3(v, OP_InitCoroutine, pVal->regYield,0,pVal->addrTop);
-        sqlite3SelectDestInit(&pVal->dest, SRT_Coroutine, pVal->regYield);
-        for(p=pRight; p->pPrior; p=p->pPrior ){
-          p->pPrior->pNext = p;
+  if( pVal==0 && pParse->zValuesToken ){
+    int iLimit = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
+
+    /* If the co-routine has not already been started, but more than
+    ** SQLITE_LIMIT_COMPOUND_SELECT select statements have been create 
+    ** during this parse, check if the co-routine should be started now. */
+    if( pParse->nSelect>iLimit ){
+      int nSelect = 1;
+      Select *p;
+      pParse->zValuesToken = 0;
+      for(p=pRight; p->pPrior; p=p->pPrior ) nSelect++;
+      if( iLimit>0 && nSelect>iLimit && (p->selFlags & SF_InsertValues) ){
+        Vdbe *v = sqlite3GetVdbe(pParse);
+        pVal = (MultiValues*)sqlite3DbMallocZero(pParse->db, sizeof(*pVal));
+        if( v && pVal ){
+          /* Start coding the co-routine */
+          pParse->pValues = pVal;
+          pVal->pSelect = p;
+          pVal->regYield = ++pParse->nMem;
+          pVal->addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+          sqlite3VdbeAddOp3(v, OP_InitCoroutine,pVal->regYield,0,pVal->addrTop);
+          sqlite3SelectDestInit(&pVal->dest, SRT_Coroutine, pVal->regYield);
+          for(p=pRight; p->pPrior; p=p->pPrior ){
+            p->pPrior->pNext = p;
+          }
+          pRight = p;
+          while( p ){
+            Select *pNext = p->pNext;
+            int explain = pParse->explain;
+            p->selFlags = p->selFlags & (~SF_Values);
+            p->pPrior = 0;
+            pParse->explain = 255;
+            sqlite3Select(pParse, p, &pVal->dest);
+            pParse->explain = explain;
+            if( p!=pRight ) sqlite3SelectDelete(pParse->db, p);
+            p = pNext;
+          }
+          sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);
         }
-        pRight = p;
-        while( p ){
-          Select *pNext = p->pNext;
-          int explain = pParse->explain;
-          p->selFlags = p->selFlags & (~SF_Values);
-          p->pPrior = 0;
-          pParse->explain = 255;
-          sqlite3Select(pParse, p, &pVal->dest);
-          pParse->explain = explain;
-          if( p!=pRight ) sqlite3SelectDelete(pParse->db, p);
-          p = pNext;
-        }
-        sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);
       }
     }
   }
