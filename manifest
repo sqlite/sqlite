@@ -1,5 +1,5 @@
-C Add\sthe\sjson_pretty(J)\sfunction\sfor\spretty-printing\sof\sJSON.\s\sAn\soptional\n2nd\sargument\sis\stext\sused\sfor\sindentation,\swith\sa\sdefault\svalue\sbeing\sfour\nspaces.
-D 2024-03-06T14:30:42.046
+C Add\sa\scouple\sof\sjson_pretty()\sexamples\sto\s/fiddle.
+D 2024-03-06T14:42:06.357
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -641,7 +641,7 @@ F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c
 F ext/wasm/fiddle.make 3c2eace29255d6ddd219f5d8cc2728cb28b9fe717ea80b6062c2a6178947a16b
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
-F ext/wasm/fiddle/fiddle.js 04a638e3ed8fc9ca7c05cbe73ac4196e4529ec564639a76fbcecaffdf62bd983
+F ext/wasm/fiddle/fiddle.js b444a5646a9aac9f3fc06c53d78af5e1912eb235d69a8e6010723e4eb0e9d4a1
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html e91d76e4581185238fd3d42ed86ec600f7023ed3e3a944c5c356f25304bf1263
 F ext/wasm/index.html b31ce41c0da476d5ffcef23069b9d3415b419d65af5779096ebcfbcbade453a9
@@ -2176,11 +2176,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 483fa2969e1e10cd8e8d2f9e3027871c65b1360b6c23897efe3ce63a3a55ae13
-R cdcb4f4f681bccfe01ba6f525ed68e3e
-T *branch * json-pretty
-T *sym-json-pretty *
-T -sym-trunk *
-U drh
-Z 040cd116c25b3e34e2b8acda05bc14c7
+P 39552bd36c06fe9ee346cb71e0659baceccde031b67c0974f2dd14eb11ebc055
+R f12e2eeb9bae468bef7713e1648b6a8a
+U stephan
+Z 3bec70ffdc2a1f410c64a91b9d3ada78
 # Remove this line to create a well-formed Fossil manifest.
