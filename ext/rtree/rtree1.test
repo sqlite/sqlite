@@ -797,4 +797,16 @@ do_test 23.0 {
   db eval {PRAGMA integrity_check;}
 } {ok}
 
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE rt1 USING rtree_i32(rid, c1, c2);
+  INSERT INTO rt1(rid, c1, c2) VALUES (9223372036854775807, 10, 18);
+}
+
+do_execsql_test 1.1 {
+  SELECT (rid = (CAST (9223372036854775807 AS REAL)))
+  FROM rt1 WHERE
+         (rid = (CAST (9223372036854775807 AS REAL)));
+}
+
 finish_test
