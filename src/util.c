@@ -627,6 +627,9 @@ do_atof_calc:
     u64 s2;
     rr[0] = (double)s;
     s2 = (u64)rr[0];
+#if defined(_MSC_VER) && _MSC_VER<1700
+    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+#endif
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
     if( e>0 ){
       while( e>=100  ){
