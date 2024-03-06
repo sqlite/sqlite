@@ -82,7 +82,8 @@ JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 #
 # - node = for use by node.js for node.js, as opposed to by node.js on
 #   behalf o browser-side code (use bundler-friendly for that). Note
-#   that persistent storage (OPFS) is not available in these builds.
+#   that persistent storage (OPFS, kvvfs) is not available in these
+#   builds.
 #
 JS_BUILD_MODES := vanilla esm bunder-friendly node
 
@@ -738,11 +739,12 @@ pre-post-jses.$(1)-$(2).deps := $$(pre-post-jses.deps.common) \
   $$(post-js.js.$(1)-$(2)) $$(extern-post-js.js.$(1)-$(2))
 $$(pre-js.js.$(1)-$(2)): $$(pre-js.js.$(1)-$(2).intermediary) $$(MAKEFILE)
 	cp $$(pre-js.js.$(1)-$(2).intermediary) $$@
-	@if [ sqlite3-wasmfs = $(1) ]; then \
-		echo "delete Module[xNameOfInstantiateWasm] /*for WASMFS build*/;"; \
-	elif [ sqlite3 != $(1) ]; then \
-		echo "Module[xNameOfInstantiateWasm].uri = '$(1).wasm';"; \
-	fi >> $$@
+	@case $(1) in \
+		sqlite3) ;; \
+		sqlite3-wasmfs) \
+			echo "delete Module[xNameOfInstantiateWasm] /*for WASMFS and node builds*/;" ;; \
+		*) echo "Module[xNameOfInstantiateWasm].uri = '$(1).wasm';" ;; \
+	esac >> $$@
 pre-post-$(1)-$(2).deps := \
   $$(pre-post-jses.$(1)-$(2).deps) \
   $$(dir.tmp)/pre-js.$(1)-$(2).js
@@ -825,7 +827,7 @@ pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 # $4 = resulting sqlite-api JS/MJS file
 # $5 = resulting JS/MJS file
 # $6 = -D... flags for $(bin.c-pp)
-# $7 = emcc -sXYZ flags (CURRENTLY UNUSED - was factored out)
+# $7 = optional additional flags for emcc
 #
 # Maintenance reminder: be careful not to introduce spaces around args
 # ($1, $2), otherwise string concatenation will malfunction.
@@ -892,7 +894,11 @@ $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,bundler-friendly,1,\
        $(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly))
 $(eval $(call SETUP_LIB_BUILD_MODE,sqlite3,node,1,\
        $(sqlite3-api-node.mjs),$(sqlite3-node.mjs),\
-       $(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node))
+       $(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node,-lnodefs.js))
+# ^^^^ reminder to self: using -lnodefs.js affects the resulting JS but
+#      not the .wasm file, so that build can/should use the canonical
+#      wasm file.
+#
 # The various -D... values used by *.c-pp.js include:
 #
 # -Dtarget=es6-module: for all ESM module builds
