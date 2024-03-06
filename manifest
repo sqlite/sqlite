@@ -1,5 +1,5 @@
-C Work\saround\sobscure\sfloating\spoint\sissue\sseen\swith\solder\sversions\sof\sMSVC.
-D 2024-03-06T21:00:13.512
+C Fix\sa\sminor\stest\sfile\slocking\sissue\son\sWindows.
+D 2024-03-06T21:06:07.775
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1396,7 +1396,7 @@ F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca721
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
-F test/memdb1.test bef8623da0c0c2d8d4e0426dee5a52008a5714860901f8bca7638830b2645dbe
+F test/memdb1.test 155fac4fb020d7891f5e063fb9617a739a5403da4e23cd3c9a174321aac95a74
 F test/memdb2.test 4ba1fc09e2f51df80d148a540e4a3fa66d0462e91167b27497084de4d1f6b5b4
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memjournal2.test dbc2c5cb5f7b38950f4f6dc3e73fcecf0fcbed3fc32c7ce913bba164d288da1e
@@ -2160,9 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4e423f3a466a39e435efba81ac33fd80164aaaa43827c2f4f965c1e77b3ef6c
-Q +42d39f9140cc315df04b048f3811311fa50b51e1831d6cdf982fbce029778e43
-R a1cf0483afe322a21f617dd2ac11487f
+P 6055715febf6e61e37125635b7ec29392fbaab367927411617f5e15d9a95cb82
+Q +6cd70b71df5c0d45412081590316bced302ec4403d565250b56e611882204821
+R 560cbbffd26115888883eca9742e4ffe
 U mistachkin
-Z 4709a823488a4a1ceebea1c92a9a16aa
+Z 36fd0485e07e24d5cdb0ef8713025233
 # Remove this line to create a well-formed Fossil manifest.
