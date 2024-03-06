@@ -1,5 +1,5 @@
-C Handle\sVALUES\sclauses\shaving\sdifferent\snumber\sof\svalues\sin\sdifferent\srows.\sAlso\sthe\scase\swhere\sSQLITE_LIMIT_COMPOUND_SELECT\sis\sset\sto\s0.
-D 2024-03-06T14:55:18.413
+C Avoid\smaking\stoo\smany\scalls\sto\ssqlite3Select/sqlite3WhereBegin()\swhen\sprocessing\slarge\sVALUES\sclauses.
+D 2024-03-06T20:34:59.358
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c eb6f1f2ee17e6e219ec0e7d7a13d57c6f77357397b5670584933878f7737650a
+F src/insert.c 515295695e6cf86136c7e85b1a2014d00bb9b8b098b96f7338f017dcad5b20d5
 F src/json.c 9337dac9d9d4c77461db55fd3e06e4d006f4283cb1da2b3a9b1f8d750701583e
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -824,7 +824,7 @@ F src/vdbe.c 7a33c5bb37e12ce35ac2d1d56a6429288b0b56c940ba660265c1428c67883729
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
-F src/vdbeaux.c c5704adf1737e4dd7fc52de26f263e4ee7733380fe857269f9633dca1e8eb2cc
+F src/vdbeaux.c 66161ba75c4a2d86aab124fe3cbcc2a752d8e4b1fc8c1fc6e00625db4798168c
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 213bf303826c0ef702e3a2a69dab2309d84b8381b822c6787885859fd7cd4c4e
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -1582,7 +1582,7 @@ F test/selectC.test 38c530b0cc5728b793c3c11f52b52c70290d39822224acd39011c89c1853
 F test/selectD.test 6d1909b49970bf92f45ce657505befcef5fc7cbc13544e18103a316d32189bfb
 F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
-F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae8840
+F test/selectG.test 4088930ac4c7ad3f94e283bfd65c7a7ed80b448355c94d599fb14855c0a74455
 F test/selectH.test 0b54599f1917d99568c9b929df22ec6261ed7b6d2f02a46b5945ef81b7871aac
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
@@ -1920,7 +1920,7 @@ F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
 F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce042fd
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
-F test/values.test 8a0c4fbff834ac2b5c00ec78d179692506e9e0a5d695410385531c3de425cdd0
+F test/values.test 4d72de229975e6569f4ae996433ad6f3f818eaf0768593faf561d2faa422c0bd
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test d4c4281e1679245829db35597817282f60dc513fc39cc5439078f009bd118487
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 551caba93bc1ab0c57451bc3f0cd29d16a9d577874d22d5083ac53fe09a5e60a
-R 734a2e418a4fb63b2f2067774781bb7d
+P f5074b29d96e8e642e597ce855d2481220628f6892110b9699e27c3806084f5d
+R 622ec394e32f40c2646817ddc80e7ba5
 U dan
-Z a8613604e9b33f81bf4f9c0d1f448292
+Z 2d14187c1480c54766681609db97193f
 # Remove this line to create a well-formed Fossil manifest.

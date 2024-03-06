@@ -35,6 +35,18 @@ do_test 100 {
     SELECT count(x), sum(x), avg(x), $microsec<10000000 FROM t1;
   }
 } {100000 5000050000 50000.5 1}
+
+
+reset_db
+ifcapable scanstatus {
+  sqlite3_db_config db STMT_SCANSTATUS 1
+  do_test 105 {
+    set microsec [lindex [time {db eval $sql}] 0]
+    db eval {
+      SELECT count(x), sum(x), avg(x), $microsec<10000000 FROM t1;
+    }
+  } {100000 5000050000 50000.5 1}
+}
   
 # 2018-01-14.  A 100K-entry VALUES clause within a scalar expression does
 # not cause processor stack overflow.

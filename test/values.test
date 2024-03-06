@@ -157,6 +157,33 @@ do_execsql_test 2.3 {
       ORDER BY 1
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE y1(x, y);
+}
+
+foreach {tn iLimit} {1 0    2 2} { 
+  sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT $iLimit
+
+  do_execsql_test 3.$tn.1.1 {
+    DELETE FROM y1;
+    INSERT INTO y1 VALUES(1, 2), (3, 4), (row_number() OVER (), 5);
+  }
+  do_execsql_test 3.$tn.1.2 {
+    SELECT * FROM y1;
+  } {1 2  3 4  1 5}
+  do_execsql_test 3.$tn.2.1 {
+    DELETE FROM y1;
+    INSERT INTO y1 VALUES(1, 2), (3, 4), (row_number() OVER (), 6)
+                                       , (row_number() OVER (), 7)
+  }
+  do_execsql_test 3.$tn.1.2 {
+    SELECT * FROM y1;
+  } {1 2  3 4  1 6  1 7}
+
+}
 
 
 

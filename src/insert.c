@@ -577,6 +577,20 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+static void multiValuesSelect(Parse *pParse, Select *p, int bDel){
+  MultiValues *pVal = pParse->pValues;
+  sqlite3SelectPrep(pParse, p, 0);
+  if( bDel && p->pWin==0 ){
+    sqlite3ExprCodeExprList(pParse, p->pEList, pVal->dest.iSdst, 0, 0);
+    sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, pVal->regYield);
+  }else{
+    sqlite3Select(pParse, p, &pVal->dest);
+  }
+  if( bDel ){
+    sqlite3SelectDelete(pParse->db, p);
+  }
+}
+
 Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   MultiValues *pVal = pParse->pValues;
   Select *pRight;
@@ -593,13 +607,9 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     if( pRow->nExpr!=pLeft->pEList->nExpr ){
       sqlite3SelectWrongNumTermsError(pParse, pRight);
     }
-    if( pVal && pVal->pSelect==pLeft ){
+    if( pVal && pVal->pSelect==pLeft && pParse->nErr==0 ){
       /* Option (a) above */
-      int explain = pParse->explain;
-      pParse->explain = 255;
-      sqlite3Select(pParse, pRight, &pVal->dest);
-      pParse->explain = explain;
-      sqlite3SelectDelete(pParse->db, pRight);
+      multiValuesSelect(pParse, pRight, 1);
       pRight = pLeft;
     }else{
       /* Option (b) above */
@@ -639,13 +649,9 @@ Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
           pRight = p;
           while( p ){
             Select *pNext = p->pNext;
-            int explain = pParse->explain;
             p->selFlags = p->selFlags & (~SF_Values);
             p->pPrior = 0;
-            pParse->explain = 255;
-            sqlite3Select(pParse, p, &pVal->dest);
-            pParse->explain = explain;
-            if( p!=pRight ) sqlite3SelectDelete(pParse->db, p);
+            multiValuesSelect(pParse, p, (p!=pRight));
             p = pNext;
           }
           sqlite3ParserAddCleanup(pParse, sqlite3DbFree, pVal);

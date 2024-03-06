@@ -523,7 +523,6 @@ int sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
   ** But omit them (for performance) during production builds */
   if( pParse->explain==2 || IS_STMT_SCANSTATUS(pParse->db) )
 #endif
-  if( pParse->explain!=255 )
   {
     char *zMsg;
     Vdbe *v;
