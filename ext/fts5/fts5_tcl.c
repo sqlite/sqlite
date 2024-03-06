@@ -1169,7 +1169,7 @@ struct OriginTextTokenizer {
 */
 static void f5tOrigintextTokenizerDelete(void *pCtx){
   OriginTextCtx *p = (OriginTextCtx*)pCtx;
-  ckfree(p);
+  ckfree((char*)p);
 }
 
 static int f5tOrigintextCreate(

@@ -3503,10 +3503,10 @@ static void jsonDebugPrintBlob(
       if( sz==0 && x<=JSONB_FALSE ){
         sqlite3_str_append(pOut, "\n", 1);
       }else{
-        u32 i;
+        u32 j;
         sqlite3_str_appendall(pOut, ": \"");
-        for(i=iStart+n; i<iStart+n+sz; i++){
-          u8 c = pParse->aBlob[i];
+        for(j=iStart+n; j<iStart+n+sz; j++){
+          u8 c = pParse->aBlob[j];
           if( c<0x20 || c>=0x7f ) c = '.';
           sqlite3_str_append(pOut, (char*)&c, 1);
         }
