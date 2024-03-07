@@ -761,7 +761,13 @@
           "    FROM m2 GROUP BY cy\n",
           "  )\n",
           "SELECT group_concat(rtrim(t),x'0a') as Mandelbrot FROM a;\n",
-        ]}
+        ]},
+        {name: "JSON pretty-print",
+         sql: "select json_pretty(json_object('ex',json('[52,3.14159]')))"
+        },
+        {name: "JSON pretty-print (with tabs)",
+         sql: "select json_pretty(json_object('ex',json('[52,3.14159]')),char(0x09))"
+        }
       ];
       const newOpt = function(lbl,val){
         const o = document.createElement('option');
