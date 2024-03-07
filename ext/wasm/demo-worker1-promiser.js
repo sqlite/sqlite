@@ -14,8 +14,8 @@
   proxy for for the sqlite3 Worker #1 API.
 */
 'use strict';
-(function(){
-  const T = self.SqliteTestUtil;
+(async function(){
+  const T = globalThis.SqliteTestUtil;
   const eOutput = document.querySelector('#test-output');
   const warn = console.warn.bind(console);
   const error = console.error.bind(console);
@@ -48,18 +48,20 @@
     onunhandled: function(ev){
       error("Unhandled worker message:",ev.data);
     },
-    onready: function(){
-      T.affirm(arguments[0] === workerPromise
-               /* as of version 3.46. Prior to that this callback had no arguments */);
-      self.sqlite3TestModule.setStatus(null)/*hide the HTML-side is-loading spinner*/;
-      runTests();
-    },
     onerror: function(ev){
       error("worker1 error:",ev);
+    },
+    onready: function(f){
+      warn("This is the v2 interface - don't pass an onready() function.");
     }
   };
-  const workerPromise = self.sqlite3Worker1Promiser(promiserConfig);
-  delete self.sqlite3Worker1Promiser;
+  const workerPromise = await globalThis.sqlite3Worker1Promiser.v2(promiserConfig)
+        .then((func)=>{
+          log("Init complete. Starting tests momentarily.");
+          globalThis.sqlite3TestModule.setStatus(null)/*hide the HTML-side is-loading spinner*/;
+          return func;
+        });
+  delete globalThis.sqlite3Worker1Promiser;
 
   const wtest = async function(msgType, msgArgs, callback){
     if(2===arguments.length && 'function'===typeof msgArgs){
@@ -273,5 +275,5 @@
     }).finally(()=>logHtml('',"That's all, folks!"));
   }/*runTests2()*/;
 
-  log("Init complete, but async init bits may still be running.");
+  runTests();
 })();

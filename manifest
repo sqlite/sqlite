@@ -1,5 +1,5 @@
-C Correction\sto\sthe\sprevious\scheck-in.
-D 2024-03-06T12:28:55.128
+C Initial\swork\sat\sgetting\ssqlite3Worker1Promiser.v2()\sto\sreturn\sa\sPromise\sinstead\sof\susing\san\sonready()\scallback,\sand\salso\screating\san\sESM\sbuild\sfor\spromiser1\sper\suser\srequest.\sIt\sseems\sto\swork\sbut\srequires\smore\stesting.
+D 2024-03-07T16:04:43.823
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -587,7 +587,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 92e929315c3f1e0ea389fc9666b87a67a61fa1ecbe37e44c5ad226bda3bc6abe
+F ext/wasm/GNUmakefile e04f36fec0ab949424622a906020902651bd8d17f9696c56ed572eebc63e2355
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -616,7 +616,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 5a430874906ff3f4a6ca69aadf0c2aae
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js fe427645e1499618f5fa7bc670af850577d8bcc132df982078690c9bf8400baa
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js a2fcbc3fecdd0eea229283584ebc122f29d98194083675dbe5cb2cf3a17fe309
 F ext/wasm/api/sqlite3-wasm.c d33a16495ca871781e78812d3a18fed78b797468fffee657b8d7199b277ff359
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js e8135b44a568badfe197e2379f6b42899f2240b5c3a77fa044331110f7ce8e50
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js c11220b21f748c955ca798ad43ba7fea75ca0bf8dba78f46508f09517de26c05
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
@@ -633,7 +633,7 @@ F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32
 F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
 F ext/wasm/demo-jsstorage.js 44e3ae7ec2483b6c511384c3c290beb6f305c721186bcf5398ca4e00004a06b8
 F ext/wasm/demo-worker1-promiser.html 1de7c248c7c2cfd4a5783d2aa154bce62d74c6de98ab22f5786620b3354ed15f
-F ext/wasm/demo-worker1-promiser.js 786ae8a3214c2a29f6fb2c80eb4f90cc401fcc5b524d95c35fdc66a454e32bad
+F ext/wasm/demo-worker1-promiser.js e4cd1089269d106dd3bd20684eaddcd176c73baa31867ba0e445c8e7e29160b5
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 836bece8615b17b1b572584f7b15912236a5947fe8c68b98d2737d7e287447ef
 F ext/wasm/dist.make 3a851858aad72e246a5d9c5aaf6b6a144305f1bf898ac1846760ea7bab95c9a3
@@ -2176,8 +2176,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 027e5336acc26f57f21df4980928731026c30cf88688fa0b66f13ffa0b5da3a0
-R ee785ecad1867a820bb9e665fd92d3e8
-U drh
-Z 74daf43f110405d8b8bf503998b8174f
+P 483fa2969e1e10cd8e8d2f9e3027871c65b1360b6c23897efe3ce63a3a55ae13
+R fb2d3021442c55c82ff56e48b32fdd31
+T *branch * wasm-promiser1-v2
+T *sym-wasm-promiser1-v2 *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z d10f630418c41733e8d0108d272da900
 # Remove this line to create a well-formed Fossil manifest.

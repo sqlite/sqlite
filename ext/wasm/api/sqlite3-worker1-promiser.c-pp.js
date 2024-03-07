@@ -42,9 +42,13 @@
    - `onready` (optional, but...): this callback is called with no
    arguments when the worker fires its initial
    'sqlite3-api'/'worker1-ready' message, which it does when
-   sqlite3.initWorker1API() completes its initialization. This is
-   the simplest way to tell the worker to kick off work at the
-   earliest opportunity.
+   sqlite3.initWorker1API() completes its initialization. This is the
+   simplest way to tell the worker to kick off work at the earliest
+   opportunity, and the only way to know when the worker module has
+   completed loading. The irony of using a callback for this, instead
+   of returning a promise from sqlite3Worker1Promiser() is not lost on
+   the developers, but initial attempts to return a promise resulted
+   in a much clumsier interface.
 
    - `onunhandled` (optional): a callback which gets passed the
    message event object for any worker.onmessage() events which
@@ -277,7 +281,45 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
 //#endif
   ,
   onerror: (...args)=>console.error('worker1 promiser error',...args)
+}/*defaultConfig*/;
+
+/**
+   sqlite3Worker1Promiser.v2() works identically to
+   sqlite3Worker1Promiser() except that it returns a promise instead
+   of relying an an onready callback in the config object.
+*/
+sqlite3Worker1Promiser.v2 = function(config){
+  const x = Object.create(null);
+  let oldFunc;
+  if( 'function' == typeof config ){
+    oldFunc = config;
+    config = {};
+  }else if('function'===typeof config?.onready){
+    oldFunc = config.onready;
+    delete config.onready;
+  }
+  config = Object.assign((config || Object.create(null)),{
+    onready: function(func){
+      try {
+        if( oldFunc ){
+          oldFunc(func);
+        }
+        x.resolve(func);
+      }
+      catch(e){x.reject(e)}
+    }
+  });
+  const p = new Promise(function(resolve,reject){
+    x.resolve = resolve;
+    x.reject = reject;
+  });
+  sqlite3Worker1Promiser(config);
+  return p;
 };
+
+//#if target=es6-module
+export default sqlite3Worker1Promiser.v2;
+//#endif /* target=es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
 //#endif ifnot omit-oo1
