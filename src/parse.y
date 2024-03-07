@@ -996,39 +996,18 @@ setlist(A) ::= LP idlist(X) RP EQ expr(Y). {
 }
 
 ////////////////////////// The INSERT command /////////////////////////////////
-//
-cmd ::= insert_head(H) insert_tail(T). {
-  sqlite3Insert(pParse, H.x, T.s, H.f, H.r, T.u);
+cmd ::= with insert_cmd(R) INTO xfullname(X) inscols(F) select(S) upsert(U). {
+  sqlite3Insert(pParse, X, S, F, R, U);
+}
+cmd ::= with insert_cmd(R) INTO xfullname(X) inscols(F) DEFAULT VALUES returning. {
+  sqlite3Insert(pParse, X, 0, F, R, 0);
 }
 
-%destructor insert_tail {
-  sqlite3SelectDelete(pParse->db, $$.s);
-  sqlite3UpsertDelete(pParse->db, $$.u);
-}
-%destructor insert_head {
-  sqlite3SrcListDelete(pParse->db, $$.x);
-  sqlite3IdListDelete(pParse->db, $$.f);
-}
+%type inscols {IdList*}
+%destructor inscols {sqlite3IdListDelete(pParse->db, $$);}
 
-%type insert_tail { struct insert_tail_arg { Select *s; Upsert *u; } }
-
-%type insert_head { struct insert_head_arg { int r; SrcList *x; IdList *f; } }
-
-insert_head(A) ::= with insert_cmd(R) INTO xfullname(X) idlist_opt(F). {
-  A.r = R;
-  A.x = X;
-  A.f = F;
+inscols(A) ::= idlist_opt(A). {
   if( yyLookahead==TK_VALUES ) pParse->zValuesToken = yyLookaheadToken.z;
-}
-
-insert_tail(A) ::= DEFAULT VALUES returning. {
-  A.s = 0;
-  A.u = 0;
-}
-
-insert_tail(A) ::= select(S) upsert(U). {
-  A.s = S;
-  A.u = U;
 }
 
 %type upsert {Upsert*}

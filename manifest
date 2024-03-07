@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sthe\sexp-values-clause\sbranch.
-D 2024-03-07T16:25:56.715
+C Simplify\sthe\sparser\schanges\son\sthis\sbranch.
+D 2024-03-07T17:11:12.073
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -739,7 +739,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c ff60e98138d2499082ac6230f01ac508aba545315debccfca2fd6042f5f10fcd
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 56a0ddc81574d433e1403246c1cd897584499792cf5a76008c1193fbb709776c
+F src/parse.y c00b2d30f16654209145d1fe58833cbdcc9e55631d9a6c7416290c097c1e232a
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -2179,8 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d8065e80144ba3e762c353a9f06fd5e4aea2d0125c4e365a3d6394f8e09a13c 7fbdc1a849af3440579459bbb8797ebc7f9cce7b34d95675b8baa82db194ea9c
-R 8be8412e5aaf8116cedde19c55ed54c9
-U drh
-Z 67067521e925202b77d2ca68c2d9584e
+P c4923f266f061c06560e8801a3328167aa5658b3f51019c3470f16560591ba76
+R 28cf1d9a09242accb7295b9d610d95e8
+U dan
+Z d7279512dab2d857a2b449e19b0bb733
 # Remove this line to create a well-formed Fossil manifest.
