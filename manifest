@@ -1,5 +1,5 @@
-C Add\sthe\sjson_pretty()\sSQL\sfunction.
-D 2024-03-06T20:49:05.359
+C Do\snot\sallow\sthe\squery\splanner\sto\sbe\stricked\sinto\sthinking\sthat\san\sindex\son\sa\nconstant\sexpression\smight\sbe\suseful\sfor\ssomething.\s\sProblem\sreported\son\n[forum:/forumpost/ecdfc02339|forum\spost\secdfc02339].\s\sThis\sis\sa\sfollow-up\nto\sthe\sfixes\sat\s[44200596aa943963]\sand\s[2d2b91cc0f6fed8c].
+D 2024-03-07T12:34:26.192
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -838,7 +838,7 @@ F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 33eaaeef3aef10c2b9e82096e70a174d6636e35cb0b180321b8ddf804590e5cd
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
-F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
+F src/whereexpr.c 6ebd90b553f4bb5c7df5a4b2f39b6a7c81a67484353827cdd2048f2514ec6f30
 F src/window.c 5b1387d59df30d481ed14cceef5f4d1dab1f8752aa106ba72c8b62777bd139d2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2009,7 +2009,7 @@ F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test c4bb7e2ca56d49bd8ab5c7bd085b8b83e353922b46904d68aefb3c7468643581
 F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08aecf
 F test/whereK.test 0270ab7f04ba5436fb9156d31d642a1c82727f4c4bfe5ba90d435c78cf44684a
-F test/whereL.test 9d7c8a9f4e5e82d6859e61cf8758c3856c7e0a7fd8be11c92cac8c3ec39228fd
+F test/whereL.test f0e9585623af522ee9f382f8f945ad4b7eb7d806d18746f33f00c374acf6ab65
 F test/whereM.test 0dbc9998783458ddcf3cc078ca7c2951d8b2677d472ecf0028f449ed327c0250
 F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
@@ -2177,9 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42d39f9140cc315df04b048f3811311fa50b51e1831d6cdf982fbce029778e43 6448b90708eeedef03e82dcb10d2879e1bc859d422b450c5fc403ffbe0343bed
-R 88bdf8f2cb7f2d0936a740d66ef2bdb9
-T +closed 6448b90708eeedef03e82dcb10d2879e1bc859d422b450c5fc403ffbe0343bed
+P ceb51c1cc36dfb78db8f2be042a0d74ab9a877d14a53dadf876d09e1a0616d6a
+R 897d3888369143acaff743303856f10f
 U drh
-Z 6f02a8d0c883d9be78c99bd4533f623f
+Z ee9fb6bc0a9a21d42249dd521593d5a5
 # Remove this line to create a well-formed Fossil manifest.
