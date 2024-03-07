@@ -320,12 +320,16 @@ sqlite3Worker1Promiser.v2 = function(config){
     promiseProxy.reject = reject;
   });
   try{
-    sqlite3Worker1Promiser(config);
+    this.original(config);
   }catch(e){
     promiseProxy.reject(e);
   }
   return p;
-};
+}.bind({
+   /* We do this because clients are
+      recommended to delete globalThis.sqlite3Worker1Promiser. */
+  original: sqlite3Worker1Promiser
+});
 
 //#if target=es6-module
 /**

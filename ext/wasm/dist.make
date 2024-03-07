@@ -50,8 +50,9 @@ dist.top.extras := \
     demo-jsstorage.html demo-jsstorage.js \
     demo-worker1.html demo-worker1.js \
     demo-worker1-promiser.html demo-worker1-promiser.js \
-    demo-worker1-promiser-esm.html
-dist.jswasm.extras := $(sqlite3-api.ext.jses) $(sqlite3.wasm)
+    demo-worker1-promiser-esm.html demo-worker1-promiser.mjs
+dist.jswasm.extras := $(sqlite3.wasm) \
+  $(sqlite3-api.ext.jses)
 dist.common.extras := \
     $(wildcard $(dir.common)/*.css) \
     $(dir.common)/SqliteTestUtil.js
