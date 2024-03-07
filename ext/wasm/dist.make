@@ -49,12 +49,17 @@ dist.top.extras := \
     tester1.js tester1.mjs \
     demo-jsstorage.html demo-jsstorage.js \
     demo-worker1.html demo-worker1.js \
-    demo-worker1-promiser.html demo-worker1-promiser.js
+    demo-worker1-promiser.html demo-worker1-promiser.js \
+    demo-worker1-promiser-esm.html
 dist.jswasm.extras := $(sqlite3-api.ext.jses) $(sqlite3.wasm)
 dist.common.extras := \
     $(wildcard $(dir.common)/*.css) \
     $(dir.common)/SqliteTestUtil.js
 
+#$(info sqlite3-worker1-promiser.mjs = $(sqlite3-worker1-promiser.mjs))
+#$(info sqlite3-worker1.js = $(sqlite3-worker1.js))
+#$(info sqlite3-api.ext.jses = $(sqlite3-api.ext.jses))
+#$(info dist.jswasm.extras = $(dist.jswasm.extras))
 .PHONY: dist snapshot
 # DIST_STRIP_COMMENTS $(call)able to be used in stripping C-style
 # from the dist copies of certain files.
@@ -67,7 +72,8 @@ endef
 # STRIP_K1.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with a single -k flag.
 STRIP_K1.js := $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js) \
-  $(sqlite3-worker1-bundler-friendly.js) $(sqlite3-worker1-promiser-bundler-friendly.js)
+  $(sqlite3-worker1-bundler-friendly.js) \
+  $(sqlite3-api.ext.jses)
 # STRIP_K2.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with two -k flags.
 STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
@@ -88,6 +94,7 @@ STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
 dist: \
     $(bin.stripccomments) $(bin.version-info) \
     $(dist.build) $(STRIP_K1.js) $(STRIP_K2.js) \
+    $(dist.jswasm.extras) $(dist.common.extras) \
     $(MAKEFILE) $(MAKEFILE.dist)
 	@echo "Making end-user deliverables..."
 	@rm -fr $(dist-dir.top)
