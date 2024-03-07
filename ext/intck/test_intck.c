@@ -79,7 +79,7 @@ static int testIntckCmd(
     }
 
     case 1: assert( 0==strcmp("step", aCmd[iIdx].zName) ); {
-      int rc = sqlite3_intck_step(p->intck);
+      rc = sqlite3_intck_step(p->intck);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       break;
     }
@@ -92,7 +92,7 @@ static int testIntckCmd(
 
     case 3: assert( 0==strcmp("error", aCmd[iIdx].zName) ); {
       const char *zErr = 0;
-      int rc = sqlite3_intck_error(p->intck, 0);
+      rc = sqlite3_intck_error(p->intck, 0);
       Tcl_Obj *pRes = Tcl_NewObj();
       Tcl_ListObjAppendElement(
           interp, pRes, Tcl_NewStringObj(sqlite3ErrName(rc), -1)
@@ -106,7 +106,7 @@ static int testIntckCmd(
     }
 
     case 4: assert( 0==strcmp("unlock", aCmd[iIdx].zName) ); {
-      int rc = sqlite3_intck_unlock(p->intck);
+      rc = sqlite3_intck_unlock(p->intck);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       break;
     }
