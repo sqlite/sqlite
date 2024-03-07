@@ -592,7 +592,9 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 static void multiValuesSelect(Parse *pParse, Select *p, int bDel){
   MultiValues *pVal = pParse->pValues;
   sqlite3SelectPrep(pParse, p, 0);
-  if( bDel && p->pWin==0 ){
+  if( pParse->nErr ){
+    /* Do not attempt to continue coding if a prior error has been seen. */
+  }else if( bDel && p->pWin==0 ){
     /* Code this row directly. This is prefered as calling sqlite3Select() 
     ** too many times for a single Parse context leads to excessing realloc()
     ** calls. */
