@@ -307,8 +307,9 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 
 
 ########################################################################
-# C-PP.FILTER: a $(call)able to transform $(1) to $(2) via ./c-pp -f
-# $(1) ...
+# C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
+#
+#   ./c-pp -f $(1) -o $(2) $(3)
 #
 # Historical notes:
 #
@@ -452,12 +453,13 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 # the first OPFS VFS and necessarily an external file.
 SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
 SOAP.js.bld := $(dir.dout)/$(notdir $(SOAP.js))
-sqlite3-api.ext.jses += $(SOAP.js.bld)
+#
+# $(sqlite3-api.ext.jses) = API-related files which are standalone files,
+#   not part of the amalgamation.
+#
+sqlite3-api.ext.jses := $(SOAP.js.bld)
 $(SOAP.js.bld): $(SOAP.js)
 	cp $< $@
-
-all quick: $(sqlite3-api.ext.jses)
-q: quick
 
 ########################################################################
 # $(sqlite3-api*.*js) contain the core library code but not the
@@ -825,13 +827,13 @@ pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 # $4 = resulting sqlite-api JS/MJS file
 # $5 = resulting JS/MJS file
 # $6 = -D... flags for $(bin.c-pp)
-# $7 = emcc -sXYZ flags (CURRENTLY UNUSED - was factored out)
+# $7 = optional extra flags for emcc
 #
 # Maintenance reminder: be careful not to introduce spaces around args
 # ($1, $2), otherwise string concatenation will malfunction.
 #
-# emcc.environment.$(2) must be set to a value for emcc's
-# -sENVIRONMENT flag.
+# Before calling this, emcc.environment.$(2) must be set to a value
+# for emcc's -sENVIRONMENT flag.
 #
 # $(cflags.$(1)) and $(cflags.$(1).$(2)) may be defined to append
 # CFLAGS to a given build mode.
@@ -938,18 +940,39 @@ sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
 sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js
 sqlite3-worker1.js := $(dir.dout)/sqlite3-worker1.js
 sqlite3-worker1-promiser.js := $(dir.dout)/sqlite3-worker1-promiser.js
-sqlite3-worker1-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
+sqlite3-worker1-promiser.mjs := $(dir.dout)/sqlite3-worker1-promiser.mjs
+sqlite3-worker1-bundler-friendly.mjs := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.js),\
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.mjs),\
     $(c-pp.D.sqlite3-bundler-friendly)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
     $(sqlite3-worker1-promiser-bundler-friendly.js),\
     $(c-pp.D.sqlite3-bundler-friendly)))
-$(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.js) \
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.mjs),\
+    -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
+$(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.mjs) \
     $(sqlite3-worker1-promiser-bundler-friendly.js)
-$(sqlite3.js) $(sqlite3.mjs): $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js)
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
+    -Dtarget=es6-module))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
+    -Dtarget=es6-module))
+all: $(sqlite3-worker1.js) \
+    $(sqlite3-worker1-promiser.js) $(sqlite3-worker1-promiser.mjs)
+
+demo-worker1-promiser.html: $(sqlite3-worker1-promiser.js) demo-worker1-promiser.js
+demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
+all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
+
+sqlite3-api.ext.jses += \
+  $(sqlite3-worker1-promiser.mjs) \
+  $(sqlite3-worker1-bundler-friendly.mjs) \
+  $(sqlite3-worker1.js)
+all quick: $(sqlite3-api.ext.jses)
+q: quick
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
