@@ -577,13 +577,32 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+/*
+** The Select object passed as the second argument is a component of
+** a multi-row VALUES(...) clause that is part of an INSERT statement.
+** The entire VALUES clause will be coded as a co-routine. Each component
+** is coded by loading the N values returned by the select into an array
+** of registers at pParse->pValues->dest.iSdst followed by an OP_Yield
+** instruction (using register pParse->pValues->regYield).
+**
+** This function generates the co-routine code for the select passed as
+** the second argument. If argument bDel is true then the Select object
+** is deleted before returning.
+*/
 static void multiValuesSelect(Parse *pParse, Select *p, int bDel){
   MultiValues *pVal = pParse->pValues;
   sqlite3SelectPrep(pParse, p, 0);
   if( bDel && p->pWin==0 ){
+    /* Code this row directly. This is prefered as calling sqlite3Select() 
+    ** too many times for a single Parse context leads to excessing realloc()
+    ** calls. */
     sqlite3ExprCodeExprList(pParse, p->pEList, pVal->dest.iSdst, 0, 0);
     sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, pVal->regYield);
   }else{
+    /* Call the full sqlite3Select() function for this row. This is required
+    ** to handle any window functions, or if bDel is false - in this last
+    ** case this is because this call to sqlite3Select() is required to
+    ** fulling initialize pVal->dest.  */
     sqlite3Select(pParse, p, &pVal->dest);
   }
   if( bDel ){
@@ -591,7 +610,24 @@ static void multiValuesSelect(Parse *pParse, Select *p, int bDel){
   }
 }
 
-Select *sqlite3InsertMultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
+/*
+** This function is called by the parser to process the second and subsequent
+** rows of a multi-row VALUES(...) clause. Argument pLeft is the previous
+** row of the clause, pRow contains the expressions for the new row.
+**
+** Usually, this function allocates a new Select object using pRow as its
+** select-list, links it to pLeft via a TK_ALL operator and returns the
+** new object. The SF_MultiValue flag is cleared on pLeft and set on
+** the returned object.
+**
+** However, if (a) the VALUES clause is part of an INSERT statement and
+** (b) it now has more rows than the configured SQLITE_LIMIT_COMPOUND_SELECT
+** limit, then it is already known that each row of the VALUES clause will
+** be coded as part of a co-routine that returns all such rows. In this
+** case the co-routine may be coded incrementally by this routine. This is
+** done to save memory while parsing the large VALUES clause.
+*/
+Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   MultiValues *pVal = pParse->pValues;
   Select *pRight;
 

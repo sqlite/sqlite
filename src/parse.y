@@ -631,7 +631,7 @@ values(A) ::= VALUES(T) LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,f,0);
 }
 values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
-  A = sqlite3InsertMultiValues(pParse,A,Y);
+  A = sqlite3MultiValues(pParse,A,Y);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is

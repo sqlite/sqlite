@@ -4512,7 +4512,7 @@ struct MultiValues {
   int regYield;           /* Register used for co-routine */
 };
 
-Select *sqlite3InsertMultiValues(Parse*, Select*, ExprList*);
+Select *sqlite3MultiValues(Parse*, Select*, ExprList*);
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);

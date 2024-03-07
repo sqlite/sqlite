@@ -182,9 +182,50 @@ foreach {tn iLimit} {1 0    2 2} {
   do_execsql_test 3.$tn.1.2 {
     SELECT * FROM y1;
   } {1 2  3 4  1 6  1 7}
-
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE TABLE x1(a PRIMARY KEY, b) WITHOUT ROWID;
+}
+
+foreach {tn iLimit} {1 0    2 3} { 
+  sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT $iLimit
+
+  do_execsql_test 4.1.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, 1),
+        (2, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d')) ))
+  }
+  do_execsql_test 4.1.2 {
+    SELECT * FROM x1
+  } {1 1 2 a}
+
+  do_execsql_test 4.2.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, 1),
+        (2, 2),
+        (3, 3),
+        (4, 4),
+        (5, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d')) ))
+  }
+  do_execsql_test 4.2.2 {
+    SELECT * FROM x1
+  } {1 1 2 2 3 3 4 4 5 a}
+
+  do_execsql_test 4.3.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d'), ('e')) ))
+  }
+  do_execsql_test 4.3.2 {
+    SELECT * FROM x1
+  } {1 a}
+}
 
 
 finish_test
