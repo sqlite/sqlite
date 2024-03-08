@@ -12,6 +12,7 @@
 
 source [file join [file dirname [info script]] intck_common.tcl]
 set testprefix intckbusy
+return_if_no_intck
 
 
 

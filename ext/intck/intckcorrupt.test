@@ -15,6 +15,7 @@
 
 source [file join [file dirname [info script]] intck_common.tcl]
 set testprefix intckcorrupt
+return_if_no_intck
 
 #-------------------------------------------------------------------------
 reset_db
