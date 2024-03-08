@@ -1,5 +1,5 @@
-C Introducing\sJS\sworker1\spromiser\sv2,\swhich\sinitializes\svia\sPromise\s(instead\sof\sa\scallback\sfunction)\sand\scan\sbe\sloaded\sas\san\sESM\smodule.
-D 2024-03-07T19:29:53.171
+C Must\suse\ssqlite3IntFloatCompare()\sfor\saccurate\scomparisons\sbetween\svery\slarge\ninteger\sand\sfloating\spoint\svalues\sin\sRTREE.\s\sOtherwise\sthe\scomparison\sdoes\nnot\swork\son\sall\splatforms.\s\sFurther\sfix\sto\s[027e5336acc26f57].
+D 2024-03-08T03:24:09.798
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -506,7 +506,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c d87dfef2dd8ee2360898857187b9f763e90dcee9cf98f3f487ec473b6ae30db3
+F ext/rtree/rtree.c b6133dba5ae331fa6c1fc34df6aa623eba951b05ac35116f954a0bf7ab550436
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -632,8 +632,8 @@ F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b823
 F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32e7be5bf
 F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
 F ext/wasm/demo-jsstorage.js 44e3ae7ec2483b6c511384c3c290beb6f305c721186bcf5398ca4e00004a06b8
-F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a9ef7c42ff04d7a125ddca7e5db8 w ext/wasm/demo-worker1-promiser.html
-F ext/wasm/demo-worker1-promiser.c-pp.js fcc628cb42fcfaf07d250477801de1e6deb1e319d003976612a0db8d76b9fccc w ext/wasm/demo-worker1-promiser.js
+F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a9ef7c42ff04d7a125ddca7e5db8
+F ext/wasm/demo-worker1-promiser.c-pp.js fcc628cb42fcfaf07d250477801de1e6deb1e319d003976612a0db8d76b9fccc
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 836bece8615b17b1b572584f7b15912236a5947fe8c68b98d2737d7e287447ef
 F ext/wasm/dist.make f2ce42305268fe33d4b50f6e4bb3daf4a60302a90736eee382f1b8af9ff32ec1
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7fbdc1a849af3440579459bbb8797ebc7f9cce7b34d95675b8baa82db194ea9c 9347d9b9a69277e40ea2f3ec6e1ff37ea19d24b4af80c6230b10624173f2f17c
-R 45d7a69c537ca325c17486c899557483
-U stephan
-Z 1167a057df3ec3b4a36537840625ce5c
+P 2fbaf2f51d37f70ee26d45f0c62f32c15a9e03f68b6d2e2892115e7dc028b929
+R 9853c9517d878f0be47f300b894b10da
+U drh
+Z 35bc8555140472f74b11b6aaf0808349
 # Remove this line to create a well-formed Fossil manifest.
