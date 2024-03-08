@@ -15,6 +15,16 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
+ifcapable !vtab||!pragma {
+  proc return_if_no_intck {} {
+    finish_test
+    return -code return
+  }
+  return
+} else {
+  proc return_if_no_intck {} {}
+}
+
 proc do_intck {db {bSuspend 0}} {
   set ic [sqlite3_intck $db main]
 

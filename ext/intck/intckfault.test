@@ -12,8 +12,7 @@
 
 source [file join [file dirname [info script]] intck_common.tcl]
 set testprefix intckfault
-
-
+return_if_no_intck
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
@@ -36,8 +35,6 @@ do_faultsim_test 1 -faults oom-t* -prep {
   set res
 } -test {
   catch { $::ic close }
-puts $testresult
-puts $testnfail
   faultsim_test_result {0 {SQLITE_OK {}}} {0 {SQLITE_NOMEM {}}} {0 {SQLITE_NOMEM {out of memory}}}
 }
 

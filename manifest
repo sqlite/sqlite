@@ -1,5 +1,5 @@
-C Must\suse\ssqlite3IntFloatCompare()\sfor\saccurate\scomparisons\sbetween\svery\slarge\ninteger\sand\sfloating\spoint\svalues\sin\sRTREE.\s\sOtherwise\sthe\scomparison\sdoes\nnot\swork\son\sall\splatforms.\s\sFurther\sfix\sto\s[027e5336acc26f57].
-D 2024-03-08T03:24:09.798
+C Do\snot\srun\stests\sfor\sthe\sintck\sextension\sin\sOMIT_VIRTUAL_TABLE\sor\sOMIT_PRAGMA\sbuilds.
+D 2024-03-08T11:08:53.935
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -250,12 +250,12 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/intck/intck1.test 8a879640c90fdff5e91e6c2c41d509485ee634e8077fe0ca9f76be4cbd441fa3
-F ext/intck/intck2.test 47afb44681d13d11072cd8906e6aa877c967e65be788b01f6139922fd91474ef
-F ext/intck/intck_common.tcl 9e51458126576783f11051ac0fd25bea3f6b17f570a55884223737f3200b214b
+F ext/intck/intck1.test f3a3cba14b6aeff145ffa5515546dd22f7510dad91512e519f43b92b56514012
+F ext/intck/intck2.test d2457c7e5e5b688046d15ebe08a1e1427cc5e7a6dc8d6af215f42e8bcaf67304
+F ext/intck/intck_common.tcl a61fd2697ae55b0a3d89847ca0b590c6e0d8ff64bebb70920d93724799894159
 F ext/intck/intckbusy.test 0732fe3efbb9e0a53ffdcc240073f6ff2777ea82c3e08812b16494f650763fe1
 F ext/intck/intckcorrupt.test 3211ef68ac53e83951b6c8f6a8d2396506d123fe5898f97f848a25837744ec56
-F ext/intck/intckfault.test ba0213c9c8dce08d519d5251268a3bab076a184b4d07acdea23b65e89c9ae03c
+F ext/intck/intckfault.test cff3f75dff74abb3edfcb13f6aa53f6436746ab64b09fe5e2028f051e985efab
 F ext/intck/sqlite3intck.c 0d10df36e2b7b438aa80ecd3f5e584d41b747586b038258fe6b407f66b81e7c5
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c 34243458378a12d1356c79219a03f244800533b3ab65b4a02861f0403364df12
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fbaf2f51d37f70ee26d45f0c62f32c15a9e03f68b6d2e2892115e7dc028b929
-R 9853c9517d878f0be47f300b894b10da
-U drh
-Z 35bc8555140472f74b11b6aaf0808349
+P 820f106acff5f2cd01da0e95a0e6f2bcc087705bf8c08b730b1fdb08db5679c8
+R e79b9941107e8b2e4d5643573f5112b9
+U dan
+Z 20f09b597a6402ea271e837d23b82103
 # Remove this line to create a well-formed Fossil manifest.
