@@ -946,7 +946,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
                   || (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP0)!=0 );
 
           /* Jumps never go off the end of the bytecode array */
-          assert( pOp->p2<p->nOp );
+          assert( pOp->p2<p->nOp
+                  || (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)==0 );
           break;
         }
       }
