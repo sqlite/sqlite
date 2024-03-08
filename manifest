@@ -1,5 +1,5 @@
-C Silently\signore\sredundant\sON\sCONFLICT\sclauses\sin\san\sUPSERT.\s\sOnly\sthe\sfirst\nON\sCONFLICT\sfor\seach\sindex\sis\sactive.\s\sDo\snot\sissue\san\serror,\ssince\sthat\smight\nbreak\slegacy\squeries.\s\sBut\signore\sthe\sredundant\sON\sCONFLICT\sclauses\sto\sprevent\nproblems\ssuch\sas\sdescribed\sin\s[forum:/forumpost/919c6579c8|forum\spost\s919c6579c8].
-D 2024-03-08T14:01:48.797
+C Add\snew\sassert()\sstatements,\swhich\sif\sthey\shad\sexisted\sthree\syears\sago,\nwould\shave\sdetected\sthe\scode\sgenerator\sproblem\sfixed\sby\sthe\sprevious\scheck-in.
+D 2024-03-08T15:39:59.999
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -820,11 +820,11 @@ F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c f27a17e6e43fa362abea4db507a1c409f0adc8048ecf4c6479e8d162158ed529
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 7a33c5bb37e12ce35ac2d1d56a6429288b0b56c940ba660265c1428c67883729
+F src/vdbe.c da8407be6055f5751bf85681542d130a320b4fd1f4d8719bf83a464743d9aae4
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
-F src/vdbeaux.c 66161ba75c4a2d86aab124fe3cbcc2a752d8e4b1fc8c1fc6e00625db4798168c
+F src/vdbeaux.c e52815bc11fccedcc7acb14ae98c607a1c5b6c773ff4d584cd192432540502c9
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 213bf303826c0ef702e3a2a69dab2309d84b8381b822c6787885859fd7cd4c4e
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2101,7 +2101,7 @@ F tool/mkctimec.tcl a16682eae5f01f85e5861b2aa215ca0d46b4230658ee25977e02b4508566
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
 F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
-F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
+F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 32e359ccb21011958a821955254bd7a5fa7915d01a8c16fed91ffc8b40cb4adf
 F tool/mkshellc.tcl b7adf08b82de60811d2cb6af05ff59fc17e5cd6f3e98743c14eaaa3f8971fed0
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29d9eb7d55755604781e507f6ca36c50d62fa8d8589ab932d7cefca94ba24f3e
-R 854945d64d6a5cfe38a3cc1c6a5b5bd3
+P d0ea6b6ba64dba9d68c2b391ccf1171ea96fcdd7409dafdb2b697accb00246b8
+R e2ddfd9aa39901e567d105504257c018
 U drh
-Z 3c2e932dfbe4dcd203c5f3b4ed97d851
+Z 9df6c164111bd68c49bf51ae68acbbe9
 # Remove this line to create a well-formed Fossil manifest.
