@@ -1,5 +1,5 @@
-C Do\snot\srun\stests\sfor\sthe\sintck\sextension\sin\sOMIT_VIRTUAL_TABLE\sor\sOMIT_PRAGMA\sbuilds.
-D 2024-03-08T11:08:53.935
+C Fix\spragma6.test\sso\sthat\sit\sworks\swith\sENABLE_OVERSIZE_CELL_CHECK\sbuilds.
+D 2024-03-08T11:13:20.081
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1501,7 +1501,7 @@ F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
 F test/pragma4.test 9559cf5173864bf47c0431873d158fbeb72f920a59905b1f46069d8543eccdab
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
-F test/pragma6.test fc3b670ab8ed985b2e5faa870f0f81aba1bfd5c3877ef3214e2df88592ccd3e5
+F test/pragma6.test c5ec577ba087954b4dfa619a3cbe97b155b60a0af487527abe89b10fc17e6512
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
 F test/printf.test 685fec5a0c5af2490ab0632775a301554361d674211d690f5bee0a97b05333de
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 820f106acff5f2cd01da0e95a0e6f2bcc087705bf8c08b730b1fdb08db5679c8
-R e79b9941107e8b2e4d5643573f5112b9
+P de8130c020821a1615cceeb730423a2d6e01578caaaddeb11950363c4f8ea412
+R 7c7022496908a493f9a8f2b8a0b5ac5e
 U dan
-Z 20f09b597a6402ea271e837d23b82103
+Z 4eebf82ab948ebc787bc88c49fe0f5a5
 # Remove this line to create a well-formed Fossil manifest.
