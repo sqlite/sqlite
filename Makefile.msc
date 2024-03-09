@@ -2553,7 +2553,7 @@ mdevtest:
 
 # Testing for a release
 #
-releasetest: testfixture.exe fuzztest
+releasetest: testfixture.exe
 	testfixture.exe $(TOP)\test\testrunner.tcl release
 
 

@@ -1,11 +1,11 @@
-C The\sNOT\sNULL\sstrength\sreduction\soptimization\sfrom\s[de9c86c9e4cdb34f]\sshould\nbe\sapplied\sto\sthe\sWHERE\sclause\sonly.\s\sOtherwise,\sthe\soperand\sof\sthe\sIS\sNULL\nor\sIS\sNOT\sNULL\soperator\smight\sbe\sa\sreference\sto\sa\sbare\scolumn\sof\san\naggregate\stable,\sand\swe\scan't\stell\sif\sit\sis\sNULL\sor\snot\sbased\sonly\son\sits\nNOT\sNULL\sattribute.\s\s[forum:/forumpost/440f2a2f17|Forum\spost\s440f2a2f17].
-D 2024-03-08T21:37:18.921
+C Fuzzcheck\sis\srun\sautomatically\sby\stestrunner.tcl,\sso\sthere\sis\sno\sneed\sto\ninclude\sfuzzcheck\sas\sa\sseparate\sdependency\sfor\sthe\sreleasetest\starget\sin\nthe\sMSVC\smakefile.
+D 2024-03-09T13:31:10.052
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in ca8b906b1c3285fc32cff9978a5b827f99ae3d440077babf32c257a92a2ba11c
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 72c8436ee7528cb78f7318230548aab145ef05d15a8feed0f3cb251a26384403
+F Makefile.msc 7d88d6a654d86e6a1bede090f67d633d0a57c73e591d772fce8e15bfb07147f8
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION c84541c6a9e8426462176fbb1f9ecb5cfd7d1bb56228053ff7eeba8841673eb6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d401358329f5a70f9a0b9b033609a4db2af89b83c6b40242be0c76f3d6474def
-R 05ce52a0a931825416b225aa397af1ac
+P 51704feae224eff601db5607f8651da11b3c2ed8a58ffe5b6ee8260cab50695b
+R 66041f681c588cd6eeb93d190f070a45
 U drh
-Z ce9603354c09773b286e10e1291765af
+Z a7ed925f686a031dca2d1e814c8b92d8
 # Remove this line to create a well-formed Fossil manifest.
