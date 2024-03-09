@@ -16,6 +16,7 @@ if {![info exists testdir]} {
 } 
 source $testdir/tester.tcl
 set testprefix rtreeJ
+ifcapable !rtree { finish_test ; return }
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2);
