@@ -1,5 +1,5 @@
-C Fix\sthe\srtreeJ.test\smodule\sto\salign\sit\swith\s[cd017c28d516399e].
-D 2024-03-09T13:10:28.647
+C Reenable\sthe\suse\sof\sSQLITE_OMIT_VIRTUALTABLE\sby\sfixing\na\smisplaced\s#endif\scaused\sby\sthe\smerge\sat\s[c080560c2d0d753c].
+D 2024-03-09T13:17:12.892
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -731,7 +731,7 @@ F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c f86c9d7ab18db40b7a5c18f960ffd9bd21909330ac6e806de7d0cecc297e0d20
+F src/pragma.c b61a1a1801befe6763e787b96988deb156a56e82a2b4dea004bc78e4551c9d5c
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c d3392b2a20ee314ddeef34fb43c904bf4619eb20ff9a9e07e3950a7e4dcd6912
@@ -2160,8 +2160,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ebf59fa374000169e2ab3f353e2d7c15efd32e3ce2297e893461e6c303de5d4a
-R a0f64b9533a1d40ccade3ff5f42a1c08
+P 111b3d8270db4f61efd9f4c02636f50e44bd9547261d1d922de2708bc7a07151
+R 28a2f964bc69438d93f9129c1b7b165e
 U drh
-Z b7b0622948305f7dde1fae400ceffd36
+Z 2fb59d7cf4bcc6ddaf8b976ecd57985d
 # Remove this line to create a well-formed Fossil manifest.
