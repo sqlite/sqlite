@@ -12772,6 +12772,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifndef SQLITE_SHELL_FIDDLE
   /* In WASM mode we have to leave the db state in place so that
   ** client code can "push" SQL into it after this call returns. */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( data.expert.pExpert ){
+    expertFinish(&data, 1, 0);
+  }
+#endif
   free(azCmd);
   set_table_name(&data, 0);
   if( data.db ){
