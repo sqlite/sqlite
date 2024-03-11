@@ -423,10 +423,18 @@ const installOpfsVfs = function callee(options){
     });
     state.opfsFlags = Object.assign(Object.create(null),{
       /**
-         Flag for use with xOpen(). "opfs-unlock-asap=1" enables
-         this. See defaultUnlockAsap, below.
+         Flag for use with xOpen(). URI flag "opfs-unlock-asap=1"
+         enables this. See defaultUnlockAsap, below.
        */
       OPFS_UNLOCK_ASAP: 0x01,
+      /**
+         Flag for use with xOpen(). URI flag "delete-before-open=1"
+         tells the VFS to delete the db file before attempting to open
+         it. This can be used, e.g., to replace a db which has been
+         corrupted (without forcing us to expose a delete/unlink()
+         function in the public API).
+      */
+      OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
          If true, any async routine which implicitly acquires a sync
          access handle (i.e. an OPFS lock) will release that locks at
@@ -875,13 +883,17 @@ const installOpfsVfs = function callee(options){
         let opfsFlags = 0;
         if(0===zName){
           zName = randomFilename();
-        }else if('number'===typeof zName){
+        }else if(wasm.isPtr(zName)){
           if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
             /* -----------------------^^^^^ MUST pass the untranslated
                C-string here. */
             opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
           }
+          if(capi.sqlite3_uri_boolean(zName, "delete-before-open", 0)){
+            opfsFlags |= state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN;
+          }
           zName = wasm.cstrToJs(zName);
+          //warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
         }
         const fh = Object.create(null);
         fh.fid = pFile;
