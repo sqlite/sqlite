@@ -6956,7 +6956,10 @@ static int fillInCell(
     n = nHeader + nPayload;
     testcase( n==3 );
     testcase( n==4 );
-    if( n<4 ) n = 4;
+    if( n<4 ){
+      n = 4;
+      pPayload[nPayload] = 0;
+    }
     *pnSize = n;
     assert( nSrc<=nPayload );
     testcase( nSrc<nPayload );
@@ -9402,7 +9405,10 @@ int sqlite3BtreeInsert(
   if( flags & BTREE_PREFORMAT ){
     rc = SQLITE_OK;
     szNew = p->pBt->nPreformatSize;
-    if( szNew<4 ) szNew = 4;
+    if( szNew<4 ){
+      szNew = 4;
+      newCell[3] = 0;
+    }
     if( ISAUTOVACUUM(p->pBt) && szNew>pPage->maxLocal ){
       CellInfo info;
       pPage->xParseCell(pPage, newCell, &info);
