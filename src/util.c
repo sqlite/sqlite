@@ -627,6 +627,9 @@ do_atof_calc:
     u64 s2;
     rr[0] = (double)s;
     s2 = (u64)rr[0];
+#if defined(_MSC_VER) && _MSC_VER<1700
+    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+#endif
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
     if( e>0 ){
       while( e>=100  ){
@@ -1069,7 +1072,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   assert( p->n>0 );
   assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
-  if( iRound<0 ){
+  if( iRound<=0 ){
     iRound = p->iDP - iRound;
     if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;

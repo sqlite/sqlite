@@ -1763,31 +1763,7 @@ void sqlite3Pragma(
         int mxCol;              /* Maximum non-virtual column number */
 
         if( pObjTab && pObjTab!=pTab ) continue;
-        if( !IsOrdinaryTable(pTab) ){
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-          sqlite3_vtab *pVTab;
-          int a1;
-          if( !IsVirtual(pTab) ) continue;
-          if( pTab->nCol<=0 ){
-            const char *zMod = pTab->u.vtab.azArg[0];
-            if( sqlite3HashFind(&db->aModule, zMod)==0 ) continue;
-          }
-          sqlite3ViewGetColumnNames(pParse, pTab);
-          if( pTab->u.vtab.p==0 ) continue;
-          pVTab = pTab->u.vtab.p->pVtab;
-          if( NEVER(pVTab==0) ) continue;
-          if( NEVER(pVTab->pModule==0) ) continue;
-          if( pVTab->pModule->iVersion<4 ) continue;
-          if( pVTab->pModule->xIntegrity==0 ) continue;
-          sqlite3VdbeAddOp3(v, OP_VCheck, i, 3, isQuick);
-          pTab->nTabRef++;
-          sqlite3VdbeAppendP4(v, pTab, P4_TABLEREF);
-          a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
-          integrityCheckResultRow(v);
-          sqlite3VdbeJumpHere(v, a1);
-#endif
-          continue;
-        }
+        if( !IsOrdinaryTable(pTab) ) continue;
         if( isQuick || HasRowid(pTab) ){
           pPk = 0;
           r2 = 0;
@@ -1922,6 +1898,7 @@ void sqlite3Pragma(
               ** is REAL, we have to load the actual data using OP_Column
               ** to reliably determine if the value is a NULL. */
               sqlite3VdbeAddOp3(v, OP_Column, p1, p3, 3);
+              sqlite3ColumnDefault(v, pTab, j, 3);
               jmp3 = sqlite3VdbeAddOp2(v, OP_NotNull, 3, labelOk);
               VdbeCoverage(v);
             }           
@@ -2112,6 +2089,38 @@ void sqlite3Pragma(
           }
         }
       }
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+      /* Second pass to invoke the xIntegrity method on all virtual
+      ** tables.
+      */
+      for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+        Table *pTab = sqliteHashData(x);
+        sqlite3_vtab *pVTab;
+        int a1;
+        if( pObjTab && pObjTab!=pTab ) continue;
+        if( IsOrdinaryTable(pTab) ) continue;
+        if( !IsVirtual(pTab) ) continue;
+        if( pTab->nCol<=0 ){
+          const char *zMod = pTab->u.vtab.azArg[0];
+          if( sqlite3HashFind(&db->aModule, zMod)==0 ) continue;
+        }
+        sqlite3ViewGetColumnNames(pParse, pTab);
+        if( pTab->u.vtab.p==0 ) continue;
+        pVTab = pTab->u.vtab.p->pVtab;
+        if( NEVER(pVTab==0) ) continue;
+        if( NEVER(pVTab->pModule==0) ) continue;
+        if( pVTab->pModule->iVersion<4 ) continue;
+        if( pVTab->pModule->xIntegrity==0 ) continue;
+        sqlite3VdbeAddOp3(v, OP_VCheck, i, 3, isQuick);
+        pTab->nTabRef++;
+        sqlite3VdbeAppendP4(v, pTab, P4_TABLEREF);
+        a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
+        integrityCheckResultRow(v);
+        sqlite3VdbeJumpHere(v, a1);
+        continue;
+      }
+#endif
     }
     {
       static const int iLn = VDBE_OFFSET_LINENO(2);
