@@ -681,13 +681,22 @@ proc add_build_job {buildname target} {
 
   set dirname "[string tolower [string map {- _} $buildname]]_$target"
   set dirname "testrunner_bld_$dirname"
+  switch $target {
+    testfixture -
+    testfixture.exe {
+      set mktarget coretestprogs
+    }
+    default {
+      set mktarget $target
+    }
+  }
 
   set id [add_job                                \
     -displaytype bld                             \
     -displayname "Build $buildname ($target)"    \
     -dirname $dirname                            \
     -build $buildname                            \
-    -cmd  "$TRG(makecmd) $target"                \
+    -cmd  "$TRG(makecmd) $mktarget"              \
     -priority 3
   ]
 

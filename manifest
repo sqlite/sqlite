@@ -1,11 +1,11 @@
-C Fix\sthe\s".import"\scommand\sin\sthe\sCLI\sso\sthat\sit\sworks\scorrectly\swith\stables\nthat\scontain\scomputed\scolumns.\n[forum:/forumpost/ca014d7358|forum\spost\sca014d7358].
-D 2024-03-11T11:24:59.268
+C Run\sshell*.test\smodules\swith\s"make\smdevtest".
+D 2024-03-11T18:21:02.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in ca8b906b1c3285fc32cff9978a5b827f99ae3d440077babf32c257a92a2ba11c
+F Makefile.in 5f2389d2a3c44b56621bb5156a9cb6e2bef01f7ec14a19335b1559cf0474bdde
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 7d88d6a654d86e6a1bede090f67d633d0a57c73e591d772fce8e15bfb07147f8
+F Makefile.msc e64a52619310d3067f6c38f56eedd15918a82dade70954197d6da486ad99d7f4
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION c84541c6a9e8426462176fbb1f9ecb5cfd7d1bb56228053ff7eeba8841673eb6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1687,7 +1687,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
-F test/testrunner.tcl 8e2a5c7550b78d3283eee6103104ae2bcf56aa1df892dbd1608f27b93ebf4de8
+F test/testrunner.tcl 277bf6ed811b1f07796eedf8b5740ef521fc7fa99bd50faad9760a1fa53653b3
 F test/testrunner_data.tcl 7ffd951527bbc614e723fd8d123b6834321878530696adecfdf6035100bac64e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb8d9c269c01f78f09069a2361e15087d9aeac63e9f1fd63fbd96b951384e9aa
-R 9bba8f8b4bc3bf41627766fe1aa44b9c
+P 95a9c88b258f18ac671a4c712603931167cc8bd0b86e41481b200c08043338b5
+R 29b12e6b8f2a6bc2a8ea9a08c15b926a
 U drh
-Z 1d2e3bf230fd6cd6fbc6ff6c84cfd8fb
+Z a3f33edbc2a09bf20230f9f2220bf336
 # Remove this line to create a well-formed Fossil manifest.

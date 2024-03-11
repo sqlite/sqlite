@@ -2496,9 +2496,9 @@ extensiontest:	testfixture.exe testloadext.dll
 tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
-coretestprogs:	$(TESTPROGS)
+coretestprogs:	testfixture.exe sqlite3.exe
 
-testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
+testprogs:	$(TESTPROGS) srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
 fulltest:	alltest fuzztest
 
