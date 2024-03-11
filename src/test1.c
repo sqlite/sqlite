@@ -992,6 +992,39 @@ static void intrealFunction(
 }
 
 /*
+** These SQL functions attempt to return a value (their first argument)
+** that has been modified to have multiple datatypes.  For example both
+** TEXT and INTEGER.
+*/
+static void addTextTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_text(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+static void addIntTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_int64(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+static void addRealTypeFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  (void)sqlite3_value_double(argv[0]);
+  (void)argc;
+  sqlite3_result_value(context, argv[0]);
+}
+
+/*
 ** SQL function:  strtod(X)
 **
 ** Use the C-library strtod() function to convert string X into a double.
@@ -1101,6 +1134,22 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "intreal", 1, SQLITE_UTF8,
           0, intrealFunction, 0, 0);
+  }
+
+  /* The add_text_type(), add_int_type(), and add_real_type() functions
+  ** attempt to return a value that has multiple datatypes.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_text_type", 1, SQLITE_UTF8,
+          0, addTextTypeFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_int_type", 1, SQLITE_UTF8,
+          0, addIntTypeFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "add_real_type", 1, SQLITE_UTF8,
+          0, addRealTypeFunction, 0, 0);
   }
 
   /* Functions strtod() and dtostr() work as in the shell.  These routines

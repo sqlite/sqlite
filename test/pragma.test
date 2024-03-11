@@ -556,6 +556,21 @@ ifcapable altertable {
   do_execsql_test pragma-3.23 {
     PRAGMA integrity_check(1);
   } {{non-unique entry in index t1a}}
+
+  # forum post https://sqlite.org/forum/forumpost/ee4f6fa5ab
+  do_execsql_test pragma-3.24 {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES (1);
+    ALTER TABLE t1 ADD COLUMN b NOT NULL DEFAULT 0.25;
+    SELECT * FROM t1;
+    PRAGMA integrity_check(t1);
+  } {1 0.25 ok}
+  do_execsql_test pragma-3.25 {
+    ALTER TABLE t1 ADD COLUMN c CHECK (1);
+    SELECT * FROM t1;
+    PRAGMA integrity_check(t1);
+  } {1 0.25 {} ok}
 }
 
 # PRAGMA integrity check (or more specifically the sqlite3BtreeCount()

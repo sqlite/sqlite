@@ -161,8 +161,8 @@ static struct GlobalVars {
 /*
 ** Include the external vt02.c and randomjson.c modules.
 */
-extern int sqlite3_vt02_init(sqlite3*,char***,void*);
-extern int sqlite3_randomjson_init(sqlite3*,char***,void*);
+extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
+extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
 
 
 /*
