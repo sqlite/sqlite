@@ -1123,6 +1123,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00010000     Beginning of DELETE/INSERT/UPDATE processing
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
+**   0x00080000     NOT NULL strength reduction
 */
 
 /*
@@ -3468,6 +3469,7 @@ struct NameContext {
 #define NC_InAggFunc 0x020000 /* True if analyzing arguments to an agg func */
 #define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
 #define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
+#define NC_Where     0x100000 /* Processing WHERE clause of a SELECT */
 #define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
@@ -3491,6 +3493,7 @@ struct Upsert {
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
   u8 isDoUpdate;            /* True for DO UPDATE.  False for DO NOTHING */
+  u8 isDup;                 /* True if 2nd or later with same pUpsertIdx */
   /* Above this point is the parse tree for the ON CONFLICT clauses.
   ** The next group of fields stores intermediate data. */
   void *pToFree;            /* Free memory when deleting the Upsert object */
@@ -5593,7 +5596,7 @@ const char *sqlite3JournalModename(int);
   Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
-  int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
+  int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*,Upsert*);
   void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
   Upsert *sqlite3UpsertOfIndex(Upsert*,Index*);
   int sqlite3UpsertNextIsIPK(Upsert*);
