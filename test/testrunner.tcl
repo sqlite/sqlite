@@ -719,7 +719,7 @@ proc add_shell_build_job {buildname dirname depid} {
   global TRG
 
   if {$TRG(platform)=="win"} {
-    set path [string map {/ \\} "$dirname/"
+    set path [string map {/ \\} "$dirname/"]
     set copycmd "xcopy /S $TRG(shell) $path"
   } else {
     set copycmd "cp $TRG(shell) $dirname/"
