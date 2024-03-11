@@ -2888,18 +2888,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){
+        T.assert(capi.sqlite3_vfs_find('opfs'));
+        const opfs = sqlite3.opfs;
         const filename = this.opfsDbFile = '/dir/sqlite3-tester1.db';
-        const pVfs = this.opfsVfs = capi.sqlite3_vfs_find('opfs');
-        T.assert(pVfs);
-        const unlink = this.opfsUnlink =
-              (fn=filename)=>{sqlite3.util.sqlite3__wasm_vfs_unlink(pVfs,fn)};
-        unlink();
-        let db = new sqlite3.oo1.OpfsDb(filename);
+        const fileUri = 'file://'+filename+'?delete-before-open=1';
+        const initSql = [
+          'create table p(a);',
+          'insert into p(a) values(1),(2),(3)'
+        ];
+        let db = new sqlite3.oo1.OpfsDb(fileUri);
         try {
-          db.exec([
-            'create table p(a);',
-            'insert into p(a) values(1),(2),(3)'
-          ]);
+          db.exec(initSql);
           T.assert(3 === db.selectValue('select count(*) from p'));
           db.close();
           db = new sqlite3.oo1.OpfsDb(filename);
@@ -2911,7 +2910,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                     && 0===this.opfsDbExport.byteLength % 512);
         }finally{
           db.close();
-          unlink();
+        }
+        T.assert(await opfs.entryExists(filename));
+        try {
+          db = new sqlite3.oo1.OpfsDb(fileUri);
+          db.exec(initSql) /* will throw if delete-before-open did not work */;
+          T.assert(3 === db.selectValue('select count(*) from p'));
+        }finally{
+          if(db) db.close();
         }
       }
     }/*OPFS db sanity checks*/)
@@ -2919,15 +2925,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'OPFS import',
       test: async function(sqlite3){
         let db;
+        const filename = this.opfsDbFile;
         try {
           const exp = this.opfsDbExport;
-          const filename = this.opfsDbFile;
           delete this.opfsDbExport;
           this.opfsImportSize = await sqlite3.oo1.OpfsDb.importDb(filename, exp);
           db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
           T.assert(6 === db.selectValue('select count(*) from p')).
             assert( this.opfsImportSize == exp.byteLength );
           db.close();
+          const unlink = this.opfsUnlink =
+                (fn=filename)=>sqlite3.util.sqlite3__wasm_vfs_unlink("opfs",fn);
           this.opfsUnlink(filename);
           T.assert(!(await sqlite3.opfs.entryExists(filename)));
           // Try again with a function as an input source:
@@ -2954,11 +2962,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: '(Internal-use) OPFS utility APIs',
       test: async function(sqlite3){
         const filename = this.opfsDbFile;
-        const pVfs = this.opfsVfs;
         const unlink = this.opfsUnlink;
-        T.assert(filename && pVfs && !!unlink);
+        T.assert(filename && !!unlink);
         delete this.opfsDbFile;
-        delete this.opfsVfs;
         delete this.opfsUnlink;
         /**************************************************************
            ATTENTION CLIENT-SIDE USERS: sqlite3.opfs is NOT intended
