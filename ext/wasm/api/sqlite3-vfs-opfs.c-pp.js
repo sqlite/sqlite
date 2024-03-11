@@ -433,6 +433,13 @@ const installOpfsVfs = function callee(options){
          it. This can be used, e.g., to replace a db which has been
          corrupted (without forcing us to expose a delete/unlink()
          function in the public API).
+
+         Failure to unlink the file is ignored but may lead to
+         downstream errors.  An unlink can fail if, e.g., another tab
+         has the handle open.
+
+         It goes without saying that deleting a file out from under another
+         instance results in Undefined Behavior.
       */
       OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**

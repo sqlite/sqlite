@@ -1,5 +1,5 @@
-C Add\sdelete-before-open=1\sURI\sflag\sto\sthe\s'opfs'\sVFS\sto\stell\sit\sto\sxDelete\sthe\sdb\sfile\sbefore\sopening\sit,\sprimarily\sto\senable\susers\sto\swork\saround\sa\scorrupt\sdb\swithout\shaving\sto\sreach\sinto\sOPFS-specific\sAPIs\sto\sremove\sthe\sdb\sfile.
-D 2024-03-11T09:34:38.171
+C Add\smore\sdocs\sfor\sthe\sOPFS\sdelete-before-open\sfeature.
+D 2024-03-11T09:39:52.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d299
 F ext/wasm/api/sqlite3-opfs-async-proxy.js b4c7ce9d7f7957f243d0fbd5b6e28bac80cd3c1b738374cd0c96d89df8f2f316
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 5a430874906ff3f4a6ca69aadf0c2aaedc1bb45489b8365bff7e955a83a8d42a
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js fb12aa55667109cfd76b5f645c4a4aec1a8ed9af59d62e05604b39e6390f54aa
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3c72f1a0e6a7343c8c882d29d01bb440f10be12c844651605b486e76f3d6cc8c
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js a2fcbc3fecdd0eea229283584ebc122f29d98194083675dbe5cb2cf3a17fe309
 F ext/wasm/api/sqlite3-wasm.c d33a16495ca871781e78812d3a18fed78b797468fffee657b8d7199b277ff359
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bd89edfe42a4d7122a6d6d405c5423cf00aabba1f76f6ea8e2dba9c628ddd91a
@@ -2177,9 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ead022edaf7a0cd6a8976a1261246084975c9a5be5c893f6c751bb5f963ac0f e83f9788636f7f9bcca7d2a09620c13ab4eb83436d5b2946a827e48addf0267d
-R 9e249fa0727bf1c60716395bdc490ae1
-T +closed e83f9788636f7f9bcca7d2a09620c13ab4eb83436d5b2946a827e48addf0267d Closed\sby\sintegrate-merge.
+P e87cf0d7700d33a439c91725460fbfe3a1765b48f71b4d73c38cadf6c166e0bd
+R 86fc5680f4ee4960f4c1dcde68c7d5ad
 U stephan
-Z e48b52f183c07790d9437c2d350f2700
+Z ee95146c516bc7ecdb021be98ac7e603
 # Remove this line to create a well-formed Fossil manifest.
