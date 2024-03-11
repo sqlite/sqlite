@@ -1,0 +1,256 @@
+# 2024 March 3
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix values
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE x1(a, b, c);
+}
+
+
+explain_i {
+  INSERT INTO x1(a, b, c) VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
+}
+do_execsql_test 1.1.1 {
+  INSERT INTO x1 VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
+}
+do_execsql_test 1.1.2 {
+  SELECT * FROM x1;
+} {
+  1 1 1
+  2 2 2
+  3 3 3
+  4 4 4
+}
+
+do_execsql_test 1.2.0 {
+  DELETE FROM x1
+}
+do_execsql_test 1.2.1 {
+  INSERT INTO x1 VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3) UNION ALL SELECT 4, 4, 4;
+  SELECT * FROM x1;
+} {1 1 1  2 2 2   3 3 3  4 4 4}
+
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 4
+
+do_execsql_test 1.2.2 {
+  DELETE FROM x1;
+  INSERT INTO x1 
+  VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5) 
+  UNION ALL SELECT 6, 6, 6;
+  SELECT * FROM x1;
+} {1 1 1  2 2 2   3 3 3  4 4 4  5 5 5  6 6 6}
+
+do_execsql_test 1.2.3 {
+  DELETE FROM x1;
+  INSERT INTO x1 
+  VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)
+  UNION ALL SELECT 6, 6, 6;
+  SELECT * FROM x1;
+} {1 1 1  2 2 2   3 3 3  4 4 4  6 6 6}
+
+do_execsql_test 1.2.4 {
+  DELETE FROM x1;
+  INSERT INTO x1 VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3) UNION ALL SELECT 6, 6, 6;
+  SELECT * FROM x1;
+} {
+ 1 1 1
+ 2 2 2
+ 3 3 3
+ 6 6 6
+}
+
+set a 4
+set b 5
+set c 6
+do_execsql_test 1.2.5 {
+  DELETE FROM x1;
+  INSERT INTO x1 
+  VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), 
+        (4, 4, $a), (5, 5, $b), (6, 6, $c)
+}
+
+do_execsql_test 1.2.6 {
+  SELECT * FROM x1;
+} {
+  1 1 1
+  2 2 2
+  3 3 3
+  4 4 4
+  5 5 5
+  6 6 6
+}
+
+#-------------------------------------------------------------------------
+# SQLITE_LIMIT_COMPOUND_SELECT set to 0.
+#
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a, b, c);
+}
+
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 3
+
+do_catchsql_test 2.1.1 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10, 10)
+} {1 {all VALUES must have the same number of terms}}
+
+do_catchsql_test 2.1.2 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+} {1 {all VALUES must have the same number of terms}}
+
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 0
+
+do_execsql_test 2.2 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+} {}
+do_execsql_test 2.3 {
+  INSERT INTO x1 VALUES
+      (1, 1, 1), 
+      (2, 2, 2), 
+      (3, 3, 3), 
+      (4, 4, 4), 
+      (5, 5, 5), 
+      (6, 6, 6), 
+      (7, 7, 7), 
+      (8, 8, 8), 
+      (9, 9, 9), 
+      (10, 10, 10)
+      UNION ALL 
+      SELECT 5, 12, 12
+      ORDER BY 1
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE y1(x, y);
+}
+
+do_execsql_test 3.1.1 {
+  DELETE FROM y1;
+  INSERT INTO y1 VALUES(1, 2), (3, 4), (row_number() OVER (), 5);
+}
+do_execsql_test 3.1.2 {
+  SELECT * FROM y1;
+} {1 2  3 4  1 5}
+do_execsql_test 3.2.1 {
+  DELETE FROM y1;
+  INSERT INTO y1 VALUES(1, 2), (3, 4), (row_number() OVER (), 6)
+    , (row_number() OVER (), 7)
+}
+do_execsql_test 3.1.2 {
+  SELECT * FROM y1;
+} {1 2  3 4  1 6  1 7}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE TABLE x1(a PRIMARY KEY, b) WITHOUT ROWID;
+}
+
+foreach {tn iLimit} {1 0    2 3} { 
+  sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT $iLimit
+
+  do_execsql_test 4.1.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, 1),
+        (2, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d')) ))
+  }
+  do_execsql_test 4.1.2 {
+    SELECT * FROM x1
+  } {1 1 2 a}
+
+  do_execsql_test 4.2.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, 1),
+        (2, 2),
+        (3, 3),
+        (4, 4),
+        (5, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d')) ))
+  }
+  do_execsql_test 4.2.2 {
+    SELECT * FROM x1
+  } {1 1 2 2 3 3 4 4 5 a}
+
+  do_execsql_test 4.3.1 {
+    DELETE FROM x1;
+    INSERT INTO x1 VALUES
+        (1, (SELECT * FROM  (VALUES('a'), ('b'), ('c'), ('d'), ('e')) ))
+  }
+  do_execsql_test 4.3.2 {
+    SELECT * FROM x1
+  } {1 a}
+}
+
+#------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE VIEW v1 AS VALUES(1, 2, 3), (4, 5, 6), (7, 8, 9);
+}
+do_execsql_test 5.1 {
+  SELECT * FROM v1
+} {1 2 3 4 5 6 7 8 9}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1), (2);
+}
+
+do_execsql_test 6.1 {
+  SELECT ( VALUES( x ), ( x ) ) FROM t1;
+} {1 2}
+
+
+finish_test

@@ -562,9 +562,13 @@ cmd ::= select(X).  {
 }
 
 %ifndef SQLITE_OMIT_CTE
-select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
-select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
+select(A) ::= withkw wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
+select(A) ::= withkw RECURSIVE wqlist(W) selectnowith(X).
                                               {A = attachWithToSelect(pParse,X,W);}
+
+withkw ::= WITH. {
+  pParse->bHasWith = 1;
+}
 %endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(A). {
   Select *p = A;
@@ -622,7 +626,9 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 %endif
 
 
-oneselect(A) ::= values(A).
+oneselect(A) ::= values(A). {
+  sqlite3MultiValuesEnd(pParse, A);
+}
 
 %type values {Select*}
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
@@ -630,16 +636,7 @@ values(A) ::= VALUES LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
 }
 values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
-  Select *pRight, *pLeft = A;
-  pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0);
-  if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
-  if( pRight ){
-    pRight->op = TK_ALL;
-    pRight->pPrior = pLeft;
-    A = pRight;
-  }else{
-    A = pLeft;
-  }
+  A = sqlite3MultiValues(pParse, A, Y);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
@@ -1754,8 +1751,8 @@ anylist ::= anylist ANY.
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
-with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
-with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
+with ::= withkw wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
+with ::= withkw RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
 %type wqas {u8}
 wqas(A)   ::= AS.                  {A = M10d_Any;}

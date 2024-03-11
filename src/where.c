@@ -6896,6 +6896,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( pTabItem->fg.viaCoroutine ){
       testcase( pParse->db->mallocFailed );
+      assert( pTabItem->regResult>=0 );
       translateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
                             pTabItem->regResult, 0);
       continue;

@@ -577,6 +577,104 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
+  if( pVal->pSrc->nSrc>0 ){
+    SrcItem *pItem = &pVal->pSrc->a[0];
+    sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->regReturn);
+    sqlite3VdbeJumpHere(pParse->pVdbe, pItem->addrFillSub - 1);
+  }
+}
+
+static int multiValueIsConstant(ExprList *pRow){
+  int ii;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    if( 0==sqlite3ExprIsConstant(pRow->a[ii].pExpr) ) return 0;
+  }
+  return 1;
+}
+
+Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
+  SrcItem *p;
+  SelectDest dest;
+  Select *pSelect = 0;
+
+  if( pParse->db->init.busy 
+   || pParse->pNewTrigger
+   || pParse->bHasWith
+   || multiValueIsConstant(pRow)==0
+   || pLeft->pPrior
+  ){
+    int f = SF_Values | SF_MultiValue;
+    if( pLeft->pPrior || pLeft->pSrc->nSrc ){
+      sqlite3MultiValuesEnd(pParse, pLeft);
+      f = SF_Values;
+    }
+    /* This VALUES clause is part of a VIEW or some other schema item. In
+    ** this case the co-routine cannot be coded immediately.  */
+    pSelect = sqlite3SelectNew(pParse,pRow,0,0,0,0,0,f,0);
+    pLeft->selFlags &= ~SF_MultiValue;
+    if( pSelect ){
+      pSelect->op = TK_ALL;
+      pSelect->pPrior = pLeft;
+      pLeft = pSelect;
+    }
+  }else{
+
+    if( pLeft->pSrc->nSrc==0 ){
+      /* Co-routine has not yet been started. */
+      Vdbe *v = sqlite3GetVdbe(pParse);
+      Select *pRet;
+  
+      if( v==0 ) return pLeft;
+      pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
+      if( pRet==0 ) return pLeft;
+      p = &pRet->pSrc->a[0];
+      pRet->pSrc->nSrc = 1;
+  
+      p->pSelect = pLeft;
+      p->fg.viaCoroutine = 1;
+      p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
+      p->regReturn = ++pParse->nMem;
+  
+      sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
+      sqlite3Select(pParse, pLeft, &dest);
+      p->regResult = dest.iSdst;
+      assert( pParse->nErr || dest.iSdst>0 );
+  
+      pLeft = pRet;
+    }else{
+      p = &pLeft->pSrc->a[0];
+    }
+  
+    if( pParse->nErr==0 ){
+      pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, SF_Values, 0);
+      if( pSelect ){
+        if( p->pSelect->pEList->nExpr!=pSelect->pEList->nExpr ){
+          sqlite3SelectWrongNumTermsError(pParse, pSelect);
+        }else{
+          sqlite3SelectPrep(pParse, pSelect, 0);
+#ifndef SQLITE_OMIT_WINDOWFUNC
+          if( pSelect->pWin ){
+            sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
+            dest.iSdst = p->regResult;
+            dest.nSdst = pRow->nExpr;
+            dest.iSDParm = p->regReturn;
+            sqlite3Select(pParse, pSelect, &dest);
+          }else
+#endif
+          {
+            sqlite3ExprCodeExprList(pParse, pSelect->pEList,p->regResult,0,0);
+            sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, p->regReturn);
+          }
+        }
+        sqlite3SelectDelete(pParse->db, pSelect);
+      }
+    }
+  }
+
+  return pLeft;
+}
 
 /* Forward declaration */
 static int xferOptimization(
@@ -914,24 +1012,31 @@ void sqlite3Insert(
     /* Data is coming from a SELECT or from a multi-row VALUES clause.
     ** Generate a co-routine to run the SELECT. */
     int regYield;       /* Register holding co-routine entry-point */
-    int addrTop;        /* Top of the co-routine */
     int rc;             /* Result code */
 
-    regYield = ++pParse->nMem;
-    addrTop = sqlite3VdbeCurrentAddr(v) + 1;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
-    sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
-    dest.iSdst = bIdListInOrder ? regData : 0;
-    dest.nSdst = pTab->nCol;
-    rc = sqlite3Select(pParse, pSelect, &dest);
-    regFromSelect = dest.iSdst;
-    assert( db->pParse==pParse );
-    if( rc || pParse->nErr ) goto insert_cleanup;
-    assert( db->mallocFailed==0 );
-    sqlite3VdbeEndCoroutine(v, regYield);
-    sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
-    assert( pSelect->pEList );
-    nColumn = pSelect->pEList->nExpr;
+    if( pSelect->pSrc->nSrc==1 && pSelect->pSrc->a[0].fg.viaCoroutine ){
+      SrcItem *pItem = &pSelect->pSrc->a[0];
+      dest.iSDParm = regYield = pItem->regReturn;
+      regFromSelect = pItem->regResult;
+      nColumn = pItem->pSelect->pEList->nExpr;
+    }else{
+      int addrTop;        /* Top of the co-routine */
+      regYield = ++pParse->nMem;
+      addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
+      dest.iSdst = bIdListInOrder ? regData : 0;
+      dest.nSdst = pTab->nCol;
+      rc = sqlite3Select(pParse, pSelect, &dest);
+      regFromSelect = dest.iSdst;
+      assert( db->pParse==pParse );
+      if( rc || pParse->nErr ) goto insert_cleanup;
+      assert( db->mallocFailed==0 );
+      sqlite3VdbeEndCoroutine(v, regYield);
+      sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
+      assert( pSelect->pEList );
+      nColumn = pSelect->pEList->nExpr;
+    }
 
     /* Set useTempTable to TRUE if the result of the SELECT statement
     ** should be written into a temporary table (template 4).  Set to

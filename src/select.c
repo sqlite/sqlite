@@ -7636,7 +7636,7 @@ int sqlite3Select(
     /* Generate code for all sub-queries in the FROM clause
     */
     pSub = pItem->pSelect;
-    if( pSub==0 ) continue;
+    if( pSub==0 || pItem->addrFillSub!=0 ) continue;
 
     /* The code for a subquery should only be generated once. */
     assert( pItem->addrFillSub==0 );

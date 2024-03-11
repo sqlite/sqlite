@@ -1869,6 +1869,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     pNewItem->iCursor = pOldItem->iCursor;
     pNewItem->addrFillSub = pOldItem->addrFillSub;
     pNewItem->regReturn = pOldItem->regReturn;
+    pNewItem->regResult = pOldItem->regResult;
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }

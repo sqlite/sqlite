@@ -3812,6 +3812,7 @@ struct Parse {
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
+  u8 bHasWith;         /* True if statement contains WITH */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
@@ -4485,6 +4486,9 @@ struct Window {
   u8 bExprArgs;           /* Defer evaluation of window function arguments
                           ** due to the SQLITE_SUBTYPE flag */
 };
+
+Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow);
+void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal);
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
