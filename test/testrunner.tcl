@@ -175,7 +175,7 @@ switch -nocase -glob -- $tcl_platform(os) {
   *win* {
     set TRG(platform)    win
     set TRG(make)        make.bat
-    set TRG(makecmd)     make.bat
+    set TRG(makecmd)     "call make.bat"
     set TRG(testfixture) testfixture.exe
     set TRG(shell)       sqlite3.exe
     set TRG(run)         run.bat
@@ -720,7 +720,7 @@ proc add_shell_build_job {buildname dirname depid} {
 
   if {$TRG(platform)=="win"} {
     set path [string map {/ \\} "$dirname/"]
-    set copycmd "xcopy /S $TRG(shell) $path"
+    set copycmd "xcopy $TRG(shell) $path"
   } else {
     set copycmd "cp $TRG(shell) $dirname/"
   }
