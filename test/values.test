@@ -252,5 +252,16 @@ do_execsql_test 6.1 {
   SELECT ( VALUES( x ), ( x ) ) FROM t1;
 } {1 2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('x'), ('y');
+}
+
+do_execsql_test 6.1 {
+  SELECT * FROM t1, (VALUES(1), (2))
+} {x 1 x 2 y 1 y 2}
 
 finish_test
+

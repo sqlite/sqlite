@@ -635,6 +635,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       p->fg.viaCoroutine = 1;
       p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
       p->regReturn = ++pParse->nMem;
+      p->iCursor = -1;
   
       sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
       sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
