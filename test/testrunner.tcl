@@ -994,6 +994,11 @@ proc launch_another_job {iJob} {
     close $fd
   }
 
+  set job_cmd $job(cmd)
+  if {$TRG(platform)!="win"} {
+    set job_cmd "export SQLITE_TMPDIR=\"[file normalize $dir]\"\n$job_cmd"
+  }
+
   if { $TRG(dryrun) } {
 
     mark_job_as_finished $job(jobid) "" done 0
@@ -1008,7 +1013,7 @@ proc launch_another_job {iJob} {
     set pwd [pwd]
     cd $dir
     set fd [open $TRG(run) w]
-    puts $fd $job(cmd) 
+    puts $fd $job_cmd
     close $fd
     set fd [open "|$TRG(runcmd) 2>@1" r]
     cd $pwd
