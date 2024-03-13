@@ -616,13 +616,16 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
    || pLeft->pPrior
    || (pLeft->pSrc->nSrc==0 && multiValueIsConstantNoAff(pLeft->pEList)==0)
   ){
+    /* This row of the VALUES clause cannot be coded immediately. */
     int f = SF_Values | SF_MultiValue;
-    if( pLeft->pPrior || pLeft->pSrc->nSrc ){
+    if( pLeft->pSrc->nSrc ){
       sqlite3MultiValuesEnd(pParse, pLeft);
       f = SF_Values;
+    }else if( pLeft->pPrior ){
+      /* In this case set the SF_MultiValue flag only if it was set on
+      ** the previous Select structure. */
+      f = (f & pLeft->selFlags);
     }
-    /* This VALUES clause is part of a VIEW or some other schema item. In
-    ** this case the co-routine cannot be coded immediately.  */
     pSelect = sqlite3SelectNew(pParse,pRow,0,0,0,0,0,f,0);
     pLeft->selFlags &= ~SF_MultiValue;
     if( pSelect ){
