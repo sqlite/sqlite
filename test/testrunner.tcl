@@ -95,6 +95,8 @@ of sub-processes the test script uses to run tests.
 The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
 available configurations enter "$a0 script help".
+
+Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
 
   exit 1

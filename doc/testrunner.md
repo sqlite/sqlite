@@ -17,7 +17,6 @@
   <li> 3.3. <a href=#source_code_test_failures>Investigating Source Code Test Failures</a>
 </ul>
   <li> 4. <a href=#testrunner_options>Extra testrunner.tcl Options</a>
-# 4. Extra testrunner.tcl Options
   <li> 5. <a href=#cpu_cores>Controlling CPU Core Utilization</a>
 </ul>
 
