@@ -267,5 +267,18 @@ do_execsql_test 6.2 {
   VALUES(CAST(44 AS REAL)),(55);
 } {44.0 55}
 
+#------------------------------------------------------------------------
+do_execsql_test 7.1 {
+  WITH x1(a, b) AS (
+    VALUES(1, 2), ('a', 'b')
+  )
+  SELECT * FROM x1 one, x1 two
+} {
+  1 2  1 2
+  1 2  a b
+  a b  1 2
+  a b  a b
+}
+
 finish_test
 

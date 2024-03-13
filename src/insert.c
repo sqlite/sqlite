@@ -577,6 +577,11 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+/*
+** If argument pVal is a Select object returned by an sqlite3MultiValues()
+** that was able to use the co-routine optimization, finish coding the
+** co-routine.
+*/
 void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
   if( pVal && pVal->pSrc->nSrc>0 ){
     SrcItem *pItem = &pVal->pSrc->a[0];
@@ -585,7 +590,11 @@ void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
   }
 }
 
-static int multiValueIsConstant(ExprList *pRow){
+/*
+** Return true if all expressions in the expression-list passed as the
+** only argument are constant.
+*/
+static int exprListIsConstant(ExprList *pRow){
   int ii;
   for(ii=0; ii<pRow->nExpr; ii++){
     if( 0==sqlite3ExprIsConstant(pRow->a[ii].pExpr) ) return 0;
@@ -593,9 +602,13 @@ static int multiValueIsConstant(ExprList *pRow){
   return 1;
 }
 
-static int multiValueIsConstantNoAff(ExprList *pRow){
+/*
+** Return true if all expressions in the expression-list passed as the
+** only argument are both constant and have no affinity.
+*/
+static int exprListIsNoAffinity(ExprList *pRow){
   int ii;
-  if( multiValueIsConstant(pRow)==0 ) return 0;
+  if( exprListIsConstant(pRow)==0 ) return 0;
   for(ii=0; ii<pRow->nExpr; ii++){
     assert( pRow->a[ii].pExpr->affExpr==0 );
     if( 0!=sqlite3ExprAffinity(pRow->a[ii].pExpr) ) return 0;
@@ -606,17 +619,64 @@ static int multiValueIsConstantNoAff(ExprList *pRow){
 
 /*
 ** This function is called by the parser for the second and subsequent
-** rows of a multi-row VALUES clause.
+** rows of a multi-row VALUES clause. Argument pLeft is the part of
+** the VALUES clause already parsed, argument pRow is the vector of values
+** for the new row. The Select object returned represents the complete
+** VALUES clause, including the new row.
+**
+** There are two ways in which this may be achieved - by incremental 
+** coding of a co-routine (the "co-routine" method) or by returning a
+** Select object equivalent to the following (the "UNION ALL" method):
+**
+**        "pLeft UNION ALL SELECT pRow"
+**
+** If the VALUES clause contains a lot of rows, this compound Select
+** object may consume a lot of memory.
+**
+** When the co-routine method is used, each row that will be returned
+** by the VALUES clause is coded into part of a co-routine as it is 
+** passed to this function. The returned Select object is equivalent to:
+**
+**     SELECT * FROM (
+**       Select object to read co-routine
+**     )
+**
+** The co-routine method is used in most cases. Exceptions are:
+**
+**    a) If the current statement has a WITH clause. This is to avoid
+**       statements like:
+**
+**            WITH cte AS ( VALUES('x'), ('y') ... )
+**            SELECT * FROM cte AS a, cte AS b;
+**
+**       This will not work, as the co-routine uses a hard-coded register
+**       for its OP_Yield instructions, and so it is not possible for two
+**       cursors to iterate through it concurrently.
+**
+**    b) The schema is currently being parsed (i.e. the VALUES clause is part 
+**       of a schema item like a VIEW or TRIGGER). In this case there is no VM
+**       being generated when parsing is taking place, and so generating 
+**       a co-routine is not possible.
+**
+**    c) There are non-constant expressions in the VALUES clause (e.g.
+**       the VALUES clause is part of a correlated sub-query).
+**
+**    d) One or more of the values in the first row of the VALUES clause
+**       has an affinity (i.e. is a CAST expression). This causes problems
+**       because the complex rules SQLite uses (see function 
+**       sqlite3SubqueryColumnTypes() in select.c) to determine the effective
+**       affinity of such a column for all rows require access to all values in
+**       the column simultaneously. 
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
-  if( pLeft->pPrior
-   || pParse->bHasWith
-   || pParse->db->init.busy 
-   || multiValueIsConstant(pRow)==0
-   || (pLeft->pSrc->nSrc==0 && multiValueIsConstantNoAff(pLeft->pEList)==0)
+  if( pLeft->pPrior                    /* co-routine precluded by prior row */
+   || pParse->bHasWith                 /* condition (a) above */
+   || pParse->db->init.busy            /* condition (b) above */
+   || exprListIsConstant(pRow)==0      /* condition (c) above */
+   || (pLeft->pSrc->nSrc==0 && exprListIsNoAffinity(pLeft->pEList)==0) /* (d) */
   ){
-    /* This row of the VALUES clause cannot be coded immediately. */
+    /* The co-routine method cannot be used. Fall back to UNION ALL. */
     Select *pSelect = 0;
     int f = SF_Values | SF_MultiValue;
     if( pLeft->pSrc->nSrc ){
@@ -634,14 +694,14 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       pLeft = pSelect;
     }
   }else{
-    SrcItem *p = 0;
+    SrcItem *p = 0;               /* SrcItem that reads from co-routine */
 
     if( pLeft->pSrc->nSrc==0 ){
-      /* Co-routine has not yet been started. */
+      /* Co-routine has not yet been started and the special Select object
+      ** that accesses the co-routine has not yet been created. This block 
+      ** does both those things. */
       Vdbe *v = sqlite3GetVdbe(pParse);
-      Select *pRet;
-  
-      pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
+      Select *pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
       if( pRet ){
         SelectDest dest;
         pRet->pSrc->nSrc = 1;

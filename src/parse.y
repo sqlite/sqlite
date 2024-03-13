@@ -562,13 +562,10 @@ cmd ::= select(X).  {
 }
 
 %ifndef SQLITE_OMIT_CTE
-select(A) ::= withkw wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
-select(A) ::= withkw RECURSIVE wqlist(W) selectnowith(X).
+select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
+select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
                                               {A = attachWithToSelect(pParse,X,W);}
 
-withkw ::= WITH. {
-  pParse->bHasWith = 1;
-}
 %endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(A). {
   Select *p = A;
@@ -626,16 +623,26 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 %endif
 
 
-oneselect(A) ::= values(A). {
-  sqlite3MultiValuesEnd(pParse, A);
-}
-
+// Single row VALUES clause.
+//
 %type values {Select*}
+oneselect(A) ::= values(A).
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
 values(A) ::= VALUES LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
 }
-values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
+
+// Multiple row VALUES clause.
+//
+%type mvalues {Select*}
+oneselect(A) ::= mvalues(A). {
+  sqlite3MultiValuesEnd(pParse, A);
+}
+%destructor mvalues {sqlite3SelectDelete(pParse->db, $$);}
+mvalues(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
+  A = sqlite3MultiValues(pParse, A, Y);
+}
+mvalues(A) ::= mvalues(A) COMMA LP nexprlist(Y) RP. {
   A = sqlite3MultiValues(pParse, A, Y);
 }
 
@@ -1751,16 +1758,17 @@ anylist ::= anylist ANY.
 
 with ::= .
 %ifndef SQLITE_OMIT_CTE
-with ::= withkw wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
-with ::= withkw RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
+with ::= WITH wqlist(W).              { sqlite3WithPush(pParse, W, 1); }
+with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 
 %type wqas {u8}
 wqas(A)   ::= AS.                  {A = M10d_Any;}
 wqas(A)   ::= AS MATERIALIZED.     {A = M10d_Yes;}
 wqas(A)   ::= AS NOT MATERIALIZED. {A = M10d_No;}
-wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
+wqitem(A) ::= withnm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
   A = sqlite3CteNew(pParse, &X, Y, Z, M); /*A-overwrites-X*/
 }
+withnm(A) ::= nm(A). {pParse->bHasWith = 1;}
 wqlist(A) ::= wqitem(X). {
   A = sqlite3WithAdd(pParse, 0, X); /*A-overwrites-X*/
 }
