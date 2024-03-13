@@ -245,7 +245,8 @@ const installOpfsVfs = function callee(options){
     opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/*sure, why not?*/;
+    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
+                                 is undocumented/unspecified. */;
     opfsVfs.$zName = wasm.allocCString("opfs");
     // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
     opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
@@ -422,10 +423,25 @@ const installOpfsVfs = function callee(options){
     });
     state.opfsFlags = Object.assign(Object.create(null),{
       /**
-         Flag for use with xOpen(). "opfs-unlock-asap=1" enables
-         this. See defaultUnlockAsap, below.
+         Flag for use with xOpen(). URI flag "opfs-unlock-asap=1"
+         enables this. See defaultUnlockAsap, below.
        */
       OPFS_UNLOCK_ASAP: 0x01,
+      /**
+         Flag for use with xOpen(). URI flag "delete-before-open=1"
+         tells the VFS to delete the db file before attempting to open
+         it. This can be used, e.g., to replace a db which has been
+         corrupted (without forcing us to expose a delete/unlink()
+         function in the public API).
+
+         Failure to unlink the file is ignored but may lead to
+         downstream errors.  An unlink can fail if, e.g., another tab
+         has the handle open.
+
+         It goes without saying that deleting a file out from under another
+         instance results in Undefined Behavior.
+      */
+      OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
          If true, any async routine which implicitly acquires a sync
          access handle (i.e. an OPFS lock) will release that locks at
@@ -874,13 +890,17 @@ const installOpfsVfs = function callee(options){
         let opfsFlags = 0;
         if(0===zName){
           zName = randomFilename();
-        }else if('number'===typeof zName){
+        }else if(wasm.isPtr(zName)){
           if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
             /* -----------------------^^^^^ MUST pass the untranslated
                C-string here. */
             opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
           }
+          if(capi.sqlite3_uri_boolean(zName, "delete-before-open", 0)){
+            opfsFlags |= state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN;
+          }
           zName = wasm.cstrToJs(zName);
+          //warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
         }
         const fh = Object.create(null);
         fh.fid = pFile;
@@ -992,27 +1012,6 @@ const installOpfsVfs = function callee(options){
        defaulting to 16.
     */
     opfsUtil.randomFilename = randomFilename;
-
-    /**
-       Re-registers the OPFS VFS. This is intended only for odd use
-       cases which have to call sqlite3_shutdown() as part of their
-       initialization process, which will unregister the VFS
-       registered by installOpfsVfs(). If passed a truthy value, the
-       OPFS VFS is registered as the default VFS, else it is not made
-       the default. Returns the result of the the
-       sqlite3_vfs_register() call.
-
-       Design note: the problem of having to re-register things after
-       a shutdown/initialize pair is more general. How to best plug
-       that in to the library is unclear. In particular, we cannot
-       hook in to any C-side calls to sqlite3_initialize(), so we
-       cannot add an after-initialize callback mechanism.
-    */
-    opfsUtil.registerVfs = (asDefault=false)=>{
-      return wasm.exports.sqlite3_vfs_register(
-        opfsVfs.pointer, asDefault ? 1 : 0
-      );
-    };
 
     /**
        Returns a promise which resolves to an object which represents
@@ -1213,16 +1212,18 @@ const installOpfsVfs = function callee(options){
        Asynchronously imports the given bytes (a byte array or
        ArrayBuffer) into the given database file.
 
+       Results are undefined if the given db name refers to an opened
+       db.
+
        If passed a function for its second argument, its behaviour
-       changes to async and it imports its data in chunks fed to it by
-       the given callback function. It calls the callback (which may
-       be async) repeatedly, expecting either a Uint8Array or
-       ArrayBuffer (to denote new input) or undefined (to denote
-       EOF). For so long as the callback continues to return
-       non-undefined, it will append incoming data to the given
-       VFS-hosted database file. When called this way, the resolved
-       value of the returned Promise is the number of bytes written to
-       the target file.
+       changes: imports its data in chunks fed to it by the given
+       callback function. It calls the callback (which may be async)
+       repeatedly, expecting either a Uint8Array or ArrayBuffer (to
+       denote new input) or undefined (to denote EOF). For so long as
+       the callback continues to return non-undefined, it will append
+       incoming data to the given VFS-hosted database file. When
+       called this way, the resolved value of the returned Promise is
+       the number of bytes written to the target file.
 
        It very specifically requires the input to be an SQLite3
        database and throws if that's not the case.  It does so in

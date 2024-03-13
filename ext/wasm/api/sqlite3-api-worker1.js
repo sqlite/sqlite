@@ -359,6 +359,7 @@
 
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const util = sqlite3.util;
 sqlite3.initWorker1API = function(){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
@@ -409,12 +410,12 @@ sqlite3.initWorker1API = function(){
       if(db){
         delete this.dbs[getDbId(db)];
         const filename = db.filename;
-        const pVfs = sqlite3.wasm.sqlite3_wasm_db_vfs(db.pointer, 0);
+        const pVfs = util.sqlite3__wasm_db_vfs(db.pointer, 0);
         db.close();
         const ddNdx = this.dbList.indexOf(db);
         if(ddNdx>=0) this.dbList.splice(ddNdx, 1);
         if(alsoUnlink && filename && pVfs){
-          sqlite3.wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
+          util.sqlite3__wasm_vfs_unlink(pVfs, filename);
         }
       }
     },
@@ -495,12 +496,12 @@ sqlite3.initWorker1API = function(){
       }
       if(pVfs){
         /* 2022-11-02: this feature is as-yet untested except that
-           sqlite3_wasm_vfs_create_file() has been tested from the
+           sqlite3__wasm_vfs_create_file() has been tested from the
            browser dev console. */
         let pMem;
         try{
           pMem = sqlite3.wasm.allocFromTypedArray(byteArray);
-          const rc = sqlite3.wasm.sqlite3_wasm_vfs_create_file(
+          const rc = util.sqlite3__wasm_vfs_create_file(
             pVfs, oargs.filename, pMem, byteArray.byteLength
           );
           if(rc) sqlite3.SQLite3Error.toss(rc);
