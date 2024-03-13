@@ -604,29 +604,29 @@ static int multiValueIsConstantNoAff(ExprList *pRow){
 
 }
 
+/*
+** This function is called by the parser for the second and subsequent
+** rows of a multi-row VALUES clause.
+*/
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
-  SrcItem *p;
-  SelectDest dest;
-  Select *pSelect = 0;
 
-  if( pParse->db->init.busy 
-   || pParse->pNewTrigger
+  if( pLeft->pPrior
    || pParse->bHasWith
+   || pParse->db->init.busy 
    || multiValueIsConstant(pRow)==0
-   || pLeft->pPrior
    || (pLeft->pSrc->nSrc==0 && multiValueIsConstantNoAff(pLeft->pEList)==0)
   ){
     /* This row of the VALUES clause cannot be coded immediately. */
+    Select *pSelect = 0;
     int f = SF_Values | SF_MultiValue;
     if( pLeft->pSrc->nSrc ){
       sqlite3MultiValuesEnd(pParse, pLeft);
       f = SF_Values;
     }else if( pLeft->pPrior ){
-      /* In this case set the SF_MultiValue flag only if it was set on
-      ** the previous Select structure. */
+      /* In this case set the SF_MultiValue flag only if it was set on pLeft */
       f = (f & pLeft->selFlags);
     }
-    pSelect = sqlite3SelectNew(pParse,pRow,0,0,0,0,0,f,0);
+    pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, f, 0);
     pLeft->selFlags &= ~SF_MultiValue;
     if( pSelect ){
       pSelect->op = TK_ALL;
@@ -634,6 +634,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       pLeft = pSelect;
     }
   }else{
+    SrcItem *p = 0;
 
     if( pLeft->pSrc->nSrc==0 ){
       /* Co-routine has not yet been started. */
@@ -642,15 +643,14 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   
       pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
       if( pRet ){
-        p = &pRet->pSrc->a[0];
+        SelectDest dest;
         pRet->pSrc->nSrc = 1;
-
+        p = &pRet->pSrc->a[0];
         p->pSelect = pLeft;
         p->fg.viaCoroutine = 1;
         p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
         p->regReturn = ++pParse->nMem;
         p->iCursor = -1;
-
         sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
         sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
         sqlite3Select(pParse, pLeft, &dest);
@@ -663,31 +663,14 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     }
   
     if( pParse->nErr==0 ){
-      pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, SF_Values, 0);
-      if( pSelect ){
-        if( p->pSelect->pEList->nExpr!=pSelect->pEList->nExpr ){
-          sqlite3SelectWrongNumTermsError(pParse, pSelect);
-        }else{
-          sqlite3SelectPrep(pParse, pSelect, 0);
-#ifndef SQLITE_OMIT_WINDOWFUNC
-          if( pSelect->pWin ){
-            sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
-            dest.iSdst = p->regResult;
-            dest.nSdst = pRow->nExpr;
-            dest.iSDParm = p->regReturn;
-            sqlite3Select(pParse, pSelect, &dest);
-          }else
-#endif
-          {
-            sqlite3ExprCodeExprList(pParse, pSelect->pEList,p->regResult,0,0);
-            sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, p->regReturn);
-          }
-        }
-        sqlite3SelectDelete(pParse->db, pSelect);
+      if( p->pSelect->pEList->nExpr!=pRow->nExpr ){
+        sqlite3SelectWrongNumTermsError(pParse, p->pSelect);
+      }else{
+        sqlite3ExprCodeExprList(pParse, pRow, p->regResult, 0, 0);
+        sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, p->regReturn);
       }
-    }else{
-      sqlite3ExprListDelete(pParse->db, pRow);
     }
+    sqlite3ExprListDelete(pParse->db, pRow);
   }
 
   return pLeft;
