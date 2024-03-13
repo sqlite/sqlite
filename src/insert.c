@@ -1086,7 +1086,7 @@ void sqlite3Insert(
       pNx->iDataCur = iDataCur;
       pNx->iIdxCur = iIdxCur;
       if( pNx->pUpsertTarget ){
-        if( sqlite3UpsertAnalyzeTarget(pParse, pTabList, pNx) ){
+        if( sqlite3UpsertAnalyzeTarget(pParse, pTabList, pNx, pUpsert) ){
           goto insert_cleanup;
         }
       }

@@ -598,7 +598,12 @@ proc trd_buildscript {config srcdir bMsvc} {
 
   # Ensure that the named configuration exists.
   if {![info exists build($config)]} {
-    error "No such build config: $config"
+    if {$config!="help"} {
+      puts "No such build config: $config"
+    }
+    puts "Available configurations: [lsort [array names build]]"
+    flush stdout
+    exit 1
   }
 
   # Generate and return the script.
@@ -637,4 +642,3 @@ proc trd_test_script_properties {path} {
 
   set trd_test_script_properties_cache($path)
 }
-

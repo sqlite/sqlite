@@ -209,4 +209,22 @@ do_eqp_test 710 {
   `--SEARCH t1 USING INDEX idx (<expr>=?)
 }
 
+# 2024-03-07 https://sqlite.org/forum/forumpost/ecdfc02339
+# A refinement is needed to the enhancements tested by the prior test case
+# to avoid another problem with indexes on constant expressions.
+#
+reset_db
+db null NULL
+do_execsql_test 800 {
+  CREATE TABLE t0(c0, c1);
+  CREATE TABLE t1(c2);
+  CREATE INDEX i0 ON t1(NULL);
+  INSERT INTO t1(c2) VALUES (0.2);
+  CREATE VIEW v0(c3) AS SELECT DISTINCT c2 FROM t1;
+  SELECT * FROM v0 LEFT JOIN t0 ON c3<NULL LEFT JOIN t1 ON 1;
+} {0.2 NULL NULL 0.2}
+do_execsql_test 810 {
+  SELECT * FROM v0 LEFT JOIN t0 ON c3<NULL LEFT JOIN t1 ON 1 WHERE c2/0.1;
+} {0.2 NULL NULL 0.2}
+
 finish_test

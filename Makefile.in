@@ -418,6 +418,8 @@ TESTSRC = \
   $(TOP)/ext/recover/sqlite3recover.c \
   $(TOP)/ext/recover/dbdata.c \
   $(TOP)/ext/recover/test_recover.c \
+  $(TOP)/ext/intck/test_intck.c  \
+  $(TOP)/ext/intck/sqlite3intck.c \
   $(TOP)/ext/rbu/test_rbu.c
 
 # Statically linked extensions
@@ -816,7 +818,8 @@ has_tclsh85:
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) \
+		$(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
@@ -827,7 +830,8 @@ sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS)
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover \
+		$(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
@@ -1153,35 +1157,37 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
 	./mkkeywordhash$(BEXE) >keywordhash.h
 
-# Source files that go into making shell.c
-SHELL_SRC = \
-	$(TOP)/src/shell.c.in \
-	$(TOP)/ext/consio/console_io.c \
-	$(TOP)/ext/consio/console_io.h \
-	$(TOP)/ext/misc/appendvfs.c \
-	$(TOP)/ext/misc/completion.c \
-	$(TOP)/ext/misc/decimal.c \
-	$(TOP)/ext/misc/basexx.c \
-	$(TOP)/ext/misc/base64.c \
-	$(TOP)/ext/misc/base85.c \
-	$(TOP)/ext/misc/fileio.c \
-	$(TOP)/ext/misc/ieee754.c \
-	$(TOP)/ext/misc/regexp.c \
-	$(TOP)/ext/misc/series.c \
-	$(TOP)/ext/misc/shathree.c \
-	$(TOP)/ext/misc/sqlar.c \
-	$(TOP)/ext/misc/uint.c \
-	$(TOP)/ext/expert/sqlite3expert.c \
-	$(TOP)/ext/expert/sqlite3expert.h \
-	$(TOP)/ext/misc/zipfile.c \
-	$(TOP)/ext/misc/memtrace.c \
-	$(TOP)/ext/misc/pcachetrace.c \
-	$(TOP)/ext/recover/dbdata.c \
-	$(TOP)/ext/recover/sqlite3recover.c \
-	$(TOP)/ext/recover/sqlite3recover.h \
-	$(TOP)/src/test_windirent.c
+# Source and header files that shell.c depends on
+SHELL_DEP = \
+    $(TOP)/src/shell.c.in \
+    $(TOP)/ext/consio/console_io.c \
+    $(TOP)/ext/consio/console_io.h \
+    $(TOP)/ext/expert/sqlite3expert.c \
+    $(TOP)/ext/expert/sqlite3expert.h \
+    $(TOP)/ext/intck/sqlite3intck.c \
+    $(TOP)/ext/intck/sqlite3intck.h \
+    $(TOP)/ext/misc/appendvfs.c \
+    $(TOP)/ext/misc/base64.c \
+    $(TOP)/ext/misc/base85.c \
+    $(TOP)/ext/misc/completion.c \
+    $(TOP)/ext/misc/decimal.c \
+    $(TOP)/ext/misc/fileio.c \
+    $(TOP)/ext/misc/ieee754.c \
+    $(TOP)/ext/misc/memtrace.c \
+    $(TOP)/ext/misc/pcachetrace.c \
+    $(TOP)/ext/misc/regexp.c \
+    $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/shathree.c \
+    $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/zipfile.c \
+    $(TOP)/ext/recover/dbdata.c \
+    $(TOP)/ext/recover/sqlite3recover.c \
+    $(TOP)/ext/recover/sqlite3recover.h \
+    $(TOP)/src/test_windirent.c \
+    $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_SRC) $(TOP)/tool/mkshellc.tcl has_tclsh84
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
 
 
@@ -1309,9 +1315,9 @@ testfixture$(TEXE):	has_tclsh85 $(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
-coretestprogs:	$(TESTPROGS)
+coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
-testprogs:	coretestprogs srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
+testprogs:	$(TESTPROGS) srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 
 # A very detailed test running most or all test cases
 fulltest:	alltest fuzztest

@@ -43,8 +43,9 @@
 #    which generates the makefile code, rather than using $(call) and
 #    $(eval), or at least centralize the setup of the numerous vars
 #    related to each build variant $(JS_BUILD_MODES). (Update: an
-#    external script was attempted but it's even less legible than the
-#    $(eval) indirection going on in this file.
+#    external script was attempted but generating properly-escaped
+#    makefile code from within a shell script is even less legible
+#    than the $(eval) indirection going on in this file.)
 #
 default: all
 #default: quick
@@ -306,8 +307,9 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 
 
 ########################################################################
-# C-PP.FILTER: a $(call)able to transform $(1) to $(2) via ./c-pp -f
-# $(1) ...
+# C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
+#
+#   ./c-pp -f $(1) -o $(2) $(3)
 #
 # Historical notes:
 #
@@ -432,8 +434,10 @@ sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 # sqlite3-api-worker.js = the Worker1 API:
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
-# sqlite3-v-helper = helper APIs for VFSes and VTABLEs:
-sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
+# sqlite3-vfs-helper = helper APIs for VFSes:
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
+# sqlite3-vtab-helper = helper APIs for VTABLEs:
+sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 # sqlite3-vfs-opfs.c-pp.js = the first OPFS VFS:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 # sqlite3-vfs-opfs-sahpool.c-pp.js = the second OPFS VFS:
@@ -449,12 +453,13 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 # the first OPFS VFS and necessarily an external file.
 SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
 SOAP.js.bld := $(dir.dout)/$(notdir $(SOAP.js))
-sqlite3-api.ext.jses += $(SOAP.js.bld)
+#
+# $(sqlite3-api.ext.jses) = API-related files which are standalone files,
+#   not part of the amalgamation.
+#
+sqlite3-api.ext.jses := $(SOAP.js.bld)
 $(SOAP.js.bld): $(SOAP.js)
 	cp $< $@
-
-all quick: $(sqlite3-api.ext.jses)
-q: quick
 
 ########################################################################
 # $(sqlite3-api*.*js) contain the core library code but not the
@@ -528,6 +533,10 @@ emcc.jsflags += -sSTRICT_JS=0
 # 3.1.31.  The fix for that in newer emcc's is to throw a built-time
 # error if STRICT_JS is used together with those options.
 
+# emcc.jsflags += -sSTRICT=1
+# -sSTRICT=1 Causes failures about unknown symbols which the build
+# tools should be installing, e.g. __syscall_geteuid32
+
 # -sENVIRONMENT values for the various build modes:
 emcc.environment.vanilla := web,worker
 emcc.environment.bundler-friendly := $(emcc.environment.vanilla)
@@ -548,6 +557,11 @@ emcc.environment.node := node
 # time with 16mb+ memory and 3X time when starting with 8MB. However,
 # such test results are inconsistent due to browser internals which
 # are opaque to us.
+#
+# 2024-03-04: emsdk 3.1.55 replaces INITIAL_MEMORY with INITIAL_HEAP,
+# but also says (in its changelog): "Note that it is currently not
+# supported in all configurations (#21071)."
+# https://github.com/emscripten-core/emscripten/blob/main/ChangeLog.md
 emcc.jsflags += -sALLOW_MEMORY_GROWTH
 emcc.INITIAL_MEMORY.128 := 134217728
 emcc.INITIAL_MEMORY.96  := 100663296
@@ -652,6 +666,9 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 ########################################################################
 # $(sqlite3-license-version.js) contains the license header and
 # in-comment build version info.
+#
+# Maintenance reminder: there are awk binaries out there which do not
+# support -e SCRIPT.
 $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) \
   $(MAKEFILE)
 	@echo "Making $@..."; { \
@@ -659,8 +676,8 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
     echo '/*'; \
     echo '** This code was built from sqlite3 version...'; \
     echo "**"; \
-    awk -e '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' \
-        -e '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
+    awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
+    awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
     echo "**"; \
     echo "** Using the Emscripten SDK version $(emcc.version)."; \
     echo '*/'; \
@@ -810,13 +827,13 @@ pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 # $4 = resulting sqlite-api JS/MJS file
 # $5 = resulting JS/MJS file
 # $6 = -D... flags for $(bin.c-pp)
-# $7 = emcc -sXYZ flags (CURRENTLY UNUSED - was factored out)
+# $7 = optional extra flags for emcc
 #
 # Maintenance reminder: be careful not to introduce spaces around args
 # ($1, $2), otherwise string concatenation will malfunction.
 #
-# emcc.environment.$(2) must be set to a value for emcc's
-# -sENVIRONMENT flag.
+# Before calling this, emcc.environment.$(2) must be set to a value
+# for emcc's -sENVIRONMENT flag.
 #
 # $(cflags.$(1)) and $(cflags.$(1).$(2)) may be defined to append
 # CFLAGS to a given build mode.
@@ -923,18 +940,39 @@ sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
 sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js
 sqlite3-worker1.js := $(dir.dout)/sqlite3-worker1.js
 sqlite3-worker1-promiser.js := $(dir.dout)/sqlite3-worker1-promiser.js
-sqlite3-worker1-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
+sqlite3-worker1-promiser.mjs := $(dir.dout)/sqlite3-worker1-promiser.mjs
+sqlite3-worker1-bundler-friendly.mjs := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.js),\
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.mjs),\
     $(c-pp.D.sqlite3-bundler-friendly)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
     $(sqlite3-worker1-promiser-bundler-friendly.js),\
     $(c-pp.D.sqlite3-bundler-friendly)))
-$(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.js) \
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.mjs),\
+    -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
+$(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.mjs) \
     $(sqlite3-worker1-promiser-bundler-friendly.js)
-$(sqlite3.js) $(sqlite3.mjs): $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js)
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
+    -Dtarget=es6-module))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
+$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
+    -Dtarget=es6-module))
+all: $(sqlite3-worker1.js) \
+    $(sqlite3-worker1-promiser.js) $(sqlite3-worker1-promiser.mjs)
+
+demo-worker1-promiser.html: $(sqlite3-worker1-promiser.js) demo-worker1-promiser.js
+demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
+all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
+
+sqlite3-api.ext.jses += \
+  $(sqlite3-worker1-promiser.mjs) \
+  $(sqlite3-worker1-bundler-friendly.mjs) \
+  $(sqlite3-worker1.js)
+all quick: $(sqlite3-api.ext.jses)
+q: quick
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
@@ -975,6 +1013,9 @@ emcc.speedtest1.common += -sABORTING_MALLOC
 emcc.speedtest1.common += -sSTRICT_JS=0
 emcc.speedtest1.common += -sMODULARIZE
 emcc.speedtest1.common += -Wno-limited-postlink-optimizations
+emcc.speedtest1.common += -Wno-unused-main
+# ^^^^ -Wno-unused-main is for emcc 3.1.52+. speedtest1 has a wasm_main() which is
+# exported and called by the JS code.
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
 emcc.speedtest1.common += -sSTACK_SIZE=512KB
 emcc.speedtest1.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)

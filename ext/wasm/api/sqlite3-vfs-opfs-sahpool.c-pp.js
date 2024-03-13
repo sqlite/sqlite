@@ -1137,8 +1137,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      existing content. Throws if the pool has no available file slots,
      on I/O error, or if the input does not appear to be a
      database. In the latter case, only a cursory examination is made.
-     Note that this routine is _only_ for importing database files,
-     not arbitrary files, the reason being that this VFS will
+     Results are undefined if the given db name refers to an opened
+     db.  Note that this routine is _only_ for importing database
+     files, not arbitrary files, the reason being that this VFS will
      automatically clean up any non-database files so importing them
      is pointless.
 
