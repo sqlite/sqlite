@@ -28,12 +28,18 @@ multiple jobs. It supports the following types of tests:
 
   *  Tcl test scripts.
 
-  *  Tests run with [make] commands. Specifically, at time of writing, 
-     [make fuzztest], [make mptest], [make sourcetest] and [make threadtest].
+  *  Tests run with `make` commands.  Examples:
+      -  `make mdevtest`
+      -  `make releasetest`
+      -  `make sdevtest`
+      -  `make testrunner`
 
 testrunner.tcl pipes the output of all tests and builds run into log file
-**testrunner.log**, created in the cwd directory. Searching this file for
-"failed" is a good way to find the output of a failed test.
+**testrunner.log**, created in the current working directory. Search this
+file to find details of errors.  Suggested search commands:
+
+   *  `grep "^!" testrunner.log`
+   *  `grep failed testrunner.log`
 
 testrunner.tcl also populates SQLite database **testrunner.db**. This database
 contains details of all tests run, running and to be run. A useful query
@@ -59,7 +65,7 @@ Running:
 
 in another terminal is a good way to keep an eye on a long running test.
 
-Sometimes testrunner.tcl uses the [testfixture] binary that it is run with
+Sometimes testrunner.tcl uses the `testfixture` binary that it is run with
 to run tests (see "Binary Tests" below). Sometimes it builds testfixture and
 other binaries in specific configurations to test (see "Source Tests").
 
@@ -67,9 +73,9 @@ other binaries in specific configurations to test (see "Source Tests").
 # 2. Binary Tests
 
 The commands described in this section all run various combinations of the Tcl
-test scripts using the [testfixture] binary used to run the testrunner.tcl
+test scripts using the `testfixture` binary used to run the testrunner.tcl
 script (i.e. they do not invoke the compiler to build new binaries, or the
-[make] command to run tests that are not Tcl scripts). The procedure to run
+`make` command to run tests that are not Tcl scripts). The procedure to run
 these tests is therefore:
 
   1. Build the "testfixture" (or "testfixture.exe" for windows) binary using
@@ -192,7 +198,7 @@ TODO: ./configure + Makefile.msc build systems.
 ## 3.1. Commands to Run SQLite Tests
 
 The **mdevtest** command is equivalent to running the veryquick tests and
-the [make fuzztest] target once for each of two --enable-all builds - one 
+the `make fuzztest` target once for each of two --enable-all builds - one 
 with debugging enabled and one without:
 
 ```
@@ -282,7 +288,7 @@ a dos \*.bat file on windows. For example:
 ```
 
 The generated bash or \*.bat file script accepts a single argument - a makefile
-target to build. This may be used either to run a [make] command test directly,
+target to build. This may be used either to run a `make` command test directly,
 or else to build a testfixture (or testfixture.exe) binary with which to
 run a Tcl test script, as <a href=#binary_test_failures>described above</a>.
 
@@ -338,6 +344,3 @@ testrunner.log and testrunner.db files:
 ```
   $ ./testfixture $TESTDIR/testrunner.tcl njob $NEW_NUMBER_OF_JOBS
 ```
-
-
-
