@@ -21,6 +21,10 @@
 */
 }
 
+// Function used to enlarge the parser stack, if needed
+%realloc parserStackRealloc
+%free    sqlite3_free
+
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
 
@@ -45,7 +49,7 @@
   }
 }
 %stack_overflow {
-  sqlite3ErrorMsg(pParse, "parser stack overflow");
+  sqlite3OomFault(pParse->db);
 }
 
 // The name of the generated procedure that implements the parser
@@ -546,6 +550,14 @@ cmd ::= select(X).  {
       sqlite3WithDelete(pParse->db, pWith);
     }
     return pSelect;
+  }
+
+  /* Memory allocator for parser stack resizing.  This is a thin wrapper around
+  ** sqlite3_realloc() that includes a call to sqlite3FaultSim() to facilitate
+  ** testing.
+  */
+  static void *parserStackRealloc(void *pOld, sqlite3_uint64 newSize){
+    return sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
   }
 }
 
@@ -1923,6 +1935,12 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
   SPAN            /* The span operator */
   ERROR           /* An expression containing an error */
 .
+
+term(A) ::= QNUMBER(X). {
+  A=tokenExpr(pParse,@X,X);
+  sqlite3DequoteNumber(pParse, A);
+}
+
 /* There must be no more than 255 tokens defined above.  If this grammar
 ** is extended with new rules and tokens, they must either be so few in
 ** number that TK_SPAN is no more than 255, or else the new tokens must

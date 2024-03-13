@@ -2975,7 +2975,9 @@ static int whereLoopAddBtreeIndex(
   }
   if( pProbe->bUnordered || pProbe->bLowQual ){
     if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
-    if( pProbe->bLowQual )   opMask &= ~(WO_EQ|WO_IN|WO_IS);
+    if( pProbe->bLowQual && pSrc->fg.isIndexedBy==0 ){ 
+      opMask &= ~(WO_EQ|WO_IN|WO_IS);
+    }
   }
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
@@ -3362,7 +3364,9 @@ static int indexMightHelpWithOrderBy(
   for(ii=0; ii<pOB->nExpr; ii++){
     Expr *pExpr = sqlite3ExprSkipCollateAndLikely(pOB->a[ii].pExpr);
     if( NEVER(pExpr==0) ) continue;
-    if( pExpr->op==TK_COLUMN && pExpr->iTable==iCursor ){
+    if( (pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN) 
+     && pExpr->iTable==iCursor 
+    ){
       if( pExpr->iColumn<0 ) return 1;
       for(jj=0; jj<pIndex->nKeyCol; jj++){
         if( pExpr->iColumn==pIndex->aiColumn[jj] ) return 1;
@@ -3968,7 +3972,7 @@ static int whereLoopAddBtree(
       ** unique index is used (making the index functionally non-unique)
       ** then the sqlite_stat1 data becomes important for scoring the
       ** plan */
-      pTab->tabFlags |= TF_StatsUsed;
+      pTab->tabFlags |= TF_MaybeReanalyze;
     }
 #ifdef SQLITE_ENABLE_STAT4
     sqlite3Stat4ProbeFree(pBuilder->pRec);
@@ -5462,10 +5466,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
         pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
       }
-      if( pWInfo->pSelect->pOrderBy
-       && pWInfo->nOBSat > pWInfo->pSelect->pOrderBy->nExpr ){
-        pWInfo->nOBSat = pWInfo->pSelect->pOrderBy->nExpr;
-      }
+      /* vvv--- See check-in [12ad822d9b827777] on 2023-03-16 ---vvv */
+      assert( pWInfo->pSelect->pOrderBy==0
+           || pWInfo->nOBSat <= pWInfo->pSelect->pOrderBy->nExpr );
     }else{
       pWInfo->revMask = pFrom->revLoop;
       if( pWInfo->nOBSat<=0 ){
@@ -5804,7 +5807,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
     SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
     Table *pTab = pItem->pTab;
     if( (pTab->tabFlags & TF_HasStat1)==0 ) break;
-    pTab->tabFlags |= TF_StatsUsed;
+    pTab->tabFlags |= TF_MaybeReanalyze;
     if( i>=1
      && (pLoop->wsFlags & reqFlags)==reqFlags
      /* vvvvvv--- Always the case if WHERE_COLUMN_EQ is defined */
@@ -6056,7 +6059,10 @@ WhereInfo *sqlite3WhereBegin(
 
   /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
   testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
-  if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
+  if( pOrderBy && pOrderBy->nExpr>=BMS ){
+    pOrderBy = 0;
+    wctrlFlags &= ~WHERE_WANT_DISTINCT;
+  }
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask

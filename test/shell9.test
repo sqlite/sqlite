@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool. Specifically, 
 # testing that it is possible to run a ".dump" script that creates
@@ -71,9 +72,10 @@ do_execsql_test 1.2.1 {
   CREATE TABLE t4(hello);
 }
 db close
-do_test 1.2.2 {
-  catchcmd test.db ".read testdump.txt"
-} {1 {Parse error near line 5: table sqlite_master may not be modified}}
+# This works ok on the reuse-schema branch
+# do_test 1.2.2 {
+#   catchcmd test.db ".read testdump.txt"
+# } {1 {Parse error near line 5: table sqlite_master may not be modified}}
 
 # Check testdump.txt cannot be processed if the db is in safe mode
 #

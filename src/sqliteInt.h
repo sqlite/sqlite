@@ -609,6 +609,8 @@
 # define SQLITE_OMIT_ALTERTABLE
 #endif
 
+#define SQLITE_DIGIT_SEPARATOR '_'
+
 /*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
@@ -886,7 +888,7 @@ typedef INT16_TYPE LogEst;
 #   define SQLITE_PTRSIZE __SIZEOF_POINTER__
 # elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
        defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
-      (defined(__APPLE__) && defined(__POWERPC__)) ||                     \
+      (defined(__APPLE__) && defined(__ppc__)) ||                         \
       (defined(__TOS_AIX__) && !defined(__64BIT__))
 #   define SQLITE_PTRSIZE 4
 # else
@@ -1123,6 +1125,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00010000     Beginning of DELETE/INSERT/UPDATE processing
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
+**   0x00080000     NOT NULL strength reduction
 */
 
 /*
@@ -1604,6 +1607,10 @@ struct FuncDefHash {
 };
 #define SQLITE_FUNC_HASH(C,L) (((C)+(L))%SQLITE_FUNC_HASH_SZ)
 
+#if defined(SQLITE_USER_AUTHENTICATION)
+# warning  "The SQLITE_USER_AUTHENTICATION extension is deprecated. \
+ See ext/userauth/user-auth.txt for details."
+#endif
 #ifdef SQLITE_USER_AUTHENTICATION
 /*
 ** Information held in the "sqlite3" database connection object and used
@@ -2492,8 +2499,7 @@ struct Table {
 #define TF_HasStored      0x00000040 /* Has one or more STORED columns */
 #define TF_HasGenerated   0x00000060 /* Combo: HasVirtual + HasStored */
 #define TF_WithoutRowid   0x00000080 /* No rowid.  PRIMARY KEY is the key */
-#define TF_StatsUsed      0x00000100 /* Query planner decisions affected by
-                                     ** Index.aiRowLogEst[] values */
+#define TF_MaybeReanalyze 0x00000100 /* Maybe run ANALYZE on this table */
 #define TF_NoVisibleRowid 0x00000200 /* No user-visible "rowid" column */
 #define TF_OOOHidden      0x00000400 /* Out-of-Order hidden columns */
 #define TF_HasNotNull     0x00000800 /* Contains NOT NULL constraints */
@@ -3468,6 +3474,7 @@ struct NameContext {
 #define NC_InAggFunc 0x020000 /* True if analyzing arguments to an agg func */
 #define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
 #define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
+#define NC_Where     0x100000 /* Processing WHERE clause of a SELECT */
 #define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
@@ -3491,6 +3498,7 @@ struct Upsert {
   Expr *pUpsertWhere;       /* WHERE clause for the ON CONFLICT UPDATE */
   Upsert *pNextUpsert;      /* Next ON CONFLICT clause in the list */
   u8 isDoUpdate;            /* True for DO UPDATE.  False for DO NOTHING */
+  u8 isDup;                 /* True if 2nd or later with same pUpsertIdx */
   /* Above this point is the parse tree for the ON CONFLICT clauses.
   ** The next group of fields stores intermediate data. */
   void *pToFree;            /* Free memory when deleting the Upsert object */
@@ -4816,6 +4824,7 @@ int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
 void sqlite3DequoteExpr(Expr*);
 void sqlite3DequoteToken(Token*);
+void sqlite3DequoteNumber(Parse*, Expr*);
 void sqlite3TokenInit(Token*,char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*);
@@ -5593,7 +5602,7 @@ const char *sqlite3JournalModename(int);
   Upsert *sqlite3UpsertNew(sqlite3*,ExprList*,Expr*,ExprList*,Expr*,Upsert*);
   void sqlite3UpsertDelete(sqlite3*,Upsert*);
   Upsert *sqlite3UpsertDup(sqlite3*,Upsert*);
-  int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*);
+  int sqlite3UpsertAnalyzeTarget(Parse*,SrcList*,Upsert*,Upsert*);
   void sqlite3UpsertDoUpdate(Parse*,Upsert*,Table*,Index*,int);
   Upsert *sqlite3UpsertOfIndex(Upsert*,Index*);
   int sqlite3UpsertNextIsIPK(Upsert*);

@@ -18,6 +18,13 @@ USE_AMALGAMATION = 1
 !ENDIF
 # <</mark>>
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c.
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN
@@ -1596,6 +1603,8 @@ TESTEXT = \
   $(TOP)\ext\rtree\test_rtreedoc.c \
   $(TOP)\ext\recover\sqlite3recover.c \
   $(TOP)\ext\recover\test_recover.c \
+  $(TOP)\ext\intck\test_intck.c  \
+  $(TOP)\ext\intck\sqlite3intck.c \
   $(TOP)\ext\recover\dbdata.c 
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -1914,7 +1923,7 @@ mptest:	mptester.exe
 	echo > .target_source
 
 sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe
-	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS)
+	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS) $(EXTRA_SRC)
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
@@ -2264,39 +2273,44 @@ mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
 
-# Source files that go into making shell.c
-SHELL_SRC = \
-	$(TOP)\src\shell.c.in \
-	$(TOP)\ext\consio\console_io.c \
-	$(TOP)\ext\consio\console_io.h \
-	$(TOP)\ext\misc\appendvfs.c \
-	$(TOP)\ext\misc\completion.c \
-	$(TOP)\ext\misc\base64.c \
-	$(TOP)\ext\misc\base85.c \
-	$(TOP)\ext\misc\decimal.c \
-	$(TOP)\ext\misc\fileio.c \
-	$(TOP)\ext\misc\ieee754.c \
-	$(TOP)\ext\misc\regexp.c \
-	$(TOP)\ext\misc\series.c \
-	$(TOP)\ext\misc\shathree.c \
-	$(TOP)\ext\misc\uint.c \
-	$(TOP)\ext\expert\sqlite3expert.c \
-	$(TOP)\ext\expert\sqlite3expert.h \
-	$(TOP)\ext\misc\memtrace.c \
-	$(TOP)\ext\misc\pcachetrace.c \
-	$(TOP)\ext\recover\dbdata.c \
-	$(TOP)\ext\recover\sqlite3recover.c \
-	$(TOP)\ext\recover\sqlite3recover.h \
-	$(TOP)\src\test_windirent.c
+# Source and header files that shell.c depends on
+SHELL_DEP = \
+    $(TOP)\src\shell.c.in \
+    $(TOP)\ext\consio\console_io.c \
+    $(TOP)\ext\consio\console_io.h \
+    $(TOP)\ext\expert\sqlite3expert.c \
+    $(TOP)\ext\expert\sqlite3expert.h \
+    $(TOP)\ext\intck\sqlite3intck.c \
+    $(TOP)\ext\intck\sqlite3intck.h \
+    $(TOP)\ext\misc\appendvfs.c \
+    $(TOP)\ext\misc\base64.c \
+    $(TOP)\ext\misc\base85.c \
+    $(TOP)\ext\misc\completion.c \
+    $(TOP)\ext\misc\decimal.c \
+    $(TOP)\ext\misc\fileio.c \
+    $(TOP)\ext\misc\ieee754.c \
+    $(TOP)\ext\misc\memtrace.c \
+    $(TOP)\ext\misc\pcachetrace.c \
+    $(TOP)\ext\misc\regexp.c \
+    $(TOP)\ext\misc\series.c \
+    $(TOP)\ext\misc\shathree.c \
+    $(TOP)\ext\misc\sqlar.c \
+    $(TOP)\ext\misc\uint.c \
+    $(TOP)\ext\misc\zipfile.c \
+    $(TOP)\ext\recover\dbdata.c \
+    $(TOP)\ext\recover\sqlite3recover.c \
+    $(TOP)\ext\recover\sqlite3recover.h \
+    $(TOP)\src\test_windirent.c \
+    $(TOP)\src\test_windirent.h
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
 !IF $(USE_ZLIB)!=0
-SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\sqlar.c
-SHELL_SRC = $(SHELL_SRC) $(TOP)\ext\misc\zipfile.c
+SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\sqlar.c
+SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
-shell.c:	$(SHELL_SRC) $(TOP)\tool\mkshellc.tcl
+shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
 
 zlib:
@@ -2483,9 +2497,9 @@ extensiontest:	testfixture.exe testloadext.dll
 tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
-coretestprogs:	$(TESTPROGS)
+coretestprogs:	testfixture.exe sqlite3.exe
 
-testprogs:	coretestprogs srcck1.exe fuzzcheck.exe sessionfuzz.exe
+testprogs:	$(TESTPROGS) srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
 fulltest:	alltest fuzztest
 
@@ -2540,7 +2554,7 @@ mdevtest:
 
 # Testing for a release
 #
-releasetest: testfixture.exe fuzztest
+releasetest: testfixture.exe
 	testfixture.exe $(TOP)\test\testrunner.tcl release
 
 
