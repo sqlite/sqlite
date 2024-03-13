@@ -263,5 +263,9 @@ do_execsql_test 6.1 {
   SELECT * FROM t1, (VALUES(1), (2))
 } {x 1 x 2 y 1 y 2}
 
+do_execsql_test 6.2 {
+  VALUES(CAST(44 AS REAL)),(55);
+} {44.0 55}
+
 finish_test
 

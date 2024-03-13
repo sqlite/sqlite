@@ -593,6 +593,17 @@ static int multiValueIsConstant(ExprList *pRow){
   return 1;
 }
 
+static int multiValueIsConstantNoAff(ExprList *pRow){
+  int ii;
+  if( multiValueIsConstant(pRow)==0 ) return 0;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    assert( pRow->a[ii].pExpr->affExpr==0 );
+    if( 0!=sqlite3ExprAffinity(pRow->a[ii].pExpr) ) return 0;
+  }
+  return 1;
+
+}
+
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   SrcItem *p;
   SelectDest dest;
@@ -603,6 +614,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
    || pParse->bHasWith
    || multiValueIsConstant(pRow)==0
    || pLeft->pPrior
+   || (pLeft->pSrc->nSrc==0 && multiValueIsConstantNoAff(pLeft->pEList)==0)
   ){
     int f = SF_Values | SF_MultiValue;
     if( pLeft->pPrior || pLeft->pSrc->nSrc ){
