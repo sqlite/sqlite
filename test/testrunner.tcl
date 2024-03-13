@@ -848,7 +848,7 @@ proc add_devtest_jobs {lBld patternlist} {
 #
 proc must_be_testfixture {} {
   if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
-    puts "Use ./testfixture, not tclsh, for these arguments"
+    puts "Use testfixture, not tclsh, for these arguments."
     exit 1
   }
 }
