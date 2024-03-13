@@ -65,13 +65,19 @@ Usage:
     --jobs NUMBER-OF-JOBS
     --zipvfs ZIPVFS-SOURCE-DIR
 
-Interesting values for PERMUTATION are:
+Special values for PERMUTATION that work with plain tclsh:
 
-    veryquick - a fast subset of the tcl test scripts. This is the default.
-    full      - all tcl test scripts.
+    list      - show all allowed PERMUTATION arguments.
+    mdevtest  - tests recommended prior to normal development check-ins.
+    release   - full release test with various builds.
+    sdevtest  - like mdevtest but using ASAN and UBSAN.
+
+Other PERMUTATION arguments must be run using testfixture, not tclsh:
+
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
-    release   - full release test with various builds.
+    full      - all tcl test scripts.
+    veryquick - a fast subset of the tcl test scripts. This is the default.
 
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
@@ -836,6 +842,17 @@ proc add_devtest_jobs {lBld patternlist} {
   }
 }
 
+# Check to ensure that the interpreter is a full-blown "testfixture"
+# build and not just a "tclsh".  If this is not the case, issue an
+# error message and exit.
+#
+proc must_be_testfixture {} {
+  if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
+    puts "Use ./testfixture, not tclsh, for these arguments"
+    exit 1
+  }
+}
+
 proc add_jobs_from_cmdline {patternlist} {
   global TRG
 
@@ -851,6 +868,7 @@ proc add_jobs_from_cmdline {patternlist} {
   set first [lindex $patternlist 0]
   switch -- $first {
     all {
+      must_be_testfixture
       set patternlist [lrange $patternlist 1 end]
       set clist [trd_all_configs]
       foreach c $clist {
@@ -886,7 +904,15 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
 
+    list {
+      set allperm [array names ::testspec]
+      lappend allperm all mdevtest sdevtest release list
+      puts "Allowed values for the PERMUTATION argument: [lsort $allperm]"
+      exit 0
+    }
+
     default {
+      must_be_testfixture
       if {[info exists ::testspec($first)]} {
         add_tcl_jobs "" $first [lrange $patternlist 1 end]
       } else {

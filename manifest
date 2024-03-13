@@ -1,5 +1,5 @@
-C Add\spointer\sto\sdocumentation\sto\stestrunner.tcl\shelp\smessage.
-D 2024-03-13T10:54:04.498
+C Improvements\sto\sthe\s"help"\smessage\sgenerated\sby\stestrunner.tcl.\s\sAdd\sthe\nspecial\s"list"\spermutation\sthat\sdoes\snothing\sbut\slist\sall\sallowed\nvalues\sfor\sthe\sPERMUTATION\sargument\sto\stestrunner.tcl.
+D 2024-03-13T10:55:47.181
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1687,7 +1687,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
-F test/testrunner.tcl cc3e416435f9bef832fb5e9f2b09e9d365faec77544573a9d9dc7b0f95b1120d
+F test/testrunner.tcl acc25035b127471961ff8f77b829dc51a9615b1016bb874a339733b4c0881f30
 F test/testrunner_data.tcl 2f94974e5e3a56af880be72f7a7fd239aa9d4ecf978625435fcc698319c927fa
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64f4dad1f928716b8688c650d043f18afcc72ec78d990145c580e2b98905b919
-R 1134b8266271a887377fc4f455ed517a
-U dan
-Z 833508436e05f778ed8b702f9da8c8a7
+P eff855102f9c0b4e9d876d1cff9d06c07de427b4880c2fa326d4d6e3e1dd13c8
+R 932e56d0dea34c025007477ebbf78453
+U drh
+Z 0cfae733ff130354c2d77ebd401ddd94
 # Remove this line to create a well-formed Fossil manifest.
