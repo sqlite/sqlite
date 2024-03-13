@@ -578,7 +578,7 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
 void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
-  if( pVal->pSrc->nSrc>0 ){
+  if( pVal && pVal->pSrc->nSrc>0 ){
     SrcItem *pItem = &pVal->pSrc->a[0];
     sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->regReturn);
     sqlite3VdbeJumpHere(pParse->pVdbe, pItem->addrFillSub - 1);
@@ -640,25 +640,24 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       Vdbe *v = sqlite3GetVdbe(pParse);
       Select *pRet;
   
-      if( v==0 ) return pLeft;
       pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
-      if( pRet==0 ) return pLeft;
-      p = &pRet->pSrc->a[0];
-      pRet->pSrc->nSrc = 1;
-  
-      p->pSelect = pLeft;
-      p->fg.viaCoroutine = 1;
-      p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
-      p->regReturn = ++pParse->nMem;
-      p->iCursor = -1;
-  
-      sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
-      sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
-      sqlite3Select(pParse, pLeft, &dest);
-      p->regResult = dest.iSdst;
-      assert( pParse->nErr || dest.iSdst>0 );
-  
-      pLeft = pRet;
+      if( pRet ){
+        p = &pRet->pSrc->a[0];
+        pRet->pSrc->nSrc = 1;
+
+        p->pSelect = pLeft;
+        p->fg.viaCoroutine = 1;
+        p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
+        p->regReturn = ++pParse->nMem;
+        p->iCursor = -1;
+
+        sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
+        sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
+        sqlite3Select(pParse, pLeft, &dest);
+        p->regResult = dest.iSdst;
+        assert( pParse->nErr || dest.iSdst>0 );
+        pLeft = pRet;
+      }
     }else{
       p = &pLeft->pSrc->a[0];
     }
@@ -686,6 +685,8 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         }
         sqlite3SelectDelete(pParse->db, pSelect);
       }
+    }else{
+      sqlite3ExprListDelete(pParse->db, pRow);
     }
   }
 
