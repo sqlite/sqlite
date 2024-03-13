@@ -54,7 +54,9 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
+    $a0 help
     $a0 njob ?NJOB?
+    $a0 script ?-msvc? CONFIG
     $a0 status
 
   where SWITCHES are:
@@ -89,6 +91,10 @@ directory as a running testrunner.tcl script that is running tests. The
 "status" command prints a report describing the current state and progress 
 of the tests. The "njob" command may be used to query or modify the number
 of sub-processes the test script uses to run tests.
+
+The "script" command outputs the script used to build a configuration.
+Add the "-msvc" option for a Windows-compatible script. For a list of
+available configurations enter "$a0 script help".
   }]]
 
   exit 1
@@ -326,6 +332,14 @@ if {([llength $argv]==2 || [llength $argv]==1)
   mydb close
   puts "$res"
   exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "help" command:
+#
+if {[string compare -nocase help [lindex $argv 0]]==0} {
+  usage
 }
 #--------------------------------------------------------------------------
 
