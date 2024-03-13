@@ -885,11 +885,19 @@ proc add_jobs_from_cmdline {patternlist} {
     }
 
     mdevtest {
-      add_devtest_jobs {All-O0 All-Debug} [lrange $patternlist 1 end]
+      set config_set {
+        All-O0
+        All-Debug
+      }
+      add_devtest_jobs $config_set [lrange $patternlist 1 end]
     }
 
     sdevtest {
-      add_devtest_jobs {All-Sanitize All-Debug} [lrange $patternlist 1 end]
+      set config_set {
+        All-Sanitize
+        All-Debug
+      }
+      add_devtest_jobs $config_set [lrange $patternlist 1 end]
     }
 
     release {
