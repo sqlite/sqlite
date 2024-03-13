@@ -103,6 +103,18 @@ namespace eval trd {
     --enable-all -fsanitize=address,undefined -fno-sanitize-recover=undefined
   }
 
+  set build(ReuseSchema-Debug) {
+    --enable-debug --enable-all -DSQLITE_ENABLE_SHARED_SCHEMA
+  }
+  set build(ReuseSchema-O0) {
+    -O0 --enable-all -DSQLITE_ENABLE_SHARED_SCHEMA
+  }
+  set build(ReuseSchema-Sanitize) { 
+    -DSQLITE_OMIT_LOOKASIDE=1 -DSQLITE_ENABLE_SHARED_SCHEMA
+    --enable-all -fsanitize=address,undefined -fno-sanitize-recover=undefined
+  }
+
+
   set build(Sanitize) {
     CC=clang -fsanitize=address,undefined -fno-sanitize-recover=undefined
     -DSQLITE_ENABLE_STAT4

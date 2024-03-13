@@ -886,7 +886,8 @@ proc add_jobs_from_cmdline {patternlist} {
 
     mdevtest {
       set config_set {
-        All-O0
+        ReuseSchema-O0
+        ReuseSchema-Debug
         All-Debug
       }
       add_devtest_jobs $config_set [lrange $patternlist 1 end]
@@ -894,7 +895,7 @@ proc add_jobs_from_cmdline {patternlist} {
 
     sdevtest {
       set config_set {
-        All-Sanitize
+        ReuseSchema-Sanitize
         All-Debug
       }
       add_devtest_jobs $config_set [lrange $patternlist 1 end]
