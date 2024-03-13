@@ -11,6 +11,7 @@
 #
 # The focus of this file is testing the CLI shell tool.
 #
+# TESTRUNNER: shell
 #
 
 # Test plan:

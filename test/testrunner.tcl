@@ -54,22 +54,31 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
+    $a0 help
     $a0 njob ?NJOB?
+    $a0 script ?-msvc? CONFIG
     $a0 status
 
   where SWITCHES are:
     --buildonly
     --dryrun
+    --explain
     --jobs NUMBER-OF-JOBS
     --zipvfs ZIPVFS-SOURCE-DIR
 
-Interesting values for PERMUTATION are:
+Special values for PERMUTATION that work with plain tclsh:
 
-    veryquick - a fast subset of the tcl test scripts. This is the default.
-    full      - all tcl test scripts.
+    list      - show all allowed PERMUTATION arguments.
+    mdevtest  - tests recommended prior to normal development check-ins.
+    release   - full release test with various builds.
+    sdevtest  - like mdevtest but using ASAN and UBSAN.
+
+Other PERMUTATION arguments must be run using testfixture, not tclsh:
+
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
-    release   - full release test with various builds.
+    full      - all tcl test scripts.
+    veryquick - a fast subset of the tcl test scripts. This is the default.
 
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
@@ -89,6 +98,12 @@ directory as a running testrunner.tcl script that is running tests. The
 "status" command prints a report describing the current state and progress 
 of the tests. The "njob" command may be used to query or modify the number
 of sub-processes the test script uses to run tests.
+
+The "script" command outputs the script used to build a configuration.
+Add the "-msvc" option for a Windows-compatible script. For a list of
+available configurations enter "$a0 script help".
+
+Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
 
   exit 1
@@ -126,6 +141,10 @@ proc guess_number_of_cores {} {
 }
 
 proc default_njob {} {
+  global env
+  if {[info exists env(NJOB)] && $env(NJOB)>=1} {
+    return $env(NJOB)
+  }
   set nCore [guess_number_of_cores]
   if {$nCore<=2} {
     set nHelper 1
@@ -152,6 +171,7 @@ set TRG(fuzztest) 0                 ;# is the fuzztest option present.
 set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 set TRG(buildonly) 0                ;# True if --buildonly option 
 set TRG(dryrun) 0                   ;# True if --dryrun option 
+set TRG(explain) 0                  ;# True for the --explain option
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -159,6 +179,7 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
     set TRG(testfixture) testfixture
+    set TRG(shell)       sqlite3
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
@@ -167,14 +188,16 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
     set TRG(testfixture) testfixture
+    set TRG(shell)       sqlite3
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
   *win* {
     set TRG(platform)    win
     set TRG(make)        make.bat
-    set TRG(makecmd)     make.bat
+    set TRG(makecmd)     "call make.bat"
     set TRG(testfixture) testfixture.exe
+    set TRG(shell)       sqlite3.exe
     set TRG(run)         run.bat
     set TRG(runcmd)      "run.bat"
   }
@@ -327,6 +350,14 @@ if {([llength $argv]==2 || [llength $argv]==1)
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
+# Check if this is the "help" command:
+#
+if {[string compare -nocase help [lindex $argv 0]]==0} {
+  usage
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
 # Check if this is the "script" command:
 #
 if {[string compare -nocase script [lindex $argv 0]]==0} {
@@ -435,6 +466,8 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(buildonly) 1
     } elseif {($n>2 && [string match "$a*" --dryrun]) || $a=="-d"} {
       set TRG(dryrun) 1
+    } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
+      set TRG(explain) 1
     } else {
       usage
     }
@@ -617,7 +650,16 @@ proc add_job {args} {
   trdb last_insert_rowid
 }
 
-proc add_tcl_jobs {build config patternlist} {
+# Argument $build is either an empty string, or else a list of length 3 
+# describing the job to build testfixture. In the usual form:
+#
+#    {ID DIRNAME DISPLAYNAME}
+# 
+# e.g    
+#
+#    {1 /home/user/sqlite/test/testrunner_bld_xyz All-Debug}
+# 
+proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   global TRG
 
   set topdir [file dirname $::testdir]
@@ -666,33 +708,58 @@ proc add_tcl_jobs {build config patternlist} {
     if {[lsearch $lProp slow]>=0} { set priority 2 }
     if {[lsearch $lProp superslow]>=0} { set priority 4 }
 
+    set depid [lindex $build 0]
+    if {$shelldepid!="" && [lsearch $lProp shell]>=0} { set depid $shelldepid }
+
     add_job                            \
         -displaytype tcl               \
         -displayname $displayname      \
         -cmd $cmd                      \
-        -depid [lindex $build 0]       \
+        -depid $depid                  \
         -priority $priority
-
   }
 }
 
-proc add_build_job {buildname target} {
+proc add_build_job {buildname target {postcmd ""} {depid ""}} {
   global TRG
 
   set dirname "[string tolower [string map {- _} $buildname]]_$target"
   set dirname "testrunner_bld_$dirname"
+
+  set cmd "$TRG(makecmd) $target"
+  if {$postcmd!=""} {
+    append cmd "\n"
+    append cmd $postcmd
+  }
 
   set id [add_job                                \
     -displaytype bld                             \
     -displayname "Build $buildname ($target)"    \
     -dirname $dirname                            \
     -build $buildname                            \
-    -cmd  "$TRG(makecmd) $target"                \
+    -cmd  $cmd                                   \
+    -depid $depid                                \
     -priority 3
   ]
 
   list $id [file normalize $dirname] $buildname
 }
+
+proc add_shell_build_job {buildname dirname depid} {
+  global TRG
+
+  if {$TRG(platform)=="win"} {
+    set path [string map {/ \\} "$dirname/"]
+    set copycmd "xcopy $TRG(shell) $path"
+  } else {
+    set copycmd "cp $TRG(shell) $dirname/"
+  }
+
+  return [
+    add_build_job $buildname $TRG(shell) $copycmd $depid
+  ]
+}
+
 
 proc add_make_job {bld target} {
   global TRG
@@ -767,10 +834,30 @@ proc add_devtest_jobs {lBld patternlist} {
 
   foreach b $lBld {
     set bld [add_build_job $b $TRG(testfixture)]
-    add_tcl_jobs $bld veryquick $patternlist
+    add_tcl_jobs $bld veryquick $patternlist SHELL
     if {$patternlist==""} {
       add_fuzztest_jobs $b
     }
+
+    if {[trdb one "SELECT EXISTS (SELECT 1 FROM jobs WHERE depid='SHELL')"]} {
+      set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
+      set sbldid [lindex $sbld 0]
+      trdb eval {
+        UPDATE jobs SET depid=$sbldid WHERE depid='SHELL'
+      }
+    }
+
+  }
+}
+
+# Check to ensure that the interpreter is a full-blown "testfixture"
+# build and not just a "tclsh".  If this is not the case, issue an
+# error message and exit.
+#
+proc must_be_testfixture {} {
+  if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
+    puts "Use testfixture, not tclsh, for these arguments."
+    exit 1
   }
 }
 
@@ -789,6 +876,7 @@ proc add_jobs_from_cmdline {patternlist} {
   set first [lindex $patternlist 0]
   switch -- $first {
     all {
+      must_be_testfixture
       set patternlist [lrange $patternlist 1 end]
       set clist [trd_all_configs]
       foreach c $clist {
@@ -824,7 +912,15 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
 
+    list {
+      set allperm [array names ::testspec]
+      lappend allperm all mdevtest sdevtest release list
+      puts "Allowed values for the PERMUTATION argument: [lsort $allperm]"
+      exit 0
+    }
+
     default {
+      must_be_testfixture
       if {[info exists ::testspec($first)]} {
         add_tcl_jobs "" $first [lrange $patternlist 1 end]
       } else {
@@ -948,6 +1044,16 @@ proc launch_another_job {iJob} {
     close $fd
   }
 
+  # Add a batch/shell file command to set the directory used for temp
+  # files to the test's working directory. Otherwise, tests that use
+  # large numbers of temp files (e.g. zipvfs), might generate temp 
+  # filename collisions.
+  if {$TRG(platform)=="win"} {
+    set set_tmp_dir "SET SQLITE_TMPDIR=[file normalize $dir]"
+  } else {
+    set set_tmp_dir "export SQLITE_TMPDIR=\"[file normalize $dir]\""
+  }
+
   if { $TRG(dryrun) } {
 
     mark_job_as_finished $job(jobid) "" done 0
@@ -962,7 +1068,8 @@ proc launch_another_job {iJob} {
     set pwd [pwd]
     cd $dir
     set fd [open $TRG(run) w]
-    puts $fd $job(cmd) 
+    puts $fd $set_tmp_dir
+    puts $fd $job(cmd)
     close $fd
     set fd [open "|$TRG(runcmd) 2>@1" r]
     cd $pwd
@@ -1078,15 +1185,42 @@ proc handle_buildonly {} {
   }
 }
 
+# Handle the --explain option.  Provide a human-readable
+# explanation of all the tests that are in the trdb database jobs
+# table.
+#
+proc explain_layer {indent depid} {
+  global TRG
+  if {$TRG(buildonly)} {
+    set showtests 0
+  } else {
+    set showtests 1
+  }
+  trdb eval {SELECT jobid, displayname, displaytype, dirname
+               FROM jobs WHERE depid=$depid ORDER BY displayname} {
+    if {$displaytype=="bld"} {
+      puts "${indent}$displayname in $dirname"
+      explain_layer "${indent}   " $jobid
+    } elseif {$showtests} {
+      puts "${indent}[lindex $displayname end]"
+    }
+  }
+}
+proc explain_tests {} {
+  explain_layer "" ""
+}
+
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
-if {$TRG(nJob)>1} {
-  puts "splitting work across $TRG(nJob) jobs"
+if {$TRG(explain)} {
+  explain_tests
+} else {
+  if {$TRG(nJob)>1} {
+    puts "splitting work across $TRG(nJob) jobs"
+  }
+  puts "built testset in [expr $tm/1000]ms.."
+  handle_buildonly
+  run_testset
 }
-puts "built testset in [expr $tm/1000]ms.."
-
-handle_buildonly
-run_testset
 trdb close
-#puts [pwd]
