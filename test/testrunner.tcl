@@ -62,6 +62,7 @@ Usage:
   where SWITCHES are:
     --buildonly
     --dryrun
+    --explain
     --jobs NUMBER-OF-JOBS
     --zipvfs ZIPVFS-SOURCE-DIR
 
@@ -166,6 +167,7 @@ set TRG(fuzztest) 0                 ;# is the fuzztest option present.
 set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 set TRG(buildonly) 0                ;# True if --buildonly option 
 set TRG(dryrun) 0                   ;# True if --dryrun option 
+set TRG(explain) 0                  ;# True for the --explain option
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -460,6 +462,8 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(buildonly) 1
     } elseif {($n>2 && [string match "$a*" --dryrun]) || $a=="-d"} {
       set TRG(dryrun) 1
+    } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
+      set TRG(explain) 1
     } else {
       usage
     }
@@ -1177,15 +1181,42 @@ proc handle_buildonly {} {
   }
 }
 
+# Handle the --explain option.  Provide a human-readable
+# explanation of all the tests that are in the trdb database jobs
+# table.
+#
+proc explain_layer {indent depid} {
+  global TRG
+  if {$TRG(buildonly)} {
+    set showtests 0
+  } else {
+    set showtests 1
+  }
+  trdb eval {SELECT jobid, displayname, displaytype, dirname
+               FROM jobs WHERE depid=$depid ORDER BY displayname} {
+    if {$displaytype=="bld"} {
+      puts "${indent}$displayname in $dirname"
+      explain_layer "${indent}   " $jobid
+    } elseif {$showtests} {
+      puts "${indent}[lindex $displayname end]"
+    }
+  }
+}
+proc explain_tests {} {
+  explain_layer "" ""
+}
+
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
-if {$TRG(nJob)>1} {
-  puts "splitting work across $TRG(nJob) jobs"
+if {$TRG(explain)} {
+  explain_tests
+} else {
+  if {$TRG(nJob)>1} {
+    puts "splitting work across $TRG(nJob) jobs"
+  }
+  puts "built testset in [expr $tm/1000]ms.."
+  handle_buildonly
+  run_testset
 }
-puts "built testset in [expr $tm/1000]ms.."
-
-handle_buildonly
-run_testset
 trdb close
-#puts [pwd]
