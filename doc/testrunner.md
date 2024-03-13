@@ -315,6 +315,16 @@ would normally execute into the testrunner.log file. Example:
   tclsh $TESTDIR/testrunner.tcl --dryrun mdevtest"
 ```
 
+The **--explain** option is similar to --dryrun in that it prevents testrunner.tcl
+from building any binaries or running any tests.  The difference is that --explain
+prints on standard output a human-readable summary of all the builds and tests that
+would have been run.
+
+```
+  # Show what builds and tests would have been run
+  tclsh $TESTDIR/testrunner.tcl --explain mdevtest
+```
+
 <a name=cpu_cores></a>
 # 5. Controlling CPU Core Utilization
 
