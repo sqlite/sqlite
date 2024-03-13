@@ -236,7 +236,7 @@ static int test_sqlite3_recover_init(
   zDb = Tcl_GetString(objv[2]);
   if( zDb[0]=='\0' ) zDb = 0;
 
-  pNew = ckalloc(sizeof(TestRecover));
+  pNew = (TestRecover*)ckalloc(sizeof(TestRecover));
   if( bSql==0 ){
     zUri = Tcl_GetString(objv[3]);
     pNew->p = sqlite3_recover_init(db, zDb, zUri);

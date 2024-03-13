@@ -1129,7 +1129,7 @@ case OP_Return: {           /* in1 */
 **
 ** See also: EndCoroutine
 */
-case OP_InitCoroutine: {     /* jump */
+case OP_InitCoroutine: {     /* jump0 */
   assert( pOp->p1>0 &&  pOp->p1<=(p->nMem+1 - p->nCursor) );
   assert( pOp->p2>=0 && pOp->p2<p->nOp );
   assert( pOp->p3>=0 && pOp->p3<p->nOp );
@@ -1182,7 +1182,7 @@ case OP_EndCoroutine: {           /* in1 */
 **
 ** See also: InitCoroutine
 */
-case OP_Yield: {            /* in1, jump */
+case OP_Yield: {            /* in1, jump0 */
   int pcDest;
   pIn1 = &aMem[pOp->p1];
   assert( VdbeMemDynamic(pIn1)==0 );
@@ -1512,19 +1512,15 @@ case OP_Blob: {                /* out2 */
   break;
 }
 
-/* Opcode: Variable P1 P2 * P4 *
-** Synopsis: r[P2]=parameter(P1,P4)
+/* Opcode: Variable P1 P2 * * *
+** Synopsis: r[P2]=parameter(P1)
 **
 ** Transfer the values of bound parameter P1 into register P2
-**
-** If the parameter is named, then its name appears in P4.
-** The P4 value is used by sqlite3_bind_parameter_name().
 */
 case OP_Variable: {            /* out2 */
   Mem *pVar;       /* Value being transferred */
 
   assert( pOp->p1>0 && pOp->p1<=p->nVar );
-  assert( pOp->p4.z==0 || pOp->p4.z==sqlite3VListNumToName(p->pVList,pOp->p1) );
   pVar = &p->aVar[pOp->p1 - 1];
   if( sqlite3VdbeMemTooBig(pVar) ){
     goto too_big;
@@ -2045,7 +2041,7 @@ case OP_AddImm: {            /* in1 */
 ** without data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
 */
-case OP_MustBeInt: {            /* jump, in1 */
+case OP_MustBeInt: {            /* jump0, in1 */
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_Int)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
@@ -2086,7 +2082,7 @@ case OP_RealAffinity: {                  /* in1 */
 }
 #endif
 
-#ifndef SQLITE_OMIT_CAST
+#if !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_ANALYZE)
 /* Opcode: Cast P1 P2 * * *
 ** Synopsis: affinity(r[P1])
 **
@@ -2301,7 +2297,9 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         }
       }
     }else if( affinity==SQLITE_AFF_TEXT && ((flags1 | flags3) & MEM_Str)!=0 ){
-      if( (flags1 & MEM_Str)==0 && (flags1&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
+      if( (flags1 & MEM_Str)!=0 ){
+        pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal);
+      }else if( (flags1&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn1->flags & MEM_Int );
         testcase( pIn1->flags & MEM_Real );
         testcase( pIn1->flags & MEM_IntReal );
@@ -2310,7 +2308,9 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
         if( NEVER(pIn1==pIn3) ) flags3 = flags1 | MEM_Str;
       }
-      if( (flags3 & MEM_Str)==0 && (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
+      if( (flags3 & MEM_Str)!=0 ){
+        pIn3->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal);
+      }else if( (flags3&(MEM_Int|MEM_Real|MEM_IntReal))!=0 ){
         testcase( pIn3->flags & MEM_Int );
         testcase( pIn3->flags & MEM_Real );
         testcase( pIn3->flags & MEM_IntReal );
@@ -3654,11 +3654,16 @@ case OP_MakeRecord: {
         switch( len ){
           default: zPayload[7] = (u8)(v&0xff); v >>= 8;
                    zPayload[6] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 6:  zPayload[5] = (u8)(v&0xff); v >>= 8;
                    zPayload[4] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 4:  zPayload[3] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 3:  zPayload[2] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 2:  zPayload[1] = (u8)(v&0xff); v >>= 8;
+                   /* no break */ deliberate_fall_through
           case 1:  zPayload[0] = (u8)(v&0xff);
         }
         zPayload += len;
@@ -4756,10 +4761,10 @@ case OP_ColumnsUsed: {
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
-case OP_SeekLT:         /* jump, in3, group, ncycle */
-case OP_SeekLE:         /* jump, in3, group, ncycle */
-case OP_SeekGE:         /* jump, in3, group, ncycle */
-case OP_SeekGT: {       /* jump, in3, group, ncycle */
+case OP_SeekLT:         /* jump0, in3, group, ncycle */
+case OP_SeekLE:         /* jump0, in3, group, ncycle */
+case OP_SeekGE:         /* jump0, in3, group, ncycle */
+case OP_SeekGT: {       /* jump0, in3, group, ncycle */
   int res;           /* Comparison result */
   int oc;            /* Opcode */
   VdbeCursor *pC;    /* The cursor to seek */
@@ -5426,7 +5431,7 @@ case OP_Found: {        /* jump, in3, ncycle */
 **
 ** See also: Found, NotFound, NoConflict, SeekRowid
 */
-case OP_SeekRowid: {        /* jump, in3, ncycle */
+case OP_SeekRowid: {        /* jump0, in3, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6185,7 +6190,7 @@ case OP_NullRow: {
 ** configured to use Prev, not Next.
 */
 case OP_SeekEnd:             /* ncycle */
-case OP_Last: {              /* jump, ncycle */
+case OP_Last: {              /* jump0, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6219,28 +6224,37 @@ case OP_Last: {              /* jump, ncycle */
   break;
 }
 
-/* Opcode: IfSmaller P1 P2 P3 * *
+/* Opcode: IfSizeBetween P1 P2 P3 P4 *
 **
-** Estimate the number of rows in the table P1.  Jump to P2 if that
-** estimate is less than approximately 2**(0.1*P3).
+** Let N be the approximate number of rows in the table or index
+** with cursor P1 and let X be 10*log2(N) if N is positive or -1
+** if N is zero. Thus X will be within the range of -1 to 640, inclusive
+** Jump to P2 if X is in between P3 and P4, inclusive.
 */
-case OP_IfSmaller: {        /* jump */
+case OP_IfSizeBetween: {        /* jump */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
   i64 sz;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p4type==P4_INT32 );
+  assert( pOp->p3>=-1 && pOp->p3<=640 );
+  assert( pOp->p4.i>=-1 && pOp->p4.i<=640 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->uc.pCursor;
   assert( pCrsr );
   rc = sqlite3BtreeFirst(pCrsr, &res);
   if( rc ) goto abort_due_to_error;
-  if( res==0 ){
+  if( res!=0 ){
+    sz = -1;  /* -Infinity encoding */
+  }else{
     sz = sqlite3BtreeRowCountEst(pCrsr);
-    if( ALWAYS(sz>=0) && sqlite3LogEst((u64)sz)<pOp->p3 ) res = 1;
+    assert( sz>0 );
+    sz = sqlite3LogEst((u64)sz);
   }
+  res = sz>=pOp->p3 && sz<=pOp->p4.i;
   VdbeBranchTaken(res!=0,2);
   if( res ) goto jump_to_p2;
   break;
@@ -6293,7 +6307,7 @@ case OP_Sort: {        /* jump ncycle */
 ** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 */
-case OP_Rewind: {        /* jump, ncycle */
+case OP_Rewind: {        /* jump0, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6940,11 +6954,18 @@ case OP_CreateBtree: {          /* out2 */
   break;
 }
 
-/* Opcode: SqlExec * * * P4 *
+/* Opcode: SqlExec P1 P2 * P4 *
 **
 ** Run the SQL statement or statements specified in the P4 string.
-** Disable Auth and Trace callbacks while those statements are running if
-** P1 is true.
+**
+** The P1 parameter is a bitmask of options:
+**
+**    0x0001     Disable Auth and Trace callbacks while the statements
+**               in P4 are running.
+**
+**    0x0002     Set db->nAnalysisLimit to P2 while the statements in
+**               P4 are running.
+**
 */
 case OP_SqlExec: {
   char *zErr;
@@ -6952,6 +6973,7 @@ case OP_SqlExec: {
   sqlite3_xauth xAuth;
 #endif
   u8 mTrace;
+  int savedAnalysisLimit;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
   db->nSqlExec++;
@@ -6960,11 +6982,15 @@ case OP_SqlExec: {
   xAuth = db->xAuth;
 #endif
   mTrace = db->mTrace;
-  if( pOp->p1 ){
+  savedAnalysisLimit = db->nAnalysisLimit;
+  if( pOp->p1 & 0x0001 ){
 #ifndef SQLITE_OMIT_AUTHORIZATION
     db->xAuth = 0;
 #endif
     db->mTrace = 0;
+  }
+  if( pOp->p1 & 0x0002 ){
+    db->nAnalysisLimit = pOp->p2;
   }
   rc = sqlite3_exec(db, pOp->p4.z, 0, 0, &zErr);
   db->nSqlExec--;
@@ -6972,6 +6998,7 @@ case OP_SqlExec: {
   db->xAuth = xAuth;
 #endif
   db->mTrace = mTrace;
+  db->nAnalysisLimit = savedAnalysisLimit;
   if( zErr || rc ){
     sqlite3VdbeError(p, "%s", zErr);
     sqlite3_free(zErr);
@@ -7123,11 +7150,11 @@ case OP_DropTrigger: {
 /* Opcode: IntegrityCk P1 P2 P3 P4 P5
 **
 ** Do an analysis of the currently open database.  Store in
-** register P1 the text of an error message describing any problems.
-** If no problems are found, store a NULL in register P1.
+** register (P1+1) the text of an error message describing any problems.
+** If no problems are found, store a NULL in register (P1+1).
 **
-** The register P3 contains one less than the maximum number of allowed errors.
-** At most reg(P3) errors will be reported.
+** The register (P1) contains one less than the maximum number of allowed
+** errors.  At most reg(P1) errors will be reported.
 ** In other words, the analysis stops as soon as reg(P1) errors are
 ** seen.  Reg(P1) is updated with the number of errors remaining.
 **
@@ -7147,19 +7174,21 @@ case OP_IntegrityCk: {
   Mem *pnErr;     /* Register keeping track of errors remaining */
 
   assert( p->bIsReader );
+  assert( pOp->p4type==P4_INTARRAY );
   nRoot = pOp->p2;
   aRoot = pOp->p4.ai;
   assert( nRoot>0 );
+  assert( aRoot!=0 );
   assert( aRoot[0]==(Pgno)nRoot );
-  assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
-  pnErr = &aMem[pOp->p3];
+  assert( pOp->p1>0 && (pOp->p1+1)<=(p->nMem+1 - p->nCursor) );
+  pnErr = &aMem[pOp->p1];
   assert( (pnErr->flags & MEM_Int)!=0 );
   assert( (pnErr->flags & (MEM_Str|MEM_Blob))==0 );
-  pIn1 = &aMem[pOp->p1];
+  pIn1 = &aMem[pOp->p1+1];
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
-  rc = sqlite3BtreeIntegrityCheck(db, db->aDb[pOp->p5].pBt, &aRoot[1], nRoot,
-                                 (int)pnErr->u.i+1, &nErr, &z);
+  rc = sqlite3BtreeIntegrityCheck(db, db->aDb[pOp->p5].pBt, &aRoot[1], 
+      &aMem[pOp->p3], nRoot, (int)pnErr->u.i+1, &nErr, &z);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
     assert( z==0 );
@@ -7286,7 +7315,9 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 ** P1 contains the address of the memory cell that contains the first memory
 ** cell in an array of values used as arguments to the sub-program. P2
 ** contains the address to jump to if the sub-program throws an IGNORE
-** exception using the RAISE() function. Register P3 contains the address
+** exception using the RAISE() function. P2 might be zero, if there is
+** no possibility that an IGNORE exception will be raised.
+** Register P3 contains the address
 ** of a memory cell in this (the parent) VM that is used to allocate the
 ** memory required by the sub-vdbe at runtime.
 **
@@ -7294,7 +7325,7 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 **
 ** If P5 is non-zero, then recursive program invocation is enabled.
 */
-case OP_Program: {        /* jump */
+case OP_Program: {        /* jump0 */
   int nMem;               /* Number of memory registers for sub-program */
   int nByte;              /* Bytes of runtime space required for sub-program */
   Mem *pRt;               /* Register to allocate runtime space */
@@ -8848,7 +8879,7 @@ case OP_Filter: {          /* jump */
 ** error is encountered.
 */
 case OP_Trace:
-case OP_Init: {          /* jump */
+case OP_Init: {          /* jump0 */
   int i;
 #ifndef SQLITE_OMIT_TRACE
   char *zTrace;

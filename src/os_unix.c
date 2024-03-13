@@ -1299,8 +1299,12 @@ static int unixLogErrorAtLine(
   ** available, the error message will often be an empty string. Not a
   ** huge problem. Incorrectly concluding that the GNU version is available
   ** could lead to a segfault though.
+  **
+  ** Forum post 3f13857fa4062301 reports that the Android SDK may use
+  ** int-type return, depending on its version.
   */
-#if defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)
+#if (defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)) \
+  && !defined(ANDROID) && !defined(__ANDROID__)
   zErr =
 # endif
   strerror_r(iErrno, aErr, sizeof(aErr)-1);
@@ -5488,11 +5492,16 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 
 #if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->mmapSizeMax>0 ){
+    /* Ensure that there is always at least a 256 byte buffer of addressable
+    ** memory following the returned page. If the database is corrupt,
+    ** SQLite may overread the page slightly (in practice only a few bytes,
+    ** but 256 is safe, round, number).  */
+    const int nEofBuffer = 256;
     if( pFd->pMapRegion==0 ){
       int rc = unixMapfile(pFd, -1);
       if( rc!=SQLITE_OK ) return rc;
     }
-    if( pFd->mmapSize >= iOff+nAmt ){
+    if( pFd->mmapSize >= (iOff+nAmt+nEofBuffer) ){
       *pp = &((u8 *)pFd->pMapRegion)[iOff];
       pFd->nFetchOut++;
     }

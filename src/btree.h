@@ -331,6 +331,7 @@ int sqlite3BtreeIntegrityCheck(
   sqlite3 *db,  /* Database connection that is running the check */
   Btree *p,     /* The btree to be checked */
   Pgno *aRoot,  /* An array of root pages numbers for individual trees */
+  sqlite3_value *aCnt,  /* OUT: entry counts for each btree in aRoot[] */
   int nRoot,    /* Number of entries in aRoot[] */
   int mxErr,    /* Stop reporting errors after this many */
   int *pnErr,   /* OUT: Write number of errors seen to this variable */

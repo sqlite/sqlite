@@ -498,6 +498,7 @@ void sqlite3_str_vappendf(
         if( xtype==etFLOAT ){
           iRound = -precision;
         }else if( xtype==etGENERIC ){
+          if( precision==0 ) precision = 1;
           iRound = precision;
         }else{
           iRound = precision+1;
@@ -533,13 +534,14 @@ void sqlite3_str_vappendf(
         }
 
         exp = s.iDP-1;
-        if( xtype==etGENERIC && precision>0 ) precision--;
 
         /*
         ** If the field type is etGENERIC, then convert to either etEXP
         ** or etFLOAT, as appropriate.
         */
         if( xtype==etGENERIC ){
+          assert( precision>0 );
+          precision--;
           flag_rtz = !flag_alternateform;
           if( exp<-4 || exp>precision ){
             xtype = etEXP;

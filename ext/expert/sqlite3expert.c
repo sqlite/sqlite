@@ -1948,7 +1948,7 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
     sqlite3_stmt *pSql = 0;
     rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
         "SELECT sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
-        " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
+        " AND sql NOT LIKE 'CREATE VIRTUAL %%' ORDER BY rowid"
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       const char *zSql = (const char*)sqlite3_column_text(pSql, 0);

@@ -6444,6 +6444,8 @@ void sqlite3SelectPrep(
 */
 static void printAggInfo(AggInfo *pAggInfo){
   int ii;
+  sqlite3DebugPrintf("AggInfo %d/%p:\n",
+     pAggInfo->selId, pAggInfo);
   for(ii=0; ii<pAggInfo->nColumn; ii++){
     struct AggInfo_col *pCol = &pAggInfo->aCol[ii];
     sqlite3DebugPrintf(
@@ -8546,6 +8548,12 @@ select_end:
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
 #ifdef SQLITE_DEBUG
   if( pAggInfo && !db->mallocFailed ){
+#if TREETRACE_ENABLED
+    if( sqlite3TreeTrace & 0x20 ){
+      TREETRACE(0x20,pParse,p,("Finished with AggInfo\n"));
+      printAggInfo(pAggInfo);
+    }
+#endif
     for(i=0; i<pAggInfo->nColumn; i++){
       Expr *pExpr = pAggInfo->aCol[i].pCExpr;
       if( pExpr==0 ) continue;

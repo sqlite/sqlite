@@ -18,6 +18,13 @@
 TOP = .
 
 
+# Optionally set EXTRA_SRC to a list of C files to append to
+# the generated sqlite3.c.
+#
+!IFNDEF EXTRA_SRC
+EXTRA_SRC =
+!ENDIF
+
 # Set this non-0 to enable full warnings (-W4, etc) when compiling.
 #
 !IFNDEF USE_FULLWARN

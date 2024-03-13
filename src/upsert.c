@@ -90,7 +90,8 @@ Upsert *sqlite3UpsertNew(
 int sqlite3UpsertAnalyzeTarget(
   Parse *pParse,     /* The parsing context */
   SrcList *pTabList, /* Table into which we are inserting */
-  Upsert *pUpsert    /* The ON CONFLICT clauses */
+  Upsert *pUpsert,   /* The ON CONFLICT clauses */
+  Upsert *pAll       /* Complete list of all ON CONFLICT clauses */
 ){
   Table *pTab;            /* That table into which we are inserting */
   int rc;                 /* Result code */
@@ -193,6 +194,14 @@ int sqlite3UpsertAnalyzeTarget(
         continue;
       }
       pUpsert->pUpsertIdx = pIdx;
+      if( sqlite3UpsertOfIndex(pAll,pIdx)!=pUpsert ){
+        /* Really this should be an error.  The isDup ON CONFLICT clause will
+        ** never fire.  But this problem was not discovered until three years
+        ** after multi-CONFLICT upsert was added, and so we silently ignore
+        ** the problem to prevent breaking applications that might actually
+        ** have redundant ON CONFLICT clauses. */
+        pUpsert->isDup = 1;
+      }
       break;
     }
     if( pUpsert->pUpsertIdx==0 ){
@@ -219,9 +228,13 @@ int sqlite3UpsertNextIsIPK(Upsert *pUpsert){
   Upsert *pNext;
   if( NEVER(pUpsert==0) ) return 0;
   pNext = pUpsert->pNextUpsert;
-  if( pNext==0 ) return 1;
-  if( pNext->pUpsertTarget==0 ) return 1;
-  if( pNext->pUpsertIdx==0 ) return 1;
+  while( 1 /*exit-by-return*/ ){
+    if( pNext==0 ) return 1;
+    if( pNext->pUpsertTarget==0 ) return 1;
+    if( pNext->pUpsertIdx==0 ) return 1;
+    if( !pNext->isDup ) return 0;
+    pNext = pNext->pNextUpsert;
+  }
   return 0;
 }
 

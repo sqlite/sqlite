@@ -97,7 +97,7 @@ do_test pragma4-2.100 {
   }
   string map {\[ x \] x \173 {} \175 {}} \
     [db eval {EXPLAIN PRAGMA integrity_check}]
-} {/ IntegrityCk 2 2 1 x[0-9]+,1x /}
+} {/ IntegrityCk 1 2 8 x[0-9]+,1x /}
 
 
 #--------------------------------------------------------------------------
