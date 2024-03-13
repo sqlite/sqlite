@@ -141,6 +141,10 @@ proc guess_number_of_cores {} {
 }
 
 proc default_njob {} {
+  global env
+  if {[info exists env(NJOB)] && $env(NJOB)>=1} {
+    return $env(NJOB)
+  }
   set nCore [guess_number_of_cores]
   if {$nCore<=2} {
     set nHelper 1
