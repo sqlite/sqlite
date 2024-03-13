@@ -1008,9 +1008,14 @@ proc launch_another_job {iJob} {
     close $fd
   }
 
-  set job_cmd $job(cmd)
-  if {$TRG(platform)!="win"} {
-    set job_cmd "export SQLITE_TMPDIR=\"[file normalize $dir]\"\n$job_cmd"
+  # Add a batch/shell file command to set the directory used for temp
+  # files to the test's working directory. Otherwise, tests that use
+  # large numbers of temp files (e.g. zipvfs), might generate temp 
+  # filename collisions.
+  if {$TRG(platform)=="win"} {
+    set set_tmp_dir "SET SQLITE_TMPDIR=[file normalize $dir]"
+  } else {
+    set set_tmp_dir "export SQLITE_TMPDIR=\"[file normalize $dir]\""
   }
 
   if { $TRG(dryrun) } {
@@ -1027,7 +1032,8 @@ proc launch_another_job {iJob} {
     set pwd [pwd]
     cd $dir
     set fd [open $TRG(run) w]
-    puts $fd $job_cmd
+    puts $fd $set_tmp_dir
+    puts $fd $job(cmd)
     close $fd
     set fd [open "|$TRG(runcmd) 2>@1" r]
     cd $pwd
