@@ -1,5 +1,5 @@
-C If\sthe\sNJOB\senvironment\svariable\sis\sa\spositive\sinteger,\sit\scauses\ntestrunner.tcl\sto\srun\sthat\smany\sjobs.
-D 2024-03-13T13:43:21.042
+C Minor\schange\sto\sthe\s"mdevtest"\sand\s"sdevtest"\sin\stestrunner.tcl,\sto\smake\sit\neasier\sto\sadd\sconfigurations\sin\sbranches.
+D 2024-03-13T16:32:05.539
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1687,7 +1687,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
-F test/testrunner.tcl 48e33d99f0bad37a03b8a4064a44184de4c4ed8cd2e3174fef8d7c5f4e28ecc3
+F test/testrunner.tcl 9f198e41c0d8899d547a5beb4af0c0d512021d18da136918dd96be6a242dbab5
 F test/testrunner_data.tcl 2f94974e5e3a56af880be72f7a7fd239aa9d4ecf978625435fcc698319c927fa
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a7b5fc99a9d5c7693a5707c2050a8c59a8f97732e4763a56982579f8d5959ec
-R 407830b5c90e1eed2d3fe5c7fa3b86c4
+P 924281b94d8e6ba674d6fe2f7f01da890351355a854e9e6fe623fad1180f7392
+R 92509b8a5762b034ecb1ec5b7039a632
 U drh
-Z 7cb4f1a4becd0bff0730a94c93a2e20f
+Z 644a950afdac6e39b6751ae1898b20f1
 # Remove this line to create a well-formed Fossil manifest.
