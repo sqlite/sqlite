@@ -280,5 +280,96 @@ do_execsql_test 7.1 {
   a b  a b
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+set VVV {
+  ( VALUES('a', 'b'), ('c', 'd'), (123, NULL) )
+}
+set VVV2 {
+  ( 
+  SELECT 'a' AS column1, 'b' AS column2 
+  UNION ALL SELECT 'c', 'd' UNION ALL SELECT 123, NULL
+  )
+}
+
+do_execsql_test 8.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('d'), (NULL), (123)
+}
+foreach {tn q res} {
+  1 "SELECT * FROM t1 LEFT JOIN VVV" {
+    d a b   d c d   d 123 {}
+    {} a b   {} c d   {} 123 {}
+    123 a b   123 c d   123 123 {}
+  }
+
+  2 "SELECT * FROM t1 LEFT JOIN VVV ON (column1=x)" {
+    d {} {}
+    {} {} {}
+    123 123 {}
+  }
+
+  3 "SELECT * FROM t1 RIGHT JOIN VVV" {
+    d a b   d c d   d 123 {}
+    {} a b   {} c d   {} 123 {}
+    123 a b   123 c d   123 123 {}
+  }
+
+  4 "SELECT * FROM t1 RIGHT JOIN VVV ON (column1=x)" {
+    123 123 {}
+    {} a b
+    {} c d
+  }
+
+  5 "SELECT * FROM t1 FULL OUTER JOIN VVV ON (column1=x)" {
+    d {} {}
+    {} {} {}
+    123 123 {}
+    {} a b
+    {} c d
+  }
+
+  6 "SELECT count(*) FROM VVV" { 3 }
+
+  7 "SELECT (SELECT column1 FROM VVV)" { a }
+
+  8 "SELECT * FROM VVV UNION ALL SELECT * FROM VVV" {
+    a b c d 123 {}
+    a b c d 123 {}
+  }
+
+  9 "SELECT * FROM VVV INTERSECT SELECT * FROM VVV" {
+    123 {} a b c d 
+  }
+
+  10 "SELECT * FROM VVV eXCEPT SELECT * FROM VVV" { }
+
+  11 "SELECT * FROM VVV eXCEPT SELECT 'a', 'b'" { 123 {} c d }
+
+} {
+  set q1 [string map [list VVV $VVV] $q]
+  set q2 [string map [list VVV $VVV2] $q]
+  set q3 "WITH VVV AS $VVV $q"
+
+  do_execsql_test 8.1.$tn.1 $q1 $res
+  do_execsql_test 8.1.$tn.2 $q2 $res
+  do_execsql_test 8.1.$tn.3 $q3 $res
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 9.1 {
+  VALUES(456), (123), (NULL) UNION ALL SELECT 122 ORDER BY 1
+} { {} 122 123 456 }
+
+do_execsql_test 9.2 {
+  VALUES (1, 2), (3, 4), (
+    ( SELECT column1 FROM ( VALUES (5, 6), (7, 8) ) ),
+    ( SELECT max(column2) FROM ( VALUES (5, 1), (7, 6) ) )
+  )
+} { 1 2 3 4 5 6 }
+
 finish_test
 
