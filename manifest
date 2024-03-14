@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sALTER\sTABLE\sand\scorrelated\smulti-row\sVALUES\sclauses.
-D 2024-03-14T19:31:06.929
+C Fix\stestcase\sto\saccount\sfor\snew\sbehaviors\swith\sthis\sbranch.
+D 2024-03-14T20:39:03.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1648,7 +1648,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 1b7ab4f312442c5cc6b3a5f299fa8ca051416d1dd173cb1126fd51bf64f2c3fb
-F test/sqllimits1.test 5880a2f107185744ba4d93637f44c78d17706a9899a38b694d50f209735c81cc
+F test/sqllimits1.test dee96a51b83ef866d06ec3c687d4c951d97b02549facc5be88c9dfcb215b98bf
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 123212a20ceb496893d5254a5f6c76442ce549fdc08d1702d8288a2bbaac8408
@@ -2179,8 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8a2a8198a97046ff376bc5d38e4bc0a24fcac79f5a0dadb9d29d953a862a012
-R 52836dd49dafb492a11e027744e0ffa5
-U dan
-Z 97470bd397212d168f5c1df2d58f75c8
+P d543c829ef74dbd64105bd757ca660e4f02e9ce562be4f1688a701fa535351c4
+R 9a3605a04234115bfc68cd6fc0f2125f
+U drh
+Z eb4b6e81254ae60e2fa77bddac123f09
 # Remove this line to create a well-formed Fossil manifest.
