@@ -51,7 +51,7 @@
 */
 "use strict";
 const wPost = (type,...args)=>postMessage({type, payload:args});
-const installAsyncProxy = function(self){
+const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   if(globalThis.window === globalThis){
     toss("This code cannot run from the main thread.",
@@ -563,12 +563,9 @@ const installAsyncProxy = function(self){
           return;
         }
         if( state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN & opfsFlags ){
-          //log("async proxy opfsFlags =",opfsFlags);
           try{
             await hDir.removeEntry(filenamePart);
-            //log("Unlinked",filename,hDir,filenamePart);
-          }
-          catch(e){
+          }catch(e){
             /* ignoring */
             //warn("Ignoring failed Unlink of",filename,":",e);
           }
@@ -922,5 +919,5 @@ if(!globalThis.SharedArrayBuffer){
          !navigator?.storage?.getDirectory){
   wPost('opfs-unavailable',"Missing required OPFS APIs.");
 }else{
-  installAsyncProxy(self);
+  installAsyncProxy();
 }
