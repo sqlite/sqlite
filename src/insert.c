@@ -1084,7 +1084,10 @@ void sqlite3Insert(
     int regYield;       /* Register holding co-routine entry-point */
     int rc;             /* Result code */
 
-    if( pSelect->pSrc->nSrc==1 && pSelect->pSrc->a[0].fg.viaCoroutine ){
+    if( pSelect->pSrc->nSrc==1 
+     && pSelect->pSrc->a[0].fg.viaCoroutine 
+     && pSelect->pPrior==0
+    ){
       SrcItem *pItem = &pSelect->pSrc->a[0];
       dest.iSDParm = regYield = pItem->regReturn;
       regFromSelect = pItem->regResult;
