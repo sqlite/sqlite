@@ -713,6 +713,16 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         p->iCursor = -1;
         sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
         sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
+
+        /* Allocate registers for the output of the co-routine. Do so so
+        ** that there are two unused registers immediately before those
+        ** used by the co-routine. This allows the code in sqlite3Insert()
+        ** to use these registers directly, instead of copying the output
+        ** of the co-routine to a separate array for processing.  */
+        dest.iSdst = pParse->nMem + 3; 
+        dest.nSdst = pLeft->pEList->nExpr;
+        pParse->nMem += 2 + dest.nSdst;
+
         sqlite3Select(pParse, pLeft, &dest);
         p->regResult = dest.iSdst;
         assert( pParse->nErr || dest.iSdst>0 );
@@ -1079,6 +1089,11 @@ void sqlite3Insert(
       dest.iSDParm = regYield = pItem->regReturn;
       regFromSelect = pItem->regResult;
       nColumn = pItem->pSelect->pEList->nExpr;
+      if( bIdListInOrder && nColumn==pTab->nCol ){
+        regData = regFromSelect;
+        regRowid = regData - 1;
+        regIns = regRowid - (IsVirtual(pTab) ? 1 : 0);
+      }
     }else{
       int addrTop;        /* Top of the co-routine */
       regYield = ++pParse->nMem;

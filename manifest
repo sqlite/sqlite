@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\sVALUES\sclauses\sin\svarious\scontexts.
-D 2024-03-14T11:45:39.711
+C Avoid\ssome\sOP_SCopy\sinstructions\sin\s"INSERT\sINTO\s..\sVALUES"\sstatements\sthat\sinsert\smore\sthan\sone\srow\sin\scases\swhere\sthe\sVALUES\sclause\scontains\sa\svalue\sfor\sall\scolumns\sof\sthe\stable.
+D 2024-03-14T17:04:18.708
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 6323a2da33b5af954f914f33e06af30cce354bbd2553261a4b64e578339e498f
+F src/insert.c 49b1f253248a7492595ee5b602f8b9f8f5bd25037148ca4429b24bd11d9033ed
 F src/json.c e2e40760d6689134c3e2ece38c6a496b34ff5e2661a8f238444a119af666fdce
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -1921,7 +1921,7 @@ F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
 F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce042fd
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
-F test/values.test 97a12553a3bb5bae5bdd924e1bdc53540e59d255f5072fe1f744412497ffb8e9
+F test/values.test 9ec708b15ef0c6a63ece21b2cffcf1bc11cdc96b7fc778e62995de51609afcad
 F test/valuesfault.test 2ef23ed965e3bd08e268cdc38a0d11653390ddbbe1e8e2e98d16f55edd30f6e8
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -2179,8 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 88d5bc91a52675d2a83748b79ad50de0e9732b2afd23107627bdc604f744d275
-R ff7025814ffdce6724f42ac930401faa
+P 973d197d9676c066a95cea77a27e36d2d7f5778283919d8cac4424d2ec952f47
+R 35577c4549391d6fa401c7e1873df695
 U dan
-Z a6579ddbeb44182b511c7d09df6cac16
+Z 98186a481119713b14ebbdd018027220
 # Remove this line to create a well-formed Fossil manifest.

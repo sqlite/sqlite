@@ -371,5 +371,22 @@ do_execsql_test 9.2 {
   )
 } { 1 2 3 4 5 6 }
 
+do_execsql_test 10.1 {
+  CREATE TABLE a2(a, b, c DEFAULT 'xyz');
+}
+do_execsql_test 10.2 {
+  INSERT INTO a2(a) VALUES(3),(4);
+}
+
+#-------------------------------------------------------------------------
+reset_db
+ifcapable fts5 {
+  do_execsql_test 11.0 {
+    CREATE VIRTUAL TABLE ft USING fts3(x);
+  }
+  do_execsql_test 11.1 {
+    INSERT INTO ft VALUES('one'), ('two');
+  }
+}
 finish_test
 
