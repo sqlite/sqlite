@@ -675,6 +675,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
    || pParse->db->init.busy            /* condition (b) above */
    || exprListIsConstant(pRow)==0      /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 && exprListIsNoAffinity(pLeft->pEList)==0) /* (d) */
+   || IN_SPECIAL_PARSE
   ){
     /* The co-routine method cannot be used. Fall back to UNION ALL. */
     Select *pSelect = 0;
