@@ -1,5 +1,5 @@
-C Tweaks\sto\sthe\sfunc4.test\stest\smodule\s(which\stests\sthe\srarely\sused\stotype.c\nextension)\sso\sthat\sit\sworks\son\si586\scompiled\susing\sgcc-13\swith\s-O0.\s\sDetails\nat\s[forum:/forumpost/0a7553b0f734c033|forum\spost\s0a7553b0f734c033].
-D 2024-03-15T13:16:13.460
+C Fix\s(totally\sharmless)\smemory\sleaks\sin\sLemon\sto\savoid\swarnings\sduring\sASAN\nbuilds.
+D 2024-03-15T17:04:55.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2088,7 +2088,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 7f264d5d06450f929a20fa63a1b7e8f2df47dfaa6d7f80e4afef3639157497a4
+F tool/lemon.c 2eaee61479f9b97056950741c8f671a13281c819b94246698264a322360319a9
 F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f15709430d4ba2fcf5729bc30a45dacb77102927b82cda12de0b67935b526cc0
-R 5b57f46c94d279354a994dbd1c18ea0b
+P d0fbe779bc2460e120da4f39063a9f4121c700f0b86d85f4311715b1366c3515
+R 23ce63f7e666b66fe29613cc12e69c85
 U drh
-Z ac2ce8f2de4e984fc417325734d61778
+Z 6317df74aefa1b57098e3d6e2401e93c
 # Remove this line to create a well-formed Fossil manifest.
