@@ -1,5 +1,5 @@
-C JS:\sremove\san\sunused\sfunction\sargument\sand\ssome\sdebug-related\scomments.\sNo\sfunctional\schanges.
-D 2024-03-14T13:18:19.313
+C Tweaks\sto\sthe\sfunc4.test\stest\smodule\s(which\stests\sthe\srarely\sused\stotype.c\nextension)\sso\sthat\sit\sworks\son\si586\scompiled\susing\sgcc-13\swith\s-O0.\s\sDetails\nat\s[forum:/forumpost/0a7553b0f734c033|forum\spost\s0a7553b0f734c033].
+D 2024-03-15T13:16:13.460
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1231,7 +1231,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test 504d202650c7940b5aa98364dd68f242df87f39f829e51074a55d79fc7bc7414
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
-F test/func4.test e8ef9b2bd6a192a213cbd5cf31a3b35e25cd6ff2fdaeea0b58d63be31b03d220
+F test/func4.test a3f9062487dbd826776f54f4e0e9517fe8c3cf689af92735308965774d51fac5
 F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d82a
 F test/func6.test 9cc9b1f43b435af34fe1416eb1e318c8920448ea7a6962f2121972f5215cb9b0
 F test/func7.test adbfc910385a6ffd15dc47be3c619ef070c542fcb7488964badb17b2d9a4d080
@@ -2177,8 +2177,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9349d94e05dcf266b02afcd89f1e433cdc45f23e8536b2f3f9aa242d5d89c307
-R e2c267441183e97923991728d71c55b9
-U stephan
-Z f0980170118e0dee3925f721da1aaab7
+P f15709430d4ba2fcf5729bc30a45dacb77102927b82cda12de0b67935b526cc0
+R 5b57f46c94d279354a994dbd1c18ea0b
+U drh
+Z ac2ce8f2de4e984fc417325734d61778
 # Remove this line to create a well-formed Fossil manifest.
