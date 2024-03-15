@@ -1,5 +1,5 @@
-C Fix\stestcase\sto\saccount\sfor\snew\sbehaviors\swith\sthis\sbranch.
-D 2024-03-14T20:39:03.615
+C Attempt\sto\suse\sthe\sDekker\shigh-precision\sfloating\spoint\salgorithm\sin\sthe\next/misc/totype.c\sextension.
+D 2024-03-15T12:59:11.249
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -419,7 +419,7 @@ F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd3
 F ext/misc/sqlar.c 53e7d48f68d699a24f1a92e68e71eca8b3a9ff991fe9588c2a05bde103c6e7b7
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/totype.c 75ed9827d19cc3b434fc2aeb60725d4d46e1534373615612a4d1cfdcc3d60922
+F ext/misc/totype.c e4911af239991f020017b85eaf57122be75c6416789b3946ffcc4f9e861bad22
 F ext/misc/uint.c 053fed3bce2e89583afcd4bf804d75d659879bbcedac74d0fa9ed548839a030b
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
@@ -2179,8 +2179,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d543c829ef74dbd64105bd757ca660e4f02e9ce562be4f1688a701fa535351c4
-R 9a3605a04234115bfc68cd6fc0f2125f
+P 823e579362c05bb8accf6c3b158c5162a16eb23cf81d6021c9e3246e32583d1c
+R 52f253ac14fb8e14beebf78670890719
+T *branch * totype-dekker
+T *sym-totype-dekker *
+T -sym-exp-values-clause2 *
 U drh
-Z eb4b6e81254ae60e2fa77bddac123f09
+Z a6f29290405dcccc6b403f65943397c8
 # Remove this line to create a well-formed Fossil manifest.

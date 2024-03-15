@@ -180,6 +180,62 @@ static int totypeAtoi64(const char *zNum, sqlite3_int64 *pNum, int length){
   }
 }
 
+#ifndef LONGDOUBLE_TYPE
+# define LONGDOUBLE_TYPE long double
+#endif
+typedef sqlite3_uint64 u64;
+#define LARGEST_UINT64 (0xffffffff|(((sqlite3_uint64)0xffffffff)<<32))
+#define EXP754 (((u64)0x7ff)<<52)
+#define MAN754 ((((u64)1)<<52)-1)
+#define IsNaN(X) (((X)&EXP754)==EXP754 && ((X)&MAN754)!=0)
+
+/*
+** Return true if the floating point value is Not a Number (NaN).
+*/
+int totypeIsNaN(double x){
+  int rc;   /* The value return */
+  u64 y;
+  memcpy(&y,&x,sizeof(y));
+  rc = IsNaN(y);
+  return rc;
+}
+
+/* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+static void dekkerMul2(volatile double *x, double y, double yy){
+  /*
+  ** The "volatile" keywords on parameter x[] and on local variables
+  ** below are needed force intermediate results to be truncated to
+  ** binary64 rather than be carried around in an extended-precision
+  ** format.  The truncation is necessary for the Dekker algorithm to
+  ** work.  Intel x86 floating point might omit the truncation without
+  ** the use of volatile. 
+  */
+  volatile double tx, ty, p, q, c, cc;
+  double hx, hy;
+  u64 m;
+  memcpy(&m, (void*)&x[0], 8);
+  m &= 0xfffffffffc000000LL;
+  memcpy(&hx, &m, 8);
+  tx = x[0] - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000LL;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x[0]*yy + x[1]*y + cc;
+  x[0] = c + cc;
+  x[1] = c - x[0];
+  x[1] += cc;
+}
+
 /*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
@@ -213,6 +269,7 @@ static int totypeAtoF(const char *z, double *pResult, int length){
   double result;
   int nDigits = 0;
   int nonNum = 0;
+  int bUseLongDouble = sizeof(LONGDOUBLE_TYPE)>8;
 
   *pResult = 0.0;   /* Default return value, in case of an error */
 
@@ -282,70 +339,90 @@ static int totypeAtoF(const char *z, double *pResult, int length){
   }
 
 totype_atof_calc:
+  /* Zero is a special case */
+  if( s==0 ){
+    *pResult = sign<0 ? -0.0 : +0.0;
+    goto atof_return;
+  }
+
   /* adjust exponent by d, and update sign */
   e = (e*esign) + d;
-  if( e<0 ) {
-    esign = -1;
-    e *= -1;
-  } else {
-    esign = 1;
+
+  /* Try to adjust the exponent to make it smaller */
+  while( e>0 && s<(LARGEST_UINT64/10) ){
+    s *= 10;
+    e--;
+  }
+  while( e<0 && (s%10)==0 ){
+    s /= 10;
+    e++;
   }
 
-  /* if 0 significand */
-  if( !s ) {
-    /* In the IEEE 754 standard, zero is signed.
-    ** Add the sign if we've seen at least one digit */
-    result = (sign<0 && nDigits) ? -(double)0 : (double)0;
-  } else {
-    /* attempt to reduce exponent */
-    if( esign>0 ){
-      while( s<(LARGEST_INT64/10) && e>0 ) e--,s*=10;
+  if( e==0 ){
+    *pResult = s;
+  }else if( bUseLongDouble ){
+    LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
+    if( e>0 ){
+      while( e>=100  ){ e-=100; r *= 1.0e+100L; }
+      while( e>=10   ){ e-=10;  r *= 1.0e+10L;  }
+      while( e>=1    ){ e-=1;   r *= 1.0e+01L;  }
     }else{
-      while( !(s%10) && e>0 ) e--,s/=10;
+      while( e<=-100 ){ e+=100; r *= 1.0e-100L; }
+      while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
+      while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
     }
-
-    /* adjust the sign of significand */
-    s = sign<0 ? -s : s;
-
-    /* if exponent, scale significand as appropriate
-    ** and store in result. */
-    if( e ){
-      double scale = 1.0;
-      /* attempt to handle extremely small/large numbers better */
-      if( e>307 && e<342 ){
-        while( e%308 ) { scale *= 1.0e+1; e -= 1; }
-        if( esign<0 ){
-          result = s / scale;
-          result /= 1.0e+308;
-        }else{
-          result = s * scale;
-          result *= 1.0e+308;
-        }
-      }else if( e>=342 ){
-        if( esign<0 ){
-          result = 0.0*s;
-        }else{
-          result = 1e308*1e308*s;  /* Infinity */
-        }
-      }else{
-        /* 1.0e+22 is the largest power of 10 than can be
-        ** represented exactly. */
-        while( e%22 ) { scale *= 1.0e+1; e -= 1; }
-        while( e>0 ) { scale *= 1.0e+22; e -= 22; }
-        if( esign<0 ){
-          result = s / scale;
-        }else{
-          result = s * scale;
-        }
+    assert( r>=0.0 );
+    if( r>+1.7976931348623157081452742373e+308L ){
+#ifdef INFINITY
+      *pResult = +INFINITY;
+#else
+      *pResult = 1.0e308*10.0;
+#endif
+    }else{
+      *pResult = (double)r;
+    }
+  }else{
+    double rr[2];
+    u64 s2;
+    rr[0] = (double)s;
+    s2 = (u64)rr[0];
+#if defined(_MSC_VER) && _MSC_VER<1700
+    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+#endif
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+    if( e>0 ){
+      while( e>=100  ){
+        e -= 100;
+        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
       }
-    } else {
-      result = (double)s;
+      while( e>=10   ){
+        e -= 10;
+        dekkerMul2(rr, 1.0e+10, 0.0);
+      }
+      while( e>=1    ){
+        e -= 1;
+        dekkerMul2(rr, 1.0e+01, 0.0);
+      }
+    }else{
+      while( e<=-100 ){
+        e += 100;
+        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
+      }
+      while( e<=-10  ){
+        e += 10;
+        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+      }
+      while( e<=-1   ){
+        e += 1;
+        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+      }
     }
+    *pResult = rr[0]+rr[1];
+    if( totypeIsNaN(*pResult) ) *pResult = 1e300*1e300;
   }
+  if( sign<0 ) *pResult = -*pResult;
 
-  /* store the result */
-  *pResult = result;
-
+atof_return:
   /* return true if number and no extra non-whitespace chracters after */
   return z>=zEnd && nDigits>0 && eValid && nonNum==0;
 }
