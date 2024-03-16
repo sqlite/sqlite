@@ -594,10 +594,10 @@ void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
 ** Return true if all expressions in the expression-list passed as the
 ** only argument are constant.
 */
-static int exprListIsConstant(ExprList *pRow){
+static int exprListIsConstant(Parse *pParse, ExprList *pRow){
   int ii;
   for(ii=0; ii<pRow->nExpr; ii++){
-    if( 0==sqlite3ExprIsConstant(pRow->a[ii].pExpr) ) return 0;
+    if( 0==sqlite3ExprIsConstant(pParse, pRow->a[ii].pExpr) ) return 0;
   }
   return 1;
 }
@@ -606,9 +606,9 @@ static int exprListIsConstant(ExprList *pRow){
 ** Return true if all expressions in the expression-list passed as the
 ** only argument are both constant and have no affinity.
 */
-static int exprListIsNoAffinity(ExprList *pRow){
+static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
   int ii;
-  if( exprListIsConstant(pRow)==0 ) return 0;
+  if( exprListIsConstant(pParse,pRow)==0 ) return 0;
   for(ii=0; ii<pRow->nExpr; ii++){
     assert( pRow->a[ii].pExpr->affExpr==0 );
     if( 0!=sqlite3ExprAffinity(pRow->a[ii].pExpr) ) return 0;
@@ -670,11 +670,12 @@ static int exprListIsNoAffinity(ExprList *pRow){
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
-  if( pLeft->pPrior                    /* co-routine precluded by prior row */
-   || pParse->bHasWith                 /* condition (a) above */
-   || pParse->db->init.busy            /* condition (b) above */
-   || exprListIsConstant(pRow)==0      /* condition (c) above */
-   || (pLeft->pSrc->nSrc==0 && exprListIsNoAffinity(pLeft->pEList)==0) /* (d) */
+  if( pLeft->pPrior                      /* co-routine precluded by prior row */
+   || pParse->bHasWith                   /* condition (a) above */
+   || pParse->db->init.busy              /* condition (b) above */
+   || exprListIsConstant(pParse,pRow)==0 /* condition (c) above */
+   || (pLeft->pSrc->nSrc==0 &&
+       exprListIsNoAffinity(pParse,pLeft->pEList)==0) /* condition (d) above */
    || IN_SPECIAL_PARSE
   ){
     /* The co-routine method cannot be used. Fall back to UNION ALL. */

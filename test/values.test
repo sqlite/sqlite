@@ -401,6 +401,19 @@ do_execsql_test 12.2 {
   SELECT * FROM t1
 } {1 2 3 4 5 6}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('xyz');
+
+  SELECT (
+      VALUES( (max(substr('abc', 1, 1), x)) ),
+      (123),
+      (456)
+      )
+  FROM t1;
+} {xyz}
 
 finish_test
 

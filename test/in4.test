@@ -455,17 +455,18 @@ do_execsql_test 11.0 {
   INSERT INTO sqlite_stat1 VALUES('t1','t1abc','10000 5 00 2003 10');
   ANALYZE sqlite_schema;
 } {}
+sqlite3_create_function db
 do_execsql_test 11.1 {
   SELECT * FROM t1
    WHERE b IN (345, (SELECT 1 FROM t1 
-                      WHERE b IN (345 NOT GLOB 510)
+                      WHERE b IN (noop(1))
                         AND c GLOB 'abc*xyz'))
      AND c BETWEEN 'abc' AND 'xyz';
 } {xyz 1 abcdefxyz 99}
 do_execsql_test 11.2 {
   EXPLAIN SELECT * FROM t1
    WHERE b IN (345, (SELECT 1 FROM t1 
-                      WHERE b IN (345 NOT GLOB 510)
+                      WHERE b IN (noop(1))
                         AND c GLOB 'abc*xyz'))
      AND c BETWEEN 'abc' AND 'xyz';
 } {/ SeekScan /}
