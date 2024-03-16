@@ -2388,8 +2388,9 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
    || (pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0
   ){
     pWalker->eCode = 0;
+    return WRC_Abort;
   }
-  return WRC_Abort;
+  return WRC_Continue;
 }
 
 
