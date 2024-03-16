@@ -5058,7 +5058,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 u32 sqlite3IsTrueOrFalse(const char*);
 int sqlite3ExprIdToTrueFalse(Expr*);
 int sqlite3ExprTruthValue(const Expr*);
-int sqlite3ExprIsConstant(Expr*);
+int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);

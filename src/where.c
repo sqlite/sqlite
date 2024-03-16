@@ -1329,7 +1329,7 @@ static sqlite3_index_info *allocateIndexInfo(
       Expr *pE2;
 
       /* Skip over constant terms in the ORDER BY clause */
-      if( sqlite3ExprIsConstant(pExpr) ){
+      if( sqlite3ExprIsConstant(0, pExpr) ){
         continue;
       }
 
@@ -1441,7 +1441,7 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxInfo->nConstraint = j;
   for(i=j=0; i<nOrderBy; i++){
     Expr *pExpr = pOrderBy->a[i].pExpr;
-    if( sqlite3ExprIsConstant(pExpr) ) continue;
+    if( sqlite3ExprIsConstant(0, pExpr) ) continue;
     assert( pExpr->op==TK_COLUMN
          || (pExpr->op==TK_COLLATE && pExpr->pLeft->op==TK_COLUMN
               && pExpr->iColumn==pExpr->pLeft->iColumn) );
@@ -3623,7 +3623,7 @@ static void wherePartIdxExpr(
     u8 aff;
 
     if( pLeft->op!=TK_COLUMN ) return;
-    if( !sqlite3ExprIsConstant(pRight) ) return;
+    if( !sqlite3ExprIsConstant(0, pRight) ) return;
     if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pParse, pPart)) ) return;
     if( pLeft->iColumn<0 ) return;
     aff = pIdx->pTable->aCol[pLeft->iColumn].affinity;
@@ -4997,7 +4997,7 @@ static i8 wherePathSatisfiesOrderBy(
         if( MASKBIT(i) & obSat ) continue;
         p = pOrderBy->a[i].pExpr;
         mTerm = sqlite3WhereExprUsage(&pWInfo->sMaskSet,p);
-        if( mTerm==0 && !sqlite3ExprIsConstant(p) ) continue;
+        if( mTerm==0 && !sqlite3ExprIsConstant(0,p) ) continue;
         if( (mTerm&~orderDistinctMask)==0 ){
           obSat |= MASKBIT(i);
         }
@@ -5866,7 +5866,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     }else{
       continue;
     }
-    if( sqlite3ExprIsConstant(pExpr) ) continue;
+    if( sqlite3ExprIsConstant(0,pExpr) ) continue;
     if( pExpr->op==TK_FUNCTION ){
       /* Functions that might set a subtype should not be replaced by the
       ** value taken from an expression index since the index omits the
