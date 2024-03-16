@@ -2372,7 +2372,6 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
   sqlite3 *db;       /* The database */
 
   assert( pExpr->op==TK_FUNCTION );
-  if( pWalker->eCode==0 ) return WRC_Abort;
   pList = pExpr->x.pList;
   if( pList==0 ){
     n = 0;
@@ -2421,6 +2420,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
 ** malformed schema error.
 */
 static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
+  assert( pWalker->eCode>0 );
 
   /* If pWalker->eCode is 2 then any term of the expression that comes from
   ** the ON or USING clauses of an outer join disqualifies the expression
