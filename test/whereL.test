@@ -60,13 +60,14 @@ do_eqp_test 121 {
   `--SCAN t3
 }
 
-# The sqlite3ExprIsConstant() routine does not believe that noop(3)
-# is constant.  So the optimization does not apply in this case.
+# The sqlite3ExprIsConstant() routine does not believe that
+# the expression "coalesce(5,random())" is constant.  So the
+# optimization does not apply in this case.
 # 
 sqlite3_create_function db
 do_eqp_test 122 {
   SELECT * FROM t1, t2, t3
-   WHERE t1.a=t2.a AND t2.a=t3.j AND t3.j=noop(5)
+   WHERE t1.a=t2.a AND t2.a=t3.j AND t3.j=coalesce(5,random())
   ORDER BY t1.a;
 } {
   QUERY PLAN

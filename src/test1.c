@@ -1025,23 +1025,6 @@ static void addRealTypeFunction(
 }
 
 /*
-** Implementation of the noop(X) SQL function.
-**
-** The result is just a copy of its argument.  However, this function
-** does not have the SQLITE_FUNC_CONSTANT flag, so it is consider
-** non-constant by sqlite3ExprIsConstant().
-*/
-static void noopFunction(
-  sqlite3_context *context, 
-  int argc,  
-  sqlite3_value **argv
-){
-  (void)argc;
-  sqlite3_result_value(context, argv[0]);
-}
-
-
-/*
 ** SQL function:  strtod(X)
 **
 ** Use the C-library strtod() function to convert string X into a double.
@@ -1167,10 +1150,6 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "add_real_type", 1, SQLITE_UTF8,
           0, addRealTypeFunction, 0, 0);
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "noop", 1, SQLITE_UTF8,
-          0, noopFunction, 0, 0);
   }
 
   /* Functions strtod() and dtostr() work as in the shell.  These routines
