@@ -583,7 +583,7 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 ** co-routine.
 */
 void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
-  if( pVal && pVal->pSrc->nSrc>0 ){
+  if( ALWAYS(pVal) && pVal->pSrc->nSrc>0 ){
     SrcItem *pItem = &pVal->pSrc->a[0];
     sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->regReturn);
     sqlite3VdbeJumpHere(pParse->pVdbe, pItem->addrFillSub - 1);
