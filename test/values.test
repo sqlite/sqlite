@@ -415,5 +415,10 @@ do_execsql_test 13.0 {
   FROM t1;
 } {xyz}
 
+do_catchsql_test 13.1 {
+  VALUES(300), (zeroblob(300) OVER win);
+} {1 {zeroblob() may not be used as a window function}}
+
+
 finish_test
 
