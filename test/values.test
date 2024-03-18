@@ -457,14 +457,16 @@ do_eqp_test 15.3 {
 do_eqp_test 15.4 {
   INSERT INTO t1 VALUES
     (1,2),(3,4),(7,8),
-    (5,coalesce(6,random()));
+    (5,row_number()OVER());
 } {
   QUERY PLAN
   `--COMPOUND QUERY
      |--LEFT-MOST SUBQUERY
      |  `--SCAN 3-ROW VALUES CLAUSE
      `--UNION ALL
-        `--SCAN CONSTANT ROW
+        |--CO-ROUTINE (subquery-xxxxxx)
+        |  `--SCAN CONSTANT ROW
+        `--SCAN (subquery-xxxxxx)
 }
 do_eqp_test 15.5 {
   SELECT * FROM (VALUES(1),(2),(3),(4),(5),(6)), (VALUES('a'),('b'),('c'));
