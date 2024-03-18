@@ -64,6 +64,8 @@ Usage:
     --dryrun
     --explain
     --jobs NUMBER-OF-JOBS
+    --stop-on-coredump
+    --stop-on-error
     --zipvfs ZIPVFS-SOURCE-DIR
 
 Special values for PERMUTATION that work with plain tclsh:
@@ -172,6 +174,8 @@ set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 set TRG(buildonly) 0                ;# True if --buildonly option 
 set TRG(dryrun) 0                   ;# True if --dryrun option 
 set TRG(explain) 0                  ;# True for the --explain option
+set TRG(stopOnError) 0              ;# Stop running at first failure
+set TRG(stopOnCore) 0               ;# Stop on a core-dump
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -468,6 +472,10 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(dryrun) 1
     } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
       set TRG(explain) 1
+    } elseif {[string match "$a*" --stop-on-error]} {
+      set TRG(stopOnError) 1
+    } elseif {[string match "$a*" --stop-on-coredump]} {
+      set TRG(stopOnCore) 1
     } else {
       usage
     }
@@ -993,6 +1001,14 @@ proc script_input_ready {fd iJob jobid} {
       }
       puts "FAILED: $job(displayname) ($iJob)"
       set state "failed" 
+      if {$TRG(stopOnError)} {
+        puts "OUTPUT: $O($iJob)"
+        exit 1
+      }
+      if {$TRG(stopOnCore) && [string first {core dumped} $O($iJob)]>0} {
+        puts "OUTPUT: $O($iJob)"
+        exit 1
+      }
     }
 
     set tm [clock_milliseconds]
