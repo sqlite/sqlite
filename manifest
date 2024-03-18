@@ -1,9 +1,9 @@
-C Add\sthe\s"VALUES-as-coroutine"\soptimization.\s\sLarge\sVALUES\sclauses\son\san\nINSERT,\sfor\sexample,\sprepare\sand\srun\sin\sabout\shalf\sthe\stime\sand\swith\shalf\nthe\smemory.\s\sThis\scheck-in\salso\sincludes\senhancements\sto\sthe\sinternal\nsqlite3ExprIsConstant()\sroutine\sto\srecognize\spure\sSQL\sfunctions\sas\sconstant\nif\sthey\shave\sconstant\sarguments.
-D 2024-03-18T18:00:17.106
+C Remove\sunnecessary\sblank\slines\sfrom\sbuild\scommands\sin\sthe\sdefault\sMakefile.in.
+D 2024-03-18T18:03:17.115
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 5f2389d2a3c44b56621bb5156a9cb6e2bef01f7ec14a19335b1559cf0474bdde
+F Makefile.in 993a7874e3d3721df61846f03dda4a9ef7490da11953ae36ba1bb0c0346eaf4a
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e64a52619310d3067f6c38f56eedd15918a82dade70954197d6da486ad99d7f4
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -2179,9 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 82035b9cfd28ef6b0ecc6f469f03d2b001189aa4925147cdb784b6b1964eb3b2 c86f9f2a15ffc726b7f0d9bba5a8c4dfdaeea6a297e0b591c554fff3d1fe6e1c
-R d086636689a6bb7c4b198edffb3a7c63
-T +closed c86f9f2a15ffc726b7f0d9bba5a8c4dfdaeea6a297e0b591c554fff3d1fe6e1c
+P a120c9235f125e05be494038c16a9dd326fd79837698bef17e7879cd0cd75831
+R 8ff4324227d383f5da29d0bfe203141e
 U drh
-Z 48e8dd6fe42c5583ed5ba3f909ede536
+Z 25814839eb089de12c64c949b849b19e
 # Remove this line to create a well-formed Fossil manifest.
