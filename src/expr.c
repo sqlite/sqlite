@@ -218,9 +218,10 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
       assert( pExpr->x.pList->nExpr>0 );
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
-    }else{
-      assert( pExpr->op==TK_COLLATE );
+    }else if( pExpr->op==TK_COLLATE ){
       pExpr = pExpr->pLeft;
+    }else{
+      break;
     }
   }  
   return pExpr;
@@ -1869,6 +1870,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     pNewItem->iCursor = pOldItem->iCursor;
     pNewItem->addrFillSub = pOldItem->addrFillSub;
     pNewItem->regReturn = pOldItem->regReturn;
+    pNewItem->regResult = pOldItem->regResult;
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }
@@ -2345,6 +2347,54 @@ Expr *sqlite3ExprSimplifiedAndOr(Expr *pExpr){
   return pExpr;
 }
 
+/*
+** pExpr is a TK_FUNCTION node.  Try to determine whether or not the
+** function is a constant function.  A function is constant if all of
+** the following are true:
+**
+**    (1)  It is a scalar function (not an aggregate or window function)
+**    (2)  It has either the SQLITE_FUNC_CONSTANT or SQLITE_FUNC_SLOCHNG
+**         property.
+**    (3)  All of its arguments are constants
+**
+** This routine sets pWalker->eCode to 0 if pExpr is not a constant.
+** It makes no changes to pWalker->eCode if pExpr is constant.  In
+** every case, it returns WRC_Abort.
+**
+** Called as a service subroutine from exprNodeIsConstant().
+*/
+static SQLITE_NOINLINE int exprNodeIsConstantFunction(
+  Walker *pWalker,
+  Expr *pExpr
+){
+  int n;             /* Number of arguments */
+  ExprList *pList;   /* List of arguments */
+  FuncDef *pDef;     /* The function */
+  sqlite3 *db;       /* The database */
+
+  assert( pExpr->op==TK_FUNCTION );
+  if( ExprHasProperty(pExpr, EP_TokenOnly)
+   || (pList = pExpr->x.pList)==0
+  ){;
+    n = 0;
+  }else{
+    n = pList->nExpr;
+    sqlite3WalkExprList(pWalker, pList);
+    if( pWalker->eCode==0 ) return WRC_Abort;
+  }
+  db = pWalker->pParse->db;
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
+  if( pDef==0
+   || pDef->xFinalize!=0
+   || (pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0
+   || ExprHasProperty(pExpr, EP_WinFunc)
+  ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
 
 /*
 ** These routines are Walker callbacks used to check expressions to
@@ -2373,6 +2423,7 @@ Expr *sqlite3ExprSimplifiedAndOr(Expr *pExpr){
 ** malformed schema error.
 */
 static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
+  assert( pWalker->eCode>0 );
 
   /* If pWalker->eCode is 2 then any term of the expression that comes from
   ** the ON or USING clauses of an outer join disqualifies the expression
@@ -2392,6 +2443,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       ){
         if( pWalker->eCode==5 ) ExprSetProperty(pExpr, EP_FromDDL);
         return WRC_Continue;
+      }else if( pWalker->pParse ){
+        return exprNodeIsConstantFunction(pWalker, pExpr);
       }else{
         pWalker->eCode = 0;
         return WRC_Abort;
@@ -2444,9 +2497,10 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       return WRC_Continue;
   }
 }
-static int exprIsConst(Expr *p, int initFlag, int iCur){
+static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
   Walker w;
   w.eCode = initFlag;
+  w.pParse = pParse;
   w.xExprCallback = exprNodeIsConstant;
   w.xSelectCallback = sqlite3SelectWalkFail;
 #ifdef SQLITE_DEBUG
@@ -2464,9 +2518,15 @@ static int exprIsConst(Expr *p, int initFlag, int iCur){
 ** For the purposes of this function, a double-quoted string (ex: "abc")
 ** is considered a variable but a single-quoted string (ex: 'abc') is
 ** a constant.
+**
+** The pParse parameter may be NULL.  But if it is NULL, there is no way
+** to determine if function calls are constant or not, and hence all
+** function calls will be considered to be non-constant.  If pParse is
+** not NULL, then a function call might be constant, depending on the
+** function and on its parameters.
 */
-int sqlite3ExprIsConstant(Expr *p){
-  return exprIsConst(p, 1, 0);
+int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
+  return exprIsConst(pParse, p, 1, 0);
 }
 
 /*
@@ -2482,8 +2542,8 @@ int sqlite3ExprIsConstant(Expr *p){
 ** can be added to the pParse->pConstExpr list and evaluated once when
 ** the prepared statement starts up.  See sqlite3ExprCodeRunJustOnce().
 */
-int sqlite3ExprIsConstantNotJoin(Expr *p){
-  return exprIsConst(p, 2, 0);
+static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
+  return exprIsConst(pParse, p, 2, 0);
 }
 
 /*
@@ -2493,7 +2553,7 @@ int sqlite3ExprIsConstantNotJoin(Expr *p){
 ** table other than iCur.
 */
 int sqlite3ExprIsTableConstant(Expr *p, int iCur){
-  return exprIsConst(p, 3, iCur);
+  return exprIsConst(0, p, 3, iCur);
 }
 
 /*
@@ -2650,7 +2710,7 @@ int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
 */
 int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   assert( isInit==0 || isInit==1 );
-  return exprIsConst(p, 4+isInit, 0);
+  return exprIsConst(0, p, 4+isInit, 0);
 }
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
@@ -2895,13 +2955,13 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
 ** The argument is an IN operator with a list (not a subquery) on the
 ** right-hand side.  Return TRUE if that list is constant.
 */
-static int sqlite3InRhsIsConstant(Expr *pIn){
+static int sqlite3InRhsIsConstant(Parse *pParse, Expr *pIn){
   Expr *pLHS;
   int res;
   assert( !ExprHasProperty(pIn, EP_xIsSelect) );
   pLHS = pIn->pLeft;
   pIn->pLeft = 0;
-  res = sqlite3ExprIsConstant(pIn);
+  res = sqlite3ExprIsConstant(pParse, pIn);
   pIn->pLeft = pLHS;
   return res;
 }
@@ -3170,7 +3230,7 @@ int sqlite3FindInIndex(
   if( eType==0
    && (inFlags & IN_INDEX_NOOP_OK)
    && ExprUseXList(pX)
-   && (!sqlite3InRhsIsConstant(pX) || pX->x.pList->nExpr<=2)
+   && (!sqlite3InRhsIsConstant(pParse,pX) || pX->x.pList->nExpr<=2)
   ){
     pParse->nTab--;  /* Back out the allocation of the unused cursor */
     iTab = -1;       /* Cursor is not allocated */
@@ -3453,7 +3513,7 @@ void sqlite3CodeRhsOfIN(
       ** this code only executes once.  Because for a non-constant
       ** expression we need to rerun this code each time.
       */
-      if( addrOnce && !sqlite3ExprIsConstant(pE2) ){
+      if( addrOnce && !sqlite3ExprIsConstant(pParse, pE2) ){
         sqlite3VdbeChangeToNoop(v, addrOnce-1);
         sqlite3VdbeChangeToNoop(v, addrOnce);
         ExprClearProperty(pExpr, EP_Subrtn);
@@ -4790,7 +4850,9 @@ expr_code_doover:
       }
 #endif
 
-      if( ConstFactorOk(pParse) && sqlite3ExprIsConstantNotJoin(pExpr) ){
+      if( ConstFactorOk(pParse)
+       && sqlite3ExprIsConstantNotJoin(pParse,pExpr)
+      ){
         /* SQL functions can be expensive. So try to avoid running them
         ** multiple times if we know they always give the same result */
         return sqlite3ExprCodeRunJustOnce(pParse, pExpr, -1);
@@ -4821,7 +4883,7 @@ expr_code_doover:
       }
 
       for(i=0; i<nFarg; i++){
-        if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
+        if( i<32 && sqlite3ExprIsConstant(pParse, pFarg->a[i].pExpr) ){
           testcase( i==31 );
           constMask |= MASKBIT32(i);
         }
@@ -5288,7 +5350,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   if( ConstFactorOk(pParse)
    && ALWAYS(pExpr!=0)
    && pExpr->op!=TK_REGISTER
-   && sqlite3ExprIsConstantNotJoin(pExpr)
+   && sqlite3ExprIsConstantNotJoin(pParse, pExpr)
   ){
     *pReg  = 0;
     r2 = sqlite3ExprCodeRunJustOnce(pParse, pExpr, -1);
@@ -5352,7 +5414,7 @@ void sqlite3ExprCodeCopy(Parse *pParse, Expr *pExpr, int target){
 ** might choose to code the expression at initialization time.
 */
 void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
-  if( pParse->okConstFactor && sqlite3ExprIsConstantNotJoin(pExpr) ){
+  if( pParse->okConstFactor && sqlite3ExprIsConstantNotJoin(pParse,pExpr) ){
     sqlite3ExprCodeRunJustOnce(pParse, pExpr, target);
   }else{
     sqlite3ExprCodeCopy(pParse, pExpr, target);
@@ -5411,7 +5473,7 @@ int sqlite3ExprCodeExprList(
         sqlite3VdbeAddOp2(v, copyOp, j+srcReg-1, target+i);
       }
     }else if( (flags & SQLITE_ECEL_FACTOR)!=0
-           && sqlite3ExprIsConstantNotJoin(pExpr)
+           && sqlite3ExprIsConstantNotJoin(pParse,pExpr)
     ){
       sqlite3ExprCodeRunJustOnce(pParse, pExpr, target+i);
     }else{
