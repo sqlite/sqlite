@@ -49,6 +49,33 @@ do_eqp_test 120 {
   |--SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
   `--SCAN t3
 }
+do_eqp_test 121 {
+  SELECT * FROM t1, t2, t3
+   WHERE t1.a=t2.a AND t2.a=t3.j AND t3.j=abs(5)
+  ORDER BY t1.a;
+} {
+  QUERY PLAN
+  |--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+  |--SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
+  `--SCAN t3
+}
+
+# The sqlite3ExprIsConstant() routine does not believe that
+# the expression "coalesce(5,random())" is constant.  So the
+# optimization does not apply in this case.
+# 
+sqlite3_create_function db
+do_eqp_test 122 {
+  SELECT * FROM t1, t2, t3
+   WHERE t1.a=t2.a AND t2.a=t3.j AND t3.j=coalesce(5,random())
+  ORDER BY t1.a;
+} {
+  QUERY PLAN
+  |--SCAN t3
+  |--SEARCH t1 USING INDEX sqlite_autoindex_t1_1 (a=?)
+  |--SEARCH t2 USING INDEX sqlite_autoindex_t2_1 (a=?)
+  `--USE TEMP B-TREE FOR ORDER BY
+}
 
 # Constant propagation in the face of collating sequences:
 #

@@ -3270,10 +3270,12 @@ struct IdList {
 **
 ** Union member validity:
 **
-**    u1.zIndexedBy          fg.isIndexedBy && !fg.isTabFunc
-**    u1.pFuncArg            fg.isTabFunc   && !fg.isIndexedBy
-**    u2.pIBIndex            fg.isIndexedBy && !fg.isCte
-**    u2.pCteUse             fg.isCte       && !fg.isIndexedBy
+**    u1.zIndexedBy      fg.isIndexedBy && !fg.isTabFunc
+**    u1.pFuncArg        fg.isTabFunc   && !fg.isIndexedBy
+**    u1.nRow            !fg.isTabFunc  && !fg.isIndexedBy
+**
+**    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
+**    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
   Schema *pSchema;  /* Schema to which this item is fixed */
@@ -3311,6 +3313,7 @@ struct SrcItem {
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
     ExprList *pFuncArg;  /* Arguments to table-valued-function */
+    u32 nRow;            /* Number of rows in a VALUES clause */
   } u1;
   union {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
@@ -3812,6 +3815,7 @@ struct Parse {
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
+  u8 bHasWith;         /* True if statement contains WITH */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
@@ -4486,6 +4490,9 @@ struct Window {
                           ** due to the SQLITE_SUBTYPE flag */
 };
 
+Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow);
+void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal);
+
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowUnlinkFromSelect(Window*);
@@ -5054,8 +5061,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 u32 sqlite3IsTrueOrFalse(const char*);
 int sqlite3ExprIdToTrueFalse(Expr*);
 int sqlite3ExprTruthValue(const Expr*);
-int sqlite3ExprIsConstant(Expr*);
-int sqlite3ExprIsConstantNotJoin(Expr*);
+int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
 int sqlite3ExprIsTableConstant(Expr*,int);
