@@ -698,12 +698,20 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   }else{
     SrcItem *p = 0;               /* SrcItem that reads from co-routine */
 
+
     if( pLeft->pSrc->nSrc==0 ){
       /* Co-routine has not yet been started and the special Select object
       ** that accesses the co-routine has not yet been created. This block 
       ** does both those things. */
       Vdbe *v = sqlite3GetVdbe(pParse);
       Select *pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
+
+      /* Ensure the database schema has been read. This is to ensure we have
+      ** the correct text encoding.  */
+      if( (pParse->db->mDbFlags & DBFLAG_SchemaKnownOk)==0 ){
+        sqlite3ReadSchema(pParse);
+      }
+
       if( pRet ){
         SelectDest dest;
         pRet->pSrc->nSrc = 1;

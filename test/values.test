@@ -419,6 +419,22 @@ do_catchsql_test 13.1 {
   VALUES(300), (zeroblob(300) OVER win);
 } {1 {zeroblob() may not be used as a window function}}
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 14.1 {
+  PRAGMA encoding = utf16;
+  CREATE TABLE t1(a, b);
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 14.2 {
+  INSERT INTO t1 VALUES
+    (17, 'craft'),
+    (16, 'urtlek' IN(1,2,3));
+}
+
 
 finish_test
 
