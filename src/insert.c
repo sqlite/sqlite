@@ -577,6 +577,193 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 # define autoIncStep(A,B,C)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
+/*
+** If argument pVal is a Select object returned by an sqlite3MultiValues()
+** that was able to use the co-routine optimization, finish coding the
+** co-routine.
+*/
+void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
+  if( ALWAYS(pVal) && pVal->pSrc->nSrc>0 ){
+    SrcItem *pItem = &pVal->pSrc->a[0];
+    sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->regReturn);
+    sqlite3VdbeJumpHere(pParse->pVdbe, pItem->addrFillSub - 1);
+  }
+}
+
+/*
+** Return true if all expressions in the expression-list passed as the
+** only argument are constant.
+*/
+static int exprListIsConstant(Parse *pParse, ExprList *pRow){
+  int ii;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    if( 0==sqlite3ExprIsConstant(pParse, pRow->a[ii].pExpr) ) return 0;
+  }
+  return 1;
+}
+
+/*
+** Return true if all expressions in the expression-list passed as the
+** only argument are both constant and have no affinity.
+*/
+static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
+  int ii;
+  if( exprListIsConstant(pParse,pRow)==0 ) return 0;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    assert( pRow->a[ii].pExpr->affExpr==0 );
+    if( 0!=sqlite3ExprAffinity(pRow->a[ii].pExpr) ) return 0;
+  }
+  return 1;
+
+}
+
+/*
+** This function is called by the parser for the second and subsequent
+** rows of a multi-row VALUES clause. Argument pLeft is the part of
+** the VALUES clause already parsed, argument pRow is the vector of values
+** for the new row. The Select object returned represents the complete
+** VALUES clause, including the new row.
+**
+** There are two ways in which this may be achieved - by incremental 
+** coding of a co-routine (the "co-routine" method) or by returning a
+** Select object equivalent to the following (the "UNION ALL" method):
+**
+**        "pLeft UNION ALL SELECT pRow"
+**
+** If the VALUES clause contains a lot of rows, this compound Select
+** object may consume a lot of memory.
+**
+** When the co-routine method is used, each row that will be returned
+** by the VALUES clause is coded into part of a co-routine as it is 
+** passed to this function. The returned Select object is equivalent to:
+**
+**     SELECT * FROM (
+**       Select object to read co-routine
+**     )
+**
+** The co-routine method is used in most cases. Exceptions are:
+**
+**    a) If the current statement has a WITH clause. This is to avoid
+**       statements like:
+**
+**            WITH cte AS ( VALUES('x'), ('y') ... )
+**            SELECT * FROM cte AS a, cte AS b;
+**
+**       This will not work, as the co-routine uses a hard-coded register
+**       for its OP_Yield instructions, and so it is not possible for two
+**       cursors to iterate through it concurrently.
+**
+**    b) The schema is currently being parsed (i.e. the VALUES clause is part 
+**       of a schema item like a VIEW or TRIGGER). In this case there is no VM
+**       being generated when parsing is taking place, and so generating 
+**       a co-routine is not possible.
+**
+**    c) There are non-constant expressions in the VALUES clause (e.g.
+**       the VALUES clause is part of a correlated sub-query).
+**
+**    d) One or more of the values in the first row of the VALUES clause
+**       has an affinity (i.e. is a CAST expression). This causes problems
+**       because the complex rules SQLite uses (see function 
+**       sqlite3SubqueryColumnTypes() in select.c) to determine the effective
+**       affinity of such a column for all rows require access to all values in
+**       the column simultaneously. 
+*/
+Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
+
+  if( pParse->bHasWith                   /* condition (a) above */
+   || pParse->db->init.busy              /* condition (b) above */
+   || exprListIsConstant(pParse,pRow)==0 /* condition (c) above */
+   || (pLeft->pSrc->nSrc==0 &&
+       exprListIsNoAffinity(pParse,pLeft->pEList)==0) /* condition (d) above */
+   || IN_SPECIAL_PARSE
+  ){
+    /* The co-routine method cannot be used. Fall back to UNION ALL. */
+    Select *pSelect = 0;
+    int f = SF_Values | SF_MultiValue;
+    if( pLeft->pSrc->nSrc ){
+      sqlite3MultiValuesEnd(pParse, pLeft);
+      f = SF_Values;
+    }else if( pLeft->pPrior ){
+      /* In this case set the SF_MultiValue flag only if it was set on pLeft */
+      f = (f & pLeft->selFlags);
+    }
+    pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, f, 0);
+    pLeft->selFlags &= ~SF_MultiValue;
+    if( pSelect ){
+      pSelect->op = TK_ALL;
+      pSelect->pPrior = pLeft;
+      pLeft = pSelect;
+    }
+  }else{
+    SrcItem *p = 0;               /* SrcItem that reads from co-routine */
+
+    if( pLeft->pSrc->nSrc==0 ){
+      /* Co-routine has not yet been started and the special Select object
+      ** that accesses the co-routine has not yet been created. This block 
+      ** does both those things. */
+      Vdbe *v = sqlite3GetVdbe(pParse);
+      Select *pRet = sqlite3SelectNew(pParse, 0, 0, 0, 0, 0, 0, 0, 0);
+
+      /* Ensure the database schema has been read. This is to ensure we have
+      ** the correct text encoding.  */
+      if( (pParse->db->mDbFlags & DBFLAG_SchemaKnownOk)==0 ){
+        sqlite3ReadSchema(pParse);
+      }
+
+      if( pRet ){
+        SelectDest dest;
+        pRet->pSrc->nSrc = 1;
+        pRet->pPrior = pLeft->pPrior;
+        pRet->op = pLeft->op;
+        pLeft->pPrior = 0;
+        pLeft->op = TK_SELECT;
+        assert( pLeft->pNext==0 );
+        assert( pRet->pNext==0 );
+        p = &pRet->pSrc->a[0];
+        p->pSelect = pLeft;
+        p->fg.viaCoroutine = 1;
+        p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
+        p->regReturn = ++pParse->nMem;
+        p->iCursor = -1;
+        p->u1.nRow = 2;
+        sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
+        sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
+
+        /* Allocate registers for the output of the co-routine. Do so so
+        ** that there are two unused registers immediately before those
+        ** used by the co-routine. This allows the code in sqlite3Insert()
+        ** to use these registers directly, instead of copying the output
+        ** of the co-routine to a separate array for processing.  */
+        dest.iSdst = pParse->nMem + 3; 
+        dest.nSdst = pLeft->pEList->nExpr;
+        pParse->nMem += 2 + dest.nSdst;
+
+        pLeft->selFlags |= SF_MultiValue;
+        sqlite3Select(pParse, pLeft, &dest);
+        p->regResult = dest.iSdst;
+        assert( pParse->nErr || dest.iSdst>0 );
+        pLeft = pRet;
+      }
+    }else{
+      p = &pLeft->pSrc->a[0];
+      assert( !p->fg.isTabFunc && !p->fg.isIndexedBy );
+      p->u1.nRow++;
+    }
+  
+    if( pParse->nErr==0 ){
+      assert( p!=0 );
+      if( p->pSelect->pEList->nExpr!=pRow->nExpr ){
+        sqlite3SelectWrongNumTermsError(pParse, p->pSelect);
+      }else{
+        sqlite3ExprCodeExprList(pParse, pRow, p->regResult, 0, 0);
+        sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, p->regReturn);
+      }
+    }
+    sqlite3ExprListDelete(pParse->db, pRow);
+  }
+
+  return pLeft;
+}
 
 /* Forward declaration */
 static int xferOptimization(
@@ -913,25 +1100,40 @@ void sqlite3Insert(
   if( pSelect ){
     /* Data is coming from a SELECT or from a multi-row VALUES clause.
     ** Generate a co-routine to run the SELECT. */
-    int regYield;       /* Register holding co-routine entry-point */
-    int addrTop;        /* Top of the co-routine */
     int rc;             /* Result code */
 
-    regYield = ++pParse->nMem;
-    addrTop = sqlite3VdbeCurrentAddr(v) + 1;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
-    sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
-    dest.iSdst = bIdListInOrder ? regData : 0;
-    dest.nSdst = pTab->nCol;
-    rc = sqlite3Select(pParse, pSelect, &dest);
-    regFromSelect = dest.iSdst;
-    assert( db->pParse==pParse );
-    if( rc || pParse->nErr ) goto insert_cleanup;
-    assert( db->mallocFailed==0 );
-    sqlite3VdbeEndCoroutine(v, regYield);
-    sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
-    assert( pSelect->pEList );
-    nColumn = pSelect->pEList->nExpr;
+    if( pSelect->pSrc->nSrc==1 
+     && pSelect->pSrc->a[0].fg.viaCoroutine 
+     && pSelect->pPrior==0
+    ){
+      SrcItem *pItem = &pSelect->pSrc->a[0];
+      dest.iSDParm = pItem->regReturn;
+      regFromSelect = pItem->regResult;
+      nColumn = pItem->pSelect->pEList->nExpr;
+      ExplainQueryPlan((pParse, 0, "SCAN %S", pItem));
+      if( bIdListInOrder && nColumn==pTab->nCol ){
+        regData = regFromSelect;
+        regRowid = regData - 1;
+        regIns = regRowid - (IsVirtual(pTab) ? 1 : 0);
+      }
+    }else{
+      int addrTop;        /* Top of the co-routine */
+      int regYield = ++pParse->nMem;
+      addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
+      dest.iSdst = bIdListInOrder ? regData : 0;
+      dest.nSdst = pTab->nCol;
+      rc = sqlite3Select(pParse, pSelect, &dest);
+      regFromSelect = dest.iSdst;
+      assert( db->pParse==pParse );
+      if( rc || pParse->nErr ) goto insert_cleanup;
+      assert( db->mallocFailed==0 );
+      sqlite3VdbeEndCoroutine(v, regYield);
+      sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
+      assert( pSelect->pEList );
+      nColumn = pSelect->pEList->nExpr;
+    }
 
     /* Set useTempTable to TRUE if the result of the SELECT statement
     ** should be written into a temporary table (template 4).  Set to
