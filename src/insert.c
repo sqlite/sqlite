@@ -751,6 +751,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     }
   
     if( pParse->nErr==0 ){
+      assert( p!=0 );
       if( p->pSelect->pEList->nExpr!=pRow->nExpr ){
         sqlite3SelectWrongNumTermsError(pParse, p->pSelect);
       }else{
@@ -1099,7 +1100,6 @@ void sqlite3Insert(
   if( pSelect ){
     /* Data is coming from a SELECT or from a multi-row VALUES clause.
     ** Generate a co-routine to run the SELECT. */
-    int regYield;       /* Register holding co-routine entry-point */
     int rc;             /* Result code */
 
     if( pSelect->pSrc->nSrc==1 
@@ -1107,7 +1107,7 @@ void sqlite3Insert(
      && pSelect->pPrior==0
     ){
       SrcItem *pItem = &pSelect->pSrc->a[0];
-      dest.iSDParm = regYield = pItem->regReturn;
+      dest.iSDParm = pItem->regReturn;
       regFromSelect = pItem->regResult;
       nColumn = pItem->pSelect->pEList->nExpr;
       ExplainQueryPlan((pParse, 0, "SCAN %S", pItem));
@@ -1118,7 +1118,7 @@ void sqlite3Insert(
       }
     }else{
       int addrTop;        /* Top of the co-routine */
-      regYield = ++pParse->nMem;
+      int regYield = ++pParse->nMem;
       addrTop = sqlite3VdbeCurrentAddr(v) + 1;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
       sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);

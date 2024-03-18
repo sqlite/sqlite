@@ -1,5 +1,5 @@
-C Allow\sthe\sVALUES-as-coroutine\soptimization\sto\sbe\sapplied\sto\slater\srows\sof\na\sVALUES\sclause\seven\sif\searlier\srows\sdo\snot\squalify.
-D 2024-03-18T16:30:00.996
+C Fix\sharmless\scompiler\s(scan-build)\swarnings.
+D 2024-03-18T17:13:52.924
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c a71901268468aff9bc5d4034209026b45a0163c7a21422337de21940c8ab5310
+F src/insert.c 06ce505713e86172612f9e01febefd2d3331d1f70461b4ada0eae5a76bb6349f
 F src/json.c e2e40760d6689134c3e2ece38c6a496b34ff5e2661a8f238444a119af666fdce
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -2179,8 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c589149a138fa0a6be3153986fc0f315e052e13ebc0e7006b6529ca02bae413b
-R 940f14de84991bdaec1e3874c3d6141e
+P 9a47ea7f0f675f7bf4710901487ce34c7689e618cd1d8b9f94f0ff7ebc3f2841
+R 99b0c172599c8a90caf2454e462eb6ef
 U drh
-Z d0598787dc817aed0c423e65e0b46555
+Z e6f67e954fdd4f797f1644f6604d7595
 # Remove this line to create a well-formed Fossil manifest.
