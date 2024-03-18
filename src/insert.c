@@ -670,8 +670,7 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
-  if( pLeft->pPrior                      /* co-routine precluded by prior row */
-   || pParse->bHasWith                   /* condition (a) above */
+  if( pParse->bHasWith                   /* condition (a) above */
    || pParse->db->init.busy              /* condition (b) above */
    || exprListIsConstant(pParse,pRow)==0 /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 &&
@@ -714,6 +713,12 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       if( pRet ){
         SelectDest dest;
         pRet->pSrc->nSrc = 1;
+        pRet->pPrior = pLeft->pPrior;
+        pRet->op = pLeft->op;
+        pLeft->pPrior = 0;
+        pLeft->op = TK_SELECT;
+        assert( pLeft->pNext==0 );
+        assert( pRet->pNext==0 );
         p = &pRet->pSrc->a[0];
         p->pSelect = pLeft;
         p->fg.viaCoroutine = 1;

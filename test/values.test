@@ -489,4 +489,95 @@ do_eqp_test 15.7 {
         `--SCAN 4-ROW VALUES CLAUSE
 }
 
+#--------------------------------------------------------------------------
+# The VALUES-as-coroutine optimization can be applied to later rows of
+# a VALUES clause even if earlier rows do not qualify.
+#
+reset_db
+do_execsql_test 16.1 {
+  CREATE TABLE t1(a,b);
+}
+do_execsql_test 16.2 {
+  BEGIN;
+  INSERT INTO t1 VALUES(1,2),(3,4),(5,6),
+     (7,row_number()OVER()),
+     (9,10), (11,12), (13,14), (15,16);
+  SELECT * FROM t1 ORDER BY a, b;
+  ROLLBACK;
+} {1 2 3 4 5 6 7 1 9 10 11 12 13 14 15 16}
+do_eqp_test 16.3 {
+  INSERT INTO t1 VALUES(1,2),(3,4),(5,6),
+     (7,row_number()OVER()),
+     (9,10), (11,12), (13,14), (15,16);
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  `--SCAN 3-ROW VALUES CLAUSE
+     |--UNION ALL
+     |  |--CO-ROUTINE (subquery-xxxxxx)
+     |  |  `--SCAN CONSTANT ROW
+     |  `--SCAN (subquery-xxxxxx)
+     `--UNION ALL
+        `--SCAN 4-ROW VALUES CLAUSE
+}
+do_execsql_test 16.4 {
+  BEGIN;
+  INSERT INTO t1 VALUES
+     (1,row_number()OVER()),
+     (2,3), (4,5), (6,7);
+  SELECT * FROM t1 ORDER BY a, b;
+  ROLLBACK;
+} {1 1 2 3 4 5 6 7}
+do_eqp_test 16.5 {
+  INSERT INTO t1 VALUES
+     (1,row_number()OVER()),
+     (2,3), (4,5), (6,7);
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  |--CO-ROUTINE (subquery-xxxxxx)
+     |  |  `--SCAN CONSTANT ROW
+     |  `--SCAN (subquery-xxxxxx)
+     `--UNION ALL
+        `--SCAN 3-ROW VALUES CLAUSE
+}
+do_execsql_test 16.6 {
+  BEGIN;
+  INSERT INTO t1 VALUES
+     (1,2),(3,4),
+     (5,row_number()OVER()),
+     (7,8),(9,10),(11,12),
+     (13,row_number()OVER()),
+     (15,16),(17,18),(19,20),(21,22);
+  SELECT * FROM t1 ORDER BY a, b;
+  ROLLBACK;
+} { 1 2 3 4 5 1 7 8 9 10 11 12 13 1 15 16 17 18 19 20 21 22}
+do_eqp_test 16.7 {
+  INSERT INTO t1 VALUES
+     (1,2),(3,4),
+     (5,row_number()OVER()),
+     (7,8),(9,10),(11,12),
+     (13,row_number()OVER()),
+     (15,16),(17,18),(19,20),(21,22);
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  `--SCAN 2-ROW VALUES CLAUSE
+     |--UNION ALL
+     |  |--CO-ROUTINE (subquery-xxxxxx)
+     |  |  `--SCAN CONSTANT ROW
+     |  `--SCAN (subquery-xxxxxx)
+     |--UNION ALL
+     |  `--SCAN 3-ROW VALUES CLAUSE
+     |--UNION ALL
+     |  |--CO-ROUTINE (subquery-xxxxxx)
+     |  |  `--SCAN CONSTANT ROW
+     |  `--SCAN (subquery-xxxxxx)
+     `--UNION ALL
+        `--SCAN 4-ROW VALUES CLAUSE
+}
+
 finish_test
