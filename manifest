@@ -1,5 +1,5 @@
-C Improvements\sto\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\smulti-row\sVALUES\sclaues.
-D 2024-03-18T12:49:30.989
+C Fix\sthe\spatch\sat\s[10ee6fcba08ab128]\sso\sthat\sit\sworks\son\sreduced-size\sExpr\nnodes.
+D 2024-03-18T13:10:54.954
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -700,7 +700,7 @@ F src/date.c 126ba2ab10aeb2e7ba6e089b5f07b747c0625b8287f78b60da346eda8d23c875
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c 27fdcdc65bca88934dfc4af0efe7a3eae095267bf7592b562abb6a11292c2b82
+F src/expr.c d7cfe9b9fe7ab47b254706589467d2e65fec3536b936d6f4eb28b84da6726ecc
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a47610f0a5c6cb0ad79f8fcef039c01833dec0c751bb695f28dc0ec6a4c3ba00
 F src/func.c 4204c56196847faefef57fa14e43b8e4d65eb8d7e65318abe463472e3fd148cb
@@ -2179,8 +2179,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ff476eb3d1f4a2146f4a48b57895a00a3ff5beb29afa679ae53ea58cac07c76
-R dd6d36e36b292e54015829bdd4a764a6
+P ac6f095e13e43d66c06552c8b01f6bec3407c9d41a34c4cdb0be57b0b828ad0d
+R 5e57ddae8e8fa784e790916f6a9e17d3
 U drh
-Z 67655d85fa3f7ad082be72ee3ee927a1
+Z 9ad56bfa46f009d741e8a52554c68de1
 # Remove this line to create a well-formed Fossil manifest.
