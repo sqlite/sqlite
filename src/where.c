@@ -6144,7 +6144,11 @@ WhereInfo *sqlite3WhereBegin(
     ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
-    ExplainQueryPlan((pParse, 0, "SCAN CONSTANT ROW"));
+    if( ALWAYS(pWInfo->pSelect)
+     && (pWInfo->pSelect->selFlags & SF_MultiValue)==0
+    ){
+      ExplainQueryPlan((pParse, 0, "SCAN CONSTANT ROW"));
+    }
   }else{
     /* Assign a bit from the bitmask to every term in the FROM clause.
     **

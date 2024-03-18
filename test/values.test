@@ -435,6 +435,56 @@ do_execsql_test 14.2 {
     (16, 'urtlek' IN(1,2,3));
 }
 
+#--------------------------------------------------------------------------
+#
+reset_db
+do_eqp_test 15.1 {
+  VALUES(1),(2),(3),(4),(5);
+} {
+  QUERY PLAN
+  `--SCAN 5-ROW VALUES CLAUSE
+}
+do_execsql_test 15.2 {
+  CREATE TABLE t1(a,b);
+}
+do_eqp_test 15.3 {
+  INSERT INTO t1 VALUES
+    (1,2),(3,4),(7,8);
+} {
+  QUERY PLAN
+  `--SCAN 3-ROW VALUES CLAUSE
+}
+do_eqp_test 15.4 {
+  INSERT INTO t1 VALUES
+    (1,2),(3,4),(7,8),
+    (5,coalesce(6,random()));
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  `--SCAN 3-ROW VALUES CLAUSE
+     `--UNION ALL
+        `--SCAN CONSTANT ROW
+}
+do_eqp_test 15.5 {
+  SELECT * FROM (VALUES(1),(2),(3),(4),(5),(6)), (VALUES('a'),('b'),('c'));
+} {
+  QUERY PLAN
+  |--SCAN 6-ROW VALUES CLAUSE
+  `--SCAN 3-ROW VALUES CLAUSE
+}
+do_execsql_test 15.6 {
+  CREATE TABLE t2(x,y);
+}
+do_eqp_test 15.7 {
+  SELECT * FROM t2 UNION ALL VALUES(1,2),(3,4),(5,6),(7,8);
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  `--SCAN t2
+     `--UNION ALL
+        `--SCAN 4-ROW VALUES CLAUSE
+}
 
 finish_test
-

@@ -721,6 +721,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         p->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
         p->regReturn = ++pParse->nMem;
         p->iCursor = -1;
+        p->u1.nRow = 2;
         sqlite3VdbeAddOp3(v,OP_InitCoroutine,p->regReturn,0,p->addrFillSub);
         sqlite3SelectDestInit(&dest, SRT_Coroutine, p->regReturn);
 
@@ -733,6 +734,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         dest.nSdst = pLeft->pEList->nExpr;
         pParse->nMem += 2 + dest.nSdst;
 
+        pLeft->selFlags |= SF_MultiValue;
         sqlite3Select(pParse, pLeft, &dest);
         p->regResult = dest.iSdst;
         assert( pParse->nErr || dest.iSdst>0 );
@@ -740,6 +742,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       }
     }else{
       p = &pLeft->pSrc->a[0];
+      p->u1.nRow++;
     }
   
     if( pParse->nErr==0 ){
@@ -1102,6 +1105,7 @@ void sqlite3Insert(
       dest.iSDParm = regYield = pItem->regReturn;
       regFromSelect = pItem->regResult;
       nColumn = pItem->pSelect->pEList->nExpr;
+      ExplainQueryPlan((pParse, 0, "SCAN %S", pItem));
       if( bIdListInOrder && nColumn==pTab->nCol ){
         regData = regFromSelect;
         regRowid = regData - 1;
