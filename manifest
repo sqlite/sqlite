@@ -1,5 +1,5 @@
-C Avoid\sspurious\sSQLITE_IOERR_DATA\serrors\swhen\sreading\spartial\spages\sfrom\sa\scksumvfs\sdatabase\susing\sa\sSQLITE_DIRECT_OVERFLOW_READ\sbuild.
-D 2024-03-18T20:52:45.827
+C Fix\sasan\sproblems\sin\ssqlite3rbu.c.\sEnable\sRBU\sfor\ssanitizer\srelease\stests.
+D 2024-03-18T21:08:33.041
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,7 +475,7 @@ F ext/rbu/rbuvacuum.test 542561741ff2b262e3694bc6012b44694ee62c545845319a06f3237
 F ext/rbu/rbuvacuum2.test ae097d04feb041446a74fac94b24bffeb3fdd60e32b848c5611e507ab702b81b
 F ext/rbu/rbuvacuum3.test 3ce42695fdf21aaa3499e857d7d4253bc499ad759bcd6c9362042c13cd37d8de
 F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69eefaebb205
-F ext/rbu/sqlite3rbu.c d4ddf8f0e93772556e452a6c2814063cf47efb760a0834391a9d0cd9859fa4b9
+F ext/rbu/sqlite3rbu.c 4a3376c0fb9a844a799ac529fb81260523f6b13c9f629bc270c632dbae5fc1f8
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
 F ext/recover/dbdata.c b7746c2ec801b453840831311be4b31f8c8f9dd97791060a69bbf12392c78949
@@ -1689,7 +1689,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
 F test/testrunner.tcl 01bc3b5bc900dc73b076180727eb2869dc61426b1ab95ac2f42def5d1f3d407e
-F test/testrunner_data.tcl 2f94974e5e3a56af880be72f7a7fd239aa9d4ecf978625435fcc698319c927fa
+F test/testrunner_data.tcl 7032a64e4757db0bf83c6874cab2ccbb14a8708b4d68c1ddc8b359e204139cb7
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2180,8 +2180,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76fb3a908f45230b956cb659c754e47603e80aa72a2aad50d479437a9c013f61
-R 3ba9b9e82b0006578500d53bc7e1cee3
+P 0f485dbece9146eabe5a5c0998a9e35c685a170c3fe6d4509e92aa8dae18a2c0
+R 59c6c1819c5f6280d4b2fc1e8ab12326
 U dan
-Z 687b3a53beb157acf8ccda89bb48f5f1
+Z 8b503392df6e7d7e46ebd7af33bbcc16
 # Remove this line to create a well-formed Fossil manifest.

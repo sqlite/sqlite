@@ -108,6 +108,7 @@ namespace eval trd {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_OMIT_LOOKASIDE=1
     -DCONFIG_SLOWDOWN_FACTOR=5.0
+    -DSQLITE_ENABLE_RBU
     --enable-debug
     --enable-all
   }
