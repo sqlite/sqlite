@@ -736,4 +736,31 @@ do_execsql_test 29.7 {
   END}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 30.0 {
+  CREATE TABLE t1(a, b);
+  CREATE VIEW v1 AS 
+      SELECT ( VALUES(a), (b) ) FROM (
+        SELECT a, b FROM t1
+      )
+  ;
+}
+
+do_execsql_test 30.1 {
+  SELECT * FROM v1
+}
+
+do_execsql_test 30.1 {
+  ALTER TABLE t1 RENAME TO t2;
+}
+do_execsql_test 30.2 {
+  SELECT sql FROM sqlite_schema WHERE type='view'
+} {
+  {CREATE VIEW v1 AS 
+      SELECT ( VALUES(a), (b) ) FROM (
+        SELECT a, b FROM "t2"
+      )}
+}
+
 finish_test
