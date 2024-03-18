@@ -861,6 +861,7 @@ void sqlite3_str_vappendf(
           if( pSel->selFlags & SF_NestedFrom ){
             sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);
           }else if( pSel->selFlags & SF_MultiValue ){
+            assert( !pItem->fg.isTabFunc && !pItem->fg.isIndexedBy );
             sqlite3_str_appendf(pAccum, "%u-ROW VALUES CLAUSE",
                                 pItem->u1.nRow);
           }else{

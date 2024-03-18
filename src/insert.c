@@ -698,7 +698,6 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   }else{
     SrcItem *p = 0;               /* SrcItem that reads from co-routine */
 
-
     if( pLeft->pSrc->nSrc==0 ){
       /* Co-routine has not yet been started and the special Select object
       ** that accesses the co-routine has not yet been created. This block 
@@ -742,6 +741,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       }
     }else{
       p = &pLeft->pSrc->a[0];
+      assert( !p->fg.isTabFunc && !p->fg.isIndexedBy );
       p->u1.nRow++;
     }
   

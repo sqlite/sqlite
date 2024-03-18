@@ -3270,10 +3270,12 @@ struct IdList {
 **
 ** Union member validity:
 **
-**    u1.zIndexedBy          fg.isIndexedBy && !fg.isTabFunc
-**    u1.pFuncArg            fg.isTabFunc   && !fg.isIndexedBy
-**    u2.pIBIndex            fg.isIndexedBy && !fg.isCte
-**    u2.pCteUse             fg.isCte       && !fg.isIndexedBy
+**    u1.zIndexedBy      fg.isIndexedBy && !fg.isTabFunc
+**    u1.pFuncArg        fg.isTabFunc   && !fg.isIndexedBy
+**    u1.nRow            !fg.isTabFunc  && !fg.isIndexedBy
+**
+**    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
+**    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
   Schema *pSchema;  /* Schema to which this item is fixed */
