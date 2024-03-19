@@ -1553,4 +1553,25 @@ do_execsql_test func-38.100 {
   WITH t1(x) AS (VALUES(-9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
 } {Inf Inf Inf -Inf -Inf -Inf}
 
+# 2024-03-21 https://sqlite.org/forum/forumpost/23b8688ef4
+# Another problem with Kahan-Babushka-Neumaier summation and
+# infinities.
+#
+do_execsql_test func-39.101 {
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<1)
+  SELECT sum(1.7976931348623157e308),
+         avg(1.7976931348623157e308),
+         total(1.7976931348623157e308)
+    FROM c;
+} {1.79769313486232e+308 1.79769313486232e+308 1.79769313486232e+308}
+for {set i 2} {$i<10} {incr i} {
+  do_execsql_test func-39.[expr {10*$i+100}] {
+    WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<$i)
+    SELECT sum(1.7976931348623157e308),
+           avg(1.7976931348623157e308),
+           total(1.7976931348623157e308)
+      FROM c;
+  } {Inf Inf Inf}
+}
+
 finish_test
