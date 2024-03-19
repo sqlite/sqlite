@@ -4712,10 +4712,13 @@ void sqlite3MutexWarnOnContention(sqlite3_mutex*);
 # define EXP754 (((u64)0x7ff)<<52)
 # define MAN754 ((((u64)1)<<52)-1)
 # define IsNaN(X) (((X)&EXP754)==EXP754 && ((X)&MAN754)!=0)
+# define IsOvfl(X) (((X)&EXP754)==EXP754)
   int sqlite3IsNaN(double);
+  int sqlite3IsOverflow(double);
 #else
-# define IsNaN(X)         0
-# define sqlite3IsNaN(X)  0
+# define IsNaN(X)             0
+# define sqlite3IsNaN(X)      0
+# define sqlite3IsOVerflow(X) 0
 #endif
 
 /*
