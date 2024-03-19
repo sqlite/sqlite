@@ -596,13 +596,13 @@ static int lookupName(
     ** Perhaps the name is a reference to the ROWID
     */
     if( cnt==0
-     && cntTab==1
+     && cntTab>=1
      && pMatch
      && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
      && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
     ){
-      cnt = 1;
+      cnt = cntTab;
       if( pMatch->fg.isNestedFrom==0 ) pExpr->iColumn = -1;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
     }

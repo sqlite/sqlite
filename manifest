@@ -1,5 +1,5 @@
-C Adjustments\sto\sthe\stest\scases\sfor\sthe\sprevious\scheck-in\sto\smake\sthem\ncross-platform\sLinux/Mac/Windows.\s\sTest\schance\sonly.\s\sNo\schange\sto\score\scode.
-D 2024-03-19T10:41:18.138
+C Return\sthe\serror\s"ambiguous\scolumn\sname:\srowid",\sinstead\sof\s"no\ssuch\scolumn:\srowid",\swhen\sa\s"rowid"\sreference\sis\sambiguous.
+D 2024-03-19T14:55:49.846
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -748,7 +748,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 87b67bba3662a0523f39ae6b084a3907109702f717c654d6cecb838af5cd57f1
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resolve.c ef87e3bc7700bfe761a7bbee2ce6084f1766dc816dd82a3ae77c133eec898432
+F src/resolve.c c3d6f422645c1fab9b6c493a39624d0b20af5b62f085484293c47d38114edd4f
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c df2bf515fc36e02e97959a70e82da8a4967d6c85590646a7fda2926a734c81ce
 F src/shell.c.in cf80c636bccb0ff9db46995e39d69ca21fde2a8a331d1691e4d62a69d7841c8a
@@ -1337,7 +1337,7 @@ F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f2
 F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be28
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
-F test/joinH.test f69e5b53b7d887914e854b6a131efbed4ea9f5ca52bdab81788bfc3e79299f43
+F test/joinH.test d5054173442fdf98260eeb6bb9751daa733b0ae6842fe50dcbd5469945b86985
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -1535,7 +1535,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190cfd4
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
-F test/rowid.test e29025be95baf6b32f0d5edef59a7633028325896a98f1caa8019559ca910350
+F test/rowid.test 9910c999e58d211d182599bc0023bdfa849d02c712163476afd384780936b404
 F test/rowvalue.test baf4fa3ec1a8c1c920c3faa5fd25959cb454bbd99ac8960397c34549d9fc4abe
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 1347e25ca11c547c5a6ff0cc5626f95aa9740e9275bfaec096029f57cb2130ce
@@ -1887,7 +1887,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
 F test/types3.test c9db8f9e80309edfa4252585cf16bcab7ed31f39eeb904d21e831199a3613fb0
 F test/unhex.test b7f1b806207cb77fa31c3e434fe92fba524464e3e9356809bfcc28f15af1a8b7
-F test/unionall.test 5b1c4186a661e4bf762875caf4c61d8fda3dd04a6fa9005187f6ba8900c2913f
+F test/unionall.test 04d30726c5056f84f92b3a12bf8d8a1dbbe807d1ddc8af95def09e6ef2dd91e3
 F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
 F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
@@ -2180,8 +2180,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 45d272ef38d5ee6189f81369aefb8e3ac35868a67687012d93c84f2bbc42520a
-R 06f52063180a10fd2f7e8878024a8e93
-U drh
-Z be89e098a4549a3844da98de72222ae6
+P 0dddadbd5b217a48bb5c1b0568a03fbafb89dba98c577727bf4f79ff7e0ca849
+R 9d3e521ec7779aa5763735bc3fc68d12
+T *branch * ambiguous-rowid-error
+T *sym-ambiguous-rowid-error *
+T -sym-trunk *
+U dan
+Z 8273ce08b357f09baf92785ce3364245
 # Remove this line to create a well-formed Fossil manifest.

@@ -813,8 +813,9 @@ do_execsql_test 16.6 { SELECT rowid FROM v1, t1; } {1}
 do_execsql_test 16.7 { SELECT rowid FROM v1, t3; } {3}
 do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
 
-do_catchsql_test 16.5 { SELECT rowid FROM t1, t3; } {1 {no such column: rowid}}
-
+do_catchsql_test 16.9 { 
+  SELECT rowid FROM t1, t3; 
+} {1 {ambiguous column name: rowid}}
 
 
 finish_test
