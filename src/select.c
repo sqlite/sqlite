@@ -6172,12 +6172,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           }
 
           nAdd = pTab->nCol;
-          if( VisibleRowid(pTab)
-           && !ViewCanHaveRowid
-           && (selFlags & SF_NestedFrom)!=0
-          ){
-            nAdd++;
-          }
+          if( VisibleRowid(pTab) && (selFlags & SF_NestedFrom)!=0 ) nAdd++;
           for(j=0; j<nAdd; j++){
             const char *zName; 
             struct ExprList_item *pX; /* Newly added ExprList term */
@@ -6259,7 +6254,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pX = &pNew->a[pNew->nExpr-1];
             assert( pX->zEName==0 );
             if( (selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
-              if( pNestedFrom ){
+              if( pNestedFrom && j<pNestedFrom->nExpr ){
                 pX->zEName = sqlite3DbStrDup(db, pNestedFrom->a[j].zEName);
                 testcase( pX->zEName==0 );
               }else{
