@@ -3007,7 +3007,7 @@ void sqlite3CreateView(
   ** setting fixes this problem.  But the fix can be disabled by compiling
   ** with -DSQLITE_ALLOW_ROWID_IN_VIEW in case there are legacy apps that
   ** depend upon the old buggy behavior.  The ability can also be toggled
-  ** using SQLITE_TESTCTRL_ROWID_IN_VIEW */
+  ** using SQLITE_CONFIG_NO_ROWID_IN_VIEW */
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
   p->tabFlags |= sqlite3Config.mNoVisibleRowid; /* Optional. Allow by default */
 #else

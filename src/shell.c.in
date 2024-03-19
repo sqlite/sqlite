@@ -10893,7 +10893,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,0, ""               },
     {"prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,   0, ""               },
     {"prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,   0, "SEED ?db?"      },
-    {"rowid_in_view",      SQLITE_TESTCTRL_ROWID_IN_VIEW,0,"?BOOLEAN?"      },
     {"seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,  0, ""               },
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
     {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
@@ -11068,20 +11067,6 @@ static int do_meta_command(char *zLine, ShellState *p){
           break;
         }
 #endif
-       case SQLITE_TESTCTRL_ROWID_IN_VIEW: {
-          rc2 = -1;
-          if( nArg>=3 ){
-            if( !ShellHasFlag(p,SHFLG_TestingMode) ){
-              eputz("The --unsafe-testing option is required to change "
-                    "this setting\n");
-            }else{
-              rc2 = booleanValue(azArg[2]);
-            }
-          }
-          sqlite3_test_control(testctrl, &rc2);
-          isOk = 1;
-          break;
-       }
 #ifdef SQLITE_DEBUG
         case SQLITE_TESTCTRL_TUNE: {
           if( nArg==4 ){
@@ -12363,6 +12348,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       stdin_is_interactive = 0;
     }else if( cli_strcmp(z,"-utf8")==0 ){
     }else if( cli_strcmp(z,"-no-utf8")==0 ){
+    }else if( cli_strcmp(z,"-no-rowid-in-view")==0 ){
+      sqlite3_config(SQLITE_CONFIG_NO_ROWID_IN_VIEW);
     }else if( cli_strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
       const char *zSize;
@@ -12637,6 +12624,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-utf8")==0 ){
       /* already handled */
     }else if( cli_strcmp(z,"-no-utf8")==0 ){
+      /* already handled */
+    }else if( cli_strcmp(z,"-no-rowid-in-view")==0 ){
       /* already handled */
     }else if( cli_strcmp(z,"-heap")==0 ){
       i++;
