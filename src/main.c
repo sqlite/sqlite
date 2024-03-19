@@ -765,9 +765,14 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_OMIT_DESERIALIZE */
 
-    case SQLITE_CONFIG_NO_ROWID_IN_VIEW: {
+    case SQLITE_CONFIG_ROWID_IN_VIEW: {
+      int *pVal = va_arg(ap,int*);
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
-      sqlite3GlobalConfig.mNoVisibleRowid = TF_NoVisibleRowid;
+      if( 0==*pVal ) sqlite3GlobalConfig.mNoVisibleRowid = TF_NoVisibleRowid;
+      if( 1==*pVal ) sqlite3GlobalConfig.mNoVisibleRowid = 0;
+      *pVal = (sqlite3GlobalConfig.mNoVisibleRowid==0);
+#else
+      *pVal = 0;
 #endif
       break;
     }

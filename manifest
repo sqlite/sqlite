@@ -1,5 +1,5 @@
-C Return\sthe\serror\s"ambiguous\scolumn\sname:\srowid",\sinstead\sof\s"no\ssuch\scolumn:\srowid",\swhen\sa\s"rowid"\sreference\sis\sambiguous.
-D 2024-03-19T19:56:39.777
+C Change\sthe\sSQLITE_CONFIG_NO_ROWID_IN_VIEW\sconfiguration\soption\sto\sbe\njust\sSQLITE_CONFIG_ROWID_IN_VIEW\s(without\sthe\s"_NO_"\sin\sthe\smiddle)\sand\sgive\nit\sthe\sability\sto\sturn\sthe\soption\son\sand\soff.\s\sOtherwise,\sit\sis\sdifficult\nto\stest.
+D 2024-03-19T23:01:56.437
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -713,7 +713,7 @@ F src/insert.c 06ce505713e86172612f9e01febefd2d3331d1f70461b4ada0eae5a76bb6349f
 F src/json.c e2e40760d6689134c3e2ece38c6a496b34ff5e2661a8f238444a119af666fdce
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 3db8bc4c8e0515b9e23bed3167de8b626a55e9eb1f65fe42b878d820cfa90628
+F src/main.c 8a59d297ec77e6b78550433bfccb95a1b26f2fb69aaaf233206e21579a1cfcc1
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -750,9 +750,9 @@ F src/printf.c 87b67bba3662a0523f39ae6b084a3907109702f717c654d6cecb838af5cd57f1
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c eb1860b134fb044fd819c4347105c148d5aac7c6498032be2829e5cc95619b28
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c ac3689a3f54f81e8b710ce772c5c49c13a152e4ac484c2429ad5264243e7de66
-F src/shell.c.in 31c3845fae8382e5c9c46a8985b51a444387edf77404ac4db6716493efe2c72f
-F src/sqlite.h.in e9d785f9d17f2caa366641d6616748310c8092cc0746f064c8cf5bcc767bcab0
+F src/select.c a83532bae45185f271b59babf715a31a831ac17e2b4bc061f52ee53825c688f1
+F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be2199
+F src/sqlite.h.in f099b625b073ba250ff9f0feb4d7d0fb570ac1b9584584009ff4951f729e147c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h f8928f0397d797046396dd9d360a6af8ce6dcb48bd72ea290165b07c8c518744
@@ -2180,9 +2180,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 134da9c348a5e3b5cef97b79f37d48257afd4fa958a84f6930ac9874284a14cd 021f34fcfed41b607be8169bbda59aef93f130108d944f4741b46e8e345b2bbb
-R be08dcf8f811c87330d104f5ec4dbed8
-T +closed 021f34fcfed41b607be8169bbda59aef93f130108d944f4741b46e8e345b2bbb
+P 0615bdae2dfc70c7e0416a28e89ffde31fa44ed4b3dac46e5ef20eed0d89e58c
+R 0da4f5b6bfe3d8c8b355040cbb4a265d
 U drh
-Z e6cd68fc074ecbc59d0059bf2fbd13d3
+Z c8d34cb65d7a95190f13ea53bc6d7b05
 # Remove this line to create a well-formed Fossil manifest.
