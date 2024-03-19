@@ -826,8 +826,8 @@ ifcapable allow_rowid_in_view {
   do_execsql_test 16.8 { SELECT rowid FROM (SELECT 123), t3; } {3}
 }
 
-do_catchsql_test 16.9 { SELECT rowid FROM t1, t3; } {1 {no such column: rowid}}
-
-
+do_catchsql_test 16.9 { 
+  SELECT rowid FROM t1, t3; 
+} {1 {ambiguous column name: rowid}}
 
 finish_test
