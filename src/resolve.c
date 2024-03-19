@@ -469,8 +469,37 @@ static int lookupName(
           }
         }
         if( 0==cnt && VisibleRowid(pTab) ){
+          /* pTab is a potential ROWID match.  Keep track of it and match
+          ** the ROWID later if that seems appropriate.  (Search for "cntTab"
+          ** to find related code.)  Only allow a ROWID match if there is
+          ** a single ROWID match candidate.
+          */
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+          /* In SQLITE_ALLOW_ROWID_IN_VIEW mode, allow a ROWID match
+          ** if there is a single VIEW candidate or if there is a single
+          ** non-VIEW candidate plus multiple VIEW candidates.  In other
+          ** words non-VIEW candidate terms take precedence over VIEWs.
+          */
+          if( cntTab==0
+           || (cntTab==1
+               && ALWAYS(pMatch!=0)
+               && ALWAYS(pMatch->pTab!=0)
+               && (pMatch->pTab->tabFlags & TF_Ephemeral)!=0
+               && (pTab->tabFlags & TF_Ephemeral)==0)
+          ){
+            cntTab = 1;
+            pMatch = pItem;
+          }else{
+            cntTab++;
+          }
+#else
+          /* The (much more common) non-SQLITE_ALLOW_ROWID_IN_VIEW case is
+          ** simpler since we require exactly one candidate, which will
+          ** always be a non-VIEW
+          */
           cntTab++;
           pMatch = pItem;
+#endif
         }
       }
       if( pMatch ){
