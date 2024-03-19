@@ -41,6 +41,11 @@ do_execsql_test join8-1000 {
   CREATE INDEX t1x2 ON t1(b);
   INSERT INTO t1 DEFAULT VALUES;
 } {}
+ifcapable allow_rowid_in_view {
+  set res {1 {no such column: rowid}}
+} else {
+  set res {0 1}
+}
 do_catchsql_test join8-1010 {
   SELECT a
     FROM (
@@ -61,7 +66,7 @@ do_catchsql_test join8-1010 {
     NATURAL LEFT FULL JOIN t1
    WHERE ( rowid , 1 )<=(CASE 5 WHEN 619 THEN 841 ELSE 3374391096 END,0)
    ORDER BY a ASC;
-} {0 1}
+} $res
 
 # Pending issue #2: (now resolved)
 # Jump to addrHalt inside the RIGHT JOIN body subroutine bypasses the
