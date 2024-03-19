@@ -4405,6 +4405,39 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_ROWID_IN_VIEW, int *pVal);
+    **
+    ** Query or set the sqlite3Config.mNoVisibleRowid flag.  Cases:
+    **
+    **    *pVal==1      Allow ROWID in VIEWs
+    **    *pVal==0      Disallow ROWID in VIEWs
+    **    *pVal<0       No change
+    **
+    ** In every case *pVal is written with 1 if ROWID is allowd in VIEWs and
+    ** 0 if not.  Changes to the setting only occur if SQLite is compiled
+    ** with -DSQLITE_ALLOW_ROWID_IN_VIEW (hereafter: "SARIV").  With the
+    ** "SARIV" compile-time option the default value for this setting is 1.
+    ** Otherwise this setting defaults to 0.  This setting may only be changed
+    ** if SQLite is compiled with "SARIV".  Hence, in the normal case when
+    ** SQLite is compiled without "SARIV", this test-control is a no-op
+    ** that always leaves *pVal set to 0.
+    **
+    ** IMPORTANT:  If you change this setting while a database connection
+    ** is option, it is very important to run "PRAGMA writable_schema=RESET"
+    ** afterwards in order to reparse all VIEW definitions in the schema.
+    */
+    case SQLITE_TESTCTRL_ROWID_IN_VIEW: {
+      int *pVal = va_arg(ap, int*);
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+      if( *pVal==0 ) sqlite3Config.mNoVisibleRowid = TF_NoVisibleRowid;
+      if( *pVal==1 ) sqlite3Config.mNoVisibleRowid = 0;
+      *pVal = (sqlite3Config.mNoVisibleRowid==0);
+#else
+      *pVal = 0;
+#endif
+      break;
+    }
+
     /*   sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, sqlite3*);
     **
     ** Toggle the ability to use internal functions on or off for
