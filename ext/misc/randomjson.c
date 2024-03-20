@@ -52,7 +52,7 @@ static unsigned int prngInt(Prng *p){
 }
 
 static const char *azJsonAtoms[] = {
-  /* JSON                    /* JSON-5 */
+/* JSON                      JSON-5 */
   "0",                       "0",
   "1",                       "1",
   "-1",                      "-1",
