@@ -1,5 +1,5 @@
-C Change\sthe\sSQLITE_CONFIG_NO_ROWID_IN_VIEW\sconfiguration\soption\sto\sbe\njust\sSQLITE_CONFIG_ROWID_IN_VIEW\s(without\sthe\s"_NO_"\sin\sthe\smiddle)\sand\sgive\nit\sthe\sability\sto\sturn\sthe\soption\son\sand\soff.\s\sOtherwise,\sit\sis\sdifficult\nto\stest.
-D 2024-03-19T23:01:56.437
+C Fix\stypos\sin\sthe\sSQLITE_CONFIG_ROWID_IN_VIEW\sdocumentation.
+D 2024-03-20T09:45:44.382
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -752,7 +752,7 @@ F src/resolve.c eb1860b134fb044fd819c4347105c148d5aac7c6498032be2829e5cc95619b28
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a83532bae45185f271b59babf715a31a831ac17e2b4bc061f52ee53825c688f1
 F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be2199
-F src/sqlite.h.in f099b625b073ba250ff9f0feb4d7d0fb570ac1b9584584009ff4951f729e147c
+F src/sqlite.h.in 41c5febd217b1e475aae022895c60f57fbe39ff6136450110662cfad67002d43
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h f8928f0397d797046396dd9d360a6af8ce6dcb48bd72ea290165b07c8c518744
@@ -2180,8 +2180,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0615bdae2dfc70c7e0416a28e89ffde31fa44ed4b3dac46e5ef20eed0d89e58c
-R 0da4f5b6bfe3d8c8b355040cbb4a265d
+P 5d412edc2e378999ad798d1d7d73c7f7a17ee4e3c751a0dd00b9d5ce32759550
+R d82f649ee8e5d633f69feebd0d7bf101
 U drh
-Z c8d34cb65d7a95190f13ea53bc6d7b05
+Z ae521986bd186966a5bde1a9ef372fcb
 # Remove this line to create a well-formed Fossil manifest.
