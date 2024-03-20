@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sSQLITE_CONFIG_ROWID_IN_VIEW\sdocumentation.
-D 2024-03-20T09:45:44.382
+C Fix\sa\stypo\sin\sa\scomment.
+D 2024-03-20T10:40:25.308
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 285b493d843e7ba8ef78b6ae7d31238e904901dbc0c484f7904de4cf18fd8802
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c 71445e2d1e2c78b120a20a46d80a29a9ea42370df430efda5bb6ef377e8016c8
+F src/build.c fff536730a6d83120ae38d960f812b548394e8af6907249effb1764d69178106
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
@@ -2180,8 +2180,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d412edc2e378999ad798d1d7d73c7f7a17ee4e3c751a0dd00b9d5ce32759550
-R d82f649ee8e5d633f69feebd0d7bf101
+P 1ad1ca498296493c8e89cda911cc153baa51c90ae6c19961841e6b4e37302a23
+R 881bc9317ed9df88acd3db1968866969
 U drh
-Z ae521986bd186966a5bde1a9ef372fcb
+Z 3ac48e6dcd121003681750f4a6450153
 # Remove this line to create a well-formed Fossil manifest.
