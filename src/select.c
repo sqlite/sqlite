@@ -1950,11 +1950,7 @@ static const char *columnTypeImpl(
         ** data for the result-set column of the sub-select.
         */
         if( iCol<pS->pEList->nExpr
-#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
-         && iCol>=0
-#else
-         && ALWAYS(iCol>=0)
-#endif
+         && (!ViewCanHaveRowid || iCol>=0)
         ){
           /* If iCol is less than zero, then the expression requests the
           ** rowid of the sub-select or view. This expression is legal (see
@@ -5877,7 +5873,8 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   /* The usual case - do not allow ROWID on a subquery */
   pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
 #else
-  pTab->tabFlags |= TF_Ephemeral;  /* Legacy compatibility mode */
+  /* Legacy compatibility mode */
+  pTab->tabFlags |= TF_Ephemeral | sqlite3Config.mNoVisibleRowid;
 #endif
   return pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
 }
@@ -6145,7 +6142,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             pNestedFrom = pFrom->pSelect->pEList;
             assert( pNestedFrom!=0 );
             assert( pNestedFrom->nExpr==pTab->nCol );
-            assert( VisibleRowid(pTab)==0 );
+            assert( VisibleRowid(pTab)==0 || ViewCanHaveRowid );
           }else{
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
@@ -6177,7 +6174,8 @@ static int selectExpander(Walker *pWalker, Select *p){
             pUsing = 0;
           }
 
-          nAdd = pTab->nCol + (VisibleRowid(pTab) && (selFlags&SF_NestedFrom));
+          nAdd = pTab->nCol;
+          if( VisibleRowid(pTab) && (selFlags & SF_NestedFrom)!=0 ) nAdd++;
           for(j=0; j<nAdd; j++){
             const char *zName; 
             struct ExprList_item *pX; /* Newly added ExprList term */
@@ -6259,7 +6257,8 @@ static int selectExpander(Walker *pWalker, Select *p){
             pX = &pNew->a[pNew->nExpr-1];
             assert( pX->zEName==0 );
             if( (selFlags & SF_NestedFrom)!=0 && !IN_RENAME_OBJECT ){
-              if( pNestedFrom ){
+              if( pNestedFrom && (!ViewCanHaveRowid || j<pNestedFrom->nExpr) ){
+                assert( j<pNestedFrom->nExpr );
                 pX->zEName = sqlite3DbStrDup(db, pNestedFrom->a[j].zEName);
                 testcase( pX->zEName==0 );
               }else{
