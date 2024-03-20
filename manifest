@@ -1,5 +1,5 @@
-C Have\srtree\savoid\skeeping\sa\sblob\shandle\sopen\sfollowing\san\serror.
-D 2024-03-20T16:04:53.393
+C Fix\stest\scases\sfor\srtree\sand\sfts5.\s\sNo\schanges\sto\scode.
+D 2024-03-20T16:29:19.087
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -145,7 +145,7 @@ F ext/fts5/test/fts5corrupt.test b6d4034b682bb3387bc44c510c71b3c67d4349e4df13949
 F ext/fts5/test/fts5corrupt2.test 99e7e23a58b4d89eb7167c6de1669cbc595cd3c79ab333e0eb56405473319e77
 F ext/fts5/test/fts5corrupt3.test 7da9895dafa404efd20728f66ff4b94399788bdc042c36fe2689801bba2ccd78
 F ext/fts5/test/fts5corrupt4.test f4c08e2182a48d8b70975fd869ee5391855c06d8a0ff87b6a2529e7c5a88a1d3
-F ext/fts5/test/fts5corrupt5.test 15f9afdd3173ee75225e6475c96fc345c74533c0d3243fa7a3d758c1bc8ce08a
+F ext/fts5/test/fts5corrupt5.test 2a2eac2885702a951973ad19bf72c60e998263d7130f0ef910f5ede3a3a99635
 F ext/fts5/test/fts5corrupt6.test bf8eeae07825b088b9665d9d8e4accbd8dc9bf3cb85b6c64cf6c9e18ccc420a4
 F ext/fts5/test/fts5corrupt7.test 80ad7f683a8bda2404731bb77e8c3dbbb620c1f6cc583cca8239f6accd6338c0
 F ext/fts5/test/fts5delete.test 619295b20dbc1d840b403ee07c878f52378849c3c02e44f2ee143b3e978a0aa7
@@ -504,7 +504,7 @@ F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd
 F ext/rtree/rtreeG.test 1b9ca6e3effb48f4161edaa463ddeaa8fca4b2526d084f9cbf5dbe4e0184939c
 F ext/rtree/rtreeH.test 0885151ee8429242625600ae47142cca935332c70a06737f35af53a7bd7aaf90
 F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
-F ext/rtree/rtreeJ.test bafa7616d6b29448bf19132ce4963a69b629b9ca6ab29f4b76889c8d542b8dfc
+F ext/rtree/rtreeJ.test 9b8c421c03d32be45685e4b65ed6191ceecf17f2d0e0e0dc2a37e070d1874ab3
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 202ca70df1f0645ef9d5a2170e62d378a28098d9407f0569e85c9c1cf1bd020a
 F ext/rtree/rtreecheck.test 934546ad9b563e090ee0c5cbdc69ad014189ad76e5df7320526797a9a345661f
@@ -2144,9 +2144,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b26e5a500ebc358047eff79db61b5edfec319b95fbf8685e6a798c5e6c1923fb
-Q +1cd5d4623f44af25ab4f5af580354b3ae22cf5de4109e008ca41055125bb708d
-R 3d92ae65e552649cf9ad87dc461111a2
+P 1303716a113c51e949acc46fbd01634ce0e5a016cbc2d01bb20dd03ffd1f28e0
+R 4316ed1103cbd21cf678a84593425581
 U drh
-Z 3e7505821e6a0e242783145e315b8fca
+Z 2d2263e03ee99152d87c9d3ddcc7a3ca
 # Remove this line to create a well-formed Fossil manifest.
