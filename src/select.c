@@ -1673,9 +1673,16 @@ static void generateSortTail(
   int addrExplain;                /* Address of OP_Explain instruction */
 #endif
 
-  ExplainQueryPlan2(addrExplain, (pParse, 0,
-        "USE TEMP B-TREE FOR %sORDER BY", pSort->nOBSat>0?"RIGHT PART OF ":"")
-  );
+  nKey = pOrderBy->nExpr - pSort->nOBSat;
+  if( pSort->nOBSat==0 || nKey==1 ){
+    ExplainQueryPlan2(addrExplain, (pParse, 0,
+      "USE TEMP B-TREE FOR %sORDER BY", pSort->nOBSat?"LAST TERM OF ":""
+    ));
+  }else{
+    ExplainQueryPlan2(addrExplain, (pParse, 0,
+      "USE TEMP B-TREE FOR LAST %d TERMS OF ORDER BY", nKey
+    ));
+  }
   sqlite3VdbeScanStatusRange(v, addrExplain,pSort->addrPush,pSort->addrPushEnd);
   sqlite3VdbeScanStatusCounters(v, addrExplain, addrExplain, pSort->addrPush);
 
@@ -1713,7 +1720,6 @@ static void generateSortTail(
       regRow = sqlite3GetTempRange(pParse, nColumn);
     }
   }
-  nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
     int regSortOut = ++pParse->nMem;
     iSortTab = pParse->nTab++;
