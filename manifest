@@ -1,5 +1,5 @@
-C Change\sEXPLAIN\sQUERY\sPLAN\soutput\sto\ssay\s"USE\sTEMP\sB-TREE\sFOR\sLAST\sTERM\sOF\sORDER\sBY",\sor\s"LAST\sN\sTERMS\sOF\sORDER\sBY",\sinstead\sof\s"RIGHT\sPART\sOF\sORDER\sBY".
-D 2024-03-20T16:56:12.477
+C Fix\sall\stest\scases\sso\sthat\sthey\swork\swith\sSQLITE_ALLOW_ROWID_IN_VIEW.
+D 2024-03-21T10:35:33.254
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -695,7 +695,7 @@ F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b
 F src/build.c fff536730a6d83120ae38d960f812b548394e8af6907249effb1764d69178106
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c 23331529e654be40ca97d171cbbffe9b3d4c71cc53b78fe5501230675952da8b
+F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
 F src/date.c 126ba2ab10aeb2e7ba6e089b5f07b747c0625b8287f78b60da346eda8d23c875
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
@@ -1433,7 +1433,7 @@ F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db
 F test/misc5.test 027cf0ac10314ea534173f335a33bb4059907ddabbac2c16786766d6f26c8923
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d912f3d45c2989191b797504a220ca225d6be80b21acad22ba0d35f4a9ee4579
-F test/misc8.test 4db9f8be59834cea08c87e9658014080efa02678ef54a088f84fa5647e81fee0
+F test/misc8.test 08d2380bc435486b12161521f225043ac2be26f02471c2c1ea4cac0b1548edbd
 F test/misuse.test 9e7f78402005e833af71dcab32d048003869eca5abcaccc985d4f8dc1d86bcc7
 F test/mjournal.test 28a08d5cb5fb5b5702a46e19176e45e964e0800d1f894677169e79f34030e152
 F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
@@ -1536,7 +1536,7 @@ F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190cfd4
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
-F test/rowid.test aaa2572271edf58f8f88ac4d39f69e57ee5ae7a858332cdce9106e7cff8b7963
+F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
 F test/rowvalue.test baf4fa3ec1a8c1c920c3faa5fd25959cb454bbd99ac8960397c34549d9fc4abe
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 1347e25ca11c547c5a6ff0cc5626f95aa9740e9275bfaec096029f57cb2130ce
@@ -2101,7 +2101,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl a16682eae5f01f85e5861b2aa215ca0d46b4230658ee25977e02b4508566fb75 x
+F tool/mkctimec.tcl 060e9785e9503bf51f8b1b11b542bdeef90fd0ceb0738154f6762acec0c61e5f x
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
 F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2181,9 +2181,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6802565df0f63286a7ef26c92d3ed817895f244920a24909cd855090fdfa08c cd547c500442f3f58c05d6da8a67c3238560c5204ea62ec14afa844cc8fb94f0
-R 8123b01b9bcdf105a2e2ddc317d657f0
-T +closed cd547c500442f3f58c05d6da8a67c3238560c5204ea62ec14afa844cc8fb94f0
-U dan
-Z cfb92556c121157a43b1e3903f143f16
+P 7e13a2c7583dbcb660adde6b0465da037365971c56726b8f18a541d8803ffeed
+R 2027b60f20ab6be3fc26d73a48e5361c
+U drh
+Z 4767141a590293471cedda2bdaf01e5d
 # Remove this line to create a well-formed Fossil manifest.

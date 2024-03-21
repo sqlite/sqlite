@@ -804,7 +804,7 @@ do_execsql_test 16.0 {
 }
 
 ifcapable allow_rowid_in_view {
-  set nosuch "1 {no such column: rowid}"
+  set nosuch "1 {ambiguous column name: rowid}"
   do_execsql_test 16.1 { SELECT rowid FROM t1, t2; } {1}
   do_catchsql_test 16.2 { SELECT rowid FROM t1, v1; } $nosuch
   do_catchsql_test 16.3 { SELECT rowid FROM t3, v1; } $nosuch
