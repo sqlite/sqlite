@@ -1,5 +1,5 @@
-C Add\scomments\s(only,\sno\scode)\sto\sthe\sJS\ssqlite3_config()\sbindings\sreminding\sus\swhy\sSQLITE_CONFIG_ROWID_IN_VIEW\sis\sspecifically\snot\sincluded.\sJNI\sdoes\snot\sneed\sthis\streatment\sbecause\sit\sexplicitly\ssupports\sonly\sa\svery\ssmall\ssubset\sof\sconfig\soptions.
-D 2024-03-21T15:52:52.021
+C Test\scase\sfor\sthe\sassert()\sproblem\sfixed\sby\s[9ba3cff9d48fe8fc].
+D 2024-03-21T22:18:24.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1057,7 +1057,7 @@ F test/dbpagefault.test 35f06cfb2ef100a9b19d25754e8141b9cba9b7daabd4c60fa5af93fc
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
 F test/decimal.test ef731887b43ee32ef86e1c8fddb61a40789f988332c029c601dcf2c319277e9e
-F test/default.test 9687cfb16717e4b8238c191697c98be88c0b16e568dd5368cd9284154097ef50
+F test/default.test 830fad7180cdf0e6a06e93acc0403bf73762314a639363314db5674c631b6127
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ccb372967fab779b29be8f01c879a99ef247981466f81f55e18e3961fbd7d5a
-R ea9e20b51710635b69a86f29c94e13a1
-U stephan
-Z 968d86b7461df92ba4077d882e3cd299
+P 4fea396221e84f9532f9327226691621a23bd966a860329fc579141c69cf7f64
+R 1d5390331fd847f868d4cf4de5871522
+U drh
+Z 2f8691d3650feb9b039ca6336d443329
 # Remove this line to create a well-formed Fossil manifest.
