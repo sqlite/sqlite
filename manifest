@@ -1,5 +1,5 @@
-C Have\sos_unix.c\sreuse\scached\sfile-descriptors\sin\sthe\scase\swhen\sa\sread-write\sfd\sis\srequested\son\sa\sread-only\sfile\sand\sa\sread-only\sfd\sreturned.
-D 2024-03-21T11:37:36.346
+C Enhancements\sto\stestrunner.tcl:\n(1)\sAdd\sthe\s"--config\sCONFIGS"\soption,\sto\sthat\sonly\sconfiguration\snamed\non\sthe\scomma-separated\slist\sCONFIGS\sare\srun.\n(2)\sAdd\sthe\s"--omit\sCONFIGS"\sto\somit\sconfiguration\son\sthe\sCONFIGS\slist\n(3)\sAdd\sthe\sAndroid\sconfiguration\sto\s"release"
+D 2024-03-21T11:46:52.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1590,7 +1590,7 @@ F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae
 F test/selectH.test 0b54599f1917d99568c9b929df22ec6261ed7b6d2f02a46b5945ef81b7871aac
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
-F test/sessionfuzz.c 666b47e177c7b25f01ba645d41fb9131d2d54ae673f0d81c08f5af2b3e6ecbda
+F test/sessionfuzz.c f693b8827034a3bed7616d89c65fb4fe8b7ff3c0f000c6ea6beda69b7f1aced3
 F test/shared.test f022874d9d299fe913529dc10f52ad5a386e4e7ff709270b9b1111b3a0f3420a
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test f8cd07c1a2b7cdb315c01671a0b2f8e3830b11ef31da6baa9a9cd8da88965403
@@ -1690,8 +1690,8 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
-F test/testrunner.tcl 01bc3b5bc900dc73b076180727eb2869dc61426b1ab95ac2f42def5d1f3d407e
-F test/testrunner_data.tcl 7032a64e4757db0bf83c6874cab2ccbb14a8708b4d68c1ddc8b359e204139cb7
+F test/testrunner.tcl b48a8fc17e3b200244f53d60348afa7fe9482400d164e95709890743af9536d0
+F test/testrunner_data.tcl 3d36660cfd55ea5e20e661e8f94c0520feebcb437848f9b98b33c483cc479c0c
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 66c69e2f20f7692e0f34743ae97b09c4d8d11b874cdc5381795f2d1e0410f724
-R 41345a246cf3c264839b8ebe82b82196
-U dan
-Z d2317639297bfb820720d835feec7e58
+P a678e85402af08c1e387bf30ff2205f84dd7da749755da565d70f831c007a3d9
+R 2c6a53e503eb513e49b4f3899bff37cd
+U drh
+Z 89d0196ee33d74016c89e304cba255b3
 # Remove this line to create a well-formed Fossil manifest.
