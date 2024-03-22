@@ -1,5 +1,5 @@
-C Test\scase\sfor\sthe\sassert()\sproblem\sfixed\sby\s[9ba3cff9d48fe8fc].
-D 2024-03-21T22:18:24.397
+C Fix\sincorrect\sboundary\sassert()s\son\sthe\snew\sOP_IfSizeBetween\sopcode.
+D 2024-03-22T10:32:14.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -820,7 +820,7 @@ F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 4d6d7ebfe6772a1b950c97bbb1d1a72ad4874617ec498ab8aa73b7f5a43e44bb
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c da8407be6055f5751bf85681542d130a320b4fd1f4d8719bf83a464743d9aae4
+F src/vdbe.c 651aa0f31027d5d0a133eb7b41d11c41dc3b88ecb760b770430da0e477ae3b6c
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 8f57d60c89da0b60e6d4e272358c511f6bae4e24330bdb11f8b42f986d1bf21b
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fea396221e84f9532f9327226691621a23bd966a860329fc579141c69cf7f64
-R 1d5390331fd847f868d4cf4de5871522
+P 865f0de7a17ce6059b8f0708002cff5f13b9dba3ebc41896ee0fdc21ae4f3740
+R 7ab31df9ffdd4f8066f809be43b05ba6
 U drh
-Z 2f8691d3650feb9b039ca6336d443329
+Z 00e0c5317c8b57851c68c1832373c781
 # Remove this line to create a well-formed Fossil manifest.
