@@ -580,4 +580,16 @@ do_eqp_test 16.7 {
         `--SCAN 4-ROW VALUES CLAUSE
 }
 
+#--------------------------------------------------------------------------
+# 2024-03-23 dbsqlfuzz crash-c2c5e7e08b7e489d270a26d895077a03f678c33b
+#
+do_execsql_test 17.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1 AS SELECT * FROM (VALUES(1,2), (3,4 IN (1,2,3)));
+}
+
+do_execsql_test 17.2 {
+  SELECT * FROM t1
+} {1 2 3 0}
+
 finish_test
