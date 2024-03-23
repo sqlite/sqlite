@@ -92,7 +92,7 @@ static int kern_vfs_access(sqlite3_vfs *vfs, const char *zName, int flags, int *
     struct stat sb;
     int error;
 
-    error = kern_statat(td, 0, AT_FDCWD, zName, UIO_SYSSPACE, &sb, NULL);
+    error = kern_statat(td, 0, AT_FDCWD, zName, UIO_SYSSPACE, &sb);
     if (error) {
         *pResOut = 0;
         return SQLITE_OK;  // not finding the file is a valid response for access check.
