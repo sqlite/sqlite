@@ -5134,6 +5134,10 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **
 **  (11) The subquery is not a VALUES clause
 **
+**  (12) The WHERE clause is not "rowid ISNULL" or the equivalent.  This
+**       case only comes up if SQLite is compiled using
+**       SQLITE_ALLOW_ROWID_IN_VIEW.
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -5241,6 +5245,18 @@ static int pushDownWhereTerms(
    && pWhere->w.iJoin!=iCursor
   ){
     return 0; /* restriction (5) */
+  }
+#endif
+
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  if( ViewCanHaveRowid && (pWhere->op==TK_ISNULL || pWhere->op==TK_NOTNULL) ){
+    Expr *pLeft = pWhere->pLeft;
+    if( ALWAYS(pLeft) 
+     && pLeft->op==TK_COLUMN
+     && pLeft->iColumn < 0
+    ){
+      return 0;  /* Restriction (12) */
+    }
   }
 #endif
 
@@ -5871,6 +5887,7 @@ int sqlite3ExpandSubquery(Parse *pParse, SrcItem *pFrom){
   while( pSel->pPrior ){ pSel = pSel->pPrior; }
   sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
   pTab->iPKey = -1;
+  pTab->eTabType = TABTYP_VIEW;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
 #ifndef SQLITE_ALLOW_ROWID_IN_VIEW
   /* The usual case - do not allow ROWID on a subquery */
