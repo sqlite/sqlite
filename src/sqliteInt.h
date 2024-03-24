@@ -2530,6 +2530,15 @@ struct Table {
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
 #define VisibleRowid(X) (((X)->tabFlags & TF_NoVisibleRowid)==0)
 
+/* Macro is true if the SQLITE_ALLOW_ROWID_IN_VIEW (mis-)feature is
+** available.  By default, this macro is false
+*/
+#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
+# define ViewCanHaveRowid     0
+#else
+# define ViewCanHaveRowid     (sqlite3Config.mNoVisibleRowid==0)
+#endif
+
 /*
 ** Each foreign key constraint is an instance of the following structure.
 **
@@ -4244,6 +4253,11 @@ struct Sqlite3Config {
 #endif
 #ifndef SQLITE_UNTESTABLE
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
+#endif
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  u32 mNoVisibleRowid;              /* TF_NoVisibleRowid if the ROWID_IN_VIEW
+                                    ** feature is disabled.  0 if rowids can
+                                    ** occur in views. */
 #endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
   int (*xAltLocaltime)(const void*,void*); /* Alternative localtime() routine */
