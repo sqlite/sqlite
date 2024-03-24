@@ -1,5 +1,5 @@
-C Do\snot\sautomatically\sassume\sthat\sROWID\sis\sNOT\sNULL\swhen\scompiled\swith\nSQLITE_ALLOW_ROWID_IN_VIEW.\ndbsqlfuzz\s31b38eeb63a4e1562de665078f52b7b47a7543cf
-D 2024-03-24T16:33:31.285
+C Improved\s"wheretrace"\sdebugging\soutput\sfor\scalls\sto\sxBestIndex.\s\sNo\schanges\nto\srelease\scode.
+D 2024-03-24T20:26:59.325
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -835,7 +835,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 5e9a5d642cceb666152c59091a3dbb645a9dda209b4e65a2f9215ee9298d26cf
+F src/where.c 2e01199202dd117a27f7597e1f554a5cd55e7465e2f39ff9a78adc9cba98b971
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84b6fdea0bf07c73df0ca8ef110db066164a5f34606e6c069a060476e04ef44e
-R 1acc2c5116f8a8c5695dfb6ee536b3ee
+P 80c4223098c1827ff3a564f1f9a4203164a943e9a83eef99df68378fa3c4764b
+R 85708579a006a76a9ac19f57eff9986d
 U drh
-Z 664dfa62372b996e1fbf277d588e4a7b
+Z 2f119c894f4b4cc81a59e37d61239a6c
 # Remove this line to create a well-formed Fossil manifest.
