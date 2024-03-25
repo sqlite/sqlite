@@ -1,5 +1,5 @@
-C Fix\srecent\stest\scase\schanges\sso\sthat\sthey\salso\swork\son\sWindows.
-D 2024-03-25T12:28:06.030
+C Fix\sthe\spragma4.test\sscript\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2024-03-25T13:18:46.591
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1501,7 +1501,7 @@ F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b76
 F test/pragma.test 8bb6d3992c1c31ff6d5553d1e0693d642f7e19015648c6ae7034cb497d26bbd4
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
-F test/pragma4.test d864430507fc5628c150f1e50c1d128a444ccf8dab39b5465644f53fa4232311
+F test/pragma4.test 22834a228e59b80f5c15b519b710474859d91535002670ddb7cd13ac44b54e9a
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragma6.test c5ec577ba087954b4dfa619a3cbe97b155b60a0af487527abe89b10fc17e6512
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1259d4448f744861e416f42328c1450854370e5c77102d2a5abe5cf6c7f12bd
-R 8e93d8f33bb14264477f8796f06f56d6
+P 38578b5af2e97c420f3106bc486318604aecbaa327365bbc2e9518be84491495
+R 4aabcb0c5c9b41b63fc5196fb947c9b6
 U drh
-Z 14ed6a8037fd4481b1dadac4489cca1e
+Z d83b8554c188328afa7b3f0d71ba5b85
 # Remove this line to create a well-formed Fossil manifest.

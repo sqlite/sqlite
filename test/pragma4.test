@@ -268,17 +268,19 @@ do_execsql_test 5.0 {
 #
 catch {db2 close}
 catch {db3 close}
-reset_db
-do_execsql_test 6.0 {
-  DROP TABLE IF EXISTS t1;
-  DROP TABLE IF EXISTS t2;
-  CREATE TABLE t1(a INT PRIMARY KEY, b INT);
-  CREATE TABLE t2(c INT PRIMARY KEY, d INT REFERENCES t1);
-  SELECT t.name, f."table", f."from", i.name, i.pk
-    FROM pragma_table_list() AS t
-         JOIN pragma_foreign_key_list(t.name, t.schema) AS f
-         JOIN pragma_table_info(f."table", t.schema) AS i
-   WHERE i.pk;
-} {t2 t1 d a 1}
+ifcapable vtab {
+  reset_db
+  do_execsql_test 6.0 {
+    DROP TABLE IF EXISTS t1;
+    DROP TABLE IF EXISTS t2;
+    CREATE TABLE t1(a INT PRIMARY KEY, b INT);
+    CREATE TABLE t2(c INT PRIMARY KEY, d INT REFERENCES t1);
+    SELECT t.name, f."table", f."from", i.name, i.pk
+      FROM pragma_table_list() AS t
+           JOIN pragma_foreign_key_list(t.name, t.schema) AS f
+           JOIN pragma_table_info(f."table", t.schema) AS i
+     WHERE i.pk;
+  } {t2 t1 d a 1}
+}
 
 finish_test
