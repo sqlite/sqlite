@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\svtablog.c\sextension:\s\sEliminate\smemory\sleaks.\nMore\sdiagnostic\soutput\sfor\sxBestIndex.
-D 2024-03-25T10:55:08.289
+C Use\sthe\sSQLITE_CONSTRAINT\sreturn\svalue\sfrom\sxBestIndex\sto\sprohibit\sbad\nquery\splans\sin\sthe\spragma\svirtual\stable.
+D 2024-03-25T11:34:42.948
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -743,7 +743,7 @@ F src/parse.y 5bcef16094213efcc365a9d4dc4e3131f09251dc8838dce4a9e5f9764bff5b82
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c 4629926f936cdc586873d5ff24acb1af12a1db0172988a0dc2b32e46b798a640
+F src/pragma.c f8f1845b42df684e9d31c5a1628c989a34939686049d7878bc5394ac1ae9cac4
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 87b67bba3662a0523f39ae6b084a3907109702f717c654d6cecb838af5cd57f1
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 87c54f93f5711739741ed0ff3c1a6fe24ffc8a025b43523bf78c1f6be8c1b4cd
-R 5d99a8b46e486ca8140c2e5b9bcd6d3d
+P 92e9a71bc4daa261d7c9a81fb66f7d7c0f0a74eb9e0c9dec8b4651acc5217bff
+R 7a45ef8d7654e3d4a6dd224e77e73806
 U drh
-Z 2928903171aaf3fcef9f3546955ace45
+Z d7913bb9141ded55d9621342d895b371
 # Remove this line to create a well-formed Fossil manifest.
