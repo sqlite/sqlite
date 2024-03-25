@@ -1,5 +1,5 @@
-C Fix\san\sinaccuracy\sin\sautomatic\sindexes\sthat\swas\sexposed\sby\sthe\sfix\nat\s[80c4223098c1827f].
-D 2024-03-25T14:44:10.198
+C Remove\san\sALWAYS()\sfrom\sa\scondition\sthat\scan\sbe\strue.
+D 2024-03-25T17:43:11.374
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -830,7 +830,7 @@ F src/vdbemem.c 213bf303826c0ef702e3a2a69dab2309d84b8381b822c6787885859fd7cd4c4e
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
-F src/vtab.c 38fcf63832f7e606755fa47b028c2eb6d6cd5facb40e280d66fbda4ed9a52188
+F src/vtab.c cd53fee1d4ca6c9dd6eb673aeb87ecaa1c5a067da30e3b231678bd9e3f771b60
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8fe6fb69c4164d087783a0d6990112afabea78daa4d8985eb6df7df6f45ac27
-R a7eca515ed0d2c704ec351621eaadae9
+P fdc9406f1c8ba4a7341c1e408f6042ddc788cf65f98e1de2ee101390bfb0abae
+R f76b08b792dbded66ddcd94e7cec15b2
 U drh
-Z 126d8b46e6dcce24a23c7b6d521c4841
+Z b7fa3cba61650ea05eb1778d7cc33597
 # Remove this line to create a well-formed Fossil manifest.
