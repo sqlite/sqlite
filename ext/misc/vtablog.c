@@ -189,15 +189,18 @@ static int vtablogConnectCreate(
   for(i=3; i<argc; i++){
     const char *z = argv[i];
     if( vtablog_string_parameter(pzErr, "schema", z, &zSchema) ){
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
+      goto vtablog_end_connect;
     }
     if( vtablog_string_parameter(pzErr, "rows", z, &zNRow) ){
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
+      goto vtablog_end_connect;
     }
   }
   if( zSchema==0 ){
-    zSchema = "CREATE TABLE x(a,b);";
+    zSchema = sqlite3_mprintf("%s","CREATE TABLE x(a,b);");
   }
+  printf("  schema = '%s'\n", zSchema);
   rc = sqlite3_declare_vtab(db, zSchema);
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -206,9 +209,14 @@ static int vtablogConnectCreate(
     memset(pNew, 0, sizeof(*pNew));
     pNew->nRow = 10;
     if( zNRow ) pNew->nRow = atoi(zNRow);
+    printf("  nrow = %d\n", pNew->nRow);
     pNew->zDb = sqlite3_mprintf("%s", argv[1]);
     pNew->zName = sqlite3_mprintf("%s", argv[2]);
   }
+
+vtablog_end_connect:
+  sqlite3_free(zSchema);
+  sqlite3_free(zNRow);
   return rc;
 }
 static int vtablogCreate(
@@ -249,6 +257,7 @@ static int vtablogDisconnect(sqlite3_vtab *pVtab){
 static int vtablogDestroy(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
   printf("%s.%s.xDestroy()\n", pTab->zDb, pTab->zName);
+  sqlite3_free(pTab->zDb);
   sqlite3_free(pTab->zName);
   sqlite3_free(pVtab);
   return SQLITE_OK;
@@ -434,12 +443,37 @@ static int vtablogFilter(
 */
 static int vtablogBestIndex(
   sqlite3_vtab *tab,
-  sqlite3_index_info *pIdxInfo
+  sqlite3_index_info *p
 ){
   vtablog_vtab *pTab = (vtablog_vtab*)tab;
+  int i;
   printf("%s.%s.xBestIndex():\n", pTab->zDb, pTab->zName);
-  pIdxInfo->estimatedCost = (double)500;
-  pIdxInfo->estimatedRows = 500;
+  printf("  colUsed: 0x%016llx\n", p->colUsed);
+  printf("  nConstraint: %d\n", p->nConstraint);
+  for(i=0; i<p->nConstraint; i++){
+    printf(
+       "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
+       i,
+       p->aConstraint[i].iColumn,
+       p->aConstraint[i].iTermOffset,
+       p->aConstraint[i].op,
+       p->aConstraint[i].usable,
+       sqlite3_vtab_collation(p,i));
+  }
+  printf("  nOrderBy: %d\n", p->nOrderBy);
+  for(i=0; i<p->nOrderBy; i++){
+    printf("  orderby[%d]: col=%d desc=%d\n",
+       i,
+       p->aOrderBy[i].iColumn,
+       p->aOrderBy[i].desc);
+  }
+  p->estimatedCost = (double)500;
+  p->estimatedRows = 500;
+  printf("  idxNum=%d\n", p->idxNum);
+  printf("  idxStr=NULL\n");
+  printf("  orderByConsumed=%d\n", p->orderByConsumed);
+  printf("  estimatedCost=%g\n", p->estimatedCost);
+  printf("  estimatedRows=%lld\n", p->estimatedRows);
   return SQLITE_OK;
 }
 
@@ -524,9 +558,12 @@ static int vtablogRename(sqlite3_vtab *tab, const char *zNew){
   return SQLITE_OK;
 }
 
+/* Any table name that contains the text "shadow" is seen as a
+** shadow table.  Nothing else is.
+*/
 static int vtablogShadowName(const char *zName){
   printf("vtablog.xShadowName('%s')\n", zName);
-  return 0;
+  return sqlite3_strglob("*shadow*", zName)==0;
 }
 
 static int vtablogIntegrity(
