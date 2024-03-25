@@ -855,11 +855,10 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   initBusy = db->init.busy;
   db->init.busy = 0;
   sParse.nQueryLoop = 1;
-  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable)
-   && ALWAYS(sParse.pNewTable!=0)
-   && ALWAYS(!db->mallocFailed)
-   && IsOrdinaryTable(sParse.pNewTable)
-  ){
+  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable) ){
+    assert( sParse.pNewTable!=0 );
+    assert( !db->mallocFailed );
+    assert( IsOrdinaryTable(sParse.pNewTable) );
     assert( sParse.zErrMsg==0 );
     if( !pTab->aCol ){
       Table *pNew = sParse.pNewTable;
