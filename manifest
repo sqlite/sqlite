@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\svtablog.c\sextension,\sfor\sbetter\slogging\sof\svirtual\ntable\sinteractions.
-D 2024-03-25T00:38:55.563
+C Flag\ssqlite3_trace()\sand\ssqlite3_profile()\sas\sdeprecated\sso\sthat\sthe\sdoc\sgenerator\sfor\sfunclist.html\ssees\sthem\sas\ssuch,\sand\sadd\s'Deprecated'\sto\stheir\spage's\stitle\sfor\sconsistency\swith\sother\sdeprecated\sAPIs.\sComment\schanges\sonly.\sAddresses\s[forum:0901025836|forum\spost\s0901025836].
+D 2024-03-25T10:28:10.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -752,7 +752,7 @@ F src/resolve.c eb1860b134fb044fd819c4347105c148d5aac7c6498032be2829e5cc95619b28
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 15a221347789e393b39e7d2d2bd102167979c95a1ce0675bb870b86a24ca6cf4
 F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be2199
-F src/sqlite.h.in 41c5febd217b1e475aae022895c60f57fbe39ff6136450110662cfad67002d43
+F src/sqlite.h.in e9af5761aab316d52e5a5ac11b42d6a25eaaa49352e982c14f1080aab684b5c4
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h f8928f0397d797046396dd9d360a6af8ce6dcb48bd72ea290165b07c8c518744
@@ -2182,8 +2182,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc516ff5202ee6e9834266bf755fe26e30ac557dcc7975ca7a06dfe33874fcd2
-R 73586b393bce9c1bed9e065f652632d2
-U drh
-Z 2f68833aa47d50c9278d5d5a2c9b24b3
+P e253bb36a5f4f601c9b08858b55a9ce198239ace8efa8dab7c0ec019028967c1
+R 9b310c2f5986c86858424e569b4e6f77
+U stephan
+Z 6c78d97a358d85a52548c24a097975e6
 # Remove this line to create a well-formed Fossil manifest.
