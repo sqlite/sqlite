@@ -6228,7 +6228,8 @@ case OP_Last: {              /* jump0, ncycle */
 **
 ** Let N be the approximate number of rows in the table or index
 ** with cursor P1 and let X be 10*log2(N) if N is positive or -1
-** if N is zero. Thus X will be within the range of -1 to 640, inclusive
+** if N is zero.
+**
 ** Jump to P2 if X is in between P3 and P4, inclusive.
 */
 case OP_IfSizeBetween: {        /* jump */
@@ -6239,8 +6240,8 @@ case OP_IfSizeBetween: {        /* jump */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p4type==P4_INT32 );
-  assert( pOp->p3>=-1 && pOp->p3<=640 );
-  assert( pOp->p4.i>=-1 && pOp->p4.i<=640 );
+  assert( pOp->p3>=-1 && pOp->p3<=640*2 );
+  assert( pOp->p4.i>=-1 && pOp->p4.i<=640*2 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->uc.pCursor;

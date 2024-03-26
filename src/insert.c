@@ -610,8 +610,10 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
   int ii;
   if( exprListIsConstant(pParse,pRow)==0 ) return 0;
   for(ii=0; ii<pRow->nExpr; ii++){
-    assert( pRow->a[ii].pExpr->affExpr==0 );
-    if( 0!=sqlite3ExprAffinity(pRow->a[ii].pExpr) ) return 0;
+    Expr *pExpr = pRow->a[ii].pExpr;
+    assert( pExpr->op!=TK_RAISE );
+    assert( pExpr->affExpr==0 );
+    if( 0!=sqlite3ExprAffinity(pExpr) ) return 0;
   }
   return 1;
 

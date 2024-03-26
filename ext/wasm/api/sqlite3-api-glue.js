@@ -1547,6 +1547,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           case capi.SQLITE_CONFIG_SQLLOG: // 21  /* xSqllog, void* */
           case capi.SQLITE_CONFIG_WIN32_HEAPSIZE: // 23  /* int nByte */
           default:
+          /* maintenance note: we specifically do not include
+             SQLITE_CONFIG_ROWID_IN_VIEW here, on the grounds that
+             it's only for legacy support and no apps written with
+             this API require that. */
             return capi.SQLITE_NOTFOUND;
       }
     };

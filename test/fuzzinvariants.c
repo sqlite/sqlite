@@ -296,6 +296,14 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       ** WHERE clause. */
       continue;
     }
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+    if( sqlite3_strlike("%rowid%",zColName,0)==0
+     || sqlite3_strlike("%oid%",zColName,0)==0
+    ){
+      /* ROWID values are unreliable if SQLITE_ALLOW_ROWID_IN_VIEW is used */
+      continue;
+    }
+#endif
     for(j=0; j<i; j++){
       const char *zPrior = sqlite3_column_name(pBase, j);
       if( sqlite3_stricmp(zPrior, zColName)==0 ) break;
