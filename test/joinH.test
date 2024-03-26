@@ -201,13 +201,13 @@ do_execsql_test 9.0 {
 
 do_catchsql_test 9.1 {
   SELECT rowid FROM wo1, x1, x2;
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.2 {
   SELECT rowid FROM wo1, (x1, x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.3 {
   SELECT rowid FROM wo1 JOIN (x1 JOIN x2);
-} {1 {no such column: rowid}}
+} {1 {ambiguous column name: rowid}}
 do_catchsql_test 9.4 {
   SELECT a FROM wo1, x1, x2;
 } {1 {ambiguous column name: a}}

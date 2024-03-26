@@ -65,6 +65,9 @@ static const char * const sqlite3azCompileOpt[] = {
   "ALLOW_COVERING_INDEX_SCAN=" CTIMEOPT_VAL(SQLITE_ALLOW_COVERING_INDEX_SCAN),
 # endif
 #endif
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  "ALLOW_ROWID_IN_VIEW",
+#endif
 #ifdef SQLITE_ALLOW_URI_AUTHORITY
   "ALLOW_URI_AUTHORITY",
 #endif

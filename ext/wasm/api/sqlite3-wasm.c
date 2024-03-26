@@ -545,6 +545,10 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_CONFIG_SMALL_MALLOC);
     DefInt(SQLITE_CONFIG_SORTERREF_SIZE);
     DefInt(SQLITE_CONFIG_MEMDB_MAXSIZE);
+    /* maintenance note: we specifically do not include
+       SQLITE_CONFIG_ROWID_IN_VIEW here, on the grounds that
+       it's only for legacy support and no apps written with
+       this API require that. */
   } _DefGroup;
 
   DefGroup(dataTypes) {
