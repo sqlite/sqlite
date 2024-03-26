@@ -199,6 +199,7 @@ typedef unsigned int u32;
 typedef unsigned short u16;
 typedef unsigned char u8;
 typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
 #endif
 
 /*
@@ -885,6 +886,7 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
         if( rc!=SQLITE_ROW ){
           rc = resetAndCollectError(pIter->pTblIter, &p->zErrmsg);
           pIter->zTbl = 0;
+          pIter->zDataTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
           pIter->zDataTbl = (const char*)sqlite3_column_text(pIter->pTblIter,1);
@@ -2979,7 +2981,7 @@ static i64 rbuShmChecksum(sqlite3rbu *p){
     u32 volatile *ptr;
     p->rc = pDb->pMethods->xShmMap(pDb, 0, 32*1024, 0, (void volatile**)&ptr);
     if( p->rc==SQLITE_OK ){
-      iRet = ((i64)ptr[10] << 32) + ptr[11];
+      iRet = (i64)(((u64)ptr[10] << 32) + ptr[11]);
     }
   }
   return iRet;

@@ -852,12 +852,27 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   Table *pTab;
   Parse sParse;
   int initBusy;
+  int i;
+  const unsigned char *z;
+  static const u8 aKeyword[] = { TK_CREATE, TK_TABLE, 0 };
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) || zCreateTable==0 ){
     return SQLITE_MISUSE_BKPT;
   }
 #endif
+
+  /* Verify that the first two keywords in the CREATE TABLE statement
+  ** really are "CREATE" and "TABLE".  If this is not the case, then
+  ** sqlite3_declare_vtab() is being misused.
+  */
+  z = (const unsigned char*)zCreateTable;
+  for(i=0; aKeyword[i]; i++){
+    int tokenType = 0;
+    do{ z += sqlite3GetToken(z, &tokenType); }while( tokenType==TK_SPACE );
+    if( tokenType!=aKeyword[i] ) return SQLITE_MISUSE_BKPT;
+  }
+ 
   sqlite3_mutex_enter(db->mutex);
   pCtx = db->pVtabCtx;
   if( !pCtx || pCtx->bDeclared ){
@@ -865,6 +880,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
   }
+
   pTab = pCtx->pTab;
   assert( IsVirtual(pTab) );
 
@@ -878,11 +894,10 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   initBusy = db->init.busy;
   db->init.busy = 0;
   sParse.nQueryLoop = 1;
-  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable)
-   && ALWAYS(sParse.pNewTable!=0)
-   && ALWAYS(!db->mallocFailed)
-   && IsOrdinaryTable(sParse.pNewTable)
-  ){
+  if( SQLITE_OK==sqlite3RunParser(&sParse, zCreateTable) ){
+    assert( sParse.pNewTable!=0 );
+    assert( !db->mallocFailed );
+    assert( IsOrdinaryTable(sParse.pNewTable) );
     assert( sParse.zErrMsg==0 );
     if( !pTab->aCol ){
       Table *pNew = sParse.pNewTable;

@@ -60,13 +60,15 @@ Usage:
     $a0 status
 
   where SWITCHES are:
-    --buildonly
-    --dryrun
-    --explain
-    --jobs NUMBER-OF-JOBS
-    --stop-on-coredump
-    --stop-on-error
-    --zipvfs ZIPVFS-SOURCE-DIR
+    --buildonly              Build test exes but do not run tests
+    --config CONFIGS         Only use configs on comma-separate list CONFIGS
+    --dryrun                 Write what would have happened to testrunner.log
+    --explain                Write summary to stdout
+    --jobs NUM               Run tests using NUM separate processes
+    --omit CONFIGS           Omit configs on comma-separated list CONFIGS
+    --stop-on-coredump       Stop running if any test segfaults
+    --stop-on-error          Stop running after any reported error
+    --zipvfs ZIPVFSDIR       ZIPVFS source directory
 
 Special values for PERMUTATION that work with plain tclsh:
 
@@ -172,6 +174,8 @@ set TRG(reporttime) 2000
 set TRG(fuzztest) 0                 ;# is the fuzztest option present.
 set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 set TRG(buildonly) 0                ;# True if --buildonly option 
+set TRG(config) {}                  ;# Only build the named configurations
+set TRG(omitconfig) {}              ;# Do not build these configurations
 set TRG(dryrun) 0                   ;# True if --dryrun option 
 set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
@@ -468,10 +472,16 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       if {$isLast} { usage }
     } elseif {($n>2 && [string match "$a*" --buildonly]) || $a=="-b"} {
       set TRG(buildonly) 1
+    } elseif {($n>2 && [string match "$a*" --config]) || $a=="-c"} {
+      incr ii
+      set TRG(config) [lindex $argv $ii]
     } elseif {($n>2 && [string match "$a*" --dryrun]) || $a=="-d"} {
       set TRG(dryrun) 1
     } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
       set TRG(explain) 1
+    } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
+      incr ii
+      set TRG(omitconfig) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
       set TRG(stopOnError) 1
     } elseif {[string match "$a*" --stop-on-coredump]} {
@@ -484,8 +494,6 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
   }
 }
 set argv [list]
-
-
 
 # This script runs individual tests - tcl scripts or [make xyz] commands -
 # in directories named "testdir$N", where $N is an integer. This variable
@@ -912,6 +920,8 @@ proc add_jobs_from_cmdline {patternlist} {
     release {
       set patternlist [lrange $patternlist 1 end]
       foreach b [trd_builds $TRG(platform)] {
+        if {$TRG(config)!="" && ![regexp "\\y$b\\y" $TRG(config)]} continue
+        if {[regexp "\\y$b\\y" $TRG(omitconfig)]} continue
         set bld [add_build_job $b $TRG(testfixture)]
         foreach c [trd_configs $TRG(platform) $b] {
           add_tcl_jobs $bld $c $patternlist

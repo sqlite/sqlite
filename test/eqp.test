@@ -413,7 +413,7 @@ do_eqp_test 4.2.3 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 do_eqp_test 4.2.4 {
   SELECT * FROM t1 INTERSECT SELECT * FROM t2 ORDER BY 1
@@ -425,7 +425,7 @@ do_eqp_test 4.2.4 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 do_eqp_test 4.2.5 {
   SELECT * FROM t1 EXCEPT SELECT * FROM t2 ORDER BY 1
@@ -437,7 +437,7 @@ do_eqp_test 4.2.5 {
      |  `--USE TEMP B-TREE FOR ORDER BY
      `--RIGHT
         |--SCAN t2 USING INDEX t2i1
-        `--USE TEMP B-TREE FOR RIGHT PART OF ORDER BY
+        `--USE TEMP B-TREE FOR LAST 2 TERMS OF ORDER BY
 }
 
 do_eqp_test 4.3.1 {
