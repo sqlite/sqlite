@@ -2404,7 +2404,6 @@ int sqlite3_stmt_scanstatus_v2(
   }
   if( flags & SQLITE_SCANSTAT_COMPLEX ){
     idx = iScan;
-    pScan = &p->aScan[idx];
   }else{
     /* If the COMPLEX flag is clear, then this function must ignore any
     ** ScanStatus structures with ScanStatus.addrLoop set to 0. */
@@ -2417,6 +2416,8 @@ int sqlite3_stmt_scanstatus_v2(
     }
   }
   if( idx>=p->nScan ) return 1;
+  assert( pScan==0 || pScan==&p->aScan[idx] );
+  pScan = &p->aScan[idx];
 
   switch( iScanStatusOp ){
     case SQLITE_SCANSTAT_NLOOP: {

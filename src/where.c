@@ -713,9 +713,13 @@ static void translateColumnToCopy(
 ** are no-ops.
 */
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(WHERETRACE_ENABLED)
-static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
+static void whereTraceIndexInfoInputs(
+  sqlite3_index_info *p,   /* The IndexInfo object */
+  Table *pTab              /* The TABLE that is the virtual table */
+){
   int i;
   if( (sqlite3WhereTrace & 0x10)==0 ) return;
+  sqlite3DebugPrintf("sqlite3_index_info inputs for %s:\n", pTab->zName);
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf(
        "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
@@ -733,9 +737,13 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
        p->aOrderBy[i].desc);
   }
 }
-static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
+static void whereTraceIndexInfoOutputs(
+  sqlite3_index_info *p,   /* The IndexInfo object */
+  Table *pTab              /* The TABLE that is the virtual table */
+){
   int i;
   if( (sqlite3WhereTrace & 0x10)==0 ) return;
+  sqlite3DebugPrintf("sqlite3_index_info outputs for %s:\n", pTab->zName);
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
        i,
@@ -749,8 +757,8 @@ static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
   sqlite3DebugPrintf("  estimatedRows=%lld\n", p->estimatedRows);
 }
 #else
-#define whereTraceIndexInfoInputs(A)
-#define whereTraceIndexInfoOutputs(A)
+#define whereTraceIndexInfoInputs(A,B)
+#define whereTraceIndexInfoOutputs(A,B)
 #endif
 
 /*
@@ -976,7 +984,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   ** if they go out of sync.
   */
   if( IsView(pTable) ){
-    extraCols = ALLBITS;
+    extraCols = ALLBITS & ~idxCols;
   }else{
     extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
   }
@@ -1493,11 +1501,11 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
   int rc;
 
-  whereTraceIndexInfoInputs(p);
+  whereTraceIndexInfoInputs(p, pTab);
   pParse->db->nSchemaLock++;
   rc = pVtab->pModule->xBestIndex(pVtab, p);
   pParse->db->nSchemaLock--;
-  whereTraceIndexInfoOutputs(p);
+  whereTraceIndexInfoOutputs(p, pTab);
 
   if( rc!=SQLITE_OK && rc!=SQLITE_CONSTRAINT ){
     if( rc==SQLITE_NOMEM ){
