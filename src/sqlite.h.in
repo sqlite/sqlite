@@ -6887,6 +6887,12 @@ int sqlite3_autovacuum_pages(
 ** The exceptions defined in this paragraph might change in a future
 ** release of SQLite.
 **
+** Whether the update hook is invoked before or after the
+** corresponding change is currently unspecified and may differ
+** depending on the type of change. Do not rely on the order of the
+** hook call with regards to the final result of the operation which
+** triggers the hook.
+**
 ** The update hook implementation must not do anything that will modify
 ** the database connection that invoked the update hook.  Any actions
 ** to modify the database connection must be deferred until after the
