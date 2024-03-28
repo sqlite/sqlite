@@ -5,6 +5,14 @@ This repository contains the complete source code for the
 are also included.  However, many other test scripts
 and most of the documentation are managed separately.
 
+## Yale-systems build notes
+
+Follow these steps to set up `sqlite`:
+
+* In the `sqlite/` directory, run `sudo mkdir bld`.
+* Change directories into `sqlite/bld` and run `sudo ../configure --host=arm-kfbsd`.
+* In the same `sqlite/bld` directory, run `sudo make sqlite3-all.c`
+
 ## Version Control
 
 SQLite sources are managed using
