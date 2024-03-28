@@ -366,7 +366,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
               }
             }
             if( (pTerm->eOperator & (WO_EQ|WO_IS))!=0
-             && (pX = pTerm->pExpr->pRight, ALWAYS(pX!=0))
+             && ((void)(pX = pTerm->pExpr->pRight), ALWAYS(pX!=0))
              && pX->op==TK_COLUMN
              && pX->iTable==pScan->aiCur[0]
              && pX->iColumn==pScan->aiColumn[0]
