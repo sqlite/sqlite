@@ -153,7 +153,63 @@ do_test_conflict_msg 1.5.2 {
   conflict at page 507 (read/write page; part of db index t1.i1; content=0A00000003025000...)
 }
 
+
+#-------------------------------------------------------------------------
+reset_db
 sqlite3 db2 test.db
+
+set big1 [string repeat ab 10000]
+set big2 "[string repeat ab  9999]xy"
+
+catchsql { ROLLBACK }
+
+do_execsql_test 1.6.0 {
+  CREATE TABLE x1(x, y);
+  INSERT INTO x1 VALUES(1, $big1);
+  PRAGMA journal_mode = wal;
+} {wal}
+
+do_execsql_test -db db2 1.6.1.1 {
+  BEGIN; 
+    UPDATE x1 SET y=$big2;
+} {}
+do_execsql_test 1.6.1.2 {
+  BEGIN CONCURRENT;
+    UPDATE x1 SET y=$big2;
+}
+do_execsql_test -db db2 1.6.1.3 COMMIT
+do_catchsql_test 1.6.1.4 {
+  COMMIT;
+} {1 {database is locked}}
+do_test_conflict_msg 1.6.1.5 {
+  conflict at page 21 (read/write page; part of db table x1; content=0000000061626162...)
+}
+catchsql ROLLBACK
+
+do_test 1.6.2.1 {
+  execsql { BEGIN } db2
+  set fd [db2 incrblob main x1 y 1]
+  seek $fd 19998
+  puts -nonewline $fd 00
+  close $fd
+} {}
+do_test 1.6.2.2 {
+  execsql { BEGIN CONCURRENT } db
+  set fd [db incrblob main x1 y 1]
+  seek $fd 19998
+  puts -nonewline $fd 12
+  close $fd
+} {}
+do_execsql_test -db db2 1.6.2.3 COMMIT
+do_catchsql_test 1.6.2.4 {
+  COMMIT;
+} {1 {database is locked}}
+do_test_conflict_msg 1.6.1.5 {
+  conflict at page 21 (read/write page; part of db table x1; content=0000000061626162...)
+}
+catchsql ROLLBACK
+
+
 
 db close
 db2 close

@@ -1,5 +1,5 @@
-C Merge\sall\srecent\strunk\senhancements\sinto\sthe\sbegin-concurrent\sbranch.
-D 2024-03-26T10:42:28.054
+C Improve\sthe\slog\smessage\semitted\swhen\sa\sBEGIN\sCONCURRENT\stransaction\scannot\sbe\scommitted\sdue\sto\sconflicts\sso\sthat\sit\sidentifies\sthe\sconflicting\stable\sin\sa\sfew\smore\scases.
+D 2024-03-29T17:32:00.462
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 501daeef838fa82a9fb53540d72f29e3d9172c8867f1e19f94f681e2e20b966e
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c ac70c1938c8abb1ae9e85f1fc92ba3e32ed88d99df9d752f63cebce6ec22b5bf
+F src/btree.c 67683c7395cecc1c36397ce250e84822668d7affa88e590bdd52e7067843d790
 F src/btree.h bdeeb35614caa33526b603138f04c8d07a3f90a1300b5ade76848b755edf2027
 F src/btreeInt.h 8efd30e75e35a3c6a1c4dad7410d4ddfcd560f5f46401b208fa79eceef34525a
 F src/build.c c02fca1b600267120d1492f15a8301d48c59d37094c363eb5c12cca08d9133b8
@@ -1006,7 +1006,7 @@ F test/concurrent.test fb624ddac9b008f347685911f90b6b5a022fd0a3f884c0ffef8056bc4
 F test/concurrent2.test de748c7dd749c77e2af2c4b914b9b09a28ac09608042ca498c0251dc6f46aa1a
 F test/concurrent3.test 82923fc2ea7321144b4448f98ea38aa316ddceef9020a392c5f6dea536506434
 F test/concurrent4.test e0b12cd467137e50259df3b4f837507e82aaa07c35941c88664dc8ed1d089c44
-F test/concurrent5.test 6088092b0cebe6ff299d781b06c9b4d44c91d7c8f8023f6abb9bffdb436c01b3
+F test/concurrent5.test f2064650d8a1558199fbca19ebd1f0fda5115109ab981b8fe3827ff56c76efa7
 F test/concurrent6.test a7860e9ca13bb5fb76bcf41c5524fbfa9c37e6e258ecf84ffb5748a272488c67
 F test/concurrent7.test b96fa5c4cfdf8d5c0bc66b6934214500bad0260884a736f054ccc76e81aae85d
 F test/concurrent8.test b93937e74a8efb8b84f2fea7595b53418c5f29777bbe9cbdb5dc219b3dd72a7d
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50b43b02da3cabb136c7a11e0d36e93b270f07b05359f52c0b9d03ff54f021c1 6a06dc73847716c88d65651d1bf0e002002303881df1389beac884d0032eae08
-R 8b8f020ec8d1a12ee489e27274940ff7
-U drh
-Z 0b234792aa651d099794b9a2f2e34400
+P 9b854e54b0d32542fd9b360319a784522c6a80190565094b74b2ab2c37efa14f
+R 3e711a26f5137f03bc94133c7ebecd04
+U dan
+Z 00fca70373aebb602684e384574f83d8
 # Remove this line to create a well-formed Fossil manifest.
