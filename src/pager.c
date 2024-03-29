@@ -5521,6 +5521,23 @@ static void pagerUnlockIfUnused(Pager *pPager){
   }
 }
 
+#ifndef SQLITE_OMIT_CONCURRENT
+/*
+** If this pager is currently in a concurrent transaction (pAllRead!=0),
+** then set the bit in the pAllRead vector to indicate that the transaction
+** read from page pgno. Return SQLITE_OK if successful, or an SQLite error
+** code (i.e. SQLITE_NOMEM) if an error occurs.
+*/
+int sqlite3PagerUsePage(Pager *pPager, Pgno pgno){
+  int rc = SQLITE_OK;
+  if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
+    PAGERTRACE(("USING page %d\n", pgno));
+    rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
+  }
+  return rc;
+}
+#endif
+
 /*
 ** The page getter methods each try to acquire a reference to a
 ** page with page number pgno. If the requested reference is
@@ -5594,17 +5611,13 @@ static int getPageNormal(
   assert( assert_pager_state(pPager) );
   assert( pPager->hasHeldSharedLock==1 );
 
-#ifndef SQLITE_OMIT_CONCURRENT
   /* If this is an CONCURRENT transaction and the page being read was
   ** present in the database file when the transaction was opened,
   ** mark it as read in the pAllRead vector.  */
-  pPg = 0;
-  if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
-    PAGERTRACE(("USING page %d\n", pgno));
-    rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
-    if( rc!=SQLITE_OK ) goto pager_acquire_err;
+  if( sqlite3PagerUsePage(pPager, pgno)!=SQLITE_OK ){
+    pPg = 0;
+    goto pager_acquire_err;
   }
-#endif
 
   if( pgno==0 ) return SQLITE_CORRUPT_BKPT;
   pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
