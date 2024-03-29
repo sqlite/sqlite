@@ -5687,6 +5687,8 @@ static int accessPayload(
           u8 *aWrite = &pBuf[-4];
           assert( aWrite>=pBufStart );                         /* due to (6) */
           memcpy(aSave, aWrite, 4);
+          rc = sqlite3PagerUsePage(pBt->pPager, nextPage);
+          if( rc!=SQLITE_OK ) break;
           rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
           memcpy(aWrite, aSave, 4);

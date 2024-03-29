@@ -161,8 +161,6 @@ sqlite3 db2 test.db
 set big1 [string repeat ab 10000]
 set big2 "[string repeat ab  9999]xy"
 
-catchsql { ROLLBACK }
-
 do_execsql_test 1.6.0 {
   CREATE TABLE x1(x, y);
   INSERT INTO x1 VALUES(1, $big1);
@@ -209,7 +207,36 @@ do_test_conflict_msg 1.6.1.5 {
 }
 catchsql ROLLBACK
 
+#--------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
 
+set big1 [string repeat ab 10000]
+set big2 "[string repeat ab  9999]xy"
+
+do_execsql_test 1.7.0 {
+  CREATE TABLE ww(a);
+  CREATE TABLE y1(x, y);
+  INSERT INTO y1 VALUES(1, $big1);
+  PRAGMA journal_mode = wal;
+} {wal}
+
+do_execsql_test -db db2 1.7.1 {
+  BEGIN;
+    UPDATE y1 SET y=$big2;
+    SELECT * FROM ww;
+}
+
+do_execsql_test 1.7.2 {
+  BEGIN CONCURRENT;
+    INSERT INTO ww SELECT y FROM y1;
+}
+
+do_execsql_test -db db2 1.7.3 COMMIT
+
+do_catchsql_test 1.7.4 {
+  COMMIT;
+} {1 {database is locked}}
 
 db close
 db2 close

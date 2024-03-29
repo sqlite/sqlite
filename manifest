@@ -1,5 +1,5 @@
-C Improve\sthe\slog\smessage\semitted\swhen\sa\sBEGIN\sCONCURRENT\stransaction\scannot\sbe\scommitted\sdue\sto\sconflicts\sso\sthat\sit\sidentifies\sthe\sconflicting\stable\sin\sa\sfew\smore\scases.
-D 2024-03-29T18:04:56.855
+C Fix\sa\sproblem\sin\sSQLITE_DIRECT_OVERFLOW_READ\sbuilds\sthat\scould\sallow\sa\sconcurrent\stransaction\sto\sbe\scommitted\seven\sif\sit\sread\sfrom\san\soverflow\spage\sthat\swas\smodified\sconcurrently,\sin\scases\swhere\sthe\soverflow\spage\swas\swritten\swithout\salso\swriting\sthe\sb-tree\spage\sto\swhich\sit\sis\slinked.
+D 2024-03-29T18:07:41.196
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -697,7 +697,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 501daeef838fa82a9fb53540d72f29e3d9172c8867f1e19f94f681e2e20b966e
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 8a9fbb7474f32a23f01ddd1475b8f376544e188049b212bb8d01d7bcdd04a6b2
+F src/btree.c 7eaa4a4d74faeae5ae0f7de2e2773c2ac5a3b97c1e6f5482a60a159b6d435da1
 F src/btree.h bdeeb35614caa33526b603138f04c8d07a3f90a1300b5ade76848b755edf2027
 F src/btreeInt.h bb28bf05e6206befd5f5fd2ed3825fc6382979fa4a83bf50f1875a0d3404111b
 F src/build.c 8574feab7d44c245100232fe5d5b60150e88d21ce5959a388f44d4d08426d596
@@ -745,8 +745,8 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 400bd61bef6405ff75475690ecb40cf6bb6d8ffb0ec454329fe77d6c84f42a9f
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 76a1c3cc5fe198c38c6d15d7bda1e864642eb0131c53c2f2a94f0bcff50930a5
-F src/pager.h a195b4396e0f374922d7162ceb66f6d48a6583242b7200fa999ab52fed6341ca
+F src/pager.c dc75e2a5d5c916cc58d5a280d6fdafc4ba645034a7c27c9f5691a1c07a3aa199
+F src/pager.h dd6ade22dd303a8ca6c34f1ff0f299add7191c1bff65f0289b7fd7c3460f9551
 F src/parse.y 08247e876d6508e7bcf624d48f4993f4051899e1e73400fe7da9de34af755a90
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
@@ -1011,7 +1011,7 @@ F test/concurrent.test fb624ddac9b008f347685911f90b6b5a022fd0a3f884c0ffef8056bc4
 F test/concurrent2.test 847cd11edc82229a95e1eaf88b55c974430b0f669cefd67a453d274e3480981c
 F test/concurrent3.test 82923fc2ea7321144b4448f98ea38aa316ddceef9020a392c5f6dea536506434
 F test/concurrent4.test e0b12cd467137e50259df3b4f837507e82aaa07c35941c88664dc8ed1d089c44
-F test/concurrent5.test f2064650d8a1558199fbca19ebd1f0fda5115109ab981b8fe3827ff56c76efa7
+F test/concurrent5.test aeb438ead1b9bb5204fa1066e8aed0bb27e5a08e4fa9b0ad42932f96eb0f97eb
 F test/concurrent6.test a7860e9ca13bb5fb76bcf41c5524fbfa9c37e6e258ecf84ffb5748a272488c67
 F test/concurrent7.test b96fa5c4cfdf8d5c0bc66b6934214500bad0260884a736f054ccc76e81aae85d
 F test/concurrent8.test b93937e74a8efb8b84f2fea7595b53418c5f29777bbe9cbdb5dc219b3dd72a7d
@@ -2220,9 +2220,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33d3453f467791eecc81dd682890eaadbbb2afc105ef70e22a815f82ead2c350
-Q +5d30e362cf72da3e17663dcb4299047ebe797ab6054fb14b2150ba82c2e698e1
-R 16f01b3a77791bd9d35e7bdb137c6f9d
+P 19ff2d4e1e7c6d29773d76ba752338c1c2e9ab355cdd45aed1d936880fa1c917
+Q +49263c9136c81638833aa71c9d590e318ead2ca60c4d7207ebf8884174df9c8f
+R 917aec6b3a199fcb35c3b5297d51faf1
 U dan
-Z ab68803579257300aec327bfc0466023
+Z 2d6ffda77a836c2f76cf18db98912e02
 # Remove this line to create a well-formed Fossil manifest.
