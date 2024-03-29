@@ -5611,7 +5611,7 @@ static int getPageNormal(
   /* If this is an CONCURRENT transaction and the page being read was
   ** present in the database file when the transaction was opened,
   ** mark it as read in the pAllRead vector.  */
-  if( sqlite3PagerUsePage(pPager, pgno)!=SQLITE_OK ){
+  if( (rc = sqlite3PagerUsePage(pPager, pgno))!=SQLITE_OK ){
     pPg = 0;
     goto pager_acquire_err;
   }
