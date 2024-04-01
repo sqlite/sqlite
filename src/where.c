@@ -3252,10 +3252,13 @@ static int whereLoopAddBtreeIndex(
       }
     }
 
-    /* Set rCostIdx to the cost of visiting selected rows in index. Add
-    ** it to pNew->rRun, which is currently set to the cost of the index
-    ** seek only. Then, if this is a non-covering index, add the cost of
-    ** visiting the rows in the main table.  */
+    /* Set rCostIdx to the estimated cost of visiting selected rows in the
+    ** index.  The estimate is the sum of two values:
+    **   1.  The cost of doing one search-by-key to find the first matching
+    **       entry
+    **   2.  Stepping forward in the index pNew->nOut times to find all
+    **       additional matching entries.
+    */
     assert( pSrc->pTab->szTabRow>0 );
     if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
       /* The pProbe->szIdxRow is low for an IPK table since the interior
@@ -3266,7 +3269,15 @@ static int whereLoopAddBtreeIndex(
     }else{
       rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
     }
-    pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
+    rCostIdx = sqlite3LogEstAdd(rLogSize, rCostIdx);
+
+    /* Estimate the cost of running the loop.  If all data is coming
+    ** from the index, then this is just the cost of doing the index
+    ** lookup and scan.  But if some data is coming out of the main table,
+    ** we also have to add in the cost of doing pNew->nOut searches to
+    ** locate the row in the main table that corresponds to the index entry.
+    */
+    pNew->rRun = rCostIdx;
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
     }
