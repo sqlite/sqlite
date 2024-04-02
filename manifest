@@ -1,5 +1,5 @@
-C Add\sa\sheuristic\sin\sbetween\sthe\stwo\ssolver()\spasses\sof\sthe\squery\splanner\sthat\ntries\sto\sprevent\sa\svery\sslow\squery\splan\sin\scases\swhere\sthe\soutput\srow\scount\nestimate\sis\simprecise.
-D 2024-04-02T11:44:44.648
+C Fix\stypos\sin\scomments.\s\sProvided\s".wheretrace"\sdebugging\soutput\sfor\sthe\ninterstage\sheuristic\smodule.\s\sDo\somit\sautomatic\sindex\sloops\sin\sthe\ninterstage\sheuristic.
+D 2024-04-02T14:12:29.323
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -755,7 +755,7 @@ F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be219
 F src/sqlite.h.in 32389e0d584551b300d0157881336162c14315a424cbf385c0d65eb7c2e31f7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h f8928f0397d797046396dd9d360a6af8ce6dcb48bd72ea290165b07c8c518744
+F src/sqliteInt.h 170f85c5a9d6189cf9b5dd304f4d40b73a8c9762fb927f1327e8ed2cb99c06b6
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -835,7 +835,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c ba9d22fda3850b508e075f8bdc4f4d4f1ff314551597a6f14842bb03aeec0d3a
+F src/where.c 08ffccb5b8df523a484af2ae8593c8f571113475fe76b13360f2dfd74e117b4e
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
@@ -2184,11 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b2ac2cdc767db764e3ea8bbc33898cac4e1ec27fe8c9b60ce08a1785f921e6d
-R bbe24560206aebee12aa3740963fd4bf
-T *branch * interstage-heuristic
-T *sym-interstage-heuristic *
-T -sym-trunk *
+P 8018417b0143ea11535f2457bf3e4b3755717c554a17df1076425b4251b5f2c6
+R 9b55b3987ec7e07bd641f4ba8c80fe98
 U drh
-Z f6898799f068ada043c459f74f460b9b
+Z 1d7be0abb1ed0f4f893f7da5731cd389
 # Remove this line to create a well-formed Fossil manifest.
