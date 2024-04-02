@@ -76,7 +76,7 @@ do_execsql_test 1.0 {
     ('violation','v1','376661 28974 1'),
     ('rule','rule2','24 12 1'),
     ('datasource','ds1','3 1 1');
-  ANALYZE sqlite_schema;
+  ANALYZE sqlite_master;
 }
 set DSNAME ds-two   ;#  Only a few rows.  Change to "ds-one" for many rows.
 do_eqp_test 1.1 {
@@ -90,12 +90,12 @@ do_eqp_test 1.1 {
   );
 } {
   QUERY PLAN
-  |--CO-ROUTINE (subquery-xxxxxx)
-  |  |--SEARCH DS USING COVERING INDEX ds1 (name=?)
-  |  |--SEARCH R USING COVERING INDEX rule2 (dsid=?)
-  |  |--SEARCH V USING INDEX v1 (rid=?)
+  |--CO-ROUTINE xxxxxx
+  |  |--SEARCH TABLE datasource AS DS USING COVERING INDEX ds1 (name=?)
+  |  |--SEARCH TABLE rule AS R USING COVERING INDEX rule2 (dsid=?)
+  |  |--SEARCH TABLE violation AS V USING INDEX v1 (rid=?)
   |  `--USE TEMP B-TREE FOR ORDER BY
-  `--SCAN (subquery-xxxxxx)
+  `--SCAN SUBQUERY xxxxxx
 }
 #       ^^^^---- We want to see three SEARCH terms.  No SCAN terms.
 #                The ORDER BY is implemented by a separate sorter pass.

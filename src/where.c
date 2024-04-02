@@ -4507,15 +4507,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 ** Except, if the first solver() call generated a full-table scan in an outer
 ** loop then stop this analysis at the first full-scan, since the second
 ** solver() run might try to swap that full-scan for another in order to
-** get the output into the correct order.  In other words, we do *not* want
-** to inhibit a rewrites like this:
+** get the output into the correct order.  In other words, we allow a
+** rewrite like this:
 **
 **     First Solver()                      Second Solver()
 **       |-- SCAN t1                         |-- SCAN t2
 **       |-- SEARCH t2                       `-- SEARCH t1
 **       `-- SORT USING B-TREE
 **
-** Rather, the purpose of this routine is to inhibit rewrites such as:
+** The purpose of this routine is to disallow rewrites such as:
 **
 **     First Solver()                      Second Solver()
 **       |-- SEARCH t1                       |-- SCAN t2     <--- bad!
@@ -4527,6 +4527,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 */
 static SQLITE_NOINLINE void whereInterstageHeuristic(WhereInfo *pWInfo){
   int i;
+#ifdef WHERETRACE_ENABLED
+  int once = 0;
+#endif
   for(i=0; i<pWInfo->nLevel; i++){
     WhereLoop *p = pWInfo->a[i].pWLoop;
     if( p==0 ) break;
@@ -4536,7 +4539,19 @@ static SQLITE_NOINLINE void whereInterstageHeuristic(WhereInfo *pWInfo){
       WhereLoop *pLoop;
       for(pLoop=pWInfo->pLoops; pLoop; pLoop=pLoop->pNextLoop){
         if( pLoop->iTab!=iTab ) continue;
-        if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=0 ) continue;
+        if( (pLoop->wsFlags & (WHERE_CONSTRAINT|WHERE_AUTO_INDEX))!=0 ){
+          /* Auto-index and index-constrained loops allowed to remain */
+          continue;
+        }
+#ifdef WHERETRACE_ENABLED
+        if( sqlite3WhereTrace & 0x80 ){
+          if( once==0 ){
+            sqlite3DebugPrintf("Loops disabled by interstage heuristic:\n");
+            once = 1;
+          }
+          whereLoopPrint(pLoop, &pWInfo->sWC);
+        }
+#endif /* WHERETRACE_ENABLED */
         pLoop->prereq = ALLBITS;  /* Prevent 2nd solver() from using this one */
       }
     }else{
