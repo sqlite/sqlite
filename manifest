@@ -1,5 +1,5 @@
-C Fix\sexception\spropagation\swhen\sthe\sopfs-sahpool\sVFS\sfails\sto\sinitialize\sto\saddress\sreport\sin\s[forum:be0141c639|forum\spost\sbe0141c639].
-D 2024-04-04T12:36:33.682
+C Fix\stest\scases\sdue\sto\san\serror\smessage\schange.
+D 2024-04-04T13:07:43.910
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1057,7 +1057,7 @@ F test/dbpagefault.test 35f06cfb2ef100a9b19d25754e8141b9cba9b7daabd4c60fa5af93fc
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
 F test/decimal.test ef731887b43ee32ef86e1c8fddb61a40789f988332c029c601dcf2c319277e9e
-F test/default.test 830fad7180cdf0e6a06e93acc0403bf73762314a639363314db5674c631b6127
+F test/default.test c7124864cded213a3f118bc7e2e26f34b7c36dfa26cf6945cc8b7f5db1191277
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
@@ -2183,8 +2183,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P acddbc489d5231dacf29890d1aa562da499026690f55c256a07d04a3190faacc
-R f4284681fd828de592cb5ab0ae30f403
-U stephan
-Z 66fed09968d914b9f5c12c3e86ad8491
+P cdb3a90055afe371962ec6c0931f1b08797aaeaab0358ef64b1cabda0a855b33
+R ccb06537668742bb198e005c80e2d348
+U drh
+Z 5666fcda290346432865b5fd5e238e7f
 # Remove this line to create a well-formed Fossil manifest.
