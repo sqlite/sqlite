@@ -1271,7 +1271,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return poolUtil;
       }).catch(async (e)=>{
         await thePool.removeVfs().catch(()=>{});
-        return e;
+        throw e;
       });
     }).catch((err)=>{
       //error("rejecting promise:",err);
