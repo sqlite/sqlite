@@ -1,5 +1,5 @@
-C Fix\san\sASAN\sproblem\sin\spart\sof\sthe\stest\sharness.\s\sNo\schanges\sto\sSQLite\sitself.
-D 2024-04-04T13:36:48.714
+C Add\sthe\s"interstage-heuristic"\sthat\sattempts\sto\savoid\swildly\sinefficient\nqueries\sthat\suse\stable\sscans\sinstead\sof\sindex\slookups\sbecause\sthe\soutput\nrow\sestimates\sare\sinaccurate.
+D 2024-04-04T14:26:42.961
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -755,7 +755,7 @@ F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be219
 F src/sqlite.h.in 32389e0d584551b300d0157881336162c14315a424cbf385c0d65eb7c2e31f7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h f8928f0397d797046396dd9d360a6af8ce6dcb48bd72ea290165b07c8c518744
+F src/sqliteInt.h 170f85c5a9d6189cf9b5dd304f4d40b73a8c9762fb927f1327e8ed2cb99c06b6
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -835,7 +835,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c a15429ae9d42c7b824b9faad7e8234b006abf0a4526166dc4dfc0cc9cd2c9e6a
+F src/where.c 08ffccb5b8df523a484af2ae8593c8f571113475fe76b13360f2dfd74e117b4e
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
@@ -2017,6 +2017,7 @@ F test/whereJ.test fc05e374cc9f2dc204148d6c06822c380ad388895fe97a6d335b94a26a08a
 F test/whereK.test 0270ab7f04ba5436fb9156d31d642a1c82727f4c4bfe5ba90d435c78cf44684a
 F test/whereL.test 438a397fa883b77bb6361c08a8befa41b52e9cfbe15a2a43715d122f8cfa8649
 F test/whereM.test 0dbc9998783458ddcf3cc078ca7c2951d8b2677d472ecf0028f449ed327c0250
+F test/whereN.test 63a3584b71acfb6963416de82f26c6b1644abc5ca6080c76546b9246734c8803
 F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test afb46397c6d7e964e6e294ba3569864a0c570fe3807afc634236c2b752372f31
@@ -2183,8 +2184,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c49ec239eddde6f07f8d528cccd6224c4c80b240dc8f5c974186e3bb08afb83b
-R 7af8cb79e580778082df3d4aa754bb75
+P 797cda7ddcceb140330d58892c3e73d28df72b638df00fd48f07dfcba7706c5f 186dcae19e249db36de15f295999cff25063b54ee3d5d481cd2ba99b6d13148e
+R 869b12f296c2e2b0f215f1adb6cf5942
+T +closed 186dcae19e249db36de15f295999cff25063b54ee3d5d481cd2ba99b6d13148e
 U drh
-Z e0623a1804a9fd12482c3193ee60e8ba
+Z 93e4543ac83acbe7df90dc3896cd40af
 # Remove this line to create a well-formed Fossil manifest.

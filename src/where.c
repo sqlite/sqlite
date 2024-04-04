@@ -5530,12 +5530,88 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     }
   }
 
-
   pWInfo->nRowOut = pFrom->nRow;
 
   /* Free temporary memory and return success */
   sqlite3StackFreeNN(pParse->db, pSpace);
   return SQLITE_OK;
+}
+
+/*
+** This routine implements a heuristic designed to improve query planning.
+** This routine is called in between the first and second call to
+** wherePathSolver().  Hence the name "Interstage" "Heuristic".
+**
+** The first call to wherePathSolver() (hereafter just "solver()") computes
+** the best path without regard to the order of the outputs.  The second call
+** to the solver() builds upon the first call to try to find an alternative
+** path that satisfies the ORDER BY clause.
+**
+** This routine looks at the results of the first solver() run, and for
+** every FROM clause term in the resulting query plan that uses an equality
+** constraint against an index, disable other WhereLoops for that same
+** FROM clause term that would try to do a full-table scan.  This prevents
+** an index search from being converted into a full-table scan in order to
+** satisfy an ORDER BY clause, since even though we might get slightly better
+** performance using the full-scan without sorting if the output size
+** estimates are very precise, we might also get severe performance
+** degradation using the full-scan if the output size estimate is too large.
+** It is better to err on the side of caution.
+**
+** Except, if the first solver() call generated a full-table scan in an outer
+** loop then stop this analysis at the first full-scan, since the second
+** solver() run might try to swap that full-scan for another in order to
+** get the output into the correct order.  In other words, we allow a
+** rewrite like this:
+**
+**     First Solver()                      Second Solver()
+**       |-- SCAN t1                         |-- SCAN t2
+**       |-- SEARCH t2                       `-- SEARCH t1
+**       `-- SORT USING B-TREE
+**
+** The purpose of this routine is to disallow rewrites such as:
+**
+**     First Solver()                      Second Solver()
+**       |-- SEARCH t1                       |-- SCAN t2     <--- bad!
+**       |-- SEARCH t2                       `-- SEARCH t1
+**       `-- SORT USING B-TREE
+**
+** See test cases in test/whereN.test for the real-world query that
+** originally provoked this heuristic.
+*/
+static SQLITE_NOINLINE void whereInterstageHeuristic(WhereInfo *pWInfo){
+  int i;
+#ifdef WHERETRACE_ENABLED
+  int once = 0;
+#endif
+  for(i=0; i<pWInfo->nLevel; i++){
+    WhereLoop *p = pWInfo->a[i].pWLoop;
+    if( p==0 ) break;
+    if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 ) continue;
+    if( (p->wsFlags & (WHERE_COLUMN_EQ|WHERE_COLUMN_NULL|WHERE_COLUMN_IN))!=0 ){
+      u8 iTab = p->iTab;
+      WhereLoop *pLoop;
+      for(pLoop=pWInfo->pLoops; pLoop; pLoop=pLoop->pNextLoop){
+        if( pLoop->iTab!=iTab ) continue;
+        if( (pLoop->wsFlags & (WHERE_CONSTRAINT|WHERE_AUTO_INDEX))!=0 ){
+          /* Auto-index and index-constrained loops allowed to remain */
+          continue;
+        }
+#ifdef WHERETRACE_ENABLED
+        if( sqlite3WhereTrace & 0x80 ){
+          if( once==0 ){
+            sqlite3DebugPrintf("Loops disabled by interstage heuristic:\n");
+            once = 1;
+          }
+          sqlite3WhereLoopPrint(pLoop, &pWInfo->sWC);
+        }
+#endif /* WHERETRACE_ENABLED */
+        pLoop->prereq = ALLBITS;  /* Prevent 2nd solver() from using this one */
+      }
+    }else{
+      break;
+    }
+  }
 }
 
 /*
@@ -6320,6 +6396,7 @@ WhereInfo *sqlite3WhereBegin(
     wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;
     if( pWInfo->pOrderBy ){
+       whereInterstageHeuristic(pWInfo);
        wherePathSolver(pWInfo, pWInfo->nRowOut+1);
        if( db->mallocFailed ) goto whereBeginError;
     }
