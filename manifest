@@ -1,5 +1,5 @@
-C Fix\stest\scases\sdue\sto\san\serror\smessage\schange.
-D 2024-04-04T13:07:43.910
+C Fix\san\sASAN\sproblem\sin\spart\sof\sthe\stest\sharness.\s\sNo\schanges\sto\sSQLite\sitself.
+D 2024-04-04T13:36:48.714
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -771,7 +771,7 @@ F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
 F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
 F src/test_autoext.c 915d245e736652a219a907909bb6710f0d587871
 F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
-F src/test_bestindex.c f6af1e41cb7901edafb065a8198e4a0192dd42432b642d038965be5e628dec12
+F src/test_bestindex.c 1ee3d64b49ca06a9cb8195fab04f1a0585cafc90d25a2a817caa14e7caab22e7
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 5fa77ee6064ba546e144c4fea870c5ede2c54314616f81485c6a9c4192100c75
@@ -2183,8 +2183,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cdb3a90055afe371962ec6c0931f1b08797aaeaab0358ef64b1cabda0a855b33
-R ccb06537668742bb198e005c80e2d348
+P c49ec239eddde6f07f8d528cccd6224c4c80b240dc8f5c974186e3bb08afb83b
+R 7af8cb79e580778082df3d4aa754bb75
 U drh
-Z 5666fcda290346432865b5fd5e238e7f
+Z e0623a1804a9fd12482c3193ee60e8ba
 # Remove this line to create a well-formed Fossil manifest.
