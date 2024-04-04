@@ -433,40 +433,56 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       out.returnVal = ()=>opt.resultRows;
     }
     if(opt.callback || opt.resultRows){
-      switch((undefined===opt.rowMode)
-             ? 'array' : opt.rowMode) {
-          case 'object': out.cbArg = (stmt)=>stmt.get(Object.create(null)); break;
-          case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
-          case 'stmt':
-            if(Array.isArray(opt.resultRows)){
-              toss3("exec(): invalid rowMode for a resultRows array: must",
-                    "be one of 'array', 'object',",
-                    "a result column number, or column name reference.");
-            }
-            out.cbArg = (stmt)=>stmt;
+      switch((undefined===opt.rowMode) ? 'array' : opt.rowMode) {
+        case 'object':
+          out.cbArg = (stmt,cache)=>{
+            if( !cache.columnNames ) cache.columnNames = stmt.getColumnNames([]);
+            /* https://sqlite.org/forum/forumpost/3632183d2470617d:
+               conversion of rows to objects (key/val pairs) is
+               somewhat expensive for large data sets because of the
+               native-to-JS conversion of the column names. If we
+               instead cache the names and build objects from that
+               list of strings, it can run twice as fast. The
+               difference is not noticeable for small data sets but
+               becomes human-perceivable when enough rows are
+               involved. */
+            const row = stmt.get([]);
+            const rv = Object.create(null);
+            for( const i in cache.columnNames ) rv[cache.columnNames[i]] = row[i];
+            return rv;
+          };
+          break;
+        case 'array': out.cbArg = (stmt)=>stmt.get([]); break;
+        case 'stmt':
+          if(Array.isArray(opt.resultRows)){
+            toss3("exec(): invalid rowMode for a resultRows array: must",
+                  "be one of 'array', 'object',",
+                  "a result column number, or column name reference.");
+          }
+          out.cbArg = (stmt)=>stmt;
+          break;
+        default:
+          if(util.isInt32(opt.rowMode)){
+            out.cbArg = (stmt)=>stmt.get(opt.rowMode);
             break;
-          default:
-            if(util.isInt32(opt.rowMode)){
-              out.cbArg = (stmt)=>stmt.get(opt.rowMode);
-              break;
-            }else if('string'===typeof opt.rowMode
-                     && opt.rowMode.length>1
-                     && '$'===opt.rowMode[0]){
-              /* "$X": fetch column named "X" (case-sensitive!). Prior
-                 to 2022-12-14 ":X" and "@X" were also permitted, but
-                 having so many options is unnecessary and likely to
-                 cause confusion. */
-              const $colName = opt.rowMode.substr(1);
-              out.cbArg = (stmt)=>{
-                const rc = stmt.get(Object.create(null))[$colName];
-                return (undefined===rc)
-                  ? toss3(capi.SQLITE_NOTFOUND,
-                          "exec(): unknown result column:",$colName)
-                  : rc;
-              };
-              break;
-            }
-            toss3("Invalid rowMode:",opt.rowMode);
+          }else if('string'===typeof opt.rowMode
+                   && opt.rowMode.length>1
+                   && '$'===opt.rowMode[0]){
+            /* "$X": fetch column named "X" (case-sensitive!). Prior
+               to 2022-12-14 ":X" and "@X" were also permitted, but
+               having so many options is unnecessary and likely to
+               cause confusion. */
+            const $colName = opt.rowMode.substr(1);
+            out.cbArg = (stmt)=>{
+              const rc = stmt.get(Object.create(null))[$colName];
+              return (undefined===rc)
+                ? toss3(capi.SQLITE_NOTFOUND,
+                        "exec(): unknown result column:",$colName)
+                : rc;
+            };
+            break;
+          }
+          toss3("Invalid rowMode:",opt.rowMode);
       }
     }
     return out;
@@ -884,10 +900,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  and names. */) ? 0 : 1;
             evalFirstResult = false;
             if(arg.cbArg || resultRows){
+              const cbArgCache = Object.create(null)
+              /* 2nd arg for arg.cbArg, used by (at least) row-to-object
+                 converter */;
               for(; stmt.step(); stmt._lockedByExec = false){
-                if(0===gotColNames++) stmt.getColumnNames(opt.columnNames);
+                if(0===gotColNames++){
+                  stmt.getColumnNames(cbArgCache.columnNames = (opt.columnNames || []));
+                }
                 stmt._lockedByExec = true;
-                const row = arg.cbArg(stmt);
+                const row = arg.cbArg(stmt,cbArgCache);
                 if(resultRows) resultRows.push(row);
                 if(callback && false === callback.call(opt, row, stmt)){
                   break;
