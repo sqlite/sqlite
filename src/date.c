@@ -46,7 +46,12 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
+
+#ifdef FREEBSD_KERNEL
+//STELIOS: todo
+#else
 #include <time.h>
+#endif
 
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 
@@ -1563,6 +1568,49 @@ static void ctimestampFunc(
 ** and strftime(). The format string to pass to strftime() is supplied
 ** as the user-data for the function.
 */
+
+#ifdef FREEBSD_KERNEL
+
+//todo: STELIOS
+static void currentTimeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  // time_t t;
+  //char *zFormat = (char *)sqlite3_user_data(context);
+  // sqlite3_int64 iT;
+  // struct tm *pTm;
+  // struct tm sNow;
+  char zBuf[20];
+
+  /*
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
+
+  iT = sqlite3StmtCurrentTime(context);
+  if( iT<=0 ) return;
+  t = iT/1000 - 10000*(sqlite3_int64)21086676;
+#if HAVE_GMTIME_R
+  pTm = gmtime_r(&t, &sNow);
+#else
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN));
+  pTm = gmtime(&t);
+  if( pTm ) memcpy(&sNow, pTm, sizeof(sNow));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MAIN));
+#endif
+  if( pTm ){
+    strftime(zBuf, 20, zFormat, &sNow);
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+  }
+  */
+  printf("Warning: currentTimeFunc - function is not implemented on FreeBSD Kernel. This code should not be executed!\n");
+  zBuf[0] = '0';
+  for (int i = 1; i < 20; i++) zBuf[i] = zBuf[i-1];
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+
+#else 
 static void currentTimeFunc(
   sqlite3_context *context,
   int argc,
@@ -1594,6 +1642,7 @@ static void currentTimeFunc(
     sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
+#endif //FREEBSD_KERNEL
 #endif
 
 /*

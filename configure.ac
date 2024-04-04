@@ -74,7 +74,41 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
+
 AC_INIT([sqlite],m4_esyscmd(cat VERSION | tr -d '\n'))
+
+#########
+# Initialize a variable to indicate a FreeBSD kernel environment.
+freebsd_kernel_env=no
+
+# Check if we are cross-compiling for FreeBSD kernel.
+case "$host" in
+*kfbsd*)
+    freebsd_kernel_env=yes
+    ;;
+esac
+
+AS_IF([test "x$freebsd_kernel_env" == "xyes"], [
+  AC_CACHE_VAL([ac_cv_header_dlfcn_h], [ac_cv_header_dlfcn_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdio_h], [ac_cv_header_stdio_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdlib_h], [ac_cv_header_stdlib_h=no])
+  AC_CACHE_VAL([ac_cv_header_string_h], [ac_cv_header_string_h=no])
+  AC_CACHE_VAL([ac_cv_header_inttypes_h], [ac_cv_header_inttypes_h=no])
+  AC_CACHE_VAL([ac_cv_header_stdint_h], [ac_cv_header_stdint_h=no])
+  AC_CACHE_VAL([ac_cv_header_strings_h], [ac_cv_header_strings_h=no])
+  AC_CACHE_VAL([ac_cv_header_unistd_h], [ac_cv_header_unistd_h=no])
+  AC_CACHE_VAL([ac_cv_type_int16_t], [ac_cv_type_int16_t=no])
+  AC_CACHE_VAL([ac_cv_type_int8_t], [ac_cv_type_int8_t=no])
+  AC_CACHE_VAL([ac_cv_type_int32_t], [ac_cv_type_int32_t=no])
+  AC_CACHE_VAL([ac_cv_type_int64_t], [ac_cv_type_int64_t=no])
+  AC_CACHE_VAL([ac_cv_type_intptr_t], [ac_cv_type_intptr_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint16_t], [ac_cv_type_uint16_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint8_t], [ac_cv_type_uint8_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint32_t], [ac_cv_type_uint32_t=no])
+  AC_CACHE_VAL([ac_cv_type_uint64_t], [ac_cv_type_uint64_t=no])
+  AC_CACHE_VAL([ac_cv_type_uintptr_t], [ac_cv_type_uintptr_t=no])
+])
+
 
 dnl Make sure the local VERSION file matches this configure script
 sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
@@ -101,14 +135,18 @@ AC_SYS_LARGEFILE
 AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
                 uint16_t, uint32_t, uint64_t, uintptr_t])
 
-#########
-# Check for needed/wanted headers
-AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h malloc.h])
 
-#########
-# Figure out whether or not we have these functions
-#
-AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64])
+# Exclude certain checks when in the FreeBSD kernel environment
+AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
+    # Standard environment checks
+    AC_CHECK_HEADERS([dlfcn.h inttypes.h stdint.h stdlib.h string.h strings.h sys/stat.h sys/types.h unistd.h malloc.h stdio.h])
+
+    # Figure or not if we have these functions
+    AC_CHECK_FUNCS([fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64])
+], [
+    # Leave all other macros undefined for FreeBSD kernel
+    AC_CHECK_HEADERS([sys/stat.h sys/types.h])
+])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -310,6 +348,15 @@ matches *cygwin*])dnl
 AC_CANONICAL_HOST
 case $host_os in
   *cygwin* ) CYGWIN=yes;;
+  *kfbsd* ) 
+    AC_DEFINE([FREEBSD_KERNEL], [1], [Define to 1 if compiling for FreeBSD Kernel])
+    AC_DEFINE([assert(X)], [//STELIOS: todo], [Assert definition: todo for later])
+    AC_DEFINE([SQLITE_OMIT_DATETIME_FUNCS], [1], [FreeBSD Kernel uses no datetime functions])
+    AC_DEFINE([SQLITE_OMIT_FLOATING_POINT], [1], [FreeBSD Kernel uses no floating point functions])
+    AC_DEFINE([SQLITE_OMIT_DESERIALIZE], [1], [Solves issues with initialization of SQLite])
+    AC_DEFINE([SQLITE_OS_OTHER], [1], [FreeBSD Kernel is a different OS])
+    AC_DEFINE([FILENAME_MAX], [255], [Maximum filename for FreeBSD Kernel])
+    ;;
 	 * ) CYGWIN=no;;
 esac
 
@@ -651,10 +698,17 @@ fi
 AC_SUBST(USE_AMALGAMATION)
 
 #########
-# Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-AC_CHECK_HEADERS(zlib.h)
-AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
-AC_SUBST(HAVE_ZLIB)
+
+
+# Exclude certain checks when in the FreeBSD kernel environment
+AS_IF([test "x$freebsd_kernel_env" != "xyes"], [
+    # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+    AC_CHECK_HEADERS(zlib.h)
+    AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
+    AC_SUBST(HAVE_ZLIB)
+], [
+    # Keep undefined for a FreeBSD kernel environment
+])
 
 #########
 # See whether we should allow loadable extensions

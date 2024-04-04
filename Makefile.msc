@@ -1361,6 +1361,7 @@ SRC00 = \
   $(TOP)\src\mutex_w32.c \
   $(TOP)\src\notify.c \
   $(TOP)\src\os.c \
+  $(TOP)\src\os_kfbsd.c \
   $(TOP)\src\os_kv.c \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c
@@ -2098,6 +2099,9 @@ pcache1.lo:	$(TOP)\src\pcache1.c $(HDR) $(TOP)\src\pcache.h
 
 os.lo:	$(TOP)\src\os.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os.c
+
+os_kfbsd.lo:	$(TOP)\src\os_kfbsd.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_kfbsd.c
 
 os_kv.lo:	$(TOP)\src\os_kv.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\os_kv.c
