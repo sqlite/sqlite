@@ -31,10 +31,7 @@ proc vtab_command {method args} {
   return {}
 }
 
-do_execsql_test 1.0 {
-  CREATE TABLE t1(a, b);
-}
-
+breakpoint
 foreach {tn cts} {
   1 {SELECT 123}
   2 {SELECT 123, 456}
@@ -44,11 +41,27 @@ foreach {tn cts} {
   6 {DROP TABLE nosuchtable}
   7 {DROP TABLE x1}
   8 {DROP TABLE t1}
+  9 {CREATE TABLE xyz AS SELECT * FROM sqlite_schema}
+  10 {CREATE TABLE xyz AS SELECT 1 AS 'col'}
 } {
   set ::create_table_sql $cts
   do_catchsql_test 1.$tn {
     CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
   } {1 {vtable constructor failed: x1}}
+}
+
+foreach {tn cts} {
+  1 {CREATE TABLE IF NOT EXISTS t1(a, b)}
+  2 {CREATE TABLE ""(a, b PRIMARY KEY) WITHOUT ROWID}
+} {
+  set ::create_table_sql $cts
+  execsql { DROP TABLE IF EXISTS x1 }
+  do_execsql_test 2.$tn.1 {
+    CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+  }
+  do_execsql_test 2.$tn.2 {
+    SELECT a, b FROM x1
+  }
 }
 
 finish_test
