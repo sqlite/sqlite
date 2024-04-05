@@ -1156,7 +1156,7 @@ extern u32 sqlite3WhereTrace;
 ** 0x00000010   Display sqlite3_index_info xBestIndex calls
 ** 0x00000020   Range an equality scan metrics
 ** 0x00000040   IN operator decisions
-** 0x00000080   WhereLoop cost adjustements
+** 0x00000080   WhereLoop cost adjustments
 ** 0x00000100
 ** 0x00000200   Covering index decisions
 ** 0x00000400   OR optimization

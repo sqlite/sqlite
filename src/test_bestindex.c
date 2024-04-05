@@ -226,7 +226,7 @@ static int tclConnect(
   }
 
   sqlite3_free(zCmd);
-  *ppVtab = &pTab->base;
+  *ppVtab = pTab ? &pTab->base : 0;
   return rc;
 }
 
