@@ -3585,6 +3585,7 @@ struct Select {
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
+#define SF_RhsOfIN      0x20000000 /* Right-hand-side of an IN operator */
 
 /* True if S exists and has SF_NestedFrom */
 #define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
@@ -5081,7 +5082,7 @@ int sqlite3ExprTruthValue(const Expr*);
 int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
-int sqlite3ExprIsTableConstant(Expr*,int);
+// int sqlite3ExprIsTableConstant(Expr*,int);
 int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcList*,int);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);

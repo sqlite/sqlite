@@ -2500,7 +2500,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       return WRC_Continue;
   }
 }
-static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
+static int exprIsConst(Parse *pParse, Expr *p, int initFlag){
   Walker w;
   w.eCode = initFlag;
   w.pParse = pParse;
@@ -2509,7 +2509,6 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
 #ifdef SQLITE_DEBUG
   w.xSelectCallback2 = sqlite3SelectWalkAssert2;
 #endif
-  w.u.iCur = iCur;
   sqlite3WalkExpr(&w, p);
   return w.eCode;
 }
@@ -2529,7 +2528,7 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
 ** function and on its parameters.
 */
 int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
-  return exprIsConst(pParse, p, 1, 0);
+  return exprIsConst(pParse, p, 1);
 }
 
 /*
@@ -2546,7 +2545,44 @@ int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
 ** the prepared statement starts up.  See sqlite3ExprCodeRunJustOnce().
 */
 static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
-  return exprIsConst(pParse, p, 2, 0);
+  return exprIsConst(pParse, p, 2);
+}
+
+/*
+** This routine examines sub-SELECT statements as an expression is being
+** walked as part of sqlite3ExprIsTableConstant() (hereafter IsTabConst()).
+** Most SELECT statements will cause IsTabConst() to return false.  However,
+** if:
+**
+**    (1)  The SELECT is the right-hand side of an IN operator, and
+**    (2)  Nothing in the SELECT refers to anything other than itself
+**
+** Then this routine causes the sub-SELECT to be bypassed, so that if
+** nothing else is amiss the IsTabConst() routine can return true.
+*/
+static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
+  int savedCursor;
+  assert( pSelect!=0 );
+  assert( pWalker->eCode==3 || pWalker->eCode==0 );
+  if( (pSelect->selFlags & SF_RhsOfIN)==0 ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+  assert( pSelect->pSrc!=0 );
+  assert( pSelect->pSrc->nSrc==1 );
+  assert( pSelect->pWhere==0 );
+  assert( pSelect->pGroupBy==0 );
+  assert( pSelect->pHaving==0 );
+  assert( pSelect->pOrderBy==0 );
+  assert( pSelect->pPrior==0 );
+  assert( pSelect->pNext==0 );
+  assert( pSelect->pLimit==0 );
+  assert( pSelect->pWith==0 );
+  savedCursor = pWalker->u.iCur;
+  pWalker->u.iCur = pSelect->pSrc->a[0].iCursor;
+  sqlite3WalkExprList(pWalker, pSelect->pEList);
+  pWalker->u.iCur = savedCursor;
+  return WRC_Prune;
 }
 
 /*
@@ -2554,9 +2590,19 @@ static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
 ** for any single row of the table with cursor iCur.  In other words, the
 ** expression must not refer to any non-deterministic function nor any
 ** table other than iCur.
+**
+** 2024-04-05:  Operators of the form "expr IN table" are now allowed, where
+** "table" is the name of a table.
 */
-int sqlite3ExprIsTableConstant(Expr *p, int iCur){
-  return exprIsConst(0, p, 3, iCur);
+static int sqlite3ExprIsTableConstant(Expr *p, int iCur){
+  Walker w;
+  w.eCode = 3;
+  w.pParse = 0;
+  w.xExprCallback = exprNodeIsConstant;
+  w.xSelectCallback = exprSelectWalkTableConstant;
+  w.u.iCur = iCur;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
 }
 
 /*
@@ -2713,7 +2759,7 @@ int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
 */
 int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   assert( isInit==0 || isInit==1 );
-  return exprIsConst(0, p, 4+isInit, 0);
+  return exprIsConst(0, p, 4+isInit);
 }
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS

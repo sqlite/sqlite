@@ -1369,6 +1369,10 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
     A = sqlite3PExpr(pParse, TK_IN, A, 0);
     sqlite3PExprAddSelect(pParse, A, pSelect);
+    if( pParse->nErr==0 ){
+      assert( pSelect!=0 );
+      pSelect->selFlags |= SF_RhsOfIN;
+    }
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
   }
   expr(A) ::= EXISTS LP select(Y) RP. {
