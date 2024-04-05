@@ -1,5 +1,5 @@
-C Optimize\ssqlite3.oo1.DB.exec()\sfor\sthe\srowMode='object'\scase\sto\savoid\sconverting\sthe\sobject\sproperty\skeys\s(column\snames)\sfrom\snative\scode\sto\sJS\sfor\seach\srow.\sThis\sspeeds\sup\slarge\sdata\ssets\sconsiderably\sand\saddresses\sthe\sreport\sin\s[forum:3632183d2470617d|forum\spost\s3632183d2470617d].
-D 2024-04-04T22:53:09.385
+C When\scompiling\swith\sSQLITE_ALLOW_ROWID_IN_VIEW,\sif\sthe\sRETURNING\sclause\sof\nan\sUPDATE\sof\sa\sview\sspecifies\sa\srowid,\sthen\sreturn\sNULL\sfor\sthe\svalue\sof\nthat\srowid.\s\sdbsqlfuzz\s7863696e9e5ec10b29bcf5ab2681cd6c82a78a4a.
+D 2024-04-05T11:23:51.958
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -815,7 +815,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3f703cacdab728d7741e5a6ac242006d74fe1c2754d4f03ed889d7253259bd68
 F src/treeview.c c6fc972683fd00f975d8b32a81c1f25d2fb7d4035366bf45c9f5622d3ccd70ee
 F src/trigger.c 0905b96b04bb6658509f711a8207287f1315cdbc3df1a1b13ba6483c8e341c81
-F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
+F src/update.c 732404a04d1737ef14bb6ec6b84f74edf28b3c102a92ae46b4855438a710efe7
 F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 4d6d7ebfe6772a1b950c97bbb1d1a72ad4874617ec498ab8aa73b7f5a43e44bb
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7bf49e2c54c9f6f336416f01c0e76aaf70f1e2f3fd612232e5a33ae5dabe0900
-R 32cab23d7481e1a388944c536dd694cd
-U stephan
-Z 96ae2cb4464d7637da1ca6fd97c9b197
+P 8b41ef8690001eb299f5b7182c28f5318333bff5b505e1d59d6e6f4556b1c759
+R f56441a29ebaf6b9cc2fa5b75235bdce
+U drh
+Z ca20487feeb5219923a08470db600847
 # Remove this line to create a well-formed Fossil manifest.
