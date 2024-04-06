@@ -1,5 +1,5 @@
-C Generalize\spushdown\sto\sallow\sany\suncorrelated\ssubquery\sto\sbe\spushed\sdown.
-D 2024-04-06T12:19:50.927
+C Merge\stesting\slogic\sfixes\son\strunk\sinto\sthe\spushdown-subquery\sbranch.
+D 2024-04-06T17:42:14.598
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1258,7 +1258,7 @@ F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 4355043e98cd8555c62462fcbba91c17c6492b0b017bbbe68656d5f2208f6444
+F test/fuzzinvariants.c 9fc6810dde21e1aee20ed7a6c8ed944ffee127cf082fc48caba398fa31c762ca
 F test/gcfault.test 4ea410ac161e685f17b19e1f606f58514a2850e806c65b846d05f60d436c5b0d
 F test/gencol1.test e169bdfa11c7ed5e9f322a98a7db3afe9e66235750b68c923efee8e1876b46ec
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2184,11 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2cbd7838fd6ffdf210f34671cd2e3e749a076a3a6f155bbe5f910a67db31c5b1
-R 3f1ebbef3f30ee834eac030ff4cc2f9a
-T *branch * pushdown-subquery
-T *sym-pushdown-subquery *
-T -sym-pushdown-IN-table *
+P 87c45fb0d5f5ca5d6d1ad27bef83f294231d17d94299e1997364a7975b423e38 c6e873d4db3ef36a0d561e64ead6feada5d1654c0757b4b6e55f671c9db66469
+R 5c918916ac2b7aa6a88b463bfdfa1fb1
 U drh
-Z 00cc18dd5b8247ec2ec6349e18d457dd
+Z 8a9056dc314aaed8a12c375787e3cb55
 # Remove this line to create a well-formed Fossil manifest.
