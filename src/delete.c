@@ -270,7 +270,7 @@ Expr *sqlite3LimitWhere(
 
   /* now generate the new WHERE rowid IN clause for the DELETE/UPDATE */
   pInClause = sqlite3PExpr(pParse, TK_IN, pLhs, 0);
-  sqlite3PExprAddSelect(pParse, pInClause, pSelect);
+  sqlite3PExprAddSelect(pParse, pInClause, pSelect, SF_RhsIsIN);
   return pInClause;
 }
 #endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) */

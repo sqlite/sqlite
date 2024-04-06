@@ -1050,18 +1050,27 @@ Expr *sqlite3PExpr(
 }
 
 /*
-** Add pSelect to the Expr.x.pSelect field.  Or, if pExpr is NULL (due
-** do a memory allocation failure) then delete the pSelect object.
+** Add pSelect to the Expr.x.pSelect field.  Or, if there has been
+** any kind of prior error (especially an OOM) then delete the pSelect object.
+**
+** mFlags are added to the Select.selFlags field of the SELECT statement.
 */
-void sqlite3PExprAddSelect(Parse *pParse, Expr *pExpr, Select *pSelect){
-  if( pExpr ){
-    pExpr->x.pSelect = pSelect;
-    ExprSetProperty(pExpr, EP_xIsSelect|EP_Subquery);
-    sqlite3ExprSetHeightAndFlags(pParse, pExpr);
-  }else{
-    assert( pParse->db->mallocFailed );
+void sqlite3PExprAddSelect(
+  Parse *pParse,         /* Parsing context */
+  Expr *pExpr,           /* Expr node to which pSelect should be added */
+  Select *pSelect,       /* The SELECT statement to add */
+  u32 mFlags             /* Add these SF_ flags to pSelect */
+){
+  if( pParse->nErr ){
     sqlite3SelectDelete(pParse->db, pSelect);
+    return;
   }
+  assert( pExpr!=0 );
+  assert( pSelect!=0 );
+  pExpr->x.pSelect = pSelect;
+  ExprSetProperty(pExpr, EP_xIsSelect|EP_Subquery);
+  pSelect->selFlags |= mFlags;
+  sqlite3ExprSetHeightAndFlags(pParse, pExpr);
 }
 
 /*
@@ -2563,26 +2572,19 @@ static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
 static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
   int savedCursor;
   assert( pSelect!=0 );
+  assert( pSelect->pSrc!=0 );
   assert( pWalker->eCode==3 || pWalker->eCode==0 );
-  if( (pSelect->selFlags & SF_RhsOfIN)==0 ){
+  if( (pSelect->selFlags & SF_RhsOfIN)==0
+   || pSelect->pSrc->nSrc!=1
+  ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
-  assert( pSelect->pSrc!=0 );
-  assert( pSelect->pSrc->nSrc==1 );
-  assert( pSelect->pWhere==0 );
-  assert( pSelect->pGroupBy==0 );
-  assert( pSelect->pHaving==0 );
-  assert( pSelect->pOrderBy==0 );
-  assert( pSelect->pPrior==0 );
-  assert( pSelect->pNext==0 );
-  assert( pSelect->pLimit==0 );
-  assert( pSelect->pWith==0 );
   savedCursor = pWalker->u.iCur;
   pWalker->u.iCur = pSelect->pSrc->a[0].iCursor;
-  sqlite3WalkExprList(pWalker, pSelect->pEList);
+  sqlite3WalkSelectExpr(pWalker, pSelect);
   pWalker->u.iCur = savedCursor;
-  return WRC_Prune;
+  return pWalker->eCode==0 ? WRC_Abort : WRC_Prune;
 }
 
 /*

@@ -7163,7 +7163,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     pTerm = pPrior ? sqlite3ExprDup(db, pCount, 0) : pCount;
     pSub->pEList = sqlite3ExprListAppend(pParse, 0, pTerm);
     pTerm = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
-    sqlite3PExprAddSelect(pParse, pTerm, pSub);
+    sqlite3PExprAddSelect(pParse, pTerm, pSub, 0);
     if( pExpr==0 ){
       pExpr = pTerm;
     }else{

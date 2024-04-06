@@ -1332,7 +1332,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
         A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
       }else if( Y->nExpr==1 && pRHS->op==TK_SELECT ){
         A = sqlite3PExpr(pParse, TK_IN, A, 0);
-        sqlite3PExprAddSelect(pParse, A, pRHS->x.pSelect);
+        sqlite3PExprAddSelect(pParse, A, pRHS->x.pSelect, SF_RhsOfIN);
         pRHS->x.pSelect = 0;
         sqlite3ExprListDelete(pParse->db, Y);
       }else{
@@ -1344,7 +1344,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
           Select *pSelectRHS = sqlite3ExprListToValues(pParse, nExpr, Y);
           if( pSelectRHS ){
             parserDoubleLinkSelect(pParse, pSelectRHS);
-            sqlite3PExprAddSelect(pParse, A, pSelectRHS);
+            sqlite3PExprAddSelect(pParse, A, pSelectRHS, 0);
           }
         }else{
           A->x.pList = Y;
@@ -1356,11 +1356,11 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   }
   expr(A) ::= LP select(X) RP. {
     A = sqlite3PExpr(pParse, TK_SELECT, 0, 0);
-    sqlite3PExprAddSelect(pParse, A, X);
+    sqlite3PExprAddSelect(pParse, A, X, 0);
   }
   expr(A) ::= expr(A) in_op(N) LP select(Y) RP.  [IN] {
     A = sqlite3PExpr(pParse, TK_IN, A, 0);
-    sqlite3PExprAddSelect(pParse, A, Y);
+    sqlite3PExprAddSelect(pParse, A, Y, SF_RhsOfIN);
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
   }
   expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) paren_exprlist(E). [IN] {
@@ -1368,17 +1368,13 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0);
     if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
     A = sqlite3PExpr(pParse, TK_IN, A, 0);
-    sqlite3PExprAddSelect(pParse, A, pSelect);
-    if( pParse->nErr==0 ){
-      assert( pSelect!=0 );
-      pSelect->selFlags |= SF_RhsOfIN;
-    }
+    sqlite3PExprAddSelect(pParse, A, pSelect, SF_RhsOfIN);
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0);
   }
   expr(A) ::= EXISTS LP select(Y) RP. {
     Expr *p;
     p = A = sqlite3PExpr(pParse, TK_EXISTS, 0, 0);
-    sqlite3PExprAddSelect(pParse, p, Y);
+    sqlite3PExprAddSelect(pParse, p, Y, 0);
   }
 %endif SQLITE_OMIT_SUBQUERY
 
