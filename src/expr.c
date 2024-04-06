@@ -2570,14 +2570,22 @@ static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
 ** expression must not refer to any non-deterministic function nor any
 ** table other than iCur.
 **
-** Enhanced on 2024-04-06:  Allow pExpr to contain uncorrelated subqueries.
+** Consider uncorrelated subqueries to be constants if the bAllowSubq
+** parameter is true.
 */
-static int sqlite3ExprIsTableConstant(Expr *p, int iCur){
+static int sqlite3ExprIsTableConstant(Expr *p, int iCur, int bAllowSubq){
   Walker w;
   w.eCode = 3;
   w.pParse = 0;
   w.xExprCallback = exprNodeIsConstant;
-  w.xSelectCallback = exprSelectWalkTableConstant;
+  if( bAllowSubq ){
+    w.xSelectCallback = exprSelectWalkTableConstant;
+  }else{
+    w.xSelectCallback = sqlite3SelectWalkFail;
+#ifdef SQLITE_DEBUG
+    w.xSelectCallback2 = sqlite3SelectWalkAssert2;
+#endif
+  }
   w.u.iCur = iCur;
   sqlite3WalkExpr(&w, p);
   return w.eCode;
@@ -2598,7 +2606,10 @@ static int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 **
 **   (1)  pExpr cannot refer to any table other than pSrc->iCursor.
 **
-**   (2)  pExpr cannot use subqueries or non-deterministic functions.
+**   (2a) pExpr cannot use subqueries unless the bAllowSubq parameter is
+**        true and the subquery is non-correlated
+**
+**   (2b) pExpr cannot use non-deterministic functions.
 **
 **   (3)  pSrc cannot be part of the left operand for a RIGHT JOIN.
 **        (Is there some way to relax this constraint?)
@@ -2627,7 +2638,8 @@ static int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 int sqlite3ExprIsSingleTableConstraint(
   Expr *pExpr,                 /* The constraint */
   const SrcList *pSrcList,     /* Complete FROM clause */
-  int iSrc                     /* Which element of pSrcList to use */
+  int iSrc,                    /* Which element of pSrcList to use */
+  int bAllowSubq               /* Allow non-correlated subqueries */
 ){
   const SrcItem *pSrc = &pSrcList->a[iSrc];
   if( pSrc->fg.jointype & JT_LTORJ ){
@@ -2652,7 +2664,8 @@ int sqlite3ExprIsSingleTableConstraint(
       }
     }
   }
-  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor); /* rules (1), (2) */
+  /* Rules (1), (2a), and (2b) handled by the following: */
+  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor, bAllowSubq);
 }
 
 
