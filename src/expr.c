@@ -2550,38 +2550,17 @@ static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
 
 /*
 ** This routine examines sub-SELECT statements as an expression is being
-** walked as part of sqlite3ExprIsTableConstant() (hereafter IsTabConst()).
-** Most SELECT statements will cause IsTabConst() to return false.  However,
-** if:
-**
-**    (1)  The SELECT is the right-hand side of an IN operator, and
-**    (2)  Nothing in the SELECT refers to anything other than itself
-**
-** Then this routine causes the sub-SELECT to be bypassed, so that if
-** nothing else is amiss the IsTabConst() routine can return true.
+** walked as part of sqlite3ExprIsTableConstant().  Sub-SELECTs are considered
+** constant as long as they are uncorrelated - meaning that they do not
+** contain any terms from outer contexts.
 */
 static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
-  int savedCursor;
   assert( pSelect!=0 );
   assert( pWalker->eCode==3 || pWalker->eCode==0 );
-  if( (pSelect->selFlags & SF_RhsOfIN)==0 ){
+  if( (pSelect->selFlags & SF_Correlated)!=0 ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
-  assert( pSelect->pSrc!=0 );
-  assert( pSelect->pSrc->nSrc==1 );
-  assert( pSelect->pWhere==0 );
-  assert( pSelect->pGroupBy==0 );
-  assert( pSelect->pHaving==0 );
-  assert( pSelect->pOrderBy==0 );
-  assert( pSelect->pPrior==0 );
-  assert( pSelect->pNext==0 );
-  assert( pSelect->pLimit==0 );
-  assert( pSelect->pWith==0 );
-  savedCursor = pWalker->u.iCur;
-  pWalker->u.iCur = pSelect->pSrc->a[0].iCursor;
-  sqlite3WalkExprList(pWalker, pSelect->pEList);
-  pWalker->u.iCur = savedCursor;
   return WRC_Prune;
 }
 
@@ -2591,8 +2570,7 @@ static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
 ** expression must not refer to any non-deterministic function nor any
 ** table other than iCur.
 **
-** 2024-04-05:  Operators of the form "expr IN table" are now allowed, where
-** "table" is the name of a table.
+** Enhanced on 2024-04-06:  Allow pExpr to contain uncorrelated subqueries.
 */
 static int sqlite3ExprIsTableConstant(Expr *p, int iCur){
   Walker w;
