@@ -223,6 +223,18 @@ not_a_fault:
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+/*
+** Return TRUE if the i-th column of pStmt might be a ROWID value.
+*/
+static int column_might_be_rowid(sqlite3_stmt *pStmt, int i){
+  const char *zColName = sqlite3_column_name(pStmt, i);
+  if( sqlite3_strlike("%rowid%",zColName,0)==0 ) return 1;
+  if( sqlite3_strlike("%oid%",zColName,0)==0 ) return 1;
+  return 0;
+}
+#endif /* SQLITE_ALLOW_ROWID_IN_VIEW */
+
 
 /*
 ** Generate SQL used to test a statement invariant.
@@ -297,9 +309,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
       continue;
     }
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
-    if( sqlite3_strlike("%rowid%",zColName,0)==0
-     || sqlite3_strlike("%oid%",zColName,0)==0
-    ){
+    if( column_might_be_rowid(pBase,i) ){
       /* ROWID values are unreliable if SQLITE_ALLOW_ROWID_IN_VIEW is used */
       continue;
     }
@@ -332,6 +342,11 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
 
 /*
 ** Return true if and only if v1 and is the same as v2.
+**
+** When compiled with SQLITE_ALLOW_ROWID_IN_VIEW, and if either
+** v1 or v2 has a column name that indicates that it is a rowid
+** then a NULL value in the rowid column will compare equal to
+** an integer value in the other.
 */
 static int sameValue(
   sqlite3_stmt *pS1, int i1,       /* Value to text on the left */
@@ -346,6 +361,20 @@ static int sameValue(
      || (t1==SQLITE_FLOAT && t2==SQLITE_INTEGER)
     ){
       /* Comparison of numerics is ok */
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+    }else
+    if( t1==SQLITE_INTEGER
+     && t2==SQLITE_NULL
+     && column_might_be_rowid(pS2,i2)
+    ){
+      return 1;
+    }else
+    if( t2==SQLITE_INTEGER
+     && t1==SQLITE_NULL
+     && column_might_be_rowid(pS1,i1)
+    ){
+      return 1;
+#endif /* SQLITE_ALLOW_ROWID_IN_VIEW */
     }else{
       return 0;
     }
