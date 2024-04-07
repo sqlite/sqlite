@@ -1,5 +1,5 @@
-C If\sSQLITE_ALLOW_ROWID_IN_VIEW\sis\sset\sto\s2,\sthen\sall\srowids\sfor\sviews\sreturn\na\svalue\sof\sNULL.
-D 2024-04-07T18:23:30.116
+C Omit\sall\srowid-in-view\srestrictions\sfrom\sthe\sfuzzinvariant.c\stest\smodule\nas\sthey\sare\sno\slonger\snecessary,\sas\sof\sthe\sprevious\scheck-in.
+D 2024-04-07T18:36:32.081
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1258,7 +1258,7 @@ F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 9fc6810dde21e1aee20ed7a6c8ed944ffee127cf082fc48caba398fa31c762ca
+F test/fuzzinvariants.c d89b81c3bdad7b2837f8cce645d5b563ffa965f6d819ce33f0f6d82a71c6ca9a
 F test/gcfault.test 4ea410ac161e685f17b19e1f606f58514a2850e806c65b846d05f60d436c5b0d
 F test/gencol1.test e169bdfa11c7ed5e9f322a98a7db3afe9e66235750b68c923efee8e1876b46ec
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3d5fb1ec7a0440072d6e3b957903c85d0f32b8b07207a1ef22d1a69cf5e664d1
-R 0db0e0612520e2d37c806507a6db9dae
+P 0a53dde21403aa6de11c5085c16def3f95046c5629daf2675b075e4d6683ef94
+R 950039d72c57e0f5f8da3387d03515aa
 U drh
-Z 2bafcb904067739b9429bfd86a29a830
+Z decff099e336dbab63d6324042d80ad4
 # Remove this line to create a well-formed Fossil manifest.
