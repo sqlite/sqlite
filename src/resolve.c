@@ -632,6 +632,11 @@ static int lookupName(
      && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
     ){
       cnt = cntTab;
+#if SQLITE_ALLOW_ROWID_IN_VIEW+0==2
+      if( pMatch->pTab!=0 && IsView(pMatch->pTab) ){
+        eNewExprOp = TK_NULL;
+      }
+#endif
       if( pMatch->fg.isNestedFrom==0 ) pExpr->iColumn = -1;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
