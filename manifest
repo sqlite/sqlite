@@ -1,5 +1,5 @@
-C Omit\sall\srowid-in-view\srestrictions\sfrom\sthe\sfuzzinvariant.c\stest\smodule\nas\sthey\sare\sno\slonger\snecessary,\sas\sof\sthe\sprevious\scheck-in.
-D 2024-04-07T18:36:32.081
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sICU\sextension\sdue\sto\s[acddbc489d5231da].
+D 2024-04-08T11:45:15.171
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -248,7 +248,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 3eba8e9bee4221ed165f3304b51b2a74a705f4ec5df3d044573a2be539534af8
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
-F ext/icu/icu.c 5c858611fd11d65caf8a04acd836af9193880a724ba75cee63f9da75ce4a469d
+F ext/icu/icu.c 3add8197e0a86c1761771a39500ebae749438bcf1836160b407a56b4eaa8721c
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test f3a3cba14b6aeff145ffa5515546dd22f7510dad91512e519f43b92b56514012
 F ext/intck/intck2.test d2457c7e5e5b688046d15ebe08a1e1427cc5e7a6dc8d6af215f42e8bcaf67304
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a53dde21403aa6de11c5085c16def3f95046c5629daf2675b075e4d6683ef94
-R 950039d72c57e0f5f8da3387d03515aa
+P 6431538f0bb3bb8606786f3c3e5c055c4bc387098dd3bdc8a94f6fda61c47f52
+R d4b41721554e465dd5d2ae1a7b49b70e
 U drh
-Z decff099e336dbab63d6324042d80ad4
+Z 2f169d04c81c297dd79cb34d0c3d4d69
 # Remove this line to create a well-formed Fossil manifest.

@@ -499,7 +499,7 @@ static void icuLoadCollation(
       {  "QUARTERNARY",  UCOL_QUATERNARY        },
       {  "IDENTICAL",    UCOL_IDENTICAL         },
     };
-    int i;
+    unsigned int i;
     for(i=0; i<sizeof(aStrength)/sizeof(aStrength[0]); i++){
       if( sqlite3_stricmp(zOption,aStrength[i].zName)==0 ){
         ucol_setStrength(pUCollator, aStrength[i].val);
