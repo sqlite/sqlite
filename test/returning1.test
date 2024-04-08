@@ -227,21 +227,21 @@ ifcapable !allow_rowid_in_view {
 } else {
   # Note: The values returned by the RETURNING clauses of the following
   # two statements are the rowid columns of views. These values are not
-  # well defined, so the INSERT returns -1, and the UPDATE returns 1, 2 
-  # and 3. These match the values used for new.rowid expressions, but 
-  # not much else.
+  # well defined, so the INSERT returns -1, and the UPDATE returns NULL.
+  # These match the values used for new.rowid expressions, but not much 
+  # else.
   do_catchsql_test 10.3a {
     INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
   } {0 -1}
   
   do_catchsql_test 10.3b {
     UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
-  } {0 {1 2 3}}
+  } {0 {{} {} {}}}
   
   do_execsql_test 10.4 {
     SELECT * FROM log;
   } {
-    insert -1 1234 5678 update 1 z y update 2 z y update 3 z y
+    insert -1 1234 5678 update {} z y update {} z y update {} z y
   }
 }
 
