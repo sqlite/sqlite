@@ -1,5 +1,5 @@
-C Update\stests\sin\sreturning1.test\sto\saccount\sfor\s[c7896e88].
-D 2024-04-08T17:55:15.936
+C The\sread-only\sCHECK-constraint\soptimization\sof\s[34ddf02d3d21151b]\sinhibits\sthe\nxfer\soptimization\sfor\stables\swith\sCHECK\sconstraints.\s\sHowever,\sthe\sxfer\noptimization\sis\srequired\sfor\scorrect\soperation\sof\sVACUUM\sINTO\son\stables\sthat\ncontain\sgenerated\scolumns.\sFix\sthis\sby\signoring\sCHECK\sconstraints\swhen\nqualifying\sthe\sxfer\soptimization\swhile\srunning\sVACUUM.\s\sProblem\sreported\sby\n[forum:/forumpost/3ec177d68fe7fa2c|forum\spost\s3ec177d68fe7fa2c].
+D 2024-04-09T13:57:27.143
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c bc4d172b52a6167cd28797397a464c2cca9607dc047dfa0b5cf61687962e6964
+F src/insert.c 4bd7c7e54a1062dcd0214b7a6296f7194eb10fb14d3ddca1ed20b01c2a86a18c
 F src/json.c e2e40760d6689134c3e2ece38c6a496b34ff5e2661a8f238444a119af666fdce
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -1916,7 +1916,7 @@ F test/uri.test c1abaaaa28e9422d61e5f3f9cbc8ef993ec49fe802f581520731708561d49384
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 9fde0bb5d3a821594aa68c6829ab9c5453a084384137ebb9f6153e2d678039da
-F test/vacuum-into.test 35dc6f79b563f91c61822f61797363e97fed1bf28f1f722688b98d43f1980d76
+F test/vacuum-into.test 77845cee98770c416dae9b0da6bb3229753861f2da65c11b4f9715d081712d8a
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test 9fd45ce6ce29f5614c249e03938d3567c06a9e772d4f155949f8eafe2d8af520
 F test/vacuum3.test d9d9a04ee58c485b94694fd4f68cffaba49c32234fdefe1ac1a622c5e17d4ce3
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69ec714b2d698acf9e37635256c01b233ce32f22e8323e226441d5ddd948a940
-R 02f4dab5c53b9393812ce64cd20da4c4
-U dan
-Z d5b97b3de9d6c5aa7782c9d7a19a211c
+P c02956cd5cbf87027ba201b5d273e0efd429836ee6cabdc2f6d5b8096c876b7b
+R 14ee2c4095f13f5f59e64d6dfae705ab
+U drh
+Z 40f988c61dc13a84e5a7ab5ecd628e6c
 # Remove this line to create a well-formed Fossil manifest.
