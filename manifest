@@ -1,5 +1,5 @@
-C Avoid\ssome\sperformance\sproblems\sin\sthe\srecover\sextension\swhen\srecovering\sstrategically\scorrupted\sdatabases.
-D 2024-04-09T15:18:34.781
+C Fix\sthe\spragma4.test\sscript\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2024-04-10T16:36:38.941
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1483,7 +1483,7 @@ F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b76
 F test/pragma.test cddd4b534d7fb5cf113d1308dea4231f3548e8a7f3a65d7d1cf4810c87090b5a
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
-F test/pragma4.test 0010fbd5a3ec84a8cd94ae859b5b5c9c6e608881c8397bba15a7dda059a25d6c
+F test/pragma4.test c7539e5e63cdfd60b3c8114360ec2cf838e2cd6e3ebfd648152319dd8d6f6be0
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
@@ -2160,9 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bb6f9908098baa84b9c3b6f747ec8df6a5cf55c790ba1f172085f16394d684f2
-Q +e66a834bbab9d71e02b70588ad4c71eae2e13b50e299b0269d488402bc4a7fc5
-R f36297a69c27166681e949ad503a65fb
+P d83b0ffe8b49b531f423a034d8886c4dae186d317b3ea0322c0a384e8a05b538
+Q +f8fe6fb69c4164d087783a0d6990112afabea78daa4d8985eb6df7df6f45ac27
+R 22bcecfce65d187512b181df05eba85c
 U dan
-Z 81b0f1c90ecde83626bb50bf77e3f7a9
+Z b56be39bdc3dfcfddadc0768a295e877
 # Remove this line to create a well-formed Fossil manifest.
