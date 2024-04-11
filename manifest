@@ -1,5 +1,5 @@
-C Fix\sthe\spragma4.test\sscript\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2024-04-10T16:36:38.941
+C Fix\shandling\sof\sthe\sSQLITE_OMIT_WAL\scheck\sin\sone\splace.\sResolves\s[forum:87cc13302de160eb|forum\spost\s87cc13302de160eb].
+D 2024-04-11T19:09:28.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -725,7 +725,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c fa9b81b642e60e77ffaf98bd1a2e5fde16c1c2317614ec178bf3bd5864772356
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c ff60e98138d2499082ac6230f01ac508aba545315debccfca2fd6042f5f10fcd
+F src/pager.c 9beb80f6e330dd63c5d8ba0f7a7f3a55fff22067a68d424949c389bfc6fa0c56
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -2160,9 +2160,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d83b0ffe8b49b531f423a034d8886c4dae186d317b3ea0322c0a384e8a05b538
-Q +f8fe6fb69c4164d087783a0d6990112afabea78daa4d8985eb6df7df6f45ac27
-R 22bcecfce65d187512b181df05eba85c
-U dan
-Z b56be39bdc3dfcfddadc0768a295e877
+P 61060c7d0d13764a870340c41d8c48126f3efdb24dadc8c41287bcf79083ceaa
+Q +5dae6e6df4921f42e45c6c8de40853ab63f53a4bd1d9088a8cdac957ce62f196
+R 7c0a6547e808cf8e94dd9cf68b847823
+U stephan
+Z f3f378f301b03732d798a26e3e64c7ac
 # Remove this line to create a well-formed Fossil manifest.
