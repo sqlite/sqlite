@@ -1,5 +1,5 @@
-C Fix\shandling\sof\sthe\sSQLITE_OMIT_WAL\scheck\sin\sone\splace.\sResolves\s[forum:87cc13302de160eb|forum\spost\s87cc13302de160eb].
-D 2024-04-11T19:08:12.217
+C Mark\sthe\sBTree\scell\soverflow\scache\sas\sinvalid\swhenever\sthe\srowid\sgoes\sinvalid.
+D 2024-04-12T02:57:52.425
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -689,7 +689,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 285b493d843e7ba8ef78b6ae7d31238e904901dbc0c484f7904de4cf18fd8802
+F src/btree.c a654c4b4d84821f4fdeb322df185317493be30c1b114cb75d56adb50dd3f661c
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 02f5b25ca854c83b5015cb02b8c9ab236c60b1795528675aee8a5070e58da52a
@@ -2184,8 +2184,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d2c7ac4ecfc1ec408cb1820985a70650d7cc5613b4b8fd1829f68ea48fce6a3
-R 0071938b1b4e5105037f1334ca733633
-U stephan
-Z d6eaf14882bbc596d43b8bd29ecbee42
+P 5dae6e6df4921f42e45c6c8de40853ab63f53a4bd1d9088a8cdac957ce62f196
+R 991bf551528ac37b754c129e51db564b
+T *branch * btree-ovfl-cache
+T *sym-btree-ovfl-cache *
+T -sym-trunk *
+U drh
+Z d43adcfd8cc8586ed5a00034a7473bf9
 # Remove this line to create a well-formed Fossil manifest.

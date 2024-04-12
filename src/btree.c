@@ -9521,7 +9521,7 @@ int sqlite3BtreeInsert(
   }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->leaf );
     idx = ++pCur->ix;
-    pCur->curFlags &= ~BTCF_ValidNKey;
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   }else{
     assert( pPage->leaf );
   }
@@ -9551,7 +9551,7 @@ int sqlite3BtreeInsert(
   */
   if( pPage->nOverflow ){
     assert( rc==SQLITE_OK );
-    pCur->curFlags &= ~(BTCF_ValidNKey);
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
     rc = balance(pCur);
 
     /* Must make sure nOverflow is reset to zero even if the balance()
