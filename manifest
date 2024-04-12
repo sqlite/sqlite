@@ -1,5 +1,5 @@
-C Ignore\sCHECK\sconstraints\swhen\nqualifying\sthe\sxfer\soptimization\swhile\srunning\sVACUUM.
-D 2024-04-09T14:08:39.797
+C Mark\sthe\sBTree\scell\soverflow\scache\sas\sinvalid\swhenever\sthe\srowid\sgoes\sinvalid.
+D 2024-04-12T15:15:05.230
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -664,7 +664,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 477f724b70d06fbe7481ded1b024719dc9132c980f695a86fe127cd96bb8ea9c
+F src/btree.c 44503221cc963f7ac627243db1f9e5eae9ffd57d08f7268b76647ce699d404d0
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
 F src/btreeInt.h ef12a72b708677e48d6bc8dcd66fed25434740568b89e2cfa368093cfc5b9d15
 F src/build.c c28f319906e7a6c99a09dbc794a06b07b699203a86bfe5eb01410534e344758d
@@ -2144,9 +2144,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 083b0f7e771838e5f02744c245e8dbd7bef4fc998df59466ba65c531c7162d99
-Q +a6e26e778812c8409fca77183e24d3b70189c4d02fce10c7e74cd4ccc8c8ea97
-R f264450f7cca472796cdd7c597afe939
+P 944d1b6eb346a9b3c32bce3457f8a62013ee5d6b538fa19243036cd2924678d4
+Q +74c9e19c92c887012aebbe96450f6ed7a60ba22d6e3edbaa39a0f989fb7f2901
+R 8f0e38c96651a316044a8dc6f270bbda
 U drh
-Z 915f7b0fa0754bf87832059126685eef
+Z eba01372765ae93eea8341dcbe5fe8e4
 # Remove this line to create a well-formed Fossil manifest.
