@@ -1,5 +1,5 @@
-C Mark\sthe\sBTree\scell\soverflow\scache\sas\sinvalid\swhenever\sthe\srowid\sgoes\sinvalid.
-D 2024-04-12T02:57:52.425
+C Test\scase\sfor\sthe\sfix\sin\sthe\sprevious\scheck-in.
+D 2024-04-12T11:28:35.112
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1906,7 +1906,7 @@ F test/upfrom2.test 66f3ebf721b3cebd922faee5c386bf244f816d416b57c000753ff51af623
 F test/upfrom3.test 6130f24ebf97f5ea865e5d2a14a2d543fe5428a62e87cc60f62d875e45c1f5f0
 F test/upfrom4.test 78f742a6577c91a7a55c64edb8811004e7c6aa99b8d57b2320f70a918c357807
 F test/upfromfault.test 3a10075a0043f0c4fad6614b2c371f88a8ba5a4acab68b907438413865d6a8d6
-F test/upsert1.test a512e2f884d3a36159fce2e45108c236f78ae38e35bda55f4050db580ceb25d3
+F test/upsert1.test beba4316fbd4b7b9d76784313f6129a548cfe7abea04d46db33e2efce1ab0ac2
 F test/upsert2.test 720e94d09f7362a282bc69b3c6b83d51daeaaf0440eb4920a08b86518b8c7496
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
@@ -2184,11 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dae6e6df4921f42e45c6c8de40853ab63f53a4bd1d9088a8cdac957ce62f196
-R 991bf551528ac37b754c129e51db564b
-T *branch * btree-ovfl-cache
-T *sym-btree-ovfl-cache *
-T -sym-trunk *
+P 74c9e19c92c887012aebbe96450f6ed7a60ba22d6e3edbaa39a0f989fb7f2901
+R e5ebeec2e7c87917a5e915be853b1124
 U drh
-Z d43adcfd8cc8586ed5a00034a7473bf9
+Z 367db0044284a550a3cf0e6c6563bd86
 # Remove this line to create a well-formed Fossil manifest.
