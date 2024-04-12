@@ -1,5 +1,5 @@
-C Fixes\sand\snew\stests\slogic\sto\sensure\sthat\sthe\sbtree\soverflow\spage\scache\sis\nonly\sused\swhen\sit\sis\sconsistent.\s\sThis\sresolves\sthe\smalfunction\sobserved\nin\s[forum:/forumpost/284955a3cd454a15|forum\spost\s284955a3cd454a15].
-D 2024-04-12T15:02:16.718
+C If\sa\sbuild\sfails\sin\stestrunner.tcl,\sdo\snot\sattempt\sto\srun\sthe\sjobs\sthat\ndepend\son\sthat\sbuild.\s\sInstead,\sreport\sthose\sjobs\sas\shaving\sbeen\sskipped.
+D 2024-04-12T18:46:34.309
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1690,7 +1690,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl fe617b88c7eb08bdf983d2aaa31c20fbf439eee7b8e0d61ca636fcd0c305bbbf
-F test/testrunner.tcl b48a8fc17e3b200244f53d60348afa7fe9482400d164e95709890743af9536d0
+F test/testrunner.tcl 1386667c04207d0a540ce1a9bc5ee0b734f7a3ba856c14a03943fb4f32de55bb
 F test/testrunner_data.tcl 3d36660cfd55ea5e20e661e8f94c0520feebcb437848f9b98b33c483cc479c0c
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2184,9 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dae6e6df4921f42e45c6c8de40853ab63f53a4bd1d9088a8cdac957ce62f196 0ebc65481f4a3e7974558adea51c620a025bc0e76c0a139e549b56c5abe0cabb
-R 733b2640d8dc44517728193a890baeff
-T +closed 0ebc65481f4a3e7974558adea51c620a025bc0e76c0a139e549b56c5abe0cabb
+P 5dede50d9e7b6942df9f7b00fbfeaa2103c36c5da01d63d88136fb0ef4b7d26d
+R 4f3eb54a5cce9aa23292ec96983abdb3
 U drh
-Z 49129cd4194bac4dbb6265651119b7c1
+Z 1648e8675f24aa01764212367c0fba7b
 # Remove this line to create a well-formed Fossil manifest.
