@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.45.3.
-D 2024-04-12T15:10:03.750
+C Adjustment\sto\sEQP\soutput\sin\sone\stest\scase.
+D 2024-04-12T16:52:13.444
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1540,7 +1540,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
-F test/scanstatus2.test 317670daf7f3eef48a9598cb7800ba8eccab51949cf52bca3f7da3b83a0c1c8c
+F test/scanstatus2.test 2cb4d67ebbf578711dbf0377489a44759d0e21cdcce2fd55f0e044364961abec
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2160,8 +2160,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5266bb6dc99aebcad5380a053cf85ae933f3efba5db249d71400b75b09a8a79e
-R 734f4fc3746fe9ee314072be716b21d8
+P 119b3b3c9c9674c218d9c3bbb14b1d2f916d63f290526a3b0e1e17fbdf9e612b
+R c4d37ec4d4b175414d039c166b6f8ab8
 U drh
-Z 3fc5a291a7b20a4858cd521247090ed3
+Z 7849bcba37d32da907dabbaa779432ca
 # Remove this line to create a well-formed Fossil manifest.
