@@ -5143,6 +5143,10 @@ static int accessPayload(
       memset(pCur->aOverflow, 0, nOvfl*sizeof(Pgno));
       pCur->curFlags |= BTCF_ValidOvfl;
     }else{
+      /* Sanity check the validity of the overflow page cache */
+      assert( pCur->aOverflow[0]==nextPage || pCur->aOverflow[0]==0 );
+      assert( pCur->aOverflow[0]!=0 || pCur->aOverflow[offset/ovflSize]==0 );
+
       /* If the overflow page-list cache has been allocated and the
       ** entry for the first required overflow page is valid, skip
       ** directly to it.
