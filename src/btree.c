@@ -5624,6 +5624,23 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+#ifdef SQLITE_DEBUG
+/* The cursors is CURSOR_VALID and has BTCF_AtLast set.  Verify that
+** this flags are true for a consistent database.
+**
+** This routine is is called from within assert() statements only.
+** It is an internal verification routine and does not appear in production
+** builds.
+*/
+static int cursorIsAtLastEntry(BtCursor *pCur){
+  int ii;
+  for(ii=0; ii<pCur->iPage; ii++){
+    if( pCur->aiIdx[ii]!=pCur->apPage[ii]->nCell ) return 0;
+  }
+  return pCur->ix==pCur->pPage->nCell-1 && pCur->pPage->leaf!=0;
+}
+#endif
+
 /* Move the cursor to the last entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
 ** or set *pRes to 1 if the table is empty.
@@ -5652,18 +5669,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 
   /* If the cursor already points to the last entry, this is a no-op. */
   if( CURSOR_VALID==pCur->eState && (pCur->curFlags & BTCF_AtLast)!=0 ){
-#ifdef SQLITE_DEBUG
-    /* This block serves to assert() that the cursor really does point
-    ** to the last entry in the b-tree. */
-    int ii;
-    for(ii=0; ii<pCur->iPage; ii++){
-      assert( pCur->aiIdx[ii]==pCur->apPage[ii]->nCell );
-    }
-    assert( pCur->ix==pCur->pPage->nCell-1 || CORRUPT_DB );
-    testcase( pCur->ix!=pCur->pPage->nCell-1 );
-    /* ^-- dbsqlfuzz b92b72e4de80b5140c30ab71372ca719b8feb618 */
-    assert( pCur->pPage->leaf );
-#endif
+    assert( cursorIsAtLastEntry(pCur) || CORRUPT_DB );
     *pRes = 0;
     return SQLITE_OK;
   }
@@ -5716,6 +5722,7 @@ int sqlite3BtreeTableMoveto(
     }
     if( pCur->info.nKey<intKey ){
       if( (pCur->curFlags & BTCF_AtLast)!=0 ){
+        assert( cursorIsAtLastEntry(pCur) || CORRUPT_DB );
         *pRes = -1;
         return SQLITE_OK;
       }
