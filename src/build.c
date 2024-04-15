@@ -3008,9 +3008,12 @@ void sqlite3CreateView(
   ** on a view, even though views do not have rowids.  The following flag
   ** setting fixes this problem.  But the fix can be disabled by compiling
   ** with -DSQLITE_ALLOW_ROWID_IN_VIEW in case there are legacy apps that
-  ** depend upon the old buggy behavior. */
-#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
-  p->tabFlags |= TF_NoVisibleRowid;
+  ** depend upon the old buggy behavior.  The ability can also be toggled
+  ** using sqlite3_config(SQLITE_CONFIG_ROWID_IN_VIEW,...) */
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  p->tabFlags |= sqlite3Config.mNoVisibleRowid; /* Optional. Allow by default */
+#else
+  p->tabFlags |= TF_NoVisibleRowid;             /* Never allow rowid in view */
 #endif
 
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);

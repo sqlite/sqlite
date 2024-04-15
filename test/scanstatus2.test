@@ -247,7 +247,7 @@ QUERY (nCycle=nnn)
 ----SCAN rt2 (nCycle=nnn)
 ----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
 --SCAN rt1 (nCycle=nnn)
---CREATE AUTOMATIC INDEX ON v1(x1, cnt) (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON v1(x1, cnt, x1) (nCycle=nnn)
 --BLOOM FILTER ON v1 (x1=?)
 --SEARCH v1 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
