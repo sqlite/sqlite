@@ -2530,6 +2530,15 @@ struct Table {
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
 #define VisibleRowid(X) (((X)->tabFlags & TF_NoVisibleRowid)==0)
 
+/* Macro is true if the SQLITE_ALLOW_ROWID_IN_VIEW (mis-)feature is
+** available.  By default, this macro is false
+*/
+#ifndef SQLITE_ALLOW_ROWID_IN_VIEW
+# define ViewCanHaveRowid     0
+#else
+# define ViewCanHaveRowid     (sqlite3Config.mNoVisibleRowid==0)
+#endif
+
 /*
 ** Each foreign key constraint is an instance of the following structure.
 **
@@ -4245,6 +4254,11 @@ struct Sqlite3Config {
 #ifndef SQLITE_UNTESTABLE
   int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
 #endif
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  u32 mNoVisibleRowid;              /* TF_NoVisibleRowid if the ROWID_IN_VIEW
+                                    ** feature is disabled.  0 if rowids can
+                                    ** occur in views. */
+#endif
   int bLocaltimeFault;              /* True to fail localtime() calls */
   int (*xAltLocaltime)(const void*,void*); /* Alternative localtime() routine */
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
@@ -4700,10 +4714,13 @@ void sqlite3MutexWarnOnContention(sqlite3_mutex*);
 # define EXP754 (((u64)0x7ff)<<52)
 # define MAN754 ((((u64)1)<<52)-1)
 # define IsNaN(X) (((X)&EXP754)==EXP754 && ((X)&MAN754)!=0)
+# define IsOvfl(X) (((X)&EXP754)==EXP754)
   int sqlite3IsNaN(double);
+  int sqlite3IsOverflow(double);
 #else
-# define IsNaN(X)         0
-# define sqlite3IsNaN(X)  0
+# define IsNaN(X)             0
+# define sqlite3IsNaN(X)      0
+# define sqlite3IsOVerflow(X) 0
 #endif
 
 /*

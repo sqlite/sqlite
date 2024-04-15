@@ -218,9 +218,10 @@ Expr *sqlite3ExprSkipCollateAndLikely(Expr *pExpr){
       assert( pExpr->x.pList->nExpr>0 );
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
-    }else{
-      assert( pExpr->op==TK_COLLATE );
+    }else if( pExpr->op==TK_COLLATE ){
       pExpr = pExpr->pLeft;
+    }else{
+      break;
     }
   }  
   return pExpr;
@@ -2739,9 +2740,12 @@ int sqlite3ExprCanBeNull(const Expr *p){
       return 0;
     case TK_COLUMN:
       assert( ExprUseYTab(p) );
-      return ExprHasProperty(p, EP_CanBeNull) ||
-             NEVER(p->y.pTab==0) ||  /* Reference to column of index on expr */
-             (p->iColumn>=0
+      return ExprHasProperty(p, EP_CanBeNull)
+          || NEVER(p->y.pTab==0) /* Reference to column of index on expr */
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+          || (p->iColumn==XN_ROWID && IsView(p->y.pTab))
+#endif
+          || (p->iColumn>=0
               && p->y.pTab->aCol!=0 /* Possible due to prior error */
               && ALWAYS(p->iColumn<p->y.pTab->nCol)
               && p->y.pTab->aCol[p->iColumn].notNull==0);
