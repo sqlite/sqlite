@@ -1126,6 +1126,35 @@ static int SQLITE_TCLAPI f5tRegisterMatchinfo(
   return TCL_OK;
 }
 
+static void f5tFree(void *p) { sqlite3_free(p); }
+
+static void f5tScalarFunc(
+  sqlite3_context *ctx, 
+  int nArg, 
+  sqlite3_value **apArg
+){
+  const char *zText = (const char*)sqlite3_value_text(apArg[0]);
+  int nText = sqlite3_value_bytes(apArg[0]);
+  const char *zTok = (const char*)sqlite3_value_text(apArg[1]);
+  int nTok = sqlite3_value_bytes(apArg[1]);
+  unsigned char *aBuf = 0; 
+  int nBuf = 0;
+
+  assert( nArg==2 );
+
+  if( zTok==0 ) zTok = "";
+  nBuf = nTok + 1 + nText;
+  aBuf = (unsigned char*)sqlite3_malloc(nBuf);
+  if( aBuf==0 ){
+    sqlite3_result_error_nomem(ctx);
+  }else{
+    memcpy(aBuf, zTok, nTok+1);
+    memcpy(&aBuf[nTok+1], zText, nText);
+    sqlite3_result_blob(ctx, aBuf, nBuf, f5tFree);
+    sqlite3_result_subtype(ctx, SQLITE_FTS5_TOKENIZE_SUBTYPE);
+  }
+}
+
 static int SQLITE_TCLAPI f5tRegisterTok(
   void * clientData,
   Tcl_Interp *interp,
@@ -1145,10 +1174,16 @@ static int SQLITE_TCLAPI f5tRegisterTok(
   }
 
   rc = sqlite3Fts5TestRegisterTok(db, pApi);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "fts5tokenize", 2, SQLITE_UTF8, 0, 
+        f5tScalarFunc, 0, 0
+    );
+  }
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
     return TCL_ERROR;
   }
+  
   return TCL_OK;
 }
 

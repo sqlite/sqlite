@@ -399,6 +399,37 @@ static int fts5StorageInsertCallback(
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
 }
 
+#define IS_TOKENIZE_BLOB(pVal) ( \
+    sqlite3_value_subtype(pVal)==SQLITE_FTS5_TOKENIZE_SUBTYPE \
+ && sqlite3_value_type(pVal)==SQLITE_BLOB \
+)
+
+static const char *fts5UnpackTokenizeBlob(
+  sqlite3_value *pVal,
+  const char **pzT,
+  int *pnT
+){
+  const u8 *pBlob = sqlite3_value_blob(pVal);
+  int nBlob = sqlite3_value_bytes(pVal);
+  int ii;
+
+  assert( sqlite3_value_subtype(pVal)==SQLITE_FTS5_TOKENIZE_SUBTYPE );
+  assert( sqlite3_value_type(pVal)==SQLITE_BLOB );
+
+  for(ii=0; pBlob[ii]; ii++){
+    if( ii==nBlob ){
+      *pzT = 0;
+      *pnT = 0;
+      return 0;
+    }
+  }
+
+  *pzT = (const char*)&pBlob[ii+1];
+  *pnT = nBlob - ii - 1;
+  return (const char*)pBlob;
+}
+
+
 /*
 ** If a row with rowid iDel is present in the %_content table, add the
 ** delete-markers to the FTS index necessary to delete it. Do not actually
@@ -429,21 +460,27 @@ static int fts5StorageDeleteFromIndex(
   ctx.iCol = -1;
   for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
     if( pConfig->abUnindexed[iCol-1]==0 ){
-      const char *zText;
-      int nText;
+      const char *zText = 0;
+      const char *zTok = 0;
+      int nText = 0;
       assert( pSeek==0 || apVal==0 );
       assert( pSeek!=0 || apVal!=0 );
       if( pSeek ){
         zText = (const char*)sqlite3_column_text(pSeek, iCol);
         nText = sqlite3_column_bytes(pSeek, iCol);
       }else if( ALWAYS(apVal) ){
-        zText = (const char*)sqlite3_value_text(apVal[iCol-1]);
-        nText = sqlite3_value_bytes(apVal[iCol-1]);
+        sqlite3_value *pVal = apVal[iCol-1];
+        if( IS_TOKENIZE_BLOB(pVal) ){
+          zTok = fts5UnpackTokenizeBlob(pVal, &zText, &nText);
+        }else{
+          zText = (const char*)sqlite3_value_text(apVal[iCol-1]);
+          nText = sqlite3_value_bytes(apVal[iCol-1]);
+        }
       }else{
         continue;
       }
       ctx.szCol = 0;
-      rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, 
+      rc = sqlite3Fts5SpecTokenize(pConfig, zTok, FTS5_TOKENIZE_DOCUMENT, 
           zText, nText, (void*)&ctx, fts5StorageInsertCallback
       );
       p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
@@ -752,6 +789,30 @@ static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
   return rc;
 }
 
+int sqlite3Fts5UnpackTokenizeBlob(
+  Fts5Config *pConfig,
+  sqlite3_value *pVal,
+  Fts5TokenizerInst **ppTok,
+  char **pzText,
+  int *pbDel
+){
+  int rc = SQLITE_OK;
+  if( IS_TOKENIZE_BLOB(pVal) ){
+    const char *zTok = 0;
+    const char *zText = 0;
+    int nText = 0;
+    zTok = fts5UnpackTokenizeBlob(pVal, &zText, &nText);
+    rc = sqlite3Fts5ConfigFindTokenizer(pConfig, zTok, ppTok);
+    *pzText = sqlite3Fts5Mprintf(&rc, "%.*s", nText, zText);
+    *pbDel = 1;
+  }else{
+    *pzText = (char*)sqlite3_value_text(pVal);
+    *pbDel = 0;
+    *ppTok = pConfig->pTokList;
+  }
+  return rc;
+}
+
 /*
 ** Insert a new row into the FTS content table.
 */
@@ -775,7 +836,15 @@ int sqlite3Fts5StorageContentInsert(
     int i;                        /* Counter variable */
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
-      rc = sqlite3_bind_value(pInsert, i, apVal[i]);
+      sqlite3_value *pVal = apVal[i];
+      if( IS_TOKENIZE_BLOB(pVal) ){
+        const char *zT = 0;
+        int nT = 0;
+        fts5UnpackTokenizeBlob(pVal, &zT, &nT);
+        rc = sqlite3_bind_text(pInsert, i, zT, nT, SQLITE_STATIC);
+      }else{
+        rc = sqlite3_bind_value(pInsert, i, apVal[i]);
+      }
     }
     if( rc==SQLITE_OK ){
       sqlite3_step(pInsert);
@@ -810,13 +879,20 @@ int sqlite3Fts5StorageIndexInsert(
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
     if( pConfig->abUnindexed[ctx.iCol]==0 ){
-      const char *zText = (const char*)sqlite3_value_text(apVal[ctx.iCol+2]);
-      int nText = sqlite3_value_bytes(apVal[ctx.iCol+2]);
-      rc = sqlite3Fts5Tokenize(pConfig, 
-          FTS5_TOKENIZE_DOCUMENT,
-          zText, nText,
-          (void*)&ctx,
-          fts5StorageInsertCallback
+      sqlite3_value *pVal = apVal[ctx.iCol+2];
+      const char *zText = 0;
+      const char *zTok = 0;
+      int nText = 0;
+
+      if( IS_TOKENIZE_BLOB(pVal) ){
+        zTok = fts5UnpackTokenizeBlob(pVal, &zText, &nText);
+      }else{
+        zText = (const char*)sqlite3_value_text(apVal[ctx.iCol+2]);
+        nText = sqlite3_value_bytes(apVal[ctx.iCol+2]);
+      }
+      rc = sqlite3Fts5SpecTokenize(pConfig, 
+          zTok, FTS5_TOKENIZE_DOCUMENT, zText, nText, 
+          (void*)&ctx, fts5StorageInsertCallback
       );
     }
     sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);

@@ -143,6 +143,14 @@ struct Fts5Colset {
 
 typedef struct Fts5Config Fts5Config;
 
+typedef struct Fts5TokenizerInst Fts5TokenizerInst;
+struct Fts5TokenizerInst {
+  char *zSpec;
+  Fts5Tokenizer *pTok;
+  fts5_tokenizer *pTokApi;
+  Fts5TokenizerInst *pNext;
+};
+
 /*
 ** An instance of the following structure encodes all information that can
 ** be gleaned from the CREATE VIRTUAL TABLE statement.
@@ -184,6 +192,7 @@ typedef struct Fts5Config Fts5Config;
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
+  Fts5Global *pGlobal;            /* Database wide data */
   char *zDb;                      /* Database holding FTS index (e.g. "main") */
   char *zName;                    /* Name of FTS index */
   int nCol;                       /* Number of columns */
@@ -199,8 +208,7 @@ struct Fts5Config {
   int bTokendata;                 /* "tokendata=" option value (dflt==0) */
   int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
-  Fts5Tokenizer *pTok;
-  fts5_tokenizer *pTokApi;
+  Fts5TokenizerInst *pTokList;
   int bLock;                      /* True when table is preparing statement */
   int ePattern;                   /* FTS_PATTERN_XXX constant */
 
@@ -252,6 +260,21 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig);
 
 int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
+  const char *pText, int nText,   /* Text to tokenize */
+  void *pCtx,                     /* Context passed to xToken() */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
+);
+
+int sqlite3Fts5ConfigFindTokenizer(
+  Fts5Config *pConfig, 
+  const char *z, 
+  Fts5TokenizerInst **ppOut
+);
+
+int sqlite3Fts5SpecTokenize(
+  Fts5Config *pConfig,            /* FTS5 Configuration object */
+  const char *zSpec,              /* Tokenizer specification */
   int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
@@ -598,11 +621,8 @@ struct Fts5Table {
 };
 
 int sqlite3Fts5GetTokenizer(
-  Fts5Global*, 
-  const char **azArg,
-  int nArg,
   Fts5Config*,
-  char **pzErr
+  const char *zSpec
 );
 
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
@@ -713,6 +733,14 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
 int sqlite3Fts5StorageReset(Fts5Storage *p);
+
+int sqlite3Fts5UnpackTokenizeBlob(
+  Fts5Config *pConfig,
+  sqlite3_value *pVal,
+  Fts5TokenizerInst **ppTok,
+  char **pzText,
+  int *pbDel
+);
 
 /*
 ** End of interface to code in fts5_storage.c.

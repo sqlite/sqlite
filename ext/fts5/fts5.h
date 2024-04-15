@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+#define SQLITE_FTS5_TOKENIZE_SUBTYPE ((unsigned int)'T')
+
 /*************************************************************************
 ** CUSTOM AUXILIARY FUNCTIONS
 **

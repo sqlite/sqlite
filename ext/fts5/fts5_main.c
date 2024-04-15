@@ -115,7 +115,9 @@ struct Fts5TokenizerModule {
 struct Fts5FullTable {
   Fts5Table p;                    /* Public class members from fts5Int.h */
   Fts5Storage *pStorage;          /* Document store */
+#if 0
   Fts5Global *pGlobal;            /* Global (connection wide) data */
+#endif
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
   
@@ -378,7 +380,6 @@ static int fts5InitVtab(
   }
   if( rc==SQLITE_OK ){
     pTab->p.pConfig = pConfig;
-    pTab->pGlobal = pGlobal;
   }
 
   /* Open the index sub-system */
@@ -693,7 +694,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 
 static int fts5NewTransaction(Fts5FullTable *pTab){
   Fts5Cursor *pCsr;
-  for(pCsr=pTab->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+  for(pCsr=pTab->p.pConfig->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
     if( pCsr->base.pVtab==(sqlite3_vtab*)pTab ) return SQLITE_OK;
   }
   return sqlite3Fts5StorageReset(pTab->pStorage);
@@ -714,7 +715,7 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
     nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
     pCsr = (Fts5Cursor*)sqlite3_malloc64(nByte);
     if( pCsr ){
-      Fts5Global *pGlobal = pTab->pGlobal;
+      Fts5Global *pGlobal = pConfig->pGlobal;
       memset(pCsr, 0, (size_t)nByte);
       pCsr->aColumnSize = (int*)&pCsr[1];
       pCsr->pNext = pGlobal->pCsr;
@@ -801,7 +802,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
 
     fts5FreeCursorComponents(pCsr);
     /* Remove the cursor from the Fts5Global.pCsr list */
-    for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
+    for(pp=&pTab->p.pConfig->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
     *pp = pCsr->pNext;
 
     sqlite3_free(pCsr);
@@ -854,7 +855,7 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
 */
 static void fts5TripCursors(Fts5FullTable *pTab){
   Fts5Cursor *pCsr;
-  for(pCsr=pTab->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+  for(pCsr=pTab->p.pConfig->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
     if( pCsr->ePlan==FTS5_PLAN_MATCH
      && pCsr->base.pVtab==(sqlite3_vtab*)pTab 
     ){
@@ -1106,7 +1107,7 @@ static int fts5SpecialMatch(
 static Fts5Auxiliary *fts5FindAuxiliary(Fts5FullTable *pTab, const char *zName){
   Fts5Auxiliary *pAux;
 
-  for(pAux=pTab->pGlobal->pAux; pAux; pAux=pAux->pNext){
+  for(pAux=pTab->p.pConfig->pGlobal->pAux; pAux; pAux=pAux->pNext){
     if( sqlite3_stricmp(zName, pAux->zFunc)==0 ) return pAux;
   }
 
@@ -1277,7 +1278,14 @@ static int fts5FilterMethod(
         pRank = apVal[i];
         break;
       case 'M': {
-        const char *zText = (const char*)sqlite3_value_text(apVal[i]);
+        Fts5TokenizerInst *pInst = 0;
+        char *zText = 0;
+        int bDel = 0;
+
+        rc = sqlite3Fts5UnpackTokenizeBlob(
+            pConfig, apVal[i], &pInst, &zText, &bDel
+        );
+
         if( zText==0 ) zText = "";
         iCol = 0;
         do{
@@ -1290,6 +1298,7 @@ static int fts5FilterMethod(
           ** indicates that the MATCH expression is not a full text query,
           ** but a request for an internal parameter.  */
           rc = fts5SpecialMatch(pTab, pCsr, &zText[1]);
+          if( bDel ) sqlite3_free(zText);
           goto filter_out;
         }else{
           char **pzErr = &pTab->p.base.zErrMsg;
@@ -1298,9 +1307,10 @@ static int fts5FilterMethod(
             rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
             pExpr = 0;
           }
-          if( rc!=SQLITE_OK ) goto filter_out;
         }
 
+        if( bDel ) sqlite3_free(zText);
+        if( rc!=SQLITE_OK ) goto filter_out;
         break;
       }
       case 'L':
@@ -2861,39 +2871,93 @@ static int fts5FindTokenizer(
 }
 
 int sqlite3Fts5GetTokenizer(
-  Fts5Global *pGlobal, 
-  const char **azArg,
-  int nArg,
   Fts5Config *pConfig,
-  char **pzErr
+  const char *zSpec
 ){
-  Fts5TokenizerModule *pMod;
   int rc = SQLITE_OK;
+  char **pzErr = pConfig->pzErrmsg;
+  const char **azArg = 0;
+  char *pDel = 0;
+  sqlite3_int64 nArg = 0;
 
-  pMod = fts5LocateTokenizer(pGlobal, nArg==0 ? 0 : azArg[0]);
-  if( pMod==0 ){
-    assert( nArg>0 );
-    rc = SQLITE_ERROR;
-    *pzErr = sqlite3_mprintf("no such tokenizer: %s", azArg[0]);
-  }else{
-    rc = pMod->x.xCreate(
-        pMod->pUserData, (azArg?&azArg[1]:0), (nArg?nArg-1:0), &pConfig->pTok
-    );
-    pConfig->pTokApi = &pMod->x;
-    if( rc!=SQLITE_OK ){
-      if( pzErr ) *pzErr = sqlite3_mprintf("error in tokenizer constructor");
-    }else{
-      pConfig->ePattern = sqlite3Fts5TokenizerPattern(
-          pMod->x.xCreate, pConfig->pTok
-      );
+  assert( pzErr || (zSpec==0 && pConfig->pTokList==0) );
+  if( zSpec ){
+    const char *p = (const char*)zSpec;
+    char *pSpace = 0;
+
+    nArg = strlen(zSpec) + 1;
+    pDel = sqlite3Fts5MallocZero(&rc, nArg * 2);
+    pSpace = pDel;
+    azArg = (const char**)sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
+
+    if( azArg && pSpace ){
+      for(nArg=0; p && *p; nArg++){
+        const char *p2 = fts5ConfigSkipWhitespace(p);
+        if( *p2=='\'' ){
+          p = fts5ConfigSkipLiteral(p2);
+        }else{
+          p = fts5ConfigSkipBareword(p2);
+        }
+        if( p ){
+          memcpy(pSpace, p2, p-p2);
+          azArg[nArg] = pSpace;
+          sqlite3Fts5Dequote(pSpace);
+          pSpace += (p - p2) + 1;
+          p = fts5ConfigSkipWhitespace(p);
+        }
+      }
+      if( p==0 ){
+        *pzErr= sqlite3_mprintf("parse error in tokenize directive");
+        rc = SQLITE_ERROR;
+      }
     }
   }
 
-  if( rc!=SQLITE_OK ){
-    pConfig->pTokApi = 0;
-    pConfig->pTok = 0;
+  if( rc==SQLITE_OK ){
+    Fts5TokenizerModule *pMod;
+    pMod = fts5LocateTokenizer(pConfig->pGlobal, nArg==0 ? 0 : azArg[0]);
+    if( pMod==0 ){
+      assert( nArg>0 );
+      rc = SQLITE_ERROR;
+      *pzErr = sqlite3_mprintf("no such tokenizer: %s", azArg[0]);
+    }else{
+      int nSpec = zSpec ? strlen(zSpec) + 1 : 0;
+      int nByte = sizeof(Fts5TokenizerInst) + nSpec;
+      Fts5TokenizerInst *pNew = sqlite3Fts5MallocZero(&rc, nByte);
+      if( pNew ){
+        if( zSpec ){
+          pNew->zSpec = (char*)&pNew[1];
+          memcpy(pNew->zSpec, zSpec, nSpec);
+        }
+        rc = pMod->x.xCreate(
+            pMod->pUserData, (azArg?&azArg[1]:0), (nArg?nArg-1:0), &pNew->pTok
+        );
+        pNew->pTokApi = &pMod->x;
+        if( rc!=SQLITE_OK ){
+          if( pzErr ){
+            *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+          }
+        }else if( pConfig->pTokList==0 ){
+          pConfig->ePattern = sqlite3Fts5TokenizerPattern(
+              pMod->x.xCreate, pNew->pTok
+          );
+        }
+      }
+      if( rc==SQLITE_OK ){
+        if( pConfig->pTokList ){
+          pNew->pNext = pConfig->pTokList->pNext;
+          pConfig->pTokList->pNext = pNew;
+        }else{
+          pConfig->pTokList = pNew;
+        }
+      }else{
+        sqlite3_free(pNew);
+      }
+    }
   }
 
+  sqlite3_free(azArg);
+  sqlite3_free(pDel);
   return rc;
 }
 

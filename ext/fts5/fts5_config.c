@@ -224,6 +224,33 @@ static int fts5ConfigSetEnum(
   return iVal<0 ? SQLITE_ERROR : SQLITE_OK;
 }
 
+int sqlite3Fts5ConfigFindTokenizer(
+  Fts5Config *pConfig, 
+  const char *z, 
+  Fts5TokenizerInst **ppOut
+){
+  Fts5TokenizerInst *pRet = 0;
+  int rc = SQLITE_OK;
+
+  assert( pConfig->pzErrmsg );
+
+  /* Search for an existing tokenizer that matches this spec */
+  for(pRet=pConfig->pTokList; pRet; pRet=pRet->pNext){
+    if( strcmp(pRet->zSpec, z)==0 ) break;
+  }
+
+  if( pRet==0 ){
+    /* No tokenizer found - create one. */
+    rc = sqlite3Fts5GetTokenizer(pConfig, z);
+    if( rc==SQLITE_OK ){
+      pRet = pConfig->pTokList->pNext;
+    }
+  }
+
+  if( ppOut ) *ppOut = pRet;
+  return rc;
+}
+
 /*
 ** Parse a "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
@@ -296,46 +323,15 @@ static int fts5ConfigParseSpecial(
   }
 
   if( sqlite3_strnicmp("tokenize", zCmd, nCmd)==0 ){
-    const char *p = (const char*)zArg;
-    sqlite3_int64 nArg = strlen(zArg) + 1;
-    char **azArg = sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
-    char *pDel = sqlite3Fts5MallocZero(&rc, nArg * 2);
-    char *pSpace = pDel;
-
-    if( azArg && pSpace ){
-      if( pConfig->pTok ){
-        *pzErr = sqlite3_mprintf("multiple tokenize=... directives");
-        rc = SQLITE_ERROR;
-      }else{
-        for(nArg=0; p && *p; nArg++){
-          const char *p2 = fts5ConfigSkipWhitespace(p);
-          if( *p2=='\'' ){
-            p = fts5ConfigSkipLiteral(p2);
-          }else{
-            p = fts5ConfigSkipBareword(p2);
-          }
-          if( p ){
-            memcpy(pSpace, p2, p-p2);
-            azArg[nArg] = pSpace;
-            sqlite3Fts5Dequote(pSpace);
-            pSpace += (p - p2) + 1;
-            p = fts5ConfigSkipWhitespace(p);
-          }
-        }
-        if( p==0 ){
-          *pzErr = sqlite3_mprintf("parse error in tokenize directive");
-          rc = SQLITE_ERROR;
-        }else{
-          rc = sqlite3Fts5GetTokenizer(pGlobal, 
-              (const char**)azArg, (int)nArg, pConfig,
-              pzErr
-          );
-        }
-      }
+    if( pConfig->pTokList ){
+      *pzErr = sqlite3_mprintf("multiple tokenize=... directives");
+      rc = SQLITE_ERROR;
+    }else{
+      assert( pConfig->pzErrmsg==0 );
+      pConfig->pzErrmsg = pzErr;
+      rc = sqlite3Fts5GetTokenizer(pConfig, zArg);
+      pConfig->pzErrmsg = 0;
     }
-
-    sqlite3_free(azArg);
-    sqlite3_free(pDel);
     return rc;
   }
 
@@ -410,16 +406,6 @@ static int fts5ConfigParseSpecial(
 
   *pzErr = sqlite3_mprintf("unrecognized option: \"%.*s\"", nCmd, zCmd);
   return SQLITE_ERROR;
-}
-
-/*
-** Allocate an instance of the default tokenizer ("simple") at 
-** Fts5Config.pTokenizer. Return SQLITE_OK if successful, or an SQLite error
-** code if an error occurs.
-*/
-static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
-  assert( pConfig->pTok==0 && pConfig->pTokApi==0 );
-  return sqlite3Fts5GetTokenizer(pGlobal, 0, 0, pConfig, 0);
 }
 
 /*
@@ -555,6 +541,7 @@ int sqlite3Fts5ConfigParse(
   if( pRet==0 ) return SQLITE_NOMEM;
   memset(pRet, 0, sizeof(Fts5Config));
   pRet->db = db;
+  pRet->pGlobal = pGlobal;
   pRet->iCookie = -1;
 
   nByte = nArg * (sizeof(char*) + sizeof(u8));
@@ -643,8 +630,8 @@ int sqlite3Fts5ConfigParse(
   /* If a tokenizer= option was successfully parsed, the tokenizer has
   ** already been allocated. Otherwise, allocate an instance of the default
   ** tokenizer (unicode61) now.  */
-  if( rc==SQLITE_OK && pRet->pTok==0 ){
-    rc = fts5ConfigDefaultTokenizer(pGlobal, pRet);
+  if( rc==SQLITE_OK && pRet->pTokList==0 ){
+    rc = sqlite3Fts5GetTokenizer(pRet, 0);
   }
 
   /* If no zContent option was specified, fill in the default values. */
@@ -682,17 +669,27 @@ int sqlite3Fts5ConfigParse(
   return rc;
 }
 
+static void fts5ConfigFreeTokenizers(Fts5Config *pConfig){
+  Fts5TokenizerInst *p = pConfig->pTokList;
+  while( p ){
+    Fts5TokenizerInst *pNext = p->pNext;
+    p->pTokApi->xDelete(p->pTok);
+    sqlite3_free(p);
+    p = pNext;
+  }
+  pConfig->pTokList = 0;
+}
+
 /*
 ** Free the configuration object passed as the only argument.
 */
 void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
   if( pConfig ){
     int i;
-    if( pConfig->pTok ){
-      pConfig->pTokApi->xDelete(pConfig->pTok);
-    }
+    fts5ConfigFreeTokenizers(pConfig);
     sqlite3_free(pConfig->zDb);
     sqlite3_free(pConfig->zName);
+    fts5ConfigFreeTokenizers(pConfig);
     for(i=0; i<pConfig->nCol; i++){
       sqlite3_free(pConfig->azCol[i]);
     }
@@ -765,10 +762,30 @@ int sqlite3Fts5Tokenize(
   void *pCtx,                     /* Context passed to xToken() */
   int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
 ){
-  if( pText==0 ) return SQLITE_OK;
-  return pConfig->pTokApi->xTokenize(
-      pConfig->pTok, pCtx, flags, pText, nText, xToken
-  );
+  if( pText ){
+    Fts5TokenizerInst *p = pConfig->pTokList;
+    return p->pTokApi->xTokenize(p->pTok, pCtx, flags, pText, nText, xToken);
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3Fts5SpecTokenize(
+  Fts5Config *pConfig,            /* FTS5 Configuration object */
+  const char *zSpec,              /* Tokenizer specification */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
+  const char *pText, int nText,   /* Text to tokenize */
+  void *pCtx,                     /* Context passed to xToken() */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
+){
+  if( pText ){
+    Fts5TokenizerInst *p = pConfig->pTokList;
+    if( zSpec ){
+      int rc = sqlite3Fts5ConfigFindTokenizer(pConfig, zSpec, &p);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    return p->pTokApi->xTokenize(p->pTok, pCtx, flags, pText, nText, xToken);
+  }
+  return SQLITE_OK;
 }
 
 /*
