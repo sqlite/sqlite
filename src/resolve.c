@@ -632,6 +632,11 @@ static int lookupName(
      && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
     ){
       cnt = cntTab;
+#if SQLITE_ALLOW_ROWID_IN_VIEW+0==2
+      if( pMatch->pTab!=0 && IsView(pMatch->pTab) ){
+        eNewExprOp = TK_NULL;
+      }
+#endif
       if( pMatch->fg.isNestedFrom==0 ) pExpr->iColumn = -1;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
     }
@@ -1349,6 +1354,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_PartIdx );
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
+        assert( pExpr->x.pSelect );
         if( pNC->ncFlags & NC_SelfRef ){
           notValidImpl(pParse, pNC, "subqueries", pExpr, pExpr);
         }else{
@@ -1357,6 +1363,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
           ExprSetProperty(pExpr, EP_VarSelect);
+          pExpr->x.pSelect->selFlags |= SF_Correlated;
         }
         pNC->ncFlags |= NC_Subquery;
       }
