@@ -5144,7 +5144,9 @@ static int accessPayload(
       pCur->curFlags |= BTCF_ValidOvfl;
     }else{
       /* Sanity check the validity of the overflow page cache */
-      assert( pCur->aOverflow[0]==nextPage || pCur->aOverflow[0]==0 );
+      assert( pCur->aOverflow[0]==nextPage
+           || pCur->aOverflow[0]==0
+           || CORRUPT_DB );
       assert( pCur->aOverflow[0]!=0 || pCur->aOverflow[offset/ovflSize]==0 );
 
       /* If the overflow page-list cache has been allocated and the

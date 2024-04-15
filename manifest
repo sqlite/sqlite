@@ -1,5 +1,5 @@
-C If\sa\sbuild\sfails\sin\stestrunner.tcl,\sdo\snot\sattempt\sto\srun\sthe\sjobs\sthat\ndepend\son\sthat\sbuild.\s\sInstead,\sreport\sthose\sjobs\sas\shaving\sbeen\sskipped.
-D 2024-04-12T18:46:34.309
+C The\sfirst\sassert()\sadded\sin\s[0ebc65481f4a3e79]\sis\snot\snecessarily\strue\sin\sa\ncorrupt\sdatabase\sfile.\s\sSo\sadd\sa\sterm\sto\smake\sit\strue.
+D 2024-04-15T20:43:21.644
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -689,7 +689,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 8c2d32661d9b3333b5e2192a9baf0f34aaf50224c7e0130bdb96a1e5dee9009c
+F src/btree.c 71b80e77b255144db47180fda8138740608e382a44231942464029b1a45fc036
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 02f5b25ca854c83b5015cb02b8c9ab236c60b1795528675aee8a5070e58da52a
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dede50d9e7b6942df9f7b00fbfeaa2103c36c5da01d63d88136fb0ef4b7d26d
-R 4f3eb54a5cce9aa23292ec96983abdb3
+P b40580be719a129ecd1aa3c69d1086c967d063920fdd48617c864e73c059abc1
+R 8fc5f990e4d938881ab9bd286e3b11d3
 U drh
-Z 1648e8675f24aa01764212367c0fba7b
+Z fa0c07b8b0de569fa969f3e2656bc2dc
 # Remove this line to create a well-formed Fossil manifest.
