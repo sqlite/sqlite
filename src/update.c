@@ -921,6 +921,9 @@ void sqlite3Update(
       }
     }
     if( chngRowid==0 && pPk==0 ){
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+      if( isView ) sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
+#endif
       sqlite3VdbeAddOp2(v, OP_Copy, regOldRowid, regNewRowid);
     }
   }
