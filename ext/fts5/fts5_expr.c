@@ -141,6 +141,7 @@ struct Fts5Parse {
   Fts5ExprPhrase **apPhrase;      /* Array of all phrases */
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
   int bPhraseToAnd;               /* Convert "a+b" to "a AND b" */
+  Fts5TokenizerInst *pTok;
 };
 
 /*
@@ -255,6 +256,7 @@ static void fts5ParseFree(void *p){ sqlite3_free(p); }
 
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig,            /* FTS5 Configuration */
+  Fts5TokenizerInst *pTok,        /* Tokenizer to use, or NULL */
   int bPhraseToAnd,
   int iCol,
   const char *zExpr,              /* Expression text */
@@ -272,6 +274,7 @@ int sqlite3Fts5ExprNew(
   *pzErr = 0;
   memset(&sParse, 0, sizeof(sParse));
   sParse.bPhraseToAnd = bPhraseToAnd;
+  sParse.pTok = pTok ? pTok : pConfig->pTokList;
   pEngine = sqlite3Fts5ParserAlloc(fts5ParseAlloc);
   if( pEngine==0 ){ return SQLITE_NOMEM; }
   sParse.pConfig = pConfig;
@@ -407,7 +410,9 @@ int sqlite3Fts5ExprPattern(
         }
       }
       zExpr[iOut] = '\0';
-      rc = sqlite3Fts5ExprNew(pConfig, bAnd, iCol, zExpr, pp,pConfig->pzErrmsg);
+      rc = sqlite3Fts5ExprNew(
+          pConfig, 0, bAnd, iCol, zExpr, pp,pConfig->pzErrmsg
+      );
     }else{
       *pp = 0;
     }
@@ -1843,11 +1848,12 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 
   rc = fts5ParseStringFromToken(pToken, &z);
   if( rc==SQLITE_OK ){
+    Fts5TokenizerInst *p = pParse->pTok;
     int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_PREFIX : 0);
     int n;
     sqlite3Fts5Dequote(z);
     n = (int)strlen(z);
-    rc = sqlite3Fts5Tokenize(pConfig, flags, z, n, &sCtx, fts5ParseTokenize);
+    rc = p->pTokApi->xTokenize(p->pTok, &sCtx, flags, z, n, fts5ParseTokenize);
   }
   sqlite3_free(z);
   if( rc || (rc = sCtx.rc) ){
@@ -2777,7 +2783,7 @@ static void fts5ExprFunction(
 
   rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5ExprNew(pConfig, 0, pConfig->nCol, zExpr, &pExpr, &zErr);
+    rc = sqlite3Fts5ExprNew(pConfig, 0, 0, pConfig->nCol, zExpr, &pExpr, &zErr);
   }
   if( rc==SQLITE_OK ){
     char *zText;

@@ -1,0 +1,137 @@
+# 2024 Apr 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the tokenize-blob functionality.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5tokenizer3
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set ::constructor_count 0
+proc tcl_create1 {args} { incr ::constructor_count ; return "tcl_tokenize1" }
+proc tcl_create2 {args} { incr ::constructor_count ; return "tcl_tokenize2" }
+sqlite3_fts5_create_tokenizer db tcl1 tcl_create1
+sqlite3_fts5_create_tokenizer db tcl2 tcl_create2
+
+proc tcl_tokenize1 {tflags text} {
+  foreach t [split $text] {
+    sqlite3_fts5_token [string toupper $t] 0 0
+  }
+  return 0
+}
+proc tcl_tokenize2 {tflags text} {
+  foreach t [split $text] {
+    sqlite3_fts5_token [string tolower $t] 0 0
+  }
+  return 0
+}
+
+sqlite3_fts5_register_fts5tokenize db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, tokenize = tcl1, content=);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(x1, instance);
+  INSERT INTO x1 VALUES('Abc Def');
+}
+
+do_execsql_test 1.1 {
+  SELECT hex( fts5tokenize('Ghi Jkl', 'tcl2') );
+} {74636C3200476869204A6B6C}
+
+do_execsql_test 1.2 {
+  INSERT INTO x1 VALUES(fts5tokenize('Ghi Jkl', 'tcl2'));
+}
+
+do_execsql_test 1.3 {
+  SELECT DISTINCT term FROM v1 ORDER BY 1
+} {ABC DEF ghi jkl}
+
+do_execsql_test 1.4 {
+  INSERT INTO x1(x1, rowid, x) VALUES('delete', 2, 'Ghi Jkl');
+  SELECT DISTINCT term FROM v1 ORDER BY 1
+} {ABC DEF ghi jkl}
+
+do_execsql_test 1.5 {
+  INSERT INTO x1(x1, rowid, x) 
+    VALUES('delete', 2, fts5tokenize('Ghi Jkl', 'tcl2'));
+  SELECT DISTINCT term FROM v1 ORDER BY 1
+} {ABC DEF}
+
+do_execsql_test 1.6 {
+  INSERT INTO x1(x1) VALUES('delete-all');
+  INSERT INTO x1 VALUES('Abc Def');
+  INSERT INTO x1 VALUES(fts5tokenize('Ghi Jkl', 'tcl2'));
+} {}
+
+do_execsql_test 1.7 {
+  SELECT rowid FROM x1('Ghi Jkl');
+} {}
+do_execsql_test 1.8 {
+  SELECT rowid FROM x1(fts5tokenize('Abc Def', 'tcl1'));
+} {1}
+do_execsql_test 1.9 {
+  SELECT rowid FROM x1(fts5tokenize('Ghi Jkl', 'tcl2'));
+} {2}
+
+#-------------------------------------------------------------------------
+# Error conditions.
+#
+do_catchsql_test 1.10 {
+  INSERT INTO x1 VALUES(fts5tokenize('Mno Pqr', 'tcl3'));
+} {1 {no such tokenizer: tcl3}}
+do_catchsql_test 1.11 {
+  INSERT INTO x1(x1, rowid, x) 
+    VALUES('delete', 2, fts5tokenize('Mno Pqr', 'tcl3'));
+} {1 {no such tokenizer: tcl3}}
+do_catchsql_test 1.12 {
+  SELECT rowid FROM x1(fts5tokenize('Mno Pqr', 'tcl3'));
+} {1 {no such tokenizer: tcl3}}
+
+do_catchsql_test 1.13 {
+  INSERT INTO x1 VALUES(fts5tokenize('Mno Pqr', 'unicode61 option'));
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 1.14 {
+  INSERT INTO x1(x1, rowid, x) 
+    VALUES('delete', 2, fts5tokenize('Mno Pqr', 'unicode61 option'));
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 1.15 {
+  SELECT rowid FROM x1(fts5tokenize('Mno Pqr', 'unicode61 option'));
+} {1 {error in tokenizer constructor}}
+
+# Check the tokenizer cache has been working.
+#
+do_test 1.16 {
+  set ::constructor_count
+} 2
+proc tcl_create4 {args} { incr ::constructor_count ; return "tcl_tokenize2" }
+sqlite3_fts5_create_tokenizer db tcl4 tcl_create4
+do_execsql_test 1.17 {
+  SELECT rowid FROM x1(fts5tokenize('Mno Pqr', 'tcl4'));
+}
+do_test 1.18 {
+  set ::constructor_count
+} 3
+do_execsql_test 1.19 {
+  SELECT rowid FROM x1(fts5tokenize('Mno Pqr', 'tcl2'));
+}
+do_test 1.20 {
+  set ::constructor_count
+} 3
+
+
+finish_test
+

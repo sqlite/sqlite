@@ -1285,6 +1285,7 @@ static int fts5FilterMethod(
         rc = sqlite3Fts5UnpackTokenizeBlob(
             pConfig, apVal[i], &pInst, &zText, &bDel
         );
+        if( rc!=SQLITE_OK ) goto filter_out;
 
         if( zText==0 ) zText = "";
         iCol = 0;
@@ -1302,7 +1303,7 @@ static int fts5FilterMethod(
           goto filter_out;
         }else{
           char **pzErr = &pTab->p.base.zErrMsg;
-          rc = sqlite3Fts5ExprNew(pConfig, 0, iCol, zText, &pExpr, pzErr);
+          rc = sqlite3Fts5ExprNew(pConfig, pInst, 0, iCol, zText, &pExpr,pzErr);
           if( rc==SQLITE_OK ){
             rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
             pExpr = 0;

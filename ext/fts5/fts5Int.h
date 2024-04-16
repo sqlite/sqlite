@@ -765,6 +765,7 @@ struct Fts5Token {
 /* Parse a MATCH expression. */
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
+  Fts5TokenizerInst*,
   int bPhraseToAnd,
   int iCol,                       /* Column on LHS of MATCH operator */
   const char *zExpr,

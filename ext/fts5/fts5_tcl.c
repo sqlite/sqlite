@@ -1175,8 +1175,8 @@ static int SQLITE_TCLAPI f5tRegisterTok(
 
   rc = sqlite3Fts5TestRegisterTok(db, pApi);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "fts5tokenize", 2, SQLITE_UTF8, 0, 
-        f5tScalarFunc, 0, 0
+    rc = sqlite3_create_function(db, "fts5tokenize", 2, 
+        SQLITE_UTF8 | SQLITE_RESULT_SUBTYPE, 0, f5tScalarFunc, 0, 0
     );
   }
   if( rc!=SQLITE_OK ){
