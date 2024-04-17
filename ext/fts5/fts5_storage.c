@@ -399,11 +399,43 @@ static int fts5StorageInsertCallback(
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
 }
 
-#define IS_TOKENIZE_BLOB(pVal) ( \
-    sqlite3_value_subtype(pVal)==SQLITE_FTS5_TOKENIZE_SUBTYPE \
- && sqlite3_value_type(pVal)==SQLITE_BLOB \
-)
+/*
+** If the value passed as the third argument is a tokenizer blob, and the
+** Fts5Config object indicates that the table is a contentless-table, 
+** return non-zero.
+**
+** Or, if the value passed as the third argument is a tokenizer blob but
+** the table is not a contentless table, set *pRc to SQLITE_ERROR and leave
+** an error message in the Fts5Config object. Return 0 in this case.
+**
+** Finally, if the value is not a tokenizer blob, return 0.
+*/
+static int fts5IsTokenizeBlob(
+  int *pRc, 
+  Fts5Config *pConfig, 
+  sqlite3_value *pVal
+){
+  assert( *pRc==SQLITE_OK );
+  if( sqlite3_value_subtype(pVal)==SQLITE_FTS5_TOKENIZE_SUBTYPE 
+   && sqlite3_value_type(pVal)==SQLITE_BLOB 
+  ){
+    if( pConfig->eContent==FTS5_CONTENT_NONE ) return 1;
 
+    *pRc = SQLITE_ERROR;
+    *pConfig->pzErrmsg = sqlite3_mprintf(
+        "table does not support alternative tokenizers"
+    );
+  }
+  return 0;
+}
+
+/*
+** Value pVal is guaranteed to be a tokenize-blob. This function unpacks
+** the blob and returns a pointer to the nul-terminated tokenizer
+** specification. It also sets output parameter (*pzT) to point to the
+** start of the utf-8 text value (not nul-terminated) and (*pnT) to the
+** number of valid bytes in this buffer.
+*/
 static const char *fts5UnpackTokenizeBlob(
   sqlite3_value *pVal,
   const char **pzT,
@@ -470,7 +502,7 @@ static int fts5StorageDeleteFromIndex(
         nText = sqlite3_column_bytes(pSeek, iCol);
       }else if( ALWAYS(apVal) ){
         sqlite3_value *pVal = apVal[iCol-1];
-        if( IS_TOKENIZE_BLOB(pVal) ){
+        if( fts5IsTokenizeBlob(&rc, pConfig, pVal) ){
           zTok = fts5UnpackTokenizeBlob(pVal, &zText, &nText);
         }else{
           zText = (const char*)sqlite3_value_text(apVal[iCol-1]);
@@ -480,12 +512,14 @@ static int fts5StorageDeleteFromIndex(
         continue;
       }
       ctx.szCol = 0;
-      rc = sqlite3Fts5SpecTokenize(pConfig, zTok, FTS5_TOKENIZE_DOCUMENT, 
-          zText, nText, (void*)&ctx, fts5StorageInsertCallback
-      );
-      p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
-      if( p->aTotalSize[iCol-1]<0 ){
-        rc = FTS5_CORRUPT;
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts5SpecTokenize(pConfig, zTok, FTS5_TOKENIZE_DOCUMENT, 
+            zText, nText, (void*)&ctx, fts5StorageInsertCallback
+        );
+        p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
+        if( p->aTotalSize[iCol-1]<0 ){
+          rc = FTS5_CORRUPT;
+        }
       }
     }
   }
@@ -789,15 +823,27 @@ static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
   return rc;
 }
 
+/*
+** This function is used to extract text from an sqlite3_value to use
+** as an fts5 query string. It also finds the required tokenizer to use
+** for tokenizing query terms.
+**
+** If successful, SQLITE_OK is returned, output variable (*ppTok) is set
+** to point to the required tokenizer instance, (*pzText) points to a
+** nul-terminated buffer containing the query string as utf-8 text, and
+** (*pbDel) is set to true if the caller must sqlite3_free(*pzText) at
+** some point in the future. Or, if an error occurs, an SQLite error
+** code is returned.
+*/
 int sqlite3Fts5UnpackTokenizeBlob(
   Fts5Config *pConfig,
   sqlite3_value *pVal,
   Fts5TokenizerInst **ppTok,
   char **pzText,
-  int *pbDel
+  int *pbDel                      /* OUT: Set to true if sqlite3_free() req. */
 ){
   int rc = SQLITE_OK;
-  if( IS_TOKENIZE_BLOB(pVal) ){
+  if( fts5IsTokenizeBlob(&rc, pConfig, pVal) ){
     const char *zTok = 0;
     const char *zText = 0;
     int nText = 0;
@@ -837,12 +883,12 @@ int sqlite3Fts5StorageContentInsert(
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       sqlite3_value *pVal = apVal[i];
-      if( IS_TOKENIZE_BLOB(pVal) ){
+      if( fts5IsTokenizeBlob(&rc, pConfig, pVal) ){
         const char *zT = 0;
         int nT = 0;
         fts5UnpackTokenizeBlob(pVal, &zT, &nT);
         rc = sqlite3_bind_text(pInsert, i, zT, nT, SQLITE_STATIC);
-      }else{
+      }else if( rc==SQLITE_OK ){
         rc = sqlite3_bind_value(pInsert, i, apVal[i]);
       }
     }
@@ -884,16 +930,18 @@ int sqlite3Fts5StorageIndexInsert(
       const char *zTok = 0;
       int nText = 0;
 
-      if( IS_TOKENIZE_BLOB(pVal) ){
+      if( fts5IsTokenizeBlob(&rc, pConfig, pVal) ){
         zTok = fts5UnpackTokenizeBlob(pVal, &zText, &nText);
       }else{
         zText = (const char*)sqlite3_value_text(apVal[ctx.iCol+2]);
         nText = sqlite3_value_bytes(apVal[ctx.iCol+2]);
       }
-      rc = sqlite3Fts5SpecTokenize(pConfig, 
-          zTok, FTS5_TOKENIZE_DOCUMENT, zText, nText, 
-          (void*)&ctx, fts5StorageInsertCallback
-      );
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts5SpecTokenize(pConfig, 
+            zTok, FTS5_TOKENIZE_DOCUMENT, zText, nText, 
+            (void*)&ctx, fts5StorageInsertCallback
+        );
+      }
     }
     sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
     p->aTotalSize[ctx.iCol] += (i64)ctx.szCol;

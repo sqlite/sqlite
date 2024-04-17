@@ -224,10 +224,15 @@ static int fts5ConfigSetEnum(
   return iVal<0 ? SQLITE_ERROR : SQLITE_OK;
 }
 
+/*
+** Locate a tokenizer instance with a specification matching the second
+** argument. Create a new tokenizer if one can not be found. Return SQLITE_OK
+** if successful, or an SQLite error code otherwise.
+*/
 int sqlite3Fts5ConfigFindTokenizer(
-  Fts5Config *pConfig, 
-  const char *z, 
-  Fts5TokenizerInst **ppOut
+  Fts5Config *pConfig,            /* Table configuration */
+  const char *z,                  /* Requested tokenizer specification */
+  Fts5TokenizerInst **ppOut       /* OUT: Tokenizer instance */
 ){
   Fts5TokenizerInst *pRet = 0;
   int rc = SQLITE_OK;
@@ -669,6 +674,9 @@ int sqlite3Fts5ConfigParse(
   return rc;
 }
 
+/*
+** Free all tokenizer instances in the list starting at Fts5Config.pTokList.
+*/
 static void fts5ConfigFreeTokenizers(Fts5Config *pConfig){
   Fts5TokenizerInst *p = pConfig->pTokList;
   while( p ){
@@ -769,6 +777,10 @@ int sqlite3Fts5Tokenize(
   return SQLITE_OK;
 }
 
+/*
+** Like sqlite3Fts5Tokenize(), but using the tokenizer defined by 
+** specification zSpec.
+*/
 int sqlite3Fts5SpecTokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
   const char *zSpec,              /* Tokenizer specification */

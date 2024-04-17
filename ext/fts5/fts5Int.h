@@ -143,9 +143,13 @@ struct Fts5Colset {
 
 typedef struct Fts5Config Fts5Config;
 
+/*
+** All instantiated tokenizers are stored in a list of the following objects,
+** starting at Fts5Config.pTokList.
+*/
 typedef struct Fts5TokenizerInst Fts5TokenizerInst;
 struct Fts5TokenizerInst {
-  char *zSpec;
+  char *zSpec;                    /* Tokenizer specification */
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
   Fts5TokenizerInst *pNext;

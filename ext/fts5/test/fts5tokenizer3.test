@@ -132,6 +132,27 @@ do_test 1.20 {
   set ::constructor_count
 } 3
 
+#-------------------------------------------------------------------------
+# non-contentless tables.
+#
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x);
+  CREATE VIRTUAL TABLE x2 USING fts5(x);
+  CREATE VIRTUAL TABLE x3 USING fts5(x, content=t1);
+}
+
+do_catchsql_test 2.1 {
+  INSERT INTO x2 VALUES( fts5tokenize('hello world', 'tcl2') );
+} {1 {table does not support alternative tokenizers}}
+do_catchsql_test 2.2 {
+  INSERT INTO x3 VALUES( fts5tokenize('hello world', 'tcl2') );
+} {1 {table does not support alternative tokenizers}}
+do_catchsql_test 2.3 {
+  SELECT * FROM x2( fts5tokenize('hello world', 'tcl2') );
+} {1 {table does not support alternative tokenizers}}
+do_catchsql_test 2.4 {
+  SELECT * FROM x3( fts5tokenize('hello world', 'tcl2') );
+} {1 {table does not support alternative tokenizers}}
 
 finish_test
 

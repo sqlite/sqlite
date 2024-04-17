@@ -115,9 +115,6 @@ struct Fts5TokenizerModule {
 struct Fts5FullTable {
   Fts5Table p;                    /* Public class members from fts5Int.h */
   Fts5Storage *pStorage;          /* Document store */
-#if 0
-  Fts5Global *pGlobal;            /* Global (connection wide) data */
-#endif
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
   
@@ -2871,6 +2868,10 @@ static int fts5FindTokenizer(
   return rc;
 }
 
+/*
+** Add a tokenizer with specification zSpec to the list at Fts5Config.pTokList.
+** Return SQLITE_OK if successful, or an SQLite error code otherwise.
+*/
 int sqlite3Fts5GetTokenizer(
   Fts5Config *pConfig,
   const char *zSpec
