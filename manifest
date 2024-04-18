@@ -1,5 +1,5 @@
-C The\sfirst\sassert()\sadded\sin\s[0ebc65481f4a3e79]\sis\snot\snecessarily\strue\sin\sa\ncorrupt\sdatabase\sfile.\s\sSo\sadd\sa\sterm\sto\smake\sit\strue.
-D 2024-04-15T20:43:21.644
+C Correct\shandling\sof\sOUTER\sJOIN\swhen\son\sor\sthe\sother\soperand\sis\sa\ssubquery\nimplemented\susing\sthe\sVALUES-as-coroutine\soptimization.\ndbsqlfuzz\sbde3bf80aedf25afa56e2997a0545a314765d3f8.
+D 2024-04-18T16:11:01.833
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -820,7 +820,7 @@ F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 4d6d7ebfe6772a1b950c97bbb1d1a72ad4874617ec498ab8aa73b7f5a43e44bb
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 651aa0f31027d5d0a133eb7b41d11c41dc3b88ecb760b770430da0e477ae3b6c
+F src/vdbe.c 298e8bf31adbcad0d8dfa37e106372e0d59ce531f2cca5b8ce559f9e173085f2
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
@@ -835,9 +835,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 09253e913dc1a93aa6e0e1a5d25a392b8fa39096cc30d230dd302264b3be0661
+F src/where.c 40ee94edd4cf31e6dc3e4c9ac814777b8cf4dc8ee985d87eb5f77bd4c42e69da
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
-F src/wherecode.c e033875570f5d65b99fdb5189e597d91c8bc34f4196089fd50e6086d174035e7
+F src/wherecode.c 4b5909be0c36030eec18ea0e7a64c60254180a21e626c9d2e0e9be3007ad47c1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1924,7 +1924,7 @@ F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
 F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce042fd
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
-F test/values.test 6c2426de40cd397a8ab68d375b6964ab3bce1244bbb69f5d1ed3ccd0e039c1f3
+F test/values.test 8c1e0157ba64aeaebdecd4b0b6b1b1422740664e29c17153499973e77ca5200b
 F test/valuesfault.test 2ef23ed965e3bd08e268cdc38a0d11653390ddbbe1e8e2e98d16f55edd30f6e8
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b40580be719a129ecd1aa3c69d1086c967d063920fdd48617c864e73c059abc1
-R 8fc5f990e4d938881ab9bd286e3b11d3
+P 6b21cccdeec92db9f6ce3dd7ea5e61b8b46650cc1e550271aa51bdc619f55b11
+R 742e51db40c512171314564bf9760205
 U drh
-Z fa0c07b8b0de569fa969f3e2656bc2dc
+Z 2a179895cc5d13f95288c795c253907b
 # Remove this line to create a well-formed Fossil manifest.

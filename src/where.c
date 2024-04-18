@@ -6940,8 +6940,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
       assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
       if( (ws & WHERE_IDX_ONLY)==0 ){
-        assert( pLevel->iTabCur==pTabList->a[pLevel->iFrom].iCursor );
-        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
+        SrcItem *pSrc = &pTabList->a[pLevel->iFrom];
+        assert( pLevel->iTabCur==pSrc->iCursor );
+        if( pSrc->fg.viaCoroutine ){
+          int m, n;
+          n = pSrc->regResult;
+          assert( pSrc->pTab!=0 );
+          m = pSrc->pTab->nCol;
+          sqlite3VdbeAddOp3(v, OP_Null, 0, n, n+m-1);
+        }else{
+          sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
+        }
       }
       if( (ws & WHERE_INDEXED)
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCoveringIdx)

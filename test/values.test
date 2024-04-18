@@ -648,6 +648,27 @@ do_catchsql_test 18.5.3 {
   SELECT * FROM t1;
 } {0 {}}
 
-
+# 2024-04-18 dbsqlfuzz crash-bde3bf80aedf25afa56e2997a0545a314765d3f8
+# Verify that the VALUES expressions used as an argument to an outer
+# join work correctly.
+#
+reset_db
+db null NULL
+do_execsql_test 19.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1 VALUES(11,22);
+  SELECT * FROM t1 LEFT JOIN (VALUES(33,44),(55,66)) AS t2 ON a=b;
+} {11 22 NULL NULL}
+do_execsql_test 19.2 {
+  SELECT * FROM (VALUES(33,44),(55,66)) AS t2 RIGHT JOIN t1 ON a=b;
+} {NULL NULL 11 22}
+do_execsql_test 19.3 {
+  SELECT *, '|' FROM t1 FULL JOIN (VALUES(33,44),(55,66)) AS t2 ON a=b
+  ORDER BY +column1
+} {11 22 NULL NULL | NULL NULL 33 44 | NULL NULL 55 66 |}
+do_execsql_test 19.4 {
+  SELECT *, '|' FROM (VALUES(33,44),(55,66)) AS t2 FULL JOIN t1 ON a=b
+  ORDER BY +column1
+} {NULL NULL 11 22 | 33 44 NULL NULL | 55 66 NULL NULL |}
 
 finish_test

@@ -2730,11 +2730,21 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
                                   pRJ->regReturn);
   for(k=0; k<iLevel; k++){
     int iIdxCur;
+    SrcItem *pRight;
+    assert( pWInfo->a[k].pWLoop->iTab == pWInfo->a[k].iFrom );
+    pRight = &pWInfo->pTabList->a[pWInfo->a[k].iFrom];
     mAll |= pWInfo->a[k].pWLoop->maskSelf;
-    sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
-    iIdxCur = pWInfo->a[k].iIdxCur;
-    if( iIdxCur ){
-      sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+    if( pRight->fg.viaCoroutine ){
+      sqlite3VdbeAddOp3(
+          v, OP_Null, 0, pRight->regResult, 
+          pRight->regResult + pRight->pSelect->pEList->nExpr-1
+      );
+    }else{
+      sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
+      iIdxCur = pWInfo->a[k].iIdxCur;
+      if( iIdxCur ){
+        sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);
+      }
     }
   }
   if( (pTabItem->fg.jointype & JT_LTORJ)==0 ){

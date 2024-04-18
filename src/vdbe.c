@@ -1152,7 +1152,9 @@ jump_to_p2:
 **
 ** The instruction at the address in register P1 is a Yield.
 ** Jump to the P2 parameter of that Yield.
-** After the jump, register P1 becomes undefined.
+** After the jump, the value register P1 is left with a value
+** such that subsequent OP_Yields go back to the this same
+** OP_EndCoroutine instruction.
 **
 ** See also: InitCoroutine
 */
@@ -1164,8 +1166,8 @@ case OP_EndCoroutine: {           /* in1 */
   pCaller = &aOp[pIn1->u.i];
   assert( pCaller->opcode==OP_Yield );
   assert( pCaller->p2>=0 && pCaller->p2<p->nOp );
+  pIn1->u.i = (int)(pOp - p->aOp) - 1;
   pOp = &aOp[pCaller->p2 - 1];
-  pIn1->flags = MEM_Undefined;
   break;
 }
 
