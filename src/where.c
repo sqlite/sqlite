@@ -302,14 +302,24 @@ static Expr *whereRightSubexprIsColumn(Expr *p){
   return 0;
 }
 
-static int SQLITE_NOINLINE indexInAffinityOk(
+/*
+** Term pTerm is guaranteed to be a WO_IN term. It may be a component term
+** of a vector IN expression of the form "(x, y, ...) IN (SELECT ...)".
+** This function checks to see if the term is compatible with an index
+** column with affinity idxaff (one of the SQLITE_AFF_XYZ values). If so,
+** it returns a pointer to the name of the collation sequence (e.g. "BINARY"
+** or "NOCASE") used by the comparison in pTerm. If it is not compatible
+** with affinity idxaff, NULL is returned.
+*/
+static SQLITE_NOINLINE const char *indexInAffinityOk(
   Parse *pParse, 
   WhereTerm *pTerm, 
-  u8 idxaff, 
-  CollSeq **ppColl
+  u8 idxaff
 ){
   Expr *pX = pTerm->pExpr;
   Expr inexpr;
+
+  assert( pTerm->eOperator & WO_IN );
 
   if( sqlite3ExprIsVector(pX->pLeft) ){
     int iField = pTerm->u.x.iField - 1;
@@ -320,8 +330,11 @@ static int SQLITE_NOINLINE indexInAffinityOk(
     pX = &inexpr;
   }
 
-  *ppColl = sqlite3ExprCompareCollSeq(pParse, pX);
-  return sqlite3IndexAffinityOk(pX, idxaff);
+  if( sqlite3IndexAffinityOk(pX, idxaff) ){
+    CollSeq *pRet = sqlite3ExprCompareCollSeq(pParse, pX);
+    return pRet ? pRet->zName : sqlite3StrBINARY;
+  }
+  return 0;
 }
 
 /*
@@ -374,24 +387,24 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
           if( (pTerm->eOperator & pScan->opMask)!=0 ){
             /* Verify the affinity and collating sequence match */
             if( pScan->zCollName && (pTerm->eOperator & WO_ISNULL)==0 ){
-              CollSeq *pColl;
+              const char *zCollName;
               Parse *pParse = pWC->pWInfo->pParse;
               pX = pTerm->pExpr;
 
               if( (pTerm->eOperator & WO_IN) ){
-                if( !indexInAffinityOk(pParse, pTerm, pScan->idxaff, &pColl) ){
-                  continue;
-                }
+                zCollName = indexInAffinityOk(pParse, pTerm, pScan->idxaff);
+                if( !zCollName ) continue;
               }else{
+                CollSeq *pColl;
                 if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
                   continue;
                 }
                 assert(pX->pLeft);
                 pColl = sqlite3ExprCompareCollSeq(pParse, pX);
+                zCollName = pColl ? pColl->zName : sqlite3StrBINARY;
               }
 
-              if( pColl==0 ) pColl = pParse->db->pDfltColl;
-              if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
+              if( sqlite3StrICmp(zCollName, pScan->zCollName) ){
                 continue;
               }
             }

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\san\sexpression\slike\s(a,\sb)\sIN\s(SELECT\s...)\smight\snot\suse\san\sindex\son\s(a,\sb)\sif\sthe\saffinities\sand\scollation\ssequences\sof\s"a"\sand\s"b"\sare\snot\sidentical.
-D 2024-04-20T15:14:06.554
+C Slight\sperformance\simprovement\sfor\sthe\snew\scode\son\sthis\sbranch.
+D 2024-04-20T19:19:30.713
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -835,7 +835,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c b4eb20a2e5f74e299cb19095454dd257292ad2a23a90265a9eecd2390fd0552a
+F src/where.c 79c673bf23b3b7fcc5e9cfa0adcd88a97645cd47920d2365dd6aec8cab7b222a
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 4b5909be0c36030eec18ea0e7a64c60254180a21e626c9d2e0e9be3007ad47c1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
@@ -1274,7 +1274,7 @@ F test/in.test d1cad4ededd425568b2e39fb0c31fa9a3772311dd595801ff13ba3912b69bba6
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test bb767ec1cfd1730256f0a83219f0acda36bc251b63f8b8bb7d8c7cff17875a4f
-F test/in5.test b32ce7f4a93f44c5dee94af16886d922cc16ebe33c8e1765c73d4049d0f4b40f
+F test/in5.test 4fd79c70dfa0681313e8cdca07f5ff0400bdc0e20f808a5c59eaef1e4b48082a
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
@@ -2184,11 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c0f69e0e4ae0a446838cc193bfd4395fd251f3c7659b35ac388e5a0a7650a66
-R 76aaae3efae57f02d5fc2e79c67a8826
-T *branch * vector-in-fix
-T *sym-vector-in-fix *
-T -sym-trunk *
+P 4d870fd8b5450047a7486fc023d1ac9439642e8ed91eadfd5026c4cda7cc9179
+R 6023edc800b34da7492bfeaa8c433f44
 U dan
-Z 8e2ed7e86b55b55a9e6d2d789c1dac73
+Z caab3df5b31f1752021c68136ff6d06a
 # Remove this line to create a well-formed Fossil manifest.
