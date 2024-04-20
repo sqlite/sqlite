@@ -302,6 +302,28 @@ static Expr *whereRightSubexprIsColumn(Expr *p){
   return 0;
 }
 
+static int SQLITE_NOINLINE indexInAffinityOk(
+  Parse *pParse, 
+  WhereTerm *pTerm, 
+  u8 idxaff, 
+  CollSeq **ppColl
+){
+  Expr *pX = pTerm->pExpr;
+  Expr inexpr;
+
+  if( sqlite3ExprIsVector(pX->pLeft) ){
+    int iField = pTerm->u.x.iField - 1;
+    inexpr.op = TK_EQ;
+    inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
+    assert( ExprUseXSelect(pX) );
+    inexpr.pRight = pX->x.pSelect->pEList->a[iField].pExpr;
+    pX = &inexpr;
+  }
+
+  *ppColl = sqlite3ExprCompareCollSeq(pParse, pX);
+  return sqlite3IndexAffinityOk(pX, idxaff);
+}
+
 /*
 ** Advance to the next WhereTerm that matches according to the criteria
 ** established when the pScan object was initialized by whereScanInit().
@@ -355,11 +377,19 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
               CollSeq *pColl;
               Parse *pParse = pWC->pWInfo->pParse;
               pX = pTerm->pExpr;
-              if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
-                continue;
+
+              if( (pTerm->eOperator & WO_IN) ){
+                if( !indexInAffinityOk(pParse, pTerm, pScan->idxaff, &pColl) ){
+                  continue;
+                }
+              }else{
+                if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
+                  continue;
+                }
+                assert(pX->pLeft);
+                pColl = sqlite3ExprCompareCollSeq(pParse, pX);
               }
-              assert(pX->pLeft);
-              pColl = sqlite3ExprCompareCollSeq(pParse, pX);
+
               if( pColl==0 ) pColl = pParse->db->pDfltColl;
               if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
                 continue;
