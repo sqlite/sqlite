@@ -6948,9 +6948,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           assert( pSrc->pTab!=0 );
           m = pSrc->pTab->nCol;
           sqlite3VdbeAddOp3(v, OP_Null, 0, n, n+m-1);
-        }else{
-          sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
         }
+        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED)
        || ((ws & WHERE_MULTI_OR) && pLevel->u.pCoveringIdx)
