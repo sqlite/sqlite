@@ -329,7 +329,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
   }
 
-  if(wasm.exports.sqlite3_activate_see instanceof Function){
+//#if enable-see
+  if(wasm.exports.sqlite3_key_v2 instanceof Function){
     /**
        This code is capable of using an SEE build but note that an SEE
        WASM build is generally incompatible with SEE's license
@@ -346,6 +347,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_activate_see", undefined, "string"]
     );
   }
+//#endif enable-see
+
   /**
      Functions which require BigInt (int64) support are separated from
      the others because we need to conditionally bind them or apply
@@ -627,7 +630,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3__wasm_vfs_create_file", "int",
      "sqlite3_vfs*","string","*", "int"],
     ["sqlite3__wasm_posix_create_file", "int", "string","*", "int"],
-    ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
+    ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"],
+    ["sqlite3__wasm_qfmt_token","string:dealloc", "string","int"]
   ];
 
   /**

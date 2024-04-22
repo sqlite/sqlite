@@ -335,19 +335,26 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 #
 # Note that the SQLITE_... build flags used here have NO EFFECT on the
 # JS/WASM build. They are solely for use with $(bin.c-pp) itself.
+#
+# -D... flags which should be included in all invocations should be
+# appended to $(C-PP.FILTER.global).
 bin.c-pp := ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
+C-PP.FILTER.global ?=
+ifeq (1,$(SQLITE_C_IS_SEE))
+  C-PP.FILTER.global += -Denable-see
+endif
 define C-PP.FILTER
 # Create $2 from $1 using $(bin.c-pp)
 # $1 = Input file: c-pp -f $(1).js
 # $2 = Output file: c-pp -o $(2).js
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
-	$$(bin.c-pp) -f $(1) -o $$@ $(3)
+	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(C-PP.FILTER.global)
 CLEAN_FILES += $(2)
 endef
 # /end C-PP.FILTER
