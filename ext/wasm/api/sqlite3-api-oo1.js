@@ -87,6 +87,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __vfsPostOpenSql = Object.create(null);
 
+//#if enable-see
   /**
      Converts ArrayBuffer or Uint8Array ba into a string of hex
      digits.
@@ -103,7 +104,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return li.join('');
   };
 
-//#if enable-see
   /**
      Internal helper to apply an SEE key to a just-opened
      database. Requires that db be-a DB object which has just been
@@ -160,7 +160,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }else if('string'!==typeof key){
         toss3("Invalid value for the 'hexkey' option. Expecting a string, ArrayBuffer, or Uint8Array.");
       }
-      /* else assume it's valid hex codes */;
+      /* else assume it's valid hex codes */
     }else{
       return;
     }
@@ -385,7 +385,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - `key`, `hexkey`, or `textkey`: encryption key as a string,
        ArrayBuffer, or Uint8Array. These flags function as documented
-       for the SEE pragmas of the same names.
+       for the SEE pragmas of the same names. Using a byte array for
+       `hexkey` is equivalent to the same series of hex codes in
+       string form, so '666f6f' is equivalent to
+       Uint8Array([0x66,0x6f,0x6f]). A `textkey` byte array is assumed
+       to be UTF-8. A `key` string is transformed into a UTF-8 byte
+       array, and a `key` byte array is transformed into a `hexkey`
+       with the same bytes.
 
      In non-SEE builds, these options are ignored. In SEE builds,
      `PRAGMA key/textkey/hexkey=X` is executed immediately after

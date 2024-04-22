@@ -2613,10 +2613,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         this.kvvfsUnlink();
         let db;
+        const encOpt1 = 1
+              ? {textkey: 'foo'}
+              : {key: 'foo'};
+        const encOpt2 = encOpt1.textkey
+              ? encOpt1
+              : {hexkey: new Uint8Array([0x66,0x6f,0x6f]/*==>"foo"*/)}
         try{
           db = new this.JDb({
             filename: this.kvvfsDbFile,
-            key: 'foo'
+            ...encOpt1
           });
           db.exec([
             "create table t(a,b);",
@@ -2643,7 +2649,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new sqlite3.oo1.DB({
             filename: this.kvvfsDbFile,
             vfs: 'kvvfs',
-            hexkey: new Uint8Array([0x66,0x6f,0x6f]) // equivalent: '666f6f'
+            ...encOpt2
           });
           T.assert( 4===db.selectValue('select sum(a) from t') );
         }finally{
