@@ -671,4 +671,45 @@ do_execsql_test 19.4 {
   ORDER BY +column1
 } {NULL NULL 11 22 | 33 44 NULL NULL | 55 66 NULL NULL |}
 
+# 2024-04-21 dbsqlfuzz 6fd1ff3a64bef4a6c092e8d757548e95698b0df5
+# A continuation of the 2024-04-18 problem above.  We have to create
+# Pseudo-cursor that is always NULL on the viaCoroutine loop in case
+# there are OP_Columns generated against it by the sub-WHERE clause.
+#
+db null N
+do_execsql_test 19.5 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t1(a,b);              INSERT INTO t1 VALUES(1,2);
+  CREATE TABLE t2(column1,column2);  INSERT INTO t2 VALUES(11,22),(33,44);
+  CREATE TABLE t3(d,e);              INSERT INTO t3 VALUES(3,4);
+}
+do_execsql_test 19.6 {
+  -- output verify using PG 14.2
+  SELECT *
+    FROM t1 CROSS JOIN t2 FULL JOIN t3 ON a=d
+   ORDER BY +d, +column1;
+} {1 2 11 22 N N
+   1 2 33 44 N N
+   N N  N  N 3 4}
+do_execsql_test 19.7 {
+  SELECT *
+    FROM t1 CROSS JOIN (VALUES(11,22),(33,44)) FULL JOIN t3 ON a=d
+   ORDER BY +d, +column1;
+} {1 2 11 22 N N
+   1 2 33 44 N N
+   N N  N  N 3 4}
+do_execsql_test 19.8 {
+  -- output verified using PG 14.2
+  SELECT *
+    FROM t1 CROSS JOIN t2 FULL JOIN t3 ON a=d
+   WHERE column1 IS NULL;
+} {N N  N  N 3 4}
+do_execsql_test 19.9 {
+  SELECT *
+    FROM t1 CROSS JOIN (VALUES(11,22),(33,44)) FULL JOIN t3 ON a=d
+   WHERE column1 IS NULL;
+} {N N  N  N 3 4}
+
 finish_test

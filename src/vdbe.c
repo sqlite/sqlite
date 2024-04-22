@@ -4584,7 +4584,8 @@ case OP_SequenceTest: {
 ** is the only cursor opcode that works with a pseudo-table.
 **
 ** P3 is the number of fields in the records that will be stored by
-** the pseudo-table.
+** the pseudo-table.  If P2 is 0 or negative then the pseudo-cursor
+** will return NULL for every column.
 */
 case OP_OpenPseudo: {
   VdbeCursor *pCx;

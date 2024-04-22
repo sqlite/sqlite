@@ -2739,6 +2739,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
           v, OP_Null, 0, pRight->regResult, 
           pRight->regResult + pRight->pSelect->pEList->nExpr-1
       );
+      sqlite3VdbeAddOp1(v, OP_OpenPseudo, pWInfo->a[k].iTabCur);
     }else{
       sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
       iIdxCur = pWInfo->a[k].iIdxCur;
