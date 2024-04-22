@@ -179,12 +179,30 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pVfs = capi.sqlite3_js_db_vfs(pDb);
       if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
       const postInitSql = __vfsPostOpenSql[pVfs];
-      if(postInitSql instanceof Function){
-        postInitSql(this, sqlite3);
-      }else if(postInitSql){
-        checkSqlite3Rc(
-          pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
-        );
+      if(postInitSql){
+        if(capi.sqlite3_activate_see){
+          /**
+             In SEE-capable builds we have to avoid running any db
+             code before the client has an opportunity to apply their
+             decryption key. If we first run any db code, e.g. pragma
+             journal_mode=..., then it will fail with SQLITE_NOTADB
+             and the db handle will be left in an unusuable
+             state. Note that at this point we do not actually know
+             whether the db is encrypted, but if a client has gone out
+             of their way to create an SEE build, it seems safe to
+             assume that they are using the encryption.
+          */
+          sqlite3.config.warn(
+            "Disabling execution of on-open() db code "+
+            "because this is an SEE build. DB: "+fnJs
+          );
+        }else if(postInitSql instanceof Function){
+          postInitSql(this, sqlite3);
+        }else{
+          checkSqlite3Rc(
+            pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
+          );
+        }
       }
     }catch(e){
       this.close();
@@ -288,7 +306,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      For purposes of passing a DB instance to C-style sqlite3
      functions, the DB object's read-only `pointer` property holds its
      `sqlite3*` pointer value. That property can also be used to check
-     whether this DB instance is still open.
+     whether this DB instance is still open: it will evaluate to
+     `undefined` after the DB object's close() method is called.
 
      In the main window thread, the filenames `":localStorage:"` and
      `":sessionStorage:"` are special: they cause the db to use either
