@@ -1,5 +1,5 @@
-C Slight\sperformance\simprovement\sfor\sthe\snew\scode\son\sthis\sbranch.
-D 2024-04-20T19:19:30.713
+C Fix\san\suninitialized\svariable\sproblem\sin\sthe\snew\scode\son\sthis\sbranch.
+D 2024-04-23T11:56:20.612
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -835,7 +835,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 79c673bf23b3b7fcc5e9cfa0adcd88a97645cd47920d2365dd6aec8cab7b222a
+F src/where.c 09dc0b63e1c18c380179f5ca15dd25ec4b796fc142bfe202b6a1a4e6c4fa8100
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 4b5909be0c36030eec18ea0e7a64c60254180a21e626c9d2e0e9be3007ad47c1
 F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
@@ -2184,8 +2184,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d870fd8b5450047a7486fc023d1ac9439642e8ed91eadfd5026c4cda7cc9179
-R 6023edc800b34da7492bfeaa8c433f44
+P 500c67f1341fe2a7e7333d525c90df201cc73a683b943ad5c1e41d4a4f639043
+R 842a99b3ce378b1a997aef4384eecd35
 U dan
-Z caab3df5b31f1752021c68136ff6d06a
+Z 6e531b1f6828a7a325bb114af8c59a31
 # Remove this line to create a well-formed Fossil manifest.
