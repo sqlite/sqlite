@@ -245,7 +245,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        The exception's message is created by concatenating its
        arguments with a space between each, except for the
-       two-args-with-an-objec form and that the first argument will
+       two-args-with-an-object form and that the first argument will
        get coerced to a string, as described above, if it's an
        integer.
 

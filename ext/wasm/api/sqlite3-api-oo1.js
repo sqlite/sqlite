@@ -112,10 +112,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      as a string, an ArrayBuffer, or a Uint8Array.
 
      This is a no-op in non-SEE builds. It throws on error and returns
-     without side effects if its key/textkey options are not of valid
-     types.
+     without side effects if none of the key/textkey/hexkey options
+     are set. It throws if more than one is set or if any are set to
+     values of an invalid type.
 
-     Returns true if it applies the key, else a falsy value.
+     Returns true if it applies the key, else an unspecified falsy value.
   */
   const dbCtorApplySEEKey = function(db,opt){
     if( !capi.sqlite3_key_v2 ) return;
@@ -123,7 +124,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     let key;
     const check = (opt.key ? 1 : 0) + (opt.hexkey ? 1 : 0) + (opt.textkey ? 1 : 0);
     if( !check ) return;
-    else if( check>1 ) toss3("Only ONE of (key, hexkey, textkey) may be provided.");
+    else if( check>1 ){
+      toss3(capi.SQLITE_MISUSE,
+            "Only ONE of (key, hexkey, textkey) may be provided.");
+    }
     if( opt.key ){
       /* It is not legal to bind an argument to PRAGMA key=?, so we
          convert it to a hexkey... */
@@ -136,7 +140,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         key = byteArrayToHex(key);
         keytype = 'hexkey';
       }else{
-        toss3("Invalid value for the 'key' option. Expecting a string, ArrayBuffer, or Uint8Array.");
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'key' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
         return;
       }
     }else if( opt.textkey ){
@@ -150,7 +156,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(key instanceof Uint8Array){
         key = new TextDecoder('utf-8').decode(key);
       }else if('string'!==typeof key){
-        toss3("Invalid value for the 'textkey' option. Expecting a string, ArrayBuffer, or Uint8Array.");
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'textkey' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
       }
     }else if( opt.hexkey ){
       keytype = 'hexkey';
@@ -158,7 +166,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if((key instanceof ArrayBuffer) || (key instanceof Uint8Array)){
         key = byteArrayToHex(key);
       }else if('string'!==typeof key){
-        toss3("Invalid value for the 'hexkey' option. Expecting a string, ArrayBuffer, or Uint8Array.");
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'hexkey' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
       }
       /* else assume it's valid hex codes */
     }else{
@@ -381,23 +391,33 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `vfs`: the VFS fname
 
 //#if enable-see
-     And, for SEE-capable builds, optionally ONE of the following:
+
+     SEE-capable builds optionally support ONE of the following
+     additional options:
 
      - `key`, `hexkey`, or `textkey`: encryption key as a string,
        ArrayBuffer, or Uint8Array. These flags function as documented
        for the SEE pragmas of the same names. Using a byte array for
        `hexkey` is equivalent to the same series of hex codes in
-       string form, so '666f6f' is equivalent to
-       Uint8Array([0x66,0x6f,0x6f]). A `textkey` byte array is assumed
-       to be UTF-8. A `key` string is transformed into a UTF-8 byte
-       array, and a `key` byte array is transformed into a `hexkey`
-       with the same bytes.
+       string form, so `'666f6f'` is equivalent to
+       `Uint8Array([0x66,0x6f,0x6f])`. A `textkey` byte array is
+       assumed to be UTF-8. A `key` string is transformed into a UTF-8
+       byte array, and a `key` byte array is transformed into a
+       `hexkey` with the same bytes.
 
      In non-SEE builds, these options are ignored. In SEE builds,
      `PRAGMA key/textkey/hexkey=X` is executed immediately after
      opening the db. If more than one of the options is provided,
      or any option has an invalid argument type, an exception is
      thrown.
+
+     Note that some DB subclasses may run post-initialization SQL
+     code, e.g. to set a busy-handler timeout or tweak the page cache
+     size. Such code is run _after_ the SEE key is applied. If no key
+     is supplied and the database is encrypted, execution of the
+     post-initialization SQL will fail, causing the constructor to
+     throw.
+
 //#endif enable-see
 
      The `filename` and `vfs` arguments may be either JS strings or
