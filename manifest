@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\saborting\sconflicts\sin\sthe\ssessions\smodule.
-D 2024-04-22T20:09:17.153
+C When\srunning\sthe\s'dist'\starget\sin\sext/wasm\sfor\san\sSEE-capable\sbuild,\sensure\sthat\sthe\sresulting\szip\sfile\sand\sdirectory\sname\sinclude\s'-see'.
+D 2024-04-23T05:38:49.383
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a
 F ext/wasm/demo-worker1-promiser.c-pp.js fcc628cb42fcfaf07d250477801de1e6deb1e319d003976612a0db8d76b9fccc
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 836bece8615b17b1b572584f7b15912236a5947fe8c68b98d2737d7e287447ef
-F ext/wasm/dist.make f2ce42305268fe33d4b50f6e4bb3daf4a60302a90736eee382f1b8af9ff32ec1
+F ext/wasm/dist.make 653e212c1e84aa3be168d62a10616ccea45ee9585b0192745d2706707a5248ce
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make 3c2eace29255d6ddd219f5d8cc2728cb28b9fe717ea80b6062c2a6178947a16b
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
@@ -2185,8 +2185,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5ee2594b657b96aea9e482a175820dcbacfa9298da45b38cf17f39ad076d3f7f
-R 95bcc3fd0d6dba3139788e0776ab3daa
-U dan
-Z c4a19dd969db970154ebbee1de10bace
+P b4a6d32662acacb7767cfb9b8e040e6eb1f99322cb7d0cd44e6265e9ac2fb2e8
+R 7804df285b1889ac6d0dbfb4c36fb69b
+U stephan
+Z 47a1361c4075358585b8d5f5c90006b4
 # Remove this line to create a well-formed Fossil manifest.
