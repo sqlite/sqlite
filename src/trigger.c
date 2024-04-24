@@ -987,7 +987,7 @@ static void codeReturningTrigger(
   sSelect.pSrc = &sFrom;
   sFrom.nSrc = 1;
   sFrom.a[0].pTab = pTab;
-  sFrom.a[0].zName = pTab->zName;
+  sFrom.a[0].zName = pTab->zName; /* tag-20240424-1 */
   sFrom.a[0].iCursor = -1;
   sqlite3SelectPrep(pParse, &sSelect, 0);
   if( pParse->nErr==0 ){
