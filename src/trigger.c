@@ -951,6 +951,72 @@ static ExprList *sqlite3ExpandReturning(
   return pNew;
 }
 
+/* If the Expr node is a subquery or an EXISTS operator or an IN operator that
+** uses a subquery, and if the subquery is SF_Correlated, then mark the
+** expression as EP_VarSelect.
+*/
+static int sqlite3ReturningSubqueryVarSelect(Walker *NotUsed, Expr *pExpr){
+  UNUSED_PARAMETER(NotUsed);
+  if( ExprUseXSelect(pExpr)
+   && (pExpr->x.pSelect->selFlags & SF_Correlated)!=0
+  ){
+    testcase( ExprHasProperty(pExpr, EP_VarSelect) );
+    ExprSetProperty(pExpr, EP_VarSelect);
+  }
+  return WRC_Continue;
+}
+
+
+/*
+** If the SELECT references the table pWalker->u.pTab, then do two things:
+**
+**    (1) Mark the SELECT as as SF_Correlated.
+**    (2) Set pWalker->eCode to non-zero so that the caller will know
+**        that (1) has happened.
+*/
+static int sqlite3ReturningSubqueryCorrelated(Walker *pWalker, Select *pSelect){
+  int i;
+  SrcList *pSrc;
+  assert( pSelect!=0 );
+  pSrc = pSelect->pSrc;
+  assert( pSrc!=0 );
+  for(i=0; i<pSrc->nSrc; i++){
+    if( pSrc->a[i].pTab==pWalker->u.pTab ){
+      testcase( pSelect->selFlags & SF_Correlated );
+      pSelect->selFlags |= SF_Correlated;
+      pWalker->eCode = 1;
+      break;
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Scan the expression list that is the argument to RETURNING looking
+** for subqueries that depend on the table which is being modified in the
+** statement that is hosting the RETURNING clause (pTab).  Mark all such
+** subqueries as SF_Correlated.  If the subqueries are part of an
+** expression, mark the expression as EP_VarSelect.
+**
+** https://sqlite.org/forum/forumpost/2c83569ce8945d39
+*/
+static void sqlite3ProcessReturningSubqueries(
+  ExprList *pEList,
+  Table *pTab
+){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = sqlite3ExprWalkNoop;
+  w.xSelectCallback = sqlite3ReturningSubqueryCorrelated;
+  w.u.pTab = pTab;
+  sqlite3WalkExprList(&w, pEList);
+  if( w.eCode ){
+    w.xExprCallback = sqlite3ReturningSubqueryVarSelect;
+    w.xSelectCallback = sqlite3SelectWalkNoop;
+    sqlite3WalkExprList(&w, pEList);
+  }
+}
+
 /*
 ** Generate code for the RETURNING trigger.  Unlike other triggers
 ** that invoke a subprogram in the bytecode, the code for RETURNING
@@ -1014,6 +1080,7 @@ static void codeReturningTrigger(
       int i;
       int nCol = pNew->nExpr;
       int reg = pParse->nMem+1;
+      sqlite3ProcessReturningSubqueries(pNew, pTab);
       pParse->nMem += nCol+2;
       pReturning->iRetReg = reg;
       for(i=0; i<nCol; i++){
