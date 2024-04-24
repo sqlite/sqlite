@@ -2393,7 +2393,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
     pWalker->eCode = 0;
     return WRC_Abort;
   }
-  return WRC_Continue;
+  return WRC_Prune;
 }
 
 
