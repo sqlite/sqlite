@@ -627,8 +627,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   wasm.bindingSignatures.wasmInternal = [
     ["sqlite3__wasm_db_reset", "int", "sqlite3*"],
     ["sqlite3__wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
-    ["sqlite3__wasm_vfs_create_file", "int",
-     "sqlite3_vfs*","string","*", "int"],
+    [/* DO NOT USE. This is deprecated since 2023-08-11 because it can
+        trigger assert() in debug builds when used with file sizes
+        which are not sizes to a multiple of a valid db page size. */
+      "sqlite3__wasm_vfs_create_file", "int", "sqlite3_vfs*","string","*", "int"
+    ],
     ["sqlite3__wasm_posix_create_file", "int", "string","*", "int"],
     ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"],
     ["sqlite3__wasm_qfmt_token","string:dealloc", "string","int"]

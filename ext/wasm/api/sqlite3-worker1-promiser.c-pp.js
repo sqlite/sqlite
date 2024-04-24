@@ -285,7 +285,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
 }/*defaultConfig*/;
 
 /**
-   sqlite3Worker1Promiser.v2() works identically to
+   sqlite3Worker1Promiser.v2(), added in 3.46, works identically to
    sqlite3Worker1Promiser() except that it returns a Promise instead
    of relying an an onready callback in the config object. The Promise
    resolves to the same factory function which
