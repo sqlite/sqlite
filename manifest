@@ -1,5 +1,5 @@
-C Add\scomments\slinking\sthe\sassert()\sadded\sin\s[cef4d9e3ba586735]\sto\sthe\splaces\nwhere\sthe\sprecondition\sthat\sthe\sassert()\stests\sare\sactually\srequired.
-D 2024-04-24T11:51:51.477
+C Fix\sa\scase\swhere\sa\scorrupt\sstat4\srecord\scould\sgo\sunrecognized\sdue\sto\sinteger\soverflow.
+D 2024-04-24T14:18:20.595
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -827,7 +827,7 @@ F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
 F src/vdbeaux.c 6385727adf51a649e4993098870a62c3945fe21dbc0e0fd9013772aff930b8fb
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
-F src/vdbemem.c 213bf303826c0ef702e3a2a69dab2309d84b8381b822c6787885859fd7cd4c4e
+F src/vdbemem.c 385c8b89da3b5ef9a468d77a466958aa72ee1212d5cb005f23ec63df1d413054
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
@@ -1020,7 +1020,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 9d8cbf6214e492abe9e822e759b9751ae336cec0a6fe3ff3b37bfbd8ff9c22ca
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test 504d90502d9993440226edc355d2275524b89064ea3df5ee5c27f7028ec59d07
+F test/corruptL.test 652fc8ac0763a6fd3eb28b951d481924167b2d9936083bcc68253b2274a0c8fe
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test 7c099d153a554001b4fb829c799b01f2ea6276cbc32479131e0db0da4efd9cc4
 F test/cost.test cc434a026b1e9d0d98137a147e24e5daf1b1ad09e9ff7da63b34c83ddd136d92
@@ -2185,8 +2185,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1c0b0345451853846076467831884f951c92ec79476be40ce7f7b766fd2d8fc1
-R 09140f401f2e5de2029c7707ae39c044
-U drh
-Z 19c09d10e1b97b5d9274dbb80f3447f0
+P 6f0e7e195275aeb4aefd9da20348af35e3ef7f0a6b2768a34824daeace16eff1
+R 8aa170676bd507dd4717ebad9ca82758
+U dan
+Z 3e9a5a5005e3601585922bc0e00c59cc
 # Remove this line to create a well-formed Fossil manifest.
