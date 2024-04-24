@@ -737,16 +737,16 @@ do_execsql_test view-27.5 {
 
 do_execsql_test view-27.6 { 
   SELECT c0<c1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
-} 1
+} 0
 do_execsql_test view-27.7 { 
   SELECT c1<c0 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) 
-} 0
+} 1
 do_execsql_test view-27.8 {
   SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c1<c0
 } {}
 do_execsql_test view-27.9 {
   SELECT 1 FROM (SELECT t0.c0 AS c0, AVG(t0.c1) AS c1 FROM t0) WHERE c0<c1
-} {1}
+} {}
 
 #-------------------------------------------------------------------------
 reset_db

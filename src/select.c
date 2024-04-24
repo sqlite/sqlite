@@ -6417,7 +6417,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       Select *pSel = pFrom->pSelect;
       if( pSel ){
-        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_NONE);
+        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_BLOB);
       }
     }
   }

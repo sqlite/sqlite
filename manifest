@@ -1,5 +1,5 @@
-C If\sa\sRETURNING\sclause\scontains\sa\ssubquery\sthat\sreferences\sthe\stable\sthat\sis\nbeing\supdated\sin\sthe\sstatement\sthat\sincludes\sthe\sRETURNING\sclause,\sthen\smark\nthe\ssubquery\sas\scorrelated\ssot\shat\sit\sis\srecomputed\sfor\seach\sresult\sand\snot\njust\scomputed\sonce\sand\sreused.\s\sSee\n[forum:/forumpost/2c83569ce8945d39|forum\spost\s2c83569ce8945d39].
-D 2024-04-24T16:36:37.548
+C An\sexperimental\sminor\stweak\sto\sthe\sway\saffinities\sare\scomputed\sfor\scompound\nsubqueries,\swhen\sthe\sactual\saffinity\sis\sambiguous.
+D 2024-04-24T19:49:52.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -751,7 +751,7 @@ F src/printf.c 8b250972305e14b365561be5117ed0fd364e4fd58968776df1ce64c6280b90f9
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 647edf93729ba124c0a6048982af56c2fa4f841e69d626e4f3caa620f082bb15
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 51893b3e34d38ad8d46b5010a6e380ca878b578be5001a640daa907336187424
+F src/select.c 39c5dc8b2fca3b1e52db1a9b469507bfc312d3e3a4bf10c58a7a716626c4bdff
 F src/shell.c.in 0354ca51eee5fbf6af394a7ef9f5ef6823ef45b743db65431f6777e4d5be2199
 F src/sqlite.h.in 32389e0d584551b300d0157881336162c14315a424cbf385c0d65eb7c2e31f7b
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1929,7 +1929,7 @@ F test/values.test 52102ad9e5068b449429e40a976486a52246041f7cd79d086a2b170e77dec
 F test/valuesfault.test 2ef23ed965e3bd08e268cdc38a0d11653390ddbbe1e8e2e98d16f55edd30f6e8
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test d4c4281e1679245829db35597817282f60dc513fc39cc5439078f009bd118487
+F test/view.test 9df7e00eb1f96a9d738a317137989a594541ce7b9ebea0506e39f89de0c1319a
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
 F test/view3.test ad8a8290ee2b55ff6ce66c9ef1ce3f1e47926273a3814e1c425293e128a95456
 F test/vt02.c 5b44ac67b1a283fedecf2d6e2ceda61e7a157f01d44dcb4490dcb1e87d057060
@@ -2185,8 +2185,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 240a4a48b27a2b1070bba6d7da76a8df8e3f1808e262045d7ad2cf910df08f3d
-R 0443bbe68d7ebf5917ca0dd9f2f0960d
+P 9ea6bcc8fdf6aadb756ec5bcaaa7af314167f8973bdd32fd23f83bd964f0c21e
+R 069cab252330979e2eef5b88f83953a3
+T *branch * compound-subquery-affinity
+T *sym-compound-subquery-affinity *
+T -sym-trunk *
 U drh
-Z a1811f8f003e2400c1c50cad60d7b2cc
+Z 7c2ae6bcf3d76ce120ccc503dbc0842f
 # Remove this line to create a well-formed Fossil manifest.
