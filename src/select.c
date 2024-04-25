@@ -2336,17 +2336,21 @@ void sqlite3SubqueryColumnTypes(
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
     i64 n;
+    Select *pS2 = pSelect;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
+    while( pCol->affinity<=SQLITE_AFF_NONE && pS2->pNext!=0 ){
+      pS2 = pS2->pNext;
+      pCol->affinity = sqlite3ExprAffinity(pS2->pEList->a[i].pExpr);
+    }
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       pCol->affinity = aff;
     }
-    if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
+    if( pCol->affinity>=SQLITE_AFF_TEXT && pS2->pNext ){
       int m = 0;
-      Select *pS2;
-      for(m=0, pS2=pSelect->pNext; pS2; pS2=pS2->pNext){
+      for(m=0, pS2=pS2->pNext; pS2; pS2=pS2->pNext){
         m |= sqlite3ExprDataType(pS2->pEList->a[i].pExpr);
       }
       if( pCol->affinity==SQLITE_AFF_TEXT && (m&0x01)!=0 ){
@@ -6417,7 +6421,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       Select *pSel = pFrom->pSelect;
       if( pSel ){
-        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_BLOB);
+        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_NONE);
       }
     }
   }
