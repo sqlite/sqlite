@@ -1,5 +1,5 @@
-C If\sa\sRETURNING\sclause\scontains\sa\ssubquery\sthat\sreferences\sthe\stable\sthat\sis\nbeing\supdated\sin\sthe\sstatement\sthat\sincludes\sthe\sRETURNING\sclause,\sthen\smark\nthe\ssubquery\sas\scorrelated\ssot\shat\sit\sis\srecomputed\sfor\seach\sresult\sand\snot\njust\scomputed\sonce\sand\sreused.\s\sSee\n[forum:/forumpost/2c83569ce8945d39|forum\spost\s2c83569ce8945d39].
-D 2024-04-24T16:36:37.548
+C wasm:\sadd\sa\smakefile\scomment\sabout\sthe\sstatic\ssqlite3.h/c\sversion\sinfo\sinjected\sinto\sthe\sJS\sfiles\spossibly\sdiffering\sfrom\sthe\sruntime-emited\sversion\sinfo\swhen\sa\suser\sprovides\stheir\sown\ssqlite3.c.
+D 2024-04-25T06:52:19.923
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -588,7 +588,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 0d5ccc8a4814716c1c789bb3069dd4d71d5ef0a97bbea074ac182fbfb85a3ca8
+F ext/wasm/GNUmakefile 21f015f342e4ed9b7ff632c10750512259d26c836a34f4f535673fae9a7c9fcc
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2185,8 +2185,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 240a4a48b27a2b1070bba6d7da76a8df8e3f1808e262045d7ad2cf910df08f3d
-R 0443bbe68d7ebf5917ca0dd9f2f0960d
-U drh
-Z a1811f8f003e2400c1c50cad60d7b2cc
+P 9ea6bcc8fdf6aadb756ec5bcaaa7af314167f8973bdd32fd23f83bd964f0c21e
+R 64fc844d8bd132b5a1025854e240b927
+U stephan
+Z 2ab8bdbf685d01a81ecb7a8256df40c5
 # Remove this line to create a well-formed Fossil manifest.

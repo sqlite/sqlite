@@ -289,6 +289,12 @@ endif
 # embedding in the JS files and in building the distribution zip file.
 # It must NOT be in $(dir.tmp) because we need it to survive the
 # cleanup process for the dist build to work properly.
+#
+# Slight caveat: this uses the version info from the in-tree
+# sqlite3.c/h, which may diff from a user-provided $(sqlite3.c).  The
+# end result is that the generated JS files may have static version
+# info from $(bin.version-info) which differ from their runtime-emited
+# version info (e.g. from sqlite3_libversion()).
 bin.version-info := $(dir.top)/version-info
 .NOTPARALLEL: $(bin.version-info)
 $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
