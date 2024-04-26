@@ -1,5 +1,5 @@
-C Improvement\sto\sthe\sway\sthat\saffinity\sis\sdetermined\sfor\scolumns\sof\sa\ncompound\ssubquery.\s\sThe\saffinity\sis\sthe\saffinity\sof\sthe\sleft-most\narm\sof\sthe\scompound\ssubquery\sthat\shas\san\saffinity\sother\sthan\sNONE,\sadjusted\nto\saccommodate\sthe\sdata\stypes\scoming\sout\sof\sthe\sother\sarms.
-D 2024-04-25T23:26:11.710
+C Add\stest\sdemonstrating\sthe\sproblem\sat\s[forum:/forumpost/c243b8f856|forum\spost\sc243b8f856].\sNo\sfix\syet.
+D 2024-04-26T12:01:17.532
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -936,6 +936,7 @@ F test/bestindex8.test 333ad8c6a554b885a49b68c019166eda92b05f493a92b36b0acdf7f76
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
+F test/bestindexC.test cddef2bfebfce49f27d93de6db070e158842e9414ade05e2ddd9f869691bf698
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -2185,8 +2186,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d99a01a0f6e1f70f70c9a0625aeaa8a8015eba352bcfb3978eafca6df10ba5a8 bbdf22e3d989f42b963f1f2f219dfeac11db786f17ac27097ab72f72e7638a2a
-R 654e0ae3f3741f82dda9d50fba2bb5a6
-U drh
-Z cd9aa5444a2a196c931f4e6dcda6cddb
+P e6df846f36209bac3e420dd80ce2bbbd87ab7a20b8063fce05f78a3c7ab6027e
+R 86e9e2a691d55b415e3c7d753f120811
+T *branch * vtab-limit-fix
+T *sym-vtab-limit-fix *
+T -sym-trunk *
+U dan
+Z 98d2dacd3c5e1da28914a036142cb128
 # Remove this line to create a well-formed Fossil manifest.
