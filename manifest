@@ -1,5 +1,5 @@
-C Add\stest\sdemonstrating\sthe\sproblem\sat\s[forum:/forumpost/c243b8f856|forum\spost\sc243b8f856].\sNo\sfix\syet.
-D 2024-04-26T12:01:17.532
+C Enhance\sthe\sgenerated_series()\stable-valued-function\sto\srespond\sto\nLIMIT\sand\sOFFSET.\s\sUse\sthis\sto\sadd\snew\stest\scases\sfor\sLIMIT\sand\sOFFSET\non\svirtual\stables\sin\sa\scompound\sSELECT.
+D 2024-04-26T13:30:48.724
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -411,7 +411,7 @@ F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab840709636240
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 384f93a8a09cf45e1aa6575660cb580ed61d372c590aad05cdcd4a84fbd8f6ab
+F ext/misc/series.c 69df6c989a37c58d831dcd4c6742ea7c98bc1517d45905290445f3bb277d2cbf
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1679,7 +1679,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 54f27eacd054aa528a8b6e3331192c484104f30aaee351ad035f2b39a00f87c4
+F test/tabfunc01.test f150d206294471d20f50029e6b46b76b87a7a010b16dc57eb44245c76dd02802
 F test/table.test 7862a00b58b5541511a26757ea9c5c7c3f8298766e98aa099deec703d9c0a8e0
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2186,11 +2186,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6df846f36209bac3e420dd80ce2bbbd87ab7a20b8063fce05f78a3c7ab6027e
-R 86e9e2a691d55b415e3c7d753f120811
-T *branch * vtab-limit-fix
-T *sym-vtab-limit-fix *
-T -sym-trunk *
-U dan
-Z 98d2dacd3c5e1da28914a036142cb128
+P 1685495c0a00238c9c92cce01af8108204a2fad22433ed3e7bba3c9da9ee0766
+R 5bce82b446834e1e285fe6cb5599985f
+U drh
+Z 002d1fa139abb35e0569e061564589d9
 # Remove this line to create a well-formed Fossil manifest.
