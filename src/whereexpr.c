@@ -1638,6 +1638,7 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         continue;
       }
       if( pWC->a[ii].leftCursor!=iCsr ) return;
+      if( pWC->a[ii].prereqRight!=0 ) return;
     }
 
     /* Check condition (5). Return early if it is not met. */

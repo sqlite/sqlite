@@ -134,4 +134,24 @@ do_execsql_test 2.1 {
   LIMIT 3
 } {c d}
 
+#-------------------------------------------------------------------------
+reset_db
+register_tcl_module db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command "1 2 3 4 5 6 7 8 9 10");
+} {}
+
+do_execsql_test 3.1 {
+  SELECT * FROM y1 WHERE a = COALESCE('8', a) LIMIT 3
+} {8}
+
+do_execsql_test 3.2 {
+  SELECT * FROM y1 WHERE a = '2' LIMIT 3
+} {2}
+
+load_static_extension db series
+do_execsql_test 3.3 {
+  SELECT * FROM generate_series(1, 5) WHERE value = (value & 14) LIMIT 3
+} {2 4}
+
 finish_test
