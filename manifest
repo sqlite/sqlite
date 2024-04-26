@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sallowing\sa\sLIMIT\sconstraint\sto\sbe\spassed\sto\sa\svirtual\stable\sin\scases\swhere\sthere\sexist\sWHERE\sterms\sthat\scannot\salso\sbe\spassed.
-D 2024-04-26T14:32:58.805
+C Use\shex\sflag\smasks\srather\sthan\sdecimals\sin\sext/misc/series.c.
+D 2024-04-26T14:36:28.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -411,7 +411,7 @@ F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab840709636240
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 69df6c989a37c58d831dcd4c6742ea7c98bc1517d45905290445f3bb277d2cbf
+F ext/misc/series.c ba7c22c607e24c42bd8e6f289e246abb997e6a11b76b1a385d6f4272eae1ac88
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2186,8 +2186,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40421c1c4ed5bb1ed79ad7ee37cb5a4f0b7864c1eb94abd8ee357ab2202cad30
-R 2db4adc3908600896b903e9d700f2b90
-U dan
-Z 2050298cecb5ad6b15cc33d4bff9b8cd
+P 72c8ed9698dd2aadee7b84fd293e8306233f0fe5b5b5731687482444fdf461c7
+R e853dfcde05ddfe7b4221b55af72f1df
+U drh
+Z 2da9867ae5f646560b353212baa0f0fb
 # Remove this line to create a well-formed Fossil manifest.

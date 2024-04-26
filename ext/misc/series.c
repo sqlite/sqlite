@@ -411,7 +411,7 @@ static int seriesFilter(
     if( pCur->ss.iStep==0 ){
       pCur->ss.iStep = 1;
     }else if( pCur->ss.iStep<0 ){
-      if( (idxNum & 16)==0 ) idxNum |= 8;
+      if( (idxNum & 0x10)==0 ) idxNum |= 0x08;
     }
   }else{
     pCur->ss.iStep = 1;
