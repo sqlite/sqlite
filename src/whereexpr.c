@@ -1653,13 +1653,13 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
 
     /* All conditions are met. Add the terms to the where-clause object. */
     assert( p->pLimit->op==TK_LIMIT );
-    if( p->iOffset==0 || (p->selFlags & SF_Compound)==0 ){
-      whereAddLimitExpr(pWC, p->iLimit, p->pLimit->pLeft,
-                        iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
-    }
     if( p->iOffset!=0 && (p->selFlags & SF_Compound)==0 ){
       whereAddLimitExpr(pWC, p->iOffset, p->pLimit->pRight,
                         iCsr, SQLITE_INDEX_CONSTRAINT_OFFSET);
+    }
+    if( p->iOffset==0 || (p->selFlags & SF_Compound)==0 ){
+      whereAddLimitExpr(pWC, p->iLimit, p->pLimit->pLeft,
+                        iCsr, SQLITE_INDEX_CONSTRAINT_LIMIT);
     }
   }
 }

@@ -40,11 +40,11 @@ proc vtab_command {lVal method args} {
       foreach c $clist {
         array set a $c
         if {$a(usable)==0} continue
-        if {$a(op)=="limit"} { 
+        if {$a(op)=="limit" && ![info exists ::do_not_use_limit]} { 
           lappend idxstr limit
           lappend res omit $idx
         }
-        if {$a(op)=="offset"} { 
+        if {$a(op)=="offset" && ![info exists ::do_not_use_offset]} { 
           lappend idxstr offset
           lappend res omit $idx
         }
@@ -58,8 +58,12 @@ proc vtab_command {lVal method args} {
       set idxstr [lindex $args 1]
       set LIMIT ""
       foreach a $idxstr b [lindex $args 2] {
-        append LIMIT " $a $b"
+        set x($a) $b
       }
+
+      if {![info exists x(limit)]} { set x(limit) -1 }
+      if {![info exists x(offset)]} { set x(offset) -1 }
+      set LIMIT " LIMIT $x(limit) OFFSET $x(offset)"
 
       set idx 1
       foreach v $lVal {
@@ -157,5 +161,18 @@ do_execsql_test 3.3 {
 do_execsql_test 3.4 {
   SELECT value FROM generate_series(1,10) WHERE value>2 LIMIT 4 OFFSET 1;
 } {4 5 6 7}
+
+set ::do_not_use_limit 1
+do_execsql_test 3.5 {
+  SELECT * FROM y1 LIMIT 5 OFFSET 3
+} {4 5 6 7 8}
+unset ::do_not_use_limit
+set ::do_not_use_offset 1
+do_execsql_test 3.6 {
+  SELECT * FROM y1 LIMIT 5 OFFSET 3
+} {4 5 6 7 8}
+unset ::do_not_use_offset
+
+
 
 finish_test
