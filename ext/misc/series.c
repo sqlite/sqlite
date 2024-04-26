@@ -478,7 +478,9 @@ static int seriesBestIndex(
 ){
   int i, j;              /* Loop over constraints */
   int idxNum = 0;        /* The query plan bitmask */
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
   int bStartSeen = 0;    /* EQ constraint seen on the START column */
+#endif
   int unusableMask = 0;  /* Mask of unusable constraints */
   int nArg = 0;          /* Number of arguments that seriesFilter() expects */
   int aIdx[5];           /* Constraints on start, stop, step, LIMIT, OFFSET */
@@ -495,11 +497,16 @@ static int seriesBestIndex(
     int iCol;    /* 0 for start, 1 for stop, 2 for step */
     int iMask;   /* bitmask for those column */
     int op = pConstraint->op;
-    if( op!=SQLITE_INDEX_CONSTRAINT_EQ ){
-      if( op==SQLITE_INDEX_CONSTRAINT_LIMIT ){
+    if( op>=SQLITE_INDEX_CONSTRAINT_LIMIT
+     && op<=SQLITE_INDEX_CONSTRAINT_OFFSET
+    ){
+      if( pConstraint->usable==0 ){
+        /* do nothing */
+      }else if( op==SQLITE_INDEX_CONSTRAINT_LIMIT ){
         aIdx[3] = i;
         idxNum |= 0x20;
-      }else if( op==SQLITE_INDEX_CONSTRAINT_OFFSET ){
+      }else{
+        assert( op==SQLITE_INDEX_CONSTRAINT_OFFSET );
         aIdx[4] = i;
         idxNum |= 0x40;
       }
@@ -509,11 +516,15 @@ static int seriesBestIndex(
     iCol = pConstraint->iColumn - SERIES_COLUMN_START;
     assert( iCol>=0 && iCol<=2 );
     iMask = 1 << iCol;
-    if( iCol==0 ) bStartSeen = 1;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
+    if( iCol==0 && op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      bStartSeen = 1;
+    }
+#endif
     if( pConstraint->usable==0 ){
       unusableMask |=  iMask;
       continue;
-    }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+    }else if( op==SQLITE_INDEX_CONSTRAINT_EQ ){
       idxNum |= iMask;
       aIdx[iCol] = i;
     }
@@ -548,7 +559,7 @@ static int seriesBestIndex(
     ** this plan is unusable */
     return SQLITE_CONSTRAINT;
   }
-  if( (idxNum & 3)==3 ){
+  if( (idxNum & 0x03)==0x03 ){
     /* Both start= and stop= boundaries are available.  This is the 
     ** the preferred case */
     pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
@@ -561,6 +572,9 @@ static int seriesBestIndex(
       }
       pIdxInfo->orderByConsumed = 1;
     }
+  }else if( (idxNum & 0x21)==0x21 ){
+    /* We have start= and LIMIT */
+    pIdxInfo->estimatedRows = 2500;
   }else{
     /* If either boundary is missing, we have to generate a huge span
     ** of numbers.  Make this case very expensive so that the query
