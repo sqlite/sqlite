@@ -1,5 +1,5 @@
-C Enhance\sthe\sgenerated_series()\stable-valued-function\sto\srespond\sto\nLIMIT\sand\sOFFSET.\s\sUse\sthis\sto\sadd\snew\stest\scases\sfor\sLIMIT\sand\sOFFSET\non\svirtual\stables\sin\sa\scompound\sSELECT.
-D 2024-04-26T13:30:48.724
+C Fix\shandling\sof\sLIMIT\sand\sOFFSET\sin\svirtual\stables\sthat\sare\spart\sof\na\scompound\sSELECT.
+D 2024-04-26T13:38:43.836
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -839,7 +839,7 @@ F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 447d8761632fb0a18b03077161415d9713cbd0a81bf34a35cee63480e5c401c5
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c 1f6940349e92a6e056aecd70163b00f331554c815c362b4cc80906c48151d73d
-F src/whereexpr.c 7b64295f1d82ad0928df435925dd7bbd5997b44a026153113eace0d9e71ff435
+F src/whereexpr.c f6c25f7c8c0301f983dbf2ca06dc0081728e3a6c104f6ffdfacd64d80c5c2e76
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2186,8 +2186,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1685495c0a00238c9c92cce01af8108204a2fad22433ed3e7bba3c9da9ee0766
-R 5bce82b446834e1e285fe6cb5599985f
+P 408d47ecaa3b906d0886f76a22b76339ec5878270ffe8d1838c74de09c29a33e
+R 6c52e220da37a777a1b67496ddeb5f65
 U drh
-Z 002d1fa139abb35e0569e061564589d9
+Z b21bac460d0c0d27bd69b9e1b44612bb
 # Remove this line to create a well-formed Fossil manifest.
