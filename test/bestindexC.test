@@ -1,4 +1,4 @@
-# 2023-10-26
+# 2024-04-26
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -13,7 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix bestindexB
+set testprefix bestindexC
 
 ifcapable !vtab {
   finish_test
@@ -153,5 +153,9 @@ load_static_extension db series
 do_execsql_test 3.3 {
   SELECT * FROM generate_series(1, 5) WHERE value = (value & 14) LIMIT 3
 } {2 4}
+
+do_execsql_test 3.4 {
+  SELECT value FROM generate_series(1,10) WHERE value>2 LIMIT 4 OFFSET 1;
+} {4 5 6 7}
 
 finish_test
