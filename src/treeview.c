@@ -346,7 +346,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
       sqlite3TreeViewExpr(pView, p->pLimit->pLeft, p->pLimit->pRight!=0);
       if( p->pLimit->pRight ){
-        sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
+        sqlite3TreeViewItem(pView, "OFFSET", 0);
         sqlite3TreeViewExpr(pView, p->pLimit->pRight, 0);
         sqlite3TreeViewPop(&pView);
       }
