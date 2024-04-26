@@ -1925,15 +1925,15 @@ globalThis.WhWasmUtilInstaller = function(target){
        const C-string, encoded as UTF-8, copies it to a JS string,
        and returns that JS string.
 
-     - `string:dealloc` or `utf8:dealloc) (results): treats the result value
-       as a non-const UTF-8 C-string, ownership of which has just been
-       transfered to the caller. It copies the C-string to a JS
-       string, frees the C-string, and returns the JS string. If such
-       a result value is NULL, the JS result is `null`. Achtung: when
-       using an API which returns results from a specific allocator,
-       e.g. `my_malloc()`, this conversion _is not legal_. Instead, an
-       equivalent conversion which uses the appropriate deallocator is
-       required. For example:
+     - `string:dealloc` or `utf8:dealloc` (results): treats the result
+       value as a non-const UTF-8 C-string, ownership of which has
+       just been transfered to the caller. It copies the C-string to a
+       JS string, frees the C-string, and returns the JS string. If
+       such a result value is NULL, the JS result is `null`. Achtung:
+       when using an API which returns results from a specific
+       allocator, e.g. `my_malloc()`, this conversion _is not
+       legal_. Instead, an equivalent conversion which uses the
+       appropriate deallocator is required. For example:
 
 ```js
    target.xWrap.resultAdapter('string:my_free',(i)=>{

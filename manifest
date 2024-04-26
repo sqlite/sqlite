@@ -1,5 +1,5 @@
-C Additional\sinternal\sdocs\sin\sthe\swasm\sutilities.
-D 2024-04-26T18:24:23.472
+C Internal\sJS\sdoc\stouchups.\sNo\sfunctional\schanges.
+D 2024-04-26T18:42:50.715
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -627,7 +627,7 @@ F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js fc923692f51b9a47cb6c3d0ab350db542cf6774c39d9e4ed9e894b55180d6989
+F ext/wasm/common/whwasmutil.js e474e0fac695abf88e5385581e26d53e5706cd268cab9d92a56eab2873c08daa
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32e7be5bf
@@ -2185,8 +2185,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 38f1e5ce4eedd59fbeb0a0d676d26dfe8a3313189ab9b9e4a5a1ed6721b73a14
-R 42961bb992b575c9ac9834f429717116
+P 5a2245a9ebae6d23cd343e46b9d730f66ec4d5ffc91b83ed11a0fbd2194ad807
+R 2adc6cf9c9a2aba61ab0a2581495ddf7
 U stephan
-Z e5e500cd82301a12835836646a3b6e08
+Z fc84f35cfa574620d41dff4fcae199b4
 # Remove this line to create a well-formed Fossil manifest.
