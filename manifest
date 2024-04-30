@@ -1,5 +1,5 @@
-C Fix\sissues\sin\s[/info/1e227ad9f413227f|LIMIT/OFFSET\ssupport\sfor\svirtual\stables].\nThe\sfirst\sproblem\swas\sreported\sby\n[forum:/forumpost/c243b8f856|forum\spost\sc243b8f856].\s\sThat\sreport\sprompted\nan\senhancement\sto\sthe\sgenerate_series()\s(also\sincluded\sin\sthis\smerge)\swhich\nin\sturn\sidentified\sother\ssimilar\sissues.
-D 2024-04-26T19:10:15.851
+C Avoid\s32-bit\soverflow\swhen\scalculating\sncycle\sfor\s".scanstats\svm".
+D 2024-04-30T19:34:15.474
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -830,7 +830,7 @@ F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe
 F src/vdbemem.c 385c8b89da3b5ef9a468d77a466958aa72ee1212d5cb005f23ec63df1d413054
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
-F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
+F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 4c475fb672a6fe57830561e614dbee21a9a24a6f616d1cfcbe85f356a09f14ad
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
@@ -2186,9 +2186,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 626b997b4e727554d7ec8b60fb37b2a94cb861a87325da4ae484bd9aa8961ca5 90e5c8226a695e838e8c1703a9b8598e654d216799e8806c4d1a1f20c28c6486
-R 2a7971e3914aa76c70593754ba02f5ed
-T +closed 90e5c8226a695e838e8c1703a9b8598e654d216799e8806c4d1a1f20c28c6486
-U drh
-Z e187ac779304121a02fd3106018bb12d
+P 5f6c079d847e3664ec5acaf1b3e989efe0d548c211ae4a18936162b36df89065
+R 903fbc18fbeeda59fd5e86360c55f235
+U dan
+Z 0ade4d9c1bbdd68ad336341e8aad91d0
 # Remove this line to create a well-formed Fossil manifest.
