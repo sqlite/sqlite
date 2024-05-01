@@ -693,10 +693,9 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
                 pgnoOvfl = get_uint32(aOvfl);
                 sqlite3_free(aOvfl);
               }
-              memset(&pCsr->rec.aBuf[nPayload-nRem], 0, DBDATA_PADDING_BYTES);
-            }else{
-              memset(&pCsr->rec.aBuf[nLocal], 0, DBDATA_PADDING_BYTES);
+              nPayload -= nRem;
             }
+            memset(&pCsr->rec.aBuf[nPayload], 0, DBDATA_PADDING_BYTES);
     
             iHdr = dbdataGetVarintU32(pCsr->rec.aBuf, &nHdr);
             if( nHdr>nPayload ) nHdr = 0;
