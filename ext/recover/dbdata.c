@@ -88,6 +88,15 @@ typedef unsigned int u32;
 
 typedef struct DbdataTable DbdataTable;
 typedef struct DbdataCursor DbdataCursor;
+typedef struct DbdataBuffer DbdataBuffer;
+
+/*
+** Buffer type.
+*/
+struct DbdataBuffer {
+  u8 *aBuf;
+  sqlite3_int64 nBuf;
+};
 
 /* Cursor object */
 struct DbdataCursor {
@@ -104,7 +113,7 @@ struct DbdataCursor {
   sqlite3_int64 iRowid;
 
   /* Only for the sqlite_dbdata table */
-  u8 *pRec;                       /* Buffer containing current record */
+  DbdataBuffer rec;
   sqlite3_int64 nRec;             /* Size of pRec[] in bytes */
   sqlite3_int64 nHdr;             /* Size of header in bytes */
   int iField;                     /* Current field number */
@@ -148,6 +157,31 @@ struct DbdataTable {
       "  child INTEGER,"          \
       "  schema TEXT HIDDEN"      \
       ")"
+
+/*
+** Ensure the buffer passed as the first argument is at least nMin bytes
+** in size. If an error occurs while attempting to resize the buffer,
+** SQLITE_NOMEM is returned. Otherwise, SQLITE_OK.
+*/
+static int dbdataBufferSize(DbdataBuffer *pBuf, sqlite3_int64 nMin){
+  if( nMin>pBuf->nBuf ){
+    sqlite3_int64 nNew = nMin+16384;
+    u8 *aNew = (u8*)sqlite3_realloc64(pBuf->aBuf, nNew);
+
+    if( aNew==0 ) return SQLITE_NOMEM;
+    pBuf->aBuf = aNew;
+    pBuf->nBuf = nNew;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Release the allocation managed by buffer pBuf.
+*/
+static void dbdataBufferFree(DbdataBuffer *pBuf){
+  sqlite3_free(pBuf->aBuf);
+  memset(pBuf, 0, sizeof(*pBuf));
+}
 
 /*
 ** Connect to an sqlite_dbdata (pAux==0) or sqlite_dbptr (pAux!=0) virtual 
@@ -289,8 +323,7 @@ static void dbdataResetCursor(DbdataCursor *pCsr){
   pCsr->iField = 0;
   pCsr->bOnePage = 0;
   sqlite3_free(pCsr->aPage);
-  sqlite3_free(pCsr->pRec);
-  pCsr->pRec = 0;
+  dbdataBufferFree(&pCsr->rec);
   pCsr->aPage = 0;
 }
 
@@ -551,7 +584,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
       }
     }else{
       /* If there is no record loaded, load it now. */
-      if( pCsr->pRec==0 ){
+      if( pCsr->nRec==0 ){
         int bHasRowid = 0;
         int nPointer = 0;
         sqlite3_int64 nPayload = 0;
@@ -595,6 +628,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           }else{
             iOff += dbdataGetVarintU32(&pCsr->aPage[iOff], &nPayload);
             if( nPayload>0x7fffff00 ) nPayload &= 0x3fff;
+            if( nPayload==0 ) nPayload = 1;
           }
     
           /* If this is a leaf intkey cell, load the rowid */
@@ -629,13 +663,13 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             /* Allocate space for payload. And a bit more to catch small buffer
             ** overruns caused by attempting to read a varint or similar from 
             ** near the end of a corrupt record.  */
-            pCsr->pRec = (u8*)sqlite3_malloc64(nPayload+DBDATA_PADDING_BYTES);
-            if( pCsr->pRec==0 ) return SQLITE_NOMEM;
-            memset(pCsr->pRec, 0, nPayload+DBDATA_PADDING_BYTES);
+            rc = dbdataBufferSize(&pCsr->rec, nPayload+DBDATA_PADDING_BYTES);
+            if( rc!=SQLITE_OK ) return rc;
+            assert( nPayload!=0 );
             pCsr->nRec = nPayload;
 
             /* Load the nLocal bytes of payload */
-            memcpy(pCsr->pRec, &pCsr->aPage[iOff], nLocal);
+            memcpy(pCsr->rec.aBuf, &pCsr->aPage[iOff], nLocal);
             iOff += nLocal;
 
             /* Load content from overflow pages */
@@ -653,19 +687,22 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
 
                 nCopy = U-4;
                 if( nCopy>nRem ) nCopy = nRem;
-                memcpy(&pCsr->pRec[nPayload-nRem], &aOvfl[4], nCopy);
+                memcpy(&pCsr->rec.aBuf[nPayload-nRem], &aOvfl[4], nCopy);
                 nRem -= nCopy;
 
                 pgnoOvfl = get_uint32(aOvfl);
                 sqlite3_free(aOvfl);
               }
+              memset(&pCsr->rec.aBuf[nPayload-nRem], 0, DBDATA_PADDING_BYTES);
+            }else{
+              memset(&pCsr->rec.aBuf[nLocal], 0, DBDATA_PADDING_BYTES);
             }
     
-            iHdr = dbdataGetVarintU32(pCsr->pRec, &nHdr);
+            iHdr = dbdataGetVarintU32(pCsr->rec.aBuf, &nHdr);
             if( nHdr>nPayload ) nHdr = 0;
             pCsr->nHdr = nHdr;
-            pCsr->pHdrPtr = &pCsr->pRec[iHdr];
-            pCsr->pPtr = &pCsr->pRec[pCsr->nHdr];
+            pCsr->pHdrPtr = &pCsr->rec.aBuf[iHdr];
+            pCsr->pPtr = &pCsr->rec.aBuf[pCsr->nHdr];
             pCsr->iField = (bHasRowid ? -1 : 0);
           }
         }
@@ -673,7 +710,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
         pCsr->iField++;
         if( pCsr->iField>0 ){
           sqlite3_int64 iType;
-          if( pCsr->pHdrPtr>=&pCsr->pRec[pCsr->nRec] 
+          if( pCsr->pHdrPtr>=&pCsr->rec.aBuf[pCsr->nRec] 
            || pCsr->iField>=DBDATA_MX_FIELD
           ){
             bNextPage = 1;
@@ -681,8 +718,8 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             int szField = 0;
             pCsr->pHdrPtr += dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
             szField = dbdataValueBytes(iType);
-            if( (pCsr->nRec - (pCsr->pPtr - pCsr->pRec))<szField ){
-              pCsr->pPtr = &pCsr->pRec[pCsr->nRec];
+            if( (pCsr->nRec - (pCsr->pPtr - pCsr->rec.aBuf))<szField ){
+              pCsr->pPtr = &pCsr->rec.aBuf[pCsr->nRec];
             }else{
               pCsr->pPtr += szField;
             }
@@ -692,20 +729,18 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
 
       if( bNextPage ){
         sqlite3_free(pCsr->aPage);
-        sqlite3_free(pCsr->pRec);
         pCsr->aPage = 0;
-        pCsr->pRec = 0;
+        pCsr->nRec = 0;
         if( pCsr->bOnePage ) return SQLITE_OK;
         pCsr->iPgno++;
       }else{
-        if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->pRec[pCsr->nHdr] ){
+        if( pCsr->iField<0 || pCsr->pHdrPtr<&pCsr->rec.aBuf[pCsr->nHdr] ){
           return SQLITE_OK;
         }
 
         /* Advance to the next cell. The next iteration of the loop will load
         ** the record and so on. */
-        sqlite3_free(pCsr->pRec);
-        pCsr->pRec = 0;
+        pCsr->nRec = 0;
         pCsr->iCell++;
       }
     }
@@ -895,12 +930,12 @@ static int dbdataColumn(
       case DBDATA_COLUMN_VALUE: {
         if( pCsr->iField<0 ){
           sqlite3_result_int64(ctx, pCsr->iIntkey);
-        }else if( &pCsr->pRec[pCsr->nRec] >= pCsr->pPtr ){
+        }else if( &pCsr->rec.aBuf[pCsr->nRec] >= pCsr->pPtr ){
           sqlite3_int64 iType;
           dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
           dbdataValue(
               ctx, pCsr->enc, iType, pCsr->pPtr, 
-              &pCsr->pRec[pCsr->nRec] - pCsr->pPtr
+              &pCsr->rec.aBuf[pCsr->nRec] - pCsr->pPtr
           );
         }
         break;
