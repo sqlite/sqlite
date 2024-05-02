@@ -666,7 +666,6 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             rc = dbdataBufferSize(&pCsr->rec, nPayload+DBDATA_PADDING_BYTES);
             if( rc!=SQLITE_OK ) return rc;
             assert( nPayload!=0 );
-            pCsr->nRec = nPayload;
 
             /* Load the nLocal bytes of payload */
             memcpy(pCsr->rec.aBuf, &pCsr->aPage[iOff], nLocal);
@@ -696,6 +695,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
               nPayload -= nRem;
             }
             memset(&pCsr->rec.aBuf[nPayload], 0, DBDATA_PADDING_BYTES);
+            pCsr->nRec = nPayload;
     
             iHdr = dbdataGetVarintU32(pCsr->rec.aBuf, &nHdr);
             if( nHdr>nPayload ) nHdr = 0;
