@@ -103,5 +103,18 @@ foreach {tn nNext idx sql} {
   } $nNext
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a TEXT PRIMARY KEY, b TEXT) WITHOUT ROWID;
+  INSERT INTO t1 VALUES('1', 'one');
+  INSERT INTO t1 VALUES('2', NULL);
+  INSERT INTO t1 VALUES('3', 'three');
+}
+
+do_execsql_test 2.1 {
+  SELECT b FROM t1 WHERE a IN (1,2,3) ORDER BY b ASC NULLS LAST;
+} {one three {}}
+
 
 finish_test

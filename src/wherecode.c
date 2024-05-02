@@ -2106,7 +2106,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
  
     /* Record the instruction used to terminate the loop. */
     if( (pLoop->wsFlags & WHERE_ONEROW)
-     || (pLevel->u.in.nIn && whereLoopIsOneRow(pLoop))
+     || (pLevel->u.in.nIn && regBignull==0 && whereLoopIsOneRow(pLoop))
     ){
       pLevel->op = OP_Noop;
     }else if( bRev ){
