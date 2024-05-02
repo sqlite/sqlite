@@ -1,5 +1,5 @@
-C Do\snot\saccept\sa\sstring\sthat\slooks\slike\sa\snumber\sused\sas\san\sargument\sto\nPRAGMA\sintegrity_check\sas\sa\snumber.\s\sTreat\sit\sas\sa\stable\sname\sthat\sjust\nhappens\sto\slook\slike\sa\snumber.
-D 2024-05-02T11:52:31.688
+C Add\sa\stest\scase\sto\sthe\sfix\sto\sPRAGMA\sintegrity_check\sin\sthe\sprevious\scheck-in.
+D 2024-05-02T12:00:36.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1501,7 +1501,7 @@ F test/pendingrace.test 6aa33756b950c4529f79c4f3817a9a1e4025bd0d9961571a05c0279b
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
-F test/pragma.test 8bb6d3992c1c31ff6d5553d1e0693d642f7e19015648c6ae7034cb497d26bbd4
+F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
 F test/pragma4.test 22834a228e59b80f5c15b519b710474859d91535002670ddb7cd13ac44b54e9a
@@ -2187,8 +2187,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 532795acd1c800751737fe70148f9ae691e9cf11b836577f8538421d24cab2fe
-R ac4ea06b7b0d066e4f57370f325b3bc3
+P b04e7a23478f1012e501a810f3e09cca81a66e802f5f72cae80c81120174e2cb
+R 0ac28bb5468fe4b54198e9b7f938f439
 U drh
-Z fc28259a0336795cd85fcb803ce7457a
+Z 39f04eb486031705b188423b1deb4083
 # Remove this line to create a well-formed Fossil manifest.
