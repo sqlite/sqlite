@@ -520,4 +520,15 @@ do_execsql_test 20.3 {
   8 N N N
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  PRAGMA writable_schema=ON;
+  INSERT INTO sqlite_schema DEFAULT VALUES RETURNING sqlite_schema.name;
+} {{}}
+
+do_execsql_test 21.1 {
+  INSERT INTO sqlite_temp_schema DEFAULT VALUES RETURNING sqlite_temp_schema.name;
+} {{}}
+
 finish_test
