@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\sin\sthe\srecovery\sextension\swhere\sa\scorrupt\ssqlite_schema\stable\scould\slead\sto\sexcessive\smemory\sconsumption.
-D 2024-05-01T16:25:46.099
+C Omit\sthe\sOP_SqlExec\sto\s"PRAGMA\sintegrity_check"\sadded\sby\s[348fa7aaf7958b3f]\nbecause\sit\sis\sa\sno-op.\s\sEven\sif\sthe\sintegrity_check\sfailes,\sthe\sCREATE\sTABLE\nis\sstull\ssuccessful.\s\sThe\sOP_SqlExec\sjust\sburns\sCPU\scycles\sfor\sno\sreason.
+D 2024-05-02T11:51:26.866
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 71b80e77b255144db47180fda8138740608e382a44231942464029b1a45fc036
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c 02f5b25ca854c83b5015cb02b8c9ab236c60b1795528675aee8a5070e58da52a
+F src/build.c 11ec7014a3c468e7b3ccc8dda8d9111cd5a29a358df18818788601e0600aaabd
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
@@ -2187,8 +2187,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8de85170d53e1d2a2abe14508a222377b9493e25f3174b8f0f773427deb8df26
-R 2e43de06901a93042cb97fda0a6a1240
-U dan
-Z 503087664d848ee9e213d2cb778368c0
+P 1c7e33a8aa0e6122b5ef606e4a7d95e8ecd9440216d4b099fe8f2a40653422be
+R fa686d9a513ff74fa7b322c41469fcee
+T *branch * faster-create
+T *sym-faster-create *
+T -sym-trunk *
+U drh
+Z 8e0fd4c6a3749c78cd7f96ba5b5be837
 # Remove this line to create a well-formed Fossil manifest.
