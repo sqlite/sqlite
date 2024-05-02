@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\sin\sthe\srecovery\sextension\swhere\sa\scorrupt\ssqlite_schema\stable\scould\slead\sto\sexcessive\smemory\sconsumption.
-D 2024-05-01T16:25:46.099
+C Fix\sthe\sCREATE\sTABLE\sperformance\sissue\sdescribed\sby\n[forum:/forumpost/4cf69794d9dfff7c|forum\sthread\s4cf69794d9dfff7c]\sin\stwo\ndifferent\sways:\s\s(1)\sOmit\sthe\scall\sto\sPRAGMA\sintegrity_check('X')\sthat\swas\nbeing\sdone\safter\sCREATE\sTABLE\s"X"\sbecause\sthe\sresult\swas\sbeing\signored\sand\nthe\sintegrity_check\swas\snot\sdoing\sanything\sother\sthan\sburning\sCPU\scycles.\n(2)\sDo\snot\sinterpret\sthe\sargument\sto\sPRAGMA\sintegrity_check\sas\sa\snumber\sif\sit\nis\sin\sfact\sa\sstring\sthat\slooks\slike\sa\snumber.
+D 2024-05-02T12:14:31.463
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 71b80e77b255144db47180fda8138740608e382a44231942464029b1a45fc036
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c 02f5b25ca854c83b5015cb02b8c9ab236c60b1795528675aee8a5070e58da52a
+F src/build.c 11ec7014a3c468e7b3ccc8dda8d9111cd5a29a358df18818788601e0600aaabd
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
@@ -745,7 +745,7 @@ F src/parse.y 5bcef16094213efcc365a9d4dc4e3131f09251dc8838dce4a9e5f9764bff5b82
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c f8f1845b42df684e9d31c5a1628c989a34939686049d7878bc5394ac1ae9cac4
+F src/pragma.c d357a25276d222adfd4637c48880409ec4539f30844b74001c6ba5c7d1a1f0f7
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 8b250972305e14b365561be5117ed0fd364e4fd58968776df1ce64c6280b90f9
@@ -1501,7 +1501,7 @@ F test/pendingrace.test 6aa33756b950c4529f79c4f3817a9a1e4025bd0d9961571a05c0279b
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
-F test/pragma.test 8bb6d3992c1c31ff6d5553d1e0693d642f7e19015648c6ae7034cb497d26bbd4
+F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
 F test/pragma4.test 22834a228e59b80f5c15b519b710474859d91535002670ddb7cd13ac44b54e9a
@@ -2187,8 +2187,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8de85170d53e1d2a2abe14508a222377b9493e25f3174b8f0f773427deb8df26
-R 2e43de06901a93042cb97fda0a6a1240
-U dan
-Z 503087664d848ee9e213d2cb778368c0
+P 1c7e33a8aa0e6122b5ef606e4a7d95e8ecd9440216d4b099fe8f2a40653422be 39a57b596d309d9e2d4c59409fe5d36e0665781ce0307d157ff8b6e883161bbb
+R 0ac28bb5468fe4b54198e9b7f938f439
+T +closed 39a57b596d309d9e2d4c59409fe5d36e0665781ce0307d157ff8b6e883161bbb
+U drh
+Z 15b2c37a84e486735d2d03d1b8398070
 # Remove this line to create a well-formed Fossil manifest.
