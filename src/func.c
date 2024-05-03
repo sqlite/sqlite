@@ -2643,7 +2643,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
     FUNCTION(concat_ws,          0, 0, 0, 0                ),
     FUNCTION(concat_ws,          1, 0, 0, 0                ),
-    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
+    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, SQLITE_RESULT_SUBTYPE),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
@@ -2725,8 +2725,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(pi,                 0, 0, 0,      piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
-    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
-    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, SQLITE_RESULT_SUBTYPE),
+    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      SQLITE_RESULT_SUBTYPE),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
