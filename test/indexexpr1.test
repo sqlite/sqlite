@@ -642,6 +642,30 @@ do_execsql_test indexexpr1-2231 {
   CREATE INDEX t1j ON t1(ifnull(NULL,json(y)));
   SELECT json_insert('{}', '$.a', ifnull(NULL,json(y)))->>'$.a.b' FROM t1;
 } {5}
+do_execsql_test indexexpr1-2240 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', nullif(json(y),8))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2241 {
+  CREATE INDEX t1j ON t1(nullif(json(y),8));
+  SELECT json_insert('{}', '$.a', nullif(json(y),8))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2250 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', min('~',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2251 {
+  CREATE INDEX t1j ON t1(min('~',json(y)));
+  SELECT json_insert('{}', '$.a', min('~',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2260 {
+  DROP INDEX t1j;
+  SELECT json_insert('{}', '$.a', max('...',json(y)))->>'$.a.b' FROM t1;
+} {5}
+do_execsql_test indexexpr1-2261 {
+  CREATE INDEX t1j ON t1(max('...',json(y)));
+  SELECT json_insert('{}', '$.a', max('...',json(y)))->>'$.a.b' FROM t1;
+} {5}
 
 
 # 2023-11-08 Forum post https://sqlite.org/forum/forumpost/68d284c86b082c3e
