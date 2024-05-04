@@ -984,7 +984,6 @@ static void nullifFunc(
   UNUSED_PARAMETER(NotUsed);
   if( sqlite3MemCompare(argv[0], argv[1], pColl)!=0 ){
     sqlite3_result_value(context, argv[0]);
-    sqlite3_result_subtype(context, sqlite3_value_subtype(argv[0]));
   }
 }
 
@@ -2609,11 +2608,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(rtrim,              2, 2, 0, trimFunc         ),
     FUNCTION(trim,               1, 3, 0, trimFunc         ),
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
-    FUNCTION2(min,              -1, 0, 1, minmaxFunc, SQLITE_RESULT_SUBTYPE),
+    FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
     FUNCTION(min,                0, 0, 1, 0                ),
     WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
-    FUNCTION2(max,              -1, 1, 1, minmaxFunc, SQLITE_RESULT_SUBTYPE),
+    FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
     FUNCTION(max,                0, 1, 1, 0                ),
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
@@ -2644,10 +2643,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
     FUNCTION(concat_ws,          0, 0, 0, 0                ),
     FUNCTION(concat_ws,          1, 0, 0, 0                ),
-    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, SQLITE_RESULT_SUBTYPE),
+    INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
-    FUNCTION2(nullif,            2, 0, 1, nullifFunc, SQLITE_RESULT_SUBTYPE),
+    FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
@@ -2726,8 +2725,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(pi,                 0, 0, 0,      piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
-    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, SQLITE_RESULT_SUBTYPE),
-    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      SQLITE_RESULT_SUBTYPE),
+    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
+    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
