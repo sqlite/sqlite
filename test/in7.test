@@ -71,6 +71,27 @@ foreach {tn nNext idx sql} {
   } {
     SELECT * FROM t1 WHERE a IN (SELECT z FROM t2)
   } 
+
+  9 1 {
+    CREATE UNIQUE INDEX i1 ON t1(a, b);
+  } {
+    SELECT * FROM t1 WHERE a IN (SELECT z FROM t2) AND b IS ?
+  } 
+  10 0 {
+    CREATE UNIQUE INDEX i1 ON t1(a, b);
+  } {
+    SELECT * FROM t1 WHERE a IN (SELECT z FROM t2) AND b = ?
+  } 
+  11 1 {
+    CREATE UNIQUE INDEX i1 ON t1(a, b);
+  } {
+    SELECT * FROM t1 WHERE a IS NULL AND b IN (SELECT z FROM t2)
+  } 
+  12 0 {
+    CREATE UNIQUE INDEX i1 ON t1(a, b);
+  } {
+    SELECT * FROM t1 WHERE a = ? AND b IN (SELECT z FROM t2)
+  } 
 } {
   do_test 1.1.$tn {
     execsql BEGIN
