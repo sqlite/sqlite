@@ -1585,6 +1585,71 @@ static int SQLITE_TCLAPI test_sqlite3changegroup(
   return TCL_OK;
 }
 
+typedef struct TestChangeIter TestChangeIter;
+struct TestChangeIter {
+  sqlite3_changeset_iter *pIter;
+};
+
+static int SQLITE_TCLAPI test_iter_cmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  return TCL_OK;
+}
+
+/*
+** Tclcmd:  sqlite3changeset_start ?-invert? CHANGESET
+*/
+static int SQLITE_TCLAPI test_sqlite3changeset_start(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int isInvert = 0;
+  void *pChangeset = 0;           /* Buffer containing changeset */
+  int nChangeset = 0;             /* Size of buffer aChangeset in bytes */
+  TestChangeIter *pNew = 0;
+  sqlite3_changeset_iter *pIter = 0;
+  int flags = 0;
+  int rc = SQLITE_OK;
+
+  static int iCmd = 1;
+  char zCmd[64];
+
+  if( objc==3 ){
+    int n = 0;
+    const char *z = Tcl_GetStringFromObj(objv[1], &n);
+    isInvert = (n>=2 && sqlite3_strnicmp(z, "-invert", n)==0);
+  }
+
+  if( objc!=2 && (objc!=3 || !isInvert) ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-invert? CHANGESET");
+    return TCL_ERROR;
+  }
+
+  flags = isInvert ? SQLITE_CHANGESETSTART_INVERT : 0;
+  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[objc-1], &nChangeset);
+  rc = sqlite3changeset_start_v2(&pIter, nChangeset, pChangeset, flags);
+  if( rc!=SQLITE_OK ){
+    char *zErr = sqlite3_mprintf(
+        "error in sqlite3changeset_start_v2() - %d", rc
+    );
+    Tcl_AppendResult(interp, zErr, (char*)0);
+    return TCL_ERROR;
+  }
+
+  pNew = (TestChangeIter*)ckalloc(sizeof(TestChangeIter));
+  pNew->pIter = pIter;
+
+  sprintf(zCmd, "csiter%d", iCmd++);
+  Tcl_CreateObjCommand(interp, zCmd, test_iter_cmd, (void*)pNew, 0);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(zCmd, -1));
+  return TCL_OK;
+}
+
 int TestSession_Init(Tcl_Interp *interp){
   struct Cmd {
     const char *zCmd;
@@ -1592,6 +1657,7 @@ int TestSession_Init(Tcl_Interp *interp){
   } aCmd[] = {
     { "sqlite3session", test_sqlite3session },
     { "sqlite3changegroup", test_sqlite3changegroup },
+    { "sqlite3changeset_start", test_sqlite3changeset_start },
     { "sqlite3session_foreach", test_sqlite3session_foreach },
     { "sqlite3changeset_invert", test_sqlite3changeset_invert },
     { "sqlite3changeset_concat", test_sqlite3changeset_concat },
