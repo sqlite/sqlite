@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\stest/in7.test.\sNo\scode\schanges.
-D 2024-05-04T16:50:47.770
+C Add\scomment\sto\sthe\stest/lemon-test01.y\sfile\sindicating\sthat\sit\sdoes\snot\swork\nand\sis\sfor\shistorical\sreference\sonly.
+D 2024-05-05T10:00:02.569
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1369,7 +1369,7 @@ F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 6e0228409ea7ca0497dad503fbd109badb5e59545d131014b6aaac68b56f484a
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/lemon-test01.y 58b764610fd934e189ffbb0bbfa33d171b9cb06019b55bdc04d090d6767e11d7
+F test/lemon-test01.y f6280e3787ff9ab57b12527e814c205e1ba1f25fc7458dd6986e2d3351eee320
 F test/like.test 242ee7f5d08a031144c0daf63bbd7e7710c847ccf387a83347e0b61b3aa69526
 F test/like2.test d3be15fefee3e02fc88942a9b98f26c5339bbdef7783c90023c092c4955fe3d3
 F test/like3.test a76e5938fadbe6d32807284c796bafd869974a961057bc5fc5a28e06de98745c
@@ -2188,8 +2188,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b36d499e4cdb41a5d7e44a1c4347a059d7654f85ade9c5c04d18ac95ddc09fde
-R 960c98e5734bcdd93c02bad4a02cdc67
-U dan
-Z a883d658d4cc670b0c73f4c6321f0eb9
+P 8c3086f9fe502dfc4a1fa610a23794fb037721df29dc5d2126cfb749a9d44a50
+R efcb64168ddc99770223ec8b44cbaf4e
+U drh
+Z 71bad1f699deb7358af8858b2f47ba10
 # Remove this line to create a well-formed Fossil manifest.
