@@ -1,5 +1,5 @@
-C Add\scomment\sto\sthe\stest/lemon-test01.y\sfile\sindicating\sthat\sit\sdoes\snot\swork\nand\sis\sfor\shistorical\sreference\sonly.
-D 2024-05-05T10:00:02.569
+C Fix\sproblem\sin\ssqlar_uncompress()\swhen\sbeing\sused\sto\sextract\ssymbolic\slinks.
+D 2024-05-06T11:27:47.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -416,7 +416,7 @@ F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f0
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd397dbea
-F ext/misc/sqlar.c 53e7d48f68d699a24f1a92e68e71eca8b3a9ff991fe9588c2a05bde103c6e7b7
+F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
 F ext/misc/totype.c 75ed9827d19cc3b434fc2aeb60725d4d46e1534373615612a4d1cfdcc3d60922
@@ -2188,8 +2188,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c3086f9fe502dfc4a1fa610a23794fb037721df29dc5d2126cfb749a9d44a50
-R efcb64168ddc99770223ec8b44cbaf4e
-U drh
-Z 71bad1f699deb7358af8858b2f47ba10
+P 9bdf73a8d4a3b4a72f2882252f9ed29a6f1a26d3f50c071f27455bcf10458c4b
+R c4e317266c51f659c5ce93f052688c23
+U dan
+Z d759657d9ef1cadf5eb299f7ac2ab3b0
 # Remove this line to create a well-formed Fossil manifest.
