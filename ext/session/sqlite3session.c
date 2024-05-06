@@ -6031,11 +6031,14 @@ int sqlite3changegroup_add_change(
   sqlite3_changegroup *pGrp,
   sqlite3_changeset_iter *pIter
 ){
-  if( pIter->in.iCurrent==pIter->in.iNext || pIter->rc!=SQLITE_OK ){
-    /* Iterator does not point to any valid entry. */
+  if( pIter->in.iCurrent==pIter->in.iNext 
+   || pIter->rc!=SQLITE_OK 
+   || pIter->bInvert
+  ){
+    /* Iterator does not point to any valid entry or is an INVERT iterator. */
     return SQLITE_ERROR;
   }
-  return sessionChangesetToHash(pIter, pGrp, 0);
+  return sessionOneChangeToHash(pGrp, pIter, 0);
 }
 
 /*

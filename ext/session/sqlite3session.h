@@ -1067,7 +1067,9 @@ int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 **
 ** The iterator must point to a valid entry when this function is called.
 ** If it does not, SQLITE_ERROR is returned and no change is added to the
-** changegroup.
+** changegroup. Additionally, the iterator must not have been opened with
+** the SQLITE_CHANGESETAPPLY_INVERT flag. In this case SQLITE_ERROR is also
+** returned.
 */
 int sqlite3changegroup_add_change(
   sqlite3_changegroup*,

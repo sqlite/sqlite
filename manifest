@@ -1,5 +1,5 @@
-C Add\snew\ssessions\sAPI\ssqlite3changegroup_add_change().
-D 2024-05-04T21:10:24.120
+C Add\stests\sfor\ssqlite3changegroup_add_change().
+D 2024-05-06T17:21:23.939
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -582,9 +582,9 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 0cdf052460fe11fd00a5c3f83b4a7152ed6c72ff7dacd4664c30ce16579748d7
-F ext/session/sqlite3session.h e36392d1087e42f4e691caff23cb99f4e9fc3b8b88ac7504dac3ea30883dc08b
-F ext/session/test_session.c ba40d22840f3ed667448e34ab4eaa38e69f62f23af530c0f8f70a64ed92b039b
+F ext/session/sqlite3session.c c7473aafbd88f796391a8c25aa90975a8f3729ab7f4f8cf74ab9d3b014e10abe
+F ext/session/sqlite3session.h 1e9a1ab23701d85bb1a3794bae38a4c618c652ff84f744a7fd9b6339e9c8af2e
+F ext/session/test_session.c 8bcc857125372e640f75ab63b4188080f9bbab92b65f86dfd160721c574b2044
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -2188,11 +2188,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8c3086f9fe502dfc4a1fa610a23794fb037721df29dc5d2126cfb749a9d44a50
-R 92b682ff0cdf49829f0c1fddda225a0c
-T *branch * changegroup-add-change
-T *sym-changegroup-add-change *
-T -sym-trunk *
+P 73647db1ddfdaf40cbf18f1e47c10b4a906489f6d34d7667f0f2ff532f1eb37c
+R 57bf39cdeb4ff65bb7bb7b027bf86eec
 U dan
-Z d18fc76401ae213ec8fe7cdec8b2f0ce
+Z 43c000dbcc9bde7f8ce3b6fbffdd9a33
 # Remove this line to create a well-formed Fossil manifest.
