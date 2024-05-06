@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\srecursion\sin\ssqlite3ExprDeleteNN().\s\sThis\scomplicates\sthe\ncode,\sbut\sit\sis\sneeded\sto\sprevent\snuisance\s"stack\soverflow"\sreports\sfrom\nOSSFuzz\swhile\sit\sis\srunning\sthe\slatest\sASAN.
-D 2024-05-06T19:04:46.744
+C Omit\sredundant\sunary\s+\soperators\sfrom\sthe\sAST.
+D 2024-05-06T20:18:30.134
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -742,7 +742,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9beb80f6e330dd63c5d8ba0f7a7f3a55fff22067a68d424949c389bfc6fa0c56
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 5bcef16094213efcc365a9d4dc4e3131f09251dc8838dce4a9e5f9764bff5b82
+F src/parse.y 50516253433303673ff6b009983bb246d1527415e5a9af22acc51b0eedb9a10d
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
@@ -2189,8 +2189,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5eaab43ce48bb8d710f784ecd6aa9a4b3e708b44b0f7e49daf66a3f8bc2b9873
-R ff7af78ebbbdb04b1ac8e2867e48ea3c
+P 70abc144ca90a58ea25dc2d90683545246c084d961215c20ec070b0abe640371
+R 6e7646721881518bcc2dce999a09299b
 U drh
-Z 931e0d906bc176d6db5edaecc3c54370
+Z 6285aee0842c44c0bef4e5561a9995b3
 # Remove this line to create a well-formed Fossil manifest.
