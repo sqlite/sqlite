@@ -1,5 +1,5 @@
-C Fix\sa\scompilation\serror\sin\stest/lemon-test01.y,\sreported\sin\s[forum:f0ad095705|forum\spost\sf0ad095705].
-D 2024-05-07T13:20:24.512
+C Ensure\ssuccessive\sscans\sof\spragma\svirtual\stables\sreturn\sconsistent\srowids.
+D 2024-05-07T17:58:07.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -746,7 +746,7 @@ F src/parse.y 50516253433303673ff6b009983bb246d1527415e5a9af22acc51b0eedb9a10d
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c d357a25276d222adfd4637c48880409ec4539f30844b74001c6ba5c7d1a1f0f7
+F src/pragma.c 52bfbf6dfd668b69b5eb9bd1186e3a67367c8453807150d6e75239229924f684
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 371f6115cb69286ebc12c6f2d7511279c2e47d9f54f475d46a554d687a3b312c
 F src/printf.c 8b250972305e14b365561be5117ed0fd364e4fd58968776df1ce64c6280b90f9
@@ -1506,7 +1506,7 @@ F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b76
 F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
 F test/pragma3.test 92a46bbea12322dd94a404f49edcfbfc913a2c98115f0d030a7459bb4712ef31
-F test/pragma4.test 22834a228e59b80f5c15b519b710474859d91535002670ddb7cd13ac44b54e9a
+F test/pragma4.test f93f317693e90ece4ed0f5505d9035cae03f9fc684b718278433f2e48703f693
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragma6.test c5ec577ba087954b4dfa619a3cbe97b155b60a0af487527abe89b10fc17e6512
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
@@ -2189,8 +2189,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2bf8c3f99ad8b74f707d17272fa12b674bec66082d3e8349ebef3dac42ba0782
-R cd6817873ffd9cbd41715e29850cbbb5
-U stephan
-Z ea3f55e2a2ab2609bdac4d75c8a5f3af
+P 576b68c8b5132eb8901789b7fafb37e5ad7a00c1c7154090b42ddc5934ac0396
+R dd0146b65a6f2cce89315f9eb819a1ea
+U dan
+Z 7d535aaf3f019393b2ad327e44317dcb
 # Remove this line to create a well-formed Fossil manifest.
