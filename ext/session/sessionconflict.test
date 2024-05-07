@@ -20,6 +20,7 @@ ifcapable !session {finish_test; return}
 
 set testprefix sessionconflict
 
+db close
 sqlite3_shutdown
 test_sqlite3_log log
 proc log {code msg} { puts "LOG $code $msg" }
