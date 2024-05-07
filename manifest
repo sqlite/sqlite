@@ -1,5 +1,5 @@
-C When\sextracting\slinks\sfrom\ssqlar\sarchives,\sclobber\sany\sexisting\sfile\sor\slink,\sand\sdo\snot\scall\sutimes()\sto\sset\sthe\stimestamp\s-\sit\slooks\sthrough\sthe\slink\sand\soperates\son\sthe\starget.
-D 2024-05-06T20:21:31.369
+C Fix\sa\scompilation\serror\sin\stest/lemon-test01.y,\sreported\sin\s[forum:f0ad095705|forum\spost\sf0ad095705].
+D 2024-05-07T13:20:24.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1370,7 +1370,7 @@ F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 6e0228409ea7ca0497dad503fbd109badb5e59545d131014b6aaac68b56f484a
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/lemon-test01.y f6280e3787ff9ab57b12527e814c205e1ba1f25fc7458dd6986e2d3351eee320
+F test/lemon-test01.y 70110eff607ab137ccc851edb2bc7e14a6d4f246b5d2d25f82a60b69d87a9ff2
 F test/like.test 242ee7f5d08a031144c0daf63bbd7e7710c847ccf387a83347e0b61b3aa69526
 F test/like2.test d3be15fefee3e02fc88942a9b98f26c5339bbdef7783c90023c092c4955fe3d3
 F test/like3.test a76e5938fadbe6d32807284c796bafd869974a961057bc5fc5a28e06de98745c
@@ -2189,8 +2189,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f81cc149e5e308785502b36e83eaaf3d31c72520793e0596d5496abd70f9cda8
-R 11a1bb72646a7cee54c6968ddd222fda
-U dan
-Z 139d76aa50084d40f26f43b610be1a4e
+P 2bf8c3f99ad8b74f707d17272fa12b674bec66082d3e8349ebef3dac42ba0782
+R cd6817873ffd9cbd41715e29850cbbb5
+U stephan
+Z ea3f55e2a2ab2609bdac4d75c8a5f3af
 # Remove this line to create a well-formed Fossil manifest.

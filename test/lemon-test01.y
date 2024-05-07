@@ -33,7 +33,7 @@ all ::=  error B.
   #include "lemon-test01.h"
   static int nTest = 0;
   static int nErr = 0;
-  static int testCase(int testId, int shouldBe, int actual){
+  static void testCase(int testId, int shouldBe, int actual){
     nTest++;
     if( shouldBe==actual ){
       printf("test %d: ok\n", testId);
