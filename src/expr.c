@@ -5306,15 +5306,14 @@ expr_code_doover:
       }
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       if( pExpr->affExpr==OE_Ignore ){
-        sqlite3VdbeAddOp4(
-            v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
+        sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_OK, OE_Ignore);
         VdbeCoverage(v);
       }else{
-        sqlite3HaltConstraint(pParse,
+        r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+        sqlite3VdbeAddOp3(v, OP_Halt, 
              pParse->pTriggerTab ? SQLITE_CONSTRAINT_TRIGGER : SQLITE_ERROR,
-             pExpr->affExpr, pExpr->u.zToken, 0, 0);
+             pExpr->affExpr, r1);
       }
-
       break;
     }
 #endif

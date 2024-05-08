@@ -818,7 +818,8 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
         case OE_Ignore:     zType = "ignore";    break;
       }
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      sqlite3TreeViewLine(pView, "RAISE %s(%Q)", zType, pExpr->u.zToken);
+      sqlite3TreeViewLine(pView, "RAISE %s", zType);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
 #endif
