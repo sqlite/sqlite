@@ -1063,7 +1063,7 @@ int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
 **
 ** This function adds the single change currently indicated by the iterator
 ** passed as the second argument to the changegroup object. The rules for
-** adding the change are just as described for [sqlite3_changegroup_add()].
+** adding the change are just as described for [sqlite3changegroup_add()].
 **
 ** If the change is successfully added to the changegroup, SQLITE_OK is
 ** returned. Otherwise, an SQLite error code is returned.
