@@ -2012,8 +2012,12 @@ globalThis.WhWasmUtilInstaller = function(target){
           arguments may be passed in after that one, and what those
           arguments are, is _not_ part of the public interface and is
           _not_ stable.
+
+          Maintenance reminder: the Ember framework modifies the core
+          Array type, breaking for-in loops.
         */
-        for(const i in args) args[i] = cxw.convertArgNoCheck(
+        let i = 0;
+        for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
           argTypes[i], args[i], args, i
         );
         return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
