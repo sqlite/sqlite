@@ -636,6 +636,7 @@ void *sqlite3ParserAddCleanup(
   ParseCleanup *pCleanup;
   if( sqlite3FaultSim(300) ){
     pCleanup = 0;
+    sqlite3OomFault(pParse->db);
   }else{
     pCleanup = sqlite3DbMallocRaw(pParse->db, sizeof(*pCleanup));
   }
