@@ -173,6 +173,25 @@ do_execsql_test 3.6 {
 } {4 5 6 7 8}
 unset ::do_not_use_offset
 
+#-------------------------------------------------------------------------
+reset_db
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect {
+      error "not happy!"
+    }
+  }
+
+  return {}
+}
+
+register_tcl_module db
+do_catchsql_test 4.0 {
+  CREATE VIRTUAL TABLE y1 USING tcl(vtab_command 1);
+} {1 {not happy!}}
+do_test 4.1 {
+  sqlite3_errcode db
+} SQLITE_ERROR
 
 
 finish_test

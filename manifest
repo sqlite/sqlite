@@ -1,5 +1,5 @@
-C Fix\saggregate\sfunction\sprocessing\sto\scorrectly\sdeal\swith\sOOMs\sinside\sof\nsqlite3ParserAddCleanup().\s\n(dbsqlfuzz\sb2d11ca70e55ee8bde48ae0b53fa3e9355812f95).\nAlso\sadd\simproved\stesting\ssupport\sby\scausing\ssqlite3FaultSim(300)\sto\nsimulate\san\sOOM\sinside\sof\ssqlite3ParserAddCleanup()\sand\sby\sadding\nimproved\sfault-sim\ssupport\sto\sthe\sCLI.
-D 2024-05-10T18:24:15.938
+C Add\stests\sto\sbestindexC.test.\sNo\schanges\sto\scode.
+D 2024-05-11T16:44:56.528
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -938,7 +938,7 @@ F test/bestindex8.test b63a4f171a2c83d481bb14c431a8b72e85d27b2ffdaa0435a95d58ca9
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
-F test/bestindexC.test c14a8c8639b6825b0efa1ae693f34ec04f41a46e3056e7063d6e0f46bf4ff692
+F test/bestindexC.test a2d4ab909e17bb58fe4d66a394460e713620c7b2964b450bc82216c171d264a2
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -2190,9 +2190,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d6716054d7fc50df237996c3db30e5fb8e32acbf48cb8b9af472360515945c4 716088d673b80446ea5f9cb83f6aad8a9ea2ec769d4894e02ab916930e4cf169
-R 19835e40d33408ef0911b62a1ca97162
-T +closed 716088d673b80446ea5f9cb83f6aad8a9ea2ec769d4894e02ab916930e4cf169
-U drh
-Z 7c60328ccced7c5397c63b972a68b6fa
+P c6fd70b3c23fa00eaac9286d4a67e5c8ac76f926c11c220250c34032647bedc1
+R da518a0d510ea768080aa36a2357bedd
+U dan
+Z 00211d5eb53202476ca10f2c5f60b56e
 # Remove this line to create a well-formed Fossil manifest.
