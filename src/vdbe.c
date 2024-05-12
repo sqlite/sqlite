@@ -4324,23 +4324,23 @@ case OP_OpenWrite:
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
     }
+    if( pOp->p5 & OPFLAG_P2ISREG ){
+      assert( p2>0 );
+      assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
+      pIn2 = &aMem[p2];
+      assert( memIsValid(pIn2) );
+      assert( (pIn2->flags & MEM_Int)!=0 );
+      sqlite3VdbeMemIntegerify(pIn2);
+      p2 = (int)pIn2->u.i;
+      /* The p2 value always comes from a prior OP_CreateBtree opcode and
+      ** that opcode will always set the p2 value to 2 or more or else fail.
+      ** If there were a failure, the prepared statement would have halted
+      ** before reaching this instruction. */
+      assert( p2>=2 );
+    }
   }else{
     wrFlag = 0;
-  }
-  if( pOp->p5 & OPFLAG_P2ISREG ){
-    assert( p2>0 );
-    assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
-    assert( pOp->opcode==OP_OpenWrite );
-    pIn2 = &aMem[p2];
-    assert( memIsValid(pIn2) );
-    assert( (pIn2->flags & MEM_Int)!=0 );
-    sqlite3VdbeMemIntegerify(pIn2);
-    p2 = (int)pIn2->u.i;
-    /* The p2 value always comes from a prior OP_CreateBtree opcode and
-    ** that opcode will always set the p2 value to 2 or more or else fail.
-    ** If there were a failure, the prepared statement would have halted
-    ** before reaching this instruction. */
-    assert( p2>=2 );
+    assert( (pOp->p5 & OPFLAG_P2ISREG)==0 );
   }
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;
