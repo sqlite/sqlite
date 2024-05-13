@@ -1,5 +1,5 @@
-C Add\stests\sto\sbestindexC.test.\sNo\schanges\sto\scode.
-D 2024-05-11T16:44:56.528
+C Allow\sexisting\sfts5\stables\sto\sbe\sdropped\seven\sif\sthe\sassociated\stokenizer\sis\snot\savailable.
+D 2024-05-13T20:06:08.273
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -93,14 +93,14 @@ F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6d
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl bc3a0ca78be7d3df08e7602c00ca48021ebae40682d75eb001bfdf6e54ffb44e
 F ext/fts5/fts5.h 8856e11a5f0269cd346754cea0765efe8089635b80cad3222e8bfdb08cd5348a
-F ext/fts5/fts5Int.h defa43c0932265138ee910ca416e6baccf8b774e0f3d610e74be1ab2880e9834
+F ext/fts5/fts5Int.h 965ded9eedfa4bbe6b39048d4b0cce804a13ec954f11a088d1205a48703ce03f
 F ext/fts5/fts5_aux.c 4584e88878e54828bf7d4d0d83deedd232ec60628b7731be02bad6adb62304b1
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
-F ext/fts5/fts5_config.c 8072a207034b51ae9b7694121d1b5715c794e94b275e088f70ae532378ca5cdf
+F ext/fts5/fts5_config.c 74093394dc26750becc302922e5fe308a8597a70e6e83e66c892242952468163
 F ext/fts5/fts5_expr.c e91156ebdcc08d837f4f324168f69f3c0d7fdef0e521fd561efb48ef3297b696
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c ee0f4d50bc0c58a7c5ef7d645e7e38e1e59315b8ea9d722ae00c5f949ee65379
-F ext/fts5/fts5_main.c d68bd9533d5a638b7f6fae61c3cb0a15257dcdcccedaf3d0b3c9f55940c85048
+F ext/fts5/fts5_main.c 942fea921d67f75f745d02bf383e5b949bf96a8b78bcfffca40f06439d252fae
 F ext/fts5/fts5_storage.c f9e31b0d155e9b2c92d5d3a09ad7a56b937fbf1c7f962e10f4ca6281349f3934
 F ext/fts5/fts5_tcl.c fdf7e2bb9a9186cfcaf2d2ce11d338309342b7a7593c2812bc54455db53da5d2
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
@@ -227,10 +227,10 @@ F ext/fts5/test/fts5synonym.test 1651815b8008de170e8e600dcacc17521d765482ea8f074
 F ext/fts5/test/fts5synonym2.test e2f6ff68c4fbe12a866a3a87510f553d9dac99bcb74c10b56487c4c0a562fcf5
 F ext/fts5/test/fts5tok1.test 1f7817499f5971450d8c4a652114b3d833393c8134e32422d0af27884ffe9cef
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
-F ext/fts5/test/fts5tokenizer.test ac3c9112b263a639fb0508ae73a3ee886bf4866d2153771a8e8a20c721305a43
+F ext/fts5/test/fts5tokenizer.test e5ff1fa93ae267592ad2280ae545133ac24d19cf44116c736e7ece9c02285b5b
 F ext/fts5/test/fts5tokenizer2.test cb5428c7cfb3b6a74b7adfcde65506e329112003e8dffa7501d01c2d18d02569
 F ext/fts5/test/fts5trigram.test 6c4e37864f3e7d90673db5563d9736d7e40080ab94d10ebdffa94c1b77941da0
-F ext/fts5/test/fts5trigram2.test 9fe4207f8a4241747aff1005258b564958588d21bfd240d6cd4c2e955d31c156
+F ext/fts5/test/fts5trigram2.test c91f0a94f7e1ff859682228646abeab4c0eba2effc46af2cbc8f0f48b05a0566
 F ext/fts5/test/fts5ubsan.test 783d5a8d13ebfa169e634940228db54540780e3ba7a87ad1e4510e61440bf64b
 F ext/fts5/test/fts5umlaut.test a42fe2fe6387c40c49ab27ccbd070e1ae38e07f38d05926482cc0bccac9ad602
 F ext/fts5/test/fts5unicode.test 17056f4efe6b0a5d4f41fdf7a7dc9af2873004562eaa899d40633b93dc95f5a9
@@ -2190,8 +2190,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c6fd70b3c23fa00eaac9286d4a67e5c8ac76f926c11c220250c34032647bedc1
-R da518a0d510ea768080aa36a2357bedd
+P 58d938c0e03c3c8d8796c537f89e69734ba6263d60ba37e345259cb6fdffbea5
+R 8cd6e7131b6ecbfb841a3c6de5597a39
+T *branch * fts5-delay-tokenizer
+T *sym-fts5-delay-tokenizer *
+T -sym-trunk *
 U dan
-Z 00211d5eb53202476ca10f2c5f60b56e
+Z f97ec1a719d45c2730606c10145cb9ed
 # Remove this line to create a well-formed Fossil manifest.
