@@ -1,5 +1,5 @@
-C Have\sfts5\stables\sdelay\sinitializing\sthe\stokenizer\suntil\sit\sis\sfirst\sused\sin\sall\scases\swhere\sthe\stokenizer\sis\snot\s"trigram".
-D 2024-05-14T17:16:09.294
+C Avoid\scalculating\sthe\svalue\sof\sthe\s"cnt"\scolumn\sfor\sfts5vocab(row)\squeries\sthat\sdo\snot\suse\sit.
+D 2024-05-14T19:09:54.416
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -108,7 +108,7 @@ F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a
 F ext/fts5/fts5_tokenize.c fa5493075101540270f572038fc1723d44fcc97bfbf237c8530013b8a27860be
 F ext/fts5/fts5_unicode2.c eca63dbc797f8ff0572e97caf4631389c0ab900d6364861b915bdd4735973f00
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
-F ext/fts5/fts5_vocab.c 00a098ee63290d7f6e3711f14e56f0d77f3a7c07c0a3909843fcf9826aea5b5f
+F ext/fts5/fts5_vocab.c faa8c6d8e0102037694165734a46b94d06f4460bde797af7486ed62c05764e35
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl 3378732aae2a7d9a4b9b5c40bde678d4259ca16bd490883325aecc4747bcb384
@@ -2190,8 +2190,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69ef47eeee8b53684c321393be34f03600694fbc86377f8720ff80307846aff6
-R db8162066c5e98d7999ebd78f85cf216
+P ca4fdcb8ae95d2a61236b949f852d2bf25ea2dbbff7eedafbd8eb84e8fd96687
+R 17e05953d472a335ac30c411c88ba602
 U dan
-Z 6313824362f7fdc689bb0b31fedc6732
+Z 6157f839a4ddd69a6600b93afee6568d
 # Remove this line to create a well-formed Fossil manifest.
