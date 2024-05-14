@@ -868,6 +868,7 @@ int sqlite3Fts5TokenizerPattern(
     int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
     Fts5Tokenizer *pTok
 );
+int sqlite3Fts5TokenizerPreload(Fts5TokenizerConfig*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
 **************************************************************************/

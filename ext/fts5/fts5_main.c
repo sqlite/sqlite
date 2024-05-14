@@ -380,7 +380,7 @@ static int fts5InitVtab(
     pConfig->pzErrmsg = pzErr;
     pTab->p.pConfig = pConfig;
     pTab->pGlobal = pGlobal;
-    if( bCreate ){
+    if( bCreate || sqlite3Fts5TokenizerPreload(&pConfig->t) ){
       rc = sqlite3Fts5LoadTokenizer(pConfig);
     }
   }
@@ -584,14 +584,6 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         "recursively defined fts5 content table"
     );
     return SQLITE_ERROR;
-  }
-
-  if( pConfig->t.pTok==0 ){
-    int rc;
-    pConfig->pzErrmsg = &pVTab->zErrMsg;
-    rc = sqlite3Fts5LoadTokenizer(pConfig);
-    pConfig->pzErrmsg = 0;
-    if( rc!=SQLITE_OK ) return rc;
   }
 
   idxStr = (char*)sqlite3_malloc(pInfo->nConstraint * 8 + 1);

@@ -365,7 +365,7 @@ static int fts5VocabOpenMethod(
       if( rc==SQLITE_OK ){
         pVTab->zErrMsg = sqlite3_mprintf(
             "no such fts5 table: %s.%s", pTab->zFts5Db, pTab->zFts5Tbl
-            );
+        );
         rc = SQLITE_ERROR;
       }
     }else{
