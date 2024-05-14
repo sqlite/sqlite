@@ -533,8 +533,16 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
             /* Do not bother counting the number of instances if the "cnt"
             ** column is not being read (according to colUsed).  */
             if( eDetail==FTS5_DETAIL_FULL && (pCsr->colUsed & 0x04) ){
-              while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-                pCsr->aCnt[0]++;
+              while( iPos<nPos ){
+                u32 ii;
+                fts5FastGetVarint32(pPos, iPos, ii);
+                if( ii==1 ){ 
+                  /* New column in the position list */
+                  fts5FastGetVarint32(pPos, iPos, ii);
+                }else{
+                  /* An instance - increment pCsr->aCnt[] */
+                  pCsr->aCnt[0]++;
+                }
               }
             }
             pCsr->aDoc[0]++;
