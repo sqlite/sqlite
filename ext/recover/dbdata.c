@@ -466,62 +466,74 @@ static void dbdataValue(
   u8 *pData,
   sqlite3_int64 nData
 ){
-  if( eType>=0 && dbdataValueBytes(eType)<=nData ){
-    switch( eType ){
-      case 0: 
-      case 10: 
-      case 11: 
-        sqlite3_result_null(pCtx);
-        break;
-      
-      case 8: 
-        sqlite3_result_int(pCtx, 0);
-        break;
-      case 9:
-        sqlite3_result_int(pCtx, 1);
-        break;
-  
-      case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
-        sqlite3_uint64 v = (signed char)pData[0];
-        pData++;
-        switch( eType ){
-          case 7:
-          case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-          case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
-          case 4:  v = (v<<8) + pData[0];  pData++;
-          case 3:  v = (v<<8) + pData[0];  pData++;
-          case 2:  v = (v<<8) + pData[0];  pData++;
-        }
-  
-        if( eType==7 ){
-          double r;
-          memcpy(&r, &v, sizeof(r));
-          sqlite3_result_double(pCtx, r);
-        }else{
-          sqlite3_result_int64(pCtx, (sqlite3_int64)v);
-        }
-        break;
-      }
-  
-      default: {
-        int n = ((eType-12) / 2);
-        if( eType % 2 ){
-          switch( enc ){
-#ifndef SQLITE_OMIT_UTF16
-            case SQLITE_UTF16BE:
-              sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
-              break;
-            case SQLITE_UTF16LE:
-              sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
-              break;
-#endif
-            default:
-              sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
-              break;
+  if( eType>=0 ){
+    if( dbdataValueBytes(eType)<=nData ){
+      switch( eType ){
+        case 0: 
+        case 10: 
+        case 11: 
+          sqlite3_result_null(pCtx);
+          break;
+        
+        case 8: 
+          sqlite3_result_int(pCtx, 0);
+          break;
+        case 9:
+          sqlite3_result_int(pCtx, 1);
+          break;
+    
+        case 1: case 2: case 3: case 4: case 5: case 6: case 7: {
+          sqlite3_uint64 v = (signed char)pData[0];
+          pData++;
+          switch( eType ){
+            case 7:
+            case 6:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+            case 5:  v = (v<<16) + (pData[0]<<8) + pData[1];  pData += 2;
+            case 4:  v = (v<<8) + pData[0];  pData++;
+            case 3:  v = (v<<8) + pData[0];  pData++;
+            case 2:  v = (v<<8) + pData[0];  pData++;
           }
-        }else{
-          sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+    
+          if( eType==7 ){
+            double r;
+            memcpy(&r, &v, sizeof(r));
+            sqlite3_result_double(pCtx, r);
+          }else{
+            sqlite3_result_int64(pCtx, (sqlite3_int64)v);
+          }
+          break;
         }
+    
+        default: {
+          int n = ((eType-12) / 2);
+          if( eType % 2 ){
+            switch( enc ){
+  #ifndef SQLITE_OMIT_UTF16
+              case SQLITE_UTF16BE:
+                sqlite3_result_text16be(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+                break;
+              case SQLITE_UTF16LE:
+                sqlite3_result_text16le(pCtx, (void*)pData, n, SQLITE_TRANSIENT);
+                break;
+  #endif
+              default:
+                sqlite3_result_text(pCtx, (char*)pData, n, SQLITE_TRANSIENT);
+                break;
+            }
+          }else{
+            sqlite3_result_blob(pCtx, pData, n, SQLITE_TRANSIENT);
+          }
+        }
+      }
+    }else{
+      if( eType==7 ){
+        sqlite3_result_double(pCtx, 0.0);
+      }else if( eType<7 ){
+        sqlite3_result_int(pCtx, 0);
+      }else if( eType%2 ){
+        sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
+      }else{
+        sqlite3_result_blob(pCtx, "", 0, SQLITE_STATIC);
       }
     }
   }
