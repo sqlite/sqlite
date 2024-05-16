@@ -280,6 +280,7 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
     #endif
     if( ALWAYS(nByte>(signed)sizeof(unsigned)) ) nByte = sizeof(unsigned int);
     #ifdef FREEBSD_KERNEL
+    printf("Warning: sqlite3OsRandomness - this part not yet implemented\n");
     //todo: STELIOS
     #else
     memcpy(zBufOut, &sqlite3Config.iPrngSeed, nByte);

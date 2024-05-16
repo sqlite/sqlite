@@ -4778,6 +4778,7 @@ expr_code_doover:
       }else{
         #ifdef FREEBSD_KERNEL
         //todo: STELIOS
+          printf("Warning: AggInfoColumnReg not implemented\n");
         #else
         return AggInfoFuncReg(pInfo, pExpr->iAgg);
         #endif
@@ -5072,6 +5073,7 @@ expr_code_doover:
         if( !pAggInfo->directMode ){
           #ifdef FREEBSD_KERNEL
           //todo: STELIOS
+          printf("Warning: AggInfoColumnReg not implemented\n");
           #else
           inReg = AggInfoColumnReg(pAggInfo, pExpr->iAgg);
           #endif
