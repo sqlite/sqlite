@@ -4776,12 +4776,7 @@ expr_code_doover:
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %#T()", pExpr);
       }else{
-        #ifdef FREEBSD_KERNEL
-        //todo: STELIOS
-          printf("Warning: AggInfoColumnReg not implemented\n");
-        #else
         return AggInfoFuncReg(pInfo, pExpr->iAgg);
-        #endif
       }
       break;
     }
