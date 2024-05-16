@@ -1,6 +1,15 @@
 #ifndef FREEBSD_KERNEL_H
 #define FREEBSD_KERNEL_H
 
+//
+// Note that this code is copy-pasted from several sources:
+//
+// https://opensource.apple.com/source/clang/clang-211.10.1/src/projects/compiler-rt/lib/floatdidf.c.auto.html
+// https://opensource.apple.com/source/clang/clang-700.0.72/src/projects/compiler-rt/lib/builtins/comparedf2.c.auto.html
+// https://opensource.apple.com/source/clang/clang-700.1.81/src/projects/compiler-rt/lib/builtins/fp_lib.h.auto.html
+//
+// 
+
 typedef uint32_t rep_t;
 typedef int32_t srep_t;
 
@@ -47,11 +56,6 @@ enum GE_RESULT {
 
 
 double __floatdidf(long long a) {
-    //todo: STELIOS
-  //printf("Warning: Symbol __floatdidf is undefined - this function should not be called!\n");
-
-    printf("Warning: Symbol __floatdidf is possibly implemented\n");
-
     
     static const double twop52 = 0x1.0p52;
     static const double twop32 = 0x1.0p32;
@@ -72,10 +76,6 @@ double __floatditf(long a) {
 }
 
 int __gtdf2(double a, double b) {
-    //todo: STELIOS
-    // printf("Warning: Symbol __gtdf2 is undefined - this function should not be called!\n");
-    printf("Warning: Symbol __gtdf2 is possibly implemented!\n");
-    
 
     const srep_t aInt = toRep(a);
     const srep_t bInt = toRep(b);
@@ -97,9 +97,6 @@ int __gtdf2(double a, double b) {
 }
 
 int __ltdf2(double a, double b) {
-    //todo: STELIOS
-    // printf("Warning: Symbol __ltdf2 is undefined - this function should not be called!\n");
-    printf("Warning: Symbol __ltdf2 is possibly implemented\n");
         
     const srep_t aInt = toRep(a);
     const srep_t bInt = toRep(b);
