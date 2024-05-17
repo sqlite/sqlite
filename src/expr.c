@@ -4450,12 +4450,7 @@ expr_code_doover:
       }
       pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
-        #ifdef FREEBSD_KERNEL
-        printf("Warning: sqlite3ExprCodeTarget - This code should not be called! The function is not ready yet!\n");
-        //todo: STELIOS
-        #else
         return AggInfoColumnReg(pAggInfo, pExpr->iAgg);
-        #endif
       }else if( pAggInfo->useSortingIdx ){
         Table *pTab = pCol->pTab;
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdxPTab,
@@ -5066,12 +5061,7 @@ expr_code_doover:
       if( pAggInfo ){
         assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
         if( !pAggInfo->directMode ){
-          #ifdef FREEBSD_KERNEL
-          //todo: STELIOS
-          printf("Warning: AggInfoColumnReg not implemented\n");
-          #else
           inReg = AggInfoColumnReg(pAggInfo, pExpr->iAgg);
-          #endif
           break;
         }
         if( pExpr->pAggInfo->useSortingIdx ){
