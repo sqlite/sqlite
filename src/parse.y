@@ -1658,8 +1658,8 @@ expr(A) ::= RAISE LP IGNORE RP.  {
     A->affExpr = OE_Ignore;
   }
 }
-expr(A) ::= RAISE LP raisetype(T) COMMA nm(Z) RP.  {
-  A = sqlite3ExprAlloc(pParse->db, TK_RAISE, &Z, 1);
+expr(A) ::= RAISE LP raisetype(T) COMMA expr(Z) RP.  {
+  A = sqlite3PExpr(pParse, TK_RAISE, Z, 0);
   if( A ) {
     A->affExpr = (char)T;
   }
