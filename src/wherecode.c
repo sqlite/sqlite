@@ -1436,7 +1436,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   if( pLevel->iFrom>0 && (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
     pLevel->iLeftJoin = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
-    VdbeComment((v, "init LEFT JOIN no-match flag"));
+    VdbeComment((v, "init LEFT JOIN match flag"));
   }
 
   /* Compute a safe address to jump to if we discover that the table for

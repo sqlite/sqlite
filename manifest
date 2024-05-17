@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sthe\serror\smessages\sgenerated\sby\ssqlite3_declare_vtab()\swhen\spassed\ssomething\sother\sthan\sa\swell-formed\sCREATE\sTABLE\sstatement.
-D 2024-05-16T16:22:51.903
+C Improvements\sto\sa\sVDBE\scomment.\s\sNo\schanges\sto\sanything\sthat\saffects\squeries.
+D 2024-05-17T22:51:03.662
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -841,7 +841,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c d235ba520b0147f60732b3bd411e119b43be33d348251edaa6e304a8ad52c511
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
-F src/wherecode.c b9908c0a1aab095822a1e7032556bedc03b6d29641191e9ca535fb2307cd733d
+F src/wherecode.c f5255f49d1f42b6e7e6b0362ff3522fa88cbcaa7213e52f9374744027ecdebca
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2191,8 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ec2961a0341619ae88832942b52606b3246fc0de07ca6da0300e4bfc656ecf0
-R 3e80a1a8d16383b10a9edc0a3a535e00
-U dan
-Z 4379dfd9de0672673743bdb6b799c4de
+P 5fa0c2a026f0467af3a76ea80cee8168b7a49553c350f642d1dff02ff9e7aeed
+R ff343800565c823ff5271a08e7be7456
+U drh
+Z c91b300408dcad01064e8ec2c6e1dc4c
 # Remove this line to create a well-formed Fossil manifest.
