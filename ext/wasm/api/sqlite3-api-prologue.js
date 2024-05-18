@@ -1838,7 +1838,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Calls either sqlite3_result_error_nomem(), if e is-a
      WasmAllocError, or sqlite3_result_error(). In the latter case,
-     the second arugment is coerced to a string to create the error
+     the second argument is coerced to a string to create the error
      message.
 
      The first argument is a (sqlite3_context*). Returns void.

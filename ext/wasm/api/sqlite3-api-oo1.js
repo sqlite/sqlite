@@ -1868,7 +1868,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        an exception is thrown.
 
        By default it will determine the data type of the result
-       automatically. If passed a second arugment, it must be one
+       automatically. If passed a second argument, it must be one
        of the enumeration values for sqlite3 types, which are
        defined as members of the sqlite3 module: SQLITE_INTEGER,
        SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB. Any other value,

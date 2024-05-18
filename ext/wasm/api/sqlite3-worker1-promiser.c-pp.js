@@ -207,7 +207,7 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
       msg.args = arguments[1];
       msg.dbId = msg.args.dbId;
     }else{
-      toss("Invalid arugments for sqlite3Worker1Promiser()-created factory.");
+      toss("Invalid arguments for sqlite3Worker1Promiser()-created factory.");
     }
     if(!msg.dbId && msg.type!=='open') msg.dbId = dbId;
     msg.messageId = genMsgId(msg);
