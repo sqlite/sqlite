@@ -9942,20 +9942,22 @@ const char *sqlite3_vtab_collation(sqlite3_index_info*,int);
 ** <li value="2"><p>
 ** ^(If the sqlite3_vtab_distinct() interface returns 2, that means
 ** that the query planner does not need the rows returned in any particular
-** order, as long as rows with the same values in all "aOrderBy" columns
+** order, as long as rows with the same values in all "colUsed" columns
 ** are adjacent.)^  ^(Furthermore, only a single row for each particular
-** combination of values in the columns identified by the "aOrderBy" field
+** combination of values in the columns identified by the "colUsed" field
 ** needs to be returned.)^  ^It is always ok for two or more rows with the same
-** values in all "aOrderBy" columns to be returned, as long as all such rows
+** values in all "colUsed" columns to be returned, as long as all such rows
 ** are adjacent.  ^The virtual table may, if it chooses, omit extra rows
-** that have the same value for all columns identified by "aOrderBy".
+** that have the same value for all columns identified by "colUsed".
 ** ^However omitting the extra rows is optional.
 ** This mode is used for a DISTINCT query.
 ** <li value="3"><p>
 ** ^(If the sqlite3_vtab_distinct() interface returns 3, that means
-** that the query planner needs only distinct rows but it does need the
-** rows to be sorted.)^ ^The virtual table implementation is free to omit
-** rows that are identical in all aOrderBy columns, if it wants to, but
+** that the query planner needs only rows that are distinct over the
+** set of columns defined by "colUsed" but it does need the
+** rows to be sorted according to the order defined by "aOrderBy".)^
+** ^The virtual table implementation is free to omit
+** rows that are identical in all "colUsed" columns, if it wants to, but
 ** it is not required to omit any rows.  This mode is used for queries
 ** that have both DISTINCT and ORDER BY clauses.
 ** </ol>

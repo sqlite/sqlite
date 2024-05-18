@@ -194,8 +194,10 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     x.printfFlags |= SQLITE_PRINTF_INTERNAL;
     sqlite3_str_appendf(&x, "{%d:*} %!S", pItem->iCursor, pItem);
     if( pItem->pTab ){
-      sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx",
-           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, pItem->colUsed);
+      sqlite3_str_appendf(&x, " tab=%Q nCol=%d ptr=%p used=%llx%s",
+           pItem->pTab->zName, pItem->pTab->nCol, pItem->pTab, 
+           pItem->colUsed,
+           pItem->fg.rowidUsed ? "+rowid" : "");
     }
     if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==(JT_LEFT|JT_RIGHT) ){
       sqlite3_str_appendf(&x, " FULL-OUTER-JOIN");
