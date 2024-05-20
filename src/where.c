@@ -1416,7 +1416,7 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n ){
       nOrderBy = n;
-      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) ){
+      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) && !pSrc->fg.rowidUsed ){
         eDistinct = 2 + ((pWInfo->wctrlFlags & WHERE_SORTBYGROUP)!=0);
       }else if( pWInfo->wctrlFlags & WHERE_GROUPBY ){
         eDistinct = 1;
