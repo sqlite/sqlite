@@ -1,5 +1,5 @@
-C Fix\sthe\sdefinition\sof\ssqlite3_vtab_distinct()\ssuch\sthat\sreturn\scodes\s2\sand\n3\smean\sthat\sall\srows\smust\sbe\sdistinct\sover\s"colUsed"\swhich\sis\sa\ssuperset\sof\n"aOrderBy".\s\sAlso,\sdisallow\sreturn\scodes\s2\sand\s3\sif\sthe\srowid\sof\sthe\svirtual\ntable\sis\saccessed.
-D 2024-05-18T20:00:08.988
+C Improvements\sto\sthe\ssqlite3_vtab_distinct()\sdocumentation.
+D 2024-05-20T16:00:27.117
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -756,7 +756,7 @@ F src/resolve.c 22f1fa3423b377c02ae78d451cfeb1c2d96dcf0389c0642cbdcd19d3bfd7ae01
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 1a841c38974d45cf15a7611398479182b61ad4c187423c380741d8b1688fe607
 F src/shell.c.in 8f2406e4e8d726452e48058d117f52e86b789f47435157b0418fb06c631349b6
-F src/sqlite.h.in 6d645f9c2da3b64ea44944024df0c733bba186ee200d849a72a25bf8ae9beac4
+F src/sqlite.h.in c71d9ef76a6d32dc7ff2d373f2e57ce09056af26c1457bcadae5358b7628c7c3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 6a9fa3902c9faca2b57060e822f2afadfbf96d64c4ede81e201f0e0c42d7e4aa
@@ -2191,11 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a073f9acfb691eebf4a8cc78a72ff47ebbb6aba4acede6755fa3faefae48f2b
-R be7ef6a3dcb331720f0112bf3c3e9c8c
-T *branch * vtab-distinct-fix
-T *sym-vtab-distinct-fix *
-T -sym-trunk *
+P 922731ce98c0ce7837784ff7966049e59fa73da2aa04abf3506503b6fc4aa048
+R 65c04e4dfc1793594341c544753e5e70
 U drh
-Z 3a71e5f761d3443220a5a5a181b974f3
+Z 4b4899e535e10a58b98edaa878f294f3
 # Remove this line to create a well-formed Fossil manifest.
