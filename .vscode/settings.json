@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "wal.h": "c",
+        "*.in": "c"
+    }
+}

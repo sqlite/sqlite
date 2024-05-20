@@ -5546,6 +5546,7 @@ int sqlite3TempInMemory(const sqlite3*);
 const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_WAL
   int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
+  int sqlite3SetWalSwtich(sqlite3 *db, int iDb, long long conn, void (*callback)(long long,int, unsigned int));
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
 #ifndef SQLITE_OMIT_CTE

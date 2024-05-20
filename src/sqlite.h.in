@@ -9721,6 +9721,9 @@ int sqlite3_wal_checkpoint_v2(
   int *pnCkpt                     /* OUT: Total number of frames checkpointed */
 );
 
+
+int sqlite3_wal_set_switch_callback(sqlite3 *db, long long conn, void (*callback)(long long, int, unsigned int));
+
 /*
 ** CAPI3REF: Checkpoint Mode Values
 ** KEYWORDS: {checkpoint mode}

@@ -130,6 +130,8 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
+int sqlite3WalSetSwitchCallback(Wal *pWal, long long conn, void (*callback)(long long, int, unsigned int));
+
 #ifdef SQLITE_ENABLE_SNAPSHOT
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
 void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);

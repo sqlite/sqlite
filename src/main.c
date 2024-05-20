@@ -2565,6 +2565,37 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
+int sqlite3_wal_set_switch_callback(
+  sqlite3 *db, /* Database handle */
+  long long conn,
+  void (*callback)(long long,int, unsigned int)
+) {
+#ifdef SQLITE_OMIT_WAL
+  return SQLITE_OK;
+#else
+  int rc;                                         /* Return code */
+  int iDb = 0;                        /* Schema to checkpoint */
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  sqlite3_mutex_enter(db->mutex);
+
+  rc = sqlite3SetWalSwtich(db, iDb, conn, callback);
+  sqlite3Error(db, rc);
+  // rc = sqlite3ApiExit(db, rc);
+
+  /* If there are no active statements, clear the interrupt flag at this
+  ** point.  */
+  // if( db->nVdbeActive==0 ){
+  //   AtomicStore(&db->u1.isInterrupted, 0);
+  // }
+
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+#endif
+}
+
 
 /*
 ** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
@@ -2623,7 +2654,32 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
 
   return (rc==SQLITE_OK && bBusy) ? SQLITE_BUSY : rc;
 }
+
+// TODO docs
+int sqlite3SetWalSwtich(sqlite3 *db, int iDb, long long conn, void (*callback)(long long, int, unsigned int)){
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Used to iterate through attached dbs */
+  int bBusy = 0;                  /* True if SQLITE_BUSY has been encountered */
+
+  assert( sqlite3_mutex_held(db->mutex) );
+
+  for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
+    if( i==iDb || iDb==SQLITE_MAX_DB ){
+      Pager *pager = sqlite3BtreePager(db->aDb[i].pBt);
+      rc = sqlite3PagerSetSwitchCallback(pager, conn, callback);
+      if( rc==SQLITE_BUSY ){
+        bBusy = 1;
+        rc = SQLITE_OK;
+      }
+    }
+  }
+
+  return (rc==SQLITE_OK && bBusy) ? SQLITE_BUSY : rc;
+}
+
 #endif /* SQLITE_OMIT_WAL */
+
+
 
 /*
 ** This function returns true if main-memory should be used instead of

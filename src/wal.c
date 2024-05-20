@@ -808,6 +808,9 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
 #endif
+void (*walSwitchCB)(long long, int, unsigned int);
+long long conn;
+
 };
 
 /*
@@ -3114,42 +3117,6 @@ int sqlite3WalClose(
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
-      for(i=0; rc==SQLITE_OK && i<2; i++){
-        rc = sqlite3WalCheckpoint(pWal, db, 
-            SQLITE_CHECKPOINT_PASSIVE, 0, 0, sync_flags, nBuf, zBuf, 0, 0
-        );
-        if( rc==SQLITE_OK ){
-          int bPersist = -1;
-          sqlite3OsFileControlHint(
-              pWal->pDbFd, SQLITE_FCNTL_PERSIST_WAL, &bPersist
-          );
-          if( bPersist!=1 ){
-            /* Try to delete the WAL file if the checkpoint completed and
-            ** fsyned (rc==SQLITE_OK) and if we are not in persistent-wal
-            ** mode (!bPersist) */
-            isDelete = 1;
-          }else if( pWal->mxWalSize>=0 ){
-            /* Try to truncate the WAL file to zero bytes if the checkpoint
-            ** completed and fsynced (rc==SQLITE_OK) and we are in persistent
-            ** WAL mode (bPersist) and if the PRAGMA journal_size_limit is a
-            ** non-negative value (pWal->mxWalSize>=0).  Note that we truncate
-            ** to zero bytes as truncating to the journal_size_limit might
-            ** leave a corrupt WAL file on disk. */
-            walLimitSize(pWal, 0);
-          }
-        }
-
-        if( isWalMode2(pWal)==0 ) break;
-
-        SEH_TRY {
-          walCkptInfo(pWal)->nBackfill = 0;
-          walidxSetFile(&pWal->hdr, !walidxGetFile(&pWal->hdr));
-          pWal->writeLock = 1;
-          walIndexWriteHdr(pWal);
-          pWal->writeLock = 0;
-        } 
-        SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
-      }
     }
 
     walIndexClose(pWal, isDelete);
@@ -4596,8 +4563,9 @@ static int walRestartLog(Wal *pWal){
         / (pWal->szPage+WAL_FRAME_HDRSIZE);
       nWalSize = MAX(nWalSize, 1);
     }
+    u32 currentWALMaxFrame = walidxGetMxFrame(&pWal->hdr, iApp);
 
-    if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
+    if( currentWALMaxFrame>=nWalSize ){
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
       u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
       if( mxFrame==0 || pInfo->nBackfill ){
@@ -4612,6 +4580,9 @@ static int walRestartLog(Wal *pWal){
           walIndexWriteHdr(pWal);
           pInfo->nBackfill = 0;
           wal2RestartFinished(pWal, iApp);
+          if (pWal->walSwitchCB != NULL) {
+            pWal->walSwitchCB(pWal->conn, iApp, currentWALMaxFrame);
+          }
           walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
           pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
           rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
@@ -5450,6 +5421,14 @@ sqlite3_file *sqlite3WalFile(Wal *pWal){
 int sqlite3WalJournalMode(Wal *pWal){
   assert( pWal );
   return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
+}
+
+int sqlite3WalSetSwitchCallback(Wal *pWal,long long conn, void (*walSwitchCB)(long long, int, unsigned int)) {
+    if (pWal) {
+      pWal->walSwitchCB = walSwitchCB;
+      pWal->conn = conn;
+    }
+    return SQLITE_OK;
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */
