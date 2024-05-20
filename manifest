@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sdocumentation\sof\ssqlite3_vtab_distinct().\s\sDo\snot\sallow\nsqlite3_vtab_distinct()\sto\sreturn\s2\sor\s3\sif\sthe\srowid\scolumn\sof\sthe\svirtual\ntable\sis\sused,\sas\sdoing\sso\smight\slead\sto\san\sincorrect\sanswer.
-D 2024-05-20T17:52:35.621
+C Do\snot\srun\sthe\stests\sin\srecovercorrupt4.test\swith\sthe\sinmemory_journal\spermutation.
+D 2024-05-20T19:51:06.196
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -486,7 +486,7 @@ F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1c
 F ext/recover/recovercorrupt.test 64c081ad1200ae77b447da99eb724785d6bf71715f394543dc7689642e92bf49
 F ext/recover/recovercorrupt2.test 1418f1710debc24ff38276cedfcea234beb37a34205708e7e3e6d76cc4a979db
 F ext/recover/recovercorrupt3.test 2e7b9a1b528ca23ed382cec6f64e3fcbbd0f8e852add7562397fd8df83f335d5
-F ext/recover/recovercorrupt4.test 8990c3a76da616b938e800cd2b40eb1f7adf9352624966ba0af0303c7a015f00
+F ext/recover/recovercorrupt4.test cc4a56086c50fba6a5b20db122a3f220195b3d4f11a86e0858c7f5f5d8ba58d1
 F ext/recover/recoverfault.test 9d9f88eeb222615a25e7514f234c950d46bee20d24cd8db49d8fff8d650dcfe1
 F ext/recover/recoverfault2.test 730e7371bcda769554d15460cb23126abba1be8eca9539ccabf63623e7bb7e09
 F ext/recover/recoverold.test 68db3d6f85dd2b98e785b6c4da4f5eea4bbe52ccf6674d9a94c7506dc92596aa
@@ -2191,9 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1a073f9acfb691eebf4a8cc78a72ff47ebbb6aba4acede6755fa3faefae48f2b 6ee041d34f292b94701919f51bbb9e12bcb9e0c4f45e4c0b83f30ff328070637
-R 65c04e4dfc1793594341c544753e5e70
-T +closed 6ee041d34f292b94701919f51bbb9e12bcb9e0c4f45e4c0b83f30ff328070637
-U drh
-Z fa3617d3b707c5d55775f8d830ee0281
+P 08058d66d1bde4fcf8324482ee4c6c030c681383470d5076b6f75b74aac2ae29
+R 01944e27726a0e53c62f6b779625a02f
+U dan
+Z f9b21623fcc9b31310e5e703021ca634
 # Remove this line to create a well-formed Fossil manifest.
