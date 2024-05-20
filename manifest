@@ -1,5 +1,5 @@
-C Do\snot\srun\sthe\stests\sin\srecovercorrupt4.test\swith\sthe\sinmemory_journal\spermutation.
-D 2024-05-20T19:51:06.196
+C Omit\sa\scapi3\stest\sfrom\s2007\sthat\sdepends\supon\sundefined\sbehavior\s(UAF).
+D 2024-05-20T19:59:32.762
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -969,7 +969,7 @@ F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
 F test/capi2.test 4ee545824adc3eb33bf57ef89f77440b28188ec3da72e5425ff0fcdba32e8d5a
-F test/capi3.test 3910a73c38ac76d69778dd9eb481ab7cd6ed59117fc047b4f6056a5c72529de1
+F test/capi3.test 4892b5e53d2a6941edc9d204a0ab174dd66e8689282d9a15e4384561c3965945
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a490f7
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
@@ -2191,8 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 08058d66d1bde4fcf8324482ee4c6c030c681383470d5076b6f75b74aac2ae29
-R 01944e27726a0e53c62f6b779625a02f
-U dan
-Z f9b21623fcc9b31310e5e703021ca634
+P c13205d66b8406cccfc937c88ac515fa758fe2ade8b3d30f0c1e79fe974e9600
+R afa580b78e84297da9d918d4b239628f
+U drh
+Z dd88f180c52872ac43a520d8ec94266a
 # Remove this line to create a well-formed Fossil manifest.
