@@ -31,7 +31,6 @@ proc vtab_command {method args} {
   return {}
 }
 
-breakpoint
 foreach {tn cts} {
   1 {SELECT 123}
   2 {SELECT 123, 456}
@@ -41,13 +40,21 @@ foreach {tn cts} {
   6 {DROP TABLE nosuchtable}
   7 {DROP TABLE x1}
   8 {DROP TABLE t1}
+} {
+  set ::create_table_sql $cts
+  do_catchsql_test 1.$tn {
+    CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
+  } {1 {declare_vtab: syntax error}}
+}
+
+foreach {tn cts} {
   9 {CREATE TABLE xyz AS SELECT * FROM sqlite_schema}
   10 {CREATE TABLE xyz AS SELECT 1 AS 'col'}
 } {
   set ::create_table_sql $cts
   do_catchsql_test 1.$tn {
     CREATE VIRTUAL TABLE x1 USING tcl(vtab_command);
-  } {1 {vtable constructor failed: x1}}
+  } {1 {declare_vtab: SQL logic error}}
 }
 
 foreach {tn cts} {

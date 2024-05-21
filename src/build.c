@@ -2953,9 +2953,6 @@ void sqlite3EndTable(
              sqlite3MPrintf(db, "SELECT*FROM\"%w\".\"%w\"",
                    db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
     }
-    sqlite3VdbeAddOp4(v, OP_SqlExec, 0x0001, 0, 0,
-           sqlite3MPrintf(db, "PRAGMA \"%w\".integrity_check(%Q)",
-                 db->aDb[iDb].zDbSName, p->zName), P4_DYNAMIC);
   }
 
   /* Add the table to the in-memory representation of the database.

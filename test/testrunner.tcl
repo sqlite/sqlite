@@ -270,7 +270,7 @@ set TRG(schema) {
     /* Fields updated as jobs run */
     starttime INTEGER, 
     endtime INTEGER,
-    state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
+    state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
     output TEXT
   );
 
@@ -446,6 +446,10 @@ if {[llength $argv]==1
       SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
     } job {
       display_job [array get job]
+    }
+    set nOmit [db one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    if {$nOmit} {
+      puts "$nOmit jobs omitted due to failures"
     }
   }
  
@@ -976,11 +980,16 @@ proc make_new_testset {} {
 
 proc mark_job_as_finished {jobid output state endtm} {
   r_write_db {
+    if {$state=="failed"} {
+      set childstate omit
+    } else {
+      set childstate ready
+    }
     trdb eval {
       UPDATE jobs 
         SET output=$output, state=$state, endtime=$endtm
         WHERE jobid=$jobid;
-      UPDATE jobs SET state='ready' WHERE depid=$jobid;
+      UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
   }
 }
@@ -1202,6 +1211,10 @@ proc run_testset {} {
       } {
         puts "FAILED: $displayname"
       }
+    }
+    set nOmit [trdb one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    if {$nOmit>0} {
+      puts "$nOmit jobs skipped due to prior failures"
     }
   }
 

@@ -1152,7 +1152,9 @@ jump_to_p2:
 **
 ** The instruction at the address in register P1 is a Yield.
 ** Jump to the P2 parameter of that Yield.
-** After the jump, register P1 becomes undefined.
+** After the jump, the value register P1 is left with a value
+** such that subsequent OP_Yields go back to the this same
+** OP_EndCoroutine instruction.
 **
 ** See also: InitCoroutine
 */
@@ -1164,8 +1166,8 @@ case OP_EndCoroutine: {           /* in1 */
   pCaller = &aOp[pIn1->u.i];
   assert( pCaller->opcode==OP_Yield );
   assert( pCaller->p2>=0 && pCaller->p2<p->nOp );
+  pIn1->u.i = (int)(pOp - p->aOp) - 1;
   pOp = &aOp[pCaller->p2 - 1];
-  pIn1->flags = MEM_Undefined;
   break;
 }
 
@@ -4582,7 +4584,8 @@ case OP_SequenceTest: {
 ** is the only cursor opcode that works with a pseudo-table.
 **
 ** P3 is the number of fields in the records that will be stored by
-** the pseudo-table.
+** the pseudo-table.  If P2 is 0 or negative then the pseudo-cursor
+** will return NULL for every column.
 */
 case OP_OpenPseudo: {
   VdbeCursor *pCx;

@@ -1709,7 +1709,7 @@ void sqlite3Pragma(
     /* Set the maximum error count */
     mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
     if( zRight ){
-      if( sqlite3GetInt32(zRight, &mxErr) ){
+      if( sqlite3GetInt32(pValue->z, &mxErr) ){
         if( mxErr<=0 ){
           mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
         }
@@ -2918,6 +2918,7 @@ static void pragmaVtabCursorClear(PragmaVtabCursor *pCsr){
   int i;
   sqlite3_finalize(pCsr->pPragma);
   pCsr->pPragma = 0;
+  pCsr->iRowid = 0;
   for(i=0; i<ArraySize(pCsr->azArg); i++){
     sqlite3_free(pCsr->azArg[i]);
     pCsr->azArg[i] = 0;

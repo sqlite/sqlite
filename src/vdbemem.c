@@ -1949,17 +1949,17 @@ int sqlite3Stat4Column(
   sqlite3_value **ppVal           /* OUT: Extracted value */
 ){
   u32 t = 0;                      /* a column type code */
-  int nHdr;                       /* Size of the header in the record */
-  int iHdr;                       /* Next unread header byte */
-  int iField;                     /* Next unread data byte */
-  int szField = 0;                /* Size of the current data field */
+  u32 nHdr;                       /* Size of the header in the record */
+  u32 iHdr;                       /* Next unread header byte */
+  i64 iField;                     /* Next unread data byte */
+  u32 szField = 0;                /* Size of the current data field */
   int i;                          /* Column index */
   u8 *a = (u8*)pRec;              /* Typecast byte array */
   Mem *pMem = *ppVal;             /* Write result into this Mem object */
 
   assert( iCol>0 );
   iHdr = getVarint32(a, nHdr);
-  if( nHdr>nRec || iHdr>=nHdr ) return SQLITE_CORRUPT_BKPT;
+  if( nHdr>(u32)nRec || iHdr>=nHdr ) return SQLITE_CORRUPT_BKPT;
   iField = nHdr;
   for(i=0; i<=iCol; i++){
     iHdr += getVarint32(&a[iHdr], t);

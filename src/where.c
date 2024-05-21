@@ -303,6 +303,42 @@ static Expr *whereRightSubexprIsColumn(Expr *p){
 }
 
 /*
+** Term pTerm is guaranteed to be a WO_IN term. It may be a component term
+** of a vector IN expression of the form "(x, y, ...) IN (SELECT ...)".
+** This function checks to see if the term is compatible with an index
+** column with affinity idxaff (one of the SQLITE_AFF_XYZ values). If so,
+** it returns a pointer to the name of the collation sequence (e.g. "BINARY"
+** or "NOCASE") used by the comparison in pTerm. If it is not compatible
+** with affinity idxaff, NULL is returned.
+*/
+static SQLITE_NOINLINE const char *indexInAffinityOk(
+  Parse *pParse, 
+  WhereTerm *pTerm, 
+  u8 idxaff
+){
+  Expr *pX = pTerm->pExpr;
+  Expr inexpr;
+
+  assert( pTerm->eOperator & WO_IN );
+
+  if( sqlite3ExprIsVector(pX->pLeft) ){
+    int iField = pTerm->u.x.iField - 1;
+    inexpr.flags = 0;
+    inexpr.op = TK_EQ;
+    inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
+    assert( ExprUseXSelect(pX) );
+    inexpr.pRight = pX->x.pSelect->pEList->a[iField].pExpr;
+    pX = &inexpr;
+  }
+
+  if( sqlite3IndexAffinityOk(pX, idxaff) ){
+    CollSeq *pRet = sqlite3ExprCompareCollSeq(pParse, pX);
+    return pRet ? pRet->zName : sqlite3StrBINARY;
+  }
+  return 0;
+}
+
+/*
 ** Advance to the next WhereTerm that matches according to the criteria
 ** established when the pScan object was initialized by whereScanInit().
 ** Return NULL if there are no more matching WhereTerms.
@@ -352,16 +388,24 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
           if( (pTerm->eOperator & pScan->opMask)!=0 ){
             /* Verify the affinity and collating sequence match */
             if( pScan->zCollName && (pTerm->eOperator & WO_ISNULL)==0 ){
-              CollSeq *pColl;
+              const char *zCollName;
               Parse *pParse = pWC->pWInfo->pParse;
               pX = pTerm->pExpr;
-              if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
-                continue;
+
+              if( (pTerm->eOperator & WO_IN) ){
+                zCollName = indexInAffinityOk(pParse, pTerm, pScan->idxaff);
+                if( !zCollName ) continue;
+              }else{
+                CollSeq *pColl;
+                if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
+                  continue;
+                }
+                assert(pX->pLeft);
+                pColl = sqlite3ExprCompareCollSeq(pParse, pX);
+                zCollName = pColl ? pColl->zName : sqlite3StrBINARY;
               }
-              assert(pX->pLeft);
-              pColl = sqlite3ExprCompareCollSeq(pParse, pX);
-              if( pColl==0 ) pColl = pParse->db->pDfltColl;
-              if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
+
+              if( sqlite3StrICmp(zCollName, pScan->zCollName) ){
                 continue;
               }
             }
@@ -942,7 +986,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, pLevel->iFrom)
+     && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, pLevel->iFrom, 0)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
@@ -1211,7 +1255,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
       if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-       && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, iSrc)
+       && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, iSrc, 0)
       ){
         sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       }
@@ -1372,7 +1416,7 @@ static sqlite3_index_info *allocateIndexInfo(
     }
     if( i==n ){
       nOrderBy = n;
-      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) ){
+      if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) && !pSrc->fg.rowidUsed ){
         eDistinct = 2 + ((pWInfo->wctrlFlags & WHERE_SORTBYGROUP)!=0);
       }else if( pWInfo->wctrlFlags & WHERE_GROUPBY ){
         eDistinct = 1;
@@ -4014,6 +4058,21 @@ static int isLimitTerm(WhereTerm *pTerm){
 }
 
 /*
+** Return true if the first nCons constraints in the pUsage array are
+** marked as in-use (have argvIndex>0). False otherwise.
+*/
+static int allConstraintsUsed(
+  struct sqlite3_index_constraint_usage *aUsage, 
+  int nCons
+){
+  int ii;
+  for(ii=0; ii<nCons; ii++){
+    if( aUsage[ii].argvIndex<=0 ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Argument pIdxInfo is already populated with all constraints that may
 ** be used by the virtual table identified by pBuilder->pNew->iTab. This
 ** function marks a subset of those constraints usable, invokes the
@@ -4153,13 +4212,20 @@ static int whereLoopAddVirtualOne(
         *pbIn = 1; assert( (mExclude & WO_IN)==0 );
       }
 
+      /* Unless pbRetryLimit is non-NULL, there should be no LIMIT/OFFSET
+      ** terms. And if there are any, they should follow all other terms. */
       assert( pbRetryLimit || !isLimitTerm(pTerm) );
-      if( isLimitTerm(pTerm) && *pbIn ){
+      assert( !isLimitTerm(pTerm) || i>=nConstraint-2 );
+      assert( !isLimitTerm(pTerm) || i==nConstraint-1 || isLimitTerm(pTerm+1) );
+
+      if( isLimitTerm(pTerm) && (*pbIn || !allConstraintsUsed(pUsage, i)) ){
         /* If there is an IN(...) term handled as an == (separate call to
         ** xFilter for each value on the RHS of the IN) and a LIMIT or
-        ** OFFSET term handled as well, the plan is unusable. Set output
-        ** variable *pbRetryLimit to true to tell the caller to retry with
-        ** LIMIT and OFFSET disabled. */
+        ** OFFSET term handled as well, the plan is unusable. Similarly,
+        ** if there is a LIMIT/OFFSET and there are other unused terms,
+        ** the plan cannot be used. In these cases set variable *pbRetryLimit
+        ** to true to tell the caller to retry with LIMIT and OFFSET 
+        ** disabled. */
         if( pIdxInfo->needToFreeIdxStr ){
           sqlite3_free(pIdxInfo->idxStr);
           pIdxInfo->idxStr = 0;
@@ -5924,6 +5990,58 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 }
 
 /*
+** Expression Node callback for sqlite3ExprCanReturnSubtype().
+**
+** Only a function call is able to return a subtype.  So if the node
+** is not a function call, return WRC_Prune immediately.
+**
+** A function call is able to return a subtype if it has the
+** SQLITE_RESULT_SUBTYPE property.
+**
+** Assume that every function is able to pass-through a subtype from
+** one of its argument (using sqlite3_result_value()).  Most functions
+** are not this way, but we don't have a mechanism to distinguish those
+** that are from those that are not, so assume they all work this way.
+** That means that if one of its arguments is another function and that
+** other function is able to return a subtype, then this function is
+** able to return a subtype.
+*/
+static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
+  int n;
+  FuncDef *pDef;
+  sqlite3 *db;
+  if( pExpr->op!=TK_FUNCTION ){
+    return WRC_Prune;
+  }
+  assert( ExprUseXList(pExpr) );
+  db = pWalker->pParse->db;
+  n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
+  if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+    pWalker->eCode = 1;
+    return WRC_Prune;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return TRUE if expression pExpr is able to return a subtype.
+**
+** A TRUE return does not guarantee that a subtype will be returned.
+** It only indicates that a subtype return is possible.  False positives
+** are acceptable as they only disable an optimization.  False negatives,
+** on the other hand, can lead to incorrect answers.
+*/
+static int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.pParse = pParse;
+  w.xExprCallback = exprNodeCanReturnSubtype;
+  sqlite3WalkExpr(&w, pExpr);
+  return w.eCode;
+}
+
+/*
 ** The index pIdx is used by a query and contains one or more expressions.
 ** In other words pIdx is an index on an expression.  iIdxCur is the cursor
 ** number for the index and iDataCur is the cursor number for the corresponding
@@ -5956,19 +6074,11 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       continue;
     }
     if( sqlite3ExprIsConstant(0,pExpr) ) continue;
-    if( pExpr->op==TK_FUNCTION ){
+    if( pExpr->op==TK_FUNCTION && sqlite3ExprCanReturnSubtype(pParse,pExpr) ){
       /* Functions that might set a subtype should not be replaced by the
       ** value taken from an expression index since the index omits the
       ** subtype.  https://sqlite.org/forum/forumpost/68d284c86b082c3e */
-      int n;
-      FuncDef *pDef;
-      sqlite3 *db = pParse->db;
-      assert( ExprUseXList(pExpr) );
-      n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
-      pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
-      if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
-        continue;
-      }
+      continue;
     }
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
@@ -6940,7 +7050,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
       assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
       if( (ws & WHERE_IDX_ONLY)==0 ){
-        assert( pLevel->iTabCur==pTabList->a[pLevel->iFrom].iCursor );
+        SrcItem *pSrc = &pTabList->a[pLevel->iFrom];
+        assert( pLevel->iTabCur==pSrc->iCursor );
+        if( pSrc->fg.viaCoroutine ){
+          int m, n;
+          n = pSrc->regResult;
+          assert( pSrc->pTab!=0 );
+          m = pSrc->pTab->nCol;
+          sqlite3VdbeAddOp3(v, OP_Null, 0, n, n+m-1);
+        }
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iTabCur);
       }
       if( (ws & WHERE_INDEXED)

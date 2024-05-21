@@ -1368,6 +1368,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
 static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   assert( p!=0 );
   assert( db!=0 );
+exprDeleteRestart:
   assert( !ExprUseUValue(p) || p->u.iValue>=0 );
   assert( !ExprUseYWin(p) || !ExprUseYSub(p) );
   assert( !ExprUseYWin(p) || p->y.pWin!=0 || db->mallocFailed );
@@ -1383,7 +1384,6 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
   if( !ExprHasProperty(p, (EP_TokenOnly|EP_Leaf)) ){
     /* The Expr.x union is never used at the same time as Expr.pRight */
     assert( (ExprUseXList(p) && p->x.pList==0) || p->pRight==0 );
-    if( p->pLeft && p->op!=TK_SELECT_COLUMN ) sqlite3ExprDeleteNN(db, p->pLeft);
     if( p->pRight ){
       assert( !ExprHasProperty(p, EP_WinFunc) );
       sqlite3ExprDeleteNN(db, p->pRight);
@@ -1397,6 +1397,19 @@ static SQLITE_NOINLINE void sqlite3ExprDeleteNN(sqlite3 *db, Expr *p){
         sqlite3WindowDelete(db, p->y.pWin);
       }
 #endif
+    }
+    if( p->pLeft && p->op!=TK_SELECT_COLUMN ){
+      Expr *pLeft = p->pLeft;
+      if( !ExprHasProperty(p, EP_Static)
+       && !ExprHasProperty(pLeft, EP_Static)
+      ){
+        /* Avoid unnecessary recursion on unary operators */
+        sqlite3DbNNFreeNN(db, p);
+        p = pLeft;
+        goto exprDeleteRestart;
+      }else{
+        sqlite3ExprDeleteNN(db, pLeft);
+      }
     }
   }
   if( !ExprHasProperty(p, EP_Static) ){
@@ -1430,11 +1443,11 @@ void sqlite3ClearOnOrUsing(sqlite3 *db, OnOrUsing *p){
 **
 ** The pExpr might be deleted immediately on an OOM error.
 **
-** The deferred delete is (currently) implemented by adding the
-** pExpr to the pParse->pConstExpr list with a register number of 0.
+** Return 0 if the delete was successfully deferred.  Return non-zero
+** if the delete happened immediately because of an OOM.
 */
-void sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
-  sqlite3ParserAddCleanup(pParse, sqlite3ExprDeleteGeneric, pExpr);
+int sqlite3ExprDeferredDelete(Parse *pParse, Expr *pExpr){
+  return 0==sqlite3ParserAddCleanup(pParse, sqlite3ExprDeleteGeneric, pExpr);
 }
 
 /* Invoke sqlite3RenameExprUnmap() and sqlite3ExprDelete() on the
@@ -2393,7 +2406,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
     pWalker->eCode = 0;
     return WRC_Abort;
   }
-  return WRC_Continue;
+  return WRC_Prune;
 }
 
 
@@ -2500,7 +2513,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       return WRC_Continue;
   }
 }
-static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
+static int exprIsConst(Parse *pParse, Expr *p, int initFlag){
   Walker w;
   w.eCode = initFlag;
   w.pParse = pParse;
@@ -2509,7 +2522,6 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
 #ifdef SQLITE_DEBUG
   w.xSelectCallback2 = sqlite3SelectWalkAssert2;
 #endif
-  w.u.iCur = iCur;
   sqlite3WalkExpr(&w, p);
   return w.eCode;
 }
@@ -2529,7 +2541,7 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag, int iCur){
 ** function and on its parameters.
 */
 int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
-  return exprIsConst(pParse, p, 1, 0);
+  return exprIsConst(pParse, p, 1);
 }
 
 /*
@@ -2546,7 +2558,23 @@ int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
 ** the prepared statement starts up.  See sqlite3ExprCodeRunJustOnce().
 */
 static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
-  return exprIsConst(pParse, p, 2, 0);
+  return exprIsConst(pParse, p, 2);
+}
+
+/*
+** This routine examines sub-SELECT statements as an expression is being
+** walked as part of sqlite3ExprIsTableConstant().  Sub-SELECTs are considered
+** constant as long as they are uncorrelated - meaning that they do not
+** contain any terms from outer contexts.
+*/
+static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
+  assert( pSelect!=0 );
+  assert( pWalker->eCode==3 || pWalker->eCode==0 );
+  if( (pSelect->selFlags & SF_Correlated)!=0 ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+  return WRC_Prune;
 }
 
 /*
@@ -2554,9 +2582,26 @@ static int sqlite3ExprIsConstantNotJoin(Parse *pParse, Expr *p){
 ** for any single row of the table with cursor iCur.  In other words, the
 ** expression must not refer to any non-deterministic function nor any
 ** table other than iCur.
+**
+** Consider uncorrelated subqueries to be constants if the bAllowSubq
+** parameter is true.
 */
-int sqlite3ExprIsTableConstant(Expr *p, int iCur){
-  return exprIsConst(0, p, 3, iCur);
+static int sqlite3ExprIsTableConstant(Expr *p, int iCur, int bAllowSubq){
+  Walker w;
+  w.eCode = 3;
+  w.pParse = 0;
+  w.xExprCallback = exprNodeIsConstant;
+  if( bAllowSubq ){
+    w.xSelectCallback = exprSelectWalkTableConstant;
+  }else{
+    w.xSelectCallback = sqlite3SelectWalkFail;
+#ifdef SQLITE_DEBUG
+    w.xSelectCallback2 = sqlite3SelectWalkAssert2;
+#endif
+  }
+  w.u.iCur = iCur;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
 }
 
 /*
@@ -2574,7 +2619,10 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 **
 **   (1)  pExpr cannot refer to any table other than pSrc->iCursor.
 **
-**   (2)  pExpr cannot use subqueries or non-deterministic functions.
+**   (2a) pExpr cannot use subqueries unless the bAllowSubq parameter is
+**        true and the subquery is non-correlated
+**
+**   (2b) pExpr cannot use non-deterministic functions.
 **
 **   (3)  pSrc cannot be part of the left operand for a RIGHT JOIN.
 **        (Is there some way to relax this constraint?)
@@ -2603,7 +2651,8 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 int sqlite3ExprIsSingleTableConstraint(
   Expr *pExpr,                 /* The constraint */
   const SrcList *pSrcList,     /* Complete FROM clause */
-  int iSrc                     /* Which element of pSrcList to use */
+  int iSrc,                    /* Which element of pSrcList to use */
+  int bAllowSubq               /* Allow non-correlated subqueries */
 ){
   const SrcItem *pSrc = &pSrcList->a[iSrc];
   if( pSrc->fg.jointype & JT_LTORJ ){
@@ -2628,7 +2677,8 @@ int sqlite3ExprIsSingleTableConstraint(
       }
     }
   }
-  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor); /* rules (1), (2) */
+  /* Rules (1), (2a), and (2b) handled by the following: */
+  return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor, bAllowSubq);
 }
 
 
@@ -2713,7 +2763,7 @@ int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
 */
 int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   assert( isInit==0 || isInit==1 );
-  return exprIsConst(0, p, 4+isInit, 0);
+  return exprIsConst(0, p, 4+isInit);
 }
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
@@ -5031,8 +5081,9 @@ expr_code_doover:
       if( !ExprHasProperty(pExpr, EP_Collate) ){
         /* A TK_COLLATE Expr node without the EP_Collate tag is a so-called
         ** "SOFT-COLLATE" that is added to constraints that are pushed down
-        ** from outer queries into sub-queries by the push-down optimization.
-        ** Clear subtypes as subtypes may not cross a subquery boundary.
+        ** from outer queries into sub-queries by the WHERE-clause push-down
+        ** optimization. Clear subtypes as subtypes may not cross a subquery
+        ** boundary.
         */
         assert( pExpr->pLeft );
         sqlite3ExprCode(pParse, pExpr->pLeft, target);
@@ -6630,9 +6681,8 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
        && pAggInfo->aCol[iAgg].pCExpr==pExpr
       ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
-        if( pExpr ){
+        if( pExpr && !sqlite3ExprDeferredDelete(pParse, pExpr) ){
           pAggInfo->aCol[iAgg].pCExpr = pExpr;
-          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }else{
@@ -6641,9 +6691,8 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
        && pAggInfo->aFunc[iAgg].pFExpr==pExpr
       ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
-        if( pExpr ){
+        if( pExpr && !sqlite3ExprDeferredDelete(pParse, pExpr) ){
           pAggInfo->aFunc[iAgg].pFExpr = pExpr;
-          sqlite3ExprDeferredDelete(pParse, pExpr);
         }
       }
     }

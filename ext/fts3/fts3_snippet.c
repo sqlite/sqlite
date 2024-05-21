@@ -446,7 +446,7 @@ static void fts3SnippetDetails(
         }
         mCover |= mPhrase;
 
-        for(j=0; j<pPhrase->nToken; j++){
+        for(j=0; j<pPhrase->nToken && j<pIter->nSnippet; j++){
           mHighlight |= (mPos>>j);
         }
 

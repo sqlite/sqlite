@@ -870,7 +870,10 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   for(i=0; aKeyword[i]; i++){
     int tokenType = 0;
     do{ z += sqlite3GetToken(z, &tokenType); }while( tokenType==TK_SPACE );
-    if( tokenType!=aKeyword[i] ) return SQLITE_MISUSE_BKPT;
+    if( tokenType!=aKeyword[i] ){
+      sqlite3ErrorWithMsg(db, SQLITE_ERROR, "syntax error");
+      return SQLITE_ERROR;
+    }
   }
  
   sqlite3_mutex_enter(db->mutex);

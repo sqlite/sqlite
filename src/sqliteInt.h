@@ -1923,7 +1923,7 @@ struct sqlite3 {
 #define SQLITE_CursorHints    0x00000400 /* Add OP_CursorHint opcodes */
 #define SQLITE_Stat4          0x00000800 /* Use STAT4 data */
    /* TH3 expects this value  ^^^^^^^^^^ to be 0x0000800. Don't change it */
-#define SQLITE_PushDown       0x00001000 /* The push-down optimization */
+#define SQLITE_PushDown       0x00001000 /* WHERE-clause push-down opt */
 #define SQLITE_SimplifyJoin   0x00002000 /* Convert LEFT JOIN to JOIN */
 #define SQLITE_SkipScan       0x00004000 /* Skip-scans */
 #define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
@@ -3332,6 +3332,7 @@ struct SrcItem {
     unsigned isOn :1;          /* u3.pOn was once valid and non-NULL */
     unsigned isSynthUsing :1;  /* u3.pUsing is synthesized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
+    unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   union {
@@ -3600,11 +3601,12 @@ struct Select {
 #define SF_View          0x0200000 /* SELECT statement is a view */
 #define SF_NoopOrderBy   0x0400000 /* ORDER BY is ignored for this query */
 #define SF_UFSrcCheck    0x0800000 /* Check pSrc as required by UPDATE...FROM */
-#define SF_PushDown      0x1000000 /* SELECT has be modified by push-down opt */
+#define SF_PushDown      0x1000000 /* Modified by WHERE-clause push-down opt */
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
+#define SF_Correlated   0x20000000 /* True if references the outer context */
 
 /* True if S exists and has SF_NestedFrom */
 #define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
@@ -4879,7 +4881,7 @@ void sqlite3ExprFunctionUsable(Parse*,const Expr*,const FuncDef*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*, u32);
 void sqlite3ExprDelete(sqlite3*, Expr*);
 void sqlite3ExprDeleteGeneric(sqlite3*,void*);
-void sqlite3ExprDeferredDelete(Parse*, Expr*);
+int sqlite3ExprDeferredDelete(Parse*, Expr*);
 void sqlite3ExprUnmapAndDelete(Parse*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 ExprList *sqlite3ExprListAppendVector(Parse*,ExprList*,IdList*,Expr*);
@@ -5105,8 +5107,7 @@ int sqlite3ExprTruthValue(const Expr*);
 int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
-int sqlite3ExprIsTableConstant(Expr*,int);
-int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcList*,int);
+int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcList*,int,int);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
@@ -5291,7 +5292,9 @@ void sqlite3ErrorWithMsg(sqlite3*, int, const char*,...);
 void sqlite3Error(sqlite3*,int);
 void sqlite3ErrorClear(sqlite3*);
 void sqlite3SystemError(sqlite3*,int);
+#if !defined(SQLITE_OMIT_BLOB_LITERAL)
 void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
+#endif
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
