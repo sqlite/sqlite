@@ -7943,7 +7943,7 @@ static struct {
   int nHit;          /* Number of hits seen so far */
   int nRepeat;       /* Turn off after this many hits.  0 for never */
   int nSkip;         /* Skip this many before first fault */
-} faultsim_state = {-1, 0, 0, 0, 0, 0, 0};
+} faultsim_state = {-1, 0, 0, 0, 0, 0, 0, 0};
 
 /*
 ** This is the fault-sim callback
