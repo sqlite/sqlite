@@ -1482,7 +1482,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           /*step() skipped intentionally*/.reset(true);
       } finally {
         T.assert(0===st.finalize())
-          .assert(undefined===st.finalize());        
+          .assert(undefined===st.finalize());
       }
 
       try {
@@ -2587,7 +2587,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(pVfs);
         const JDb = this.JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = this.kvvfsUnlink = ()=>{JDb.clearStorage(filename)};
+        const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(this.kvvfsDbFile);
         unlink();
         let db = new JDb(filename);
         try {
@@ -2605,6 +2605,60 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*kvvfs sanity checks*/)
+//#if enable-see
+    .t({
+      name: 'kvvfs with SEE encryption',
+      predicate: ()=>(isUIThread()
+                      || "Only available in main thread."),
+      test: function(sqlite3){
+        this.kvvfsUnlink();
+        let db;
+        const encOpt1 = 1
+              ? {textkey: 'foo'}
+              : {key: 'foo'};
+        const encOpt2 = encOpt1.textkey
+              ? encOpt1
+              : {hexkey: new Uint8Array([0x66,0x6f,0x6f]/*==>"foo"*/)}
+        try{
+          db = new this.JDb({
+            filename: this.kvvfsDbFile,
+            ...encOpt1
+          });
+          db.exec([
+            "create table t(a,b);",
+            "insert into t(a,b) values(1,2),(3,4)"
+          ]);
+          db.close();
+          let err;
+          try{
+            db = new this.JDb({
+              filename: this.kvvfsDbFile,
+              flags: 'ct'
+            });
+            T.assert(db) /* opening is fine, but... */;
+            db.exec("select 1 from sqlite_schema");
+            console.warn("sessionStorage =",sessionStorage);
+          }catch(e){
+            err = e;
+          }finally{
+            db.close();
+          }
+          T.assert(err,"Expecting an exception")
+            .assert(sqlite3.capi.SQLITE_NOTADB==err.resultCode,
+                    "Expecting NOTADB");
+          db = new sqlite3.oo1.DB({
+            filename: this.kvvfsDbFile,
+            vfs: 'kvvfs',
+            ...encOpt2
+          });
+          T.assert( 4===db.selectValue('select sum(a) from t') );
+        }finally{
+          if( db ) db.close();
+          this.kvvfsUnlink();
+        }
+      }
+    })/*kvvfs with SEE*/
+//#endif enable-see
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////

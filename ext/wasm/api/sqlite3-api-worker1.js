@@ -459,11 +459,6 @@ sqlite3.initWorker1API = function(){
     return wState.dbList[0] && getDbId(wState.dbList[0]);
   };
 
-  const guessVfs = function(filename){
-    const m = /^file:.+(vfs=(\w+))/.exec(filename);
-    return sqlite3.capi.sqlite3_vfs_find(m ? m[2] : 0);
-  };
-
   const isSpecialDbFilename = (n)=>{
     return ""===n || ':'===n[0];
   };
@@ -485,36 +480,8 @@ sqlite3.initWorker1API = function(){
         toss("Throwing because of simulateError flag.");
       }
       const rc = Object.create(null);
-      let byteArray, pVfs;
       oargs.vfs = args.vfs;
-      if(isSpecialDbFilename(args.filename)){
-        oargs.filename = args.filename || "";
-      }else{
-        oargs.filename = args.filename;
-        byteArray = args.byteArray;
-        if(byteArray) pVfs = guessVfs(args.filename);
-      }
-      if(pVfs){
-        /* 2022-11-02: this feature is as-yet untested except that
-           sqlite3__wasm_vfs_create_file() has been tested from the
-           browser dev console. */
-        let pMem;
-        try{
-          pMem = sqlite3.wasm.allocFromTypedArray(byteArray);
-          const rc = util.sqlite3__wasm_vfs_create_file(
-            pVfs, oargs.filename, pMem, byteArray.byteLength
-          );
-          if(rc) sqlite3.SQLite3Error.toss(rc);
-        }catch(e){
-          throw new sqlite3.SQLite3Error(
-            e.name+' creating '+args.filename+": "+e.message, {
-              cause: e
-            }
-          );
-        }finally{
-          if(pMem) sqlite3.wasm.dealloc(pMem);
-        }
-      }
+      oargs.filename = args.filename || "";
       const db = wState.open(oargs);
       rc.filename = db.filename;
       rc.persistent = !!sqlite3.capi.sqlite3_js_db_uses_vfs(db.pointer, "opfs");

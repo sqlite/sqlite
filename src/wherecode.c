@@ -1338,6 +1338,27 @@ static SQLITE_NOINLINE void filterPullDown(
 }
 
 /*
+** Loop pLoop is a WHERE_INDEXED level that uses at least one IN(...) 
+** operator. Return true if level pLoop is guaranteed to visit only one 
+** row for each key generated for the index.
+*/
+static int whereLoopIsOneRow(WhereLoop *pLoop){
+  if( pLoop->u.btree.pIndex->onError 
+   && pLoop->nSkip==0 
+   && pLoop->u.btree.nEq==pLoop->u.btree.pIndex->nKeyCol 
+  ){
+    int ii;
+    for(ii=0; ii<pLoop->u.btree.nEq; ii++){
+      if( pLoop->aLTerm[ii]->eOperator & (WO_IS|WO_ISNULL) ){
+        return 0;
+      }
+    }
+    return 1;
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1415,7 +1436,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   if( pLevel->iFrom>0 && (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
     pLevel->iLeftJoin = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
-    VdbeComment((v, "init LEFT JOIN no-match flag"));
+    VdbeComment((v, "init LEFT JOIN match flag"));
   }
 
   /* Compute a safe address to jump to if we discover that the table for
@@ -2084,7 +2105,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
  
     /* Record the instruction used to terminate the loop. */
-    if( pLoop->wsFlags & WHERE_ONEROW ){
+    if( (pLoop->wsFlags & WHERE_ONEROW)
+     || (pLevel->u.in.nIn && regBignull==0 && whereLoopIsOneRow(pLoop))
+    ){
       pLevel->op = OP_Noop;
     }else if( bRev ){
       pLevel->op = OP_Prev;
@@ -2730,7 +2753,16 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
                                   pRJ->regReturn);
   for(k=0; k<iLevel; k++){
     int iIdxCur;
+    SrcItem *pRight;
+    assert( pWInfo->a[k].pWLoop->iTab == pWInfo->a[k].iFrom );
+    pRight = &pWInfo->pTabList->a[pWInfo->a[k].iFrom];
     mAll |= pWInfo->a[k].pWLoop->maskSelf;
+    if( pRight->fg.viaCoroutine ){
+      sqlite3VdbeAddOp3(
+          v, OP_Null, 0, pRight->regResult, 
+          pRight->regResult + pRight->pSelect->pEList->nExpr-1
+      );
+    }
     sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
     iIdxCur = pWInfo->a[k].iIdxCur;
     if( iIdxCur ){
