@@ -87,6 +87,104 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __vfsPostOpenSql = Object.create(null);
 
+//#if enable-see
+  /**
+     Converts ArrayBuffer or Uint8Array ba into a string of hex
+     digits.
+  */
+  const byteArrayToHex = function(ba){
+    if( ba instanceof ArrayBuffer ){
+      ba = new Uint8Array(ba);
+    }
+    const li = [];
+    const digits = "0123456789abcdef";
+    for( const d of ba ){
+      li.push( digits[(d & 0xf0) >> 4], digits[d & 0x0f] );
+    }
+    return li.join('');
+  };
+
+  /**
+     Internal helper to apply an SEE key to a just-opened
+     database. Requires that db be-a DB object which has just been
+     opened, opt be the options object processed by its ctor, and opt
+     must have either the key, hexkey, or textkey properties, either
+     as a string, an ArrayBuffer, or a Uint8Array.
+
+     This is a no-op in non-SEE builds. It throws on error and returns
+     without side effects if none of the key/textkey/hexkey options
+     are set. It throws if more than one is set or if any are set to
+     values of an invalid type.
+
+     Returns true if it applies the key, else an unspecified falsy value.
+  */
+  const dbCtorApplySEEKey = function(db,opt){
+    if( !capi.sqlite3_key_v2 ) return;
+    let keytype;
+    let key;
+    const check = (opt.key ? 1 : 0) + (opt.hexkey ? 1 : 0) + (opt.textkey ? 1 : 0);
+    if( !check ) return;
+    else if( check>1 ){
+      toss3(capi.SQLITE_MISUSE,
+            "Only ONE of (key, hexkey, textkey) may be provided.");
+    }
+    if( opt.key ){
+      /* It is not legal to bind an argument to PRAGMA key=?, so we
+         convert it to a hexkey... */
+      keytype = 'key';
+      key = opt.key;
+      if('string'===typeof key){
+        key = new TextEncoder('utf-8').encode(key);
+      }
+      if((key instanceof ArrayBuffer) || (key instanceof Uint8Array)){
+        key = byteArrayToHex(key);
+        keytype = 'hexkey';
+      }else{
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'key' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
+        return;
+      }
+    }else if( opt.textkey ){
+      /* For textkey we need it to be in string form, so convert it to
+         a string if it's a byte array... */
+      keytype = 'textkey';
+      key = opt.textkey;
+      if(key instanceof ArrayBuffer){
+        key = new Uint8Array(key);
+      }
+      if(key instanceof Uint8Array){
+        key = new TextDecoder('utf-8').decode(key);
+      }else if('string'!==typeof key){
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'textkey' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
+      }
+    }else if( opt.hexkey ){
+      keytype = 'hexkey';
+      key = opt.hexkey;
+      if((key instanceof ArrayBuffer) || (key instanceof Uint8Array)){
+        key = byteArrayToHex(key);
+      }else if('string'!==typeof key){
+        toss3(capi.SQLITE_MISUSE,
+              "Invalid value for the 'hexkey' option. Expecting a string,",
+              "ArrayBuffer, or Uint8Array.");
+      }
+      /* else assume it's valid hex codes */
+    }else{
+      return;
+    }
+    let stmt;
+    try{
+      stmt = db.prepare("PRAGMA "+keytype+"="+util.sqlite3__wasm_qfmt_token(key, 1));
+      stmt.step();
+    }finally{
+      if(stmt) stmt.finalize();
+    }
+    return true;
+  };
+//#endif enable-see
+
   /**
      A proxy for DB class constructors. It must be called with the
      being-construct DB object as its "this". See the DB constructor
@@ -175,16 +273,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     __ptrMap.set(this, pDb);
     __stmtMap.set(this, Object.create(null));
     try{
+//#if enable-see
+      dbCtorApplySEEKey(this,opt);
+//#endif
       // Check for per-VFS post-open SQL/callback...
-      const pVfs = capi.sqlite3_js_db_vfs(pDb);
-      if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
+      const pVfs = capi.sqlite3_js_db_vfs(pDb)
+            || toss3("Internal error: cannot get VFS for new db handle.");
       const postInitSql = __vfsPostOpenSql[pVfs];
-      if(postInitSql instanceof Function){
-        postInitSql(this, sqlite3);
-      }else if(postInitSql){
-        checkSqlite3Rc(
-          pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
-        );
+      if(postInitSql){
+        /**
+           Reminder: if this db is encrypted and the client did _not_ pass
+           in the key, any init code will fail, causing the ctor to throw.
+           We don't actually know whether the db is encrypted, so we cannot
+           sensibly apply any heuristics which skip the init code only for
+           encrypted databases for which no key has yet been supplied.
+        */
+        if(postInitSql instanceof Function){
+          postInitSql(this, sqlite3);
+        }else{
+          checkSqlite3Rc(
+            pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
+          );
+        }
       }
     }catch(e){
       this.close();
@@ -280,6 +390,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `flags`: open-mode flags
      - `vfs`: the VFS fname
 
+//#if enable-see
+
+     SEE-capable builds optionally support ONE of the following
+     additional options:
+
+     - `key`, `hexkey`, or `textkey`: encryption key as a string,
+       ArrayBuffer, or Uint8Array. These flags function as documented
+       for the SEE pragmas of the same names. Using a byte array for
+       `hexkey` is equivalent to the same series of hex codes in
+       string form, so `'666f6f'` is equivalent to
+       `Uint8Array([0x66,0x6f,0x6f])`. A `textkey` byte array is
+       assumed to be UTF-8. A `key` string is transformed into a UTF-8
+       byte array, and a `key` byte array is transformed into a
+       `hexkey` with the same bytes.
+
+     In non-SEE builds, these options are ignored. In SEE builds,
+     `PRAGMA key/textkey/hexkey=X` is executed immediately after
+     opening the db. If more than one of the options is provided,
+     or any option has an invalid argument type, an exception is
+     thrown.
+
+     Note that some DB subclasses may run post-initialization SQL
+     code, e.g. to set a busy-handler timeout or tweak the page cache
+     size. Such code is run _after_ the SEE key is applied. If no key
+     is supplied and the database is encrypted, execution of the
+     post-initialization SQL will fail, causing the constructor to
+     throw.
+
+//#endif enable-see
+
      The `filename` and `vfs` arguments may be either JS strings or
      C-strings allocated via WASM. `flags` is required to be a JS
      string (because it's specific to this API, which is specific
@@ -288,7 +428,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      For purposes of passing a DB instance to C-style sqlite3
      functions, the DB object's read-only `pointer` property holds its
      `sqlite3*` pointer value. That property can also be used to check
-     whether this DB instance is still open.
+     whether this DB instance is still open: it will evaluate to
+     `undefined` after the DB object's close() method is called.
 
      In the main window thread, the filenames `":localStorage:"` and
      `":sessionStorage:"` are special: they cause the db to use either
@@ -1543,7 +1684,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          they are larger than 32 bits, else double or int32, depending
          on whether they have a fractional part. Booleans are bound as
          integer 0 or 1. It is not expected the distinction of binding
-         doubles which have no fractional parts is integers is
+         doubles which have no fractional parts and integers is
          significant for the majority of clients due to sqlite3's data
          typing model. If [BigInt] support is enabled then this
          routine will bind BigInt values as 64-bit integers if they'll
@@ -1727,7 +1868,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        an exception is thrown.
 
        By default it will determine the data type of the result
-       automatically. If passed a second arugment, it must be one
+       automatically. If passed a second argument, it must be one
        of the enumeration values for sqlite3 types, which are
        defined as members of the sqlite3 module: SQLITE_INTEGER,
        SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB. Any other value,
@@ -1927,16 +2068,26 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Functionally equivalent to DB(storageName,'c','kvvfs') except
        that it throws if the given storage name is not one of 'local'
        or 'session'.
+
+       As of version 3.46, the argument may optionally be an options
+       object in the form:
+
+       {
+         filename: 'session'|'local',
+         ... etc. (all options supported by the DB ctor)
+       }
+
+       noting that the 'vfs' option supported by main DB
+       constructor is ignored here: the vfs is always 'kvvfs'.
     */
     sqlite3.oo1.JsStorageDb = function(storageName='session'){
+      const opt = dbCtorHelper.normalizeArgs(...arguments);
+      storageName = opt.filename;
       if('session'!==storageName && 'local'!==storageName){
         toss3("JsStorageDb db name must be one of 'session' or 'local'.");
       }
-      dbCtorHelper.call(this, {
-        filename: storageName,
-        flags: 'c',
-        vfs: "kvvfs"
-      });
+      opt.vfs = 'kvvfs';
+      dbCtorHelper.call(this, opt);
     };
     const jdb = sqlite3.oo1.JsStorageDb;
     jdb.prototype = Object.create(DB.prototype);

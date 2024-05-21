@@ -1678,35 +1678,24 @@ int sqlite3__wasm_config_j(int op, sqlite3_int64 arg){
   return sqlite3_config(op, arg);
 }
 
-#if 0
-// Pending removal after verification of a workaround discussed in the
-// forum post linked to below.
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
-** Returns a pointer to sqlite3_free(). In compliant browsers the
-** return value, when passed to sqlite3.wasm.exports.functionEntry(),
-** must resolve to the same function as
-** sqlite3.wasm.exports.sqlite3_free. i.e. from a dev console where
-** sqlite3 is exported globally, the following must be true:
-**
-** ```
-** sqlite3.wasm.functionEntry(
-**   sqlite3.wasm.exports.sqlite3__wasm_ptr_to_sqlite3_free()
-** ) === sqlite3.wasm.exports.sqlite3_free
-** ```
-**
-** Using a function to return this pointer, as opposed to exporting it
-** via sqlite3__wasm_enum_json(), is an attempt to work around a
-** Safari-specific quirk covered at
-** https://sqlite.org/forum/info/e5b20e1feb37a19a.
-**/
+** If z is not NULL, returns the result of passing z to
+** sqlite3_mprintf()'s %Q modifier (if addQuotes is true) or %q (if
+** addQuotes is 0). Returns NULL if z is NULL or on OOM.
+*/
 SQLITE_WASM_EXPORT
-void * sqlite3__wasm_ptr_to_sqlite3_free(void){
-  return (void*)sqlite3_free;
+char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
+  char * rc = 0;
+  if( z ){
+    rc = addQuotes
+      ? sqlite3_mprintf("%Q", z)
+      : sqlite3_mprintf("%q", z);
+  }
+  return rc;
 }
-#endif
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>

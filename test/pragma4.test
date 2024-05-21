@@ -283,4 +283,32 @@ ifcapable vtab {
   } {t2 t1 d a 1}
 }
 
+# 2024-05-08 https://sqlite.org/forum/forumpost/cf29a33e94
+#
+ifcapable vtab {
+  do_execsql_test 7.0 {
+    CREATE TABLE t3 ("a" TEXT, "b" TEXT);
+    CREATE TABLE t4 ("a" TEXT, "b" TEXT, "c" TEXT); 
+  }
+  
+  do_execsql_test 7.1 {
+    CREATE TABLE pragma_t3 AS SELECT * FROM pragma_table_info('t3');
+    CREATE TABLE pragma_t4 AS SELECT * FROM pragma_table_info('t4');
+  }
+  
+  do_execsql_test 7.2 {
+    SELECT pragma_t4.name, pragma_t3.name 
+      FROM pragma_t4 RIGHT JOIN pragma_t3 ON (pragma_t4.name=pragma_t3.name);
+  } {a a b b}
+  
+  do_execsql_test 7.3 {
+    SELECT t4.name, t3.name 
+    FROM pragma_table_info('t4') t4 
+    RIGHT JOIN pragma_table_info('t3') t3 ON (t4.name=t3.name);
+  } {a a b b}
+}
+
+
+
+
 finish_test

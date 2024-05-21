@@ -3374,9 +3374,9 @@ int sqlite3VdbeHalt(Vdbe *p){
 
     /* Check for immediate foreign key violations. */
     if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-      sqlite3VdbeCheckFk(p, 0);
+      (void)sqlite3VdbeCheckFk(p, 0);
     }
- 
+
     /* If the auto-commit flag is set and this is the only active writer
     ** VM, then we do either a commit or rollback of the current transaction.
     **

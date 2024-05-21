@@ -19,10 +19,15 @@ MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
 # built, and won't be built until we expand the dependencies. Thus we
 # have to use a temporary name for the archive until we can get
 # that binary built.
-ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
-dist-name-prefix := sqlite-wasm
+ifeq (1,$(SQLITE_C_IS_SEE))
+dist-name-extra := -see
 else
-dist-name-prefix := sqlite-wasm-snapshot-$(shell /usr/bin/date +%Y%m%d)
+dist-name-extra :=
+endif
+ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
+dist-name-prefix := sqlite-wasm$(dist-name-extra)
+else
+dist-name-prefix := sqlite-wasm$(dist-name-extra)-snapshot-$(shell /usr/bin/date +%Y%m%d)
 endif
 dist-name := $(dist-name-prefix)-TEMP
 
