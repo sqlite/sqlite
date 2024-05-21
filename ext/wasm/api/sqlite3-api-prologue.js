@@ -245,7 +245,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        The exception's message is created by concatenating its
        arguments with a space between each, except for the
-       two-args-with-an-objec form and that the first argument will
+       two-args-with-an-object form and that the first argument will
        get coerced to a string, as described above, if it's an
        integer.
 
@@ -1838,7 +1838,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Calls either sqlite3_result_error_nomem(), if e is-a
      WasmAllocError, or sqlite3_result_error(). In the latter case,
-     the second arugment is coerced to a string to create the error
+     the second argument is coerced to a string to create the error
      message.
 
      The first argument is a (sqlite3_context*). Returns void.

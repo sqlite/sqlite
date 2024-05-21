@@ -1382,15 +1382,19 @@ globalThis.WhWasmUtilInstaller = function(target){
      conversion of argument or return types, but see xWrap() and
      xCallWrapped() for variants which do.
 
+     If the first argument is a function is is assumed to be
+     a WASM-bound function and is used as-is instead of looking up
+     the function via xGet().
+
      As a special case, if passed only 1 argument after the name and
      that argument in an Array, that array's entries become the
      function arguments. (This is not an ambiguous case because it's
      not legal to pass an Array object to a WASM function.)
   */
   target.xCall = function(fname, ...args){
-    const f = target.xGet(fname);
+    const f = (fname instanceof Function) ? fname : target.xGet(fname);
     if(!(f instanceof Function)) toss("Exported symbol",fname,"is not a function.");
-    if(f.length!==args.length) __argcMismatch(fname,f.length)
+    if(f.length!==args.length) __argcMismatch(((f===fname) ? f.name : fname),f.length)
     /* This is arguably over-pedantic but we want to help clients keep
        from shooting themselves in the foot when calling C APIs. */;
     return (2===arguments.length && Array.isArray(arguments[1]))
@@ -1537,7 +1541,7 @@ globalThis.WhWasmUtilInstaller = function(target){
        jsFuncToWasm().
 
      - bindScope (string): one of ('transient', 'context',
-       'singleton'). Bind scopes are:
+       'singleton', 'permanent'). Bind scopes are:
 
        - 'transient': it will convert JS functions to WASM only for
          the duration of the xWrap()'d function call, using
@@ -1787,11 +1791,29 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __xResultAdapterCheck =
         (t)=>xResult.get(t) || toss("Result adapter not found:",t);
 
+  /**
+     Fetches the xWrap() argument adapter mapped to t, calls it,
+     passing in all remaining arguments, and returns the result.
+     Throws if t is not mapped to an argument converter.
+  */
   cache.xWrap.convertArg = (t,...args)=>__xArgAdapterCheck(t)(...args);
+  /**
+     Identical to convertArg() except that it does not perform
+     an is-defined check on the mapping to t before invoking it.
+  */
   cache.xWrap.convertArgNoCheck = (t,...args)=>xArg.get(t)(...args);
 
+  /**
+     Fetches the xWrap() result adapter mapped to t, calls it, passing
+     it v, and returns the result.  Throws if t is not mapped to an
+     argument converter.
+  */
   cache.xWrap.convertResult =
     (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
+  /**
+     Identical to convertResult() except that it does not perform an
+     is-defined check on the mapping to t before invoking it.
+  */
   cache.xWrap.convertResultNoCheck =
     (t,v)=>(null===t ? v : (t ? xResult.get(t)(v) : undefined));
 
@@ -1903,15 +1925,15 @@ globalThis.WhWasmUtilInstaller = function(target){
        const C-string, encoded as UTF-8, copies it to a JS string,
        and returns that JS string.
 
-     - `string:dealloc` or `utf8:dealloc) (results): treats the result value
-       as a non-const UTF-8 C-string, ownership of which has just been
-       transfered to the caller. It copies the C-string to a JS
-       string, frees the C-string, and returns the JS string. If such
-       a result value is NULL, the JS result is `null`. Achtung: when
-       using an API which returns results from a specific allocator,
-       e.g. `my_malloc()`, this conversion _is not legal_. Instead, an
-       equivalent conversion which uses the appropriate deallocator is
-       required. For example:
+     - `string:dealloc` or `utf8:dealloc` (results): treats the result
+       value as a non-const UTF-8 C-string, ownership of which has
+       just been transfered to the caller. It copies the C-string to a
+       JS string, frees the C-string, and returns the JS string. If
+       such a result value is NULL, the JS result is `null`. Achtung:
+       when using an API which returns results from a specific
+       allocator, e.g. `my_malloc()`, this conversion _is not
+       legal_. Instead, an equivalent conversion which uses the
+       appropriate deallocator is required. For example:
 
 ```js
    target.xWrap.resultAdapter('string:my_free',(i)=>{
@@ -2012,8 +2034,12 @@ globalThis.WhWasmUtilInstaller = function(target){
           arguments may be passed in after that one, and what those
           arguments are, is _not_ part of the public interface and is
           _not_ stable.
+
+          Maintenance reminder: the Ember framework modifies the core
+          Array type, breaking for-in loops.
         */
-        for(const i in args) args[i] = cxw.convertArgNoCheck(
+        let i = 0;
+        for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
           argTypes[i], args[i], args, i
         );
         return cxw.convertResultNoCheck(resultType, xf.apply(null,args));

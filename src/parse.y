@@ -1282,8 +1282,17 @@ expr(A) ::= NOT(B) expr(X).
 expr(A) ::= BITNOT(B) expr(X).
               {A = sqlite3PExpr(pParse, @B, X, 0);/*A-overwrites-B*/}
 expr(A) ::= PLUS|MINUS(B) expr(X). [BITNOT] {
-  A = sqlite3PExpr(pParse, @B==TK_PLUS ? TK_UPLUS : TK_UMINUS, X, 0);
-  /*A-overwrites-B*/
+  Expr *p = X;
+  u8 op = @B + (TK_UPLUS-TK_PLUS);
+  assert( TK_UPLUS>TK_PLUS );
+  assert( TK_UMINUS == TK_MINUS + (TK_UPLUS - TK_PLUS) );
+  if( p && p->op==TK_UPLUS ){
+    p->op = op;
+    A = p;
+  }else{
+    A = sqlite3PExpr(pParse, op, p, 0);
+    /*A-overwrites-B*/
+  }
 }
 
 expr(A) ::= expr(B) PTR(C) expr(D). {
@@ -1929,8 +1938,8 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
   TRUEFALSE       /* True or false keyword */
   ISNOT           /* Combination of IS and NOT */
   FUNCTION        /* A function invocation */
-  UMINUS          /* Unary minus */
   UPLUS           /* Unary plus */
+  UMINUS          /* Unary minus */
   TRUTH           /* IS TRUE or IS FALSE or IS NOT TRUE or IS NOT FALSE */
   REGISTER        /* Reference to a VDBE register */
   VECTOR          /* Vector */
