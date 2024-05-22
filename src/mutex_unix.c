@@ -20,7 +20,7 @@
 ** Note that this implementation requires a version of pthreads that
 ** supports recursive mutexes.
 */
-#ifdef SQLITE_MUTEX_PTHREADS
+#if defined(SQLITE_MUTEX_PTHREADS) && !defined(SQLITE_OS_OTHER)
 
 #include <pthread.h>
 

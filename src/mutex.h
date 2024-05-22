@@ -45,6 +45,9 @@
 #    define SQLITE_MUTEX_PTHREADS
 #  elif SQLITE_OS_WIN
 #    define SQLITE_MUTEX_W32
+#  elif SQLITE_OS_FBSD
+#    define SQLITE_MUTEX_FBSD
+#    undef SQLITE_MUTEX_PTHREADS
 #  else
 #    define SQLITE_MUTEX_NOOP
 #  endif

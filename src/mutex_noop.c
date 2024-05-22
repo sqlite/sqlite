@@ -27,7 +27,7 @@
 */
 #include "sqliteInt.h"
 
-#ifndef SQLITE_MUTEX_OMIT
+#if !defined(SQLITE_MUTEX_OMIT) && defined(SQLITE_MUTEX_NOOP)
 
 #ifndef SQLITE_DEBUG
 /*
@@ -207,9 +207,11 @@ sqlite3_mutex_methods const *sqlite3NoopMutex(void){
 ** If compiled with SQLITE_MUTEX_NOOP, then the no-op mutex implementation
 ** is used regardless of the run-time threadsafety setting.
 */
+#if 0
 #ifdef SQLITE_MUTEX_NOOP
 sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   return sqlite3NoopMutex();
 }
 #endif /* defined(SQLITE_MUTEX_NOOP) */
+#endif /* 0 */
 #endif /* !defined(SQLITE_MUTEX_OMIT) */

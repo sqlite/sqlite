@@ -355,7 +355,9 @@ case $host_os in
     AC_DEFINE([SQLITE_OMIT_FLOATING_POINT], [1], [FreeBSD Kernel uses no floating point functions])
     AC_DEFINE([SQLITE_OMIT_DESERIALIZE], [1], [Solves issues with initialization of SQLite])
     AC_DEFINE([SQLITE_OS_OTHER], [1], [FreeBSD Kernel is a different OS])
+    AC_DEFINE([SQLITE_THREADSAFE], [1], [FreeBSD Kernel is a different OS])
     AC_DEFINE([FILENAME_MAX], [255], [Maximum filename for FreeBSD Kernel])
+    AC_DEFINE([SQLITE_MUTEX_FBSD], [1], [Use kernel mutexes])
     ;;
 	 * ) CYGWIN=no;;
 esac
