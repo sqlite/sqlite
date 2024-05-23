@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sbegin-concurrent\sbranch.
-D 2024-05-21T15:17:13.869
+C Version\s3.46.0\sfor\sthe\sbegin-concurrent\sbranch
+D 2024-05-23T14:04:16.818
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -479,7 +479,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 4a3376c0fb9a844a799ac529fb81260523f6b13c9f629bc270c632dbae5fc1f8
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c 0a943861ec096de375097e0aaff07b480a002eab9b01fecd3f9e828faf4ef624
+F ext/recover/dbdata.c a22ecd689f00ff2ad33b5633c4ef84c8f088c65faeac18d4eb73c128395c7aec
 F ext/recover/recover1.test e16d78e94183562abff569967b18b7c77451d7044365516cd0fe14713a284851
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -2208,8 +2208,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eedf6bed2abdaa8a245a4871f9455e3660a7dfeb3bd5f2631d3305cb41591aeb 54a49f1847f95c377f0f611eb10f635b879bba8c2eb25e65e2f66a56f4f9a505
-R 928b8738827cdbfd5aaa6ca212fe76e7
+P 5c1c8651d122f811dfc3dd08007214c1b38e1229b13b3a8a50a8753ef3767988 96c92aba00c8375bc32fafcdf12429c58bd8aabfcadab6683e35bbb9cdebf19e
+R f152d60ac37c304e2bd46e9eaa53f64c
 U drh
-Z fcf389f540b085e40438a8cfc518ef51
+Z 61453f6fd00e6956b8e3793ef1f1418c
 # Remove this line to create a well-formed Fossil manifest.
