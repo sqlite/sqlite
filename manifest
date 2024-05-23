@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sbedrock\sbranch.
-D 2024-05-21T15:24:33.617
+C Version\s3.46.0\sfor\sthe\sbedrock\sbranch
+D 2024-05-23T14:09:13.140
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -482,7 +482,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 4a3376c0fb9a844a799ac529fb81260523f6b13c9f629bc270c632dbae5fc1f8
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c 0a943861ec096de375097e0aaff07b480a002eab9b01fecd3f9e828faf4ef624
+F ext/recover/dbdata.c a22ecd689f00ff2ad33b5633c4ef84c8f088c65faeac18d4eb73c128395c7aec
 F ext/recover/recover1.test e16d78e94183562abff569967b18b7c77451d7044365516cd0fe14713a284851
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -2228,8 +2228,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 16dac180b5fcc619104c789ed8bfec691fc6b808294aa41d9e0795ad2810a83a d4217d9f70118a47c0052be940955cf85356b9a08166cef9712668175baea999
-R cc200e35ee8891ab965268849f3f97bb
+P c65a82f1faa6cdfc710c01869943b12033a43868e8343468e326816e5a2fd5ad fdc0e1480a941d494e556331544cb40b2a997e8709e2c7fab1bed572007eb88d
+R 9b44a275ed8286ad7cd3c2a376a17180
 U drh
-Z b0986c1e13d32bf1d2c81312b6e86662
+Z b452abc9bb2c77c6b4b7d4e33b9d7ed0
 # Remove this line to create a well-formed Fossil manifest.
