@@ -1,5 +1,5 @@
-C Fix\sthe\swindow-function\sgroup_concat()\sso\sthat\sit\sreturns\san\sempty\sstring\s\nif\sit\shas\sone\sor\smore\sempty\sstring\sinputs.
-D 2024-05-23T23:30:27.098
+C Increase\sthe\sversion\snumber\sto\s3.46.1
+D 2024-05-23T23:34:45.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 993a7874e3d3721df61846f03dda4a9ef7490da11953ae36ba1bb0c0346eaf4a
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e64a52619310d3067f6c38f56eedd15918a82dade70954197d6da486ad99d7f4
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
-F VERSION c84541c6a9e8426462176fbb1f9ecb5cfd7d1bb56228053ff7eeba8841673eb6
+F VERSION 01b0b94ee03b29c27cb72ef03c460cd9476dee97b0cf8cf74b17a201e199820a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -24,7 +24,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in 106a96f2f745d41a0f6193f1de98d7355830b65d45032c18cd7c90295ec24196
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 9e74135563a901d9b1a019bad1c9d73a6659fa32325f6a565bef72bfb0ec7297
+F autoconf/tea/configure.ac 629148599fb2c29003b34e72dd161473b5fe23b6f26a2281200e9581daaede95
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in b9eb6dd37f64e08e637d576b3c83259814b9cddd78bec4af2e5abfc6c5c750ce
@@ -35,7 +35,7 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 40f7af9ed5ca0d44a4b9bc7ad34f1ee4867bb4eeb19e75036be6bed66193a498 x
+F configure 1728380292e4153caf04870b0734c771b9cdc73be655181618f7b8253f2d9d5c x
 F configure.ac f25bd7843120f2c2b8bc9db5a92b0502bbdd28e68907415c3d42fc8e57c657b9
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2191,12 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96c92aba00c8375bc32fafcdf12429c58bd8aabfcadab6683e35bbb9cdebf19e
-Q +cec6bb3fc9932ea78ec8e63d9c2d4e56a4d94b8973b9ea46033cc4baa87c0476
-R e46e2ca0b5c9c7bbd4a13f63dc50d414
-T *branch * branch-3.46
-T *sym-branch-3.46 *
-T -sym-trunk *
+P 7fe11274fc05a3773846ab1908fcaf4dc6a1b5a95d8b6abad253137aee097379
+R bc976ec44d8e59a12d82f3a5926b8914
 U drh
-Z 889128282019d0caef715a8650aec8f9
+Z ac84877616e5695f3aaf49c4a152f507
 # Remove this line to create a well-formed Fossil manifest.
