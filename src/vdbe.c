@@ -1214,7 +1214,7 @@ case OP_HaltIfNull: {      /* in3 */
   /* no break */ deliberate_fall_through
 }
 
-/* Opcode:  Halt P1 P2 * P4 P5
+/* Opcode:  Halt P1 P2 P3 P4 P5
 **
 ** Exit immediately.  All open cursors, etc are closed
 ** automatically.
@@ -1227,18 +1227,22 @@ case OP_HaltIfNull: {      /* in3 */
 ** then back out all changes that have occurred during this execution of the
 ** VDBE, but do not rollback the transaction.
 **
-** If P4 is not null then it is an error message string.
+** If P3 is not zero and P4 is NULL, then P3 is a register that holds the
+** text of an error message.
 **
-** P5 is a value between 0 and 4, inclusive, that modifies the P4 string.
+** If P3 is zero and P4 is not null then the error message string is held
+** in P4.
 **
-**    0:  (no change)
+** P5 is a value between 1 and 4, inclusive, then the P4 error message
+** string is modified as follows:
+**
 **    1:  NOT NULL constraint failed: P4
 **    2:  UNIQUE constraint failed: P4
 **    3:  CHECK constraint failed: P4
 **    4:  FOREIGN KEY constraint failed: P4
 **
-** If P5 is not zero and P4 is NULL, then everything after the ":" is
-** omitted.
+** If P3 is zero and P5 is not zero and P4 is NULL, then everything after
+** the ":" is omitted.
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
@@ -1251,6 +1255,9 @@ case OP_Halt: {
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
+  assert( pOp->p4type==P4_NOTUSED
+       || pOp->p4type==P4_STATIC
+       || pOp->p4type==P4_DYNAMIC );
 
   /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
   ** something is wrong with the code generator.  Raise an assertion in order
@@ -1281,7 +1288,12 @@ case OP_Halt: {
   p->errorAction = (u8)pOp->p2;
   assert( pOp->p5<=4 );
   if( p->rc ){
-    if( pOp->p5 ){
+    if( pOp->p3>0 && pOp->p4type==P4_NOTUSED ){
+      const char *zErr;
+      assert( pOp->p3<=(p->nMem + 1 - p->nCursor) );
+      zErr = sqlite3ValueText(&aMem[pOp->p3], SQLITE_UTF8);
+      sqlite3VdbeError(p, "%s", zErr);
+    }else if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
                                              "FOREIGN KEY" };
       testcase( pOp->p5==1 );
@@ -4324,23 +4336,23 @@ case OP_OpenWrite:
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
     }
+    if( pOp->p5 & OPFLAG_P2ISREG ){
+      assert( p2>0 );
+      assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
+      pIn2 = &aMem[p2];
+      assert( memIsValid(pIn2) );
+      assert( (pIn2->flags & MEM_Int)!=0 );
+      sqlite3VdbeMemIntegerify(pIn2);
+      p2 = (int)pIn2->u.i;
+      /* The p2 value always comes from a prior OP_CreateBtree opcode and
+      ** that opcode will always set the p2 value to 2 or more or else fail.
+      ** If there were a failure, the prepared statement would have halted
+      ** before reaching this instruction. */
+      assert( p2>=2 );
+    }
   }else{
     wrFlag = 0;
-  }
-  if( pOp->p5 & OPFLAG_P2ISREG ){
-    assert( p2>0 );
-    assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
-    assert( pOp->opcode==OP_OpenWrite );
-    pIn2 = &aMem[p2];
-    assert( memIsValid(pIn2) );
-    assert( (pIn2->flags & MEM_Int)!=0 );
-    sqlite3VdbeMemIntegerify(pIn2);
-    p2 = (int)pIn2->u.i;
-    /* The p2 value always comes from a prior OP_CreateBtree opcode and
-    ** that opcode will always set the p2 value to 2 or more or else fail.
-    ** If there were a failure, the prepared statement would have halted
-    ** before reaching this instruction. */
-    assert( p2>=2 );
+    assert( (pOp->p5 & OPFLAG_P2ISREG)==0 );
   }
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;

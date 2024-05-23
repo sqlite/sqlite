@@ -324,7 +324,7 @@ int sqlite3Fts5ExprNew(
   }
 
   sqlite3_free(sParse.apPhrase);
-  *pzErr = sParse.zErr;
+  if( 0==*pzErr ) *pzErr = sParse.zErr;
   return sParse.rc;
 }
 
