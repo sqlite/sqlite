@@ -1,5 +1,5 @@
-C Merge\svarious\senhancements\sthat\swere\sbeing\sheld\son\sa\sbranch\suntil\safter\sthe\n3.46.0\srelease.\s\s(1)\sAllow\sarbitrary\sexpressions\sin\sthe\ssecond\sargument\sto\nthe\sRAISE()\sfunction.\s(2)\sPerformance\soptimization\sto\sthe\sOP_OpenRead\sand\nOP_OpenWrite\sbytecode\soperators.\s(3)\sAllow\sFTS5\stables\sto\sbe\sdropped\seven\sif\nthe\sassociated\stokenizer\sis\snot\savailable.\s\s(4)\sPerformance\soptimizations\sin\nFTS5.\s\s(5)\sGenerate\sbetter\sbytecode\sto\simprove\sperformance\sof\sONEROW\sscans.
-D 2024-05-23T15:05:57.348
+C Fix\sthe\swindow-function\sgroup_concat()\sso\sthat\sit\sreturns\san\sempty\sstring\s\nif\sit\shas\sone\sor\smore\sempty\sstring\sinputs.\s\sThis\sfixes\na\sbug\sintroduced\sby\s[c6da39115d3e2b0f]\son\s2019-03-26\s(version\s3.28.0)\sand\nreported\sby\s[forum/forumpost/bf8f43aa522c2299|forum\spost\sbf8f43aa522c2299].
+D 2024-05-23T23:26:04.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -707,7 +707,7 @@ F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
 F src/expr.c 50e71ed518f1b1ba8401006922a309e200d205b2ca5b93d6fd8a006a336dbf67
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 852f93c0ef995e0c2b8983059a2b97151c194cc8259e21f5bc2b7ac508348c2a
-F src/func.c 283d4f3b2751a1d9339fd93a8a013d1948fd5f4474a3cab0955eb4fafd445d0f
+F src/func.c f1f57c6863c1380f31ecf3d61732495bfff847a8e35a832c7e306e310db5a799
 F src/global.c 61a419dd9e993b9be0f91de4c4ccf322b053eb829868e089f0321dd669be3b90
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2034,7 +2034,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test e0924eb8daac02bf80e9da88930747bd44dd9b230b7759fed927b1655b467c9c
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 5e8abe56a7d667eeddbba6de180086dcf69ed528d046447a25464f945ece101f
+F test/window1.test 79dc3b9a2226f622d7e104a1fc750d1c4c3c08d6147b59085bdbe05352947ffa
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -2191,9 +2191,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20e228a22e4c5a8d62fae003ac176de62126d8e121871c5ca14a5480c4d4b6a2 6dc6472175bccbed15ebf6811c209d1a0b5fad60158fb32040210f2cdae916a6
-R 8bddc71c9aad2b206ce1df483c24253e
-T +closed 6dc6472175bccbed15ebf6811c209d1a0b5fad60158fb32040210f2cdae916a6
+P 1e5385ffc30743412ade1536583504eec36790cac5355042aa1e12d8d2271d1f
+R c2083a7140dca6efcab0abf6ed5aec5a
 U drh
-Z bb39af0ce41ef3b8a3492c4ff2e0362a
+Z b173c105f45a8c5809d898ff2ee0b454
 # Remove this line to create a well-formed Fossil manifest.
