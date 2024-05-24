@@ -460,6 +460,39 @@ static void updateRangeAffinityStr(
   }
 }
 
+/*
+** The pOrderBy->a[].u.x.iOrderByCol values might be incorrect because
+** columns might have been rearranged in the result set.  This routine
+** fixes them up.
+**
+** pEList is the new result set.  The pEList->a[].u.x.iOrderByCol values
+** contain the *old* locations of each expression.  This is a temporary
+** use of u.x.iOrderByCol, not its intended use.  The caller must reset
+** u.x.iOrderByCol back to zero for all entries in pEList before the
+** caller returns.
+**
+** This routine changes pOrderBy->a[].u.x.iOrderByCol values from
+** pEList->a[N].u.x.iOrderByCol into N+1.  (The "+1" is because of the 1-based
+** indexing used by iOrderByCol.)  Or if no match, iOrderByCol is set to zero.
+*/
+static void adjustOrderByCol(ExprList *pOrderBy, ExprList *pEList){
+  int i, j;
+  if( pOrderBy==0 ) return;
+  for(i=0; i<pOrderBy->nExpr; i++){
+    int t = pOrderBy->a[i].u.x.iOrderByCol;
+    if( t==0 ) continue;
+    for(j=0; j<pEList->nExpr; j++){
+      if( pEList->a[j].u.x.iOrderByCol==t ){
+        pOrderBy->a[i].u.x.iOrderByCol = j+1;
+        break;
+      }
+    }
+    if( j>=pEList->nExpr ){
+      pOrderBy->a[i].u.x.iOrderByCol = 0;
+    }
+  }
+}
+
 
 /*
 ** pX is an expression of the form:  (vector) IN (SELECT ...)
@@ -522,7 +555,8 @@ static Expr *removeUnindexableInClauseTerms(
           iField = pLoop->aLTerm[i]->u.x.iField - 1;
           if( pOrigRhs->a[iField].pExpr==0 ) continue; /* Duplicate PK column */
           pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
-          pOrigRhs->a[iField].pExpr = 0;
+          pOrigRhs->a[iField].pExpr = 0;	
+          if( pRhs ) pRhs->a[pRhs->nExpr-1].u.x.iOrderByCol = iField+1;
           if( pOrigLhs ){
             assert( pOrigLhs->a[iField].pExpr!=0 );
             pLhs = sqlite3ExprListAppend(pParse,pLhs,pOrigLhs->a[iField].pExpr);
@@ -545,18 +579,16 @@ static Expr *removeUnindexableInClauseTerms(
         sqlite3ExprDelete(db, pNew->pLeft);
         pNew->pLeft = p;
       }
-      if( pSelect->pOrderBy ){
-        /* If the SELECT statement has an ORDER BY clause, zero the
-        ** iOrderByCol variables. These are set to non-zero when an
-        ** ORDER BY term exactly matches one of the terms of the
-        ** result-set. Since the result-set of the SELECT statement may
-        ** have been modified or reordered, these variables are no longer
-        ** set correctly.  Since setting them is just an optimization,
-        ** it's easiest just to zero them here.  */
-        ExprList *pOrderBy = pSelect->pOrderBy;
-        for(i=0; i<pOrderBy->nExpr; i++){
-          pOrderBy->a[i].u.x.iOrderByCol = 0;
-        }
+
+      /* If either the ORDER BY clause or the GROUP BY clause contains
+      ** references to result-set columns, those references might now be
+      ** obsolete.  So fix them up.
+      */
+      assert( pRhs!=0 || db->mallocFailed );
+      if( pRhs ){
+        adjustOrderByCol(pSelect->pOrderBy, pRhs);
+        adjustOrderByCol(pSelect->pGroupBy, pRhs);
+        for(i=0; i<pRhs->nExpr; i++) pRhs->a[i].u.x.iOrderByCol = 0;
       }
 
 #if 0
