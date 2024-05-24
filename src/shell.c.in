@@ -1221,9 +1221,9 @@ INCLUDE ../ext/misc/sqlar.c
 #endif
 INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
-
 INCLUDE ../ext/intck/sqlite3intck.h
 INCLUDE ../ext/intck/sqlite3intck.c
+INCLUDE ../ext/misc/stmtrand.c
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 #define SQLITE_SHELL_HAVE_RECOVER 1
@@ -5364,6 +5364,7 @@ static void open_db(ShellState *p, int openFlags){
 #endif
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_uint_init(p->db, 0, 0);
+    sqlite3_stmtrand_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
     sqlite3_base64_init(p->db, 0, 0);
     sqlite3_base85_init(p->db, 0, 0);
