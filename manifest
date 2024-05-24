@@ -1,5 +1,5 @@
-C Ensure\sthat\squeries\slike\s"SELECT\sindeterministic(a)\sFROM\stbl\sGROUP\sBY\s1"\sinvoke\sthe\sindeterministic\sfunction\sonly\sonce\sfor\seach\srow\sof\stbl.
-D 2024-05-24T18:31:39.505
+C When\somitting\sresult\scolumns\sfor\sthe\svector-IN\soptimization,\smake\ssure\sthat\nany\sresult-set\scolumn\sreferences\sin\sboth\sthe\sORDER\sBY\sclause\sand\sthe\nGROUP\sBY\sclause\sare\supdated\sappropriately.
+D 2024-05-24T20:18:16.599
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -842,7 +842,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 9b2ab23fcc2198ebcee1e6e840a9ff22350668bd3a99195a5dc7299d5908370a
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
-F src/wherecode.c f5255f49d1f42b6e7e6b0362ff3522fa88cbcaa7213e52f9374744027ecdebca
+F src/wherecode.c d5184620bcb5265d59072cb66e1386bfe0331a9ce7614286f9ab79a4fcd00fb8
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2193,11 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c97a5b9d163b1c427e002f3734687ca0384bc0da6a90fc4bfd358c654d3a7b3
-R 5fdf8e25d08374c3b6caf60dac9645e5
-T *branch * group-by-consistency
-T *sym-group-by-consistency *
-T -sym-trunk *
-U dan
-Z 5149149f75ab1db4d2d6bfcada9a5ce2
+P 4555d66547e28cb110e1012b145bcf3aafb5d4bde05e9d27bcb4ca33837b28f5
+R 956873244f968f95be3366298765be9b
+U drh
+Z ab0b66dde2c2b53f84c20902891068f4
 # Remove this line to create a well-formed Fossil manifest.
