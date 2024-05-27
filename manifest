@@ -1,5 +1,5 @@
-C Ensure\sthat\ssqlite3ViewGetColumnNames()\sreturns\snon-zero\son\sany\serror.\ndbsqlfuzz\sd9de2a508f693e5a228d7a01d5341e3c64326fbb.
-D 2024-05-25T23:13:15.836
+C Add\snew\sassert()\sstatements\sto\shelp\sout\sa\sstatic\sanalyzer.\s\sResponse\sto\n[forum:/forumpost/17fe8ac32e0de4f5|forum\spost\s17fe8ac32e0de4f5].
+D 2024-05-27T11:31:02.983
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 71b80e77b255144db47180fda8138740608e382a44231942464029b1a45fc036
+F src/btree.c c786c0e9ee3d848e01e96fa3a84b0e44dbc80477b0accf406de810d87a7d0426
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 237ccc0290d131d646be722f418e92ee0a38043aee25e7dfdc75f8ce5b3abe4e
@@ -2193,8 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 663f5dd32d9db83249fcf85602a756464ece74e1899dc881ac9519d872638441
-R 67dd292b009e7afb9767bed1b386f5c7
+P 57aeb3a287fc190bf8d438a7b03d6715c05fd3fd71559c6a14d7bd910d37b38d
+R 7cbf595b1ca4596681b998a2f0ff06f6
 U drh
-Z 741f9768ce72f3e0695011ad58c7b55d
+Z 965bcfdda628566a6226377c41ce768a
 # Remove this line to create a well-formed Fossil manifest.

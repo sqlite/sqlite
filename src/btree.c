@@ -7568,6 +7568,7 @@ static int rebuildPage(
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i; k++){}
+  assert( k<NB*2 );
   pSrcEnd = pCArray->apEnd[k];
 
   pData = pEnd;
@@ -7651,6 +7652,7 @@ static int pageInsertArray(
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   if( iEnd<=iFirst ) return 0;
   for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i ; k++){}
+  assert( k<NB*2 );
   pEnd = pCArray->apEnd[k];
   while( 1 /*Exit by break*/ ){
     int sz, rc;
@@ -8762,6 +8764,7 @@ static int balance_nonroot(
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
     for(k=0; ALWAYS(k<NB*2) && b.ixNx[k]<=j; k++){}
+    assert( k<NB*2 );
     pSrcEnd = b.apEnd[k];
     if( SQLITE_OVERFLOW(pSrcEnd, pCell, pCell+sz) ){
       rc = SQLITE_CORRUPT_BKPT;
