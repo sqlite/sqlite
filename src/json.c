@@ -3859,7 +3859,7 @@ static void jsonExtractFunc(
       **     [NUMBER] ==>  $[NUMBER]     // Not PG.  Purely for convenience
       **
       ** Updated 2024-05-27:  If the NUMBER is negative, then PG counts from
-      ** the write of the array.  Hence for negative NUMBER:
+      ** the right of the array.  Hence for negative NUMBER:
       **
       **     NUMBER   ==>  $[#NUMBER]    // PG compatible
       */
