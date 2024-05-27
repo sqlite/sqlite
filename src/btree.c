@@ -7567,8 +7567,8 @@ static int rebuildPage(
   if( j>(u32)usableSize ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
-  for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i; k++){}
-  assert( k<NB*2 );
+  assert( pCArray->ixNx[NB*2-1]>i );
+  for(k=0; pCArray->ixNx[k]<=i; k++){}
   pSrcEnd = pCArray->apEnd[k];
 
   pData = pEnd;
@@ -7651,8 +7651,8 @@ static int pageInsertArray(
   u8 *pEnd;                       /* Maximum extent of cell data */
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   if( iEnd<=iFirst ) return 0;
-  for(k=0; ALWAYS(k<NB*2) && pCArray->ixNx[k]<=i ; k++){}
-  assert( k<NB*2 );
+  assert( pCArray->ixNx[NB*2-1]>i );
+  for(k=0; pCArray->ixNx[k]<=i ; k++){}
   pEnd = pCArray->apEnd[k];
   while( 1 /*Exit by break*/ ){
     int sz, rc;
@@ -8172,7 +8172,9 @@ static int balance_nonroot(
   CellArray b;                 /* Parsed information on cells being balanced */
 
   memset(abDone, 0, sizeof(abDone));
-  memset(&b, 0, sizeof(b));
+  assert( sizeof(b) - sizeof(b.ixNx) == offsetof(CellArray,ixNx) );
+  memset(&b, 0, sizeof(b)-sizeof(b.ixNx));
+  b.ixNx[NB*2-1] = 0x7fffffff;
   pBt = pParent->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
@@ -8763,8 +8765,8 @@ static int balance_nonroot(
     iOvflSpace += sz;
     assert( sz<=pBt->maxLocal+23 );
     assert( iOvflSpace <= (int)pBt->pageSize );
-    for(k=0; ALWAYS(k<NB*2) && b.ixNx[k]<=j; k++){}
-    assert( k<NB*2 );
+    assert( b.ixNx[NB*2-1]>j );
+    for(k=0; b.ixNx[k]<=j; k++){}
     pSrcEnd = b.apEnd[k];
     if( SQLITE_OVERFLOW(pSrcEnd, pCell, pCell+sz) ){
       rc = SQLITE_CORRUPT_BKPT;

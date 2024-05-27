@@ -1,5 +1,5 @@
-C Doc\stypo\sfix.\sNo\scode\schanges.
-D 2024-05-27T13:41:46.728
+C Very\ssmall\sperformance\sincrease\sand\ssize\sreduction\sby\sremoving\sunnecessary\nALWAYS()\smacros\sfrom\sthe\sbtree\sbalance\slogic\sand\sreplacing\sthem\swith\nspecial\sinitialization\sof\sCellArray\sand\ssome\sassert()s.
+D 2024-05-27T15:13:49.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c c786c0e9ee3d848e01e96fa3a84b0e44dbc80477b0accf406de810d87a7d0426
+F src/btree.c 1a77e763f03a775b5e7c17f4e2f043c46538b107c12e425ecc68cf78a71d9a51
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 237ccc0290d131d646be722f418e92ee0a38043aee25e7dfdc75f8ce5b3abe4e
@@ -2193,8 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 82365a45b96536c1146a384e5d3efce80a6ec469a54713c7f40bf15eb834b5fd
-R 69243fb48d2d86f0aae5c62167ad4060
-U stephan
-Z 7c55017839b224ee3043f5b1beb0d3bd
+P eaf07fe69f383938dd394f58cedad3f16f146d9b48e66bc1ba17446cf75ffb3f
+R dc12087fabeb41552a351cfb5dec1bee
+U drh
+Z 1b0c3733cd5c8aecb350c7623a6fceee
 # Remove this line to create a well-formed Fossil manifest.
