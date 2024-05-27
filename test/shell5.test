@@ -585,4 +585,16 @@ do_test shell5-7.1 {
 SELECT * FROM t1;}
 } {0 aaa|bbb|aaabbb}
 
+#-------------------------------------------------------------------------
+
+do_test shell5-8.1 {
+
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out x
+  close $out
+
+  catchcmd :memory: {.import --csv shell5.csv '""""""""""""""""""""""""""""""""""""""""""""""'}
+} {0 {}}
+
 finish_test
