@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment\sused\sto\sgenerate\sparts\sof\sthe\sdocumentation.\n[forum:/forumpost/da5a2ca4db|Forum\spost\sda5a2ca4db].
-D 2024-05-27T18:15:08.730
+C The\sprevious\scheck-in\swas\sa\slittle\stwo\saggressive\sabout\sskipping\sthe\ninitialization\sof\sentries\sin\sthe\sCellArray.ixNx\sarray.\s\sFixed\shere.
+D 2024-05-27T19:52:24.258
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 1a77e763f03a775b5e7c17f4e2f043c46538b107c12e425ecc68cf78a71d9a51
+F src/btree.c 8b42fc7d9efdb2df05c30e8f91ff6cfbd979724ae24bf90269028468b7a13333
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 237ccc0290d131d646be722f418e92ee0a38043aee25e7dfdc75f8ce5b3abe4e
@@ -2193,8 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32b79041d9b6858e4ffade5841898619c7d25d20c4638bf85447a2ca9cc4a3d3
-R 6d7e8d363f9510bd5e196509859708e6
+P 428aadf0c71473ccb0681b2b7146281c62949ee99556873e49895d44eec7aee5
+R 4ca5c510c21258f08a4799ee1f04b980
 U drh
-Z 62c8271bd132db7f532d96e8c36d38b0
+Z e77b6b7828b797641ee06ff1dc47219a
 # Remove this line to create a well-formed Fossil manifest.

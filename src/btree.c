@@ -7937,6 +7937,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     b.szCell = &szCell;
     b.apEnd[0] = pPage->aDataEnd;
     b.ixNx[0] = 2;
+    b.ixNx[NB*2-1] = 0x7fffffff;
     rc = rebuildPage(&b, 0, 1, pNew);
     if( NEVER(rc) ){
       releasePage(pNew);
@@ -8173,7 +8174,7 @@ static int balance_nonroot(
 
   memset(abDone, 0, sizeof(abDone));
   assert( sizeof(b) - sizeof(b.ixNx) == offsetof(CellArray,ixNx) );
-  memset(&b, 0, sizeof(b)-sizeof(b.ixNx));
+  memset(&b, 0, sizeof(b)-sizeof(b.ixNx[0]));
   b.ixNx[NB*2-1] = 0x7fffffff;
   pBt = pParent->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
