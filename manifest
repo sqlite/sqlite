@@ -1,5 +1,5 @@
-C Very\ssmall\sperformance\sincrease\sand\ssize\sreduction\sby\sremoving\sunnecessary\nALWAYS()\smacros\sfrom\sthe\sbtree\sbalance\slogic\sand\sreplacing\sthem\swith\nspecial\sinitialization\sof\sCellArray\sand\ssome\sassert()s.
-D 2024-05-27T15:13:49.723
+C Fix\stypo\sin\scomment\sused\sto\sgenerate\sparts\sof\sthe\sdocumentation.\n[forum:/forumpost/da5a2ca4db|Forum\spost\sda5a2ca4db].
+D 2024-05-27T18:15:08.730
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -757,7 +757,7 @@ F src/resolve.c 22f1fa3423b377c02ae78d451cfeb1c2d96dcf0389c0642cbdcd19d3bfd7ae01
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c cbdaf9cb2d9a697ee9ce1484f27d2e96762d33cc19259aedfb818a68b9d3be10
 F src/shell.c.in cba809572972ff736aa6c3423ffb87015c740864206d97e168bb77316129015f
-F src/sqlite.h.in c71d9ef76a6d32dc7ff2d373f2e57ce09056af26c1457bcadae5358b7628c7c3
+F src/sqlite.h.in 954a55f03801617876d30329a4496f365d73f4d91fde7dabc61869f51e2967e8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 98ba756789b37f8d8217407ce077c31faf0b9b21d593b327c2b9667ad5bea1ac
@@ -2193,8 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eaf07fe69f383938dd394f58cedad3f16f146d9b48e66bc1ba17446cf75ffb3f
-R dc12087fabeb41552a351cfb5dec1bee
+P 32b79041d9b6858e4ffade5841898619c7d25d20c4638bf85447a2ca9cc4a3d3
+R 6d7e8d363f9510bd5e196509859708e6
 U drh
-Z 1b0c3733cd5c8aecb350c7623a6fceee
+Z 62c8271bd132db7f532d96e8c36d38b0
 # Remove this line to create a well-formed Fossil manifest.
