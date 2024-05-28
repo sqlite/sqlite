@@ -238,10 +238,41 @@ do_catchsql_test 1.7.4 {
   COMMIT;
 } {1 {database is locked}}
 
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+
+set big1 "[string repeat ab 10000]"
+set big2 "[string repeat ab  9999]xy"
+do_execsql_test 2.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(100, $big1);
+} {wal}
+
+do_execsql_test -db db2 2.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO t2 SELECT * FROM t1;
+}
+
+do_execsql_test 2.2 {
+   UPDATE t1 SET b=$big2
+}
+
+do_test 2.3 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+
+do_test_conflict_msg 2.4 {
+  conflict at page 22 (read-only page; part of db table t1; content=0000000061626162...)
+}
+
 db close
 db2 close
 sqlite3_shutdown
 test_sqlite3_log 
 sqlite3_initialize
 finish_test
+
 
