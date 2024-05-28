@@ -2884,7 +2884,9 @@ int fts5GetTokenizer(
     );
     pConfig->t.pTokApi = &pMod->x;
     if( rc!=SQLITE_OK ){
-      if( pzErr ) *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+      if( pzErr && rc!=SQLITE_NOMEM ){
+        *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+      }
     }else{
       pConfig->t.ePattern = sqlite3Fts5TokenizerPattern(
           pMod->x.xCreate, pConfig->t.pTok
