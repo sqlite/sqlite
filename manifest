@@ -1,5 +1,5 @@
-C Query\splanner\stuning:\s\sIncrease\sthe\smaximum\snumber\sof\ssimultaneous\ssolutions\nto\strack\sint\seh\ssolver\sfrom\s10\sto\s12.
-D 2024-05-28T00:01:07.835
+C Improve\sthe\sautomatic-index\sdecision\ssuch\sthat\sno\sattempt\sis\smade\sto\screate\nan\sautomatic\sindex\son\sa\scolumn\sthat\sis\sknown\sto\sbe\snon-selective\sbecause\sif\nits\suse\sin\sother\sindexes\sthat\shave\sbeen\sanalyzed.\s\sSee\n[src:/tktview/8ff324e120|ticket\s8ff324e120]\sand\n[forum:/forumpost/b21c2101a559be0a|forum\spost\sb21c2101a559be0a].
+D 2024-05-28T00:16:52.505
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -840,7 +840,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c dd7d9eb570c35caf94797814f9d54b187175bd21966f7f4dfd36b0c1f63aa501
+F src/where.c ad4866c036a9d64f0c79ccf2ec60ac65bb64cb81b9facce453b0a920caac7a1d
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c d5184620bcb5265d59072cb66e1386bfe0331a9ce7614286f9ab79a4fcd00fb8
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
@@ -910,7 +910,7 @@ F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e188
 F test/autoinc.test 997d6f185f138229dc4251583a1d04816423dddc2fc034871a01aeb1d728cb39
 F test/autoindex1.test d34caffb0384003ee28eae87679214c029e9be4b332d9649a79e0b94ab70502c
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
-F test/autoindex3.test dcd6b2f8bed2be67b131e2e671f892e971d934e24fd00988952d0e0a67e24aa7
+F test/autoindex3.test ca502c8050166ac6107a7b4fe4e951f4d3270a23a958af02b14f1b962b83c4b6
 F test/autoindex4.test 3c2105e9172920e26f950ba3c5823e4972190e022c1e6f260ba476b0af24c593
 F test/autoindex5.test 2ee94f033b87ca0160e08d81034c507aff8e230df2627f0304fa309b2fee19a3
 F test/autovacuum.test 00671369bbf96c6a49989a9425f5b78b94075d6a4b031e5e00000c2c32f365df
@@ -2193,8 +2193,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b6d1fbcdecf14bc79dc7b5df50e585d2fcc1484a9987b863c190e8f7ba2c39f
-R 81c36ec13694e48008fb110fd73a5f00
+P fe2e1dadbacbe6392ceed44fd287a2ed82189cb8055f35631d37967d9a7a5d1d 70409763f70faa2a0f4f072fd318a687b109a0905cc57906ad7f80d2885fe6d9
+R a2e2cddff59ec6ba73015ce8c07a73b7
+T +closed 70409763f70faa2a0f4f072fd318a687b109a0905cc57906ad7f80d2885fe6d9
 U drh
-Z 108dc3aeba08b8d2b68875bf68eaf849
+Z 8ce1e608e60c39ba63116e451ee082d8
 # Remove this line to create a well-formed Fossil manifest.
