@@ -10171,6 +10171,9 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
           pPageIn = 0;
           rc = sqlite3PagerGet(pSrcPager, ovflIn, &pPageIn, PAGER_GET_READONLY);
           if( rc==SQLITE_OK ){
+            setMempageRoot(
+                (MemPage*)sqlite3PagerGetExtra(pPageIn), pSrc->pgnoRoot
+            );
             aIn = (const u8*)sqlite3PagerGetData(pPageIn);
             ovflIn = get4byte(aIn);
             aIn += 4;
