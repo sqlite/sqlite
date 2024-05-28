@@ -5286,9 +5286,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   **     -----      --------
   **       1            1            // the most common case
   **       2            5
-  **       3+          20
+  **       3+        8*(N-2)
   */
-  mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 20);
+  mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 8*(nLoop-2));
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d, nQueryLoop=%d)\n",
                      nRowEst, pParse->nQueryLoop));
