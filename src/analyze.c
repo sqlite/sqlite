@@ -1640,6 +1640,16 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
     pIndex->bUnordered = 0;
     decodeIntArray((char*)z, nCol, aiRowEst, pIndex->aiRowLogEst, pIndex);
     pIndex->hasStat1 = 1;
+
+    /* TUNING:  Increase the estimated size of small tables.  Assume a 
+    ** minimum of 100 rows in every table.  This is because if the estimated
+    ** number of rows is inaccurate, you are more likely to get a speedy
+    ** result if the estimate is too large than if the number of rows is
+    ** near zero. */
+    if( pIndex->aiRowLogEst[0]<99 ){
+      pIndex->aiRowLogEst[0] = 66 + pIndex->aiRowLogEst[0]/3;
+    }
+
     if( pIndex->pPartIdxWhere==0 ){
       pTable->nRowLogEst = pIndex->aiRowLogEst[0];
       pTable->tabFlags |= TF_HasStat1;

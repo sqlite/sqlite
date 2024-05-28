@@ -1,5 +1,5 @@
-C Increase\sthe\snumber\sof\sparallel\spaths\sin\sthe\squery\ssolver\sfrom\s12\sto\s20.\nIn\sthe\s.wheretrace\soutput,\ssort\sthe\sparallel\spaths\sin\sorder\sof\sincreasing\ncost.
-D 2024-05-28T12:41:11.505
+C For\squery\splanning\spurposes,\sassume\severy\stable\sholds\sat\sleast\s100\nrows,\sas\sthis\sseems\sto\sgive\sbetter\sworst-case\sperformance\sif\sthe\stable\srow\ncount\sestimate\sturns\sout\sto\sbe\sinaccurate.\s\sPark\sthis\schange\son\sa\sbranch\sfor\nnow\sand\sconsider\sit\sfor\sa\sfuture\senhancement.
+D 2024-05-28T15:37:41.498
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -688,7 +688,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c e1b6782b85dd758f89e5c588e4e3eb82638c2dafc0c857b79a43bb8ec1746fca
-F src/analyze.c a3df28274e2565ba5656577d7e3fd262169a213e6eb0bd47890e0f0729a4031c
+F src/analyze.c 33e7d516042c276bebd06c15d150dffd0b7222f7d545e1f173de3e85c4016fd8
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2193,8 +2193,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1f2f9c709eaee3c45664afa062f0fb2b912de446581066c87ea144b8ba55b55c
-R 621f31ea7fc9d463b84af6cc3d551a91
+P 8ba2c2f5cb31f7bcc426bec78457316ef11d0b5debf24e8da8c6fc2f95878b1e
+R b48f75430fd2b84d7c9883dda18ea3f9
+T *branch * min-row-estimate
+T *sym-min-row-estimate *
+T -sym-trunk *
 U drh
-Z 9d869639496738a8fa8ca13e1d3ba3ec
+Z 99536df9dc345dd11ff9d136fbfb6876
 # Remove this line to create a well-formed Fossil manifest.
