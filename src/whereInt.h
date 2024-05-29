@@ -160,6 +160,8 @@ struct WhereLoop {
   /**** whereLoopXfer() copies fields above ***********************/
 # define WHERE_LOOP_XFER_SZ offsetof(WhereLoop,nLSlot)
   u16 nLSlot;           /* Number of slots allocated for aLTerm[] */
+  LogEst rStarDelta;    /* Cost delta due to star-schema heuristic.  Not
+                        ** initialized unless pWInfo->nOutStarDelta>0 */
   WhereTerm **aLTerm;   /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
   WhereTerm *aLTermSpace[3];  /* Initial aLTerm[] space */

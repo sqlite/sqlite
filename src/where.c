@@ -5277,10 +5277,10 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
     Bitmask m;                /* Bitmask for current loop */
     assert( pWInfo->nOutStarDelta==0 );
     for(iLoop=0, m=1; iLoop<nLoop; iLoop++, m<<=1){
-      int nDep = 0;
-      WhereLoop *pWLoop;
-      LogEst rDelta;
-      Bitmask mSeen = 0;
+      WhereLoop *pWLoop;        /* For looping over WhereLoops */
+      int nDep = 0;             /* Number of dimension tables */
+      LogEst rDelta;            /* Heuristic cost adjustment */
+      Bitmask mSeen = 0;        /* Mask of dimension tables */
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( (pWLoop->prereq & m)!=0 && (pWLoop->maskSelf & mSeen)==0 ){
           nDep++;
@@ -5289,11 +5289,17 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
       }
       if( nDep<=3 ) continue;
       rDelta = 15*(nDep-3);
+      if( pWInfo->nOutStarDelta==0 ){
+        for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+          pWLoop->rStarDelta = 0;
+        }
+      }
       pWInfo->nOutStarDelta += rDelta;
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->maskSelf==m ){
           pWLoop->rRun -= rDelta;
           pWLoop->nOut -= rDelta;
+          pWLoop->rStarDelta = rDelta;
         }
       }
     }      
@@ -6104,6 +6110,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
       }
     }
     nSearch += pLoop->nOut;
+    if( pWInfo->nOutStarDelta ) nSearch += pLoop->rStarDelta;
   }
 }
 
