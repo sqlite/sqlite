@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sassert()\sstatements\sso\sthat\sthey\scannot\sfire\nwhen\sthe\sSQLITE_TESTCTRL_INTERNAL_FUNCTIONS\sdebugging\scapability\nis\sactivated.\s\sdbsqlfuzz\sf5b347cf167a62fbe08062b2feee65cb9306e363.
-D 2024-05-28T19:08:18.051
+C Use\sa\sheuristic\sin\sthe\squery\splanner\sto\shelp\sit\sbetter\scope\swith\slarge\nstar\sschema\squeries.
+D 2024-05-29T00:38:12.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -840,8 +840,8 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 692d3d72c6d616c03aae0864366deffc367ddd8b428ec8eb41223f40afe3e2f5
-F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
+F src/where.c 4b777f3c20be01c9849f651a99f187a83300effd20ed8079e16e6498ca99a1f6
+F src/whereInt.h aff769fab5e21f8da96d4588f49204fa341f5d0f762ce965826dcf4f57c5a9d1
 F src/wherecode.c d5184620bcb5265d59072cb66e1386bfe0331a9ce7614286f9ab79a4fcd00fb8
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
@@ -1661,6 +1661,7 @@ F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae
 F test/sqldiff1.test 1b7ab4f312442c5cc6b3a5f299fa8ca051416d1dd173cb1126fd51bf64f2c3fb
 F test/sqllimits1.test dee96a51b83ef866d06ec3c687d4c951d97b02549facc5be88c9dfcb215b98bf
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
+F test/starschema1.test b8dad4cd297e7639698d3f3af97693efc2f740f1ba66f92acef900d1bb0d82a4
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
 F test/stat.test 123212a20ceb496893d5254a5f6c76442ce549fdc08d1702d8288a2bbaac8408
 F test/statfault.test 064f43379e4992b5221b7d9ac887c313b3191f85cce605d78e416fc4045da64e
@@ -2193,8 +2194,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e49081001f93b75ee499536f8a61a0f49225a1745117bb9267249c38c4bf803
-R 64eb34d956a538c4310c3186c1ebd004
+P 273504b74cb9c3cfa2497a1339e706a1f2d2c3ce81b23a16beb47da9292535e0
+R 22ac7091c1a5acc513b0e5ab9d7bf6ee
+T *branch * star-schema
+T *sym-star-schema *
+T -sym-trunk *
 U drh
-Z bedb48464f906f24fcbe994c86e9e98f
+Z 6e119c920cb95d32552c3e003a8c097f
 # Remove this line to create a well-formed Fossil manifest.

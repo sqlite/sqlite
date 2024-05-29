@@ -5245,6 +5245,63 @@ static LogEst whereSortingCost(
 }
 
 /*
+** Compute the maximum number of paths in the solver algorithm, for
+** queries that have three or more terms in the FROM clause.  Queries with
+** two or fewer FROM clause terms are handled by the caller.
+**
+** Query planning is NP-hard.  We must limit the number of paths at
+** each step of the solver search algorithm to avoid exponential behavior.
+**
+** The value returned is a tuning parameter.  Currently the value is
+** 12 for normal queries and 18 for "star-queries".  A star-query is
+** a query with large central table that is joined against three or
+** more smaller tables.  The central table is called the "fact" table.
+** The smaller tables that get joined are "dimension tables".
+**
+** SIDE EFFECT:
+**
+** If pWInfo describes a star-query, then the cost on WhereLoops for the
+** fact table is reduced.  This heuristic helps keep fact tables in
+** outer loops.  Without this heuristic, paths with fact tables in outer
+** loops tend to get pruned by the mxChoice limit on the number of paths,
+** resulting in poor query plans.
+*/
+static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
+  int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
+  if( nRowEst==0 && nLoop>=4 ){
+    /* Check to see if we are dealing with a star schema and if so, reduce
+    ** the cost of fact tables relative to dimension tables, as a heuristic
+    ** to help keep the fact tables in outer loops.
+    */
+    int iLoop;                /* Counter over join terms */
+    Bitmask m;                /* Bitmask for current loop */
+    assert( pWInfo->nOutStarDelta==0 );
+    for(iLoop=0, m=1; iLoop<nLoop; iLoop++, m<<=1){
+      int nDep = 0;
+      WhereLoop *pWLoop;
+      LogEst rDelta;
+      Bitmask mSeen = 0;
+      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( (pWLoop->prereq & m)!=0 && (pWLoop->maskSelf & mSeen)==0 ){
+          nDep++;
+          mSeen |= pWLoop->maskSelf;
+        }
+      }
+      if( nDep<=3 ) continue;
+      rDelta = 15*(nDep-3);
+      pWInfo->nOutStarDelta += rDelta;
+      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( pWLoop->maskSelf==m ){
+          pWLoop->rRun -= rDelta;
+          pWLoop->nOut -= rDelta;
+        }
+      }
+    }      
+  }
+  return pWInfo->nOutStarDelta>0 ? 18 : 12;
+}
+
+/*
 ** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
 ** attempts to find the lowest cost path that visits each WhereLoop
 ** once.  This path is then loaded into the pWInfo->a[].pWLoop fields.
@@ -5288,7 +5345,13 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   **       2            5
   **       3+        8*(N-2)
   */
-  mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 8*(nLoop-2));
+  if( nLoop<=1 ){
+    mxChoice = 1;
+  }else if( nLoop==2 ){
+    mxChoice = 5;
+  }else{
+    mxChoice = computeMxChoice(pWInfo, nRowEst);
+  }
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d, nQueryLoop=%d)\n",
                      nRowEst, pParse->nQueryLoop));
@@ -5651,7 +5714,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     }
   }
 
-  pWInfo->nRowOut = pFrom->nRow;
+  pWInfo->nRowOut = pFrom->nRow + pWInfo->nOutStarDelta;
 
   /* Free temporary memory and return success */
   sqlite3StackFreeNN(pParse->db, pSpace);
