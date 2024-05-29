@@ -5505,7 +5505,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         ** to (pTo->isOrdered==(-1))==(isOrdered==(-1))" for the range
         ** of legal values for isOrdered, -1..64.
         */
-        assert( nTo>0 );
+        testcase( nTo==0 );
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
            && ((pTo->isOrdered^isOrdered)&0x80)==0
