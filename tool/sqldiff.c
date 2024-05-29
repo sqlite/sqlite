@@ -383,7 +383,7 @@ static void printQuoted(FILE *out, sqlite3_value *X){
         fprintf(out, "'");
         for(i=j=0; zArg[i]; i++){
           char c = zArg[i];
-          int ctl = iscntrl(c);
+          int ctl = iscntrl((unsigned char)c);
           if( ctl>inctl ){
             inctl = ctl;
             fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);

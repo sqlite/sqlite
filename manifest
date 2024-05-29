@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sassert()\sstatements\sso\sthat\sthey\scannot\sfire\nwhen\sthe\sSQLITE_TESTCTRL_INTERNAL_FUNCTIONS\sdebugging\scapability\nis\sactivated.\s\sdbsqlfuzz\sf5b347cf167a62fbe08062b2feee65cb9306e363.
-D 2024-05-28T19:08:18.051
+C [forum:/forumpost/c9b8d923d5|Fix\ssqldiff\sout-of-bounds\schar\sclassification\serror\smentioned\sin\sthe\sforum.]
+D 2024-05-29T03:35:40.577
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2154,7 +2154,7 @@ F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
-F tool/sqldiff.c 985452ffc8554baee0f945d078859d393a22abc0bbf553a9f12acae1b6e1fdd0
+F tool/sqldiff.c 1e0a2c264c2ad5aca745d35deee3c7715cb00c703839cfb0b85be079db55194c
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2193,8 +2193,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1e49081001f93b75ee499536f8a61a0f49225a1745117bb9267249c38c4bf803
-R 64eb34d956a538c4310c3186c1ebd004
-U drh
-Z bedb48464f906f24fcbe994c86e9e98f
+P 273504b74cb9c3cfa2497a1339e706a1f2d2c3ce81b23a16beb47da9292535e0
+R 3d29219632b829c340a5b12dd13b21a4
+U larrybr
+Z ea2c1f12bb191533813291014e73a3d6
 # Remove this line to create a well-formed Fossil manifest.
