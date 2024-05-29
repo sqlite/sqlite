@@ -5252,10 +5252,14 @@ static LogEst whereSortingCost(
 ** Query planning is NP-hard.  We must limit the number of paths at
 ** each step of the solver search algorithm to avoid exponential behavior.
 **
-** The value returned is a tuning parameter.  Currently the value is
-** 12 for normal queries and 18 for "star-queries".  A star-query is
-** a query with large central table that is joined against three or
-** more smaller tables.  The central table is called the "fact" table.
+** The value returned is a tuning parameter.  Currently the value is:
+**
+**     18    for star queries
+**     12    otherwise
+**
+** For the purposes of SQLite, a star-query is defined as a query
+** with a large central table that is joined against four or more
+** smaller tables.  The central table is called the "fact" table.
 ** The smaller tables that get joined are "dimension tables".
 **
 ** SIDE EFFECT:
@@ -5264,7 +5268,9 @@ static LogEst whereSortingCost(
 ** fact table is reduced.  This heuristic helps keep fact tables in
 ** outer loops.  Without this heuristic, paths with fact tables in outer
 ** loops tend to get pruned by the mxChoice limit on the number of paths,
-** resulting in poor query plans.
+** resulting in poor query plans.  The total amount of heuristic cost
+** adjustment is stored in pWInfo->nOutStarDelta and the cost adjustment
+** for each WhereLoop is stored in its rStarDelta field.
 */
 static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
@@ -5289,6 +5295,14 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
       }
       if( nDep<=3 ) continue;
       rDelta = 15*(nDep-3);
+#ifdef WHERETRACE_ENABLED /* 0x4 */
+      if( sqlite3WhereTrace&0x4 ){
+         SrcItem *pItem = pWInfo->pTabList->a + iLoop;
+         sqlite3DebugPrintf("Fact-table %s: %d dimensions, cost reduced %d\n",
+             pItem->zAlias ? pItem->zAlias : pItem->pTab->zName,
+             nDep, rDelta);
+      }
+#endif
       if( pWInfo->nOutStarDelta==0 ){
         for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
           pWLoop->rStarDelta = 0;
@@ -5342,6 +5356,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   pParse = pWInfo->pParse;
   nLoop = pWInfo->nLevel;
+  WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d, nQueryLoop=%d)\n",
+                     nRowEst, pParse->nQueryLoop));
   /* TUNING: mxChoice is the maximum number of possible paths to preserve
   ** at each step.  Based on the number of loops in the FROM clause:
   **
@@ -5349,7 +5365,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   **     -----      --------
   **       1            1            // the most common case
   **       2            5
-  **       3+        8*(N-2)
+  **       3+        12 or 18        // see computeMxChoice()
   */
   if( nLoop<=1 ){
     mxChoice = 1;
@@ -5359,8 +5375,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     mxChoice = computeMxChoice(pWInfo, nRowEst);
   }
   assert( nLoop<=pWInfo->pTabList->nSrc );
-  WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d, nQueryLoop=%d)\n",
-                     nRowEst, pParse->nQueryLoop));
 
   /* If nRowEst is zero and there is an ORDER BY clause, ignore it. In this
   ** case the purpose of this call is to estimate the number of rows returned
