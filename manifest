@@ -1,5 +1,5 @@
-C Remove\sthe\sunconditional\sSQLITE_OMIT_WAL\swhen\sbuilding\sin\swasi-sdk\smode,\sper\s[forum:80003e91a7a6cb4d|requests\sin\sthe\sforum].
-D 2024-05-30T17:56:26.243
+C Back\sout\s[dcc2bb2c562e97e090174],\sas\sit\sbreaks\sthe\s--with-wasi-sdk\sbuilds.
+D 2024-05-30T21:54:16.706
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -757,7 +757,7 @@ F src/resolve.c 22f1fa3423b377c02ae78d451cfeb1c2d96dcf0389c0642cbdcd19d3bfd7ae01
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c cbdaf9cb2d9a697ee9ce1484f27d2e96762d33cc19259aedfb818a68b9d3be10
 F src/shell.c.in a4d5957a853d6065549a1f2d8f46ded9940f72835e0328bbad292560f36b4d45
-F src/sqlite.h.in cbd3e4177791a61c056fd81e37a5b21bb6c8cb2ea8cac558c625974673f50acf
+F src/sqlite.h.in 892d0c427608ad7128a0fe44e972d6c4197225f5077f64f07792ffa44c6ecd77
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 98ba756789b37f8d8217407ce077c31faf0b9b21d593b327c2b9667ad5bea1ac
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a47c644fef71f3ab3dc584ea917eaab9a8e5b4c9dcb57bdd29747ba32108e85f
-R dbf8da7df3d6710109e3f50f2572dd2b
+P dcc2bb2c562e97e090174d4d0970bfa1551e5eb4db022e6d232c4dd786818e45
+R 26b2d1af00d15dbbae9294d17198b2cc
 U stephan
-Z d943edf9ee101c09eebc6bdb1635bbc9
+Z 5e10d8a42e727262c6d109f98d1a95c0
 # Remove this line to create a well-formed Fossil manifest.
