@@ -12802,6 +12802,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if HAVE_READLINE || HAVE_EDITLINE
       rl_attempted_completion_function = readline_completion;
 #elif HAVE_LINENOISE
+      linenoiseSetMultiLine(1);
       linenoiseSetCompletionCallback(linenoise_completion, NULL);
 #endif
       data.in = 0;

@@ -1,5 +1,5 @@
-C Update\sshell.c\sto\suse\sthe\smsteve\sfork\sof\slinenoise,\sper\s/chat\sdiscussion.
-D 2024-05-30T11:14:16.476
+C Experimentally\senable\slinenoise\smultiline\smode\sin\sshell.c.
+D 2024-05-30T11:25:32.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -756,7 +756,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 22f1fa3423b377c02ae78d451cfeb1c2d96dcf0389c0642cbdcd19d3bfd7ae01
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c cbdaf9cb2d9a697ee9ce1484f27d2e96762d33cc19259aedfb818a68b9d3be10
-F src/shell.c.in a4d5957a853d6065549a1f2d8f46ded9940f72835e0328bbad292560f36b4d45
+F src/shell.c.in 71f060e49c8f2a3deb4553c6c5df81cd00c4123a73ba69a300b9026433758f69
 F src/sqlite.h.in 892d0c427608ad7128a0fe44e972d6c4197225f5077f64f07792ffa44c6ecd77
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -2194,8 +2194,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c08dd245f7706f2fd2269d700be480477619a722e27e6b439462ae543302c49f
-R 72c04f74ef51a04b1a629955fe9bd59f
+P ee92fa8366b743266b17c692499087c0d11b9302d096c3dfb4e6356b467e939e
+R 13ec985eb044ec602c654b53115e5786
+T *branch * linenoise-multiline
+T *sym-linenoise-multiline *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 89260005431ea7f0523c5c606191a398
+Z 411fb288d919f36d58749bb216dc9fb7
 # Remove this line to create a well-formed Fossil manifest.
