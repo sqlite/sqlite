@@ -6644,7 +6644,7 @@ WhereInfo *sqlite3WhereBegin(
     if( db->mallocFailed ) goto whereBeginError;
     if( pWInfo->pOrderBy ){
        whereInterstageHeuristic(pWInfo);
-       wherePathSolver(pWInfo, pWInfo->nRowOut+1);
+       wherePathSolver(pWInfo, pWInfo->nRowOut<0 ? 1 : pWInfo->nRowOut+1);
        if( db->mallocFailed ) goto whereBeginError;
     }
 
