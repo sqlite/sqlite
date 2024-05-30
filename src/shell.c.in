@@ -5518,15 +5518,18 @@ static char **readline_completion(const char *zText, int iStart, int iEnd){
 
 #elif HAVE_LINENOISE
 /*
-** Linenoise completion callback
+** Linenoise completion callback. Note that the 3rd argument is from
+** the "msteveb" version of linenoise, not the "antirez" version.
 */
-static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
+static void linenoise_completion(const char *zLine, linenoiseCompletions *lc,
+                                 void *pUserData){
   i64 nLine = strlen(zLine);
   i64 i, iStart;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
   char zBuf[1000];
 
+  UNUSED_PARAMETER(pUserData);
   if( nLine>(i64)sizeof(zBuf)-30 ) return;
   if( zLine[0]=='.' || zLine[0]=='#') return;
   for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
@@ -12799,7 +12802,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if HAVE_READLINE || HAVE_EDITLINE
       rl_attempted_completion_function = readline_completion;
 #elif HAVE_LINENOISE
-      linenoiseSetCompletionCallback(linenoise_completion);
+      linenoiseSetCompletionCallback(linenoise_completion, NULL);
 #endif
       data.in = 0;
       rc = process_input(&data);
