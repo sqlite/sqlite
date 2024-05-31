@@ -5262,7 +5262,7 @@ static LogEst whereSortingCost(
 ** smaller tables.  The central table is called the "fact" table.
 ** The smaller tables that get joined are "dimension tables".
 **
-** SIDE EFFECT:
+** SIDE EFFECT:  (and really the whole point of this subroutine)
 **
 ** If pWInfo describes a star-query, then the cost on WhereLoops for the
 ** fact table is reduced.  This heuristic helps keep fact tables in

@@ -218,7 +218,8 @@ int sqlite3WhereExplainOneScan(
     zMsg = sqlite3StrAccumFinish(&str);
     sqlite3ExplainBreakpoint("",zMsg);
     ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
-                            pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
+                            pParse->addrExplain, pLoop->rRun,
+                            zMsg, P4_DYNAMIC);
   }
   return ret;
 }

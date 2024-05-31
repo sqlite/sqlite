@@ -9015,14 +9015,29 @@ case OP_ReleaseReg: {
 
 /* Opcode: Noop * * * * *
 **
-** Do nothing.  This instruction is often useful as a jump
-** destination.
+** Do nothing.  Continue downward to the next opcode.
 */
-/*
-** The magic Explain opcode are only inserted when explain==2 (which
-** is to say when the EXPLAIN QUERY PLAN syntax is used.)
-** This opcode records information from the optimizer.  It is the
-** the same as a no-op.  This opcodesnever appears in a real VM program.
+/* Opcode: Explain P1 P2 P3 P4 *
+**
+** This is the same as OP_Noop during normal query execution.  The
+** purpose of this opcode is to hold information about the query
+** plan for the purpose of EXPLAIN QUERY PLAN output.
+**
+** The P4 value is human-readable text that describes the query plan
+** element.  Something like "SCAN t1" or "SEARCH t2 USING INDEX t2x1".
+**
+** The P1 value is the ID of the current element and P2 is the parent
+** element for the case of nested query plan elements.  If P2 is zero
+** then this element is a top-level element.
+**
+** For loop elements, P3 is the estimated code of each invocation of this
+** element.
+**
+** As with all opcodes, the meanings of the parameters for OP_Explain
+** are subject to change from one release to the next.  Applications
+** should not attempt to interpret or use any of the information
+** contined in the OP_Explain opcode.  The information provided by this
+** opcode is intended for testing and debugging use only.
 */
 default: {          /* This is really OP_Noop, OP_Explain */
   assert( pOp->opcode==OP_Noop || pOp->opcode==OP_Explain );
