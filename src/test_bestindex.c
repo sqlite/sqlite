@@ -700,6 +700,10 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
               pIdxInfo->aConstraintUsage[iCons].omit = bOmit;
             }
           }
+        }else
+        if( sqlite3_stricmp("constraint", zCmd)==0 ){
+          rc = SQLITE_CONSTRAINT;
+          pTab->base.zErrMsg = sqlite3_mprintf("%s", Tcl_GetString(p));
         }else{
           rc = SQLITE_ERROR;
           pTab->base.zErrMsg = sqlite3_mprintf("unexpected: %s", zCmd);

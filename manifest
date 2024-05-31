@@ -1,5 +1,5 @@
-C Remove\sthe\sunconditional\sSQLITE_OMIT_WAL\swhen\sbuilding\sin\swasi-sdk\smode,\sper\s[forum:80003e91a7a6cb4d|requests\sin\sthe\sforum].
-D 2024-05-30T17:56:26.243
+C Better\shandle\sWHERE\sterms\sthat\sare\scommon\sto\stwo\sor\smore\sOR\sbranches\swhen\splanning\svirtual\stable\squeries.
+D 2024-05-31T19:26:22.693
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -776,7 +776,7 @@ F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
 F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
 F src/test_autoext.c 915d245e736652a219a907909bb6710f0d587871
 F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
-F src/test_bestindex.c 770429c434221afe6216ec81fe4c00ad3bbdad1d5e64576aa613ffb7c5a984f0
+F src/test_bestindex.c e8ae36817864ca80bd4608d109634cbc35cca099234313ff9f3c061a22783bd8
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
 F src/test_config.c 5fa77ee6064ba546e144c4fea870c5ede2c54314616f81485c6a9c4192100c75
@@ -840,7 +840,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 5ddff7d4e0c0f7a2616efc126e4b8224387ce5fa4f5adf0737c8daa3e83824cf
+F src/where.c ddffcd89b1b794a3d7ce56ac31315ae7a5625313046f6aff3942a682b3fa0d48
 F src/whereInt.h 002adc3aa2cc10733b9b27958fdbe893987cd989fab25a9853941c1f9b9b0a65
 F src/wherecode.c d5184620bcb5265d59072cb66e1386bfe0331a9ce7614286f9ab79a4fcd00fb8
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
@@ -940,7 +940,7 @@ F test/bestindex8.test b63a4f171a2c83d481bb14c431a8b72e85d27b2ffdaa0435a95d58ca9
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
-F test/bestindexC.test 9e6f184be080fd9c4605a7e5c7097eed1a259372f9af78151c37b072a9086f86
+F test/bestindexC.test ae34a3ceb64b117cd20aba71ea8e9fadd639b021cf232e15a57fe2eefe1f29ea
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -2194,8 +2194,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a47c644fef71f3ab3dc584ea917eaab9a8e5b4c9dcb57bdd29747ba32108e85f
-R dbf8da7df3d6710109e3f50f2572dd2b
-U stephan
-Z d943edf9ee101c09eebc6bdb1635bbc9
+P dcc2bb2c562e97e090174d4d0970bfa1551e5eb4db022e6d232c4dd786818e45
+R 586dbe3b8a77baf191835ccb84865021
+T *branch * xbestindex-or-terms
+T *sym-xbestindex-or-terms *
+T -sym-trunk *
+U dan
+Z cae40e4fc9a5b7b19f7dc2f2cabe22f0
 # Remove this line to create a well-formed Fossil manifest.
