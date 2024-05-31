@@ -5274,7 +5274,7 @@ static LogEst whereSortingCost(
 */
 static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
-  if( nRowEst==0 && nLoop>=4 ){
+  if( nRowEst==0 && nLoop>=5 ){
     /* Check to see if we are dealing with a star schema and if so, reduce
     ** the cost of fact tables relative to dimension tables, as a heuristic
     ** to help keep the fact tables in outer loops.
