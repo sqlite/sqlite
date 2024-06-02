@@ -1565,6 +1565,17 @@ static sqlite3_index_info *allocateIndexInfo(
 }
 
 /*
+** Free and zero the sqlite3_index_info.idxStr value if needed.
+*/
+static void freeIdxStr(sqlite3_index_info *pIdxInfo){
+  if( pIdxInfo->needToFreeIdxStr ){
+    sqlite3_free(pIdxInfo->idxStr);
+    pIdxInfo->idxStr = 0;
+    pIdxInfo->needToFreeIdxStr = 0;
+  }
+}  
+
+/*
 ** Free an sqlite3_index_info structure allocated by allocateIndexInfo()
 ** and possibly modified by xBestIndex methods.
 */
@@ -1579,6 +1590,7 @@ static void freeIndexInfo(sqlite3 *db, sqlite3_index_info *pIdxInfo){
     sqlite3ValueFree(pHidden->aRhs[i]); /* IMP: R-14553-25174 */
     pHidden->aRhs[i] = 0;
   }
+  freeIdxStr(pIdxInfo);
   sqlite3DbFree(db, pIdxInfo);
 }
 
@@ -4210,6 +4222,7 @@ static int whereLoopAddVirtualOne(
       ** Make no entries in the loop table.
       */
       WHERETRACE(0xffffffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      freeIdxStr(pIdxInfo);
       return SQLITE_OK;
     }
     return rc;
@@ -4232,7 +4245,7 @@ static int whereLoopAddVirtualOne(
        || pIdxCons->usable==0
       ){
         sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-        testcase( pIdxInfo->needToFreeIdxStr );
+        freeIdxStr(pIdxInfo);
         return SQLITE_ERROR;
       }
       testcase( iTerm==nConstraint-1 );
@@ -4282,11 +4295,7 @@ static int whereLoopAddVirtualOne(
         ** the plan cannot be used. In these cases set variable *pbRetryLimit
         ** to true to tell the caller to retry with LIMIT and OFFSET 
         ** disabled. */
-        if( pIdxInfo->needToFreeIdxStr ){
-          sqlite3_free(pIdxInfo->idxStr);
-          pIdxInfo->idxStr = 0;
-          pIdxInfo->needToFreeIdxStr = 0;
-        }
+        freeIdxStr(pIdxInfo);
         *pbRetryLimit = 1;
         return SQLITE_OK;
       }
@@ -4299,7 +4308,7 @@ static int whereLoopAddVirtualOne(
       /* The non-zero argvIdx values must be contiguous.  Raise an
       ** error if they are not */
       sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-      testcase( pIdxInfo->needToFreeIdxStr );
+      freeIdxStr(pIdxInfo);
       return SQLITE_ERROR;
     }
   }
@@ -4595,7 +4604,6 @@ static int whereLoopAddVirtual(
     }
   }
 
-  if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   freeIndexInfo(pParse->db, p);
   WHERETRACE(0x800, ("END %s.addVirtual(), rc=%d\n", pSrc->pTab->zName, rc));
   return rc;

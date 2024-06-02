@@ -1,5 +1,5 @@
-C Have\sfts5.xBestIndex\sreturn\sSQLITE_CONSTRAINT,\sinstead\sof\sa\slarge\scost,\swhen\sno\susable\splan\scan\sbe\sfound.
-D 2024-06-01T17:56:58.279
+C Be\smore\saggressive\sabout\sfreeing\smemory\sassociated\swith\sthe\nsqlite3_index_info.idxStr\sfield.
+D 2024-06-02T10:52:35.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -840,7 +840,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c ddffcd89b1b794a3d7ce56ac31315ae7a5625313046f6aff3942a682b3fa0d48
+F src/where.c 233c668403a0afd83ad1211235f42601b62b95fbfd893f93bfeb0df6bf384245
 F src/whereInt.h 002adc3aa2cc10733b9b27958fdbe893987cd989fab25a9853941c1f9b9b0a65
 F src/wherecode.c d5184620bcb5265d59072cb66e1386bfe0331a9ce7614286f9ab79a4fcd00fb8
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff4a30056f8dbcbd045afdbee485f6671c3580b95187144aa9a77c97dfda2647
-R 884536d5c578ec6faaf09891deb9b65a
-U dan
-Z 7e4839dea4a455e242c808d50043956b
+P 7c470945372dc98610f7c9840ce8cab18c19b655352f0187e4f31040cea77363
+R 63d264a5691dbac02e2f4fc53ea495d4
+U drh
+Z 6b7afb3ccb4c7001ae92721661549344
 # Remove this line to create a well-formed Fossil manifest.
