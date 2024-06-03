@@ -8331,7 +8331,11 @@ int sqlite3Select(
         }
 
         if( iOrderByCol ){
-          sqlite3ExprToRegister(p->pEList->a[iOrderByCol-1].pExpr, iAMem+j);
+          Expr *pX = p->pEList->a[iOrderByCol-1].pExpr;
+          Expr *pBase = sqlite3ExprSkipCollateAndLikely(pX);
+          if( ALWAYS(pBase!=0) && pBase->op!=TK_AGG_COLUMN ){
+            sqlite3ExprToRegister(pX, iAMem+j);
+          }
         }
       }
       sqlite3VdbeAddOp4(v, OP_Compare, iAMem, iBMem, pGroupBy->nExpr,

@@ -336,4 +336,30 @@ do_execsql_test 5040 {
   SELECT a FROM cnt WHERE a>45 GROUP BY 1;
 } {46 47 48 49 50}
 
+
+# 2024-06-03 dbsqlfuzz 8a44f675401a8b1f68a43bf813c4f4f72ad8f0ea
+# Use of uninitialized bytecode register due to the call-function-once
+# optimization at check-in 663f5dd32d9db832
+#
+db null NULL
+do_execsql_test 5050 {
+  CREATE TABLE t0(a TEXT); INSERT INTO t0 VALUES('abcd');
+  CREATE TABLE t1(b TEXT);
+  CREATE TABLE t2(c TEXT);
+  CREATE TABLE t3(d TEXT); INSERT INTO t3 VALUES('wxyz');
+  CREATE VIEW  v4(e) AS SELECT (SELECT t2.c FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+do_execsql_test 5060 {
+  DROP VIEW v4;
+  CREATE VIEW  v4(e) AS SELECT (SELECT t2.c COLLATE nocase FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+
+do_execsql_test 5070 {
+  DROP VIEW v4;
+  CREATE VIEW  v4(e) AS SELECT (SELECT unlikely(t2.c COLLATE nocase) FROM t0, t1 GROUP BY 1) FROM t2;
+  SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
+} NULL
+
 finish_test
