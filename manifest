@@ -1,5 +1,5 @@
-C Modify\sthree\s#if\schecks\sin\sos_unix.c\sto\simprove\shandling\sof\sSQLITE_OMIT_WAL\son\sWASI\sbuilds.\sBased\son\sthe\sdiscussion\sin/around\s[forum:57e918431735128a|forum\spost\s57e918431735128a].
-D 2024-06-03T07:22:28.518
+C Omit\san\sunused\s#define.
+D 2024-06-03T12:36:43.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -760,7 +760,7 @@ F src/shell.c.in a4d5957a853d6065549a1f2d8f46ded9940f72835e0328bbad292560f36b4d4
 F src/sqlite.h.in 892d0c427608ad7128a0fe44e972d6c4197225f5077f64f07792ffa44c6ecd77
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 98ba756789b37f8d8217407ce077c31faf0b9b21d593b327c2b9667ad5bea1ac
+F src/sqliteInt.h d66a1eab63dea318ad3f56df2b4d8c70ee9143aff25fbb1423c8234d6cf37787
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a07ec16bbc056fbc23a7bd58e5e32ef691c13e9babeb542918cf9a01cac40c20
-R ec4b0ef096bbb322e89f9c8b12d64294
-U stephan
-Z a28a63e6360f258a971f7c4657c7b09e
+P 296eeb26c816bc734530cf446922f25be970b901c884df1a98083502f0d1e9f5
+R c2b235abe104a50bb52435bc7dd8e30a
+U drh
+Z 6a462a5c042ea727edcd9a050ecce1bd
 # Remove this line to create a well-formed Fossil manifest.
