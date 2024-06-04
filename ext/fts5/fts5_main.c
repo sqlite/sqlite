@@ -533,10 +533,10 @@ static int fts5UsePatternMatch(
 ** This function ensures that there is at most one "r" or "=". And that if
 ** there exists an "=" then there is no "<" or ">".
 **
-** Costs are assigned as follows:
+** If an unusable MATCH operator is present in the WHERE clause, then
+** SQLITE_CONSTRAINT is returned.
 **
-**  a) If an unusable MATCH operator is present in the WHERE clause, the
-**     cost is unconditionally set to 1e50 (a really big number).
+** Costs are assigned as follows:
 **
 **  a) If a MATCH operator is present, the cost depends on the other
 **     constraints also present. As follows:
@@ -569,7 +569,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   int bSeenEq = 0;
   int bSeenGt = 0;
   int bSeenLt = 0;
-  int bSeenMatch = 0;
+  int nSeenMatch = 0;
   int bSeenRank = 0;
 
 
@@ -600,18 +600,15 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       /* A MATCH operator or equivalent */
       if( p->usable==0 || iCol<0 ){
         /* As there exists an unusable MATCH constraint this is an 
-        ** unusable plan. Set a prohibitively high cost. */
-        pInfo->estimatedCost = 1e50;
-        assert( iIdxStr < pInfo->nConstraint*6 + 1 );
-        idxStr[iIdxStr] = 0;
-        return SQLITE_OK;
+        ** unusable plan. Return SQLITE_CONSTRAINT. */
+        return SQLITE_CONSTRAINT;
       }else{
         if( iCol==nCol+1 ){
           if( bSeenRank ) continue;
           idxStr[iIdxStr++] = 'r';
           bSeenRank = 1;
         }else if( iCol>=0 ){
-          bSeenMatch = 1;
+          nSeenMatch++;
           idxStr[iIdxStr++] = 'M';
           sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
           idxStr += strlen(&idxStr[iIdxStr]);
@@ -628,7 +625,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         idxStr += strlen(&idxStr[iIdxStr]);
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
         assert( idxStr[iIdxStr]=='\0' );
-        bSeenMatch = 1;
+        nSeenMatch++;
       }else if( bSeenEq==0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ && iCol<0 ){
         idxStr[iIdxStr++] = '=';
         bSeenEq = 1;
@@ -665,7 +662,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   */
   if( pInfo->nOrderBy==1 ){
     int iSort = pInfo->aOrderBy[0].iColumn;
-    if( iSort==(pConfig->nCol+1) && bSeenMatch ){
+    if( iSort==(pConfig->nCol+1) && nSeenMatch>0 ){
       idxFlags |= FTS5_BI_ORDER_RANK;
     }else if( iSort==-1 && (!pInfo->aOrderBy[0].desc || !pConfig->bTokendata) ){
       idxFlags |= FTS5_BI_ORDER_ROWID;
@@ -680,14 +677,17 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 
   /* Calculate the estimated cost based on the flags set in idxFlags. */
   if( bSeenEq ){
-    pInfo->estimatedCost = bSeenMatch ? 100.0 : 10.0;
-    if( bSeenMatch==0 ) fts5SetUniqueFlag(pInfo);
+    pInfo->estimatedCost = nSeenMatch ? 1000.0 : 10.0;
+    if( nSeenMatch==0 ) fts5SetUniqueFlag(pInfo);
   }else if( bSeenLt && bSeenGt ){
-    pInfo->estimatedCost = bSeenMatch ? 500.0 : 250000.0;
+    pInfo->estimatedCost = nSeenMatch ? 5000.0 : 250000.0;
   }else if( bSeenLt || bSeenGt ){
-    pInfo->estimatedCost = bSeenMatch ? 750.0 : 750000.0;
+    pInfo->estimatedCost = nSeenMatch ? 7500.0 : 750000.0;
   }else{
-    pInfo->estimatedCost = bSeenMatch ? 1000.0 : 1000000.0;
+    pInfo->estimatedCost = nSeenMatch ? 10000.0 : 1000000.0;
+  }
+  for(i=1; i<nSeenMatch; i++){
+    pInfo->estimatedCost *= 0.4;
   }
 
   pInfo->idxNum = idxFlags;

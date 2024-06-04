@@ -535,5 +535,36 @@ do_execsql_test 19.0 {
   COMMIT;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  INSERT INTO x1(rowid, a) VALUES
+      (1, 'a b c d'),
+      (2, 'x b c d'),
+      (3, 'x y z d'),
+      (4, 'a y c x');
+}
+
+do_execsql_test 20.1 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'b';
+} {1}
+
+do_execsql_test 20.2 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'y';
+} {4}
+
+do_execsql_test 20.3 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR x1 MATCH 'y';
+} {1 4 3}
+
+do_execsql_test 20.4 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR (x1 MATCH 'y' AND x1 MATCH 'd');
+} {1 4 3}
+
+do_execsql_test 20.5 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'z' OR (x1 MATCH 'a' AND x1 MATCH 'd');
+} {3 1}
+
 finish_test
 

@@ -1347,6 +1347,20 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
+** Return term iTerm of the WhereClause passed as the first argument. Terms
+** are numbered from 0 upwards, starting with the terms in pWC->a[], then
+** those in pWC->pOuter->a[] (if any), and so on.
+*/
+static WhereTerm *termFromWhereClause(WhereClause *pWC, int iTerm){
+  WhereClause *p;
+  for(p=pWC; p; p=p->pOuter){
+    if( iTerm<p->nTerm ) return &p->a[iTerm];
+    iTerm -= p->nTerm;
+  }
+  return 0;
+}
+
+/*
 ** Allocate and populate an sqlite3_index_info structure. It is the
 ** responsibility of the caller to eventually release the structure
 ** by passing the pointer returned by this function to freeIndexInfo().
@@ -1372,6 +1386,7 @@ static sqlite3_index_info *allocateIndexInfo(
   const Table *pTab;
   int eDistinct = 0;
   ExprList *pOrderBy = pWInfo->pOrderBy;
+  WhereClause *p;
 
   assert( pSrc!=0 );
   pTab = pSrc->pTab;
@@ -1382,28 +1397,30 @@ static sqlite3_index_info *allocateIndexInfo(
   ** Mark each term with the TERM_OK flag.  Set nTerm to the number of
   ** terms found.
   */
-  for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    pTerm->wtFlags &= ~TERM_OK;
-    if( pTerm->leftCursor != pSrc->iCursor ) continue;
-    if( pTerm->prereqRight & mUnusable ) continue;
-    assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
-    testcase( pTerm->eOperator & WO_IN );
-    testcase( pTerm->eOperator & WO_ISNULL );
-    testcase( pTerm->eOperator & WO_IS );
-    testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
-    if( pTerm->wtFlags & TERM_VNULL ) continue;
+  for(p=pWC, nTerm=0; p; p=p->pOuter){
+    for(i=0, pTerm=p->a; i<p->nTerm; i++, pTerm++){
+      pTerm->wtFlags &= ~TERM_OK;
+      if( pTerm->leftCursor != pSrc->iCursor ) continue;
+      if( pTerm->prereqRight & mUnusable ) continue;
+      assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
+      testcase( pTerm->eOperator & WO_IN );
+      testcase( pTerm->eOperator & WO_ISNULL );
+      testcase( pTerm->eOperator & WO_IS );
+      testcase( pTerm->eOperator & WO_ALL );
+      if( (pTerm->eOperator & ~(WO_EQUIV))==0 ) continue;
+      if( pTerm->wtFlags & TERM_VNULL ) continue;
 
-    assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
-    assert( pTerm->u.x.leftColumn>=XN_ROWID );
-    assert( pTerm->u.x.leftColumn<pTab->nCol );
-    if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
-     && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
-    ){
-      continue;
+      assert( (pTerm->eOperator & (WO_OR|WO_AND))==0 );
+      assert( pTerm->u.x.leftColumn>=XN_ROWID );
+      assert( pTerm->u.x.leftColumn<pTab->nCol );
+      if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0
+          && !constraintCompatibleWithOuterJoin(pTerm,pSrc)
+        ){
+        continue;
+      }
+      nTerm++;
+      pTerm->wtFlags |= TERM_OK;
     }
-    nTerm++;
-    pTerm->wtFlags |= TERM_OK;
   }
 
   /* If the ORDER BY clause contains only columns in the current
@@ -1482,49 +1499,52 @@ static sqlite3_index_info *allocateIndexInfo(
   pHidden->pParse = pParse;
   pHidden->eDistinct = eDistinct;
   pHidden->mIn = 0;
-  for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    u16 op;
-    if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
-    pIdxCons[j].iColumn = pTerm->u.x.leftColumn;
-    pIdxCons[j].iTermOffset = i;
-    op = pTerm->eOperator & WO_ALL;
-    if( op==WO_IN ){
-      if( (pTerm->wtFlags & TERM_SLICE)==0 ){
-        pHidden->mIn |= SMASKBIT32(j);
+  for(p=pWC, i=j=0; p; p=p->pOuter){
+    int nLast = i+p->nTerm;;
+    for(pTerm=p->a; i<nLast; i++, pTerm++){
+      u16 op;
+      if( (pTerm->wtFlags & TERM_OK)==0 ) continue;
+      pIdxCons[j].iColumn = pTerm->u.x.leftColumn;
+      pIdxCons[j].iTermOffset = i;
+      op = pTerm->eOperator & WO_ALL;
+      if( op==WO_IN ){
+        if( (pTerm->wtFlags & TERM_SLICE)==0 ){
+          pHidden->mIn |= SMASKBIT32(j);
+        }
+        op = WO_EQ;
       }
-      op = WO_EQ;
-    }
-    if( op==WO_AUX ){
-      pIdxCons[j].op = pTerm->eMatchOp;
-    }else if( op & (WO_ISNULL|WO_IS) ){
-      if( op==WO_ISNULL ){
-        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_ISNULL;
+      if( op==WO_AUX ){
+        pIdxCons[j].op = pTerm->eMatchOp;
+      }else if( op & (WO_ISNULL|WO_IS) ){
+        if( op==WO_ISNULL ){
+          pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_ISNULL;
+        }else{
+          pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_IS;
+        }
       }else{
-        pIdxCons[j].op = SQLITE_INDEX_CONSTRAINT_IS;
-      }
-    }else{
-      pIdxCons[j].op = (u8)op;
-      /* The direct assignment in the previous line is possible only because
-      ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
-      ** following asserts verify this fact. */
-      assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
-      assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
-      assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
-      assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
-      assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
-      assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_AUX) );
+        pIdxCons[j].op = (u8)op;
+        /* The direct assignment in the previous line is possible only because
+        ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
+        ** following asserts verify this fact. */
+        assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
+        assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
+        assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
+        assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
+        assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
+        assert( pTerm->eOperator&(WO_IN|WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_AUX) );
 
-      if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
-       && sqlite3ExprIsVector(pTerm->pExpr->pRight)
-      ){
-        testcase( j!=i );
-        if( j<16 ) mNoOmit |= (1 << j);
-        if( op==WO_LT ) pIdxCons[j].op = WO_LE;
-        if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+        if( op & (WO_LT|WO_LE|WO_GT|WO_GE)
+            && sqlite3ExprIsVector(pTerm->pExpr->pRight)
+          ){
+          testcase( j!=i );
+          if( j<16 ) mNoOmit |= (1 << j);
+          if( op==WO_LT ) pIdxCons[j].op = WO_LE;
+          if( op==WO_GT ) pIdxCons[j].op = WO_GE;
+        }
       }
+
+      j++;
     }
-
-    j++;
   }
   assert( j==nTerm );
   pIdxInfo->nConstraint = j;
@@ -1545,6 +1565,17 @@ static sqlite3_index_info *allocateIndexInfo(
 }
 
 /*
+** Free and zero the sqlite3_index_info.idxStr value if needed.
+*/
+static void freeIdxStr(sqlite3_index_info *pIdxInfo){
+  if( pIdxInfo->needToFreeIdxStr ){
+    sqlite3_free(pIdxInfo->idxStr);
+    pIdxInfo->idxStr = 0;
+    pIdxInfo->needToFreeIdxStr = 0;
+  }
+}  
+
+/*
 ** Free an sqlite3_index_info structure allocated by allocateIndexInfo()
 ** and possibly modified by xBestIndex methods.
 */
@@ -1559,6 +1590,7 @@ static void freeIndexInfo(sqlite3 *db, sqlite3_index_info *pIdxInfo){
     sqlite3ValueFree(pHidden->aRhs[i]); /* IMP: R-14553-25174 */
     pHidden->aRhs[i] = 0;
   }
+  freeIdxStr(pIdxInfo);
   sqlite3DbFree(db, pIdxInfo);
 }
 
@@ -4159,7 +4191,7 @@ static int whereLoopAddVirtualOne(
   ** arguments mUsable and mExclude. */
   pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
   for(i=0; i<nConstraint; i++, pIdxCons++){
-    WhereTerm *pTerm = &pWC->a[pIdxCons->iTermOffset];
+    WhereTerm *pTerm = termFromWhereClause(pWC, pIdxCons->iTermOffset);
     pIdxCons->usable = 0;
     if( (pTerm->prereqRight & mUsable)==pTerm->prereqRight
      && (pTerm->eOperator & mExclude)==0
@@ -4190,6 +4222,7 @@ static int whereLoopAddVirtualOne(
       ** Make no entries in the loop table.
       */
       WHERETRACE(0xffffffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      freeIdxStr(pIdxInfo);
       return SQLITE_OK;
     }
     return rc;
@@ -4207,18 +4240,17 @@ static int whereLoopAddVirtualOne(
       int j = pIdxCons->iTermOffset;
       if( iTerm>=nConstraint
        || j<0
-       || j>=pWC->nTerm
+       || (pTerm = termFromWhereClause(pWC, j))==0
        || pNew->aLTerm[iTerm]!=0
        || pIdxCons->usable==0
       ){
         sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-        testcase( pIdxInfo->needToFreeIdxStr );
+        freeIdxStr(pIdxInfo);
         return SQLITE_ERROR;
       }
       testcase( iTerm==nConstraint-1 );
       testcase( j==0 );
       testcase( j==pWC->nTerm-1 );
-      pTerm = &pWC->a[j];
       pNew->prereq |= pTerm->prereqRight;
       assert( iTerm<pNew->nLSlot );
       pNew->aLTerm[iTerm] = pTerm;
@@ -4263,11 +4295,7 @@ static int whereLoopAddVirtualOne(
         ** the plan cannot be used. In these cases set variable *pbRetryLimit
         ** to true to tell the caller to retry with LIMIT and OFFSET 
         ** disabled. */
-        if( pIdxInfo->needToFreeIdxStr ){
-          sqlite3_free(pIdxInfo->idxStr);
-          pIdxInfo->idxStr = 0;
-          pIdxInfo->needToFreeIdxStr = 0;
-        }
+        freeIdxStr(pIdxInfo);
         *pbRetryLimit = 1;
         return SQLITE_OK;
       }
@@ -4280,7 +4308,7 @@ static int whereLoopAddVirtualOne(
       /* The non-zero argvIdx values must be contiguous.  Raise an
       ** error if they are not */
       sqlite3ErrorMsg(pParse,"%s.xBestIndex malfunction",pSrc->pTab->zName);
-      testcase( pIdxInfo->needToFreeIdxStr );
+      freeIdxStr(pIdxInfo);
       return SQLITE_ERROR;
     }
   }
@@ -4335,7 +4363,7 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
   if( iCons>=0 && iCons<pIdxInfo->nConstraint ){
     CollSeq *pC = 0;
     int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
-    Expr *pX = pHidden->pWC->a[iTerm].pExpr;
+    Expr *pX = termFromWhereClause(pHidden->pWC, iTerm)->pExpr;
     if( pX->pLeft ){
       pC = sqlite3ExprCompareCollSeq(pHidden->pParse, pX);
     }
@@ -4381,7 +4409,9 @@ int sqlite3_vtab_rhs_value(
     rc = SQLITE_MISUSE_BKPT; /* EV: R-30545-25046 */
   }else{
     if( pH->aRhs[iCons]==0 ){
-      WhereTerm *pTerm = &pH->pWC->a[pIdxInfo->aConstraint[iCons].iTermOffset];
+      WhereTerm *pTerm = termFromWhereClause(
+          pH->pWC, pIdxInfo->aConstraint[iCons].iTermOffset
+      );
       rc = sqlite3ValueFromExpr(
           pH->pParse->db, pTerm->pExpr->pRight, ENC(pH->pParse->db),
           SQLITE_AFF_BLOB, &pH->aRhs[iCons]
@@ -4537,9 +4567,8 @@ static int whereLoopAddVirtual(
       Bitmask mNext = ALLBITS;
       assert( mNext>0 );
       for(i=0; i<nConstraint; i++){
-        Bitmask mThis = (
-            pWC->a[p->aConstraint[i].iTermOffset].prereqRight & ~mPrereq
-        );
+        int iTerm = p->aConstraint[i].iTermOffset;
+        Bitmask mThis = termFromWhereClause(pWC, iTerm)->prereqRight & ~mPrereq;
         if( mThis>mPrev && mThis<mNext ) mNext = mThis;
       }
       mPrev = mNext;
@@ -4575,7 +4604,6 @@ static int whereLoopAddVirtual(
     }
   }
 
-  if( p->needToFreeIdxStr ) sqlite3_free(p->idxStr);
   freeIndexInfo(pParse->db, p);
   WHERETRACE(0x800, ("END %s.addVirtual(), rc=%d\n", pSrc->pTab->zName, rc));
   return rc;
