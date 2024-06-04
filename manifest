@@ -1,5 +1,5 @@
-C Improve\sthe\slog\smessage\semitted\swhen\sa\sBEGIN\sCONCURRENT\stransaction\scannot\sbe\scommitted\sdue\sto\sconflicts\sso\sthat\sit\sidentifies\sthe\sconflicting\stable\sin\sa\sfew\smore\scases.
-D 2024-06-04T15:33:03.547
+C Fix\sa\sproblem\sin\sSQLITE_DIRECT_OVERFLOW_READ\sbuilds\sthat\scould\sallow\sa\sconcurrent\stransaction\sto\sbe\scommitted\seven\sif\sit\sread\sfrom\san\soverflow\spage\sthat\swas\smodified\sconcurrently,\sin\scases\swhere\sthe\soverflow\spage\swas\swritten\swithout\salso\swriting\sthe\sb-tree\spage\sto\swhich\sit\sis\slinked.
+D 2024-06-04T15:33:45.455
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -685,7 +685,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 501daeef838fa82a9fb53540d72f29e3d9172c8867f1e19f94f681e2e20b966e
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 7f7e6ac880be9b91650a06ec6a4cda022cec93f65341714f664883de6e8b5f4a
+F src/btree.c 8f47bb2c8f7259604f8007730a74ba1337ea7b782a3138cb6395c84d6eaf686f
 F src/btree.h d906e4d53f483c83d471d99479fa73fcdf20696305d578876f46ee283f3507cb
 F src/btreeInt.h 4e04041380c1ac1f4b2e80d7fb072c6d74c1be605a4271625347ba06b651e37a
 F src/build.c 9bbb6fcdde621fc52ebadc29ed9fa51837c6a9f0576abe2dfe0a93b2bb41694b
@@ -733,8 +733,8 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c d3e6c6a84acc645c93f2c52772227193a1183c0629cd22382f34256bb4d85151
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 76a1c3cc5fe198c38c6d15d7bda1e864642eb0131c53c2f2a94f0bcff50930a5
-F src/pager.h a195b4396e0f374922d7162ceb66f6d48a6583242b7200fa999ab52fed6341ca
+F src/pager.c dc75e2a5d5c916cc58d5a280d6fdafc4ba645034a7c27c9f5691a1c07a3aa199
+F src/pager.h dd6ade22dd303a8ca6c34f1ff0f299add7191c1bff65f0289b7fd7c3460f9551
 F src/parse.y e583113148bb13280de7faab4f213fa183d9e6498483d5eee02f9578a07b9cd4
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
@@ -2197,9 +2197,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 33b9cf7c1086c8af72205cff586f1b2a6d495e1efa0f1de46b37019aac98edc9
-Q +5d30e362cf72da3e17663dcb4299047ebe797ab6054fb14b2150ba82c2e698e1
-R 0be69b16c16cd568ccfb9217176fe1b7
+P eed5aa7cdf786918ab3aca823c5e1f45e61f7fb53528f7935457e06f677c8d21
+Q +49263c9136c81638833aa71c9d590e318ead2ca60c4d7207ebf8884174df9c8f
+R 2f8e74399e645bdf8ffbc39fd13d5ee8
 U dan
-Z 4d24bd0d773f4b37997d12509e97f7c3
+Z 358fe08ba91b32e742af35cd7485d0c6
 # Remove this line to create a well-formed Fossil manifest.
