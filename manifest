@@ -1,5 +1,5 @@
-C Better\shandle\sWHERE\sterms\sthat\sare\scommon\sto\stwo\sor\smore\sOR\sbranches\swhen\splanning\svirtual\stable\squeries.
-D 2024-06-04T17:26:15.006
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC.
+D 2024-06-04T19:21:16.009
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -385,7 +385,7 @@ F ext/misc/carray.h 503209952ccf2431c7fd899ebb92bf46bf7635b38aace42ec8aa1b8d7b6e
 F ext/misc/cksumvfs.c 3a7931dd30667be6348af919f3f9e6188dfd7646b42af8e399a499b327f5bd63
 F ext/misc/closure.c 0e04f52d93e678dd6f950f195f365992edf3c380df246f3d80425cba4c13891e
 F ext/misc/completion.c ef78835483b43ac18c96be312b90b615d8368189909be03513ab7a9338131298
-F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
+F ext/misc/compress.c 2c79a74330e0e0ba6cb3f7397f8ba5af12d46377ef5d3ee075e12dd8a6ed57f0
 F ext/misc/csv.c 575c2c05fba0a451586a4d42c2c81e711780c41e797126f198d8d9e0a308dcdb
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
 F ext/misc/decimal.c 172cf81a8634e6a0f0bedaf71a8372fee63348cf5a3c4e1b78bb233c35889fdc
@@ -430,7 +430,7 @@ F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
-F ext/misc/zipfile.c 64cb3d98b6316586e6056d182051aa9d28fdedfbf4b908e6b7a7d70209b1db11
+F ext/misc/zipfile.c 5a3bf1b9cccb8e0da2389fe9e39e9c7f2b1351474b7e5090635f817d495eee3f
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2194,9 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e84f09d469ee76a5b5e44baf6a69b90c69d4160fa4c32de04a96f868643acd96 85dcd0a8479a658203833cfd75f22813faa26d4793ebfbb8843035d683bee105
-R ef252a4e30665afc837737e2dd6e6acf
-T +closed 85dcd0a8479a658203833cfd75f22813faa26d4793ebfbb8843035d683bee105
-U dan
-Z 63031e840e155842bdee98d1a8498c9b
+P 1976c3f7e1fe77cf3367710e8ada230a3672ed374e316425164e42b2622526c7
+R d8eccf164f9724f23a05a76c65e3fbe6
+U mistachkin
+Z 95140046d0f54cc6d678728b4fb9117c
 # Remove this line to create a well-formed Fossil manifest.
