@@ -1,5 +1,5 @@
-C Allow\sshell\scommand\s"testctrl\spending_byte"\sto\sbe\sused\sin\sunsafe-testing\smode\sonly.
-D 2024-06-04T14:32:31.978
+C Fix\sa\scouple\sof\smemory\sleaks\sin\sthe\sshell\stool\scode\sthat\scould\soccur\swhen\sprocessing\serrors.
+D 2024-06-04T15:07:38.217
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -756,7 +756,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 22f1fa3423b377c02ae78d451cfeb1c2d96dcf0389c0642cbdcd19d3bfd7ae01
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 3b818d1b476c7108fdbbf6853c92fe4a933940474c77546f812e14f8aa2be03d
-F src/shell.c.in eda43eacdf547cc810d1e88f1866b4f535a5467305c1851238a52d3960d86b9a
+F src/shell.c.in 134db38064e038b6d3aec968a4a3eb302141b043808922961e34b333de1cff21
 F src/sqlite.h.in 892d0c427608ad7128a0fe44e972d6c4197225f5077f64f07792ffa44c6ecd77
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -1613,7 +1613,7 @@ F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 17a5ca9c6f24f807b2f505b4b38fcbce143d96cd8664c06c34bbbe0672bf7c30
 F test/shell2.test 56da24128304c9ab67da2964cc80beff7b35761c446ec6e6e98bff2775b15026
-F test/shell3.test 5ad4b2813717956414f2c0c8a2027895cd98ccf7dd54dbacbde4d4f5591ce5a1
+F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
 F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
 F test/shell5.test 6a49440bddc33a132f856fb189e71228f8132963655d12a2c8b8a161263b9632
 F test/shell6.test e3b883b61d4916b6906678a35f9d19054861123ad91b856461e0a456273bdbb8
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b37ac2d020873b78efa164036db4056406a67330679f850775da520cd8027cb9
-R 03b67338e4f76f19d1378076ba7adc4c
+P afa45c4f5afc9248ca4a1e775404a460280bb9a58a92eae508ae00fb2f675dc6
+R 332c194faf67e4e5d499e21ef0877039
 U dan
-Z 20ef19e0c9f6862e4dab9e45e30fdc2a
+Z 25f8afeca77d9ed28a678ff29d2afdb8
 # Remove this line to create a well-formed Fossil manifest.
