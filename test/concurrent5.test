@@ -269,6 +269,37 @@ do_test_conflict_msg 2.4 {
   conflict at page 22 (read-only page; part of db table t1; content=0000000061626162...)
 }
 
+db2 close
+reset_db
+do_execsql_test 1.5.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a, b);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) 
+  INSERT INTO t1 SELECT i, randomblob(200) FROM s;
+} {wal}
+do_test 1.5.1 {
+  set ::log [list]
+
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(100000, '');
+  } db
+
+  sqlite3 db2 test.db
+  execsql { INSERT INTO t1(rowid, a, b) VALUES(-1, 100001, '') } db2
+  catchsql COMMIT db
+} {1 {database is locked}}
+
+do_test_conflict_msg 1.5.2 {
+  conflict at page 507 (read/write page; part of db index t1.i1; content=0A00000003025000...)
+}
+
+sqlite3 db2 test.db
+
 db close
 db2 close
 sqlite3_shutdown
