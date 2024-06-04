@@ -1,5 +1,5 @@
-C Merge\sall\s3.45.2\spages\sinto\sthe\sbedrock-3.45\ssubbranch.
-D 2024-03-12T12:00:22.391
+C Improve\sthe\slog\smessage\semitted\swhen\sa\sBEGIN\sCONCURRENT\stransaction\scannot\sbe\scommitted\sdue\sto\sconflicts\sso\sthat\sit\sidentifies\sthe\sconflicting\stable\sin\sa\sfew\smore\scases.
+D 2024-06-04T15:33:03.547
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -685,7 +685,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 501daeef838fa82a9fb53540d72f29e3d9172c8867f1e19f94f681e2e20b966e
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 2c7ee906cdcd7860d2f64020603883cb1791a2586817d9d6f50993e538127e06
+F src/btree.c 7f7e6ac880be9b91650a06ec6a4cda022cec93f65341714f664883de6e8b5f4a
 F src/btree.h d906e4d53f483c83d471d99479fa73fcdf20696305d578876f46ee283f3507cb
 F src/btreeInt.h 4e04041380c1ac1f4b2e80d7fb072c6d74c1be605a4271625347ba06b651e37a
 F src/build.c 9bbb6fcdde621fc52ebadc29ed9fa51837c6a9f0576abe2dfe0a93b2bb41694b
@@ -2197,8 +2197,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 516b7e13801f79afb120a0a708a553ad780d1b3ae636162ad50f14af996f8684 64d740c59499877ddb6eadaaefb86f191efab4760551d6a6bae80399018faff2
-R 1f2e6014b52e0c43d5147822c6b06d95
-U drh
-Z 5e99135d7c129b17414a4b0854d84632
+P 33b9cf7c1086c8af72205cff586f1b2a6d495e1efa0f1de46b37019aac98edc9
+Q +5d30e362cf72da3e17663dcb4299047ebe797ab6054fb14b2150ba82c2e698e1
+R 0be69b16c16cd568ccfb9217176fe1b7
+U dan
+Z 4d24bd0d773f4b37997d12509e97f7c3
 # Remove this line to create a well-formed Fossil manifest.

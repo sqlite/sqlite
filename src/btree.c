@@ -5648,6 +5648,9 @@ static int accessPayload(
               (eOp==0 ? PAGER_GET_READONLY : 0)
           );
           if( rc==SQLITE_OK ){
+            setMempageRoot(
+                (MemPage*)sqlite3PagerGetExtra(pDbPage), pCur->pgnoRoot
+            );
             aPayload = sqlite3PagerGetData(pDbPage);
             nextPage = get4byte(aPayload);
             rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
@@ -9645,6 +9648,7 @@ static SQLITE_NOINLINE int btreeOverwriteOverflowCell(
   do{
     rc = btreeGetPage(pBt, ovflPgno, &pPage, 0);
     if( rc ) return rc;
+    setMempageRoot(pPage, pCur->pgnoRoot);
     if( sqlite3PagerPageRefcount(pPage->pDbPage)!=1 || pPage->isInit ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
