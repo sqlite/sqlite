@@ -6578,6 +6578,7 @@ bypass_moveto_root:
       pCur->pPage = pCur->apPage[--pCur->iPage];
       break;
     }
+    setMempageRoot(pCur->pPage, pCur->pgnoRoot);
     /*
     ***** End of in-lined moveToChild() call */
  }
@@ -10106,6 +10107,9 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
           pPageIn = 0;
           rc = sqlite3PagerGet(pSrcPager, ovflIn, &pPageIn, PAGER_GET_READONLY);
           if( rc==SQLITE_OK ){
+            setMempageRoot(
+                (MemPage*)sqlite3PagerGetExtra(pPageIn), pSrc->pgnoRoot
+            );
             aIn = (const u8*)sqlite3PagerGetData(pPageIn);
             ovflIn = get4byte(aIn);
             aIn += 4;
