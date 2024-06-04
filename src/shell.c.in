@@ -10905,7 +10905,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef YYCOVERAGE
     {"parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE,0,""             },
 #endif
-    {"pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,0, "OFFSET  "       },
+    {"pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,1, "OFFSET  "       },
     {"prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,0, ""               },
     {"prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,   0, ""               },
     {"prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,   0, "SEED ?db?"      },
