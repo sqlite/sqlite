@@ -1582,4 +1582,14 @@ for {set i 2} {$i<10} {incr i} {
   } {Inf Inf Inf}
 }
 
+# Tests for the CONCATB function.
+#
+do_execsql_test func-40.1 {
+  SELECT typeof(concatb(NULL, '1', X'ABCD', 'test'));
+} {blob}
+
+do_execsql_test func-40.2 {
+  SELECT hex(concatb(NULL, '1', X'ABCD', 'test'));
+} {31ABCD74657374}
+
 finish_test

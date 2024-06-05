@@ -1551,18 +1551,19 @@ static void trimFunc(
   sqlite3_result_text(context, (char*)zIn, nIn, SQLITE_TRANSIENT);
 }
 
-/* The core implementation of the CONCAT(...) and CONCAT_WS(SEP,...)
-** functions.
+/* The core implementation of the CONCAT(...), CONCATB(...), and
+** CONCAT_WS(SEP,...) functions.
 **
-** Return a string value that is the concatenation of all non-null
-** entries in argv[].  Use zSep as the separator.
+** Return a string or blob value that is the concatenation of all
+** non-null entries in argv[].  Use zSep as the separator.
 */
 static void concatFuncCore(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv,
   int nSep,
-  const char *zSep
+  const char *zSep,
+  int bBlob
 ){
   i64 j, k, n = 0;
   int i;
@@ -1577,23 +1578,44 @@ static void concatFuncCore(
     return;
   }
   j = 0;
-  for(i=0; i<argc; i++){
-    k = sqlite3_value_bytes(argv[i]);
-    if( k>0 ){
-      const char *v = (const char*)sqlite3_value_text(argv[i]);
-      if( v!=0 ){
-        if( j>0 && nSep>0 ){
-          memcpy(&z[j], zSep, nSep);
-          j += nSep;
+  if( bBlob ){
+    for(i=0; i<argc; i++){
+      k = sqlite3_value_bytes(argv[i]);
+      if( k>0 ){
+        const char *v = (const char*)sqlite3_value_blob(argv[i]);
+        if( v!=0 ){
+          if( j>0 && nSep>0 ){
+            memcpy(&z[j], zSep, nSep);
+            j += nSep;
+          }
+          memcpy(&z[j], v, k);
+          j += k;
         }
-        memcpy(&z[j], v, k);
-        j += k;
+      }
+    }
+  }else{
+    for(i=0; i<argc; i++){
+      k = sqlite3_value_bytes(argv[i]);
+      if( k>0 ){
+        const char *v = (const char*)sqlite3_value_text(argv[i]);
+        if( v!=0 ){
+          if( j>0 && nSep>0 ){
+            memcpy(&z[j], zSep, nSep);
+            j += nSep;
+          }
+          memcpy(&z[j], v, k);
+          j += k;
+        }
       }
     }
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+  if( bBlob ){
+    sqlite3_result_blob64(context, z, j, sqlite3_free);
+  }else{
+    sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+  }
 }
 
 /*
@@ -1605,7 +1627,19 @@ static void concatFunc(
   int argc,
   sqlite3_value **argv
 ){
-  concatFuncCore(context, argc, argv, 0, "");
+  concatFuncCore(context, argc, argv, 0, "", 0);
+}
+
+/*
+** The CONCATB(...) function.  Generate a blob result that is the
+** concatentation of all non-null arguments.
+*/
+static void concatBlobFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  concatFuncCore(context, argc, argv, 0, "", 1);
 }
 
 /*
@@ -1623,7 +1657,7 @@ static void concatwsFunc(
   int nSep = sqlite3_value_bytes(argv[0]);
   const char *zSep = (const char*)sqlite3_value_text(argv[0]);
   if( zSep==0 ) return;
-  concatFuncCore(context, argc-1, argv+1, nSep, zSep);
+  concatFuncCore(context, argc-1, argv+1, nSep, zSep, 0);
 }
 
 
@@ -2641,6 +2675,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
     FUNCTION(concat,            -1, 0, 0, concatFunc       ),
+    FUNCTION(concatb,           -1, 1, 0, concatBlobFunc   ),
     FUNCTION(concat,             0, 0, 0, 0                ),
     FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
     FUNCTION(concat_ws,          0, 0, 0, 0                ),
