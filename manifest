@@ -1,5 +1,5 @@
-C Add\san\sexperimental\sconcatb()\sfunction.
-D 2024-06-05T20:52:50.846
+C Harmonize\sfunction\snames.
+D 2024-06-05T20:54:40.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
 F src/expr.c 585109ab97149b2d484697e7469f28c91d495cd1330cc760d24711b7be8d22fb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 852f93c0ef995e0c2b8983059a2b97151c194cc8259e21f5bc2b7ac508348c2a
-F src/func.c cc8c9cdae9e8ee05a6de9e3b4d7c11400cba8e5e54ba4917a8ec41d68fce8f96
+F src/func.c 4daef1c773c7dc55a974dc8d54b9d433a6efe1c0d8ad8594430b15a7d6ddc2df
 F src/global.c 61a419dd9e993b9be0f91de4c4ccf322b053eb829868e089f0321dd669be3b90
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2194,11 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 816d4749384c7f398912c905a16c83b88f4c55632050b4c6117c61301d1a53e1
-R 312e87c7c5f6a411437e7dcf8c9768a7
-T *branch * concatb
-T *sym-concatb *
-T -sym-trunk *
+P 07d8420285a49867b9c34f9e344eb666448dd9ce85c7791fa9480d98458684d9
+R e26286215208735e6e38d174733a8a9f
 U mistachkin
-Z 77b4765c43d95146e57ecf29682d5748
+Z 523d5e338790c61751ca83e3ee126827
 # Remove this line to create a well-formed Fossil manifest.

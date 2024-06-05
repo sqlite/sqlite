@@ -1622,7 +1622,7 @@ static void concatFuncCore(
 ** The CONCAT(...) function.  Generate a string result that is the
 ** concatentation of all non-null arguments.
 */
-static void concatFunc(
+static void concatTextFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -2674,7 +2674,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
-    FUNCTION(concat,            -1, 0, 0, concatFunc       ),
+    FUNCTION(concat,            -1, 0, 0, concatTextFunc   ),
     FUNCTION(concatb,           -1, 1, 0, concatBlobFunc   ),
     FUNCTION(concat,             0, 0, 0, 0                ),
     FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
