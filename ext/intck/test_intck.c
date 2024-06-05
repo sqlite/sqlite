@@ -92,8 +92,9 @@ static int testIntckCmd(
 
     case 3: assert( 0==strcmp("error", aCmd[iIdx].zName) ); {
       const char *zErr = 0;
+      Tcl_Obj *pRes;
       rc = sqlite3_intck_error(p->intck, 0);
-      Tcl_Obj *pRes = Tcl_NewObj();
+      pRes = Tcl_NewObj();
       Tcl_ListObjAppendElement(
           interp, pRes, Tcl_NewStringObj(sqlite3ErrName(rc), -1)
       );

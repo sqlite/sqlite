@@ -671,7 +671,7 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
     if( pConfig->t.pTok ){
       pConfig->t.pTokApi->xDelete(pConfig->t.pTok);
     }
-    sqlite3_free(pConfig->t.azArg);
+    sqlite3_free((char*)pConfig->t.azArg);
     sqlite3_free(pConfig->zDb);
     sqlite3_free(pConfig->zName);
     for(i=0; i<pConfig->nCol; i++){
