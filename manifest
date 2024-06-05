@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\swith\ssecure-delete\smode\scausing\sintegrity-check\sto\serroneously\sreport\sa\scorrupt\sindex.
-D 2024-06-05T14:47:54.677
+C Small\sperformance\soptimization\sin\sthe\scodeEqualityTerm()\sroutine\sof\sthe\ncode\sgenerator.
+D 2024-06-05T20:41:36.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -842,7 +842,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 343e74d65856665f2aac59a9fcefecfc988e9af4aafa0bd1b8332a89c6c725b4
 F src/whereInt.h 002adc3aa2cc10733b9b27958fdbe893987cd989fab25a9853941c1f9b9b0a65
-F src/wherecode.c 5ad509221ebb4d3b35a8a6ef361f2c5b54129b8c273aa434dd3053d2e25d1794
+F src/wherecode.c c9cac0b0b8e809c5e7e79d7796918907fb685ad99be2aaa9737f9787aa47349c
 F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a096eb7554952f8137c6e9330c328164719fb27e958787fbd503bcd1364e6ae4
-R 0a424bef53f9d9c6999e5b99ba3f491f
-U dan
-Z bc999b30c47bb6a6c63f18a66f996a4c
+P 80bef4d60ba9e3679ea66655ca36fcfaa888775a3d1598d50e9649ad84a95b63
+R 2c603113ce745efce0c45179f5a33586
+U drh
+Z 49fdb8ccd67e18818e3ecc829cf527f5
 # Remove this line to create a well-formed Fossil manifest.
