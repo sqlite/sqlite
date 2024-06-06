@@ -435,6 +435,13 @@ static int isAuxiliaryVtabOperator(
         }
       }
     }
+  }else if( pExpr->op>=TK_EQ ){
+    /* Comparison operators are a common case.  Save a few comparisons for
+    ** that common case by terminating early. */
+    assert( TK_NE < TK_EQ );
+    assert( TK_ISNOT < TK_EQ );
+    assert( TK_NOTNULL < TK_EQ );
+    return 0;
   }else if( pExpr->op==TK_NE || pExpr->op==TK_ISNOT || pExpr->op==TK_NOTNULL ){
     int res = 0;
     Expr *pLeft = pExpr->pLeft;
