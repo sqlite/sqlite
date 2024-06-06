@@ -2942,7 +2942,7 @@ static void whereLoopOutputAdjust(
           Expr *pRight = pTerm->pExpr->pRight;
           int k = 0;
           testcase( pTerm->pExpr->op==TK_IS );
-          if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
+          if( sqlite3ExprIsInteger(pRight, &k, 0) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
             k = 20;
