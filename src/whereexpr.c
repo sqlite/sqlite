@@ -139,15 +139,16 @@ static u16 exprCommute(Parse *pParse, Expr *pExpr){
 static u16 operatorMask(int op){
   u16 c;
   assert( allowedOp(op) );
-  if( op==TK_IN ){
+  if( op>=TK_EQ ){
+    assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
+    c = (u16)(WO_EQ<<(op-TK_EQ));
+  }else if( op==TK_IN ){
     c = WO_IN;
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
-  }else if( op==TK_IS ){
-    c = WO_IS;
   }else{
-    assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
-    c = (u16)(WO_EQ<<(op-TK_EQ));
+    assert( op==TK_IS );
+    c = WO_IS;
   }
   assert( op!=TK_ISNULL || c==WO_ISNULL );
   assert( op!=TK_IN || c==WO_IN );
