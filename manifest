@@ -1,5 +1,5 @@
-C Fix\sharmless\scompilation\sissues\sseen\swith\sMSVC.
-D 2024-06-05T20:50:39.523
+C Small\sperformance\soptimization\sin\sthe\sallowedOp()\sroutine\sof\sthe\sWHERE\nclause\sanalysis\scode.
+D 2024-06-06T00:49:36.480
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -843,7 +843,7 @@ F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 343e74d65856665f2aac59a9fcefecfc988e9af4aafa0bd1b8332a89c6c725b4
 F src/whereInt.h 002adc3aa2cc10733b9b27958fdbe893987cd989fab25a9853941c1f9b9b0a65
 F src/wherecode.c c9cac0b0b8e809c5e7e79d7796918907fb685ad99be2aaa9737f9787aa47349c
-F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
+F src/whereexpr.c 6410cd2cd4f2d97c5c14bdd38650f0da712e75077d2014beff9a0bca93e2b893
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8080c6eafd1280ea870a6ab1ba715ac5af67387e69771be6cbd46dda77c3eaa8
-R b1d29e4b163a20c9d9aadcb22bf1cdb9
-U mistachkin
-Z 0cf3ec6bb41ed4737c063035dfa47552
+P 816d4749384c7f398912c905a16c83b88f4c55632050b4c6117c61301d1a53e1
+R 19dca2cd3f6ce49e135153d860cdf2bd
+U drh
+Z 62188313bf6cfe2c21e1198d3cb7d57d
 # Remove this line to create a well-formed Fossil manifest.

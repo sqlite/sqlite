@@ -101,7 +101,12 @@ static int allowedOp(int op){
   assert( TK_LT>TK_EQ && TK_LT<TK_GE );
   assert( TK_LE>TK_EQ && TK_LE<TK_GE );
   assert( TK_GE==TK_EQ+4 );
-  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL || op==TK_IS;
+  assert( TK_IN<TK_EQ );
+  assert( TK_IS<TK_EQ );
+  assert( TK_ISNULL<TK_EQ );
+  if( op>TK_GE ) return 0;
+  if( op>=TK_EQ ) return 1;
+  return op==TK_IN || op==TK_ISNULL || op==TK_IS;
 }
 
 /*
