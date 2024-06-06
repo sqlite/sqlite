@@ -1583,7 +1583,7 @@ static void whereAddLimitExpr(
   Expr *pNew;
   int iVal = 0;
 
-  if( sqlite3ExprIsInteger(pExpr, &iVal) && iVal>=0 ){
+  if( sqlite3ExprIsInteger(pExpr, &iVal, pParse) && iVal>=0 ){
     Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
     if( pVal==0 ) return;
     ExprSetProperty(pVal, EP_IntValue);

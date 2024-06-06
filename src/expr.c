@@ -2789,8 +2789,12 @@ int sqlite3ExprContainsSubquery(Expr *p){
 ** to fit in a 32-bit integer, return 1 and put the value of the integer
 ** in *pValue.  If the expression is not an integer or if it is too big
 ** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
+**
+** If the pParse pointer is provided, then allow the expression p to be
+** a parameter (TK_VARIABLE) that is bound to an integer.
+** But if pParse is NULL, then p must be a pure integer literal.
 */
-int sqlite3ExprIsInteger(const Expr *p, int *pValue){
+int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
   int rc = 0;
   if( NEVER(p==0) ) return 0;  /* Used to only happen following on OOM */
 
@@ -2805,15 +2809,35 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue){
   }
   switch( p->op ){
     case TK_UPLUS: {
-      rc = sqlite3ExprIsInteger(p->pLeft, pValue);
+      rc = sqlite3ExprIsInteger(p->pLeft, pValue, 0);
       break;
     }
     case TK_UMINUS: {
       int v = 0;
-      if( sqlite3ExprIsInteger(p->pLeft, &v) ){
+      if( sqlite3ExprIsInteger(p->pLeft, &v, 0) ){
         assert( ((unsigned int)v)!=0x80000000 );
         *pValue = -v;
         rc = 1;
+      }
+      break;
+    }
+    case TK_VARIABLE: {
+      sqlite3_value *pVal;
+      if( pParse==0 ) break;
+      if( NEVER(pParse->pVdbe==0) ) break;
+      if( (pParse->db->flags & SQLITE_EnableQPSG)!=0 ) break;
+      sqlite3VdbeSetVarmask(pParse->pVdbe, p->iColumn);
+      pVal = sqlite3VdbeGetBoundValue(pParse->pReprepare, p->iColumn,
+                                      SQLITE_AFF_BLOB);
+      if( pVal ){
+        if( sqlite3_value_type(pVal)==SQLITE_INTEGER ){
+          sqlite3_int64 vv = sqlite3_value_int64(pVal);
+          if( vv == (vv & 0x7fffffff) ){ /* non-negative numbers only */
+            *pValue = (int)vv;
+            rc = 1;
+          }
+        }
+        sqlite3ValueFree(pVal);
       }
       break;
     }
