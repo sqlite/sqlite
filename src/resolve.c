@@ -1049,7 +1049,7 @@ static int resolveOrderByTermToExprList(
   int rc;            /* Return code from subprocedures */
   u8 savedSuppErr;   /* Saved value of db->suppressErr */
 
-  assert( sqlite3ExprIsInteger(pE, &i)==0 );
+  assert( sqlite3ExprIsInteger(pE, &i, 0)==0 );
   pEList = pSelect->pEList;
 
   /* Resolve all names in the ORDER BY term expression
@@ -1145,7 +1145,7 @@ static int resolveCompoundOrderBy(
       Expr *pE, *pDup;
       if( pItem->done ) continue;
       pE = sqlite3ExprSkipCollate(pItem->pExpr);
-      if( sqlite3ExprIsInteger(pE, &iCol) ){
+      if( sqlite3ExprIsInteger(pE, &iCol, 0) ){
         if( iCol<=0 || iCol>pEList->nExpr ){
           resolveOutOfRangeError(pParse, "ORDER", i+1, pEList->nExpr);
           return 1;
@@ -1338,7 +1338,7 @@ static int resolveOrderGroupBy(
         continue;
       }
     }
-    if( sqlite3ExprIsInteger(pE2, &iCol) ){
+    if( sqlite3ExprIsInteger(pE2, &iCol, 0) ){
       /* The ORDER BY term is an integer constant.  Again, set the column
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */

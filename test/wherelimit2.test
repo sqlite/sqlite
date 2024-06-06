@@ -296,4 +296,35 @@ do_test 5.5 {
 } {ax a bx b cx c dx d ex a}
 
 
+# 2024-06-06
+# Use LIMIT if the argument is a variable.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a INT, b INT);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<1000)
+    INSERT INTO t1 SELECT n, n FROM c;
+  CREATE INDEX t1a ON t1(a);
+  CREATE INDEX t1b ON t1(b);
+  ANALYZE;
+}
+do_eqp_test 8.1 {
+  SELECT * FROM t1 WHERE a>=100 AND b<300 ORDER BY b LIMIT 5;
+} {
+  QUERY PLAN
+  |--SEARCH t1 USING INDEX t1a (a>? AND a<?)
+  `--USE TEMP B-TREE FOR ORDER BY
+}
+do_eqp_test 8.2 {
+  SELECT * FROM t1 WHERE a>=100 AND b<300 ORDER BY b LIMIT -1;
+} {
+  QUERY PLAN
+  |--SEARCH t1 USING INDEX t1a (a>? AND a<?)
+  `--USE TEMP B-TREE FOR ORDER BY
+}
+
+
+
+
+
 finish_test
