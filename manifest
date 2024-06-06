@@ -1,5 +1,5 @@
-C Better\soptimize\squeries\sthat\suse\sparameters\sin\sthe\sLIMIT\sclause.
-D 2024-06-06T15:03:16.778
+C Omit\sbogus\stests\saccidentally\sadded\sby\sthe\sprivious\scommit.
+D 2024-06-06T23:22:32.539
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2031,7 +2031,7 @@ F test/whereN.test 63a3584b71acfb6963416de82f26c6b1644abc5ca6080c76546b9246734c8
 F test/wherefault.test 6cf2a9c5712952d463d3f45ebee7f6caf400984df51a195d884cfb7eb0e837a7
 F test/wherelfault.test 9012e4ef5259058b771606616bd007af5d154e64cc25fa9fd4170f6411db44e3
 F test/wherelimit.test afb46397c6d7e964e6e294ba3569864a0c570fe3807afc634236c2b752372f31
-F test/wherelimit2.test 45051faca87204e00d999a3282eeea4263d7a7eb7a063c2fb9096e1ef359e9c5
+F test/wherelimit2.test b9e4bfe7b4d7c2f85f99cf2bd2c51369378d04b1f3d1b60557423752003bfd90
 F test/wherelimit3.test 22d73e046870cf8bbe15573eda6b432b07ebe64a88711f9f849c6b3667c1fae6
 F test/widetab1.test c296a98e123762de79917350e45fa33fdf88577a2571eb3a64c8bf7e44ef74d1
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
@@ -2195,11 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f66608bd356efe492d1003663c2e1ccd7cfbf2d40393d256f8720149904ad2d5
-R 925869cddd08d7fffc1c9ed1ac68c360
-T *branch * var-in-limit
-T *sym-var-in-limit *
-T -sym-trunk *
+P e58cb304d1e0ec6e30260a165aaccc2cf096ce6c999efb06683c4ef600ee12ef
+R f3d6aba1cc68a2224dd6f7df935a2c23
 U drh
-Z 69f66afa464bc68dae7849bd1467273b
+Z e624ae0f33850da22aad0ef54cd48e89
 # Remove this line to create a well-formed Fossil manifest.
