@@ -4093,7 +4093,7 @@ int sqlite3ExprIsTableConstant(Expr*,int);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
-int sqlite3ExprIsInteger(Expr*, int*);
+int sqlite3ExprIsInteger(const Expr*, int*, Parse*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);

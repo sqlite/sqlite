@@ -3071,6 +3071,7 @@ static int shell_exec(
         zEQP = sqlite3_mprintf("EXPLAIN QUERY PLAN %s", zStmtSql);
         rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
         if( rc==SQLITE_OK ){
+          bind_prepared_stmt(pArg, pExplain);
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
@@ -3088,6 +3089,7 @@ static int shell_exec(
           rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
           if( rc==SQLITE_OK ){
             pArg->cMode = MODE_Explain;
+            bind_prepared_stmt(pArg, pExplain);
             explain_data_prepare(pArg, pExplain);
             exec_prepared_stmt(pArg, pExplain);
             explain_data_delete(pArg);

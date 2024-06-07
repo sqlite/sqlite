@@ -1457,6 +1457,7 @@ void sqlite3WhereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
   }
 }
 
+
 /*
 ** Initialize a preallocated WhereClause structure.
 */
