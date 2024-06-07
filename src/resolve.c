@@ -1367,6 +1367,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( nRef!=pNC->nRef ){
           ExprSetProperty(pExpr, EP_VarSelect);
           pExpr->x.pSelect->selFlags |= SF_Correlated;
+          if( pExpr->op==TK_EXISTS ) pParse->bHasExists = 1;
         }
         pNC->ncFlags |= NC_Subquery;
       }

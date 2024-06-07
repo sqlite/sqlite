@@ -7284,6 +7284,152 @@ static int fromClauseTermCanBeCoroutine(
 }
 
 /*
+** sqlite3WalkExpr() callback used by exprReferencesTable().
+*/
+static int exprReferencesTableExprCb(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN && pExpr->iTable==pWalker->u.iCur ){
+    pWalker->eCode = 1;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return true if the expression passed as the first argument refers
+** to cursor number iCur. Otherwise return false.
+*/
+static int exprReferencesTable(Expr *pExpr, int iCur){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.u.iCur = iCur;
+  w.xExprCallback = exprReferencesTableExprCb;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  sqlite3WalkExpr(&w, pExpr);
+  return w.eCode;
+}
+
+/*
+** Index pIdx is a UNIQUE index on the table accessed by cursor number 
+** iCsr. This function returns a mask of the index columns that are
+** constrained to match a single, non-NULL value by the WHERE clause
+** passed as the 4th argument. For example, if the index is:
+**
+**      CREATE UNIQUE INDEX idx ON tbl(a, b, c);
+**
+** and pWhere:
+**
+**      WHERE a=? AND c=?
+**
+** then this function returns 5.
+*/
+static u64 findConstIdxTerms(
+  Parse *pParse, 
+  int iCsr,
+  Index *pIdx, 
+  Expr *pWhere
+){
+  u64 m = 0;
+  if( pWhere->op==TK_AND ){
+    m = findConstIdxTerms(pParse, iCsr, pIdx, pWhere->pLeft);
+    m |= findConstIdxTerms(pParse, iCsr, pIdx, pWhere->pRight);
+  }else if( pWhere->op==TK_EQ ){
+    Expr *pLeft = pWhere->pLeft;
+    Expr *pRight = pWhere->pRight;
+    if( pRight->op==TK_COLUMN && pRight->iTable==iCsr ){
+      SWAP(Expr*, pLeft, pRight);
+    }
+    if( pLeft->op==TK_COLUMN 
+     && pLeft->iTable==iCsr 
+     && exprReferencesTable(pRight, iCsr)==0
+    ){
+      if( pIdx ){
+        int ii;
+        for(ii=0; ii<pIdx->nKeyCol; ii++){
+          assert( pIdx->azColl[ii] );
+          if( pLeft->iColumn==pIdx->aiColumn[ii] ){
+            CollSeq *pColl = sqlite3ExprCompareCollSeq(pParse, pWhere);
+            if( sqlite3StrICmp(pColl->zName, pIdx->azColl[ii])==0 ){
+              m |= ((u64)1 << ii);
+              break;
+            }
+          }
+        }
+      }else{
+        if( pLeft->iColumn<0 ) m = 1;
+      }
+    }
+  }
+  return m;
+}
+
+/*
+** Argument pWhere is the WHERE clause belonging to SELECT statement p. This
+** function attempts to transform expressions of the form:
+**
+**     EXISTS (SELECT ...)
+**
+** into joins. For example, given
+**
+**    CREATE TABLE sailors(sid INTEGER PRIMARY KEY, name TEXT);
+**    CREATE TABLE reserves(sid INT, day DATE, PRIMARY KEY(sid, day));
+**
+**    SELECT name FROM sailors AS S WHERE EXISTS (
+**      SELECT * FROM reserves AS R WHERE S.sid = R.sid AND R.day = '2022-10-25'
+**    );
+**
+** the SELECT statement may be transformed as follows:
+**
+**    SELECT name FROM sailors AS S, reserves AS R
+**      WHERE S.sid = R.sid AND R.day = '2022-10-25';
+*/
+static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
+  if( pWhere && p->pSrc->nSrc>0 ){
+    if( pWhere->op==TK_AND ){
+      existsToJoin(pParse, p, pWhere->pLeft);
+      existsToJoin(pParse, p, pWhere->pRight);
+    }
+    else if( pWhere->op==TK_EXISTS && (pWhere->flags & EP_xIsSelect) ){
+      Select *pSub = pWhere->x.pSelect;
+      if( pSub->pSrc->nSrc==1 
+       && (pSub->selFlags & (SF_Aggregate|SF_Correlated))==SF_Correlated
+       && pSub->pWhere
+      ){
+        int bTransform = 0;       /* True if EXISTS can be made into join */
+        Table *pTab = pSub->pSrc->a[0].pTab;
+        int iCsr = pSub->pSrc->a[0].iCursor;
+        Index *pIdx;
+        if( HasRowid(pTab) && findConstIdxTerms(pParse, iCsr, 0,pSub->pWhere) ){
+          bTransform = 1;
+        }
+        for(pIdx=pTab->pIndex; pIdx && bTransform==0; pIdx=pIdx->pNext){
+          if( pIdx->onError && pIdx->nKeyCol<64 ){
+            u64 c = findConstIdxTerms(pParse, iCsr, pIdx, pSub->pWhere);
+            if( c==(1 << pIdx->nKeyCol)-1 ){
+              bTransform = 1;
+            }
+          }
+        }
+        if( bTransform ){
+          p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
+          pSub->pSrc = 0;
+          if( p->pWhere ){
+            p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSub->pWhere);
+          }else{
+            p->pWhere = pSub->pWhere;
+          }
+          pSub->pWhere = 0;
+
+          sqlite3SelectDelete(pParse->db, pSub);
+          memset(pWhere, 0, sizeof(*pWhere));
+          pWhere->op = TK_INTEGER;
+          pWhere->u.iValue = 1;
+          ExprSetProperty(pWhere, EP_IntValue);
+        }
+      }
+    }
+  }
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument. 
 **
 ** The results are returned according to the SelectDest structure.
@@ -7608,6 +7754,13 @@ int sqlite3Select(
     return rc;
   }
 #endif
+
+  /* If there may be an "EXISTS (SELECT ...)" in the WHERE clause, attempt
+  ** to change it into a join.  */
+  if( pParse->bHasExists ){
+    existsToJoin(pParse, p, p->pWhere);
+    pTabList = p->pSrc;
+  }
 
   /* Do the WHERE-clause constant propagation optimization if this is
   ** a join.  No need to speed time on this operation for non-join queries
