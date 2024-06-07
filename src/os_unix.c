@@ -3317,10 +3317,15 @@ static int nfsUnlock(sqlite3_file *id, int eFileLock){
 ** Seek to the offset passed as the second argument, then read cnt
 ** bytes into pBuf. Return the number of bytes actually read.
 **
-** To avoid stomping the errno value on a failed read the lastErrno value
-** is set before returning.
+** To avoid stomping the errno value on a failed read() call,
+** the lastErrno value is set before returning.
 */
-static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
+static SQLITE_NOINLINE int seekAndRead(
+  unixFile *id,
+  sqlite3_int64 offset,
+  void *pBuf,
+  int cnt
+){
   int got;
   int prior = 0;
 #if (!defined(USE_PREAD) && !defined(USE_PREAD64))
@@ -3364,10 +3369,104 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   return got+prior;
 }
 
+/* Forward reference */
+static int unixRead(sqlite3_file*,void*,int,sqlite3_int64);
+
+#if SQLITE_MAX_MMAP_SIZE>0
+/*
+** Helper subroutine to unixRead():  Handle the case of reading
+** from a memory-mapped file.
+*/
+static SQLITE_NOINLINE int unixReadMMap(
+  unixFile *pFile,          /* File from which we are reading */
+  void *pBuf,               /* Store content here */
+  int amt,                  /* Number of bytes to read */
+  sqlite3_int64 offset      /* Begin reading at this offset into the file */
+){
+  assert( offset < pFile->mmapSize );
+  if( offset+amt <= pFile->mmapSize ){
+    memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
+    return SQLITE_OK;
+  }else{
+    int nCopy = pFile->mmapSize - offset;
+    assert( nCopy>0 );
+    testcase( nCopy>amt/2 );
+    memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], nCopy);
+    return unixRead((sqlite3_file*)pFile,&((u8*)pBuf)[nCopy],
+                    amt-nCopy,offset+nCopy);
+  }
+}
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
+
+/*
+** Helper subroutine to unixRead():  Handle the rare case where
+** the number of bytes returned by pread() or read() is different
+** from the number of bytes requested.
+*/
+static SQLITE_NOINLINE int unixReadDealWithIssue(
+  unixFile *pFile,         /* Tried to read from this file */
+  void *pBuf,              /* Results written here */
+  int amt,                 /* Bytes requested */
+  sqlite3_int64 offset,    /* Offset of first byte to read */
+  int got                  /* Result from the first read attempt */
+){
+  while( 1 /*exit-by-return-or-break*/ ){
+    if( got<0 ){
+      if( errno==EINTR ){
+        got = seekAndRead(pFile, offset, pBuf, amt);
+        if( got==amt ) return SQLITE_OK;
+        continue;
+      }else{
+        storeLastErrno(pFile, errno);
+        /*
+        ** Usually we return SQLITE_IOERR_READ here, though for some
+        ** kinds of errors we return SQLITE_IOERR_CORRUPTFS.  The
+        ** SQLITE_IOERR_CORRUPTFS will be converted into SQLITE_CORRUPT
+        ** prior to returning to the application by the sqlite3ApiExit()
+        ** routine.
+        */
+        switch( pFile->lastErrno ){
+          case ERANGE:
+          case EIO:
+#ifdef ENXIO
+          case ENXIO:
+#endif
+#ifdef EDEVERR
+          case EDEVERR:
+#endif
+            return SQLITE_IOERR_CORRUPTFS;
+        }
+        return SQLITE_IOERR_READ;
+      }
+    }else if( got>0 ){
+      offset += got;
+      pBuf = (void*)(got + (char*)pBuf);
+      amt -= got;
+      got = seekAndRead(pFile, offset, pBuf, amt);
+      if( got==amt ) return SQLITE_OK;
+      continue;
+    }else{
+      storeLastErrno(pFile, 0);   /* not a system error */
+      /* Unread parts of the buffer must be zero-filled */
+      memset(&((char*)pBuf)[got], 0, amt-got);
+      break;
+    }
+  }   
+  return SQLITE_IOERR_SHORT_READ;
+}
+
+
 /*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
+**
+** The most common case (by far) is that this routine does a single
+** call to pread() to get the content request and then returns.
+** This routine is coded so that that is the fast path.  If anything
+** unusual happens (an I/O error, the read comes back in smaller
+** pieces, memory-mapped I/O, etc) then that processing is handled
+** by subroutines so as not to burden the fast path.
 */
 static int unixRead(
   sqlite3_file *id,
@@ -3377,64 +3476,41 @@ static int unixRead(
 ){
   unixFile *pFile = (unixFile *)id;
   int got;
+#if (!defined(USE_PREAD) && !defined(USE_PREAD64))
+  i64 newOffset;
+#endif
+
   assert( id );
   assert( offset>=0 );
   assert( amt>0 );
-
-  /* If this is a database file (not a journal, super-journal or temp
-  ** file), the bytes in the locking range should never be read or written. */
-#if 0
-  assert( pFile->pPreallocatedUnused==0
-       || offset>=PENDING_BYTE+512
-       || offset+amt<=PENDING_BYTE
-  );
-#endif
 
 #if SQLITE_MAX_MMAP_SIZE>0
   /* Deal with as much of this read request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
-    if( offset+amt <= pFile->mmapSize ){
-      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
-      return SQLITE_OK;
-    }else{
-      int nCopy = pFile->mmapSize - offset;
-      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], nCopy);
-      pBuf = &((u8 *)pBuf)[nCopy];
-      amt -= nCopy;
-      offset += nCopy;
-    }
+    return unixReadMMap(pFile, pBuf, amt, offset);
   }
 #endif
 
-  got = seekAndRead(pFile, offset, pBuf, amt);
-  if( got==amt ){
-    return SQLITE_OK;
-  }else if( got<0 ){
-    /* pFile->lastErrno has been set by seekAndRead().
-    ** Usually we return SQLITE_IOERR_READ here, though for some
-    ** kinds of errors we return SQLITE_IOERR_CORRUPTFS.  The
-    ** SQLITE_IOERR_CORRUPTFS will be converted into SQLITE_CORRUPT
-    ** prior to returning to the application by the sqlite3ApiExit()
-    ** routine.
-    */
-    switch( pFile->lastErrno ){
-      case ERANGE:
-      case EIO:
-#ifdef ENXIO
-      case ENXIO:
+#if defined(USE_PREAD)
+  got = osPread(pFile->h, pBuf, amt, offset);
+  SimulateIOError( got = -1 );
+#elif defined(USE_PREAD64)
+  got = osPread64(pFile->h, pBuf, amt, offset);
+  SimulateIOError( got = -1 );
+#else
+  newOffset = lseek(pFile->h, offset, SEEK_SET);
+  SimulateIOError( newOffset = -1 );
+  if( newOffset<0 ){
+    return unixReadDealWithIssue(pFile, pBuf, amt, offset, -1);
+  }
+  got = osRead(id->h, pBuf, amt);
 #endif
-#ifdef EDEVERR
-      case EDEVERR:
-#endif
-        return SQLITE_IOERR_CORRUPTFS;
-    }
-    return SQLITE_IOERR_READ;
+
+  if( got!=amt ){
+    return unixReadDealWithIssue(pFile, pBuf, amt, offset, got);
   }else{
-    storeLastErrno(pFile, 0);   /* not a system error */
-    /* Unread parts of the buffer must be zero-filled */
-    memset(&((char*)pBuf)[got], 0, amt-got);
-    return SQLITE_IOERR_SHORT_READ;
+    return SQLITE_OK;
   }
 }
 
@@ -5360,7 +5436,7 @@ static void unixRemapfile(
 #endif
 
     /* The attempt to extend the existing mapping failed. Free it. */
-    if( pNew==MAP_FAILED || pNew==0 ){
+    if( pNew==MAP_FAILED || NEVER(pNew==0) ){
       osMunmap(pOrig, nReuse);
     }
   }
