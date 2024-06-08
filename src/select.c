@@ -7382,12 +7382,13 @@ static u64 findConstIdxTerms(
 **      WHERE S.sid = R.sid AND R.day = '2022-10-25';
 */
 static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
-  if( pWhere && p->pSrc->nSrc>0 ){
+  if( pWhere && p->pSrc->nSrc>0 && pParse->db->mallocFailed==0 ){
     if( pWhere->op==TK_AND ){
+      Expr *pRight = pWhere->pRight;
       existsToJoin(pParse, p, pWhere->pLeft);
-      existsToJoin(pParse, p, pWhere->pRight);
+      existsToJoin(pParse, p, pRight);
     }
-    else if( pWhere->op==TK_EXISTS && (pWhere->flags & EP_xIsSelect) ){
+    else if( pWhere->op==TK_EXISTS ){
       Select *pSub = pWhere->x.pSelect;
       if( pSub->pSrc->nSrc==1 
        && (pSub->selFlags & (SF_Aggregate|SF_Correlated))==SF_Correlated
@@ -7401,28 +7402,26 @@ static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
           bTransform = 1;
         }
         for(pIdx=pTab->pIndex; pIdx && bTransform==0; pIdx=pIdx->pNext){
-          if( pIdx->onError && pIdx->nKeyCol<64 ){
+          if( pIdx->onError && pIdx->nKeyCol<=63 ){
             u64 c = findConstIdxTerms(pParse, iCsr, pIdx, pSub->pWhere);
-            if( c==(1 << pIdx->nKeyCol)-1 ){
+            if( c==((u64)1 << pIdx->nKeyCol)-1 ){
               bTransform = 1;
             }
           }
         }
         if( bTransform ){
-          p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
-          pSub->pSrc = 0;
-          if( p->pWhere ){
-            p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSub->pWhere);
-          }else{
-            p->pWhere = pSub->pWhere;
-          }
-          pSub->pWhere = 0;
-
-          sqlite3SelectDelete(pParse->db, pSub);
           memset(pWhere, 0, sizeof(*pWhere));
           pWhere->op = TK_INTEGER;
           pWhere->u.iValue = 1;
           ExprSetProperty(pWhere, EP_IntValue);
+
+          assert( p->pWhere!=0 );
+          p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
+          p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSub->pWhere);
+
+          pSub->pWhere = 0;
+          pSub->pSrc = 0;
+          sqlite3SelectDelete(pParse->db, pSub);
         }
       }
     }
