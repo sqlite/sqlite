@@ -2547,6 +2547,7 @@ static void fpdecodeFunc(
   x = sqlite3_value_double(argv[0]);
   y = sqlite3_value_int(argv[1]);
   z = sqlite3_value_int(argv[2]);
+  if( z<=0 ) z = 1;
   sqlite3FpDecode(&s, x, y, z);
   if( s.isSpecial==2 ){
     sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");

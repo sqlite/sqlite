@@ -1015,10 +1015,13 @@ int sqlite3Atoi(const char *z){
 ** Decode a floating-point value into an approximate decimal
 ** representation.
 **
-** Round the decimal representation to n significant digits if
-** n is positive.  Or round to -n signficant digits after the
-** decimal point if n is negative.  No rounding is performed if
-** n is zero.
+** If iRound<=0 then round to -iRound significant digits to the
+** the left of the decimal point, or to a maximum of mxRound total
+** significant digits.
+**
+** If iRound>0 round to min(iRound,mxRound) significant digits total.
+**
+** mxRound must be positive.
 **
 ** The significant digits of the decimal representation are
 ** stored in p->z[] which is a often (but not always) a pointer
@@ -1031,6 +1034,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int e, exp = 0;
   p->isSpecial = 0;
   p->z = p->zBuf;
+
+  assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */
