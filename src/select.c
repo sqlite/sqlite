@@ -7332,8 +7332,8 @@ static u64 findConstIdxTerms(
     m = findConstIdxTerms(pParse, iCsr, pIdx, pWhere->pLeft);
     m |= findConstIdxTerms(pParse, iCsr, pIdx, pWhere->pRight);
   }else if( pWhere->op==TK_EQ ){
-    Expr *pLeft = pWhere->pLeft;
-    Expr *pRight = pWhere->pRight;
+    Expr *pLeft = sqlite3ExprSkipCollateAndLikely(pWhere->pLeft);
+    Expr *pRight = sqlite3ExprSkipCollateAndLikely(pWhere->pRight);
     if( pRight->op==TK_COLUMN && pRight->iTable==iCsr ){
       SWAP(Expr*, pLeft, pRight);
     }

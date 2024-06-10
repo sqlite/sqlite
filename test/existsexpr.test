@@ -241,6 +241,35 @@ do_subquery_test 4.1 0 {
   D d
 }
 
+do_subquery_test 4.1.1 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE (a COLLATE nocase)=x AND b=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.2 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND (b COLLATE binary)=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.1 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE x=(a COLLATE nocase) AND b=y
+  )
+} {
+  A a   b b   C c   D d
+}
+do_subquery_test 4.1.2 0 {
+  SELECT * FROM tx2 WHERE EXISTS (
+    SELECT 1 FROM tx1 WHERE a=x AND y=(b COLLATE binary)
+  )
+} {
+  A a   b b   C c   D d
+}
+
 do_subquery_test 4.2 1 {
   SELECT * FROM tx2 WHERE EXISTS (
     SELECT 1 FROM tx1 WHERE a=x AND b=y COLLATE nocase
