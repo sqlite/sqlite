@@ -1012,6 +1012,18 @@ int sqlite3Atoi(const char *z){
 }
 
 /*
+** Return true if the first N characters of string z[] are '9'
+*/
+static SQLITE_NOINLINE int allNines(const char *z, int N){
+  int i;
+  assert( N>0 );
+  for(i=0; i<N; i++){
+    if( z[i]!='9' ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Decode a floating-point value into an approximate decimal
 ** representation.
 **
@@ -1027,6 +1039,21 @@ int sqlite3Atoi(const char *z){
 ** stored in p->z[] which is a often (but not always) a pointer
 ** into the middle of p->zBuf[].  There are p->n significant digits.
 ** The p->z[] array is *not* zero-terminated.
+**
+** Rounding Behavior:
+**
+**   (1)  If the next digit is 3 or less, then truncate.  Do not round.
+**
+**   (2)  If the next digit is 5 or more, then round up.
+**
+**   (3)  Round up if the next digit is a 4 followed by three or
+**        more 9 digits and all digits after the 4 up to the
+**        antipenultimate digit are 9.  Otherwise truncate.
+**
+** Rule (3) is so that things like round(0.15,1) will come out as 0.2
+** even though the stored value for 0.15 is really
+** 0.1499999999999999944488848768742172978818416595458984375 and ought
+** to round down to 0.1.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
@@ -1140,8 +1167,10 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
     char *z = &p->zBuf[i+1];
     if( iRound>mxRound ) iRound = mxRound;
-    p->n = iRound;
-    if( z[iRound]>='5' ){
+    if( z[iRound]>='5'
+     || (z[iRound]=='4' && p->n>iRound+5
+                        && allNines(&z[iRound+1],p->n-iRound-3))
+    ){
       int j = iRound-1;
       while( 1 /*exit-by-break*/ ){
         z[j]++;
@@ -1149,7 +1178,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         z[j] = '0';
         if( j==0 ){
           p->z[i--] = '1';
-          p->n++;
+          iRound++;
           p->iDP++;
           break;
         }else{
@@ -1157,7 +1186,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         }
       }
     }
-  }
+    p->n = iRound;
+ }
   p->z = &p->zBuf[i+1];
   assert( i+p->n < sizeof(p->zBuf) );
   while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }

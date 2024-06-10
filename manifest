@@ -1,5 +1,5 @@
-C Improved\sheader\scomment\son\sthe\ssqlite3FpDecode()\simplementation.\nFor\sthe\sfpdecode()\sSQL\sfunction\s(available\sin\sdebug\sbuilds\sonly)\slimit\nthe\svalue\sof\sthe\sthird\sparameter\s(mxRound)\sto\sbe\spositive.
-D 2024-06-10T12:43:03.794
+C Change\sthe\srounding\sbehavior\sof\sfloat\spoint\sto\sdecimal\sconversions\ssuch\sthat\nif\sthe\snext\sdigit\sis\s4\sbut\sthe\svalue\sis\swithin\sone\sepsilon\sof\sthe\snext\sdigit\nbeing\s5\sand\sif\sthe\sepsilon\sis\ssmall\scompared\sthe\snumber\sof\sdigits\sto\sbe\nrendered,\sthen\sgo\sahead\sand\sround\sup\sanyhow,\neven\sthough\sthe\scorrect\sbehavior\swould\sbe\sto\sround\sdown.
+D 2024-06-10T14:31:07.017
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -823,7 +823,7 @@ F src/trigger.c 0858f75818ed1580332db274f1032bcc5effe567cb132df5c5be8b1d800ca97f
 F src/update.c 732404a04d1737ef14bb6ec6b84f74edf28b3c102a92ae46b4855438a710efe7
 F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
-F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
+F src/util.c cedda44359c51d971557614216085c31d78ee7d23cc89400061c5433855aff64
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c b05777c3ff2ed7b9dfc347e7cdee18e371aa6811cef1fe83454691b0dbe2cc9f
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
@@ -1543,6 +1543,7 @@ F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d9
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190cfd4
+F test/round2.test d2ab6f54156fe5e4a822e3b5e4de69a4b963439797c2dc516d00ce5fb22b6e17
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
@@ -2195,8 +2196,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40de3939792e17df25598b3e60d1cebcecde2b00832acd55604f14b21398a9a7
-R 3798b5dfb33f66d6cffbf2ab99073009
+P 56af06fa12104a1fe119d7087746011183af053834eac72d0fb69f60d98054c6
+R d2547c87a8223548d3daae3e983f63e3
+T *branch * round-up
+T *sym-round-up *
+T -sym-trunk *
 U drh
-Z 6cba9a77bc527574a7f08d08f1d8739d
+Z fe023add6bc94c6c74f3cca88a0e7276
 # Remove this line to create a well-formed Fossil manifest.
