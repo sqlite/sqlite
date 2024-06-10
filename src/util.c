@@ -1012,15 +1012,20 @@ int sqlite3Atoi(const char *z){
 }
 
 /*
-** Return true if the first N characters of string z[] are '9'
+** z[] is the complete list of digits for a floating point conversion.
+** The z[iRound] character is a 4.  This routine checks to see if the
+** iRound-1 character should be rounded up even though z[iRound] is not
+** a 5.
+**
+** Return true if the 4 is followed by at least three 9s and all digits
+** past the 4 are 9s out to the limit of precision.
 */
-static SQLITE_NOINLINE int allNines(const char *z, int N){
+static SQLITE_NOINLINE int shouldRoundUp(const char *z, int n, int iRound){
   int i;
-  assert( N>0 );
-  for(i=0; i<N; i++){
-    if( z[i]!='9' ) return 0;
-  }
-  return 1;
+  assert( z[iRound]=='4' );
+  for(i=iRound+1; i<n && z[i]=='9'; i++){}
+  if( i<iRound+3 ) return 0;
+  return i>15;
 }
 
 /*
@@ -1053,7 +1058,13 @@ static SQLITE_NOINLINE int allNines(const char *z, int N){
 ** Rule (3) is so that things like round(0.15,1) will come out as 0.2
 ** even though the stored value for 0.15 is really
 ** 0.1499999999999999944488848768742172978818416595458984375 and ought
-** to round down to 0.1.
+** to round down to 0.1.  Rule (3) is only applied if mxRound==27.
+**
+** This routine is normally only called from printf()/format().  In that
+** case, mxRound is usually 16 but is increased to 26 with the "!" flag.
+** Undocumented behavior:  mxRound is 27 with the "#" and "!" flags.  The
+** round() function uses this undocumented flag combination to activate
+** rounding rule (3).
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
@@ -1168,8 +1179,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     char *z = &p->zBuf[i+1];
     if( iRound>mxRound ) iRound = mxRound;
     if( z[iRound]>='5'
-     || (z[iRound]=='4' && p->n>iRound+5
-                        && allNines(&z[iRound+1],p->n-iRound-3))
+     || (z[iRound]=='4' && mxRound>=27 && shouldRoundUp(z, p->n, iRound))
     ){
       int j = iRound-1;
       while( 1 /*exit-by-break*/ ){
