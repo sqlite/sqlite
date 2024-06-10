@@ -1052,19 +1052,16 @@ static SQLITE_NOINLINE int shouldRoundUp(const char *z, int n, int iRound){
 **   (2)  If the next digit is 5 or more, then round up.
 **
 **   (3)  Round up if the next digit is a 4 followed by three or
-**        more 9 digits and all digits after the 4 up to the
-**        antipenultimate digit are 9.  Otherwise truncate.
+**        more 9 digits and all significant digits after the 4 are
+**        9 and mxRound is 27.  Otherwise truncate.
 **
-** Rule (3) is so that things like round(0.15,1) will come out as 0.2
+** Rule (3) is used by the built-in round() function to do more aggressive
+** rounding so that things like round(0.15,1) will come out as 0.2
 ** even though the stored value for 0.15 is really
 ** 0.1499999999999999944488848768742172978818416595458984375 and ought
 ** to round down to 0.1.  Rule (3) is only applied if mxRound==27.
-**
-** This routine is normally only called from printf()/format().  In that
-** case, mxRound is usually 16 but is increased to 26 with the "!" flag.
-** Undocumented behavior:  mxRound is 27 with the "#" and "!" flags.  The
-** round() function uses this undocumented flag combination to activate
-** rounding rule (3).
+** And mxRound is only 27 if the internal sqlite3MPrintf() formatter is
+** used and the "!" flag is included.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;

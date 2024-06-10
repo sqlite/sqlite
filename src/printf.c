@@ -483,6 +483,7 @@ void sqlite3_str_vappendf(
         FpDecode s;
         int iRound;
         int j;
+        int mx;
 
         if( bArgList ){
           realvalue = getDoubleArg(pArgList);
@@ -503,11 +504,12 @@ void sqlite3_str_vappendf(
         }else{
           iRound = precision+1;
         }
-        sqlite3FpDecode(&s, realvalue, iRound, 
-            flag_altform2 ? 26+flag_alternateform : 16);
-            /*                 ^^^^^^^^^^^^^^^^^^^--- Undocumented behavior:
-            ** When both '#' and '!' flags are present, the rounding behavior
-            ** is changed.  See "rule 3" in the sqlite3FpDecode docs. */
+        if( flag_altform2 ){
+          mx = 26 + ((pAccum->printfFlags & SQLITE_PRINTF_INTERNAL)!=0);
+        }else{
+          mx = 16;
+        }
+        sqlite3FpDecode(&s, realvalue, iRound, mx);
         if( s.isSpecial ){
           if( s.isSpecial==2 ){
             bufpt = flag_zeropad ? "null" : "NaN";
