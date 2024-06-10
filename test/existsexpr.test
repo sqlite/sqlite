@@ -363,6 +363,18 @@ do_subquery_test 5.7 1 "
   2 5
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(a, b UNIQUE, c UNIQUE);
+  CREATE TABLE t2(a INfEGER PRIMARY KEY, b);
+  CREATE UNIQUE INDEX t2b ON t2(b);
+}
+
+do_catchsql_test 6.1 {
+  SELECT a FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c COLLATE f = a)
+} {1 {no such collation sequence: f}}
+
 
 
 finish_test

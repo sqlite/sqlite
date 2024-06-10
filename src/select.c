@@ -7347,7 +7347,7 @@ static u64 findConstIdxTerms(
           assert( pIdx->azColl[ii] );
           if( pLeft->iColumn==pIdx->aiColumn[ii] ){
             CollSeq *pColl = sqlite3ExprCompareCollSeq(pParse, pWhere);
-            if( sqlite3StrICmp(pColl->zName, pIdx->azColl[ii])==0 ){
+            if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[ii])==0 ){
               m |= ((u64)1 << ii);
               break;
             }
