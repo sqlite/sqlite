@@ -2279,26 +2279,17 @@ static int nolockClose(sqlite3_file *id) {
 
 /*
 ** This routine checks if there is a RESERVED lock held on the specified
-** file by this or any other process. If such a lock is held, set *pResOut
-** to a non-zero value otherwise *pResOut is set to zero.  The return value
-** is set to SQLITE_OK unless an I/O error occurs during lock checking.
-**
-** In dotfile locking, either a lock exists or it does not.  So in this
-** variation of CheckReservedLock(), *pResOut is set to true if any lock
-** is held on the file and false if the file is unlocked.
+** file by this or any other process. The caller always holds a SHARED
+** lock when it is called. This means that no other connection could
+** hold a RESERVED lock, as unix-dotfile uses just a single exclusive lock -
+** the presence of the dotfile - for all 4 VFS locks. So this function sets
+** (*pResOut) to 0 (no other connection holds RESERVED) and returns SQLITE_OK.
 */
 static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
-  int rc = SQLITE_OK;
-  int reserved = 0;
-  unixFile *pFile = (unixFile*)id;
-
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
-
-  assert( pFile );
-  reserved = osAccess((const char*)pFile->lockingContext, 0)==0;
-  OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
-  *pResOut = reserved;
-  return rc;
+  assert( ((unixFile*)id)->eFileLock>=SHARED_LOCK );
+  *pResOut = 0;
+  return SQLITE_OK;
 }
 
 /*
