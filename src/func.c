@@ -436,39 +436,59 @@ static void substrFunc(
 }
 
 /*
+** The library round() function is only available if
+** SQLITE_ENABLE_MATH_FUNCTIONS is defined.  Without that macro, we
+** have to grow our own.
+**
+** The sqlite3Round(x) routine only needs to deal with non-negative
+** numbers.
+*/
+#ifdef SQLITE_ENABLE_MATH_FUNCTIONS
+# define sqlite3Round(X) round(X)
+#else
+static double sqlite3Round(double x){
+  assert( x>=0.0 );
+  if( x>+4503599627370496.0 ){
+    return x;
+  }else{
+    sqlite3_int64 ii = (sqlite3_int64)(x+0.5);
+    return (double)ii;
+  }
+}
+#endif
+
+/*
 ** Implementation of the round() function
 */
 #ifndef SQLITE_OMIT_FLOATING_POINT
 static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  int n = 0;
-  double r;
-  char *zBuf;
+  int n = 0;        /* Second argument. Digits to the right of decimal point */
+  double r;         /* First argument.  Value to be rounded */
+  double rX = 1.0;  /* Scaling factor.  pow(10,n) */
+  double rSgn;      /* Sign of the first first */
+  static const double rTwoPowerMinus52 =  /* pow(2,-52) */
+                           2.220446049250313080847263336181640625e-16;
   assert( argc==1 || argc==2 );
   if( argc==2 ){
+    double rY = 10;
+    int i;
     if( SQLITE_NULL==sqlite3_value_type(argv[1]) ) return;
     n = sqlite3_value_int(argv[1]);
     if( n>30 ) n = 30;
     if( n<0 ) n = 0;
+    for(i=n, rY=10; i>0; i>>=1, rY=rY*rY){
+      if( i&1 ) rX *= rY;
+    }
   }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   r = sqlite3_value_double(argv[0]);
-  /* If Y==0 and X will fit in a 64-bit int,
-  ** handle the rounding directly,
-  ** otherwise use printf.
-  */
-  if( r<-4503599627370496.0 || r>+4503599627370496.0 ){
-    /* The value has no fractional part so there is nothing to round */
-  }else if( n==0 ){ 
-    r = (double)((sqlite_int64)(r+(r<0?-0.5:+0.5)));
+  if( r<0 ){
+    rSgn = -1.0;
+    r = -r;
   }else{
-    zBuf = sqlite3_mprintf("%!.*f",n,r);
-    if( zBuf==0 ){
-      sqlite3_result_error_nomem(context);
-      return;
-    }
-    sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8);
-    sqlite3_free(zBuf);
+    rSgn = 1.0;
   }
+  r = rSgn*sqlite3Round(r*rX + rX*r*rTwoPowerMinus52)/rX;
   sqlite3_result_double(context, r);
 }
 #endif
@@ -2505,7 +2525,6 @@ static void piFunc(
   (void)argv;
   sqlite3_result_double(context, M_PI);
 }
-
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
 
 /*
