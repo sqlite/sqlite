@@ -252,6 +252,18 @@ do_test 2.dotfile.5 {
   } db2
 } {ok}
 
+db2 close
+
+do_test 2.dotfile.6 {
+  forcecopy test.db test.db2
+  forcecopy test.db-journal test.db2-journal
+
+  sqlite3 db2 file:test.db2?nolock=1 -vfs unix-dotfile -uri 1
+  catchsql {
+    SELECT count(*) FROM t1;
+  } db2
+} {0 1000}
+
 finish_test
 
 

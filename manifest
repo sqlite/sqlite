@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\srolling\sback\shot\sjournals\susing\sthe\sunix-dotfile\sVFS.
-D 2024-06-11T20:03:32.695
+C Handle\sthe\scase\swhere\sunix-dotfile\sis\sused\swith\sURI\sparameter\snolock=1.
+D 2024-06-11T20:28:56.529
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -739,7 +739,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 582eb7e4aa4fee66dd9475cf7325a6753890266020ba1670c36ed8b9babd5a46
+F src/os_unix.c 2ea8d3ed496b8d1f9332a9505653424e5464fd797ea9d91f8e2e62f9dd0298d0
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9beb80f6e330dd63c5d8ba0f7a7f3a55fff22067a68d424949c389bfc6fa0c56
@@ -1388,7 +1388,7 @@ F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test 27143363eda1622f03c133efc8db808fc331afd973486cb571ea71cd717d37b8
-F test/lock5.test 69d7991e39c3fade9b6e46403c1386bcd21a4808796c9c6f60f17d0fdcec266f
+F test/lock5.test e6d5a7dd3c3c2ad83b05dbd50d0bd8b2a98a13ce6b2f3297e0edfbebb3413de3
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 2f3f7f2e9637f93ccf609df48ef5b27a50278b6b1cd752b445d52262e5841413
@@ -2195,11 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6935ac71bad3d36cc519f0325ae4447a674f257309d020cdc0741160fcce0580
-R a6be376671415b32f13dc00f1cf159ee
-T *branch * unix-dotfile-fix
-T *sym-unix-dotfile-fix *
-T -sym-trunk *
+P 4ae3300b79e03381fd7f1033bb7978bb6367369790f17c3bdacac51e205edaf9
+R f4ac66d6cce3f1556fd45b9db23cb700
 U dan
-Z 82729b2f1037b9035a8ecef1ba94fcd8
+Z 59b7d2f0f8fc06cadab577170f885282
 # Remove this line to create a well-formed Fossil manifest.
