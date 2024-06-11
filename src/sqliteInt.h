@@ -1126,6 +1126,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
 **   0x00080000     NOT NULL strength reduction
+**   0x00100000     EXISTS-to-JOIN optimization
 */
 
 /*
@@ -1924,6 +1925,7 @@ struct sqlite3 {
 #define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
 #define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
 #define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
+#define SQLITE_ExistsToJoin   0x10000000 /* The EXISTS-to-JOIN optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*

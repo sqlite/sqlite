@@ -7421,7 +7421,14 @@ static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
 
           pSub->pWhere = 0;
           pSub->pSrc = 0;
-          sqlite3SelectDelete(pParse->db, pSub);
+          sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSub);
+#if TREETRACE_ENABLED
+          if( sqlite3TreeTrace & 0x100000 ){
+            TREETRACE(0x100000,pParse,p,
+                      ("After EXISTS-to-JOIN optimization:\n"));
+            sqlite3TreeViewSelect(0, p, 0);
+          }
+#endif
         }
       }
     }
@@ -7756,7 +7763,7 @@ int sqlite3Select(
 
   /* If there may be an "EXISTS (SELECT ...)" in the WHERE clause, attempt
   ** to change it into a join.  */
-  if( pParse->bHasExists ){
+  if( pParse->bHasExists && OptimizationEnabled(db,SQLITE_ExistsToJoin) ){
     existsToJoin(pParse, p, p->pWhere);
     pTabList = p->pSrc;
   }
