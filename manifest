@@ -1,5 +1,5 @@
-C Disable\sthe\somit-noop-join\soptimization\swhen\sthere\sare\s64\sor\smore\sterms\sin\nthe\sORDER\sBY\sclause.
-D 2024-06-09T17:58:09.994
+C Fix\sa\spotential\sdb\scorruption\scase\striggered\sby\sthe\sOPFS\sVFS's\sxCheckReservedLock()\simplementation.
+D 2024-06-12T21:08:02.745
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d299
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 196ad83d36ca794e564044788c9d21b964679d63cad865f604da37c4afc9a285
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 8433ee332d5f5e39fb19427fccb7bad7f44aa99b5504daad3343fc128c311e78
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3c72f1a0e6a7343c8c882d29d01bb440f10be12c844651605b486e76f3d6cc8c
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 397bb234cf703c5de88a6f4abc154dfe6264989b1faac3797c4e053627043773
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js a2fcbc3fecdd0eea229283584ebc122f29d98194083675dbe5cb2cf3a17fe309
 F ext/wasm/api/sqlite3-wasm.c 9267174b9b0591b4f71193542ab57adf95bb9415f7d3453acf4a8ca8052f5e6c
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46f303ba8ddd1b2f0a391798837beddfa72e8c897038c8047eda49ce7d5ed46b
@@ -2191,9 +2191,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a7fa0a434bb84023bf9075463613857966ca579e18de903c0d9b1561acf42c6
-Q +40de3939792e17df25598b3e60d1cebcecde2b00832acd55604f14b21398a9a7
-R 846daec7b0fe01d46a65b23c75ccc79e
-U drh
-Z f18ab008f7a68095fb66c91171ab50b9
+P a7fe90c1581e7e4ffbcb6fb9bcf1db7631cde612ad1d4a33b6b9a22640db5817
+Q +c298b8ba2dcd01fa28b79a78bb4986fa0282755a0a36b7f38b93096ac31f521e
+Q +f253cab3359270045a3ae9f5e9eadc1cfc8844181db127165bfdf49d5f99efb1
+R e3ade148f1be81568d1161f8f0ce574b
+U stephan
+Z 8c4365234cc05bb98b7150818b48ae1b
 # Remove this line to create a well-formed Fossil manifest.

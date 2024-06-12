@@ -720,9 +720,18 @@ const installOpfsVfs = function callee(options){
            involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
            given pFile is open.
+
+           Update 2024-06-12: based on forum discussions, this
+           function now always sets pOut to 0 (false):
+
+           https://sqlite.org/forum/forumpost/a2f573b00cda1372
         */
-        const f = __openFiles[pFile];
-        wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        if(1){
+          wasm.poke(pOut, 0, 'i32');
+        }else{
+          const f = __openFiles[pFile];
+          wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        }
         return 0;
       },
       xClose: function(pFile){
@@ -738,7 +747,6 @@ const installOpfsVfs = function callee(options){
         return rc;
       },
       xDeviceCharacteristics: function(pFile){
-        //debug("xDeviceCharacteristics(",pFile,")");
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
       },
       xFileControl: function(pFile, opId, pArg){
