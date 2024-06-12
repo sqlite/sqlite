@@ -1,5 +1,5 @@
-C A\ssecond\sapproach\sto\sworking\son\sthe\sround()\sfunction\sso\sthat\sit\sgives\sa\nsmall\sboost\sto\snumbers\sthat\sare\s...49999999\ssuch\sthat\sthey\sround\sup.
-D 2024-06-11T22:47:33.094
+C Test\scases\sfor\sthe\sround()\sfunction\sfor\svalues\swithin\sone\sepsilon\sof\sthe\s5\nround-up\sthreshold.
+D 2024-06-12T00:30:37.110
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1543,6 +1543,7 @@ F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d9
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
 F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190cfd4
+F test/round2.test 628c34321eaec238772ff0fbf37e702c129ee91b1992b5450c36ceb77986a429
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
@@ -2195,11 +2196,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6935ac71bad3d36cc519f0325ae4447a674f257309d020cdc0741160fcce0580
-R 20f10f21aa5a26361938ba3edec94cb0
-T *branch * round-up-2
-T *sym-round-up-2 *
-T -sym-trunk *
+P 44dd632896e688a7d73707f43261577b237628a587800b94f1b77d3ab0cedc2e
+Q +4a790d3b28685f08bbb722057cd6a97aea08a2b2a6098562c6373fd3b5b7206c
+R 654d15fd5bfaa578239c1ec4318433f9
 U drh
-Z 72a6e77fd70156feb2a1bdd4868e4b54
+Z 7012d98fd09019b22f3f917305a9afdf
 # Remove this line to create a well-formed Fossil manifest.
