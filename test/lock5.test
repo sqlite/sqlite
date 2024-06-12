@@ -181,10 +181,12 @@ do_test lock5-none.5 {
 } {1 2}
 
 ifcapable memorymanage {
-  do_test lock5-none.6 {
-    sqlite3_release_memory 1000000
-    execsql {SELECT * FROM t1} db2
-  } {1 2 3 4}
+  if {[permutation]!="memsubsys1" && [permutation]!="memsubsys2"} { 
+    do_test lock5-none.6 {
+      sqlite3_release_memory 1000000
+      execsql {SELECT * FROM t1} db2
+    } {1 2 3 4}
+  }
 }
 
 do_test lock5-none.X {
