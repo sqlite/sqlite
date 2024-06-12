@@ -715,12 +715,23 @@ const installOpfsVfs = function callee(options){
            file. We have no way of checking whether any _other_ db
            connection has a lock except by trying to obtain and (on
            success) release a sync-handle for it, but doing so would
-           involve an inherent race condition. For the time being,
+           involve an inherent race condition and would require
+           waiting on the async proxy (which might be tied up for
+           arbitrarily long with unrelated work). For the time being,
            pending a better solution, we simply report whether the
            given pFile is open.
+
+           Update 2024-06-12: based on forum discussions, this
+           function now always sets pOut to 0 (false):
+
+           https://sqlite.org/forum/forumpost/a2f573b00cda1372
         */
-        const f = __openFiles[pFile];
-        wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        if(1){
+          wasm.poke(pOut, 0, 'i32');
+        }else{
+          const f = __openFiles[pFile];
+          wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        }
         return 0;
       },
       xClose: function(pFile){
@@ -736,7 +747,6 @@ const installOpfsVfs = function callee(options){
         return rc;
       },
       xDeviceCharacteristics: function(pFile){
-        //debug("xDeviceCharacteristics(",pFile,")");
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
       },
       xFileControl: function(pFile, opId, pArg){
