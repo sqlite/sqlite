@@ -458,6 +458,13 @@ static double sqlite3Round(double x){
 #endif
 
 /*
+** This is the value of the least significant bit of the significand
+** relative to the total magnitude of the number for an IEEE754 binary64.
+** Since the significant is 53 bits, this is pow(2,-52).
+*/
+#define SQLITE_DOUBLE_EPSILON 2.220446049250313080847263336181640625e-16
+
+/*
 ** Implementation of the round() function
 */
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -465,21 +472,8 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   int n = 0;        /* Second argument. Digits to the right of decimal point */
   double r;         /* First argument.  Value to be rounded */
   double rX = 1.0;  /* Scaling factor.  pow(10,n) */
-  double rSgn;      /* Sign of the first first */
-  static const double rTwoPowerMinus52 =  /* pow(2,-52) */
-                           2.220446049250313080847263336181640625e-16;
+  double rSgn;      /* Sign of the first argument */
   assert( argc==1 || argc==2 );
-  if( argc==2 ){
-    double rY = 10;
-    int i;
-    if( SQLITE_NULL==sqlite3_value_type(argv[1]) ) return;
-    n = sqlite3_value_int(argv[1]);
-    if( n>30 ) n = 30;
-    if( n<0 ) n = 0;
-    for(i=n, rY=10; i>0; i>>=1, rY=rY*rY){
-      if( i&1 ) rX *= rY;
-    }
-  }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   r = sqlite3_value_double(argv[0]);
   if( r<0 ){
@@ -488,7 +482,18 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }else{
     rSgn = 1.0;
   }
-  r = rSgn*sqlite3Round(r*rX + rX*r*rTwoPowerMinus52)/rX;
+  if( argc==2 ){
+    double rY = 10.0;   /* Use to compute rX */
+    int i;              /* Loop counter for computing rX */
+    if( SQLITE_NULL==sqlite3_value_type(argv[1]) ) return;
+    n = sqlite3_value_int(argv[1]);
+    if( n>30 ) n = 30;
+    if( n<0 ) n = 0;
+    for(i=n, rY=10; i>0; i>>=1, rY=rY*rY){
+      if( i&1 ) rX *= rY;
+    }
+  }
+  r = rSgn*sqlite3Round(r*rX + rX*r*SQLITE_DOUBLE_EPSILON)/rX;
   sqlite3_result_double(context, r);
 }
 #endif
