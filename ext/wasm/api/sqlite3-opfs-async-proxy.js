@@ -173,10 +173,10 @@ const installAsyncProxy = function(){
 
   /**
      If the given file-holding object has a sync handle attached to it,
-     that handle is remove and asynchronously closed. Though it may
+     that handle is removed and asynchronously closed. Though it may
      sound sensible to continue work as soon as the close() returns
      (noting that it's asynchronous), doing so can cause operations
-     performed soon afterwards, e.g. a call to getSyncHandle() to fail
+     performed soon afterwards, e.g. a call to getSyncHandle(), to fail
      because they may happen out of order from the close(). OPFS does
      not guaranty that the actual order of operations is retained in
      such cases. i.e.  always "await" on the result of this function.
@@ -293,6 +293,20 @@ const installAsyncProxy = function(){
      times. If acquisition still fails at that point it will give up
      and propagate the exception. Client-level code will see that as
      an I/O error.
+
+     2024-06-12: there is a rare race condition here which has been
+     reported a single time:
+
+     https://sqlite.org/forum/forumpost/9ee7f5340802d600
+
+     What appears to be happening is that file we're waiting for a
+     lock on is deleted while we wait. What currently happens here is
+     that a locking exception is thrown but the exception type is
+     NotFoundError. In such cases, we very probably should attempt to
+     re-open/re-create the file an obtain the lock on it (noting that
+     there's another race condition there). That's easy to say but
+     creating a viable test for that condition has proven challenging
+     so far.
   */
   const getSyncHandle = async (fh,opName)=>{
     if(!fh.syncHandle){
@@ -674,8 +688,10 @@ const installAsyncProxy = function(){
       mTimeStart('xUnlock');
       let rc = 0;
       const fh = __openFiles[fid];
-      if( state.sq3Codes.SQLITE_LOCK_NONE===lockType
-          && fh.syncHandle ){
+      if( fh.syncHandle
+          && state.sq3Codes.SQLITE_LOCK_NONE===lockType
+          /* Note that we do not differentiate between lock types in
+             this VFS. We're either locked or unlocked. */ ){
         wTimeStart('xUnlock');
         try { await closeSyncHandle(fh) }
         catch(e){
