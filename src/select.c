@@ -7382,7 +7382,11 @@ static u64 findConstIdxTerms(
 **      WHERE S.sid = R.sid AND R.day = '2022-10-25';
 */
 static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
-  if( pWhere && p->pSrc->nSrc>0 && pParse->db->mallocFailed==0 ){
+  if( pWhere 
+   && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
+   && p->pSrc->nSrc>0 
+   && pParse->db->mallocFailed==0 
+  ){
     if( pWhere->op==TK_AND ){
       Expr *pRight = pWhere->pRight;
       existsToJoin(pParse, p, pWhere->pLeft);
