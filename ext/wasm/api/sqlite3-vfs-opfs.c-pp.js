@@ -715,9 +715,7 @@ const installOpfsVfs = function callee(options){
            file. We have no way of checking whether any _other_ db
            connection has a lock except by trying to obtain and (on
            success) release a sync-handle for it, but doing so would
-           involve an inherent race condition and would require
-           waiting on the async proxy (which might be tied up for
-           arbitrarily long with unrelated work). For the time being,
+           involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
            given pFile is open.
 
