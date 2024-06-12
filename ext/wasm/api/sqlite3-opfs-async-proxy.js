@@ -265,23 +265,34 @@ const installAsyncProxy = function(){
       this.name = 'GetSyncHandleError';
     }
   };
+
+  /**
+     Attempts to find a suitable SQLITE_xyz result code for Error
+     object e. Returns either such a translation or rc if if it does
+     not know how to translate the exception.
+  */
   GetSyncHandleError.convertRc = (e,rc)=>{
-    if(1){
-      return (
-        e instanceof GetSyncHandleError
-          && ((e.cause.name==='NoModificationAllowedError')
-              /* Inconsistent exception.name from Chrome/ium with the
-                 same exception.message text: */
-              || (e.cause.name==='DOMException'
-                  && 0===e.cause.message.indexOf('Access Handles cannot')))
-      ) ? (
-        /*console.warn("SQLITE_BUSY",e),*/
-        state.sq3Codes.SQLITE_BUSY
-      ) : rc;
-    }else{
-      return rc;
+    if( e instanceof GetSyncHandleError ){
+      if( e.cause.name==='NoModificationAllowedError'
+        /* Inconsistent exception.name from Chrome/ium with the
+           same exception.message text: */
+          || (e.cause.name==='DOMException'
+              && 0===e.cause.message.indexOf('Access Handles cannot')) ){
+        return state.sq3Codes.SQLITE_BUSY;
+      }else if( 'NotFoundError'===e.cause.name ){
+        /**
+           Maintenance reminder: SQLITE_NOTFOUND, though it looks like
+           a good match, has different semantics than NotFoundError
+           and is not suitable here.
+        */
+        return state.sq3Codes.SQLITE_CANTOPEN;
+      }
+    }else if( 'NotFoundError'===e?.name ){
+      return state.sq3Codes.SQLITE_CANTOPEN;
     }
-  }
+    return rc;
+  };
+
   /**
      Returns the sync access handle associated with the given file
      handle object (which must be a valid handle object, as created by
@@ -600,19 +611,6 @@ const installAsyncProxy = function(){
         fh.releaseImplicitLocks =
           (opfsFlags & state.opfsFlags.OPFS_UNLOCK_ASAP)
           || state.opfsFlags.defaultUnlockAsap;
-        if(0 /* this block is modelled after something wa-sqlite
-                does but it leads to immediate contention on journal files.
-                Update: this approach reportedly only works for DELETE journal
-                mode. */
-           && (0===(flags & state.sq3Codes.SQLITE_OPEN_MAIN_DB))){
-          /* sqlite does not lock these files, so go ahead and grab an OPFS
-             lock. */
-          fh.xLock = "xOpen"/* Truthy value to keep entry from getting
-                               flagged as auto-locked. String value so
-                               that we can easily distinguish is later
-                               if needed. */;
-          await getSyncHandle(fh,'xOpen');
-        }
         __openFiles[fid] = fh;
         storeAndNotify(opName, 0);
       }catch(e){
