@@ -1,5 +1,5 @@
-C Remove\ssome\sdead\sJS\scode\sand\supdate\ssome\sJS\sdocs.
-D 2024-06-11T17:04:43.812
+C Slight\sAPI\sdoc\stweak\sfor\sxCheckReservedLock(),\sbased\son\sforum\sfeedback.\sNo\scode\schanges.
+D 2024-06-12T11:39:29.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -757,7 +757,7 @@ F src/resolve.c 7e8d23ce7cdbfedf351a47e759f2722e8182ca10fd7580be43f4ce1f1a228145
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ea0b75fce45e1f2c22f50ed2b6e2ddd7f66640948d0fc79a397917b4236a74af
 F src/shell.c.in ad27d1d990e9e5fb7ae8fc38a717e91f55233714f59723e5618baf4a2a3d2b65
-F src/sqlite.h.in cbd3e4177791a61c056fd81e37a5b21bb6c8cb2ea8cac558c625974673f50acf
+F src/sqlite.h.in 6c884a87bbf8828562b49272025a1e66e3801a196a58b0bdec87edcd2c9c8fc1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h af50738edf6a6cf9aa974b98d75bd0cedce607948dd10885ac6ae6cf5abae23c
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 06e6f64533563ab9c059b773e5f0d78085df716f2624e547b7259f6789c3ffe0
-R 79d342ace6fd539450d6954e121ef97a
+P 6935ac71bad3d36cc519f0325ae4447a674f257309d020cdc0741160fcce0580
+R 6f00a87482c0b560181528a2ef901b80
 U stephan
-Z 878c1bfba19ab8a7570c53af656f275c
+Z c3fe7f4acc9c5d5503f58267d83105e5
 # Remove this line to create a well-formed Fossil manifest.
