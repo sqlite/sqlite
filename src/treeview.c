@@ -901,9 +901,10 @@ void sqlite3TreeViewBareExprList(
     sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
       int j = pList->a[i].u.x.iOrderByCol;
+      u8 sortFlags = pList->a[i].fg.sortFlags;
       char *zName = pList->a[i].zEName;
       int moreToFollow = i<pList->nExpr - 1;
-      if( j || zName ){
+      if( j || zName || sortFlags ){
         sqlite3TreeViewPush(&pView, moreToFollow);
         moreToFollow = 0;
         sqlite3TreeViewLine(pView, 0);
@@ -924,13 +925,18 @@ void sqlite3TreeViewBareExprList(
           }
         }
         if( j ){
-          fprintf(stdout, "iOrderByCol=%d", j);
+          fprintf(stdout, "iOrderByCol=%d ", j);
+        }
+        if( sortFlags & KEYINFO_ORDER_DESC ){
+          fprintf(stdout, "DESC ");
+        }else if( sortFlags & KEYINFO_ORDER_BIGNULL ){
+          fprintf(stdout, "NULLS-LAST");
         }
         fprintf(stdout, "\n");
         fflush(stdout);
       }
       sqlite3TreeViewExpr(pView, pList->a[i].pExpr, moreToFollow);
-      if( j || zName ){
+      if( j || zName || sortFlags ){
         sqlite3TreeViewPop(&pView);
       }
     }
