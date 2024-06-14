@@ -1,5 +1,5 @@
-C Do\snot\somit\sthe\sORDER\sBY\sclause\sfrom\sa\srecursive\sCTE\sjust\sbecause\sthe\nouter\squery\sthat\suses\sthe\sCTE\salso\scontains\san\sORDER\sBY\sclause.
-D 2024-06-14T17:16:33.927
+C Improvement\sto\streeview.c:\s\sShow\sthe\sDESC\sand\sBIGNULL\sflags\swhen\sprinting\sout\nExprList\sobjects.
+D 2024-06-14T18:33:15.720
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -818,7 +818,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3f703cacdab728d7741e5a6ac242006d74fe1c2754d4f03ed889d7253259bd68
-F src/treeview.c 4b0e9131c33a08905bb56a424cd07d6146497f3277301962b4d3d997c2fd7d5f
+F src/treeview.c e4f0c5ca871371d26ca6868554bd5b06b7bd9554023bbec834e26c2b45814b0c
 F src/trigger.c 0858f75818ed1580332db274f1032bcc5effe567cb132df5c5be8b1d800ca97f
 F src/update.c 732404a04d1737ef14bb6ec6b84f74edf28b3c102a92ae46b4855438a710efe7
 F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
@@ -2197,11 +2197,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4666433cbd9af21c2e0440b10bcb39878624a39485e2bb514553b276acb8a401
-R 21b71d50ef4d42488cd0668a5b8420f0
-T *branch * recursive-cte-orderby-fix
-T *sym-recursive-cte-orderby-fix *
-T -sym-exists-to-join *
+P 5e700f2cc22bafa51928084454b374858eee3e2b00b58454cb97948d1691d276
+R 8a3362db9740b25284e88aad56e25d23
 U drh
-Z 7296e8a4128951f77ca981105e7dae8b
+Z 5784bea9179ece24de3f0ff77dcc2784
 # Remove this line to create a well-formed Fossil manifest.
