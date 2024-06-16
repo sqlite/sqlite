@@ -725,12 +725,7 @@ const installOpfsVfs = function callee(options){
 
            https://sqlite.org/forum/forumpost/a2f573b00cda1372
         */
-        if(1){
-          wasm.poke(pOut, 0, 'i32');
-        }else{
-          const f = __openFiles[pFile];
-          wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
-        }
+        wasm.poke(pOut, 0, 'i32');
         return 0;
       },
       xClose: function(pFile){
