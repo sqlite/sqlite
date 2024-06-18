@@ -139,8 +139,10 @@ dir.api := api
 dir.jacc := jaccwabyt
 dir.common := common
 dir.fiddle := fiddle
+dir.fiddle-debug := fiddle-debug
 dir.tool := $(dir.top)/tool
-CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~
+CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
+  $(dir.fiddle-debug)/*
 
 ########################################################################
 # dir.dout = output dir for deliverables.
