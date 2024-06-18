@@ -4122,7 +4122,7 @@ struct Returning {
 };
 
 /*
-** An objected used to accumulate the text of a string where we
+** An object used to accumulate the text of a string where we
 ** do not necessarily know how big the string will be in the end.
 */
 struct sqlite3_str {
@@ -4136,7 +4136,7 @@ struct sqlite3_str {
 };
 #define SQLITE_PRINTF_INTERNAL 0x01  /* Internal-use-only converters allowed */
 #define SQLITE_PRINTF_SQLFUNC  0x02  /* SQL function arguments to VXPrintf */
-#define SQLITE_PRINTF_MALLOCED 0x04  /* True if xText is allocated space */
+#define SQLITE_PRINTF_MALLOCED 0x04  /* True if zText is allocated space */
 
 #define isMalloced(X)  (((X)->printfFlags & SQLITE_PRINTF_MALLOCED)!=0)
 

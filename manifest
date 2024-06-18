@@ -1,5 +1,5 @@
-C Remove\ssome\sdead\sJS\scode.
-D 2024-06-16T17:06:50.289
+C Internal\sdoc\stypo\sfixes,\sas\sreported\sin\sthe\sforum.\sNo\scode\schanges.
+D 2024-06-18T09:58:39.997
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -760,7 +760,7 @@ F src/shell.c.in ad27d1d990e9e5fb7ae8fc38a717e91f55233714f59723e5618baf4a2a3d2b6
 F src/sqlite.h.in 6c884a87bbf8828562b49272025a1e66e3801a196a58b0bdec87edcd2c9c8fc1
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h af50738edf6a6cf9aa974b98d75bd0cedce607948dd10885ac6ae6cf5abae23c
+F src/sqliteInt.h 76f4bf5adce98a989bf9b792b962bc8f739e79636a63d841e567017370acd607
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 13242289c5d412b706f50fc7e1553032ea3a52d41a3e34e155432adaf0551481
-R 31572d28985020c098637ffed52dc11c
+P 754e6e059b740435475c1869feeaca39585b262d5c27210e0fbddbbcc202c4d5
+R ae59ad0856c063c9c0ffaf75175671a5
 U stephan
-Z 406a2fb5260fa551d1298d2d9abdfe1c
+Z c1ed72f7e9ae5b233f6d9d785940ed28
 # Remove this line to create a well-formed Fossil manifest.
