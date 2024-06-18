@@ -1,5 +1,5 @@
-C Internal\sdoc\stypo\sfixes,\sas\sreported\sin\sthe\sforum.\sNo\scode\schanges.
-D 2024-06-18T09:58:39.997
+C Update\ssqlite3_analyzer\sto\sreport\son\sthe\snumber\sof\sWITHOUT\sROWID\stables\sand\nto\sprovide\sseparate\saggregate\sstatistics\sfor\sWITHOUT\sand\sWITH\sROWID\stables.
+D 2024-06-18T12:19:13.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2147,7 +2147,7 @@ F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a80
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
-F tool/spaceanal.tcl 70c87c04cfd2e77b3e6f21c33ca768296aa8f67d4ab4874786ac8fbb28433477
+F tool/spaceanal.tcl 3568b2b15b83dcaf789e787a4db0980da81eb6fa0e1e00783e4a927fdf584550
 F tool/speed-check.sh e8d20cc2eb9c85ec1ba562226de144435456dcdff4ee618de49603c6958f6116
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 754e6e059b740435475c1869feeaca39585b262d5c27210e0fbddbbcc202c4d5
-R ae59ad0856c063c9c0ffaf75175671a5
-U stephan
-Z c1ed72f7e9ae5b233f6d9d785940ed28
+P ea16b286b4344c1833ca3d17b6d315fb4ddcb99bcc232ff6444debeb634881f2
+R a7c3f049be65d235476058b7cf9b7ac3
+U drh
+Z 301102884eb3249c2db98b7577b2bad4
 # Remove this line to create a well-formed Fossil manifest.
