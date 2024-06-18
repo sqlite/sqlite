@@ -45,6 +45,12 @@ fiddle.emcc-flags = \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
+# Flags specifically for debug builds of fiddle. Performance suffers
+# greatly with these enabled.
+fiddle.emcc-flags.debug := -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_SELECTTRACE \
+  -DSQLITE_ENABLE_WHERETRACE
+
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
     $(EXPORTED_FUNCTIONS.api)
@@ -82,7 +88,8 @@ clean-fiddle:
         $(dir.fiddle)/fiddle-module.worker.js \
         EXPORTED_FUNCTIONS.fiddle
 .PHONY: fiddle
-fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz
+fiddle-debug fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz
+fiddle-debug: fiddle.emcc-flags+=$(fiddle.emcc-flags.debug)
 all: fiddle
 
 ########################################################################
