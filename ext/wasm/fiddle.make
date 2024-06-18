@@ -72,12 +72,6 @@ fiddle-module.js$(2) := $(1)/fiddle-module.js
 fiddle-module.wasm$(2) := $$(subst .js,.wasm,$$(fiddle-module.js$(2)))
 $(1):
 	@test -d "$$@" || mkdir -p "$$@"
-	@if [[ x.debug = x$(2) ]]; then \
-		cp -p $$(dir.fiddle)/index.html \
-			$$(dir.fiddle)/fiddle.js \
-			$$(dir.fiddle)/fiddle-worker.js \
-			$$@/.; \
-	fi
 $$(fiddle-module.js$(2)): $(1) $$(MAKEFILE) $$(MAKEFILE.fiddle) \
     $$(EXPORTED_FUNCTIONS.fiddle) \
     $$(fiddle.cses) $$(pre-post-fiddle-module-vanilla.deps) $$(fiddle.SOAP.js$(2))
@@ -85,10 +79,17 @@ $$(fiddle-module.js$(2)): $(1) $$(MAKEFILE) $$(MAKEFILE.fiddle) \
     $$(pre-post-fiddle-module-vanilla.flags) \
     $$(fiddle.cses)
 	$$(maybe-wasm-strip) $$(fiddle-module.wasm$(2))
-	cp -p $$(SOAP.js) $$(dir $$@)
-	gzip < $$@ > $$@.gz
-	gzip < $$(fiddle-module.wasm$(2)) > $$(fiddle-module.wasm$(2)).gz
-	gzip < $(1)/fiddle.js > $(1)/fiddle.js.gz
+	@cp -p $$(SOAP.js) $$(dir $$@)
+	@if [[ x.debug = x$(2) ]]; then \
+		cp -p $$(dir.fiddle)/index.html \
+			$$(dir.fiddle)/fiddle.js \
+			$$(dir.fiddle)/fiddle-worker.js \
+			$$(dir $$@)/.; \
+	fi
+	@for i in $(1)/*.*js $(1)/*.html $(1)/*.wasm; do \
+		test -f $$$${i} || continue; \
+		gzip < $$$${i} > $$$${i}.gz; \
+	done
 fiddle$(2): $$(fiddle-module.js$(2)) $(1)/fiddle.js.gz
 endef
 
