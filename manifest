@@ -1,5 +1,5 @@
-C Enhance\slemon.c\sso\sthat\swhen\sit\sshows\sthe\scompile-time\soptions\sin\sthe\sheader\ncomment\sof\sthe\sgenerated\soutput\sfile,\sit\sshows\sall\soptions,\seven\sthose\snot\nused,\sand\sit\sshows\sthem\sin\ssorted\sorder.
-D 2024-06-19T16:38:17.988
+C In\slemon,\sshow\sall\sthe\s-D\soptions\sin\sthe\sgenerated\sheader,\seven\sif\snone\sof\sthem\nare\sused.
+D 2024-06-19T18:46:44.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2105,7 +2105,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c d2506bae870ad1abc0175cd492e4c58395642929e8ad1ed5aa0a3f14ff5fdcce
+F tool/lemon.c 11a76a312591ad4d2d11a664960d14791e6a3698490c2330f8f217d37defb29d
 F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P afae2c9e6fba0820c9be8d06a2e301a74167e4457bada45fe57b5fd9287d2e8b
-R 7241db8bc0d5de33af5ed78e8ba69ac8
+P eed76e6698eabe47c6bf9696599ce1c2f7aa428cf60f39d0566fbd0d1f6c4c62
+R 7ee122c11f32e2edad2a0b78a30e5cda
 U drh
-Z f352912aeb1aedd183fd5feefa03cacc
+Z 43a86ba5dbf2c4560b6460986e5be6a3
 # Remove this line to create a well-formed Fossil manifest.
