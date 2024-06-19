@@ -1,5 +1,5 @@
-C Remove\ssome\sextraneous\sflags\sfrom\sthe\sfiddle-debug\sbuild.\sInternal\sdoc\stweaks\sin\sthe\smain\swasm\smakefile.
-D 2024-06-19T11:08:58.746
+C Enhance\slemon.c\sso\sthat\swhen\sit\sshows\sthe\scompile-time\soptions\sin\sthe\sheader\ncomment\sof\sthe\sgenerated\soutput\sfile,\sit\sshows\sall\soptions,\seven\sthose\snot\nused,\sand\sit\sshows\sthem\sin\ssorted\sorder.
+D 2024-06-19T16:38:17.988
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2105,7 +2105,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 2eaee61479f9b97056950741c8f671a13281c819b94246698264a322360319a9
+F tool/lemon.c d2506bae870ad1abc0175cd492e4c58395642929e8ad1ed5aa0a3f14ff5fdcce
 F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2194,8 +2194,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d356aebdd450bedc1ecbbdd266effe53c7badbd74ed7e6db8d0c31318d99a35f
-R 1b8d65863430b0c79a5aa023031c20e8
-U stephan
-Z 118e38e2ad35e8a787c1871b213cd619
+P afae2c9e6fba0820c9be8d06a2e301a74167e4457bada45fe57b5fd9287d2e8b
+R 7241db8bc0d5de33af5ed78e8ba69ac8
+U drh
+Z f352912aeb1aedd183fd5feefa03cacc
 # Remove this line to create a well-formed Fossil manifest.

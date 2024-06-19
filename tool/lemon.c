@@ -1709,6 +1709,15 @@ static void stats_line(const char *zLabel, int iValue){
          iValue);
 }
 
+/*
+** Comparison function used by qsort() to sort the azDefine[] array.
+*/
+static int defineCmp(const void *pA, const void *pB){
+  const char *zA = *(const char**)pA;
+  const char *zB = *(const char**)pB;
+  return strcmp(zA,zB);
+}
+
 /* The main program.  Parse the command line and do it... */
 int main(int argc, char **argv){
   static int version = 0;
@@ -1764,6 +1773,7 @@ int main(int argc, char **argv){
   }
   memset(&lem, 0, sizeof(lem));
   lem.errorcnt = 0;
+  qsort(azDefine, nDefine, sizeof(azDefine[0]), defineCmp);
 
   /* Initialize the machine */
   Strsafe_init();
@@ -4498,7 +4508,7 @@ void ReportTable(
   }else{
     fprintf(out, " with these options:\n**\n"); lineno += 2;
     for(i=0; i<nDefine; i++){
-      if( !bDefineUsed[i] ) continue;
+      /* if( !bDefineUsed[i] ) continue; */
       fprintf(out, "**   -D%s\n", azDefine[i]); lineno++;
     }
     fprintf(out, "*/\n"); lineno++;
