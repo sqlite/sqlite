@@ -48,7 +48,6 @@ fiddle.emcc-flags = \
 # Flags specifically for debug builds of fiddle. Performance suffers
 # greatly in debug builds.
 fiddle.emcc-flags.debug := $(fiddle.emcc-flags) \
-  -O0 -g \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_SELECTTRACE \
   -DSQLITE_ENABLE_WHERETRACE

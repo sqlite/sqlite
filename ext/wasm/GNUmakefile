@@ -388,8 +388,8 @@ emcc_opt_full := $(emcc_opt) -g3
 # ^^^ -flto improves runtime speed at -O0 considerably but doubles
 # build time.
 #
-# ^^^^ -O3, -Oz, -Os minify symbol names and there appears to be no
-# way around that except to use -g3, but -g3 causes the binary file
+# ^^^^ (-O3, -Oz, -Os) all minify symbol names and there appears to be
+# no way around that except to use -g3, but -g3 causes the binary file
 # size to absolutely explode (approx. 5x larger). This minification
 # utterly breaks the resulting module, making it unsable except as
 # self-contained/self-referential-only code, as ALL of the exported
