@@ -3419,10 +3419,10 @@ static void display_scanstats(
     const char *zSql =
       "  SELECT addr, opcode, p1, p2, p3, p4, p5, comment, nexec,"
       "   format('% 6s (%.2f%%)',"
-      "      CASE WHEN ncycle<100_000 THEN ncycle || ' '"
-      "         WHEN ncycle<100_000_000 THEN (ncycle/1_000) || 'K'"
-      "         WHEN ncycle<100_000_000_000 THEN (ncycle/1_000_000) || 'M'"
-      "         ELSE (ncycle/1000_000_000) || 'G' END,"
+      "      CASE WHEN ncycle<100000 THEN ncycle || ' '"
+      "         WHEN ncycle<100000000 THEN (ncycle/1000) || 'K'"
+      "         WHEN ncycle<100000000000 THEN (ncycle/1000000) || 'M'"
+      "         ELSE (ncycle/1000000000) || 'G' END,"
       "       ncycle*100.0/(sum(ncycle) OVER ())"
       "   )  AS cycles"
       "   FROM bytecode(?)";
