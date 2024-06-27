@@ -7384,7 +7384,8 @@ static u64 findConstIdxTerms(
 static void existsToJoin(Parse *pParse, Select *p, Expr *pWhere){
   if( pWhere 
    && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
-   && p->pSrc->nSrc>0 
+   && p->pSrc->nSrc>0
+   && p->pSrc->nSrc<BMS
    && pParse->db->mallocFailed==0 
   ){
     if( pWhere->op==TK_AND ){
