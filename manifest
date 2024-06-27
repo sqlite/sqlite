@@ -1,5 +1,5 @@
-C Do\snot\suse\sinteger\sconstants\slike\s100_000\sin\sthe\sshell\scode\son\sthis\sbranch.\sThey\sare\snot\ssupported\suntil\s3.46.
-D 2024-06-26T16:33:49.079
+C Avoid\s32-bit\soverflow\swhen\scalculating\sncycle\sfor\s".scanstats\svm".
+D 2024-06-27T18:18:53.432
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -825,7 +825,7 @@ F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe
 F src/vdbemem.c 0012d5f01cc866833847c2f3ae4c318ac53a1cb3d28acad9c35e688039464cf0
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
-F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
+F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 11948e105f56e84099ca17f1f434b1944539ea84de26d0d767eadfbc670ce1ea
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bf87522c6adf40c36bf33c736ba202c998b1825b8f26202771b4e9306f2773d8
@@ -2197,8 +2197,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d826236e22234bd0ab7888d26f2f2eeb8f109099c8936b62dedf6597df386e45
-R 9eb88d989bb072bea96be1908cd8aab6
+P 8362edb45b993f8467b464ca0491ef347c8215ea2e65504f7b3d1f7232eb3c63
+Q +2858efa06d4fc7b412b892f35f5e9a766b467b4a5b74d602a030d25443f9efb4
+R 9f2f34b51784ba4176cf6dda819b8df2
 U dan
-Z 4c154b3d171d516e7931f00094ab9ab5
+Z 849e01900f8ab047a01241d3e121cd9d
 # Remove this line to create a well-formed Fossil manifest.
