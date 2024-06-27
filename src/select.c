@@ -7692,13 +7692,16 @@ int sqlite3Select(
     **            (a)  The outer query has a different ORDER BY clause
     **            (b)  The subquery is part of a join
     **          See forum post 062d576715d277c8
+    **    (6)   The subquery is not a recursive CTE.  ORDER BY has a different
+    **          meaning for recursive CTEs and this optimization does not
+    **          apply.
     **
     ** Also retain the ORDER BY if the OmitOrderBy optimization is disabled.
     */
     if( pSub->pOrderBy!=0
      && (p->pOrderBy!=0 || pTabList->nSrc>1)      /* Condition (5) */
      && pSub->pLimit==0                           /* Condition (1) */
-     && (pSub->selFlags & SF_OrderByReqd)==0      /* Condition (2) */
+     && (pSub->selFlags & (SF_OrderByReqd|SF_Recursive))==0  /* (2) and (6) */
      && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
      && OptimizationEnabled(db, SQLITE_OmitOrderBy)
     ){

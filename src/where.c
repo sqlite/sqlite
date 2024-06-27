@@ -4980,7 +4980,7 @@ static i8 wherePathSatisfiesOrderBy(
         assert( pIndex->aiColumn[nColumn-1]==XN_ROWID
                           || !HasRowid(pIndex->pTable));
         /* All relevant terms of the index must also be non-NULL in order
-        ** for isOrderDistinct to be true.  So the isOrderDistint value
+        ** for isOrderDistinct to be true.  So the isOrderDistinct value
         ** computed here might be a false positive.  Corrections will be
         ** made at tag-20210426-1 below */
         isOrderDistinct = IsUniqueIndex(pIndex)
