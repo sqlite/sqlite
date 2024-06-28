@@ -1,5 +1,5 @@
-C Do\snot\sconvert\san\sexpression\snode\sthat\sis\salready\sTK_REGISTER\sinto\sa\nnew\sTK_REGISTER.\s\sThis\sis\sa\sfollow-up\sto\s[663f5dd32d9db832]\sthat\sfixes\sa\nbug\sdiscovered\sby\sdbsqlfuzz.
-D 2024-06-28T17:14:00.360
+C Additional\ssteps\sto\smake\ssure\scalls\sto\ssqlite3ExprToRegister()\sare\ssane.
+D 2024-06-28T18:07:10.142
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/date.c 13dd752847afb32ed70510ad7345a5b9c841f51ad904dba5d010f1fa3a6a324e
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c af9c9242be0df17280faf36c9810339de9df3d7a64ac8d33a5190a1400086ee5
+F src/expr.c 02652ae4e3d7147d252ae4dd16642251b09289e10ec7cb5e977c7185457e17f0
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 852f93c0ef995e0c2b8983059a2b97151c194cc8259e21f5bc2b7ac508348c2a
 F src/func.c 1f61e32e7a357e615b5d2e774bee563761fce4f2fd97ecb0f72c33e62a2ada5f
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d07085e2035b52a7edd27980523225e59c5bf851fb4a6de975f03e653b937c9c
-R 6b4e371b1a6983b6d20bf6bb77f15e3d
+P fcb669cfaa8a59ca710504d5aaa1936f65a6da8ff13473ad84458f97a6fd1f49
+R f2da2caf7ab4dc74d519b7306af82cc5
 U drh
-Z 1da9b70811e2736c2416513d2f56f791
+Z 0d34565772917324f2bd7f30087daf88
 # Remove this line to create a well-formed Fossil manifest.
