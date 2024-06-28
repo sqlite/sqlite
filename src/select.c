@@ -8336,7 +8336,10 @@ int sqlite3Select(
         if( iOrderByCol ){
           Expr *pX = p->pEList->a[iOrderByCol-1].pExpr;
           Expr *pBase = sqlite3ExprSkipCollateAndLikely(pX);
-          if( ALWAYS(pBase!=0) && pBase->op!=TK_AGG_COLUMN ){
+          if( ALWAYS(pBase!=0)
+           && pBase->op!=TK_AGG_COLUMN
+           && pBase->op!=TK_REGISTER
+          ){
             sqlite3ExprToRegister(pX, iAMem+j);
           }
         }
