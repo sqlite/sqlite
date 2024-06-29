@@ -85,7 +85,9 @@ char sqlite3ExprAffinity(const Expr *pExpr){
       op = pExpr->op;
       continue;
     }
-    if( op!=TK_REGISTER || (op = pExpr->op2)==TK_REGISTER ) break;
+    if( op!=TK_REGISTER ) break;
+    op = pExpr->op2;
+    if( NEVER( op==TK_REGISTER ) ) break;
   }
   return pExpr->affExpr;
 }
