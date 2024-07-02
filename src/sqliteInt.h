@@ -143,10 +143,13 @@
 /*
 ** Macro to disable warnings about missing "break" at the end of a "case".
 */
-#if GCC_VERSION>=7000000
-# define deliberate_fall_through __attribute__((fallthrough));
-#else
-# define deliberate_fall_through
+#if defined(__has_attribute)
+#  if __has_attribute(fallthrough)
+#    define deliberate_fall_through __attribute__((fallthrough));
+#  endif
+#endif
+#if !defined(deliberate_fall_through)
+#  define deliberate_fall_through
 #endif
 
 /*
