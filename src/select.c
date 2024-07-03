@@ -1387,6 +1387,7 @@ static void selectInnerLoop(
         if( pDest->iSDParm2 ){
           sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
                                regResult, nResultCol);
+          ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
         }
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -3324,6 +3325,7 @@ static int generateOutputSubroutine(
       if( pDest->iSDParm2>0 ){
         sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
                              pIn->iSdst, pIn->nSdst);
+        ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
       }
       sqlite3ReleaseTempReg(pParse, r1);
       break;
