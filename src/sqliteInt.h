@@ -3622,7 +3622,11 @@ struct Select {
 **     SRT_Set         The result must be a single column.  Store each
 **                     row of result as the key in table pDest->iSDParm.
 **                     Apply the affinity pDest->affSdst before storing
-**                     results.  Used to implement "IN (SELECT ...)".
+**                     results.  if pDest->iSDParm2 is positive, then it is
+**                     a regsiter holding a Bloom filter for the IN operator
+**                     that should be populated in addition to the 
+**                     pDest->iSDParm table.  This SRT is used to
+**                     implement "IN (SELECT ...)".
 **
 **     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
 **                     the result there. The cursor is left open after
