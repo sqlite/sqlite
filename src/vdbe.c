@@ -5308,6 +5308,7 @@ case OP_Found: {        /* jump, in3, ncycle */
     r.pKeyInfo = pC->pKeyInfo;
     r.default_rc = 0;
 #ifdef SQLITE_DEBUG
+    (void)sqlite3FaultSim(50);  /* For use by --counter in TH3 */
     for(ii=0; ii<r.nField; ii++){
       assert( memIsValid(&r.aMem[ii]) );
       assert( (r.aMem[ii].flags & MEM_Zero)==0 || r.aMem[ii].n==0 );

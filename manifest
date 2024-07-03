@@ -1,5 +1,5 @@
-C Use\sa\sBloom\sfilter\sto\simprove\sperformance\sof\sIN\soperators\swhen\sthe\sRHS\sof\nthe\sIN\soperator\sis\sa\ssubquery.
-D 2024-07-03T17:51:48.915
+C Add\sa\snew\ssqlite3FaultSim()\scall\sto\sOP_NotFound\sto\suse\sfor\stesting\spurposes.
+D 2024-07-03T18:56:56.464
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -825,7 +825,7 @@ F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c b05777c3ff2ed7b9dfc347e7cdee18e371aa6811cef1fe83454691b0dbe2cc9f
+F src/vdbe.c f941fd8dbd1a9e073866a941e7fbb553f1de2d25b249611005d8c27d5eac8995
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
@@ -2195,11 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77a76654e64c05f2c67be120f579fc60924ff51a9d0fa2cf9eb158f40171b5f5
-R 4c7ee9fc9c8b7335da98fdebc409f26a
-T *branch * in-bloom
-T *sym-in-bloom *
-T -sym-trunk *
+P 1933496539c19cbf429a39d6b0b1c6b1b2af50733a3c4aea4920990ced652f6a
+R 9c9e7e3ddb9d61c25f83c8cc55bade8c
 U drh
-Z e24cefbcb7cf0e7de9d7a748b98704bf
+Z fe58adb4deb8e6161fd0f3d3e1a34948
 # Remove this line to create a well-formed Fossil manifest.
