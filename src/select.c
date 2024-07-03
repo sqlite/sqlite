@@ -1377,12 +1377,17 @@ static void selectInnerLoop(
         ** case the order does matter */
         pushOntoSorter(
             pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
+        pDest->iSDParm2 = 0; /* Signal that any Bloom filter is unpopulated */
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol,
             r1, pDest->zAffSdst, nResultCol);
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, nResultCol);
+        if( pDest->iSDParm2 ){
+          sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
+                               regResult, nResultCol);
+        }
         sqlite3ReleaseTempReg(pParse, r1);
       }
       break;
@@ -3316,6 +3321,10 @@ static int generateOutputSubroutine(
           r1, pDest->zAffSdst, pIn->nSdst);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pDest->iSDParm, r1,
                            pIn->iSdst, pIn->nSdst);
+      if( pDest->iSDParm2>0 ){
+        sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
+                             pIn->iSdst, pIn->nSdst);
+      }
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
