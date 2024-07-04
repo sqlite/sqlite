@@ -1,5 +1,5 @@
-C Add\scomment\susing\sthe\sname\s"predicate\spush-down\soptimization"\sto\swhat\swe\shave\nalso\scalled\s"WHERE-clause\spush\sdown".\s\sNo\schanges\sto\scode.
-D 2024-07-04T11:15:32.292
+C Be\smore\saggressive\sabout\sreusing\ssubqueries\sthat\sappear\son\sthe\sRHS\sof\sIN\noperators\sthat\shave\sbeen\sreplicated\sdue\sto\sthe\spredicate\spush-down\soptimization.
+D 2024-07-04T16:57:11.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/date.c 13dd752847afb32ed70510ad7345a5b9c841f51ad904dba5d010f1fa3a6a324e
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
-F src/expr.c d6f614d0c90cf8d72bbd54dbae96040e7feb495a77991fdc1b1c67db68eeb326
+F src/expr.c 06c1d1a0f8b5025f001bc8219ac63fded7c33494a1863afdc78032ed1085ffef
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 852f93c0ef995e0c2b8983059a2b97151c194cc8259e21f5bc2b7ac508348c2a
 F src/func.c 1f61e32e7a357e615b5d2e774bee563761fce4f2fd97ecb0f72c33e62a2ada5f
@@ -826,10 +826,10 @@ F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c f941fd8dbd1a9e073866a941e7fbb553f1de2d25b249611005d8c27d5eac8995
-F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
+F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
-F src/vdbeaux.c 6e37cb918506c28fe7657454fcbc2e01e66bfba4164f306c2f075fd5c5fef609
+F src/vdbeaux.c 8d522d012c0545035be52e46b4cc5dfa752e376e17137816e558b3ab6bec9e5d
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 831a244831eaa45335f9ae276b50a7a82ee10d8c46c2c72492d4eb8c98d94d89
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -1518,7 +1518,7 @@ F test/printf.test 685fec5a0c5af2490ab0632775a301554361d674211d690f5bee0a97b0533
 F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/pushdown.test 9e655df51bc6559608dcc7af89a36f727eff520b4860261ed15a5f95a5ebbcd8
+F test/pushdown.test 84b525767442b3695d671f9df59dd91cf0ed8fb24cbbcdc55959f0dadeee8b39
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quickcheck.test a4b7e878cd97e46108291c409b0bf8214f29e18fddd68a42bc5c1375ad1fb80a
@@ -2195,8 +2195,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a204ffc06b468c2edf8f11ccf3de639edd4f8282e69a44ceeb68a4d3a43e77ea
-R 7ddaa7e2074acfdf6d0130f12e8505c2
+P be77fe701c7b7d3407800e1ed6a4c8be14035831790419cc99362bff41c65b60
+R 53a737f2af23a108773b1a9f30c846b8
+T *branch * reuse-subqueries
+T *sym-reuse-subqueries *
+T -sym-trunk *
 U drh
-Z 940dec88e4e92fbd5a212ce2f1e6eedc
+Z 375183e5bacb7ab157909f081f98b1e8
 # Remove this line to create a well-formed Fossil manifest.
