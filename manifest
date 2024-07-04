@@ -1,5 +1,5 @@
-C Be\smore\saggressive\sabout\sreusing\ssubqueries\sthat\sappear\son\sthe\sRHS\sof\sIN\noperators\sthat\shave\sbeen\sreplicated\sdue\sto\sthe\spredicate\spush-down\soptimization.
-D 2024-07-04T16:57:11.632
+C Update\sEXPLAIN\soutput\sto\sinclude\sP4_SUBRTNSIG.
+D 2024-07-04T17:49:34.845
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -829,7 +829,7 @@ F src/vdbe.c f941fd8dbd1a9e073866a941e7fbb553f1de2d25b249611005d8c27d5eac8995
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
-F src/vdbeaux.c 8d522d012c0545035be52e46b4cc5dfa752e376e17137816e558b3ab6bec9e5d
+F src/vdbeaux.c 25d685cafe119ff890c94345e884ea558a6b5d823bfa52ba708eb8ff3c70aa71
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 831a244831eaa45335f9ae276b50a7a82ee10d8c46c2c72492d4eb8c98d94d89
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2195,11 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be77fe701c7b7d3407800e1ed6a4c8be14035831790419cc99362bff41c65b60
-R 53a737f2af23a108773b1a9f30c846b8
-T *branch * reuse-subqueries
-T *sym-reuse-subqueries *
-T -sym-trunk *
-U drh
-Z 375183e5bacb7ab157909f081f98b1e8
+P 2accf32b6e45a396503c29eecc14a103bcc7b4c313cde921b26b489704060177
+R cc0b42021fc412ee4ab07a9997d10b3f
+U dan
+Z 6dc43e94d75155dfb066f57a2c862429
 # Remove this line to create a well-formed Fossil manifest.

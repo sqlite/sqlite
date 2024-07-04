@@ -1999,6 +1999,8 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
       break;
     }
     case P4_SUBRTNSIG: {
+      SubrtnSig *pSig = pOp->p4.pSubrtnSig;
+      sqlite3_str_appendf(&x, "subrtnsig:%d,%s", pSig->selId, pSig->zAff);
       break;
     }
     default: {
