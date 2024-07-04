@@ -1,5 +1,5 @@
-C When\sconstructing\san\sephermeral\stable\sto\suse\sas\sthe\sright-hand\sside\sof\nan\sIN\soperator,\salso\sconstruct\sa\sBloom\sfilter\sto\sspeed\smembership\stesting.
-D 2024-07-03T20:19:33.270
+C For\sshell\scompletion,\suse\spragma_table_xinfo\sinstead\sof\spragma_table_info,\sso\sthat\sgenerated\scolumns\sare\shandled,\sas\sreported\sin\s[forum:f0735e05d8d7e857|forum\spost\sf0735e05d8d7e857].
+D 2024-07-04T09:45:23.225
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -385,7 +385,7 @@ F ext/misc/carray.c 34fac63770971611c5285de0a9f0ac67d504eaf66be891f637add9290f1c
 F ext/misc/carray.h 503209952ccf2431c7fd899ebb92bf46bf7635b38aace42ec8aa1b8d7b6e98a5
 F ext/misc/cksumvfs.c 3a7931dd30667be6348af919f3f9e6188dfd7646b42af8e399a499b327f5bd63
 F ext/misc/closure.c 0e04f52d93e678dd6f950f195f365992edf3c380df246f3d80425cba4c13891e
-F ext/misc/completion.c ef78835483b43ac18c96be312b90b615d8368189909be03513ab7a9338131298
+F ext/misc/completion.c cb978c88d5577821323617a8ea775ce1b920e02dcdb593858f02044a4d008eea
 F ext/misc/compress.c 2c79a74330e0e0ba6cb3f7397f8ba5af12d46377ef5d3ee075e12dd8a6ed57f0
 F ext/misc/csv.c 575c2c05fba0a451586a4d42c2c81e711780c41e797126f198d8d9e0a308dcdb
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
@@ -2195,9 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 77a76654e64c05f2c67be120f579fc60924ff51a9d0fa2cf9eb158f40171b5f5 c10a1b99d47a4c93bdb16e646f6a21add570d6dbb34fd91a32f8abacdb28712b
-R c969cbcf973aa6019e666c5feff1eff5
-T +closed c10a1b99d47a4c93bdb16e646f6a21add570d6dbb34fd91a32f8abacdb28712b
-U drh
-Z f6a0a26b000fa84938a7a16f1457134d
+P baa83b460c677c210c7fa3f20314d7e05f305aed8a69026bc5fa106a3de4ea38
+R b6b0f6bf3a9f29c3d04a87244b6b7008
+U stephan
+Z 2e9a155351b52e0d45346f29a516cf2e
 # Remove this line to create a well-formed Fossil manifest.
