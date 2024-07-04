@@ -5077,7 +5077,8 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **
 ** NAME AMBIGUITY
 **
-** This optimization is called the "WHERE-clause push-down optimization".
+** This optimization is called the "WHERE-clause push-down optimization"
+** or sometimes the "predicate push-down optimization".
 **
 ** Do not confuse this optimization with another unrelated optimization
 ** with a similar name:  The "MySQL push-down optimization" causes WHERE
