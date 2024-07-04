@@ -3439,6 +3439,8 @@ static int findCompatibleInRhsSubrtn(
   assert( pExpr->op==TK_IN );
   assert( !ExprUseYSub(pExpr) );
   assert( ExprUseXSelect(pExpr) );
+  assert( pExpr->x.pSelect!=0 );
+  assert( (pExpr->x.pSelect->selFlags & SF_All)==0 );
   v = pParse->pVdbe;
   assert( v!=0 );
   pOp = sqlite3VdbeGetOp(v, 1);
@@ -3514,11 +3516,9 @@ void sqlite3CodeRhsOfIN(
     ** Compute a signature for the RHS of the IN operator to facility
     ** finding and reusing prior instances of the same IN operator.
     */
-    SubrtnSig *pSig;
-    if( !ExprUseXSelect(pExpr) ){
-      pSig = 0;
-    }else{
-      assert( pExpr->x.pSelect!=0 );
+    SubrtnSig *pSig = 0;
+    assert( !ExprUseXSelect(pExpr) || pExpr->x.pSelect!=0 );
+    if( ExprUseXSelect(pExpr) && (pExpr->x.pSelect->selFlags & SF_All)==0 ){
       pSig = sqlite3DbMallocRawNN(pParse->db, sizeof(pSig[0]));
       if( pSig ){
         pSig->selId = pExpr->x.pSelect->selId;
