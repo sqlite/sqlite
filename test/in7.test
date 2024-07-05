@@ -137,5 +137,61 @@ do_execsql_test 2.1 {
   SELECT b FROM t1 WHERE a IN (1,2,3) ORDER BY b ASC NULLS LAST;
 } {one three {}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a);
+  INSERT INTO x1 VALUES(1), (2), (3);
+
+  CREATE TABLE x2(b);
+  INSERT INTO x2 VALUES(4), (5), (6);
+
+  CREATE TABLE t1(u);
+  INSERT INTO t1 VALUES(1), (2), (3), (4), (5), (6);
+
+  CREATE VIEW v1 AS SELECT u FROM t1 WHERE u IN (
+    SELECT a FROM x1
+  );
+  CREATE VIEW v2 AS SELECT u FROM t1 WHERE u IN (
+    SELECT b FROM x2
+  );
+}
+
+do_execsql_test 3.1 {
+  SELECT * FROM v1
+} {
+  1 2 3
+}
+
+do_execsql_test 3.2 {
+  SELECT * FROM v2
+} {
+  4 5 6 
+}
+
+do_execsql_test 3.3 {
+  SELECT * FROM v2
+  UNION ALL
+  SELECT * FROM v1
+} {
+  4 5 6
+  1 2 3 
+}
+
+do_execsql_test 3.4 {
+  WITH w1 AS (
+    SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
+  ),
+  w2 AS (
+    SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+  )
+  SELECT * FROM v1 WHERE u IN w1
+  UNION ALL
+  SELECT * FROM v2 WHERE u IN w2
+} {
+  1 2 3 4 5 6
+}
+
+
 
 finish_test
