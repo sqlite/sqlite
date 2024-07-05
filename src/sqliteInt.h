@@ -3834,7 +3834,7 @@ struct Parse {
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
   u8 bHasWith;         /* True if statement contains WITH */
-  u8 bHasSubrtn;       /* True if any P4_SUBRTNSIG has been set */
+  u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
