@@ -3436,6 +3436,7 @@ static int findCompatibleInRhsSubrtn(
   Vdbe *v;
 
   if( pNewSig==0 ) return 0;
+  if( pParse->bHasSubrtn==0 ) return 0;
   assert( pExpr->op==TK_IN );
   assert( !ExprUseYSub(pExpr) );
   assert( ExprUseXSelect(pExpr) );
@@ -3446,8 +3447,8 @@ static int findCompatibleInRhsSubrtn(
   pOp = sqlite3VdbeGetOp(v, 1);
   pEnd = sqlite3VdbeGetLastOp(v);
   for(; pOp<pEnd; pOp++){
-    if( pOp->opcode!=OP_BeginSubrtn ) continue;
     if( pOp->p4type!=P4_SUBRTNSIG ) continue;
+    assert( pOp->opcode==OP_BeginSubrtn );
     pSig = pOp->p4.pSubrtnSig;
     assert( pSig!=0 );
     if( pNewSig->selId!=pSig->selId ) continue;
@@ -3563,6 +3564,7 @@ void sqlite3CodeRhsOfIN(
       pSig->regReturn = pExpr->y.sub.regReturn;
       pSig->iTable = iTab;
       sqlite3VdbeChangeP4(v, -1, (const char*)pSig, P4_SUBRTNSIG);
+      pParse->bHasSubrtn = 1;
     }
     addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
