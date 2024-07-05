@@ -3510,19 +3510,34 @@ void sqlite3CodeRhsOfIN(
       SelectDest dest;
       int i;
       int rc;
+      int addrBloom = 0;
       sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
+      if( addrOnce && OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+        int regBloom = ++pParse->nMem;
+        addrBloom = sqlite3VdbeAddOp2(v, OP_Blob, 10000, regBloom);
+        VdbeComment((v, "Bloom filter"));
+        dest.iSDParm2 = regBloom;
+      }
       testcase( pSelect->selFlags & SF_Distinct );
       testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
       pCopy = sqlite3SelectDup(pParse->db, pSelect, 0);
       rc = pParse->db->mallocFailed ? 1 :sqlite3Select(pParse, pCopy, &dest);
       sqlite3SelectDelete(pParse->db, pCopy);
       sqlite3DbFree(pParse->db, dest.zAffSdst);
+      if( addrBloom ){
+        sqlite3VdbeGetOp(v, addrOnce)->p3 = dest.iSDParm2;
+        if( dest.iSDParm2==0 ){
+          sqlite3VdbeChangeToNoop(v, addrBloom);
+        }else{
+          sqlite3VdbeGetOp(v, addrOnce)->p3 = dest.iSDParm2;
+        }
+      }
       if( rc ){
         sqlite3KeyInfoUnref(pKeyInfo);
         return;
-      }     
+      }
       assert( pKeyInfo!=0 ); /* OOM will cause exit after sqlite3Select() */
       assert( pEList!=0 );
       assert( pEList->nExpr>0 );
@@ -3961,6 +3976,15 @@ static void sqlite3ExprCodeIN(
     sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, nVector, 0, zAff, nVector);
     if( destIfFalse==destIfNull ){
       /* Combine Step 3 and Step 5 into a single opcode */
+      if( ExprHasProperty(pExpr, EP_Subrtn) ){
+        const VdbeOp *pOp = sqlite3VdbeGetOp(v, pExpr->y.sub.iAddr);
+        assert( pOp->opcode==OP_Once || pParse->nErr );
+        if( pOp->opcode==OP_Once && pOp->p3>0 ){
+          assert( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) );
+          sqlite3VdbeAddOp4Int(v, OP_Filter, pOp->p3, destIfFalse,
+                               rLhs, nVector); VdbeCoverage(v);
+        }
+      }
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iTab, destIfFalse,
                            rLhs, nVector); VdbeCoverage(v);
       goto sqlite3ExprCodeIN_finished;
