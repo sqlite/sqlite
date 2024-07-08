@@ -99,6 +99,6 @@ sqlite3_db_config db DEFENSIVE 0
 do_catchsql_test 3.1 {
   DELETE FROM t3_content WHERE rowid = 3;
   SELECT * FROM t3 WHERE t3 MATCH 'o';
-} {1 {database disk image is malformed}}
+} {1 {fts5: missing row 3 from content table 'main'.'t3_content'}}
 
 finish_test
