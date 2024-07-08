@@ -3563,8 +3563,8 @@ void sqlite3CodeRhsOfIN(
       pSig->iAddr = pExpr->y.sub.iAddr;
       pSig->regReturn = pExpr->y.sub.regReturn;
       pSig->iTable = iTab;
-      sqlite3VdbeChangeP4(v, -1, (const char*)pSig, P4_SUBRTNSIG);
       pParse->mSubrtnSig = 1 << (pSig->selId&7);
+      sqlite3VdbeChangeP4(v, -1, (const char*)pSig, P4_SUBRTNSIG);
     }
     addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   }
