@@ -441,21 +441,21 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 # Emscripten glue:
 sqlite3-api.jses += $(dir.common)/whwasmutil.js
 sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
-# sqlite3-api-glue.js Glues the previous part together:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
+# sqlite3-api-glue Glues the previous part together with sqlite:
+sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
 # $(sqlite3-api-build-version.js) = library version info
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
-# sqlite3-api-oo1.js = the oo1 API:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
-# sqlite3-api-worker.js = the Worker1 API:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
+# sqlite3-api-oo1 = the oo1 API:
+sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
+# sqlite3-api-worker = the Worker1 API:
+sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
 # sqlite3-vfs-helper = helper APIs for VFSes:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
 # sqlite3-vtab-helper = helper APIs for VTABLEs:
 sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
-# sqlite3-vfs-opfs.c-pp.js = the first OPFS VFS:
+# sqlite3-vfs-opfs = the first OPFS VFS:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
-# sqlite3-vfs-opfs-sahpool.c-pp.js = the second OPFS VFS:
+# sqlite3-vfs-opfs-sahpool = the second OPFS VFS:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
 # sqlite3-api-cleanup.js = "finalizes" the build and cleans up
 # any extraneous global symbols which are needed temporarily
