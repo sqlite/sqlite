@@ -102,7 +102,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     clearOnInit: false,
     /* Logging verbosity 3+ == everything, 2 == warnings+errors, 1 ==
        errors only. */
-    verbosity: 2
+    verbosity: 2,
+    forceReinitIfFailed: false
   });
 
   /** Logging routines, from most to least serious. */
@@ -1004,9 +1005,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return true;
   };
 
-  /** Only for testing a rejection case. */
-  let instanceCounter = 0;
-
   /**
      installOpfsSAHPoolVfs() asynchronously initializes the OPFS
      SyncAccessHandle (a.k.a. SAH) Pool VFS. It returns a Promise which
@@ -1081,12 +1079,26 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      the default directory. If no directory is explicitly provided
      then a directory name is synthesized from the `name` option.
 
-     Peculiarities of this VFS:
+
+     - `forceReinitIfFailed`: (default=`false`) Is a fallback option
+     to assist in working around certain flaky environments which may
+     mysteriously fail to permit access to OPFS sync access handles on
+     an initial attempt but permit it on a second attemp. This option
+     should never be used but is provided for those who choose to
+     throw caution to the wind and trust such environments. If this
+     option is truthy _and_ the previous attempt to initialize this
+     VFS with the same `name` failed, the VFS will attempt to
+     initialize a second time instead of returning the cached
+     failure. See discussion at:
+     <https://github.com/sqlite/sqlite-wasm/issues/79>
+
+
+     Peculiarities of this VFS vis a vis other SQLite VFSes:
 
      - Paths given to it _must_ be absolute. Relative paths will not
      be properly recognized. This is arguably a bug but correcting it
      requires some hoop-jumping in routines which have no business
-     doing tricks.
+     doing such tricks.
 
      - It is possible to install multiple instances under different
      names, each sandboxed from one another inside their own private
@@ -1207,13 +1219,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      handles are currently in use, e.g. by an sqlite3 db.
   */
   sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
-    const vfsName = options.name || optionDefaults.name;
-    if(0 && 2===++instanceCounter){
-      throw new Error("Just testing rejection.");
+    options = Object.assign(Object.create(null), optionDefaults, (options||{}));
+    const vfsName = options.name;
+    if(options.$testThrowPhase1){
+      throw options.$testThrowPhase1;
     }
     if(initPromises[vfsName]){
-      //console.warn("Returning same OpfsSAHPool result",options,vfsName,initPromises[vfsName]);
-      return initPromises[vfsName];
+      const p = initPromises[vfsName];
+      if( (p instanceof OpfsSAHPool) || !options.forceReinitIfFailed ){
+        //log("Returning cached installOpfsSAHPoolVfs() result",options,vfsName,initPromises[vfsName]);
+        return p;
+      }
+      delete initPromises[vfsName];
+      /* Fall through and try again. */
     }
     if(!globalThis.FileSystemHandle ||
        !globalThis.FileSystemDirectoryHandle ||
@@ -1238,8 +1256,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ensues.
     */
     return initPromises[vfsName] = apiVersionCheck().then(async function(){
-      if(options.$testThrowInInit){
-        throw options.$testThrowInInit;
+      if(options.$testThrowPhase2){
+        throw options.$testThrowPhase2;
       }
       const thePool = new OpfsSAHPool(options);
       return thePool.isReady.then(async()=>{
@@ -1255,7 +1273,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             oo1.DB.dbCtorHelper.call(this, opt);
           };
           OpfsSAHPoolDb.prototype = Object.create(oo1.DB.prototype);
-          // yes or no? OpfsSAHPoolDb.PoolUtil = poolUtil;
           poolUtil.OpfsSAHPoolDb = OpfsSAHPoolDb;
           oo1.DB.dbCtorHelper.setVfsPostOpenSql(
             theVfs.pointer,
