@@ -471,10 +471,22 @@ const installOpfsVfs = function callee(options){
       /* async thread will take over here */;
       const t = performance.now();
       while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
-        /* See discussion at https://github.com/sqlite/sqlite-wasm/issues/12 */
+        /*
+          The reason for this loop is burried in the details of
+          a long discussion at:
+
+          https://github.com/sqlite/sqlite-wasm/issues/12
+
+          Summary: in at least one browser flavor, under high loads,
+          this wait() call can, on rare occasion, end up returning
+          'ok', which indicates that it's returning _without_ the
+          other half of the proxy having called Atomics.notify(). When
+          this happens, we just wait() again.
+        */
       }
-      /* When this wait() call returns, the async half will have
-         completed the operation and reported its results. */;
+      /* When the above wait() call returns 'not-equal', the async
+         half will have completed the operation and reported its results
+         in the state.opIds.rc slot of the SAB. */
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       if(rc && state.asyncS11nExceptions){
