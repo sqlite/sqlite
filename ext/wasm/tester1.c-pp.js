@@ -3193,11 +3193,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         /* Ensure that the forceReinitIfFailed fallback bypasses the VFS init cache... */
         cErr = u3 = undefined;
         conf2.forceReinitIfFailed = true;
+        conf2.verbosity = 3;
         const P3b = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
         T.assert(undefined === cErr)
           .assert(P3b === u3)
+          .assert(P3b === await inst(conf2))
           .assert(true === await u3.removeVfs())
-          .assert(false === await u3.removeVfs());
+          .assert(false === await P3b.removeVfs());
       }
     }/*OPFS SAH Pool sanity checks*/)
 

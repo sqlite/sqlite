@@ -1225,13 +1225,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       throw options.$testThrowPhase1;
     }
     if(initPromises[vfsName]){
-      const p = initPromises[vfsName];
-      if( (p instanceof OpfsSAHPool) || !options.forceReinitIfFailed ){
-        //log("Returning cached installOpfsSAHPoolVfs() result",options,vfsName,initPromises[vfsName]);
+      try {
+        const p = await initPromises[vfsName];
+        //log("installOpfsSAHPoolVfs() returning cached result",options,vfsName,p);
         return p;
+      }catch(e){
+        //log("installOpfsSAHPoolVfs() got cached failure",options,vfsName,e);
+        if( options.forceReinitIfFailed ){
+          delete initPromises[vfsName];
+          /* Fall through and try again. */
+        }else{
+          throw e;
+        }
       }
-      delete initPromises[vfsName];
-      /* Fall through and try again. */
     }
     if(!globalThis.FileSystemHandle ||
        !globalThis.FileSystemDirectoryHandle ||
