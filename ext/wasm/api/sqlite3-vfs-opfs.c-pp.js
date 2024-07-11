@@ -443,7 +443,7 @@ const installOpfsVfs = function callee(options){
       OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
          If true, any async routine which implicitly acquires a sync
-         access handle (i.e. an OPFS lock) will release that locks at
+         access handle (i.e. an OPFS lock) will release that lock at
          the end of the call which acquires it. If false, such
          "autolocks" are not released until the VFS is idle for some
          brief amount of time.

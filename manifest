@@ -1,5 +1,5 @@
-C Add\ssome\sdocs\sexplaining\s[64f4f3cd878b1a72].
-D 2024-07-11T12:57:58.720
+C Remove\sthe\stiming\sand\scounter\smetrics\sfrom\sthe\sOPFS\sVFS,\sas\sthey're\slong-since\sunused\sso\sare\sjust\swasted\sCPU\scycles.
+D 2024-07-11T14:07:46.554
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -616,10 +616,10 @@ F ext/wasm/api/sqlite3-api-oo1.c-pp.js c373cc04625a96bd3f01ce8ebeac93a5d38dbda62
 F ext/wasm/api/sqlite3-api-prologue.js b347a0c5350247f90174a0ad9b9e72a99a5f837f31f78f60fcdb829b2ca30b63
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 5cc22a3c0d52828cb32aad8691488719f47d27567e63e8bc8b832d74371c352d
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
-F ext/wasm/api/sqlite3-opfs-async-proxy.js 881af4643f037b6590c491cef5fac8bcdd4118993197a1fa222ccb8b01e3504a
+F ext/wasm/api/sqlite3-opfs-async-proxy.js e8f1df56e97a29004a95a2eddd26778f52c33b3e797d32d4b1b668a38e6493dd
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 8433ee332d5f5e39fb19427fccb7bad7f44aa99b5504daad3343fc128c311e78
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 1d0a2d9d9c8b1eb0126e1abd00ef26a9be9d348786d7e415556ecc345832eabe
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 258a0d7c2a952ee360c13d7e4551b11d3f4fbe6dec1df6162866eca4d54e8443
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js a2fcbc3fecdd0eea229283584ebc122f29d98194083675dbe5cb2cf3a17fe309
 F ext/wasm/api/sqlite3-wasm.c 9267174b9b0591b4f71193542ab57adf95bb9415f7d3453acf4a8ca8052f5e6c
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46f303ba8ddd1b2f0a391798837beddfa72e8c897038c8047eda49ce7d5ed46b
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64f4f3cd878b1a723caa0cd54b21f10fdb27d4e2ecb19fc233cbc8dd9d06f259
-R 14a1d62c6182eceaa22bb6feac58e8ac
+P 4fdf9a322fccf7d68b03d07a42a526f18f951e2e19228b7d41e01121b667cc86
+R 5866522ad6fbcc120fd61fe54902049d
 U stephan
-Z d0a56f821b38fd7e590974af97a06665
+Z c3a08dde48aa22cdaaa7d36ef45af62c
 # Remove this line to create a well-formed Fossil manifest.
