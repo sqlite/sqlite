@@ -470,7 +470,9 @@ const installOpfsVfs = function callee(options){
       Atomics.notify(state.sabOPView, state.opIds.whichOp)
       /* async thread will take over here */;
       const t = performance.now();
-      Atomics.wait(state.sabOPView, state.opIds.rc, -1)
+      while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
+        /* See discussion at https://github.com/sqlite/sqlite-wasm/issues/12 */
+      }
       /* When this wait() call returns, the async half will have
          completed the operation and reported its results. */;
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
