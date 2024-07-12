@@ -445,7 +445,7 @@ const installOpfsVfs = function callee(options){
       OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
          If true, any async routine which implicitly acquires a sync
-         access handle (i.e. an OPFS lock) will release that locks at
+         access handle (i.e. an OPFS lock) will release that lock at
          the end of the call which acquires it. If false, such
          "autolocks" are not released until the VFS is idle for some
          brief amount of time.
@@ -472,9 +472,23 @@ const installOpfsVfs = function callee(options){
       Atomics.notify(state.sabOPView, state.opIds.whichOp)
       /* async thread will take over here */;
       const t = performance.now();
-      Atomics.wait(state.sabOPView, state.opIds.rc, -1)
-      /* When this wait() call returns, the async half will have
-         completed the operation and reported its results. */;
+      while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
+        /*
+          The reason for this loop is burried in the details of
+          a long discussion at:
+
+          https://github.com/sqlite/sqlite-wasm/issues/12
+
+          Summary: in at least one browser flavor, under high loads,
+          this wait() call can, on rare occasion, end up returning
+          'ok', which indicates that it's returning _without_ the
+          other half of the proxy having called Atomics.notify(). When
+          this happens, we just wait() again.
+        */
+      }
+      /* When the above wait() call returns 'not-equal', the async
+         half will have completed the operation and reported its results
+         in the state.opIds.rc slot of the SAB. */
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       if(rc && state.asyncS11nExceptions){
