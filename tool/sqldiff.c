@@ -31,7 +31,7 @@
 ** correctly on Windows:
 **
 **     fprintf()  ->  Wfprintf()
-**     
+**
 */
 #if defined(_WIN32)
 # include "console_io.h"
@@ -65,7 +65,7 @@ struct GlobalVars {
 static void strFree(sqlite3_str *pStr){
   sqlite3_free(sqlite3_str_finish(pStr));
 }
-  
+
 /*
 ** Print an error resulting from faulting command-line arguments and
 ** abort the program.
@@ -1998,7 +1998,7 @@ int main(int argc, char **argv){
   if( g.bSchemaOnly && g.bSchemaCompare ){
     cmdlineError("The --schema option is useless with --table %s .", zTab);
   }
-  rc = sqlite3_open(zDb1, &g.db);
+  rc = sqlite3_open_v2(zDb1, &g.db, SQLITE_OPEN_READONLY, 0);
   if( rc ){
     cmdlineError("cannot open database file \"%s\"", zDb1);
   }
