@@ -2006,6 +2006,13 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
   }
+  {
+    sqlite3 *db2 = 0;
+    if( sqlite3_open_v2(zDb2, &db2, SQLITE_OPEN_READONLY, 0) ){
+      cmdlineError("cannot open database file \"%s\"", zDb2);
+    }
+    sqlite3_close(db2);
+  }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   sqlite3_enable_load_extension(g.db, 1);
   for(i=0; i<nExt; i++){
