@@ -1,5 +1,5 @@
-C Add\sseveral\sconvenience\slinks\sto\sthe\sOPFS\sVFS\sconcurrency\stester\sapp\sfor\slaunching\sit\swith\svarious\scombinations\sof\soptions.
-D 2024-07-13T01:40:36.950
+C Remove\sa\sstray/harmless\sduplicate\swasm\sfunction\sexport\sentry.
+D 2024-07-13T11:47:44.216
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -601,7 +601,7 @@ F ext/wasm/SQLTester/SQLTester.mjs ce765c0ad7d57f93553d12ef4dca574deb00300134a26
 F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ceabe40849784e24e41c84638
 F ext/wasm/SQLTester/index.html 3f8a016df0776be76605abf20e815ecaafbe055abac0e1fe5ea080e7846b760d
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
-F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api f442460ed9a109e637dd3ea1caa4489553ad9414e8988118b208bb7a4bbece6b
+F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api 00a1ce656f31b0d168ace7e50faa9d9366793848318077b379c74e91f06b9041
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 34fe11466f9c1d81b10a0469e1114e5f1c5a6365c73d80a1a6ca639a1a358b73
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbf3948a4ba27c6ebf55b24e7463b20026439f04d1974bafe78df5c5bc958f59
-R 17ad9e555acf9a71bf586f6402e9a39a
+P 397d6a18f173a46b60a867fc45611045c76316d6602a3df8b4dc4ba45e1348ce
+R 8d1b4d875aa4428b36547df3364516ee
 U stephan
-Z 3c72ba5f810e193ef72ed570a9a2bd8b
+Z 977e101f8c18c7f8d4990fad09aea47e
 # Remove this line to create a well-formed Fossil manifest.
