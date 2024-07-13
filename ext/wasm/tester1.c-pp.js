@@ -3190,9 +3190,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(cErr === await inst(conf2).catch(e=>e),
                 "Init result is cached even if it failed");
 
-        /* Ensure that the forceReinitIfFailed fallback bypasses the VFS init cache... */
+        /* Ensure that the forceReinitIfPreviouslyFailed fallback bypasses
+           the VFS init cache... */
         cErr = u3 = undefined;
-        conf2.forceReinitIfFailed = true;
+        conf2.forceReinitIfPreviouslyFailed = true;
         conf2.verbosity = 3;
         const P3b = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
         T.assert(undefined === cErr)

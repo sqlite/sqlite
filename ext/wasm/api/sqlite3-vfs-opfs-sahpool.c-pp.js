@@ -103,7 +103,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Logging verbosity 3+ == everything, 2 == warnings+errors, 1 ==
        errors only. */
     verbosity: 2,
-    forceReinitIfFailed: false
+    forceReinitIfPreviouslyFailed: false
   });
 
   /** Logging routines, from most to least serious. */
@@ -1080,7 +1080,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      then a directory name is synthesized from the `name` option.
 
 
-     - `forceReinitIfFailed`: (default=`false`) Is a fallback option
+     - `forceReinitIfPreviouslyFailed`: (default=`false`) Is a fallback option
      to assist in working around certain flaky environments which may
      mysteriously fail to permit access to OPFS sync access handles on
      an initial attempt but permit it on a second attemp. This option
@@ -1231,7 +1231,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return p;
       }catch(e){
         //log("installOpfsSAHPoolVfs() got cached failure",options,vfsName,e);
-        if( options.forceReinitIfFailed ){
+        if( options.forceReinitIfPreviouslyFailed ){
           delete initPromises[vfsName];
           /* Fall through and try again. */
         }else{
