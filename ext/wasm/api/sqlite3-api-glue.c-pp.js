@@ -95,6 +95,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
     ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
+    ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
     ["sqlite3_bind_pointer", "int",
      "sqlite3_stmt*", "int", "*", "string:static", "*"],
     ["sqlite3_busy_handler","int", [

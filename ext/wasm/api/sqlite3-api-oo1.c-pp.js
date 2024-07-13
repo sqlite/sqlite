@@ -2030,6 +2030,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return (affirmStmtOpen(this).parameterCount
               ? capi.sqlite3_bind_parameter_index(this.pointer, name)
               : undefined);
+    },
+    /**
+       If this statement has named bindable parameters and the given
+       index refers to one, its name is returned, else null is
+       returned. If this statement has no bound parameters, undefined
+       is returned.
+
+       Added in 3.47.
+    */
+    getParamName: function(ndx){
+      return (affirmStmtOpen(this).parameterCount
+              ? capi.sqlite3_bind_parameter_name(this.pointer, ndx)
+              : undefined);
     }
   }/*Stmt.prototype*/;
 
