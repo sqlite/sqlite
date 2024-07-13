@@ -120,6 +120,8 @@ _sqlite3_sql
 _sqlite3_status
 _sqlite3_status64
 _sqlite3_step
+_sqlite3_stmt_busy
+_sqlite3_stmt_explain
 _sqlite3_stmt_isexplain
 _sqlite3_stmt_readonly
 _sqlite3_stmt_status

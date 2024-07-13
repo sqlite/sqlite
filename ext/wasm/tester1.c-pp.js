@@ -1475,7 +1475,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
-        T.assert(0===st.columnCount);
+        T.assert(0===st.columnCount)
+          .assert( false===st.isReadOnly() );
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
         st.bindAsBlob(ndx, "ima blob")
@@ -3215,7 +3216,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Misc. APIs')
-    .t('bind_parameter', function(sqlite3){
+    .t('bind_parameter_...', function(sqlite3){
       const db = new sqlite3.oo1.DB();
       db.exec("create table t(a)");
       const stmt = db.prepare("insert into t(a) values($a)");
@@ -3228,6 +3229,35 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert( null===capi.sqlite3_bind_parameter_name(stmt, 0) )
         .assert( "$a"===stmt.getParamName(1) )
         .assert( null===stmt.getParamName(0) );
+      stmt.finalize();
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Misc. stmt_...", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec(["create table t(a);","insert into t(a) values(123)"]);
+      const stmt = db.prepare("select a from t");
+      T.assert( stmt.isReadOnly() )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+      while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+        T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
+                  "Because stmt is busy" )
+          .assert( capi.sqlite3_stmt_busy(stmt) )
+          .assert( stmt.isBusy() )
+          .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
+          .assert( true===stmt.isReadOnly() );
+        const sv = capi.sqlite3_column_value(stmt, 0);
+        T.assert( 123===capi.sqlite3_value_int(sv) );
+      }
+      T.assert( 0===capi.sqlite3_stmt_busy(stmt) )
+        .assert( !stmt.isBusy() );
       stmt.finalize();
       db.close();
     })

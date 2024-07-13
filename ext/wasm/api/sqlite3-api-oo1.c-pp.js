@@ -2043,6 +2043,26 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return (affirmStmtOpen(this).parameterCount
               ? capi.sqlite3_bind_parameter_name(this.pointer, ndx)
               : undefined);
+    },
+
+    /**
+       Behaves like sqlite3_stmt_busy() but throws if this statement
+       is closed and returns a value of type boolean instead of integer.
+
+       Added in 3.47.
+    */
+    isBusy: function(){
+      return 0!==capi.sqlite3_stmt_busy(affirmStmtOpen(this));
+    },
+
+    /**
+       Behaves like sqlite3_stmt_readonly() but throws if this statement
+       is closed and returns a value of type boolean instead of integer.
+
+       Added in 3.47.
+    */
+    isReadOnly: function(){
+      return 0!==capi.sqlite3_stmt_readonly(affirmStmtOpen(this));
     }
   }/*Stmt.prototype*/;
 
