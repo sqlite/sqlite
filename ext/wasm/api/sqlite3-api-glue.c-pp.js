@@ -152,6 +152,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
+    ["sqlite3_db_readonly", "int", "sqlite3*", "string"],
     ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
     ["sqlite3_errcode", "int", "sqlite3*"],
     ["sqlite3_errmsg", "string", "sqlite3*"],
@@ -192,10 +193,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_get_autocommit", "int", "sqlite3*"],
     ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
     ["sqlite3_initialize", undefined],
-    /*["sqlite3_interrupt", undefined, "sqlite3*"
-       ^^^ we cannot actually currently support this because JS is
-        single-threaded and we don't have a portable way to access a DB
-        from 2 SharedWorkers concurrently. ],*/
+    ["sqlite3_interrupt", undefined, "sqlite3*"],
+    ["sqlite3_is_interrupted", "int", "sqlite3*"],
     ["sqlite3_keyword_count", "int"],
     ["sqlite3_keyword_name", "int", ["int", "**", "*"]],
     ["sqlite3_keyword_check", "int", ["string", "int"]],

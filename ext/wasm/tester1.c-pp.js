@@ -461,7 +461,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try{ sqlite3.SQLite3Error.toss("resultCode check") }
       catch(e){
         T.assert(capi.SQLITE_ERROR === e.resultCode)
-          .assert('resultCode check' === e.message);        
+          .assert('resultCode check' === e.message);
       }
     })
   ////////////////////////////////////////////////////////////////////
@@ -2061,6 +2061,24 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.exec("detach foo");
       T.mustThrow(()=>db.exec("select * from foo.bar"),
                   "Because foo is no longer attached.");
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Interrupt", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      T.assert( 0===capi.sqlite3_is_interrupted(db) );
+      capi.sqlite3_interrupt(db);
+      T.assert( 0!==capi.sqlite3_is_interrupted(db) );
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Read-only", function(sqlite3){
+      T.assert( 0===capi.sqlite3_db_readonly(this.db, "main") );
+      const db = new sqlite3.oo1.DB('file://'+this.db.filename+'?mode=ro');
+      T.assert( 1===capi.sqlite3_db_readonly(db, "main") );
+      T.assert( -1===capi.sqlite3_db_readonly(db, "nope") );
+      db.close();
     })
 
   ////////////////////////////////////////////////////////////////////
