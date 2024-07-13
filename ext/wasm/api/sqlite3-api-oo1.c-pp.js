@@ -482,6 +482,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      statement's preparation and when it is stepped may invalidate it.
 
      - `parameterCount`: the number of bindable parameters in the query.
+
+     As a general rule, most methods of this class will throw if
+     called on an instance which has been finalized. For brevity's
+     sake, the method docs do not all repeat this warning.
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
@@ -1686,12 +1690,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          integer 0 or 1. It is not expected the distinction of binding
          doubles which have no fractional parts and integers is
          significant for the majority of clients due to sqlite3's data
-         typing model. If [BigInt] support is enabled then this
-         routine will bind BigInt values as 64-bit integers if they'll
-         fit in 64 bits. If that support disabled, it will store the
-         BigInt as an int32 or a double if it can do so without loss
-         of precision. If the BigInt is _too BigInt_ then it will
-         throw.
+         typing model. If BigInt support is enabled then this routine
+         will bind BigInt values as 64-bit integers if they'll fit in
+         64 bits. If that support disabled, it will store the BigInt
+         as an int32 or a double if it can do so without loss of
+         precision. If the BigInt is _too BigInt_ then it will throw.
 
        - Strings are bound as strings (use bindAsBlob() to force
          blob binding).
@@ -1797,9 +1800,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     /**
        Steps the statement one time. If the result indicates that a
-       row of data is available, a truthy value is returned.
-       If no row of data is available, a falsy
-       value is returned.  Throws on error.
+       row of data is available, a truthy value is returned.  If no
+       row of data is available, a falsy value is returned.  Throws on
+       error.
     */
     step: function(){
       affirmNotLockedByExec(this, 'step()');
@@ -1819,6 +1822,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Functions exactly like step() except that...
 
        1) On success, it calls this.reset() and returns this object.
+
        2) On error, it throws and does not call reset().
 
        This is intended to simplify constructs like:
@@ -1842,7 +1846,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        throws.
 
        On success, it returns true if the step indicated that a row of
-       data was available, else it returns false.
+       data was available, else it returns a falsy value.
 
        This is intended to simplify use cases such as:
 
@@ -1860,6 +1864,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         catch(e){/*ignored*/}
       }
     },
+
     /**
        Fetches the value from the given 0-based column index of
        the current data row, throwing if index is out of range.
@@ -1884,7 +1889,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        If ndx is a plain object, this function behaves even
        differentlier: it assigns the properties of the object to
-       the values of their corresponding result columns.
+       the values of their corresponding result columns and returns
+       that object.
 
        Blobs are returned as Uint8Array instances.
 
