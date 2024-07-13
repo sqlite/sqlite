@@ -1,5 +1,5 @@
-C Add\san\soption\sto\sthe\sopfs-sahpool\sVFS\swhich\stells\sit\sto\signore\sa\sprevious\sinit\sfailure\sand\sretry,\sas\san\sopt-in\sworkaround\sfor\sa\sbrowser\squirk\swhich\soccasionally\sdenies\sOPFS\saccess\son\sthe\sfirst\sattempt\sand\spermits\sit\son\ssubsequent\sattempts.\sThis\sresolves\s[https://github.com/sqlite/sqlite-wasm/issues/79|issue\s#79\sof\sthe\snpm\sdistribution].
-D 2024-07-13T01:02:57.267
+C Add\sseveral\sconvenience\slinks\sto\sthe\sOPFS\sVFS\sconcurrency\stester\sapp\sfor\slaunching\sit\swith\svarious\scombinations\sof\soptions.
+D 2024-07-13T01:40:36.950
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -668,8 +668,8 @@ F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f80
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
 F ext/wasm/tester1.c-pp.js 74ade5f0d61db790b4e403f6bf7c0d346e19ec876cdee109c22ae4214aa89f4e
-F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a982deea6079efd98098d3e42fbcbc1
-F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
+F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
+F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966f1bc16a
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -2195,9 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e8b33525fc2b4d609a7be9acc43fbc66638effaa7b092b48568ded6c53c4f4db c9f0a6090258534a3d81066df5610229183a8457fc60d5034b4b94d9a29796e4
-R 674df08c7c71be5b7a456e9edf4c5bff
-T +closed c9f0a6090258534a3d81066df5610229183a8457fc60d5034b4b94d9a29796e4 Closed\sby\sintegrate-merge.
+P fbf3948a4ba27c6ebf55b24e7463b20026439f04d1974bafe78df5c5bc958f59
+R 17ad9e555acf9a71bf586f6402e9a39a
 U stephan
-Z 46da404de8b55901677e43a878b084be
+Z 3c72ba5f810e193ef72ed570a9a2bd8b
 # Remove this line to create a well-formed Fossil manifest.
