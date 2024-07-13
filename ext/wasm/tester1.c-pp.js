@@ -3246,7 +3246,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
         .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
         .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+      let n = 0;
       while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+        ++n;
         T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
                   "Because stmt is busy" )
           .assert( capi.sqlite3_stmt_busy(stmt) )
@@ -3258,7 +3260,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
           .assert( null===capi.sqlite3_column_decltype(stmt,1) );
       }
-      T.assert( 0===capi.sqlite3_stmt_busy(stmt) )
+      T.assert( 1===n )
+        .assert( 0===capi.sqlite3_stmt_busy(stmt) )
         .assert( !stmt.isBusy() );
       stmt.finalize();
       db.close();
