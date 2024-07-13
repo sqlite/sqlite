@@ -24,6 +24,7 @@ _sqlite3_collation_needed
 _sqlite3_column_blob
 _sqlite3_column_bytes
 _sqlite3_column_count
+_sqlite3_column_decltype
 _sqlite3_column_double
 _sqlite3_column_int
 _sqlite3_column_int64

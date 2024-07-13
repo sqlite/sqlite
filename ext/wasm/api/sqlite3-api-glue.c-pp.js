@@ -116,6 +116,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
     ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_count", "int", "sqlite3_stmt*"],
+    ["sqlite3_column_decltype", "string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
     ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],

@@ -3236,8 +3236,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t("Misc. stmt_...", function(sqlite3){
       const db = new sqlite3.oo1.DB();
-      db.exec(["create table t(a);","insert into t(a) values(123)"]);
-      const stmt = db.prepare("select a from t");
+      db.exec("create table t(a doggiebiscuits); insert into t(a) values(123)");
+      const stmt = db.prepare("select a, a+1 from t");
       T.assert( stmt.isReadOnly() )
         .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
         .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
@@ -3254,7 +3254,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
           .assert( true===stmt.isReadOnly() );
         const sv = capi.sqlite3_column_value(stmt, 0);
-        T.assert( 123===capi.sqlite3_value_int(sv) );
+        T.assert( 123===capi.sqlite3_value_int(sv) )
+          .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
+          .assert( null===capi.sqlite3_column_decltype(stmt,1) );
       }
       T.assert( 0===capi.sqlite3_stmt_busy(stmt) )
         .assert( !stmt.isBusy() );
