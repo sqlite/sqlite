@@ -2824,7 +2824,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'Session API sanity checks',
       predicate: ()=>!!capi.sqlite3changegroup_add,
       test: function(sqlite3){
-        warn("The session API tests could use some expansion.");
+        //warn("The session API tests could use some expansion.");
         const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
         const sqlInit = [
           "create table t(rowid INTEGER PRIMARY KEY,a,b); ",
@@ -2859,7 +2859,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert('b4' === db1.selectValue('select b from t where rowid=4'))
             .assert(3 === db1.selectValue('select count(*) from t'));
 
-          const testSessionEnable = false;
+          const testSessionEnable =
+                false /* it's not yet clear whether these test failures are
+                         broken tests or broken bindings. */;
           if(testSessionEnable){
             rc = capi.sqlite3session_enable(pSession, 0);
             T.assert( 0 === rc )
@@ -2870,7 +2872,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               .assert( capi.sqlite3session_enable(pSession, -1) > 0 )
               .assert(undefined === db1.selectValue('select a from t where rowid=2'));
           }else{
-            warn("sqlite3session_enable() tests are currently disabled.");
+            //warn("sqlite3session_enable() tests are currently disabled.");
           }
           let db1Count = db1.selectValue("select count(*) from t");
           T.assert( db1Count === (testSessionEnable ? 2 : 3) );
@@ -3177,13 +3179,28 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
 
         let cErr, u3;
-        conf2.$testThrowInInit = new Error("Testing throwing during init.");
+        conf2.$testThrowPhase2 = new Error("Testing throwing during init.");
         conf2.name = sahPoolConfig.name+'-err';
         const P3 = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
-        T.assert(P3 === conf2.$testThrowInInit)
+        T.assert(P3 === conf2.$testThrowPhase2)
           .assert(cErr === P3)
           .assert(undefined === u3)
           .assert(!sqlite3.capi.sqlite3_vfs_find(conf2.name));
+        delete conf2.$testThrowPhase2;
+        T.assert(cErr === await inst(conf2).catch(e=>e),
+                "Init result is cached even if it failed");
+
+        /* Ensure that the forceReinitIfPreviouslyFailed fallback bypasses
+           the VFS init cache... */
+        cErr = u3 = undefined;
+        conf2.forceReinitIfPreviouslyFailed = true;
+        conf2.verbosity = 3;
+        const P3b = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
+        T.assert(undefined === cErr)
+          .assert(P3b === u3)
+          .assert(P3b === await inst(conf2))
+          .assert(true === await u3.removeVfs())
+          .assert(false === await P3b.removeVfs());
       }
     }/*OPFS SAH Pool sanity checks*/)
 
