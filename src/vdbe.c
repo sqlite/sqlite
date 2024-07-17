@@ -7690,6 +7690,7 @@ case OP_AggStep: {
   pCtx = sqlite3DbMallocRawNN(db, nAlloc + sizeof(Mem));
   if( pCtx==0 ) goto no_mem;
   pCtx->pOut = (Mem*)((u8*)pCtx + nAlloc);
+  assert( EIGHT_BYTE_ALIGNMENT(pCtx->pOut) );
 
   sqlite3VdbeMemInit(pCtx->pOut, db, MEM_Null);
   pCtx->pMem = 0;
