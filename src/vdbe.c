@@ -7671,18 +7671,29 @@ case OP_AggInverse:
 case OP_AggStep: {
   int n;
   sqlite3_context *pCtx;
+  u64 nAlloc;
 
   assert( pOp->p4type==P4_FUNCDEF );
   n = pOp->p5;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem+1 - p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRawNN(db, n*sizeof(sqlite3_value*) +
-               (sizeof(pCtx[0]) + sizeof(Mem) - sizeof(sqlite3_value*)));
+
+  /* Allocate space for (a) the context object and (n-1) extra pointers
+  ** to append to the sqlite3_context.argv[1] array, and (b) a memory
+  ** cell in which to store the accumulation. Be careful that the memory
+  ** cell is 8-byte aligned, even on platforms where a pointer is 32-bits.
+  **
+  ** Note: We could avoid this by using a regular memory cell from aMem[] for 
+  ** the accumulator, instead of allocating one here. */
+  nAlloc = ROUND8P( sizeof(pCtx[0]) + (n-1)*sizeof(sqlite3_value*) );
+  pCtx = sqlite3DbMallocRawNN(db, nAlloc + sizeof(Mem));
   if( pCtx==0 ) goto no_mem;
-  pCtx->pMem = 0;
-  pCtx->pOut = (Mem*)&(pCtx->argv[n]);
+  pCtx->pOut = (Mem*)((u8*)pCtx + nAlloc);
+  assert( EIGHT_BYTE_ALIGNMENT(pCtx->pOut) );
+
   sqlite3VdbeMemInit(pCtx->pOut, db, MEM_Null);
+  pCtx->pMem = 0;
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
