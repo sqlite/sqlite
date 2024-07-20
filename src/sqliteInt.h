@@ -3305,6 +3305,7 @@ struct SrcItem {
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
+    unsigned isLateral :1;     /* True if sub-query is LATERAL */
     unsigned isMaterialized:1; /* This is a materialized view */
     unsigned viaCoroutine :1;  /* Implemented as a co-routine */
     unsigned isRecursive :1;   /* True for recursive reference in WITH */
@@ -3367,7 +3368,7 @@ struct SrcList {
 #define JT_OUTER     0x20    /* The "OUTER" keyword is present */
 #define JT_LTORJ     0x40    /* One of the LEFT operands of a RIGHT JOIN
                              ** Mnemonic: Left Table Of Right Join */
-#define JT_ERROR     0x80    /* unknown or unsupported join type */
+#define JT_LATERAL   0x80    /* A LATERAL join */
 
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()

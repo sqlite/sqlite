@@ -1859,6 +1859,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   nCompound = 0;
   pLeftmost = p;
   while( p ){
+    int nSrc;
     assert( (p->selFlags & SF_Expanded)!=0 );
     assert( (p->selFlags & SF_Resolved)==0 );
     p->selFlags |= SF_Resolved;
@@ -1890,15 +1891,32 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Recursively resolve names in all subqueries in the FROM clause
     */
     if( pOuterNC ) pOuterNC->nNestedSelect++;
-    for(i=0; i<p->pSrc->nSrc; i++){
+    nSrc = p->pSrc->nSrc;
+    for(i=0; i<nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
       assert( pItem->zName!=0 || pItem->pSelect!=0 );/* Test of tag-20240424-1*/
       if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
         int nRef = pOuterNC ? pOuterNC->nRef : 0;
         const char *zSavedContext = pParse->zAuthContext;
-
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
-        sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
+        if( pItem->fg.isLateral && i>0 ){
+          int nRef2 = sNC.nRef;
+          p->pSrc->nSrc = i;
+          sNC.pSrcList = p->pSrc;
+          sNC.pNext = pOuterNC;
+          sqlite3ResolveSelectNames(pParse, pItem->pSelect, &sNC);
+          p->pSrc->nSrc = nSrc;
+          if( sNC.nRef>nRef2 ){
+            int kk;
+            pItem->fg.isCorrelated = 1;
+            for(kk=0; kk<i; kk++) p->pSrc->a[kk].fg.jointype |= JT_LATERAL;
+          }
+          sNC.pSrcList = 0;
+          sNC.pNext = 0;
+        }else{
+          sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
+        }
+      
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr ) return WRC_Abort;
         assert( db->mallocFailed==0 );
@@ -1909,9 +1927,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         ** but the innermost outer context object, as lookupName() increments
         ** the refcount on all contexts between the current one and the
         ** context containing the column when it resolves a name. */
-        if( pOuterNC ){
-          assert( pItem->fg.isCorrelated==0 && pOuterNC->nRef>=nRef );
-          pItem->fg.isCorrelated = (pOuterNC->nRef>nRef);
+        if( pOuterNC && pOuterNC->nRef>nRef ){
+          pItem->fg.isCorrelated = 1;
         }
       }
     }

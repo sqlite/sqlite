@@ -4772,12 +4772,13 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     pBuilder->iPlanLimit += SQLITE_QUERY_PLANNER_LIMIT_INCR;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( bFirstPastRJ
-     || (pItem->fg.jointype & (JT_OUTER|JT_CROSS|JT_LTORJ))!=0
+     || (pItem->fg.jointype & (JT_OUTER|JT_CROSS|JT_LTORJ|JT_LATERAL))!=0
     ){
       /* Add prerequisites to prevent reordering of FROM clause terms
-      ** across CROSS joins and outer joins.  The bFirstPastRJ boolean
-      ** prevents the right operand of a RIGHT JOIN from being swapped with
-      ** other elements even further to the right.
+      ** across CROSS joins, outer joins, and lateral joins.
+      ** The bFirstPastRJ boolean prevents the right operand of a
+      ** RIGHT JOIN from being swapped with other elements even further
+      ** to the right.
       **
       ** The JT_LTORJ case and the hasRightJoin flag work together to
       ** prevent FROM-clause terms from moving from the right side of
@@ -4794,7 +4795,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     if( IsVirtual(pItem->pTab) ){
       SrcItem *p;
       for(p=&pItem[1]; p<pEnd; p++){
-        if( mUnusable || (p->fg.jointype & (JT_OUTER|JT_CROSS)) ){
+        if( mUnusable || (p->fg.jointype & (JT_OUTER|JT_CROSS|JT_LATERAL)) ){
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }

@@ -253,7 +253,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
   CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
+  IGNORE IMMEDIATE INITIALLY INSTEAD LATERAL LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
@@ -731,6 +731,14 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(A) LP select(S) RP as(Z) on_using(N). {
     A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
+  }
+  seltablist(A) ::= stl_prefix(A) LATERAL LP select(S) RP as(Z) on_using(N). {
+    SrcList *pSrc;
+    pSrc = A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
+    if( pSrc && pSrc->nSrc>1 ){
+      pSrc->a[pSrc->nSrc-1].fg.isLateral = 1;
+      pSrc->a[pSrc->nSrc-2].fg.jointype |= JT_LATERAL;
+    }
   }
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP as(Z) on_using(N). {
     if( A==0 && Z.n==0 && N.pOn==0 && N.pUsing==0 ){

@@ -261,6 +261,7 @@ static Select *findRightmost(Select *p){
 */
 int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   int jointype = 0;
+  int bErr = 0;
   Token *apAll[3];
   Token *p;
                              /*   0123456789 123456789 123456789 123 */
@@ -293,13 +294,13 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     }
     testcase( j==0 || j==1 || j==2 || j==3 || j==4 || j==5 || j==6 );
     if( j>=ArraySize(aKeyword) ){
-      jointype |= JT_ERROR;
+      bErr = 1;
       break;
     }
   }
   if(
      (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
-     (jointype & JT_ERROR)!=0 ||
+     bErr>0 ||
      (jointype & (JT_OUTER|JT_LEFT|JT_RIGHT))==JT_OUTER
   ){
     const char *zSp1 = " ";
@@ -7273,7 +7274,7 @@ static int fromClauseTermCanBeCoroutine(
     if( pCteUse->eM10d==M10d_Yes ) return 0;                          /* (2a) */
     if( pCteUse->nUse>=2 && pCteUse->eM10d!=M10d_No ) return 0;       /* (2b) */
   }
-  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;               /* (3)  */
+  if( pTabList->a[0].fg.jointype & (JT_LTORJ|JT_LATERAL) ) return 0;  /* (3)  */
   if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0; /* (4)  */
   if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
     return 0;                                                          /* (5) */

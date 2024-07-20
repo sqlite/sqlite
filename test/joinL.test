@@ -1,0 +1,104 @@
+# 2024-07-20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Tests for LATERAL JOIN
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix joinL
+
+db null NULL
+do_execsql_test 1.0 {
+  CREATE TABLE product(product_id INT, price REAL, product TEXT);
+  INSERT INTO product VALUES
+    (1, 6.76, 'apple'),
+    (2, 5.28, 'banana'),
+    (3, 28.28, 'cherry'),
+    (4, 13.54, 'dates'),
+    (5, 30.58, 'elderberry'),
+    (6, 26.57, 'figs'),
+    (7, 64.85, 'grapes'),
+    (8, 21.55, 'huckleberry'),
+    (9, 29.00, 'jakefruit'),
+    (10, 17.31, 'kiwi');
+  CREATE TABLE wishlist(wishlist_id  int, username text, desired_price real);
+  INSERT INTO wishlist VALUES
+      (1, 'alice', 45.0),
+      (2, 'bob', 30.0),
+      (3, 'cindy', 15.0),
+      (4, 'david', 4.0);
+  SELECT * 
+    FROM wishlist AS w LEFT JOIN LATERAL (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x
+  ORDER BY wishlist_id, price DESC;
+} {
+  1  alice  45.0    5        30.58  elderberry 
+  1  alice  45.0    9        29.0   jakefruit  
+  1  alice  45.0    3        28.28  cherry     
+  2  bob    30.0    9        29.0   jakefruit  
+  2  bob    30.0    3        28.28  cherry     
+  2  bob    30.0    6        26.57  figs       
+  3  cindy  15.0    4        13.54  dates      
+  3  cindy  15.0    1        6.76   apple      
+  3  cindy  15.0    2        5.28   banana     
+  4  david  4.0     NULL     NULL   NULL       
+}
+do_execsql_test 1.1 {
+  SELECT * 
+    FROM wishlist AS w JOIN LATERAL (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x
+  ORDER BY wishlist_id, price DESC;
+} {
+  1  alice  45.0    5        30.58  elderberry 
+  1  alice  45.0    9        29.0   jakefruit  
+  1  alice  45.0    3        28.28  cherry     
+  2  bob    30.0    9        29.0   jakefruit  
+  2  bob    30.0    3        28.28  cherry     
+  2  bob    30.0    6        26.57  figs       
+  3  cindy  15.0    4        13.54  dates      
+  3  cindy  15.0    1        6.76   apple      
+  3  cindy  15.0    2        5.28   banana     
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE orders(id INTEGER PRIMARY KEY, user_id INT, created_at TEXT);
+  INSERT INTO orders VALUES
+   (1,1,'2024-07-20T01:35:03'),
+   (2,2,'2024-07-20T01:35:07'),
+   (3,3,'2024-07-20T01:35:10'),
+   (4,1,'2024-07-20T01:58:10'),
+   (5,3,'2024-07-20T01:58:17'),
+   (6,3,'2024-07-20T01:58:25');
+  
+  SELECT user_id, first_order_time, next_order_time, id FROM
+    (SELECT user_id, min(created_at) AS first_order_time
+       FROM orders GROUP BY user_id) AS o1
+    LEFT JOIN LATERAL
+    (SELECT id, created_at AS next_order_time
+     FROM orders
+     WHERE user_id = o1.user_id AND created_at > o1.first_order_time
+     ORDER BY created_at ASC LIMIT 1) AS o2
+    ON true;
+} {
+  1   2024-07-20T01:35:03  2024-07-20T01:58:10 4
+  2   2024-07-20T01:35:07  NULL                NULL
+  3   2024-07-20T01:35:10  2024-07-20T01:58:17 5
+}
+
+
+finish_test
