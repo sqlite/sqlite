@@ -75,6 +75,44 @@ do_execsql_test 1.1 {
   3  cindy  15.0    2        5.28   banana     
 }
 
+
+do_catchsql_test 1.2 {
+  SELECT * 
+    FROM wishlist AS w RIGHT JOIN LATERAL (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x ON true
+  ORDER BY wishlist_id, price DESC;
+} {1 {join must be INNER or LEFT for a LATERAL reference}}
+do_catchsql_test 1.3 {
+  SELECT * 
+    FROM wishlist AS w FULL OUTER JOIN LATERAL (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x ON true
+  ORDER BY wishlist_id, price DESC;
+} {1 {join must be INNER or LEFT for a LATERAL reference}}
+do_catchsql_test 1.4 {
+  SELECT * 
+    FROM wishlist AS w FULL OUTER JOIN LATERALx (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x ON true
+  ORDER BY wishlist_id, price DESC;
+} {1 {near "LATERALx": syntax error}}
+do_catchsql_test 1.5 {
+  SELECT * 
+    FROM wishlist AS w FULL OUTER JOIN LATERAL.xyz (
+          SELECT * FROM  product AS p
+           WHERE  p.price < w.desired_price
+           ORDER BY p.price DESC LIMIT 3
+         ) AS x ON true
+  ORDER BY wishlist_id, price DESC;
+} {1 {near "LATERAL": syntax error}}
+
 do_execsql_test 2.0 {
   CREATE TABLE orders(id INTEGER PRIMARY KEY, user_id INT, created_at TEXT);
   INSERT INTO orders VALUES
@@ -99,6 +137,33 @@ do_execsql_test 2.0 {
   2   2024-07-20T01:35:07  NULL                NULL
   3   2024-07-20T01:35:10  2024-07-20T01:58:17 5
 }
+do_execsql_test 2.1 {
+  SELECT user_id, first_order_time, next_order_time, id FROM
+    LATERAL (SELECT user_id, min(created_at) AS first_order_time
+       FROM orders GROUP BY user_id) AS o1
+    LEFT JOIN LATERAL
+    (SELECT id, created_at AS next_order_time
+     FROM orders
+     WHERE user_id = o1.user_id AND created_at > o1.first_order_time
+     ORDER BY created_at ASC LIMIT 1) AS o2
+    ON true;
+} {
+  1   2024-07-20T01:35:03  2024-07-20T01:58:10 4
+  2   2024-07-20T01:35:07  NULL                NULL
+  3   2024-07-20T01:35:10  2024-07-20T01:58:17 5
+}
 
+# "LATERAL" is a not actually a keyword.  It can be used as an indentifier for
+# historical compatibility.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE lateral(a,lateral lateral);
+  INSERT INTO lateral VALUES(1,2);
+  SELECT * FROM lateral;
+  ATTACH ':memory:' AS lateral;
+  CREATE TABLE lateral.t2(x,y);
+  INSERT INTO t2 VALUES(98,99);
+  SELECT * FROM t2;
+} {1 2 98 99}
 
 finish_test

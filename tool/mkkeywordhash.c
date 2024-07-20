@@ -251,7 +251,6 @@ static Keyword aKeywordTable[] = {
   { "JOIN",             "TK_JOIN",         ALWAYS,           5      },
   { "KEY",              "TK_KEY",          ALWAYS,           1      },
   { "LAST",             "TK_LAST",         ALWAYS,           4      },
-  { "LATERAL",          "TK_LATERAL",      ALWAYS,           7      },
   { "LEFT",             "TK_JOIN_KW",      ALWAYS,           5      },
   { "LIKE",             "TK_LIKE_KW",      ALWAYS,           5      },
   { "LIMIT",            "TK_LIMIT",        ALWAYS,           3      },

@@ -253,7 +253,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
   CONFLICT DATABASE DEFERRED DESC DETACH DO
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  IGNORE IMMEDIATE INITIALLY INSTEAD LATERAL LIKE_KW MATCH NO PLAN
+  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
   ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
@@ -732,8 +732,25 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
   seltablist(A) ::= stl_prefix(A) LP select(S) RP as(Z) on_using(N). {
     A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
   }
-  seltablist(A) ::= stl_prefix(A) LATERAL LP select(S) RP as(Z) on_using(N). {
-    SrcList *pSrc;
+  seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP select(S) RP as(Z) on_using(N). {
+    //                            \___________/
+    //                                  |
+    //  This must be a single identifier token "LATERAL".  We cannot make
+    //  LATERAL a keyword, since there might be legacy databases that
+    //  use "lateral" as a table name and a table name is valid syntax
+    //  in this position.
+    SrcList *pSrc = A;
+    if( Y.n!=7 || sqlite3StrNICmp(Y.z,"lateral",7)!=0 || D.z!=0 ){
+      sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &Y);
+      pParse->db->errByteOffset = (int)(Y.z - pParse->zTail);
+    }else
+    if(  pSrc
+     && ALWAYS(pSrc->nSrc>0)
+     && (pSrc->a[pSrc->nSrc-1].fg.jointype & JT_RIGHT)!=0
+    ){
+      sqlite3ErrorMsg(pParse, "join must be INNER or LEFT for a LATERAL reference");
+      pParse->db->errByteOffset = (int)(Y.z - pParse->zTail);
+    } 
     pSrc = A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
     if( pSrc && pSrc->nSrc>1 ){
       pSrc->a[pSrc->nSrc-1].fg.isLateral = 1;

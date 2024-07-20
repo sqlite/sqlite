@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\sLATERAL\sJOIN.
-D 2024-07-20T01:19:18.644
+C "LATERAL"\smay\snot\sbe\sa\skeyword,\sas\sthat\swould\scause\sproblems\sfor\slegacy\ndatabases\sthat\shave\stables\snamed\s"lateral".\s\sIt\shas\sto\sbe\sparsed\sas\san\nidentifier.
+D 2024-07-20T03:19:40.623
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -744,7 +744,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 4be218b2b28316145aae99695ccec0bd08d1b9f1088304a72e5e526bb9bbb083
+F src/parse.y c681bcadfb08325e425c3798a6fa0fb374426ffa2db943cf4e7e97b6545e09fb
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -1347,7 +1347,7 @@ F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
 F test/joinH.test 55f69e64da74d4eca2235237f3acb657aef181e22e45daa228e35bba865e0255
-F test/joinL.test 42f319f9fc60a3dddb248a71f4d8ace80741772c8a8606f4ce878e96311822ee
+F test/joinL.test d18dc1f85a8254b260ef5d0e1d3695dca65309f20f04b79e0b1cb754fdef9334
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -2117,7 +2117,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 060e9785e9503bf51f8b1b11b542bdeef90fd0ceb0738154f6762acec0c61e5f x
-F tool/mkkeywordhash.c 10f6a1eb691b17d4a87b0a9bf809420c5cfb806273d3e5101add1544b223f9d4
+F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
 F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
@@ -2196,11 +2196,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf54b26092ded2e6acc779acfb960364f05c665c7626c38ffae61caae5636184
-R fd0426e8bf5d734a1d48d710a5bc9a8a
-T *branch * lateral-join
-T *sym-lateral-join *
-T -sym-trunk *
+P 3c045a96bc65713e5544af82b8547cdcdf93fa20f9b7b0851d77f8c090cc650b
+R f090a6ec615c741ecafebf974126b522
 U drh
-Z 0351f62d422552d2d5b55232d6520d93
+Z ff3d32fb657fae9cfdb48424d2f017eb
 # Remove this line to create a well-formed Fossil manifest.
