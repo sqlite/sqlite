@@ -7287,7 +7287,12 @@ static int fromClauseTermCanBeCoroutine(
   }
   if( selFlags & SF_UpdateFrom ) return 0;                        /* (1c-iii) */
   while( 1 /*exit-by-break*/ ){
-    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;     /* (1c-ii) */
+    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS|JT_LATERAL)  ){
+      testcase( pItem->fg.jointype & JT_OUTER );
+      testcase( pItem->fg.jointype & JT_CROSS );
+      testcase( pItem->fg.jointype & JT_LATERAL );
+      return 0;                                                   /* (1c-ii) */
+    }
     if( i==0 ) break;
     i--;
     pItem--;
