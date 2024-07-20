@@ -4786,6 +4786,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       ** is itself on the left side of a RIGHT JOIN.
       */
       if( pItem->fg.jointype & JT_LTORJ ) hasRightJoin = 1;
+      testcase( pItem->fg.jointype & JT_CROSS );
+      testcase( pItem->fg.jointype & JT_OUTER );
+      testcase( pItem->fg.jointype & JT_LATERAL );
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
     }else if( !hasRightJoin ){
@@ -4796,6 +4799,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       SrcItem *p;
       for(p=&pItem[1]; p<pEnd; p++){
         if( mUnusable || (p->fg.jointype & (JT_OUTER|JT_CROSS|JT_LATERAL)) ){
+          testcase( p->fg.jointype & JT_CROSS );
+          testcase( p->fg.jointype & JT_OUTER );
+          testcase( p->fg.jointype & JT_LATERAL );
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }

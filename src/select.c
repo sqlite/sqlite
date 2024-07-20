@@ -7272,6 +7272,8 @@ static int fromClauseTermCanBeCoroutine(
     if( pCteUse->eM10d==M10d_Yes ) return 0;                          /* (2a) */
     if( pCteUse->nUse>=2 && pCteUse->eM10d!=M10d_No ) return 0;       /* (2b) */
   }
+  testcase( pTabList->a[0].fg.jointype & JT_LTORJ );
+  testcase( pTabList->a[0].fg.jointype & JT_LATERAL );
   if( pTabList->a[0].fg.jointype & (JT_LTORJ|JT_LATERAL) ) return 0;  /* (3)  */
   if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0; /* (4)  */
   if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
