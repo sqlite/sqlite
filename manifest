@@ -1,5 +1,5 @@
-C Optimizations\sand\simproved\scomments.
-D 2024-07-20T08:31:52.630
+C Remove\san\sunnecessary\serror\soffset\sassignment.
+D 2024-07-20T09:36:04.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -744,7 +744,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y c681bcadfb08325e425c3798a6fa0fb374426ffa2db943cf4e7e97b6545e09fb
+F src/parse.y 8de6d5dc5f0a708a250d9a31ecd44d0852e3d2aa02f0ca2ee43e6ba040474aa0
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2196,8 +2196,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e50d338ebd974b5d1b8baf4c7a400abded28ee997414e896c2e8b9d61d39a94
-R f7bd63c57c273b4368bcf35dafa83b42
+P 84b80233e7f1afd9ed2c0c63f2d641891d9ed06cc160fee55c75a6fd77af6144
+R 666dd2e16c282ad917a8ba631b110357
 U drh
-Z f4cfc48df533373bac4bfb5d658558a1
+Z 8682af1ef6432eaa19cf55420d24dee6
 # Remove this line to create a well-formed Fossil manifest.

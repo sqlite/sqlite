@@ -742,7 +742,6 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
     SrcList *pSrc = A;
     if( Y.n!=7 || sqlite3StrNICmp(Y.z,"lateral",7)!=0 || D.z!=0 ){
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &Y);
-      pParse->db->errByteOffset = (int)(Y.z - pParse->zTail);
     }else
     if(  pSrc
      && ALWAYS(pSrc->nSrc>0)
