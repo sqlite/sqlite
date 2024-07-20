@@ -3272,10 +3272,10 @@ struct IdList {
 ** The SrcItem object represents a single term in the FROM clause of a query.
 ** The SrcList object is mostly an array of SrcItems.
 **
-** The jointype starts out showing the join type between the current table
-** and the next table on the list.  The parser builds the list this way.
+** The jointype starts out showing the join type between the current term
+** and the next term on the list.  The parser builds the list this way.
 ** But sqlite3SrcListShiftJoinType() later shifts the jointypes so that each
-** jointype expresses the join between the table and the previous table.
+** jointype expresses the join between the current term and the previous.
 **
 ** In the colUsed field, the high-order bit (bit 63) is set if the table
 ** contains more than 63 columns and the 64-th or later column is used.
@@ -3300,7 +3300,7 @@ struct SrcItem {
   int regReturn;    /* Register holding return address of addrFillSub */
   int regResult;    /* Registers holding results of a co-routine */
   struct {
-    u8 jointype;      /* Type of join between this table and the previous */
+    u8 jointype;               /* Type of join. See above for more detail. */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
@@ -3368,7 +3368,9 @@ struct SrcList {
 #define JT_OUTER     0x20    /* The "OUTER" keyword is present */
 #define JT_LTORJ     0x40    /* One of the LEFT operands of a RIGHT JOIN
                              ** Mnemonic: Left Table Of Right Join */
-#define JT_LATERAL   0x80    /* A LATERAL join */
+#define JT_LATERAL   0x80    /* A LATERAL join.  Or, if on the left-most
+                             ** SrcItem, an indication that at least one
+                             ** correlated LATERAL join exists in the FROM */
 
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()

@@ -5094,7 +5094,11 @@ void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
 **
 ** The operator is "natural cross join".  The A and B operands are stored
 ** in p->a[0] and p->a[1], respectively.  The parser initially stores the
-** operator with A.  This routine shifts that operator over to B.
+** operator with A in p->a[0].  This routine shifts that operator over to
+** B in p->a[1].  After this shift, the left-most term (p->a[0].fg.jointype)
+** is not used except as a placeholder for JT_LTORJ and/or JT_LATERAL to
+** indicate that at least one RIGHT JOIN or LATERAL JOIN (respectively)
+** occurs somewhere in the FROM.
 **
 ** Additional changes:
 **

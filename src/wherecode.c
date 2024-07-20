@@ -1433,7 +1433,7 @@ static SQLITE_NOINLINE int haltAddress(
   int iLevel,
   SrcItem *pTabItem
 ){
-  if( pTabItem->fg.isLateral==0 ){
+  if( pTabItem->fg.isLateral==0 || pTabItem->fg.isCorrelated==0 ){
     while( 1 /*exit-by-break*/ ){
       if( pWInfo->a[iLevel].iLeftJoin ) break;
       if( pWInfo->a[iLevel].pRJ ) break;

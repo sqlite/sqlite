@@ -1897,26 +1897,29 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       assert( pItem->zName!=0 || pItem->pSelect!=0 );/* Test of tag-20240424-1*/
       if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
         int nRef = pOuterNC ? pOuterNC->nRef : 0;
+        int nRef2 = sNC.nRef;
+        NameContext *pSubNC;
         const char *zSavedContext = pParse->zAuthContext;
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
-        if( pItem->fg.isLateral && i>0 ){
-          int nRef2 = sNC.nRef;
+        if( pItem->fg.isLateral ){
+          assert( i>0 );  /* Because p->pSub->a[0] is never marked LATERAL */
           p->pSrc->nSrc = i;
           sNC.pSrcList = p->pSrc;
           sNC.pNext = pOuterNC;
-          sqlite3ResolveSelectNames(pParse, pItem->pSelect, &sNC);
-          p->pSrc->nSrc = nSrc;
-          if( sNC.nRef>nRef2 ){
-            int kk;
-            pItem->fg.isCorrelated = 1;
-            for(kk=0; kk<i; kk++) p->pSrc->a[kk].fg.jointype |= JT_LATERAL;
-          }
+          pSubNC = &sNC;
+        }else{
           sNC.pSrcList = 0;
           sNC.pNext = 0;
-        }else{
-          sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
+          pSubNC = pOuterNC;
         }
-      
+        sqlite3ResolveSelectNames(pParse, pItem->pSelect, pSubNC);
+        p->pSrc->nSrc = nSrc;
+        if( sNC.nRef>nRef2 ){
+          pItem->fg.isCorrelated = 1;
+          /* Add JT_LATERAL to the left-most term of the FROM clause as a
+          ** marker that this FROM clause contains one or more LATERALs. */
+          p->pSrc->a[0].fg.jointype |= JT_LATERAL;
+        }
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr ) return WRC_Abort;
         assert( db->mallocFailed==0 );

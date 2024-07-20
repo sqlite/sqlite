@@ -261,7 +261,6 @@ static Select *findRightmost(Select *p){
 */
 int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   int jointype = 0;
-  int bErr = 0;
   Token *apAll[3];
   Token *p;
                              /*   0123456789 123456789 123456789 123 */
@@ -294,13 +293,12 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     }
     testcase( j==0 || j==1 || j==2 || j==3 || j==4 || j==5 || j==6 );
     if( j>=ArraySize(aKeyword) ){
-      bErr = 1;
+      jointype = JT_OUTER;  /* Triggers error report below */
       break;
     }
   }
   if(
      (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
-     bErr>0 ||
      (jointype & (JT_OUTER|JT_LEFT|JT_RIGHT))==JT_OUTER
   ){
     const char *zSp1 = " ";
@@ -7258,7 +7256,7 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 **         (a) the AS MATERIALIZED keyword is used, or
 **         (b) the CTE is used multiple times and does not have the
 **             NOT MATERIALIZED keyword
-**    (3)  The subquery is not part of a left operand for a RIGHT JOIN
+**    (3)  The FROM clause does not contain a RIGHT JOIN nor a LATERAL JOIN.
 **    (4)  The SQLITE_Coroutine optimization disable flag is not set
 **    (5)  The subquery is not self-joined
 */
