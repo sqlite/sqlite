@@ -1419,6 +1419,32 @@ static int whereLoopIsOneRow(WhereLoop *pLoop){
 }
 
 /*
+** Find an appropriate label for iLevel loop to jump to if it the table
+** for that loop is empty.
+**
+** For a simple query, we might as well jump to the break-address of the
+** outermost loop, halting the query, since if one of the joined tables
+** is empty, the result set will be empty.  But that does not work if
+** there are outer joins.  Nor does it work if the empty table is a
+** correlated subquery (with the LATERAL keyword).
+*/
+static SQLITE_NOINLINE int haltAddress(
+  WhereInfo *pWInfo,
+  int iLevel,
+  SrcItem *pTabItem
+){
+  if( pTabItem->fg.isLateral==0 ){
+    while( 1 /*exit-by-break*/ ){
+      if( pWInfo->a[iLevel].iLeftJoin ) break;
+      if( pWInfo->a[iLevel].pRJ ) break;
+      if( iLevel==0 ) break;
+      iLevel--;
+    };
+  }
+  return pWInfo->a[iLevel].addrBrk;
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1440,7 +1466,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   sqlite3 *db;                    /* Database connection */
   SrcItem *pTabItem;              /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
-  int addrHalt;                   /* addrBrk for the outermost loop */
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
@@ -1498,14 +1523,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN match flag"));
   }
-
-  /* Compute a safe address to jump to if we discover that the table for
-  ** this loop is empty and can never contribute content. */
-  for(j=iLevel; j>0; j--){
-    if( pWInfo->a[j].iLeftJoin ) break;
-    if( pWInfo->a[j].pRJ ) break;
-  }
-  addrHalt = pWInfo->a[j].addrBrk;
 
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->fg.viaCoroutine ){
@@ -1738,7 +1755,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, pX->op==TK_GE);
       sqlite3ReleaseTempReg(pParse, rTemp);
     }else{
-      sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrHalt);
+      sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, 
+                        haltAddress(pWInfo, iLevel, pTabItem));
       VdbeCoverageIf(v, bRev==0);
       VdbeCoverageIf(v, bRev!=0);
     }
@@ -2533,7 +2551,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       codeCursorHint(pTabItem, pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
-      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrHalt);
+      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, 
+                               haltAddress(pWInfo, iLevel, pTabItem));
       VdbeCoverageIf(v, bRev==0);
       VdbeCoverageIf(v, bRev!=0);
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;

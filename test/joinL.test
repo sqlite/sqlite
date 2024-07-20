@@ -141,7 +141,7 @@ do_execsql_test 2.1 {
   SELECT user_id, first_order_time, next_order_time, id FROM
     LATERAL (SELECT user_id, min(created_at) AS first_order_time
        FROM orders GROUP BY user_id) AS o1
-    LEFT JOIN LATERAL
+    JOIN LATERAL
     (SELECT id, created_at AS next_order_time
      FROM orders
      WHERE user_id = o1.user_id AND created_at > o1.first_order_time
@@ -149,7 +149,6 @@ do_execsql_test 2.1 {
     ON true;
 } {
   1   2024-07-20T01:35:03  2024-07-20T01:58:10 4
-  2   2024-07-20T01:35:07  NULL                NULL
   3   2024-07-20T01:35:10  2024-07-20T01:58:17 5
 }
 
