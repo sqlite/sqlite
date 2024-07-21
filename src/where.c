@@ -708,7 +708,7 @@ static LogEst estLog(LogEst N){
 ** iAutoidxCur cursor, in order to generate unique rowids for the
 ** automatic index being generated.
 */
-static void translateColumnToCopy(
+void sqlite3TranslateColumnToCopy(
   Parse *pParse,      /* Parsing context */
   int iStart,         /* Translate from this opcode to the end */
   int iTabCur,        /* OP_Column/OP_Rowid references to this table */
@@ -1185,8 +1185,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
     testcase( pParse->db->mallocFailed );
     assert( pLevel->iIdxCur>0 );
-    translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
-                          pSrc->regResult, pLevel->iIdxCur);
+    sqlite3TranslateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
+                                 pSrc->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
     pSrc->fg.viaCoroutine = 0;
   }else{
@@ -7292,8 +7292,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pTabItem->fg.viaCoroutine ){
       testcase( pParse->db->mallocFailed );
       assert( pTabItem->regResult>=0 );
-      translateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
-                            pTabItem->regResult, 0);
+      sqlite3TranslateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
+                                   pTabItem->regResult, 0);
       continue;
     }
 

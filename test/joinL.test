@@ -165,4 +165,10 @@ do_execsql_test 3.0 {
   SELECT * FROM t2;
 } {1 2 98 99}
 
+# https://sqlite.org/forum/forumpost/dfe2cd37ca3a9a80
+#
+do_execsql_test 4.0 {
+  SELECT * FROM (VALUES (1), (2)) JOIN LATERAL (select COUNT(*), column1);
+} {1 1 1 2 1 2}
+
 finish_test

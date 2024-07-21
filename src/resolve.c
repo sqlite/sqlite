@@ -1916,9 +1916,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         p->pSrc->nSrc = nSrc;
         if( sNC.nRef>nRef2 ){
           pItem->fg.isCorrelated = 1;
-          /* Add JT_LATERAL to the left-most term of the FROM clause as a
-          ** marker that this FROM clause contains one or more LATERALs. */
-          p->pSrc->a[0].fg.jointype |= JT_LATERAL;
         }
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr ) return WRC_Abort;

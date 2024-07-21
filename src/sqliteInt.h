@@ -5019,6 +5019,13 @@ void sqlite3Update(Parse*, SrcList*, ExprList*,Expr*,int,ExprList*,Expr*,
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,
                              ExprList*,Select*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
+void sqlite3TranslateColumnToCopy(
+  Parse *pParse,      /* Parsing context */
+  int iStart,         /* Translate from this opcode to the end */
+  int iTabCur,        /* OP_Column/OP_Rowid references to this table */
+  int iRegister,      /* The first column is in this register */
+  int iAutoidxCur     /* If non-zero, cursor of autoindex being generated */
+);
 LogEst sqlite3WhereOutputRowCount(WhereInfo*);
 int sqlite3WhereIsDistinct(WhereInfo*);
 int sqlite3WhereIsOrdered(WhereInfo*);

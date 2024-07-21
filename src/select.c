@@ -7256,7 +7256,7 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 **         (a) the AS MATERIALIZED keyword is used, or
 **         (b) the CTE is used multiple times and does not have the
 **             NOT MATERIALIZED keyword
-**    (3)  The FROM clause does not contain a RIGHT JOIN nor a LATERAL JOIN.
+**    (3)  The FROM clause does not contain a RIGHT JOIN
 **    (4)  The SQLITE_Coroutine optimization disable flag is not set
 **    (5)  The subquery is not self-joined
 */
@@ -7272,9 +7272,7 @@ static int fromClauseTermCanBeCoroutine(
     if( pCteUse->eM10d==M10d_Yes ) return 0;                          /* (2a) */
     if( pCteUse->nUse>=2 && pCteUse->eM10d!=M10d_No ) return 0;       /* (2b) */
   }
-  testcase( pTabList->a[0].fg.jointype & JT_LTORJ );
-  testcase( pTabList->a[0].fg.jointype & JT_LATERAL );
-  if( pTabList->a[0].fg.jointype & (JT_LTORJ|JT_LATERAL) ) return 0;  /* (3)  */
+  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;               /* (3)  */
   if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0; /* (4)  */
   if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
     return 0;                                                          /* (5) */
@@ -7816,6 +7814,15 @@ int sqlite3Select(
       ExplainQueryPlan2(addrExplain, (pParse, 1, "MATERIALIZE %!S", pItem));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
+      if( pItem->fg.isLateral && pItem->fg.isCorrelated ){
+        int kk;
+        for(kk=0; kk<i; kk++){
+          SrcItem *pX = &pTabList->a[kk];
+          if( pX->fg.viaCoroutine==0 ) continue;
+          sqlite3TranslateColumnToCopy(pParse, topAddr+1,
+             pX->iCursor, pX->regResult, 0);
+        }
+      }
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
