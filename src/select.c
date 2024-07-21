@@ -7753,6 +7753,7 @@ int sqlite3Select(
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
     
+      assert( pItem->fg.isLateral==0 );
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%!S", pItem));
