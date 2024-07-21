@@ -1,5 +1,5 @@
-C Improved\sdebugging\soutput\swhen\susing\sPRAGMA\svdbe_addoptrace:\nShow\sthe\srange\sof\sopcodes\sbeing\schecked\sfor\sColumn-to-Copy\sconversion.
-D 2024-07-21T23:10:55.079
+C Fixes\sto\sTreeView\sdebugging\soutput\sfor\sVALUES\sclauses.
+D 2024-07-21T23:34:52.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -818,7 +818,7 @@ F src/test_window.c cdae419fdcea5bad6dcd9368c685abdad6deb59e9fc8b84b153de513d394
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3f703cacdab728d7741e5a6ac242006d74fe1c2754d4f03ed889d7253259bd68
-F src/treeview.c e4f0c5ca871371d26ca6868554bd5b06b7bd9554023bbec834e26c2b45814b0c
+F src/treeview.c 774838df4e25956ca34ff79bef150266412cfc2640620d04e22d5c8a55a98992
 F src/trigger.c 0858f75818ed1580332db274f1032bcc5effe567cb132df5c5be8b1d800ca97f
 F src/update.c 732404a04d1737ef14bb6ec6b84f74edf28b3c102a92ae46b4855438a710efe7
 F src/upsert.c 2e60567a0e9e8520c18671b30712a88dc73534474304af94f32bb5f3ef65ac65
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7be326a80e7b3aa8fd6e5e059c04e6ad3feaffcb20b1e3c251d7195ddc1be8b
-R 9ae7ec0fe10c689e0f0ef5a3a2113d67
+P 2c122026db979a099a3d1a14ae1e01a0a64a559905ea414b2d80ed7dc3e04846
+R 7c78963f5a281763614d42345d62144d
 U drh
-Z 501b27f7af7c0d47afe601f333f1b3b4
+Z e31a6d3bd1a00f1e50f69b067433df28
 # Remove this line to create a well-formed Fossil manifest.
