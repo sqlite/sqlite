@@ -6313,6 +6313,30 @@ static SQLITE_NOINLINE void whereReverseScanOrder(WhereInfo *pWInfo){
 }
 
 /*
+** Adjust the addrBody of all WHERE_IDX_ONLY WhereLoops prior to ii 
+** so that the addrBody covers the subroutine that computes a LATERAL
+** subquery.
+**
+** This routine is broken out into a separate no-inline subroutine because
+** it runs rarely, and by breaking it out it reduces register contention
+** in the main sqlite3WhereBegin() routine, helping sqlite3WhereBegin()
+** to run faster.
+*/
+static SQLITE_NOINLINE void whereAdjustAddrBodyForLateral(
+  WhereInfo *pWInfo,  /* There WHERE loop info */
+  SrcItem *pSrc,      /* The LATERAL subquery */
+  int ii              /* Index of pSrc in the FROM clause */
+){
+  while( --ii >= 0 ){
+    if( pWInfo->a[ii].pWLoop->wsFlags & WHERE_IDX_ONLY
+     && pWInfo->a[ii].addrBody > pSrc->addrFillSub
+    ){
+       pWInfo->a[ii].addrBody = pSrc->addrFillSub;
+    }
+  }
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -7000,6 +7024,9 @@ WhereInfo *sqlite3WhereBegin(
     if( pSrc->fg.isMaterialized ){
       if( pSrc->fg.isCorrelated ){
         sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);
+        if( pSrc->fg.isLateral ){
+          whereAdjustAddrBodyForLateral(pWInfo, pSrc, ii);
+        }
       }else{
         int iOnce = sqlite3VdbeAddOp0(v, OP_Once);  VdbeCoverage(v);
         sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->regReturn, pSrc->addrFillSub);

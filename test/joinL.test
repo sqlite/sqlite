@@ -171,4 +171,36 @@ do_execsql_test 4.0 {
   SELECT * FROM (VALUES (1), (2)) JOIN LATERAL (select COUNT(*), column1);
 } {1 1 1 2 1 2}
 
+# https://sqlite.org/forum/forumpost/fc29fa4f14
+#
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a,b);      INSERT INTO t1 VALUES(1,2);
+  CREATE TABLE t2(c,d,e,f);  INSERT INTO t2 VALUES(3,4,5,6);
+  CREATE INDEX t2cd ON t2(c,d);
+  CREATE TABLE dual(dummy TEXT);  INSERT INTO dual VALUES('X');
+  SELECT c, a, sb
+    FROM t2, LATERAL(
+           SELECT a, sum(b) AS sb FROM t1 GROUP BY a HAVING sum(b)<d
+         ) AS lx
+   ORDER BY a, c;
+} {3 1 2}
+do_execsql_test 5.1 {
+  SELECT c, a, sb
+    FROM dual, t2, LATERAL(
+           SELECT a, sum(b) AS sb FROM t1 GROUP BY a HAVING sum(b)<d
+         ) AS lx
+   ORDER BY a, c;
+} {3 1 2}
+do_execsql_test 5.2 {
+  SELECT c, a, sb
+    FROM t2, dual, LATERAL(
+           SELECT a, sum(b) AS sb FROM t1 GROUP BY a HAVING sum(b)<d
+         ) AS lx
+   ORDER BY a, c;
+} {3 1 2}
+
+
+
+
+
 finish_test
