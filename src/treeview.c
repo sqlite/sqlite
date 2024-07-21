@@ -240,14 +240,12 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
     }
     if( pItem->pSelect ){
-      sqlite3TreeViewPush(&pView, i+1<pSrc->nSrc);
       if( pItem->pTab ){
         Table *pTab = pItem->pTab;
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
       assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
       sqlite3TreeViewSelect(pView, pItem->pSelect, (--n)>0);
-      sqlite3TreeViewPop(&pView);
     }
     if( pItem->fg.isTabFunc ){
       sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
@@ -289,7 +287,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       n = 1000;
     }else{
       n = 0;
-      if( p->pSrc && p->pSrc->nSrc ) n++;
+      if( p->pSrc && p->pSrc->nSrc && p->pSrc->nAlloc ) n++;
       if( p->pWhere ) n++;
       if( p->pGroupBy ) n++;
       if( p->pHaving ) n++;
@@ -315,7 +313,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       sqlite3TreeViewPop(&pView);
     }
 #endif
-    if( p->pSrc && p->pSrc->nSrc ){
+    if( p->pSrc && p->pSrc->nSrc && p->pSrc->nAlloc ){
       sqlite3TreeViewPush(&pView, (n--)>0);
       sqlite3TreeViewLine(pView, "FROM");
       sqlite3TreeViewSrcList(pView, p->pSrc);

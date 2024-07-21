@@ -3927,9 +3927,7 @@ static void sqlite3ExprCodeIN(
   if( sqlite3ExprCheckIN(pParse, pExpr) ) return;
   zAff = exprINAffinity(pParse, pExpr);
   nVector = sqlite3ExprVectorSize(pExpr->pLeft);
-  aiMap = (int*)sqlite3DbMallocZero(
-      pParse->db, nVector*(sizeof(int) + sizeof(char)) + 1
-  );
+  aiMap = (int*)sqlite3DbMallocZero(pParse->db, nVector*sizeof(int));
   if( pParse->db->mallocFailed ) goto sqlite3ExprCodeIN_oom_error;
 
   /* Attempt to compute the RHS. After this step, if anything other than

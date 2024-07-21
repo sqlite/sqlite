@@ -719,6 +719,12 @@ void sqlite3TranslateColumnToCopy(
   VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
   int iEnd = sqlite3VdbeCurrentAddr(v);
   if( pParse->db->mallocFailed ) return;
+#ifdef SQLITE_DEBUG
+  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+    printf("CHECKING for column-to-copy on cursor %d for %d..%d\n",
+            iTabCur, iStart, iEnd);
+  }
+#endif
   for(; iStart<iEnd; iStart++, pOp++){
     if( pOp->p1!=iTabCur ) continue;
     if( pOp->opcode==OP_Column ){
