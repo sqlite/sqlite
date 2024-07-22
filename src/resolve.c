@@ -1910,9 +1910,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
             ** variables from other FROM clause terms to the left of the
             ** subquery to be used in the LIMIT/OFFSET clause. */
             sNC.pNext = 0;
-            if( sqlite3ResolveExprNames(&sNC, pItem->pSelect->pLimit) ){
-              return WRC_Abort;
-            }
+            (void)sqlite3ResolveExprNames(&sNC, pItem->pSelect->pLimit);
           }
           sNC.pNext = pOuterNC;
           pSubNC = &sNC;
