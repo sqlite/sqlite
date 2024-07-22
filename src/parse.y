@@ -733,12 +733,13 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
     A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
   }
   seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP select(S) RP as(Z) on_using(N). {
-    //                            \___________/
-    //                                  |
-    //  This must be a single identifier token "LATERAL".  We cannot make
-    //  LATERAL a keyword, since there might be legacy databases that
-    //  use "lateral" as a table name and a table name is valid syntax
-    //  in this position.
+    /*                            \___________/
+    **                                  |
+    **  This must be a single identifier token "LATERAL".  We cannot make
+    **  LATERAL a keyword, since there might be legacy databases that
+    **  use "lateral" as a table name and a table name is valid syntax
+    **  in this position.
+    */
     SrcList *pSrc = A;
     if( Y.n!=7 || sqlite3StrNICmp(Y.z,"lateral",7)!=0 || D.z!=0 ){
       sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &Y);
