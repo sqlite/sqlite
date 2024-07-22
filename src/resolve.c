@@ -1868,7 +1868,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pWinSelect = p;
-    sNC.pNext = pOuterNC;
+    if( p->selFlags & SF_Lateral ) sNC.pNext = pOuterNC;
     if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }
@@ -1902,6 +1902,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
         if( pItem->fg.isLateral ){
           assert( i>0 );  /* Because p->pSub->a[0] is never marked LATERAL */
+          assert( pItem->pSelect->selFlags & SF_Lateral );
           p->pSrc->nSrc = i;
           sNC.pSrcList = p->pSrc;
           sNC.pNext = pOuterNC;

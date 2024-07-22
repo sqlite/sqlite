@@ -2069,6 +2069,9 @@ case OP_MustBeInt: {            /* jump0, in1 */
       }
     }
   }
+#ifdef SQLITE_DEBUG
+  pIn1->pScopyFrom = 0;
+#endif
   VdbeBranchTaken(0, 2);
   MemSetTypeFlag(pIn1, MEM_Int);
   break;
