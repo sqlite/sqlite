@@ -79,14 +79,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }.bind({counter: 0}));
 
-  /**
-     A map of sqlite3_vfs pointers to SQL code or a callback function
-     to run when the DB constructor opens a database with the given
-     VFS. In the latter case, the call signature is (theDbObject,sqlite3Namespace)
-     and the callback is expected to throw on error.
-  */
-  const __vfsPostOpenSql = Object.create(null);
-
 //#if enable-see
   /**
      Converts ArrayBuffer or Uint8Array ba into a string of hex
@@ -279,7 +271,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       // Check for per-VFS post-open SQL/callback...
       const pVfs = capi.sqlite3_js_db_vfs(pDb)
             || toss3("Internal error: cannot get VFS for new db handle.");
-      const postInitSql = __vfsPostOpenSql[pVfs];
+      const postInitSql = __vfsPostOpenCallback[pVfs];
       if(postInitSql){
         /**
            Reminder: if this db is encrypted and the client did _not_ pass
@@ -302,19 +294,39 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   };
 
+
   /**
-     Sets SQL which should be exec()'d on a DB instance after it is
-     opened with the given VFS pointer. The SQL may be any type
-     supported by the "string:flexible" function argument conversion.
-     Alternately, the 2nd argument may be a function, in which case it
-     is called with (theOo1DbObject,sqlite3Namespace) at the end of
-     the DB() constructor. The function must throw on error, in which
-     case the db is closed and the exception is propagated.  This
-     function is intended only for use by DB subclasses or sqlite3_vfs
-     implementations.
+     A map of sqlite3_vfs pointers to SQL code or a callback function
+     to run when the DB constructor opens a database with the given
+     VFS. In the latter case, the call signature is
+     (theDbObject,sqlite3Namespace) and the callback is expected to
+     throw on error.
   */
-  dbCtorHelper.setVfsPostOpenSql = function(pVfs, sql){
-    __vfsPostOpenSql[pVfs] = sql;
+  const __vfsPostOpenCallback = Object.create(null);
+
+  /**
+     Sets a callback which should be called after a db is opened with
+     the given sqlite3_vfs pointer. The 2nd argument must be a
+     function, which gets called with
+     (theOo1DbObject,sqlite3Namespace) at the end of the DB()
+     constructor. The function must throw on error, in which case the
+     db is closed and the exception is propagated.  This function is
+     intended only for use by DB subclasses or sqlite3_vfs
+     implementations.
+
+     Prior to 2024-07-22, it was legal to pass SQL code as the second
+     argument, but that can interfere with a client's ability to run
+     pragmas which must be run before anything else, namely (pragma
+     locking_mode=exclusive) for use with WAL mode.  That capability
+     had only ever been used as an internal detail of the two OPFS
+     VFSes, and they no longer use it that way.
+  */
+  dbCtorHelper.setVfsPostOpenCallback = function(pVfs, callback){
+    if( !(callback instanceof Function)){
+      toss3("dbCtorHelper.setVfsPostOpenCallback() should not be used with "+
+            "a non-function argument.",arguments);
+    }
+    __vfsPostOpenCallback[pVfs] = callback;
   };
 
   /**

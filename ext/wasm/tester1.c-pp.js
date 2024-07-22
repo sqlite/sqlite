@@ -3113,11 +3113,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(db instanceof sqlite3.oo1.DB)
           .assert(1 === u1.getFileCount());
         db.exec([
+          'pragma locking_mode=exclusive;',
+          'pragma journal_mode=wal;'
+          /* WAL mode only works in this VFS if locking_mode=exclusive
+             is invoked prior to the first db access, as this build
+             does not have the shared-memory APIs needed for WAL without
+             exclusive-mode locking. See:
+
+             https://sqlite.org/wal.html#use_of_wal_without_shared_memory
+
+             Note that WAL mode here DOES NOT add any concurrency capabilities
+             to this VFS, but it MAY provide slightly improved performance
+             over the other journaling modes.
+          */,
           'create table t(a);',
           'insert into t(a) values(1),(2),(3)'
         ]);
-        T.assert(1 === u1.getFileCount());
-        T.assert(3 === db.selectValue('select count(*) from t'));
+        T.assert(2 === u1.getFileCount() /* one is the journal file */)
+          .assert(3 === db.selectValue('select count(*) from t'))
+          .assert('wal'===db.selectValue('pragma journal_mode'));
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);
@@ -3137,6 +3151,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
+            //.assert('wal' == db2.selectValue("pragma journal_mode=WAL"))
             .assert(3 === db2.selectValue('select count(*) from t'));
           db2.close();
           T.assert(true === u1.unlink(dbName2))
