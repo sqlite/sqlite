@@ -79,6 +79,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }.bind({counter: 0}));
 
+  /**
+     A map of sqlite3_vfs pointers to SQL code or a callback function
+     to run when the DB constructor opens a database with the given
+     VFS. In the latter case, the call signature is
+     (theDbObject,sqlite3Namespace) and the callback is expected to
+     throw on error.
+  */
+  const __vfsPostOpenCallback = Object.create(null);
+
 //#if enable-see
   /**
      Converts ArrayBuffer or Uint8Array ba into a string of hex
@@ -108,7 +117,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      are set. It throws if more than one is set or if any are set to
      values of an invalid type.
 
-     Returns true if it applies the key, else an unspecified falsy value.
+     Returns true if it applies the key, else an unspecified falsy
+     value.  Note that applying the key does not imply that the key is
+     correct, only that it was passed on to the db.
   */
   const dbCtorApplySEEKey = function(db,opt){
     if( !capi.sqlite3_key_v2 ) return;
@@ -170,10 +181,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     try{
       stmt = db.prepare("PRAGMA "+keytype+"="+util.sqlite3__wasm_qfmt_token(key, 1));
       stmt.step();
+      return true;
     }finally{
       if(stmt) stmt.finalize();
     }
-    return true;
   };
 //#endif enable-see
 
@@ -293,16 +304,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       throw e;
     }
   };
-
-
-  /**
-     A map of sqlite3_vfs pointers to SQL code or a callback function
-     to run when the DB constructor opens a database with the given
-     VFS. In the latter case, the call signature is
-     (theDbObject,sqlite3Namespace) and the callback is expected to
-     throw on error.
-  */
-  const __vfsPostOpenCallback = Object.create(null);
 
   /**
      Sets a callback which should be called after a db is opened with

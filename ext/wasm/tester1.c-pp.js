@@ -3151,7 +3151,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
-            //.assert('wal' == db2.selectValue("pragma journal_mode=WAL"))
+            .assert('wal' !== db2.selectValue("pragma journal_mode")
+                    /* importDb() unsets the WAL-mode header for
+                       historical reasons. Because clients must
+                       explicitly enable pragma locking_mode=exclusive
+                       before using WAL, that behavior is retained. */)
             .assert(3 === db2.selectValue('select count(*) from t'));
           db2.close();
           T.assert(true === u1.unlink(dbName2))
