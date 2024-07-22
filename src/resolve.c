@@ -1864,12 +1864,11 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     assert( (p->selFlags & SF_Resolved)==0 );
     p->selFlags |= SF_Resolved;
 
-    /* Resolve the expressions in the LIMIT and OFFSET clauses. These
-    ** are not allowed to refer to any names, so pass an empty NameContext.
-    */
+    /* Resolve the expressions in the LIMIT and OFFSET clauses. */
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pWinSelect = p;
+    sNC.pNext = pOuterNC;
     if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }

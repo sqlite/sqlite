@@ -170,6 +170,39 @@ do_execsql_test 3.0 {
 do_execsql_test 4.0 {
   SELECT * FROM (VALUES (1), (2)) JOIN LATERAL (select COUNT(*), column1);
 } {1 1 1 2 1 2}
+do_execsql_test 4.1 {
+  CREATE TABLE t3(x INTEGER PRIMARY KEY);
+  WITH RECURSIVE c(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<20)
+    INSERT INTO t3(x) SELECT n FROM c;
+  CREATE TABLE t4(y,z);
+  INSERT INTO t4 VALUES(1,0),(3,2),(5,7);
+  SELECT * FROM t4, LATERAL(SELECT x FROM t3 ORDER BY x LIMIT y OFFSET z);
+} {
+  1   0   0   
+  3   2   2   
+  3   2   3   
+  3   2   4   
+  5   7   7   
+  5   7   8   
+  5   7   9   
+  5   7   10  
+  5   7   11 
+}
+do_execsql_test 4.2 {
+  SELECT * FROM (VALUES(1,0),(3,2),(5,7)),
+              LATERAL(SELECT x FROM t3 ORDER BY x LIMIT column1 OFFSET column2);
+} {
+  1   0   0   
+  3   2   2   
+  3   2   3   
+  3   2   4   
+  5   7   7   
+  5   7   8   
+  5   7   9   
+  5   7   10  
+  5   7   11 
+}
+
 
 # https://sqlite.org/forum/forumpost/fc29fa4f14
 #
@@ -198,9 +231,5 @@ do_execsql_test 5.2 {
          ) AS lx
    ORDER BY a, c;
 } {3 1 2}
-
-
-
-
 
 finish_test

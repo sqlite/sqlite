@@ -3977,6 +3977,7 @@ static void substSelect(
     substExprList(pSubst, p->pEList);
     substExprList(pSubst, p->pGroupBy);
     substExprList(pSubst, p->pOrderBy);
+    p->pLimit = substExpr(pSubst, p->pLimit);
     p->pHaving = substExpr(pSubst, p->pHaving);
     p->pWhere = substExpr(pSubst, p->pWhere);
     pSrc = p->pSrc;
