@@ -1278,9 +1278,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      option is not available on the client.
 
      Though the mount point name returned by this function is intended
-     to remain stable, clients should not hard-coded it anywhere. Always call this function to get the path.
+     to remain stable, clients should not hard-coded it
+     anywhere. Always call this function to get the path.
 
-     Note that this function is a no-op in must builds of this
+     Note that this function is a no-op in most builds of this
      library, as the WASMFS capability requires a custom
      build.
   */
