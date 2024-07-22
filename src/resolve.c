@@ -1868,8 +1868,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pWinSelect = p;
-    sNC.pNext = pOuterNC;
-    if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
+    if( p->pLimit!=0  && sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }
 
@@ -1902,9 +1901,19 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
         if( pItem->fg.isLateral ){
           assert( i>0 );  /* Because p->pSub->a[0] is never marked LATERAL */
+          assert( pItem->pSelect!=0 );
           assert( pItem->pSelect->selFlags & SF_Lateral );
           p->pSrc->nSrc = i;
           sNC.pSrcList = p->pSrc;
+          if( pItem->pSelect->pLimit ){
+            /* If a LIMIT/OFFSET clause exists on a LATERAL subquery, allow
+            ** variables from other FROM clause terms to the left of the
+            ** subquery to be used in the LIMIT/OFFSET clause. */
+            sNC.pNext = 0;
+            if( sqlite3ResolveExprNames(&sNC, pItem->pSelect->pLimit) ){
+              return WRC_Abort;
+            }
+          }
           sNC.pNext = pOuterNC;
           pSubNC = &sNC;
         }else{
