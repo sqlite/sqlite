@@ -1868,7 +1868,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pWinSelect = p;
-    if( p->selFlags & SF_Lateral ) sNC.pNext = pOuterNC;
+    sNC.pNext = pOuterNC;
     if( sqlite3ResolveExprNames(&sNC, p->pLimit) ){
       return WRC_Abort;
     }
