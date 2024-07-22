@@ -1184,7 +1184,7 @@ endif
 # Push files to public wasm-testing.sqlite.org server
 wasm-testing.include = *.js *.mjs *.html \
   ./tests \
-  $(dir.dout) $(dir.common) $(dir.fiddle) $(dir.jacc)
+  $(dir.dout) $(dir.common) $(dir.fiddle) $(dir.fiddle-debug) $(dir.jacc)
 wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
 wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)
@@ -1233,3 +1233,4 @@ endif
 # Run local web server for the test/demo pages.
 httpd:
 	althttpd -max-age 1 -enable-sab 1 -page index.html
+

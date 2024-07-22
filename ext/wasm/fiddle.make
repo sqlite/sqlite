@@ -69,11 +69,10 @@ $(eval $(call call-make-pre-post,fiddle-module,vanilla))
 define make-fiddle-rules
 fiddle-module.js$(2) := $(1)/fiddle-module.js
 fiddle-module.wasm$(2) := $$(subst .js,.wasm,$$(fiddle-module.js$(2)))
-$(1):
-	@test -d "$$@" || mkdir -p "$$@"
-$$(fiddle-module.js$(2)): $(1) $$(MAKEFILE) $$(MAKEFILE.fiddle) \
+$$(fiddle-module.js$(2)): $$(MAKEFILE) $$(MAKEFILE.fiddle) \
     $$(EXPORTED_FUNCTIONS.fiddle) \
-    $$(fiddle.cses) $$(pre-post-fiddle-module-vanilla.deps) $$(fiddle.SOAP.js$(2))
+    $$(fiddle.cses) $$(pre-post-fiddle-module-vanilla.deps) $$(SOAP.js)
+	@test -d "$$(dir $$@)" || mkdir -p "$$(dir $$@)"
 	$$(emcc.bin) -o $$@ $$(fiddle.emcc-flags$(2)) \
     $$(pre-post-fiddle-module-vanilla.flags) \
     $$(fiddle.cses)
@@ -99,10 +98,10 @@ fiddle.debug: $(fiddle-module.js.debug)
 
 clean: clean-fiddle
 clean-fiddle:
-	rm -f $(fiddle-module.js) $(fiddle-module.js).gz \
-        $(fiddle-module.wasm) $(fiddle-module.wasm).gz \
-        $(dir.fiddle)/$(SOAP.js) \
-        $(dir.fiddle)/fiddle-module.worker.js \
+	rm -f $(fiddle-module.js) \
+        $(fiddle-module.wasm) \
+        $(dir.fiddle)/sqlite3-opfs-*.js \
+        $(dir.fiddle)/*.gz \
         EXPORTED_FUNCTIONS.fiddle
 	rm -fr $(dir.fiddle-debug)
 .PHONY: fiddle fiddle.debug
