@@ -57,6 +57,8 @@
 **  (12)  The percentile(Y,P) is implemented as a single C99 source-code
 **        file that compiles into a shared-library or DLL that can be loaded
 **        into SQLite using the sqlite3_load_extension() interface.
+**
+**  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -103,16 +105,21 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   double rPct;
   int eType;
   double y;
-  assert( argc==2 );
+  assert( argc==2 || argc==1 );
 
-  /* Requirement 3:  P must be a number between 0 and 100 */
-  eType = sqlite3_value_numeric_type(argv[1]);
-  rPct = sqlite3_value_double(argv[1]);
-  if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
-   || rPct<0.0 || rPct>100.0 ){
-    sqlite3_result_error(pCtx, "2nd argument to percentile() is not "
-                         "a number between 0.0 and 100.0", -1);
-    return;
+  if( argc==1 ){
+    /* Requirement 13:  median(Y) is the same as percentile(Y,50). */
+    rPct = 50.0;
+  }else{
+    /* Requirement 3:  P must be a number between 0 and 100 */
+    eType = sqlite3_value_numeric_type(argv[1]);
+    rPct = sqlite3_value_double(argv[1]);
+    if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
+     || rPct<0.0 || rPct>100.0 ){
+       sqlite3_result_error(pCtx, "2nd argument to percentile() is not "
+                           "a number between 0.0 and 100.0", -1);
+      return;
+    }
   }
 
   /* Allocate the session context. */
@@ -165,14 +172,52 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 }
 
 /*
-** Compare to doubles for sorting using qsort()
+** Sort an array of doubles.
 */
-static int SQLITE_CDECL doubleCmp(const void *pA, const void *pB){
-  double a = *(double*)pA;
-  double b = *(double*)pB;
-  if( a==b ) return 0;
-  if( a<b ) return -1;
-  return +1;
+static void sortDoubles(double *a, int n){
+  int iLt;       /* Entries with index less than iLt are less than rPivot */
+  int iGt;       /* Entries with index iGt or more are greater than rPivot */
+  int i;         /* Loop counter */
+  double rPivot; /* The pivot value */
+  double rTmp;   /* Temporary used to swap two values */
+
+  if( n<2 ) return;
+  if( n>5 ){
+    rPivot = (a[0] + a[n/2] + a[n-1])/3.0;
+  }else{
+    rPivot = a[n/2];
+  }
+  iLt = i = 0;
+  iGt = n;
+  while( i<iGt ){
+    if( a[i]<rPivot ){
+      if( i>iLt ){
+        rTmp = a[i];
+        a[i] = a[iLt];
+        a[iLt] = rTmp;
+      }
+      iLt++;
+      i++;
+    }else if( a[i]>rPivot ){
+      do{
+        iGt--;
+      }while( iGt>i && a[iGt]>rPivot );
+      rTmp = a[i];
+      a[i] = a[iGt];
+      a[iGt] = rTmp;
+    }else{
+      i++;
+    }
+  }
+  if( iLt>=2 ) sortDoubles(a, iLt);
+  if( n-iGt>=2 ) sortDoubles(a+iGt, n-iGt);
+
+/* Uncomment for testing */
+#if 0
+  for(i=0; i<n-1; i++){
+    assert( a[i]<=a[i+1] );
+  }
+#endif
 }
 
 /*
@@ -188,7 +233,7 @@ static void percentFinal(sqlite3_context *pCtx){
   if( p==0 ) return;
   if( p->a==0 ) return;
   if( p->nUsed ){
-    qsort(p->a, p->nUsed, sizeof(double), doubleCmp);
+    sortDoubles(p->a, p->nUsed);
     ix = (p->rPct-1.0)*(p->nUsed-1)*0.01;
     i1 = (unsigned)ix;
     i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
@@ -216,5 +261,10 @@ int sqlite3_percentile_init(
   rc = sqlite3_create_function(db, "percentile", 2, 
                                SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
                                0, percentStep, percentFinal);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "median", 1, 
+                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
+                                 0, percentStep, percentFinal);
+  }
   return rc;
 }

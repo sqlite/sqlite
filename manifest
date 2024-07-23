@@ -1,5 +1,5 @@
-C Doc\stypo\sfix.\sNo\scode\schanges.
-D 2024-07-22T21:46:55.078
+C Enhance\sthe\spercentile()\sextension\sfunction\sto\sinclude\sthe\smedian()\nvariant.\s\sUpdate\sthe\simplementation\sto\simplement\sits\sown\ssorting\nalgorithm,\sso\sthat\sthe\sextension\sno\slonger\sdepends\son\sqsort().
+D 2024-07-23T16:23:46.925
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -404,7 +404,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea576453d82e691
+F ext/misc/percentile.c f15eb0fb0c2a95a482382b41415b9d1ae66eabf857ecac8e1e0eb3aa6b44e4d8
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -1503,7 +1503,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test 6aa33756b950c4529f79c4f3817a9a1e4025bd0d9961571a05c0279bd183d9c6
-F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
+F test/percentile.test 16fa70efabac459223d4886604abc629cacfb5f00ca7c3160da47fbeac870674
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6cd9f55a975b5237efee8776efce7e7836b41905ca750f82be3b90aa04c1dff2
-R 61b15192d04959d281e94594e02bce6a
-U stephan
-Z aae0cc74fee2d9ed676d7939f647c2b8
+P 8d558ad25bfbdea04de87616d4e3f664b5749a7d23643d1a0238e991b4bb337e
+R 6164638135694f2a60de1effceddb452
+U drh
+Z a2b6c7a02bd489d715da4964c630a442
 # Remove this line to create a well-formed Fossil manifest.

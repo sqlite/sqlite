@@ -38,6 +38,9 @@ foreach {in out} {
     execsql {SELECT percentile(x,$in) FROM t1}
   } $out
 }
+do_execsql_test percentile-1.1.median {
+  SELECT median(x) FROM t1;
+} 8.0
 
 # Add some NULL values.
 #
