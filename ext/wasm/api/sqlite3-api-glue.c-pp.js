@@ -385,26 +385,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
-    ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
-    ["sqlite3_preupdate_count", "int", "sqlite3*"],
-    ["sqlite3_preupdate_depth", "int", "sqlite3*"],
-    ["sqlite3_preupdate_hook", "*", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_preupdate_hook',
-        signature: "v(ppippjj)",
-        contextKey: (argv)=>argv[0/* sqlite3* */],
-        callProxy: (callback)=>{
-          return (p,db,op,zDb,zTbl,iKey1,iKey2)=>{
-            callback(p, db, op, wasm.cstrToJs(zDb), wasm.cstrToJs(zTbl),
-                     iKey1, iKey2);
-          };
-        }
-      }),
-      "*"
-    ]],
-    ["sqlite3_preupdate_new", "int", ["sqlite3*", "int", "**"]],
-    ["sqlite3_preupdate_old", "int", ["sqlite3*", "int", "**"]],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
@@ -440,8 +420,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_vtab_rhs_value","int", "sqlite3_index_info*", "int", "**"]
   ];
 
+  if(wasm.bigIntEnabled && !!wasm.exports.sqlite3_preupdate_hook){
+    wasm.bindingSignatures.int64.push(
+      ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
+      ["sqlite3_preupdate_count", "int", "sqlite3*"],
+      ["sqlite3_preupdate_depth", "int", "sqlite3*"],
+      ["sqlite3_preupdate_hook", "*", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_preupdate_hook',
+          signature: "v(ppippjj)",
+          contextKey: (argv)=>argv[0/* sqlite3* */],
+          callProxy: (callback)=>{
+            return (p,db,op,zDb,zTbl,iKey1,iKey2)=>{
+              callback(p, db, op, wasm.cstrToJs(zDb), wasm.cstrToJs(zTbl),
+                       iKey1, iKey2);
+            };
+          }
+        }),
+        "*"
+      ]],
+      ["sqlite3_preupdate_new", "int", ["sqlite3*", "int", "**"]],
+      ["sqlite3_preupdate_old", "int", ["sqlite3*", "int", "**"]]
+    );
+  } /* preupdate API */
+
   // Add session/changeset APIs...
-  if(wasm.bigIntEnabled && !!wasm.exports.sqlite3changegroup_add){
+  if(wasm.bigIntEnabled
+     && !!wasm.exports.sqlite3changegroup_add
+     && !!wasm.exports.sqlite3session_create
+     && !!wasm.exports.sqlite3_preupdate_hook /* required by the session API */){
     /**
        FuncPtrAdapter options for session-related callbacks with the
        native signature "i(ps)". This proxy converts the 2nd argument
@@ -1079,7 +1087,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_close_v2()*/
 
-  if(capi.sqlite3session_table_filter){
+  if(capi.sqlite3session_create){
     const __sqlite3SessionDelete = wasm.xWrap(
       'sqlite3session_delete', undefined, ['sqlite3_session*']
     );

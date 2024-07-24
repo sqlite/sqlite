@@ -104,8 +104,8 @@
 #ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
 #endif
-#ifndef SQLITE_ENABLE_FTS4
-#  define SQLITE_ENABLE_FTS4 1
+#ifndef SQLITE_ENABLE_FTS5
+#  define SQLITE_ENABLE_FTS5 1
 #endif
 #ifndef SQLITE_ENABLE_MATH_FUNCTIONS
 #  define SQLITE_ENABLE_MATH_FUNCTIONS 1
@@ -127,6 +127,22 @@
 #endif
 #ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 #  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+#endif
+
+/*
+** If SQLITE_WASM_MINIMAL is defined, undefine most of the ENABLE
+** macros.
+*/
+#ifdef SQLITE_WASM_MINIMAL
+#  undef SQLITE_ENABLE_DBPAGE_VTAB
+#  undef SQLITE_ENABLE_DBSTAT_VTAB
+#  undef SQLITE_ENABLE_EXPLAIN_COMMENTS
+#  undef SQLITE_ENABLE_FTS5
+#  undef SQLITE_ENABLE_OFFSET_SQL_FUNC
+#  undef SQLITE_ENABLE_PREUPDATE_HOOK
+#  undef SQLITE_ENABLE_RTREE
+#  undef SQLITE_ENABLE_SESSION
+#  undef SQLITE_ENABLE_STMTVTAB
 #endif
 
 /**********************************************************************/
@@ -499,6 +515,7 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(changeset){
+#ifdef SQLITE_CHANGESETSTART_INVERT
     DefInt(SQLITE_CHANGESETSTART_INVERT);
     DefInt(SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
     DefInt(SQLITE_CHANGESETAPPLY_INVERT);
@@ -513,6 +530,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_CHANGESET_OMIT);
     DefInt(SQLITE_CHANGESET_REPLACE);
     DefInt(SQLITE_CHANGESET_ABORT);
+#endif
   } _DefGroup;
 
   DefGroup(config){
@@ -564,7 +582,6 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_DBCONFIG_LOOKASIDE);
     DefInt(SQLITE_DBCONFIG_ENABLE_FKEY);
     DefInt(SQLITE_DBCONFIG_ENABLE_TRIGGER);
-    DefInt(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
     DefInt(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
     DefInt(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
     DefInt(SQLITE_DBCONFIG_ENABLE_QPSG);
@@ -859,8 +876,10 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(session){
+#ifdef SQLITE_SESSION_CONFIG_STRMSIZE
     DefInt(SQLITE_SESSION_CONFIG_STRMSIZE);
     DefInt(SQLITE_SESSION_OBJCONFIG_SIZE);
+#endif
   } _DefGroup;
 
   DefGroup(sqlite3Status){
