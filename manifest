@@ -1,5 +1,5 @@
-C Enhance\sthe\spercentile()\sextension\sfunction\sto\sinclude\sthe\smedian()\nvariant.\s\sUpdate\sthe\simplementation\sto\simplement\sits\sown\ssorting\nalgorithm,\sso\sthat\sthe\sextension\sno\slonger\sdepends\son\sqsort().
-D 2024-07-23T16:23:46.925
+C JNI\sSQLTester:\sfix\s--new\scommand\sto\sforce-replace\sdb\sif\sit\salready\sexists.\sAdd\sno-op\simpls\sfor\s--stmt-cache\sand\s--jsonglob\scommands.
+D 2024-07-24T12:12:11.773
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -289,7 +289,7 @@ F ext/jni/src/org/sqlite/jni/capi/ProgressHandlerCallback.java 01bc0c238eed2d5f9
 F ext/jni/src/org/sqlite/jni/capi/ResultCode.java 8141171f1bcf9f46eef303b9d3c5dc2537a25ad1628f3638398d8a60cacefa7f
 F ext/jni/src/org/sqlite/jni/capi/RollbackHookCallback.java e172210a2080e851ebb694c70e9f0bf89284237795e38710a7f5f1b61e3f6787
 F ext/jni/src/org/sqlite/jni/capi/SQLFunction.java 0d1e9afc9ff8a2adb94a155b72385155fa3b8011a5cca0bb3c28468c7131c1a5
-F ext/jni/src/org/sqlite/jni/capi/SQLTester.java 09bee15aa0eedac68d767ae21d9a6a62a31ade59182a3ccbf036d6463d9e30b1
+F ext/jni/src/org/sqlite/jni/capi/SQLTester.java 0b25cde8c5fa77f3e7ad92368acf195c5c64fb1c5273b8ee71b2d7ab812aab34
 F ext/jni/src/org/sqlite/jni/capi/ScalarFunction.java 93b9700fca4c68075ccab12fe0fbbc76c91cafc9f368e835b9bd7cd7732c8615
 F ext/jni/src/org/sqlite/jni/capi/TableColumnMetadata.java addf120e0e76e5be1ff2260daa7ce305ff9b5fafd64153a7a28e9d8f000a815f
 F ext/jni/src/org/sqlite/jni/capi/Tester1.java e5fa17301b7266c1cbe4bcce67788e08e45871c7c72c153d515abb37e501de0a
@@ -2195,8 +2195,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d558ad25bfbdea04de87616d4e3f664b5749a7d23643d1a0238e991b4bb337e
-R 6164638135694f2a60de1effceddb452
-U drh
-Z a2b6c7a02bd489d715da4964c630a442
+P 6e31b1bab1f014933c671a12a5930c1e88d611cfe68d389e9ce888bd8842addd
+R 9fff1942fcabca82c9428b463cd9f75c
+U stephan
+Z 85b41f77db581220e66c2d5ad0a7d9f1
 # Remove this line to create a well-formed Fossil manifest.
