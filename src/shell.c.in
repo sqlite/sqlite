@@ -1200,6 +1200,7 @@ INCLUDE ../ext/misc/pcachetrace.c
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
+INCLUDE ../ext/misc/percentile.c
 #undef sqlite3_base_init
 #define sqlite3_base_init sqlite3_base64_init
 INCLUDE ../ext/misc/base64.c
@@ -5374,6 +5375,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_uint_init(p->db, 0, 0);
     sqlite3_stmtrand_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
+    sqlite3_percentile_init(p->db, 0, 0);
     sqlite3_base64_init(p->db, 0, 0);
     sqlite3_base85_init(p->db, 0, 0);
     sqlite3_regexp_init(p->db, 0, 0);
