@@ -428,8 +428,10 @@ ifeq (1,$(SQLITE_C_IS_SEE))
 endif
 ifeq (0,$(minimal))
   EXPORTED_FUNCTIONS.api.in += \
+    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-auth) \
+    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-preupdate) \
     $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-session) \
-    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-preupdate)
+    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-vtab)
 else
   $(info ========================================)
   $(info This is a minimal-mode build)

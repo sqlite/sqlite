@@ -41,8 +41,6 @@ _sqlite3_create_collation
 _sqlite3_create_collation_v2
 _sqlite3_create_function
 _sqlite3_create_function_v2
-_sqlite3_create_module
-_sqlite3_create_module_v2
 _sqlite3_create_window_function
 _sqlite3_data_count
 _sqlite3_db_filename
@@ -50,7 +48,6 @@ _sqlite3_db_handle
 _sqlite3_db_name
 _sqlite3_db_readonly
 _sqlite3_db_status
-_sqlite3_declare_vtab
 _sqlite3_deserialize
 _sqlite3_drop_modules
 _sqlite3_errcode
@@ -106,7 +103,6 @@ _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
 _sqlite3_rollback_hook
 _sqlite3_serialize
-_sqlite3_set_authorizer
 _sqlite3_set_auxdata
 _sqlite3_set_last_insert_rowid
 _sqlite3_shutdown

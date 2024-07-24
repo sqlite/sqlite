@@ -1510,6 +1510,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: "sqlite3_set_authorizer()",
+      predicate: ()=>!!wasm.exports.sqlite3_set_authorizer || "Missing sqlite3_set_authorizer()",
       test:function(sqlite3){
         T.assert(capi.SQLITE_IGNORE>0)
           .assert(capi.SQLITE_DENY>0);
@@ -2152,7 +2153,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #1: eponymous w/ manual exception handling',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2349,7 +2350,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
