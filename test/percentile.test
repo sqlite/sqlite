@@ -42,6 +42,20 @@ do_execsql_test percentile-1.1.median {
   SELECT median(x) FROM t1;
 } 8.0
 
+foreach {in out} {
+  1.0     11.0
+  0.5      8.0
+  0.125    4.0
+  0.15     4.4
+  0.2      5.2
+  0.8     11.0
+  0.89    11.0
+} {
+  do_test percentile-1.1b-$in {
+    execsql {SELECT percentile_cont(x,$in) FROM t1}
+  } $out
+}
+
 # Add some NULL values.
 #
 do_test percentile-1.2 {
@@ -112,6 +126,9 @@ do_test percentile-1.11 {
 do_test percentile-1.12 {
   catchsql {SELECT percentile(x,x'3530') FROM t1}
 } {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+do_test percentile-1.12b {
+  catchsql {SELECT percentile_cont(x,x'3530') FROM t1}
+} {1 {2nd argument to percentile_cont() is not a number between 0.0 and 1.0}}
 
 # Second argument is out of range
 #
@@ -121,6 +138,9 @@ do_test percentile-1.13 {
 do_test percentile-1.14 {
   catchsql {SELECT percentile(x,100.0000001) FROM t1}
 } {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+do_test percentile-1.14b {
+  catchsql {SELECT percentile_cont(x,1.0000001) FROM t1}
+} {1 {2nd argument to percentile_cont() is not a number between 0.0 and 1.0}}
 
 # First argument is not NULL and is not NUMERIC
 #

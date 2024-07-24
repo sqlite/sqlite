@@ -59,6 +59,9 @@
 **        into SQLite using the sqlite3_load_extension() interface.
 **
 **  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
+**
+**  (14)  A separate percentile_cond(Y,X) function is the equivalent of
+**        percentile(Y,X*100.0).
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -110,7 +113,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   if( argc==1 ){
     /* Requirement 13:  median(Y) is the same as percentile(Y,50). */
     rPct = 50.0;
-  }else{
+  }else if( sqlite3_user_data(pCtx)==0 ){
     /* Requirement 3:  P must be a number between 0 and 100 */
     eType = sqlite3_value_numeric_type(argv[1]);
     rPct = sqlite3_value_double(argv[1]);
@@ -120,6 +123,17 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
                            "a number between 0.0 and 100.0", -1);
       return;
     }
+  }else{
+    /* Requirement 3:  P must be a number between 0 and 1 */
+    eType = sqlite3_value_numeric_type(argv[1]);
+    rPct = sqlite3_value_double(argv[1]);
+    if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
+     || rPct<0.0 || rPct>1.0 ){
+       sqlite3_result_error(pCtx, "2nd argument to percentile_cont() is not "
+                           "a number between 0.0 and 1.0", -1);
+      return;
+    }
+    rPct *= 100.0;
   }
 
   /* Allocate the session context. */
@@ -264,6 +278,11 @@ int sqlite3_percentile_init(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "median", 1, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
+                                 0, percentStep, percentFinal);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "percentile_cont", 2, 
+                                 SQLITE_UTF8|SQLITE_INNOCUOUS, &percentStep,
                                  0, percentStep, percentFinal);
   }
   return rc;
