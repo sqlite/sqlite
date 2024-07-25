@@ -848,171 +848,176 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*WhWasmUtil*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3.StructBinder (jaccwabyt🐇)', function(sqlite3){
-      const S = sqlite3, W = S.wasm;
-      const MyStructDef = {
-        sizeof: 16,
-        members: {
-          p4: {offset: 0, sizeof: 4, signature: "i"},
-          pP: {offset: 4, sizeof: 4, signature: "P"},
-          ro: {offset: 8, sizeof: 4, signature: "i", readOnly: true},
-          cstr: {offset: 12, sizeof: 4, signature: "s"}
-        }
-      };
-      if(W.bigIntEnabled){
-        const m = MyStructDef;
-        m.members.p8 = {offset: m.sizeof, sizeof: 8, signature: "j"};
-        m.sizeof += m.members.p8.sizeof;
-      }
-      const StructType = S.StructBinder.StructType;
-      const K = S.StructBinder('my_struct',MyStructDef);
-      T.mustThrowMatching(()=>K(), /via 'new'/).
-        mustThrowMatching(()=>new K('hi'), /^Invalid pointer/);
-      const k1 = new K(), k2 = new K();
-      try {
-        T.assert(k1.constructor === K).
-          assert(K.isA(k1)).
-          assert(k1 instanceof K).
-          assert(K.prototype.lookupMember('p4').key === '$p4').
-          assert(K.prototype.lookupMember('$p4').name === 'p4').
-          mustThrowMatching(()=>K.prototype.lookupMember('nope'), /not a mapped/).
-          assert(undefined === K.prototype.lookupMember('nope',false)).
-          assert(k1 instanceof StructType).
-          assert(StructType.isA(k1)).
-          mustThrowMatching(()=>k1.$ro = 1, /read-only/);
-        Object.keys(MyStructDef.members).forEach(function(key){
-          key = K.memberKey(key);
-          T.assert(0 == k1[key],
-                   "Expecting allocation to zero the memory "+
-                   "for "+key+" but got: "+k1[key]+
-                   " from "+k1.memoryDump());
-        });
-        T.assert('number' === typeof k1.pointer).
-          mustThrowMatching(()=>k1.pointer = 1, /pointer/);
-        k1.$p4 = 1; k1.$pP = 2;
-        T.assert(1 === k1.$p4).assert(2 === k1.$pP);
-        if(MyStructDef.members.$p8){
-          k1.$p8 = 1/*must not throw despite not being a BigInt*/;
-          k1.$p8 = BigInt(Number.MAX_SAFE_INTEGER * 2);
-          T.assert(BigInt(2 * Number.MAX_SAFE_INTEGER) === k1.$p8);
-        }
-        T.assert(!k1.ondispose);
-        k1.setMemberCString('cstr', "A C-string.");
-        T.assert(Array.isArray(k1.ondispose)).
-          assert(k1.ondispose[0] === k1.$cstr).
-          assert('number' === typeof k1.$cstr).
-          assert('A C-string.' === k1.memberToJsString('cstr'));
-        k1.$pP = k2;
-        T.assert(k1.$pP === k2.pointer);
-        k1.$pP = null/*null is special-cased to 0.*/;
-        T.assert(0===k1.$pP);
-        let ptr = k1.pointer;
-        k1.dispose();
-        T.assert(undefined === k1.pointer).
-          mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
-      }finally{
-        k1.dispose();
-        k2.dispose();
-      }
-
-      if(!W.bigIntEnabled){
-        log("Skipping WasmTestStruct tests: BigInt not enabled.");
-        return;
-      }
-
-      const WTStructDesc =
-            W.ctype.structs.filter((e)=>'WasmTestStruct'===e.name)[0];
-      const autoResolvePtr = true /* EXPERIMENTAL */;
-      if(autoResolvePtr){
-        WTStructDesc.members.ppV.signature = 'P';
-      }
-      const WTStruct = S.StructBinder(WTStructDesc);
-      //log(WTStruct.structName, WTStruct.structInfo);
-      const wts = new WTStruct();
-      //log("WTStruct.prototype keys:",Object.keys(WTStruct.prototype));
-      try{
-        T.assert(wts.constructor === WTStruct).
-          assert(WTStruct.memberKeys().indexOf('$ppV')>=0).
-          assert(wts.memberKeys().indexOf('$v8')>=0).
-          assert(!K.isA(wts)).
-          assert(WTStruct.isA(wts)).
-          assert(wts instanceof WTStruct).
-          assert(wts instanceof StructType).
-          assert(StructType.isA(wts)).
-          assert(wts.pointer>0).assert(0===wts.$v4).assert(0n===wts.$v8).
-          assert(0===wts.$ppV).assert(0===wts.$xFunc);
-        const testFunc =
-              W.xGet('sqlite3__wasm_test_struct'/*name gets mangled in -O3 builds!*/);
-        let counter = 0;
-        //log("wts.pointer =",wts.pointer);
-        const wtsFunc = function(arg){
-          /*log("This from a JS function called from C, "+
-              "which itself was called from JS. arg =",arg);*/
-          ++counter;
-          if(3===counter){
-            tossQuietly("Testing exception propagation.");
+    .t({
+      name: 'sqlite3.StructBinder (jaccwabyt🐇)',
+      predicate: (sqlite3)=>!!sqlite3.wasm.exports.sqlite3__wasm_test_struct
+        || "Built without SQLITE_WASM_ENABLE_C_TESTS",
+      test: function(sqlite3){
+        const S = sqlite3, W = S.wasm;
+        const MyStructDef = {
+          sizeof: 16,
+          members: {
+            p4: {offset: 0, sizeof: 4, signature: "i"},
+            pP: {offset: 4, sizeof: 4, signature: "P"},
+            ro: {offset: 8, sizeof: 4, signature: "i", readOnly: true},
+            cstr: {offset: 12, sizeof: 4, signature: "s"}
           }
+        };
+        if(W.bigIntEnabled){
+          const m = MyStructDef;
+          m.members.p8 = {offset: m.sizeof, sizeof: 8, signature: "j"};
+          m.sizeof += m.members.p8.sizeof;
         }
-        wts.$v4 = 10; wts.$v8 = 20;
-        wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
-        T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
-          .assert(0 === wts.$ppV).assert('number' === typeof wts.$xFunc)
-          .assert(0 === wts.$cstr)
-          .assert(wts.memberIsString('$cstr'))
-          .assert(!wts.memberIsString('$v4'))
-          .assert(null === wts.memberToJsString('$cstr'))
-          .assert(W.functionEntry(wts.$xFunc) instanceof Function);
-        /* It might seem silly to assert that the values match
-           what we just set, but recall that all of those property
-           reads and writes are, via property interceptors,
-           actually marshaling their data to/from a raw memory
-           buffer, so merely reading them back is actually part of
-           testing the struct-wrapping API. */
+        const StructType = S.StructBinder.StructType;
+        const K = S.StructBinder('my_struct',MyStructDef);
+        T.mustThrowMatching(()=>K(), /via 'new'/).
+          mustThrowMatching(()=>new K('hi'), /^Invalid pointer/);
+        const k1 = new K(), k2 = new K();
+        try {
+          T.assert(k1.constructor === K).
+            assert(K.isA(k1)).
+            assert(k1 instanceof K).
+            assert(K.prototype.lookupMember('p4').key === '$p4').
+            assert(K.prototype.lookupMember('$p4').name === 'p4').
+            mustThrowMatching(()=>K.prototype.lookupMember('nope'), /not a mapped/).
+            assert(undefined === K.prototype.lookupMember('nope',false)).
+            assert(k1 instanceof StructType).
+            assert(StructType.isA(k1)).
+            mustThrowMatching(()=>k1.$ro = 1, /read-only/);
+          Object.keys(MyStructDef.members).forEach(function(key){
+            key = K.memberKey(key);
+            T.assert(0 == k1[key],
+                     "Expecting allocation to zero the memory "+
+                     "for "+key+" but got: "+k1[key]+
+                     " from "+k1.memoryDump());
+          });
+          T.assert('number' === typeof k1.pointer).
+            mustThrowMatching(()=>k1.pointer = 1, /pointer/);
+          k1.$p4 = 1; k1.$pP = 2;
+          T.assert(1 === k1.$p4).assert(2 === k1.$pP);
+          if(MyStructDef.members.$p8){
+            k1.$p8 = 1/*must not throw despite not being a BigInt*/;
+            k1.$p8 = BigInt(Number.MAX_SAFE_INTEGER * 2);
+            T.assert(BigInt(2 * Number.MAX_SAFE_INTEGER) === k1.$p8);
+          }
+          T.assert(!k1.ondispose);
+          k1.setMemberCString('cstr', "A C-string.");
+          T.assert(Array.isArray(k1.ondispose)).
+            assert(k1.ondispose[0] === k1.$cstr).
+            assert('number' === typeof k1.$cstr).
+            assert('A C-string.' === k1.memberToJsString('cstr'));
+          k1.$pP = k2;
+          T.assert(k1.$pP === k2.pointer);
+          k1.$pP = null/*null is special-cased to 0.*/;
+          T.assert(0===k1.$pP);
+          let ptr = k1.pointer;
+          k1.dispose();
+          T.assert(undefined === k1.pointer).
+            mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
+        }finally{
+          k1.dispose();
+          k2.dispose();
+        }
 
-        testFunc(wts.pointer);
-        //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
-        T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
-          .assert(wts.$ppV === wts.pointer)
-          .assert('string' === typeof wts.memberToJsString('cstr'))
-          .assert(wts.memberToJsString('cstr') === wts.memberToJsString('$cstr'))
-          .mustThrowMatching(()=>wts.memberToJsString('xFunc'),
-                             /Invalid member type signature for C-string/)
-        ;
-        testFunc(wts.pointer);
-        T.assert(2===counter).assert(40 === wts.$v4).assert(80n === wts.$v8)
-          .assert(wts.$ppV === wts.pointer);
-        /** The 3rd call to wtsFunc throw from JS, which is called
-            from C, which is called from JS. Let's ensure that
-            that exception propagates back here... */
-        T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
-        W.uninstallFunction(wts.$xFunc);
-        wts.$xFunc = 0;
-        wts.$ppV = 0;
-        T.assert(!wts.$ppV);
-        //WTStruct.debugFlags(0x03);
-        wts.$ppV = wts;
-        T.assert(wts.pointer === wts.$ppV)
-        wts.setMemberCString('cstr', "A C-string.");
-        T.assert(Array.isArray(wts.ondispose)).
-          assert(wts.ondispose[0] === wts.$cstr).
-          assert('A C-string.' === wts.memberToJsString('cstr'));
-        const ptr = wts.pointer;
-        wts.dispose();
-        T.assert(ptr).assert(undefined === wts.pointer);
-      }finally{
-        wts.dispose();
-      }
+        if(!W.bigIntEnabled){
+          log("Skipping WasmTestStruct tests: BigInt not enabled.");
+          return;
+        }
 
-      if(1){ // ondispose of other struct instances
-        const s1 = new WTStruct, s2 = new WTStruct, s3 = new WTStruct;
-        T.assert(s1.lookupMember instanceof Function)
-          .assert(s1.addOnDispose instanceof Function);
-        s1.addOnDispose(s2,"testing variadic args");
-        T.assert(2===s1.ondispose.length);
-        s2.addOnDispose(s3);
-        s1.dispose();
-        T.assert(!s2.pointer,"Expecting s2 to be ondispose'd by s1.");
-        T.assert(!s3.pointer,"Expecting s3 to be ondispose'd by s2.");
+        const WTStructDesc =
+              W.ctype.structs.filter((e)=>'WasmTestStruct'===e.name)[0];
+        const autoResolvePtr = true /* EXPERIMENTAL */;
+        if(autoResolvePtr){
+          WTStructDesc.members.ppV.signature = 'P';
+        }
+        const WTStruct = S.StructBinder(WTStructDesc);
+        //log(WTStruct.structName, WTStruct.structInfo);
+        const wts = new WTStruct();
+        //log("WTStruct.prototype keys:",Object.keys(WTStruct.prototype));
+        try{
+          T.assert(wts.constructor === WTStruct).
+            assert(WTStruct.memberKeys().indexOf('$ppV')>=0).
+            assert(wts.memberKeys().indexOf('$v8')>=0).
+            assert(!K.isA(wts)).
+            assert(WTStruct.isA(wts)).
+            assert(wts instanceof WTStruct).
+            assert(wts instanceof StructType).
+            assert(StructType.isA(wts)).
+            assert(wts.pointer>0).assert(0===wts.$v4).assert(0n===wts.$v8).
+            assert(0===wts.$ppV).assert(0===wts.$xFunc);
+          const testFunc =
+                W.xGet('sqlite3__wasm_test_struct'/*name gets mangled in -O3 builds!*/);
+          let counter = 0;
+          //log("wts.pointer =",wts.pointer);
+          const wtsFunc = function(arg){
+            /*log("This from a JS function called from C, "+
+              "which itself was called from JS. arg =",arg);*/
+            ++counter;
+            if(3===counter){
+              tossQuietly("Testing exception propagation.");
+            }
+          }
+          wts.$v4 = 10; wts.$v8 = 20;
+          wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
+          T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
+            .assert(0 === wts.$ppV).assert('number' === typeof wts.$xFunc)
+            .assert(0 === wts.$cstr)
+            .assert(wts.memberIsString('$cstr'))
+            .assert(!wts.memberIsString('$v4'))
+            .assert(null === wts.memberToJsString('$cstr'))
+            .assert(W.functionEntry(wts.$xFunc) instanceof Function);
+          /* It might seem silly to assert that the values match
+             what we just set, but recall that all of those property
+             reads and writes are, via property interceptors,
+             actually marshaling their data to/from a raw memory
+             buffer, so merely reading them back is actually part of
+             testing the struct-wrapping API. */
+
+          testFunc(wts.pointer);
+          //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
+          T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
+            .assert(wts.$ppV === wts.pointer)
+            .assert('string' === typeof wts.memberToJsString('cstr'))
+            .assert(wts.memberToJsString('cstr') === wts.memberToJsString('$cstr'))
+            .mustThrowMatching(()=>wts.memberToJsString('xFunc'),
+                               /Invalid member type signature for C-string/)
+          ;
+          testFunc(wts.pointer);
+          T.assert(2===counter).assert(40 === wts.$v4).assert(80n === wts.$v8)
+            .assert(wts.$ppV === wts.pointer);
+          /** The 3rd call to wtsFunc throw from JS, which is called
+              from C, which is called from JS. Let's ensure that
+              that exception propagates back here... */
+          T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
+          W.uninstallFunction(wts.$xFunc);
+          wts.$xFunc = 0;
+          wts.$ppV = 0;
+          T.assert(!wts.$ppV);
+          //WTStruct.debugFlags(0x03);
+          wts.$ppV = wts;
+          T.assert(wts.pointer === wts.$ppV)
+          wts.setMemberCString('cstr', "A C-string.");
+          T.assert(Array.isArray(wts.ondispose)).
+            assert(wts.ondispose[0] === wts.$cstr).
+            assert('A C-string.' === wts.memberToJsString('cstr'));
+          const ptr = wts.pointer;
+          wts.dispose();
+          T.assert(ptr).assert(undefined === wts.pointer);
+        }finally{
+          wts.dispose();
+        }
+
+        if(1){ // ondispose of other struct instances
+          const s1 = new WTStruct, s2 = new WTStruct, s3 = new WTStruct;
+          T.assert(s1.lookupMember instanceof Function)
+            .assert(s1.addOnDispose instanceof Function);
+          s1.addOnDispose(s2,"testing variadic args");
+          T.assert(2===s1.ondispose.length);
+          s2.addOnDispose(s3);
+          s1.dispose();
+          T.assert(!s2.pointer,"Expecting s2 to be ondispose'd by s1.");
+          T.assert(!s3.pointer,"Expecting s3 to be ondispose'd by s2.");
+        }
       }
     }/*StructBinder*/)
 
@@ -1126,75 +1131,84 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('sqlite3.oo1')
-    .t('Create db', function(sqlite3){
-      const dbFile = '/tester1.db';
-      sqlite3.util.sqlite3__wasm_vfs_unlink(0, dbFile);
-      const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
-      db.onclose = {
-        disposeAfter: [],
-        disposeBefore: [
-          (db)=>{
-            //console.debug("db.onclose.before dropping modules");
-            //sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
-          }
-        ],
-        before: function(db){
-          while(this.disposeBefore.length){
-            const v = this.disposeBefore.shift();
-            console.debug("db.onclose.before cleaning up:",v);
-            if(wasm.isPtr(v)) wasm.dealloc(v);
-            else if(v instanceof sqlite3.StructBinder.StructType){
-              v.dispose();
-            }else if(v instanceof Function){
-              try{ v(db) } catch(e){
-                console.warn("beforeDispose() callback threw:",e);
+    .t({
+      name:'Create db',
+      //predicate: (sqlite3)=>
+      test: function(sqlite3){
+        const dbFile = '/tester1.db';
+        sqlite3.util.sqlite3__wasm_vfs_unlink(0, dbFile);
+        const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
+        db.onclose = {
+          disposeAfter: [],
+          disposeBefore: [
+            (db)=>{
+              //console.debug("db.onclose.before dropping modules");
+              //sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
+            }
+          ],
+          before: function(db){
+            while(this.disposeBefore.length){
+              const v = this.disposeBefore.shift();
+              console.debug("db.onclose.before cleaning up:",v);
+              if(wasm.isPtr(v)) wasm.dealloc(v);
+              else if(v instanceof sqlite3.StructBinder.StructType){
+                v.dispose();
+              }else if(v instanceof Function){
+                try{ v(db) } catch(e){
+                  console.warn("beforeDispose() callback threw:",e);
+                }
+              }
+            }
+          },
+          after: function(){
+            while(this.disposeAfter.length){
+              const v = this.disposeAfter.shift();
+              console.debug("db.onclose.after cleaning up:",v);
+              if(wasm.isPtr(v)) wasm.dealloc(v);
+              else if(v instanceof sqlite3.StructBinder.StructType){
+                v.dispose();
+              }else if(v instanceof Function){
+                try{v()} catch(e){/*ignored*/}
               }
             }
           }
-        },
-        after: function(){
-          while(this.disposeAfter.length){
-            const v = this.disposeAfter.shift();
-            console.debug("db.onclose.after cleaning up:",v);
-            if(wasm.isPtr(v)) wasm.dealloc(v);
-            else if(v instanceof sqlite3.StructBinder.StructType){
-              v.dispose();
-            }else if(v instanceof Function){
-              try{v()} catch(e){/*ignored*/}
-            }
-          }
+        };
+
+        T.assert(wasm.isPtr(db.pointer))
+          .mustThrowMatching(()=>db.pointer=1, /read-only/)
+          .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
+          .assert('main'===db.dbName(0))
+          .assert('string' === typeof db.dbVfsName())
+          .assert(db.pointer === wasm.xWrap.testConvertArg('sqlite3*',db));
+        // Custom db error message handling via sqlite3_prepare_v2/v3()
+        let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
+        T.assert(capi.SQLITE_MISUSE === rc)
+          .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
+          .assert(dbFile === db.dbFilename())
+          .assert(!db.dbFilename('nope'));
+        //Sanity check DB.checkRc()...
+        let ex;
+        try{db.checkRc(rc)}
+        catch(e){ex = e}
+        T.assert(ex instanceof sqlite3.SQLite3Error)
+          .assert(capi.SQLITE_MISUSE===ex.resultCode)
+          .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
+          .assert(ex.message.indexOf("Invalid SQL")>0);
+        T.assert(db === db.checkRc(0))
+          .assert(db === sqlite3.oo1.DB.checkRc(db,0))
+          .assert(null === sqlite3.oo1.DB.checkRc(null,0));
+
+        this.progressHandlerCount = 0;
+        if( wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK') ){
+          T.assert( !capi.sqlite3_progress_handler );
+        }else{
+          T.assert( capi.sqlite3_progress_handler );
+          capi.sqlite3_progress_handler(db, 5, (p)=>{
+            ++this.progressHandlerCount;
+            return 0;
+          }, 0);
         }
-      };
-
-      T.assert(wasm.isPtr(db.pointer))
-        .mustThrowMatching(()=>db.pointer=1, /read-only/)
-        .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
-        .assert('main'===db.dbName(0))
-        .assert('string' === typeof db.dbVfsName())
-        .assert(db.pointer === wasm.xWrap.testConvertArg('sqlite3*',db));
-      // Custom db error message handling via sqlite3_prepare_v2/v3()
-      let rc = capi.sqlite3_prepare_v3(db.pointer, {/*invalid*/}, -1, 0, null, null);
-      T.assert(capi.SQLITE_MISUSE === rc)
-        .assert(0 === capi.sqlite3_errmsg(db.pointer).indexOf("Invalid SQL"))
-        .assert(dbFile === db.dbFilename())
-        .assert(!db.dbFilename('nope'));
-      //Sanity check DB.checkRc()...
-      let ex;
-      try{db.checkRc(rc)}
-      catch(e){ex = e}
-      T.assert(ex instanceof sqlite3.SQLite3Error)
-        .assert(capi.SQLITE_MISUSE===ex.resultCode)
-        .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
-        .assert(ex.message.indexOf("Invalid SQL")>0);
-      T.assert(db === db.checkRc(0))
-        .assert(db === sqlite3.oo1.DB.checkRc(db,0))
-        .assert(null === sqlite3.oo1.DB.checkRc(null,0));
-
-      this.progressHandlerCount = 0;
-      capi.sqlite3_progress_handler(db, 5, (p)=>{
-        ++this.progressHandlerCount;
-        return 0;
-      }, 0);
+      }
     })
   ////////////////////////////////////////////////////////////////////
     .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
@@ -1236,7 +1250,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         new TextEncoder('utf-8').encode("select 3 as a")
       );
       //debug("statement =",st);
-      this.progressHandlerCount = 0;
+      T.assert( !this.progressHandlerCount );
       let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
@@ -1278,7 +1292,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               st, capi.SQLITE_STMTSTATUS_RUN, 0
             ) > 0);
 
-        T.assert(this.progressHandlerCount > 0,
+        T.assert(this.progressHandlerCount>0
+                 || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
                  "Expecting progress callback.").
           assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
           assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
@@ -1363,7 +1378,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert(2 === list.length)
         .assert('string'===typeof list[1])
         .assert(3===db.changes())
-        .assert(this.progressHandlerCount > 0,
+        .assert(this.progressHandlerCount > 0
+                || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
                 "Expecting progress callback.")
       if(wasm.bigIntEnabled){
         T.assert(3n===db.changes(false,true));
@@ -1904,7 +1920,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: 'Window UDFs',
-      //predicate: ()=>false,
+      predicate: (sqlite3)=>!!sqlite3.wasm.exports.sqlite3_create_window_function
+      /*!sqlite3.wasm.compileOptionUsed('OMIT_WINDOWFUNC')*/
+        || "Missing window functions",
       test: function(){
         /* Example window function, table, and results taken from:
            https://sqlite.org/windowfunctions.html#udfwinfunc */
@@ -3132,7 +3150,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         ]);
         T.assert(2 === u1.getFileCount() /* one is the journal file */)
           .assert(3 === db.selectValue('select count(*) from t'))
-          .assert('wal'===db.selectValue('pragma journal_mode'));
+          .assert(
+            'wal'===db.selectValue('pragma journal_mode')
+              || wasm.compileOptionUsed('OMIT_WAL')
+          );
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);

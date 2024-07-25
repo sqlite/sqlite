@@ -95,21 +95,16 @@
 
 /**********************************************************************/
 /* SQLITE_O... */
-#ifndef SQLITE_OMIT_DEPRECATED
-# define SQLITE_OMIT_DEPRECATED 1
-#endif
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-# define SQLITE_OMIT_LOAD_EXTENSION 1
-#endif
-#ifndef SQLITE_OMIT_SHARED_CACHE
-# define SQLITE_OMIT_SHARED_CACHE 1
-#endif
-#ifndef SQLITE_OMIT_UTF16
-# define SQLITE_OMIT_UTF16 1
-#endif
-#ifndef SQLITE_OS_KV_OPTIONAL
-# define SQLITE_OS_KV_OPTIONAL 1
-#endif
+#undef SQLITE_OMIT_DEPRECATED
+#define SQLITE_OMIT_DEPRECATED 1
+#undef SQLITE_OMIT_LOAD_EXTENSION
+#define SQLITE_OMIT_LOAD_EXTENSION 1
+#undef SQLITE_OMIT_SHARED_CACHE
+#define SQLITE_OMIT_SHARED_CACHE 1
+#undef SQLITE_OMIT_UTF16
+#define SQLITE_OMIT_UTF16 1
+#undef SQLITE_OS_KV_OPTIONAL
+#define SQLITE_OS_KV_OPTIONAL 1
 
 /**********************************************************************/
 /* SQLITE_S... */
@@ -137,48 +132,61 @@
 #endif
 
 /*
-** If SQLITE_WASM_MINIMAL is defined, undefine most of the ENABLE
+** If SQLITE_WASM_BARE_BONES is defined, undefine most of the ENABLE
 ** macros.
 */
-#ifdef SQLITE_WASM_MINIMAL
-#  undef SQLITE_ENABLE_DBPAGE_VTAB
-#  undef SQLITE_ENABLE_DBSTAT_VTAB
-#  undef SQLITE_ENABLE_EXPLAIN_COMMENTS
-#  undef SQLITE_ENABLE_FTS5
-#  undef SQLITE_ENABLE_OFFSET_SQL_FUNC
-#  undef SQLITE_ENABLE_PREUPDATE_HOOK
-#  undef SQLITE_ENABLE_RTREE
-#  undef SQLITE_ENABLE_SESSION
-#  undef SQLITE_ENABLE_STMTVTAB
-#  undef SQLITE_OMIT_AUTHORIZATION
+#ifdef SQLITE_WASM_BARE_BONES
+#  undef  SQLITE_ENABLE_DBPAGE_VTAB
+#  undef  SQLITE_ENABLE_DBSTAT_VTAB
+#  undef  SQLITE_ENABLE_EXPLAIN_COMMENTS
+#  undef  SQLITE_ENABLE_FTS5
+#  undef  SQLITE_ENABLE_OFFSET_SQL_FUNC
+#  undef  SQLITE_ENABLE_PREUPDATE_HOOK
+#  undef  SQLITE_ENABLE_RTREE
+#  undef  SQLITE_ENABLE_SESSION
+#  undef  SQLITE_ENABLE_STMTVTAB
+#  undef  SQLITE_OMIT_AUTHORIZATION
 #  define SQLITE_OMIT_AUTHORIZATION
-/*Reminder re. custom sqlite3.c:
+#  undef  SQLITE_OMIT_GET_TABLE
+#  define SQLITE_OMIT_GET_TABLE
+#  undef  SQLITE_OMIT_INCRBLOB
+#  define SQLITE_OMIT_INCRBLOB
+#  undef  SQLITE_OMIT_INTROSPECTION_PRAGMAS
+#  define SQLITE_OMIT_INTROSPECTION_PRAGMAS
+#  undef  SQLITE_OMIT_JSON
+#  define SQLITE_OMIT_JSON
+#  undef  SQLITE_OMIT_PROGRESS_CALLBACK
+#  define SQLITE_OMIT_PROGRESS_CALLBACK
+#  undef  SQLITE_OMIT_WAL
+#  define SQLITE_OMIT_WAL
+/*
+  The following OMITs do not work with the standard amalgamation, so
+  require a custom build:
 
   fossil clean -x
   ./configure
-  OPTS='-DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_EXPLAIN -DSQLITE_OMIT_TRIGGER' make -e sqlite3
-*/
-/*Requires a custom sqlite3.c
-#  undef SQLITE_OMIT_TRIGGER
-#  define SQLITE_OMIT_TRIGGER
-*/
-/*TODO (requires build tweaks)
-#  undef SQLITE_OMIT_WINDOWFUNC
-#  define SQLITE_OMIT_WINDOWFUNC
-*/
-/*Requires a custom sqlite3.c
+  OPTS='...' make -e sqlite3
+
+  where ... has a -D... for each of the following OMIT flags:
+
 #  undef SQLITE_OMIT_EXPLAIN
 #  define SQLITE_OMIT_EXPLAIN
-*/
-/*Requires a custom sqlite3.c
+
+#  undef SQLITE_OMIT_TRIGGER
+#  define SQLITE_OMIT_TRIGGER
+
 #  undef SQLITE_OMIT_VIRTUALTABLE
 #  define SQLITE_OMIT_VIRTUALTABLE
+
+#  undef SQLITE_OMIT_WINDOWFUNC
+#  define SQLITE_OMIT_WINDOWFUNC
+
+  As of this writing (2024-07-25), such a build fails in various ways
+  for as-yet-unknown reasons.
 */
-#  undef SQLITE_OMIT_JSON
-#  define SQLITE_OMIT_JSON
 #endif
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_BARE_BONES)
 #  define SQLITE_WASM_HAS_VTAB 1
 #else
 #  define SQLITE_WASM_HAS_VTAB 0
@@ -233,10 +241,6 @@
 #undef INC__STRINGIFY_
 #undef INC__STRINGIFY
 #undef SQLITE_C
-
-#if defined(__EMSCRIPTEN__)
-#  include <emscripten/console.h>
-#endif
 
 #if 0
 /*
@@ -1720,6 +1724,7 @@ char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
 }
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
+#include <emscripten/console.h>
 #include <emscripten/wasmfs.h>
 
 /*
@@ -1941,5 +1946,5 @@ int sqlite3__wasm_SQLTester_strglob(const char *zGlob, const char *z){
 
 #undef SQLITE_WASM_EXPORT
 #undef SQLITE_WASM_HAS_VTAB
-#undef SQLITE_WASM_MINIMAL
+#undef SQLITE_WASM_BARE_BONES
 #undef SQLITE_WASM_ENABLE_C_TESTS

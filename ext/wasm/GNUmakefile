@@ -157,8 +157,9 @@ $(sqlite3.c): $(sqlite3.h)
 # of the makefile, some of which are relatively expensive to calculate
 # on each run (that is, they can take a human-visible amount of time).
 #
-# .gen.make is also home to make-side vars which are needed for
-# generating makefile code via shell code.
+# Sidebar: three attempts have been made to move much of the
+# $(eval)-generated makefile code into make-make.sh but the result is
+# even less legible/maintainable than make-side $(eval).
 ifeq (0,$(MAKING_CLEAN))
 .gen.make: $(MAKEFILE) $(sqlite3.c)
 	rm -f $@
@@ -171,9 +172,39 @@ ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
   $(info Development build. Use 'release' or 'snapshot' target for a smaller release build.)
 endif
 
+########################################################################
+# minimal=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
+# goal being to create a WASM file with only the core APIs.
+ifeq (1,$(minimal))
+  wasm-bare-bones := 1
+else
+  wasm-bare-bones := 0
+endif
+undefine minimal
+
 # Common options for building sqlite3-wasm.c and speedtest1.c.
 # Explicit ENABLEs...
-SQLITE_OPT = \
+SQLITE_OPT.common := \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_TEMP_STORE=2 \
+  -DSQLITE_ENABLE_MATH_FUNCTIONS \
+  -DSQLITE_OS_KV_OPTIONAL=1 \
+  '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
+  -DSQLITE_USE_URI=1 \
+  -DSQLITE_C=$(sqlite3.c) \
+  -DSQLITE_OMIT_DEPRECATED \
+  -DSQLITE_OMIT_UTF16 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_SHARED_CACHE
+# ^^^ These particular OMITs are hard-coded in sqlite3-wasm.c and
+# removing them from this list will serve only to break the speedtest1
+# builds.
+
+# Currently always needed but TODO is paring tester1.c-pp.js down
+# to be able to run without this:
+SQLITE_OPT.common += -DSQLITE_WASM_ENABLE_C_TESTS
+
+SQLITE_OPT.full-featured := \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
   -DSQLITE_ENABLE_DBSTAT_VTAB \
@@ -186,22 +217,45 @@ SQLITE_OPT = \
   -DSQLITE_ENABLE_STMTVTAB \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 
-# Explicit OMITs...
-SQLITE_OPT += \
-  -DSQLITE_OMIT_LOAD_EXTENSION \
-  -DSQLITE_OMIT_DEPRECATED \
-  -DSQLITE_OMIT_UTF16 \
-  -DSQLITE_OMIT_SHARED_CACHE
-
-# Misc. build-time config options...
-SQLITE_OPT += \
-  -DSQLITE_THREADSAFE=0 \
-  -DSQLITE_TEMP_STORE=2 \
-  -DSQLITE_OS_KV_OPTIONAL=1 \
-  '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
-  -DSQLITE_USE_URI=1 \
-  -DSQLITE_WASM_ENABLE_C_TESTS \
-  -DSQLITE_C=$(sqlite3.c)
+ifeq (0,$(wasm-bare-bones))
+  # The so-called canonical build is full-featured:
+  SQLITE_OPT := \
+    $(SQLITE_OPT.common) \
+    $(SQLITE_OPT.full-featured)
+else
+  # The so-called bare-bones build is exactly that:
+  SQLITE_OPT := \
+    $(SQLITE_OPT.common) \
+    -DSQLITE_WASM_BARE_BONES
+  # SQLITE_WASM_BARE_BONES tells sqlite3-wasm.c to explicitly omit
+  # a bunch of stuff, in the interest of keeping the wasm file size
+  # down. As of this writing it equates to:
+  #
+  #  -USQLITE_ENABLE_DBPAGE_VTAB
+  #  -USQLITE_ENABLE_DBSTAT_VTAB
+  #  -USQLITE_ENABLE_EXPLAIN_COMMENTS
+  #  -USQLITE_ENABLE_FTS5
+  #  -USQLITE_ENABLE_OFFSET_SQL_FUNC
+  #  -USQLITE_ENABLE_PREUPDATE_HOOK
+  #  -USQLITE_ENABLE_RTREE
+  #  -USQLITE_ENABLE_SESSION
+  #  -USQLITE_ENABLE_STMTVTAB
+  #  -DSQLITE_OMIT_AUTHORIZATION
+  #  -DSQLITE_OMIT_GET_TABLE
+  #  -DSQLITE_OMIT_INCRBLOB
+  #  -DSQLITE_OMIT_INTROSPECTION_PRAGMAS
+  #  -DSQLITE_OMIT_JSON
+  #  -DSQLITE_OMIT_PROGRESS_CALLBACK
+  #  -DSQLITE_OMIT_WAL
+  #
+  # There are others we want here but which require explicit OMIT when
+  # creating their amalgamation, and that step is TODO:
+  #
+  #  -DSQLITE_OMIT_EXPLAIN
+  #  -DSQLITE_OMIT_TRIGGER
+  #  -DSQLITE_OMIT_VIRTUALTABLE
+  #  -DSQLITE_OMIT_WINDOWFUNC
+endif
 
 #SQLITE_OPT += -DSQLITE_DEBUG
 # Enabling SQLITE_DEBUG will break sqlite3_wasm_vfs_create_file()
@@ -211,18 +265,16 @@ SQLITE_OPT += \
 # in client code.
 
 ########################################################################
-# minimal=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
-# goal being to create a WASM file with only the core APIs.
-ifeq (1,$(minimal))
-  SQLITE_OPT += -DSQLITE_WASM_MINIMAL
-  # SQLITE_WASM_MINIMAL tells sqlite3-wasm.c to explicitly omit
-  # a bunch of stuff, in the interest of keeping the wasm file size
-  # down.
-  wasm-minimal := 1
-else
-  wasm-minimal := 0
-endif
-undefine minimal
+# The following flags are hard-coded into sqlite3-wasm.c and cannot be
+# modified via the build process:
+#
+#  SQLITE_ENABLE_API_ARMOR
+#  SQLITE_OMIT_LOAD_EXTENSION
+#  SQLITE_OMIT_DEPRECATED
+#  SQLITE_OMIT_UTF16
+#  SQLITE_OMIT_SHARED_CACHE
+########################################################################
+
 
 ########################################################################
 # Adding custom C code via sqlite3_wasm_extra_init.c:
@@ -385,7 +437,7 @@ EXPORTED_FUNCTIONS.api.in := $(EXPORTED_FUNCTIONS.api.core)
 ifeq (1,$(SQLITE_C_IS_SEE))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see
 endif
-ifeq (0,$(wasm-minimal))
+ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 else
   $(info ========================================)
@@ -425,7 +477,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
 # sqlite3-vfs-helper = helper APIs for VFSes:
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
-ifeq (0,$(wasm-minimal))
+ifeq (0,$(wasm-bare-bones))
   # sqlite3-vtab-helper = helper APIs for VTABLEs:
   sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 endif
@@ -1053,7 +1105,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         $(emcc.speedtest1.common) \
         $(emcc.flags.speedtest1-vanilla) $(pre-post-speedtest1-vanilla.flags) \
         $(SQLITE_OPT) \
-        -USQLITE_WASM_MINIMAL \
+        -USQLITE_WASM_BARE_BONES \
         -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cfiles) -lm
