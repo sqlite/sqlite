@@ -385,7 +385,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this, the canonical builds of sqlite3.wasm/js guarantee that
        sqlite3.wasm.alloc() and friends use those allocators. Custom builds
        may not guarantee that, however. */,
-    ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
     ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
@@ -422,6 +421,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_create_module_v2", "int",
        ["sqlite3*","string","sqlite3_module*","*","*"]],
       ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
+      ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
       ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
       ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
       ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],

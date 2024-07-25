@@ -14,16 +14,17 @@
 */
 #define SQLITE_WASM
 #ifdef SQLITE_WASM_ENABLE_C_TESTS
+#  undef SQLITE_WASM_ENABLE_C_TESTS
+#  define SQLITE_WASM_ENABLE_C_TESTS 1
 /*
-** Code blocked off by SQLITE_WASM_TESTS is intended solely for use in
-** unit/regression testing. They may be safely omitted from
+** Code blocked off by SQLITE_WASM_ENABLE_C_TESTS is intended solely
+** for use in unit/regression testing. They may be safely omitted from
 ** client-side builds. The main unit test script, tester1.js, will
 ** skip related tests if it doesn't find the corresponding functions
 ** in the WASM exports.
 */
-#  define SQLITE_WASM_TESTS 1
 #else
-#  define SQLITE_WASM_TESTS 0
+#  define SQLITE_WASM_ENABLE_C_TESTS 0
 #endif
 
 /*
@@ -91,43 +92,6 @@
 */
 #undef SQLITE_ENABLE_API_ARMOR
 #define SQLITE_ENABLE_API_ARMOR 1
-
-#ifndef SQLITE_ENABLE_BYTECODE_VTAB
-#  define SQLITE_ENABLE_BYTECODE_VTAB 1
-#endif
-#ifndef SQLITE_ENABLE_DBPAGE_VTAB
-#  define SQLITE_ENABLE_DBPAGE_VTAB 1
-#endif
-#ifndef SQLITE_ENABLE_DBSTAT_VTAB
-#  define SQLITE_ENABLE_DBSTAT_VTAB 1
-#endif
-#ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
-#  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
-#endif
-#ifndef SQLITE_ENABLE_FTS5
-#  define SQLITE_ENABLE_FTS5 1
-#endif
-#ifndef SQLITE_ENABLE_MATH_FUNCTIONS
-#  define SQLITE_ENABLE_MATH_FUNCTIONS 1
-#endif
-#ifndef SQLITE_ENABLE_OFFSET_SQL_FUNC
-#  define SQLITE_ENABLE_OFFSET_SQL_FUNC 1
-#endif
-#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
-#  define SQLITE_ENABLE_PREUPDATE_HOOK 1 /*required by session extension*/
-#endif
-#ifndef SQLITE_ENABLE_RTREE
-#  define SQLITE_ENABLE_RTREE 1
-#endif
-#ifndef SQLITE_ENABLE_SESSION
-#  define SQLITE_ENABLE_SESSION 1
-#endif
-#ifndef SQLITE_ENABLE_STMTVTAB
-#  define SQLITE_ENABLE_STMTVTAB 1
-#endif
-#ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#endif
 
 /**********************************************************************/
 /* SQLITE_O... */
@@ -212,6 +176,12 @@
 */
 #  undef SQLITE_OMIT_JSON
 #  define SQLITE_OMIT_JSON
+#endif
+
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
+#  define SQLITE_WASM_HAS_VTAB 1
+#else
+#  define SQLITE_WASM_HAS_VTAB 0
 #endif
 
 #include <assert.h>
@@ -412,7 +382,7 @@ int sqlite3__wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   return err_code;
 }
 
-#if SQLITE_WASM_TESTS
+#if SQLITE_WASM_ENABLE_C_TESTS
 struct WasmTestStruct {
   int v4;
   void * ppV;
@@ -432,7 +402,7 @@ void sqlite3__wasm_test_struct(WasmTestStruct * s){
   }
   return;
 }
-#endif /* SQLITE_WASM_TESTS */
+#endif /* SQLITE_WASM_ENABLE_C_TESTS */
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -967,7 +937,7 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(vtab) {
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
+#if SQLITE_WASM_HAS_VTAB
     DefInt(SQLITE_INDEX_SCAN_UNIQUE);
     DefInt(SQLITE_INDEX_CONSTRAINT_EQ);
     DefInt(SQLITE_INDEX_CONSTRAINT_GT);
@@ -995,7 +965,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_FAIL);
     //DefInt(SQLITE_ABORT); // Also an error code
     DefInt(SQLITE_REPLACE);
-#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
+#endif /*SQLITE_WASM_HAS_VTAB*/
   } _DefGroup;
 
 #undef DefGroup
@@ -1110,6 +1080,7 @@ const char * sqlite3__wasm_enum_json(void){
 #undef CurrentStruct
 
 
+#if SQLITE_WASM_HAS_VTAB
 #define CurrentStruct sqlite3_vtab
     StructBinder {
       M(pModule, "p");
@@ -1155,7 +1126,6 @@ const char * sqlite3__wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
     /**
      ** Workaround: in order to map the various inner structs from
      ** sqlite3_index_info, we have to uplift those into constructs we
@@ -1232,9 +1202,9 @@ const char * sqlite3__wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
-#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
+#endif /*SQLITE_WASM_HAS_VTAB*/
 
-#if SQLITE_WASM_TESTS
+#if SQLITE_WASM_ENABLE_C_TESTS
 #define CurrentStruct WasmTestStruct
     StructBinder {
       M(v4,    "i");
@@ -1244,7 +1214,7 @@ const char * sqlite3__wasm_enum_json(void){
       M(xFunc, "v(p)");
     } _StructBinder;
 #undef CurrentStruct
-#endif
+#endif /*SQLITE_WASM_ENABLE_C_TESTS*/
 
   } out( "]"/*structs*/);
 
@@ -1603,7 +1573,7 @@ sqlite3_kvvfs_methods * sqlite3__wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
+#if SQLITE_WASM_HAS_VTAB
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
@@ -1626,7 +1596,7 @@ int sqlite3__wasm_vtab_config(sqlite3 *pDb, int op, int arg){
     return SQLITE_MISUSE;
   }
 }
-#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
+#endif /*SQLITE_WASM_HAS_VTAB*/
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -1801,7 +1771,7 @@ int sqlite3__wasm_init_wasmfs(const char *zUnused){
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_ENABLE_WASMFS */
 
-#if SQLITE_WASM_TESTS
+#if SQLITE_WASM_ENABLE_C_TESTS
 
 SQLITE_WASM_EXPORT
 int sqlite3__wasm_test_intptr(int * p){
@@ -1967,6 +1937,9 @@ int sqlite3__wasm_SQLTester_strglob(const char *zGlob, const char *z){
  return !sqlite3__wasm_SQLTester_strnotglob(zGlob, z);
 }
 
-#endif /* SQLITE_WASM_TESTS */
+#endif /* SQLITE_WASM_ENABLE_C_TESTS */
 
 #undef SQLITE_WASM_EXPORT
+#undef SQLITE_WASM_HAS_VTAB
+#undef SQLITE_WASM_MINIMAL
+#undef SQLITE_WASM_ENABLE_C_TESTS

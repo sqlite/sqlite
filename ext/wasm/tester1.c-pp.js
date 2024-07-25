@@ -2153,7 +2153,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #1: eponymous w/ manual exception handling',
-      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
+      predicate: (sqlite3)=>!!sqlite3.capi.sqlite3_vtab || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2350,7 +2350,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
-      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
+      predicate: (sqlite3)=>!!sqlite3.capi.sqlite3_vtab || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -3300,7 +3300,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
-      predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "FTS5 is not available",
+      predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "Missing FTS5",
       test: function(sqlite3){
         // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
         // with the exception that that post uses "external content"
