@@ -1197,12 +1197,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(db === db.checkRc(0))
           .assert(db === sqlite3.oo1.DB.checkRc(db,0))
           .assert(null === sqlite3.oo1.DB.checkRc(null,0));
-
         this.progressHandlerCount = 0;
         if( wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK') ){
           T.assert( !capi.sqlite3_progress_handler );
         }else{
-          T.assert( capi.sqlite3_progress_handler );
+          T.assert( !!capi.sqlite3_progress_handler );
           capi.sqlite3_progress_handler(db, 5, (p)=>{
             ++this.progressHandlerCount;
             return 0;
