@@ -1,3 +1,10 @@
+_sqlite3_set_authorizer
+_sqlite3_preupdate_blobwrite
+_sqlite3_preupdate_count
+_sqlite3_preupdate_depth
+_sqlite3_preupdate_hook
+_sqlite3_preupdate_new
+_sqlite3_preupdate_old
 _sqlite3changegroup_add
 _sqlite3changegroup_add_strm
 _sqlite3changegroup_delete
@@ -40,3 +47,14 @@ _sqlite3session_object_config
 _sqlite3session_patchset
 _sqlite3session_patchset_strm
 _sqlite3session_table_filter
+_sqlite3_create_module
+_sqlite3_create_module_v2
+_sqlite3_declare_vtab
+_sqlite3_vtab_collation
+_sqlite3_vtab_distinct
+_sqlite3_vtab_in
+_sqlite3_vtab_in_first
+_sqlite3_vtab_in_next
+_sqlite3_vtab_nochange
+_sqlite3_vtab_on_conflict
+_sqlite3_vtab_rhs_value

@@ -1,6 +1,0 @@
-_sqlite3_preupdate_blobwrite
-_sqlite3_preupdate_count
-_sqlite3_preupdate_depth
-_sqlite3_preupdate_hook
-_sqlite3_preupdate_new
-_sqlite3_preupdate_old

@@ -54,6 +54,7 @@ MAKEFILE := $(lastword $(MAKEFILE_LIST))
 CLEAN_FILES :=
 DISTCLEAN_FILES := ./--dummy--
 release: oz
+MAKING_CLEAN := $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
 
 ########################################################################
 # JS_BUILD_NAMES exists for documentation purposes only. It enumerates
@@ -87,46 +88,6 @@ JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 JS_BUILD_MODES := vanilla esm bunder-friendly node
 
 ########################################################################
-# Emscripten SDK home dir and related binaries...
-EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/emsdk $(HOME)/src/emsdk))
-emcc.bin ?= $(word 1,$(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc) $(shell which emcc))
-ifeq (,$(emcc.bin))
-  $(error Cannot find emcc.)
-endif
-emcc.version := $(shell "$(emcc.bin)" --version | sed -n 1p \
-                  | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
-ifeq (,$(emcc.version))
-  $(warning Cannot determine emcc version. This might unduly impact build flags.)
-else
-  $(info using emcc version [$(emcc.version)])
-endif
-
-wasm-strip ?= $(shell which wasm-strip 2>/dev/null)
-ifeq (,$(filter clean,$(MAKECMDGOALS)))
-ifeq (,$(wasm-strip))
-  $(info WARNING: *******************************************************************)
-  $(info WARNING: builds using -O2/-O3/-Os/-Oz will minify WASM-exported names,)
-  $(info WARNING: breaking _All The Things_. The workaround for that is to build)
-  $(info WARNING: with -g3 (which explodes the file size) and then strip the debug)
-  $(info WARNING: info after compilation, using wasm-strip, to shrink the wasm file.)
-  $(info WARNING: wasm-strip was not found in the PATH so we cannot strip those.)
-  $(info WARNING: If this build uses any optimization level higher than -O1 then)
-  $(info WARNING: the ***resulting JS code WILL NOT BE USABLE***.)
-  $(info WARNING: wasm-strip is part of the wabt package:)
-  $(info WARNING:    https://github.com/WebAssembly/wabt)
-  $(info WARNING: on Ubuntu-like systems it can be installed with:)
-  $(info WARNING:    sudo apt install wabt)
-  $(info WARNING: *******************************************************************)
-endif
-endif # 'make clean' check
-
-ifeq (,$(wasm-strip))
-  maybe-wasm-strip = echo "not wasm-stripping"
-else
-  maybe-wasm-strip = $(wasm-strip)
-endif
-
-########################################################################
 # dir.top = the top dir of the canonical build tree, where
 # sqlite3.[ch] live.
 dir.top := ../..
@@ -141,41 +102,16 @@ dir.common := common
 dir.fiddle := fiddle
 dir.fiddle-debug := fiddle-debug
 dir.tool := $(dir.top)/tool
-CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
-  $(dir.fiddle-debug)/*
-
-########################################################################
-# dir.dout = output dir for deliverables.
+# Maintenance reminder: the names of $(dir.dout) and $(dir.tmp) must
+# stay in sync with make-make.sh
 #
-# MAINTENANCE REMINDER: the output .js and .wasm files of certain emcc
-# buildables must be in _this_ dir, rather than a subdir, or else
-# parts of the generated code get confused and cannot load
-# property. Specifically, when X.js loads X.wasm, whether or not X.js
-# uses the correct path for X.wasm depends on how it's loaded: an HTML
-# script tag will resolve it intuitively, whereas a Worker's call to
-# importScripts() will not.  That's a fundamental incompatibility with
-# how URL resolution in JS happens between those two contexts. See:
-#
-# https://zzz.buzz/2017/03/14/relative-uris-in-web-development/
-#
-# We unfortunately have no way, from Worker-initiated code, to
-# automatically resolve the path from X.js to X.wasm.
-#
-# We have an "only slightly unsightly" solution for our main builds
-# but it does not work for the WASMFS builds, so those builds have to
-# be built to _this_ directory and can only run when the client app is
-# loaded from the same directory.
-dir.dout := $(dir.wasm)/jswasm
 # dir.tmp = output dir for intermediary build files, as opposed to
 # end-user deliverables.
+dir.dout := $(dir.wasm)/jswasm
+# dir.dout = output dir for deliverables
 dir.tmp := $(dir.wasm)/bld
-CLEAN_FILES += $(dir.tmp)/* $(dir.dout)/*
-ifeq (,$(wildcard $(dir.dout)))
-  dir._tmp := $(shell mkdir -p $(dir.dout))
-endif
-ifeq (,$(wildcard $(dir.tmp)))
-  dir._tmp := $(shell mkdir -p $(dir.tmp))
-endif
+CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
+  $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
 
 ########################################################################
 # Set up sqlite3.c and sqlite3.h...
@@ -197,18 +133,33 @@ endif
 sqlite3.canonical.c := $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
 sqlite3.h := $(dir.top)/sqlite3.h
-ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c) 2>/dev/null))
-  SQLITE_C_IS_SEE := 0
-else
-  SQLITE_C_IS_SEE := 1
-  $(info This is an SEE build.)
+
+########################################################################@
+# It's important that sqlite3.h be built to completion before any
+# other parts of the build run, thus we use .NOTPARALLEL to disable
+# parallel build of that file and its dependants.
+.NOTPARALLEL: $(sqlite3.h)
+$(sqlite3.h):
+	$(MAKE) -C $(dir.top) sqlite3.c
+$(sqlite3.c): $(sqlite3.h)
+
+# .cache.make is generated by a shell script and holds certain parts
+# of the makefile, some of which are relatively expensive to calculate
+# on each run (that is, they can take a human-visible amount of time).
+ifeq (0,$(MAKING_CLEAN))
+.cache.make: $(sqlite3.c) $(sqlite3.canonical.c) $(MAKEFILE) make-make.sh
+	rm -f $@
+	$(SHELL) make-make.sh "$(sqlite3.c)" > $@
+	chmod -w $@
+-include .cache.make
+.cache.make: $(emcc.bin)
 endif
-# Most SQLITE_OPT flags are set in sqlite3-wasm.c but we need them
-# made explicit here for building speedtest1.c.
+CLEAN_FILES += .cache.make
+
+# Common options for building sqlite3-wasm.c and speedtest1.c.
 SQLITE_OPT = \
   -DSQLITE_ENABLE_FTS5 \
   -DSQLITE_ENABLE_RTREE \
-  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
   -DSQLITE_ENABLE_STMTVTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
@@ -240,15 +191,6 @@ minimal ?= 0
 ifeq (1,$(minimal))
   SQLITE_OPT += -DSQLITE_WASM_MINIMAL
 endif
-
-########################################################################@
-# It's important that sqlite3.h be built to completion before any
-# other parts of the build run, thus we use .NOTPARALLEL to disable
-# parallel build of that file and its dependants.
-.NOTPARALLEL: $(sqlite3.h)
-$(sqlite3.h):
-	$(MAKE) -C $(dir.top) sqlite3.c
-$(sqlite3.c): $(sqlite3.h)
 
 .PHONY: clean distclean
 clean:
@@ -371,7 +313,7 @@ define C-PP.FILTER
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
 	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(C-PP.FILTER.global)
-CLEAN_FILES += $(2)
+#CLEAN_FILES += $(2)
 endef
 # /end C-PP.FILTER
 ########################################################################
@@ -421,17 +363,13 @@ emcc_opt_full := $(emcc_opt) -g3
 ########################################################################
 # EXPORTED_FUNCTIONS.* = files for use with Emscripten's
 # -sEXPORTED_FUNCTION flag.
-EXPORTED_FUNCTIONS.api.core := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core)
+EXPORTED_FUNCTIONS.api.core := $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core
 EXPORTED_FUNCTIONS.api.in := $(EXPORTED_FUNCTIONS.api.core)
 ifeq (1,$(SQLITE_C_IS_SEE))
-  EXPORTED_FUNCTIONS.api.in += $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see)
+  EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see
 endif
 ifeq (0,$(minimal))
-  EXPORTED_FUNCTIONS.api.in += \
-    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-auth) \
-    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-preupdate) \
-    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-session) \
-    $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-vtab)
+  EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 else
   $(info ========================================)
   $(info This is a minimal-mode build)
@@ -906,7 +844,7 @@ $(5): $(4) $$(MAKEFILE) $$(sqlite3-wasm.cfiles) $$(EXPORTED_FUNCTIONS.api) $$(pr
 	ls -la $$$$dotwasm $$@
 all: $(5)
 #quick: $(5)
-CLEAN_FILES += $(4) $(5)
+#CLEAN_FILES += $(4) $(5)
 endef
 # ^^^ /SETUP_LIB_BUILD_MODE
 ########################################################################
@@ -962,7 +900,7 @@ $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
 $(sqlite3-node.mjs): $(sqlite3.mjs)
-CLEAN_FILES += $(sqlite3.wasm)
+#CLEAN_FILES += $(sqlite3.wasm)
 
 ########################################################################
 # We need separate copies of certain supplementary JS files for the
@@ -1106,7 +1044,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
 
 speedtest1: $(speedtest1.js)
 all: speedtest1
-CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
+#CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # end speedtest1.js
 ########################################################################
 
@@ -1174,7 +1112,7 @@ wasmfs.enable ?= 1
 else
 # Unconditionally enable wasmfs for [dist]clean so that the wasmfs
 # sub-make can clean up.
-wasmfs.enable ?= $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
+wasmfs.enable ?= $(MAKING_CLEAN)
 endif
 ifeq (1,$(wasmfs.enable))
 # wasmfs build disabled 2022-10-19 per /chat discussion.

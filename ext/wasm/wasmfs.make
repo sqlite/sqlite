@@ -14,11 +14,6 @@ sqlite3-wasmfs.js     := $(dir.wasmfs)/sqlite3-wasmfs.js
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
 sqlite3-wasmfs.wasm   := $(dir.wasmfs)/sqlite3-wasmfs.wasm
 
-CLEAN_FILES += $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.wasm) \
-    $(subst .js,.worker.js,$(sqlite3-wasmfs.js)) \
-    $(sqlite3-wasmfs.mjs) \
-    $(subst .mjs,.worker.mjs,$(sqlite3-wasmfs.mjs))
-
 ########################################################################
 # emcc flags for .c/.o.
 cflags.sqlite3-wasmfs :=
@@ -109,7 +104,5 @@ $(speedtest1-wasmfs.mjs): $(speedtest1.cfiles) $(sqlite3-wasmfs.js) \
 	ls -la $@ $(speedtest1-wasmfs.wasm)
 
 wasmfs: $(speedtest1-wasmfs.mjs)
-CLEAN_FILES += $(speedtest1-wasmfs.mjs) $(speedtest1-wasmfs.wasm) \
-     $(subst .js,.worker.js,$(speedtest1-wasmfs.mjs))
 # end speedtest1.js
 ########################################################################

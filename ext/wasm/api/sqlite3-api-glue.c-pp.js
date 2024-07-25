@@ -336,7 +336,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/* sqlite3_set_authorizer() */
 
   if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
-    /* ^^^ "the problem" is that this is an option feature and the
+    /* ^^^ "the problem" is that this is an optional feature and the
        build-time function-export list does not currently take
        optional features into account. */
     wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);

@@ -3300,17 +3300,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
-      predicate: function(sqlite3){
-        const d = new sqlite3.oo1.DB();
-        try{
-          d.exec("create virtual table f using fts5(x)");
-          return true;
-        }catch(e){
-          return "FTS5 is not available";
-        }finally{
-          d.close();
-        }
-      },
+      predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "FTS5 is not available",
       test: function(sqlite3){
         // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
         // with the exception that that post uses "external content"
