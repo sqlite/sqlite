@@ -801,6 +801,7 @@ typedef struct F5tTokenizerInstance F5tTokenizerInstance;
 struct F5tTokenizerContext {
   void *pCtx;
   int (*xToken)(void*, int, const char*, int, int, int);
+  F5tTokenizerInstance *pInst;
 };
 
 struct F5tTokenizerModule {
@@ -809,11 +810,36 @@ struct F5tTokenizerModule {
   F5tTokenizerContext *pContext;
 };
 
+/*
+** zLocale:
+**   Buffer zLocale contains the current locale, as configured by the most
+**   recent call to xSetLocale(). A NULL (default) locale is represented as
+**   a 0 byte string - "\0".
+**
+**   This can be retrieved by a Tcl tokenize script using [sqlite3_fts5_locale].
+*/
 struct F5tTokenizerInstance {
   Tcl_Interp *interp;
   Tcl_Obj *pScript;
   F5tTokenizerContext *pContext;
+  char zLocale[128];
 };
+
+static int f5tTokenizerSetLocale(
+  Fts5Tokenizer *pTokenizer, 
+  const char *pLocale,
+  int nLocale
+){
+  F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)pTokenizer;
+  if( nLocale>=sizeof(pInst->zLocale) ){
+    return SQLITE_ERROR;
+  }
+
+  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
+  memcpy(pInst->zLocale, pLocale, nLocale);
+
+  return SQLITE_OK;
+}
 
 static int f5tTokenizerCreate(
   void *pCtx, 
@@ -867,6 +893,7 @@ static int f5tTokenizerTokenize(
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+  F5tTokenizerInstance *pOldInst = 0;
   void *pOldCtx;
   int (*xOldToken)(void*, int, const char*, int, int, int);
   Tcl_Obj *pEval;
@@ -875,9 +902,11 @@ static int f5tTokenizerTokenize(
 
   pOldCtx = pInst->pContext->pCtx;
   xOldToken = pInst->pContext->xToken;
+  pOldInst = pInst->pContext->pInst;
 
   pInst->pContext->pCtx = pCtx;
   pInst->pContext->xToken = xToken;
+  pInst->pContext->pInst = pInst;
 
   assert( 
       flags==FTS5_TOKENIZE_DOCUMENT
@@ -913,7 +942,35 @@ static int f5tTokenizerTokenize(
 
   pInst->pContext->pCtx = pOldCtx;
   pInst->pContext->xToken = xOldToken;
+  pInst->pContext->pInst = pOldInst;
   return rc;
+}
+
+/*
+** sqlite3_fts5_locale 
+*/
+static int SQLITE_TCLAPI f5tTokenizerLocale(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  F5tTokenizerContext *p = (F5tTokenizerContext*)clientData;
+
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+  if( p->xToken==0 ){
+    Tcl_AppendResult(interp, 
+        "sqlite3_fts5_locale may only be used by tokenizer callback", 0
+    );
+    return TCL_ERROR;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(p->pInst->zLocale, -1));
+  return TCL_OK;
 }
 
 /*
@@ -1001,12 +1058,21 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   fts5_api *pApi;
   char *zName;
   Tcl_Obj *pScript;
-  fts5_tokenizer t;
   F5tTokenizerModule *pMod;
   int rc;
+  int bV2 = 0;                    /* True to use _v2 API */
+
+  if( objc==5 ){
+    const char *zArg = Tcl_GetString(objv[1]);
+    if( 0==strcmp(zArg, "-v2") ){
+      objv++;
+      objc--;
+      bV2 = 1;
+    }
+  }
 
   if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME SCRIPT");
+    Tcl_WrongNumArgs(interp, 1, objv, "?-v2? DB NAME SCRIPT");
     return TCL_ERROR;
   }
   if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
@@ -1015,18 +1081,34 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   zName = Tcl_GetString(objv[2]);
   pScript = objv[3];
 
-  t.xCreate = f5tTokenizerCreate;
-  t.xTokenize = f5tTokenizerTokenize;
-  t.xDelete = f5tTokenizerDelete;
-
   pMod = (F5tTokenizerModule*)ckalloc(sizeof(F5tTokenizerModule));
   pMod->interp = interp;
   pMod->pScript = pScript;
   pMod->pContext = pContext;
   Tcl_IncrRefCount(pScript);
-  rc = pApi->xCreateTokenizer(pApi, zName, (void*)pMod, &t, f5tDelTokenizer);
+
+  if( bV2==0 ){
+    fts5_tokenizer t;
+    t.xCreate = f5tTokenizerCreate;
+    t.xTokenize = f5tTokenizerTokenize;
+    t.xDelete = f5tTokenizerDelete;
+    rc = pApi->xCreateTokenizer(pApi, zName, (void*)pMod, &t, f5tDelTokenizer);
+  }else{
+    fts5_tokenizer_v2 t2;
+    memset(&t2, 0, sizeof(t2));
+    t2.iVersion = 2;
+    t2.xCreate = f5tTokenizerCreate;
+    t2.xTokenize = f5tTokenizerTokenize;
+    t2.xDelete = f5tTokenizerDelete;
+    t2.xSetLocale = f5tTokenizerSetLocale;
+    rc = pApi->xCreateTokenizer_v2(pApi, zName,(void*)pMod,&t2,f5tDelTokenizer);
+  }
+
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error in fts5_api.xCreateTokenizer()", 0);
+    Tcl_AppendResult(interp, (
+          bV2 ? "error in fts5_api.xCreateTokenizer_v2()"
+          : "error in fts5_api.xCreateTokenizer()"
+    ), 0);
     return TCL_ERROR;
   }
 
@@ -1333,6 +1415,7 @@ int Fts5tcl_Init(Tcl_Interp *interp){
   } aCmd[] = {
     { "sqlite3_fts5_create_tokenizer",   f5tCreateTokenizer, 1 },
     { "sqlite3_fts5_token",              f5tTokenizerReturn, 1 },
+    { "sqlite3_fts5_locale",             f5tTokenizerLocale, 1 },
     { "sqlite3_fts5_tokenize",           f5tTokenize, 0 },
     { "sqlite3_fts5_create_function",    f5tCreateFunction, 0 },
     { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },

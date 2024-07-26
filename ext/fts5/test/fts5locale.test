@@ -1,0 +1,176 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the built-in fts5 tokenizers. 
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5locale
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+proc transform_token {locale token} {
+  switch -- $locale {
+    reverse {
+      set ret ""
+      foreach c [split $token ""] {
+        set ret "$c$ret"
+      }
+      set token $ret
+    }
+
+    default {
+      # no-op
+    }
+  }
+
+  set token
+}
+
+proc tcl_create {args} { return "tcl_tokenize" }
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    set w [transform_token [sqlite3_fts5_locale] $w]
+    sqlite3_fts5_token $w $iStart $iEnd
+  }
+}
+
+#-------------------------------------------------------------------------
+# Check that queries can have a locale attached to them.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=tcl);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t1 VALUES('cba');
+} {}
+
+do_execsql_test 1.1 {
+  SELECT rowid, a FROM t1( fts5_locale('en_US', 'abc') );
+} {1 abc}
+
+do_execsql_test 1.2 {
+  SELECT rowid, a FROM t1( fts5_locale('reverse', 'abc') );
+} {2 cba}
+
+#-------------------------------------------------------------------------
+# Test that the locale= option exists and seems to accept values. And
+# that fts5_locale() values may only be inserted into an internal-content
+# table if the locale=1 option was specified.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE b1 USING fts5(x, y, locale=1, tokenize=tcl);
+  CREATE VIRTUAL TABLE b2 USING fts5(x, y, locale=0, tokenize=tcl);
+
+  CREATE VIRTUAL TABLE ttt USING fts5vocab('b1', instance);
+}
+
+do_catchsql_test 2.2 {
+  CREATE VIRTUAL TABLE b3 USING fts5(x, y, locale=2);
+} {1 {malformed locale=... directive}}
+
+do_catchsql_test 2.3 {
+  INSERT INTO b1(b1, rank) VALUES('locale', 0);
+} {1 {SQL logic error}}
+
+do_execsql_test 2.4 {
+  INSERT INTO b1 VALUES('abc', 'one two three');
+  INSERT INTO b1 VALUES('def', fts5_locale('reverse', 'four five six'));
+}
+
+do_execsql_test 2.5 {
+  INSERT INTO b2 VALUES('abc', 'one two three');
+}
+
+do_catchsql_test 2.6 {
+  INSERT INTO b2 VALUES('def', fts5_locale('reverse', 'four five six'));
+} {1 {fts5_locale() may not be used without locale=1}}
+
+do_execsql_test 2.7  { SELECT rowid FROM b1('one')  } {1}
+do_execsql_test 2.8  { SELECT rowid FROM b1('four') } {}
+do_execsql_test 2.9  { SELECT rowid FROM b1('ruof') } 2
+do_execsql_test 2.10 { SELECT rowid FROM b1(fts5_locale('reverse', 'five'))} 2
+
+do_execsql_test 2.11 {
+  SELECT x, quote(y) FROM b1
+} {
+  abc {'one two three'}
+  def {'four five six'}
+}
+
+do_execsql_test 2.12  { SELECT quote(y) FROM b1('ruof') } {
+  {'four five six'}
+}
+
+do_execsql_test 2.13 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+do_execsql_test 2.14 {
+  INSERT INTO b1(b1) VALUES('rebuild');
+}
+do_execsql_test 2.15 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+
+do_execsql_test 2.16 {
+  DELETE FROM b1 WHERE rowid=2
+}
+do_execsql_test 2.17 {
+  INSERT INTO b1(b1) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+# Test the 'delete' command with contentless tables.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE c1 USING fts5(x, content=, tokenize=tcl);
+  CREATE VIRTUAL TABLE c2 USING fts5vocab('c1', instance);
+
+  INSERT INTO c1 VALUES('hello world');
+  INSERT INTO c1 VALUES( fts5_locale('reverse', 'one two three') );
+}
+
+do_execsql_test 3.2 {
+  SELECT DISTINCT term FROM c2 ORDER BY 1
+} {
+  eerht eno hello owt world
+}
+
+do_execsql_test 3.3 {
+  INSERT INTO c1(c1, rowid, x) 
+    VALUES('delete', 2, fts5_locale('reverse', 'one two three') );
+}
+
+do_execsql_test 3.4 {
+  SELECT DISTINCT term FROM c2 ORDER BY 1
+} {
+  hello world
+}
+
+
+
+# execsql_pp { SELECT * FROM ttt }
+
+finish_test
+
+

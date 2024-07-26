@@ -107,7 +107,7 @@ struct Fts5Auxiliary {
 struct Fts5TokenizerModule {
   char *zName;                    /* Name of tokenizer */
   void *pUserData;                /* User pointer passed to xCreate() */
-  fts5_tokenizer x;               /* Tokenizer functions */
+  fts5_tokenizer_v2 x;            /* Tokenizer functions */
   void (*xDestroy)(void*);        /* Destructor function */
   Fts5TokenizerModule *pNext;     /* Next registered tokenizer module */
 };
@@ -229,6 +229,8 @@ struct Fts5Cursor {
 
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
+
+#define FTS5_LOCALE_SUBTYPE ((unsigned int)'L')
 
 
 /*
@@ -1229,6 +1231,116 @@ static void fts5SetVtabError(Fts5FullTable *p, const char *zFormat, ...){
 }
 
 
+static int fts5SetLocale(
+  Fts5Config *pConfig, 
+  const char *zLocale, 
+  int nLocale
+){
+  Fts5TokenizerConfig *pT = &pConfig->t;
+  int rc = SQLITE_OK;
+  if( pT->pTokApi->xSetLocale ){
+    rc = pT->pTokApi->xSetLocale(pT->pTok, zLocale, nLocale);
+  }
+  return rc;
+}
+
+void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
+  fts5SetLocale(pConfig, 0, 0);
+}
+
+int sqlite3Fts5ExtractText(
+  Fts5Config *pConfig,
+  int bContent,
+  sqlite3_value *pVal,            /* Value to extract text from */
+  int *pbResetTokenizer,          /* OUT: True if xSetLocale(NULL) required */
+  const char **ppText,            /* OUT: Pointer to text buffer */
+  int *pnText                     /* OUT: Size of (*ppText) in bytes */
+){
+  const char *pText = 0;
+  int nText = 0;
+  int bResetTokenizer = 0;
+  int rc = SQLITE_OK;
+
+  int bDecodeBlob = 0;
+  if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+   if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
+    || (bContent && pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL)
+   ){
+     bDecodeBlob = 1;
+   }
+  }
+
+  if( bDecodeBlob ){
+    const u8 *pBlob = sqlite3_value_blob(pVal);
+    int nBlob = sqlite3_value_bytes(pVal);
+    int nLocale = 0;
+
+    for(nLocale=0; nLocale<nBlob; nLocale++){
+      if( pBlob[nLocale]==0x00 ) break;
+    }
+
+    if( nLocale==nBlob ) return SQLITE_ERROR;
+    pText = (const char*)&pBlob[nLocale+1];
+    nText = nBlob-nLocale-1;
+
+    rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
+    bResetTokenizer = 1;
+
+  }else{
+    pText = (const char*)sqlite3_value_text(pVal);
+    nText = sqlite3_value_bytes(pVal);
+  }
+
+  *ppText = pText;
+  *pnText = nText;
+  *pbResetTokenizer = bResetTokenizer;
+
+  return rc;
+}
+
+/*
+** Argument pVal is the text of a full-text search expression. It may or
+** may not have been wrapped by fts5_locale(). This function extracts
+** the text of the expression, and sets output variable (*pzText) to 
+** point to a nul-terminated buffer containing the expression.
+**
+** If pVal was an fts5_locale() value, then the tokenizer has been 
+** configured to us the required locale.
+**
+** If output variable (*pbFreeAndReset) is set to true, then the caller
+** is required to (a) call xSetLocale(NULL) to reset the tokenizer locale,
+** and (b) call sqlite3_free() to free (*pzText).
+*/
+static int fts5ExtractExprText(
+  Fts5FullTable *pTab,
+  sqlite3_value *pVal,
+  char **pzText, 
+  int *pbFreeAndReset
+){
+  const char *zText = 0;
+  int nText = 0;
+  int rc = SQLITE_OK;
+  int bReset = 0;
+
+  *pbFreeAndReset = 0;
+  rc = sqlite3Fts5ExtractText(pTab->p.pConfig, 0, pVal, &bReset, &zText,&nText);
+  if( rc==SQLITE_OK ){
+    if( bReset ){
+      *pzText = sqlite3Fts5Mprintf(&rc, "%.*s", nText, zText);
+      if( rc!=SQLITE_OK ){
+        sqlite3Fts5ClearLocale(pTab->p.pConfig);
+      }else{
+        *pbFreeAndReset = 1;
+      }
+    }else{
+      *pzText = (char*)zText;
+    }
+  }
+
+  return rc;
+}
+
+
 /*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
@@ -1293,8 +1405,13 @@ static int fts5FilterMethod(
         pRank = apVal[i];
         break;
       case 'M': {
-        const char *zText = (const char*)sqlite3_value_text(apVal[i]);
+        char *zText = 0;
+        int bFreeAndReset = 0;
+
+        rc = fts5ExtractExprText(pTab, apVal[i], &zText, &bFreeAndReset);
+        if( rc!=SQLITE_OK ) goto filter_out;
         if( zText==0 ) zText = "";
+
         iCol = 0;
         do{
           iCol = iCol*10 + (idxStr[iIdxStr]-'0');
@@ -1306,7 +1423,6 @@ static int fts5FilterMethod(
           ** indicates that the MATCH expression is not a full text query,
           ** but a request for an internal parameter.  */
           rc = fts5SpecialMatch(pTab, pCsr, &zText[1]);
-          goto filter_out;
         }else{
           char **pzErr = &pTab->p.base.zErrMsg;
           rc = sqlite3Fts5ExprNew(pConfig, 0, iCol, zText, &pExpr, pzErr);
@@ -1314,8 +1430,14 @@ static int fts5FilterMethod(
             rc = sqlite3Fts5ExprAnd(&pCsr->pExpr, pExpr);
             pExpr = 0;
           }
-          if( rc!=SQLITE_OK ) goto filter_out;
         }
+
+        if( bFreeAndReset ){
+          sqlite3_free(zText);
+          sqlite3Fts5ClearLocale(pConfig);
+        }
+
+        if( zText[0]=='*' || rc!=SQLITE_OK ) goto filter_out;
 
         break;
       }
@@ -2596,6 +2718,35 @@ static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
   return rc;
 }
 
+static void fts5ExtractValueFromColumn(
+  sqlite3_context *pCtx,
+  Fts5Config *pConfig, 
+  sqlite3_value *pVal
+){
+  if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+    if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
+     || (pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL)
+    ){
+      const u8 *pBlob = sqlite3_value_blob(pVal);
+      int nBlob = sqlite3_value_bytes(pVal);
+
+      if( nBlob>=4 && memcmp(pBlob, "\0\0\0\0", 4)==0 ){
+        sqlite3_result_blob(pCtx, &pBlob[4], nBlob-4, SQLITE_TRANSIENT);
+      }else{
+        int ii;
+        for(ii=0; ii<nBlob && pBlob[ii]; ii++);
+        if( ii<nBlob ){
+          const char *pText = (const char*)&pBlob[ii+1];
+          sqlite3_result_text(pCtx, pText, nBlob-ii-1, SQLITE_TRANSIENT);
+        }
+      }
+      return;
+    }
+  }
+
+  sqlite3_result_value(pCtx, pVal);
+}
+
 /* 
 ** This is the xColumn method, called by SQLite to request a value from
 ** the row that the supplied cursor currently points to.
@@ -2641,7 +2792,8 @@ static int fts5ColumnMethod(
     pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
     rc = fts5SeekCursor(pCsr, 1);
     if( rc==SQLITE_OK ){
-      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
+      sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
+      fts5ExtractValueFromColumn(pCtx, pConfig, pVal);
     }
     pConfig->pzErrmsg = 0;
   }else if( pConfig->bContentlessDelete && sqlite3_vtab_nochange(pCtx) ){
@@ -2791,7 +2943,47 @@ static int fts5CreateAux(
 
 /*
 ** Register a new tokenizer. This is the implementation of the 
-** fts5_api.xCreateTokenizer() method.
+** fts5_api.xCreateTokenizer_v2() method.
+*/
+static int fts5CreateTokenizer_v2(
+  fts5_api *pApi,                 /* Global context (one per db handle) */
+  const char *zName,              /* Name of new function */
+  void *pUserData,                /* User data for aux. function */
+  fts5_tokenizer_v2 *pTokenizer,  /* Tokenizer implementation */
+  void(*xDestroy)(void*)          /* Destructor for pUserData */
+){
+  Fts5Global *pGlobal = (Fts5Global*)pApi;
+  int rc = SQLITE_OK;
+
+  if( pTokenizer->iVersion>2 ){
+    rc = SQLITE_ERROR;
+  }else{
+    Fts5TokenizerModule *pNew;
+    sqlite3_int64 nName;          /* Size of zName and its \0 terminator */
+    sqlite3_int64 nByte;          /* Bytes of space to allocate */
+
+    nName = strlen(zName) + 1;
+    nByte = sizeof(Fts5TokenizerModule) + nName;
+    pNew = (Fts5TokenizerModule*)sqlite3Fts5MallocZero(&rc, nByte);
+    if( pNew ){
+      pNew->zName = (char*)&pNew[1];
+      memcpy(pNew->zName, zName, nName);
+      pNew->pUserData = pUserData;
+      pNew->x = *pTokenizer;
+      pNew->xDestroy = xDestroy;
+      pNew->pNext = pGlobal->pTok;
+      pGlobal->pTok = pNew;
+      if( pNew->pNext==0 ){
+        pGlobal->pDfltTok = pNew;
+      }
+    }
+  }
+
+  return rc;
+}
+
+/*
+** The fts5_api.xCreateTokenizer() method.
 */
 static int fts5CreateTokenizer(
   fts5_api *pApi,                 /* Global context (one per db handle) */
@@ -2800,32 +2992,15 @@ static int fts5CreateTokenizer(
   fts5_tokenizer *pTokenizer,     /* Tokenizer implementation */
   void(*xDestroy)(void*)          /* Destructor for pUserData */
 ){
-  Fts5Global *pGlobal = (Fts5Global*)pApi;
-  Fts5TokenizerModule *pNew;
-  sqlite3_int64 nName;            /* Size of zName and its \0 terminator */
-  sqlite3_int64 nByte;            /* Bytes of space to allocate */
-  int rc = SQLITE_OK;
+  fts5_tokenizer_v2 tok;
 
-  nName = strlen(zName) + 1;
-  nByte = sizeof(Fts5TokenizerModule) + nName;
-  pNew = (Fts5TokenizerModule*)sqlite3_malloc64(nByte);
-  if( pNew ){
-    memset(pNew, 0, (size_t)nByte);
-    pNew->zName = (char*)&pNew[1];
-    memcpy(pNew->zName, zName, nName);
-    pNew->pUserData = pUserData;
-    pNew->x = *pTokenizer;
-    pNew->xDestroy = xDestroy;
-    pNew->pNext = pGlobal->pTok;
-    pGlobal->pTok = pNew;
-    if( pNew->pNext==0 ){
-      pGlobal->pDfltTok = pNew;
-    }
-  }else{
-    rc = SQLITE_NOMEM;
-  }
+  memset(&tok, 0, sizeof(tok));
+  tok.iVersion = 2;
+  tok.xCreate = pTokenizer->xCreate;
+  tok.xTokenize = pTokenizer->xTokenize;
+  tok.xDelete = pTokenizer->xDelete;
 
-  return rc;
+  return fts5CreateTokenizer_v2(pApi, zName, pUserData, &tok, xDestroy);
 }
 
 static Fts5TokenizerModule *fts5LocateTokenizer(
@@ -2847,6 +3022,32 @@ static Fts5TokenizerModule *fts5LocateTokenizer(
 
 /*
 ** Find a tokenizer. This is the implementation of the 
+** fts5_api.xFindTokenizer_v2() method.
+*/
+static int fts5FindTokenizer_v2(
+  fts5_api *pApi,                 /* Global context (one per db handle) */
+  const char *zName,              /* Name of tokenizer */
+  void **ppUserData,
+  fts5_tokenizer_v2 **ppTokenizer /* Populate this object */
+){
+  int rc = SQLITE_OK;
+  Fts5TokenizerModule *pMod;
+
+  pMod = fts5LocateTokenizer((Fts5Global*)pApi, zName);
+  if( pMod ){
+    *ppTokenizer = &pMod->x;
+    *ppUserData = pMod->pUserData;
+  }else{
+    *ppTokenizer = 0;
+    *ppUserData = 0;
+    rc = SQLITE_ERROR;
+  }
+
+  return rc;
+}
+
+/*
+** Find a tokenizer. This is the implementation of the 
 ** fts5_api.xFindTokenizer() method.
 */
 static int fts5FindTokenizer(
@@ -2855,16 +3056,14 @@ static int fts5FindTokenizer(
   void **ppUserData,
   fts5_tokenizer *pTokenizer      /* Populate this object */
 ){
+  fts5_tokenizer_v2 *pV2 = 0;
   int rc = SQLITE_OK;
-  Fts5TokenizerModule *pMod;
 
-  pMod = fts5LocateTokenizer((Fts5Global*)pApi, zName);
-  if( pMod ){
-    *pTokenizer = pMod->x;
-    *ppUserData = pMod->pUserData;
-  }else{
-    memset(pTokenizer, 0, sizeof(fts5_tokenizer));
-    rc = SQLITE_ERROR;
+  rc = fts5FindTokenizer_v2(pApi, zName, ppUserData, &pV2);
+  if( rc==SQLITE_OK ){
+    pTokenizer->xCreate = pV2->xCreate;
+    pTokenizer->xDelete = pV2->xDelete;
+    pTokenizer->xTokenize = pV2->xTokenize;
   }
 
   return rc;
@@ -2967,6 +3166,46 @@ static void fts5SourceIdFunc(
 }
 
 /*
+** Implementation of fts5_locale() function.
+*/
+static void fts5LocaleFunc(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apArg           /* Function arguments */
+){
+  u8 *pBlob = 0;
+  int nBlob = 0;
+
+  const char *zLocale = 0;
+  int nLocale = 0;
+  const char *zText = 0;
+  int nText = 0;
+
+  assert( nArg==2 );
+  UNUSED_PARAM(nArg);
+
+  zLocale = (const char*)sqlite3_value_text(apArg[0]);
+  nLocale = sqlite3_value_bytes(apArg[0]);
+
+  zText = (const char*)sqlite3_value_text(apArg[1]);
+  nText = sqlite3_value_bytes(apArg[1]);
+
+  nBlob = nLocale + 1 + nText;
+  pBlob = (u8*)sqlite3_malloc(nBlob);
+  if( pBlob==0 ){
+    sqlite3_result_error_nomem(pCtx);
+    return;
+  }
+
+  if( zLocale ) memcpy(pBlob, zLocale, nLocale);
+  pBlob[nLocale] = 0x00;
+  if( zText ) memcpy(&pBlob[nLocale+1], zText, nText);
+
+  sqlite3_result_blob(pCtx, pBlob, nBlob, sqlite3_free);
+  sqlite3_result_subtype(pCtx, FTS5_LOCALE_SUBTYPE);
+}
+
+/*
 ** Return true if zName is the extension on one of the shadow tables used
 ** by this module.
 */
@@ -3058,10 +3297,12 @@ static int fts5Init(sqlite3 *db){
     void *p = (void*)pGlobal;
     memset(pGlobal, 0, sizeof(Fts5Global));
     pGlobal->db = db;
-    pGlobal->api.iVersion = 2;
+    pGlobal->api.iVersion = 3;
     pGlobal->api.xCreateFunction = fts5CreateAux;
     pGlobal->api.xCreateTokenizer = fts5CreateTokenizer;
     pGlobal->api.xFindTokenizer = fts5FindTokenizer;
+    pGlobal->api.xCreateTokenizer_v2 = fts5CreateTokenizer_v2;
+    pGlobal->api.xFindTokenizer_v2 = fts5FindTokenizer_v2;
     rc = sqlite3_create_module_v2(db, "fts5", &fts5Mod, p, fts5ModuleDestroy);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5IndexInit(db);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(pGlobal, db);
@@ -3078,6 +3319,13 @@ static int fts5Init(sqlite3 *db){
           db, "fts5_source_id", 0, 
           SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS,
           p, fts5SourceIdFunc, 0, 0
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "fts5_locale", 2, 
+          SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_RESULT_SUBTYPE,
+          p, fts5LocaleFunc, 0, 0
       );
     }
   }

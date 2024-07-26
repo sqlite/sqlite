@@ -162,7 +162,7 @@ typedef struct Fts5TokenizerConfig Fts5TokenizerConfig;
 
 struct Fts5TokenizerConfig {
   Fts5Tokenizer *pTok;
-  fts5_tokenizer *pTokApi;
+  fts5_tokenizer_v2 *pTokApi;
   const char **azArg;
   int nArg;
   int ePattern;                   /* FTS_PATTERN_XXX constant */
@@ -223,6 +223,7 @@ struct Fts5Config {
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
   int bTokendata;                 /* "tokendata=" option value (dflt==0) */
+  int bLocale;                    /* "locale=" option value (dflt==0) */
   int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
   Fts5TokenizerConfig t;
@@ -291,6 +292,8 @@ int sqlite3Fts5ConfigLoad(Fts5Config*, int);
 int sqlite3Fts5ConfigSetValue(Fts5Config*, const char*, sqlite3_value*, int*);
 
 int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
+
+void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...);
 
 /*
 ** End of interface to code in fts5_config.c.
@@ -626,6 +629,17 @@ int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig);
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
 int sqlite3Fts5FlushToDisk(Fts5Table*);
+
+int sqlite3Fts5ExtractText(
+  Fts5Config *pConfig,
+  int bContent,                   /* Loaded from content table */
+  sqlite3_value *pVal,            /* Value to extract text from */
+  int *pbResetTokenizer,          /* OUT: True if xSetLocale(NULL) required */
+  const char **ppText,            /* OUT: Pointer to text buffer */
+  int *pnText                     /* OUT: Size of (*ppText) in bytes */
+);
+
+void sqlite3Fts5ClearLocale(Fts5Config *pConfig);
 
 /*
 ** End of interface to code in fts5.c.

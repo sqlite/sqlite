@@ -380,6 +380,16 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("locale", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed locale=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bLocale = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
   if( sqlite3_strnicmp("detail", zCmd, nCmd)==0 ){
     const Fts5Enum aDetail[] = {
       { "none", FTS5_DETAIL_NONE },
@@ -603,6 +613,11 @@ int sqlite3Fts5ConfigParse(
 
     sqlite3_free(zOne);
     sqlite3_free(zTwo);
+  }
+
+  /* If this is not an FTS5_CONTENT_NORMAL table, set bLocale */
+  if( pRet->eContent!=FTS5_CONTENT_NORMAL ){
+    pRet->bLocale = 1;
   }
 
   /* We only allow contentless_delete=1 if the table is indeed contentless. */
@@ -1027,3 +1042,20 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   }
   return rc;
 }
+
+void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
+  va_list ap;                     /* ... printf arguments */
+  char *zMsg = 0;
+
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  if( pConfig->pzErrmsg ){
+    *pConfig->pzErrmsg = zMsg;
+  }else{
+    sqlite3_free(zMsg);
+  }
+
+  va_end(ap);
+}
+
+
