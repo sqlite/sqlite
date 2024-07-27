@@ -1,5 +1,5 @@
-C wasm\sminimal\sbuild:\sstrip\sauthorizers\sand\sJSON\ssupport\s(saves\sapprox\s35kb).\sStrip\svtab\ssupport\sfrom\sthe\sJS\sbits\sbut\scannot\syet\sstrip\sit\sfrom\sthe\sC\sbits\sbecause\sthat\srequires\sa\scustom-configured\ssqlite3.c.
-D 2024-07-24T23:58:28.415
+C Fix\sdocumentation\stypo.\s\n[forum:/forumpost/993cb82402|Forum\spost\s993cb82402]
+D 2024-07-27T20:28:13.014
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -761,7 +761,7 @@ F src/resolve.c 7e8d23ce7cdbfedf351a47e759f2722e8182ca10fd7580be43f4ce1f1a228145
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 6a95a2bffa6c09584dea99db5a7ae10c813305c09c92920ffc54f6eae2ba399e
 F src/shell.c.in 44c02fd1581d95e066b479241e081f37dc95c98452badd03627ef2a1c21bdc80
-F src/sqlite.h.in 6c884a87bbf8828562b49272025a1e66e3801a196a58b0bdec87edcd2c9c8fc1
+F src/sqlite.h.in 1ad9110150773c38ebababbad11b5cb361bcd3997676dec1c91ac5e0416a7b86
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955ac1
@@ -2199,8 +2199,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ee2191f7302210100fa0b29ace8156531ad995bf61aa2642e526e0901d0c6862
-R 72e8c79f1e4399a95154f130ea5870d2
-U stephan
-Z 427f56307156eafbb2685aac023af7a2
+P eb64d106551718467e0f6c6b53695410bf4c566901008e4cda8580d0f7efa7b0
+R ad51bbdd14781776f7624246eec357e7
+U drh
+Z 102d909571cd81f9b00d601f888788db
 # Remove this line to create a well-formed Fossil manifest.
