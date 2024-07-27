@@ -167,9 +167,54 @@ do_execsql_test 3.4 {
   hello world
 }
 
+#-------------------------------------------------------------------------
+# Test that an UPDATE that updates a subset of the columns does not
+# magically discard the locale from those columns not updated.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
 
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE d1 USING fts5(x, y, locale=1, tokenize=tcl);
+  CREATE VIRTUAL TABLE d2 USING fts5vocab('d1', instance);
 
-# execsql_pp { SELECT * FROM ttt }
+  INSERT INTO d1(rowid, x, y) VALUES(1, 'abc', 'def');
+  INSERT INTO d1(rowid, x, y) VALUES(2, 'ghi', fts5_locale('reverse', 'hello'));
+}
+
+do_execsql_test 4.2 {
+  SELECT DISTINCT term FROM d2 ORDER BY 1
+} {
+  abc def ghi olleh
+}
+
+do_execsql_test 4.3 {
+  UPDATE d1 SET x='jkl' WHERE rowid=2;
+}
+
+do_execsql_test 4.4 {
+  SELECT DISTINCT term FROM d2 ORDER BY 1
+} {
+  abc def jkl olleh
+}
+
+do_execsql_test 4.5 {
+  SELECT rowid, * FROM d1
+} {
+  1 abc def
+  2 jkl hello
+}
+
+do_execsql_test 4.6 {
+  UPDATE d1 SET rowid=4 WHERE rowid=2
+}
+
+do_execsql_test 4.7 {
+  SELECT rowid, * FROM d1
+} {
+  1 abc def
+  4 jkl hello
+}
 
 finish_test
 

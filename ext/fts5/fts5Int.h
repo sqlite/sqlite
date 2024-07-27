@@ -720,7 +720,7 @@ int sqlite3Fts5StorageRename(Fts5Storage*, const char *zName);
 int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
-int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**);
+int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**, int);
 int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
 int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
@@ -745,6 +745,9 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 int sqlite3Fts5StorageOptimize(Fts5Storage *p);
 int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
 int sqlite3Fts5StorageReset(Fts5Storage *p);
+
+void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage*);
+int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel);
 
 /*
 ** End of interface to code in fts5_storage.c.

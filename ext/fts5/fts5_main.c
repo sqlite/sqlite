@@ -1746,7 +1746,7 @@ static int fts5SpecialDelete(
   int eType1 = sqlite3_value_type(apVal[1]);
   if( eType1==SQLITE_INTEGER ){
     sqlite3_int64 iDel = sqlite3_value_int64(apVal[1]);
-    rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, &apVal[2]);
+    rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, &apVal[2], 0);
   }
   return rc;
 }
@@ -1870,7 +1870,7 @@ static int fts5UpdateMethod(
     /* DELETE */
     else if( nArg==1 ){
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
-      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0);
+      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0, 0);
       bUpdateOrDelete = 1;
     }
 
@@ -1878,16 +1878,18 @@ static int fts5UpdateMethod(
     else{
       int eType1 = sqlite3_value_numeric_type(apVal[1]);
 
-      if( eType1!=SQLITE_INTEGER && eType1!=SQLITE_NULL ){
+      if( (eType1!=SQLITE_INTEGER && eType1!=SQLITE_NULL)
+       || (eType0==SQLITE_INTEGER && eType1==SQLITE_NULL)
+      ){
         rc = SQLITE_MISMATCH;
       }
 
-      else if( eType0!=SQLITE_INTEGER ){     
+      else if( eType0!=SQLITE_INTEGER ){
         /* An INSERT statement. If the conflict-mode is REPLACE, first remove
         ** the current entry (if any). */
         if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
-          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
+          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
           bUpdateOrDelete = 1;
         }
         fts5StorageInsert(&rc, pTab, apVal, pRowid);
@@ -1897,28 +1899,34 @@ static int fts5UpdateMethod(
       else{
         i64 iOld = sqlite3_value_int64(apVal[0]);  /* Old rowid */
         i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
-        if( eType1==SQLITE_INTEGER && iOld!=iNew ){
+        assert( eType1==SQLITE_INTEGER );
+        if( iOld!=iNew ){
           if( eConflict==SQLITE_REPLACE ){
-            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
+            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
+              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
             }
             fts5StorageInsert(&rc, pTab, apVal, pRowid);
           }else{
-            rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, apVal, pRowid);
+            rc = sqlite3Fts5StorageFindDeleteRow(pTab->pStorage, iOld);
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
+              rc = sqlite3Fts5StorageContentInsert(pTab->pStorage,apVal,pRowid);
+            }
+            if( rc==SQLITE_OK ){
+              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
             }
             if( rc==SQLITE_OK ){
               rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal,*pRowid);
             }
           }
         }else{
-          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
+          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
           fts5StorageInsert(&rc, pTab, apVal, pRowid);
         }
         bUpdateOrDelete = 1;
+        sqlite3Fts5StorageReleaseDeleteRow(pTab->pStorage);
       }
+
     }
   }
 
@@ -2606,6 +2614,16 @@ static Fts5Cursor *fts5CursorFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
   return pCsr;
 }
 
+static void fts5ResultError(sqlite3_context *pCtx, const char *zFmt, ...){
+  char *zErr = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  zErr = sqlite3_vmprintf(zFmt, ap);
+  sqlite3_result_error(pCtx, zErr, -1);
+  sqlite3_free(zErr);
+  va_end(ap);
+}
+
 static void fts5ApiCallback(
   sqlite3_context *context,
   int argc,
@@ -2622,9 +2640,7 @@ static void fts5ApiCallback(
 
   pCsr = fts5CursorFromCsrid(pAux->pGlobal, iCsrId);
   if( pCsr==0 || pCsr->ePlan==0 ){
-    char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
-    sqlite3_result_error(context, zErr, -1);
-    sqlite3_free(zErr);
+    fts5ResultError(context, "no such cursor: %lld", iCsrId);
   }else{
     sqlite3_vtab *pTab = pCsr->base.pVtab;
     fts5ApiInvoke(pAux, pCsr, context, argc-1, &argv[1]);
@@ -2776,8 +2792,8 @@ static int fts5ColumnMethod(
     ** auxiliary function.  */
     sqlite3_result_int64(pCtx, pCsr->iCsrId);
   }else if( iCol==pConfig->nCol+1 ){
-
     /* The value of the "rank" column. */
+
     if( pCsr->ePlan==FTS5_PLAN_SOURCE ){
       fts5PoslistBlob(pCtx, pCsr);
     }else if( 
@@ -2788,21 +2804,27 @@ static int fts5ColumnMethod(
         fts5ApiInvoke(pCsr->pRank, pCsr, pCtx, pCsr->nRankArg, pCsr->apRankArg);
       }
     }
-  }else if( !fts5IsContentless(pTab) ){
-    pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
-    rc = fts5SeekCursor(pCsr, 1);
-    if( rc==SQLITE_OK ){
-      sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
-      fts5ExtractValueFromColumn(pCtx, pConfig, pVal);
+  }else{
+    /* A column created by the user containing values. */
+    int bNochange = sqlite3_vtab_nochange(pCtx);
+
+    if( fts5IsContentless(pTab) ){
+      if( bNochange && pConfig->bContentlessDelete ){
+        fts5ResultError(pCtx, "cannot UPDATE a subset of "
+            "columns on fts5 contentless-delete table: %s", pConfig->zName
+        );
+      }
+    }else if( bNochange==0 || pConfig->eContent!=FTS5_CONTENT_NORMAL ){
+      pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
+      rc = fts5SeekCursor(pCsr, 1);
+      if( rc==SQLITE_OK ){
+        sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
+        fts5ExtractValueFromColumn(pCtx, pConfig, pVal);
+      }
+      pConfig->pzErrmsg = 0;
     }
-    pConfig->pzErrmsg = 0;
-  }else if( pConfig->bContentlessDelete && sqlite3_vtab_nochange(pCtx) ){
-    char *zErr = sqlite3_mprintf("cannot UPDATE a subset of "
-        "columns on fts5 contentless-delete table: %s", pConfig->zName
-    );
-    sqlite3_result_error(pCtx, zErr, -1);
-    sqlite3_free(zErr);
   }
+
   return rc;
 }
 

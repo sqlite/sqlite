@@ -22,7 +22,8 @@ struct Fts5Storage {
   int bTotalsValid;               /* True if nTotalRow/aTotalSize[] are valid */
   i64 nTotalRow;                  /* Total number of rows in FTS table */
   i64 *aTotalSize;                /* Total sizes of each column */ 
-  sqlite3_stmt *aStmt[11];
+  sqlite3_stmt *pSavedRow;
+  sqlite3_stmt *aStmt[12];
 };
 
 
@@ -36,14 +37,15 @@ struct Fts5Storage {
 # error "FTS5_STMT_LOOKUP mismatch" 
 #endif
 
-#define FTS5_STMT_INSERT_CONTENT  3
-#define FTS5_STMT_REPLACE_CONTENT 4
-#define FTS5_STMT_DELETE_CONTENT  5
-#define FTS5_STMT_REPLACE_DOCSIZE  6
-#define FTS5_STMT_DELETE_DOCSIZE  7
-#define FTS5_STMT_LOOKUP_DOCSIZE  8
-#define FTS5_STMT_REPLACE_CONFIG 9
-#define FTS5_STMT_SCAN 10
+#define FTS5_STMT_LOOKUP2  3
+#define FTS5_STMT_INSERT_CONTENT  4
+#define FTS5_STMT_REPLACE_CONTENT 5
+#define FTS5_STMT_DELETE_CONTENT  6
+#define FTS5_STMT_REPLACE_DOCSIZE  7
+#define FTS5_STMT_DELETE_DOCSIZE  8
+#define FTS5_STMT_LOOKUP_DOCSIZE  9
+#define FTS5_STMT_REPLACE_CONFIG 10
+#define FTS5_STMT_SCAN 11
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -73,6 +75,7 @@ static int fts5StorageGetStmt(
       "SELECT %s FROM %s T WHERE T.%Q >= ? AND T.%Q <= ? ORDER BY T.%Q ASC",
       "SELECT %s FROM %s T WHERE T.%Q <= ? AND T.%Q >= ? ORDER BY T.%Q DESC",
       "SELECT %s FROM %s T WHERE T.%Q=?",               /* LOOKUP  */
+      "SELECT %s FROM %s T WHERE T.%Q=?",               /* LOOKUP2  */
 
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
@@ -87,6 +90,8 @@ static int fts5StorageGetStmt(
     };
     Fts5Config *pC = p->pConfig;
     char *zSql = 0;
+
+    assert( ArraySize(azStmt)==ArraySize(p->aStmt) );
 
     switch( eStmt ){
       case FTS5_STMT_SCAN:
@@ -104,6 +109,7 @@ static int fts5StorageGetStmt(
         break;
 
       case FTS5_STMT_LOOKUP:
+      case FTS5_STMT_LOOKUP2:
         zSql = sqlite3_mprintf(azStmt[eStmt], 
             pC->zContentExprlist, pC->zContent, pC->zContentRowid
         );
@@ -150,7 +156,7 @@ static int fts5StorageGetStmt(
       rc = SQLITE_NOMEM;
     }else{
       int f = SQLITE_PREPARE_PERSISTENT;
-      if( eStmt>FTS5_STMT_LOOKUP ) f |= SQLITE_PREPARE_NO_VTAB;
+      if( eStmt>FTS5_STMT_LOOKUP2 ) f |= SQLITE_PREPARE_NO_VTAB;
       p->pConfig->bLock++;
       rc = sqlite3_prepare_v3(pC->db, zSql, -1, f, &p->aStmt[eStmt], 0);
       p->pConfig->bLock--;
@@ -399,6 +405,24 @@ static int fts5StorageInsertCallback(
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
 }
 
+int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel){
+  int rc = SQLITE_OK;
+  sqlite3_stmt *pSeek = 0;
+
+  assert( p->pSavedRow==0 );
+  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP+1, &pSeek, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pSeek, 1, iDel);
+    if( sqlite3_step(pSeek)!=SQLITE_ROW ){
+      rc = sqlite3_reset(pSeek);
+    }else{
+      p->pSavedRow = pSeek;
+    }
+  }
+
+  return rc;
+}
+
 /*
 ** If a row with rowid iDel is present in the %_content table, add the
 ** delete-markers to the FTS index necessary to delete it. Do not actually
@@ -407,7 +431,8 @@ static int fts5StorageInsertCallback(
 static int fts5StorageDeleteFromIndex(
   Fts5Storage *p, 
   i64 iDel, 
-  sqlite3_value **apVal
+  sqlite3_value **apVal,
+  int bSaveRow
 ){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pSeek = 0;        /* SELECT to read row iDel from %_data */
@@ -416,12 +441,21 @@ static int fts5StorageDeleteFromIndex(
   int iCol;
   Fts5InsertCtx ctx;
 
+  assert( bSaveRow==0 || apVal==0 );
+  assert( bSaveRow==0 || bSaveRow==1 );
+  assert( FTS5_STMT_LOOKUP2==FTS5_STMT_LOOKUP+1 );
+
   if( apVal==0 ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP, &pSeek, 0);
-    if( rc!=SQLITE_OK ) return rc;
-    sqlite3_bind_int64(pSeek, 1, iDel);
-    if( sqlite3_step(pSeek)!=SQLITE_ROW ){
-      return sqlite3_reset(pSeek);
+    if( p->pSavedRow && bSaveRow ){
+      pSeek = p->pSavedRow;
+      p->pSavedRow = 0;
+    }else{
+      rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP+bSaveRow, &pSeek, 0);
+      if( rc!=SQLITE_OK ) return rc;
+      sqlite3_bind_int64(pSeek, 1, iDel);
+      if( sqlite3_step(pSeek)!=SQLITE_ROW ){
+        return sqlite3_reset(pSeek);
+      }
     }
   }
 
@@ -462,9 +496,19 @@ static int fts5StorageDeleteFromIndex(
     p->nTotalRow--;
   }
 
-  rc2 = sqlite3_reset(pSeek);
-  if( rc==SQLITE_OK ) rc = rc2;
+  if( rc==SQLITE_OK && bSaveRow ){
+    assert( p->pSavedRow==0 );
+    p->pSavedRow = pSeek;
+  }else{
+    rc2 = sqlite3_reset(pSeek);
+    if( rc==SQLITE_OK ) rc = rc2;
+  }
   return rc;
+}
+
+void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage *pStorage){
+  sqlite3_reset(pStorage->pSavedRow);
+  pStorage->pSavedRow = 0;
 }
 
 /*
@@ -582,7 +626,12 @@ static int fts5StorageSaveTotals(Fts5Storage *p){
 /*
 ** Remove a row from the FTS table.
 */
-int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
+int sqlite3Fts5StorageDelete(
+  Fts5Storage *p,                 /* Storage object */
+  i64 iDel,                       /* Rowid to delete from table */
+  sqlite3_value **apVal,          /* Optional - values to remove from index */
+  int bSaveRow
+){
   Fts5Config *pConfig = p->pConfig;
   int rc;
   sqlite3_stmt *pDel = 0;
@@ -599,7 +648,7 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
     if( p->pConfig->bContentlessDelete ){
       rc = fts5StorageContentlessDelete(p, iDel);
     }else{
-      rc = fts5StorageDeleteFromIndex(p, iDel, apVal);
+      rc = fts5StorageDeleteFromIndex(p, iDel, apVal, bSaveRow);
     }
   }
 
@@ -787,7 +836,11 @@ int sqlite3Fts5StorageContentInsert(
     int i;                        /* Counter variable */
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
-      rc = sqlite3_bind_value(pInsert, i, apVal[i]);
+      sqlite3_value *pVal = apVal[i];
+      if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
+        pVal = sqlite3_column_value(p->pSavedRow, i-1);
+      }
+      rc = sqlite3_bind_value(pInsert, i, pVal);
     }
     if( rc==SQLITE_OK ){
       sqlite3_step(pInsert);
@@ -825,9 +878,13 @@ int sqlite3Fts5StorageIndexInsert(
       int bReset = 0;
       int nText = 0;
       const char *pText = 0;
-      rc = sqlite3Fts5ExtractText(
-          pConfig, 0, apVal[ctx.iCol+2], &bReset, &pText, &nText
-      );
+      sqlite3_value *pVal = apVal[ctx.iCol+2];
+      int bDisk = 0;
+      if( p->pSavedRow && sqlite3_value_nochange(pVal) ){
+        pVal = sqlite3_column_value(p->pSavedRow, ctx.iCol+1);
+        bDisk = 1;
+      }
+      rc = sqlite3Fts5ExtractText(pConfig, bDisk, pVal, &bReset,&pText,&nText);
       if( rc==SQLITE_OK ){
         if( bReset && pConfig->bLocale==0 ){
           rc = SQLITE_ERROR;
