@@ -2849,6 +2849,40 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
 }
 
 /*
+** Return true if pExpr always returns integer 0 or integer 1 or NULL.
+*/
+int sqlite3ExprIsBoolean(const Expr *pExpr){
+  assert( pExpr!=0 );
+  switch( pExpr->op ){
+    case TK_EQ:
+    case TK_NE:
+    case TK_LT:
+    case TK_LE:
+    case TK_GT:
+    case TK_GE:
+    case TK_IN:
+    case TK_TRUTH:
+    case TK_ISNULL:
+    case TK_NOTNULL:
+    case TK_IS:
+    case TK_ISNOT:
+    case TK_AND:
+    case TK_OR:
+    case TK_BETWEEN:
+    case TK_NOT:
+/*
+**  case TK_EXISTS:  // technical this is also a boolean.  But the use case
+**                   // for this routine does not allow for subqueries
+**                   // so we might as well leave it out
+*/
+      return 1;
+
+    default:
+      return 0;
+  }
+}
+
+/*
 ** Return FALSE if there is no chance that the expression can be NULL.
 **
 ** If the expression might be NULL or if the expression is too complex

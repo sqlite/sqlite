@@ -1391,8 +1391,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         int rc = resolveExprStep(pWalker, pRight);
         if( rc==WRC_Abort ) return WRC_Abort;
         if( pRight->op==TK_TRUEFALSE ){
-          pExpr->op2 = pExpr->op;
-          pExpr->op = TK_TRUTH;
+          if( pExpr->op==TK_IS && sqlite3ExprIsBoolean(pExpr->pLeft) ){
+            pExpr->op = TK_EQ;
+          }else{
+            pExpr->op2 = pExpr->op;
+            pExpr->op = TK_TRUTH;
+          }
           return WRC_Continue;
         }
       }
