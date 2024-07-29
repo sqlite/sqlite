@@ -247,6 +247,7 @@ static int SQLITE_TCLAPI xF5tApi(
 
     { "xQueryToken",       2, "IPHRASE ITERM" },      /* 18 */
     { "xInstToken",        2, "IDX ITERM" },          /* 19 */
+    { "xColumnLocale",     1, "COL" },                /* 20 */
     { 0, 0, 0}
   };
 
@@ -532,6 +533,20 @@ static int SQLITE_TCLAPI xF5tApi(
         Tcl_SetObjResult(interp, Tcl_NewStringObj(pTerm, nTerm));
       }
 
+      break;
+    }
+
+    CASE(20, "xColumnLocale") {
+      const char *z = 0;
+      int n = 0;
+      int iCol;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCol) ){
+        return TCL_ERROR;
+      }
+      rc = p->pApi->xColumnLocale(p->pFts, iCol, &z, &n);
+      if( rc==SQLITE_OK && z ){
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(z, n));
+      }
       break;
     }
 

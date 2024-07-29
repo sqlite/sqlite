@@ -839,7 +839,19 @@ int sqlite3Fts5StorageContentInsert(
       sqlite3_value *pVal = apVal[i];
       if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
         pVal = sqlite3_column_value(p->pSavedRow, i-1);
+      }else if( i>1 && pConfig->abUnindexed[i-2] 
+             && pConfig->bLocale 
+             && sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE
+      ){
+        /* At attempt to insert an fts5_locale() value into an UNINDEXED
+        ** column. Strip the locale away and just bind the text.  */
+        const char *pText = 0;
+        int nText = 0;
+        rc = sqlite3Fts5ExtractText(pConfig, 0, pVal, 0, &pText, &nText);
+        sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
+        continue;
       }
+
       rc = sqlite3_bind_value(pInsert, i, pVal);
     }
     if( rc==SQLITE_OK ){

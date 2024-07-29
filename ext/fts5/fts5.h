@@ -308,9 +308,42 @@ struct Fts5PhraseIter {
 **
 **   This API can be quite slow if used with an FTS5 table created with the
 **   "detail=none" or "detail=column" option.
+**
+** xColumnLocale(pFts5, iIdx, pzLocale, pnLocale)
+**   If parameter iCol is less than zero, or greater than or equal to the
+**   number of columns in the table, SQLITE_RANGE is returned.
+**
+**   Otherwise, this function attempts to retrieve the locale associated
+**   with column iCol of the current row. Usually, there is no associated
+**   locale, and output parameters (*pzLocale) and (*pnLocale) are set
+**   to NULL and 0, respectively. However, if the fts5_locale() function
+**   was used to associated a locale with the value when it was inserted
+**   into the fts5 table, then (*pzLocale) is set to point to a buffer 
+**   containing the name of the locale in utf-8 encoding. (*pnLocale) is
+**   set to the size in bytes of the buffer.
+**
+**   If successful, SQLITE_OK is returned. Or, if an error occurs, an
+**   SQLite error code is returned. The final value of the output parameters
+**   is undefined in this case.
+**
+** xTokenizeSetLocale(pFts5, pLocale, nLocale)
+**   This API function is used to invoke the fts5_tokenizer_v2.xSetLocale() 
+**   method of the fts5 table's tokenizer, in the same way as xTokenize() is 
+**   used to invoke fts5_tokenizer_v2.xTokenize().
+**
+**   Parameters pLocale and nLocale may both be 0, in which case the tokenizer
+**   is configured to use its default locale. Otherwise, pLocale should point
+**   to a buffer containing the name of the locale to use encoded as utf-8.
+**   It does not have to be nul-terminated. nLocale must be passed the size 
+**   of the text in bytes. The buffer indicated by pLocale must remain valid
+**   for the duration of any calls made to xTokenize() by the auxiliary 
+**   function call up until the next invocation of xTokenizeSetLocale(), if 
+**   any.
+**
+**   SQLITE_OK is returned on success, or an SQLite error code otherwise.
 */
 struct Fts5ExtensionApi {
-  int iVersion;                   /* Currently always set to 3 */
+  int iVersion;                   /* Currently always set to 4 */
 
   void *(*xUserData)(Fts5Context*);
 
@@ -352,6 +385,11 @@ struct Fts5ExtensionApi {
       const char **ppToken, int *pnToken
   );
   int (*xInstToken)(Fts5Context*, int iIdx, int iToken, const char**, int*);
+
+  /* Below this point are iVersion>=4 only */
+  int (*xColumnLocale)(Fts5Context*, int iCol, const char **pz, int *pn);
+
+  int (*xTokenizeSetLocale)(Fts5Context*, const char *z, int n);
 };
 
 /* 

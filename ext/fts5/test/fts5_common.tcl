@@ -78,11 +78,22 @@ proc fts5_test_columnsize {cmd} {
 proc fts5_columntext {cmd iCol} {
   $cmd xColumnText $iCol
 }
+proc fts5_columnlocale {cmd iCol} {
+  $cmd xColumnLocale $iCol
+}
 
 proc fts5_test_columntext {cmd} {
   set res [list]
   for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
     lappend res [$cmd xColumnText $i]
+  }
+  set res
+}
+
+proc fts5_test_columnlocale {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
+    lappend res [$cmd xColumnLocale $i]
   }
   set res
 }
@@ -165,6 +176,7 @@ proc fts5_aux_test_functions {db} {
   foreach f {
     fts5_test_columnsize
     fts5_test_columntext
+    fts5_test_columnlocale
     fts5_test_columntotalsize
     fts5_test_poslist
     fts5_test_poslist2
@@ -177,6 +189,7 @@ proc fts5_aux_test_functions {db} {
     fts5_test_queryphrase
     fts5_test_phrasecount
     fts5_columntext
+    fts5_columnlocale
     fts5_queryphrase
     fts5_collist
   } {

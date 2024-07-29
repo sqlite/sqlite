@@ -41,7 +41,13 @@ proc transform_token {locale token} {
 
 proc tcl_create {args} { return "tcl_tokenize" }
 proc tcl_tokenize {tflags text} {
+  set iToken 1
+  set bSkip 0
+  if {[sqlite3_fts5_locale]=="second"} { set bSkip 1 }
   foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    incr iToken
+    if {(($iToken) % ($bSkip + 1))} continue
+
     set w [transform_token [sqlite3_fts5_locale] $w]
     sqlite3_fts5_token $w $iStart $iEnd
   }
@@ -215,6 +221,87 @@ do_execsql_test 4.7 {
   1 abc def
   4 jkl hello
 }
+
+fts5_aux_test_functions db
+
+do_execsql_test 4.8.1 {
+  SELECT fts5_test_columntext(d1) FROM d1('jkl')
+} {{jkl hello}}
+do_execsql_test 4.8.2 {
+  SELECT fts5_test_columntext(d1) FROM d1(fts5_locale('reverse', 'hello'))
+} {{jkl hello}}
+
+do_execsql_test 4.9 {
+  SELECT fts5_test_columnlocale(d1) FROM d1(fts5_locale('reverse', 'hello'))
+} {{{} reverse}}
+
+do_execsql_test 4.10 {
+  SELECT fts5_test_columnlocale(d1) FROM d1
+} {
+  {{} {}}
+  {{} reverse}
+}
+
+#-------------------------------------------------------------------------
+# Test that if an fts5_locale() value is written to an UNINDEXED 
+# column it is stored as text. This is so that blobs and other values
+# can also be stored as is.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      x, y UNINDEXED, locale=1, tokenize=tcl
+  );
+
+  INSERT INTO t1(rowid, x, y) VALUES(111,
+      fts5_locale('reverse', 'one two three'),
+      fts5_locale('reverse', 'four five six')
+  );
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid, x, y FROM t1
+} {
+  111 {one two three} {four five six}
+}
+
+do_execsql_test 5.3 {
+  SELECT typeof(c0), typeof(c1) FROM t1_content
+} {
+  blob text
+}
+
+#-------------------------------------------------------------------------
+
+foreach {tn opt} {
+  1 {}
+  2 {, columnsize=0}
+} {
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  do_execsql_test 6.$tn.1 "
+    CREATE VIRTUAL TABLE y1 USING fts5(t, locale=1, tokenize=tcl $opt);
+  "
+
+  do_execsql_test 6.$tn.2 {
+    INSERT INTO y1(rowid, t) VALUES
+      (1, fts5_locale('second', 'the city of London')),
+      (2, fts5_locale('second', 'shall have all the old')),
+      (3, fts5_locale('second', 'Liberties and Customs')),
+      (4, fts5_locale('second', 'which it hath been used to have'));
+  }
+
+  fts5_aux_test_functions db
+
+  do_execsql_test 5.$tn.3 {
+    SELECT fts5_test_columnsize(y1) FROM y1
+  } {
+    2 3 2 4
+  }
+}
+
 
 finish_test
 

@@ -195,11 +195,15 @@ struct Fts5Cursor {
   Fts5Auxiliary *pAux;            /* Currently executing extension function */
   Fts5Auxdata *pAuxdata;          /* First in linked list of saved aux-data */
 
-  /* Cache used by auxiliary functions xInst() and xInstCount() */
+  /* Cache used by auxiliary API functions xInst() and xInstCount() */
   Fts5PoslistReader *aInstIter;   /* One for each phrase */
   int nInstAlloc;                 /* Size of aInst[] array (entries / 3) */
   int nInstCount;                 /* Number of phrase instances */
   int *aInst;                     /* 3 integers per phrase instance */
+
+  /* Values set by xTokenizeSetLocale() */
+  const char *pLocale;
+  int nLocale;
 };
 
 /*
@@ -1258,16 +1262,17 @@ int sqlite3Fts5ExtractText(
 ){
   const char *pText = 0;
   int nText = 0;
-  int bResetTokenizer = 0;
   int rc = SQLITE_OK;
-
   int bDecodeBlob = 0;
+
+  assert( pbResetTokenizer==0 || *pbResetTokenizer==0 );
+
   if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
-   if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
-    || (bContent && pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL)
-   ){
-     bDecodeBlob = 1;
-   }
+    if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
+     || (bContent && pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL)
+    ){
+      bDecodeBlob = 1;
+    }
   }
 
   if( bDecodeBlob ){
@@ -1283,8 +1288,10 @@ int sqlite3Fts5ExtractText(
     pText = (const char*)&pBlob[nLocale+1];
     nText = nBlob-nLocale-1;
 
-    rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
-    bResetTokenizer = 1;
+    if( pbResetTokenizer ){
+      rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
+      *pbResetTokenizer = 1;
+    }
 
   }else{
     pText = (const char*)sqlite3_value_text(pVal);
@@ -1293,7 +1300,6 @@ int sqlite3Fts5ExtractText(
 
   *ppText = pText;
   *pnText = nText;
-  *pbResetTokenizer = bResetTokenizer;
 
   return rc;
 }
@@ -2030,9 +2036,20 @@ static int fts5ApiTokenize(
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
-  return sqlite3Fts5Tokenize(
-      pTab->pConfig, FTS5_TOKENIZE_AUX, pText, nText, pUserData, xToken
-  );
+  int rc = SQLITE_OK;
+  const char *pLocale = pCsr->pLocale;
+  if( pLocale ){
+    rc = fts5SetLocale(pTab->pConfig, pLocale, pCsr->nLocale);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5Tokenize(
+        pTab->pConfig, FTS5_TOKENIZE_AUX, pText, nText, pUserData, xToken
+    );
+  }
+  if( pLocale ){
+    sqlite3Fts5ClearLocale(pTab->pConfig);
+  }
+  return rc;
 }
 
 static int fts5ApiPhraseCount(Fts5Context *pCtx){
@@ -2064,8 +2081,13 @@ static int fts5ApiColumnText(
   }else{
     rc = fts5SeekCursor(pCsr, 0);
     if( rc==SQLITE_OK ){
-      *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
-      *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
+      Fts5Config *pConfig = pTab->pConfig;
+      int bContent = (
+          pConfig->bLocale && pConfig->abUnindexed[iCol]==0 && 
+          pConfig->eContent==FTS5_CONTENT_NORMAL
+      );
+      sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
+      sqlite3Fts5ExtractText(pConfig, bContent, pVal, 0, pz, pn);
     }
   }
   return rc;
@@ -2277,16 +2299,22 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
       }
     }else{
       int i;
+      rc = fts5SeekCursor(pCsr, 0);
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         if( pConfig->abUnindexed[i]==0 ){
-          const char *z; int n;
-          void *p = (void*)(&pCsr->aColumnSize[i]);
+          const int bContent = (pConfig->eContent==FTS5_CONTENT_NORMAL);
+          const char *z = 0; 
+          int n = 0;
+          int bReset = 0;
+          sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, i+1);
+
           pCsr->aColumnSize[i] = 0;
-          rc = fts5ApiColumnText(pCtx, i, &z, &n);
+          rc = sqlite3Fts5ExtractText(pConfig, bContent, pVal, &bReset, &z, &n);
           if( rc==SQLITE_OK ){
-            rc = sqlite3Fts5Tokenize(
-                pConfig, FTS5_TOKENIZE_AUX, z, n, p, fts5ColumnSizeCb
+            rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_AUX, 
+                z, n, (void*)&pCsr->aColumnSize[i], fts5ColumnSizeCb
             );
+            if( bReset ) sqlite3Fts5ClearLocale(pConfig);
           }
         }
       }
@@ -2530,8 +2558,64 @@ static int fts5ApiQueryPhrase(Fts5Context*, int, void*,
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
 );
 
+static int fts5ApiColumnLocale(
+  Fts5Context *pCtx, 
+  int iCol, 
+  const char **pzLocale, 
+  int *pnLocale
+){
+  int rc = SQLITE_OK;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
+
+  *pzLocale = 0;
+  *pnLocale = 0;
+
+  if( iCol<0 || iCol>=pConfig->nCol ){
+    rc = SQLITE_RANGE;
+  }else{
+    int bNormal = (pConfig->eContent==FTS5_CONTENT_NORMAL);
+    if( pConfig->abUnindexed[iCol]==0
+     && pCsr->ePlan!=FTS5_PLAN_SPECIAL
+     && pConfig->eContent!=FTS5_CONTENT_NONE
+     && (bNormal==0 || pConfig->bLocale)
+    ){
+      rc = fts5SeekCursor(pCsr, 0);
+      if( rc==SQLITE_OK ){
+        sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
+        if( sqlite3_value_type(pVal)==SQLITE_BLOB
+         && (bNormal || sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE)
+        ){
+          const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
+          int nBlob = sqlite3_value_bytes(pVal);
+          int nLocale = 0;
+          for(nLocale=0; nLocale<nBlob && pBlob[nLocale]!=0x00; nLocale++);
+          if( nLocale!=0 && nLocale!=nBlob ){
+            *pzLocale = (const char*)pBlob;
+            *pnLocale = nLocale;
+          }
+        }
+      }
+    }
+  }
+
+  return rc;
+}
+
+static int fts5ApiTokenizeSetLocale(
+  Fts5Context *pCtx, 
+  const char *pLocale, 
+  int nLocale
+){
+  int rc = SQLITE_OK;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  pCsr->pLocale = pLocale;
+  pCsr->nLocale = nLocale;
+  return rc;
+}
+
 static const Fts5ExtensionApi sFts5Api = {
-  3,                            /* iVersion */
+  4,                            /* iVersion */
   fts5ApiUserData,
   fts5ApiColumnCount,
   fts5ApiRowCount,
@@ -2552,7 +2636,9 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiPhraseFirstColumn,
   fts5ApiPhraseNextColumn,
   fts5ApiQueryToken,
-  fts5ApiInstToken
+  fts5ApiInstToken,
+  fts5ApiColumnLocale,
+  fts5ApiTokenizeSetLocale
 };
 
 /*
@@ -2606,6 +2692,8 @@ static void fts5ApiInvoke(
   pCsr->pAux = pAux;
   pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc, argv);
   pCsr->pAux = 0;
+  pCsr->pLocale = 0;
+  pCsr->nLocale = 0;
 }
 
 static Fts5Cursor *fts5CursorFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
