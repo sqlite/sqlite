@@ -836,7 +836,9 @@ static int f5tTokenizerSetLocale(
   }
 
   memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
-  memcpy(pInst->zLocale, pLocale, nLocale);
+  if( nLocale>0 ){
+    memcpy(pInst->zLocale, pLocale, nLocale);
+  }
 
   return SQLITE_OK;
 }

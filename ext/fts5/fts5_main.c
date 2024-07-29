@@ -1407,6 +1407,7 @@ static int fts5FilterMethod(
       case 'M': {
         char *zText = 0;
         int bFreeAndReset = 0;
+        int bInternal = 0;
 
         rc = fts5ExtractExprText(pTab, apVal[i], &zText, &bFreeAndReset);
         if( rc!=SQLITE_OK ) goto filter_out;
@@ -1423,6 +1424,7 @@ static int fts5FilterMethod(
           ** indicates that the MATCH expression is not a full text query,
           ** but a request for an internal parameter.  */
           rc = fts5SpecialMatch(pTab, pCsr, &zText[1]);
+          bInternal = 1;
         }else{
           char **pzErr = &pTab->p.base.zErrMsg;
           rc = sqlite3Fts5ExprNew(pConfig, 0, iCol, zText, &pExpr, pzErr);
@@ -1437,7 +1439,7 @@ static int fts5FilterMethod(
           sqlite3Fts5ClearLocale(pConfig);
         }
 
-        if( zText[0]=='*' || rc!=SQLITE_OK ) goto filter_out;
+        if( bInternal || rc!=SQLITE_OK ) goto filter_out;
 
         break;
       }
