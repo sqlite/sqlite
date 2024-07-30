@@ -136,7 +136,7 @@ foreach {tn blob} {
   do_test 2.$tn {
     set changeset [binary decode hex $blob]
 #set fd [open x.change w+]
-#fconfigure $fd -encoding binary -translation binary
+#fconfigure $fd -translation binary
 #puts -nonewline $fd $changeset
 #close $fd
     list [catch { sqlite3changeset_apply db $changeset xConflict } msg] $msg

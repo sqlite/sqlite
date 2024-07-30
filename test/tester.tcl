@@ -897,7 +897,7 @@ proc catchsafecmd {db {cmd ""}} {
 proc catchcmdex {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
-  fconfigure $out -encoding binary -translation binary
+  fconfigure $out -translation binary
   puts -nonewline $out $cmd
   close $out
   set line "exec -keepnewline -- $CLI $db < cmds.txt"
@@ -905,7 +905,7 @@ proc catchcmdex {db {cmd ""}} {
   foreach chan $chans {
     catch {
       set modes($chan) [fconfigure $chan]
-      fconfigure $chan -encoding binary -translation binary -buffering none
+      fconfigure $chan -translation binary -buffering none
     }
   }
   set rc [catch { eval $line } msg]

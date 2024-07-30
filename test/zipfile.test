@@ -30,7 +30,7 @@ if {[catch {load_static_extension db fileio} error]} {
 
 proc readfile {f} {
   set fd [open $f]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd]
   close $fd
   set data
