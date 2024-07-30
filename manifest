@@ -1,5 +1,5 @@
-C First\sattempt\sat\sgetting\sthe\sbuild\sto\swork\swith\sTcl\s9.0.
-D 2024-07-30T15:49:02.043
+C Fix\sthe\sincrblob\schannel\sso\sthat\spartial\sclose\sworks\swith\sTcl9.
+D 2024-07-30T16:51:51.690
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -112,7 +112,7 @@ F ext/fts5/fts5_vocab.c e4830b00809e5da53bc10f93adc59e321407b0f801c7f4167c0e47f5
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl bc33c6cc65e5d390f28a68aeeb3a526dadd2c3a947d2466ee1986c1a4002df56
-F ext/fts5/test/fts5aa.test 4db81519863244a3cab35795fe65ab6b592e7970c7409eba098b23ebbfc08d95
+F ext/fts5/test/fts5aa.test 183a2296fc4dab220f935dbb99a81f441bc6b7226fdda268597f755d69e8205b
 F ext/fts5/test/fts5ab.test 4bdb619fee409e11417e8827e320b857e42e926a01a0408fc9f143ec870a6ced
 F ext/fts5/test/fts5ac.test 4a73626de86f3d17c95738034880c4f0de8d54741fb943d819b528373657e59b
 F ext/fts5/test/fts5ad.test 058e616612964e61d19f70295f0e6eaedceb4b29b1fbf4f859615ef7e779dc22
@@ -768,8 +768,8 @@ F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955a
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c f4753c1c90964a89f2c094f62bcb413fdefe0215c73c2d4fca4e8c50ace7a1f6
-F src/tclsqlite.h f3dc9ed1464a7cc775a47da70ac6f23e95d0fb939dd7eaf48639778f94d5aaad w src/tclinterface.h
+F src/tclsqlite.c e36996d1426c37e314c648b6746c2671a875e1b66e9641ac13b89b16ab8c7ec1
+F src/tclsqlite.h f3dc9ed1464a7cc775a47da70ac6f23e95d0fb939dd7eaf48639778f94d5aaad
 F src/test1.c 9f01a43b5d9d0c08c31617f3ab4e924bb30cd47db784527dbf6a309456a4db3b
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
@@ -2200,11 +2200,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 86de4e755e37dc1cbcbd59018927aa87ff49fc15f706a36187631d8f14075c12
-R f26b0d5f665cd9e5cd8b699e9fa3852a
-T *branch * tcl9
-T *sym-tcl9 *
-T -sym-trunk *
+P 6e5bb48a74d63fb8c30528f0005d1763cd2dbb882abf86baf1565721e6bfcf84
+R b6fac0aac026b18427ddeec14d1b1b88
 U drh
-Z 6096f47dfe122296507e83030fc2948d
+Z 4e51314270d54eeb39bc75af76080956
 # Remove this line to create a well-formed Fossil manifest.

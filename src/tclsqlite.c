@@ -203,6 +203,7 @@ struct IncrblobChannel {
   sqlite3_blob *pBlob;      /* sqlite3 blob handle */
   SqliteDb *pDb;            /* Associated database connection */
   int iSeek;                /* Current seek offset */
+  int isClosed;             /* TCL_CLOSE_READ or TCL_CLOSE_WRITE */
   Tcl_Channel channel;      /* Channel identifier */
   IncrblobChannel *pNext;   /* Linked list of all open incrblob channels */
   IncrblobChannel *pPrev;   /* Linked list of all open incrblob channels */
@@ -242,13 +243,26 @@ static void closeIncrblobChannels(SqliteDb *pDb){
 /*
 ** Close an incremental blob channel.
 */
-static int SQLITE_TCLAPI incrblobClose(
+static int SQLITE_TCLAPI incrblobClose2(
   ClientData instanceData,
-  Tcl_Interp *interp
+  Tcl_Interp *interp,
+  int flags
 ){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
-  int rc = sqlite3_blob_close(p->pBlob);
+  int  rc;
   sqlite3 *db = p->pDb->db;
+
+  if( flags ){
+    p->isClosed |= flags;
+    if( (p->isClosed & (TCL_CLOSE_READ|TCL_CLOSE_WRITE))
+          != (TCL_CLOSE_READ|TCL_CLOSE_WRITE) ){
+      /* Not yet fully closed.  Just return. */
+      return TCL_OK;
+    }
+  }
+
+  /* If we reach this point, then we really do need to close the channel */
+  rc = sqlite3_blob_close(p->pBlob);
 
   /* Remove the channel from the SqliteDb.pIncrblob list. */
   if( p->pNext ){
@@ -270,6 +284,13 @@ static int SQLITE_TCLAPI incrblobClose(
   }
   return TCL_OK;
 }
+static int SQLITE_TCLAPI incrblobClose(
+  ClientData instanceData,
+  Tcl_Interp *interp
+){
+  return incrblobClose2(instanceData, interp, 0);
+}
+
 
 /*
 ** Read data from an incremental blob channel.
@@ -390,7 +411,7 @@ static Tcl_ChannelType IncrblobChannelType = {
   0,                                 /* getOptionProc                        */
   incrblobWatch,                     /* watchProc (this is a no-op)          */
   incrblobHandle,                    /* getHandleProc (always returns error) */
-  0,                                 /* close2Proc                           */
+  incrblobClose2,                    /* close2Proc                           */
   0,                                 /* blockModeProc                        */
   0,                                 /* flushProc                            */
   0,                                 /* handlerProc                          */
@@ -428,6 +449,7 @@ static int createIncrblobChannel(
   p = (IncrblobChannel *)Tcl_Alloc(sizeof(IncrblobChannel));
   p->iSeek = 0;
   p->pBlob = pBlob;
+  if( (flags & TCL_WRITABLE)==0 ) p->isClosed |= TCL_CLOSE_WRITE;
 
   sqlite3_snprintf(sizeof(zChannel), zChannel, "incrblob_%d", ++count);
   p->channel = Tcl_CreateChannel(&IncrblobChannelType, zChannel, p, flags);
