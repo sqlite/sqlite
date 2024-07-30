@@ -254,11 +254,7 @@ static int SQLITE_TCLAPI incrblobClose2(
 
   if( flags ){
     p->isClosed |= flags;
-    if( (p->isClosed & (TCL_CLOSE_READ|TCL_CLOSE_WRITE))
-          != (TCL_CLOSE_READ|TCL_CLOSE_WRITE) ){
-      /* Not yet fully closed.  Just return. */
-      return TCL_OK;
-    }
+    return TCL_OK;
   }
 
   /* If we reach this point, then we really do need to close the channel */

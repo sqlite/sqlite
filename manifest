@@ -1,5 +1,5 @@
-C Adjustments\sto\stest\scases\sfor\ssession\sso\sthat\sthey\swork\swith\sTcl9.
-D 2024-07-30T18:42:31.471
+C More\sadjustments\sto\sthe\sincrblob\schannel:\s\sApparently\syou\sneed\sto\swait\nuntil\sthe\sclose2Proc\sis\scalled\swith\sa\sflag\sof\s0\sbefore\sactually\sshutting\ndown\sthe\schannel.
+D 2024-07-30T18:49:20.607
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -768,7 +768,7 @@ F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955a
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 121754e462f24e1e4f865ea7b21e0a9cae943f7f6dadfe98bae2058e10def813
+F src/tclsqlite.c 671206cdad1ebc93d0e5db94c91a23d342d3906cb2a7ef25ceac44a2ca0cdc67
 F src/tclsqlite.h f3dc9ed1464a7cc775a47da70ac6f23e95d0fb939dd7eaf48639778f94d5aaad
 F src/test1.c 9f01a43b5d9d0c08c31617f3ab4e924bb30cd47db784527dbf6a309456a4db3b
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19fda979c5dc1a385ed3f8ab8df34388c1acfc7ff951fe1b183a79186bd20cdb
-R a643402027c268eb90fce274177b0fb0
+P d417415b967e62d41667e14ebf5455932ebf38d218a941f13878f0aba6d19bc8
+R 94e782c05e2c9cf245122cb0fc8c093c
 U drh
-Z f9db89498774d5b3d5a43bfc1584031f
+Z eacf65a6bef4c82f39e33d70e480d0fd
 # Remove this line to create a well-formed Fossil manifest.
