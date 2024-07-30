@@ -18,10 +18,9 @@ source $testdir/tester.tcl
 
 # A variable with only a string representation comes in as TEXT
 do_test types3-1.1 {
-  set V {}
-  append V x
+  set V [format %s xxxxx]
   concat [tcl_variable_type V] [execsql {SELECT typeof(:V)}]
-} {string text}
+} {text}
 
 # A variable with an integer representation comes in as INTEGER
 do_test types3-1.2 {

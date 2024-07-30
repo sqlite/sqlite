@@ -1,5 +1,5 @@
-C More\sadjustments\sto\sthe\sincrblob\schannel:\s\sApparently\syou\sneed\sto\swait\nuntil\sthe\sclose2Proc\sis\scalled\swith\sa\sflag\sof\s0\sbefore\sactually\sshutting\ndown\sthe\schannel.
-D 2024-07-30T18:49:20.607
+C All\stests\sin\s"make\stest"\snow\spass\swith\sTcl9,\sexcept\sfor\sabout\s198\scases\swhere\nthe\serror\sinvolves\ssmall\sdifferences\sin\sthe\srendering\sto\sfloating\spoint\nvalues.
+D 2024-07-30T20:39:05.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1727,7 +1727,7 @@ F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
 F test/tkt-26ff0c2d1e.test c15bec890c4d226c0da2f35ff30f9e84c169cfef90e73a8cb5cec11d723dfa96
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
-F test/tkt-2d1a5c67d.test f143872a2102c62e777be3486b38ac2744c18ece31585ed3d0afcb573ca3b4f5
+F test/tkt-2d1a5c67d.test 92bf2a2de5757d2d24ef554f8a6a38476a6735074e32dc28c775b5b9a23f96a3
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 6fb8807851964da0d24e942f2e19c7c705b9fb58
 F test/tkt-313723c356.test 4b306ad45c736cedf2f5221f6155b92143244b6d
@@ -1902,7 +1902,7 @@ F test/tt3_stress.c f9a769ca8b026ecc76ee93ca8c9700a5619f8e51c581107c4053ba6ac97f
 F test/tt3_vacuum.c 71b254cde1fc49d6c8c44efd54f4668f3e57d7b3a8f4601ade069f75a999ba39
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 1aeb81976841a91eef292723649b5c4fe3bc3cac
-F test/types3.test c9db8f9e80309edfa4252585cf16bcab7ed31f39eeb904d21e831199a3613fb0
+F test/types3.test c60e89c4d6babe44b23a2ea0090f3044e549403b20648b1c6bb65a69fea5f1ed
 F test/unhex.test b7f1b806207cb77fa31c3e434fe92fba524464e3e9356809bfcc28f15af1a8b7
 F test/unionall.test 04d30726c5056f84f92b3a12bf8d8a1dbbe807d1ddc8af95def09e6ef2dd91e3
 F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
@@ -1974,7 +1974,7 @@ F test/vtabdistinct.test 7688f0889358f849fd60bbfde1ded38b014b18066076d4bfbb75395
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
 F test/vtabrhs1.test 9b5ecbc74a689500c33a4b2b36761f9bcc22fcc4e3f9d21066ee0c9c74cf5f6c
 F test/wal.test 519c550255c78f55959e9159b93ebbfad2b4e9f36f5b76284da41f572f9d27da
-F test/wal2.test 31f6e2c404b9f2cdf9ca19b105a1742fdc19653c2c936da39e3658c617524046
+F test/wal2.test 44fe1cb4935dbbddfa0a34c2c4fd90f0ba8654d59b83c4136eb90fb327fd264f
 F test/wal3.test 5de023bb862fd1eb9d2ad26fa8d9c43abb5370582e5b08b2ae0d6f93661bc310
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -2085,8 +2085,8 @@ F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501d
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test b51e19c3bf19ef62486f275463ac7e83d026bacb1a73c93f53125048b79cd38b
-F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
+F test/zipfile.test a36327c5697a03150a313ba06ab45842facef8b0c21be19d73a3a4fee58bc54c
+F test/zipfile2.test 6df5f5ef9d247756f7200066f43e7f3f52cffff47f0c02cbefe4ce9c3284cb10
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
 F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e04534bbf
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d417415b967e62d41667e14ebf5455932ebf38d218a941f13878f0aba6d19bc8
-R 94e782c05e2c9cf245122cb0fc8c093c
+P fa549a5507b5f805b469b4360c11155aa9d22043f01f6d9428bf44d0f2351eb0
+R b16c3971e6beab65b3114759a6ea073a
 U drh
-Z eacf65a6bef4c82f39e33d70e480d0fd
+Z b90cc1cc87390ce48c689e5c22b10880
 # Remove this line to create a well-formed Fossil manifest.
