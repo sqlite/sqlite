@@ -300,6 +300,40 @@ foreach {tn opt} {
   } {
     2 3 2 4
   }
+
+  do_execsql_test 5.$tn.4 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('shall');
+  } {
+    2 3
+  }
+
+  do_execsql_test 5.$tn.5 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('shall');
+  } {
+    2 3
+  }
+
+  do_execsql_test 5.$tn.6 {
+    SELECT rowid, fts5_test_columnsize(y1) FROM y1('have');
+  } {
+    4 4
+  }
+
+  do_execsql_test 5.$tn.7 {
+    SELECT rowid, highlight(y1, 0, '[', ']') FROM y1('have');
+  } {
+    4 {which it hath been used to [have]}
+  }
+
+  do_execsql_test 5.$tn.8 {
+    SELECT rowid, 
+           highlight(y1, 0, '[', ']'),
+           snippet(y1, 0, '[', ']', '...', 10)
+    FROM y1('Liberties + Customs');
+  } {
+    3 {[Liberties and Customs]}
+      {[Liberties and Customs]}
+  }
 }
 
 
