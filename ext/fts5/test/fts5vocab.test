@@ -513,6 +513,7 @@ do_execsql_test 10.5 {
     INSERT INTO ft(a) VALUES('4 5 6');
 }
 
+unset -nocomplain x res
 do_test 10.6 {
   set res [list]
   db eval { SELECT rowid FROM ft('4') } x {

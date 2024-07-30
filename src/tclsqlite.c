@@ -202,8 +202,8 @@ struct SqliteDb {
 struct IncrblobChannel {
   sqlite3_blob *pBlob;      /* sqlite3 blob handle */
   SqliteDb *pDb;            /* Associated database connection */
-  int iSeek;                /* Current seek offset */
-  int isClosed;             /* TCL_CLOSE_READ or TCL_CLOSE_WRITE */
+  sqlite3_int64 iSeek;      /* Current seek offset */
+  unsigned int isClosed;    /* TCL_CLOSE_READ or TCL_CLOSE_WRITE */
   Tcl_Channel channel;      /* Channel identifier */
   IncrblobChannel *pNext;   /* Linked list of all open incrblob channels */
   IncrblobChannel *pPrev;   /* Linked list of all open incrblob channels */
@@ -302,9 +302,9 @@ static int SQLITE_TCLAPI incrblobInput(
   int *errorCodePtr
 ){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
-  int nRead = bufSize;         /* Number of bytes to read */
-  int nBlob;                   /* Total size of the blob */
-  int rc;                      /* sqlite error code */
+  sqlite3_int64 nRead = bufSize;   /* Number of bytes to read */
+  sqlite3_int64 nBlob;             /* Total size of the blob */
+  int rc;                          /* sqlite error code */
 
   nBlob = sqlite3_blob_bytes(p->pBlob);
   if( (p->iSeek+nRead)>nBlob ){
@@ -314,7 +314,7 @@ static int SQLITE_TCLAPI incrblobInput(
     return 0;
   }
 
-  rc = sqlite3_blob_read(p->pBlob, (void *)buf, nRead, p->iSeek);
+  rc = sqlite3_blob_read(p->pBlob, (void *)buf, (int)nRead, (int)p->iSeek);
   if( rc!=SQLITE_OK ){
     *errorCodePtr = rc;
     return -1;
@@ -334,9 +334,9 @@ static int SQLITE_TCLAPI incrblobOutput(
   int *errorCodePtr
 ){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
-  int nWrite = toWrite;        /* Number of bytes to write */
-  int nBlob;                   /* Total size of the blob */
-  int rc;                      /* sqlite error code */
+  sqlite3_int64 nWrite = toWrite;   /* Number of bytes to write */
+  sqlite3_int64 nBlob;              /* Total size of the blob */
+  int rc;                           /* sqlite error code */
 
   nBlob = sqlite3_blob_bytes(p->pBlob);
   if( (p->iSeek+nWrite)>nBlob ){
@@ -347,7 +347,7 @@ static int SQLITE_TCLAPI incrblobOutput(
     return 0;
   }
 
-  rc = sqlite3_blob_write(p->pBlob, (void *)buf, nWrite, p->iSeek);
+  rc = sqlite3_blob_write(p->pBlob, (void*)buf,(int)nWrite, (int)p->iSeek);
   if( rc!=SQLITE_OK ){
     *errorCodePtr = EIO;
     return -1;
@@ -360,9 +360,9 @@ static int SQLITE_TCLAPI incrblobOutput(
 /*
 ** Seek an incremental blob channel.
 */
-static int SQLITE_TCLAPI incrblobSeek(
+static long long SQLITE_TCLAPI incrblobWideSeek(
   ClientData instanceData,
-  long offset,
+  long long offset,
   int seekMode,
   int *errorCodePtr
 ){
@@ -383,6 +383,14 @@ static int SQLITE_TCLAPI incrblobSeek(
   }
 
   return p->iSeek;
+}
+static int SQLITE_TCLAPI incrblobSeek(
+  ClientData instanceData,
+  long offset,
+  int seekMode,
+  int *errorCodePtr
+){
+  return incrblobWideSeek(instanceData,offset,seekMode,errorCodePtr);
 }
 
 
@@ -415,7 +423,7 @@ static Tcl_ChannelType IncrblobChannelType = {
   0,                                 /* blockModeProc                        */
   0,                                 /* flushProc                            */
   0,                                 /* handlerProc                          */
-  0,                                 /* wideSeekProc                         */
+  incrblobWideSeek,                  /* wideSeekProc                         */
 };
 
 /*
@@ -447,7 +455,7 @@ static int createIncrblobChannel(
   }
 
   p = (IncrblobChannel *)Tcl_Alloc(sizeof(IncrblobChannel));
-  p->iSeek = 0;
+  memset(p, 0, sizeof(*p));
   p->pBlob = pBlob;
   if( (flags & TCL_WRITABLE)==0 ) p->isClosed |= TCL_CLOSE_WRITE;
 
