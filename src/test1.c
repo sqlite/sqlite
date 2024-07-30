@@ -26,11 +26,7 @@
 #endif
 
 #include "vdbeInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -1772,7 +1768,7 @@ static int SQLITE_TCLAPI blobHandleFromObj(
   sqlite3_blob **ppBlob
 ){
   char *z;
-  int n;
+  Tcl_Size n;
 
   z = Tcl_GetStringFromObj(pObj, &n);
   if( n==0 ){
@@ -4102,7 +4098,7 @@ static int SQLITE_TCLAPI test_bind_text(
 ){
   sqlite3_stmt *pStmt;
   int idx;
-  int trueLength = 0;
+  Tcl_Size trueLength = 0;
   int bytes;
   char *value;
   int rc;
@@ -4160,7 +4156,7 @@ static int SQLITE_TCLAPI test_bind_text16(
   char *value;
   char *toFree = 0;
   int rc;
-  int trueLength = 0;
+  Tcl_Size trueLength = 0;
 
   void (*xDel)(void*) = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
   Tcl_Obj *oStmt    = objv[objc-4];
@@ -4214,7 +4210,8 @@ static int SQLITE_TCLAPI test_bind_blob(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_stmt *pStmt;
-  int len, idx;
+  Tcl_Size len;
+  int idx;
   int bytes;
   char *value;
   int rc;
@@ -4240,7 +4237,7 @@ static int SQLITE_TCLAPI test_bind_blob(
   if( bytes>len ){
     char zBuf[200];
     sqlite3_snprintf(sizeof(zBuf), zBuf,
-                     "cannot use %d blob bytes, have %d", bytes, len);
+                     "cannot use %d blob bytes, have %d", bytes, (int)len);
     Tcl_AppendResult(interp, zBuf, (char*)0);
     return TCL_ERROR;
   }
@@ -4538,9 +4535,9 @@ static int SQLITE_TCLAPI test_carray_bind(
       struct iovec *a = sqlite3_malloc( sizeof(struct iovec)*nData );
       if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
       for(j=0; j<nData; j++){
-        int n = 0;
+        Tcl_Size n = 0;
         unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+i], &n);
-        a[j].iov_len = n;
+        a[j].iov_len = (size_t)n;
         a[j].iov_base = sqlite3_malloc64( n );
         if( a[j].iov_base==0 ){
           a[j].iov_len = 0;
@@ -5116,7 +5113,7 @@ static int SQLITE_TCLAPI test_prepare16(
   char zBuf[50]; 
   int rc;
   int bytes;                /* The integer specified as arg 3 */
-  int objlen;               /* The byte-array length of arg 2 */
+  Tcl_Size objlen;          /* The byte-array length of arg 2 */
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -5176,7 +5173,7 @@ static int SQLITE_TCLAPI test_prepare16_v2(
   char zBuf[50]; 
   int rc;
   int bytes;                /* The integer specified as arg 3 */
-  int objlen;               /* The byte-array length of arg 2 */
+  Tcl_Size objlen;          /* The byte-array length of arg 2 */
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -5256,9 +5253,9 @@ static int SQLITE_TCLAPI test_open_v2(
   int rc;
   char zBuf[100];
 
-  int nFlag;
+  Tcl_Size nFlag;
   Tcl_Obj **apFlag;
-  int i;
+  Tcl_Size i;
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME FLAGS VFS");
@@ -8733,7 +8730,7 @@ static int SQLITE_TCLAPI test_write_db(
   sqlite3 *db = 0;
   Tcl_WideInt iOff = 0;
   const unsigned char *aData = 0;
-  int nData = 0;
+  Tcl_Size nData = 0;
   sqlite3_file *pFile = 0;
   int rc;
 
@@ -8746,7 +8743,7 @@ static int SQLITE_TCLAPI test_write_db(
   aData = Tcl_GetByteArrayFromObj(objv[3], &nData);
 
   sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, (void*)&pFile);
-  rc = pFile->pMethods->xWrite(pFile, aData, nData, iOff);
+  rc = pFile->pMethods->xWrite(pFile, aData, (int)(nData&0x7fffffff), iOff);
 
   Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;

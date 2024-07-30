@@ -93,11 +93,7 @@
 
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -352,14 +348,14 @@ static int tclFilter(
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
       rc = SQLITE_ERROR;
       pTab->base.zErrMsg = sqlite3_mprintf("%s", zErr);
     }else{
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("sql", zCmd)==0 ){
@@ -664,7 +660,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     */
     Tcl_Obj *pRes = Tcl_GetObjResult(interp);
     Tcl_Obj **apElem = 0;
-    int nElem;
+    Tcl_Size nElem;
     rc = Tcl_ListObjGetElements(interp, pRes, &nElem, &apElem);
     if( rc!=TCL_OK ){
       const char *zErr = Tcl_GetStringResult(interp);
@@ -673,7 +669,7 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }else{
       int ii;
       int iArgv = 1;
-      for(ii=0; rc==SQLITE_OK && ii<nElem; ii+=2){
+      for(ii=0; rc==SQLITE_OK && ii<(int)nElem; ii+=2){
         const char *zCmd = Tcl_GetString(apElem[ii]);
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("cost", zCmd)==0 ){
