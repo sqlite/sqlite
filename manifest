@@ -1,5 +1,5 @@
-C Tcl_ChannelType\simplementations\sfor\sTcl9\sapparently\srequire\sthat\nwideSeekProc\sbe\simplemented.\s\sAlso\sadjust\sminor\stest\sscript\sissues\sfor\nfts5\stests\sso\sthat\sthey\scan\sbe\srun\ssequentially\sand\sso\sthat\sthey\sdo\snot\ndepend\son\sthe\sspecific\sfloating\spoint\soutput\sformats\sgenerated\sby\sTcl.
-D 2024-07-30T18:15:59.082
+C Adjustments\sto\stest\scases\sfor\ssession\sso\sthat\sthey\swork\swith\sTcl9.
+D 2024-07-30T18:42:31.471
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254
 F ext/session/session1.test e94f764fbfb672147c0ef7026b195988133b371dc8cf9e52423eba6cad69717e
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
 F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
-F ext/session/session4.test d5a119a42954754ad505be757be5b0e24396e6ca675518af458d5e2c338dd48b
+F ext/session/session4.test 823f6f018fcbb8dacf61e2960f8b3b848d492b094f8b495eae1d9407d9ab7219
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
 F ext/session/session6.test 35279f2ec45448cd2e24a61688219dc6cf7871757716063acf4a8b5455e1e926
 F ext/session/session8.test 326f3273abf9d5d2d7d559eee8f5994c4ea74a5d935562454605e6607ee29904
@@ -573,7 +573,7 @@ F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa20
 F ext/session/sessionchange.test 77c4702050f24270b58070e2cf01c95c3d232a3ef164b70f31974b386ce69903
 F ext/session/sessionconflict.test 8b8cbd98548e2e636ddc17d0986276f60e833fb865617dd4f88ea5bbe3a16b96
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
-F ext/session/sessionfault.test 573bf027fb870d57bd4e7cf50822a3e4b17b2b923407438747aaa918dec57a09
+F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576dc79ed344c46fbf41c
 F ext/session/sessionfault3.test 7c7547202775de268f3fe6f074c4d0d165151829710b4e64f90d4a01645ba9e7
 F ext/session/sessioninvert.test 04075517a9497a80d39c495ba6b44f3982c7371129b89e2c52219819bc105a25
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e0d9670dd98a22d2e22aac8ba8720787a05e280e18ec9b2d4323f947c83718f5
-R 0516231a2ea9e600f4b16ff82d6015df
+P 19fda979c5dc1a385ed3f8ab8df34388c1acfc7ff951fe1b183a79186bd20cdb
+R a643402027c268eb90fce274177b0fb0
 U drh
-Z 6ecda6df1246f3587330a953d9052353
+Z f9db89498774d5b3d5a43bfc1584031f
 # Remove this line to create a well-formed Fossil manifest.
