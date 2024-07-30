@@ -228,6 +228,8 @@ struct Fts5Config {
   char *zContentExprlist;
   Fts5TokenizerConfig t;
   int bLock;                      /* True when table is preparing statement */
+  int eEnc;                       /* An FTS5_ENCODING_XXX constant */
+  
 
   /* Values loaded from the %_config table */
   int iVersion;                   /* fts5 file format 'version' */

@@ -118,11 +118,15 @@ struct Fts5FullTable {
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
-  
+
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
 };
+
+#define FTS5_ENCODING_UNKNOWN 0
+#define FTS5_ENCODING_UTF8    1
+#define FTS5_ENCODING_UTF16   2
 
 struct Fts5MatchPhrase {
   Fts5Buffer *pPoslist;           /* Pointer to current poslist */
@@ -1252,6 +1256,30 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
   fts5SetLocale(pConfig, 0, 0);
 }
 
+static int fts5IsUtf16(Fts5Config *pConfig, int *pbIs){
+  if( pConfig->eEnc==FTS5_ENCODING_UNKNOWN ){
+    sqlite3_stmt *pPragma = 0;
+    int rc = fts5PrepareStatement(&pPragma, pConfig,
+        "SELECT (encoding LIKE '%%16%%') FROM pragma_encoding"
+    );
+    if( rc==SQLITE_OK ){
+      int val;
+      sqlite3_step(pPragma);
+      val = sqlite3_column_int(pPragma, 0);
+      rc = sqlite3_finalize(pPragma);
+      if( rc!=SQLITE_OK ) return rc;
+      if( val ){
+        pConfig->eEnc = FTS5_ENCODING_UTF16;
+      }else{
+        pConfig->eEnc = FTS5_ENCODING_UTF8;
+      }
+    }
+  }
+
+  *pbIs = (pConfig->eEnc==FTS5_ENCODING_UTF16);
+  return SQLITE_OK;
+}
+
 int sqlite3Fts5ExtractText(
   Fts5Config *pConfig,
   int bContent,
@@ -1280,17 +1308,33 @@ int sqlite3Fts5ExtractText(
     int nBlob = sqlite3_value_bytes(pVal);
     int nLocale = 0;
 
-    for(nLocale=0; nLocale<nBlob; nLocale++){
-      if( pBlob[nLocale]==0x00 ) break;
-    }
+    if( nBlob>=4 && memcmp(pBlob, "\0\0\0\0", 4)==0 ){
+      int bIs16 = 0;
+      pText = (const char*)sqlite3_value_text(pVal);
+      nText = sqlite3_value_bytes(pVal);
+      rc = fts5IsUtf16(pConfig, &bIs16);
+      
+      if( bIs16 ){
+        pText += 2;
+        nText -= 2;
+      }else{
+        pText += 4;
+        nText -= 4;
+      }
 
-    if( nLocale==nBlob ) return SQLITE_ERROR;
-    pText = (const char*)&pBlob[nLocale+1];
-    nText = nBlob-nLocale-1;
+    }else{
+      for(nLocale=0; nLocale<nBlob; nLocale++){
+        if( pBlob[nLocale]==0x00 ) break;
+      }
 
-    if( pbResetTokenizer ){
-      rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
-      *pbResetTokenizer = 1;
+      if( nLocale==nBlob || nLocale==0 ) return SQLITE_ERROR;
+      pText = (const char*)&pBlob[nLocale+1];
+      nText = nBlob-nLocale-1;
+
+      if( pbResetTokenizer ){
+        rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
+        *pbResetTokenizer = 1;
+      }
     }
 
   }else{
@@ -3302,19 +3346,23 @@ static void fts5LocaleFunc(
   zText = (const char*)sqlite3_value_text(apArg[1]);
   nText = sqlite3_value_bytes(apArg[1]);
 
-  nBlob = nLocale + 1 + nText;
-  pBlob = (u8*)sqlite3_malloc(nBlob);
-  if( pBlob==0 ){
-    sqlite3_result_error_nomem(pCtx);
-    return;
+  if( zLocale==0 || zLocale[0]=='\0' ){
+    sqlite3_result_text(pCtx, zText, nText, SQLITE_TRANSIENT);
+  }else{
+    nBlob = nLocale + 1 + nText;
+    pBlob = (u8*)sqlite3_malloc(nBlob);
+    if( pBlob==0 ){
+      sqlite3_result_error_nomem(pCtx);
+      return;
+    }
+
+    memcpy(pBlob, zLocale, nLocale);
+    pBlob[nLocale] = 0x00;
+    if( zText ) memcpy(&pBlob[nLocale+1], zText, nText);
+
+    sqlite3_result_blob(pCtx, pBlob, nBlob, sqlite3_free);
+    sqlite3_result_subtype(pCtx, FTS5_LOCALE_SUBTYPE);
   }
-
-  if( zLocale ) memcpy(pBlob, zLocale, nLocale);
-  pBlob[nLocale] = 0x00;
-  if( zText ) memcpy(&pBlob[nLocale+1], zText, nText);
-
-  sqlite3_result_blob(pCtx, pBlob, nBlob, sqlite3_free);
-  sqlite3_result_subtype(pCtx, FTS5_LOCALE_SUBTYPE);
 }
 
 /*

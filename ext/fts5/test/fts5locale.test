@@ -336,6 +336,19 @@ foreach {tn opt} {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+}
+do_catchsql_test 6.1 {
+  INSERT INTO x1(rowid, x) VALUES(123, fts5_locale('en_AU', 'hello world'));
+} {1 {fts5_locale() may not be used without locale=1}}
+
+do_execsql_test 6.2 {
+  SELECT typeof( fts5_locale(NULL, 'xyz') ), typeof( fts5_locale('', 'abc') );
+} {text text}
+
 
 finish_test
 

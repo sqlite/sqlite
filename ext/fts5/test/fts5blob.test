@@ -1,0 +1,77 @@
+# 2024 July 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5blob
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach {tn enc locale} {
+  1 utf8  0
+  2 utf8  1
+  3 utf16 0
+  4 utf16 1
+} {
+  reset_db
+  fts5_aux_test_functions db
+
+  execsql "PRAGMA encoding = $enc"
+
+  if {$tn==3 || $tn==4} breakpoint
+
+  execsql "
+    CREATE VIRTUAL TABLE t1 USING fts5(x, y, locale=$locale);
+  "
+  do_execsql_test 1.$tn.0 {
+    CREATE VIRTUAL TABLE tt USING fts5vocab('t1', 'instance');
+    INSERT INTO t1(rowid, x, y) VALUES(1, 555, X'0000000041424320444546');
+    INSERT INTO t1(rowid, x, y) VALUES(2, 666, X'41424300444546');
+    INSERT INTO t1(rowid, x, y) VALUES(3, 777, 'xyz');
+  }
+
+  do_execsql_test 1.$tn.1 {
+    SELECT rowid, quote(x), quote(y) FROM t1
+  } {
+    1 555 X'0000000041424320444546'
+    2 666 X'41424300444546'
+    3 777 'xyz'
+  }
+
+  set T($enc,$locale) [execsql { SELECT * FROM tt }]
+  set U($enc,$locale) [execsql { SELECT fts5_test_columntext(t1) FROM t1 }]
+
+  do_execsql_test 1.$tn.2 {
+    DELETE FROM t1 WHERE rowid=2;
+    DELETE FROM t1 WHERE rowid=1;
+  }
+
+  do_execsql_test 1.$tn.3 {
+    PRAGMA integrity_check;
+  } {ok}
+}
+
+do_test 1.5.1 { set T(utf8,1) } $T(utf8,0)
+do_test 1.5.2 { set T(utf16,1) } $T(utf16,0)
+
+do_test 1.6.1 { set U(utf8,1) } $U(utf8,0)
+do_test 1.6.2 { set U(utf16,1) } $U(utf16,0)
+
+
+
+finish_test
+
+
