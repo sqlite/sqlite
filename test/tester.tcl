@@ -310,66 +310,6 @@ proc do_delete_file {force args} {
   }
 }
 
-if {$::tcl_platform(platform) eq "windows"} {
-  proc do_remove_win32_dir {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach dirName $args {
-      # On windows, sometimes even a [remove_win32_dir] can fail just after
-      # a directory is emptied. The cause is usually "tag-alongs" - programs
-      # like anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # removal.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            remove_win32_dir $dirName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        remove_win32_dir $dirName
-      }
-    }
-  }
-
-  proc do_delete_win32_file {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach fileName $args {
-      # On windows, sometimes even a [delete_win32_file] can fail just after
-      # a file is closed. The cause is usually "tag-alongs" - programs like
-      # anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # delete.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            delete_win32_file $fileName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        delete_win32_file $fileName
-      }
-    }
-  }
-}
-
 proc execpresql {handle args} {
   trace remove execution $handle enter [list execpresql $handle]
   if {[info exists ::G(perm:presql)]} {
