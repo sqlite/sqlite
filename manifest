@@ -1,5 +1,5 @@
-C Implement\sa\snew\scomparison\sroutine\sto\scompare\stext\srenderings\sof\nfloating\spoint\svalues.\s\sThis\sgets\sthe\snumber\sof\sfailures\sdown\sto\sjust\s5.\nBut\sthe\sroutine\sneeds\swork,\sand\sprobably\srefactoring.
-D 2024-07-31T01:45:14.852
+C Adjust\sa\sfew\stests\sthat\sdon't\swork\seven\swith\sthe\snew\sfloating\spoint\ncomparison\sroutine.
+D 2024-07-31T01:53:48.615
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1248,7 +1248,7 @@ F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab
 F test/func4.test a3f9062487dbd826776f54f4e0e9517fe8c3cf689af92735308965774d51fac5
 F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d82a
 F test/func6.test 3bc89ec0f2605736d3a118f43d25ef58115a7db4dba8ae939a363917d815c0bb
-F test/func7.test adbfc910385a6ffd15dc47be3c619ef070c542fcb7488964badb17b2d9a4d080
+F test/func7.test 38d882ca14f3ec178b50d9354e6bb092c7dc8e1c30c9e4ac62b8f3e6a0b6a7d9
 F test/func8.test c4e2ecacf9f16e47a245e7a25fbabcc7e78f9c7c41a80f158527cdfdc6dd299d
 F test/func9.test b32d313f679aa9698d52f39519d301c3941823cb72b4e23406c210eadd82c824
 F test/fuzz-oss1.test 514dcabb24687818ea949fa6760229eaacad74ca70157743ef36d35bbe01ffb0
@@ -1441,7 +1441,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
-F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
+F test/misc3.test 4eab749f3bbab4405b1f64ca827543049d74d4b4446a694659d33396581ee178
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
 F test/misc5.test 027cf0ac10314ea534173f335a33bb4059907ddabbac2c16786766d6f26c8923
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
@@ -1462,7 +1462,7 @@ F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f9
 F test/multiplex4.test e8ae4c4bd70606a5727743241f13b5701990abe4
 F test/mutex1.test 42cb5e244c3a77bb0ef2b967e06fa5e7ba7d32d90a9b20bed98f6f5ede185a25
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
-F test/nan.test 437d40e6d0778b050d7750726c0cbd2c9936b81962926e8f8c48ca698f00f4d1
+F test/nan.test 73ea63ab43668313e2f8cc9ef9e9a966672c7934f3ce76926fbe991235d07d91
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
 F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/normalize.test f23b6c5926c59548635fcf39678ac613e726121e073dd902a3062fbb83903b72
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e27f5326c69aa4fb6f3f1f42668ab1b08140ab0a614ac4a9d94679c8fb9734e
-R 2961dc3384c51136e21cb2a47ab0b5d2
+P 71f2ee5db01150707401804b136641170e7ed44760fccec20de19184e4d0a840
+R cd4b28da8f0177e6ba3602669e9943bb
 U drh
-Z f1dc4569062e062a05b7f613172f6c6b
+Z 107af80bed0e760d0f1a4661620a5bc3
 # Remove this line to create a well-formed Fossil manifest.

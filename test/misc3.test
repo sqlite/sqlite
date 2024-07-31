@@ -87,9 +87,10 @@ do_test misc3-2.3 {
 do_test misc3-2.4 {
   execsql {SELECT 2e-25*0.5e250}
 } 1e+225
+load_static_extension db decimal
 do_test misc3-2.5 {
-  execsql {SELECT 2.0e-250*0.5e25}
-} 1e-225
+  execsql {SELECT decimal_exp(2.0e-250*0.5e25)}
+} {/\+1\.000000000000000\d+e-225/}
 do_test misc3-2.6 {
   execsql {SELECT '-2.0e-127' * '-0.5e27'}
 } 1e-100

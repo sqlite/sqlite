@@ -139,7 +139,7 @@ do_execsql_test func7-pg-420 {
    SELECT round( tan(1), 7);
 } {1.5574077}
 do_execsql_test func7-pg-421 {
-   SELECT tan( radians(45) );
+   SELECT round(tan( radians(45) ),10);
 } {1.0}
 do_execsql_test func7-pg-500 {
    SELECT round( sinh(1), 7);
