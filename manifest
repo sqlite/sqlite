@@ -1,5 +1,5 @@
-C Fix\stypo\sin\stestrunner.tcl\sfor\sthe\s"status"\scommand\sthat\swas\scausing\sit\nto\sfail\sif\sany\serrors\swere\sseen.
-D 2024-07-31T22:17:26.138
+C Make\sthe\s#include\ssection\sof\stclsqlite.c\sthe\ssame\sas\stclsqlite.h.
+D 2024-07-31T22:25:25.378
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -768,7 +768,7 @@ F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955a
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 6242341191e43952a8ed466b1ee4993cad3a2b93ec3e4a5e826f0b06225a6716
+F src/tclsqlite.c 8e86ab2595c2ff7bb155331fb173e560180235bceaacce7931a718b1c2e6dfb4
 F src/tclsqlite.h c6af51f31a2b2172d674608763a4b98fdf5cd587e4025053e546fb8077757262
 F src/test1.c 51159784f29d3dfd4b50fd6ed9c43c8f7f36925c501a3ad3083528e5e5544bd7
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4e32d4aed7c487ee9ed39a7e4486c2989a01781a3edbe9cdce52c6ed357f6366
-R c8d75f24cdc92f2c156f1c37c053f824
+P 8327c5ed535c57c4082211a50bfb1c32ea5d5fe1cf71f37798d8b58e88948ac2
+R 20b530f4b4cc3303006640f07228cc1d
 U drh
-Z 97aa9466e911e388cc1550afb23cf268
+Z 8814e0397816bd225e332f4bc053c4a6
 # Remove this line to create a well-formed Fossil manifest.
