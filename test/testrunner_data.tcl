@@ -486,7 +486,7 @@ proc make_sh_script {srcdir opts cflags makeOpts configOpts} {
     TCLDIR="$tcldir"
     
     if [ ! -f Makefile ] ; then
-      \$SRCDIR/configure --with-tcl=\$TCL $configOpts 
+      \$SRCDIR/configure --with-tcl=\$TCLDIR $configOpts 
     fi
     
     $myopts
