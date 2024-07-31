@@ -6791,7 +6791,7 @@ static int SQLITE_TCLAPI file_control_lockproxy_test(
   {
     char *testPath;
     int rc;
-    int nPwd;
+    Tcl_Size nPwd;
     const char *zPwd;
     char proxyPath[400];
     

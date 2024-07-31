@@ -1,5 +1,5 @@
-C Adjust\sthe\sconfigure\sscript\sso\sthat\sthe\s--with-tcl\soption\sis\sused\sto\nfind\sthe\sappropriate\stclsh.
-D 2024-07-31T11:42:47.316
+C Minor\sadjustments\sto\sget\sTcl9-based\stesting\sworking\son\sMacs.
+D 2024-07-31T12:19:16.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -770,7 +770,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 6242341191e43952a8ed466b1ee4993cad3a2b93ec3e4a5e826f0b06225a6716
 F src/tclsqlite.h 4ed60ea4084b2ea46e19ab13857b3f39d33250ebbf5b2df62b0999bb9b2766b7
-F src/test1.c 179c80be560631a24ca7dc40542c560f6afcf22232ac7502e3a041a96abd8df3
+F src/test1.c b0ebd758a5ee92305510bc526448cde3b2015c4ac6e1b7b0c450ba2745cfda24
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -1441,7 +1441,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
-F test/misc3.test 4eab749f3bbab4405b1f64ca827543049d74d4b4446a694659d33396581ee178
+F test/misc3.test 651b88bca19b8ff6a7b6af73dae00c3fd5b3ea5bee0c0d1d91abd4c4b4748718
 F test/misc4.test 10cd6addb2fa9093df4751a1b92b50440175dd5468a6ec84d0386e78f087db0e
 F test/misc5.test 027cf0ac10314ea534173f335a33bb4059907ddabbac2c16786766d6f26c8923
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d4a23d32dc16b115153e6e100ba3ba15273c3e37310e8a1b4bace885c5383a8
-R 64a8d10fb6347ca8ef346534c156b0fa
+P 6fb9e37c751cd1a411c77f792794e1abafa5c40ad4dda8d433600d44d525a97c
+R 75074f72d19f6c210244f75d22179060
 U drh
-Z fd89c8e44bc980444bfd6347c100cdd8
+Z 82e857c9b07f1185c6a5a8324ed25dc7
 # Remove this line to create a well-formed Fossil manifest.
