@@ -10318,7 +10318,20 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 #
-for ac_prog in tclsh8.7 tclsh8.6 tclsh8.5 tclsh
+if test x"${with_tcl}" != x; then
+  if test ! -r ${with_tcl}/tclConfig.sh; then
+    as_fn_error $? "no tclConfig.sh file found in --with-tcl: ${with_tcl}" "$LINENO" 5
+  else
+    . ${with_tcl}/tclConfig.sh
+    TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
+    if test ! -x ${TCLSH_CMD}; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cannot use tclsh at: ${TCLSH_CMD}" >&5
+$as_echo "$as_me: WARNING: cannot use tclsh at: ${TCLSH_CMD}" >&2;}
+      TCLSH_CMD=none
+    fi
+  fi
+else
+  for ac_prog in tclsh8.6 tclsh8.5 tclsh
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -10361,12 +10374,19 @@ fi
 done
 test -n "$TCLSH_CMD" || TCLSH_CMD="none"
 
+fi
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
   echo "Warning: can't find tclsh - defaulting to non-amalgamation build."
   USE_AMALGAMATION=0
   TCLSH_CMD="tclsh"
+fi
+if test x"$TCLSH_CMD" = x; then
+  as_fn_error $? "cannot find a usable tclsh" "$LINENO" 5
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: using $TCLSH_CMD" >&5
+$as_echo "using $TCLSH_CMD" >&6; }
 fi
 
 
