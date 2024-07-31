@@ -1,5 +1,5 @@
-C Merge\slatest\schanges\sfrom\strunk\sinto\sthis\sbranch.
-D 2024-07-31T10:52:38.878
+C Add\smissing\sdocumentation\sfor\snew\sfeatures\sto\sfts5.h.
+D 2024-07-31T15:46:41.319
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6dbd6348ef0cfc324a7
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl bc3a0ca78be7d3df08e7602c00ca48021ebae40682d75eb001bfdf6e54ffb44e
-F ext/fts5/fts5.h 7cd47e5dfe68d798e667caa76722374f0c909f2db05bb4d42b1ec5300d18e658
+F ext/fts5/fts5.h f5451da088d0004c4be7314e2fdb41fda16ce682ce2aa3b54b9474ebe9a013d5
 F ext/fts5/fts5Int.h 833a2fe729f926ebcde47e21e495d141b99ede9a188fc577873f24bea0f0bfa2
 F ext/fts5/fts5_aux.c 652f839dc0c77431295f10b08f268631560bb5630e65fd701de7a58744428a82
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
@@ -604,7 +604,7 @@ F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ce
 F ext/wasm/SQLTester/index.html 3f8a016df0776be76605abf20e815ecaafbe055abac0e1fe5ea080e7846b760d
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-auth 7ac80cc3b6a6d52e041bb295e85555ce797be78c15ef2008a64ae58815014080
-F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-core 400213eb52a7e5ad5f448053d375cacf4dac2cf45d134f3edfe485ae4a49a183 w ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api
+F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-core 400213eb52a7e5ad5f448053d375cacf4dac2cf45d134f3edfe485ae4a49a183
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-preupdate d1d62a2212099f2c0782d730beb8cb84a7a52d99c15ead2cb9b1411fff5fd6b1
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-session 213b6c04267cb9bd760172db011eb1650732805fb3d01f9395478a8ceec18eb0
@@ -2201,8 +2201,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ae435aff1785d5832821c19dc88ccf6c496a7ff55be80276b31e5c9abee723db 86de4e755e37dc1cbcbd59018927aa87ff49fc15f706a36187631d8f14075c12
-R 854c24bb1cc78c16c421b7985fead9f3
+P ff64939ec8399949393f1029fa6d514892fbf2bf1498545300cc5e120b9622a5
+R f7dbcf0c98ed562d42b896f7c143383b
 U dan
-Z 7ee036ea576e2778dfe1b42f432458d4
+Z 344ab71a9372cfa91d638c7c0c606714
 # Remove this line to create a well-formed Fossil manifest.

@@ -317,10 +317,11 @@ struct Fts5PhraseIter {
 **   with column iCol of the current row. Usually, there is no associated
 **   locale, and output parameters (*pzLocale) and (*pnLocale) are set
 **   to NULL and 0, respectively. However, if the fts5_locale() function
-**   was used to associated a locale with the value when it was inserted
-**   into the fts5 table, then (*pzLocale) is set to point to a buffer 
-**   containing the name of the locale in utf-8 encoding. (*pnLocale) is
-**   set to the size in bytes of the buffer.
+**   was used to associate a locale with the value when it was inserted
+**   into the fts5 table, then (*pzLocale) is set to point to a nul-terminated
+**   buffer containing the name of the locale in utf-8 encoding. (*pnLocale) 
+**   is set to the size in bytes of the buffer, not including the 
+**   nul-terminator.
 **
 **   If successful, SQLITE_OK is returned. Or, if an error occurs, an
 **   SQLite error code is returned. The final value of the output parameters
@@ -333,7 +334,7 @@ struct Fts5PhraseIter {
 **
 **   Parameters pLocale and nLocale may both be 0, in which case the tokenizer
 **   is configured to use its default locale. Otherwise, pLocale should point
-**   to a buffer containing the name of the locale to use encoded as utf-8.
+**   to a buffer containing the utf-8 encoded name of the locale to use.
 **   It does not have to be nul-terminated. nLocale must be passed the size 
 **   of the text in bytes. The buffer indicated by pLocale must remain valid
 **   for the duration of any calls made to xTokenize() by the auxiliary 
@@ -388,8 +389,7 @@ struct Fts5ExtensionApi {
 
   /* Below this point are iVersion>=4 only */
   int (*xColumnLocale)(Fts5Context*, int iCol, const char **pz, int *pn);
-
-  int (*xTokenizeSetLocale)(Fts5Context*, const char *z, int n);
+  int (*xTokenizeSetLocale)(Fts5Context*, const char *p, int n);
 };
 
 /* 
@@ -401,16 +401,17 @@ struct Fts5ExtensionApi {
 **
 ** Applications may also register custom tokenizer types. A tokenizer 
 ** is registered by providing fts5 with a populated instance of the 
-** following structure. All structure methods must be defined, setting
-** any member of the fts5_tokenizer struct to NULL leads to undefined
-** behaviour. The structure methods are expected to function as follows:
+** following structure. Of the three structure methods, xCreate, xDelete and
+** xTokenize must be supplied, any fo these three members of the 
+** fts5_tokenizer_v2 struct to NULL leads to undefined behaviour. The 
+** structure methods are expected to function as follows:
 **
 ** xCreate:
 **   This function is used to allocate and initialize a tokenizer instance.
 **   A tokenizer instance is required to actually tokenize text.
 **
 **   The first argument passed to this function is a copy of the (void*)
-**   pointer provided by the application when the fts5_tokenizer object
+**   pointer provided by the application when the fts5_tokenizer_v2 object
 **   was registered with FTS5 (the third argument to xCreateTokenizer()). 
 **   The second and third arguments are an array of nul-terminated strings
 **   containing the tokenizer arguments, if any, specified following the
@@ -480,6 +481,33 @@ struct Fts5ExtensionApi {
 **   if an error occurs with the xTokenize() implementation itself, it
 **   may abandon the tokenization and return any error code other than
 **   SQLITE_OK or SQLITE_DONE.
+**
+** xSetLocale:
+**   This function is invoked by FTS5 to configure the locale to use for
+**   subsequent calls to xTokenize. The second argument is a pointer to 
+**   a nul-terminated buffer containing the utf-8 encoded name of the locale
+**   to use. The third argument is the size of the buffer in bytes, not 
+**   including the nul-terminator character. This function may also be
+**   invoked with the second and third parameters set to 0 - instructing
+**   the tokenizer to use its default locale.
+**
+**   FTS5 guarantees that any buffer passed to xSetLocale() will remain
+**   valid until either the next call to xSetLocale() or xDelete() on the
+**   same tokenizer object.
+**
+**   This function should return SQLITE_OK if successful, or an SQLite
+**   error code if an error occurs. If an error does occur and an error
+**   code is returned, execution of the current statement is abandoned
+**   and FTS5 returns the error code to the caller.
+**
+**   Often, this function is not required and is never invoked. It is only
+**   ever invoked when processing a value that has had a locale associated
+**   with it using SQL function fts5_locale().
+**
+**   It is not necessary to supply an implementation of this method when
+**   registering a tokenizer. If fts5_tokenizer_v2.xSetLocale is set to NULL,
+**   then no attempt is made to pass locale information through to the
+**   tokenizer.  
 **
 ** SYNONYM SUPPORT
 **
@@ -589,25 +617,6 @@ struct Fts5ExtensionApi {
 **   inefficient.
 */
 typedef struct Fts5Tokenizer Fts5Tokenizer;
-typedef struct fts5_tokenizer fts5_tokenizer;
-struct fts5_tokenizer {
-  int (*xCreate)(void*, const char **azArg, int nArg, Fts5Tokenizer **ppOut);
-  void (*xDelete)(Fts5Tokenizer*);
-  int (*xTokenize)(Fts5Tokenizer*, 
-      void *pCtx,
-      int flags,            /* Mask of FTS5_TOKENIZE_* flags */
-      const char *pText, int nText, 
-      int (*xToken)(
-        void *pCtx,         /* Copy of 2nd argument to xTokenize() */
-        int tflags,         /* Mask of FTS5_TOKEN_* flags */
-        const char *pToken, /* Pointer to buffer containing token */
-        int nToken,         /* Size of token in bytes */
-        int iStart,         /* Byte offset of token within input text */
-        int iEnd            /* Byte offset of end of token within input text */
-      )
-  );
-};
-
 typedef struct fts5_tokenizer_v2 fts5_tokenizer_v2;
 struct fts5_tokenizer_v2 {
   int iVersion;             /* Currently always 2 */
@@ -630,6 +639,31 @@ struct fts5_tokenizer_v2 {
 
   int (*xSetLocale)(Fts5Tokenizer*, const char *pLocale, int nLocale);
 };
+
+/*
+** New code should use the fts5_tokenizer_v2 type to define tokenizer
+** implementations. The following type is included for legacy applications
+** that still use it.
+*/
+typedef struct fts5_tokenizer fts5_tokenizer;
+struct fts5_tokenizer {
+  int (*xCreate)(void*, const char **azArg, int nArg, Fts5Tokenizer **ppOut);
+  void (*xDelete)(Fts5Tokenizer*);
+  int (*xTokenize)(Fts5Tokenizer*, 
+      void *pCtx,
+      int flags,            /* Mask of FTS5_TOKENIZE_* flags */
+      const char *pText, int nText, 
+      int (*xToken)(
+        void *pCtx,         /* Copy of 2nd argument to xTokenize() */
+        int tflags,         /* Mask of FTS5_TOKEN_* flags */
+        const char *pToken, /* Pointer to buffer containing token */
+        int nToken,         /* Size of token in bytes */
+        int iStart,         /* Byte offset of token within input text */
+        int iEnd            /* Byte offset of end of token within input text */
+      )
+  );
+};
+
 
 /* Flags that may be passed as the third argument to xTokenize() */
 #define FTS5_TOKENIZE_QUERY     0x0001
