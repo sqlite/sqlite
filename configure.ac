@@ -119,14 +119,32 @@ USE_AMALGAMATION=1
 # See whether we can run specific tclsh versions known to work well;
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
-# 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.7 tclsh8.6 tclsh8.5 tclsh], none)
+#
+if test x"${with_tcl}" != x; then
+  if test ! -r ${with_tcl}/tclConfig.sh; then
+    AC_MSG_ERROR([no tclConfig.sh file found in --with-tcl: ${with_tcl}])
+  else
+    . ${with_tcl}/tclConfig.sh
+    TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
+    if test ! -x ${TCLSH_CMD}; then
+      AC_MSG_WARN([cannot use tclsh at: ${TCLSH_CMD}])
+      TCLSH_CMD=none
+    fi
+  fi
+else
+  AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh8.5 tclsh], none)
+fi
 if test "$TCLSH_CMD" = "none"; then
   # If we can't find a local tclsh, then building the amalgamation will fail.
   # We act as though --disable-amalgamation has been used.
   echo "Warning: can't find tclsh - defaulting to non-amalgamation build."
   USE_AMALGAMATION=0
   TCLSH_CMD="tclsh"
+fi
+if test x"$TCLSH_CMD" = x; then
+  AC_MSG_ERROR([cannot find a usable tclsh])
+else
+  AC_MSG_RESULT([using $TCLSH_CMD])
 fi
 AC_SUBST(TCLSH_CMD)
 

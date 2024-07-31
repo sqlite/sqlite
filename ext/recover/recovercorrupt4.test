@@ -34,11 +34,11 @@ if {[permutation]!="inmemory_journal"} {
   do_test 1.1 {
     set sz [expr [file size test.db] - 1024]
     set fd [open test.db]
-    fconfigure $fd -encoding binary -translation binary
+    fconfigure $fd -translation binary
   
     set data [read $fd $sz]
     set fd2 [open test.db2 w]
-    fconfigure $fd2 -encoding binary -translation binary
+    fconfigure $fd2 -translation binary
     puts -nonewline $fd2 $data
     close $fd2
     set {} {}
@@ -61,4 +61,3 @@ if {[permutation]!="inmemory_journal"} {
 }
 
 finish_test
-
