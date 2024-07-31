@@ -1,5 +1,5 @@
-C Fixes\sto\stestfixture\sroutines\sneeded\sto\stest\ssnapshots.
-D 2024-07-31T17:15:24.049
+C Under\sTcl9,\sthe\s%x\sformat\sletter\struncates\sto\s32-bits.\s\sMust\suse\s%llx\sin\sorder\nto\sget\sa\s64-bit\srendering.
+D 2024-07-31T19:56:14.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1573,7 +1573,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
-F test/scanstatus2.test 688adc0c3ab1ffadead218cbce6446b10aa892004a8ea5e3640d59257fb836f2
+F test/scanstatus2.test d85d17f2b0b4c013dde95232f7beab749f11f0ef847f5ecffb9486d2f5ecf9f9
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b8f81351914deac99b14be6bb5e4096c1efed9bdb057750825760f09dae04656
-R ed4a46e87468bba46f614d62afb17c20
+P 66f61c3b35383b2575774d309043a722cc87a53d03518d339d6dbdcf342adc93
+R 3754410baf7d81a240b5f3745d6a91b6
 U drh
-Z 3a09c9e2a0ce88f1333ee44d49cfbdb9
+Z f4de28c04f76ade84e47b56a0971adc2
 # Remove this line to create a well-formed Fossil manifest.
