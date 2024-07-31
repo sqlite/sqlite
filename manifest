@@ -1,5 +1,5 @@
-C All\stests\sin\s"make\stest"\snow\spass\swith\sTcl9,\sexcept\sfor\sabout\s198\scases\swhere\nthe\serror\sinvolves\ssmall\sdifferences\sin\sthe\srendering\sto\sfloating\spoint\nvalues.
-D 2024-07-30T20:39:05.717
+C Implement\sa\snew\scomparison\sroutine\sto\scompare\stext\srenderings\sof\nfloating\spoint\svalues.\s\sThis\sgets\sthe\snumber\sof\sfailures\sdown\sto\sjust\s5.\nBut\sthe\sroutine\sneeds\swork,\sand\sprobably\srefactoring.
+D 2024-07-31T01:45:14.852
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -770,7 +770,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 671206cdad1ebc93d0e5db94c91a23d342d3906cb2a7ef25ceac44a2ca0cdc67
 F src/tclsqlite.h f3dc9ed1464a7cc775a47da70ac6f23e95d0fb939dd7eaf48639778f94d5aaad
-F src/test1.c 9f01a43b5d9d0c08c31617f3ab4e924bb30cd47db784527dbf6a309456a4db3b
+F src/test1.c 179c80be560631a24ca7dc40542c560f6afcf22232ac7502e3a041a96abd8df3
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -981,7 +981,7 @@ F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a49
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/carray01.test 23ed7074307c4a829ba5ff2970993a9d87db7c5cdbbe1a2cbef672d0df6d6e31
-F test/cast.test af2286fdd28f3470b7dcad23977282b8cc117747ad55acff74a770dad3b19398
+F test/cast.test 42f7d79d88ab5e8080e96c650c52fcf72eef3e6476aaaee2c9f6e074396cfdfc
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 4377d202a487f66fc2822c1bf57c46798c8b2caf7446f4f701723b1dbb6b86f6
 F test/changes2.test 07949edcc732af28cb54276bfb7d99723bccc1e905a423648bf57ac5cb0dc792
@@ -1704,7 +1704,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl f16465ee09897fc2bf5ea266146c5f15d507eb2a6a33129cffe135495192a3aa
+F test/tester.tcl 80626ee1ce542f3171a2e64e5d944f9a37ff06386ac325dd8988445494f526b1
 F test/testrunner.tcl 1386667c04207d0a540ce1a9bc5ee0b734f7a3ba856c14a03943fb4f32de55bb
 F test/testrunner_data.tcl 3d36660cfd55ea5e20e661e8f94c0520feebcb437848f9b98b33c483cc479c0c
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa549a5507b5f805b469b4360c11155aa9d22043f01f6d9428bf44d0f2351eb0
-R b16c3971e6beab65b3114759a6ea073a
+P 8e27f5326c69aa4fb6f3f1f42668ab1b08140ab0a614ac4a9d94679c8fb9734e
+R 2961dc3384c51136e21cb2a47ab0b5d2
 U drh
-Z b90cc1cc87390ce48c689e5c22b10880
+Z f1dc4569062e062a05b7f613172f6c6b
 # Remove this line to create a well-formed Fossil manifest.

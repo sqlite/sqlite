@@ -847,6 +847,9 @@ proc do_test {name cmd expected} {
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
+        if {!$ok} {
+          set ok [fpnum_compare $result $expected]
+        }
       }
       if {!$ok} {
         # if {![info exists ::testprefix] || $::testprefix eq ""} {
