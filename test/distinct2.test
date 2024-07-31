@@ -362,4 +362,22 @@ do_execsql_test 5070 {
   SELECT v4.e FROM t3 LEFT JOIN v4 ON true GROUP BY 1;
 } NULL
 
+# 2024-06-28 dbsqlfuzz 46343912848a603e32c6072cae792eb056bac897
+# Do not call sqlite3ExprToRegister() on an expression that is already
+# a register.
+#
+do_execsql_test 5080 {
+  CREATE TABLE dual(dummy TEXT);
+  INSERT INTO dual VALUES('X');
+  SELECT 11 = (
+                SELECT b
+                  FROM (
+                         SELECT a AS b
+                           FROM dual
+                           LEFT JOIN (SELECT 22 AS a FROM dual)
+                       )
+                 GROUP BY b, b
+              );
+} 0
+
 finish_test

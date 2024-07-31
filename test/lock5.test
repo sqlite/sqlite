@@ -207,7 +207,7 @@ if {[permutation]!="inmemory_journal"} {
   #    not commit it.
   # 3. Make a copy of the database files on disk.
   # 4. Try to read from the copy using unix-dotfile VFS. This fails because
-  #    the dotfile still exists, so SQLite things the database is locked.
+  #    the dotfile still exists, so SQLite thinks the database is locked.
   # 5. Remove the dotfile.
   # 6. Try to read the db again. This time, the old transaction is rolled
   #    back and the read permitted.
@@ -269,5 +269,3 @@ if {[permutation]!="inmemory_journal"} {
 }
 
 finish_test
-
-

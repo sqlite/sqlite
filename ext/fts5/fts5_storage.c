@@ -447,7 +447,7 @@ static int fts5StorageDeleteFromIndex(
           zText, nText, (void*)&ctx, fts5StorageInsertCallback
       );
       p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
-      if( p->aTotalSize[iCol-1]<0 ){
+      if( p->aTotalSize[iCol-1]<0 && rc==SQLITE_OK ){
         rc = FTS5_CORRUPT;
       }
     }

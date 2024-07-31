@@ -20,6 +20,7 @@ ifcapable !fts5 {
   finish_test
   return
 }
+unset -nocomplain res
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, content='', contentless_delete=1);

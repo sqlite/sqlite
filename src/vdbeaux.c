@@ -1413,6 +1413,12 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       if( db->pnBytesFreed==0 ) sqlite3DeleteTable(db, (Table*)p4);
       break;
     }
+    case P4_SUBRTNSIG: {
+      SubrtnSig *pSig = (SubrtnSig*)p4;
+      sqlite3DbFree(db, pSig->zAff);
+      sqlite3DbFree(db, pSig);
+      break;
+    }
   }
 }
 
@@ -1990,6 +1996,11 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
     case P4_TABLE: {
       zP4 = pOp->p4.pTab->zName;
+      break;
+    }
+    case P4_SUBRTNSIG: {
+      SubrtnSig *pSig = pOp->p4.pSubrtnSig;
+      sqlite3_str_appendf(&x, "subrtnsig:%d,%s", pSig->selId, pSig->zAff);
       break;
     }
     default: {

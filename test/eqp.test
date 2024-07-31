@@ -311,7 +311,8 @@ det 3.3.1 {
   QUERY PLAN
   |--SCAN t1
   `--LIST SUBQUERY xxxxxx
-     `--SCAN t2
+     |--SCAN t2
+     `--CREATE BLOOM FILTER
 }
 det 3.3.2 {
   SELECT * FROM t1 WHERE y IN (SELECT y FROM t2 WHERE t1.x!=t2.x)

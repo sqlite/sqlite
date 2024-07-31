@@ -1377,12 +1377,18 @@ static void selectInnerLoop(
         ** case the order does matter */
         pushOntoSorter(
             pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
+        pDest->iSDParm2 = 0; /* Signal that any Bloom filter is unpopulated */
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         assert( sqlite3Strlen30(pDest->zAffSdst)==nResultCol );
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, nResultCol,
             r1, pDest->zAffSdst, nResultCol);
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, nResultCol);
+        if( pDest->iSDParm2 ){
+          sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
+                               regResult, nResultCol);
+          ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
+        }
         sqlite3ReleaseTempReg(pParse, r1);
       }
       break;
@@ -3316,6 +3322,11 @@ static int generateOutputSubroutine(
           r1, pDest->zAffSdst, pIn->nSdst);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pDest->iSDParm, r1,
                            pIn->iSdst, pIn->nSdst);
+      if( pDest->iSDParm2>0 ){
+        sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
+                             pIn->iSdst, pIn->nSdst);
+        ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
+      }
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
@@ -5066,7 +5077,8 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **
 ** NAME AMBIGUITY
 **
-** This optimization is called the "WHERE-clause push-down optimization".
+** This optimization is called the "WHERE-clause push-down optimization"
+** or sometimes the "predicate push-down optimization".
 **
 ** Do not confuse this optimization with another unrelated optimization
 ** with a similar name:  The "MySQL push-down optimization" causes WHERE
@@ -8500,7 +8512,10 @@ int sqlite3Select(
         if( iOrderByCol ){
           Expr *pX = p->pEList->a[iOrderByCol-1].pExpr;
           Expr *pBase = sqlite3ExprSkipCollateAndLikely(pX);
-          if( ALWAYS(pBase!=0) && pBase->op!=TK_AGG_COLUMN ){
+          if( ALWAYS(pBase!=0)
+           && pBase->op!=TK_AGG_COLUMN
+           && pBase->op!=TK_REGISTER
+          ){
             sqlite3ExprToRegister(pX, iAMem+j);
           }
         }

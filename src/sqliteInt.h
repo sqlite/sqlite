@@ -143,10 +143,13 @@
 /*
 ** Macro to disable warnings about missing "break" at the end of a "case".
 */
-#if GCC_VERSION>=7000000
-# define deliberate_fall_through __attribute__((fallthrough));
-#else
-# define deliberate_fall_through
+#if defined(__has_attribute)
+#  if __has_attribute(fallthrough)
+#    define deliberate_fall_through __attribute__((fallthrough));
+#  endif
+#endif
+#if !defined(deliberate_fall_through)
+#  define deliberate_fall_through
 #endif
 
 /*
@@ -3621,7 +3624,11 @@ struct Select {
 **     SRT_Set         The result must be a single column.  Store each
 **                     row of result as the key in table pDest->iSDParm.
 **                     Apply the affinity pDest->affSdst before storing
-**                     results.  Used to implement "IN (SELECT ...)".
+**                     results.  if pDest->iSDParm2 is positive, then it is
+**                     a regsiter holding a Bloom filter for the IN operator
+**                     that should be populated in addition to the 
+**                     pDest->iSDParm table.  This SRT is used to
+**                     implement "IN (SELECT ...)".
 **
 **     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
 **                     the result there. The cursor is left open after
@@ -3830,6 +3837,7 @@ struct Parse {
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
   u8 bHasWith;         /* True if statement contains WITH */
   u8 bHasExists;       /* Has a correlated "EXISTS (SELECT ....)" expression */
+  u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif

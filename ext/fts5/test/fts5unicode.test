@@ -60,6 +60,7 @@ do_execsql_test 2.1 "
 # require 17 or more bits to store).
 #
 
+unset -nocomplain A B C D
 set A [db one {SELECT char(0x1F75E)}]    ;# Type So
 set B [db one {SELECT char(0x1F5FD)}]    ;# Type So
 set C [db one {SELECT char(0x2F802)}]    ;# Type Lo
