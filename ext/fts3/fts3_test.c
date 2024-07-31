@@ -225,7 +225,6 @@ static int SQLITE_TCLAPI fts3_near_match_cmd(
     }
     for(jj=0; jj<(int)nToken; jj++){
       NearToken *pT = &aPhrase[ii].aToken[jj];
-      Tcl_Size nn;
       pT->z = Tcl_GetStringFromObj(apToken[jj], &nn);
       pT->n = (int)nn;
     }
