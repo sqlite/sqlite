@@ -11,10 +11,14 @@
 
 /**
    This file installs sqlite3.vtab, a namespace of helpers for use in
-   the creation of JavaScript implementations virtual tables.
+   the creation of JavaScript implementations virtual tables. If built
+   without virtual table support then this function does nothing.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  if( !sqlite3.wasm.exports.sqlite3_declare_vtab ){
+    return;
+  }
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
   const vtab = Object.create(null);
   sqlite3.vtab = vtab;

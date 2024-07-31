@@ -1510,6 +1510,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: "sqlite3_set_authorizer()",
+      predicate: ()=>!!wasm.exports.sqlite3_set_authorizer || "Missing sqlite3_set_authorizer()",
       test:function(sqlite3){
         T.assert(capi.SQLITE_IGNORE>0)
           .assert(capi.SQLITE_DENY>0);
@@ -2152,7 +2153,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #1: eponymous w/ manual exception handling',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2349,7 +2350,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2761,7 +2762,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })/* commit/rollback/update hooks */
     .t({
       name: "sqlite3_preupdate_hook()",
-      predicate: ()=>wasm.bigIntEnabled || "Pre-update hook requires int64",
+      predicate: ()=>capi.sqlite3_preupdate_hook || "Missing pre-update hook API",
       test: function(sqlite3){
         const db = new sqlite3.oo1.DB(':memory:', 1 ? 'c' : 'ct');
         const countHook = Object.create(null);
@@ -2832,7 +2833,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Session API')
     .t({
       name: 'Session API sanity checks',
-      predicate: ()=>!!capi.sqlite3changegroup_add,
+      predicate: ()=>!!capi.sqlite3changegroup_add || "Missing session API",
       test: function(sqlite3){
         //warn("The session API tests could use some expansion.");
         const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
@@ -3113,11 +3114,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(db instanceof sqlite3.oo1.DB)
           .assert(1 === u1.getFileCount());
         db.exec([
+          'pragma locking_mode=exclusive;',
+          'pragma journal_mode=wal;'
+          /* WAL mode only works in this VFS if locking_mode=exclusive
+             is invoked prior to the first db access, as this build
+             does not have the shared-memory APIs needed for WAL without
+             exclusive-mode locking. See:
+
+             https://sqlite.org/wal.html#use_of_wal_without_shared_memory
+
+             Note that WAL mode here DOES NOT add any concurrency capabilities
+             to this VFS, but it MAY provide slightly improved performance
+             over the other journaling modes.
+          */,
           'create table t(a);',
           'insert into t(a) values(1),(2),(3)'
         ]);
-        T.assert(1 === u1.getFileCount());
-        T.assert(3 === db.selectValue('select count(*) from t'));
+        T.assert(2 === u1.getFileCount() /* one is the journal file */)
+          .assert(3 === db.selectValue('select count(*) from t'))
+          .assert('wal'===db.selectValue('pragma journal_mode'));
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);
@@ -3137,6 +3152,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
+            .assert('wal' !== db2.selectValue("pragma journal_mode")
+                    /* importDb() unsets the WAL-mode header for
+                       historical reasons. Because clients must
+                       explicitly enable pragma locking_mode=exclusive
+                       before using WAL, that behavior is retained. */)
             .assert(3 === db2.selectValue('select count(*) from t'));
           db2.close();
           T.assert(true === u1.unlink(dbName2))
@@ -3280,6 +3300,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
+      predicate: function(sqlite3){
+        const d = new sqlite3.oo1.DB();
+        try{
+          d.exec("create virtual table f using fts5(x)");
+          return true;
+        }catch(e){
+          return "FTS5 is not available";
+        }finally{
+          d.close();
+        }
+      },
       test: function(sqlite3){
         // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
         // with the exception that that post uses "external content"

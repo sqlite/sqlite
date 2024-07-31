@@ -1288,40 +1288,13 @@ const installOpfsVfs = function callee(options){
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsDb = OpfsDb;
       OpfsDb.importDb = opfsUtil.importDb;
-      sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
+      sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenCallback(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
           /* Set a relatively high default busy-timeout handler to
              help OPFS dbs deal with multi-tab/multi-worker
              contention. */
           sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
-          sqlite3.capi.sqlite3_exec(oo1Db, [
-            /* As of July 2023, the PERSIST journal mode on OPFS is
-               somewhat slower than DELETE or TRUNCATE (it was faster
-               before Chrome version 108 or 109). TRUNCATE and DELETE
-               have very similar performance on OPFS.
-
-               Roy Hashimoto notes that TRUNCATE and PERSIST modes may
-               decrease OPFS concurrency because multiple connections
-               can open the journal file in those modes:
-
-               https://github.com/rhashimoto/wa-sqlite/issues/68
-
-               Given that, and the fact that testing has not revealed
-               any appreciable difference between performance of
-               TRUNCATE and DELETE modes on OPFS, we currently (as of
-               2023-07-13) default to DELETE mode.
-            */
-            "pragma journal_mode=DELETE;",
-            /*
-              This vfs benefits hugely from cache on moderate/large
-              speedtest1 --size 50 and --size 100 workloads. We
-              currently rely on setting a non-default cache size when
-              building sqlite3.wasm. If that policy changes, the cache
-              can be set here.
-            */
-            "pragma cache_size=-16384;"
-          ], 0, 0, 0);
         }
       );
     }/*extend sqlite3.oo1*/

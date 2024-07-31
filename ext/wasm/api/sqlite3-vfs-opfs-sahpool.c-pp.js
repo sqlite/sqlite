@@ -78,8 +78,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.SQLITE_OPEN_MAIN_DB |
         capi.SQLITE_OPEN_MAIN_JOURNAL |
         capi.SQLITE_OPEN_SUPER_JOURNAL |
-        capi.SQLITE_OPEN_WAL /* noting that WAL support is
-                                unavailable in the WASM build.*/;
+        capi.SQLITE_OPEN_WAL;
 
   /** Subdirectory of the VFS's space where "opaque" (randomly-named)
       files are stored. Changing this effectively invalidates the data
@@ -1280,16 +1279,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           };
           OpfsSAHPoolDb.prototype = Object.create(oo1.DB.prototype);
           poolUtil.OpfsSAHPoolDb = OpfsSAHPoolDb;
-          oo1.DB.dbCtorHelper.setVfsPostOpenSql(
-            theVfs.pointer,
-            function(oo1Db, sqlite3){
-              sqlite3.capi.sqlite3_exec(oo1Db, [
-                /* See notes in sqlite3-vfs-opfs.js */
-                "pragma journal_mode=DELETE;",
-                "pragma cache_size=-16384;"
-              ], 0, 0, 0);
-            }
-          );
         }/*extend sqlite3.oo1*/
         thePool.log("VFS initialized.");
         return poolUtil;
