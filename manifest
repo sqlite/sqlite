@@ -1,5 +1,5 @@
-C Patch\sto\stestrunner.tcl\sso\sthat\sit\sworks\swith\sTcl9's\spedantic\sUTF-8\schecking.
-D 2024-07-31T11:12:13.141
+C Adjust\sthe\sconfigure\sscript\sso\sthat\sthe\s--with-tcl\soption\sis\sused\sto\nfind\sthe\sappropriate\stclsh.
+D 2024-07-31T11:42:47.316
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -35,8 +35,8 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc 7b3bb2ef32ade0f3f14d951231811678722725e3bca240dd9727ae0dfe10f6a5
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 27d144c2edfa993ac155a2ad5e6b431e4ec811159598ef55a59f345bc2e5e533 x
-F configure.ac f25bd7843120f2c2b8bc9db5a92b0502bbdd28e68907415c3d42fc8e57c657b9
+F configure e0efd210b151971f4158e3fdf93b34322882a668a96f88b6167a6f7a51edebec x
+F configure.ac 7361a1dd862c0ba0d2daa3d978bc3b93fcccc1ef3efe204d0238722c19bbdcf5
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md e8635eea9153dcd6a51fd2740666ebc4492b3813cb1ac31cd8e99150df91762d
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7157c3c910565c9385a028793a0c0106c5064ab6a8a6efbe29dd1f1cdb2bd48d
-R 2e7d18721eb725cc0ae0df1dfecc64bd
+P 8d4a23d32dc16b115153e6e100ba3ba15273c3e37310e8a1b4bace885c5383a8
+R 64a8d10fb6347ca8ef346534c156b0fa
 U drh
-Z 2989fad3f143368778831d6aee688e14
+Z fd89c8e44bc980444bfd6347c100cdd8
 # Remove this line to create a well-formed Fossil manifest.
