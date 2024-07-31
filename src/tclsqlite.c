@@ -35,7 +35,23 @@
 # include "msvc.h"
 #endif
 
-#include "tclsqlite.h"
+/****** Copy of tclsqlite.h ******/
+#if defined(INCLUDE_SQLITE_TCL_H)
+# include "sqlite_tcl.h"   /* Special case for Windows using STDCALL */
+#else
+# include "tcl.h"          /* All normal cases */
+# ifndef SQLITE_TCLAPI
+#   define SQLITE_TCLAPI
+# endif
+#endif
+/* Compatability between Tcl8.6 and Tcl9.0 */
+#if TCL_MAJOR_VERSION==9
+# define CONST const
+#else
+  typedef int Tcl_Size;
+#endif
+/**** End copy of tclsqlite.h ****/
+
 #include <errno.h>
 
 /*
@@ -3996,6 +4012,11 @@ EXTERN int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
 EXTERN int Sqlite_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
+
+/* Also variants with a lowercase "s" */
+EXTERN int sqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
+EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
+
 
 /*
 ** If the TCLSH macro is defined, add code to make a stand-alone program.

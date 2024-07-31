@@ -14,6 +14,7 @@
 ** and various test*.c pieces) should #include this file rather than
 ** including tcl.h directly.
 */
+/******  Any edits to this file must mirrored in tclsqlite.c ***********/
 
 /* When compiling for Windows using STDCALL instead of CDECL calling
 ** conventions, the MSVC makefile has to build a customized version of
@@ -29,9 +30,13 @@
 # endif
 #endif
 
+/******  Any edits to this file must mirrored in tclsqlite.c ***********/
+
 /* Compatability between Tcl8.6 and Tcl9.0 */
 #if TCL_MAJOR_VERSION==9
 # define CONST const
 #else
   typedef int Tcl_Size;
 #endif
+
+/******  Any edits to this file must mirrored in tclsqlite.c ***********/

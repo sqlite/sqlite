@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sstrictly\sconforming\sUTF8\sin\sshell1.test.
-D 2024-07-31T02:01:19.346
+C Fixes\sto\stclsqlite.c\sto\sfacilitate\sTEA\sinstalls.
+D 2024-07-31T10:59:19.356
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -768,8 +768,8 @@ F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955a
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 671206cdad1ebc93d0e5db94c91a23d342d3906cb2a7ef25ceac44a2ca0cdc67
-F src/tclsqlite.h f3dc9ed1464a7cc775a47da70ac6f23e95d0fb939dd7eaf48639778f94d5aaad
+F src/tclsqlite.c 6242341191e43952a8ed466b1ee4993cad3a2b93ec3e4a5e826f0b06225a6716
+F src/tclsqlite.h 4ed60ea4084b2ea46e19ab13857b3f39d33250ebbf5b2df62b0999bb9b2766b7
 F src/test1.c 179c80be560631a24ca7dc40542c560f6afcf22232ac7502e3a041a96abd8df3
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 895125a4895099df7c3841ca7c34697ba17fd667bddbc2fd7148f7aa9d6d2b9d
-R 29e6c2fe80c749b833106a3f129e0b0b
+P 8ee187f98d310e1e7cf6c3fdf000c19e98a9f11e01436c3c407df04da79aa7c0
+R 11b997737d72a6acc08733c094770fe6
 U drh
-Z 4f162a5701a7f3bcc06c08326c1da654
+Z 95699a30a586f97e0f36f4f5ea30a6cf
 # Remove this line to create a well-formed Fossil manifest.
