@@ -2335,13 +2335,13 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
     };
 
     Tcl_Obj **aFlag = 0;
-    int nFlag = 0;
+    Tcl_Size nFlag = 0;
     int ii;
 
     if( Tcl_ListObjGetElements(interp, objv[2], &nFlag, &aFlag) ){
       return TCL_ERROR;
     }
-    for(ii=0; ii<nFlag; ii++){
+    for(ii=0; ii<(int)nFlag; ii++){
       int iVal = 0;
       int res = Tcl_GetIndexFromObjStruct(
           interp, aFlag[ii], aTbl, sizeof(aTbl[0]), "flag", 0, &iVal
@@ -6083,7 +6083,7 @@ static int SQLITE_TCLAPI fpnum_compare(
         break;
       }
     }
-    if( zA[i]=='e' && zB[i]=='e' ){
+    if( zA[i]=='e' && zB[j]=='e' ){
       i++;
       j++;
       if( (zA[i]=='+' || zA[i]=='-') && zB[j]==zA[i] ){  i++;  j++; }
@@ -8367,7 +8367,7 @@ static int SQLITE_TCLAPI test_user_authenticate(
 ){
   char *zUser = 0;
   char *zPasswd = 0;
-  int nPasswd = 0;
+  Tcl_Size nPasswd = 0;
   sqlite3 *db;
   int rc;
 
@@ -8380,7 +8380,7 @@ static int SQLITE_TCLAPI test_user_authenticate(
   }
   zUser = Tcl_GetString(objv[2]);
   zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
-  rc = sqlite3_user_authenticate(db, zUser, zPasswd, nPasswd);
+  rc = sqlite3_user_authenticate(db, zUser, zPasswd, (int)nPasswd);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }
