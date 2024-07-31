@@ -2762,7 +2762,7 @@ static int SQLITE_TCLAPI test_snapshot_open_blob(
   sqlite3 *db;
   char *zName;
   unsigned char *pBlob;
-  int nBlob;
+  Tcl_Size nBlob;
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SNAPSHOT");
@@ -2797,8 +2797,8 @@ static int SQLITE_TCLAPI test_snapshot_cmp_blob(
   int res;
   unsigned char *p1;
   unsigned char *p2;
-  int n1;
-  int n2;
+  Tcl_Size n1;
+  Tcl_Size n2;
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT1 SNAPSHOT2");
