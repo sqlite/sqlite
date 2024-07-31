@@ -447,7 +447,7 @@ if {[llength $argv]==1
     } job {
       display_job [array get job]
     }
-    set nOmit [db one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
       puts "$nOmit jobs omitted due to failures"
     }
