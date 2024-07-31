@@ -1,5 +1,5 @@
-C Fixes\sto\stclsqlite.c\sto\sfacilitate\sTEA\sinstalls.
-D 2024-07-31T10:59:19.356
+C Patch\sto\stestrunner.tcl\sso\sthat\sit\sworks\swith\sTcl9's\spedantic\sUTF-8\schecking.
+D 2024-07-31T11:12:13.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1705,7 +1705,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 80626ee1ce542f3171a2e64e5d944f9a37ff06386ac325dd8988445494f526b1
-F test/testrunner.tcl 1386667c04207d0a540ce1a9bc5ee0b734f7a3ba856c14a03943fb4f32de55bb
+F test/testrunner.tcl 757f79c68f82cad563441d80f02c492465f51cf537336c7b719c3ef45f348911
 F test/testrunner_data.tcl 3d36660cfd55ea5e20e661e8f94c0520feebcb437848f9b98b33c483cc479c0c
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2200,8 +2200,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ee187f98d310e1e7cf6c3fdf000c19e98a9f11e01436c3c407df04da79aa7c0
-R 11b997737d72a6acc08733c094770fe6
+P 7157c3c910565c9385a028793a0c0106c5064ab6a8a6efbe29dd1f1cdb2bd48d
+R 2e7d18721eb725cc0ae0df1dfecc64bd
 U drh
-Z 95699a30a586f97e0f36f4f5ea30a6cf
+Z 2989fad3f143368778831d6aee688e14
 # Remove this line to create a well-formed Fossil manifest.

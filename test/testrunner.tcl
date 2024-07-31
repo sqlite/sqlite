@@ -1117,7 +1117,7 @@ proc launch_another_job {iJob} {
     set fd [open "|$TRG(runcmd) 2>@1" r]
     cd $pwd
 
-    fconfigure $fd -blocking false
+    fconfigure $fd -blocking false -translation binary
     fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
   }
 
