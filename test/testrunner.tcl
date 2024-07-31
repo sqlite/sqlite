@@ -399,7 +399,7 @@ if {[llength $argv]==1
   }
 
   sqlite3 mydb $TRG(dbname)
-  mydb timeout 1000
+  mydb timeout 2000
   mydb eval BEGIN
 
   set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
@@ -963,6 +963,7 @@ proc add_jobs_from_cmdline {patternlist} {
 proc make_new_testset {} {
   global TRG
 
+  trdb eval {PRAGMA journal_mode=WAL;}
   r_write_db {
     trdb eval $TRG(schema)
     set nJob $TRG(nJob)
