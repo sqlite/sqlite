@@ -42,6 +42,7 @@ fiddle.emcc-flags = \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT) $(SHELL_OPT) \
+  -USQLITE_WASM_MINIMAL \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
