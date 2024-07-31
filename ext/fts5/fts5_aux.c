@@ -239,6 +239,8 @@ static int fts5ConfigureTokenizer(
   const char *zLocale = 0;
   int nLocale = 0;
 
+  assert( pApi->iVersion>=4 );    /* Ensure xColumnLocale() is available */
+
   rc = pApi->xColumnLocale(pFts, iCol, &zLocale, &nLocale);
   if( rc==SQLITE_OK ){
     rc = pApi->xTokenizeSetLocale(pFts, zLocale, nLocale);

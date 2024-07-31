@@ -476,7 +476,7 @@ static int fts5StorageDeleteFromIndex(
         pVal = apVal[iCol-1];
       }
 
-      rc = sqlite3Fts5ExtractText(pConfig,pSeek!=0,pVal,&bReset,&pText,&nText);
+      rc = sqlite3Fts5ExtractText(pConfig, pVal, 1, &bReset, &pText, &nText);
       if( rc==SQLITE_OK ){
         ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, 
@@ -740,8 +740,8 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
         int bReset = 0;
         int nText = 0;
         const char *pText = 0;
-        rc = sqlite3Fts5ExtractText(pConfig, 1, 
-            sqlite3_column_value(pScan, ctx.iCol+1), &bReset, &pText, &nText
+        rc = sqlite3Fts5ExtractText(pConfig, 
+            sqlite3_column_value(pScan, ctx.iCol+1), 1, &bReset, &pText, &nText
         );
 
         if( rc==SQLITE_OK ){
@@ -851,11 +851,14 @@ int sqlite3Fts5StorageContentInsert(
           ** column. Strip the locale away and just bind the text.  */
           const char *pText = 0;
           int nText = 0;
-          rc = sqlite3Fts5ExtractText(pConfig, 0, pVal, 0, &pText, &nText);
+          rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
           sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
           continue;
         }
-      }else if( pConfig->bLocale && sqlite3_value_type(pVal)==SQLITE_BLOB ){
+      }else if( pConfig->bLocale 
+       && sqlite3_value_type(pVal)==SQLITE_BLOB 
+       && i>=2 && pConfig->abUnindexed[i-2]==0
+      ){
         /* Inserting a blob into a normal content table with locale=1. */
         int n = sqlite3_value_bytes(pVal);
         u8 *pBlob = sqlite3Fts5MallocZero(&rc, n+4);
@@ -911,7 +914,7 @@ int sqlite3Fts5StorageIndexInsert(
         pVal = sqlite3_column_value(p->pSavedRow, ctx.iCol+1);
         bDisk = 1;
       }
-      rc = sqlite3Fts5ExtractText(pConfig, bDisk, pVal, &bReset,&pText,&nText);
+      rc = sqlite3Fts5ExtractText(pConfig, pVal, bDisk, &bReset,&pText,&nText);
       if( rc==SQLITE_OK ){
         if( bReset && pConfig->bLocale==0 ){
           rc = SQLITE_ERROR;
@@ -1100,8 +1103,8 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p, int iArg){
             int nText = 0;
             int bReset = 0;
 
-            rc = sqlite3Fts5ExtractText(pConfig, 1,
-                sqlite3_column_value(pScan, i+1), &bReset, &pText, &nText
+            rc = sqlite3Fts5ExtractText(pConfig, 
+                sqlite3_column_value(pScan, i+1), 1, &bReset, &pText, &nText
             );
 
             if( rc==SQLITE_OK ){

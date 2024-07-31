@@ -124,10 +124,6 @@ struct Fts5FullTable {
 #endif
 };
 
-#define FTS5_ENCODING_UNKNOWN 0
-#define FTS5_ENCODING_UTF8    1
-#define FTS5_ENCODING_UTF16   2
-
 struct Fts5MatchPhrase {
   Fts5Buffer *pPoslist;           /* Pointer to current poslist */
   int nTerm;                      /* Size of phrase in terms */
@@ -169,6 +165,12 @@ struct Fts5Sorter {
 **   If the cursor iterates in descending order of rowid, iFirstRowid
 **   is the upper limit (i.e. the "first" rowid visited) and iLastRowid
 **   the lower.
+**
+** pLocale, nLocale:
+**   These are set by API method xTokenizeSetLocale(). xTokenizeSetLocale()
+**   does not actually configure the tokenizer, it just stores the values
+**   it is passed in these variables. The fts5_tokenizer_v2.xSetLocale()
+**   method is called from within the xTokenize() API method if required.
 */
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
@@ -238,6 +240,9 @@ struct Fts5Cursor {
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
 
+/*
+** The subtype values returned by fts5_locale() are tagged with.
+*/
 #define FTS5_LOCALE_SUBTYPE ((unsigned int)'L')
 
 
@@ -1003,7 +1008,7 @@ static int fts5PrepareStatement(
     rc = sqlite3_prepare_v3(pConfig->db, zSql, -1, 
                             SQLITE_PREPARE_PERSISTENT, &pRet, 0);
     if( rc!=SQLITE_OK ){
-      *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
+      sqlite3Fts5ConfigErrmsg(pConfig, "%s", sqlite3_errmsg(pConfig->db));
     }
     sqlite3_free(zSql);
   }
@@ -1238,7 +1243,11 @@ static void fts5SetVtabError(Fts5FullTable *p, const char *zFormat, ...){
   va_end(ap);
 }
 
-
+/*
+** Configure the tokenizer to use the locale specified by nLocale byte
+** buffer zLocale. Return SQLITE_OK if successful, or an SQLite error
+** code otherwise.
+*/
 static int fts5SetLocale(
   Fts5Config *pConfig, 
   const char *zLocale, 
@@ -1252,11 +1261,27 @@ static int fts5SetLocale(
   return rc;
 }
 
+/*
+** Reset the locale of the tokenizer to its default.
+*/
 void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
   fts5SetLocale(pConfig, 0, 0);
 }
 
-static int fts5IsUtf16(Fts5Config *pConfig, int *pbIs){
+/*
+** This function is used to determine if the database handle uses utf-8 or
+** a utf-16 encoding. If it uses utf-8, then output parameter (*pbIs) is set
+** to 0. Otherwise, if it uses utf-16, then the output parameter is set
+** to 1.
+**
+** This function returns SQLITE_OK if successful, or an SQLite error code
+** otherwise. If an error code is returned, the final value of (*pbIs) is
+** undefined.
+*/
+static int fts5IsUtf16(
+  Fts5Config *pConfig,            /* Configuration object */
+  int *pbIs                       /* OUT: True if utf-16, false if utf-8 */
+){
   if( pConfig->eEnc==FTS5_ENCODING_UNKNOWN ){
     sqlite3_stmt *pPragma = 0;
     int rc = fts5PrepareStatement(&pPragma, pConfig,
@@ -1280,10 +1305,57 @@ static int fts5IsUtf16(Fts5Config *pConfig, int *pbIs){
   return SQLITE_OK;
 }
 
+/*
+** This function is used to extract utf-8 text from an sqlite3_value. This
+** is usually done in order to tokenize it. For example, when:
+**
+**     * a value is written to an fts5 table,
+**     * a value is deleted from an FTS5_CONTENT_NORMAL table,
+**     * a value containing a query expression is passed to xFilter()
+**
+** and so on.
+**
+** This function handles 3 cases:
+**
+**   1) Ordinary values. The text can be extracted from these using
+**      sqlite3_value_text().
+**
+**   2) Blobs tagged with sub-type FTS5_LOCALE_SUBTYPE, or those read from
+**      the content table of an FTS5_CONTENT_NORMAL table with locale=1
+**      set that do not begin with 0x00.
+**
+**      In these cases the value is a blob formatted by fts5_locale() that
+**      contains both a locale and a text value. The locale is first, as
+**      utf-8, followed by a single 0x00 byte, followed by the text value, 
+**      also as utf-8. There is no nul-terminator for the text value.
+**
+**   3) Blobs read from the content table of an FTS5_CONTENT_NORMAL table
+**      with locale=1 set that do begin with 0x00. These are used to
+**      store actual SQLITE_BLOB values written to the fts5 table by the
+**      user. They begin with 4 0x00 bytes, followed by the blob data as
+**      specified by the user.
+**
+** If successful, SQLITE_OK is returned and output parameters (*ppText)
+** and (*pnText) are set to point to a buffer containing the extracted utf-8 
+** text and its length in bytes, respectively. The buffer is not 
+** nul-terminated. It has the same lifetime as the sqlite3_value object
+** from which it is extracted.
+**
+** Parameter bContent must be true if the value was read from an indexed
+** column (i.e. not UNINDEXED) of the on disk content. In this case, if
+** the table is FTS5_CONTENT_NORMAL and locale=1 was specified, special blob
+** cases (2) and (3) above will apply.
+**
+** If pbResetTokenizer is not NULL and if case (2) is used, then the
+** tokenizer is configured to use the locale. In this case (*pbResetTokenizer)
+** is set to true before returning, to indicate that the caller must
+** call sqlite3Fts5ClearLocale() to reset the tokenizer after tokenizing
+** the text.
+*/
 int sqlite3Fts5ExtractText(
   Fts5Config *pConfig,
-  int bContent,
   sqlite3_value *pVal,            /* Value to extract text from */
+  int bContent,                   /* True if indexed table content */
   int *pbResetTokenizer,          /* OUT: True if xSetLocale(NULL) required */
   const char **ppText,            /* OUT: Pointer to text buffer */
   int *pnText                     /* OUT: Size of (*ppText) in bytes */
@@ -1309,11 +1381,23 @@ int sqlite3Fts5ExtractText(
     int nLocale = 0;
 
     if( nBlob>=4 && memcmp(pBlob, "\0\0\0\0", 4)==0 ){
-      int bIs16 = 0;
+      /* Extract the text from a blob stored in a locale=1 table. The
+      ** value consists of 4 0x00 bytes followed by the blob specified
+      ** by the user. The extracted text has to match the text extracted
+      ** when the blob was inserted - by calling sqlite3_value_text() on
+      ** the value without the 4 0x00 byte header.
+      **
+      ** The tricky bit here is that the exact text extracted from a blob
+      ** depends on the encoding of the database. To avoid reimplementing
+      ** SQLite's blob-to-text conversion code here, we call
+      ** sqlite3_value_text() on the blob with the header, then trim off the
+      ** leading utf-8 characters that the 4 byte header was converted to. In
+      ** practice this is 4 0x00 bytes for a utf-8 database, or 2 0x00 bytes
+      ** for a utf-16 database.  */
+      int bIs16 = 0;              /* True for utf-16 database */
       pText = (const char*)sqlite3_value_text(pVal);
       nText = sqlite3_value_bytes(pVal);
       rc = fts5IsUtf16(pConfig, &bIs16);
-      
       if( bIs16 ){
         pText += 2;
         nText -= 2;
@@ -1321,7 +1405,6 @@ int sqlite3Fts5ExtractText(
         pText += 4;
         nText -= 4;
       }
-
     }else{
       for(nLocale=0; nLocale<nBlob; nLocale++){
         if( pBlob[nLocale]==0x00 ) break;
@@ -1344,7 +1427,6 @@ int sqlite3Fts5ExtractText(
 
   *ppText = pText;
   *pnText = nText;
-
   return rc;
 }
 
@@ -1358,8 +1440,8 @@ int sqlite3Fts5ExtractText(
 ** configured to us the required locale.
 **
 ** If output variable (*pbFreeAndReset) is set to true, then the caller
-** is required to (a) call xSetLocale(NULL) to reset the tokenizer locale,
-** and (b) call sqlite3_free() to free (*pzText).
+** is required to (a) call sqlite3Fts5ClearLocale() to reset the tokenizer 
+** locale, and (b) call sqlite3_free() to free (*pzText).
 */
 static int fts5ExtractExprText(
   Fts5FullTable *pTab,
@@ -1373,7 +1455,7 @@ static int fts5ExtractExprText(
   int bReset = 0;
 
   *pbFreeAndReset = 0;
-  rc = sqlite3Fts5ExtractText(pTab->p.pConfig, 0, pVal, &bReset, &zText,&nText);
+  rc = sqlite3Fts5ExtractText(pTab->p.pConfig, pVal, 0, &bReset, &zText,&nText);
   if( rc==SQLITE_OK ){
     if( bReset ){
       *pzText = sqlite3Fts5Mprintf(&rc, "%.*s", nText, zText);
@@ -1930,16 +2012,12 @@ static int fts5UpdateMethod(
     else{
       int eType1 = sqlite3_value_numeric_type(apVal[1]);
 
-      if( (eType1!=SQLITE_INTEGER && eType1!=SQLITE_NULL)
-       || (eType0==SQLITE_INTEGER && eType1==SQLITE_NULL)
-      ){
-        rc = SQLITE_MISMATCH;
-      }
-
-      else if( eType0!=SQLITE_INTEGER ){
+      if( eType0!=SQLITE_INTEGER ){
         /* An INSERT statement. If the conflict-mode is REPLACE, first remove
         ** the current entry (if any). */
-        if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
+        if( eType1!=SQLITE_INTEGER && eType1!=SQLITE_NULL ){
+          rc = SQLITE_MISMATCH;
+        }else if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
           bUpdateOrDelete = 1;
@@ -1951,8 +2029,9 @@ static int fts5UpdateMethod(
       else{
         i64 iOld = sqlite3_value_int64(apVal[0]);  /* Old rowid */
         i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
-        assert( eType1==SQLITE_INTEGER );
-        if( iOld!=iNew ){
+        if( eType1!=SQLITE_INTEGER ){
+          rc = SQLITE_MISMATCH;
+        }else if( iOld!=iNew ){
           if( eConflict==SQLITE_REPLACE ){
             rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
             if( rc==SQLITE_OK ){
@@ -2126,12 +2205,9 @@ static int fts5ApiColumnText(
     rc = fts5SeekCursor(pCsr, 0);
     if( rc==SQLITE_OK ){
       Fts5Config *pConfig = pTab->pConfig;
-      int bContent = (
-          pConfig->bLocale && pConfig->abUnindexed[iCol]==0 && 
-          pConfig->eContent==FTS5_CONTENT_NORMAL
-      );
+      int bContent = (pConfig->abUnindexed[iCol]==0);
       sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
-      sqlite3Fts5ExtractText(pConfig, bContent, pVal, 0, pz, pn);
+      sqlite3Fts5ExtractText(pConfig, pVal, bContent, 0, pz, pn);
     }
   }
   return rc;
@@ -2346,14 +2422,13 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
       rc = fts5SeekCursor(pCsr, 0);
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         if( pConfig->abUnindexed[i]==0 ){
-          const int bContent = (pConfig->eContent==FTS5_CONTENT_NORMAL);
           const char *z = 0; 
           int n = 0;
           int bReset = 0;
           sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, i+1);
 
           pCsr->aColumnSize[i] = 0;
-          rc = sqlite3Fts5ExtractText(pConfig, bContent, pVal, &bReset, &z, &n);
+          rc = sqlite3Fts5ExtractText(pConfig, pVal, 1, &bReset, &z, &n);
           if( rc==SQLITE_OK ){
             rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_AUX, 
                 z, n, (void*)&pCsr->aColumnSize[i], fts5ColumnSizeCb
@@ -2602,6 +2677,9 @@ static int fts5ApiQueryPhrase(Fts5Context*, int, void*,
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
 );
 
+/*
+** The xColumnLocale() API.
+*/
 static int fts5ApiColumnLocale(
   Fts5Context *pCtx, 
   int iCol, 
@@ -2617,24 +2695,34 @@ static int fts5ApiColumnLocale(
 
   if( iCol<0 || iCol>=pConfig->nCol ){
     rc = SQLITE_RANGE;
-  }else{
-    int bNormal = (pConfig->eContent==FTS5_CONTENT_NORMAL);
-    if( pConfig->abUnindexed[iCol]==0
-     && pCsr->ePlan!=FTS5_PLAN_SPECIAL
-     && pConfig->eContent!=FTS5_CONTENT_NONE
-     && (bNormal==0 || pConfig->bLocale)
-    ){
-      rc = fts5SeekCursor(pCsr, 0);
-      if( rc==SQLITE_OK ){
-        sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
-        if( sqlite3_value_type(pVal)==SQLITE_BLOB
-         && (bNormal || sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE)
+  }else if(
+      pConfig->abUnindexed[iCol]==0
+   && pCsr->ePlan!=FTS5_PLAN_SPECIAL
+   && pConfig->eContent!=FTS5_CONTENT_NONE
+   && pConfig->bLocale
+  ){
+    rc = fts5SeekCursor(pCsr, 0);
+    if( rc==SQLITE_OK ){
+      /* Load the value into pVal. pVal is a locale/text pair iff:
+      **
+      **   1) It is an SQLITE_BLOB, and
+      **   2) Either the subtype is FTS5_LOCALE_SUBTYPE, or else the
+      **      value was loaded from an FTS5_CONTENT_NORMAL table, and
+      **   3) It does not begin with an 0x00 byte.
+      */ 
+      sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
+      if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+        if( pConfig->eContent==FTS5_CONTENT_NORMAL
+         || sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE
         ){
           const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
           int nBlob = sqlite3_value_bytes(pVal);
           int nLocale = 0;
           for(nLocale=0; nLocale<nBlob && pBlob[nLocale]!=0x00; nLocale++);
-          if( nLocale!=0 && nLocale!=nBlob ){
+          if( nLocale==nBlob ){
+            rc = FTS5_CORRUPT;
+          }else if( nLocale!=0 ){
+            /* A locale/text pair */
             *pzLocale = (const char*)pBlob;
             *pnLocale = nLocale;
           }
@@ -2646,6 +2734,9 @@ static int fts5ApiColumnLocale(
   return rc;
 }
 
+/*
+** The xTokenizeSetLocale() API.
+*/
 static int fts5ApiTokenizeSetLocale(
   Fts5Context *pCtx, 
   const char *pLocale, 
@@ -2868,14 +2959,36 @@ static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
   return rc;
 }
 
+/*
+** Value pVal was read from column iCol of the FTS5 table. This function
+** returns it to the owner of pCtx via a call to an sqlite3_result_xxx()
+** function. This function deals with the same 3 cases as
+** sqlite3Fts5ExtractText():
+**
+**   1) Ordinary values. These can be returned using sqlite3_result_value().
+**
+**   2) Blobs with subtype FTS5_LOCALE_SUBTYPE, or read from an 
+**      FTS5_CONTENT_NORMAL table that do not begin with 0x00. These are
+**      locale/text pairs. In this case the text is extracted and returned
+**      via sqlite3_result_text().
+**
+**   3) Blobs with subtype FTS5_LOCALE_SUBTYPE, or read from an 
+**      FTS5_CONTENT_NORMAL table that begin with 4 0x00 bytes. These are
+**      blobs with a 4 byte header. In this case the user's blob is extracted
+**      and returned via sqlite3_result_blob().
+*/
 static void fts5ExtractValueFromColumn(
   sqlite3_context *pCtx,
   Fts5Config *pConfig, 
+  int iCol,
   sqlite3_value *pVal
 ){
-  if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+  if( pConfig->bLocale 
+   && sqlite3_value_type(pVal)==SQLITE_BLOB 
+   && pConfig->abUnindexed[iCol]==0
+  ){
     if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
-     || (pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL)
+     || pConfig->eContent==FTS5_CONTENT_NORMAL
     ){
       const u8 *pBlob = sqlite3_value_blob(pVal);
       int nBlob = sqlite3_value_bytes(pVal);
@@ -2953,7 +3066,7 @@ static int fts5ColumnMethod(
       rc = fts5SeekCursor(pCsr, 1);
       if( rc==SQLITE_OK ){
         sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
-        fts5ExtractValueFromColumn(pCtx, pConfig, pVal);
+        fts5ExtractValueFromColumn(pCtx, pConfig, iCol, pVal);
       }
       pConfig->pzErrmsg = 0;
     }
@@ -3322,7 +3435,17 @@ static void fts5SourceIdFunc(
 }
 
 /*
-** Implementation of fts5_locale() function.
+** Implementation of fts5_locale(LOCALE, TEXT) function.
+**
+** If parameter LOCALE is NULL, or a zero-length string, then a copy of
+** TEXT is returned. Otherwise, both LOCALE and TEXT are interpreted as
+** text, and the value returned is a blob consisting of:
+**
+**     * The LOCALE, as utf-8 text, followed by
+**     * 0x00, followed by
+**     * The TEXT, as utf-8 text.
+**
+** There is no final nul-terminator following the TEXT value.
 */
 static void fts5LocaleFunc(
   sqlite3_context *pCtx,          /* Function call context */

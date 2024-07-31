@@ -615,7 +615,9 @@ int sqlite3Fts5ConfigParse(
     sqlite3_free(zTwo);
   }
 
-  /* If this is not an FTS5_CONTENT_NORMAL table, set bLocale */
+  /* If this is not an FTS5_CONTENT_NORMAL table, set bLocale. There are
+  ** no restrictions on using fts5_locale() with external-content or
+  ** contentless tables. */
   if( pRet->eContent!=FTS5_CONTENT_NORMAL ){
     pRet->bLocale = 1;
   }
@@ -1028,7 +1030,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
     rc = SQLITE_ERROR;
     if( pConfig->pzErrmsg ){
       assert( 0==*pConfig->pzErrmsg );
-      *pConfig->pzErrmsg = sqlite3_mprintf("invalid fts5 file format "
+      sqlite3Fts5ConfigErrmsg(pConfig, "invalid fts5 file format "
           "(found %d, expected %d or %d) - run 'rebuild'",
           iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
       );
@@ -1043,6 +1045,11 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   return rc;
 }
 
+/*
+** Set (*pConfig->pzErrmsg) to point to an sqlite3_malloc()ed buffer 
+** containing the error message created using printf() style formatting
+** string zFmt and its trailing arguments.
+*/
 void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
   va_list ap;                     /* ... printf arguments */
   char *zMsg = 0;
@@ -1050,6 +1057,7 @@ void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
   va_start(ap, zFmt);
   zMsg = sqlite3_vmprintf(zFmt, ap);
   if( pConfig->pzErrmsg ){
+    assert( *pConfig->pzErrmsg==0 );
     *pConfig->pzErrmsg = zMsg;
   }else{
     sqlite3_free(zMsg);

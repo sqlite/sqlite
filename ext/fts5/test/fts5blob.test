@@ -31,8 +31,6 @@ foreach {tn enc locale} {
 
   execsql "PRAGMA encoding = $enc"
 
-  if {$tn==3 || $tn==4} breakpoint
-
   execsql "
     CREATE VIRTUAL TABLE t1 USING fts5(x, y, locale=$locale);
   "
@@ -70,6 +68,20 @@ do_test 1.5.2 { set T(utf16,1) } $T(utf16,0)
 do_test 1.6.1 { set U(utf8,1) } $U(utf8,0)
 do_test 1.6.2 { set U(utf16,1) } $U(utf16,0)
 
+
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y UNINDEXED, locale=1);
+  INSERT INTO t1(rowid, x, y) VALUES(12, 'twelve', X'0000000041424320444546');
+}
+
+breakpoint
+do_execsql_test 2.1 {
+  select rowid, x, quote(y) FROM t1
+} {
+  12 twelve X'0000000041424320444546'
+}
 
 
 finish_test

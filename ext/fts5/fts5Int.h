@@ -206,6 +206,14 @@ struct Fts5TokenizerConfig {
 **
 **       INSERT INTO tbl(tbl, rank) VALUES('prefix-index', $bPrefixIndex);
 **
+** bLocale:
+**   Set to true if locale=1 was specified when the table was created.
+**
+** eEnc:
+**   Set to either FTS5_ENCODING_UNKNOWN, ENCODING_UTF8, or ENCODING_UTF16,
+**   to indicate the encoding used by the database handle. This is initially
+**   set to UNKNOWN, then to one of the other two values the first time it
+**   is required.
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -269,6 +277,10 @@ struct Fts5Config {
 #define FTS5_PATTERN_NONE     0
 #define FTS5_PATTERN_LIKE     65  /* matches SQLITE_INDEX_CONSTRAINT_LIKE */
 #define FTS5_PATTERN_GLOB     66  /* matches SQLITE_INDEX_CONSTRAINT_GLOB */
+
+#define FTS5_ENCODING_UNKNOWN 0
+#define FTS5_ENCODING_UTF8    1
+#define FTS5_ENCODING_UTF16   2
 
 int sqlite3Fts5ConfigParse(
     Fts5Global*, sqlite3*, int, const char **, Fts5Config**, char**
@@ -634,9 +646,9 @@ int sqlite3Fts5FlushToDisk(Fts5Table*);
 
 int sqlite3Fts5ExtractText(
   Fts5Config *pConfig,
-  int bContent,                   /* Loaded from content table */
   sqlite3_value *pVal,            /* Value to extract text from */
-  int *pbResetTokenizer,          /* OUT: True if xSetLocale(NULL) required */
+  int bContent,                   /* Loaded from content table */
+  int *pbResetTokenizer,          /* OUT: True if ClearLocale() required */
   const char **ppText,            /* OUT: Pointer to text buffer */
   int *pnText                     /* OUT: Size of (*ppText) in bytes */
 );
