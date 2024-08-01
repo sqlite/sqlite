@@ -54,6 +54,7 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
+    $a0 errors ?-v|--verbose?
     $a0 help
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
@@ -106,6 +107,11 @@ of sub-processes the test script uses to run tests.
 The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
 available configurations enter "$a0 script help".
+
+The "errors" commands shows the output of all tests that failed in the
+most recent run.  Complete output is shown if the -v or --verbose options
+are used.  Otherwise, an attempt is made to minimize the output to show
+only the parts that contain the error messages.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -398,12 +404,22 @@ if {[llength $argv]==1
     puts "  $dfname $dtm"
   }
 
+  if {![file readable $TRG(dbname)]} {
+    puts "Database missing: $TRG(dbname)"
+    exit
+  }
   sqlite3 mydb $TRG(dbname)
   mydb timeout 2000
   mydb eval BEGIN
 
-  set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
-  set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
+  if {[catch {
+    set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
+    set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
+  } msg]} {
+    puts "Cannot read database: $TRG(dbname)"
+    mydb close
+    exit
+  }
 
   set now [clock_milliseconds]
   set tm [mydb one {
@@ -454,6 +470,47 @@ if {[llength $argv]==1
   }
  
   mydb close
+  exit
+}
+
+#--------------------------------------------------------------------------
+# Check if this is the "errors" command:
+#
+if {[llength $argv]>=1 && [llength $argv]<=2
+ && ([string compare -nocase errors [lindex $argv 0]]==0 ||
+     [string match err* [lindex $argv 0]]==1)
+} {
+  set verbose 0
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$a0=="-v" || $a0=="--verbose" || $a0=="-verbose"} {
+      set verbose 1
+    } else {
+      puts "unknown option: \"$a0\"".  Use --help for more info."
+      exit 1
+    }
+  }
+  set cnt 0
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 2000
+  mydb eval {SELECT displaytype, displayname, output
+               FROM jobs WHERE state='failed'} {
+    puts "**** $displayname ****"
+    if {$verbose || $displaytype!="tcl"} {
+      puts $output
+    } else {
+      foreach line [split $output \n] {
+        if {[string match {!*} $line] || [string match *failed* $line]} {
+          puts $line
+        }
+      }
+    }
+    incr cnt
+  }
+  mydb close
+  if {$cnt==0} {
+    puts "No errors"
+  }
   exit
 }
 
@@ -602,12 +659,6 @@ proc r_get_next_job {iJob} {
 
   return $ret
 }
-
-#rename r_get_next_job r_get_next_job_r
-#proc r_get_next_job {iJob} {
-  #puts [time { set res [r_get_next_job_r $iJob] }]
-  #set res
-#}
 
 # Usage:
 #
