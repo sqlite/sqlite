@@ -380,7 +380,7 @@ do_execsql_test 10.2 {
 
 #-------------------------------------------------------------------------
 reset_db
-ifcapable fts5 {
+ifcapable fts3 {
   do_execsql_test 11.0 {
     CREATE VIRTUAL TABLE ft USING fts3(x);
   }

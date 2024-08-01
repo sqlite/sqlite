@@ -571,7 +571,6 @@ sqlite3.initWorker1API = function(){
       });
       rc.version = sqlite3.version;
       rc.vfsList = sqlite3.capi.sqlite3_js_vfs_list();
-      rc.opfsEnabled = !!sqlite3.opfs;
       return rc;
     },
 
@@ -598,12 +597,6 @@ sqlite3.initWorker1API = function(){
 
     toss: function(ev){
       toss("Testing worker exception");
-    },
-
-    'opfs-tree': async function(ev){
-      if(!sqlite3.opfs) toss("OPFS support is unavailable.");
-      const response = await sqlite3.opfs.treeList();
-      return response;
     }
   }/*wMsgHandler*/;
 

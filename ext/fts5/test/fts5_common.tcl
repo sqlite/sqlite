@@ -114,6 +114,10 @@ proc fts5_test_rowcount {cmd} {
   $cmd xRowCount
 }
 
+proc fts5_test_rowid {cmd} {
+  $cmd xRowid
+}
+
 proc test_queryphrase_cb {cnt cmd} {
   upvar $cnt L 
   for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
@@ -167,6 +171,7 @@ proc fts5_aux_test_functions {db} {
     fts5_test_collist
     fts5_test_tokenize
     fts5_test_rowcount
+    fts5_test_rowid
     fts5_test_all
 
     fts5_test_queryphrase

@@ -17,7 +17,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5corrupt3
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -4267,7 +4267,7 @@ do_test 35.0 {
 
 do_catchsql_test 35.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'e*';
-} {1 {database disk image is malformed}}
+} {1 {fts5: missing row 14 from content table 'main'.'t1_content'}}
 
 #-------------------------------------------------------------------------
 reset_db

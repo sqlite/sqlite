@@ -101,9 +101,20 @@ do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t4 USING fts5(z, tokenize=trigram);
 } {}
 
-breakpoint
 do_execsql_test 4.1 {
   INSERT INTO t4 VALUES('ABCD');
+  INSERT INTO t4 VALUES('DEFG');
 } {}
+
+db close
+sqlite3 db test.db
+
+do_eqp_test 4.1 {
+  SELECT rowid FROM t4 WHERE z LIKE '%abc%'
+} {VIRTUAL TABLE INDEX 0:L0}
+
+do_execsql_test 4.2 {
+  SELECT rowid FROM t4 WHERE z LIKE '%abc%'
+} {1}
 
 finish_test

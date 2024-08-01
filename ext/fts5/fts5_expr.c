@@ -324,7 +324,11 @@ int sqlite3Fts5ExprNew(
   }
 
   sqlite3_free(sParse.apPhrase);
-  *pzErr = sParse.zErr;
+  if( 0==*pzErr ){
+    *pzErr = sParse.zErr;
+  }else{
+    sqlite3_free(sParse.zErr);
+  }
   return sParse.rc;
 }
 
@@ -1871,6 +1875,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     }else if( sCtx.pPhrase->nTerm ){
       sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = (u8)bPrefix;
     }
+    assert( pParse->apPhrase!=0 );
     pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
   }
 
@@ -1890,7 +1895,7 @@ int sqlite3Fts5ExprClonePhrase(
   Fts5ExprPhrase *pOrig = 0;      /* The phrase extracted from pExpr */
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
   TokenCtx sCtx = {0,0,0};        /* Context object for fts5ParseTokenize */
-  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
+  if( !pExpr || iPhrase<0 || iPhrase>=pExpr->nPhrase ){
     rc = SQLITE_RANGE;
   }else{
     pOrig = pExpr->apExprPhrase[iPhrase];
@@ -2465,6 +2470,8 @@ Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
         );
 
     if( pRight->eType==FTS5_EOF ){
+      assert( pParse->apPhrase!=0 );
+      assert( pParse->nPhrase>0 );
       assert( pParse->apPhrase[pParse->nPhrase-1]==pRight->pNear->apPhrase[0] );
       sqlite3Fts5ParseNodeFree(pRight);
       pRet = pLeft;

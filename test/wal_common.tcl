@@ -65,7 +65,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
     set fd [open $filename r+]
     fconfigure $fd -translation binary
-    fconfigure $fd -encoding binary
     seek $fd 0
     puts -nonewline $fd $blob
     close $fd
@@ -73,7 +72,6 @@ proc wal_set_walhdr {filename {intlist {}}} {
 
   set fd [open $filename]
   fconfigure $fd -translation binary
-  fconfigure $fd -encoding binary
   set blob [read $fd 24]
   close $fd
 
@@ -129,5 +127,3 @@ proc incr_tvfs_hdr {file idx incrval} {
   lset ints $idx $v
   set_tvfs_hdr $file $ints
 }
-
-

@@ -1200,6 +1200,7 @@ INCLUDE ../ext/misc/pcachetrace.c
 INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
+INCLUDE ../ext/misc/percentile.c
 #undef sqlite3_base_init
 #define sqlite3_base_init sqlite3_base64_init
 INCLUDE ../ext/misc/base64.c
@@ -1221,9 +1222,9 @@ INCLUDE ../ext/misc/sqlar.c
 #endif
 INCLUDE ../ext/expert/sqlite3expert.h
 INCLUDE ../ext/expert/sqlite3expert.c
-
 INCLUDE ../ext/intck/sqlite3intck.h
 INCLUDE ../ext/intck/sqlite3intck.c
+INCLUDE ../ext/misc/stmtrand.c
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 #define SQLITE_SHELL_HAVE_RECOVER 1
@@ -2420,7 +2421,7 @@ static int shell_callback(
     case MODE_Explain: {
       static const int aExplainWidth[] = {4,       13, 4, 4, 4, 13, 2, 13};
       static const int aExplainMap[] =   {0,       1,  2, 3, 4, 5,  6, 7 };
-      static const int aScanExpWidth[] = {4, 6, 6, 13, 4, 4, 4, 13, 2, 13};
+      static const int aScanExpWidth[] = {4, 15, 6, 13, 4, 4, 4, 13, 2, 13};
       static const int aScanExpMap[] =   {0, 9, 8, 1,  2, 3, 4, 5,  6, 7 };
 
       const int *aWidth = aExplainWidth;
@@ -3430,7 +3431,13 @@ static void display_scanstats(
   if( pArg->scanstatsOn==3 ){
     const char *zSql =
       "  SELECT addr, opcode, p1, p2, p3, p4, p5, comment, nexec,"
-      "   round(ncycle*100.0 / (sum(ncycle) OVER ()), 2)||'%' AS cycles"
+      "   format('% 6s (%.2f%%)',"
+      "      CASE WHEN ncycle<100_000 THEN ncycle || ' '"
+      "         WHEN ncycle<100_000_000 THEN (ncycle/1_000) || 'K'"
+      "         WHEN ncycle<100_000_000_000 THEN (ncycle/1_000_000) || 'M'"
+      "         ELSE (ncycle/1000_000_000) || 'G' END,"
+      "       ncycle*100.0/(sum(ncycle) OVER ())"
+      "   )  AS cycles"
       "   FROM bytecode(?)";
 
     int rc = SQLITE_OK;
@@ -4253,6 +4260,7 @@ static int shell_exec(
         sqlite3_reset(pExplain);
         rc = sqlite3_stmt_explain(pExplain, 2);
         if( rc==SQLITE_OK ){
+          bind_prepared_stmt(pArg, pExplain);
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
             int iEqpId = sqlite3_column_int(pExplain, 0);
@@ -4270,6 +4278,7 @@ static int shell_exec(
           if( rc==SQLITE_OK ){
             pArg->cMode = MODE_Explain;
             assert( sqlite3_stmt_isexplain(pExplain)==1 );
+            bind_prepared_stmt(pArg, pExplain);
             explain_data_prepare(pArg, pExplain);
             exec_prepared_stmt(pArg, pExplain);
             explain_data_delete(pArg);
@@ -5364,7 +5373,9 @@ static void open_db(ShellState *p, int openFlags){
 #endif
     sqlite3_shathree_init(p->db, 0, 0);
     sqlite3_uint_init(p->db, 0, 0);
+    sqlite3_stmtrand_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
+    sqlite3_percentile_init(p->db, 0, 0);
     sqlite3_base64_init(p->db, 0, 0);
     sqlite3_base85_init(p->db, 0, 0);
     sqlite3_regexp_init(p->db, 0, 0);
@@ -5517,15 +5528,18 @@ static char **readline_completion(const char *zText, int iStart, int iEnd){
 
 #elif HAVE_LINENOISE
 /*
-** Linenoise completion callback
+** Linenoise completion callback. Note that the 3rd argument is from
+** the "msteveb" version of linenoise, not the "antirez" version.
 */
-static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
+static void linenoise_completion(const char *zLine, linenoiseCompletions *lc,
+                                 void *pUserData){
   i64 nLine = strlen(zLine);
   i64 i, iStart;
   sqlite3_stmt *pStmt = 0;
   char *zSql;
   char zBuf[1000];
 
+  UNUSED_PARAMETER(pUserData);
   if( nLine>(i64)sizeof(zBuf)-30 ) return;
   if( zLine[0]=='.' || zLine[0]=='#') return;
   for(i=nLine-1; i>=0 && (isalnum(zLine[i]) || zLine[i]=='_'); i--){}
@@ -8951,6 +8965,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         eputf("%s: empty file\n", sCtx.zFile);
         import_cleanup(&sCtx);
         rc = 1;
+        sqlite3_free(zCreate);
         goto meta_command_exit;
       }
       zCreate = sqlite3_mprintf("%z%z\n", zCreate, zColDefs);
@@ -8977,7 +8992,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
-    nByte = strlen(zSql);    
     rc =  sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     zSql = 0;
@@ -8996,16 +9010,21 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_finalize(pStmt);
     pStmt = 0;
     if( nCol==0 ) return 0; /* no columns, no error */
-    zSql = sqlite3_malloc64( nByte*2 + 20 + nCol*2 );
+
+    nByte = 64                 /* space for "INSERT INTO", "VALUES(", ")\0" */
+          + (zSchema ? strlen(zSchema)*2 + 2: 0)  /* Quoted schema name */
+          + strlen(zTable)*2 + 2                  /* Quoted table name */
+          + nCol*2;            /* Space for ",?" for each column */
+    zSql = sqlite3_malloc64( nByte );
     if( zSql==0 ){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
     if( zSchema ){
-      sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
+      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
                        zSchema, zTable);
     }else{
-      sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
+      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
     }
     j = strlen30(zSql);
     for(i=1; i<nCol; i++){
@@ -9014,6 +9033,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
+    assert( j<nByte );
     if( eVerbose>=2 ){
       oputf("Insert using: %s\n", zSql);
     }
@@ -10896,7 +10916,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef YYCOVERAGE
     {"parser_coverage",    SQLITE_TESTCTRL_PARSER_COVERAGE,0,""             },
 #endif
-    {"pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,0, "OFFSET  "       },
+    {"pending_byte",       SQLITE_TESTCTRL_PENDING_BYTE,1, "OFFSET  "       },
     {"prng_restore",       SQLITE_TESTCTRL_PRNG_RESTORE,0, ""               },
     {"prng_save",          SQLITE_TESTCTRL_PRNG_SAVE,   0, ""               },
     {"prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,   0, "SEED ?db?"      },
@@ -11956,27 +11976,29 @@ static char *find_home_dir(int clearFlag){
 /*
 ** On non-Windows platforms, look for $XDG_CONFIG_HOME.
 ** If ${XDG_CONFIG_HOME}/sqlite3/sqliterc is found, return
-** the path to it, else return 0. The result is cached for
-** subsequent calls.
+** the path to it.  If there is no $(XDG_CONFIG_HOME) then
+** look for $(HOME)/.config/sqlite3/sqliterc and if found
+** return that.  If none of these are found, return 0.
+**
+** The string returned is obtained from sqlite3_malloc() and
+** should be freed by the caller.
 */
-static const char *find_xdg_config(void){
+static char *find_xdg_config(void){
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN32_WCE) \
      || defined(__RTP__) || defined(_WRS_KERNEL)
   return 0;
 #else
-  static int alreadyTried = 0;
-  static char *zConfig = 0;
+  char *zConfig = 0;
   const char *zXdgHome;
 
-  if( alreadyTried!=0 ){
-    return zConfig;
-  }
-  alreadyTried = 1;
   zXdgHome = getenv("XDG_CONFIG_HOME");
   if( zXdgHome==0 ){
-    return 0;
+    const char *zHome = getenv("HOME");
+    if( zHome==0 ) return 0;
+    zConfig = sqlite3_mprintf("%s/.config/sqlite3/sqliterc", zHome);
+  }else{
+    zConfig = sqlite3_mprintf("%s/sqlite3/sqliterc", zXdgHome);
   }
-  zConfig = sqlite3_mprintf("%s/sqlite3/sqliterc", zXdgHome);
   shell_check_oom(zConfig);
   if( access(zConfig,0)!=0 ){
     sqlite3_free(zConfig);
@@ -12004,7 +12026,7 @@ static void process_sqliterc(
   int savedLineno = p->lineno;
 
   if( sqliterc == NULL ){
-    sqliterc = find_xdg_config();
+    sqliterc = zBuf = find_xdg_config();
   }
   if( sqliterc == NULL ){
     home_dir = find_home_dir(0);
@@ -12740,8 +12762,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       if( azCmd[i][0]=='.' ){
         rc = do_meta_command(azCmd[i], &data);
         if( rc ){
-          free(azCmd);
-          return rc==2 ? 0 : rc;
+          if( rc==2 ) rc = 0;
+          goto shell_main_exit;
         }
       }else{
         open_db(&data, 0);
@@ -12754,8 +12776,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
             eputf("Error: unable to process SQL: %s\n", azCmd[i]);
           }
           sqlite3_free(zErrMsg);
-          free(azCmd);
-          return rc!=0 ? rc : 1;
+          if( rc==0 ) rc = 1;
+          goto shell_main_exit;
         }
       }
     }
@@ -12793,7 +12815,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if HAVE_READLINE || HAVE_EDITLINE
       rl_attempted_completion_function = readline_completion;
 #elif HAVE_LINENOISE
-      linenoiseSetCompletionCallback(linenoise_completion);
+      linenoiseSetCompletionCallback(linenoise_completion, NULL);
 #endif
       data.in = 0;
       rc = process_input(&data);
@@ -12815,6 +12837,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     expertFinish(&data, 1, 0);
   }
 #endif
+ shell_main_exit:
   free(azCmd);
   set_table_name(&data, 0);
   if( data.db ){
@@ -12847,7 +12870,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
           (unsigned int)(sqlite3_memory_used()-mem_main_enter));
   }
 #endif
-#endif /* !SQLITE_SHELL_FIDDLE */
+#else /* SQLITE_SHELL_FIDDLE... */
+  shell_main_exit:
+#endif
   return rc;
 }
 

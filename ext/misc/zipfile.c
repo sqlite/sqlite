@@ -29,7 +29,9 @@ SQLITE_EXTENSION_INIT1
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <stdint.h>
+#ifndef SQLITE_NO_STDINT
+#  include <stdint.h>
+#endif
 
 #include <zlib.h>
 
