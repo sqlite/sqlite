@@ -473,6 +473,32 @@ if {[llength $argv]==1
   exit
 }
 
+# Scan the output of all jobs looking for the summary lines that
+# report the number of test cases and the number of errors.
+# Aggregate these numbers and return them.
+#
+proc aggregate_test_counts {db} {
+  set ncase 0
+  set nerr 0
+  $db eval {SELECT output FROM jobs WHERE displaytype IN ('tcl','fuzz')} {
+    set n 0
+    set m 0
+    if {[regexp {(\d+) errors out of (\d+) tests} $output all n m]
+        && [string is integer -strict $n]
+        && [string is integer -strict $m]} {
+      incr ncase $m
+      incr nerr $n
+    } elseif {[regexp {sessionfuzz.*: *(\d+) cases, (\d+) crash} $output \
+                      all m n]
+              && [string is integer -strict $m]
+              && [string is integer -strict $n]} {
+      incr ncase $m
+      incr nerr $n
+    }
+  }
+  return [list $nerr $ncase]
+}
+
 #--------------------------------------------------------------------------
 # Check if this is the "errors" command:
 #
@@ -507,10 +533,9 @@ if {[llength $argv]>=1 && [llength $argv]<=2
     }
     incr cnt
   }
+  set summary [aggregate_test_counts mydb]
   mydb close
-  if {$cnt==0} {
-    puts "No errors"
-  }
+  puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
   exit
 }
 
