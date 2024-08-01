@@ -795,17 +795,7 @@ VERSION
 program_prefix
 TCLLIBDIR
 HAVE_TCL
-TCL_SHLIB_SUFFIX
-TCL_STUB_LIB_SPEC
-TCL_STUB_LIB_FLAG
-TCL_STUB_LIB_FILE
 TCL_LIB_SPEC
-TCL_LIB_FLAG
-TCL_LIB_FILE
-TCL_INCLUDE_SPEC
-TCL_SRC_DIR
-TCL_BIN_DIR
-TCL_VERSION
 TCLSH_CMD
 INSTALL_DATA
 INSTALL_SCRIPT
@@ -3944,13 +3934,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3947: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3937: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3950: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3940: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3953: output\"" >&5)
+  (eval echo "\"\$as_me:3943: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5156,7 +5146,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5159 "configure"' > conftest.$ac_ext
+  echo '#line 5149 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6681,11 +6671,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6684: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6674: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6688: \$? = $ac_status" >&5
+   echo "$as_me:6678: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7020,11 +7010,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7023: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7013: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7027: \$? = $ac_status" >&5
+   echo "$as_me:7017: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7125,11 +7115,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7128: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7118: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7132: \$? = $ac_status" >&5
+   echo "$as_me:7122: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7180,11 +7170,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7183: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7173: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7187: \$? = $ac_status" >&5
+   echo "$as_me:7177: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9560,7 +9550,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9563 "configure"
+#line 9553 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9656,7 +9646,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9659 "configure"
+#line 9649 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10397,16 +10387,9 @@ if test x"${with_tcl}" != x; then
 $as_echo "loading TCL configuration from ${tclconfig}" >&6; }
     . ${tclconfig}
 
-
-
-
-
-
-
-
-
-
-
+    # There are lots of other configuration variables that are provided by the
+    # tclConfig.sh file and that could be included here.  But as of right now,
+    # TCL_LIB_SPEC is the only what that the Makefile uses.
   fi
   if test x"$TCLSH_CMD" == x; then
     TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}

@@ -11,15 +11,20 @@ to running this script.  Use "make tclsqlite3.c" to generate that file.
 Options:
 
    --build-only         Only build the extension, don't install it
+   --cc COMPILER        Build using this compiler
    --info               Show info on existing SQLite TCL extension installs
    --install-only       Install an extension previously build
-   --uninstall          Uninstall the extension}
+   --uninstall          Uninstall the extension
+
+Other options are retained and passed through into the compiler.}
 
 
 set build 1
 set install 1
 set uninstall 0
 set infoonly 0
+set CC {}
+set OPTS {}
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
@@ -30,6 +35,11 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
     set uninstall 1
   } elseif {$a0=="--info"} {
     set infoonly 1
+  } elseif {$a0=="--cc" && $ii+1<[llength $argv]} {
+    incr ii
+    set CC [lindex $argv $ii]
+  } elseif {[string match -* $a0]} {
+    append OPTS " $a0"
   } else {
     puts stderr "Unknown option: \"$a0\"\n"
     puts stderr $help
@@ -84,15 +94,12 @@ set TCLMAJOR 8
 regexp {TCL_MAJOR_VERSION='(\d)'} $tclConfig all TCLMAJOR
 set SUFFIX so
 regexp {TCL_SHLIB_SUFFIX='\.([^']+)'} $tclConfig all SUFFIX
-set CC gcc
-regexp {TCL_CC='([^']+)'} $tclConfig all CC
+if {$CC==""} {
+  set CC gcc
+  regexp {TCL_CC='([^']+)'} $tclConfig all CC
+}
 set CFLAGS -fPIC
 regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
-set opt {}
-regexp {TCL_CFLAGS_OPTIMIZE='([^']+)'} $tclConfig all opt
-if {$opt!=""} {
-  append CFLAGS " $opt"
-}
 set LIBS {}
 regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBS
 set INC "-I$srcdir/src"
@@ -104,6 +111,9 @@ if {$inc!=""} {
 set cmd {}
 regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
 set LDFLAGS "$INC -DUSE_TCL_STUBS"
+if {[string length $OPTS]>1} {
+  append LDFLAGS $OPTS
+}
 set CMD [subst $cmd]
 if {$TCLMAJOR>8} {
   set OUT libtcl9sqlite$VERSION.$SUFFIX
@@ -197,7 +207,12 @@ package ifneeded sqlite3 $VERSION \\
   #
   set cmd "$CMD tclsqlite3.c -o $OUT $LIBS"
   puts $cmd
-  exec {*}$cmd
+  if {[catch {
+    exec {*}$cmd
+  } errmsg]} {
+    puts $errmsg
+    exit 1
+  }
 }
 
 

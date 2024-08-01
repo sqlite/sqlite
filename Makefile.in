@@ -1561,7 +1561,7 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 # by --with-tclsh=
 #
 tclextension:	tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
 
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
