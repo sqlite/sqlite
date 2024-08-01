@@ -1556,13 +1556,14 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
-pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
-tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
-	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
-	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
-	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
-	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
+pkgIndex.tcl:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only
+
+tclextension-install:	pkgIndex.tcl
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --install-only
+
+tclextension-uninstall: 
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
 
 clean:
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la

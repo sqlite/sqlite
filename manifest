@@ -1,9 +1,9 @@
-C Work\son\sa\sTCL\sscript\sthat\swill\scompile\sand\sinstall\sthe\sTCL\sextension.\nWorks\son\sLinux\sonly,\sso\sfar.\s\sThis\sis\san\sincremental\scheck-in.
-D 2024-08-01T20:18:10.470
+C New\smakefile\stargets:\stclextension-install\sand\stclextension-uninstall.\s\sSeem\nto\swork\son\sLinux.
+D 2024-08-01T20:26:22.352
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 58c2cc5010aa5fd5e8eef6fe24d4ebcec7dc2e8c56f135d4f49e90a099bbc531
+F Makefile.in 1e1686272e573f924567483d123abc2a1397cf59c0ec823916a1368b46e13382
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 993f8addade63bcac7192416e7161ceee60edcee2376299ea48b2a74c66ac2d5
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -2093,7 +2093,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
-F tool/buildtclext.tcl 0ef183d0786744d13b06fec85e2cd4ee7369dd58c3ef2f684c5a616d952777d4
+F tool/buildtclext.tcl b360c5133169d555b2b2d6aeac8aece43a34babc672dd6c05fd41ebc850cc14f
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8fafc679d91e857602fbbe203144ca98242246660ede5a49c5fec8aaff571151
-R e8c67e263d146ad1487048a2a5cec02e
+P 58babd2aa4b5c9c70e1169cdf09f05eb95d7b13f50bb2ec0e487182288172678
+R 38f4741323b0ec90afecf9f175b90c98
 U drh
-Z b7f53b5d5d52347992c8bf634ae8776a
+Z a4ed4e2858217ff286bef81105749295
 # Remove this line to create a well-formed Fossil manifest.

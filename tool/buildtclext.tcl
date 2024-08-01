@@ -3,6 +3,8 @@
 # library for SQLite.  Run the script with the specific "tclsh" for which
 # the installation should occur.
 #
+# Must do "make tclsqlite3.c" first.
+#
 # Options:
 #
 #    --build-only              Only build the extension, don't install it
