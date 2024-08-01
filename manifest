@@ -1,5 +1,5 @@
-C Clean\sup\sand\srestructure\sthe\sTCL\sconfiguration\ssections\sin\sautoconf.\nThe\snew\s--with-tclsh=FILE\soption\slets\syou\sselect\sthe\sspecific\stclsh\nthat\syou\swant\sto\srun.
-D 2024-08-01T18:10:00.524
+C Work\son\sa\sTCL\sscript\sthat\swill\scompile\sand\sinstall\sthe\sTCL\sextension.\nWorks\son\sLinux\sonly,\sso\sfar.\s\sThis\sis\san\sincremental\scheck-in.
+D 2024-08-01T20:18:10.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2093,6 +2093,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
+F tool/buildtclext.tcl 0ef183d0786744d13b06fec85e2cd4ee7369dd58c3ef2f684c5a616d952777d4
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2201,11 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 173df1478e89996126e172656e35da8026d4ef145b2341ef56213f00ade14f48
-R 9276dc9ad744c7eb260be766cc2b74e8
-T *branch * autoconf-revamp
-T *sym-autoconf-revamp *
-T -sym-trunk *
+P 8fafc679d91e857602fbbe203144ca98242246660ede5a49c5fec8aaff571151
+R e8c67e263d146ad1487048a2a5cec02e
 U drh
-Z c7858b737379341436d4877837104339
+Z b7f53b5d5d52347992c8bf634ae8776a
 # Remove this line to create a well-formed Fossil manifest.
