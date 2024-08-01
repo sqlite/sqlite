@@ -95,6 +95,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
     ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
+    ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
     ["sqlite3_bind_pointer", "int",
      "sqlite3_stmt*", "int", "*", "string:static", "*"],
     ["sqlite3_busy_handler","int", [
@@ -115,6 +116,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
     ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_count", "int", "sqlite3_stmt*"],
+    ["sqlite3_column_decltype", "string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
     ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
@@ -152,6 +154,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
+    ["sqlite3_db_readonly", "int", "sqlite3*", "string"],
     ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
     ["sqlite3_errcode", "int", "sqlite3*"],
     ["sqlite3_errmsg", "string", "sqlite3*"],
@@ -192,10 +195,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_get_autocommit", "int", "sqlite3*"],
     ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
     ["sqlite3_initialize", undefined],
-    /*["sqlite3_interrupt", undefined, "sqlite3*"
-       ^^^ we cannot actually currently support this because JS is
-        single-threaded and we don't have a portable way to access a DB
-        from 2 SharedWorkers concurrently. ],*/
+    ["sqlite3_interrupt", undefined, "sqlite3*"],
+    ["sqlite3_is_interrupted", "int", "sqlite3*"],
     ["sqlite3_keyword_count", "int"],
     ["sqlite3_keyword_name", "int", ["int", "**", "*"]],
     ["sqlite3_keyword_check", "int", ["string", "int"]],
@@ -243,26 +244,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }),
       '*'
     ]],
-    ["sqlite3_set_authorizer", "int", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: "sqlite3_set_authorizer::xAuth",
-        signature: "i(pi"+"ssss)",
-        contextKey: (argv, argIndex)=>argv[0/*(sqlite3*)*/],
-        callProxy: (callback)=>{
-          return (pV, iCode, s0, s1, s2, s3)=>{
-            try{
-              s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
-              s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
-              return callback(pV, iCode, s0, s1, s2, s3) || 0;
-            }catch(e){
-              return e.resultCode || capi.SQLITE_ERROR;
-            }
-          }
-        }
-      }),
-      "*"/*pUserData*/
-    ]],
     ["sqlite3_set_auxdata", undefined, [
       "sqlite3_context*", "int", "*",
       new wasm.xWrap.FuncPtrAdapter({
@@ -276,8 +257,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_status", "int", "int", "*", "*", "int"],
     ["sqlite3_step", "int", "sqlite3_stmt*"],
-    ["sqlite3_stmt_isexplain", "int", ["sqlite3_stmt*"]],
-    ["sqlite3_stmt_readonly", "int", ["sqlite3_stmt*"]],
+    ["sqlite3_stmt_busy", "int", "sqlite3_stmt*"],
+    ["sqlite3_stmt_readonly", "int", "sqlite3_stmt*"],
     ["sqlite3_stmt_status", "int", "sqlite3_stmt*", "int", "int"],
     ["sqlite3_strglob", "int", "string","string"],
     ["sqlite3_stricmp", "int", "string", "string"],
@@ -322,6 +303,38 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
   ]/*wasm.bindingSignatures*/;
 
+  if( !!wasm.exports.sqlite3_stmt_explain ){
+    wasm.bindingSignatures.push(
+      ["sqlite3_stmt_explain", "int", "sqlite3_stmt*", "int"],
+      ["sqlite3_stmt_isexplain", "int", "sqlite3_stmt*"]
+    );
+  }
+
+  if( !!wasm.exports.sqlite3_set_authorizer ){
+    wasm.bindingSignatures.push(
+      ["sqlite3_set_authorizer", "int", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: "sqlite3_set_authorizer::xAuth",
+          signature: "i(pi"+"ssss)",
+          contextKey: (argv, argIndex)=>argv[0/*(sqlite3*)*/],
+          callProxy: (callback)=>{
+            return (pV, iCode, s0, s1, s2, s3)=>{
+              try{
+                s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
+                s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
+                return callback(pV, iCode, s0, s1, s2, s3) || 0;
+              }catch(e){
+                return e.resultCode || capi.SQLITE_ERROR;
+              }
+            }
+          }
+        }),
+        "*"/*pUserData*/
+      ]]
+    );
+  }/* sqlite3_set_authorizer() */
+
   if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
     /* ^^^ "the problem" is that this is an option feature and the
        build-time function-export list does not currently take
@@ -364,11 +377,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
     ["sqlite3_changes64","i64", ["sqlite3*"]],
     ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
-    ["sqlite3_create_module", "int",
-     ["sqlite3*","string","sqlite3_module*","*"]],
-    ["sqlite3_create_module_v2", "int",
-     ["sqlite3*","string","sqlite3_module*","*","*"]],
-    ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
     ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
     /* Careful! Short version: de/serialize() are problematic because they
        might use a different allocator than the user for managing the
@@ -382,26 +390,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
-    ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
-    ["sqlite3_preupdate_count", "int", "sqlite3*"],
-    ["sqlite3_preupdate_depth", "int", "sqlite3*"],
-    ["sqlite3_preupdate_hook", "*", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_preupdate_hook',
-        signature: "v(ppippjj)",
-        contextKey: (argv)=>argv[0/* sqlite3* */],
-        callProxy: (callback)=>{
-          return (p,db,op,zDb,zTbl,iKey1,iKey2)=>{
-            callback(p, db, op, wasm.cstrToJs(zDb), wasm.cstrToJs(zTbl),
-                     iKey1, iKey2);
-          };
-        }
-      }),
-      "*"
-    ]],
-    ["sqlite3_preupdate_new", "int", ["sqlite3*", "int", "**"]],
-    ["sqlite3_preupdate_old", "int", ["sqlite3*", "int", "**"]],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
@@ -424,21 +412,59 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       "*"
     ]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
-    ["sqlite3_value_int64","i64", "sqlite3_value*"],
-    ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
-    ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
-    ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],
-    ["sqlite3_vtab_in_first", "int", "sqlite3_value*", "**"],
-    ["sqlite3_vtab_in_next", "int", "sqlite3_value*", "**"],
-    /*["sqlite3_vtab_config" is variadic and requires a hand-written
-      proxy.] */
-    ["sqlite3_vtab_nochange","int", "sqlite3_context*"],
-    ["sqlite3_vtab_on_conflict","int", "sqlite3*"],
-    ["sqlite3_vtab_rhs_value","int", "sqlite3_index_info*", "int", "**"]
+    ["sqlite3_value_int64","i64", "sqlite3_value*"]
   ];
 
+  if( wasm.bigIntEnabled && !!wasm.exports.sqlite3_declare_vtab ){
+    wasm.bindingSignatures.int64.push(
+      ["sqlite3_create_module", "int",
+       ["sqlite3*","string","sqlite3_module*","*"]],
+      ["sqlite3_create_module_v2", "int",
+       ["sqlite3*","string","sqlite3_module*","*","*"]],
+      ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
+      ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
+      ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
+      ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],
+      ["sqlite3_vtab_in_first", "int", "sqlite3_value*", "**"],
+      ["sqlite3_vtab_in_next", "int", "sqlite3_value*", "**"],
+      /*["sqlite3_vtab_config" is variadic and requires a hand-written
+        proxy.] */
+      ["sqlite3_vtab_nochange","int", "sqlite3_context*"],
+      ["sqlite3_vtab_on_conflict","int", "sqlite3*"],
+      ["sqlite3_vtab_rhs_value","int", "sqlite3_index_info*", "int", "**"]
+    );
+  }/* virtual table APIs */
+
+  if(wasm.bigIntEnabled && !!wasm.exports.sqlite3_preupdate_hook){
+    wasm.bindingSignatures.int64.push(
+      ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
+      ["sqlite3_preupdate_count", "int", "sqlite3*"],
+      ["sqlite3_preupdate_depth", "int", "sqlite3*"],
+      ["sqlite3_preupdate_hook", "*", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_preupdate_hook',
+          signature: "v(ppippjj)",
+          contextKey: (argv)=>argv[0/* sqlite3* */],
+          callProxy: (callback)=>{
+            return (p,db,op,zDb,zTbl,iKey1,iKey2)=>{
+              callback(p, db, op, wasm.cstrToJs(zDb), wasm.cstrToJs(zTbl),
+                       iKey1, iKey2);
+            };
+          }
+        }),
+        "*"
+      ]],
+      ["sqlite3_preupdate_new", "int", ["sqlite3*", "int", "**"]],
+      ["sqlite3_preupdate_old", "int", ["sqlite3*", "int", "**"]]
+    );
+  } /* preupdate API */
+
   // Add session/changeset APIs...
-  if(wasm.bigIntEnabled && !!wasm.exports.sqlite3changegroup_add){
+  if(wasm.bigIntEnabled
+     && !!wasm.exports.sqlite3changegroup_add
+     && !!wasm.exports.sqlite3session_create
+     && !!wasm.exports.sqlite3_preupdate_hook /* required by the session API */){
     /**
        FuncPtrAdapter options for session-related callbacks with the
        native signature "i(ps)". This proxy converts the 2nd argument
@@ -714,12 +740,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ('sqlite3*', (v)=>
       __xArgPtr((v instanceof (sqlite3?.oo1?.DB || nilType))
            ? v.pointer : v))
-    ('sqlite3_index_info*', (v)=>
-      __xArgPtr((v instanceof (capi.sqlite3_index_info || nilType))
-           ? v.pointer : v))
-    ('sqlite3_module*', (v)=>
-      __xArgPtr((v instanceof (capi.sqlite3_module || nilType))
-           ? v.pointer : v))
     /**
        `sqlite3_vfs*`:
 
@@ -742,6 +762,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return __xArgPtr((v instanceof (capi.sqlite3_vfs || nilType))
                        ? v.pointer : v);
     });
+    if( wasm.exports.sqlite3_declare_vtab ){
+      wasm.xWrap.argAdapter('sqlite3_index_info*', (v)=>
+        __xArgPtr((v instanceof (capi.sqlite3_index_info || nilType))
+                  ? v.pointer : v))
+      ('sqlite3_module*', (v)=>
+        __xArgPtr((v instanceof (capi.sqlite3_module || nilType))
+                  ? v.pointer : v)
+      );
+    }
 
     const __xRcPtr = wasm.xWrap.resultAdapter('*');
     wasm.xWrap.resultAdapter('sqlite3*', __xRcPtr)
@@ -1020,12 +1049,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       'sqlite3_update_hook'
     ]) {
       const x = wasm.exports[name];
+      if( !x ){
+        /* assume it was built without this API */
+        continue;
+      }
       closeArgs.length = x.length/*==argument count*/
       /* recall that undefined entries translate to 0 when passed to
          WASM. */;
       try{ capi[name](...closeArgs) }
       catch(e){
-        console.warn("close-time call of",name+"(",closeArgs,") threw:",e);
+        sqlite3.config.warn("close-time call of",name+"(",closeArgs,") threw:",e);
       }
     }
     const m = __dbCleanupMap(pDb, 0);
@@ -1076,7 +1109,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_close_v2()*/
 
-  if(capi.sqlite3session_table_filter){
+  if(capi.sqlite3session_create){
     const __sqlite3SessionDelete = wasm.xWrap(
       'sqlite3session_delete', undefined, ['sqlite3_session*']
     );

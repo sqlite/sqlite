@@ -104,8 +104,8 @@
 #ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
 #endif
-#ifndef SQLITE_ENABLE_FTS4
-#  define SQLITE_ENABLE_FTS4 1
+#ifndef SQLITE_ENABLE_FTS5
+#  define SQLITE_ENABLE_FTS5 1
 #endif
 #ifndef SQLITE_ENABLE_MATH_FUNCTIONS
 #  define SQLITE_ENABLE_MATH_FUNCTIONS 1
@@ -170,6 +170,48 @@
 
 #ifdef SQLITE_WASM_EXTRA_INIT
 #  define SQLITE_EXTRA_INIT sqlite3_wasm_extra_init
+#endif
+
+/*
+** If SQLITE_WASM_MINIMAL is defined, undefine most of the ENABLE
+** macros.
+*/
+#ifdef SQLITE_WASM_MINIMAL
+#  undef SQLITE_ENABLE_DBPAGE_VTAB
+#  undef SQLITE_ENABLE_DBSTAT_VTAB
+#  undef SQLITE_ENABLE_EXPLAIN_COMMENTS
+#  undef SQLITE_ENABLE_FTS5
+#  undef SQLITE_ENABLE_OFFSET_SQL_FUNC
+#  undef SQLITE_ENABLE_PREUPDATE_HOOK
+#  undef SQLITE_ENABLE_RTREE
+#  undef SQLITE_ENABLE_SESSION
+#  undef SQLITE_ENABLE_STMTVTAB
+#  undef SQLITE_OMIT_AUTHORIZATION
+#  define SQLITE_OMIT_AUTHORIZATION
+/*Reminder re. custom sqlite3.c:
+
+  fossil clean -x
+  ./configure
+  OPTS='-DSQLITE_OMIT_VIRTUALTABLE -DSQLITE_OMIT_EXPLAIN -DSQLITE_OMIT_TRIGGER' make -e sqlite3
+*/
+/*Requires a custom sqlite3.c
+#  undef SQLITE_OMIT_TRIGGER
+#  define SQLITE_OMIT_TRIGGER
+*/
+/*TODO (requires build tweaks)
+#  undef SQLITE_OMIT_WINDOWFUNC
+#  define SQLITE_OMIT_WINDOWFUNC
+*/
+/*Requires a custom sqlite3.c
+#  undef SQLITE_OMIT_EXPLAIN
+#  define SQLITE_OMIT_EXPLAIN
+*/
+/*Requires a custom sqlite3.c
+#  undef SQLITE_OMIT_VIRTUALTABLE
+#  define SQLITE_OMIT_VIRTUALTABLE
+*/
+#  undef SQLITE_OMIT_JSON
+#  define SQLITE_OMIT_JSON
 #endif
 
 #include <assert.h>
@@ -499,6 +541,7 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(changeset){
+#ifdef SQLITE_CHANGESETSTART_INVERT
     DefInt(SQLITE_CHANGESETSTART_INVERT);
     DefInt(SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
     DefInt(SQLITE_CHANGESETAPPLY_INVERT);
@@ -513,6 +556,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_CHANGESET_OMIT);
     DefInt(SQLITE_CHANGESET_REPLACE);
     DefInt(SQLITE_CHANGESET_ABORT);
+#endif
   } _DefGroup;
 
   DefGroup(config){
@@ -564,7 +608,6 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_DBCONFIG_LOOKASIDE);
     DefInt(SQLITE_DBCONFIG_ENABLE_FKEY);
     DefInt(SQLITE_DBCONFIG_ENABLE_TRIGGER);
-    DefInt(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
     DefInt(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
     DefInt(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
     DefInt(SQLITE_DBCONFIG_ENABLE_QPSG);
@@ -859,8 +902,10 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(session){
+#ifdef SQLITE_SESSION_CONFIG_STRMSIZE
     DefInt(SQLITE_SESSION_CONFIG_STRMSIZE);
     DefInt(SQLITE_SESSION_OBJCONFIG_SIZE);
+#endif
   } _DefGroup;
 
   DefGroup(sqlite3Status){
@@ -922,6 +967,7 @@ const char * sqlite3__wasm_enum_json(void){
   } _DefGroup;
 
   DefGroup(vtab) {
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
     DefInt(SQLITE_INDEX_SCAN_UNIQUE);
     DefInt(SQLITE_INDEX_CONSTRAINT_EQ);
     DefInt(SQLITE_INDEX_CONSTRAINT_GT);
@@ -949,6 +995,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_FAIL);
     //DefInt(SQLITE_ABORT); // Also an error code
     DefInt(SQLITE_REPLACE);
+#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
   } _DefGroup;
 
 #undef DefGroup
@@ -1108,6 +1155,7 @@ const char * sqlite3__wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
     /**
      ** Workaround: in order to map the various inner structs from
      ** sqlite3_index_info, we have to uplift those into constructs we
@@ -1183,6 +1231,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(colUsed,            "j");
     } _StructBinder;
 #undef CurrentStruct
+
+#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
 
 #if SQLITE_WASM_TESTS
 #define CurrentStruct WasmTestStruct
@@ -1553,6 +1603,7 @@ sqlite3_kvvfs_methods * sqlite3__wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
 
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_WASM_MINIMAL)
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
@@ -1575,6 +1626,7 @@ int sqlite3__wasm_vtab_config(sqlite3 *pDb, int op, int arg){
     return SQLITE_MISUSE;
   }
 }
+#endif /*!SQLITE_OMIT_VIRTUALTABLE*/
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly

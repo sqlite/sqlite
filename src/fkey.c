@@ -1328,7 +1328,8 @@ static Trigger *fkActionTrigger(
       SrcList *pSrc;
       Expr *pRaise; 
 
-      pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
+      pRaise = sqlite3Expr(db, TK_STRING, "FOREIGN KEY constraint failed"),
+      pRaise = sqlite3PExpr(pParse, TK_RAISE, pRaise, 0);
       if( pRaise ){
         pRaise->affExpr = OE_Abort;
       }

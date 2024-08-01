@@ -399,7 +399,7 @@ if {[llength $argv]==1
   }
 
   sqlite3 mydb $TRG(dbname)
-  mydb timeout 1000
+  mydb timeout 2000
   mydb eval BEGIN
 
   set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
@@ -447,7 +447,7 @@ if {[llength $argv]==1
     } job {
       display_job [array get job]
     }
-    set nOmit [db one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
       puts "$nOmit jobs omitted due to failures"
     }
@@ -964,6 +964,7 @@ proc add_jobs_from_cmdline {patternlist} {
 proc make_new_testset {} {
   global TRG
 
+  trdb eval {PRAGMA journal_mode=WAL;}
   r_write_db {
     trdb eval $TRG(schema)
     set nJob $TRG(nJob)
@@ -1118,7 +1119,7 @@ proc launch_another_job {iJob} {
     set fd [open "|$TRG(runcmd) 2>@1" r]
     cd $pwd
 
-    fconfigure $fd -blocking false
+    fconfigure $fd -blocking false -translation binary
     fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
   }
 

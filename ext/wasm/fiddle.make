@@ -42,8 +42,16 @@ fiddle.emcc-flags = \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT) $(SHELL_OPT) \
+  -USQLITE_WASM_MINIMAL \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc
+
+# Flags specifically for debug builds of fiddle. Performance suffers
+# greatly in debug builds.
+fiddle.emcc-flags.debug := $(fiddle.emcc-flags) \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_SELECTTRACE \
+  -DSQLITE_ENABLE_WHERETRACE
 
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
@@ -52,37 +60,52 @@ fiddle.EXPORTED_FUNCTIONS.in := \
 $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
-fiddle-module.js := $(dir.fiddle)/fiddle-module.js
-fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
-
-fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
-$(fiddle.SOAP.js): $(SOAP.js)
-	cp $< $@
-
 $(eval $(call call-make-pre-post,fiddle-module,vanilla))
-$(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
-    $(EXPORTED_FUNCTIONS.fiddle) \
-    $(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) $(fiddle.SOAP.js)
-	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
-    $(pre-post-fiddle-module-vanilla.flags) \
-    $(fiddle.cses)
-	$(maybe-wasm-strip) $(fiddle-module.wasm)
-	gzip < $@ > $@.gz
-	gzip < $(fiddle-module.wasm) > $(fiddle-module.wasm).gz
 
-$(dir.fiddle)/fiddle.js.gz: $(dir.fiddle)/fiddle.js
-	gzip < $< > $@
+########################################################################
+# emit rules for one of the two fiddle builds. $1 must be
+# either $(dir.fiddle) or $(dir.fiddle-debug). $2 must be empty
+# in the former case and .debug in the latter.
+define make-fiddle-rules
+fiddle-module.js$(2) := $(1)/fiddle-module.js
+fiddle-module.wasm$(2) := $$(subst .js,.wasm,$$(fiddle-module.js$(2)))
+$$(fiddle-module.js$(2)): $$(MAKEFILE) $$(MAKEFILE.fiddle) \
+    $$(EXPORTED_FUNCTIONS.fiddle) \
+    $$(fiddle.cses) $$(pre-post-fiddle-module-vanilla.deps) $$(SOAP.js)
+	@test -d "$$(dir $$@)" || mkdir -p "$$(dir $$@)"
+	$$(emcc.bin) -o $$@ $$(fiddle.emcc-flags$(2)) \
+    $$(pre-post-fiddle-module-vanilla.flags) \
+    $$(fiddle.cses)
+	$$(maybe-wasm-strip) $$(fiddle-module.wasm$(2))
+	@cp -p $$(SOAP.js) $$(dir $$@)
+	@if [[ x.debug = x$(2) ]]; then \
+		cp -p $$(dir.fiddle)/index.html \
+			$$(dir.fiddle)/fiddle.js \
+			$$(dir.fiddle)/fiddle-worker.js \
+			$$(dir $$@)/.; \
+	fi
+	@for i in $(1)/*.*js $(1)/*.html $(1)/*.wasm; do \
+		test -f $$$${i} || continue; \
+		gzip < $$$${i} > $$$${i}.gz; \
+	done
+fiddle$(2): $$(fiddle-module.js$(2)) $(1)/fiddle.js.gz
+endef
+
+$(eval $(call make-fiddle-rules,$(dir.fiddle)))
+$(eval $(call make-fiddle-rules,$(dir.fiddle-debug),.debug))
+fiddle: $(fiddle-module.js) $(fiddle-module.js.debug)
+fiddle.debug: $(fiddle-module.js.debug)
 
 clean: clean-fiddle
 clean-fiddle:
-	rm -f $(fiddle-module.js) $(fiddle-module.js).gz \
-        $(fiddle-module.wasm) $(fiddle-module.wasm).gz \
-        $(dir.fiddle)/$(SOAP.js) \
-        $(dir.fiddle)/fiddle-module.worker.js \
+	rm -f $(fiddle-module.js) \
+        $(fiddle-module.wasm) \
+        $(dir.fiddle)/sqlite3-opfs-*.js \
+        $(dir.fiddle)/*.gz \
         EXPORTED_FUNCTIONS.fiddle
-.PHONY: fiddle
-fiddle: $(fiddle-module.js) $(dir.fiddle)/fiddle.js.gz
+	rm -fr $(dir.fiddle-debug)
+.PHONY: fiddle fiddle.debug
 all: fiddle
 
 ########################################################################

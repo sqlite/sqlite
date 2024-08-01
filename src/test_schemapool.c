@@ -19,7 +19,7 @@
 */
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_TEST)
 
-#include <tcl.h>
+#include "tclsqlite.h"
 
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
 
@@ -279,4 +279,3 @@ int Sqlitetestschemapool_Init(Tcl_Interp *interp){
 #endif /* ifdef SQLITE_ENABLE_SHARED_SCHEMA */
   return TCL_OK;
 }
-

@@ -156,8 +156,7 @@
 
    - 'dealloc()` must behave like C's `free()`, accepting either a
      pointer returned from its allocation counterpart or the values
-     null/0 (for which it must be a no-op). allocating N bytes of
-     memory and returning its pointer. In Emscripten this is
+     null/0 (for which it must be a no-op). In Emscripten this is
      conventionally made available via `Module['_free']`.
 
    APIs which require allocation routines are explicitly documented as
@@ -730,22 +729,23 @@ globalThis.WhWasmUtilInstaller = function(target){
   };
 
   /**
-     The counterpart of peek(), this sets a numeric value at
-     the given WASM heap address, using the type to define how many
-     bytes are written. Throws if given an invalid type. See
-     peek() for details about the type argument. If the 3rd
-     argument ends with `*` then it is treated as a pointer type and
-     this function behaves as if the 3rd argument were `i32`.
+     The counterpart of peek(), this sets a numeric value at the given
+     WASM heap address, using the 3rd argument to define how many
+     bytes are written. Throws if given an invalid type. See peek()
+     for details about the `type` argument. If the 3rd argument ends
+     with `*` then it is treated as a pointer type and this function
+     behaves as if the 3rd argument were `i32`.
 
      If the first argument is an array, it is treated like a list
      of pointers and the given value is written to each one.
 
-     Returns `this`. (Prior to 2022-12-09 it returns this function.)
+     Returns `this`. (Prior to 2022-12-09 it returned this function.)
 
-     ACHTUNG: calling this often, e.g. in a loop, can have a noticably
-     painful impact on performance. Rather than doing so, use
-     heapForSize() to fetch the heap object and assign directly to it
-     or use the heap's set() method.
+     ACHTUNG: calling this often, e.g. in a loop to populate a large
+     chunk of memory, can have a noticably painful impact on
+     performance. Rather than doing so, use heapForSize() to fetch the
+     heap object and assign directly to it or use the heap's set()
+     method.
   */
   target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;

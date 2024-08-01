@@ -1214,7 +1214,7 @@ case OP_HaltIfNull: {      /* in3 */
   /* no break */ deliberate_fall_through
 }
 
-/* Opcode:  Halt P1 P2 * P4 P5
+/* Opcode:  Halt P1 P2 P3 P4 P5
 **
 ** Exit immediately.  All open cursors, etc are closed
 ** automatically.
@@ -1227,18 +1227,22 @@ case OP_HaltIfNull: {      /* in3 */
 ** then back out all changes that have occurred during this execution of the
 ** VDBE, but do not rollback the transaction.
 **
-** If P4 is not null then it is an error message string.
+** If P3 is not zero and P4 is NULL, then P3 is a register that holds the
+** text of an error message.
 **
-** P5 is a value between 0 and 4, inclusive, that modifies the P4 string.
+** If P3 is zero and P4 is not null then the error message string is held
+** in P4.
 **
-**    0:  (no change)
+** P5 is a value between 1 and 4, inclusive, then the P4 error message
+** string is modified as follows:
+**
 **    1:  NOT NULL constraint failed: P4
 **    2:  UNIQUE constraint failed: P4
 **    3:  CHECK constraint failed: P4
 **    4:  FOREIGN KEY constraint failed: P4
 **
-** If P5 is not zero and P4 is NULL, then everything after the ":" is
-** omitted.
+** If P3 is zero and P5 is not zero and P4 is NULL, then everything after
+** the ":" is omitted.
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
@@ -1251,6 +1255,9 @@ case OP_Halt: {
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
+  assert( pOp->p4type==P4_NOTUSED
+       || pOp->p4type==P4_STATIC
+       || pOp->p4type==P4_DYNAMIC );
 
   /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
   ** something is wrong with the code generator.  Raise an assertion in order
@@ -1281,7 +1288,12 @@ case OP_Halt: {
   p->errorAction = (u8)pOp->p2;
   assert( pOp->p5<=4 );
   if( p->rc ){
-    if( pOp->p5 ){
+    if( pOp->p3>0 && pOp->p4type==P4_NOTUSED ){
+      const char *zErr;
+      assert( pOp->p3<=(p->nMem + 1 - p->nCursor) );
+      zErr = sqlite3ValueText(&aMem[pOp->p3], SQLITE_UTF8);
+      sqlite3VdbeError(p, "%s", zErr);
+    }else if( pOp->p5 ){
       static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
                                              "FOREIGN KEY" };
       testcase( pOp->p5==1 );
@@ -4324,23 +4336,23 @@ case OP_OpenWrite:
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
     }
+    if( pOp->p5 & OPFLAG_P2ISREG ){
+      assert( p2>0 );
+      assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
+      pIn2 = &aMem[p2];
+      assert( memIsValid(pIn2) );
+      assert( (pIn2->flags & MEM_Int)!=0 );
+      sqlite3VdbeMemIntegerify(pIn2);
+      p2 = (int)pIn2->u.i;
+      /* The p2 value always comes from a prior OP_CreateBtree opcode and
+      ** that opcode will always set the p2 value to 2 or more or else fail.
+      ** If there were a failure, the prepared statement would have halted
+      ** before reaching this instruction. */
+      assert( p2>=2 );
+    }
   }else{
     wrFlag = 0;
-  }
-  if( pOp->p5 & OPFLAG_P2ISREG ){
-    assert( p2>0 );
-    assert( p2<=(u32)(p->nMem+1 - p->nCursor) );
-    assert( pOp->opcode==OP_OpenWrite );
-    pIn2 = &aMem[p2];
-    assert( memIsValid(pIn2) );
-    assert( (pIn2->flags & MEM_Int)!=0 );
-    sqlite3VdbeMemIntegerify(pIn2);
-    p2 = (int)pIn2->u.i;
-    /* The p2 value always comes from a prior OP_CreateBtree opcode and
-    ** that opcode will always set the p2 value to 2 or more or else fail.
-    ** If there were a failure, the prepared statement would have halted
-    ** before reaching this instruction. */
-    assert( p2>=2 );
+    assert( (pOp->p5 & OPFLAG_P2ISREG)==0 );
   }
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;
@@ -5296,6 +5308,7 @@ case OP_Found: {        /* jump, in3, ncycle */
     r.pKeyInfo = pC->pKeyInfo;
     r.default_rc = 0;
 #ifdef SQLITE_DEBUG
+    (void)sqlite3FaultSim(50);  /* For use by --counter in TH3 */
     for(ii=0; ii<r.nField; ii++){
       assert( memIsValid(&r.aMem[ii]) );
       assert( (r.aMem[ii].flags & MEM_Zero)==0 || r.aMem[ii].n==0 );
@@ -7658,18 +7671,29 @@ case OP_AggInverse:
 case OP_AggStep: {
   int n;
   sqlite3_context *pCtx;
+  u64 nAlloc;
 
   assert( pOp->p4type==P4_FUNCDEF );
   n = pOp->p5;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem+1 - p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRawNN(db, n*sizeof(sqlite3_value*) +
-               (sizeof(pCtx[0]) + sizeof(Mem) - sizeof(sqlite3_value*)));
+
+  /* Allocate space for (a) the context object and (n-1) extra pointers
+  ** to append to the sqlite3_context.argv[1] array, and (b) a memory
+  ** cell in which to store the accumulation. Be careful that the memory
+  ** cell is 8-byte aligned, even on platforms where a pointer is 32-bits.
+  **
+  ** Note: We could avoid this by using a regular memory cell from aMem[] for 
+  ** the accumulator, instead of allocating one here. */
+  nAlloc = ROUND8P( sizeof(pCtx[0]) + (n-1)*sizeof(sqlite3_value*) );
+  pCtx = sqlite3DbMallocRawNN(db, nAlloc + sizeof(Mem));
   if( pCtx==0 ) goto no_mem;
-  pCtx->pMem = 0;
-  pCtx->pOut = (Mem*)&(pCtx->argv[n]);
+  pCtx->pOut = (Mem*)((u8*)pCtx + nAlloc);
+  assert( EIGHT_BYTE_ALIGNMENT(pCtx->pOut) );
+
   sqlite3VdbeMemInit(pCtx->pOut, db, MEM_Null);
+  pCtx->pMem = 0;
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
@@ -9003,14 +9027,29 @@ case OP_ReleaseReg: {
 
 /* Opcode: Noop * * * * *
 **
-** Do nothing.  This instruction is often useful as a jump
-** destination.
+** Do nothing.  Continue downward to the next opcode.
 */
-/*
-** The magic Explain opcode are only inserted when explain==2 (which
-** is to say when the EXPLAIN QUERY PLAN syntax is used.)
-** This opcode records information from the optimizer.  It is the
-** the same as a no-op.  This opcodesnever appears in a real VM program.
+/* Opcode: Explain P1 P2 P3 P4 *
+**
+** This is the same as OP_Noop during normal query execution.  The
+** purpose of this opcode is to hold information about the query
+** plan for the purpose of EXPLAIN QUERY PLAN output.
+**
+** The P4 value is human-readable text that describes the query plan
+** element.  Something like "SCAN t1" or "SEARCH t2 USING INDEX t2x1".
+**
+** The P1 value is the ID of the current element and P2 is the parent
+** element for the case of nested query plan elements.  If P2 is zero
+** then this element is a top-level element.
+**
+** For loop elements, P3 is the estimated code of each invocation of this
+** element.
+**
+** As with all opcodes, the meanings of the parameters for OP_Explain
+** are subject to change from one release to the next.  Applications
+** should not attempt to interpret or use any of the information
+** contined in the OP_Explain opcode.  The information provided by this
+** opcode is intended for testing and debugging use only.
 */
 default: {          /* This is really OP_Noop, OP_Explain */
   assert( pOp->opcode==OP_Noop || pOp->opcode==OP_Explain );

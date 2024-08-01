@@ -596,6 +596,7 @@ set nindex [db eval {SELECT count(*) FROM sqlite_schema WHERE type='index'}]
 set sql {SELECT count(*) FROM sqlite_schema WHERE name LIKE 'sqlite_autoindex%'}
 set nautoindex [db eval $sql]
 set nmanindex [expr {$nindex-$nautoindex}]
+set nwithoutrowid [db eval {SELECT count(*) FROM pragma_table_list WHERE wr}]
 
 # set total_payload [mem eval "SELECT sum(payload) FROM space_used"]
 set user_payload [mem one {SELECT int(sum(payload)) FROM space_used
@@ -614,6 +615,7 @@ statline {Pages on the freelist (per header)} $free_pgcnt2 $free_percent2
 statline {Pages on the freelist (calculated)} $free_pgcnt $free_percent
 statline {Pages of auto-vacuum overhead} $av_pgcnt $av_percent
 statline {Number of tables in the database} $ntable
+statline {Number of WITHOUT ROWID tables} $nwithoutrowid
 statline {Number of indices} $nindex
 statline {Number of defined indices} $nmanindex
 statline {Number of implied indices} $nautoindex
@@ -672,6 +674,14 @@ if {$nindex>0} {
   subreport {All tables and indices} 1 0
 }
 subreport {All tables} {NOT is_index} 0
+if {$nwithoutrowid>0} {
+  subreport {All WITHOUT ROWID tables} {is_without_rowid} 0
+  set nrowidtab [db eval {SELECT count(*) FROM pragma_table_list
+                         WHERE type='table' AND NOT wr}]
+  if {$nrowidtab>0} {
+     subreport {ALL rowid tables} {NOT is_without_rowid AND NOT is_index} 0
+  }
+}
 if {$nindex>0} {
   subreport {All indices} {is_index} 0
 }
