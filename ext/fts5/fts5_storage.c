@@ -16,6 +16,32 @@
 
 #include "fts5Int.h"
 
+/*
+** pSavedRow:
+**   SQL statement FTS5_STMT_LOOKUP2 is a copy of FTS5_STMT_LOOKUP, it 
+**   does a by-rowid lookup to retrieve a single row from the %_content 
+**   table or equivalent external-content table/view.
+**
+**   However, FTS5_STMT_LOOKUP2 is only used when retrieving the original
+**   values for a row being UPDATEd. In that case, the SQL statement is
+**   not reset and pSavedRow is set to point at it. This is so that the
+**   insert operation that follows the delete may access the original 
+**   row values for any new values for which sqlite3_value_nochange() returns
+**   true. i.e. if the user executes:
+**
+**        CREATE VIRTUAL TABLE ft USING fts5(a, b, c, locale=1);
+**        ...
+**        UPDATE fts SET a=?, b=? WHERE rowid=?;
+**
+**   then the value passed to the xUpdate() method of this table as the 
+**   new.c value is an sqlite3_value_nochange() value. So in this case it
+**   must be read from the saved row stored in Fts5Storage.pSavedRow.
+**
+**   This is necessary - using sqlite3_value_nochange() instead of just having
+**   SQLite pass the original value back via xUpdate() - so as not to discard
+**   any locale information associated with such values.
+**
+*/
 struct Fts5Storage {
   Fts5Config *pConfig;
   Fts5Index *pIndex;
@@ -37,15 +63,15 @@ struct Fts5Storage {
 # error "FTS5_STMT_LOOKUP mismatch" 
 #endif
 
-#define FTS5_STMT_LOOKUP2  3
+#define FTS5_STMT_LOOKUP2         3
 #define FTS5_STMT_INSERT_CONTENT  4
 #define FTS5_STMT_REPLACE_CONTENT 5
 #define FTS5_STMT_DELETE_CONTENT  6
-#define FTS5_STMT_REPLACE_DOCSIZE  7
+#define FTS5_STMT_REPLACE_DOCSIZE 7
 #define FTS5_STMT_DELETE_DOCSIZE  8
 #define FTS5_STMT_LOOKUP_DOCSIZE  9
 #define FTS5_STMT_REPLACE_CONFIG 10
-#define FTS5_STMT_SCAN 11
+#define FTS5_STMT_SCAN           11
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -405,6 +431,16 @@ static int fts5StorageInsertCallback(
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
 }
 
+/*
+** This function is used as part of an UPDATE statement that modifies the
+** rowid of a row. In that case, this function is called first to set
+** Fts5Storage.pSavedRow to point to a statement that may be used to 
+** access the original values of the row being deleted - iDel.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+** It is not considered an error if row iDel does not exist. In this case
+** pSavedRow is not set and SQLITE_OK returned.
+*/
 int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel){
   int rc = SQLITE_OK;
   sqlite3_stmt *pSeek = 0;
@@ -427,12 +463,17 @@ int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel){
 ** If a row with rowid iDel is present in the %_content table, add the
 ** delete-markers to the FTS index necessary to delete it. Do not actually
 ** remove the %_content row at this time though.
+**
+** If parameter bSaveRow is true, then Fts5Storage.pSavedRow is left
+** pointing to a statement (FTS5_STMT_LOOKUP2) that may be used to access
+** the original values of the row being deleted. This is used by UPDATE
+** statements.
 */
 static int fts5StorageDeleteFromIndex(
   Fts5Storage *p, 
   i64 iDel, 
   sqlite3_value **apVal,
-  int bSaveRow
+  int bSaveRow                    /* True to set pSavedRow */
 ){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pSeek = 0;        /* SELECT to read row iDel from %_data */
@@ -506,7 +547,15 @@ static int fts5StorageDeleteFromIndex(
   return rc;
 }
 
+/*
+** Reset any saved statement pSavedRow. Zero pSavedRow as well. This
+** should be called by the xUpdate() method of the fts5 table before 
+** returning from any operation that may have set Fts5Storage.pSavedRow.
+*/
 void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage *pStorage){
+  assert( pStorage->pSavedRow==0 
+       || pStorage->pSavedRow==pStorage->aStmt[FTS5_STMT_LOOKUP2] 
+  );
   sqlite3_reset(pStorage->pSavedRow);
   pStorage->pSavedRow = 0;
 }
@@ -630,7 +679,7 @@ int sqlite3Fts5StorageDelete(
   Fts5Storage *p,                 /* Storage object */
   i64 iDel,                       /* Rowid to delete from table */
   sqlite3_value **apVal,          /* Optional - values to remove from index */
-  int bSaveRow
+  int bSaveRow                    /* If true, set pSavedRow for deleted row */
 ){
   Fts5Config *pConfig = p->pConfig;
   int rc;
@@ -737,13 +786,12 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
     for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
       ctx.szCol = 0;
       if( pConfig->abUnindexed[ctx.iCol]==0 ){
-        int bReset = 0;
-        int nText = 0;
-        const char *pText = 0;
-        rc = sqlite3Fts5ExtractText(pConfig, 
-            sqlite3_column_value(pScan, ctx.iCol+1), 1, &bReset, &pText, &nText
-        );
+        int bReset = 0;           /* True if tokenizer locale must be reset */
+        int nText = 0;            /* Size of pText in bytes */
+        const char *pText = 0;    /* Pointer to buffer containing text value */
+        sqlite3_value *pVal = sqlite3_column_value(pScan, ctx.iCol+1);
 
+        rc = sqlite3Fts5ExtractText(pConfig, pVal, 1, &bReset, &pText, &nText);
         if( rc==SQLITE_OK ){
           rc = sqlite3Fts5Tokenize(pConfig, 
               FTS5_TOKENIZE_DOCUMENT,
@@ -838,6 +886,8 @@ int sqlite3Fts5StorageContentInsert(
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       sqlite3_value *pVal = apVal[i];
       if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
+        /* This is an UPDATE statement, and column (i-2) was not modified.
+        ** Retrieve the value from Fts5Storage.pSavedRow instead. */
         pVal = sqlite3_column_value(p->pSavedRow, i-1);
       }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
         if( pConfig->bLocale==0 ){
@@ -859,7 +909,8 @@ int sqlite3Fts5StorageContentInsert(
        && sqlite3_value_type(pVal)==SQLITE_BLOB 
        && i>=2 && pConfig->abUnindexed[i-2]==0
       ){
-        /* Inserting a blob into a normal content table with locale=1. */
+        /* Inserting a blob into a normal content table with locale=1. 
+        ** Add the 4 0x00 byte header.  */
         int n = sqlite3_value_bytes(pVal);
         u8 *pBlob = sqlite3Fts5MallocZero(&rc, n+4);
         if( pBlob ){
@@ -905,28 +956,22 @@ int sqlite3Fts5StorageIndexInsert(
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
     if( pConfig->abUnindexed[ctx.iCol]==0 ){
-      int bReset = 0;
-      int nText = 0;
-      const char *pText = 0;
+      int bReset = 0;             /* True if tokenizer locale must be reset */
+      int nText = 0;              /* Size of pText in bytes */
+      const char *pText = 0;      /* Pointer to buffer containing text value */
       sqlite3_value *pVal = apVal[ctx.iCol+2];
       int bDisk = 0;
       if( p->pSavedRow && sqlite3_value_nochange(pVal) ){
         pVal = sqlite3_column_value(p->pSavedRow, ctx.iCol+1);
         bDisk = 1;
       }
-      rc = sqlite3Fts5ExtractText(pConfig, pVal, bDisk, &bReset,&pText,&nText);
+      rc = sqlite3Fts5ExtractText(pConfig, pVal, bDisk, &bReset, &pText,&nText);
       if( rc==SQLITE_OK ){
-        if( bReset && pConfig->bLocale==0 ){
-          rc = SQLITE_ERROR;
-          sqlite3Fts5ConfigErrmsg(pConfig, 
-              "fts5_locale() may not be used without locale=1"
-          );
-        }else{
-          rc = sqlite3Fts5Tokenize(pConfig, 
-              FTS5_TOKENIZE_DOCUMENT, pText, nText, (void*)&ctx,
-              fts5StorageInsertCallback
-          );
-        }
+        assert( bReset==0 || pConfig->bLocale );
+        rc = sqlite3Fts5Tokenize(pConfig, 
+            FTS5_TOKENIZE_DOCUMENT, pText, nText, (void*)&ctx,
+            fts5StorageInsertCallback
+        );
         if( bReset ) sqlite3Fts5ClearLocale(pConfig);
       }
     }
@@ -1099,14 +1144,13 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p, int iArg){
             rc = sqlite3Fts5TermsetNew(&ctx.pTermset);
           }
           if( rc==SQLITE_OK ){
-            const char *pText = 0;
-            int nText = 0;
-            int bReset = 0;
+            int bReset = 0;        /* True if tokenizer locale must be reset */
+            int nText = 0;         /* Size of pText in bytes */
+            const char *pText = 0; /* Pointer to buffer containing text value */
 
             rc = sqlite3Fts5ExtractText(pConfig, 
                 sqlite3_column_value(pScan, i+1), 1, &bReset, &pText, &nText
             );
-
             if( rc==SQLITE_OK ){
               rc = sqlite3Fts5Tokenize(pConfig, 
                   FTS5_TOKENIZE_DOCUMENT,
