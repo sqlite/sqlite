@@ -1,29 +1,38 @@
+#!/usr/bin/tclsh
 #
-# Run this TCL script to build and optionally install the TCL interface
-# library for SQLite.  Run the script with the specific "tclsh" for which
-# the installation should occur.
-#
-# Must do "make tclsqlite3.c" first.
-#
-# Options:
-#
-#    --build-only              Only build the extension, don't install it
-#    --install-only            Install an extension previously build
-#    --uninstall               Uninstall the extension
-#
-set installonly 0
-set buildonly 0
+set help \
+{Run this TCL script to build and install the TCL interface library for
+SQLite.  Run the script with the specific "tclsh" for which the installation
+should occur.
+
+There must be a valid "tclsqlite3.c" file in the working directory prior
+to running this script.  Use "make tclsqlite3.c" to generate that file.
+
+Options:
+
+   --build-only         Only build the extension, don't install it
+   --info               Show info on existing SQLite TCL extension installs
+   --install-only       Install an extension previously build
+   --uninstall          Uninstall the extension}
+
+
+set build 1
+set install 1
 set uninstall 0
+set infoonly 0
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
-    set installonly 1
+    set build 0
   } elseif {$a0=="--build-only"} {
-    set buildonly 1
+    set install 0
   } elseif {$a0=="--uninstall"} {
     set uninstall 1
+  } elseif {$a0=="--info"} {
+    set infoonly 1
   } else {
-    puts stderr "Unknown option: \"$a0\""
+    puts stderr "Unknown option: \"$a0\"\n"
+    puts stderr $help
     exit 1
   }
 }
@@ -94,12 +103,30 @@ if {$inc!=""} {
 }
 set cmd {}
 regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
-set LDFLAGS $INC
+set LDFLAGS "$INC -DUSE_TCL_STUBS"
 set CMD [subst $cmd]
 if {$TCLMAJOR>8} {
   set OUT libtcl9sqlite$VERSION.$SUFFIX
 } else {
   set OUT libsqlite$VERSION.$SUFFIX
+}
+
+# Show information about prior installs
+#
+if {$infoonly} {
+  set cnt 0
+  foreach dir $auto_path {
+    foreach subdir [glob -nocomplain -types d $dir/sqlite3*] {
+      if {[file exists $subdir/pkgIndex.tcl]} {
+        puts $subdir
+        incr cnt
+      }
+    }
+  }
+  if {$cnt==0} {
+    puts "no current installations of the SQLite TCL extension"
+  }
+  exit
 }
 
 # Uninstall the extension
@@ -123,24 +150,40 @@ if {$uninstall} {
   exit
 }
 
-# Figure out where the extension will be installed.
-#
-set DEST {}
-foreach dir $auto_path {
-  if {[file writable $dir]} {
-    set DEST $dir
-    break
+if {$install} {
+  # Figure out where the extension will be installed.  Put the extension
+  # in the first writable directory on $auto_path.
+  #
+  set DEST {}
+  foreach dir $auto_path {
+    if {[file writable $dir]} {
+      set DEST $dir
+      break
+    } elseif {[glob -nocomplain $dir/sqlite3*/pkgIndex.tcl]!=""} {
+      set conflict [lindex [glob $dir/sqlite3*/pkgIndex.tcl] 0]
+      puts "Unable to install. There is already a conflicting version"
+      puts "of the SQLite TCL Extension that cannot be overwritten at\n"
+      puts "   [file dirname $conflict]\n"
+      puts "Consider running using sudo to work around this problem."
+      exit 1
+    }
+  }
+  if {$DEST==""} {
+    puts "None of the directories on \$auto_path are writable by this process,"
+    puts "so the installation cannot take place.  Consider running using sudo"
+    puts "to work around this problem.\n"
+    puts "These are the (unwritable) \$auto_path directories:\n"
+    foreach dir $auto_path {
+      puts "  *  $dir"
+    }
+    exit 1
   }
 }
-if {$DEST==""} {
-  puts "None of the directories on $auto_path are writable by this process,"
-  puts "so the installation cannot take place.  Consider running using sudo"
-  puts "to work around this."
-}
 
-if {!$installonly} {
+if {$build} {
   # Generate the pkgIndex.tcl file
   #
+  puts "generating pkgConfig.tcl..."
   set fd [open pkgIndex.tcl w]
   puts $fd [subst -nocommands {# -*- tcl -*-
 # Tcl package index file, version ???
@@ -157,9 +200,9 @@ package ifneeded sqlite3 $VERSION \\
   exec {*}$cmd
 }
 
-# Install the extension
-#
-if {$DEST!="" && !$buildonly} {
+
+if {$install} {
+  # Install the extension
   set DEST2 $DEST/sqlite$VERSION
   file mkdir $DEST2
   puts "installing $DEST2/pkgIndex.tcl"

@@ -369,12 +369,19 @@ static int SQLITE_TCLAPI incrblobOutput(
   return nWrite;
 }
 
+/* The datatype of Tcl_DriverWideSeekProc changes between tcl8.6 and tcl9.0 */
+#if TCL_MAJOR_VERSION==9
+# define WideSeekProcType long lone
+#else
+# define WideSeekProcType Tcl_WideInt
+#endif
+
 /*
 ** Seek an incremental blob channel.
 */
-static long long SQLITE_TCLAPI incrblobWideSeek(
+static WideSeekProcType SQLITE_TCLAPI incrblobWideSeek(
   ClientData instanceData,
-  long long offset,
+  WideSeekProcType offset,
   int seekMode,
   int *errorCodePtr
 ){
