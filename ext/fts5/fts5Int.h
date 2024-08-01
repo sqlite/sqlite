@@ -59,6 +59,22 @@ typedef sqlite3_uint64 u64;
 # define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 # define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
+/* The uptr type is an unsigned integer large enough to hold a pointer
+*/
+#if defined(HAVE_STDINT_H)
+  typedef uintptr_t uptr;
+#elif SQLITE_PTRSIZE==4
+  typedef u32 uptr;
+#else
+  typedef u64 uptr;
+#endif
+
+#ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&3)==0)
+#else
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&7)==0)
+#endif
+
 #endif
 
 /* Truncate very long tokens to this many bytes. Hard limit is 
@@ -142,6 +158,15 @@ struct Fts5Colset {
 */
 
 typedef struct Fts5Config Fts5Config;
+typedef struct Fts5TokenizerConfig Fts5TokenizerConfig;
+
+struct Fts5TokenizerConfig {
+  Fts5Tokenizer *pTok;
+  fts5_tokenizer *pTokApi;
+  const char **azArg;
+  int nArg;
+  int ePattern;                   /* FTS_PATTERN_XXX constant */
+};
 
 /*
 ** An instance of the following structure encodes all information that can
@@ -184,6 +209,7 @@ typedef struct Fts5Config Fts5Config;
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
+  Fts5Global *pGlobal;            /* Global fts5 object for handle db */
   char *zDb;                      /* Database holding FTS index (e.g. "main") */
   char *zName;                    /* Name of FTS index */
   int nCol;                       /* Number of columns */
@@ -199,10 +225,8 @@ struct Fts5Config {
   int bTokendata;                 /* "tokendata=" option value (dflt==0) */
   int eDetail;                    /* FTS5_DETAIL_XXX value */
   char *zContentExprlist;
-  Fts5Tokenizer *pTok;
-  fts5_tokenizer *pTokApi;
+  Fts5TokenizerConfig t;
   int bLock;                      /* True when table is preparing statement */
-  int ePattern;                   /* FTS_PATTERN_XXX constant */
 
   /* Values loaded from the %_config table */
   int iVersion;                   /* fts5 file format 'version' */
@@ -597,13 +621,7 @@ struct Fts5Table {
   Fts5Index *pIndex;              /* Full-text index */
 };
 
-int sqlite3Fts5GetTokenizer(
-  Fts5Global*, 
-  const char **azArg,
-  int nArg,
-  Fts5Config*,
-  char **pzErr
-);
+int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig);
 
 Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
@@ -866,6 +884,7 @@ int sqlite3Fts5TokenizerPattern(
     int (*xCreate)(void*, const char**, int, Fts5Tokenizer**),
     Fts5Tokenizer *pTok
 );
+int sqlite3Fts5TokenizerPreload(Fts5TokenizerConfig*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
 **************************************************************************/

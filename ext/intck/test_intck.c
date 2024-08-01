@@ -15,13 +15,7 @@
 
 #include "sqlite3.h"
 #include "sqlite3intck.h"
-
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
-
+#include "tclsqlite.h"
 #include <string.h>
 #include <assert.h>
 
@@ -92,8 +86,9 @@ static int testIntckCmd(
 
     case 3: assert( 0==strcmp("error", aCmd[iIdx].zName) ); {
       const char *zErr = 0;
+      Tcl_Obj *pRes;
       rc = sqlite3_intck_error(p->intck, 0);
-      Tcl_Obj *pRes = Tcl_NewObj();
+      pRes = Tcl_NewObj();
       Tcl_ListObjAppendElement(
           interp, pRes, Tcl_NewStringObj(sqlite3ErrName(rc), -1)
       );

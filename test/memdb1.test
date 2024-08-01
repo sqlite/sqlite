@@ -245,7 +245,7 @@ if {[wal_is_capable]} {
   db close
   
   set fd [open test.db]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   set data [read $fd [expr 20*1024]]
   close $fd
   

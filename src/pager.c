@@ -4058,6 +4058,7 @@ static int pagerAcquireMapPage(
       return SQLITE_NOMEM_BKPT;
     }
     p->pExtra = (void *)&p[1];
+    assert( EIGHT_BYTE_ALIGNMENT( p->pExtra ) );
     p->flags = PGHDR_MMAP;
     p->nRef = 1;
     p->pPager = pPager;

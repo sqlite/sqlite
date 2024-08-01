@@ -82,10 +82,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      A map of sqlite3_vfs pointers to SQL code or a callback function
      to run when the DB constructor opens a database with the given
-     VFS. In the latter case, the call signature is (theDbObject,sqlite3Namespace)
-     and the callback is expected to throw on error.
+     VFS. In the latter case, the call signature is
+     (theDbObject,sqlite3Namespace) and the callback is expected to
+     throw on error.
   */
-  const __vfsPostOpenSql = Object.create(null);
+  const __vfsPostOpenCallback = Object.create(null);
 
 //#if enable-see
   /**
@@ -116,7 +117,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      are set. It throws if more than one is set or if any are set to
      values of an invalid type.
 
-     Returns true if it applies the key, else an unspecified falsy value.
+     Returns true if it applies the key, else an unspecified falsy
+     value.  Note that applying the key does not imply that the key is
+     correct, only that it was passed on to the db.
   */
   const dbCtorApplySEEKey = function(db,opt){
     if( !capi.sqlite3_key_v2 ) return;
@@ -178,10 +181,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     try{
       stmt = db.prepare("PRAGMA "+keytype+"="+util.sqlite3__wasm_qfmt_token(key, 1));
       stmt.step();
+      return true;
     }finally{
       if(stmt) stmt.finalize();
     }
-    return true;
   };
 //#endif enable-see
 
@@ -279,7 +282,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       // Check for per-VFS post-open SQL/callback...
       const pVfs = capi.sqlite3_js_db_vfs(pDb)
             || toss3("Internal error: cannot get VFS for new db handle.");
-      const postInitSql = __vfsPostOpenSql[pVfs];
+      const postInitSql = __vfsPostOpenCallback[pVfs];
       if(postInitSql){
         /**
            Reminder: if this db is encrypted and the client did _not_ pass
@@ -303,18 +306,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Sets SQL which should be exec()'d on a DB instance after it is
-     opened with the given VFS pointer. The SQL may be any type
-     supported by the "string:flexible" function argument conversion.
-     Alternately, the 2nd argument may be a function, in which case it
-     is called with (theOo1DbObject,sqlite3Namespace) at the end of
-     the DB() constructor. The function must throw on error, in which
-     case the db is closed and the exception is propagated.  This
-     function is intended only for use by DB subclasses or sqlite3_vfs
+     Sets a callback which should be called after a db is opened with
+     the given sqlite3_vfs pointer. The 2nd argument must be a
+     function, which gets called with
+     (theOo1DbObject,sqlite3Namespace) at the end of the DB()
+     constructor. The function must throw on error, in which case the
+     db is closed and the exception is propagated.  This function is
+     intended only for use by DB subclasses or sqlite3_vfs
      implementations.
+
+     Prior to 2024-07-22, it was legal to pass SQL code as the second
+     argument, but that can interfere with a client's ability to run
+     pragmas which must be run before anything else, namely (pragma
+     locking_mode=exclusive) for use with WAL mode.  That capability
+     had only ever been used as an internal detail of the two OPFS
+     VFSes, and they no longer use it that way.
   */
-  dbCtorHelper.setVfsPostOpenSql = function(pVfs, sql){
-    __vfsPostOpenSql[pVfs] = sql;
+  dbCtorHelper.setVfsPostOpenCallback = function(pVfs, callback){
+    if( !(callback instanceof Function)){
+      toss3("dbCtorHelper.setVfsPostOpenCallback() should not be used with "+
+            "a non-function argument.",arguments);
+    }
+    __vfsPostOpenCallback[pVfs] = callback;
   };
 
   /**
@@ -482,6 +495,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      statement's preparation and when it is stepped may invalidate it.
 
      - `parameterCount`: the number of bindable parameters in the query.
+
+     As a general rule, most methods of this class will throw if
+     called on an instance which has been finalized. For brevity's
+     sake, the method docs do not all repeat this warning.
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
@@ -1686,12 +1703,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          integer 0 or 1. It is not expected the distinction of binding
          doubles which have no fractional parts and integers is
          significant for the majority of clients due to sqlite3's data
-         typing model. If [BigInt] support is enabled then this
-         routine will bind BigInt values as 64-bit integers if they'll
-         fit in 64 bits. If that support disabled, it will store the
-         BigInt as an int32 or a double if it can do so without loss
-         of precision. If the BigInt is _too BigInt_ then it will
-         throw.
+         typing model. If BigInt support is enabled then this routine
+         will bind BigInt values as 64-bit integers if they'll fit in
+         64 bits. If that support disabled, it will store the BigInt
+         as an int32 or a double if it can do so without loss of
+         precision. If the BigInt is _too BigInt_ then it will throw.
 
        - Strings are bound as strings (use bindAsBlob() to force
          blob binding).
@@ -1797,9 +1813,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     /**
        Steps the statement one time. If the result indicates that a
-       row of data is available, a truthy value is returned.
-       If no row of data is available, a falsy
-       value is returned.  Throws on error.
+       row of data is available, a truthy value is returned.  If no
+       row of data is available, a falsy value is returned.  Throws on
+       error.
     */
     step: function(){
       affirmNotLockedByExec(this, 'step()');
@@ -1819,6 +1835,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Functions exactly like step() except that...
 
        1) On success, it calls this.reset() and returns this object.
+
        2) On error, it throws and does not call reset().
 
        This is intended to simplify constructs like:
@@ -1842,7 +1859,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        throws.
 
        On success, it returns true if the step indicated that a row of
-       data was available, else it returns false.
+       data was available, else it returns a falsy value.
 
        This is intended to simplify use cases such as:
 
@@ -1860,6 +1877,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         catch(e){/*ignored*/}
       }
     },
+
     /**
        Fetches the value from the given 0-based column index of
        the current data row, throwing if index is out of range.
@@ -1884,7 +1902,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        If ndx is a plain object, this function behaves even
        differentlier: it assigns the properties of the object to
-       the values of their corresponding result columns.
+       the values of their corresponding result columns and returns
+       that object.
 
        Blobs are returned as Uint8Array instances.
 
@@ -2030,6 +2049,39 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return (affirmStmtOpen(this).parameterCount
               ? capi.sqlite3_bind_parameter_index(this.pointer, name)
               : undefined);
+    },
+    /**
+       If this statement has named bindable parameters and the given
+       index refers to one, its name is returned, else null is
+       returned. If this statement has no bound parameters, undefined
+       is returned.
+
+       Added in 3.47.
+    */
+    getParamName: function(ndx){
+      return (affirmStmtOpen(this).parameterCount
+              ? capi.sqlite3_bind_parameter_name(this.pointer, ndx)
+              : undefined);
+    },
+
+    /**
+       Behaves like sqlite3_stmt_busy() but throws if this statement
+       is closed and returns a value of type boolean instead of integer.
+
+       Added in 3.47.
+    */
+    isBusy: function(){
+      return 0!==capi.sqlite3_stmt_busy(affirmStmtOpen(this));
+    },
+
+    /**
+       Behaves like sqlite3_stmt_readonly() but throws if this statement
+       is closed and returns a value of type boolean instead of integer.
+
+       Added in 3.47.
+    */
+    isReadOnly: function(){
+      return 0!==capi.sqlite3_stmt_readonly(affirmStmtOpen(this));
     }
   }/*Stmt.prototype*/;
 
