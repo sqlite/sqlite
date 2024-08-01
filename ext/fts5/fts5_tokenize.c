@@ -1429,6 +1429,16 @@ int sqlite3Fts5TokenizerPattern(
 }
 
 /*
+** Return true if the tokenizer described by p->azArg[] is the trigram
+** tokenizer. This tokenizer needs to be loaded before xBestIndex is
+** called for the first time in order to correctly handle LIKE/GLOB.
+*/
+int sqlite3Fts5TokenizerPreload(Fts5TokenizerConfig *p){
+  return (p->nArg>=1 && 0==sqlite3_stricmp(p->azArg[0], "trigram"));
+}
+
+
+/*
 ** Register all built-in tokenizers with FTS5.
 */
 int sqlite3Fts5TokenizerInit(fts5_api *pApi){

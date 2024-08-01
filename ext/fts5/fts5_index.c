@@ -831,11 +831,12 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
     if( rc==SQLITE_OK ){
       u8 *aOut = 0;               /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
-      sqlite3_int64 nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
+      int szData = (sizeof(Fts5Data) + 7) & ~7;
+      sqlite3_int64 nAlloc = szData + nByte + FTS5_DATA_PADDING;
       pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
       if( pRet ){
         pRet->nn = nByte;
-        aOut = pRet->p = (u8*)&pRet[1];
+        aOut = pRet->p = (u8*)pRet + szData;
       }else{
         rc = SQLITE_NOMEM;
       }
@@ -858,6 +859,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   }
 
   assert( (pRet==0)==(p->rc!=SQLITE_OK) );
+  assert( pRet==0 || EIGHT_BYTE_ALIGNMENT( pRet->p ) );
   return pRet;
 }
 

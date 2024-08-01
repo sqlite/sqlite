@@ -59,7 +59,15 @@ canonical source on a new Windows 11 PC, as of 2023-11-01:
       <li>  `nmake /f makefile.msc sqlite3.c`
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`
+      <li>  `nmake /f makefile.msc sqlite3.exe`
       </ul>
+
+  7.  For a debugging build of the CLI, where the ".treetrace" and ".wheretrace"
+      commands work, add the DEBUG=3 argument to nmake.  Like this:
+      <ul>
+      <li> `nmake /f makefile.msc DEBUG=3 clean sqlite3.exe`
+      </ul>
+   
 
 ## 32-bit Builds
 

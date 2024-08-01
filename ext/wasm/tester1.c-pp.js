@@ -461,7 +461,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try{ sqlite3.SQLite3Error.toss("resultCode check") }
       catch(e){
         T.assert(capi.SQLITE_ERROR === e.resultCode)
-          .assert('resultCode check' === e.message);        
+          .assert('resultCode check' === e.message);
       }
     })
   ////////////////////////////////////////////////////////////////////
@@ -1475,7 +1475,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
-        T.assert(0===st.columnCount);
+        T.assert(0===st.columnCount)
+          .assert( false===st.isReadOnly() );
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
         st.bindAsBlob(ndx, "ima blob")
@@ -1509,6 +1510,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: "sqlite3_set_authorizer()",
+      predicate: ()=>!!wasm.exports.sqlite3_set_authorizer || "Missing sqlite3_set_authorizer()",
       test:function(sqlite3){
         T.assert(capi.SQLITE_IGNORE>0)
           .assert(capi.SQLITE_DENY>0);
@@ -2064,6 +2066,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })
 
   ////////////////////////////////////////////////////////////////////
+    .t("Read-only", function(sqlite3){
+      T.assert( 0===capi.sqlite3_db_readonly(this.db, "main") );
+      const db = new sqlite3.oo1.DB('file://'+this.db.filename+'?mode=ro');
+      T.assert( 1===capi.sqlite3_db_readonly(db, "main") );
+      T.assert( -1===capi.sqlite3_db_readonly(db, "nope") );
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
     .t({
       name: 'C-side WASM tests',
       predicate: ()=>(haveWasmCTests() || "Not compiled in."),
@@ -2142,7 +2153,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #1: eponymous w/ manual exception handling',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2339,7 +2350,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
-      predicate: ()=>!!capi.sqlite3_index_info,
+      predicate: ()=>!!capi.sqlite3_create_module || "Missing vtab support",
       test: function(sqlite3){
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
@@ -2751,7 +2762,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })/* commit/rollback/update hooks */
     .t({
       name: "sqlite3_preupdate_hook()",
-      predicate: ()=>wasm.bigIntEnabled || "Pre-update hook requires int64",
+      predicate: ()=>capi.sqlite3_preupdate_hook || "Missing pre-update hook API",
       test: function(sqlite3){
         const db = new sqlite3.oo1.DB(':memory:', 1 ? 'c' : 'ct');
         const countHook = Object.create(null);
@@ -2822,9 +2833,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   T.g('Session API')
     .t({
       name: 'Session API sanity checks',
-      predicate: ()=>!!capi.sqlite3changegroup_add,
+      predicate: ()=>!!capi.sqlite3changegroup_add || "Missing session API",
       test: function(sqlite3){
-        warn("The session API tests could use some expansion.");
+        //warn("The session API tests could use some expansion.");
         const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
         const sqlInit = [
           "create table t(rowid INTEGER PRIMARY KEY,a,b); ",
@@ -2859,7 +2870,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert('b4' === db1.selectValue('select b from t where rowid=4'))
             .assert(3 === db1.selectValue('select count(*) from t'));
 
-          const testSessionEnable = false;
+          const testSessionEnable =
+                false /* it's not yet clear whether these test failures are
+                         broken tests or broken bindings. */;
           if(testSessionEnable){
             rc = capi.sqlite3session_enable(pSession, 0);
             T.assert( 0 === rc )
@@ -2870,7 +2883,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               .assert( capi.sqlite3session_enable(pSession, -1) > 0 )
               .assert(undefined === db1.selectValue('select a from t where rowid=2'));
           }else{
-            warn("sqlite3session_enable() tests are currently disabled.");
+            //warn("sqlite3session_enable() tests are currently disabled.");
           }
           let db1Count = db1.selectValue("select count(*) from t");
           T.assert( db1Count === (testSessionEnable ? 2 : 3) );
@@ -3101,11 +3114,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(db instanceof sqlite3.oo1.DB)
           .assert(1 === u1.getFileCount());
         db.exec([
+          'pragma locking_mode=exclusive;',
+          'pragma journal_mode=wal;'
+          /* WAL mode only works in this VFS if locking_mode=exclusive
+             is invoked prior to the first db access, as this build
+             does not have the shared-memory APIs needed for WAL without
+             exclusive-mode locking. See:
+
+             https://sqlite.org/wal.html#use_of_wal_without_shared_memory
+
+             Note that WAL mode here DOES NOT add any concurrency capabilities
+             to this VFS, but it MAY provide slightly improved performance
+             over the other journaling modes.
+          */,
           'create table t(a);',
           'insert into t(a) values(1),(2),(3)'
         ]);
-        T.assert(1 === u1.getFileCount());
-        T.assert(3 === db.selectValue('select count(*) from t'));
+        T.assert(2 === u1.getFileCount() /* one is the journal file */)
+          .assert(3 === db.selectValue('select count(*) from t'))
+          .assert('wal'===db.selectValue('pragma journal_mode'));
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);
@@ -3125,6 +3152,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( dbytes.byteLength == nWrote );
           let db2 = new u1.OpfsSAHPoolDb(dbName2);
           T.assert(db2 instanceof sqlite3.oo1.DB)
+            .assert('wal' !== db2.selectValue("pragma journal_mode")
+                    /* importDb() unsets the WAL-mode header for
+                       historical reasons. Because clients must
+                       explicitly enable pragma locking_mode=exclusive
+                       before using WAL, that behavior is retained. */)
             .assert(3 === db2.selectValue('select count(*) from t'));
           db2.close();
           T.assert(true === u1.unlink(dbName2))
@@ -3177,20 +3209,108 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
 
         let cErr, u3;
-        conf2.$testThrowInInit = new Error("Testing throwing during init.");
+        conf2.$testThrowPhase2 = new Error("Testing throwing during init.");
         conf2.name = sahPoolConfig.name+'-err';
         const P3 = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
-        T.assert(P3 === conf2.$testThrowInInit)
+        T.assert(P3 === conf2.$testThrowPhase2)
           .assert(cErr === P3)
           .assert(undefined === u3)
           .assert(!sqlite3.capi.sqlite3_vfs_find(conf2.name));
+        delete conf2.$testThrowPhase2;
+        T.assert(cErr === await inst(conf2).catch(e=>e),
+                "Init result is cached even if it failed");
+
+        /* Ensure that the forceReinitIfPreviouslyFailed fallback bypasses
+           the VFS init cache... */
+        cErr = u3 = undefined;
+        conf2.forceReinitIfPreviouslyFailed = true;
+        conf2.verbosity = 3;
+        const P3b = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
+        T.assert(undefined === cErr)
+          .assert(P3b === u3)
+          .assert(P3b === await inst(conf2))
+          .assert(true === await u3.removeVfs())
+          .assert(false === await P3b.removeVfs());
       }
     }/*OPFS SAH Pool sanity checks*/)
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Misc. APIs')
+    .t('bind_parameter_...', function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a)");
+      const stmt = db.prepare("insert into t(a) values($a)");
+      T.assert( 1===capi.sqlite3_bind_parameter_count(stmt) )
+        .assert( 1===capi.sqlite3_bind_parameter_index(stmt, "$a") )
+        .assert( 0===capi.sqlite3_bind_parameter_index(stmt, ":a") )
+        .assert( 1===stmt.getParamIndex("$a") )
+        .assert( 0===stmt.getParamIndex(":a") )
+        .assert( "$a"===capi.sqlite3_bind_parameter_name(stmt, 1) )
+        .assert( null===capi.sqlite3_bind_parameter_name(stmt, 0) )
+        .assert( "$a"===stmt.getParamName(1) )
+        .assert( null===stmt.getParamName(0) );
+      stmt.finalize();
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("Misc. stmt_...", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a doggiebiscuits); insert into t(a) values(123)");
+      const stmt = db.prepare("select a, a+1 from t");
+      T.assert( stmt.isReadOnly() )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
+        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+        .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
+        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+      let n = 0;
+      while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+        ++n;
+        T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
+                  "Because stmt is busy" )
+          .assert( capi.sqlite3_stmt_busy(stmt) )
+          .assert( stmt.isBusy() )
+          .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
+          .assert( true===stmt.isReadOnly() );
+        const sv = capi.sqlite3_column_value(stmt, 0);
+        T.assert( 123===capi.sqlite3_value_int(sv) )
+          .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
+          .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+      }
+      T.assert( 1===n )
+        .assert( 0===capi.sqlite3_stmt_busy(stmt) )
+        .assert( !stmt.isBusy() );
+      stmt.finalize();
+      db.close();
+    })
+
+  ////////////////////////////////////////////////////////////////////
+    .t("interrupt", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      T.assert( 0===capi.sqlite3_is_interrupted(db) );
+      capi.sqlite3_interrupt(db);
+      T.assert( 0!==capi.sqlite3_is_interrupted(db) );
+      db.close();
+    })
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
+      predicate: function(sqlite3){
+        const d = new sqlite3.oo1.DB();
+        try{
+          d.exec("create virtual table f using fts5(x)");
+          return true;
+        }catch(e){
+          return "FTS5 is not available";
+        }finally{
+          d.close();
+        }
+      },
       test: function(sqlite3){
         // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
         // with the exception that that post uses "external content"

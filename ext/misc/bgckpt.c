@@ -123,15 +123,7 @@ int sqlite3_bgckpt_checkpoint(Checkpointer *p, int bBlock){
 }
 
 #ifdef SQLITE_TEST
-
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 const char *sqlite3ErrName(int rc);
 
@@ -231,14 +223,6 @@ int Bgckpt_Init(Tcl_Interp *interp){
 #endif   /* SQLITE_TEST */
 
 #else
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+# include "tclsqlite.h"
 int Bgckpt_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif
-

@@ -211,12 +211,12 @@ if {$tcl_platform(platform)!="windows"} {
   # while it is locked by the database connection. 
   do_test 3.4 {
     set fd [open test.db2-shm]
-    fconfigure $fd -encoding binary -translation binary
+    fconfigure $fd -translation binary
     set data [read $fd]
     close $fd
   
     set fd [open test.db-shm w]
-    fconfigure $fd -encoding binary -translation binary
+    fconfigure $fd -translation binary
     puts -nonewline $fd $data
     close $fd
   
@@ -269,4 +269,3 @@ file delete test.db2-wal2
 
 
 finish_test
-

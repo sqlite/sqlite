@@ -3064,8 +3064,9 @@ create_view_fail:
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** The Table structure pTable is really a VIEW.  Fill in the names of
-** the columns of the view in the pTable structure.  Return the number
-** of errors.  If an error is seen leave an error message in pParse->zErrMsg.
+** the columns of the view in the pTable structure.  Return non-zero if
+** there are errors.  If an error is seen an error message is left
+** in pParse->zErrMsg.
 */
 static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
   Table *pSelTab;   /* A fake table from which we get the result set */
@@ -3188,7 +3189,7 @@ static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
     sqlite3DeleteColumnNames(db, pTable);
   }
 #endif /* SQLITE_OMIT_VIEW */
-  return nErr; 
+  return nErr + pParse->nErr; 
 }
 int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable!=0 );

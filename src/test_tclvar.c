@@ -36,11 +36,7 @@
 ** according to "fullname" and "value" only.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -150,10 +146,10 @@ static int next2(Tcl_Interp *interp, tclvar_cursor *pCur, Tcl_Obj *pObj){
       Tcl_IncrRefCount(pCur->pList2);
       assert( pCur->i2==0 );
     }else{
-      int n = 0;
+      Tcl_Size n = 0;
       pCur->i2++;
       Tcl_ListObjLength(0, pCur->pList2, &n);
-      if( pCur->i2>=n ){
+      if( pCur->i2>=(int)n ){
         Tcl_DecrRefCount(pCur->pList2);
         pCur->pList2 = 0;
         pCur->i2 = 0;
@@ -167,14 +163,14 @@ static int next2(Tcl_Interp *interp, tclvar_cursor *pCur, Tcl_Obj *pObj){
 
 static int tclvarNext(sqlite3_vtab_cursor *cur){
   Tcl_Obj *pObj;
-  int n = 0;
+  Tcl_Size n = 0;
   int ok = 0;
 
   tclvar_cursor *pCur = (tclvar_cursor *)cur;
   Tcl_Interp *interp = ((tclvar_vtab *)(cur->pVtab))->interp;
 
   Tcl_ListObjLength(0, pCur->pList1, &n);
-  while( !ok && pCur->i1<n ){
+  while( !ok && pCur->i1<(int)n ){
     Tcl_ListObjIndex(0, pCur->pList1, pCur->i1, &pObj);
     ok = next2(interp, pCur, pObj);
     if( !ok ){

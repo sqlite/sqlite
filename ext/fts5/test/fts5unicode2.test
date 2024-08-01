@@ -17,7 +17,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -116,6 +116,7 @@ set docs [list {
   connected by OR.  
 }]
 
+unset -nocomplain map
 set map(a) [list "\u00C4" "\u00E4"]  ; # LATIN LETTER A WITH DIAERESIS
 set map(e) [list "\u00CB" "\u00EB"]  ; # LATIN LETTER E WITH DIAERESIS
 set map(i) [list "\u00CF" "\u00EF"]  ; # LATIN LETTER I WITH DIAERESIS
