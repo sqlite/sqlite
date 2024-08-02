@@ -1,9 +1,9 @@
-C New\sconfiguration\soption:\s\s--with-tclsh=FILE.\s\sNew\smakefile\stargets:\ntclextension,\stclextension-install,\stclextension-uninstall,\ntclextension-list.
-D 2024-08-02T00:59:32.758
+C Fix\sproblems\sin\sthe\sconfigure/Makefile\ssystem\scaused\sby\srecent\senhancements\nand\sreport\sby\s[forum:/forumpost/242ebd0c81|forum\spost\s242ebd0c81].
+D 2024-08-02T11:32:28.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in fbfe18ff577bcb35b1236015e442667bcdf94230cef07a0897e26f3cab5bf488
+F Makefile.in d9d8d60efaad73dde2ed2380ab3ae3b9b15cb98089d0a7d0573f39de7f093ea2
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 993f8addade63bcac7192416e7161ceee60edcee2376299ea48b2a74c66ac2d5
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -35,8 +35,8 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc 7b3bb2ef32ade0f3f14d951231811678722725e3bca240dd9727ae0dfe10f6a5
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 33192bee7d11f68a2be3a1ddf1dc4aa02060675f0bfb48eaf61b63fcd45abedf x
-F configure.ac 1665604ede8e83da1454f26eb19dcc7cff70f1b21d305616b6c7cea2d107c005
+F configure 187978aa8b6e5bfe261bce02a883f82f7a1d239f95e53cbb5eb6be0aaab2a5b6 x
+F configure.ac 50ac86967b264eab4f2925ae8c981601f154aa090ef2fd0c413974fca63251d0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md e8635eea9153dcd6a51fd2740666ebc4492b3813cb1ac31cd8e99150df91762d
@@ -2202,9 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 173df1478e89996126e172656e35da8026d4ef145b2341ef56213f00ade14f48 7748367c78a1f480ec9e892ba77652e3c31a4b387b89221ae584891818804851
-R ba9c12b4ec23352b095b4f17c1f3bef8
-T +closed 7748367c78a1f480ec9e892ba77652e3c31a4b387b89221ae584891818804851
+P 888284d1d47269e66e23627e2519cd2cf83ef65a777a679af20c288453f092e2
+R 93c99f8e3949df92d18547af26ca7640
 U drh
-Z d1d647e1ea5237f2d093d8aa4cd2371f
+Z ef0c9981348aa214ce55c288609b3967
 # Remove this line to create a well-formed Fossil manifest.

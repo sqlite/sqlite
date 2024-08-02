@@ -121,10 +121,6 @@ TCLSH_CMD = @TCLSH_CMD@
 #
 TCLLIBDIR = @TCLLIBDIR@
 
-# The suffix used on shared libraries.  Ex:  ".dll", ".so", ".dylib"
-#
-SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
-
 # If gcov support was enabled by the configure script, add the appropriate
 # flags here.  It's not always as easy as just having the user add the right
 # CFLAGS / LDFLAGS, because libtool wants to use CFLAGS when linking, which

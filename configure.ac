@@ -144,7 +144,9 @@ if test x"${with_tcl}" != x; then
   if test x"${tclconfig}" != x; then
     AC_MSG_RESULT([loading TCL configuration from ${tclconfig}])
     . ${tclconfig}
+    AC_SUBST(TCL_INCLUDE_SPEC)
     AC_SUBST(TCL_LIB_SPEC)
+    AC_SUBST(TCL_STUB_LIB_SPEC)
     # There are lots of other configuration variables that are provided by the
     # tclConfig.sh file and that could be included here.  But as of right now,
     # TCL_LIB_SPEC is the only what that the Makefile uses.
