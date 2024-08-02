@@ -1556,13 +1556,29 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
-pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
-tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
-	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
-	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
-	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
-	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
+# Build the SQLite TCL extension in a way that make it compatible
+# with whatever version of TCL is running as $TCLSH_CMD, possibly defined
+# by --with-tclsh=
+#
+tclextension:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
+# to find it.
+#
+tclextension-install:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension that is used by $TCLSH_CMD
+#
+tclextension-uninstall: 
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
+
+# List all installed the SQLite TCL extension that is are accessible
+# by $TCLSH_CMD, included prior versions.
+#
+tclextension-list: 
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
 clean:
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
