@@ -72,9 +72,11 @@ if {![file exists $LIBDIR]} {
                does not exist."
   exit 1
 }
-if {![file exists $LIBDIR/tclConfig.sh]} {
+if {![file exists $LIBDIR/tclConfig.sh] 
+    || [file size $LIBDIR/tclConfig.sh]<5000} {
   set n1 $LIBDIR/tcl$::tcl_version
-  if {[file exists $n1/tclConfig.sh]} {
+  if {[file exists $n1/tclConfig.sh]
+      && [file size $n1/tclConfig.sh]>5000} {
     set LIBDIR $n1
   } else {
     puts stderr "$argv0: cannot find tclConfig.sh in either $LIBDIR or $n1"
@@ -84,6 +86,7 @@ if {![file exists $LIBDIR/tclConfig.sh]} {
 
 # Read the tclConfig.sh file into the $tclConfig variable
 #
+#puts "using $LIBDIR/tclConfig.sh"
 set fd [open $LIBDIR/tclConfig.sh rb]
 set tclConfig [read $fd]
 close $fd
@@ -95,8 +98,14 @@ regexp {TCL_MAJOR_VERSION='(\d)'} $tclConfig all TCLMAJOR
 set SUFFIX so
 regexp {TCL_SHLIB_SUFFIX='\.([^']+)'} $tclConfig all SUFFIX
 if {$CC==""} {
+  set cc {}
+  regexp {TCL_CC='([^']+)'} $tclConfig all cc
+  if {$cc!=""} {
+    set CC $cc
+  }
+}
+if {$CC==""} {
   set CC gcc
-  regexp {TCL_CC='([^']+)'} $tclConfig all CC
 }
 set CFLAGS -fPIC
 regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
@@ -108,7 +117,7 @@ regexp {TCL_INCLUDE_SPEC='([^']+)'} $tclConfig all inc
 if {$inc!=""} {
   append INC " $inc"
 }
-set cmd {}
+set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
 regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
 set LDFLAGS "$INC -DUSE_TCL_STUBS"
 if {[string length $OPTS]>1} {

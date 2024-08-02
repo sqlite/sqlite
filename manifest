@@ -1,5 +1,5 @@
-C Simplification\sthe\s./configure\sscript.\s\sCarry\sMakefile\sCFLAGS\sand\sOPTS\sthrough\ninto\sbuilttclext.tcl.\s\sFix\sa\sbug\sin\stclsqlite.c\sintroduced\sby\sthe\sprevious\ncheck-in.
-D 2024-08-01T23:30:29.441
+C Extra\srobustness\sfor\sthe\sSQLite\sTcl\sExtension\sbuilder,\sso\sthat\sit\sworks\non\sDebian\sLinux.
+D 2024-08-02T00:19:59.895
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2093,7 +2093,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
-F tool/buildtclext.tcl d6e880173bec323f30c0505c5f82eb29c5661bd501d33b5b7a3b5507269dc4f9
+F tool/buildtclext.tcl 865343ca043c4119e19de9651d01185d0017e588d70f533612c345553cc8160b
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f667cc8e54167342e17e63e1a017388365ebf4cd379f9c16c12e4603b34a326
-R 79bc0ffb836cbf05c7dcfd1908280244
+P 72a80aa0abb121a23f8cc1eb1af04ba06c733a7a40c06f1fe9e62f2a0a26ca6e
+R 30cc174315110745d69ebebfb5ba6cf9
 U drh
-Z c826d5650b7fb369e6f2edfd17fa30c3
+Z 07ee2d4f800935e6e99694df22387f92
 # Remove this line to create a well-formed Fossil manifest.
