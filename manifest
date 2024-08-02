@@ -1,9 +1,9 @@
-C Extra\srobustness\sfor\sthe\sSQLite\sTcl\sExtension\sbuilder,\sso\sthat\sit\sworks\non\sDebian\sLinux.
-D 2024-08-02T00:19:59.895
+C Continuing\srefinements\sof\sthe\stclextension-install\smakefile\starget.
+D 2024-08-02T00:51:52.845
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 3de6a3420170d4f6fac8fd0f338db422ce100be1e64c1e8cb62b85876ebc5fca
+F Makefile.in 3cbcc2626f946d826350d68e16ecc987cb653117dde77ebfb33179f5ec86b5a9
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 993f8addade63bcac7192416e7161ceee60edcee2376299ea48b2a74c66ac2d5
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -2093,7 +2093,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
-F tool/buildtclext.tcl 865343ca043c4119e19de9651d01185d0017e588d70f533612c345553cc8160b
+F tool/buildtclext.tcl 0368eda9802262105d4b1896439889b042a40acfe73e55869ea24edb4fcba94b
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72a80aa0abb121a23f8cc1eb1af04ba06c733a7a40c06f1fe9e62f2a0a26ca6e
-R 30cc174315110745d69ebebfb5ba6cf9
+P 2f0738daaff48c51a60f063af6e453443bd7eedf6936daab325b2a36927c7a2b
+R 154770fef55d2b7a022438541d20df55
 U drh
-Z 07ee2d4f800935e6e99694df22387f92
+Z fb4c8793f898a65a5ea5be50709db328
 # Remove this line to create a well-formed Fossil manifest.

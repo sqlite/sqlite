@@ -216,9 +216,9 @@ package ifneeded sqlite3 $VERSION \\
   #
   set cmd "$CMD tclsqlite3.c -o $OUT $LIBS"
   puts $cmd
-  if {[catch {
-    exec {*}$cmd
-  } errmsg]} {
+  file delete -force $OUT
+  catch {exec {*}$cmd} errmsg
+  if {$errmsg!="" && ![file exists $OUT]} {
     puts $errmsg
     exit 1
   }

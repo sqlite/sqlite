@@ -1566,8 +1566,8 @@ tclextension:	tclsqlite3.c
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
-tclextension-install:	tclextension
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --install-only
+tclextension-install:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl
 
 # Install the SQLite TCL extension that is used by $TCLSH_CMD
 #
