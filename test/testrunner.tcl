@@ -58,7 +58,7 @@ Usage:
     $a0 help
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
-    $a0 status
+    $a0 status ?-d SECS?
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
@@ -101,8 +101,9 @@ with the specified permutation.
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
 "status" command prints a report describing the current state and progress 
-of the tests. The "njob" command may be used to query or modify the number
-of sub-processes the test script uses to run tests.
+of the tests.  Use the "-d N" option to have the status display clear the
+screen and repeat every N seconds.  The "njob" command may be used to query
+or modify the number of sub-processes the test script uses to run tests.
 
 The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
@@ -390,10 +391,24 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
 #--------------------------------------------------------------------------
 # Check if this is the "status" command:
 #
-if {[llength $argv]==1 
+if {[llength $argv]>=1 
  && [string compare -nocase status [lindex $argv 0]]==0 
 } {
-
+  set delay 0
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$a0=="-d" && $ii+1<[llength $argv]} {
+      incr ii
+      set delay [lindex $argv $ii]
+      if {![string is integer -strict $delay]} {
+        puts "Argument to -d should be an integer"
+        exit 1
+      }
+    } else {
+      puts "unknown option: \"$a0\""
+      exit 1
+    }
+  }
   proc display_job {jobdict {tm ""}} {
     array set job $jobdict
 
@@ -404,71 +419,100 @@ if {[llength $argv]==1
     puts "  $dfname $dtm"
   }
 
+  # The clreol proc returns the VT100 escape code for clear-to-end-of-line,
+  # if delay>0.  If we are only painting the status once, it returns an
+  # empty string.
+  #
+  if {$delay>0} {
+    proc clreol {} {return ""}
+  } else {
+    proc clreol {} {return \033K}
+  }
+
   if {![file readable $TRG(dbname)]} {
     puts "Database missing: $TRG(dbname)"
     exit
   }
   sqlite3 mydb $TRG(dbname)
   mydb timeout 2000
-  mydb eval BEGIN
 
-  if {[catch {
-    set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
-    set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
-  } msg]} {
-    puts "Cannot read database: $TRG(dbname)"
-    mydb close
-    exit
-  }
+  # Clear the whole screen initially.
+  #
+  if {$delay>0} {puts -nonewline "\033\[2J"}
 
-  set now [clock_milliseconds]
-  set tm [mydb one {
-    SELECT 
-      COALESCE((SELECT value FROM config WHERE name='end'), $now) -
-      (SELECT value FROM config WHERE name='start')
-  }]
-
-  set total 0
-  foreach s {"" ready running done failed} { set S($s) 0 }
-  mydb eval {
-    SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
-  } {
-    incr S($state) $cnt
-    incr total $cnt
-  }
-  set fin [expr $S(done)+$S(failed)]
-  if {$cmdline!=""} {set cmdline " $cmdline"}
-
-  set f ""
-  if {$S(failed)>0} {
-    set f "$S(failed) FAILED, "
-  }
-  puts "Command line: \[testrunner.tcl$cmdline\]"
-  puts "Jobs:         $nJob"
-  puts "Summary:      ${tm}ms, ($fin/$total) finished, ${f}$S(running) running"
-
-  set srcdir [file dirname [file dirname $TRG(info_script)]]
-  if {$S(running)>0} {
-    puts "Running: "
+  while {1} {
+    mydb eval BEGIN
+    if {[catch {
+      set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
+      set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
+    } msg]} {
+      puts "Cannot read database: $TRG(dbname)"
+      mydb close
+      exit
+    }
+  
+    set now [clock_milliseconds]
+    set tm [mydb one {
+      SELECT 
+        COALESCE((SELECT value FROM config WHERE name='end'), $now) -
+        (SELECT value FROM config WHERE name='start')
+    }]
+  
+    set total 0
+    foreach s {"" ready running done failed} { set S($s) 0 }
     mydb eval {
-      SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
-    } job {
-      display_job [array get job] $now
+      SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
+    } {
+      incr S($state) $cnt
+      incr total $cnt
     }
+    set fin [expr $S(done)+$S(failed)]
+    if {$cmdline!=""} {set cmdline " $cmdline"}
+  
+    if {$delay>0} {
+      # Move the cursor to the top-left corner.  Each iteration will simply
+      # overwrite.
+      puts -nonewline "\033\[H"
+    }
+    set f ""
+    if {$S(failed)>0} {
+      set f "$S(failed) FAILED, "
+    }
+    puts "Command line: \[testrunner.tcl$cmdline\]"
+    puts "Jobs:         $nJob"
+    puts "Summary:      ${tm}ms, ($fin/$total) finished,\
+                        ${f}$S(running) running  "
+  
+    set srcdir [file dirname [file dirname $TRG(info_script)]]
+    if {$S(running)>0} {
+      puts "Running: "
+      mydb eval {
+        SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
+      } job {
+        display_job [array get job] $now
+      }
+    }
+    if {$S(failed)>0} {
+      puts "Failures: "
+      mydb eval {
+        SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+      } job {
+        display_job [array get job]
+      }
+      set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
+      if {$nOmit} {
+        puts "$nOmit jobs omitted due to failures[clreol]"
+      }
+    }
+    if {$delay>0} {
+      # Clear everything else to the bottom of the screen
+      puts -nonewline "\033\[J"
+      flush stdout
+    }
+    mydb eval COMMIT
+    if {$delay<=0} break
+    after [expr {$delay*1000}]
   }
-  if {$S(failed)>0} {
-    puts "Failures: "
-    mydb eval {
-      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
-    } job {
-      display_job [array get job]
-    }
-    set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
-    if {$nOmit} {
-      puts "$nOmit jobs omitted due to failures"
-    }
-  }
- 
   mydb close
   exit
 }
