@@ -32,8 +32,12 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--build-only"} {
     set install 0
   } elseif {$a0=="--uninstall"} {
+    set build 0
+    set install 0
     set uninstall 1
   } elseif {$a0=="--info"} {
+    set build 0
+    set install 0
     set infoonly 1
   } elseif {$a0=="--cc" && $ii+1<[llength $argv]} {
     incr ii
@@ -57,79 +61,93 @@ set fd [open $srcdir/VERSION]
 set VERSION [string trim [read $fd]]
 close $fd
 
-# Figure out the location of the tclConfig.sh file used by the
-# tclsh that is executing this script.
-#
-if {[catch {
-  set LIBDIR [tcl::pkgconfig get libdir,install]
-}]} {
-  puts stderr "$argv0: tclsh does not support tcl::pkgconfig."
-  exit 1
-}
-if {![file exists $LIBDIR]} {
-  puts stderr "$argv0: cannot find the tclConfig.sh file."
-  puts stderr "$argv0: tclsh reported library directory \"$LIBDIR\"\
-               does not exist."
-  exit 1
-}
-if {![file exists $LIBDIR/tclConfig.sh] 
-    || [file size $LIBDIR/tclConfig.sh]<5000} {
-  set n1 $LIBDIR/tcl$::tcl_version
-  if {[file exists $n1/tclConfig.sh]
-      && [file size $n1/tclConfig.sh]>5000} {
-    set LIBDIR $n1
-  } else {
-    puts stderr "$argv0: cannot find tclConfig.sh in either $LIBDIR or $n1"
+if {$tcl_platform(platform)=="windows"} {
+  # We are only able to install, uninstall, and list on Windows.
+  # The build process is handled by the Makefile.msc, specifically
+  # using "nmake /f Makefile.msc pkgIndex.tcl tclsqlite3.dll"
+  #
+  if {$build} {
+    puts "Unable to build on Windows using the builttclext.tcl script."
+    puts "To build, run\n"
+    puts "   \"nmake /f Makefile.msc pkgIndex.tcl tclsqlite3.dll"
     exit 1
   }
-}
+  set OUT tclsqlite3.dll
+} else {
+  # Figure out the location of the tclConfig.sh file used by the
+  # tclsh that is executing this script.
+  #
+  if {[catch {
+    set LIBDIR [tcl::pkgconfig get libdir,install]
+  }]} {
+    puts stderr "$argv0: tclsh does not support tcl::pkgconfig."
+    exit 1
+  }
+  if {![file exists $LIBDIR]} {
+    puts stderr "$argv0: cannot find the tclConfig.sh file."
+    puts stderr "$argv0: tclsh reported library directory \"$LIBDIR\"\
+                 does not exist."
+    exit 1
+  }
+  if {![file exists $LIBDIR/tclConfig.sh] 
+      || [file size $LIBDIR/tclConfig.sh]<5000} {
+    set n1 $LIBDIR/tcl$::tcl_version
+    if {[file exists $n1/tclConfig.sh]
+        && [file size $n1/tclConfig.sh]>5000} {
+      set LIBDIR $n1
+    } else {
+      puts stderr "$argv0: cannot find tclConfig.sh in either $LIBDIR or $n1"
+      exit 1
+    }
+  }
 
-# Read the tclConfig.sh file into the $tclConfig variable
-#
-#puts "using $LIBDIR/tclConfig.sh"
-set fd [open $LIBDIR/tclConfig.sh rb]
-set tclConfig [read $fd]
-close $fd
-
-# Extract parameter we will need from the tclConfig.sh file
-#
-set TCLMAJOR 8
-regexp {TCL_MAJOR_VERSION='(\d)'} $tclConfig all TCLMAJOR
-set SUFFIX so
-regexp {TCL_SHLIB_SUFFIX='\.([^']+)'} $tclConfig all SUFFIX
-if {$CC==""} {
-  set cc {}
-  regexp {TCL_CC='([^']+)'} $tclConfig all cc
-  if {$cc!=""} {
-    set CC $cc
+  # Read the tclConfig.sh file into the $tclConfig variable
+  #
+  #puts "using $LIBDIR/tclConfig.sh"
+  set fd [open $LIBDIR/tclConfig.sh rb]
+  set tclConfig [read $fd]
+  close $fd
+  
+  # Extract parameter we will need from the tclConfig.sh file
+  #
+  set TCLMAJOR 8
+  regexp {TCL_MAJOR_VERSION='(\d)'} $tclConfig all TCLMAJOR
+  set SUFFIX so
+  regexp {TCL_SHLIB_SUFFIX='\.([^']+)'} $tclConfig all SUFFIX
+  if {$CC==""} {
+    set cc {}
+    regexp {TCL_CC='([^']+)'} $tclConfig all cc
+    if {$cc!=""} {
+      set CC $cc
+    }
+  }
+  if {$CC==""} {
+    set CC gcc
+  }
+  set CFLAGS -fPIC
+  regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
+  set LIBS {}
+  regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBS
+  set INC "-I$srcdir/src"
+  set inc {}
+  regexp {TCL_INCLUDE_SPEC='([^']+)'} $tclConfig all inc
+  if {$inc!=""} {
+    append INC " $inc"
+  }
+  set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
+  regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
+  set LDFLAGS "$INC -DUSE_TCL_STUBS"
+  if {[string length $OPTS]>1} {
+    append LDFLAGS $OPTS
+  }
+  set CMD [subst $cmd]
+  if {$TCLMAJOR>8} {
+    set OUT libtcl9sqlite$VERSION.$SUFFIX
+  } else {
+    set OUT libsqlite$VERSION.$SUFFIX
   }
 }
-if {$CC==""} {
-  set CC gcc
-}
-set CFLAGS -fPIC
-regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
-set LIBS {}
-regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBS
-set INC "-I$srcdir/src"
-set inc {}
-regexp {TCL_INCLUDE_SPEC='([^']+)'} $tclConfig all inc
-if {$inc!=""} {
-  append INC " $inc"
-}
-set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
-regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
-set LDFLAGS "$INC -DUSE_TCL_STUBS"
-if {[string length $OPTS]>1} {
-  append LDFLAGS $OPTS
-}
-set CMD [subst $cmd]
-if {$TCLMAJOR>8} {
-  set OUT libtcl9sqlite$VERSION.$SUFFIX
-} else {
-  set OUT libsqlite$VERSION.$SUFFIX
-}
-
+  
 # Show information about prior installs
 #
 if {$infoonly} {
