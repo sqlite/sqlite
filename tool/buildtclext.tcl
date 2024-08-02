@@ -202,7 +202,7 @@ if {$install} {
 if {$build} {
   # Generate the pkgIndex.tcl file
   #
-  puts "generating pkgConfig.tcl..."
+  puts "generating pkgIndex.tcl..."
   set fd [open pkgIndex.tcl w]
   puts $fd [subst -nocommands {# -*- tcl -*-
 # Tcl package index file, version ???

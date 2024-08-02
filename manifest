@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\sthe\sconfigure/Makefile\ssystem\scaused\sby\srecent\senhancements\nand\sreport\sby\s[forum:/forumpost/242ebd0c81|forum\spost\s242ebd0c81].
-D 2024-08-02T11:32:28.781
+C Fix\stypo\sin\sa\sprogress\smessage\sin\sthe\sbuilttclext.tcl\sscript.
+D 2024-08-02T13:56:55.670
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2093,7 +2093,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
-F tool/buildtclext.tcl 0368eda9802262105d4b1896439889b042a40acfe73e55869ea24edb4fcba94b
+F tool/buildtclext.tcl 6b8907c6a7b6734940513886d06ea9c00d2f3ba62ce39208db4e2ea5d115198b
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 888284d1d47269e66e23627e2519cd2cf83ef65a777a679af20c288453f092e2
-R 93c99f8e3949df92d18547af26ca7640
+P a59319fe4adc094381c46e490289b3e0cda8f804edaea6984571c47a68a23eef
+R 50f27b8d2c62eae13aeca51f3735d0b2
 U drh
-Z ef0c9981348aa214ce55c288609b3967
+Z d21a99cc930b4bc362ff91cb037b47fd
 # Remove this line to create a well-formed Fossil manifest.
