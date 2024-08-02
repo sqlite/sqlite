@@ -1,9 +1,9 @@
-C Continuing\srefinements\sof\sthe\stclextension-install\smakefile\starget.
-D 2024-08-02T00:51:52.845
+C Previous\sMakefile.in\schange\sbroke\sthe\stclextension-install\starget.
+D 2024-08-02T00:56:31.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 3cbcc2626f946d826350d68e16ecc987cb653117dde77ebfb33179f5ec86b5a9
+F Makefile.in fbfe18ff577bcb35b1236015e442667bcdf94230cef07a0897e26f3cab5bf488
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 993f8addade63bcac7192416e7161ceee60edcee2376299ea48b2a74c66ac2d5
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f0738daaff48c51a60f063af6e453443bd7eedf6936daab325b2a36927c7a2b
-R 154770fef55d2b7a022438541d20df55
+P 871c20a848e0e9b7f3d5661bd076fde16e9ec1e445a7ee657ef267978988ad56
+R ba9c12b4ec23352b095b4f17c1f3bef8
 U drh
-Z fb4c8793f898a65a5ea5be50709db328
+Z bc0e02f193279e0ca2d17c115ebd2a46
 # Remove this line to create a well-formed Fossil manifest.
