@@ -517,7 +517,9 @@ static int fts5StorageDeleteFromIndex(
         pVal = apVal[iCol-1];
       }
 
-      rc = sqlite3Fts5ExtractText(pConfig, pVal, 1, &bReset, &pText, &nText);
+      rc = sqlite3Fts5ExtractText(
+          pConfig, pVal, pSeek!=0, &bReset, &pText, &nText
+      );
       if( rc==SQLITE_OK ){
         ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, 
@@ -890,35 +892,23 @@ int sqlite3Fts5StorageContentInsert(
         ** Retrieve the value from Fts5Storage.pSavedRow instead. */
         pVal = sqlite3_column_value(p->pSavedRow, i-1);
       }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
-        if( pConfig->bLocale==0 ){
-          sqlite3Fts5ConfigErrmsg(pConfig, 
-              "fts5_locale() may not be used without locale=1"
-          );
-          rc = SQLITE_ERROR;
-          break;
-        }else if( i>1 && pConfig->abUnindexed[i-2] ){
-          /* At attempt to insert an fts5_locale() value into an UNINDEXED
-          ** column. Strip the locale away and just bind the text.  */
-          const char *pText = 0;
-          int nText = 0;
-          rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
-          sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
+        assert( pConfig->bLocale );
+        if( i>1 ){
+          if( pConfig->abUnindexed[i-2] ){
+            /* At attempt to insert an fts5_locale() value into an UNINDEXED
+            ** column. Strip the locale away and just bind the text.  */
+            const char *pText = 0;
+            int nText = 0;
+            rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
+            sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
+          }else{
+            const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
+            int nBlob = sqlite3_value_bytes(pVal);
+            assert( nBlob>4 );
+            sqlite3_bind_blob(pInsert, i, pBlob+4, nBlob-4, SQLITE_TRANSIENT);
+          }
           continue;
         }
-      }else if( pConfig->bLocale 
-       && sqlite3_value_type(pVal)==SQLITE_BLOB 
-       && i>=2 && pConfig->abUnindexed[i-2]==0
-      ){
-        /* Inserting a blob into a normal content table with locale=1. 
-        ** Add the 4 0x00 byte header.  */
-        int n = sqlite3_value_bytes(pVal);
-        u8 *pBlob = sqlite3Fts5MallocZero(&rc, n+4);
-        if( pBlob ){
-          memcpy(&pBlob[4], sqlite3_value_blob(pVal), n);
-          rc = sqlite3_bind_blob(pInsert, i, pBlob, n+4, SQLITE_TRANSIENT);
-          sqlite3_free(pBlob);
-        }
-        continue;
       }
 
       rc = sqlite3_bind_value(pInsert, i, pVal);

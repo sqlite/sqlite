@@ -208,12 +208,6 @@ struct Fts5TokenizerConfig {
 **
 ** bLocale:
 **   Set to true if locale=1 was specified when the table was created.
-**
-** eEnc:
-**   Set to either FTS5_ENCODING_UNKNOWN, ENCODING_UTF8, or ENCODING_UTF16,
-**   to indicate the encoding used by the database handle. This is initially
-**   set to UNKNOWN, then to one of the other two values the first time it
-**   is required.
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -236,7 +230,6 @@ struct Fts5Config {
   char *zContentExprlist;
   Fts5TokenizerConfig t;
   int bLock;                      /* True when table is preparing statement */
-  int eEnc;                       /* An FTS5_ENCODING_XXX constant */
   
 
   /* Values loaded from the %_config table */
@@ -277,10 +270,6 @@ struct Fts5Config {
 #define FTS5_PATTERN_NONE     0
 #define FTS5_PATTERN_LIKE     65  /* matches SQLITE_INDEX_CONSTRAINT_LIKE */
 #define FTS5_PATTERN_GLOB     66  /* matches SQLITE_INDEX_CONSTRAINT_GLOB */
-
-#define FTS5_ENCODING_UNKNOWN 0
-#define FTS5_ENCODING_UTF8    1
-#define FTS5_ENCODING_UTF16   2
 
 int sqlite3Fts5ConfigParse(
     Fts5Global*, sqlite3*, int, const char **, Fts5Config**, char**

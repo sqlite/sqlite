@@ -107,7 +107,7 @@ do_execsql_test 2.5 {
 
 do_catchsql_test 2.6 {
   INSERT INTO b2 VALUES('def', fts5_locale('reverse', 'four five six'));
-} {1 {fts5_locale() may not be used without locale=1}}
+} {1 {fts5_locale() requires locale=1}}
 
 do_execsql_test 2.7  { SELECT rowid FROM b1('one')  } {1}
 do_execsql_test 2.8  { SELECT rowid FROM b1('four') } {}
@@ -149,7 +149,7 @@ reset_db
 sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
 
 do_execsql_test 3.1 {
-  CREATE VIRTUAL TABLE c1 USING fts5(x, content=, tokenize=tcl);
+  CREATE VIRTUAL TABLE c1 USING fts5(x, content=, tokenize=tcl, locale=1);
   CREATE VIRTUAL TABLE c2 USING fts5vocab('c1', instance);
 
   INSERT INTO c1 VALUES('hello world');
@@ -343,11 +343,57 @@ do_execsql_test 6.0 {
 }
 do_catchsql_test 6.1 {
   INSERT INTO x1(rowid, x) VALUES(123, fts5_locale('en_AU', 'hello world'));
-} {1 {fts5_locale() may not be used without locale=1}}
+} {1 {fts5_locale() requires locale=1}}
 
 do_execsql_test 6.2 {
   SELECT typeof( fts5_locale(NULL, 'xyz') ), typeof( fts5_locale('', 'abc') );
 } {text text}
+
+#--------------------------------------------------------------------------
+# Test that fts5_locale() works with virtual tables.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+# optimization_control db query-flattener 0
+
+do_execsql_test 7.1 {
+  CREATE TABLE t1(ii INTEGER PRIMARY KEY, bb BLOB, tt TEXT, locale TEXT);
+  CREATE VIEW v1 AS 
+      SELECT ii AS rowid, bb, fts5_locale(locale, tt) AS tt FROM t1;
+
+  CREATE VIRTUAL TABLE ft USING fts5(
+      bb, tt, locale=1, tokenize=tcl, content=v1
+  );
+
+  INSERT INTO t1 VALUES(1, NULL, 'one two three', NULL);
+  INSERT INTO t1 VALUES(2, '7800616263', 'four five six', 'reverse');
+  INSERT INTO t1 VALUES(3, '000000007800616263', 'seven eight nine', 'second');
+}
+
+do_execsql_test 7.2 {
+  INSERT INTO ft(ft) VALUES('rebuild');
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 7.3 {
+  SELECT rowid, quote(bb), quote(tt) FROM ft
+} {
+  1 NULL {'one two three'}
+  2 '7800616263' {'four five six'}
+  3 '000000007800616263' {'seven eight nine'}
+}
+
+do_execsql_test 7.4 { SELECT rowid FROM ft('six'); } 
+do_execsql_test 7.5 { SELECT rowid FROM ft(fts5_locale('reverse','six')); } 2
+
+fts5_aux_test_functions db
+
+do_execsql_test 7.6 {
+  SELECT fts5_test_columnlocale(ft) FROM ft;
+} {
+  {{} {}} {{} reverse} {{} second}
+}
+
 
 
 finish_test

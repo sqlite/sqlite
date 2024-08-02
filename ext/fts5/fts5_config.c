@@ -615,13 +615,6 @@ int sqlite3Fts5ConfigParse(
     sqlite3_free(zTwo);
   }
 
-  /* If this is not an FTS5_CONTENT_NORMAL table, set bLocale. There are
-  ** no restrictions on using fts5_locale() with external-content or
-  ** contentless tables. */
-  if( pRet->eContent!=FTS5_CONTENT_NORMAL ){
-    pRet->bLocale = 1;
-  }
-
   /* We only allow contentless_delete=1 if the table is indeed contentless. */
   if( rc==SQLITE_OK 
    && pRet->bContentlessDelete 
