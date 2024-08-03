@@ -58,7 +58,7 @@ Usage:
     $a0 help
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
-    $a0 status ?-d SECS?
+    $a0 status ?-d SECS? ?--cls?
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
@@ -67,6 +67,7 @@ Usage:
     --explain                Write summary to stdout
     --jobs NUM               Run tests using NUM separate processes
     --omit CONFIGS           Omit configs on comma-separated list CONFIGS
+    --status                 Show the full "status" report while running
     --stop-on-coredump       Stop running if any test segfaults
     --stop-on-error          Stop running after any reported error
     --zipvfs ZIPVFSDIR       ZIPVFS source directory
@@ -187,6 +188,7 @@ set TRG(dryrun) 0                   ;# True if --dryrun option
 set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
+set TRG(fullstatus) 0               ;# Full "status" report while running
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -386,6 +388,99 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
   puts [trd_buildscript $config [file dirname $testdir] $bMsvc]
   exit
 }
+
+# Helper routine for show_status
+#
+proc display_job {jobdict {tm ""}} {
+  array set job $jobdict
+  set dfname [format %-60s $job(displayname)]
+  set dtm ""
+  if {$tm!=""} {
+    set dtm [format %-10s "\[[expr {$tm-$job(starttime)}]ms\]"]
+  }
+  puts "  $dfname $dtm"
+}
+
+# This procedure shows the "status" page.  It uses the database
+# connect passed in as the "db" parameter.  If the "cls" parameter
+# is true, then VT100 escape codes are used to format the display.
+#
+proc show_status {db cls} {
+  global TRG
+  $db eval BEGIN
+  if {[catch {
+    set cmdline [$db one { SELECT value FROM config WHERE name='cmdline' }]
+    set nJob [$db one { SELECT value FROM config WHERE name='njob' }]
+  } msg]} {
+    if {$cls} {puts "\033\[H\033\[2J"}
+    puts "Cannot read database: $TRG(dbname)"
+    return
+  }
+  set now [clock_milliseconds]
+  set tm [$db one {
+    SELECT 
+      COALESCE((SELECT value FROM config WHERE name='end'), $now) -
+      (SELECT value FROM config WHERE name='start')
+  }]
+
+  set total 0
+  foreach s {"" ready running done failed} { set S($s) 0 }
+  $db eval {
+    SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
+  } {
+    incr S($state) $cnt
+    incr total $cnt
+  }
+  set fin [expr $S(done)+$S(failed)]
+  if {$cmdline!=""} {set cmdline " $cmdline"}
+
+  if {$cls} {
+    # Move the cursor to the top-left corner.  Each iteration will simply
+    # overwrite.
+    puts -nonewline "\033\[H"
+    flush stdout
+    set clreol "\033\[K"
+  } else {
+    set clreol ""
+  }
+  set f ""
+  if {$S(failed)>0} {
+    set f "$S(failed) FAILED, "
+  }
+  puts "Command line: \[testrunner.tcl$cmdline\]$clreol"
+  puts "Jobs:         $nJob  "
+  puts "Summary:      ${tm}ms, ($fin/$total) finished,\
+                      ${f}$S(running) running  "
+
+  set srcdir [file dirname [file dirname $TRG(info_script)]]
+  if {$S(running)>0} {
+    puts "Running: "
+    $db eval {
+      SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
+    } job {
+      display_job [array get job] $now
+    }
+  }
+  if {$S(failed)>0} {
+    puts "Failures: "
+    $db eval {
+      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+    } job {
+      display_job [array get job]
+    }
+    set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    if {$nOmit} {
+      puts "$nOmit jobs omitted due to failures$clreol"
+    }
+  }
+  if {$cls} {
+    # Clear everything else to the bottom of the screen
+    puts -nonewline "\033\[0J"
+    flush stdout
+  }
+  $db eval COMMIT
+}
+
   
 
 #--------------------------------------------------------------------------
@@ -395,6 +490,7 @@ if {[llength $argv]>=1
  && [string compare -nocase status [lindex $argv 0]]==0 
 } {
   set delay 0
+  set cls 0
   for {set ii 1} {$ii<[llength $argv]} {incr ii} {
     set a0 [lindex $argv $ii]
     if {$a0=="-d" && $ii+1<[llength $argv]} {
@@ -404,29 +500,12 @@ if {[llength $argv]>=1
         puts "Argument to -d should be an integer"
         exit 1
       }
+    } elseif {$a0=="-cls" || $a0=="--cls"} {
+      set cls 1
     } else {
       puts "unknown option: \"$a0\""
       exit 1
     }
-  }
-  proc display_job {jobdict {tm ""}} {
-    array set job $jobdict
-
-    set dfname [format %-60s $job(displayname)]
-
-    set dtm ""
-    if {$tm!=""} { set dtm "\[[expr {$tm-$job(starttime)}]ms\]" }
-    puts "  $dfname $dtm"
-  }
-
-  # The clreol proc returns the VT100 escape code for clear-to-end-of-line,
-  # if delay>0.  If we are only painting the status once, it returns an
-  # empty string.
-  #
-  if {$delay>0} {
-    proc clreol {} {return ""}
-  } else {
-    proc clreol {} {return \033K}
   }
 
   if {![file readable $TRG(dbname)]} {
@@ -438,78 +517,10 @@ if {[llength $argv]>=1
 
   # Clear the whole screen initially.
   #
-  if {$delay>0} {puts -nonewline "\033\[2J"}
+  if {$delay>0 || $cls} {puts -nonewline "\033\[2J"}
 
   while {1} {
-    mydb eval BEGIN
-    if {[catch {
-      set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
-      set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
-    } msg]} {
-      puts "Cannot read database: $TRG(dbname)"
-      mydb close
-      exit
-    }
-  
-    set now [clock_milliseconds]
-    set tm [mydb one {
-      SELECT 
-        COALESCE((SELECT value FROM config WHERE name='end'), $now) -
-        (SELECT value FROM config WHERE name='start')
-    }]
-  
-    set total 0
-    foreach s {"" ready running done failed} { set S($s) 0 }
-    mydb eval {
-      SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
-    } {
-      incr S($state) $cnt
-      incr total $cnt
-    }
-    set fin [expr $S(done)+$S(failed)]
-    if {$cmdline!=""} {set cmdline " $cmdline"}
-  
-    if {$delay>0} {
-      # Move the cursor to the top-left corner.  Each iteration will simply
-      # overwrite.
-      puts -nonewline "\033\[H"
-    }
-    set f ""
-    if {$S(failed)>0} {
-      set f "$S(failed) FAILED, "
-    }
-    puts "Command line: \[testrunner.tcl$cmdline\]"
-    puts "Jobs:         $nJob"
-    puts "Summary:      ${tm}ms, ($fin/$total) finished,\
-                        ${f}$S(running) running  "
-  
-    set srcdir [file dirname [file dirname $TRG(info_script)]]
-    if {$S(running)>0} {
-      puts "Running: "
-      mydb eval {
-        SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
-      } job {
-        display_job [array get job] $now
-      }
-    }
-    if {$S(failed)>0} {
-      puts "Failures: "
-      mydb eval {
-        SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
-      } job {
-        display_job [array get job]
-      }
-      set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
-      if {$nOmit} {
-        puts "$nOmit jobs omitted due to failures[clreol]"
-      }
-    }
-    if {$delay>0} {
-      # Clear everything else to the bottom of the screen
-      puts -nonewline "\033\[J"
-      flush stdout
-    }
-    mydb eval COMMIT
+    show_status mydb [expr {$delay>0 || $cls}]
     if {$delay<=0} break
     after [expr {$delay*1000}]
   }
@@ -616,6 +627,16 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(stopOnError) 1
     } elseif {[string match "$a*" --stop-on-coredump]} {
       set TRG(stopOnCore) 1
+    } elseif {[string match "$a*" --status]} {
+      if {$tcl_platform(platform)=="windows"} {
+        puts stdout \
+"The --status option is not available on Windows. A suggested work-around"
+        puts stdout \
+"is to run the following command in a separate window:\n"
+        puts stdout "   [info nameofexe] $argv0 status -d 2\n"
+      } else {
+        set TRG(fullstatus) 1
+      }
     } else {
       usage
     }
@@ -1245,49 +1266,58 @@ proc launch_another_job {iJob} {
   return 1
 }
 
-proc one_line_report {} {
+# Show the testing progress report
+#
+proc progress_report {} {
   global TRG
 
-  set tm [expr [clock_milliseconds] - $TRG(starttime)]
-  set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
-
-  r_write_db {
-    trdb eval { 
-      SELECT displaytype, state, count(*) AS cnt 
-      FROM jobs 
-      GROUP BY 1, 2 
-    } {
-      set v($state,$displaytype) $cnt
-      incr t($displaytype) $cnt
+  if {$TRG(fullstatus)} {
+    if {$::tcl_platform(platform)=="windows"} {
+      exec [info nameofexe] $::argv0 status --cls
+    } else {
+      show_status trdb 1
     }
-  }
-
-  set text ""
-  foreach j [lsort [array names t]] {
-    foreach k {done failed running} { incr v($k,$j) 0 }
-    set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "${j}($fin/$t($j))"
-    if {$v(failed,$j)>0} {
-      lappend text "f$v(failed,$j)"
-    }
-    if {$v(running,$j)>0} {
-      lappend text "r$v(running,$j)"
-    }
-  }
-
-  if {[info exists TRG(reportlength)]} {
-    puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-  }
-  set report "${tm} [join $text { }]"
-  set TRG(reportlength) [string length $report]
-  if {[string length $report]<100} {
-    puts -nonewline "$report\r"
-    flush stdout
   } else {
-    puts $report
+    set tm [expr [clock_milliseconds] - $TRG(starttime)]
+    set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
+  
+    r_write_db {
+      trdb eval { 
+        SELECT displaytype, state, count(*) AS cnt 
+        FROM jobs 
+        GROUP BY 1, 2 
+      } {
+        set v($state,$displaytype) $cnt
+        incr t($displaytype) $cnt
+      }
+    }
+  
+    set text ""
+    foreach j [lsort [array names t]] {
+      foreach k {done failed running} { incr v($k,$j) 0 }
+      set fin [expr $v(done,$j) + $v(failed,$j)]
+      lappend text "${j}($fin/$t($j))"
+      if {$v(failed,$j)>0} {
+        lappend text "f$v(failed,$j)"
+      }
+      if {$v(running,$j)>0} {
+        lappend text "r$v(running,$j)"
+      }
+    }
+  
+    if {[info exists TRG(reportlength)]} {
+      puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
+    }
+    set report "${tm} [join $text { }]"
+    set TRG(reportlength) [string length $report]
+    if {[string length $report]<100} {
+      puts -nonewline "$report\r"
+      flush stdout
+    } else {
+      puts $report
+    }
   }
-
-  after $TRG(reporttime) one_line_report
+  after $TRG(reporttime) progress_report
 }
 
 proc launch_some_jobs {} {
@@ -1312,13 +1342,14 @@ proc run_testset {} {
 
   launch_some_jobs
 
-  one_line_report
+  if {$TRG(fullstatus)} {puts "\033\[2J"}
+  progress_report
   while {[dirs_nHelper]>0} {
     after 500 {incr ::wakeup}
     vwait ::wakeup
   }
   close $TRG(log)
-  one_line_report
+  progress_report
 
   r_write_db {
     set tm [clock_milliseconds]
