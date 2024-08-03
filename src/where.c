@@ -1506,9 +1506,12 @@ static sqlite3_index_info *allocateIndexInfo(
     /* Ensure that all bits associated with PK columns are set. This is to
     ** ensure they are available for cases like RIGHT joins or OR loops. */
     Index *pPk = sqlite3PrimaryKeyIndex((Table*)pTab);
+    assert( pPk!=0 );
     for(i=0; i<pPk->nKeyCol; i++){
       int iCol = pPk->aiColumn[i];
-      pIdxInfo->colUsed |= (iCol>=BMS ? ALLBITS : MASKBIT(iCol));
+      assert( iCol>=0 );
+      if( iCol>=BMS-1 ) iCol = BMS-1;
+      pIdxInfo->colUsed |= MASKBIT(iCol);
     }
   }
   pHidden->pWC = pWC;
