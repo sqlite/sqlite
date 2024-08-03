@@ -11641,7 +11641,7 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
         const char *zExpect = "PRAGMA foreign_keys=OFF;";
         assert( strlen(zExpect)==24 );
         if( p->bSafeMode==0
-         && strlen(zSql)>=25
+         && strlen(zSql)>=24
          && memcmp(zSql, zExpect, 25)==0
         ){
           p->eRestoreState = 1;
