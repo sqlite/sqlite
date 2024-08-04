@@ -1,9 +1,9 @@
-C Fix\sto\sthe\sprevious\scheckin:\s\sThe\scolUsed\sparameter\sshould\shave\shigh-order\sbit\nset\sif\sany\sof\sthe\s64-th\sor\sgreater\scolumns\sof\sthe\svirtual\stable\sis\sused.\s\sThe\nlower\s63\sbits\sof\scolUsed\salways\sshow\sthe\susage\sof\sthe\sfirst\s63\scolumns\sof\sthe\nvirtual\stable.
-D 2024-08-03T23:00:17.844
+C Restore\slegacy\s"tcl_install"\smakefile\starget,\sas\san\sinterim\smeasure\suntil\nI\scan\sfigure\sout\swhat\sis\sgoing\son.
+D 2024-08-04T10:13:01.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in d9d8d60efaad73dde2ed2380ab3ae3b9b15cb98089d0a7d0573f39de7f093ea2
+F Makefile.in cf96aa7d2682650dec56dc2f03cfe463feb101a1be594e4929bcd38662bc2ea8
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 6c3fe8b6ce60e73f34a148c957d78b4648745c8d30e792423aa1a8d8bf12d065
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
@@ -2203,8 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff4ac279b02190cc2107b0b110806dd7abcea47a6589d827b5ee39d4b80fb719
-R a2921e0516f49bd12a52be68e2b8cf58
+P 90ac8457750ace1d76d7bc957af7877e86e6301bb07361e19beaf5c7b3b6085a
+R 9b2d1c4cfc1de11b88618206fa47dc44
 U drh
-Z fc6c19311d5767734dbc13dfa2309323
+Z 58431a0b0955994c226a6fb05d3d3ed5
 # Remove this line to create a well-formed Fossil manifest.
