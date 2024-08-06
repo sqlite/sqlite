@@ -1,5 +1,5 @@
-C Slight\sdoc\stouchup\sfor\s[af41a1e6fc8b36e9bf65]/[c7519d98ff09e]\sbased\son\sfeedback.\sNo\scode\schanges.
-D 2024-07-15T10:13:02.516
+C Improved\srobustness\sof\sparsing\sof\stokenize=\sarguments\sin\sFTS5.
+D 2024-08-06T22:54:56.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -105,7 +105,7 @@ F ext/fts5/fts5_storage.c f9e31b0d155e9b2c92d5d3a09ad7a56b937fbf1c7f962e10f4ca62
 F ext/fts5/fts5_tcl.c fdf7e2bb9a9186cfcaf2d2ce11d338309342b7a7593c2812bc54455db53da5d2
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
-F ext/fts5/fts5_tokenize.c 83cfcede3898001cab84432a36ce1503e3080cf9b1c682b022ec82e267ea4c13
+F ext/fts5/fts5_tokenize.c b94826fc235e1937c4e93c266e0db4052dcab648ff87f4080376fc04b1fc93a4
 F ext/fts5/fts5_unicode2.c eca63dbc797f8ff0572e97caf4631389c0ab900d6364861b915bdd4735973f00
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
 F ext/fts5/fts5_vocab.c 209e0c151e108d5f3621fa24b91e9b02f3750ee6c3f9ccec312df39481b68a09
@@ -228,9 +228,9 @@ F ext/fts5/test/fts5synonym2.test e2f6ff68c4fbe12a866a3a87510f553d9dac99bcb74c10
 F ext/fts5/test/fts5tok1.test 1f7817499f5971450d8c4a652114b3d833393c8134e32422d0af27884ffe9cef
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test ac3c9112b263a639fb0508ae73a3ee886bf4866d2153771a8e8a20c721305a43
-F ext/fts5/test/fts5tokenizer2.test cb5428c7cfb3b6a74b7adfcde65506e329112003e8dffa7501d01c2d18d02569
-F ext/fts5/test/fts5trigram.test 6c4e37864f3e7d90673db5563d9736d7e40080ab94d10ebdffa94c1b77941da0
-F ext/fts5/test/fts5trigram2.test 9fe4207f8a4241747aff1005258b564958588d21bfd240d6cd4c2e955d31c156
+F ext/fts5/test/fts5tokenizer2.test b9d734c1b10bc317a377ffea3ecb5c2937313113a02e364f167d0c7f8c81c282
+F ext/fts5/test/fts5trigram.test be914555deb8504dde682bd5aa343d00c4da37dfad20709a5bac30d5f97f2ef5
+F ext/fts5/test/fts5trigram2.test 4043f8836bbbb0ce37b86dd1e741431c6c595c7e4ba4fc8e26f21dc3b540e228
 F ext/fts5/test/fts5ubsan.test 783d5a8d13ebfa169e634940228db54540780e3ba7a87ad1e4510e61440bf64b
 F ext/fts5/test/fts5umlaut.test a42fe2fe6387c40c49ab27ccbd070e1ae38e07f38d05926482cc0bccac9ad602
 F ext/fts5/test/fts5unicode.test 17056f4efe6b0a5d4f41fdf7a7dc9af2873004562eaa899d40633b93dc95f5a9
@@ -2191,9 +2191,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7519d98ff09ed96c3c6f2cccf16f8efa19133e12cbb077fc86526f0e81f0470
-Q +be7b1fc0c5d8cda971b471dfcb4637212bfff4f42b1e074077a381cc493d877a
-R 25d6454fe046cdba79f56994072c8204
-U stephan
-Z a2c01e65c215b93339c9d803c0adca59
+P a61997c315ce70d60f3722a2b3b3d06ba592ce1cafed1639a9d5f162f712ae03
+Q +d9f726ade6b258f8723f90d0b04a4682e885e30939eb29773913e4dfc8e85503
+R 5f343f5765d17f03385da2454716eb3e
+U drh
+Z 71e3aedaf58c5df6d18eb9c2aaa0e383
 # Remove this line to create a well-formed Fossil manifest.
