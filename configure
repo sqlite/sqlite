@@ -10306,7 +10306,7 @@ USE_AMALGAMATION=1
 
 #########
 # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
-# The --with-tcl= configuration parameter might be useful for this.
+# The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
 #
 
 # Check whether --with-tclsh was given.
@@ -10371,41 +10371,70 @@ if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: using tclsh at \"$TCLSH_CMD\"" >&5
 $as_echo "using tclsh at \"$TCLSH_CMD\"" >&6; }
   with_tcl=`${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}" >&5
+  if test x"${with_tcl}" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}" >&5
 $as_echo "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $TCLSH_CMD is unable to recommend a tclConfig.sh" >&5
+$as_echo "$as_me: WARNING: $TCLSH_CMD is unable to recommend a tclConfig.sh" >&2;}
+  fi
 fi
 if test x"${with_tcl}" != x; then
   if test -r ${with_tcl}/tclConfig.sh; then
     tclconfig="${with_tcl}/tclConfig.sh"
   else
-    if test -r ${with_tcl}/tcl8.6/tclConfig.sh; then
-      tclconfig="${with_tcl}/tcl8.6/tclConfig.sh"
-    else
-      as_fn_error $? "no tclConfig.sh file found in ${with_tcl} or ${with_tcl}/tcl8.6" "$LINENO" 5
-    fi
-  fi
-  if test x"${tclconfig}" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: loading TCL configuration from ${tclconfig}" >&5
-$as_echo "loading TCL configuration from ${tclconfig}" >&6; }
-    . ${tclconfig}
-
-
-
-    # There are lots of other configuration variables that are provided by the
-    # tclConfig.sh file and that could be included here.  But as of right now,
-    # TCL_LIB_SPEC is the only what that the Makefile uses.
-  fi
-  if test x"$TCLSH_CMD" == x; then
-    TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
-    if test ! -x ${TCLSH_CMD}; then
-      TCLSH_CMD_2=${TCL_EXEC_PREFIX}/bin/tclsh
-      if test ! -x ${TCLSH_CMD_2}; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}" >&5
-$as_echo "$as_me: WARNING: cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}" >&2;}
-        TCLSH_CMD=none
-      else
-        TCLSH_CMD=${TCLSH_CMD_2}
+    for i in tcl8.6 tcl9.0 lib; do
+      if test -r ${with_tcl}/$i/tclConfig.sh; then
+        tclconfig=${with_tcl}/$i/tclConfig.sh
+        break
       fi
+    done
+  fi
+  if test ! -r "${tclconfig}"; then
+    as_fn_error $? "no tclConfig.sh file found under ${with_tcl}" "$LINENO" 5
+  fi
+else
+  # If we have not yet found a tclConfig.sh file, look in $libdir whic is
+  # set automatically by autoconf or by the --prefix command-line option.
+  # See https://sqlite.org/forum/forumpost/e04e693439a22457
+  libdir=${prefix}/lib
+  if test -r ${libdir}/tclConfig.sh; then
+    tclconfig=${libdir}/tclConfig.sh
+  else
+    for i in tcl8.6 tcl9.0 lib; do
+      if test -r ${libdir}/$i/tclConfig.sh; then
+        tclconfig=${libdir}/$i/tclConfig.sh
+        break
+      fi
+    done
+  fi
+  if test ! -r "${tclconfig}"; then
+    as_fn_error $? "cannot find a usable tclConfig.sh file.
+      Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
+      SQLite does not use TCL internally, but TCL is required to build SQLite
+      from canonical sources and TCL is required for testing." "$LINENO" 5
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: loading TCL configuration from ${tclconfig}" >&5
+$as_echo "loading TCL configuration from ${tclconfig}" >&6; }
+. ${tclconfig}
+
+
+
+# There are lots of other configuration variables that are provided by the
+# tclConfig.sh file and that could be included here.  But as of right now,
+# TCL_LIB_SPEC is the only what that the Makefile uses.
+
+if test x"$TCLSH_CMD" == x; then
+  TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
+  if test ! -x ${TCLSH_CMD}; then
+    TCLSH_CMD_2=${TCL_EXEC_PREFIX}/bin/tclsh
+    if test ! -x ${TCLSH_CMD_2}; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}" >&5
+$as_echo "$as_me: WARNING: cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}" >&2;}
+      TCLSH_CMD=none
+    else
+      TCLSH_CMD=${TCLSH_CMD_2}
     fi
   fi
 fi
@@ -10425,7 +10454,6 @@ fi
 
 
 if test "x${TCLLIBDIR+set}" != "xset" ; then
-  TCLLIBDIR='$(libdir)'
   for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
     if test -d $i ; then
       TCLLIBDIR=$i

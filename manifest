@@ -1,5 +1,5 @@
-C Change\sthe\sAggInfoColumnReg()\sand\sAggInfoFuncReg()\smacros\sfor\ncompilers\sthat\scannot\sparse\sempty\selements\sof\sa\scomma\sexpression.\n[forum:/forumpost/8fd21998dc|Forum\spost\s8fd21998dc].
-D 2024-08-06T10:29:41.290
+C Improvements\sto\s./configure\sthat\swill\shopefully\sbreak\sfewer\sbuilds.
+D 2024-08-06T20:00:10.407
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -35,8 +35,8 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc 7b3bb2ef32ade0f3f14d951231811678722725e3bca240dd9727ae0dfe10f6a5
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 187978aa8b6e5bfe261bce02a883f82f7a1d239f95e53cbb5eb6be0aaab2a5b6 x
-F configure.ac 50ac86967b264eab4f2925ae8c981601f154aa090ef2fd0c413974fca63251d0
+F configure 8c74221e3e3af939270c27f0600281a5485ac2e5014dd7581b056e24a528d625 x
+F configure.ac 9a3d92b38ad56456d09c1272f83131794f73110437f0f53fb94c90ce0d7a351a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md e8635eea9153dcd6a51fd2740666ebc4492b3813cb1ac31cd8e99150df91762d
@@ -2203,8 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 931ad7d9e3aedb6d466fffc0af1f8d6b20d57a35dec644f28585f3e84f22d1ce
-R d8ba70166a18ab57aa5e818fead8a2e7
+P 533a6251f188805363f0e39613ea03b1bfd758eaea00e0855803238585bdfec7
+R a7a477ca379232403aa066474b0e57d0
 U drh
-Z 3f8f0dbf60885f64555a59fa3dde5754
+Z 01918af4ac385e19f077c5342eefac64
 # Remove this line to create a well-formed Fossil manifest.
