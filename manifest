@@ -1,5 +1,5 @@
-C Improved\srobustness\sof\sparsing\sof\stokenize=\sarguments\sin\sFTS5.\n[forum:/forumpost/171bcc2bcd|Forum\spost\s171bcc2bcd].
-D 2024-08-06T22:49:01.135
+C Remove\sunused\stest\scases\sfrom\sFTS5,\sas\sthey\sinterfere\swith\s"grep".
+D 2024-08-06T23:09:37.114
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -235,7 +235,7 @@ F ext/fts5/test/fts5trigram2.test 9be01ec340a61869931a23ec109d189e589e2b807d574e
 F ext/fts5/test/fts5ubsan.test 9a2dcf399dc8d0e0de661f0d93884d1d27e5b7f0693cfceb97dd24d818df5dd2
 F ext/fts5/test/fts5umlaut.test a42fe2fe6387c40c49ab27ccbd070e1ae38e07f38d05926482cc0bccac9ad602
 F ext/fts5/test/fts5unicode.test 41898f7e476e6515cd4b737c02a442cda5a580a74509788aa9072a2074948e0e
-F ext/fts5/test/fts5unicode2.test 3ff7ea5d27310d65441779d9919055084cdbb570ed7743af1f8f4eeca1a3be26
+F ext/fts5/test/fts5unicode2.test a5c38179b311a188b24376772309389b073c996f52b79bb9ca760a19e62043ea
 F ext/fts5/test/fts5unicode3.test f4891a3dac3b49c3d7c0fdb29566e9eb0ecff35263370c89f9661b1952b20818
 F ext/fts5/test/fts5unicode4.test 728c8f0caafb05567f524ad313d9f8b780fa45987b8a8df04eff87923c74b4d0
 F ext/fts5/test/fts5unindexed.test 168838d2c385e131120bbf5b516d2432a5fabc4caa2259c932e1d49ae209a4ae
@@ -2203,8 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 769e32a69b7b7c04225afa0371f139b2ed29aaee5a7a4159a30d600ed9f25c57
-R f82e2089204b40d7709881ee6cd588a3
+P d9f726ade6b258f8723f90d0b04a4682e885e30939eb29773913e4dfc8e85503
+R 8883991defb511b18c50a1c79414e20d
 U drh
-Z e2400150d004e016a710bc2ae395399e
+Z 52ae6209c36ddaa63cf3a7ae6e99cfb1
 # Remove this line to create a well-formed Fossil manifest.
