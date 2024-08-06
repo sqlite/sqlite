@@ -1,5 +1,5 @@
-C Restore\slegacy\s"tcl_install"\smakefile\starget,\sas\san\sinterim\smeasure\suntil\nI\scan\sfigure\sout\swhat\sis\sgoing\son.
-D 2024-08-04T10:13:01.193
+C Change\sthe\sAggInfoColumnReg()\sand\sAggInfoFuncReg()\smacros\sfor\ncompilers\sthat\scannot\sparse\sempty\selements\sof\sa\scomma\sexpression.\n[forum:/forumpost/8fd21998dc|Forum\spost\s8fd21998dc].
+D 2024-08-06T10:29:41.290
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -764,7 +764,7 @@ F src/shell.c.in 664d443867c2a6d3f17da7dd864af5660012750847a985d0b22ee0c8cd6fc18
 F src/sqlite.h.in 1ad9110150773c38ebababbad11b5cb361bcd3997676dec1c91ac5e0416a7b86
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h b77218c425891c7c90506c77fd2eb13bae03628d065b44fffeb37401cd955ac1
+F src/sqliteInt.h e3f3b3d80a666a7c5c85b4db102d41ca831c5624f0b3001814479d376f00c19d
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2203,8 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90ac8457750ace1d76d7bc957af7877e86e6301bb07361e19beaf5c7b3b6085a
-R 9b2d1c4cfc1de11b88618206fa47dc44
+P 931ad7d9e3aedb6d466fffc0af1f8d6b20d57a35dec644f28585f3e84f22d1ce
+R d8ba70166a18ab57aa5e818fead8a2e7
 U drh
-Z 58431a0b0955994c226a6fb05d3d3ed5
+Z 3f8f0dbf60885f64555a59fa3dde5754
 # Remove this line to create a well-formed Fossil manifest.
