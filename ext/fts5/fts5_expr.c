@@ -2457,6 +2457,7 @@ Fts5ExprNode *sqlite3Fts5ParseImplicitAnd(
     assert( pRight->eType==FTS5_STRING 
         || pRight->eType==FTS5_TERM 
         || pRight->eType==FTS5_EOF 
+        || (pRight->eType==FTS5_AND && pParse->bPhraseToAnd) 
     );
 
     if( pLeft->eType==FTS5_AND ){

@@ -120,4 +120,18 @@ do_execsql_test 4.2 {
   SELECT rowid FROM t4 WHERE z LIKE '%abc%'
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t5 USING fts5(
+      c1, tokenize='trigram', detail='none'
+  );
+  INSERT INTO t5(rowid, c1) VALUES(1, 'abc_____xyx_yxz');
+  INSERT INTO t5(rowid, c1) VALUES(2, 'abc_____xyxz');
+  INSERT INTO t5(rowid, c1) VALUES(3, 'ac_____xyxz');
+} {}
+do_execsql_test 5.1 {
+  SELECT rowid FROM t5 WHERE c1 LIKE 'abc%xyxz'
+} {2}
+
 finish_test
