@@ -563,6 +563,7 @@ static int vdbePmaReadBlob(
       rc = vdbePmaReadBlob(p, nCopy, &aNext);
       if( rc!=SQLITE_OK ) return rc;
       assert( aNext!=p->aAlloc );
+      assert( aNext!=0 );
       memcpy(&p->aAlloc[nByte - nRem], aNext, nCopy);
       nRem -= nCopy;
     }
