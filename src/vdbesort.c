@@ -556,7 +556,7 @@ static int vdbePmaReadBlob(
     while( nRem>0 ){
       int rc;                     /* vdbePmaReadBlob() return code */
       int nCopy;                  /* Number of bytes to copy */
-      u8 *aNext;                  /* Pointer to buffer to copy data from */
+      u8 *aNext = 0;              /* Pointer to buffer to copy data from */
 
       nCopy = nRem;
       if( nRem>p->nBuffer ) nCopy = p->nBuffer;

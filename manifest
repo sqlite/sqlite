@@ -1,5 +1,5 @@
-C Remove\sunused\stest\scases\sfrom\sFTS5,\sas\sthey\sinterfere\swith\s"grep".
-D 2024-08-06T23:09:37.114
+C Fix\sa\sharmless\scompiler\swarning\sin\san\sassert().
+D 2024-08-07T14:54:54.630
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -837,7 +837,7 @@ F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
 F src/vdbeaux.c 25d685cafe119ff890c94345e884ea558a6b5d823bfa52ba708eb8ff3c70aa71
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 831a244831eaa45335f9ae276b50a7a82ee10d8c46c2c72492d4eb8c98d94d89
-F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
+F src/vdbesort.c 218fb7358e6c4ca3c843171d989ff31b4bc0b708c10e6a095ae7e9aa3335cfae
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5fb499d20494b7eecaadb7584634af9afcb374cb0524912b475fcb1712458a1b
@@ -2203,8 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d9f726ade6b258f8723f90d0b04a4682e885e30939eb29773913e4dfc8e85503
-R 8883991defb511b18c50a1c79414e20d
+P 048a71bae48aacdfc91e59330db4d4b3d663f00665f51a7110ea82e0508758ec
+R 29c7af48e92a52bfc015cef89b4e9b80
 U drh
-Z 52ae6209c36ddaa63cf3a7ae6e99cfb1
+Z 823f9a62b624b3de6573555750300eee
 # Remove this line to create a well-formed Fossil manifest.
