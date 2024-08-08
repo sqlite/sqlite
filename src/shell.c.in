@@ -3571,6 +3571,14 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
     }else if( sqlite3_strlike("_INF", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, INFINITY);
 #endif
+    }else if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
+    }else if( strncmp(zVar, "$text_", 6)==0 ){
+      char *zBuf = sqlite3_malloc64( strlen(zVar)-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], strlen(zVar)-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, -1, sqlite3_free, SQLITE_UTF8);
+      }
     }else{
       sqlite3_bind_null(pStmt, i);
     }
