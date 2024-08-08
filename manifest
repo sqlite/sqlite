@@ -1,5 +1,5 @@
-C Do\snot\slet\sthe\snumber\sof\sterms\son\sa\sVALUES\sclause\sbe\slimited\sby\nSQLITE_LIMIT_COMPOUND_SELECT,\seven\sif\sthe\sVALUES\sclause\scontains\selements\nthat\sappear\sto\sbe\svariables\sdue\sto\sthe\suse\sof\sdouble-quoted\sstring\sliterals.
-D 2024-08-08T14:49:54.365
+C Ensure\ssqlite3expert.c\sunregisters\sany\sSQL\suser-functions\sit\sregisters\swith\sthe\sdatabase\shandle\sbefore\sreturning.
+D 2024-08-08T15:42:46.324
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -57,8 +57,8 @@ F ext/consio/console_io.c f32b757c9ee7fdf68e7586bee306f8368759e7cd12febb2a683919
 F ext/consio/console_io.h 0548b83d7c4b7270ad544a67f2bb90cebc519637fa39b1838df4744cf0d87646
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 53a749de08939e3bc14f804e97410927d46fa772cbce0247d7e8fa6fc2523b0c
-F ext/expert/sqlite3expert.c c8cea5ff15fbe792cccc4992a9b40b706411c41d32611f617897fecac6ff06a4
+F ext/expert/expert1.test 661f873fd451127edf822ef0d520088faa319135f6a15bd10be6801ac284ac9b
+F ext/expert/sqlite3expert.c 8b09aeb2b95a9fca8b6628b522bf4d69aa746ff64c38eb1e99a9b5fad8cf03b9
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2191,9 +2191,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 569824c7ff79ed1aadd2a6bce34bfcd8bf4f68db9565f56b803182adad526bc7
-Q +670beb133eb203065a75022f0c6db7c605a4e0e22c8ef6d6b4724be2663ff3dc
-R 5956e4906a5865a8a3cd97615eaa54c8
-U drh
-Z ee8bf72416287bbd114ae3210307ccd4
+P 05dbfad70c3eb39f84b91503fc9b4c1cb96843e5e6599584077b1a630936ddc7
+Q +123b154ce3b6fee1bbf483704812bd6f8538966f9687520b4470d700f0270719
+R a8307329e7c28fd3c923f24b58fddfd1
+U dan
+Z 6e3b831efc16724eb699f2665adc2c9d
 # Remove this line to create a well-formed Fossil manifest.
