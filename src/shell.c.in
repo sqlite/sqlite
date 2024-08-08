@@ -1356,6 +1356,8 @@ struct ShellState {
 #endif
   } aAuxDb[5],           /* Array of all database connections */
     *pAuxDb;             /* Currently active database connection */
+  sqlite3 *dbParam;      /* Database to use for query parameters.  Often the
+                         ** same as "db", but might be different. */
   int *aiIndent;         /* Array of indents used in MODE_Explain */
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
@@ -3480,22 +3482,44 @@ static void restore_debug_trace_modes(void){
   sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 3, &savedWhereTrace);
 }
 
-/* Create the TEMP table used to store parameter bindings */
-static void bind_table_init(ShellState *p){
+/* Create the TEMP table used to store parameter bindings.
+**
+** If bInMemory is true, create a separate in-memory database for
+** the parameter binding table.
+**
+** The database that stores the sqlite_parameter table will be
+** p->dbParam.  This might be a copy of p->db.  Or it might be a
+** completely separate database (if bInMemory is true, because of
+** the ".param init --memory" command).
+*/
+static void bind_table_init(ShellState *p, int bInMemory){
   int wrSchema = 0;
   int defensiveMode = 0;
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
-  sqlite3_exec(p->db,
+  sqlite3 *dbx;
+  if( p->dbParam ) return;
+  if( sqlite3_table_column_metadata(p->db, "TEMP", "sqlite_parameters",
+                                    "key", 0, 0, 0, 0, 0)==SQLITE_OK ){
+    return;
+  }
+  if( bInMemory && p->dbParam==0 ){
+    sqlite3_open(":memory:", &p->dbParam);
+  }else{
+    p->dbParam = p->db;
+  }
+  dbx = p->dbParam;
+ 
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  sqlite3_exec(dbx,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value\n"
     ") WITHOUT ROWID;",
     0, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
+  sqlite3_db_config(dbx, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
 }
 
 /*
@@ -3518,12 +3542,14 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
 
   nVar = sqlite3_bind_parameter_count(pStmt);
   if( nVar==0 ) return;  /* Nothing to do */
-  if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
-                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
+  if( pArg->dbParam==0
+   || sqlite3_table_column_metadata(pArg->dbParam, "TEMP", "sqlite_parameters",
+                                    "key", 0, 0, 0, 0, 0)!=SQLITE_OK
+  ){
     rc = SQLITE_NOTFOUND;
     pQ = 0;
   }else{
-    rc = sqlite3_prepare_v2(pArg->db,
+    rc = sqlite3_prepare_v2(pArg->dbParam,
             "SELECT value FROM temp.sqlite_parameters"
             " WHERE key=?1", -1, &pQ, 0);
   }
@@ -4829,7 +4855,7 @@ static const char *(azHelp[]) = {
 #endif
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear                   Erase all bindings",
-  "   init                    Initialize the TEMP table that holds bindings",
+  "   init ?--memory?         Initialize the TEMP table that holds bindings",
   "   list                    List the current parameter bindings",
   "   set PARAMETER VALUE     Given SQL parameter PARAMETER a value of VALUE",
   "                           PARAMETER should start with one of: $ : @ ?",
@@ -5485,9 +5511,17 @@ static void open_db(ShellState *p, int openFlags){
 
 /*
 ** Attempt to close the database connection.  Report errors.
+**
+** If dbParam is not NULL and is different from db, then close it
+** too.  No error checking is done on the close of dbParam, as it
+** should be a :memory: database which cannot really fail on close.
 */
-void close_db(sqlite3 *db){
-  int rc = sqlite3_close(db);
+void close_db(sqlite3 *db, sqlite3 *dbParam){
+  int rc;
+  if( dbParam && dbParam!=db ){
+    sqlite3_close(dbParam);
+  }
+  rc = sqlite3_close(db);
   if( rc ){
     eputf("Error: sqlite3_close() returns %d: %s\n", rc, sqlite3_errmsg(db));
   }
@@ -6146,7 +6180,7 @@ static void tryToClone(ShellState *p, const char *zNewDb){
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
-  close_db(newDb);
+  close_db(newDb, 0);
 }
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -7581,7 +7615,7 @@ static int arDotCommand(
   }
 end_ar_command:
   if( cmd.db!=pState->db ){
-    close_db(cmd.db);
+    close_db(cmd.db, 0);
   }
   sqlite3_free(cmd.zSrcTable);
 
@@ -8106,7 +8140,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                   SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, zVfs);
     if( rc!=SQLITE_OK ){
       eputf("Error: cannot open \"%s\"\n", zDestFile);
-      close_db(pDest);
+      close_db(pDest, 0);
       return 1;
     }
     if( bAsync ){
@@ -8117,7 +8151,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
     if( pBackup==0 ){
       eputf("Error: %s\n", sqlite3_errmsg(pDest));
-      close_db(pDest);
+      close_db(pDest, 0);
       return 1;
     }
     while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
@@ -8128,7 +8162,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputf("Error: %s\n", sqlite3_errmsg(pDest));
       rc = 1;
     }
-    close_db(pDest);
+    close_db(pDest, 0);
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
@@ -8268,7 +8302,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
       }else if( p->aAuxDb[i].db ){
         session_close_all(p, i);
-        close_db(p->aAuxDb[i].db);
+        close_db(p->aAuxDb[i].db, 0);
         p->aAuxDb[i].db = 0;
       }
     }else{
@@ -9558,8 +9592,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 
     /* Close the existing database */
     session_close_all(p, -1);
-    close_db(p->db);
-    p->db = 0;
+    close_db(p->db, p->dbParam);
+    p->db = p->dbParam = 0;
     p->pAuxDb->zDbFilename = 0;
     sqlite3_free(p->pAuxDb->zFreeOnClose);
     p->pAuxDb->zFreeOnClose = 0;
@@ -9725,8 +9759,15 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Clear all bind parameters by dropping the TEMP table that holds them.
     */
     if( nArg==2 && cli_strcmp(azArg[1],"clear")==0 ){
-      sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
-                   0, 0, 0);
+      if( p->dbParam==0 ){
+        /* no-op */
+      }else if( p->dbParam==p->db ){
+        sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp.sqlite_parameters;",
+                     0, 0, 0);
+      }else{
+        sqlite3_close(p->dbParam);
+      }
+      p->dbParam = 0;
     }else
 
     /* .parameter list
@@ -9736,33 +9777,45 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_stmt *pStmt = 0;
       int rx;
       int len = 0;
-      rx = sqlite3_prepare_v2(p->db,
-             "SELECT max(length(key)) "
-             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
-      if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-        len = sqlite3_column_int(pStmt, 0);
-        if( len>40 ) len = 40;
-      }
-      sqlite3_finalize(pStmt);
-      pStmt = 0;
-      if( len ){
-        rx = sqlite3_prepare_v2(p->db,
-             "SELECT key, quote(value) "
-             "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
-        while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-          oputf("%-*s %s\n", len, sqlite3_column_text(pStmt,0),
-                sqlite3_column_text(pStmt,1));
+      if( p->dbParam ){
+        rx = sqlite3_prepare_v2(p->dbParam,
+               "SELECT max(length(key)) "
+               "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+        if( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+          len = sqlite3_column_int(pStmt, 0);
+          if( len>40 ) len = 40;
         }
         sqlite3_finalize(pStmt);
+        pStmt = 0;
+        if( len ){
+          rx = sqlite3_prepare_v2(p->db,
+               "SELECT key, quote(value) "
+               "FROM temp.sqlite_parameters;", -1, &pStmt, 0);
+          while( rx==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+            oputf("%-*s %s\n", len, sqlite3_column_text(pStmt,0),
+                  sqlite3_column_text(pStmt,1));
+          }
+          sqlite3_finalize(pStmt);
+        }
       }
     }else
 
-    /* .parameter init
+    /* .parameter init ?--memory?
     ** Make sure the TEMP table used to hold bind parameters exists.
     ** Create it if necessary.
+    **
+    ** If the --memory option is specified, the sqlite_parameters table
+    ** is held in a separate database so that parameter binding queries
+    ** do not show up in debugging output from .treetrace, .wheretrace,
+    ** PRAGMA vdbe_addoptrace=on, and similar.
     */
     if( nArg==2 && cli_strcmp(azArg[1],"init")==0 ){
-      bind_table_init(p);
+      bind_table_init(p, 0);
+    }else
+    if( nArg==3 && cli_strcmp(azArg[1],"init")==0
+     && cli_strcmp(azArg[2],"--memory")==0
+    ){
+      bind_table_init(p, 1);
     }else
 
     /* .parameter set NAME VALUE
@@ -9777,28 +9830,30 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_stmt *pStmt;
       const char *zKey = azArg[2];
       const char *zValue = azArg[3];
-      bind_table_init(p);
-      zSql = sqlite3_mprintf(
-                  "REPLACE INTO temp.sqlite_parameters(key,value)"
-                  "VALUES(%Q,%s);", zKey, zValue);
-      shell_check_oom(zSql);
-      pStmt = 0;
-      rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-      sqlite3_free(zSql);
-      if( rx!=SQLITE_OK ){
-        sqlite3_finalize(pStmt);
-        pStmt = 0;
+      bind_table_init(p, 0);
+      if( p->dbParam ){
         zSql = sqlite3_mprintf(
-                   "REPLACE INTO temp.sqlite_parameters(key,value)"
-                   "VALUES(%Q,%Q);", zKey, zValue);
+                    "REPLACE INTO temp.sqlite_parameters(key,value)"
+                    "VALUES(%Q,%s);", zKey, zValue);
         shell_check_oom(zSql);
-        rx = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+        pStmt = 0;
+        rx = sqlite3_prepare_v2(p->dbParam, zSql, -1, &pStmt, 0);
         sqlite3_free(zSql);
         if( rx!=SQLITE_OK ){
-          oputf("Error: %s\n", sqlite3_errmsg(p->db));
           sqlite3_finalize(pStmt);
           pStmt = 0;
-          rc = 1;
+          zSql = sqlite3_mprintf(
+                     "REPLACE INTO temp.sqlite_parameters(key,value)"
+                     "VALUES(%Q,%Q);", zKey, zValue);
+          shell_check_oom(zSql);
+          rx = sqlite3_prepare_v2(p->dbParam, zSql, -1, &pStmt, 0);
+          sqlite3_free(zSql);
+          if( rx!=SQLITE_OK ){
+            oputf("Error: %s\n", sqlite3_errmsg(p->db));
+            sqlite3_finalize(pStmt);
+            pStmt = 0;
+            rc = 1;
+          }
         }
       }
       sqlite3_step(pStmt);
@@ -9813,7 +9868,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       char *zSql = sqlite3_mprintf(
           "DELETE FROM temp.sqlite_parameters WHERE key=%Q", azArg[2]);
       shell_check_oom(zSql);
-      sqlite3_exec(p->db, zSql, 0, 0, 0);
+      if( p->dbParam ) sqlite3_exec(p->dbParam, zSql, 0, 0, 0);
       sqlite3_free(zSql);
     }else
     /* If no command name matches, show a syntax error */
@@ -9951,14 +10006,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = sqlite3_open(zSrcFile, &pSrc);
     if( rc!=SQLITE_OK ){
       eputf("Error: cannot open \"%s\"\n", zSrcFile);
-      close_db(pSrc);
+      close_db(pSrc, 0);
       return 1;
     }
     open_db(p, 0);
     pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
     if( pBackup==0 ){
       eputf("Error: %s\n", sqlite3_errmsg(p->db));
-      close_db(pSrc);
+      close_db(pSrc, 0);
       return 1;
     }
     while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
@@ -9978,7 +10033,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputf("Error: %s\n", sqlite3_errmsg(p->db));
       rc = 1;
     }
-    close_db(pSrc);
+    close_db(pSrc, 0);
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
@@ -12845,13 +12900,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   set_table_name(&data, 0);
   if( data.db ){
     session_close_all(&data, -1);
-    close_db(data.db);
+    close_db(data.db, data.dbParam);
   }
   for(i=0; i<ArraySize(data.aAuxDb); i++){
     sqlite3_free(data.aAuxDb[i].zFreeOnClose);
     if( data.aAuxDb[i].db ){
       session_close_all(&data, i);
-      close_db(data.aAuxDb[i].db);
+      close_db(data.aAuxDb[i].db, 0);
     }
   }
   find_home_dir(1);
