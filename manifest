@@ -1,5 +1,5 @@
-C Improved\srobustness\sof\sparsing\sof\stokenize=\sarguments\sin\sFTS5.
-D 2024-08-06T22:54:56.766
+C Move\sa\smisplaced\sva_end,\sas\sreported\sin\s[forum:702c79e9da|forum\spost\s702c79e9da].
+D 2024-08-08T10:55:15.312
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -494,7 +494,7 @@ F ext/recover/recoverpgsz.test 3658ab8e68475b1bb87d6af88baa04551c84b73280a566a1b
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test 5205a9742dd9490ee99950dabb622307355ef1662dea6a3a21030057bfd81411
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 65ef0f56301a16c0536c9839fb7e23540c9c4f75da0afe3b7b4d163c8f624404
+F ext/recover/sqlite3recover.c 2dcf6b56c5e0e2b43fc4c6115b689ab194c374ced7f7f8380ad9a24d8ef24ac9
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c fd871a40f2238022bedcbdf3cb493b91225edaa94d6ae8892af97a10e7ccc4ba
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2191,9 +2191,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a61997c315ce70d60f3722a2b3b3d06ba592ce1cafed1639a9d5f162f712ae03
-Q +d9f726ade6b258f8723f90d0b04a4682e885e30939eb29773913e4dfc8e85503
-R 5f343f5765d17f03385da2454716eb3e
-U drh
-Z 71e3aedaf58c5df6d18eb9c2aaa0e383
+P 7a65ac42c2723b785786cf15f4b267ebfbd4f848f9fc6b37dcf9fac9abd0398c
+Q +daa25fb35fd7bdd482d51214439f38b0b9a7df93f689a2b3d30a113daa9f2a1a
+R 3ccb59e8ac6b0853bb8710d43043c061
+U stephan
+Z 2fd891815cd1bc2fdd9840c2666785d4
 # Remove this line to create a well-formed Fossil manifest.
