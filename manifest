@@ -1,5 +1,5 @@
-C Back\sout\sthe\s--memory\soption\sto\s".parameter\sinit"\sin\sthe\sCLI,\sas\sthe\ncapability\sis\sno\slonger\sneeded\sfor\stesting\sdue\sto\sthe\snew\s"$int_N"\sand\n"$text_T"\sautomatic\sbindings,\sand\sthe\s"init\s--memory"\sis\shence\sjust\nadded\scomplication.
-D 2024-08-08T12:14:07.897
+C Do\snot\slet\sthe\snumber\sof\sterms\son\sa\sVALUES\sclause\sbe\slimited\sby\nSQLITE_LIMIT_COMPOUND_SELECT,\seven\sif\sthe\sVALUES\sclause\scontains\selements\nthat\sappear\sto\sbe\svariables\sdue\sto\sthe\suse\sof\sdouble-quoted\sstring\sliterals.\n[https://issues.chromium.org/issues/358174302|Chromium\sissue\s358174302].
+D 2024-08-08T14:45:50.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -718,7 +718,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 4bd7c7e54a1062dcd0214b7a6296f7194eb10fb14d3ddca1ed20b01c2a86a18c
+F src/insert.c 8ff11e9e54c5fc1fe89707b3d41cf44ad2822f712bd3b5da68338ea42518847e
 F src/json.c 5b6a1d6015997b9ee848a32948720bdb26a0ef2de5a2127ebf7355ce66dbdc0d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -748,7 +748,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 2bd540b3b1e79017eb41fca2396633a75e7dd430c05383c61fe52c6f4e97c6d8
+F src/parse.y 318ef86fbe358b1a93262a42e152f37b97b3fddae8d319dffbd24ce2300f6c88
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -1591,7 +1591,7 @@ F test/select3.test 180223af31e1ca5537dd395ef9708ae18e651a233777fd366fd0d75469fc
 F test/select4.test f0684d3da3bccacbe2a1ebadf6fb49d9df6f53acb4c6ebc228a88d0d6054cc7b
 F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f390ae
 F test/select6.test 9b2fb4ffedf52e1b5703cfcae1212e7a4a063f014c0458d78d29aca3db766d1f
-F test/select7.test f659f231489349e8c5734e610803d7654207318f
+F test/select7.test b825420da8a0b5722fdb77f3369f6396a3d198c46e8787eb26ff9425d4ac9d27
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test f7586b207ce2304ab80dc93d3146469a28fd4403621dd3a82d06644563d3c812
 F test/selectA.test 1da8ce3884c326e11d2855baffb76436b0d7e044404af8a2a70d1399a4ff7e29
@@ -2203,9 +2203,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a929cdb00ff74d77cdf55087d32abf53578f7127b36276f89b64ccbef1d4a9a4
-Q -4e69dce2093b75b7db4fbdca4953b664b907be15d991ed352ea1d87c64fbf9d2
-R 80ba63bff6bb194482fa92e681f77bdc
+P 3b1b0c141993eb0f8749f54ea40d6014f9bdccbe0fdb3ccccad971a0baea8d3c
+R 3c5d070c449c1fcf67b35bba7df06bed
 U drh
-Z 15b4994c5694541199c17b609b4ae0e5
+Z dd212a4a681e0046af843c3dc6922a44
 # Remove this line to create a well-formed Fossil manifest.
