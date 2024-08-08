@@ -347,4 +347,20 @@ do_execsql_test 8.1 {
   1 4 1  2 4 2
 }
 
+
+#-------------------------------------------------------------------------
+# 2024-08-08
+# https://sqlite.org/forum/forumpost/e60e4c295d22f8ce
+#
+unset -nocomplain int_1
+set int_1 1
+do_execsql_test 9.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a TEXT PRIMARY KEY, b INT, c INT) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t1c ON t1(c) WHERE b=1;
+  INSERT INTO t1(a,b,c) VALUES('a',1,2);
+  UPDATE t1 SET a='z' WHERE b=$int_1 AND c=2;
+  SELECT * FROM t1;
+} {z 1 2}
+
 finish_test

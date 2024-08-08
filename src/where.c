@@ -4047,10 +4047,14 @@ static int whereLoopAddBtree(
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }
           }
-        }else if( m==0 ){
+        }else if( m==0 && (pProbe->pPartIdxWhere==0 || pWInfo->pSelect!=0) ){
+          /*              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          ** Do not use WHERE_IDX_ONLY based purely on bitmaps for a
+          ** partial indexes in an UPDATE or DELETE.  Solution to the bug
+          ** reported in Forum thread e60e4c295d22f8ce (2024-08-08). */
           WHERETRACE(0x200,
-             ("-> %s a covering index according to bitmasks\n",
-             pProbe->zName, m==0 ? "is" : "is not"));
+             ("-> %s is a covering index according to bitmasks\n",
+             pProbe->zName));
           pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         }
       }

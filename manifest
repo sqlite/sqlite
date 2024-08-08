@@ -1,5 +1,5 @@
-C Ensure\ssqlite3expert.c\sunregisters\sany\sSQL\suser-functions\sit\sregisters\swith\sthe\sdatabase\shandle\sbefore\sreturning.
-D 2024-08-08T15:26:11.708
+C Do\snot\sallow\sthe\sWHERE_IDX_ONLY\squery\splanner\sresult\sin\scases\swhere\sa\npartial\sindex\sis\sused\son\san\sUPDATE\sor\sa\sDELETE,\ssince\sthe\scode\smight\sstill\nneed\sto\saccess\sthe\soriginal\stable\sdue\sto\sparameterized\sterms\sin\sthe\sWHERE\nclause\sof\sthe\spartial\sindex.
+D 2024-08-08T19:45:30.826
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -846,7 +846,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 5bbe53db73ae6c8ee34a5eab693a5586ad8ff4f094ff0e524df965b683bec884
+F src/where.c a0b4a7f510043becaefa5703c98db990edcc7bd33f8bc45f2b2033d18190e9b8
 F src/whereInt.h 002adc3aa2cc10733b9b27958fdbe893987cd989fab25a9853941c1f9b9b0a65
 F src/wherecode.c c9cac0b0b8e809c5e7e79d7796918907fb685ad99be2aaa9737f9787aa47349c
 F src/whereexpr.c 7d0d34b42b9edfd8e8ca66beb3a6ef63fe211c001af54caf2ccbcd989b783290
@@ -1311,7 +1311,7 @@ F test/index6.test b376a648e85aa71c50074382784e6cb0c126ec46e43d1ad15af9a4d234c52
 F test/index7.test b238344318e0b4e42126717f6554f0e7dfd0b39cecad4b736039b43e1e3b6eb3
 F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a912a3
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
-F test/indexA.test 11d84f6995e6e5b9d8315953fb1b6d29772ee7c7803ee9112715e7e4dd3e4974
+F test/indexA.test cbb2304458cff6c61a4008805941ee94baa7061dd2d759b502d8eea5f3a1f468
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
 F test/indexexpr1.test 24fa85a12da384dd1d56f7b24e593c51a8a54b4c5e2e8bbb9e5fdf1099427faf
 F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
@@ -2204,8 +2204,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 797b0a13fd7a42b0a48ecbf0cd1961aa932da3e9c9ccffd903a3a4d963d0cc54
-R 524433c41a8ffc46e95c387bd9dc2975
-U dan
-Z fa7382f01ce16aee65751b978df534e7
+P 123b154ce3b6fee1bbf483704812bd6f8538966f9687520b4470d700f0270719
+R 3b082c07c9d7268e2bb297b81e1a4889
+T *branch * partial-index-terms-patch
+T *sym-partial-index-terms-patch *
+T -sym-trunk *
+U drh
+Z 672a1c93d3d0e2d7fb7b0a432fd4b93b
 # Remove this line to create a well-formed Fossil manifest.
