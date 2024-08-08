@@ -2263,6 +2263,9 @@ static void fts5ExprAssignXNext(Fts5ExprNode *pNode){
   }
 }
 
+/*
+** Add pSub as a child of p.
+*/
 static void fts5ExprAddChildren(Fts5ExprNode *p, Fts5ExprNode *pSub){
   int ii = p->nChild;
   if( p->eType!=FTS5_NOT && pSub->eType==p->eType ){
@@ -2407,19 +2410,23 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
                   "fts5: %s queries are not supported (detail!=full)", 
                   pNear->nPhrase==1 ? "phrase": "NEAR"
               );
-              sqlite3_free(pRet);
+              sqlite3Fts5ParseNodeFree(pRet);
               pRet = 0;
+              pNear = 0;
+              assert( pLeft==0 && pRight==0 );
             }
           }
         }else{
+          assert( pNear==0 );
           fts5ExprAddChildren(pRet, pLeft);
           fts5ExprAddChildren(pRet, pRight);
+          pLeft = pRight = 0;
           if( pRet->iHeight>SQLITE_FTS5_MAX_EXPR_DEPTH ){
             sqlite3Fts5ParseError(pParse, 
                 "fts5 expression tree is too large (maximum depth %d)", 
                 SQLITE_FTS5_MAX_EXPR_DEPTH
             );
-            sqlite3_free(pRet);
+            sqlite3Fts5ParseNodeFree(pRet);
             pRet = 0;
           }
         }

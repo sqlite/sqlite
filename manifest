@@ -1,5 +1,5 @@
-C Do\snot\slet\sthe\snumber\sof\sterms\son\sa\sVALUES\sclause\sbe\slimited\sby\nSQLITE_LIMIT_COMPOUND_SELECT,\seven\sif\sthe\sVALUES\sclause\scontains\selements\nthat\sappear\sto\sbe\svariables\sdue\sto\sthe\suse\sof\sdouble-quoted\sstring\sliterals.\n[https://issues.chromium.org/issues/358174302|Chromium\sissue\s358174302].
-D 2024-08-08T14:45:50.247
+C Add\sassert()\sstatements\sand\sreorganize\scode\sslightly\sin\sfts3\sand\sfts5\sto\smake\sit\seasier\sto\sfollow.
+D 2024-08-08T15:07:27.410
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -74,7 +74,7 @@ F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c e19807ce0ae31c1c6e9898e89ecc93183d7ec224ea101af039722a4f49e5f2b8
-F ext/fts3/fts3_snippet.c 610328fe128c047c6b0eba77768982ccf3933daae095d497949a75c9dfd47409
+F ext/fts3/fts3_snippet.c c38117a2e4dcc9485a170a57a6134423955247b230fef7073c46fa9c51239540
 F ext/fts3/fts3_term.c 6a96027ad364001432545fe43322b6af04ed28bb5619ec51af1f59d0710d6d69
 F ext/fts3/fts3_test.c 7a9cb3d61774134211bf4bfdf1adcb581a1a0377f2d050a121ae7ab44baef0e3
 F ext/fts3/fts3_tokenize_vtab.c 7fd9ef364f257b97218b9c331f2378e307375c592f70fd541f714e747d944962
@@ -97,7 +97,7 @@ F ext/fts5/fts5Int.h 41fb3a2dd40e818cc96c6f4176dbdf2aaa8f57043cfc9a8f2676e7e6a72
 F ext/fts5/fts5_aux.c 4584e88878e54828bf7d4d0d83deedd232ec60628b7731be02bad6adb62304b1
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
 F ext/fts5/fts5_config.c 68cb87a49215f8e7028000b681df4057c430a4a6afbd676463886da94c9e1c37
-F ext/fts5/fts5_expr.c 29558460f161b0bee816fdfb6547cdcaefc7b61c64a1bf78d50052932a210201
+F ext/fts5/fts5_expr.c 3a24c6ab5b7545312a5ec03085ae705ede820a08f9a63f1d72829ed4a35da6f6
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c eb9a0dda3bc6ef969a6be8d2746af56856e67251810ddba08622b45be8477abe
 F ext/fts5/fts5_main.c 77fefb37e7931095a5ff271a28fbe4f73ec46d5492ef1f35d405d98e137ad8ed
@@ -159,6 +159,7 @@ F ext/fts5/test/fts5dlidx.test a7c42b0a74dc7c8aa1a46d586e0aadda4b6cc42c24450f8d3
 F ext/fts5/test/fts5doclist.test b7cb84758504519746957802db9cd31187bb4e0028b89d9087ba06e26cc4155f
 F ext/fts5/test/fts5ea.test cefdf66024550fa7920c03395c71ce5046235ed1a1a7a469d79b19e7aad5afb5
 F ext/fts5/test/fts5eb.test 401f756fdb77083aeba8b696c1e0ad4d834c39dbd6f17e492bb55a2ad64b4296
+F ext/fts5/test/fts5expr.test 7e1b2d075b63b727a624a378c2c09f94296a93dc4ae968aad67f8d9f3810c266
 F ext/fts5/test/fts5fault1.test d28a65caee75db6897c3cf1358c5230d3bb2a3bf7fb31062c19c7e5382b3d2bd
 F ext/fts5/test/fts5fault2.test 69c8fdbef830cd0d450908d4504d5bb86609e255af99c421c20a0756251fe344
 F ext/fts5/test/fts5fault3.test da2f9e3e56ff5740d68ebdd6877c97089e7ed28ddff28a0da87a6afea27e5522
@@ -1212,7 +1213,7 @@ F test/fts3query.test 45806a302921b245a9dba5d85c9d51fb98b3f137eea6e6bf6eae4883e0
 F test/fts3rank.test cd99bc83a3c923c8d52afd90d86979cf05fc41849f892faeac3988055ef37b99
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
-F test/fts3snippet.test 0887196d67cffbe365edde535b95ecc642a532ce8551ccd9a73aab5999c3ffae
+F test/fts3snippet.test 560c7f38c5fa591d88e367eac1313b64e503625616708ff61da9d5f52cbf75e5
 F test/fts3snippet2.test 03f6738ab3897bea2ba6be424a0613872e167acbf37a66200d655d737b470f65
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test a663f4cac22a9505400bc22aacb818d7055240409c28729669ea7d4cc2120d15
@@ -2203,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3b1b0c141993eb0f8749f54ea40d6014f9bdccbe0fdb3ccccad971a0baea8d3c
-R 3c5d070c449c1fcf67b35bba7df06bed
-U drh
-Z dd212a4a681e0046af843c3dc6922a44
+P 670beb133eb203065a75022f0c6db7c605a4e0e22c8ef6d6b4724be2663ff3dc
+R 312db3aeda520a84f3f575d1adc99854
+U dan
+Z f0731ccfa7622c7f28b0888a2de2dbf2
 # Remove this line to create a well-formed Fossil manifest.
