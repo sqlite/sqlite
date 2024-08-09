@@ -1706,6 +1706,20 @@ VdbeOp *sqlite3VdbeGetLastOp(Vdbe *p){
   return sqlite3VdbeGetOp(p, p->nOp - 1);
 }
 
+/* Edit the bytecode of a runable prepared statement.  Used to implement
+** SQLITE_TESTCTRL_EDITSTMT.
+*/
+void sqlite3VdbeEditStmt(sqlite3_stmt *p, int iAddr, int iField, int iVal){
+  VdbeOp *pOp = &((Vdbe*)p)->aOp[iAddr];
+  if( iField==1 ){
+    pOp->p1 = iVal;
+  }else if( iField==2 ){
+    pOp->p2 = iVal;
+  }else{
+    pOp->p3 = iVal;
+  }
+}
+
 #if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS)
 /*
 ** Return an integer value for one of the parameters to the opcode pOp

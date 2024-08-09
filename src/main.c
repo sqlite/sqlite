@@ -4693,6 +4693,30 @@ int sqlite3_test_control(int op, ...){
 #endif
       break;
     }
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_EDITSTMT, pStmt,iAddr,iField,iVal)
+    **
+    ** Make changes to the bytecode in prepared statement pStmt.  Modify
+    ** instruction iAddr.  iField is 1, 2, or 3 for p1, p2, or p3.  iVal
+    ** is the new value.
+    **
+    ** This operation is used to deliberately corrupt bytecode in order to
+    ** exercise the internal self-checks that prevent crashes due to bugs in
+    ** the query planner and/or code generator.
+    */
+    case SQLITE_TESTCTRL_EDITSTMT: {
+      sqlite3_stmt *p;   /* The prepared statement */
+      int iAddr;         /* Instruction to change */
+      int iField;        /* 1, 2, or 3 for P1, P2, or P3 */
+      int iVal;          /* New value */
+
+      p = va_arg(ap, sqlite3_stmt*);
+      iAddr = va_arg(ap, int);
+      iField = va_arg(ap, int);
+      iVal = va_arg(ap, int);
+      sqlite3VdbeEditStmt(p,iAddr,iField,iVal);
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_UNTESTABLE */
