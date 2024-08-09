@@ -822,6 +822,9 @@ struct F5tTokenizerContext {
 struct F5tTokenizerModule {
   Tcl_Interp *interp;
   Tcl_Obj *pScript;
+  void *pParentCtx;
+  fts5_tokenizer_v2 parent_v2;
+  fts5_tokenizer parent;
   F5tTokenizerContext *pContext;
 };
 
@@ -836,6 +839,8 @@ struct F5tTokenizerModule {
 struct F5tTokenizerInstance {
   Tcl_Interp *interp;
   Tcl_Obj *pScript;
+  F5tTokenizerModule *pModule;
+  Fts5Tokenizer *pParent;
   F5tTokenizerContext *pContext;
   char zLocale[128];
 };
@@ -864,10 +869,19 @@ static int f5tTokenizerCreate(
   int nArg, 
   Fts5Tokenizer **ppOut
 ){
+  Fts5Tokenizer *pParent = 0;
   F5tTokenizerModule *pMod = (F5tTokenizerModule*)pCtx;
   Tcl_Obj *pEval;
   int rc = TCL_OK;
   int i;
+
+  assert( pMod->parent_v2.xCreate==0 || pMod->parent.xCreate==0 );
+  if( pMod->parent_v2.xCreate ){
+    rc = pMod->parent_v2.xCreate(pMod->pParentCtx, 0, 0, &pParent);
+  }
+  if( pMod->parent.xCreate ){
+    rc = pMod->parent.xCreate(pMod->pParentCtx, 0, 0, &pParent);
+  }
 
   pEval = Tcl_DuplicateObj(pMod->pScript);
   Tcl_IncrRefCount(pEval);
@@ -888,6 +902,8 @@ static int f5tTokenizerCreate(
     pInst->interp = pMod->interp;
     pInst->pScript = Tcl_GetObjResult(pMod->interp);
     pInst->pContext = pMod->pContext;
+    pInst->pParent = pParent;
+    pInst->pModule = pMod;
     Tcl_IncrRefCount(pInst->pScript);
     *ppOut = (Fts5Tokenizer*)pInst;
   }
@@ -898,11 +914,19 @@ static int f5tTokenizerCreate(
 
 static void f5tTokenizerDelete(Fts5Tokenizer *p){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+  if( pInst->pParent ){
+    if( pInst->pModule->parent_v2.xDelete ){
+      pInst->pModule->parent_v2.xDelete(pInst->pParent);
+    }else{
+      pInst->pModule->parent.xDelete(pInst->pParent);
+    }
+  }
   Tcl_DecrRefCount(pInst->pScript);
   ckfree((char *)pInst);
 }
 
-static int f5tTokenizerTokenize(
+
+static int f5tTokenizerReallyTokenize(
   Fts5Tokenizer *p, 
   void *pCtx,
   int flags,
@@ -960,6 +984,54 @@ static int f5tTokenizerTokenize(
   pInst->pContext->pCtx = pOldCtx;
   pInst->pContext->xToken = xOldToken;
   pInst->pContext->pInst = pOldInst;
+  return rc;
+}
+
+typedef struct CallbackCtx CallbackCtx;
+struct CallbackCtx {
+  Fts5Tokenizer *p;
+  void *pCtx;
+  int flags;
+  int (*xToken)(void*, int, const char*, int, int, int);
+};
+
+static int f5tTokenizeCallback(
+  void *pCtx, 
+  int tflags, 
+  const char *z, int n, 
+  int iStart, int iEnd
+){
+  CallbackCtx *p = (CallbackCtx*)pCtx;
+  return f5tTokenizerReallyTokenize(p->p, p->pCtx, p->flags, z, n, p->xToken);
+}
+
+static int f5tTokenizerTokenize(
+  Fts5Tokenizer *p, 
+  void *pCtx,
+  int flags,
+  const char *pText, int nText, 
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  int rc = SQLITE_OK;
+  F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+  if( pInst->pParent ){
+    CallbackCtx ctx;
+    ctx.p = p;
+    ctx.pCtx = pCtx;
+    ctx.flags = flags;
+    ctx.xToken = xToken;
+    if( pInst->pModule->parent_v2.xTokenize ){
+      rc = pInst->pModule->parent_v2.xTokenize(
+          pInst->pParent, (void*)&ctx, flags, pText, nText, f5tTokenizeCallback
+      );
+    }else{
+      rc = pInst->pModule->parent.xTokenize(
+          pInst->pParent, (void*)&ctx, flags, pText, nText, f5tTokenizeCallback
+      );
+    }
+  }else{
+    rc = f5tTokenizerReallyTokenize(p, pCtx, flags, pText, nText, xToken);
+  }
   return rc;
 }
 
@@ -1078,47 +1150,85 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   F5tTokenizerModule *pMod;
   int rc;
   int bV2 = 0;                    /* True to use _v2 API */
+  const char *zParent = 0;        /* Name of parent tokenizer, if any */
+  int ii = 0;
 
-  if( objc==5 ){
-    const char *zArg = Tcl_GetString(objv[1]);
-    if( 0==strcmp(zArg, "-v2") ){
-      objv++;
-      objc--;
-      bV2 = 1;
+  if( objc<4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?OPTIONS? DB NAME SCRIPT");
+    return TCL_ERROR;
+  }
+
+  /* Parse any options. Set stack variables bV2 and zParent. */
+  for(ii=1; ii<objc-3; ii++){
+    int iOpt = 0;
+    const char *azOpt[] = { "-v2", "-parent", 0 };
+    if( Tcl_GetIndexFromObj(interp, objv[ii], azOpt, "OPTION", 0, &iOpt) ){
+      return TCL_ERROR;
+    }
+    switch( iOpt ){
+      case 0: /* -v2 */ {
+        bV2 = 1;
+        break;
+      }
+      case 1: /* -parent */ {
+        ii++;
+        if( ii==objc-3 ){
+          Tcl_AppendResult(
+              interp, "option requires an argument: -parent", (char*)0
+          );
+          return TCL_ERROR;
+        }
+        zParent = Tcl_GetString(objv[ii]);
+        break;
+      }
+      default:
+        assert( 0 );
+        break;
     }
   }
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?-v2? DB NAME SCRIPT");
+  if( f5tDbAndApi(interp, objv[objc-3], &db, &pApi) ){
     return TCL_ERROR;
   }
-  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
-    return TCL_ERROR;
-  }
-  zName = Tcl_GetString(objv[2]);
-  pScript = objv[3];
+  zName = Tcl_GetString(objv[objc-2]);
+  pScript = objv[objc-1];
 
   pMod = (F5tTokenizerModule*)ckalloc(sizeof(F5tTokenizerModule));
+  memset(pMod, 0, sizeof(F5tTokenizerModule));
   pMod->interp = interp;
   pMod->pScript = pScript;
-  pMod->pContext = pContext;
   Tcl_IncrRefCount(pScript);
+  pMod->pContext = pContext;
+  if( zParent ){
+    if( bV2 ){
+      fts5_tokenizer_v2 *pParent = 0;
+      rc = pApi->xFindTokenizer_v2(pApi, zParent, &pMod->pParentCtx, &pParent);
+      if( rc==SQLITE_OK ){
+        memcpy(&pMod->parent_v2, pParent, sizeof(fts5_tokenizer_v2));
+      }
+    }else{
+      rc = pApi->xFindTokenizer(pApi, zParent, &pMod->pParentCtx,&pMod->parent);
+    }
+  }
 
-  if( bV2==0 ){
-    fts5_tokenizer t;
-    t.xCreate = f5tTokenizerCreate;
-    t.xTokenize = f5tTokenizerTokenize;
-    t.xDelete = f5tTokenizerDelete;
-    rc = pApi->xCreateTokenizer(pApi, zName, (void*)pMod, &t, f5tDelTokenizer);
-  }else{
-    fts5_tokenizer_v2 t2;
-    memset(&t2, 0, sizeof(t2));
-    t2.iVersion = 2;
-    t2.xCreate = f5tTokenizerCreate;
-    t2.xTokenize = f5tTokenizerTokenize;
-    t2.xDelete = f5tTokenizerDelete;
-    t2.xSetLocale = f5tTokenizerSetLocale;
-    rc = pApi->xCreateTokenizer_v2(pApi, zName,(void*)pMod,&t2,f5tDelTokenizer);
+  if( rc==SQLITE_OK ){
+    void *pModCtx = (void*)pMod;
+    if( bV2==0 ){
+      fts5_tokenizer t;
+      t.xCreate = f5tTokenizerCreate;
+      t.xTokenize = f5tTokenizerTokenize;
+      t.xDelete = f5tTokenizerDelete;
+      rc = pApi->xCreateTokenizer(pApi, zName, pModCtx, &t, f5tDelTokenizer);
+    }else{
+      fts5_tokenizer_v2 t2;
+      memset(&t2, 0, sizeof(t2));
+      t2.iVersion = 2;
+      t2.xCreate = f5tTokenizerCreate;
+      t2.xTokenize = f5tTokenizerTokenize;
+      t2.xDelete = f5tTokenizerDelete;
+      t2.xSetLocale = f5tTokenizerSetLocale;
+      rc = pApi->xCreateTokenizer_v2(pApi, zName, pModCtx, &t2,f5tDelTokenizer);
+    }
   }
 
   if( rc!=SQLITE_OK ){
