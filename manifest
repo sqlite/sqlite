@@ -1,5 +1,5 @@
-C Merge\sthe\serror\scode\sfix\sfrom\strunk.
-D 2024-08-09T18:22:20.994
+C Import\sthe\ssecond\sALTER\sTABLE\sfix\sfrom\strunk.
+D 2024-08-09T18:53:02.857
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
-F src/alter.c e1b6782b85dd758f89e5c588e4e3eb82638c2dafc0c857b79a43bb8ec1746fca
+F src/alter.c bb663fddf1fe0e2e6d8758b2b7fb6374e7c057a6ca3955f37a48986806029765
 F src/analyze.c 5c4e2bfd0aa8e5157f7fb91a17d86905510a74397326dc5767ec4e0588a4eea5
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fae39ae9320c0f4fcc2e3b3baf0a4170ba2b9a04634a0a1fa41dd4918a74b106 9052187efd1f78abd9b285ac94269a3ba4d65b6aa74c9fa34002ee0628c83919
-R 65096613cd2ad24ce9040af4357a3430
+P 81dfb8cd5d59ecf974018b03175ddabd11366d2aca0211dc982f7e14ff314d4d b416756320dfb46ad72b843a7fbf18807d3fd1966251c320de626280b5238a5c
+R a3984f1bb6f081096bb3871ebe43a6fd
 U drh
-Z 67de35a44cee14d85982f1f0205afc6b
+Z 4b72616d18b38c73609a43a2c780b02c
 # Remove this line to create a well-formed Fossil manifest.
