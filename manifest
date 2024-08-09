@@ -1,5 +1,5 @@
-C Remove\stwo\sunnecessary\sint\scasts,\sas\sreported\sin\s[forum:84fe63b7b3|forum\spost\s84fe63b7b3].
-D 2024-08-09T09:49:24.313
+C Fix\ssome\ssigned/unsigned\scompiler\swarnings\son\sthis\sbranch.
+D 2024-08-09T10:50:20.734
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -850,7 +850,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5fb499d20494b7eecaadb7584634af9afcb374cb0524912b475fcb1712458a1b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c bf87522c6adf40c36bf33c736ba202c998b1825b8f26202771b4e9306f2773d8
+F src/wal.c 1f0202bcb1ce5571c02e74dd2ae2947b5e5ef09e98ba5e9b80a38e8842e3ae8c
 F src/wal.h 8d02ab8c2a93a941f5898eb3345bf711c1d3f8f86f4be8d5428fb6c074962d8a
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c d87a4160e26a7a96a2f7ca283b147b1b283b54ba545c46acb14cfcc6ec37ae9e
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c1f616ce802fbb9c3652f8cb43970e4bda18464e765f23fb5f96029721431092
-R e84972c652283b7c582e30878935014b
-U stephan
-Z e3d21f9c5187026512009f287e7977c9
+P 1de0c1b574d53c9bd2f2c6070b42e973d63d2a74f150836ed54c78614e286f92
+R f44e91323dac7ffd03ea4597c2700e55
+U dan
+Z 6f4f0e71ea2eb16f27d1286bc9e4ae20
 # Remove this line to create a well-formed Fossil manifest.
