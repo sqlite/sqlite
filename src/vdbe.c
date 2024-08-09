@@ -2942,7 +2942,7 @@ case OP_Column: {            /* ncycle */
 op_column_restart:
   assert( pC!=0 );
   assert( p2<(u32)pC->nField
-       || (pC->eCurType==CURTYPE_PSEUDO && pC->seekResult==0) );
+       || (pC->eCurType==CURTYPE_PSEUDO && pC->seekResult<=0) );
   aOffset = pC->aOffset;
   assert( aOffset==pC->aType+pC->nField );
   assert( pC->eCurType!=CURTYPE_VTAB );
@@ -2959,6 +2959,10 @@ op_column_restart:
         assert( memIsValid(pReg) );
         pC->payloadSize = pC->szRow = pReg->n;
         pC->aRow = (u8*)pReg->z;
+      }else if( pC->eCurType==CURTYPE_PSEUDO && pC->seekResult<0 ){
+        rc = SQLITE_INTERNAL;
+        sqlite3VdbeError(p, "bad bytecode");
+        goto abort_due_to_error;
       }else{
         pDest = &aMem[pOp->p3];
         memAboutToChange(p, pDest);

@@ -7078,32 +7078,12 @@ whereBeginError:
   }
 #endif
 
-#ifdef SQLITE_DEBUG
-/*
-** Return true if cursor iCur is opened by instruction k of the
-** bytecode.  Used inside of assert() only.
-*/
-static int cursorIsOpen(Vdbe *v, int iCur, int k){
-  while( k>=0 ){
-    VdbeOp *pOp = sqlite3VdbeGetOp(v,k--);
-    if( pOp->p1!=iCur ) continue;
-    if( pOp->opcode==OP_Close ) return 0;
-    if( pOp->opcode==OP_OpenRead ) return 1;
-    if( pOp->opcode==OP_OpenWrite ) return 1;
-    if( pOp->opcode==OP_OpenDup ) return 1;
-    if( pOp->opcode==OP_OpenAutoindex ) return 1;
-    if( pOp->opcode==OP_OpenEphemeral ) return 1;
-  }
-  return 0;
-}
-#endif /* SQLITE_DEBUG */
-
 /*
 ** Make arrangements to open cursor number iCur in the startup code of
-** the prepared statement.  This cursor will always returns NULL
-** for any OP_Column opcode.
+** the prepared statement.  If this cursor is every accessed via OP_Cursor,
+** it will cause an SQLITE_INTERNAL error to be raised.
 */
-static SQLITE_NOINLINE void sqlite3OpenNullCursor(Parse *pParse, int iCur){
+static SQLITE_NOINLINE void sqlite3OpenDeathCursor(Parse *pParse, int iCur){
   Expr e;
   memset(&e, 0, sizeof(e));
   e.op = TK_TABLE;
@@ -7410,14 +7390,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             OpcodeRewriteTrace(db, k, pOp);
           }else if( pLoop->wsFlags & WHERE_IDX_ONLY ){
             OpcodeRewriteTrace(db, k, pOp);
-            assert( cursorIsOpen(v,pOp->p1,k) );
-
-            /* This following call to sqlite3OpenNullCursor() is defensive
-            ** code.  The null cursor should never be used, unless there is
-            ** a bug in the covering-index logic of the query planner, in
-            ** which case the null cursor might prevent a NULL-pointer
-            ** dereference in OP_Column. */
-            sqlite3OpenNullCursor(pParse, pLevel->iTabCur);
+            sqlite3OpenDeathCursor(pParse, pLevel->iTabCur);
           }
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;

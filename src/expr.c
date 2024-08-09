@@ -5440,10 +5440,11 @@ expr_code_doover:
     }
 #endif
 
-    /* Special opcode used to generate a cursor that always returns NULL.
-    ** Used by the sqlite3OpenNullCursor() routine. */
+    /* Special opcode used to generate a cursor that raises an
+    ** SQLITE_INTERNAL error if it is every accessed.  Used by the
+    ** sqlite3OpenDeathCursor() routine. */
     case TK_TABLE: {
-      sqlite3VdbeAddOp3(v, OP_OpenPseudo, pExpr->iTable, 0, 1);
+      sqlite3VdbeAddOp3(v, OP_OpenPseudo, pExpr->iTable, -99, 1);
       break;
     }
   }
