@@ -1,5 +1,5 @@
-C Ensure\ssqlite3expert.c\sunregisters\sany\sSQL\suser-functions\sit\sregisters\swith\sthe\sdatabase\shandle\sbefore\sreturning.
-D 2024-08-08T15:26:11.708
+C Remove\sunused\sstatic\svar\scBadGroup\sfrom\sext/consio/console_io.c\sto\sresolve\sa\scompiler\swarning\sreported\sin\sthe\sfossil\sforum.\sThis\sis\sa\sbuild\sfix,\snot\sa\sfunctional\schange.
+D 2024-08-09T12:19:11.913
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -53,7 +53,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c f32b757c9ee7fdf68e7586bee306f8368759e7cd12febb2a6839199b1c1af395 x
+F ext/consio/console_io.c b4885dfea71ed583315de8f0792a29d5fc7c7460b4a26c0aebe5cda5da8b38f8 x
 F ext/consio/console_io.h 0548b83d7c4b7270ad544a67f2bb90cebc519637fa39b1838df4744cf0d87646
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 797b0a13fd7a42b0a48ecbf0cd1961aa932da3e9c9ccffd903a3a4d963d0cc54
-R 524433c41a8ffc46e95c387bd9dc2975
-U dan
-Z fa7382f01ce16aee65751b978df534e7
+P 123b154ce3b6fee1bbf483704812bd6f8538966f9687520b4470d700f0270719
+R dfb7fc0d7f5895fabd0ef74030340b71
+U stephan
+Z 5f05148caae955ae7f0f151431a9b4b8
 # Remove this line to create a well-formed Fossil manifest.
