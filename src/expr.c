@@ -5439,6 +5439,13 @@ expr_code_doover:
       break;
     }
 #endif
+
+    /* Special opcode used to generate a cursor that always returns NULL.
+    ** Used by the sqlite3OpenNullCursor() routine. */
+    case TK_TABLE: {
+      sqlite3VdbeAddOp3(v, OP_OpenPseudo, pExpr->iTable, 0, 1);
+      break;
+    }
   }
   sqlite3ReleaseTempReg(pParse, regFree1);
   sqlite3ReleaseTempReg(pParse, regFree2);

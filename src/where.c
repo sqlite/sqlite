@@ -7099,6 +7099,20 @@ static int cursorIsOpen(Vdbe *v, int iCur, int k){
 #endif /* SQLITE_DEBUG */
 
 /*
+** Make arrangements to open cursor number iCur in the startup code of
+** the prepared statement.  This cursor will always returns NULL
+** for any OP_Column opcode.
+*/
+static SQLITE_NOINLINE void sqlite3OpenNullCursor(Parse *pParse, int iCur){
+  Expr e;
+  memset(&e, 0, sizeof(e));
+  e.op = TK_TABLE;
+  e.iTable = iCur;
+  sqlite3ExprCodeRunJustOnce(pParse, &e, -1);
+}
+
+
+/*
 ** Generate the end of the WHERE loop.  See comments on
 ** sqlite3WhereBegin() for additional information.
 */
@@ -7376,37 +7390,34 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           assert( pIdx->pTable==pTab );
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
           if( pOp->opcode==OP_Offset ){
-            /* Do not need to translate the column number */
+            x = 0;
           }else
 #endif
-          if( !HasRowid(pTab) ){
-            Index *pPk = sqlite3PrimaryKeyIndex(pTab);
-            x = pPk->aiColumn[x];
-            assert( x>=0 );
-          }else{
-            testcase( x!=sqlite3StorageColumnToTable(pTab,x) );
-            x = sqlite3StorageColumnToTable(pTab,x);
+          {
+            if( !HasRowid(pTab) ){
+              Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+              x = pPk->aiColumn[x];
+              assert( x>=0 );
+            }else{
+              testcase( x!=sqlite3StorageColumnToTable(pTab,x) );
+              x = sqlite3StorageColumnToTable(pTab,x);
+            }
+            x = sqlite3TableColumnToIndex(pIdx, x);
           }
-          x = sqlite3TableColumnToIndex(pIdx, x);
           if( x>=0 ){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
             OpcodeRewriteTrace(db, k, pOp);
-          }else{
-            /* Unable to translate the table reference into an index
-            ** reference.  Verify that this is harmless - that the
-            ** table being referenced really is open.
-            */
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-                 || cursorIsOpen(v,pOp->p1,k)
-                 || pOp->opcode==OP_Offset
-            );
-#else
-            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-                 || cursorIsOpen(v,pOp->p1,k)
-            );
-#endif
+          }else if( pLoop->wsFlags & WHERE_IDX_ONLY ){
+            OpcodeRewriteTrace(db, k, pOp);
+            assert( cursorIsOpen(v,pOp->p1,k) );
+
+            /* This following call to sqlite3OpenNullCursor() is defensive
+            ** code.  The null cursor should never be used, unless there is
+            ** a bug in the covering-index logic of the query planner, in
+            ** which case the null cursor might prevent a NULL-pointer
+            ** dereference in OP_Column. */
+            sqlite3OpenNullCursor(pParse, pLevel->iTabCur);
           }
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
