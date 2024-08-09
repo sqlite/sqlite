@@ -11993,13 +11993,13 @@ int sqlite3BtreeExclusiveLock(Btree *p){
         if( pSchema ){
           for(pE=sqliteHashFirst(&pSchema->tblHash); pE; pE=sqliteHashNext(pE)){
             Table *pTab = (Table *)sqliteHashData(pE);
-            if( pTab->tnum==(int)pgnoRoot ){
+            if( pTab->tnum==pgnoRoot ){
               zObj = pTab->zName;
               zTab = 0;
             }else{
               Index *pIdx;
               for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-                if( pIdx->tnum==(int)pgnoRoot ){
+                if( pIdx->tnum==pgnoRoot ){
                   zObj = pIdx->zName;
                   zTab = pTab->zName;
                 }
