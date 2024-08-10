@@ -2934,9 +2934,15 @@ struct AggInfo {
 ** assignAggregateRegisters() that computes the value of pAggInfo->iFirstReg.
 ** The assert()s that are part of this macro verify that constraint.
 */
+#ifndef NDEBUG
 #define AggInfoColumnReg(A,I)  (assert((A)->iFirstReg),(A)->iFirstReg+(I))
 #define AggInfoFuncReg(A,I)    \
                       (assert((A)->iFirstReg),(A)->iFirstReg+(A)->nColumn+(I))
+#else
+#define AggInfoColumnReg(A,I)  ((A)->iFirstReg+(I))
+#define AggInfoFuncReg(A,I)    \
+                      ((A)->iFirstReg+(A)->nColumn+(I))
+#endif
 
 /*
 ** The datatype ynVar is a signed integer, either 16-bit or 32-bit.

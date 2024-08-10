@@ -69,6 +69,9 @@ do_execsql_test 2.0 {
   INSERT INTO t1 VALUES('abcdefghijklm');
   INSERT INTO t1 VALUES('กรุงเทพมหานคร');
 }
+do_catchsql_test 2.0.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(z, tokenize='trigram case_sensitive');
+} {1 {error in tokenizer constructor}}
 
 foreach {tn s res} {
   1 abc           "(abc)defghijklm"
@@ -206,7 +209,7 @@ do_execsql_test 7.0 {
       (20, "жираф.png"), 
       (30, "cat.png"), 
       (40, "кот.png"), 
-      (50, "misic-🎵-.mp3");
+      (50, "misic-ðµ-.mp3");
 }
 do_execsql_test 7.1 {
   SELECT rowid FROM f WHERE +filename GLOB '*ир*';
