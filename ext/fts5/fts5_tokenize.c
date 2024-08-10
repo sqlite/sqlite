@@ -90,7 +90,7 @@ static int fts5AsciiCreate(
           rc = SQLITE_ERROR;
         }
       }
-      if( i<nArg ) rc = SQLITE_ERROR;
+      if( rc==SQLITE_OK && i<nArg ) rc = SQLITE_ERROR;
       if( rc!=SQLITE_OK ){
         fts5AsciiDelete((Fts5Tokenizer*)p);
         p = 0;
@@ -416,7 +416,7 @@ static int fts5UnicodeCreate(
           rc = SQLITE_ERROR;
         }
       }
-      if( i<nArg ) rc = SQLITE_ERROR;
+      if( i<nArg && rc==SQLITE_OK ) rc = SQLITE_ERROR;
 
     }else{
       rc = SQLITE_NOMEM;
@@ -1317,7 +1317,7 @@ static int fts5TriCreate(
         rc = SQLITE_ERROR;
       }
     }
-    if( i<nArg ) rc = SQLITE_ERROR;
+    if( i<nArg && rc==SQLITE_OK ) rc = SQLITE_ERROR;
 
     if( pNew->iFoldParam!=0 && pNew->bFold==0 ){
       rc = SQLITE_ERROR;
