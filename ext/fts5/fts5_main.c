@@ -2235,11 +2235,10 @@ static void *fts5ApiGetAuxdata(Fts5Context *pCtx, int bClear){
 }
 
 static void fts5ApiPhraseNext(
-  Fts5Context *pUnused, 
+  Fts5Context *pCtx, 
   Fts5PhraseIter *pIter, 
   int *piCol, int *piOff
 ){
-  UNUSED_PARAM(pUnused);
   if( pIter->a>=pIter->b ){
     *piCol = -1;
     *piOff = -1;
@@ -2247,8 +2246,12 @@ static void fts5ApiPhraseNext(
     int iVal;
     pIter->a += fts5GetVarint32(pIter->a, iVal);
     if( iVal==1 ){
+      /* Avoid returning a (*piCol) value that is too large for the table,
+      ** even if the position-list is corrupt. The caller might not be
+      ** expecting it.  */
+      int nCol = ((Fts5Table*)(((Fts5Cursor*)pCtx)->base.pVtab))->pConfig->nCol;
       pIter->a += fts5GetVarint32(pIter->a, iVal);
-      *piCol = iVal;
+      *piCol = (iVal>=nCol ? nCol-1 : iVal);
       *piOff = 0;
       pIter->a += fts5GetVarint32(pIter->a, iVal);
     }
