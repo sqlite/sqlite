@@ -2208,6 +2208,8 @@ static void groupConcatValue(sqlite3_context *context){
       sqlite3_result_error_toobig(context);
     }else if( pAccum->accError==SQLITE_NOMEM ){
       sqlite3_result_error_nomem(context);
+    }else if( pGCC->nAccum>0 && pAccum->nChar==0 ){
+      sqlite3_result_text(context, "", 1, SQLITE_STATIC);
     }else{   
       const char *zText = sqlite3_str_value(pAccum);
       sqlite3_result_text(context, zText, pAccum->nChar, SQLITE_TRANSIENT);

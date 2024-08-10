@@ -228,7 +228,7 @@ static void extendFJMatch(
 static SQLITE_NOINLINE int isValidSchemaTableName(
   const char *zTab,         /* Name as it appears in the SQL */
   Table *pTab,              /* The schema table we are trying to match */
-  Schema *pSchema           /* non-NULL if a database qualifier is present */
+  const char *zDb           /* non-NULL if a database qualifier is present */
 ){
   const char *zLegacy;
   assert( pTab!=0 );
@@ -239,7 +239,7 @@ static SQLITE_NOINLINE int isValidSchemaTableName(
     if( sqlite3StrICmp(zTab+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
       return 1;
     }
-    if( pSchema==0 ) return 0;
+    if( zDb==0 ) return 0;
     if( sqlite3StrICmp(zTab+7, &LEGACY_SCHEMA_TABLE[7])==0 ) return 1;
     if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
   }else{
@@ -422,7 +422,7 @@ static int lookupName(
             }
           }else if( sqlite3StrICmp(zTab, pTab->zName)!=0 ){
             if( pTab->tnum!=1 ) continue;
-            if( !isValidSchemaTableName(zTab, pTab, pSchema) ) continue;
+            if( !isValidSchemaTableName(zTab, pTab, zDb) ) continue;
           }
           assert( ExprUseYTab(pExpr) );
           if( IN_RENAME_OBJECT && pItem->zAlias ){
@@ -2154,6 +2154,9 @@ int sqlite3ResolveExprNames(
 ** Resolve all names for all expression in an expression list.  This is
 ** just like sqlite3ResolveExprNames() except that it works for an expression
 ** list rather than a single expression.
+**
+** The return value is SQLITE_OK (0) for success or SQLITE_ERROR (1) for a
+** failure.
 */
 int sqlite3ResolveExprListNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
@@ -2162,7 +2165,7 @@ int sqlite3ResolveExprListNames(
   int i;
   int savedHasAgg = 0;
   Walker w;
-  if( pList==0 ) return WRC_Continue;
+  if( pList==0 ) return SQLITE_OK;
   w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
@@ -2176,7 +2179,7 @@ int sqlite3ResolveExprListNames(
 #if SQLITE_MAX_EXPR_DEPTH>0
     w.pParse->nHeight += pExpr->nHeight;
     if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
-      return WRC_Abort;
+      return SQLITE_ERROR;
     }
 #endif
     sqlite3WalkExprNN(&w, pExpr);
@@ -2193,10 +2196,10 @@ int sqlite3ResolveExprListNames(
                           (NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
       pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
     }
-    if( w.pParse->nErr>0 ) return WRC_Abort;
+    if( w.pParse->nErr>0 ) return SQLITE_ERROR;
   }
   pNC->ncFlags |= savedHasAgg;
-  return WRC_Continue;
+  return SQLITE_OK;
 }
 
 /*
