@@ -103,11 +103,25 @@ struct Fts5Auxiliary {
 ** Each tokenizer module registered with the FTS5 module is represented
 ** by an object of the following type. All such objects are stored as part
 ** of the Fts5Global.pTok list.
+**
+** bV2Native:
+**  True if the tokenizer was registered using xCreateTokenizer_v2(), false
+**  for xCreateTokenizer(). If this variable is true, then x2 is populated
+**  with the routines as supplied by the caller and x1 contains synthesized
+**  wrapper routines. In this case the user-data pointer passed to 
+**  x1.xCreate should be a pointer to the Fts5TokenizerModule structure,
+**  not a copy of pUserData.
+**
+**  Of course, if bV2Native is false, then x1 contains the real routines and
+**  x2 the synthesized ones. In this case a pointer to the Fts5TokenizerModule
+**  object should be passed to x2.xCreate.
 */
 struct Fts5TokenizerModule {
   char *zName;                    /* Name of tokenizer */
   void *pUserData;                /* User pointer passed to xCreate() */
-  fts5_tokenizer_v2 x;            /* Tokenizer functions */
+  int bV2Native;                  /* True if v2 native tokenizer */
+  fts5_tokenizer x1;              /* Tokenizer functions */
+  fts5_tokenizer_v2 x2;           /* Tokenizer functions */
   void (*xDestroy)(void*);        /* Destructor function */
   Fts5TokenizerModule *pNext;     /* Next registered tokenizer module */
 };
@@ -1254,11 +1268,10 @@ static int fts5SetLocale(
   const char *zLocale, 
   int nLocale
 ){
-  Fts5TokenizerConfig *pT = &pConfig->t;
   int rc = SQLITE_OK;
-  if( pT->pTokApi->xSetLocale ){
-    rc = pT->pTokApi->xSetLocale(pT->pTok, zLocale, nLocale);
-  }
+  Fts5TokenizerConfig *pT = &pConfig->t;
+  pT->pLocale = zLocale;
+  pT->nLocale = nLocale;
   return rc;
 }
 
@@ -3177,6 +3190,105 @@ static int fts5CreateAux(
   return rc;
 }
 
+static int fts5NewTokenizerModule(
+  Fts5Global *pGlobal,            /* Global context (one per db handle) */
+  const char *zName,              /* Name of new function */
+  void *pUserData,                /* User data for aux. function */
+  void(*xDestroy)(void*),         /* Destructor for pUserData */
+  Fts5TokenizerModule **ppNew
+){
+  int rc = SQLITE_OK;
+  Fts5TokenizerModule *pNew;
+  sqlite3_int64 nName;          /* Size of zName and its \0 terminator */
+  sqlite3_int64 nByte;          /* Bytes of space to allocate */
+
+  nName = strlen(zName) + 1;
+  nByte = sizeof(Fts5TokenizerModule) + nName;
+  *ppNew = pNew = (Fts5TokenizerModule*)sqlite3Fts5MallocZero(&rc, nByte);
+  if( pNew ){
+    pNew->zName = (char*)&pNew[1];
+    memcpy(pNew->zName, zName, nName);
+    pNew->pUserData = pUserData;
+    pNew->xDestroy = xDestroy;
+    pNew->pNext = pGlobal->pTok;
+    pGlobal->pTok = pNew;
+    if( pNew->pNext==0 ){
+      pGlobal->pDfltTok = pNew;
+    }
+  }
+
+  return rc;
+}
+
+typedef struct Fts5VtoVTokenizer Fts5VtoVTokenizer;
+struct Fts5VtoVTokenizer {
+  Fts5TokenizerModule *pMod;
+  Fts5Tokenizer *pReal;
+};
+
+static int fts5VtoVCreate(
+  void *pCtx, 
+  const char **azArg, 
+  int nArg, 
+  Fts5Tokenizer **ppOut
+){
+  Fts5TokenizerModule *pMod = (Fts5TokenizerModule*)pCtx;
+  Fts5VtoVTokenizer *pNew = 0;
+  int rc = SQLITE_OK;
+
+  pNew = (Fts5VtoVTokenizer*)sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
+  if( rc==SQLITE_OK ){
+    pNew->pMod = pMod;
+    if( pMod->bV2Native ){
+      rc = pMod->x2.xCreate(pMod->pUserData, azArg, nArg, &pNew->pReal);
+    }else{
+      rc = pMod->x1.xCreate(pMod->pUserData, azArg, nArg, &pNew->pReal);
+    }
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pNew);
+      pNew = 0;
+    }
+  }
+
+  *ppOut = (Fts5Tokenizer*)pNew;
+  return rc;
+}
+static void fts5VtoVDelete(Fts5Tokenizer *pTok){
+  Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
+  if( p ){
+    Fts5TokenizerModule *pMod = p->pMod;
+    if( pMod->bV2Native ){
+      pMod->x2.xDelete(p->pReal);
+    }else{
+      pMod->x1.xDelete(p->pReal);
+    }
+    sqlite3_free(p);
+  }
+}
+static int fts5V1toV2Tokenize(
+  Fts5Tokenizer *pTok, 
+  void *pCtx, int flags,
+  const char *pText, int nText, 
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
+  Fts5TokenizerModule *pMod = p->pMod;
+  assert( pMod->bV2Native );
+  return pMod->x2.xTokenize(p->pReal, pCtx, flags, pText, nText, 0, 0, xToken);
+}
+static int fts5V2toV1Tokenize(
+  Fts5Tokenizer *pTok, 
+  void *pCtx, int flags,
+  const char *pText, int nText, 
+  const char *pLocale, int nLocale, 
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
+  Fts5TokenizerModule *pMod = p->pMod;
+  assert( pMod->bV2Native==0 );
+  return pMod->x1.xTokenize(p->pReal, pCtx, flags, pText, nText, xToken);
+}
+
 /*
 ** Register a new tokenizer. This is the implementation of the 
 ** fts5_api.xCreateTokenizer_v2() method.
@@ -3194,24 +3306,14 @@ static int fts5CreateTokenizer_v2(
   if( pTokenizer->iVersion>2 ){
     rc = SQLITE_ERROR;
   }else{
-    Fts5TokenizerModule *pNew;
-    sqlite3_int64 nName;          /* Size of zName and its \0 terminator */
-    sqlite3_int64 nByte;          /* Bytes of space to allocate */
-
-    nName = strlen(zName) + 1;
-    nByte = sizeof(Fts5TokenizerModule) + nName;
-    pNew = (Fts5TokenizerModule*)sqlite3Fts5MallocZero(&rc, nByte);
+    Fts5TokenizerModule *pNew = 0;
+    rc = fts5NewTokenizerModule(pGlobal, zName, pUserData, xDestroy, &pNew);
     if( pNew ){
-      pNew->zName = (char*)&pNew[1];
-      memcpy(pNew->zName, zName, nName);
-      pNew->pUserData = pUserData;
-      pNew->x = *pTokenizer;
-      pNew->xDestroy = xDestroy;
-      pNew->pNext = pGlobal->pTok;
-      pGlobal->pTok = pNew;
-      if( pNew->pNext==0 ){
-        pGlobal->pDfltTok = pNew;
-      }
+      pNew->x2 = *pTokenizer;
+      pNew->bV2Native = 1;
+      pNew->x1.xCreate = fts5VtoVCreate;
+      pNew->x1.xTokenize = fts5V1toV2Tokenize;
+      pNew->x1.xDelete = fts5VtoVDelete;
     }
   }
 
@@ -3228,15 +3330,19 @@ static int fts5CreateTokenizer(
   fts5_tokenizer *pTokenizer,     /* Tokenizer implementation */
   void(*xDestroy)(void*)          /* Destructor for pUserData */
 ){
-  fts5_tokenizer_v2 tok;
+  Fts5TokenizerModule *pNew = 0;
+  int rc = SQLITE_OK;
 
-  memset(&tok, 0, sizeof(tok));
-  tok.iVersion = 2;
-  tok.xCreate = pTokenizer->xCreate;
-  tok.xTokenize = pTokenizer->xTokenize;
-  tok.xDelete = pTokenizer->xDelete;
-
-  return fts5CreateTokenizer_v2(pApi, zName, pUserData, &tok, xDestroy);
+  rc = fts5NewTokenizerModule(
+      (Fts5Global*)pApi, zName, pUserData, xDestroy, &pNew
+  );
+  if( pNew ){
+    pNew->x1 = *pTokenizer;
+    pNew->x2.xCreate = fts5VtoVCreate;
+    pNew->x2.xTokenize = fts5V2toV1Tokenize;
+    pNew->x2.xDelete = fts5VtoVDelete;
+  }
+  return rc;
 }
 
 static Fts5TokenizerModule *fts5LocateTokenizer(
@@ -3271,8 +3377,12 @@ static int fts5FindTokenizer_v2(
 
   pMod = fts5LocateTokenizer((Fts5Global*)pApi, zName);
   if( pMod ){
-    *ppTokenizer = &pMod->x;
-    *ppUserData = pMod->pUserData;
+    if( pMod->bV2Native ){
+      *ppUserData = pMod->pUserData;
+    }else{
+      *ppUserData = (void*)pMod;
+    }
+    *ppTokenizer = &pMod->x2;
   }else{
     *ppTokenizer = 0;
     *ppUserData = 0;
@@ -3292,14 +3402,21 @@ static int fts5FindTokenizer(
   void **ppUserData,
   fts5_tokenizer *pTokenizer      /* Populate this object */
 ){
-  fts5_tokenizer_v2 *pV2 = 0;
   int rc = SQLITE_OK;
+  Fts5TokenizerModule *pMod;
 
-  rc = fts5FindTokenizer_v2(pApi, zName, ppUserData, &pV2);
-  if( rc==SQLITE_OK ){
-    pTokenizer->xCreate = pV2->xCreate;
-    pTokenizer->xDelete = pV2->xDelete;
-    pTokenizer->xTokenize = pV2->xTokenize;
+  pMod = fts5LocateTokenizer((Fts5Global*)pApi, zName);
+  if( pMod ){
+    if( pMod->bV2Native==0 ){
+      *ppUserData = pMod->pUserData;
+    }else{
+      *ppUserData = (void*)pMod;
+    }
+    *pTokenizer = pMod->x1;
+  }else{
+    memset(pTokenizer, 0, sizeof(*pTokenizer));
+    *ppUserData = 0;
+    rc = SQLITE_ERROR;
   }
 
   return rc;
@@ -3321,23 +3438,33 @@ int fts5GetTokenizer(
     rc = SQLITE_ERROR;
     if( pzErr ) *pzErr = sqlite3_mprintf("no such tokenizer: %s", azArg[0]);
   }else{
-    rc = pMod->x.xCreate(
-        pMod->pUserData, (azArg?&azArg[1]:0), (nArg?nArg-1:0), &pConfig->t.pTok
+    int (*xCreate)(void*, const char**, int, Fts5Tokenizer**) = 0;
+    if( pMod->bV2Native ){
+      xCreate = pMod->x2.xCreate;
+      pConfig->t.pApi2 = &pMod->x2;
+    }else{
+      pConfig->t.pApi1 = &pMod->x1;
+      xCreate = pMod->x1.xCreate;
+    }
+    
+    rc = xCreate(pMod->pUserData, 
+        (azArg?&azArg[1]:0), (nArg?nArg-1:0), &pConfig->t.pTok
     );
-    pConfig->t.pTokApi = &pMod->x;
+
     if( rc!=SQLITE_OK ){
       if( pzErr && rc!=SQLITE_NOMEM ){
         *pzErr = sqlite3_mprintf("error in tokenizer constructor");
       }
-    }else{
+    }else if( pMod->bV2Native==0 ){
       pConfig->t.ePattern = sqlite3Fts5TokenizerPattern(
-          pMod->x.xCreate, pConfig->t.pTok
+          pMod->x1.xCreate, pConfig->t.pTok
       );
     }
   }
 
   if( rc!=SQLITE_OK ){
-    pConfig->t.pTokApi = 0;
+    pConfig->t.pApi1 = 0;
+    pConfig->t.pApi2 = 0;
     pConfig->t.pTok = 0;
   }
 

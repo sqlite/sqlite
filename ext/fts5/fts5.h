@@ -627,6 +627,7 @@ struct fts5_tokenizer_v2 {
       void *pCtx,
       int flags,            /* Mask of FTS5_TOKENIZE_* flags */
       const char *pText, int nText, 
+      const char *pLocale, int nLocale,
       int (*xToken)(
         void *pCtx,         /* Copy of 2nd argument to xTokenize() */
         int tflags,         /* Mask of FTS5_TOKEN_* flags */
@@ -636,8 +637,6 @@ struct fts5_tokenizer_v2 {
         int iEnd            /* Byte offset of end of token within input text */
       )
   );
-
-  int (*xSetLocale)(Fts5Tokenizer*, const char *pLocale, int nLocale);
 };
 
 /*

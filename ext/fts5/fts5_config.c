@@ -679,7 +679,11 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
   if( pConfig ){
     int i;
     if( pConfig->t.pTok ){
-      pConfig->t.pTokApi->xDelete(pConfig->t.pTok);
+      if( pConfig->t.pApi1 ){
+        pConfig->t.pApi1->xDelete(pConfig->t.pTok);
+      }else{
+        pConfig->t.pApi2->xDelete(pConfig->t.pTok);
+      }
     }
     sqlite3_free((char*)pConfig->t.azArg);
     sqlite3_free(pConfig->zDb);
@@ -762,9 +766,15 @@ int sqlite3Fts5Tokenize(
       rc = sqlite3Fts5LoadTokenizer(pConfig);
     }
     if( rc==SQLITE_OK ){
-      rc = pConfig->t.pTokApi->xTokenize(
-          pConfig->t.pTok, pCtx, flags, pText, nText, xToken
-      );
+      if( pConfig->t.pApi1 ){
+        rc = pConfig->t.pApi1->xTokenize(
+            pConfig->t.pTok, pCtx, flags, pText, nText, xToken
+        );
+      }else{
+        rc = pConfig->t.pApi2->xTokenize(pConfig->t.pTok, pCtx, flags, 
+            pText, nText, pConfig->t.pLocale, pConfig->t.nLocale, xToken
+        );
+      }
     }
   }
   return rc;

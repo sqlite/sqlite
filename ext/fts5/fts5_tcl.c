@@ -1005,15 +1005,22 @@ static int f5tTokenizeCallback(
   return f5tTokenizerReallyTokenize(p->p, p->pCtx, p->flags, z, n, p->xToken);
 }
 
-static int f5tTokenizerTokenize(
+static int f5tTokenizerTokenize_v2(
   Fts5Tokenizer *p, 
   void *pCtx,
   int flags,
   const char *pText, int nText, 
+  const char *pLoc, int nLoc, 
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
   int rc = SQLITE_OK;
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+
+  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
+  if( pLoc && nLoc<sizeof(pInst->zLocale) ){
+    memcpy(pInst->zLocale, pLoc, nLoc);
+  }
+
   if( pInst->pParent ){
     CallbackCtx ctx;
     ctx.p = p;
@@ -1022,7 +1029,8 @@ static int f5tTokenizerTokenize(
     ctx.xToken = xToken;
     if( pInst->pModule->parent_v2.xTokenize ){
       rc = pInst->pModule->parent_v2.xTokenize(
-          pInst->pParent, (void*)&ctx, flags, pText, nText, f5tTokenizeCallback
+          pInst->pParent, (void*)&ctx, flags, pText, nText, 
+          pLoc, nLoc, f5tTokenizeCallback
       );
     }else{
       rc = pInst->pModule->parent.xTokenize(
@@ -1032,7 +1040,18 @@ static int f5tTokenizerTokenize(
   }else{
     rc = f5tTokenizerReallyTokenize(p, pCtx, flags, pText, nText, xToken);
   }
+
+  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
   return rc;
+}
+static int f5tTokenizerTokenize(
+  Fts5Tokenizer *p, 
+  void *pCtx,
+  int flags,
+  const char *pText, int nText, 
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  return f5tTokenizerTokenize_v2(p, pCtx, flags, pText, nText, 0, 0, xToken);
 }
 
 /*
@@ -1224,9 +1243,9 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
       memset(&t2, 0, sizeof(t2));
       t2.iVersion = 2;
       t2.xCreate = f5tTokenizerCreate;
-      t2.xTokenize = f5tTokenizerTokenize;
+      t2.xTokenize = f5tTokenizerTokenize_v2;
       t2.xDelete = f5tTokenizerDelete;
-      t2.xSetLocale = f5tTokenizerSetLocale;
+      // t2.xSetLocale = f5tTokenizerSetLocale;
       rc = pApi->xCreateTokenizer_v2(pApi, zName, pModCtx, &t2,f5tDelTokenizer);
     }
   }

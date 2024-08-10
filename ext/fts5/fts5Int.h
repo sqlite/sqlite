@@ -162,10 +162,13 @@ typedef struct Fts5TokenizerConfig Fts5TokenizerConfig;
 
 struct Fts5TokenizerConfig {
   Fts5Tokenizer *pTok;
-  fts5_tokenizer_v2 *pTokApi;
+  fts5_tokenizer_v2 *pApi2;
+  fts5_tokenizer *pApi1;
   const char **azArg;
   int nArg;
   int ePattern;                   /* FTS_PATTERN_XXX constant */
+  const char *pLocale;            /* Current locale to use */
+  int nLocale;
 };
 
 /*
