@@ -228,7 +228,7 @@ static void extendFJMatch(
 static SQLITE_NOINLINE int isValidSchemaTableName(
   const char *zTab,         /* Name as it appears in the SQL */
   Table *pTab,              /* The schema table we are trying to match */
-  Schema *pSchema           /* non-NULL if a database qualifier is present */
+  const char *zDb           /* non-NULL if a database qualifier is present */
 ){
   const char *zLegacy;
   assert( pTab!=0 );
@@ -239,7 +239,7 @@ static SQLITE_NOINLINE int isValidSchemaTableName(
     if( sqlite3StrICmp(zTab+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
       return 1;
     }
-    if( pSchema==0 ) return 0;
+    if( zDb==0 ) return 0;
     if( sqlite3StrICmp(zTab+7, &LEGACY_SCHEMA_TABLE[7])==0 ) return 1;
     if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
   }else{
@@ -422,7 +422,7 @@ static int lookupName(
             }
           }else if( sqlite3StrICmp(zTab, pTab->zName)!=0 ){
             if( pTab->tnum!=1 ) continue;
-            if( !isValidSchemaTableName(zTab, pTab, pSchema) ) continue;
+            if( !isValidSchemaTableName(zTab, pTab, zDb) ) continue;
           }
           assert( ExprUseYTab(pExpr) );
           if( IN_RENAME_OBJECT && pItem->zAlias ){
