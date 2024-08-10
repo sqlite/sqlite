@@ -1,5 +1,5 @@
-C Update\sthe\sfts5_tokenizer_v2\sAPI\sso\sthat\sthe\slocale\sis\spassed\sas\sparameter\sto\sxTokenize(),\sinstead\sof\svia\sa\sseparate\scall\sto\sxSetLocale().
-D 2024-08-10T18:59:36.297
+C Fix\san\suninitialized\svariable\sin\sfts5_tcl.c.
+D 2024-08-10T19:18:19.197
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -102,7 +102,7 @@ F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a
 F ext/fts5/fts5_index.c eb9a0dda3bc6ef969a6be8d2746af56856e67251810ddba08622b45be8477abe
 F ext/fts5/fts5_main.c 6248ba625b6a24c4c5f4706883aa3939b06e7f8e0266e0e8af24f5516e599879
 F ext/fts5/fts5_storage.c 5bf88213ff5911625c142ac332ddba10dcd0869e757f91f2a3d27f27ba595992
-F ext/fts5/fts5_tcl.c f901f32a1be49dc76c6da63d08224e4d971657db0a0783ebc9796ef0757a57a9
+F ext/fts5/fts5_tcl.c af5817de028f5b1210a27dd99b3592fda55f438b3053d6f84145f32fdd265533
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
 F ext/fts5/fts5_tokenize.c fa5493075101540270f572038fc1723d44fcc97bfbf237c8530013b8a27860be
@@ -2202,8 +2202,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a3ef7d47b582a66a85ebe802ab40114f77289d6b44a4b375ea7858c60f59b27f
-R c78b035ad007a6bbcb5c77edceb19899
+P 03e63ed24e7a08817341e59b075ae2d4e3f7a5e5b37e0e6138359d5fd29a5e9e
+R c027b27c24a454af656d09d633573aa9
 U dan
-Z 3bd05c86feeacf019b7ab5899d9e19c7
+Z d725700101283648380ab327f25111bf
 # Remove this line to create a well-formed Fossil manifest.

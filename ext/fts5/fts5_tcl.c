@@ -1167,7 +1167,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   char *zName;
   Tcl_Obj *pScript;
   F5tTokenizerModule *pMod;
-  int rc;
+  int rc = SQLITE_OK;
   int bV2 = 0;                    /* True to use _v2 API */
   const char *zParent = 0;        /* Name of parent tokenizer, if any */
   int ii = 0;
@@ -1245,7 +1245,6 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
       t2.xCreate = f5tTokenizerCreate;
       t2.xTokenize = f5tTokenizerTokenize_v2;
       t2.xDelete = f5tTokenizerDelete;
-      // t2.xSetLocale = f5tTokenizerSetLocale;
       rc = pApi->xCreateTokenizer_v2(pApi, zName, pModCtx, &t2,f5tDelTokenizer);
     }
   }
