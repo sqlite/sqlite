@@ -392,6 +392,7 @@ const installOpfsVfs = function callee(options){
       'SQLITE_ACCESS_EXISTS',
       'SQLITE_ACCESS_READWRITE',
       'SQLITE_BUSY',
+      'SQLITE_CANTOPEN',
       'SQLITE_ERROR',
       'SQLITE_IOERR',
       'SQLITE_IOERR_ACCESS',
@@ -444,7 +445,7 @@ const installOpfsVfs = function callee(options){
       OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
          If true, any async routine which implicitly acquires a sync
-         access handle (i.e. an OPFS lock) will release that locks at
+         access handle (i.e. an OPFS lock) will release that lock at
          the end of the call which acquires it. If false, such
          "autolocks" are not released until the VFS is idle for some
          brief amount of time.
@@ -471,9 +472,22 @@ const installOpfsVfs = function callee(options){
       Atomics.notify(state.sabOPView, state.opIds.whichOp)
       /* async thread will take over here */;
       const t = performance.now();
-      Atomics.wait(state.sabOPView, state.opIds.rc, -1)
-      /* When this wait() call returns, the async half will have
-         completed the operation and reported its results. */;
+      while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
+        /*
+          The reason for this loop is buried in the details of a long
+          discussion at:
+
+          https://github.com/sqlite/sqlite-wasm/issues/12
+
+          Summary: in at least one browser flavor, under high loads,
+          the wait()/notify() pairings can get out of sync. Calling
+          wait() here until it returns 'not-equal' gets them back in
+          sync.
+        */
+      }
+      /* When the above wait() call returns 'not-equal', the async
+         half will have completed the operation and reported its results
+         in the state.opIds.rc slot of the SAB. */
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       if(rc && state.asyncS11nExceptions){
@@ -720,9 +734,18 @@ const installOpfsVfs = function callee(options){
            involve an inherent race condition. For the time being,
            pending a better solution, we simply report whether the
            given pFile is open.
+
+           Update 2024-06-12: based on forum discussions, this
+           function now always sets pOut to 0 (false):
+
+           https://sqlite.org/forum/forumpost/a2f573b00cda1372
         */
-        const f = __openFiles[pFile];
-        wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        if(1){
+          wasm.poke(pOut, 0, 'i32');
+        }else{
+          const f = __openFiles[pFile];
+          wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
+        }
         return 0;
       },
       xClose: function(pFile){
@@ -738,7 +761,6 @@ const installOpfsVfs = function callee(options){
         return rc;
       },
       xDeviceCharacteristics: function(pFile){
-        //debug("xDeviceCharacteristics(",pFile,")");
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
       },
       xFileControl: function(pFile, opId, pArg){
