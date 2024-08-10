@@ -21,6 +21,9 @@ do_execsql_test 1.0 "
   INSERT INTO t1 VALUES('abc\u0303defghijklm');
   INSERT INTO t1 VALUES('a\u0303b\u0303c\u0303defghijklm');
 "
+do_catchsql_test 1.0.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(z, tokenize='trigram remove_diacritics');
+} {1 {error in tokenizer constructor}}
 
 do_execsql_test 1.1 {
   SELECT highlight(t1, 0, '(', ')') FROM t1('abc');

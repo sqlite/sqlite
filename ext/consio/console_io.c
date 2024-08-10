@@ -54,11 +54,6 @@
 #endif
 
 #if CIO_WIN_WC_XLATE
-/* Character used to represent a known-incomplete UTF-8 char group (�) */
-static WCHAR cBadGroup = 0xfffd;
-#endif
-
-#if CIO_WIN_WC_XLATE
 static HANDLE handleOfFile(FILE *pf){
   int fileDesc = _fileno(pf);
   union { intptr_t osfh; HANDLE fh; } fid = {
