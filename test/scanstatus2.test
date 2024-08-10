@@ -265,7 +265,7 @@ ifcapable trace {
   }
   
   proc trace {stmt sql} {
-    array set A [sqlite3_stmt_scanstatus -flags complex [format %x $stmt] 0]
+    array set A [sqlite3_stmt_scanstatus -flags complex [format %llx $stmt] 0]
     lappend ::trace_explain $A(zExplain)
   }
   db trace_v2 trace 

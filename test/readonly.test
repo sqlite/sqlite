@@ -15,7 +15,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-if {$tcl_platform(platform)=="windows"} finish_test
+if {$tcl_platform(platform)=="windows"} {
+  finish_test
+  return
+}
 source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 set ::testprefix readonly

@@ -8958,7 +8958,6 @@ do_catchsql_test 61.2 {
   SELECT * FROM t3 ORDER BY rowid;
 } {/*malformed database schema*/}
 
-breakpoint
 #-------------------------------------------------------------------------
 do_test 62.0 {
   sqlite3 db {}
@@ -10768,6 +10767,7 @@ do_catchsql_test 73.1 {
 reset_db
 do_test 74.0 {
   sqlite3 db {}
+  sqlite3_fts5_register_matchinfo db
   db deserialize [decode_hexdb {
 | size 106496 pagesize 4096 filename x.db
 | page 1 offset 0
@@ -14587,14 +14587,19 @@ do_test 74.0 {
 | end x.db
 }]} {}
 
-do_catchsql_test 74.1 {
-  SELECT rowid, quote(matchinfo(t1,'p�xyb<s')) FROM t1 WHERE t1 MATCH 'e*';
+do_catchsql_test 74.0.5 {
+  SELECT matchinfo(1,2);
 } {1 {unable to use function matchinfo in the requested context}}
+
+do_catchsql_test 74.1 {
+  SELECT rowid, quote(matchinfo(t1,'pxyb<s')) FROM t1 WHERE t1 MATCH 'e*';
+} {1 {unrecognized matchinfo flag: <}}
 
 #-------------------------------------------------------------------------
 reset_db
 do_test 75.0 {
   sqlite3 db {}
+  sqlite3_fts5_register_matchinfo db
   db deserialize [decode_hexdb {
 | size 32768 pagesize 4096 filename crash-033d665d5caa8d.db
 | page 1 offset 0
@@ -14791,7 +14796,7 @@ do_test 75.0 {
 
 do_catchsql_test 75.1 {
   SELECT rowid, quote(matchinfo(t1,'pcxybs')) FROM t1 WHERE t1 MATCH 'e*';
-} {1 {unable to use function matchinfo in the requested context}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 reset_db
