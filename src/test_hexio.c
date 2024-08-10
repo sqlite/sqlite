@@ -401,7 +401,7 @@ static int SQLITE_TCLAPI make_fts3record(
   }
 
   for(i=0; i<(int)nArg; i++){
-    sqlite3_int64 iVal;
+    Tcl_WideInt iVal;
     if( TCL_OK==Tcl_GetWideIntFromObj(0, aArg[i], &iVal) ){
       if( nOut+10>nAlloc ){
         int nNew = nAlloc?nAlloc*2:128;

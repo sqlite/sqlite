@@ -1,5 +1,5 @@
-C Fix\sbehavior\schange\sin\sthe\soffset()\sSQL\sfunction\sintroduced\sby\s\ncheck-in\s[f0b671183f44d0ae].
-D 2024-08-10T14:53:21.552
+C Fix\sharmless\scompiler\swarning\srelated\sto\sthe\sTCL8-to-TCL9\stransition.\s\sThis\nchange\sin\stesting\scode\sonly\sand\sis\snot\srelevante\sto\sthe\score\sSQLite.
+D 2024-08-10T15:05:22.550
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -791,7 +791,7 @@ F src/test_demovfs.c 3efa2adf4f21e10d95521721687d5ca047aea91fa62dd8cc22ac9e5a9c9
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
 F src/test_fs.c c411c40baba679536fc34e2679349f59d8225570aed3488b5b3ef1908525a3d5
 F src/test_func.c 8c0e89192f70fac307822d1ac2911ee51751288780b3db0c5ab5ca75fa0fe851
-F src/test_hexio.c af6db9300edd2d7b786a2d40d64177cad4b8ee22085e8ca5fe812cdeffdb6502
+F src/test_hexio.c 0f777bf9fbb2684bb4978372bacc90ef7337d5d9e3cebe067a9409941e88bacf
 F src/test_init.c 17313332d58e90defc527129d5eda4a08bd6b6e8de7207a231523c8d98fb445e
 F src/test_intarray.c e4216aadee9df2de7d1aee7e70f6b22c80ee79ece72a63d57105db74217639e5
 F src/test_intarray.h 6c3534641108cd1bea517a8e117dcba237081310a29a4c35bd2190caa8972293
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f0b671183f44d0ae294956e7651a1653f47bd6219f9636872d15993f30f28dfb
-R df8366cfe7188a7576fdab4cc318948f
+P c2ac17f183082d6388336338b8d5c0b334095e5f77a27bc08419431f37471d22
+R cab61c0a74c96f8f1dca2569723fe61f
 U drh
-Z 7afdd89a9e0f36ed074dbb50e50b24a5
+Z e34acd82ee8d24fbce707e518d148a3f
 # Remove this line to create a well-formed Fossil manifest.
