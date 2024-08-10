@@ -679,6 +679,7 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
             ** near the end of a corrupt record.  */
             rc = dbdataBufferSize(&pCsr->rec, nPayload+DBDATA_PADDING_BYTES);
             if( rc!=SQLITE_OK ) return rc;
+            assert( pCsr->rec.aBuf!=0 );
             assert( nPayload!=0 );
 
             /* Load the nLocal bytes of payload */

@@ -1,5 +1,5 @@
-C Fix\sa\sfew\sminor\sTCL9\scompatibilities\sissues.
-D 2024-08-09T22:48:11.754
+C Add\san\sassert()\sto\sfix\sa\sharmless\scompiler\swarning\sin\sthe\srecovery\nextension.
+D 2024-08-10T09:56:36.016
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -481,7 +481,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 4a3376c0fb9a844a799ac529fb81260523f6b13c9f629bc270c632dbae5fc1f8
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c b9727c3394307d058e806c1da0f8bb7b24daf3c6bb94cb10cca88ea4d5c806c0
-F ext/recover/dbdata.c a22ecd689f00ff2ad33b5633c4ef84c8f088c65faeac18d4eb73c128395c7aec
+F ext/recover/dbdata.c 5295f4f922b60d7035b6b9fd5846b13071b9d97ed7fad8496837bb7640d24771
 F ext/recover/recover1.test e16d78e94183562abff569967b18b7c77451d7044365516cd0fe14713a284851
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b416756320dfb46ad72b843a7fbf18807d3fd1966251c320de626280b5238a5c
-R 3713bfe5df240ec97ce0810792e582f6
+P 69eed19914ef52bc0101f4ae1c7b242df4ee28675b3581e1f4d60a35494f9f76
+R 1a957c9b84a4c71fe646dcbf28d160e3
 U drh
-Z 6bb203e3c3683b4f2854978314b46998
+Z fb95dff972d2b07ca88b4d892cd693f5
 # Remove this line to create a well-formed Fossil manifest.
