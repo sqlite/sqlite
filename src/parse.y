@@ -530,9 +530,9 @@ cmd ::= select(X).  {
           break;
         }
       }
-      if( (p->selFlags & SF_MultiValue)==0 && 
-        (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0 &&
-        cnt>mxSelect
+      if( (p->selFlags & (SF_MultiValue|SF_Values))==0
+       && (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0
+       && cnt>mxSelect
       ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
       }

@@ -8977,7 +8977,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
-    nByte = strlen(zSql);    
     rc =  sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     zSql = 0;
@@ -8996,16 +8995,21 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_finalize(pStmt);
     pStmt = 0;
     if( nCol==0 ) return 0; /* no columns, no error */
-    zSql = sqlite3_malloc64( nByte*2 + 20 + nCol*2 );
+
+    nByte = 64                 /* space for "INSERT INTO", "VALUES(", ")\0" */
+          + (zSchema ? strlen(zSchema)*2 + 2: 0)  /* Quoted schema name */
+          + strlen(zTable)*2 + 2                  /* Quoted table name */
+          + nCol*2;            /* Space for ",?" for each column */
+    zSql = sqlite3_malloc64( nByte );
     if( zSql==0 ){
       import_cleanup(&sCtx);
       shell_out_of_memory();
     }
     if( zSchema ){
-      sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
+      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\".\"%w\" VALUES(?", 
                        zSchema, zTable);
     }else{
-      sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
+      sqlite3_snprintf(nByte, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
     }
     j = strlen30(zSql);
     for(i=1; i<nCol; i++){
@@ -9014,6 +9018,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
+    assert( j<nByte );
     if( eVerbose>=2 ){
       oputf("Insert using: %s\n", zSql);
     }
