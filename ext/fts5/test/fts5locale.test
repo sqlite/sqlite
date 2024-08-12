@@ -350,11 +350,10 @@ do_execsql_test 6.2 {
 } {text text}
 
 #--------------------------------------------------------------------------
-# Test that fts5_locale() works with virtual tables.
+# Test that fts5_locale() works with external-content tables.
 #
 reset_db
 sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
-# optimization_control db query-flattener 0
 
 do_execsql_test 7.1 {
   CREATE TABLE t1(ii INTEGER PRIMARY KEY, bb BLOB, tt TEXT, locale TEXT);
@@ -394,8 +393,26 @@ do_execsql_test 7.6 {
   {{} {}} {{} reverse} {{} second}
 }
 
+#-------------------------------------------------------------------------
+# Test that the porter tokenizer works with locales.
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
 
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(tt, locale=1, tokenize="porter tcl");
+  CREATE VIRTUAL TABLE vocab USING fts5vocab('ft', instance);
+
+  INSERT INTO ft(rowid, tt) VALUES
+    (111, fts5_locale('second', 'the porter tokenizer is a wrapper tokenizer')),
+    (222, fts5_locale('reverse', 'This value may also be set'));
+}
+
+do_execsql_test 8.1 {
+  SELECT DISTINCT term FROM vocab ORDER BY 1
+} {
+  a eb eulav osla sihT te the token yam
+}
 
 finish_test
-
 
