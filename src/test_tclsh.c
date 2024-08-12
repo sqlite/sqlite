@@ -20,14 +20,7 @@
 ** in an effort to keep the tclsqlite.c file pure.
 */
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-# include "sqlite_tcl.h"
-#else
-# include "tcl.h"
-# ifndef SQLITE_TCLAPI
-#  define SQLITE_TCLAPI
-# endif
-#endif
+#include "tclsqlite.h"
 
 /* Needed for the setrlimit() system call on unix */
 #if defined(unix)

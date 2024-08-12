@@ -398,6 +398,7 @@ static int fts3SnippetNextCandidate(SnippetIter *pIter){
       return 1;
     }
 
+    assert( pIter->nSnippet>=0 );
     pIter->iCurrent = iStart = iEnd - pIter->nSnippet + 1;
     for(i=0; i<pIter->nPhrase; i++){
       SnippetPhrase *pPhrase = &pIter->aPhrase[i];

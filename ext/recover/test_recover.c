@@ -14,8 +14,7 @@
 
 #include "sqlite3recover.h"
 #include "sqliteInt.h"
-
-#include <tcl.h>
+#include "tclsqlite.h"
 #include <assert.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -308,4 +307,3 @@ int TestRecover_Init(Tcl_Interp *interp){
 #endif
   return TCL_OK;
 }
-

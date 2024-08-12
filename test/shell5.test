@@ -410,7 +410,7 @@ CREATE TABLE t4(a, b);
 #
 do_test shell5-3.1 {
   set fd [open shell5.csv w]
-  fconfigure $fd -encoding binary -translation binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd "\"test 1\"\x1F,test 2\r\n\x1E"
   puts -nonewline $fd "test 3\x1Ftest 4\n"
   close $fd

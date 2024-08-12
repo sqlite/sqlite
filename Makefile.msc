@@ -1820,6 +1820,19 @@ pkgIndex.tcl:	$(TOP)\VERSION
 
 $(SQLITE3TCLDLL):	libtclsqlite3.lib $(LIBRESOBJS) tclsqlite3.def pkgIndex.tcl
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /DEF:tclsqlite3.def /OUT:$@ libtclsqlite3.lib $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+
+tclextension:	$(SQLITE3TCLDLL)
+
+tclextension-install:	$(SQLITE3TCLDLL)
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --install-only
+
+tclextension-uninstall:
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --uninstall
+
+tclextension-list:
+	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
+
+
 # <</mark>>
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)

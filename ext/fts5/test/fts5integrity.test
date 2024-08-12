@@ -153,6 +153,7 @@ do_execsql_test 5.3 {
   INSERT INTO gg(gg) VALUES('integrity-check');
 }
 
+unset -nocomplain res
 do_test 5.4.1 {
   set ok 0
   for {set i 0} {$i < 10000} {incr i} {

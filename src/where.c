@@ -1501,6 +1501,19 @@ static sqlite3_index_info *allocateIndexInfo(
   pIdxInfo->aConstraint = pIdxCons;
   pIdxInfo->aOrderBy = pIdxOrderBy;
   pIdxInfo->aConstraintUsage = pUsage;
+  pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
+  if( HasRowid(pTab)==0 ){
+    /* Ensure that all bits associated with PK columns are set. This is to
+    ** ensure they are available for cases like RIGHT joins or OR loops. */
+    Index *pPk = sqlite3PrimaryKeyIndex((Table*)pTab);
+    assert( pPk!=0 );
+    for(i=0; i<pPk->nKeyCol; i++){
+      int iCol = pPk->aiColumn[i];
+      assert( iCol>=0 );
+      if( iCol>=BMS-1 ) iCol = BMS-1;
+      pIdxInfo->colUsed |= MASKBIT(iCol);
+    }
+  }
   pHidden->pWC = pWC;
   pHidden->pParse = pParse;
   pHidden->eDistinct = eDistinct;
@@ -4034,7 +4047,9 @@ static int whereLoopAddBtree(
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }
           }
-        }else if( m==0 ){
+        }else if( m==0 
+           && (HasRowid(pTab) || pWInfo->pSelect!=0 || sqlite3FaultSim(700))
+        ){
           WHERETRACE(0x200,
              ("-> %s a covering index according to bitmasks\n",
              pProbe->zName, m==0 ? "is" : "is not"));
@@ -4216,7 +4231,6 @@ static int whereLoopAddVirtualOne(
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
   pIdxInfo->estimatedRows = 25;
   pIdxInfo->idxFlags = 0;
-  pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
   pHidden->mHandleIn = 0;
 
   /* Invoke the virtual table xBestIndex() method */
@@ -7066,26 +7080,6 @@ whereBeginError:
   }
 #endif
 
-#ifdef SQLITE_DEBUG
-/*
-** Return true if cursor iCur is opened by instruction k of the
-** bytecode.  Used inside of assert() only.
-*/
-static int cursorIsOpen(Vdbe *v, int iCur, int k){
-  while( k>=0 ){
-    VdbeOp *pOp = sqlite3VdbeGetOp(v,k--);
-    if( pOp->p1!=iCur ) continue;
-    if( pOp->opcode==OP_Close ) return 0;
-    if( pOp->opcode==OP_OpenRead ) return 1;
-    if( pOp->opcode==OP_OpenWrite ) return 1;
-    if( pOp->opcode==OP_OpenDup ) return 1;
-    if( pOp->opcode==OP_OpenAutoindex ) return 1;
-    if( pOp->opcode==OP_OpenEphemeral ) return 1;
-  }
-  return 0;
-}
-#endif /* SQLITE_DEBUG */
-
 /*
 ** Generate the end of the WHERE loop.  See comments on
 ** sqlite3WhereBegin() for additional information.
@@ -7385,16 +7379,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             ** reference.  Verify that this is harmless - that the
             ** table being referenced really is open.
             */
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
-            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-                 || cursorIsOpen(v,pOp->p1,k)
-                 || pOp->opcode==OP_Offset
-            );
-#else
-            assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-                 || cursorIsOpen(v,pOp->p1,k)
-            );
-#endif
+            if( pLoop->wsFlags & WHERE_IDX_ONLY ){
+              sqlite3ErrorMsg(pParse, "internal query planner error");
+              pParse->rc = SQLITE_INTERNAL;
+            }
           }
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;

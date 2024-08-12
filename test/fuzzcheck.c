@@ -1028,6 +1028,30 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+/*
+** Special parameter binding, for testing and debugging purposes.
+**
+**     $int_NNN      ->   integer value NNN
+**     $text_TTTT    ->   floating point value TTT with destructor
+*/
+static void bindDebugParameters(sqlite3_stmt *pStmt){
+  int nVar = sqlite3_bind_parameter_count(pStmt);
+  int i;
+  for(i=0; i<nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i+1);
+    if( zVar==0 ) continue;
+    if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i+1, atoi(&zVar[5]));
+    }else
+    if( strncmp(zVar, "$text_", 6)==0 ){
+      char *zBuf = sqlite3_malloc64( strlen(zVar)-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], strlen(zVar)-5);
+        sqlite3_bind_text64(pStmt, i+1, zBuf, -1, sqlite3_free, SQLITE_UTF8);
+      }
+    }
+  }
+}
 
 /*
 ** Run the SQL text
@@ -1051,6 +1075,7 @@ static int runDbSql(
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     int nRow = 0;
+    bindDebugParameters(pStmt);
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
       if( eVerbosity>=4 ){

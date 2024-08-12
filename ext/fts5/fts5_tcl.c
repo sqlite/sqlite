@@ -14,14 +14,7 @@
 
 
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 #ifdef SQLITE_ENABLE_FTS5
 
@@ -297,12 +290,12 @@ static int SQLITE_TCLAPI xF5tApi(
       break;
     }
     CASE(3, "xTokenize") {
-      int nText;
+      Tcl_Size nText;
       char *zText = Tcl_GetStringFromObj(objv[2], &nText);
       F5tFunction ctx;
       ctx.interp = interp;
       ctx.pScript = objv[3];
-      rc = p->pApi->xTokenize(p->pFts, zText, nText, &ctx, xTokenizeCb);
+      rc = p->pApi->xTokenize(p->pFts, zText, (int)nText, &ctx, xTokenizeCb);
       if( rc==SQLITE_OK ){
         Tcl_ResetResult(interp);
       }
@@ -605,15 +598,16 @@ static void xF5tFunction(
     sqlite3_result_error(pCtx, Tcl_GetStringResult(p->interp), -1);
   }else{
     Tcl_Obj *pVar = Tcl_GetObjResult(p->interp);
-    int n;
     const char *zType = (pVar->typePtr ? pVar->typePtr->name : "");
     char c = zType[0];
     if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
       /* Only return a BLOB type if the Tcl variable is a bytearray and
       ** has no string representation. */
-      unsigned char *data = Tcl_GetByteArrayFromObj(pVar, &n);
-      sqlite3_result_blob(pCtx, data, n, SQLITE_TRANSIENT);
+      Tcl_Size nn;
+      unsigned char *data = Tcl_GetByteArrayFromObj(pVar, &nn);
+      sqlite3_result_blob(pCtx, data, (int)nn, SQLITE_TRANSIENT);
     }else if( c=='b' && strcmp(zType,"boolean")==0 ){
+      int n;
       Tcl_GetIntFromObj(0, pVar, &n);
       sqlite3_result_int(pCtx, n);
     }else if( c=='d' && strcmp(zType,"double")==0 ){
@@ -626,8 +620,9 @@ static void xF5tFunction(
       Tcl_GetWideIntFromObj(0, pVar, &v);
       sqlite3_result_int64(pCtx, v);
     }else{
-      unsigned char *data = (unsigned char *)Tcl_GetStringFromObj(pVar, &n);
-      sqlite3_result_text(pCtx, (char *)data, n, SQLITE_TRANSIENT);
+      Tcl_Size nn;
+      unsigned char *data = (unsigned char *)Tcl_GetStringFromObj(pVar, &nn);
+      sqlite3_result_text(pCtx, (char*)data, (int)nn, SQLITE_TRANSIENT);
     }
   }
 }
@@ -720,7 +715,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   Tcl_Obj *CONST objv[]
 ){
   char *zText;
-  int nText;
+  Tcl_Size nText;
   sqlite3 *db = 0;
   fts5_api *pApi = 0;
   Fts5Tokenizer *pTok = 0;
@@ -729,7 +724,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   void *pUserdata;
   int rc;
 
-  int nArg;
+  Tcl_Size nArg;
   const char **azArg;
   F5tTokenizeCtx ctx;
 
@@ -761,7 +756,7 @@ static int SQLITE_TCLAPI f5tTokenize(
     return TCL_ERROR;
   }
 
-  rc = tokenizer.xCreate(pUserdata, &azArg[1], nArg-1, &pTok);
+  rc = tokenizer.xCreate(pUserdata, &azArg[1], (int)(nArg-1), &pTok);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in tokenizer.xCreate()", 0);
     return TCL_ERROR;
@@ -773,7 +768,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   ctx.pRet = pRet;
   ctx.zInput = zText;
   rc = tokenizer.xTokenize(
-      pTok, (void*)&ctx, FTS5_TOKENIZE_DOCUMENT, zText, nText, xTokenizeCb2
+      pTok, (void*)&ctx, FTS5_TOKENIZE_DOCUMENT, zText,(int)nText, xTokenizeCb2
   );
   tokenizer.xDelete(pTok);
   if( rc!=SQLITE_OK ){
@@ -928,13 +923,13 @@ static int SQLITE_TCLAPI f5tTokenizerReturn(
   F5tTokenizerContext *p = (F5tTokenizerContext*)clientData;
   int iStart;
   int iEnd;
-  int nToken;
+  Tcl_Size nToken;
   int tflags = 0;
   char *zToken;
   int rc;
 
   if( objc==5 ){
-    int nArg;
+    Tcl_Size nArg;
     char *zArg = Tcl_GetStringFromObj(objv[1], &nArg);
     if( nArg<=10 && nArg>=2 && memcmp("-colocated", zArg, nArg)==0 ){
       tflags |= FTS5_TOKEN_COLOCATED;
@@ -959,7 +954,7 @@ static int SQLITE_TCLAPI f5tTokenizerReturn(
     return TCL_ERROR;
   }
 
-  rc = p->xToken(p->pCtx, tflags, zToken, nToken, iStart, iEnd);
+  rc = p->xToken(p->pCtx, tflags, zToken, (int)nToken, iStart, iEnd);
   Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
   return rc==SQLITE_OK ? TCL_OK : TCL_ERROR;
 
@@ -1083,7 +1078,7 @@ static int SQLITE_TCLAPI f5tTokenHash(
   Tcl_Obj *CONST objv[]
 ){
   char *z;
-  int n;
+  Tcl_Size n;
   unsigned int iVal;
   int nSlot;
 
@@ -1096,7 +1091,7 @@ static int SQLITE_TCLAPI f5tTokenHash(
   }
   z = Tcl_GetStringFromObj(objv[2], &n);
 
-  iVal = f5t_fts5HashKey(nSlot, z, n);
+  iVal = f5t_fts5HashKey(nSlot, z, (int)n);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
   return TCL_OK;
 }
