@@ -2231,14 +2231,21 @@ static int fts5CsrPoslist(
       int i;
       aPopulator = sqlite3Fts5ExprClearPoslists(pCsr->pExpr, bLive);
       if( aPopulator==0 ) rc = SQLITE_NOMEM;
+      if( rc==SQLITE_OK ){
+        rc = fts5SeekCursor(pCsr, 0);
+      }
       for(i=0; i<pConfig->nCol && rc==SQLITE_OK; i++){
-        int n; const char *z;
-        rc = fts5ApiColumnText((Fts5Context*)pCsr, i, &z, &n);
+        sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, i+1);
+        const char *z = 0;
+        int n = 0; 
+        int bReset = 0;
+        rc = sqlite3Fts5ExtractText(pConfig, pVal, 1, &bReset, &z, &n);
         if( rc==SQLITE_OK ){
           rc = sqlite3Fts5ExprPopulatePoslists(
               pConfig, pCsr->pExpr, aPopulator, i, z, n
           );
         }
+        if( bReset ) sqlite3Fts5ClearLocale(pConfig);
       }
       sqlite3_free(aPopulator);
 

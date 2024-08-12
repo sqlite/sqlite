@@ -414,5 +414,35 @@ do_execsql_test 8.1 {
   a eb eulav osla sihT te the token yam
 }
 
+#-------------------------------------------------------------------------
+# Test that position-lists (used by xInst, xPhraseFirst etc.) work with
+# locales and modes other than detail=full.
+#
+
+foreach {tn detail} {
+  1 detail=full
+  2 detail=none
+  3 detail=column
+} {
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  do_execsql_test 9.$tn.0 "
+    CREATE VIRTUAL TABLE ft USING fts5(tt, locale=1, tokenize=tcl, $detail);
+  "
+  do_execsql_test 9.$tn.1 {
+    CREATE VIRTUAL TABLE vocab USING fts5vocab('ft', instance);
+    INSERT INTO ft(rowid, tt) VALUES
+      (-1, fts5_locale('second', 'it is an ancient mariner'));
+  }
+
+  do_execsql_test 9.$tn.2 {
+    SELECT DISTINCT term FROM vocab 
+  } {an it mariner}
+
+  do_execsql_test 9.$tn.3 {
+    SELECT highlight(ft, 0, '[', ']') FROM ft('mariner')
+  } {{it is an ancient [mariner]}}
+}
+
 finish_test
 
