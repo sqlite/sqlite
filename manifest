@@ -1,5 +1,5 @@
-C Prevent\sthe\sfts5\sxPhraseNext()\sor\sxPhraseFirst()\sAPIs\sfrom\sreturning\san\sout-of-range\scolumn\snumber,\seven\sif\sthe\sdatabase\sis\scorrupt.
-D 2024-08-10T19:57:28.413
+C Resolve\sparameters\sBind\s$int_N\sand\s$test_T\sin\sfuzzcheck\sinputs.
+D 2024-08-12T09:49:02.212
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1260,7 +1260,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c dc159967609d00b0cfe619e735cbbf8482570aca85711397034b0662b6c18fc7
+F test/fuzzcheck.c 6e87c27df3d95c556870187987dff6efdc712b5cea60abedc8ab9215f471907a
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3778b2a9ca1cc12a88ef6c32a1ee7c58a0a829ed9715a3d32a225d377d7527ef
-R e552f961f7d429a11cf017943b4b9f14
-U dan
-Z 0df3f7a0f800270be689e5fef89cec38
+P d4014c87ba9b011a6a04c2bf85879b668dc762ebcbbfb50a2f8a417ce594ef88
+R 33ab7e360692d6ed2c1cd4d18565e8ac
+U drh
+Z 32b23835ef00f951c0107d2a77ff843c
 # Remove this line to create a well-formed Fossil manifest.
