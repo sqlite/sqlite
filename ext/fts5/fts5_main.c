@@ -3256,12 +3256,22 @@ static int fts5NewTokenizerModule(
   return rc;
 }
 
+/*
+** An instance of this type is used as the Fts5Tokenizer object for
+** wrapper tokenizers - those that provide access to a v1 tokenizer via
+** the fts5_tokenizer_v2 API, and those that provide access to a v2 tokenizer
+** via the fts5_tokenizer API.
+*/
 typedef struct Fts5VtoVTokenizer Fts5VtoVTokenizer;
 struct Fts5VtoVTokenizer {
   Fts5TokenizerModule *pMod;
   Fts5Tokenizer *pReal;
 };
 
+/*
+** Create a wrapper tokenizer. The context argument pCtx points to the
+** Fts5TokenizerModule object.
+*/
 static int fts5VtoVCreate(
   void *pCtx, 
   const char **azArg, 
@@ -3289,6 +3299,10 @@ static int fts5VtoVCreate(
   *ppOut = (Fts5Tokenizer*)pNew;
   return rc;
 }
+
+/*
+** Delete an Fts5VtoVTokenizer wrapper tokenizer. 
+*/
 static void fts5VtoVDelete(Fts5Tokenizer *pTok){
   Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
   if( p ){
@@ -3301,6 +3315,12 @@ static void fts5VtoVDelete(Fts5Tokenizer *pTok){
     sqlite3_free(p);
   }
 }
+
+
+/*
+** xTokenizer method for a wrapper tokenizer that offers the v1 interface
+** (no support for locales).
+*/
 static int fts5V1toV2Tokenize(
   Fts5Tokenizer *pTok, 
   void *pCtx, int flags,
@@ -3312,6 +3332,11 @@ static int fts5V1toV2Tokenize(
   assert( pMod->bV2Native );
   return pMod->x2.xTokenize(p->pReal, pCtx, flags, pText, nText, 0, 0, xToken);
 }
+
+/*
+** xTokenizer method for a wrapper tokenizer that offers the v2 interface
+** (with locale support).
+*/
 static int fts5V2toV1Tokenize(
   Fts5Tokenizer *pTok, 
   void *pCtx, int flags,
@@ -3381,9 +3406,14 @@ static int fts5CreateTokenizer(
   return rc;
 }
 
+/*
+** Search the global context passed as the first argument for a tokenizer
+** module named zName. If found, return a pointer to the Fts5TokenizerModule
+** object. Otherwise, return NULL.
+*/
 static Fts5TokenizerModule *fts5LocateTokenizer(
-  Fts5Global *pGlobal, 
-  const char *zName
+  Fts5Global *pGlobal,            /* Global (one per db handle) object */
+  const char *zName               /* Name of tokenizer module to find */
 ){
   Fts5TokenizerModule *pMod = 0;
 
@@ -3518,6 +3548,11 @@ int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig){
 }
 
 
+/*
+** xDestroy callback passed to sqlite3_create_module(). This is invoked
+** when the db handle is being closed. Free memory associated with 
+** tokenizers and aux functions registered with this db handle.
+*/
 static void fts5ModuleDestroy(void *pCtx){
   Fts5TokenizerModule *pTok, *pNextTok;
   Fts5Auxiliary *pAux, *pNextAux;
