@@ -226,28 +226,6 @@ static int fts5HighlightCb(
   return rc;
 }
 
-/*
-** Use xTokenizeSetLocale() to configure the tokenizer to use the locale
-** associated with column iCol of the current row.
-*/
-static int fts5ConfigureTokenizer(
-  const Fts5ExtensionApi *pApi,
-  Fts5Context *pFts,
-  int iCol
-){
-  int rc = SQLITE_OK;
-  const char *zLocale = 0;
-  int nLocale = 0;
-
-  assert( pApi->iVersion>=4 );    /* Ensure xColumnLocale() is available */
-
-  rc = pApi->xColumnLocale(pFts, iCol, &zLocale, &nLocale);
-  if( rc==SQLITE_OK ){
-    rc = pApi->xTokenizeSetLocale(pFts, zLocale, nLocale);
-  }
-  return rc;
-}
-
 
 /*
 ** Implementation of highlight() function.
@@ -279,15 +257,19 @@ static void fts5HighlightFunction(
     sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
     rc = SQLITE_OK;
   }else if( ctx.zIn ){
+    const char *pLoc = 0;
+    int nLoc = 0;
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
     }
 
     if( rc==SQLITE_OK ){
-      rc = fts5ConfigureTokenizer(pApi, pFts, iCol);
+      rc = pApi->xColumnLocale(pFts, iCol, &pLoc, &nLoc);
     }
     if( rc==SQLITE_OK ){
-      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+      rc = pApi->xTokenize_v2(
+          pFts, ctx.zIn, ctx.nIn, pLoc, nLoc, (void*)&ctx, fts5HighlightCb
+      );
     }
     if( ctx.bOpen ){
       fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);
@@ -484,6 +466,8 @@ static void fts5SnippetFunction(
   memset(&sFinder, 0, sizeof(Fts5SFinder));
   for(i=0; i<nCol; i++){
     if( iCol<0 || iCol==i ){
+      const char *pLoc = 0;
+      int nLoc = 0;
       int nDoc;
       int nDocsize;
       int ii;
@@ -491,10 +475,10 @@ static void fts5SnippetFunction(
       sFinder.nFirst = 0;
       rc = pApi->xColumnText(pFts, i, &sFinder.zDoc, &nDoc);
       if( rc!=SQLITE_OK ) break;
-      rc = fts5ConfigureTokenizer(pApi, pFts, i);
+      rc = pApi->xColumnLocale(pFts, i, &pLoc, &nLoc);
       if( rc!=SQLITE_OK ) break;
-      rc = pApi->xTokenize(pFts, 
-          sFinder.zDoc, nDoc, (void*)&sFinder,fts5SentenceFinderCb
+      rc = pApi->xTokenize_v2(pFts, 
+          sFinder.zDoc, nDoc, pLoc, nLoc, (void*)&sFinder, fts5SentenceFinderCb
       );
       if( rc!=SQLITE_OK ) break;
       rc = pApi->xColumnSize(pFts, i, &nDocsize);
@@ -552,6 +536,9 @@ static void fts5SnippetFunction(
     rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
   }
   if( ctx.zIn ){
+    const char *pLoc = 0;         /* Locale to tokenize in */
+    int nLoc = 0;                 /* Bytes in pLoc */
+
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iBestCol, &ctx.iter);
     }
@@ -570,10 +557,12 @@ static void fts5SnippetFunction(
     }
 
     if( rc==SQLITE_OK ){
-      rc = fts5ConfigureTokenizer(pApi, pFts, iBestCol);
+      rc = pApi->xColumnLocale(pFts, iBestCol, &pLoc, &nLoc);
     }
     if( rc==SQLITE_OK ){
-      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+      rc = pApi->xTokenize_v2(
+          pFts, ctx.zIn, ctx.nIn, pLoc, nLoc, (void*)&ctx,fts5HighlightCb
+      );
     }
     if( ctx.bOpen ){
       fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);

@@ -327,21 +327,10 @@ struct Fts5PhraseIter {
 **   SQLite error code is returned. The final value of the output parameters
 **   is undefined in this case.
 **
-** xTokenizeSetLocale(pFts5, pLocale, nLocale)
-**   This API function is used to invoke the fts5_tokenizer_v2.xSetLocale() 
-**   method of the fts5 table's tokenizer, in the same way as xTokenize() is 
-**   used to invoke fts5_tokenizer_v2.xTokenize().
-**
-**   Parameters pLocale and nLocale may both be 0, in which case the tokenizer
-**   is configured to use its default locale. Otherwise, pLocale should point
-**   to a buffer containing the utf-8 encoded name of the locale to use.
-**   It does not have to be nul-terminated. nLocale must be passed the size 
-**   of the text in bytes. The buffer indicated by pLocale must remain valid
-**   for the duration of any calls made to xTokenize() by the auxiliary 
-**   function call up until the next invocation of xTokenizeSetLocale(), if 
-**   any.
-**
-**   SQLITE_OK is returned on success, or an SQLite error code otherwise.
+** xTokenize_v2:
+**   Tokenize text using the tokenizer belonging to the FTS5 table. This
+**   API is the same as the xTokenize() API, except that it allows a tokenizer
+**   locale to be specified.
 */
 struct Fts5ExtensionApi {
   int iVersion;                   /* Currently always set to 4 */
@@ -389,7 +378,12 @@ struct Fts5ExtensionApi {
 
   /* Below this point are iVersion>=4 only */
   int (*xColumnLocale)(Fts5Context*, int iCol, const char **pz, int *pn);
-  int (*xTokenizeSetLocale)(Fts5Context*, const char *p, int n);
+  int (*xTokenize_v2)(Fts5Context*,
+    const char *pText, int nText, /* Text to tokenize */
+    const char *pLoc, int nLoc,   /* Locale to pass to tokenizer */
+    void *pCtx,                   /* Context passed to xToken() */
+    int (*xToken)(void*, int, const char*, int, int, int)       /* Callback */
+  );
 };
 
 /* 
@@ -482,32 +476,13 @@ struct Fts5ExtensionApi {
 **   may abandon the tokenization and return any error code other than
 **   SQLITE_OK or SQLITE_DONE.
 **
-** xSetLocale:
-**   This function is invoked by FTS5 to configure the locale to use for
-**   subsequent calls to xTokenize. The second argument is a pointer to 
-**   a nul-terminated buffer containing the utf-8 encoded name of the locale
-**   to use. The third argument is the size of the buffer in bytes, not 
-**   including the nul-terminator character. This function may also be
-**   invoked with the second and third parameters set to 0 - instructing
-**   the tokenizer to use its default locale.
-**
-**   FTS5 guarantees that any buffer passed to xSetLocale() will remain
-**   valid until either the next call to xSetLocale() or xDelete() on the
-**   same tokenizer object.
-**
-**   This function should return SQLITE_OK if successful, or an SQLite
-**   error code if an error occurs. If an error does occur and an error
-**   code is returned, execution of the current statement is abandoned
-**   and FTS5 returns the error code to the caller.
-**
-**   Often, this function is not required and is never invoked. It is only
-**   ever invoked when processing a value that has had a locale associated
-**   with it using SQL function fts5_locale().
-**
-**   It is not necessary to supply an implementation of this method when
-**   registering a tokenizer. If fts5_tokenizer_v2.xSetLocale is set to NULL,
-**   then no attempt is made to pass locale information through to the
-**   tokenizer.  
+**   If the tokenizer is registered using an fts5_tokenizer_v2 object,
+**   then the xTokenize() method has two additional arguments - pLocale
+**   and nLocale. These specify the locale that the tokenizer should use
+**   for the current request. If pLocale and nLocale are both 0, then the
+**   tokenizer should use its default locale. Otherwise, pLocale points to
+**   a buffer containing the name of the locale to use as utf-8 text. nLocale
+**   contains the number of bytes in pLocale. pLocale is not nul-terminated.
 **
 ** SYNONYM SUPPORT
 **

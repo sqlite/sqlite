@@ -220,10 +220,6 @@ struct Fts5Cursor {
   int nInstAlloc;                 /* Size of aInst[] array (entries / 3) */
   int nInstCount;                 /* Number of phrase instances */
   int *aInst;                     /* 3 integers per phrase instance */
-
-  /* Values set by xTokenizeSetLocale() */
-  const char *pLocale;
-  int nLocale;
 };
 
 /*
@@ -2128,28 +2124,32 @@ static int fts5ApiRowCount(Fts5Context *pCtx, i64 *pnRow){
   return sqlite3Fts5StorageRowCount(pTab->pStorage, pnRow);
 }
 
-static int fts5ApiTokenize(
+static int fts5ApiTokenize_v2(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
+  const char *pLoc, int nLoc, 
   void *pUserData,
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
   int rc = SQLITE_OK;
-  const char *pLocale = pCsr->pLocale;
-  if( pLocale ){
-    rc = fts5SetLocale(pTab->pConfig, pLocale, pCsr->nLocale);
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5Tokenize(
-        pTab->pConfig, FTS5_TOKENIZE_AUX, pText, nText, pUserData, xToken
-    );
-  }
-  if( pLocale ){
-    sqlite3Fts5ClearLocale(pTab->pConfig);
-  }
+
+  fts5SetLocale(pTab->pConfig, pLoc, nLoc);
+  rc = sqlite3Fts5Tokenize(pTab->pConfig, 
+      FTS5_TOKENIZE_AUX, pText, nText, pUserData, xToken
+  );
+  fts5SetLocale(pTab->pConfig, 0, 0);
+
   return rc;
+}
+static int fts5ApiTokenize(
+  Fts5Context *pCtx, 
+  const char *pText, int nText, 
+  void *pUserData,
+  int (*xToken)(void*, int, const char*, int, int, int)
+){
+  return fts5ApiTokenize_v2(pCtx, pText, nText, 0, 0, pUserData, xToken);
 }
 
 static int fts5ApiPhraseCount(Fts5Context *pCtx){
@@ -2720,21 +2720,6 @@ static int fts5ApiColumnLocale(
   return rc;
 }
 
-/*
-** The xTokenizeSetLocale() API.
-*/
-static int fts5ApiTokenizeSetLocale(
-  Fts5Context *pCtx, 
-  const char *pLocale, 
-  int nLocale
-){
-  int rc = SQLITE_OK;
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  pCsr->pLocale = pLocale;
-  pCsr->nLocale = nLocale;
-  return rc;
-}
-
 static const Fts5ExtensionApi sFts5Api = {
   4,                            /* iVersion */
   fts5ApiUserData,
@@ -2759,7 +2744,7 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiQueryToken,
   fts5ApiInstToken,
   fts5ApiColumnLocale,
-  fts5ApiTokenizeSetLocale
+  fts5ApiTokenize_v2
 };
 
 /*
@@ -2813,8 +2798,6 @@ static void fts5ApiInvoke(
   pCsr->pAux = pAux;
   pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc, argv);
   pCsr->pAux = 0;
-  pCsr->pLocale = 0;
-  pCsr->nLocale = 0;
 }
 
 static Fts5Cursor *fts5CursorFromCsrid(Fts5Global *pGlobal, i64 iCsrId){

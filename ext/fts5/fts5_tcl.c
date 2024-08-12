@@ -825,11 +825,9 @@ struct F5tTokenizerModule {
 
 /*
 ** zLocale:
-**   Buffer zLocale contains the current locale, as configured by the most
-**   recent call to xSetLocale(). A NULL (default) locale is represented as
-**   a 0 byte string - "\0".
-**
-**   This can be retrieved by a Tcl tokenize script using [sqlite3_fts5_locale].
+**   Within a call to xTokenize_v2(), pLocale/nLocale store the locale
+**   passed to the call by fts5. This can be retrieved by a Tcl tokenize 
+**   script using [sqlite3_fts5_locale].
 */
 struct F5tTokenizerInstance {
   Tcl_Interp *interp;
@@ -837,26 +835,9 @@ struct F5tTokenizerInstance {
   F5tTokenizerModule *pModule;
   Fts5Tokenizer *pParent;
   F5tTokenizerContext *pContext;
-  char zLocale[128];
+  const char *pLocale;
+  int nLocale;
 };
-
-static int f5tTokenizerSetLocale(
-  Fts5Tokenizer *pTokenizer, 
-  const char *pLocale,
-  int nLocale
-){
-  F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)pTokenizer;
-  if( nLocale>=sizeof(pInst->zLocale) ){
-    return SQLITE_ERROR;
-  }
-
-  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
-  if( nLocale>0 ){
-    memcpy(pInst->zLocale, pLocale, nLocale);
-  }
-
-  return SQLITE_OK;
-}
 
 static int f5tTokenizerCreate(
   void *pCtx, 
@@ -1011,10 +992,8 @@ static int f5tTokenizerTokenize_v2(
   int rc = SQLITE_OK;
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
 
-  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
-  if( pLoc && nLoc<sizeof(pInst->zLocale) ){
-    memcpy(pInst->zLocale, pLoc, nLoc);
-  }
+  pInst->pLocale = pLoc;
+  pInst->nLocale = nLoc;
 
   if( pInst->pParent ){
     CallbackCtx ctx;
@@ -1036,7 +1015,8 @@ static int f5tTokenizerTokenize_v2(
     rc = f5tTokenizerReallyTokenize(p, pCtx, flags, pText, nText, xToken);
   }
 
-  memset(pInst->zLocale, 0, sizeof(pInst->zLocale));
+  pInst->pLocale = 0;
+  pInst->nLocale = 0;
   return rc;
 }
 static int f5tTokenizerTokenize(
@@ -1072,7 +1052,9 @@ static int SQLITE_TCLAPI f5tTokenizerLocale(
     return TCL_ERROR;
   }
 
-  Tcl_SetObjResult(interp, Tcl_NewStringObj(p->pInst->zLocale, -1));
+  Tcl_SetObjResult(interp, 
+      Tcl_NewStringObj(p->pInst->pLocale, p->pInst->nLocale)
+  );
   return TCL_OK;
 }
 
