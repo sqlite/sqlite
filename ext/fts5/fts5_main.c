@@ -115,13 +115,16 @@ struct Fts5Auxiliary {
 **  Of course, if bV2Native is false, then x1 contains the real routines and
 **  x2 the synthesized ones. In this case a pointer to the Fts5TokenizerModule
 **  object should be passed to x2.xCreate.
+**
+**  The synthesized wrapper routines are necessary for xFindTokenizer(_v2)
+**  calls.
 */
 struct Fts5TokenizerModule {
   char *zName;                    /* Name of tokenizer */
   void *pUserData;                /* User pointer passed to xCreate() */
   int bV2Native;                  /* True if v2 native tokenizer */
   fts5_tokenizer x1;              /* Tokenizer functions */
-  fts5_tokenizer_v2 x2;           /* Tokenizer functions */
+  fts5_tokenizer_v2 x2;           /* V2 tokenizer functions */
   void (*xDestroy)(void*);        /* Destructor function */
   Fts5TokenizerModule *pNext;     /* Next registered tokenizer module */
 };
@@ -179,12 +182,6 @@ struct Fts5Sorter {
 **   If the cursor iterates in descending order of rowid, iFirstRowid
 **   is the upper limit (i.e. the "first" rowid visited) and iLastRowid
 **   the lower.
-**
-** pLocale, nLocale:
-**   These are set by API method xTokenizeSetLocale(). xTokenizeSetLocale()
-**   does not actually configure the tokenizer, it just stores the values
-**   it is passed in these variables. The fts5_tokenizer_v2.xSetLocale()
-**   method is called from within the xTokenize() API method if required.
 */
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
@@ -251,7 +248,7 @@ struct Fts5Cursor {
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
 
 /*
-** The subtype values returned by fts5_locale() are tagged with.
+** The subtype value and header bytes used by fts5_locale().
 */
 #define FTS5_LOCALE_SUBTYPE ((unsigned int)'L')
 #define FTS5_LOCALE_HEADER  "\x00\xE0\xB2\xEB"
@@ -1255,24 +1252,24 @@ static void fts5SetVtabError(Fts5FullTable *p, const char *zFormat, ...){
 }
 
 /*
-** Configure the tokenizer to use the locale specified by nLocale byte
-** buffer zLocale. Return SQLITE_OK if successful, or an SQLite error
-** code otherwise.
+** Arrange for subsequent calls to sqlite3Fts5Tokenize() to use the locale
+** specified by pLocale/nLocale. The buffer indicated by pLocale must remain
+** valid until after the final call to sqlite3Fts5Tokenize() that will use
+** the locale.
 */
-static int fts5SetLocale(
+static void fts5SetLocale(
   Fts5Config *pConfig, 
   const char *zLocale, 
   int nLocale
 ){
-  int rc = SQLITE_OK;
   Fts5TokenizerConfig *pT = &pConfig->t;
   pT->pLocale = zLocale;
   pT->nLocale = nLocale;
-  return rc;
 }
 
 /*
-** Reset the locale of the tokenizer to its default.
+** Clear any locale configured by an earlier call to fts5SetLocale() or
+** sqlite3Fts5ExtractText().
 */
 void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
   fts5SetLocale(pConfig, 0, 0);
@@ -1293,9 +1290,20 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 **   1) Ordinary values. The text can be extracted from these using
 **      sqlite3_value_text().
 **
-**   2) Blobs tagged with sub-type FTS5_LOCALE_SUBTYPE, or those read from
-**      the content table of a normal content or external-conten table 
-**      with locale=1 set.
+**   2) Combination text/locale blobs created by fts5_locale(). There
+**      are several cases for these:
+**
+**        * Blobs tagged with FTS5_LOCALE_SUBTYPE.
+**        * Blobs read from the content table of a locale=1 external-content
+**          table, and 
+**        * Blobs read from the content table of a locale=1 regular 
+**          content table.
+**
+**      The first two cases above should have the 4 byte FTS5_LOCALE_HEADER
+**      header. It is an error if a blob with the subtype or a blob read
+**      from the content table of an external content table does not have
+**      the required header. A blob read from the content table of a regular
+**      locale=1 table does not have the header. This is to save space.
 **
 ** If successful, SQLITE_OK is returned and output parameters (*ppText)
 ** and (*pnText) are set to point to a buffer containing the extracted utf-8 
@@ -1306,11 +1314,11 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 ** Parameter bContent must be true if the value was read from an indexed
 ** column (i.e. not UNINDEXED) of the on disk content. 
 **
-** If pbResetTokenizer is not NULL and if case (2) is used, then the
-** tokenizer is configured to use the locale. In this case (*pbResetTokenizer)
-** is set to true before returning, to indicate that the caller must
-** call sqlite3Fts5ClearLocale() to reset the tokenizer after tokenizing
-** the text.
+** If pbResetTokenizer is not NULL and if case (2) is used, then 
+** fts5SetLocale() is called to ensure subsequent sqlite3Fts5Tokenize() calls
+** use the locale. In this case (*pbResetTokenizer) is set to true before
+** returning, to indicate that the caller must call sqlite3Fts5ClearLocale() 
+** to clear the locale after tokenizing the text.
 */
 int sqlite3Fts5ExtractText(
   Fts5Config *pConfig,
@@ -1367,7 +1375,7 @@ int sqlite3Fts5ExtractText(
         nText = nBlob-nLocale-1;
 
         if( pbResetTokenizer ){
-          rc = fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
+          fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
           *pbResetTokenizer = 1;
         }
       }
@@ -1389,18 +1397,18 @@ int sqlite3Fts5ExtractText(
 ** the text of the expression, and sets output variable (*pzText) to 
 ** point to a nul-terminated buffer containing the expression.
 **
-** If pVal was an fts5_locale() value, then the tokenizer has been 
-** configured to us the required locale.
+** If pVal was an fts5_locale() value, then fts5SetLocale() is called to
+** set the tokenizer to use the specified locale.
 **
 ** If output variable (*pbFreeAndReset) is set to true, then the caller
 ** is required to (a) call sqlite3Fts5ClearLocale() to reset the tokenizer 
 ** locale, and (b) call sqlite3_free() to free (*pzText).
 */
 static int fts5ExtractExprText(
-  Fts5FullTable *pTab,
-  sqlite3_value *pVal,
-  char **pzText, 
-  int *pbFreeAndReset
+  Fts5Config *pConfig,            /* Fts5 configuration */
+  sqlite3_value *pVal,            /* Value to extract expression text from */
+  char **pzText,                  /* OUT: nul-terminated buffer of text */
+  int *pbFreeAndReset             /* OUT: Free (*pzText) and clear locale */
 ){
   const char *zText = 0;
   int nText = 0;
@@ -1408,12 +1416,12 @@ static int fts5ExtractExprText(
   int bReset = 0;
 
   *pbFreeAndReset = 0;
-  rc = sqlite3Fts5ExtractText(pTab->p.pConfig, pVal, 0, &bReset, &zText,&nText);
+  rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, &bReset, &zText, &nText);
   if( rc==SQLITE_OK ){
     if( bReset ){
       *pzText = sqlite3Fts5Mprintf(&rc, "%.*s", nText, zText);
       if( rc!=SQLITE_OK ){
-        sqlite3Fts5ClearLocale(pTab->p.pConfig);
+        sqlite3Fts5ClearLocale(pConfig);
       }else{
         *pbFreeAndReset = 1;
       }
@@ -1494,7 +1502,7 @@ static int fts5FilterMethod(
         int bFreeAndReset = 0;
         int bInternal = 0;
 
-        rc = fts5ExtractExprText(pTab, apVal[i], &zText, &bFreeAndReset);
+        rc = fts5ExtractExprText(pConfig, apVal[i], &zText, &bFreeAndReset);
         if( rc!=SQLITE_OK ) goto filter_out;
         if( zText==0 ) zText = "";
 
@@ -2124,6 +2132,9 @@ static int fts5ApiRowCount(Fts5Context *pCtx, i64 *pnRow){
   return sqlite3Fts5StorageRowCount(pTab->pStorage, pnRow);
 }
 
+/*
+** Implementation of xTokenize_v2() API.
+*/
 static int fts5ApiTokenize_v2(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
@@ -2143,6 +2154,11 @@ static int fts5ApiTokenize_v2(
 
   return rc;
 }
+
+/*
+** Implementation of xTokenize() API. This is just xTokenize_v2() with NULL/0
+** passed as the locale.
+*/
 static int fts5ApiTokenize(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
@@ -2190,11 +2206,18 @@ static int fts5ApiColumnText(
   return rc;
 }
 
+/*
+** This is called by various API functions - xInst, xPhraseFirst, 
+** xPhraseFirstColumn etc. - to obtain the position list for phrase iPhrase
+** of the current row. This function works for both detail=full tables (in
+** which case the position-list was read from the fts index) or for other
+** detail= modes if the row content is available.
+*/
 static int fts5CsrPoslist(
-  Fts5Cursor *pCsr, 
-  int iPhrase, 
-  const u8 **pa,
-  int *pn
+  Fts5Cursor *pCsr,               /* Fts5 cursor object */
+  int iPhrase,                    /* Phrase to find position list for */
+  const u8 **pa,                  /* OUT: Pointer to position list buffer */
+  int *pn                         /* OUT: Size of (*pa) in bytes */
 ){
   Fts5Config *pConfig = ((Fts5Table*)(pCsr->base.pVtab))->pConfig;
   int rc = SQLITE_OK;
@@ -2239,7 +2262,6 @@ static int fts5CsrPoslist(
     *pa = 0;
     *pn = 0;
   }
-
 
   return rc;
 }
@@ -2808,6 +2830,11 @@ static Fts5Cursor *fts5CursorFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
   return pCsr;
 }
 
+/*
+** Parameter zFmt is a printf() style formatting string. This function
+** formats it using the trailing arguments and returns the result as
+** an error message to the context passed as the first argument.
+*/
 static void fts5ResultError(sqlite3_context *pCtx, const char *zFmt, ...){
   char *zErr = 0;
   va_list ap;
@@ -2931,12 +2958,13 @@ static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
 /*
 ** Value pVal was read from column iCol of the FTS5 table. This function
 ** returns it to the owner of pCtx via a call to an sqlite3_result_xxx()
-** function. This function deals with the same 3 cases as
+** function. This function deals with the same cases as 
 ** sqlite3Fts5ExtractText():
 **
 **   1) Ordinary values. These can be returned using sqlite3_result_value().
 **
-**   2) Blobs from fts5_locale().
+**   2) Blobs from fts5_locale(). The text is extracted from these and 
+**      returned via sqlite3_result_text(). The locale is discarded.
 */
 static void fts5ExtractValueFromColumn(
   sqlite3_context *pCtx,
@@ -3176,6 +3204,21 @@ static int fts5CreateAux(
   return rc;
 }
 
+/*
+** This function is used by xCreateTokenizer_v2() and xCreateTokenizer().
+** It allocates and partially populates a new Fts5TokenizerModule object.
+** The new object is already linked into the Fts5Global context before
+** returning.
+**
+** If successful, SQLITE_OK is returned and a pointer to the new
+** Fts5TokenizerModule object returned via output parameter (*ppNew). All
+** that is required is for the caller to fill in the methods in
+** Fts5TokenizerModule.x1 and x2, and to set Fts5TokenizerModule.bV2Native
+** as appropriate.
+**
+** If an error occurs, an SQLite error code is returned and the final value
+** of (*ppNew) undefined.
+*/
 static int fts5NewTokenizerModule(
   Fts5Global *pGlobal,            /* Global context (one per db handle) */
   const char *zName,              /* Name of new function */

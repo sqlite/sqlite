@@ -168,7 +168,7 @@ struct Fts5TokenizerConfig {
   int nArg;
   int ePattern;                   /* FTS_PATTERN_XXX constant */
   const char *pLocale;            /* Current locale to use */
-  int nLocale;
+  int nLocale;                    /* Size of pLocale in bytes */
 };
 
 /*

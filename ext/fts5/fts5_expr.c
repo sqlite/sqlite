@@ -3092,8 +3092,8 @@ int sqlite3Fts5ExprPopulatePoslists(
     }
   }
 
-  return sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, z, n,
-      (void*)&sCtx, fts5ExprPopulatePoslistsCb
+  return sqlite3Fts5Tokenize(pConfig, 
+      FTS5_TOKENIZE_DOCUMENT, z, n, (void*)&sCtx, fts5ExprPopulatePoslistsCb
   );
 }
 

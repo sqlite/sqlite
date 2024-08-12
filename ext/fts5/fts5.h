@@ -395,10 +395,10 @@ struct Fts5ExtensionApi {
 **
 ** Applications may also register custom tokenizer types. A tokenizer 
 ** is registered by providing fts5 with a populated instance of the 
-** following structure. Of the three structure methods, xCreate, xDelete and
-** xTokenize must be supplied, any fo these three members of the 
-** fts5_tokenizer_v2 struct to NULL leads to undefined behaviour. The 
-** structure methods are expected to function as follows:
+** following structure. All structure methods must be defined, setting
+**
+** any member of the fts5_tokenizer struct to NULL leads to undefined
+** behaviour. The structure methods are expected to function as follows:
 **
 ** xCreate:
 **   This function is used to allocate and initialize a tokenizer instance.
@@ -481,8 +481,8 @@ struct Fts5ExtensionApi {
 **   and nLocale. These specify the locale that the tokenizer should use
 **   for the current request. If pLocale and nLocale are both 0, then the
 **   tokenizer should use its default locale. Otherwise, pLocale points to
-**   a buffer containing the name of the locale to use as utf-8 text. nLocale
-**   contains the number of bytes in pLocale. pLocale is not nul-terminated.
+**   an nLocale byte buffer containing the name of the locale to use as utf-8 
+**   text. pLocale is not nul-terminated.
 **
 ** SYNONYM SUPPORT
 **
@@ -658,7 +658,7 @@ struct fts5_tokenizer {
 */
 typedef struct fts5_api fts5_api;
 struct fts5_api {
-  int iVersion;                   /* Currently 3, was once 2 */
+  int iVersion;                   /* Currently always set to 3 */
 
   /* Create a new tokenizer */
   int (*xCreateTokenizer)(

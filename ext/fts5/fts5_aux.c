@@ -257,8 +257,8 @@ static void fts5HighlightFunction(
     sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
     rc = SQLITE_OK;
   }else if( ctx.zIn ){
-    const char *pLoc = 0;
-    int nLoc = 0;
+    const char *pLoc = 0;         /* Locale of column iCol */
+    int nLoc = 0;                 /* Size of pLoc in bytes */
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
     }
@@ -466,8 +466,8 @@ static void fts5SnippetFunction(
   memset(&sFinder, 0, sizeof(Fts5SFinder));
   for(i=0; i<nCol; i++){
     if( iCol<0 || iCol==i ){
-      const char *pLoc = 0;
-      int nLoc = 0;
+      const char *pLoc = 0;       /* Locale of column iCol */
+      int nLoc = 0;               /* Size of pLoc in bytes */
       int nDoc;
       int nDocsize;
       int ii;
@@ -536,7 +536,7 @@ static void fts5SnippetFunction(
     rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
   }
   if( ctx.zIn ){
-    const char *pLoc = 0;         /* Locale to tokenize in */
+    const char *pLoc = 0;         /* Locale of column iBestCol */
     int nLoc = 0;                 /* Bytes in pLoc */
 
     if( rc==SQLITE_OK ){
