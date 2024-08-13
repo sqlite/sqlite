@@ -1,5 +1,5 @@
-C Revision\sto\scheck-in\sd9f726ade6b258f8\sso\sthat\sOOM\sand\sother\sunrelated\sfailures\nare\snot\soverridden\sby\sa\ssyntax\serror\sin\sthe\stokenizer\sspec.
-D 2024-08-10T16:29:29.304
+C Version\s3.46.1
+D 2024-08-13T09:16:08.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2191,9 +2191,10 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6fc6e5f0a68c5b34c0f93e14a38a7e1bc1b72a66f2bcc400c3d7e0f0bab5a92
-Q +3778b2a9ca1cc12a88ef6c32a1ee7c58a0a829ed9715a3d32a225d377d7527ef
+P fc956353d3762d0e655b88f9d0c1a3840b40453a22e97160ccdf60485be56a92
 R 47b9d94ac84047bf00fd35221bcbfde9
+T +sym-release *
+T +sym-version-3.46.1 *
 U drh
-Z 26dcfcb42f2cbddea54751223061288b
+Z 519cc14a63561bb4dfa17935ffe00a32
 # Remove this line to create a well-formed Fossil manifest.
