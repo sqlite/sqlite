@@ -22,6 +22,7 @@
 #include "sqlite3.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /* Number of elements in static array X */
 #define COUNT(X)  (sizeof(X)/sizeof(X[0]))
@@ -176,6 +177,20 @@ sqlite3_int64 iotestQueryInt(
 }
 
 /*
+** Delete a file by name using the xDelete method of the default VFS.
+*/
+void iotestDeleteFile(IOTester *p, const char *zFilename){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  int rc;
+  assert( pVfs!=0 );
+  assert( pVfs->xDelete!=0 );
+  rc = pVfs->xDelete(pVfs, zFilename, 0);
+  if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_DELETE_NOENT ){
+    iotestError(p, "cannot delete file \"%s\"\n", zFilename);
+  }
+}
+
+/*
 ** Open a database.  Return a pointer to that database connection,
 ** or if something goes wrong, return a NULL pointer.
 **
@@ -211,7 +226,7 @@ void iotestBasic1(IOTester *p){
   sqlite3 *db = 0;
   p->zTestModule = "basic1";
   iotestBeginTest(p, 1);
-  iotestUnlink(p, "basic1.db");
+  iotestDeleteFile(p, "basic1.db");
   if( p->nFault ) return;
   iotestBeginTest(p, 2);
   db = iotestOpen(p, "basic1.db");
@@ -224,7 +239,7 @@ void iotestBasic1(IOTester *p){
 
 basic1_exit:
   sqlite3_close(db);
-  iotestUnlink(p, "basic1.db");
+  iotestDeleteFile(p, "basic1.db");
 }
 
 /********************** Out-Of-Band System Interactions **********************
@@ -237,30 +252,6 @@ basic1_exit:
 ** to work on alternative operating systems.
 */
 #include <stdio.h>
-#ifdef _WIN32
-# include <io.h>
-#else
-# include <unistd.h>
-# include <errno.h>
-#endif
-
-/* Remove the named file from disk, if it exists.
-**
-** If the file does not exist, this routine is a no-op.
-** If the file does exists but could not be removed, this routine raises
-** and error in the IOTester module.
-*/
-void iotestUnlink(IOTester *p, const char *zFilename){
-  int rc;
-#ifdef _WIN32
-  rc = remove(zFilename);
-#else
-  rc = unlink(zFilename);
-#endif
-  if( rc!=0 && errno!=ENOENT ){
-    iotestError(p, "cannot delete file \"%s\"\n", zFilename);
-  }
-}
 
 /*
 ** Start a new test case.  (This is under the "Out-of-band" section because
