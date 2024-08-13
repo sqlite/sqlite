@@ -75,6 +75,7 @@ struct SHA3Context {
   unsigned nRate;        /* Bytes of input accepted per Keccak iteration */
   unsigned nLoaded;      /* Input bytes loaded into u.x[] so far this cycle */
   unsigned ixMask;       /* Insert next input into u.x[nLoaded^ixMask]. */
+  unsigned iSize;        /* 224, 256, 358, or 512 */
 };
 
 /*
@@ -404,6 +405,7 @@ static void KeccakF1600Step(SHA3Context *p){
 */
 static void SHA3Init(SHA3Context *p, int iSize){
   memset(p, 0, sizeof(*p));
+  p->iSize = iSize;
   if( iSize>=128 && iSize<=512 ){
     p->nRate = (1600 - ((iSize + 31)&~31)*2)/8;
   }else{
@@ -548,6 +550,60 @@ static void sha3_step_vformat(
 }
 
 /*
+** Update a SHA3Context using a single sqlite3_value.
+*/
+static void sha3UpdateFromValue(SHA3Context *p, sqlite3_value *pVal){
+  switch( sqlite3_value_type(pVal) ){
+    case SQLITE_NULL: {
+      SHA3Update(p, (const unsigned char*)"N",1);
+      break;
+    }
+    case SQLITE_INTEGER: {
+      sqlite3_uint64 u;
+      int j;
+      unsigned char x[9];
+      sqlite3_int64 v = sqlite3_value_int64(pVal);
+      memcpy(&u, &v, 8);
+      for(j=8; j>=1; j--){
+        x[j] = u & 0xff;
+        u >>= 8;
+      }
+      x[0] = 'I';
+      SHA3Update(p, x, 9);
+      break;
+    }
+    case SQLITE_FLOAT: {
+      sqlite3_uint64 u;
+      int j;
+      unsigned char x[9];
+      double r = sqlite3_value_double(pVal);
+      memcpy(&u, &r, 8);
+      for(j=8; j>=1; j--){
+        x[j] = u & 0xff;
+        u >>= 8;
+      }
+      x[0] = 'F';
+      SHA3Update(p,x,9);
+      break;
+    }
+    case SQLITE_TEXT: {
+      int n2 = sqlite3_value_bytes(pVal);
+      const unsigned char *z2 = sqlite3_value_text(pVal);
+      sha3_step_vformat(p,"T%d:",n2);
+      SHA3Update(p, z2, n2);
+      break;
+    }
+    case SQLITE_BLOB: {
+      int n2 = sqlite3_value_bytes(pVal);
+      const unsigned char *z2 = sqlite3_value_blob(pVal);
+      sha3_step_vformat(p,"B%d:",n2);
+      SHA3Update(p, z2, n2);
+      break;
+    }
+  }
+}
+
+/*
 ** Implementation of the sha3_query(SQL,SIZE) function.
 **
 ** This function compiles and runs the SQL statement(s) given in the
@@ -636,60 +692,51 @@ static void sha3QueryFunc(
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       SHA3Update(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
-        switch( sqlite3_column_type(pStmt,i) ){
-          case SQLITE_NULL: {
-            SHA3Update(&cx, (const unsigned char*)"N",1);
-            break;
-          }
-          case SQLITE_INTEGER: {
-            sqlite3_uint64 u;
-            int j;
-            unsigned char x[9];
-            sqlite3_int64 v = sqlite3_column_int64(pStmt,i);
-            memcpy(&u, &v, 8);
-            for(j=8; j>=1; j--){
-              x[j] = u & 0xff;
-              u >>= 8;
-            }
-            x[0] = 'I';
-            SHA3Update(&cx, x, 9);
-            break;
-          }
-          case SQLITE_FLOAT: {
-            sqlite3_uint64 u;
-            int j;
-            unsigned char x[9];
-            double r = sqlite3_column_double(pStmt,i);
-            memcpy(&u, &r, 8);
-            for(j=8; j>=1; j--){
-              x[j] = u & 0xff;
-              u >>= 8;
-            }
-            x[0] = 'F';
-            SHA3Update(&cx,x,9);
-            break;
-          }
-          case SQLITE_TEXT: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_text(pStmt, i);
-            sha3_step_vformat(&cx,"T%d:",n2);
-            SHA3Update(&cx, z2, n2);
-            break;
-          }
-          case SQLITE_BLOB: {
-            int n2 = sqlite3_column_bytes(pStmt, i);
-            const unsigned char *z2 = sqlite3_column_blob(pStmt, i);
-            sha3_step_vformat(&cx,"B%d:",n2);
-            SHA3Update(&cx, z2, n2);
-            break;
-          }
-        }
+        sha3UpdateFromValue(&cx, sqlite3_column_value(pStmt,i));
       }
     }
     sqlite3_finalize(pStmt);
   }
   sqlite3_result_blob(context, SHA3Final(&cx), iSize/8, SQLITE_TRANSIENT);
 }
+
+/*
+** xStep function for sha3_agg().
+*/
+static void sha3AggStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  SHA3Context *p;
+  p = (SHA3Context*)sqlite3_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
+  if( p->nRate==0 ){
+    int sz = 256;
+    if( argc==2 ){
+      sz = sqlite3_value_int(argv[1]);
+      if( sz!=224 && sz!=384 && sz!=512 ){
+        sz = 256;
+      }
+    }
+    SHA3Init(p, sz);
+  }
+  sha3UpdateFromValue(p, argv[0]);
+}
+
+
+/*
+** xFinal function for sha3_agg().
+*/
+static void sha3AggFinal(sqlite3_context *context){
+  SHA3Context *p;
+  p = (SHA3Context*)sqlite3_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
+  if( p->iSize ){
+    sqlite3_result_blob(context, SHA3Final(p), p->iSize/8, SQLITE_TRANSIENT);
+  }
+}
+
 
 
 #ifdef _WIN32
@@ -710,6 +757,16 @@ int sqlite3_shathree_init(
     rc = sqlite3_create_function(db, "sha3", 2,
                       SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
                       0, sha3Func, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "sha3_agg", 1,
+                      SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
+                      0, 0, sha3AggStep, sha3AggFinal);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "sha3_agg", 2,
+                      SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC,
+                      0, 0, sha3AggStep, sha3AggFinal);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "sha3_query", 1,

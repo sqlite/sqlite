@@ -1,5 +1,5 @@
-C Resolve\sparameters\sBind\s$int_N\sand\s$test_T\sin\sfuzzcheck\sinputs.
-D 2024-08-12T09:49:02.212
+C Add\sthe\ssha3_agg()\saggregate\sto\sthe\sshathree\sextension.
+D 2024-08-13T21:04:00.686
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -415,7 +415,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c d96e5aac21658c6b5d54f918ac140460ec7197734c1a4fba806950831a7b1e7a
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
-F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
+F ext/misc/shathree.c 24e890cb209272379f8d0823fb278d24bd3dca35d5ea565aa0b2794cd36d6197
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd397dbea
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4014c87ba9b011a6a04c2bf85879b668dc762ebcbbfb50a2f8a417ce594ef88
-R 33ab7e360692d6ed2c1cd4d18565e8ac
+P 9c10664416274df6f8da53ddd86f6356c9704ad798fd4034d2784ae433c1c056
+R 3605902adbab51926bad4083cbf76d2c
 U drh
-Z 32b23835ef00f951c0107d2a77ff843c
+Z fc4daf336fe8a5609f55ae8abc7ca9b2
 # Remove this line to create a well-formed Fossil manifest.
