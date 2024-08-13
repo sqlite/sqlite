@@ -3488,21 +3488,20 @@ static int fts5FindTokenizer(
   return rc;
 }
 
-int fts5GetTokenizer(
-  Fts5Global *pGlobal, 
-  const char **azArg,
-  int nArg,
-  Fts5Config *pConfig,
-  char **pzErr
-){
-  Fts5TokenizerModule *pMod;
+/*
+** Attempt to instantiate the tokenizer.
+*/
+int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig){
+  const char **azArg = pConfig->t.azArg;
+  const int nArg = pConfig->t.nArg;
+  Fts5TokenizerModule *pMod = 0;
   int rc = SQLITE_OK;
 
-  pMod = fts5LocateTokenizer(pGlobal, nArg==0 ? 0 : azArg[0]);
+  pMod = fts5LocateTokenizer(pConfig->pGlobal, nArg==0 ? 0 : azArg[0]);
   if( pMod==0 ){
     assert( nArg>0 );
     rc = SQLITE_ERROR;
-    if( pzErr ) *pzErr = sqlite3_mprintf("no such tokenizer: %s", azArg[0]);
+    sqlite3Fts5ConfigErrmsg(pConfig, "no such tokenizer: %s", azArg[0]);
   }else{
     int (*xCreate)(void*, const char**, int, Fts5Tokenizer**) = 0;
     if( pMod->bV2Native ){
@@ -3518,8 +3517,8 @@ int fts5GetTokenizer(
     );
 
     if( rc!=SQLITE_OK ){
-      if( pzErr && rc!=SQLITE_NOMEM ){
-        *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+      if( rc!=SQLITE_NOMEM ){
+        sqlite3Fts5ConfigErrmsg(pConfig, "error in tokenizer constructor");
       }
     }else if( pMod->bV2Native==0 ){
       pConfig->t.ePattern = sqlite3Fts5TokenizerPattern(
@@ -3535,16 +3534,6 @@ int fts5GetTokenizer(
   }
 
   return rc;
-}
-
-/*
-** Attempt to instantiate the tokenizer.
-*/
-int sqlite3Fts5LoadTokenizer(Fts5Config *pConfig){
-  return fts5GetTokenizer(
-      pConfig->pGlobal, pConfig->t.azArg, pConfig->t.nArg, 
-      pConfig, pConfig->pzErrmsg
-  );
 }
 
 
@@ -3573,6 +3562,10 @@ static void fts5ModuleDestroy(void *pCtx){
   sqlite3_free(pGlobal);
 }
 
+/*
+** Implementation of the fts5() function used by clients to obtain the
+** API pointer.
+*/
 static void fts5Fts5Func(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */

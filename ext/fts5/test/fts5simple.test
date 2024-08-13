@@ -312,7 +312,6 @@ do_execsql_test 13.1 {
   INSERT INTO xy(rowid, x) VALUES(3, '3 4 5');
 }
 
-breakpoint
 do_execsql_test 13.2 {
   UPDATE OR REPLACE xy SET rowid=3 WHERE rowid = 2;
   SELECT rowid, x FROM xy;
