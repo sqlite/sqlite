@@ -59,6 +59,11 @@ do_catchsql_test 1.3.3 {
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
 } {1 {no such cursor: 1}}
 
+fts5_aux_test_functions db
+do_catchsql_test 1.3.4 {
+  SELECT fts5_columntext(t1) FROM t1('*reads');
+} {1 {no such cursor: 1}}
+
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 2.0 {

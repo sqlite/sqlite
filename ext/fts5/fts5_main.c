@@ -1992,12 +1992,11 @@ static int fts5UpdateMethod(
         }
       }
 
+      assert( eType1==SQLITE_INTEGER || eType1==SQLITE_NULL );
       if( eType0!=SQLITE_INTEGER ){
         /* An INSERT statement. If the conflict-mode is REPLACE, first remove
         ** the current entry (if any). */
-        if( eType1!=SQLITE_INTEGER && eType1!=SQLITE_NULL ){
-          rc = SQLITE_MISMATCH;
-        }else if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
+        if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
           bUpdateOrDelete = 1;
@@ -2726,7 +2725,7 @@ static int fts5ApiColumnLocale(
         if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
           const int SZHDR = sizeof(FTS5_LOCALE_HEADER)-1;
           if( nBlob<SZHDR || memcmp(FTS5_LOCALE_HEADER, pBlob, SZHDR) ){
-            rc = SQLITE_MISMATCH;
+            rc = SQLITE_ERROR;
           }
           pBlob += 4;
           nBlob -= 4;
@@ -2734,9 +2733,9 @@ static int fts5ApiColumnLocale(
         if( rc==SQLITE_OK ){
           int nLocale = 0;
           for(nLocale=0; nLocale<nBlob && pBlob[nLocale]!=0x00; nLocale++);
-          if( nLocale==nBlob ){
-            rc = FTS5_CORRUPT;
-          }else if( nLocale!=0 ){
+          if( nLocale==nBlob || nLocale==0 ){
+            rc = SQLITE_ERROR;
+          }else{
             /* A locale/text pair */
             *pzLocale = (const char*)pBlob;
             *pnLocale = nLocale;
@@ -2992,7 +2991,7 @@ static void fts5ExtractValueFromColumn(
 
     if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
       if( nBlob<SZHDR || memcmp(pBlob, FTS5_LOCALE_HEADER, SZHDR) ){
-        sqlite3_result_error_code(pCtx, SQLITE_MISMATCH);
+        sqlite3_result_error_code(pCtx, SQLITE_ERROR);
         return;
       }else{
         pBlob += 4;
@@ -3001,7 +3000,9 @@ static void fts5ExtractValueFromColumn(
     }
 
     for(ii=0; ii<nBlob && pBlob[ii]; ii++);
-    if( ii<nBlob ){
+    if( ii==0 || ii==nBlob ){
+      sqlite3_result_error_code(pCtx, SQLITE_ERROR);
+    }else{
       const char *pText = (const char*)&pBlob[ii+1];
       sqlite3_result_text(pCtx, pText, nBlob-ii-1, SQLITE_TRANSIENT);
     }

@@ -144,6 +144,23 @@ do_catchsql_test 3.4 {
     VALUES(113, 'hello world', 'yesno', fts5_locale('en_AU', 'abc'));
 } {1 {fts5_locale() requires locale=1}}
 
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+}
+
+foreach {tn sql} {
+  1 { INSERT INTO x1(rowid, x) VALUES(4.5, 'abcd') }
+  2 { INSERT INTO x1(rowid, x) VALUES('xyz', 'abcd') }
+  3 { INSERT INTO x1(rowid, x) VALUES(X'001122', 'abcd') }
+} {
+  do_catchsql_test 4.1.$tn $sql {1 {datatype mismatch}}
+}
+
+
 finish_test
 
 

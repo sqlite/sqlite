@@ -88,8 +88,11 @@ do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE ttt USING fts5vocab('b1', instance);
 }
 
-do_catchsql_test 2.2 {
+do_catchsql_test 2.2.1 {
   CREATE VIRTUAL TABLE b3 USING fts5(x, y, locale=2);
+} {1 {malformed locale=... directive}}
+do_catchsql_test 2.2.2 {
+  CREATE VIRTUAL TABLE b3 USING fts5(x, y, locale=111);
 } {1 {malformed locale=... directive}}
 
 do_catchsql_test 2.3 {
@@ -418,7 +421,6 @@ do_execsql_test 8.1 {
 # Test that position-lists (used by xInst, xPhraseFirst etc.) work with
 # locales and modes other than detail=full.
 #
-
 foreach {tn detail} {
   1 detail=full
   2 detail=none
@@ -443,6 +445,81 @@ foreach {tn detail} {
     SELECT highlight(ft, 0, '[', ']') FROM ft('mariner')
   } {{it is an ancient [mariner]}}
 }
+
+#-------------------------------------------------------------------------
+# Check some corrupt fts5_locale() blob formats are detected.
+#
+foreach_detail_mode $::testprefix {
+
+  reset_db
+  sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+  fts5_aux_test_functions db
+  do_execsql_test 10.1 {
+    CREATE TABLE x1(ii INTEGER PRIMARY KEY, x);
+    CREATE VIRTUAL TABLE ft USING fts5(x, 
+        content=x1, content_rowid=ii, locale=1, detail=%DETAIL%, columnsize=0
+    );
+  }
+  
+  foreach {tn v} {
+    1   X'001122'
+    2   X'0011223344'
+    3   X'00E0B2EB68656c6c6f'
+    4   X'00E0B2EB0068656c6c6f'
+  } {
+    do_execsql_test 10.2.$tn.0 { INSERT INTO ft(ft) VALUES('delete-all') }
+    do_execsql_test 10.2.$tn.1 { DELETE FROM x1; }
+    do_execsql_test 10.2.$tn.2 " INSERT INTO x1 VALUES(NULL, $v) "
+  
+    do_catchsql_test 10.2.$tn.3 {
+      INSERT INTO ft(ft) VALUES('rebuild');
+    } {1 {SQL logic error}}
+  
+    do_catchsql_test 10.2.$tn.4 "
+      SELECT * FROM ft( test_setsubtype($v, 76) );
+    " {1 {SQL logic error}}
+  
+    do_execsql_test 10.2.$tn.5 {
+      INSERT INTO ft(rowid, x) VALUES(1, 'hello world');
+    }
+  
+    if {"%DETAIL%"!="full"} {
+      do_catchsql_test 10.2.$tn.6 {
+        SELECT fts5_test_poslist(ft) FROM ft('world');
+      } {1 SQLITE_ERROR}
+  
+      do_catchsql_test 10.2.$tn.7 {
+        SELECT fts5_test_columnsize(ft) FROM ft('world');
+      } {1 SQLITE_ERROR}
+
+      do_catchsql_test 10.2.$tn.7 {
+        SELECT fts5_test_columnlocale(ft) FROM ft('world');
+      } {1 SQLITE_ERROR}
+    }
+
+    do_catchsql_test 10.2.$tn.8 {
+      SELECT * FROM ft('hello')
+    } {1 {SQL logic error}}
+  }
+
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+sqlite3_fts5_create_tokenizer -v2 db tcl tcl_create
+fts5_aux_test_functions db
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(abc, locale=1);
+  INSERT INTO x1(rowid, abc) VALUES(123, fts5_locale('en_US', 'one two three'));
+}
+
+do_catchsql_test 11.1 {
+  SELECT fts5_columnlocale(x1, -1) FROM x1('two');
+} {1 SQLITE_RANGE}
+do_catchsql_test 11.2 {
+  SELECT fts5_columnlocale(x1, 1) FROM x1('two');
+} {1 SQLITE_RANGE}
 
 finish_test
 

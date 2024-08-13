@@ -1,0 +1,67 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5faultI
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set ::testprefix fts5faultH
+
+do_execsql_test 1.0 {
+  PRAGMA encoding = utf16;
+  CREATE VIRTUAL TABLE t1 USING fts5(x, locale=1);
+  INSERT INTO t1 VALUES('origintext unicode61 ascii porter trigram');
+}
+
+faultsim_save_and_close
+faultsim_restore_and_reopen
+
+do_faultsim_test 1 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT rowid FROM t1(fts5_locale('en_US', 'origintext'));
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+do_faultsim_test 2 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT * FROM t1('ascii');
+  }
+} -body {
+  execsql {
+    UPDATE t1 SET rowid=rowid+1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+fts5_aux_test_functions db
+do_faultsim_test 3 -faults oom* -prep { 
+} -body {
+  execsql {
+    SELECT fts5_columnlocale(t1, 0) FROM t1('unicode*');
+  }
+} -test {
+  faultsim_test_result {0 {{}}}
+}
+
+finish_test
+
