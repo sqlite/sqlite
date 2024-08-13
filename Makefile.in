@@ -1537,6 +1537,9 @@ threadtest: threadtest3$(TEXE)
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
 
+iotester:	sqlite3.lo $(TOP)/test/iotester.c
+	$(LTLINK) $(TOP)/test/iotester.c sqlite3.lo -o $@ $(TLIBS)
+
 # Standard install and cleanup targets
 #
 lib_install:	libsqlite3.la

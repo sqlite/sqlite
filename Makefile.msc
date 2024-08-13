@@ -1301,7 +1301,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
 
 # Object files for the amalgamation.
 #
-LIBOBJS1 = sqlite3.lo
+LIBOBJS1 = sqlite3.obj
 
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
@@ -1944,7 +1944,7 @@ sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 
 # Rule to build the amalgamation
 #
-sqlite3.lo:	$(SQLITE3C)
+sqlite3.obj:	$(SQLITE3C)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(SQLITE3C)
 
 # <<mark>>
@@ -2699,6 +2699,9 @@ THREADTEST3_SRC = \
 
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+iotester.exe:	sqlite3.obj $(TOP)\test\iotester.c
+	$(LTLINK) $(TOP)\test\iotester.c sqlite3.obj /link $(LDFLAGS) $(LTLINKOPTS)
 
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc

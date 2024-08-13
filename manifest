@@ -1,11 +1,11 @@
-C Resolve\sparameters\sBind\s$int_N\sand\s$test_T\sin\sfuzzcheck\sinputs.
-D 2024-08-12T09:49:02.212
+C Infrastructure\sfor\sa\snew\stest\sprogram\snamed\s"iotester"\sthat\sstrives\sto\sverify\nthe\soperation\sof\sa\sVFS\sobject.
+D 2024-08-13T19:30:03.469
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in cf96aa7d2682650dec56dc2f03cfe463feb101a1be594e4929bcd38662bc2ea8
+F Makefile.in b3af743d2ce5be536a2643143847feca680a745e309a8884a9b45220f56228ab
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 6c3fe8b6ce60e73f34a148c957d78b4648745c8d30e792423aa1a8d8bf12d065
+F Makefile.msc 744d25d85ceb0080b147cfc188740fbdba1a45a53f08a421f530fb80b60eadba
 F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1337,6 +1337,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
+F test/iotester.c 4df6dff77a78162808854dd6d3810ed4fe2a8fe4ba5e95a74575548f23480026
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
 F test/join.test f7abfef3faeaf2800308872e33a57e5b6e4a2b44fb8c6b90c6068412e71a6cf4
 F test/join2.test 8561fe82ce434ac96de91544072e578dc2cadddf2d9bc9cd802f866a9b92502e
@@ -2204,8 +2205,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d4014c87ba9b011a6a04c2bf85879b668dc762ebcbbfb50a2f8a417ce594ef88
-R 33ab7e360692d6ed2c1cd4d18565e8ac
+P 9c10664416274df6f8da53ddd86f6356c9704ad798fd4034d2784ae433c1c056
+R d53719958cd6e7f4f987278bf19c1278
 U drh
-Z 32b23835ef00f951c0107d2a77ff843c
+Z 4d2d6900391d50d204c15f38c15fadf7
 # Remove this line to create a well-formed Fossil manifest.
