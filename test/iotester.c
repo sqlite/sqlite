@@ -49,12 +49,8 @@ struct IOTester {
 
 
 /* Forward declarations of subroutines and functions. */
-void iotestError(IOTester*,const char *zFormat, ...);
-sqlite3 *iotestOpenDb(IOTester*,const char *zDbName);
-void iotestUnlink(IOTester *p, const char *zFilename);
-void iotestBeginTest(IOTester *p, int iTestnum);
-
-
+static void iotestError(IOTester*,const char *zFormat, ...);
+static void iotestBeginTest(IOTester *p, int iTestnum);
 static void iotestBasic1(IOTester*);
 static void iotestBasic2(IOTester*);
 
@@ -941,8 +937,9 @@ sqlite3 *iotestOpen(IOTester *p, const char *zDbFilename){
     if( p->isExclusive ){
       iotestRun(p, db, "PRAGMA locking_mode=EXCLUSIVE;");
     }
-    iotestRun(p, db, "PRAGMA cache_size=2;");
   }
+  iotestRun(p, db, "PRAGMA cache_size=2;");
+  iotestRun(p, db, "PRAGMA temp_store=FILE;");
   sha3Register(db);
   stmtrandRegister(db);
   return db;
@@ -1039,10 +1036,6 @@ basic2_exit:
 **
 ** Any customizations that need to be made to port this test program to
 ** new platforms are made below this point.
-**
-** These functions access the filesystem directly or make other system
-** interactions that are non-portable.  Modify these routines as necessary
-** to work on alternative operating systems.
 */
 #include <stdio.h>
 
@@ -1050,7 +1043,7 @@ basic2_exit:
 ** Start a new test case.  (This is under the "Out-of-band" section because
 ** of its optional use of printf().)
 */
-void iotestBeginTest(IOTester *p, int iTN){
+static void iotestBeginTest(IOTester *p, int iTN){
   p->iTestNum = iTN;
   p->nTest++;
   if( p->eVerbosity>=2 ) printf("%s-%d\n", p->zTestModule, iTN);
@@ -1082,6 +1075,8 @@ int main(int argc, char **argv){
   static const sqlite3_int64 aszMMap[] = {
      0, 2097152, 2147483648
   };
+
+
 
   memset(&x, 0, sizeof(x));
 
