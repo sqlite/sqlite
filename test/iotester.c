@@ -930,6 +930,14 @@ sqlite3 *iotestOpen(IOTester *p, const char *zDbFilename){
     sqlite3_close(db);
     return 0;
   }
+#if defined(IOTESTER_KEY) && defined(IOTESTER_KEY_SZ)
+  rc = sqlite3_key(db, IOTESTER_KEY, IOTESTER_KEY_SZ);
+  if( rc!=SQLITE_OK ){
+    iotestError(p, "unable to set the encryption key\n");
+    sqlite3_close(db);
+    return 0;
+  }
+#endif
   if( iotestQueryInt(p, db, -1, "PRAGMA page_count")==0 ){
     iotestRun(p, db, "PRAGMA page_size=%d", p->pgsz);
     iotestRun(p, db, "PRAGMA journal_mode=%s", p->zJMode);

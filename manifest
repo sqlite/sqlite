@@ -1,5 +1,5 @@
-C incremental\simprovements\sto\siotester.
-D 2024-08-14T14:50:22.200
+C Add\sa\scompile-time\soption\sthat\senables\ssetting\sthe\sencryption\skey.
+D 2024-08-14T15:04:18.936
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1337,7 +1337,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/iotester.c 67239e55a1f48c75b74e24e1e45ea95214394d5560cb148c31485b022dd07324
+F test/iotester.c e1e0d4e500385211e8d712d7d2fcd8f9c6d3c11df83acea2567fb627c43f442c
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
 F test/join.test f7abfef3faeaf2800308872e33a57e5b6e4a2b44fb8c6b90c6068412e71a6cf4
 F test/join2.test 8561fe82ce434ac96de91544072e578dc2cadddf2d9bc9cd802f866a9b92502e
@@ -2205,8 +2205,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30a383fc3d49eb50b121446703daa6022af673f08f1347e84f0f10644168eab9
-R 18955a2ff1daa89ee6d9450efd9430d5
+P 51f5d3d991ba7aa09c3ed319f80624137470b0b7e1f0fe81c6bdaedd99804e1b
+R 9edd9539453e63e0190a0dbaf7e8817d
 U drh
-Z f82775de57e69b49e0adfa10e77e76cc
+Z 80478935c2bfa390dd52966b7ed58650
 # Remove this line to create a well-formed Fossil manifest.
