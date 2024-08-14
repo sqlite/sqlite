@@ -97,7 +97,7 @@
 ** Note that sha3_agg() hashes rows for which Y is NULL.  Add a FILTER
 ** clause if NULL rows should be excluded:
 **
-**    SELECT sha3_agg(x ORDER BY rowid) FILTER(x NOT NULL) FROM t1;
+**    SELECT sha3_agg(x ORDER BY rowid) FILTER(WHERE x NOT NULL) FROM t1;
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
