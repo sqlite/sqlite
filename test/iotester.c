@@ -975,6 +975,8 @@ static void iotestBasic2(IOTester *p){
   static const char *zDBName = "basic2.db";
   static const char *zExpected1 = 
      "7180714EBF13B8B3D872801D246C5E814227319F091578F8ECA7F51C20A5596E";
+  static const char *zExpected2 =
+     "55C297AAF30A858727C9C132DF0AAD4E1C60286B3C0B3D2D5E6F625CAB32B560";
   p->zTestModule = "basic2";
 
   iotestBeginTest(p, 1);
@@ -1013,6 +1015,7 @@ static void iotestBasic2(IOTester *p){
            "SELECT hex(sha3_agg(b ORDER BY a)) FROM t1");
   if( strcmp(zH1,zExpected1)!=0 ){
     iotestError(p, "expected %s but got %s\n", zExpected1, zH1);
+    goto basic2_exit;
   }
   sqlite3_free(zH1);
   zH1 = 0;
@@ -1022,7 +1025,37 @@ static void iotestBasic2(IOTester *p){
       iotestError(p, "ought not be able to use a secondary database "
                      "connection on \"%s\" while in EXCLUSIVE locking mode\n",
                      zDBName);
+      goto basic2_exit;
     }
+  }
+
+  iotestBeginTest(p, 6);
+  iotestRun(p, db, "BEGIN");
+  iotestRun(p, db, "DELETE FROM t1 WHERE ((a/30)&1)==0;");
+  zH1 = iotestQueryText(p, db, "?",
+           "SELECT hex(sha3_agg(b ORDER BY a)) FROM t1");
+  if( strcmp(zH1,zExpected2)!=0 ){
+    iotestError(p, "expected %s but got %s\n", zExpected2, zH1);
+    goto basic2_exit;
+  }
+
+  if( !p->isExclusive && strcmp(p->zJMode,"wa")==0 ){
+    iotestBeginTest(p, 7);
+    zH1 = iotestQueryText(p, db2, "?",
+             "SELECT hex(sha3_agg(b ORDER BY a)) FROM t1");
+    if( strcmp(zH1,zExpected1)!=0 ){
+      iotestError(p, "expected %s but got %s\n", zExpected1, zH1);
+      goto basic2_exit;
+    }
+  }
+
+  iotestBeginTest(p, 8);
+  iotestRun(p, db, "ROLLBACK");
+  zH1 = iotestQueryText(p, db, "?",
+             "SELECT hex(sha3_agg(b ORDER BY a)) FROM t1");
+  if( strcmp(zH1,zExpected1)!=0 ){
+    iotestError(p, "expected %s but got %s\n", zExpected1, zH1);
+    goto basic2_exit;
   }
 
 basic2_exit:
