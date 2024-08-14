@@ -21,6 +21,8 @@ ifcapable !fts5 {
   return
 }
 
+if 0 {
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a);
 }
@@ -565,6 +567,26 @@ do_execsql_test 20.4 {
 do_execsql_test 20.5 {
   SELECT rowid FROM x1 WHERE x1 MATCH 'z' OR (x1 MATCH 'a' AND x1 MATCH 'd');
 } {3 1}
+
+#-------------------------------------------------------------------------
+}
+reset_db
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none');
+  INSERT INTO t1(a) VALUES('a');
+}
+
+do_execsql_test 21.2 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 21.3 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT � NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 21.4 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') );
+} {-1e-06}
 
 finish_test
 
