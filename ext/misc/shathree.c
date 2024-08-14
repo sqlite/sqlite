@@ -15,10 +15,20 @@
 ** Two SQL functions are implemented:
 **
 **     sha3(X,SIZE)
-**     sha3_query(Y,SIZE)
+**     sha3_agg(Y,SIZE)
+**     sha3_query(Z,SIZE)
 **
 ** The sha3(X) function computes the SHA3 hash of the input X, or NULL if
-** X is NULL.
+** X is NULL.  If inputs X is text, the UTF-8 rendering of that text is
+** used to compute the hash.  If X is a BLOB, then the binary data of the
+** blob is used to compute the hash.  If X is an integer or real number,
+** then that number if converted into UTF-8 text and the hash is computed
+** over the text.
+**
+** The sha3_agg(Y) function computes the SHA3 hash of all Y inputs.  Since
+** order is important for the hash, it is recommended that the Y expression
+** by followed by an ORDER BY clause to guarantee that the inputs occur
+** in the desired order.
 **
 ** The sha3_query(Y) function evaluates all queries in the SQL statements of Y
 ** and returns a hash of their results.
@@ -26,6 +36,68 @@
 ** The SIZE argument is optional.  If omitted, the SHA3-256 hash algorithm
 ** is used.  If SIZE is included it must be one of the integers 224, 256,
 ** 384, or 512, to determine SHA3 hash variant that is computed.
+**
+** Because the sha3_agg() and sha3_query() functions compute a hash over
+** multiple values, the values are encode to use include type information.
+**
+** In sha3_agg(), the sequence of bytes that gets hashed for each input
+** Y depends on the datatype of Y:
+**
+**    typeof(Y)='null'         A single "N" is hashed.  (One byte)
+**
+**    typeof(Y)='integer'      The data hash is the character "I" followed
+**                             by an 8-byte big-endian binary of the
+**                             64-bit signed integer.  (Nine bytes total.)
+**
+**    typeof(Y)='real'         The character "F" followed by an 8-byte
+**                             big-ending binary of the double.  (Nine
+**                             bytes total.)
+**
+**    typeof(Y)='text'         The hash is over prefix "Tnnn:" followed
+**                             by the UTF8 encoding of the text.  The "nnn"
+**                             in the prefix is the minimum-length decimal
+**                             representation of the octet_length of the text.
+**                             Notice the ":" at the end of the prefix, which
+**                             is needed to separate the prefix from the
+**                             content in cases where the content starts
+**                             with a digit.
+**
+**    typeof(Y)='blob'         The hash is taken over prefix "Bnnn:" followed
+**                             by the binary content of the blob.  The "nnn"
+**                             in the prefix is the mimimum-length decimal
+**                             representation of the byte-length of the blob.
+**
+** According to the rules above, all of the following SELECT statements
+** should return TRUE:
+**
+**    SELECT sha3(1) = sha3('1');
+**
+**    SELECT sha3('hello') = sha3(x'68656c6c6f');
+**
+**    WITH a(x) AS (VALUES('xyzzy'))
+**      SELECT sha3_agg(x) = sha3('T5:xyzzy')            FROM a;
+**
+**    WITH a(x) AS (VALUES(x'010203'))
+**      SELECT sha3_agg(x) = sha3(x'42333a010203')       FROM a;
+**
+**    WITH a(x) AS (VALUES(0x123456))
+**      SELECT sha3_agg(x) = sha3(x'490000000000123456') FROM a;
+**
+**    WITH a(x) AS (VALUES(100.015625))
+**      SELECT sha3_agg(x) = sha3(x'464059010000000000') FROM a;
+**
+**    WITH a(x) AS (VALUES(NULL))
+**      SELECT sha3_agg(x) = sha3('N') FROM a;
+**
+**
+** In sha3_query(), individual column values are encoded as with
+** sha3_agg(), but with the addition that a single "R" character is
+** inserted at the start of each row.
+**
+** Note that sha3_agg() hashes rows for which Y is NULL.  Add a FILTER
+** clause if NULL rows should be excluded:
+**
+**    SELECT sha3_agg(x ORDER BY rowid) FILTER(x NOT NULL) FROM t1;
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
