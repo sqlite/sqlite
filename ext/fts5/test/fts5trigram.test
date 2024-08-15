@@ -200,6 +200,12 @@ do_eqp_test 6.3 {
 do_eqp_test 6.4 {
   SELECT * FROM ci1 WHERE x GLOB ?
 } {VIRTUAL TABLE INDEX 0:G0}
+do_eqp_test 6.5 {
+  SELECT * FROM ci1 WHERE x < ?
+} {{SCAN ci1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 6.6 {
+  SELECT * FROM ci0 WHERE x < ?
+} {{SCAN ci0 VIRTUAL TABLE INDEX 0:}}
 
 reset_db
 do_execsql_test 7.0 {
@@ -255,5 +261,30 @@ do_execsql_test 8.3 {
   {[abc] [cde]}
   {[abcde]}
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(
+    a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, 
+    tokenize=trigram
+  );
+
+  INSERT INTO t1(rowid, a12) VALUES(111, 'thats a tricky case though');
+  INSERT INTO t1(rowid, a12) VALUES(222, 'the query planner cannot do');
+}
+
+do_execsql_test 9.1 {
+  SELECT rowid FROM t1 WHERE a12 LIKE '%tricky%'
+} {111}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM t1 WHERE a12 LIKE '%tricky%' AND a12 LIKE '%case%'
+} {111}
+
+do_execsql_test 9.3 {
+  SELECT rowid FROM t1 WHERE a12 LIKE NULL
+} {}
+
 
 finish_test

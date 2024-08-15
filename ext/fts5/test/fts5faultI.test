@@ -60,7 +60,46 @@ do_faultsim_test 3 -faults oom* -prep {
     SELECT fts5_columnlocale(t1, 0) FROM t1('unicode*');
   }
 } -test {
-  faultsim_test_result {0 {{}}}
+  faultsim_test_result {0 {{}}} {1 SQLITE_NOMEM}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE w1 USING fts5(a);
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql {
+    BEGIN;
+      INSERT INTO w1 VALUES('token token token');
+  }
+} -body {
+  execsql {
+    INSERT INTO w1(w1, rank) VALUES('rank', 'bm25()');
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 5 -faults oom* -prep { 
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO w1 VALUES('one');
+      SAVEPOINT one;
+        INSERT INTO w1 VALUES('two');
+      ROLLBACK TO one;
+  }
+
+} -body {
+  execsql {
+    INSERT INTO w1 VALUES('string');
+  }
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 finish_test

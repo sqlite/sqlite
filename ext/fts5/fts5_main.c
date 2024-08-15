@@ -630,7 +630,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           if( bSeenRank ) continue;
           idxStr[iIdxStr++] = 'r';
           bSeenRank = 1;
-        }else if( iCol>=0 ){
+        }else{
           nSeenMatch++;
           idxStr[iIdxStr++] = 'M';
           sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
@@ -1468,13 +1468,7 @@ static int fts5FilterMethod(
   int iIdxStr = 0;
   Fts5Expr *pExpr = 0;
 
-  if( pConfig->bLock ){
-    pTab->p.base.zErrMsg = sqlite3_mprintf(
-        "recursively defined fts5 content table"
-    );
-    return SQLITE_ERROR;
-  }
-
+  assert( pConfig->bLock==0 );
   if( pCsr->ePlan ){
     fts5FreeCursorComponents(pCsr);
     memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan-(u8*)pCsr));
@@ -1992,7 +1986,6 @@ static int fts5UpdateMethod(
         }
       }
 
-      assert( eType1==SQLITE_INTEGER || eType1==SQLITE_NULL );
       if( eType0!=SQLITE_INTEGER ){
         /* An INSERT statement. If the conflict-mode is REPLACE, first remove
         ** the current entry (if any). */
@@ -2186,11 +2179,11 @@ static int fts5ApiColumnText(
   int rc = SQLITE_OK;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+
+  assert( pCsr->ePlan!=FTS5_PLAN_SPECIAL );
   if( iCol<0 || iCol>=pTab->pConfig->nCol ){
     rc = SQLITE_RANGE;
-  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) 
-   || pCsr->ePlan==FTS5_PLAN_SPECIAL 
-  ){
+  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) ){
     *pz = 0;
     *pn = 0;
   }else{
@@ -2701,11 +2694,11 @@ static int fts5ApiColumnLocale(
   *pzLocale = 0;
   *pnLocale = 0;
 
+  assert( pCsr->ePlan!=FTS5_PLAN_SPECIAL );
   if( iCol<0 || iCol>=pConfig->nCol ){
     rc = SQLITE_RANGE;
   }else if(
       pConfig->abUnindexed[iCol]==0
-   && pCsr->ePlan!=FTS5_PLAN_SPECIAL
    && pConfig->eContent!=FTS5_CONTENT_NONE
    && pConfig->bLocale
   ){
@@ -2823,6 +2816,7 @@ static void fts5ApiInvoke(
   sqlite3_value **argv
 ){
   assert( pCsr->pAux==0 );
+  assert( pCsr->ePlan!=FTS5_PLAN_SPECIAL );
   pCsr->pAux = pAux;
   pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc, argv);
   pCsr->pAux = 0;
@@ -2866,7 +2860,7 @@ static void fts5ApiCallback(
   iCsrId = sqlite3_value_int64(argv[0]);
 
   pCsr = fts5CursorFromCsrid(pAux->pGlobal, iCsrId);
-  if( pCsr==0 || pCsr->ePlan==0 ){
+  if( pCsr==0 || (pCsr->ePlan==0 || pCsr->ePlan==FTS5_PLAN_SPECIAL) ){
     fts5ResultError(context, "no such cursor: %lld", iCsrId);
   }else{
     sqlite3_vtab *pTab = pCsr->base.pVtab;
