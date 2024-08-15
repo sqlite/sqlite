@@ -4010,6 +4010,10 @@ static int whereLoopAddBtree(
 #endif
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew, rSize);
+      if( pSrc->pSelect ){
+        if( pSrc->fg.viaCoroutine ) pNew->wsFlags |= WHERE_COROUTINE;
+        pNew->u.btree.pOrderBy = pSrc->pSelect->pOrderBy;
+      }
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
       if( rc ) break;
@@ -4844,6 +4848,69 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 }
 
 /*
+** WhereLoop pLoop, which the iLoop-th term of the nested loop, is really
+** a subquery or CTE that has an ORDER BY clause.  See if any of the terms
+** in the subquery ORDER BY clause will satisfy pOrderBy from the outer
+** query.  Mark off all satisfied terms (by setting bits in *pOBSat) and
+** return TRUE if they do.  If not, return false.
+**
+** Example:
+**
+**    CREATE TABLE t1(a,b,c, PRIMARY KEY(a,b));
+**    CREATE TABLE t2(x,y);
+**    WITH t3(p,q) AS MATERIALIZED (SELECT x+y, x-y FROM t2 ORDER BY x+y)
+**       SELECT * FROM t3 JOIN t1 ON a=q ORDER BY p, b;
+**
+** The CTE named "t3" comes out in the natural order of "p", so the first
+** first them of "ORDER BY p,b" is satisfied by a sequential scan of "t3".
+**
+*/
+static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
+  WhereLoop *pLoop,       /* The nested loop term that is a subquery */
+  int iLoop,              /* Which level of the nested loop.  0==outermost */
+  int iCur,               /* Cursor used by the this loop */
+  int wctrlFlags,         /* Flags determining sort behavior */
+  ExprList *pOrderBy,     /* The ORDER BY clause on the whole query */
+  Bitmask *pRevMask,      /* When loops need to go in reverse order */
+  Bitmask *pOBSat         /* Which terms of pOrderBy are satisfied so far */
+){
+  int i, j;
+  u8 rev = 0;
+  u8 revIdx = 0;
+  Expr *pOBExpr;
+  ExprList *pSubOB = pLoop->u.btree.pOrderBy;
+  assert( pSubOB!=0 );
+  for(i=0; (MASKBIT(i) & *pOBSat)!=0; i++){}
+  for(j=0; j<pSubOB->nExpr && i<pOrderBy->nExpr; j++, i++){
+    if( pSubOB->a[j].u.x.iOrderByCol==0 ) break;
+    pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[j].pExpr);
+    if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) break;
+    if( pOBExpr->iTable!=iCur ) break;
+    if( pOBExpr->iColumn!=pSubOB->a[j].u.x.iOrderByCol-1 ) break;
+    if( pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL ) break;
+    revIdx = pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_DESC;
+    if( wctrlFlags & WHERE_GROUPBY ){
+      /* Sort order does not matter for GROUP BY */
+    }else if( j>0 ){
+      if( (rev ^ revIdx) != (pOrderBy->a[i].fg.sortFlags&KEYINFO_ORDER_DESC) ){
+        break;
+      }
+    }else{
+      rev = revIdx ^ (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC);
+      if( rev ){
+        if( (pLoop->wsFlags & WHERE_COROUTINE)!=0 ){
+          /* Cannot run a co-routine in reverse order */
+          break;
+        }
+        *pRevMask |= MASKBIT(iLoop);
+      }
+    }
+    *pOBSat |= MASKBIT(i);
+  }
+  return j>0;
+}
+
+/*
 ** Examine a WherePath (with the addition of the extra WhereLoop of the 6th
 ** parameters) to see if it outputs rows in the requested ORDER BY
 ** (or GROUP BY) without requiring a separate sort operation.  Return N:
@@ -4988,9 +5055,17 @@ static i8 wherePathSatisfiesOrderBy(
 
     if( (pLoop->wsFlags & WHERE_ONEROW)==0 ){
       if( pLoop->wsFlags & WHERE_IPK ){
+        if( pLoop->u.btree.pOrderBy
+         && OptimizationEnabled(db, SQLITE_OrderBySubq)
+         &&  wherePathMatchSubqueryOB(pLoop,iLoop,iCur,wctrlFlags,
+                                     pOrderBy,pRevMask, &obSat)
+        ){
+          nColumn = 0;
+        }else{
+          nColumn = 1;
+        }
         pIndex = 0;
         nKeyCol = 0;
-        nColumn = 1;
       }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
       }else{
@@ -5085,7 +5160,7 @@ static i8 wherePathSatisfiesOrderBy(
         }
 
         /* Find the ORDER BY term that corresponds to the j-th column
-        ** of the index and mark that ORDER BY term off
+        ** of the index and mark that ORDER BY term having been satisfied.
         */
         isMatch = 0;
         for(i=0; bOnce && i<nOrderBy; i++){
