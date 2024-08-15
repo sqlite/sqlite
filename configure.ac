@@ -121,7 +121,7 @@ USE_AMALGAMATION=1
 #
 AC_ARG_WITH(tclsh, AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use]))
 AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)]))
-AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[do not build TCL extension]),
+AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
       [use_tcl=$enableval],[use_tcl=yes])
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
   AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh tclsh9.0],none)
