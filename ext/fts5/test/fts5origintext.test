@@ -291,6 +291,15 @@ do_execsql_test 6.3 {
   SELECT rowid, tokens(ft) FROM ft('Three*');
 } {1 {{}} 2 {{}}}
 
+fts5_aux_test_functions db
+do_catchsql_test 6.4 {
+  SELECT fts5_test_insttoken(ft, -1, 0) FROM ft('one');
+} {1 SQLITE_RANGE}
+
+do_catchsql_test 6.5 {
+  SELECT fts5_test_insttoken(ft, 1, 0) FROM ft('one');
+} {1 SQLITE_RANGE}
+
 }
 
 finish_test

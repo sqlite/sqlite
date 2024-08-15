@@ -2330,7 +2330,8 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         aInst[0] = iBest;
         aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
         aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
-        if( aInst[1]<0 || aInst[1]>=nCol ){
+        assert( aInst[1]>=0 );
+        if( aInst[1]>=nCol ){
           rc = FTS5_CORRUPT;
           break;
         }

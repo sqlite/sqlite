@@ -51,6 +51,10 @@ proc fts5_test_poslist2 {cmd} {
   sort_poslist $res
 }
 
+proc fts5_test_insttoken {cmd iInst iToken} {
+  $cmd xInstToken $iInst $iToken
+}
+
 proc fts5_test_collist {cmd} {
   set res [list]
 
@@ -181,6 +185,7 @@ proc fts5_aux_test_functions {db} {
     fts5_test_poslist
     fts5_test_poslist2
     fts5_test_collist
+    fts5_test_insttoken
     fts5_test_tokenize
     fts5_test_rowcount
     fts5_test_rowid

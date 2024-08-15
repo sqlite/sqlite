@@ -571,5 +571,25 @@ do_execsql_test 20.5 {
   SELECT rowid FROM x1 WHERE x1 MATCH 'z' OR (x1 MATCH 'a' AND x1 MATCH 'd');
 } {3 1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  CREATE TABLE t1(ii INTEGER, x TEXT, y TEXT);
+  CREATE VIRTUAL TABLE xyz USING fts5(content_rowid=ii, content=t1, x, y);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+  INSERT INTO t1 VALUES(3, 'tree', 'iii');
+  INSERT INTO xyz(xyz) VALUES('rebuild');
+}
+
+do_execsql_test 21.1 {
+  UPDATE xyz SET y='TWO' WHERE rowid=2;
+  UPDATE t1 SET y='TWO' WHERE ii=2;
+}
+
+do_execsql_test 21.2 {
+  PRAGMA integrity_check
+} {ok}
+
 finish_test
 

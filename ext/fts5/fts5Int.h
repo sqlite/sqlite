@@ -345,7 +345,7 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 void sqlite3Fts5Put32(u8*, int);
 int sqlite3Fts5Get32(const u8*);
 
-#define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
+#define FTS5_POS2COLUMN(iPos) (int)((iPos >> 32) & 0x7FFFFFFF)
 #define FTS5_POS2OFFSET(iPos) (int)(iPos & 0x7FFFFFFF)
 
 typedef struct Fts5PoslistReader Fts5PoslistReader;
