@@ -1,5 +1,5 @@
-C Improved\shelp\smessage\sfor\s--disable-tcl\son\sthe\sconfigure\sscript.
-D 2024-08-15T15:31:46.143
+C Ensure\sthat\smemory\sallocations\sin\sANALYZE\sare\salways\s8-byte\saligned\sin\sorder\nto\ssatisfy\sa\snew\sassert()\sadded\sby\s[539e4f661767ef90].
+D 2024-08-16T15:35:20.377
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -693,7 +693,7 @@ F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c bb663fddf1fe0e2e6d8758b2b7fb6374e7c057a6ca3955f37a48986806029765
-F src/analyze.c 5c4e2bfd0aa8e5157f7fb91a17d86905510a74397326dc5767ec4e0588a4eea5
+F src/analyze.c 30bf40ec4208ead9e977bec017bccc8a9681820936e38ca5a4a7443100a6d5c5
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de927016aadd7ee55d947134e3540907a3ea5ab4015034c5d088e3a84905d98a
-R fa965b3cf027827ab805def1d12c22e4
+P 96e6cfb211f7f1aab50f997f4bc61dfb9701beb720c59bc413a4285c1ae5e20d
+R 19ca743d0eb81a004946ea85e6f05b5d
 U drh
-Z a05ca4fe471b9ed0243c4a5725784485
+Z b629a1d86492e4c09b552ad5721d3d89
 # Remove this line to create a well-formed Fossil manifest.
