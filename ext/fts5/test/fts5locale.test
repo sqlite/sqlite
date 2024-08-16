@@ -521,5 +521,14 @@ do_catchsql_test 11.2 {
   SELECT fts5_columnlocale(x1, 1) FROM x1('two');
 } {1 SQLITE_RANGE}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 12.0 {
+  list [catch {
+    sqlite3_fts5_create_tokenizer -v2 -version 3 db tcl tcl_create
+  } msg] $msg
+} {1 {error in fts5_api.xCreateTokenizer_v2()}}
+
 finish_test
 

@@ -890,15 +890,17 @@ static int f5tTokenizerCreate(
 
 static void f5tTokenizerDelete(Fts5Tokenizer *p){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
-  if( pInst->pParent ){
-    if( pInst->pModule->parent_v2.xDelete ){
-      pInst->pModule->parent_v2.xDelete(pInst->pParent);
-    }else{
-      pInst->pModule->parent.xDelete(pInst->pParent);
+  if( pInst ){
+    if( pInst->pParent ){
+      if( pInst->pModule->parent_v2.xDelete ){
+        pInst->pModule->parent_v2.xDelete(pInst->pParent);
+      }else{
+        pInst->pModule->parent.xDelete(pInst->pParent);
+      }
     }
+    Tcl_DecrRefCount(pInst->pScript);
+    ckfree((char *)pInst);
   }
-  Tcl_DecrRefCount(pInst->pScript);
-  ckfree((char *)pInst);
 }
 
 
@@ -1146,6 +1148,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   F5tTokenizerModule *pMod;
   int rc = SQLITE_OK;
   int bV2 = 0;                    /* True to use _v2 API */
+  int iVersion = 2;               /* Value for _v2.iVersion */
   const char *zParent = 0;        /* Name of parent tokenizer, if any */
   int ii = 0;
 
@@ -1157,7 +1160,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
   /* Parse any options. Set stack variables bV2 and zParent. */
   for(ii=1; ii<objc-3; ii++){
     int iOpt = 0;
-    const char *azOpt[] = { "-v2", "-parent", 0 };
+    const char *azOpt[] = { "-v2", "-parent", "-version", 0 };
     if( Tcl_GetIndexFromObj(interp, objv[ii], azOpt, "OPTION", 0, &iOpt) ){
       return TCL_ERROR;
     }
@@ -1175,6 +1178,19 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
           return TCL_ERROR;
         }
         zParent = Tcl_GetString(objv[ii]);
+        break;
+      }
+      case 2: /* -version */ {
+        ii++;
+        if( ii==objc-3 ){
+          Tcl_AppendResult(
+              interp, "option requires an argument: -version", (char*)0
+          );
+          return TCL_ERROR;
+        }
+        if( Tcl_GetIntFromObj(interp, objv[ii], &iVersion) ){
+          return TCL_ERROR;
+        }
         break;
       }
       default:
@@ -1201,9 +1217,13 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
       rc = pApi->xFindTokenizer_v2(pApi, zParent, &pMod->pParentCtx, &pParent);
       if( rc==SQLITE_OK ){
         memcpy(&pMod->parent_v2, pParent, sizeof(fts5_tokenizer_v2));
+        pMod->parent_v2.xDelete(0);
       }
     }else{
       rc = pApi->xFindTokenizer(pApi, zParent, &pMod->pParentCtx,&pMod->parent);
+      if( rc==SQLITE_OK ){
+        pMod->parent.xDelete(0);
+      }
     }
   }
 
@@ -1218,7 +1238,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
     }else{
       fts5_tokenizer_v2 t2;
       memset(&t2, 0, sizeof(t2));
-      t2.iVersion = 2;
+      t2.iVersion = iVersion;
       t2.xCreate = f5tTokenizerCreate;
       t2.xTokenize = f5tTokenizerTokenize_v2;
       t2.xDelete = f5tTokenizerDelete;

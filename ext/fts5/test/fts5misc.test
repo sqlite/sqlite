@@ -591,5 +591,27 @@ do_execsql_test 21.2 {
   PRAGMA integrity_check
 } {ok}
 
+breakpoint
+sqlite3_db_config db DEFENSIVE 1
+do_execsql_test 21.3 {
+  CREATE TABLE xyz_notashadow(x, y);
+  DROP TABLE xyz_notashadow;
+}
+sqlite3_db_config db DEFENSIVE 0
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 22.0 {
+  SELECT fts5(NULL);
+} {{}}
+do_execsql_test 22.1 {
+  SELECT count(*) FROM (
+    SELECT fts5_source_id()
+  )
+} {1}
+execsql_pp {
+  SELECT fts5_source_id()
+}
+
 finish_test
 
