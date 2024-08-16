@@ -4887,22 +4887,25 @@ static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
     if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) break;
     if( pOBExpr->iTable!=iCur ) break;
     if( pOBExpr->iColumn!=pSubOB->a[j].u.x.iOrderByCol-1 ) break;
-    if( pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL ) break;
-    revIdx = pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_DESC;
-    if( wctrlFlags & WHERE_GROUPBY ){
-      /* Sort order does not matter for GROUP BY */
-    }else if( j>0 ){
-      if( (rev ^ revIdx) != (pOrderBy->a[i].fg.sortFlags&KEYINFO_ORDER_DESC) ){
+    if( (wctrlFlags & WHERE_GROUPBY)==0 ){
+      if( (pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL)
+          != (pOrderBy->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL) ){
         break;
       }
-    }else{
-      rev = revIdx ^ (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC);
-      if( rev ){
-        if( (pLoop->wsFlags & WHERE_COROUTINE)!=0 ){
-          /* Cannot run a co-routine in reverse order */
+      revIdx = pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_DESC;
+      if( j>0 ){
+        if( (rev ^ revIdx)!=(pOrderBy->a[i].fg.sortFlags&KEYINFO_ORDER_DESC) ){
           break;
         }
-        *pRevMask |= MASKBIT(iLoop);
+      }else{
+        rev = revIdx ^ (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC);
+        if( rev ){
+          if( (pLoop->wsFlags & WHERE_COROUTINE)!=0 ){
+            /* Cannot run a co-routine in reverse order */
+            break;
+          }
+          *pRevMask |= MASKBIT(iLoop);
+        }
       }
     }
     *pOBSat |= MASKBIT(i);
