@@ -5064,6 +5064,7 @@ static i8 wherePathSatisfiesOrderBy(
                                      pOrderBy,pRevMask, &obSat)
         ){
           nColumn = 0;
+          isOrderDistinct = 0;
         }else{
           nColumn = 1;
         }

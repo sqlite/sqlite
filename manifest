@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\ssubquery\sORDER\sBY\sdecision\salgorithm.\sFewer\sfalse-negatives.
-D 2024-08-16T00:37:54.145
+C Bug\sfix\sin\sthe\ssubquery\sORDER\sBY\spropagator.
+D 2024-08-16T02:19:17.392
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -846,7 +846,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c c6b742473a627bb0ff2aa1f05f3daaa7fc974b05fe4f84ae8a2d07fd7b92393c
+F src/where.c 154533a45da7b54f460d7415b0ea3aea59855a58460cf1356175b0045ff30c26
 F src/whereInt.h 6444b888ce395cb80511284b8a73b63472d34247fcb1b125ee06a54fa6ae878e
 F src/wherecode.c c9cac0b0b8e809c5e7e79d7796918907fb685ad99be2aaa9737f9787aa47349c
 F src/whereexpr.c 7d0d34b42b9edfd8e8ca66beb3a6ef63fe211c001af54caf2ccbcd989b783290
@@ -2204,8 +2204,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2fbb4dc2327ee435cb2b7a4adcddf5a9cee6dff7de96e2ecb761166427b5ddea
-R 4f42ef8d0868b345800db6a42ea20509
+P b82421e3f5811946e9d60b845fc882b6ea5c53c648695654c6900754427bf9bf
+R 41797d101dab015774684ce7d95aeefd
 U drh
-Z a8bc8a8b808f8550328f0344d9e7735f
+Z c79ab6ee6fe9513aaffefd02f00f8786
 # Remove this line to create a well-formed Fossil manifest.
