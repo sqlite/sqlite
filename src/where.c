@@ -4847,7 +4847,8 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   return rc;
 }
 
-/*
+/* Implementation of the order-by-subquery optimization:
+**
 ** WhereLoop pLoop, which the iLoop-th term of the nested loop, is really
 ** a subquery or CTE that has an ORDER BY clause.  See if any of the terms
 ** in the subquery ORDER BY clause will satisfy pOrderBy from the outer
@@ -4862,43 +4863,67 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 **       SELECT * FROM t3 JOIN t1 ON a=q ORDER BY p, b;
 **
 ** The CTE named "t3" comes out in the natural order of "p", so the first
-** first them of "ORDER BY p,b" is satisfied by a sequential scan of "t3".
+** first them of "ORDER BY p,b" is satisfied by a sequential scan of "t3"
+** and sorting only needs to occur on the second term "b".
 **
+** Limitations:
+**
+** (1)  The optimization is not applied if the outer ORDER BY contains
+**      a COLLATE clause.  The optimization might be applied if the
+**      outer ORDER BY uses NULLS FIRST, NULLS LAST, ASC, and/or DESC as
+**      long as the subquery ORDER BY does the same.  But if the
+**      outer ORDER BY uses COLLATE, even a redundant COLLATE, the
+**      optimization is bypassed.
+**
+** (2)  The subquery ORDER BY terms must exactly match subquery result
+**      columns, including any COLLATE annotations.  This routine relies
+**      on iOrderByCol to do matching between order by terms and result
+**      columns, and iOrderByCol will not be set if the result column
+**      and ORDER BY collations differ.
+**
+** (3)  The subquery and outer ORDER BY can be in opposite directions as
+**      long as  the subquery is materialized.  If the subquery is
+**      implemented as a co-routine, the sort orders must be in the same
+**      direction because there is no way to run a co-routine backwards.
 */
 static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
+  WhereInfo *pWInfo,      /* The WHERE clause */
   WhereLoop *pLoop,       /* The nested loop term that is a subquery */
   int iLoop,              /* Which level of the nested loop.  0==outermost */
   int iCur,               /* Cursor used by the this loop */
-  int wctrlFlags,         /* Flags determining sort behavior */
   ExprList *pOrderBy,     /* The ORDER BY clause on the whole query */
   Bitmask *pRevMask,      /* When loops need to go in reverse order */
   Bitmask *pOBSat         /* Which terms of pOrderBy are satisfied so far */
 ){
-  int i, j;
-  u8 rev = 0;
-  u8 revIdx = 0;
-  Expr *pOBExpr;
-  ExprList *pSubOB = pLoop->u.btree.pOrderBy;
+  int iOB;                /* Index into pOrderBy->a[] */
+  int jSub;               /* Index into pSubOB->a[] */
+  u8 rev = 0;             /* True if iOB and jSub sort in opposite directions */
+  u8 revIdx = 0;          /* Sort direction for jSub */
+  Expr *pOBExpr;          /* Current term of outer ORDER BY */
+  ExprList *pSubOB;       /* Complete ORDER BY on the subquery */
+
+  pSubOB = pLoop->u.btree.pOrderBy;
   assert( pSubOB!=0 );
-  for(i=0; (MASKBIT(i) & *pOBSat)!=0; i++){}
-  for(j=0; j<pSubOB->nExpr && i<pOrderBy->nExpr; j++, i++){
-    if( pSubOB->a[j].u.x.iOrderByCol==0 ) break;
-    pOBExpr = sqlite3ExprSkipCollateAndLikely(pOrderBy->a[j].pExpr);
+  for(iOB=0; (MASKBIT(iOB) & *pOBSat)!=0; iOB++){}
+  for(jSub=0; jSub<pSubOB->nExpr && iOB<pOrderBy->nExpr; jSub++, iOB++){
+    if( pSubOB->a[jSub].u.x.iOrderByCol==0 ) break;
+    pOBExpr = pOrderBy->a[iOB].pExpr;
     if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) break;
     if( pOBExpr->iTable!=iCur ) break;
-    if( pOBExpr->iColumn!=pSubOB->a[j].u.x.iOrderByCol-1 ) break;
-    if( (wctrlFlags & WHERE_GROUPBY)==0 ){
-      if( (pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL)
-          != (pOrderBy->a[j].fg.sortFlags & KEYINFO_ORDER_BIGNULL) ){
+    if( pOBExpr->iColumn!=pSubOB->a[jSub].u.x.iOrderByCol-1 ) break;
+    if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+      u8 sfOB = pOrderBy->a[iOB].fg.sortFlags;   /* sortFlags for iOB */
+      u8 sfSub = pSubOB->a[jSub].fg.sortFlags;   /* sortFlags for jSub */
+      if( (sfSub & KEYINFO_ORDER_BIGNULL) != (sfOB & KEYINFO_ORDER_BIGNULL) ){
         break;
       }
-      revIdx = pSubOB->a[j].fg.sortFlags & KEYINFO_ORDER_DESC;
-      if( j>0 ){
-        if( (rev ^ revIdx)!=(pOrderBy->a[i].fg.sortFlags&KEYINFO_ORDER_DESC) ){
+      revIdx = sfSub & KEYINFO_ORDER_DESC;
+      if( jSub>0 ){
+        if( (rev^revIdx)!=(sfOB & KEYINFO_ORDER_DESC) ){
           break;
         }
       }else{
-        rev = revIdx ^ (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_DESC);
+        rev = revIdx ^ (sfOB & KEYINFO_ORDER_DESC);
         if( rev ){
           if( (pLoop->wsFlags & WHERE_COROUTINE)!=0 ){
             /* Cannot run a co-routine in reverse order */
@@ -4908,9 +4933,9 @@ static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
         }
       }
     }
-    *pOBSat |= MASKBIT(i);
+    *pOBSat |= MASKBIT(iOB);
   }
-  return j>0;
+  return jSub>0;
 }
 
 /*
@@ -5060,7 +5085,7 @@ static i8 wherePathSatisfiesOrderBy(
       if( pLoop->wsFlags & WHERE_IPK ){
         if( pLoop->u.btree.pOrderBy
          && OptimizationEnabled(db, SQLITE_OrderBySubq)
-         &&  wherePathMatchSubqueryOB(pLoop,iLoop,iCur,wctrlFlags,
+         &&  wherePathMatchSubqueryOB(pWInfo,pLoop,iLoop,iCur,
                                      pOrderBy,pRevMask, &obSat)
         ){
           nColumn = 0;

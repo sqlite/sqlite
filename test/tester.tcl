@@ -1056,6 +1056,29 @@ proc do_eqp_test {name sql res} {
   }
 }
 
+# Do both an eqp_test and an execsql_test on the same SQL.
+#
+proc do_eqp_execsql_test {name sql res1 res2} {
+  if {[regexp {^\s+QUERY PLAN\n} $res1]} {
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res1]} {
+      uplevel [list do_test ${name}a [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test ${name}a [list query_plan_graph $sql] $res1
+      ]
+    }
+  } else {
+    if {[string index $res 0]!="/"} {
+      set res1 "/*$res1*/"
+    }
+    uplevel do_execsql_test ${name}a [list "EXPLAIN QUERY PLAN $sql"] [list $res1]
+  }
+  uplevel do_execsql_test ${name}b [list $sql] [list $res2]
+}
+
 
 #-------------------------------------------------------------------------
 #   Usage: do_select_tests PREFIX ?SWITCHES? TESTLIST
