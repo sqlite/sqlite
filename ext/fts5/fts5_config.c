@@ -1031,13 +1031,10 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
    && iVersion!=FTS5_CURRENT_VERSION_SECUREDELETE
   ){
     rc = SQLITE_ERROR;
-    if( pConfig->pzErrmsg ){
-      assert( 0==*pConfig->pzErrmsg );
-      sqlite3Fts5ConfigErrmsg(pConfig, "invalid fts5 file format "
-          "(found %d, expected %d or %d) - run 'rebuild'",
-          iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
-      );
-    }
+    sqlite3Fts5ConfigErrmsg(pConfig, "invalid fts5 file format "
+        "(found %d, expected %d or %d) - run 'rebuild'",
+        iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
+    );
   }else{
     pConfig->iVersion = iVersion;
   }

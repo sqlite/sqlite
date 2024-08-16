@@ -261,8 +261,8 @@ do_execsql_test 5.3 {
 reset_db
 sqlite3_fts5_register_origintext db
 do_execsql_test 6.0 {
-  CREATE VIRTUAL TABLE ft USING fts5(
-      x, y, tokenize='origintext unicode61', detail=%DETAIL%
+  CREATE VIRTUAL TABLE ft USING fts5( 
+      x, y, tokenize='origintext unicode61', detail=%DETAIL%, tokendata=0
   );
 
   INSERT INTO ft VALUES('One Two', 'Three two');
@@ -299,6 +299,13 @@ do_catchsql_test 6.4 {
 do_catchsql_test 6.5 {
   SELECT fts5_test_insttoken(ft, 1, 0) FROM ft('one');
 } {1 SQLITE_RANGE}
+
+do_catchsql_test 6.6 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(x, tokendata=2);
+} {1 {malformed tokendata=... directive}}
+do_catchsql_test 6.7 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(x, content='', tokendata=11);
+} {1 {malformed tokendata=... directive}}
 
 }
 
