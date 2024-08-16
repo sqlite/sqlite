@@ -8177,6 +8177,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "distinct-opt",        SQLITE_DistinctOpt    },
     { "cover-idx-scan",      SQLITE_CoverIdxScan   },
     { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
+    { "order-by-subquery",   SQLITE_OrderBySubq    },
     { "transitive",          SQLITE_Transitive     },
     { "omit-noop-join",      SQLITE_OmitNoopJoin   },
     { "stat4",               SQLITE_Stat4          },
@@ -8401,7 +8402,7 @@ static int SQLITE_TCLAPI sorter_test_sort4_helper(
   for(iStep=0; iStep<nStep && SQLITE_ROW==sqlite3_step(pStmt); iStep++){
     int a = sqlite3_column_int(pStmt, 0);
     if( a!=sqlite3_column_int(pStmt, iB) ){
-      Tcl_AppendResult(interp, "data error: (a!=b)", 0);
+      Tcl_AppendResult(interp, "data error: (a!=b)", (void*)0);
       return TCL_ERROR;
     }
 
@@ -8420,13 +8421,13 @@ static int SQLITE_TCLAPI sorter_test_sort4_helper(
   if( rc!=SQLITE_OK ) goto sql_error;
 
   if( iCksum1!=iCksum2 ){
-    Tcl_AppendResult(interp, "checksum mismatch", 0);
+    Tcl_AppendResult(interp, "checksum mismatch", (void*)0);
     return TCL_ERROR;
   }
 
   return TCL_OK;
  sql_error:
-  Tcl_AppendResult(interp, "sql error: ", sqlite3_errmsg(db), 0);
+  Tcl_AppendResult(interp, "sql error: ", sqlite3_errmsg(db),  (void*)0);
   return TCL_ERROR;
 }
 
@@ -8475,7 +8476,7 @@ static int SQLITE_TCLAPI test_user_add(
 ){
   char *zUser = 0;
   char *zPasswd = 0;
-  int nPasswd = 0;
+  Tcl_Size nPasswd = 0;
   int isAdmin = 0;
   sqlite3 *db;
   int rc;
@@ -8490,7 +8491,7 @@ static int SQLITE_TCLAPI test_user_add(
   zUser = Tcl_GetString(objv[2]);
   zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
   Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
-  rc = sqlite3_user_add(db, zUser, zPasswd, nPasswd, isAdmin);
+  rc = sqlite3_user_add(db, zUser, zPasswd, (int)nPasswd, isAdmin);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }
@@ -8508,7 +8509,7 @@ static int SQLITE_TCLAPI test_user_change(
 ){
   char *zUser = 0;
   char *zPasswd = 0;
-  int nPasswd = 0;
+  Tcl_Size nPasswd = 0;
   int isAdmin = 0;
   sqlite3 *db;
   int rc;
@@ -8523,7 +8524,7 @@ static int SQLITE_TCLAPI test_user_change(
   zUser = Tcl_GetString(objv[2]);
   zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
   Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
-  rc = sqlite3_user_change(db, zUser, zPasswd, nPasswd, isAdmin);
+  rc = sqlite3_user_change(db, zUser, zPasswd, (int)nPasswd, isAdmin);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }

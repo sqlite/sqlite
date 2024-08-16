@@ -580,8 +580,7 @@ static void walidxSetMxFrame(WalIndexHdr *pHdr, int iWal, u32 mxFrame){
   assert( walidxGetMxFrame(pHdr, iWal)==mxFrame );
 }
 
-#define walidxGetFile(pHdr) ((int)((pHdr)->mxFrame2 >> 31))
-
+#define walidxGetFile(pHdr) (int)((pHdr)->mxFrame2 >> 31)
 #define walidxSetFile(pHdr, iWal) (                                          \
     (pHdr)->mxFrame2 = ((pHdr)->mxFrame2 & 0x7FFFFFFF) | (((u32)(iWal))<<31) \
 )

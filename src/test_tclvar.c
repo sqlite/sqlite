@@ -68,8 +68,8 @@ struct tclvar_cursor {
 
   Tcl_Obj *pList1;     /* Result of [info vars ?pattern?] */
   Tcl_Obj *pList2;     /* Result of [array names [lindex $pList1 $i1]] */
-  int i1;              /* Current item in pList1 */
-  int i2;              /* Current item (if any) in pList2 */
+  Tcl_Size i1;              /* Current item in pList1 */
+  Tcl_Size i2;              /* Current item (if any) in pList2 */
 };
 
 /* Methods for the tclvar module */
@@ -149,7 +149,7 @@ static int next2(Tcl_Interp *interp, tclvar_cursor *pCur, Tcl_Obj *pObj){
       Tcl_Size n = 0;
       pCur->i2++;
       Tcl_ListObjLength(0, pCur->pList2, &n);
-      if( pCur->i2>=(int)n ){
+      if( pCur->i2>=n ){
         Tcl_DecrRefCount(pCur->pList2);
         pCur->pList2 = 0;
         pCur->i2 = 0;
@@ -170,7 +170,7 @@ static int tclvarNext(sqlite3_vtab_cursor *cur){
   Tcl_Interp *interp = ((tclvar_vtab *)(cur->pVtab))->interp;
 
   Tcl_ListObjLength(0, pCur->pList1, &n);
-  while( !ok && pCur->i1<(int)n ){
+  while( !ok && pCur->i1<n ){
     Tcl_ListObjIndex(0, pCur->pList1, pCur->i1, &pObj);
     ok = next2(interp, pCur, pObj);
     if( !ok ){
