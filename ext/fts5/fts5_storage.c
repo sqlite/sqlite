@@ -526,7 +526,7 @@ static int fts5StorageDeleteFromIndex(
             pText, nText, (void*)&ctx, fts5StorageInsertCallback
         );
         p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
-        if( p->aTotalSize[iCol-1]<0 && rc==SQLITE_OK ){
+        if( rc==SQLITE_OK && p->aTotalSize[iCol-1]<0 ){
           rc = FTS5_CORRUPT;
         }
         if( bReset ) sqlite3Fts5ClearLocale(pConfig);
@@ -618,12 +618,12 @@ static int fts5StorageInsertDocsize(
         rc = sqlite3Fts5IndexGetOrigin(p->pIndex, &iOrigin);
         sqlite3_bind_int64(pReplace, 3, iOrigin);
       }
-      if( rc==SQLITE_OK ){
-        sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
-        sqlite3_step(pReplace);
-        rc = sqlite3_reset(pReplace);
-        sqlite3_bind_null(pReplace, 2);
-      }
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
+      sqlite3_step(pReplace);
+      rc = sqlite3_reset(pReplace);
+      sqlite3_bind_null(pReplace, 2);
     }
   }
   return rc;
@@ -887,28 +887,28 @@ int sqlite3Fts5StorageContentInsert(
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       sqlite3_value *pVal = apVal[i];
-      if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
+      if( sqlite3_value_nochange(pVal) ){
         /* This is an UPDATE statement, and column (i-2) was not modified.
         ** Retrieve the value from Fts5Storage.pSavedRow instead. */
+        assert( p->pSavedRow );
         pVal = sqlite3_column_value(p->pSavedRow, i-1);
       }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
         assert( pConfig->bLocale );
-        if( i>1 ){
-          if( pConfig->abUnindexed[i-2] ){
-            /* At attempt to insert an fts5_locale() value into an UNINDEXED
-            ** column. Strip the locale away and just bind the text.  */
-            const char *pText = 0;
-            int nText = 0;
-            rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
-            sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
-          }else{
-            const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
-            int nBlob = sqlite3_value_bytes(pVal);
-            assert( nBlob>4 );
-            sqlite3_bind_blob(pInsert, i, pBlob+4, nBlob-4, SQLITE_TRANSIENT);
-          }
-          continue;
+        assert( i>1 );
+        if( pConfig->abUnindexed[i-2] ){
+          /* At attempt to insert an fts5_locale() value into an UNINDEXED
+          ** column. Strip the locale away and just bind the text.  */
+          const char *pText = 0;
+          int nText = 0;
+          rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
+          sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
+        }else{
+          const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
+          int nBlob = sqlite3_value_bytes(pVal);
+          assert( nBlob>4 );
+          sqlite3_bind_blob(pInsert, i, pBlob+4, nBlob-4, SQLITE_TRANSIENT);
         }
+        continue;
       }
 
       rc = sqlite3_bind_value(pInsert, i, pVal);

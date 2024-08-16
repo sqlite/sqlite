@@ -22,8 +22,6 @@ ifcapable !fts5 {
 
 set ::testprefix fts5faultI
 
-if 0 {
-
 do_execsql_test 1.0 {
   PRAGMA encoding = utf16;
   CREATE VIRTUAL TABLE t1 USING fts5(x, locale=1);
@@ -168,13 +166,13 @@ do_faultsim_test 7 -faults oom* -prep {
   }
 } -test {
 }
-}
+
 #-------------------------------------------------------------------------
 reset_db
 fts5_tclnum_register db
 fts5_aux_test_functions db
 
-do_execsql_test 2.0 {
+do_execsql_test 8.0 {
   CREATE VIRTUAL TABLE ft USING fts5(
       x, tokenize = "tclnum query", detail=columns
   );
@@ -199,6 +197,28 @@ do_faultsim_test 8.2 -faults oom* -prep {
   }
 } -test {
   faultsim_test_result {0 1} {1 {SQL logic error}} {1 SQLITE_NOMEM}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft VALUES('one two three i ii iii');
+  INSERT INTO ft VALUES('four five six iv v vi');
+  INSERT INTO ft VALUES('eight nine ten viii ix x');
+} {}
+
+faultsim_save_and_close
+
+do_faultsim_test 9 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    UPDATE ft SET rowid=4 WHERE rowid=1
+  }
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 
