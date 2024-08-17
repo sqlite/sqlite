@@ -70,6 +70,7 @@ TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 # Any target libraries which libsqlite must be linked against
 #
 TLIBS = @LIBS@ $(LIBS)
+ZLIB_LIBS = @ZLIB_LIBS@
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -677,7 +678,7 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
-		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+		$(LIBREADLINE) $(TLIBS) $(ZLIB_LIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
@@ -734,7 +735,7 @@ ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.
              $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
 
 sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS) $(ZLIB_LIBS)
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
@@ -1307,7 +1308,7 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
 testfixture$(TEXE):	has_tclsh85 $(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
-		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS) $(ZLIB_LIBS)
 
 coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
@@ -1411,7 +1412,7 @@ sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): sqltclsh.c
-	$(LTLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
+	$(LTLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS) $(ZLIB_LIBS)
 
 sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
 	$(LTLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(TLIBS)

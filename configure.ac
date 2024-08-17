@@ -90,6 +90,7 @@ fi
 #
 LT_INIT
 AC_PROG_INSTALL
+PKG_PROG_PKG_CONFIG
 
 #########
 # Enable large file support (if special flags are necessary)
@@ -553,8 +554,7 @@ AC_SUBST(USE_AMALGAMATION)
 
 #########
 # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-AC_CHECK_HEADERS(zlib.h)
-AC_SEARCH_LIBS(deflate, z, [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
+PKG_CHECK_MODULES([ZLIB], [zlib], [HAVE_ZLIB="-DSQLITE_HAVE_ZLIB=1"], [HAVE_ZLIB=""])
 AC_SUBST(HAVE_ZLIB)
 
 #########
