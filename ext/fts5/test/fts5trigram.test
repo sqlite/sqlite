@@ -286,5 +286,61 @@ do_execsql_test 9.3 {
   SELECT rowid FROM t1 WHERE a12 LIKE NULL
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=trigram);
+}
+
+do_test 10.1 {
+  foreach {val} {
+    "abc \UFFjkl\UFF"
+    "abc \UFFFjkl\UFFF"
+    "abc \UFFFFjkl\UFFFF"
+    "abc \UFFFFFjkl\UFFFFF"
+    "\UFFjkl\UFF abc"
+    "\UFFFjkl\UFFF abc"
+    "\UFFFFjkl\UFFFF abc"
+    "\UFFFFFjkl\UFFFFF abc"
+    "\U10001jkl\U10001 abc"
+  } {
+    execsql { INSERT INTO t1 VALUES( $val ) }
+  }
+} {}
+
+do_test 10.2 {
+  foreach {val} {
+    X'E18000626320646566'
+    X'61EDA0806320646566'
+    X'61EDA0806320646566'
+    X'61EFBFBE6320646566'
+    X'76686920E18000626320646566'
+    X'7668692061EDA0806320646566'
+    X'7668692061EDA0806320646566'
+    X'7668692061EFBFBE6320646566'
+  } {
+    execsql " INSERT INTO t1 VALUES( $val ) "
+  }
+} {}
+
+do_test 10.3 {
+  set a [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0x62}]
+  set b [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set c [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  set d [binary format c* {0x61 0xF7 0xBF 0xBF 0xBF 0xBF 0xBF 0xBF 0x62}]
+  execsql {
+    INSERT INTO t1 VALUES($a);
+    INSERT INTO t1 VALUES($b);
+    INSERT INTO t1 VALUES($c);
+    INSERT INTO t1 VALUES($d);
+
+    INSERT INTO t1 VALUES('abcd' || $a);
+    INSERT INTO t1 VALUES('abcd' || $b);
+    INSERT INTO t1 VALUES('abcd' || $c);
+    INSERT INTO t1 VALUES('abcd' || $d);
+  }
+} {}
+
+
 
 finish_test
