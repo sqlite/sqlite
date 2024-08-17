@@ -887,10 +887,9 @@ int sqlite3Fts5StorageContentInsert(
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       sqlite3_value *pVal = apVal[i];
-      if( sqlite3_value_nochange(pVal) ){
+      if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
         /* This is an UPDATE statement, and column (i-2) was not modified.
         ** Retrieve the value from Fts5Storage.pSavedRow instead. */
-        assert( p->pSavedRow );
         pVal = sqlite3_column_value(p->pSavedRow, i-1);
       }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
         assert( pConfig->bLocale );
