@@ -10330,6 +10330,7 @@ else
   use_tcl=yes
 fi
 
+original_use_tcl=${use_tcl}
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
   for ac_prog in tclsh8.6 tclsh tclsh9.0
 do
@@ -10388,6 +10389,7 @@ $as_echo "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}" >&6; }
     else
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $TCLSH_CMD is unable to recommend a tclConfig.sh" >&5
 $as_echo "$as_me: WARNING: $TCLSH_CMD is unable to recommend a tclConfig.sh" >&2;}
+      use_tcl=no
     fi
   fi
 fi
@@ -10438,9 +10440,13 @@ $as_echo "loading TCL configuration from ${tclconfig}" >&6; }
   # tclConfig.sh file and that could be included here.  But as of right now,
   # TCL_LIB_SPEC is the only what that the Makefile uses.
   HAVE_TCL=1
-else
+elif test x"${original_use_tcl}" = "xno"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: unable to run tests because of --disable-tcl" >&5
 $as_echo "unable to run tests because of --disable-tcl" >&6; }
+  HAVE_TCL=0
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: unable to run tests because no tclConfig.sh file could be located" >&5
+$as_echo "unable to run tests because no tclConfig.sh file could be located" >&6; }
   HAVE_TCL=0
 fi
 
