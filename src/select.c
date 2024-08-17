@@ -4506,10 +4506,12 @@ static int flattenSubquery(
 
   /* Delete the transient structures associated with the subquery */
   pSub1 = pSubitem->pSelect;
-  sqlite3DbFree(db, pSubitem->zDatabase);
+  if( pSubitem->fg.fixedSchema==0 ){
+    sqlite3DbFree(db, pSubitem->u4.zDatabase);
+    pSubitem->u4.zDatabase = 0;
+  }
   sqlite3DbFree(db, pSubitem->zName);
   sqlite3DbFree(db, pSubitem->zAlias);
-  pSubitem->zDatabase = 0;
   pSubitem->zName = 0;
   pSubitem->zAlias = 0;
   pSubitem->pSelect = 0;
@@ -5637,7 +5639,7 @@ static struct Cte *searchWith(
 ){
   const char *zName = pItem->zName;
   With *p;
-  assert( pItem->zDatabase==0 );
+  assert( pItem->fg.fixedSchema || pItem->u4.zDatabase==0 );
   assert( zName!=0 );
   for(p=pWith; p; p=p->pOuter){
     int i;
@@ -5717,7 +5719,8 @@ static int resolveFromTermToCte(
     ** go no further. */
     return 0;
   }
-  if( pFrom->zDatabase!=0 ){
+  assert( pFrom->fg.hadSchema==0 || pFrom->fg.notCte!=0 );
+  if( pFrom->fg.fixedSchema==0 && pFrom->u4.zDatabase!=0 ){
     /* The FROM term contains a schema qualifier (ex: main.t1) and so
     ** it cannot possibly be a CTE reference. */
     return 0;
@@ -5794,7 +5797,8 @@ static int resolveFromTermToCte(
       assert( pRecTerm->pPrior!=0 );
       for(i=0; i<pSrc->nSrc; i++){
         SrcItem *pItem = &pSrc->a[i];
-        if( pItem->zDatabase==0
+        if( ((pItem->fg.fixedSchema==0 && pItem->u4.zDatabase==0)
+             || pItem->fg.hadSchema==0)
          && pItem->zName!=0
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
         ){
@@ -7681,7 +7685,14 @@ int sqlite3Select(
     ** string for the fake column name seems safer.
     */
     if( pItem->colUsed==0 && pItem->zName!=0 ){
-      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", pItem->zDatabase);
+      const char *zDb;
+      if( pItem->fg.fixedSchema ){
+        int iDb = sqlite3SchemaToIndex(pParse->db, pItem->u4.pSchema);
+        zDb = db->aDb[iDb].zDbSName;
+      }else{
+        zDb = pItem->u4.zDatabase;
+      }
+      sqlite3AuthCheck(pParse, SQLITE_READ, pItem->zName, "", zDb);
     }
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)

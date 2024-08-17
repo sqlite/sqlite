@@ -497,12 +497,11 @@ Table *sqlite3LocateTableItem(
   SrcItem *p
 ){
   const char *zDb;
-  assert( p->pSchema==0 || p->zDatabase==0 );
-  if( p->pSchema ){
-    int iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema);
+  if( p->fg.fixedSchema ){
+    int iDb = sqlite3SchemaToIndex(pParse->db, p->u4.pSchema);
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
-    zDb = p->zDatabase;
+    zDb = p->u4.zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
 }
@@ -3487,6 +3486,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
+  assert( pName->a[0].fg.fixedSchema==0 );
   if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
@@ -3495,7 +3495,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
 
   if( pTab==0 ){
     if( noErr ){
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].u4.zDatabase);
       sqlite3ForceNotReadOnly(pParse);
     }
     goto exit_drop_table;
@@ -4586,15 +4586,16 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   }
   assert( pParse->nErr==0 );   /* Never called with prior non-OOM errors */
   assert( pName->nSrc==1 );
+  assert( pName->a[0].fg.fixedSchema==0 );
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_drop_index;
   }
-  pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
+  pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].u4.zDatabase);
   if( pIndex==0 ){
     if( !ifExists ){
       sqlite3ErrorMsg(pParse, "no such index: %S", pName->a);
     }else{
-      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].zDatabase);
+      sqlite3CodeVerifyNamedSchema(pParse, pName->a[0].u4.zDatabase);
       sqlite3ForceNotReadOnly(pParse);
     }
     pParse->checkSchema = 1;
@@ -4891,12 +4892,13 @@ SrcList *sqlite3SrcListAppend(
   if( pDatabase && pDatabase->z==0 ){
     pDatabase = 0;
   }
+  assert( pItem->fg.fixedSchema==0 );
   if( pDatabase ){
     pItem->zName = sqlite3NameFromToken(db, pDatabase);
-    pItem->zDatabase = sqlite3NameFromToken(db, pTable);
+    pItem->u4.zDatabase = sqlite3NameFromToken(db, pTable);
   }else{
     pItem->zName = sqlite3NameFromToken(db, pTable);
-    pItem->zDatabase = 0;
+    pItem->u4.zDatabase = 0;
   }
   return pList;
 }
@@ -4928,9 +4930,11 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   assert( db!=0 );
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
-    if( pItem->zDatabase ) sqlite3DbNNFreeNN(db, pItem->zDatabase);
     if( pItem->zName ) sqlite3DbNNFreeNN(db, pItem->zName);
     if( pItem->zAlias ) sqlite3DbNNFreeNN(db, pItem->zAlias);
+    if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+      sqlite3DbNNFreeNN(db, pItem->u4.zDatabase);
+    }
     if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
     sqlite3DeleteTable(db, pItem->pTab);

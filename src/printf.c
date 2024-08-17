@@ -848,8 +848,8 @@ void sqlite3_str_vappendf(
         if( pItem->zAlias && !flag_altform2 ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else if( pItem->zName ){
-          if( pItem->zDatabase ){
-            sqlite3_str_appendall(pAccum, pItem->zDatabase);
+          if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+            sqlite3_str_appendall(pAccum, pItem->u4.zDatabase);
             sqlite3_str_append(pAccum, ".", 1);
           }
           sqlite3_str_appendall(pAccum, pItem->zName);

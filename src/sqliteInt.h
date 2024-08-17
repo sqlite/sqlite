@@ -3297,13 +3297,11 @@ struct IdList {
 **    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
 */
 struct SrcItem {
-  Schema *pSchema;  /* Schema to which this item is fixed */
-  char *zDatabase;  /* Name of database holding this table */
   char *zName;      /* Name of the table */
   char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
   Table *pTab;      /* An SQL table corresponding to zName */
   Select *pSelect;  /* A SELECT statement used in place of a table name */
-  int addrFillSub;  /* Address of subroutine to manifest a subquery */
+  int addrFillSub;  /* Address of subroutine to initialize a subquery */
   int regReturn;    /* Register holding return address of addrFillSub */
   int regResult;    /* Registers holding results of a co-routine */
   struct {
@@ -3323,12 +3321,10 @@ struct SrcItem {
     unsigned isSynthUsing :1;  /* u3.pUsing is synthesized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
     unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
+    unsigned fixedSchema :1;   /* Uses u4.pSchema, not u4.zDatabase */
+    unsigned hadSchema :1;     /* Has u4.zDatabase before u4.pSchema */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
-  union {
-    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
-    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
-  } u3;
   Bitmask colUsed;  /* Bit N set if column N used. Details above for N>62 */
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
@@ -3339,6 +3335,14 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info when fg.isCte is true */
   } u2;
+  union {
+    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
+    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
+  } u3;
+  union {
+    Schema *pSchema;  /* Schema to which this item is fixed */
+    char *zDatabase;  /* Name of database holding this table */
+  } u4;
 };
 
 /*
