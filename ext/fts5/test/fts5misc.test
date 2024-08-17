@@ -633,6 +633,24 @@ do_execsql_test 23.3 {
   SELECT rowid FROM x1('abc NEAR ".." NEAR def');
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none');
+  INSERT INTO t1(a) VALUES('a');
+}
+
+do_execsql_test 24.2 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.3 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT � NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.4 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') );
+} {-1e-06}
 
 finish_test
 

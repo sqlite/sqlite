@@ -54,13 +54,17 @@ struct Fts5Expr {
 
 /*
 ** eType:
-**   Expression node type. Always one of:
+**   Expression node type. Usually one of:
 **
 **       FTS5_AND                 (nChild, apChild valid)
 **       FTS5_OR                  (nChild, apChild valid)
 **       FTS5_NOT                 (nChild, apChild valid)
 **       FTS5_STRING              (pNear valid)
 **       FTS5_TERM                (pNear valid)
+**
+**   An expression node with eType==0 may also exist. It always matches zero
+**   rows. This is created when a phrase containing no tokens is parsed.
+**   e.g. "".
 **
 ** iHeight:
 **   Distance from this node to furthest leaf. This is always 0 for nodes
@@ -3102,6 +3106,7 @@ static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
   pNode->iRowid = iRowid;
   pNode->bEof = 0;
   switch( pNode->eType ){
+    case 0:
     case FTS5_TERM:
     case FTS5_STRING:
       return (pNode->pNear->apPhrase[0]->poslist.n>0);
