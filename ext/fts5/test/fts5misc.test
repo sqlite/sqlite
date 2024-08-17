@@ -613,5 +613,26 @@ execsql_pp {
   SELECT fts5_source_id()
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 23.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1 VALUES('one + two + three');
+  INSERT INTO x1 VALUES('one + xyz + three');
+  INSERT INTO x1 VALUES('xyz + two + xyz');
+}
+do_execsql_test 23.1 {
+  SELECT rowid FROM x1('one + two + three');
+} {1}
+
+do_execsql_test 23.2 {
+  SELECT rowid FROM x1('^".." AND one');
+} {}
+
+do_execsql_test 23.3 {
+  SELECT rowid FROM x1('abc NEAR ".." NEAR def');
+} {}
+
+
 finish_test
 
