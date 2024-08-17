@@ -3295,15 +3295,23 @@ struct IdList {
 **
 **    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
 **    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
+**
+**    u3.pOn             fg.isUsing==0
+**    u3.pUsing          fg.isUsing==1
+**
+**    u4.zDatabase       fg.fixedSchema==0
+**    u4.pSchema         fg.fixedSchema==1
 */
 struct SrcItem {
   char *zName;      /* Name of the table */
   char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
-  Table *pTab;      /* An SQL table corresponding to zName */
-  Select *pSelect;  /* A SELECT statement used in place of a table name */
-  int addrFillSub;  /* Address of subroutine to initialize a subquery */
-  int regReturn;    /* Register holding return address of addrFillSub */
-  int regResult;    /* Registers holding results of a co-routine */
+  Table *pSTab;     /* Table object for zName. Mnemonic: Srcitem-TABle */
+  struct SrcItemSubquery {
+    Select *pSelect;  /* A SELECT statement used in place of a table name */
+    int addrFillSub;  /* Address of subroutine to initialize a subquery */
+    int regReturn;    /* Register holding return address of addrFillSub */
+    int regResult;    /* Registers holding results of a co-routine */
+  } sq;
   struct {
     u8 jointype;      /* Type of join between this table and the previous */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */

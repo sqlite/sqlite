@@ -984,7 +984,7 @@ static int sqlite3ReturningSubqueryCorrelated(Walker *pWalker, Select *pSelect){
   pSrc = pSelect->pSrc;
   assert( pSrc!=0 );
   for(i=0; i<pSrc->nSrc; i++){
-    if( pSrc->a[i].pTab==pWalker->u.pTab ){
+    if( pSrc->a[i].pSTab==pWalker->u.pTab ){
       testcase( pSelect->selFlags & SF_Correlated );
       pSelect->selFlags |= SF_Correlated;
       pWalker->eCode = 1;
@@ -1055,7 +1055,7 @@ static void codeReturningTrigger(
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
   sSelect.pSrc = &sFrom;
   sFrom.nSrc = 1;
-  sFrom.a[0].pTab = pTab;
+  sFrom.a[0].pSTab = pTab;
   sFrom.a[0].zName = pTab->zName; /* tag-20240424-1 */
   sFrom.a[0].iCursor = -1;
   sqlite3SelectPrep(pParse, &sSelect, 0);

@@ -856,7 +856,7 @@ void sqlite3_str_vappendf(
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else{
-          Select *pSel = pItem->pSelect;
+          Select *pSel = pItem->sq.pSelect;
           assert( pSel!=0 ); /* Because of tag-20240424-1 */
           if( pSel->selFlags & SF_NestedFrom ){
             sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);

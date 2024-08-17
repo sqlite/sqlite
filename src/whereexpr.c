@@ -958,7 +958,7 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
     if( ALWAYS(pSrc!=0) ){
       int i;
       for(i=0; i<pSrc->nSrc; i++){
-        mask |= exprSelectUsage(pMaskSet, pSrc->a[i].pSelect);
+        mask |= exprSelectUsage(pMaskSet, pSrc->a[i].sq.pSelect);
         if( pSrc->a[i].fg.isUsing==0 ){
           mask |= sqlite3WhereExprUsage(pMaskSet, pSrc->a[i].u3.pOn);
         }
@@ -996,7 +996,7 @@ static SQLITE_NOINLINE int exprMightBeIndexed2(
   int iCur;
   do{
     iCur = pFrom->a[j].iCursor;
-    for(pIdx=pFrom->a[j].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    for(pIdx=pFrom->a[j].pSTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->aColExpr==0 ) continue;
       for(i=0; i<pIdx->nKeyCol; i++){
         if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
@@ -1040,7 +1040,7 @@ static int exprMightBeIndexed(
 
   for(i=0; i<pFrom->nSrc; i++){
     Index *pIdx;
-    for(pIdx=pFrom->a[i].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    for(pIdx=pFrom->a[i].pSTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->aColExpr ){
         return exprMightBeIndexed2(pFrom,aiCurCol,pExpr,i);
       }
@@ -1628,7 +1628,7 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
   assert( p!=0 && p->pLimit!=0 );                 /* 1 -- checked by caller */
   if( p->pGroupBy==0
    && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
-   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
+   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pSTab))      /* 3 */
   ){
     ExprList *pOrderBy = p->pOrderBy;
     int iCsr = p->pSrc->a[0].iCursor;
@@ -1849,7 +1849,7 @@ void sqlite3WhereTabFuncArgs(
   Expr *pColRef;
   Expr *pTerm;
   if( pItem->fg.isTabFunc==0 ) return;
-  pTab = pItem->pTab;
+  pTab = pItem->pSTab;
   assert( pTab!=0 );
   pArgs = pItem->u1.pFuncArg;
   if( pArgs==0 ) return;

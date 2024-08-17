@@ -1043,9 +1043,9 @@ void sqlite3FkCheck(
     pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( pSrc ){
       SrcItem *pItem = pSrc->a;
-      pItem->pTab = pFKey->pFrom;
+      pItem->pSTab = pFKey->pFrom;
       pItem->zName = pFKey->pFrom->zName;
-      pItem->pTab->nTabRef++;
+      pItem->pSTab->nTabRef++;
       pItem->iCursor = pParse->nTab++;
   
       if( regNew!=0 ){

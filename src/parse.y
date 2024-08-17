@@ -743,8 +743,8 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
         assert( pOld->fg.fixedSchema==0 );
         pNew->zName = pOld->zName;
         pNew->u4.zDatabase = pOld->u4.zDatabase;
-        pNew->pSelect = pOld->pSelect;
-        if( pNew->pSelect && (pNew->pSelect->selFlags & SF_NestedFrom)!=0 ){
+        pNew->sq.pSelect = pOld->sq.pSelect;
+        if( pNew->sq.pSelect && (pNew->sq.pSelect->selFlags & SF_NestedFrom)!=0 ){
           pNew->fg.isNestedFrom = 1;
         }
         if( pOld->fg.isTabFunc ){
@@ -754,7 +754,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pNew->fg.isTabFunc = 1;
         }
         pOld->zName = pOld->u4.zDatabase = 0;
-        pOld->pSelect = 0;
+        pOld->sq.pSelect = 0;
       }
       sqlite3SrcListDelete(pParse->db, F);
     }else{

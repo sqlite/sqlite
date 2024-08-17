@@ -4914,8 +4914,8 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;
-      if( pItem->pSelect ){
-        sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
+      if( pItem->sq.pSelect ){
+        sqlite3SrcListAssignCursors(pParse, pItem->sq.pSelect->pSrc);
       }
     }
   }
@@ -4930,6 +4930,15 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   assert( db!=0 );
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
+ 
+    /* Check invariants on SrcItem */
+    assert( pItem->sq.pSelect==0
+         || (pItem->sq.pSelect->selFlags & SF_MultiValue)==0
+         || (pItem->fg.hadSchema==0
+              && (pItem->fg.fixedSchema || pItem->u4.zDatabase==0)) );
+    assert( pItem->fg.hadSchema==0 || pItem->fg.fixedSchema==1 );
+
+
     if( pItem->zName ) sqlite3DbNNFreeNN(db, pItem->zName);
     if( pItem->zAlias ) sqlite3DbNNFreeNN(db, pItem->zAlias);
     if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
@@ -4937,8 +4946,8 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
     }
     if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
-    sqlite3DeleteTable(db, pItem->pTab);
-    if( pItem->pSelect ) sqlite3SelectDelete(db, pItem->pSelect);
+    sqlite3DeleteTable(db, pItem->pSTab);
+    if( pItem->sq.pSelect ) sqlite3SelectDelete(db, pItem->sq.pSelect);
     if( pItem->fg.isUsing ){
       sqlite3IdListDelete(db, pItem->u3.pUsing);
     }else if( pItem->u3.pOn ){
@@ -4998,7 +5007,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
   if( pSubquery ){
-    pItem->pSelect = pSubquery;
+    pItem->sq.pSelect = pSubquery;
     if( pSubquery->selFlags & SF_NestedFrom ){
       pItem->fg.isNestedFrom = 1;
     }

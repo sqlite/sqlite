@@ -1079,7 +1079,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
                                      ** sqlite3SrcListAppend() */
     if( p->pSrc ){
       Table *pTab2;
-      p->pSrc->a[0].pSelect = pSub;
+      p->pSrc->a[0].sq.pSelect = pSub;
       p->pSrc->a[0].fg.isCorrelated = 1;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded|SF_OrderByReqd;
@@ -1093,7 +1093,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
       }else{
         memcpy(pTab, pTab2, sizeof(Table));
         pTab->tabFlags |= TF_Ephemeral;
-        p->pSrc->a[0].pTab = pTab;
+        p->pSrc->a[0].pSTab = pTab;
         pTab = pTab2;
         memset(&w, 0, sizeof(w));
         w.xExprCallback = sqlite3WindowExtraAggFuncDepth;
@@ -1389,7 +1389,7 @@ int sqlite3WindowCompare(
 ** and initialize registers and cursors used by sqlite3WindowCodeStep().
 */
 void sqlite3WindowCodeInit(Parse *pParse, Select *pSelect){
-  int nEphExpr = pSelect->pSrc->a[0].pSelect->pEList->nExpr;
+  int nEphExpr = pSelect->pSrc->a[0].sq.pSelect->pEList->nExpr;
   Window *pMWin = pSelect->pWin;
   Window *pWin;
   Vdbe *v = sqlite3GetVdbe(pParse);
@@ -2789,7 +2789,7 @@ void sqlite3WindowCodeStep(
   Vdbe *v = sqlite3GetVdbe(pParse);
   int csrWrite;                   /* Cursor used to write to eph. table */
   int csrInput = p->pSrc->a[0].iCursor;     /* Cursor of sub-select */
-  int nInput = p->pSrc->a[0].pTab->nCol;    /* Number of cols returned by sub */
+  int nInput = p->pSrc->a[0].pSTab->nCol;   /* Number of cols returned by sub */
   int iInput;                               /* To iterate through sub cols */
   int addrNe;                     /* Address of OP_Ne */
   int addrGosubFlush = 0;         /* Address of OP_Gosub to flush: */
