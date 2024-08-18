@@ -1,5 +1,5 @@
-C Adjust\sMakefile.in\sso\sthat\sit\soutputs\sa\sslightly\sbetter\serror\smessage\son\san\nattempt\sto\sbuild\ssomething\sthat\srequires\sTCL\slibraries\swhen\sHAVE_TCL\sis\sfalse.
-D 2024-08-17T16:17:16.045
+C Automatically\sdisable\sdirectory\sfsync\swhen\scompiling\sfor\sAIX.
+D 2024-08-18T09:53:37.962
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -744,7 +744,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 2ea8d3ed496b8d1f9332a9505653424e5464fd797ea9d91f8e2e62f9dd0298d0
+F src/os_unix.c 6e3e4fc75904ff85184091dbab996e6e35c1799e771788961cc3b4fcbe8f852c
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
@@ -2205,8 +2205,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 793ff83d09bea165c8cedc978afd3fcfb1a4cee894c5914aa1d92416afce963d
-R be5ece8b231f01bec02cbe9ef4eda884
+P a4043cbeb8a08fca2fdd2ea703e030d3a5574cc6002292ecc6f0e88c116472a3
+R cd57173ec450b44036cf8242b7c2fe1f
 U drh
-Z 6d429e685f531219ca0d0afba9760eb7
+Z a06494827a8461d8ba3867ea1f761ae1
 # Remove this line to create a well-formed Fossil manifest.
