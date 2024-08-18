@@ -652,5 +652,18 @@ do_execsql_test 24.4 {
   SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') );
 } {-1e-06}
 
+#-------------------------------------------------------------------------
+reset_db
+fts5_aux_test_functions db
+
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none', content='');
+  INSERT INTO t1(a) VALUES('a b c');
+}
+
+do_execsql_test 25.0 {
+  SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
+} {{}}
+
 finish_test
 
