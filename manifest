@@ -1,5 +1,5 @@
-C Attempt\sto\sfix\sdate/time\scalculations\sfor\sdays\searlier\sthan\s0400-03-01.\nSee\s[forum:/forumpost/eaa0a09786c6368b|forum\sthread\seaa0a09786c6368b].
-D 2024-08-19T12:54:12.528
+C New\sdate/time\stest\scases\sto\svalidate\sancient\sdates.
+D 2024-08-19T13:53:49.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1060,6 +1060,7 @@ F test/date.test c8ff835023f2107b57ce7a45c92265d51c98a23fc93231e998f12d850831aad
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test 75dc8401e8c0639a228cd26a6eaa4ff5ea8ccda912b9853d1c9462c476670e17
+F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
 F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8ba8e9c3
@@ -2205,11 +2206,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8d170e07e20c21a5bb97fdc8c2d01d92178f5fe740e60d203e4621747cfce33e
-R 63b5eb42616efb9e489a03771c227de0
-T *branch * ancient-date-fix
-T *sym-ancient-date-fix *
-T -sym-trunk *
+P 00cae11fffaf50e2133915e851d41098d00b6b1458e1438bcb6664e1411d8498
+R 020e143aeb047149147ee2aa5a7ba85f
 U drh
-Z baa6c6f17edc1a9ecec4f4cec4c126b5
+Z d05bb26a1492de783006f86a1565084e
 # Remove this line to create a well-formed Fossil manifest.
