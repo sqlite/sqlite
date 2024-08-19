@@ -470,4 +470,24 @@ do_execsql_test 8.2.3 {
   SELECT rowid FROM t4 WHERE t4 MATCH 'a' ORDER BY rowid ASC;
 } {2 4}
 
+#-------------------------------------------------------------------------
+
+foreach {tn val bErr} {
+  1 0 0
+  2 1 0
+  3 2 0
+  4 3  1
+  5 11 1
+} {
+  reset_db
+  set aRes(0) {0 {}}
+  set aRes(1) {1 {error in tokenizer constructor}}
+  set res $aRes($bErr)
+  do_catchsql_test 9.1.$tn "
+    CREATE VIRTUAL TABLE bl USING fts5(
+        s, tokenize='trigram remove_diacritics $val'
+    );
+  " $res
+}
+
 finish_test
