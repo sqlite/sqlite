@@ -271,8 +271,8 @@ static void computeJD(DateTime *p){
     Y--;
     M += 12;
   }
-  A = Y/100;
-  B = 2 - A + (A/4);
+  A = (Y+4800)/100;
+  B = 38 - A + (A/4);
   X1 = 36525*(Y+4716)/100;
   X2 = 306001*(M+1)/10000;
   p->iJD = (sqlite3_int64)((X1 + X2 + D + B - 1524.5 ) * 86400000);
@@ -456,7 +456,7 @@ static int validJulianDay(sqlite3_int64 iJD){
 ** Compute the Year, Month, and Day from the julian day number.
 */
 static void computeYMD(DateTime *p){
-  int Z, A, B, C, D, E, X1;
+  int Z, alpha, A, B, C, D, E, X1;
   if( p->validYMD ) return;
   if( !p->validJD ){
     p->Y = 2000;
@@ -467,8 +467,8 @@ static void computeYMD(DateTime *p){
     return;
   }else{
     Z = (int)((p->iJD + 43200000)/86400000);
-    A = (int)((Z - 1867216.25)/36524.25);
-    A = Z + 1 + A - (A/4);
+    alpha = (int)((Z + 32044.75)/36524.25) - 52;
+    A = Z + 1 + alpha - ((alpha+100)/4) + 25;
     B = A + 1524;
     C = (int)((B - 122.1)/365.25);
     D = (36525*(C&32767))/100;
