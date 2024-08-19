@@ -1,5 +1,5 @@
-C Version\s3.46.1
-D 2024-08-13T09:16:08.704
+C Fix\sleap-year\shandling\sfor\sdates\sprior\sto\s0400-03-01.
+D 2024-08-19T14:23:57.073
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -700,7 +700,7 @@ F src/build.c 237ccc0290d131d646be722f418e92ee0a38043aee25e7dfdc75f8ce5b3abe4e
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
-F src/date.c 126ba2ab10aeb2e7ba6e089b5f07b747c0625b8287f78b60da346eda8d23c875
+F src/date.c a3e9ff72b3696b746363d46bbc9dfbd70745f3108c7680f88da79176b309c0d4
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
@@ -1052,6 +1052,7 @@ F test/date.test c8ff835023f2107b57ce7a45c92265d51c98a23fc93231e998f12d850831aad
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test 75dc8401e8c0639a228cd26a6eaa4ff5ea8ccda912b9853d1c9462c476670e17
+F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
 F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
 F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8ba8e9c3
@@ -2191,10 +2192,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc956353d3762d0e655b88f9d0c1a3840b40453a22e97160ccdf60485be56a92
-R 47b9d94ac84047bf00fd35221bcbfde9
-T +sym-release *
-T +sym-version-3.46.1 *
+P c9c2ab54ba1f5f46360f1b4f35d849cd3f080e6fc2b6c60e91b16c63f69a1e33
+Q +474b7e34b83bc5e85854bc3b386f31ff39b390549d89b94921f33bbc5b658d1d
+R 1e40592919c74a0f6624604d0cccc039
 U drh
-Z 519cc14a63561bb4dfa17935ffe00a32
+Z e341397c58ff7c6668cbd648792386ce
 # Remove this line to create a well-formed Fossil manifest.
