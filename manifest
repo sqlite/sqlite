@@ -1,5 +1,5 @@
-C Automatically\sdisable\sdirectory\sfsync\swhen\scompiling\sfor\sAIX.
-D 2024-08-18T09:53:37.962
+C Attempt\sto\sfix\sdate/time\scalculations\sfor\sdays\searlier\sthan\s0400-03-01.\nSee\s[forum:/forumpost/eaa0a09786c6368b|forum\sthread\seaa0a09786c6368b].
+D 2024-08-19T12:54:12.528
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -706,7 +706,7 @@ F src/build.c 237ccc0290d131d646be722f418e92ee0a38043aee25e7dfdc75f8ce5b3abe4e
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
-F src/date.c 13dd752847afb32ed70510ad7345a5b9c841f51ad904dba5d010f1fa3a6a324e
+F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
 F src/delete.c cb766727c78e715f9fb7ec8a7d03658ed2a3016343ca687acfcec9083cdca500
@@ -2205,8 +2205,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4043cbeb8a08fca2fdd2ea703e030d3a5574cc6002292ecc6f0e88c116472a3
-R cd57173ec450b44036cf8242b7c2fe1f
+P 8d170e07e20c21a5bb97fdc8c2d01d92178f5fe740e60d203e4621747cfce33e
+R 63b5eb42616efb9e489a03771c227de0
+T *branch * ancient-date-fix
+T *sym-ancient-date-fix *
+T -sym-trunk *
 U drh
-Z a06494827a8461d8ba3867ea1f761ae1
+Z baa6c6f17edc1a9ecec4f4cec4c126b5
 # Remove this line to create a well-formed Fossil manifest.
