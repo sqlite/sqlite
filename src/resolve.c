@@ -349,7 +349,7 @@ static int lookupName(
         pTab = pItem->pSTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
-        assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->sq.pSelect));
+        assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem));
         if( pItem->fg.isNestedFrom ){
           /* In this case, pItem is a subquery that has been formed from a
           ** parenthesized subset of the FROM clause terms.  Example:
@@ -358,8 +358,12 @@ static int lookupName(
           **             This pItem -------------^
           */
           int hit = 0;
-          assert( pItem->sq.pSelect!=0 );
-          pEList = pItem->sq.pSelect->pEList;
+          Select *pSel;
+          assert( pItem->fg.isSubquery );
+          assert( pItem->u4.pSubq!=0 );
+          pSel = pItem->u4.pSubq->pSelect;
+          assert( pSel!=0 );
+          pEList = pSel->pEList;
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
@@ -1880,7 +1884,11 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** moves the pOrderBy down to the sub-query. It will be moved back
     ** after the names have been resolved.  */
     if( p->selFlags & SF_Converted ){
-      Select *pSub = p->pSrc->a[0].sq.pSelect;
+      Select *pSub;
+      assert( p->pSrc->a[0].fg.isSubquery );
+      assert( p->pSrc->a[0].u4.pSubq!=0 );
+      pSub = p->pSrc->a[0].u4.pSubq->pSelect;
+      assert( pSub!=0 );
       assert( p->pSrc->nSrc==1 && p->pOrderBy );
       assert( pSub->pPrior && pSub->pOrderBy==0 );
       pSub->pOrderBy = p->pOrderBy;
@@ -1893,13 +1901,15 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     for(i=0; i<p->pSrc->nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
       assert( pItem->zName!=0
-              || pItem->sq.pSelect!=0 );  /* Test of tag-20240424-1*/
-      if( pItem->sq.pSelect && (pItem->sq.pSelect->selFlags & SF_Resolved)==0 ){
+              || pItem->fg.isSubquery );  /* Test of tag-20240424-1*/
+      if( pItem->fg.isSubquery
+       && (pItem->u4.pSubq->pSelect->selFlags & SF_Resolved)==0
+      ){
         int nRef = pOuterNC ? pOuterNC->nRef : 0;
         const char *zSavedContext = pParse->zAuthContext;
 
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
-        sqlite3ResolveSelectNames(pParse, pItem->sq.pSelect, pOuterNC);
+        sqlite3ResolveSelectNames(pParse, pItem->u4.pSubq->pSelect, pOuterNC);
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr ) return WRC_Abort;
         assert( db->mallocFailed==0 );
@@ -2001,7 +2011,10 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** These integers will be replaced by copies of the corresponding result
     ** set expressions by the call to resolveOrderGroupBy() below.  */
     if( p->selFlags & SF_Converted ){
-      Select *pSub = p->pSrc->a[0].sq.pSelect;
+      Select *pSub;
+      assert( p->pSrc->a[0].fg.isSubquery );
+      pSub = p->pSrc->a[0].u4.pSubq->pSelect;
+      assert( pSub!=0 );
       p->pOrderBy = pSub->pOrderBy;
       pSub->pOrderBy = 0;
     }

@@ -4914,11 +4914,38 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
     for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
       if( pItem->iCursor>=0 ) continue;
       pItem->iCursor = pParse->nTab++;
-      if( pItem->sq.pSelect ){
-        sqlite3SrcListAssignCursors(pParse, pItem->sq.pSelect->pSrc);
+      if( pItem->fg.isSubquery ){
+        assert( pItem->u4.pSubq!=0 );
+        assert( pItem->u4.pSubq->pSelect!=0 );
+        assert( pItem->u4.pSubq->pSelect->pSrc!=0 );
+        sqlite3SrcListAssignCursors(pParse, pItem->u4.pSubq->pSelect->pSrc);
       }
     }
   }
+}
+
+/*
+** Delete a Subquery object and its substructure.
+*/
+void sqlite3SubqueryDelete(sqlite3 *db, Subquery *pSubq){
+  assert( pSubq!=0 && pSubq->pSelect!=0 );
+  sqlite3SelectDelete(db, pSubq->pSelect);
+  sqlite3DbFree(db, pSubq);
+}
+
+/*
+** Remove a Subquery from a SrcItem.  Return the associated Select object.
+** The returned Select becomes the responsibility of the caller.
+*/
+Select *sqlite3SubqueryDetach(sqlite3 *db, SrcItem *pItem){
+  Select *pSel;
+  assert( pItem!=0 );
+  assert( pItem->fg.isSubquery );
+  pSel = pItem->u4.pSubq->pSelect;
+  sqlite3DbFree(db, pItem->u4.pSubq);
+  pItem->u4.pSubq = 0;
+  pItem->fg.isSubquery = 0;
+  return pSel;
 }
 
 /*
@@ -4932,22 +4959,19 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
  
     /* Check invariants on SrcItem */
-    assert( pItem->sq.pSelect==0
-         || (pItem->sq.pSelect->selFlags & SF_MultiValue)==0
-         || (pItem->fg.hadSchema==0
-              && (pItem->fg.fixedSchema || pItem->u4.zDatabase==0)) );
+    assert( !pItem->fg.hadSchema || !pItem->fg.isSubquery );
     assert( pItem->fg.hadSchema==0 || pItem->fg.fixedSchema==1 );
-
 
     if( pItem->zName ) sqlite3DbNNFreeNN(db, pItem->zName);
     if( pItem->zAlias ) sqlite3DbNNFreeNN(db, pItem->zAlias);
-    if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+    if( pItem->fg.isSubquery ){
+      sqlite3SubqueryDelete(db, pItem->u4.pSubq);
+    }else if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
       sqlite3DbNNFreeNN(db, pItem->u4.zDatabase);
     }
     if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
     if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
     sqlite3DeleteTable(db, pItem->pSTab);
-    if( pItem->sq.pSelect ) sqlite3SelectDelete(db, pItem->sq.pSelect);
     if( pItem->fg.isUsing ){
       sqlite3IdListDelete(db, pItem->u3.pUsing);
     }else if( pItem->u3.pOn ){
@@ -4956,6 +4980,52 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   }
   sqlite3DbNNFreeNN(db, pList);
 }
+
+/*
+** Attach a Subquery object to pItem->uv.pSubq.  Set the
+** pSelect value but leave all the other values initialized
+** to zero.
+**
+** A copy of the Select object is made if dupSelect is true, and the
+** SrcItem takes responsibility for deleting the copy.  If dupSelect is
+** false, ownership of the Select passes to the SrcItem.  Either way,
+** the SrcItem will take responsibility for deleting the Select.
+**
+** When dupSelect is zero, that means the Select might get deleted right
+** away if there is an OOM error.  Beware.
+**
+** Return non-zero on success.  Return zero on an OOM error.
+*/
+int sqlite3SrcItemAttachSubquery(
+  Parse *pParse,     /* Parsing context */
+  SrcItem *pItem,    /* Item to which the subquery is to be attached */
+  Select *pSelect,   /* The subquery SELECT.  Must be non-NULL */
+  int dupSelect      /* If true, attach a copy of pSelect, not pSelect itself.*/
+){
+  Subquery *p;
+  if( pSelect==0 ) return SQLITE_OK;
+  assert( pItem->fg.isSubquery==0 );
+  if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+    sqlite3DbFree(pParse->db, pItem->u4.zDatabase);
+    pItem->u4.zDatabase = 0;
+  }
+  pItem->fg.fixedSchema = 0;
+  if( dupSelect ){
+    pSelect = sqlite3SelectDup(pParse->db, pSelect, 0);
+    if( pSelect==0 ) return 0;
+  }
+  p = pItem->u4.pSubq = sqlite3DbMallocRawNN(pParse->db, sizeof(Subquery));
+  if( p==0 ){
+    sqlite3SelectDelete(pParse->db, pSelect);
+    return 0;
+  }
+  pItem->fg.isSubquery = 1;
+  p->pSelect = pSelect;
+  assert( offsetof(Subquery, pSelect)==0 );
+  memset(((char*)p)+sizeof(p->pSelect), 0, sizeof(*p)-sizeof(p->pSelect));
+  return 1;
+}
+
 
 /*
 ** This routine is called by the parser to add a new term to the
@@ -5006,10 +5076,12 @@ SrcList *sqlite3SrcListAppendFromTerm(
   if( pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
+  assert( pSubquery==0 || pDatabase==0 );
   if( pSubquery ){
-    pItem->sq.pSelect = pSubquery;
-    if( pSubquery->selFlags & SF_NestedFrom ){
-      pItem->fg.isNestedFrom = 1;
+    if( sqlite3SrcItemAttachSubquery(pParse, pItem, pSubquery, 0) ){
+      if( pSubquery->selFlags & SF_NestedFrom ){
+        pItem->fg.isNestedFrom = 1;
+      }
     }
   }
   assert( pOnUsing==0 || pOnUsing->pOn==0 || pOnUsing->pUsing==0 );

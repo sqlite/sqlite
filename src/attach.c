@@ -479,7 +479,7 @@ static int fixSelectCb(Walker *p, Select *pSelect){
 
   if( NEVER(pList==0) ) return WRC_Continue;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pFix->bTemp==0 ){
+    if( pFix->bTemp==0 && pItem->fg.isSubquery==0 ){
       if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
         if( iDb!=sqlite3FindDbName(db, pItem->u4.zDatabase) ){
           sqlite3ErrorMsg(pFix->pParse,

@@ -317,7 +317,9 @@ void sqlite3WhereAddScanStatus(
         sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
       }
     }else{
-      int addr = pSrclist->a[pLvl->iFrom].sq.addrFillSub;
+      int addr;
+      assert( pSrclist->a[pLvl->iFrom].fg.isSubquery );
+      addr = pSrclist->a[pLvl->iFrom].u4.pSubq->addrFillSub;
       VdbeOp *pOp = sqlite3VdbeGetOp(v, addr-1);
       assert( sqlite3VdbeDb(v)->mallocFailed || pOp->opcode==OP_InitCoroutine );
       assert( sqlite3VdbeDb(v)->mallocFailed || pOp->p2>addr );
@@ -1510,8 +1512,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->fg.viaCoroutine ){
-    int regYield = pTabItem->sq.regReturn;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield,0,pTabItem->sq.addrFillSub);
+    int regYield;
+    Subquery *pSubq;
+    assert( pTabItem->fg.isSubquery && pTabItem->u4.pSubq!=0 );
+    pSubq = pTabItem->u4.pSubq;
+    regYield = pSubq->regReturn;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSubq->addrFillSub);
     pLevel->p2 =  sqlite3VdbeAddOp2(v, OP_Yield, regYield, addrBrk);
     VdbeCoverage(v);
     VdbeComment((v, "next row of %s", pTabItem->pSTab->zName));
@@ -2819,9 +2825,13 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     pRight = &pWInfo->pTabList->a[pWInfo->a[k].iFrom];
     mAll |= pWInfo->a[k].pWLoop->maskSelf;
     if( pRight->fg.viaCoroutine ){
+      Subquery *pSubq;
+      assert( pRight->fg.isSubquery && pRight->u4.pSubq!=0 );
+      pSubq = pRight->u4.pSubq;
+      assert( pSubq->pSelect!=0 && pSubq->pSelect->pEList!=0 );
       sqlite3VdbeAddOp3(
-          v, OP_Null, 0, pRight->sq.regResult, 
-          pRight->sq.regResult + pRight->sq.pSelect->pEList->nExpr-1
+          v, OP_Null, 0, pSubq->regResult, 
+          pSubq->regResult + pSubq->pSelect->pEList->nExpr-1
       );
     }
     sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);

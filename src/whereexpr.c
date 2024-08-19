@@ -958,7 +958,9 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
     if( ALWAYS(pSrc!=0) ){
       int i;
       for(i=0; i<pSrc->nSrc; i++){
-        mask |= exprSelectUsage(pMaskSet, pSrc->a[i].sq.pSelect);
+        if( pSrc->a[i].fg.isSubquery ){
+          mask |= exprSelectUsage(pMaskSet, pSrc->a[i].u4.pSubq->pSelect);
+        }
         if( pSrc->a[i].fg.isUsing==0 ){
           mask |= sqlite3WhereExprUsage(pMaskSet, pSrc->a[i].u3.pOn);
         }

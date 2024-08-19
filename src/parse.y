@@ -742,10 +742,20 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
         SrcItem *pOld = F->a;
         assert( pOld->fg.fixedSchema==0 );
         pNew->zName = pOld->zName;
-        pNew->u4.zDatabase = pOld->u4.zDatabase;
-        pNew->sq.pSelect = pOld->sq.pSelect;
-        if( pNew->sq.pSelect && (pNew->sq.pSelect->selFlags & SF_NestedFrom)!=0 ){
-          pNew->fg.isNestedFrom = 1;
+        assert( pOld->fg.fixedSchema==0 );
+        if( pOld->fg.isSubquery ){
+          pNew->fg.isSubquery = 1;
+          pNew->u4.pSubq = pOld->u4.pSubq;
+          pOld->u4.pSubq = 0;
+          pOld->fg.isSubquery = 0;
+          if( pNew->u4.pSubq->pSelect
+           && (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0
+          ){
+            pNew->fg.isNestedFrom = 1;
+          }
+        }else{
+          pNew->u4.zDatabase = pOld->u4.zDatabase;
+          pOld->u4.zDatabase = 0;
         }
         if( pOld->fg.isTabFunc ){
           pNew->u1.pFuncArg = pOld->u1.pFuncArg;
@@ -753,8 +763,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pOld->fg.isTabFunc = 0;
           pNew->fg.isTabFunc = 1;
         }
-        pOld->zName = pOld->u4.zDatabase = 0;
-        pOld->sq.pSelect = 0;
+        pOld->zName = 0;
       }
       sqlite3SrcListDelete(pParse->db, F);
     }else{

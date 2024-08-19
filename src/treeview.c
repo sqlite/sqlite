@@ -230,19 +230,19 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1);
     n = 0;
-    if( pItem->sq.pSelect ) n++;
+    if( pItem->fg.isSubquery ) n++;
     if( pItem->fg.isTabFunc ) n++;
     if( pItem->fg.isUsing ) n++;
     if( pItem->fg.isUsing ){
       sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
     }
-    if( pItem->sq.pSelect ){
+    if( pItem->fg.isSubquery ){
       if( pItem->pSTab ){
         Table *pTab = pItem->pSTab;
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
-      assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->sq.pSelect) );
-      sqlite3TreeViewSelect(pView, pItem->sq.pSelect, (--n)>0);
+      assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem) );
+      sqlite3TreeViewSelect(pView, pItem->u4.pSubq->pSelect, (--n)>0);
     }
     if( pItem->fg.isTabFunc ){
       sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");

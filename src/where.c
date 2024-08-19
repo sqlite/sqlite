@@ -1161,9 +1161,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   /* Fill the automatic index with content */
   assert( pSrc == &pWC->pWInfo->pTabList->a[pLevel->iFrom] );
   if( pSrc->fg.viaCoroutine ){
-    int regYield = pSrc->sq.regReturn;
+    int regYield;
+    Subquery *pSubq;
+    assert( pSrc->fg.isSubquery );
+    pSubq = pSrc->u4.pSubq;
+    assert( pSubq!=0 );
+    regYield = pSubq->regReturn;
     addrCounter = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSrc->sq.addrFillSub);
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSubq->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
     VdbeComment((v, "next row of %s", pSrc->pSTab->zName));
@@ -1188,11 +1193,12 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   if( pSrc->fg.viaCoroutine ){
+    assert( pSrc->fg.isSubquery && pSrc->u4.pSubq!=0 );
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
     testcase( pParse->db->mallocFailed );
     assert( pLevel->iIdxCur>0 );
     translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
-                          pSrc->sq.regResult, pLevel->iIdxCur);
+                          pSrc->u4.pSubq->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
     pSrc->fg.viaCoroutine = 0;
   }else{
@@ -4010,9 +4016,9 @@ static int whereLoopAddBtree(
 #endif
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew, rSize);
-      if( pSrc->sq.pSelect ){
+      if( pSrc->fg.isSubquery ){
         if( pSrc->fg.viaCoroutine ) pNew->wsFlags |= WHERE_COROUTINE;
-        pNew->u.btree.pOrderBy = pSrc->sq.pSelect->pOrderBy;
+        pNew->u.btree.pOrderBy = pSrc->u4.pSubq->pSelect->pOrderBy;
       }
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -6421,8 +6427,8 @@ static SQLITE_NOINLINE void whereReverseScanOrder(WhereInfo *pWInfo){
     SrcItem *pItem = &pWInfo->pTabList->a[ii];
     if( !pItem->fg.isCte
      || pItem->u2.pCteUse->eM10d!=M10d_Yes
-     || NEVER(pItem->sq.pSelect==0)
-     || pItem->sq.pSelect->pOrderBy==0
+     || NEVER(pItem->fg.isSubquery==0)
+     || pItem->u4.pSubq->pSelect->pOrderBy==0
     ){
       pWInfo->revMask |= MASKBIT(ii);
     }
@@ -7115,11 +7121,14 @@ WhereInfo *sqlite3WhereBegin(
     wsFlags = pLevel->pWLoop->wsFlags;
     pSrc = &pTabList->a[pLevel->iFrom];
     if( pSrc->fg.isMaterialized ){
+      Subquery *pSubq;
+      assert( pSrc->fg.isSubquery );
+      pSubq = pSrc->u4.pSubq;
       if( pSrc->fg.isCorrelated ){
-        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->sq.regReturn,pSrc->sq.addrFillSub);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSubq->regReturn, pSubq->addrFillSub);
       }else{
         int iOnce = sqlite3VdbeAddOp0(v, OP_Once);  VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_Gosub, pSrc->sq.regReturn,pSrc->sq.addrFillSub);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pSubq->regReturn, pSubq->addrFillSub);
         sqlite3VdbeJumpHere(v, iOnce);
       }
     }
@@ -7334,7 +7343,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         assert( pLevel->iTabCur==pSrc->iCursor );
         if( pSrc->fg.viaCoroutine ){
           int m, n;
-          n = pSrc->sq.regResult;
+          assert( pSrc->fg.isSubquery );
+          n = pSrc->u4.pSubq->regResult;
           assert( pSrc->pSTab!=0 );
           m = pSrc->pSTab->nCol;
           sqlite3VdbeAddOp3(v, OP_Null, 0, n, n+m-1);
@@ -7388,9 +7398,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( pTabItem->fg.viaCoroutine ){
       testcase( pParse->db->mallocFailed );
-      assert( pTabItem->sq.regResult>=0 );
+      assert( pTabItem->fg.isSubquery );
+      assert( pTabItem->u4.pSubq->regResult>=0 );
       translateColumnToCopy(pParse, pLevel->addrBody, pLevel->iTabCur,
-                            pTabItem->sq.regResult, 0);
+                            pTabItem->u4.pSubq->regResult, 0);
       continue;
     }
 

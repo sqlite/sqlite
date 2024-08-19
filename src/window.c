@@ -1077,9 +1077,10 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     assert( pSub!=0 || p->pSrc==0 ); /* Due to db->mallocFailed test inside
                                      ** of sqlite3DbMallocRawNN() called from
                                      ** sqlite3SrcListAppend() */
-    if( p->pSrc ){
+    if( p->pSrc==0 ){
+      sqlite3SelectDelete(db, pSub);
+    }else if( sqlite3SrcItemAttachSubquery(pParse, &p->pSrc->a[0], pSub, 0) ){
       Table *pTab2;
-      p->pSrc->a[0].sq.pSelect = pSub;
       p->pSrc->a[0].fg.isCorrelated = 1;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded|SF_OrderByReqd;
@@ -1101,8 +1102,6 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
         w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
         sqlite3WalkSelect(&w, pSub);
       }
-    }else{
-      sqlite3SelectDelete(db, pSub);
     }
     if( db->mallocFailed ) rc = SQLITE_NOMEM;
 
@@ -1389,10 +1388,15 @@ int sqlite3WindowCompare(
 ** and initialize registers and cursors used by sqlite3WindowCodeStep().
 */
 void sqlite3WindowCodeInit(Parse *pParse, Select *pSelect){
-  int nEphExpr = pSelect->pSrc->a[0].sq.pSelect->pEList->nExpr;
-  Window *pMWin = pSelect->pWin;
   Window *pWin;
-  Vdbe *v = sqlite3GetVdbe(pParse);
+  int nEphExpr;
+  Window *pMWin;
+  Vdbe *v;
+
+  assert( pSelect->pSrc->a[0].fg.isSubquery );
+  nEphExpr = pSelect->pSrc->a[0].u4.pSubq->pSelect->pEList->nExpr;
+  pMWin = pSelect->pWin;
+  v = sqlite3GetVdbe(pParse);
 
   sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, nEphExpr);
   sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+1, pMWin->iEphCsr);

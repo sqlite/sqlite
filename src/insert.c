@@ -585,8 +585,9 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
   if( ALWAYS(pVal) && pVal->pSrc->nSrc>0 ){
     SrcItem *pItem = &pVal->pSrc->a[0];
-    sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->sq.regReturn);
-    sqlite3VdbeJumpHere(pParse->pVdbe, pItem->sq.addrFillSub - 1);
+    assert( pItem->fg.isSubquery && pItem->u4.pSubq!=0 );
+    sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->u4.pSubq->regReturn);
+    sqlite3VdbeJumpHere(pParse->pVdbe, pItem->u4.pSubq->addrFillSub - 1);
   }
 }
 
@@ -714,6 +715,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
       if( pRet ){
         SelectDest dest;
+        Subquery *pSubq;
         pRet->pSrc->nSrc = 1;
         pRet->pPrior = pLeft->pPrior;
         pRet->op = pLeft->op;
@@ -723,29 +725,31 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         assert( pLeft->pNext==0 );
         assert( pRet->pNext==0 );
         p = &pRet->pSrc->a[0];
-        p->sq.pSelect = pLeft;
         p->fg.viaCoroutine = 1;
-        p->sq.addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
-        p->sq.regReturn = ++pParse->nMem;
         p->iCursor = -1;
         p->u1.nRow = 2;
-        sqlite3VdbeAddOp3(v, OP_InitCoroutine,
-                          p->sq.regReturn, 0, p->sq.addrFillSub);
-        sqlite3SelectDestInit(&dest, SRT_Coroutine, p->sq.regReturn);
+        if( sqlite3SrcItemAttachSubquery(pParse, p, pLeft, 0) ){
+          pSubq = p->u4.pSubq;
+          pSubq->addrFillSub = sqlite3VdbeCurrentAddr(v) + 1;
+          pSubq->regReturn = ++pParse->nMem;
+          sqlite3VdbeAddOp3(v, OP_InitCoroutine,
+                            pSubq->regReturn, 0, pSubq->addrFillSub);
+          sqlite3SelectDestInit(&dest, SRT_Coroutine, pSubq->regReturn);
 
-        /* Allocate registers for the output of the co-routine. Do so so
-        ** that there are two unused registers immediately before those
-        ** used by the co-routine. This allows the code in sqlite3Insert()
-        ** to use these registers directly, instead of copying the output
-        ** of the co-routine to a separate array for processing.  */
-        dest.iSdst = pParse->nMem + 3; 
-        dest.nSdst = pLeft->pEList->nExpr;
-        pParse->nMem += 2 + dest.nSdst;
+          /* Allocate registers for the output of the co-routine. Do so so
+          ** that there are two unused registers immediately before those
+          ** used by the co-routine. This allows the code in sqlite3Insert()
+          ** to use these registers directly, instead of copying the output
+          ** of the co-routine to a separate array for processing.  */
+          dest.iSdst = pParse->nMem + 3; 
+          dest.nSdst = pLeft->pEList->nExpr;
+          pParse->nMem += 2 + dest.nSdst;
 
-        pLeft->selFlags |= SF_MultiValue;
-        sqlite3Select(pParse, pLeft, &dest);
-        p->sq.regResult = dest.iSdst;
-        assert( pParse->nErr || dest.iSdst>0 );
+          pLeft->selFlags |= SF_MultiValue;
+          sqlite3Select(pParse, pLeft, &dest);
+          pSubq->regResult = dest.iSdst;
+          assert( pParse->nErr || dest.iSdst>0 );
+        }
         pLeft = pRet;
       }
     }else{
@@ -755,12 +759,18 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
     }
   
     if( pParse->nErr==0 ){
+      Subquery *pSubq;
       assert( p!=0 );
-      if( p->sq.pSelect->pEList->nExpr!=pRow->nExpr ){
-        sqlite3SelectWrongNumTermsError(pParse, p->sq.pSelect);
+      assert( p->fg.isSubquery );
+      pSubq = p->u4.pSubq;
+      assert( pSubq!=0 );
+      assert( pSubq->pSelect!=0 );
+      assert( pSubq->pSelect->pEList!=0 );
+      if( pSubq->pSelect->pEList->nExpr!=pRow->nExpr ){
+        sqlite3SelectWrongNumTermsError(pParse, pSubq->pSelect);
       }else{
-        sqlite3ExprCodeExprList(pParse, pRow, p->sq.regResult, 0, 0);
-        sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, p->sq.regReturn);
+        sqlite3ExprCodeExprList(pParse, pRow, pSubq->regResult, 0, 0);
+        sqlite3VdbeAddOp1(pParse->pVdbe, OP_Yield, pSubq->regReturn);
       }
     }
     sqlite3ExprListDelete(pParse->db, pRow);
@@ -1111,9 +1121,14 @@ void sqlite3Insert(
      && pSelect->pPrior==0
     ){
       SrcItem *pItem = &pSelect->pSrc->a[0];
-      dest.iSDParm = pItem->sq.regReturn;
-      regFromSelect = pItem->sq.regResult;
-      nColumn = pItem->sq.pSelect->pEList->nExpr;
+      Subquery *pSubq;
+      assert( pItem->fg.isSubquery );
+      pSubq = pItem->u4.pSubq;
+      dest.iSDParm = pSubq->regReturn;
+      regFromSelect = pSubq->regResult;
+      assert( pSubq->pSelect!=0 );
+      assert( pSubq->pSelect->pEList!=0 );
+      nColumn = pSubq->pSelect->pEList->nExpr;
       ExplainQueryPlan((pParse, 0, "SCAN %S", pItem));
       if( bIdListInOrder && nColumn==pTab->nCol ){
         regData = regFromSelect;
@@ -3033,7 +3048,7 @@ static int xferOptimization(
   if( pSelect->pSrc->nSrc!=1 ){
     return 0;   /* FROM clause must have exactly one term */
   }
-  if( pSelect->pSrc->a[0].sq.pSelect ){
+  if( pSelect->pSrc->a[0].fg.isSubquery ){
     return 0;   /* FROM clause cannot contain a subquery */
   }
   if( pSelect->pWhere ){

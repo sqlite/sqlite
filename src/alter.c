@@ -1366,8 +1366,9 @@ static int renameResolveTrigger(Parse *pParse){
           int i;
           for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
             SrcItem *p = &pStep->pFrom->a[i];
-            if( p->sq.pSelect ){
-              sqlite3SelectPrep(pParse, p->sq.pSelect, 0);
+            if( p->fg.isSubquery ){
+              assert( p->u4.pSubq!=0 );
+              sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
             }
           }
         }
@@ -1435,8 +1436,12 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
     }
     if( pStep->pFrom ){
       int i;
-      for(i=0; i<pStep->pFrom->nSrc; i++){
-        sqlite3WalkSelect(pWalker, pStep->pFrom->a[i].sq.pSelect);
+      SrcList *pFrom = pStep->pFrom;
+      for(i=0; i<pFrom->nSrc; i++){
+        if( pFrom->a[i].fg.isSubquery ){
+          assert( pFrom->a[i].u4.pSubq!=0 );
+          sqlite3WalkSelect(pWalker, pFrom->a[i].u4.pSubq->pSelect);
+        }
       }
     }
   }

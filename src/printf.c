@@ -848,16 +848,19 @@ void sqlite3_str_vappendf(
         if( pItem->zAlias && !flag_altform2 ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else if( pItem->zName ){
-          if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+          if( pItem->fg.fixedSchema==0
+           && pItem->fg.isSubquery==0
+           && pItem->u4.zDatabase!=0
+          ){
             sqlite3_str_appendall(pAccum, pItem->u4.zDatabase);
             sqlite3_str_append(pAccum, ".", 1);
           }
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
-        }else{
-          Select *pSel = pItem->sq.pSelect;
-          assert( pSel!=0 ); /* Because of tag-20240424-1 */
+        }else if( pItem->fg.isSubquery ){/* Because of tag-20240424-1 */
+          Select *pSel = pItem->u4.pSubq->pSelect;
+          assert( pSel!=0 ); 
           if( pSel->selFlags & SF_NestedFrom ){
             sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);
           }else if( pSel->selFlags & SF_MultiValue ){
@@ -867,6 +870,8 @@ void sqlite3_str_vappendf(
           }else{
             sqlite3_str_appendf(pAccum, "(subquery-%u)", pSel->selId);
           }
+        }else{
+          sqlite3_str_appendf(pAccum, "(unknown-data-source-%p)", pItem);
         }
         length = width = 0;
         break;

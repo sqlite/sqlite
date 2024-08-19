@@ -1335,6 +1335,7 @@ typedef struct Savepoint Savepoint;
 typedef struct Select Select;
 typedef struct SQLiteThread SQLiteThread;
 typedef struct SelectDest SelectDest;
+typedef struct Subquery Subquery;
 typedef struct SrcItem SrcItem;
 typedef struct SrcList SrcList;
 typedef struct sqlite3_str StrAccum; /* Internal alias for sqlite3_str */
@@ -3276,6 +3277,16 @@ struct IdList {
 #define EU4_EXPR   2   /* Uses IdList.a.u4.pExpr -- NOT CURRENTLY USED */
 
 /*
+** Details of the implementation of a subquery.
+*/
+struct Subquery {
+  Select *pSelect;  /* A SELECT statement used in place of a table name */
+  int addrFillSub;  /* Address of subroutine to initialize a subquery */
+  int regReturn;    /* Register holding return address of addrFillSub */
+  int regResult;    /* Registers holding results of a co-routine */
+};
+
+/*
 ** The SrcItem object represents a single term in the FROM clause of a query.
 ** The SrcList object is mostly an array of SrcItems.
 **
@@ -3287,10 +3298,15 @@ struct IdList {
 ** In the colUsed field, the high-order bit (bit 63) is set if the table
 ** contains more than 63 columns and the 64-th or later column is used.
 **
+** Intenstive use of "union" helps keep the size of the object small.  This
+** has been shown to boost performance due to less time spend initializing
+** fields to zero when a new instance of this object is allocated.  The unions
+** also help SrcItem, and hence SrcList and Select, use less memory.
+**
 ** Union member validity:
 **
-**    u1.zIndexedBy      fg.isIndexedBy && !fg.isTabFunc
-**    u1.pFuncArg        fg.isTabFunc   && !fg.isIndexedBy
+**    u1.zIndexedBy      fg.isIndexedBy
+**    u1.pFuncArg        fg.isTabFunc
 **    u1.nRow            !fg.isTabFunc  && !fg.isIndexedBy
 **
 **    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
@@ -3299,23 +3315,19 @@ struct IdList {
 **    u3.pOn             fg.isUsing==0
 **    u3.pUsing          fg.isUsing==1
 **
-**    u4.zDatabase       fg.fixedSchema==0
+**    u4.zDatabase       fg.fixedSchema==0 && !fg.isSubquery
 **    u4.pSchema         fg.fixedSchema==1
+**    u4.pSubq           fg.isSubquery
 */
 struct SrcItem {
   char *zName;      /* Name of the table */
   char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
   Table *pSTab;     /* Table object for zName. Mnemonic: Srcitem-TABle */
-  struct SrcItemSubquery {
-    Select *pSelect;  /* A SELECT statement used in place of a table name */
-    int addrFillSub;  /* Address of subroutine to initialize a subquery */
-    int regReturn;    /* Register holding return address of addrFillSub */
-    int regResult;    /* Registers holding results of a co-routine */
-  } sq;
   struct {
     u8 jointype;      /* Type of join between this table and the previous */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
+    unsigned isSubquery :1;    /* True if this term is a subquery */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
     unsigned isMaterialized:1; /* This is a materialized view */
@@ -3350,6 +3362,7 @@ struct SrcItem {
   union {
     Schema *pSchema;  /* Schema to which this item is fixed */
     char *zDatabase;  /* Name of database holding this table */
+    Subquery *pSubq;  /* Description of a subquery */
   } u4;
 };
 
@@ -3610,8 +3623,10 @@ struct Select {
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 #define SF_Correlated   0x20000000 /* True if references the outer context */
 
-/* True if S exists and has SF_NestedFrom */
-#define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
+/* True if SrcList item X is a subquery that has SF_NestedFrom */
+#define IsNestedFrom(X) \
+   ((X)->fg.isSubquery && \
+    ((X)->u4.pSubq->pSelect->selFlags&SF_NestedFrom)!=0)
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -5003,6 +5018,9 @@ int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
+void sqlite3SubqueryDelete(sqlite3*,Subquery*);
+Select *sqlite3SubqueryDetach(sqlite3*,SrcItem*);
+int sqlite3SrcItemAttachSubquery(Parse*, SrcItem*, Select*, int);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, OnOrUsing*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);
