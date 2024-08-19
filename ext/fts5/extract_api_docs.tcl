@@ -108,8 +108,11 @@ proc get_tokenizer_docs {data} {
       append res "<dt><b>$line</b></dt><dd><p style=margin-top:0>\n"
       continue
     }
+    if {[regexp {FTS5_TOKENIZER} $line]} {
+      set line </dl><p>
+    }
     if {[regexp {SYNONYM SUPPORT} $line]} {
-      set line "</dl><h3>Synonym Support</h3>"
+      set line "<h3>Synonym Support</h3>"
     }
     if {[string trim $line] == ""} {
       append res "<p>\n"

@@ -429,7 +429,7 @@ struct Fts5ExtensionApi {
 **   argument passed to this function is a pointer to an Fts5Tokenizer object
 **   returned by an earlier call to xCreate().
 **
-**   The second argument indicates the reason that FTS5 is requesting
+**   The third argument indicates the reason that FTS5 is requesting
 **   tokenization of the supplied text. This is always one of the following
 **   four values:
 **
@@ -452,6 +452,13 @@ struct Fts5ExtensionApi {
 **            function. Or an fts5_api.xColumnSize() request made by the same
 **            on a columnsize=0 database.  
 **   </ul>
+**
+**   The sixth and seventh arguments passed to xTokenize() - pLocale and
+**   nLocale - are a pointer to a buffer containing the locale to use for
+**   tokenization (e.g. "en_US") and its size in bytes, respectively. The
+**   pLocale buffer is not nul-terminated. pLocale may be passed NULL (in
+**   which case nLocale is always 0) to indicate that the tokenizer should
+**   use its default locale.
 **
 **   For each token in the input string, the supplied callback xToken() must
 **   be invoked. The first argument to it should be a copy of the pointer
@@ -483,6 +490,21 @@ struct Fts5ExtensionApi {
 **   tokenizer should use its default locale. Otherwise, pLocale points to
 **   an nLocale byte buffer containing the name of the locale to use as utf-8 
 **   text. pLocale is not nul-terminated.
+**
+** FTS5_TOKENIZER
+**
+** There is also an fts5_tokenizer object. This is an older version of
+** fts5_tokenizer_v2. It is similar except that:
+**
+**  <ul>
+**    <li> There is no "iVersion" field, and
+**    <li> The xTokenize() method does not take a locale argument.
+**  </ul>
+**
+** fts5_tokenizer tokenizers should be registered with the xCreateTokenizer()
+** function, instead of xCreateTokenizer_v2(). Tokenizers implementations 
+** registered using either API may be retrieved using both xFindTokenizer()
+** and xFindTokenizer_v2().
 **
 ** SYNONYM SUPPORT
 **
