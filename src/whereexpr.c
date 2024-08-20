@@ -220,11 +220,20 @@ static int isLikeOrGlob(
   }
   if( z ){
 
-    /* Count the number of prefix characters prior to the first wildcard */
+    /* Count the number of prefix characters prior to the first wildcard.
+    ** If the underlying database has a UTF16LE encoding, then only consider
+    ** ASCII characters.  Note that the encoding of z[] is UTF8 - we are
+    ** dealing with only UTF8 here in this code, but the database engine
+    ** itself might be processing content using a different encoding. */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
-      if( c==wc[3] && z[cnt]!=0 ) cnt++;
+      if( c==wc[3] && z[cnt]!=0 ){
+        cnt++;
+      }else if( c>=0x80 && ENC(db)==SQLITE_UTF16LE ){
+         cnt--;
+         break;
+      }
     }
 
     /* The optimization is possible only if (1) the pattern does not begin
