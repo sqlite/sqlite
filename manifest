@@ -1,5 +1,5 @@
-C Fix\sleap-year\shandling\sfor\sdates\sprior\sto\s0400-03-01.
-D 2024-08-19T14:23:57.073
+C The\sLIKE/GLOB\soptimization\srestricts\sits\sattention\sto\nthe\spattern\sprefix\sthat\sis\sall\sASCII.
+D 2024-08-20T12:15:08.795
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -842,7 +842,7 @@ F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 839956666ce9f6b5d4951fc1f27e976951aac66920c82f9cdc5036b61b54ef7b
 F src/whereInt.h 82a13766f13d1a53b05387c2e60726289ef26404bc7b9b1f7770204d97357fb8
 F src/wherecode.c f5255f49d1f42b6e7e6b0362ff3522fa88cbcaa7213e52f9374744027ecdebca
-F src/whereexpr.c 67d15caf88a1a9528283d68ff578e024cf9fe810b517bb0343e5aaf695ad97dd
+F src/whereexpr.c c9a7a316b90db8904721a3c7bef7ed7784c290b50e66b38d7ceb6b3d55b4369d
 F src/window.c 5d95122dd330bfaebd732358c8ef067c5a9394a53ac249470d611d0ce2c52be2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2192,9 +2192,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9c2ab54ba1f5f46360f1b4f35d849cd3f080e6fc2b6c60e91b16c63f69a1e33
-Q +474b7e34b83bc5e85854bc3b386f31ff39b390549d89b94921f33bbc5b658d1d
-R 1e40592919c74a0f6624604d0cccc039
+P 6767bf1c6713795a360da218a4e0f8106a264b54333849dd18b951ef6a82cba4
+Q +a5797ebdea423afc3d2d3bd8adaf1575d33a01f594c0c315afcb1499f1718e9b
+R 6ae4235d229175ca41696bab784b34cf
 U drh
-Z e341397c58ff7c6668cbd648792386ce
+Z 43e922e062feb2d968832b46f3a6397c
 # Remove this line to create a well-formed Fossil manifest.
