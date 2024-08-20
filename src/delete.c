@@ -24,8 +24,8 @@
 **
 ** The following fields are initialized appropriate in pSrc:
 **
-**    pSrc->a[0].spTab      Pointer to the Table object
-**    pSrc->a[0].pIndex     Pointer to the INDEXED BY index, if there is one
+**    pSrc->a[0].spTab        Pointer to the Table object
+**    pSrc->a[0].u2.pIBIndex  Pointer to the INDEXED BY index, if there is one
 **
 */
 Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){

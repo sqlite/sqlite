@@ -3627,7 +3627,7 @@ struct Select {
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 #define SF_Correlated   0x20000000 /* True if references the outer context */
 
-/* True if SrcList item X is a subquery that has SF_NestedFrom */
+/* True if SrcItem X is a subquery that has SF_NestedFrom */
 #define IsNestedFrom(X) \
    ((X)->fg.isSubquery && \
     ((X)->u4.pSubq->pSelect->selFlags&SF_NestedFrom)!=0)
