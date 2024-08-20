@@ -248,7 +248,7 @@ static int isLikeOrGlob(
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */
-      *pisComplete = c==wc[0] && z[cnt+1]==0;
+      *pisComplete = c==wc[0] && z[cnt+1]==0 && ENC(db)!=SQLITE_UTF16LE;
 
       /* Get the pattern prefix.  Remove all escapes from the prefix. */
       pPrefix = sqlite3Expr(db, TK_STRING, (char*)z);
