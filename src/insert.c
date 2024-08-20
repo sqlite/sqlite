@@ -585,9 +585,11 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
   if( ALWAYS(pVal) && pVal->pSrc->nSrc>0 ){
     SrcItem *pItem = &pVal->pSrc->a[0];
-    assert( pItem->fg.isSubquery && pItem->u4.pSubq!=0 );
-    sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->u4.pSubq->regReturn);
-    sqlite3VdbeJumpHere(pParse->pVdbe, pItem->u4.pSubq->addrFillSub - 1);
+    assert( (pItem->fg.isSubquery && pItem->u4.pSubq!=0) || pParse->nErr );
+    if( pItem->fg.isSubquery ){
+      sqlite3VdbeEndCoroutine(pParse->pVdbe, pItem->u4.pSubq->regReturn);
+      sqlite3VdbeJumpHere(pParse->pVdbe, pItem->u4.pSubq->addrFillSub - 1);
+    }
   }
 }
 

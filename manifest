@@ -1,5 +1,5 @@
-C Refactor\sthe\sSrcItem\sobject\sso\sthat\sinformation\sabout\ssubqueries\sis\sstored\nin\sa\sseparately\sallocated\sSubquery\sobject.\s\sThis\sreduces\sthe\smemory\srequirements\nfor\sSrcItem\sand\smakes\sthe\scode\srun\sfaster.\s\sIt\salso\sprovides\san\sexpansion\spath\nfor\ssubquery\sprocessing\sthat\sdoes\snot\sburden\ssimple\squeries.\s\sThe\scurrent\nchecking\smostly\sworks,\sbut\sthere\sare\sstill\sissues\sthat\sneed\sto\sbe\stracked\ndown\sand\sfixed.
-D 2024-08-19T22:48:30.539
+C Memory\sissues\sfixes\sso\sthat\smdevtest\snow\spasses.
+D 2024-08-20T16:50:21.429
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -702,7 +702,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 8b42fc7d9efdb2df05c30e8f91ff6cfbd979724ae24bf90269028468b7a13333
 F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c d243a17292e027c1d662e992fbd395123aacc4b74a4a9419d0b010088ba318dd
+F src/build.c 29ebc26d90a9d6e860a3018a6d61fb667c80ec8e80e3798c4164d2349ba28650
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
@@ -719,7 +719,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c b07865339e67869ff12d2eee3a1417f4779c742e2a51ae3d14ad45e5168f6f41
+F src/insert.c 37c0c12c6eea72c4dad77699b963be370ca6cbd7d18270ff04f5fe9d6031622d
 F src/json.c 5b6a1d6015997b9ee848a32948720bdb26a0ef2de5a2127ebf7355ce66dbdc0d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -2205,8 +2205,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f5aeef3cbc2c95267c8f7bf60d5c66971a76789669fb0e8f853273ff6f616f2
-R 0dac77664f5c62d0dcc882ea3148d6f4
+P 8ff5dda8448d7e1a533d7f27db2573ce68fa9956b9d9847ced45e83c1f06bab0
+R c585d13f1a80cb4428e40ac20e746454
 U drh
-Z a11cd0d49c593b1144d9510fd31aa2a7
+Z ce4831b3d2660999f30841c855773e8f
 # Remove this line to create a well-formed Fossil manifest.

@@ -5005,11 +5005,13 @@ int sqlite3SrcItemAttachSubquery(
   Subquery *p;
   if( pSelect==0 ) return SQLITE_OK;
   assert( pItem->fg.isSubquery==0 );
-  if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+  if( pItem->fg.fixedSchema ){
+    pItem->u4.pSchema = 0;
+    pItem->fg.fixedSchema = 0;
+  }else if( pItem->u4.zDatabase!=0 ){
     sqlite3DbFree(pParse->db, pItem->u4.zDatabase);
     pItem->u4.zDatabase = 0;
   }
-  pItem->fg.fixedSchema = 0;
   if( dupSelect ){
     pSelect = sqlite3SelectDup(pParse->db, pSelect, 0);
     if( pSelect==0 ) return 0;
