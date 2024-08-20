@@ -748,9 +748,8 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pNew->u4.pSubq = pOld->u4.pSubq;
           pOld->u4.pSubq = 0;
           pOld->fg.isSubquery = 0;
-          if( pNew->u4.pSubq->pSelect
-           && (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0
-          ){
+          assert( pNew->u4.pSubq!=0 && pNew->u4.pSubq->pSelect!=0 );
+          if( (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0 ){
             pNew->fg.isNestedFrom = 1;
           }
         }else{

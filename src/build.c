@@ -5012,7 +5012,7 @@ int sqlite3SrcItemAttachSubquery(
   int dupSelect      /* If true, attach a copy of pSelect, not pSelect itself.*/
 ){
   Subquery *p;
-  if( pSelect==0 ) return SQLITE_OK;
+  assert( pSelect!=0 );
   assert( pItem->fg.isSubquery==0 );
   if( pItem->fg.fixedSchema ){
     pItem->u4.pSchema = 0;

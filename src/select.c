@@ -4523,10 +4523,7 @@ static int flattenSubquery(
     pSub1 = 0;
   }
   assert( pSubitem->fg.isSubquery==0 );
-  if( pSubitem->fg.fixedSchema==0 ){
-    sqlite3DbFree(db, pSubitem->u4.zDatabase);
-    pSubitem->u4.zDatabase = 0;
-  }
+  assert( pSubitem->fg.fixedSchema==0 );
   sqlite3DbFree(db, pSubitem->zName);
   sqlite3DbFree(db, pSubitem->zAlias);
   pSubitem->zName = 0;
@@ -5601,7 +5598,6 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   /* If we reach this point, that means the transformation is required. */
 
   pParse = pWalker->pParse;
-  if( pParse->nErr ) return WRC_Abort;
   db = pParse->db;
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
   if( pNew==0 ) return WRC_Abort;
