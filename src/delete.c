@@ -24,7 +24,7 @@
 **
 ** The following fields are initialized appropriate in pSrc:
 **
-**    pSrc->a[0].pTab       Pointer to the Table object
+**    pSrc->a[0].spTab      Pointer to the Table object
 **    pSrc->a[0].pIndex     Pointer to the INDEXED BY index, if there is one
 **
 */
@@ -219,7 +219,7 @@ Expr *sqlite3LimitWhere(
   **   );
   */
 
-  pTab = pSrc->a[0].pTab;
+  pTab = pSrc->a[0].pSTab;
   if( HasRowid(pTab) ){
     pLhs = sqlite3PExpr(pParse, TK_ROW, 0, 0);
     pEList = sqlite3ExprListAppend(
@@ -252,9 +252,9 @@ Expr *sqlite3LimitWhere(
 
   /* duplicate the FROM clause as it is needed by both the DELETE/UPDATE tree
   ** and the SELECT subtree. */
-  pSrc->a[0].pTab = 0;
+  pSrc->a[0].pSTab = 0;
   pSelectSrc = sqlite3SrcListDup(db, pSrc, 0);
-  pSrc->a[0].pTab = pTab;
+  pSrc->a[0].pSTab = pTab;
   if( pSrc->a[0].fg.isIndexedBy ){
     assert( pSrc->a[0].fg.isCte==0 );
     pSrc->a[0].u2.pIBIndex = 0;

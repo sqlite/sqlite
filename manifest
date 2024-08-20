@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sso\sthat\snow\sall\sdev\stests\s(including\sTH3)\sare\spassing.
-D 2024-08-20T17:24:42.323
+C Fix\ssome\sstray\sSrcItem\sfield\sname\sfixes.
+D 2024-08-20T17:41:44.355
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
 F src/date.c 13dd752847afb32ed70510ad7345a5b9c841f51ad904dba5d010f1fa3a6a324e
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
 F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
-F src/delete.c 8aaf9d05d6ff6349a7a6001cbf90c7a46b19b9f52ef2e47aa0415a529d5307a1
+F src/delete.c 3638367ea4ed5d422ee1728a74f0b7a2973af9d7eef9b8b959c9c1f6e761ab8d
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 849049c74a4c68961154c124087b5c67d277217a2e642570d0c1bd6336859940
@@ -2205,8 +2205,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b249516f6a6650808e035ec219e762bf24dcb7c32a6235984b995d08d07d35d8
-R 5330111931e3ecff89186b5f2d6b0982
+P 3995c45fff0e4bd10bcf49cc16eb1050216426723c63ba56d3ae5ba738c34019
+R 652ce342076e266e8f982c0969e3c6bc
 U drh
-Z d58fa1c081ceed524dfd09ccfa304c4e
+Z ae5f81dac74fb395c307223c199b02f0
 # Remove this line to create a well-formed Fossil manifest.
