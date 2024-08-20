@@ -146,13 +146,22 @@ do_execsql_test 1.14 {
   SELECT * FROM t4;
 } {4 5 6 7 8 9 10}
 
-exit
 do_execsql_test 1.15 {
   WITH 
   t4(x) AS ( 
     VALUES(4)
     UNION ALL 
     SELECT x+1 FROM main.t4 WHERE x<10
+  )
+  SELECT * FROM t4;
+} {4 5}
+
+do_execsql_test 1.15.2 {
+  WITH 
+  t4(x) AS ( 
+    VALUES(4)
+    UNION ALL 
+    SELECT x+1 FROM (SELECT * FROM main.t4) WHERE x<10
   )
   SELECT * FROM t4;
 } {4 5}

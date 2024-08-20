@@ -5823,9 +5823,10 @@ static int resolveFromTermToCte(
       assert( pRecTerm->pPrior!=0 );
       for(i=0; i<pSrc->nSrc; i++){
         SrcItem *pItem = &pSrc->a[i];
-        if( ((pItem->fg.fixedSchema==0 && pItem->u4.zDatabase==0)
-             || pItem->fg.hadSchema==0)
-         && pItem->zName!=0
+        if( pItem->zName!=0
+         && !pItem->fg.hadSchema
+         && ALWAYS( !pItem->fg.isSubquery )
+         && (pItem->fg.fixedSchema || pItem->u4.zDatabase==0)
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
         ){
           pItem->pSTab = pTab;
