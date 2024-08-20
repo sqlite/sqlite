@@ -3298,26 +3298,30 @@ struct Subquery {
 ** In the colUsed field, the high-order bit (bit 63) is set if the table
 ** contains more than 63 columns and the 64-th or later column is used.
 **
-** Intenstive use of "union" helps keep the size of the object small.  This
-** has been shown to boost performance due to less time spend initializing
-** fields to zero when a new instance of this object is allocated.  The unions
-** also help SrcItem, and hence SrcList and Select, use less memory.
+** Aggressive use of "union" helps keep the size of the object small.  This
+** has been shown to boost performance, in addition to saving memory.
+** Access to union elements is gated by the following rules which should
+** always be checked, either by an if-statement or by an assert().
 **
-** Union member validity:
-**
+**    Field              Only access if this is true
+**    ---------------    -----------------------------------
 **    u1.zIndexedBy      fg.isIndexedBy
 **    u1.pFuncArg        fg.isTabFunc
 **    u1.nRow            !fg.isTabFunc  && !fg.isIndexedBy
 **
-**    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
-**    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
+**    u2.pIBIndex        fg.isIndexedBy
+**    u2.pCteUse         fg.isCte
 **
-**    u3.pOn             fg.isUsing==0
-**    u3.pUsing          fg.isUsing==1
+**    u3.pOn             !fg.isUsing
+**    u3.pUsing          fg.isUsing
 **
-**    u4.zDatabase       fg.fixedSchema==0 && !fg.isSubquery
-**    u4.pSchema         fg.fixedSchema==1
+**    u4.zDatabase       !fg.fixedSchema && !fg.isSubquery
+**    u4.pSchema         fg.fixedSchema
 **    u4.pSubq           fg.isSubquery
+**
+** See also the sqlite3SrcListDelete() routine for assert() statements that
+** check invariants on the fields of this object, especially the flags
+** inside the fg struct.
 */
 struct SrcItem {
   char *zName;      /* Name of the table */
@@ -3342,7 +3346,7 @@ struct SrcItem {
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
     unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
     unsigned fixedSchema :1;   /* Uses u4.pSchema, not u4.zDatabase */
-    unsigned hadSchema :1;     /* Has u4.zDatabase before u4.pSchema */
+    unsigned hadSchema :1;     /* Had u4.zDatabase before u4.pSchema */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Bitmask colUsed;  /* Bit N set if column N used. Details above for N>62 */

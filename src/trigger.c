@@ -151,7 +151,9 @@ void sqlite3BeginTrigger(
   ** To maintain backwards compatibility, ignore the database
   ** name on pTableName if we are reparsing out of the schema table
   */
-  if( db->init.busy && iDb!=1 && ALWAYS(pTableName->a[0].fg.fixedSchema==0) ){
+  if( db->init.busy && iDb!=1 ){
+    assert( pTableName->a[0].fg.fixedSchema==0 );
+    assert( pTableName->a[0].fg.isSubquery==0 );
     sqlite3DbFree(db, pTableName->a[0].u4.zDatabase);
     pTableName->a[0].u4.zDatabase = 0;
   }
@@ -631,7 +633,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   }
 
   assert( pName->nSrc==1 );
-  assert( pName->a[0].fg.fixedSchema==0 );
+  assert( pName->a[0].fg.fixedSchema==0 && pName->a[0].fg.isSubquery==0 );
   zDb = pName->a[0].u4.zDatabase;
   zName = pName->a[0].zName;
   assert( zDb!=0 || sqlite3BtreeHoldsAllMutexes(db) );

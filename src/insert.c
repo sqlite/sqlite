@@ -729,6 +729,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         p = &pRet->pSrc->a[0];
         p->fg.viaCoroutine = 1;
         p->iCursor = -1;
+        assert( !p->fg.isIndexedBy && !p->fg.isTabFunc );
         p->u1.nRow = 2;
         if( sqlite3SrcItemAttachSubquery(pParse, p, pLeft, 0) ){
           pSubq = p->u4.pSubq;

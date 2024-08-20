@@ -501,6 +501,7 @@ Table *sqlite3LocateTableItem(
     int iDb = sqlite3SchemaToIndex(pParse->db, p->u4.pSchema);
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
+    assert( !p->fg.isSubquery );
     zDb = p->u4.zDatabase;
   }
   return sqlite3LocateTable(pParse, flags, p->zName, zDb);
@@ -3487,6 +3488,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
   assert( pName->a[0].fg.fixedSchema==0 );
+  assert( pName->a[0].fg.isSubquery==0 );
   if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   assert( isView==0 || isView==LOCATE_VIEW );
@@ -4587,6 +4589,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   assert( pParse->nErr==0 );   /* Never called with prior non-OOM errors */
   assert( pName->nSrc==1 );
   assert( pName->a[0].fg.fixedSchema==0 );
+  assert( pName->a[0].fg.isSubquery==0 );
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_drop_index;
   }
@@ -4893,6 +4896,7 @@ SrcList *sqlite3SrcListAppend(
     pDatabase = 0;
   }
   assert( pItem->fg.fixedSchema==0 );
+  assert( pItem->fg.isSubquery==0 );
   if( pDatabase ){
     pItem->zName = sqlite3NameFromToken(db, pDatabase);
     pItem->u4.zDatabase = sqlite3NameFromToken(db, pTable);
@@ -4959,8 +4963,13 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
  
     /* Check invariants on SrcItem */
+    assert( !pItem->fg.isIndexedBy || !pItem->fg.isTabFunc );
+    assert( !pItem->fg.isCte || !pItem->fg.isIndexedBy );
     assert( !pItem->fg.hadSchema || !pItem->fg.isSubquery );
-    assert( pItem->fg.hadSchema==0 || pItem->fg.fixedSchema==1 );
+    assert( !pItem->fg.hadSchema || pItem->fg.fixedSchema );
+    assert( !pItem->fg.fixedSchema || !pItem->fg.isSubquery );
+    assert( !pItem->fg.isSubquery || (pItem->u4.pSubq!=0 && 
+                                      pItem->u4.pSubq->pSelect!=0) );
 
     if( pItem->zName ) sqlite3DbNNFreeNN(db, pItem->zName);
     if( pItem->zAlias ) sqlite3DbNNFreeNN(db, pItem->zAlias);

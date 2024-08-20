@@ -156,7 +156,7 @@ void sqlite3MaterializeView(
   if( pFrom ){
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);
-    assert( pFrom->a[0].fg.fixedSchema==0 );
+    assert( pFrom->a[0].fg.fixedSchema==0 && pFrom->a[0].fg.isSubquery==0 );
     pFrom->a[0].u4.zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
     assert( pFrom->a[0].fg.isUsing==0 );
     assert( pFrom->a[0].u3.pOn==0 );

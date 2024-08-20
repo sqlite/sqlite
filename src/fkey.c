@@ -1337,7 +1337,7 @@ static Trigger *fkActionTrigger(
       if( pSrc ){
         assert( pSrc->nSrc==1 );
         pSrc->a[0].zName = sqlite3DbStrDup(db, zFrom);
-        assert( pSrc->a[0].fg.fixedSchema==0 );
+        assert( pSrc->a[0].fg.fixedSchema==0 && pSrc->a[0].fg.isSubquery==0 );
         pSrc->a[0].u4.zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
       }
       pSelect = sqlite3SelectNew(pParse, 

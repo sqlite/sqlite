@@ -4522,6 +4522,7 @@ static int flattenSubquery(
   }else{
     pSub1 = 0;
   }
+  assert( pSubitem->fg.isSubquery==0 );
   if( pSubitem->fg.fixedSchema==0 ){
     sqlite3DbFree(db, pSubitem->u4.zDatabase);
     pSubitem->u4.zDatabase = 0;
@@ -5812,6 +5813,7 @@ static int resolveFromTermToCte(
       sqlite3ErrorMsg(pParse, "no such index: \"%s\"", pFrom->u1.zIndexedBy);
       return 2;
     }
+    assert( !pFrom->fg.isIndexedBy );
     pFrom->fg.isCte = 1;
     pFrom->u2.pCteUse = pCteUse;
     pCteUse->nUse++;
@@ -7728,6 +7730,8 @@ int sqlite3Select(
       if( pItem->fg.fixedSchema ){
         int iDb = sqlite3SchemaToIndex(pParse->db, pItem->u4.pSchema);
         zDb = db->aDb[iDb].zDbSName;
+      }else if( pItem->fg.isSubquery ){
+        zDb = 0;
       }else{
         zDb = pItem->u4.zDatabase;
       }
