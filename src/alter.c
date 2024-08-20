@@ -1366,8 +1366,9 @@ static int renameResolveTrigger(Parse *pParse){
           int i;
           for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
             SrcItem *p = &pStep->pFrom->a[i];
-            if( p->pSelect ){
-              sqlite3SelectPrep(pParse, p->pSelect, 0);
+            if( p->fg.isSubquery ){
+              assert( p->u4.pSubq!=0 );
+              sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
             }
           }
         }
@@ -1435,8 +1436,12 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
     }
     if( pStep->pFrom ){
       int i;
-      for(i=0; i<pStep->pFrom->nSrc; i++){
-        sqlite3WalkSelect(pWalker, pStep->pFrom->a[i].pSelect);
+      SrcList *pFrom = pStep->pFrom;
+      for(i=0; i<pFrom->nSrc; i++){
+        if( pFrom->a[i].fg.isSubquery ){
+          assert( pFrom->a[i].u4.pSubq!=0 );
+          sqlite3WalkSelect(pWalker, pFrom->a[i].u4.pSubq->pSelect);
+        }
       }
     }
   }
@@ -1683,7 +1688,7 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   }
   for(i=0; i<pSrc->nSrc; i++){
     SrcItem *pItem = &pSrc->a[i];
-    if( pItem->pTab==p->pTab ){
+    if( pItem->pSTab==p->pTab ){
       renameTokenFind(pWalker->pParse, p, pItem->zName);
     }
   }
