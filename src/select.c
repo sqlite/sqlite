@@ -5600,12 +5600,17 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   /* If we reach this point, that means the transformation is required. */
 
   pParse = pWalker->pParse;
+  if( pParse->nErr ) return WRC_Abort;
   db = pParse->db;
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
   if( pNew==0 ) return WRC_Abort;
   memset(&dummy, 0, sizeof(dummy));
   pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,0);
-  if( pNewSrc==0 ) return WRC_Abort;
+  assert( pNewSrc!=0 || pParse->nErr );
+  if( pParse->nErr ){
+    sqlite3SrcListDelete(db, pNewSrc);
+    return WRC_Abort;
+  }
   *pNew = *p;
   p->pSrc = pNewSrc;
   p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ASTERISK, 0));
