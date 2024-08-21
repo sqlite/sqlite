@@ -75,7 +75,7 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
 
 To access sources directly using Fossil, first install Fossil version 2.0 or later.
 Source tarballs and precompiled binaries available
-[here](https://www.fossil-scm.org/fossil/uv/download.html.  Fossil is
+[here](https://www.fossil-scm.org/home/uv/download.html).  Fossil is
 a stand-alone program.  To install, simply download or build the single
 executable file and put that file someplace on your $PATH.
 Then run commands like this:
@@ -379,7 +379,7 @@ The `manifest.uuid` file should contain the SHA3-256 hash of the
 `manifest` file. If all of the above hash comparisons are correct, then
 you can be confident that your source tree is authentic and unadulterated.
 Details on the format for the `manifest` files are available
-[on the Fossil website](https://fossil-scm.org/fossil/doc/trunk/www/fileformat.wiki#manifest).
+[on the Fossil website](https://fossil-scm.org/home/doc/trunk/www/fileformat.wiki#manifest).
 
 The process of checking source code authenticity is automated by the 
 makefile:
