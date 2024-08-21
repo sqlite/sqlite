@@ -4965,8 +4965,6 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
     /* Check invariants on SrcItem */
     assert( !pItem->fg.isIndexedBy || !pItem->fg.isTabFunc );
     assert( !pItem->fg.isCte || !pItem->fg.isIndexedBy );
-    assert( !pItem->fg.hadSchema || !pItem->fg.isSubquery );
-    assert( !pItem->fg.hadSchema || pItem->fg.fixedSchema );
     assert( !pItem->fg.fixedSchema || !pItem->fg.isSubquery );
     assert( !pItem->fg.isSubquery || (pItem->u4.pSubq!=0 && 
                                       pItem->u4.pSubq->pSelect!=0) );
