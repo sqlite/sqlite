@@ -7340,7 +7340,7 @@ static int fromClauseTermCanBeCoroutine(
 }
 
 /*
-** Generate code for the SELECT statement given in the p argument. 
+** Generate byte-code for the SELECT statement given in the p argument. 
 **
 ** The results are returned according to the SelectDest structure.
 ** See comments in sqliteInt.h for further information.
@@ -7351,6 +7351,40 @@ static int fromClauseTermCanBeCoroutine(
 **
 ** This routine does NOT free the Select structure passed in.  The
 ** calling function needs to do that.
+**
+** This is a long function.  The following is an outline of the processing
+** steps, with tags referencing various milestones:
+**
+**  *  Resolve names and similar preparation                tag-select-0100
+**  *  Scan of the FROM clause                              tag-select-0200
+**      +  OUTER JOIN strength reduction                      tag-select-0220
+**      +  Sub-query ORDER BY removal                         tag-select-0230
+**      +  Query flattening                                   tag-select-0240
+**  *  Separate subroutine for compound-SELECT              tag-select-0300
+**  *  WHERE-clause constant propagation                    tag-select-0330
+**  *  Count()-of-VIEW optimization                         tag-select-0350
+**  *  Scan of the FROM clause again                        tag-select-0400
+**      +  Authorize unreferenced tables                      tag-select-0410
+**      +  Predicate push-down optimization                   tag-select-0420
+**      +  Omit unused subquery columns optimization          tag-select-0440
+**      +  Generate code to implement subqueries              tag-select-0480
+**         -  Co-routines                                       tag-select-0482
+**         -  Reuse previously computed CTE                     tag-select-0484
+**         -  REuse previously computed VIEW                    tag-select-0486
+**         -  Materialize a VIEW or CTE                         tag-select-0488
+**  *  DISTINCT ORDER BY -> GROUP BY optimization           tag-select-0500
+**  *  Set up for ORDER BY                                  tag-select-0600
+**  *  Create output table                                  tag-select-0630
+**  *  Prepare registers for LIMIT                          tag-select-0650
+**  *  Setup for DISTINCT                                   tag-select-0680
+**  *  Generate code for non-aggregate and non-GROUP BY     tag-select-0700
+**  *  Generate code for aggregate and/or GROUP BY          tag-select-0800
+**      +  GROUP BY queries                                   tag-select-0810
+**      +  non-GROUP BY queries                               tag-select-0820
+**         -  Special case of count() w/o GROUP BY              tag-select-0821
+**         -  General case of non-GROUP BY aggregates           tag-select-0822
+**  *  Sort results, as needed                              tag-select-0900
+**  *  Internal self-checks                                 tag-select-1000
 */
 int sqlite3Select(
   Parse *pParse,         /* The parser context */
@@ -7394,6 +7428,7 @@ int sqlite3Select(
   }
 #endif
 
+  /* tag-select-0100 */
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistFifo );
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_Fifo );
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistQueue );
@@ -7480,6 +7515,7 @@ int sqlite3Select(
 
   /* Try to do various optimizations (flattening subqueries, and strength
   ** reduction of join operators) in the FROM clause up into the main query
+  ** tag-select-0200
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
@@ -7502,6 +7538,7 @@ int sqlite3Select(
     ** way that the i-th table cannot be the NULL row of a join, then
     ** perform the appropriate simplification. This is called
     ** "OUTER JOIN strength reduction" in the SQLite documentation.
+    ** tag-select-0220
     */
     if( (pItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor,
@@ -7572,7 +7609,8 @@ int sqlite3Select(
     if( (pSub->selFlags & SF_Aggregate)!=0 ) continue;
     assert( pSub->pGroupBy==0 );
 
-    /* If a FROM-clause subquery has an ORDER BY clause that is not
+    /* tag-select-0230:
+    ** If a FROM-clause subquery has an ORDER BY clause that is not
     ** really doing anything, then delete it now so that it does not
     ** interfere with query flattening.  See the discussion at
     ** https://sqlite.org/forum/forumpost/2d76f2bcf65d256a
@@ -7638,6 +7676,7 @@ int sqlite3Select(
       continue;
     }
 
+    /* tag-select-0240 */
     if( flattenSubquery(pParse, p, i, isAgg) ){
       if( pParse->nErr ) goto select_end;
       /* This subquery can be absorbed into its parent. */
@@ -7653,7 +7692,7 @@ int sqlite3Select(
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* Handle compound SELECT statements using the separate multiSelect()
-  ** procedure.
+  ** procedure.  tag-select-0300
   */
   if( p->pPrior ){
     rc = multiSelect(pParse, p, pDest);
@@ -7669,9 +7708,9 @@ int sqlite3Select(
 #endif
 
   /* Do the WHERE-clause constant propagation optimization if this is
-  ** a join.  No need to speed time on this operation for non-join queries
+  ** a join.  No need to spend time on this operation for non-join queries
   ** as the equivalent optimization will be handled by query planner in
-  ** sqlite3WhereBegin().
+  ** sqlite3WhereBegin().  tag-select-0330
   */
   if( p->pWhere!=0
    && p->pWhere->op==TK_AND
@@ -7688,6 +7727,7 @@ int sqlite3Select(
     TREETRACE(0x2000,pParse,p,("Constant propagation not helpful\n"));
   }
 
+  /* tag-select-0350 */
   if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
    && countOfViewOptimization(pParse, p)
   ){
@@ -7695,9 +7735,12 @@ int sqlite3Select(
     pTabList = p->pSrc;
   }
 
-  /* For each term in the FROM clause, do two things:
-  ** (1) Authorize unreferenced tables
-  ** (2) Generate code for all sub-queries
+  /* Loop over all terms in the FROM clause and do two things for each term:
+  **
+  **   (1) Authorize unreferenced tables
+  **   (2) Generate code for all sub-queries
+  **
+  ** tag-select-0400
   */
   for(i=0; i<pTabList->nSrc; i++){
     SrcItem *pItem = &pTabList->a[i];
@@ -7709,7 +7752,9 @@ int sqlite3Select(
     const char *zSavedAuthContext;
 #endif
 
-    /* Issue SQLITE_READ authorizations with a fake column name for any
+    /* Authorized unreferenced tables.  tag-select-0410
+    **
+    ** Issue SQLITE_READ authorizations with a fake column name for any
     ** tables that are referenced but from which no values are extracted.
     ** Examples of where these kinds of null SQLITE_READ authorizations
     ** would occur:
@@ -7745,10 +7790,9 @@ int sqlite3Select(
     pSubq = pItem->u4.pSubq;
     assert( pSubq!=0 );
     pSub = pSubq->pSelect;
-    if( pSubq->addrFillSub!=0 ) continue;
 
     /* The code for a subquery should only be generated once. */
-    assert( pSubq->addrFillSub==0 );
+    if( pSubq->addrFillSub!=0 ) continue;
 
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree referred to by this, the parent select. The child select
@@ -7761,6 +7805,7 @@ int sqlite3Select(
 
     /* Make copies of constant WHERE-clause terms in the outer query down
     ** inside the subquery.  This can help the subquery to run more efficiently.
+    ** This is the "predicate push-down optimization".  tag-select-0420
     */
     if( OptimizationEnabled(db, SQLITE_PushDown)
      && (pItem->fg.isCte==0
@@ -7781,6 +7826,7 @@ int sqlite3Select(
 
     /* Convert unused result columns of the subquery into simple NULL
     ** expressions, to avoid unneeded searching and computation.
+    ** tag-select-0440
     */
     if( OptimizationEnabled(db, SQLITE_NullUnusedCols)
      && disableUnusedSubqueryResultColumns(pItem)
@@ -7798,11 +7844,11 @@ int sqlite3Select(
     zSavedAuthContext = pParse->zAuthContext;
     pParse->zAuthContext = pItem->zName;
 
-    /* Generate code to implement the subquery
+    /* Generate byte-code to implement the subquery  tag-select-0480
     */
     if( fromClauseTermCanBeCoroutine(pParse, pTabList, i, p->selFlags) ){
       /* Implement a co-routine that will return a single row of the result
-      ** set on each invocation.
+      ** set on each invocation.  tag-select-0482
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
     
@@ -7822,8 +7868,8 @@ int sqlite3Select(
     }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){
       /* This is a CTE for which materialization code has already been
       ** generated.  Invoke the subroutine to compute the materialization,
-      ** the make the pItem->iCursor be a copy of the ephemeral table that
-      ** holds the result of the materialization. */
+      ** then make the pItem->iCursor be a copy of the ephemeral table that
+      ** holds the result of the materialization. tag-select-0484 */
       CteUse *pCteUse = pItem->u2.pCteUse;
       sqlite3VdbeAddOp2(v, OP_Gosub, pCteUse->regRtn, pCteUse->addrM9e);
       if( pItem->iCursor!=pCteUse->iCur ){
@@ -7833,7 +7879,7 @@ int sqlite3Select(
       pSub->nSelectRow = pCteUse->nRowEst;
     }else if( (pPrior = isSelfJoinView(pTabList, pItem, 0, i))!=0 ){
       /* This view has already been materialized by a prior entry in
-      ** this same FROM clause.  Reuse it. */
+      ** this same FROM clause.  Reuse it.  tag-select-0486 */
       Subquery *pPriorSubq;
       assert( pPrior->fg.isSubquery );
       pPriorSubq = pPrior->u4.pSubq;
@@ -7847,7 +7893,7 @@ int sqlite3Select(
     }else{
       /* Materialize the view.  If the view is not correlated, generate a
       ** subroutine to do the materialization so that subsequent uses of
-      ** the same view can reuse the materialization. */
+      ** the same view can reuse the materialization.  tag-select-0488 */
       int topAddr;
       int onceAddr = 0;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
@@ -7907,7 +7953,9 @@ int sqlite3Select(
   }
 #endif
 
-  /* If the query is DISTINCT with an ORDER BY but is not an aggregate, and
+  /* tag-select-0500
+  **
+  ** If the query is DISTINCT with an ORDER BY but is not an aggregate, and
   ** if the select-list is the same as the ORDER BY list, then this query
   ** can be rewritten as a GROUP BY. In other words, this:
   **
@@ -7957,7 +8005,7 @@ int sqlite3Select(
   ** If that is the case, then the OP_OpenEphemeral instruction will be
   ** changed to an OP_Noop once we figure out that the sorting index is
   ** not needed.  The sSort.addrSortIndex variable is used to facilitate
-  ** that change.
+  ** that change.  tag-select-0600
   */
   if( sSort.pOrderBy ){
     KeyInfo *pKeyInfo;
@@ -7974,6 +8022,7 @@ int sqlite3Select(
   }
 
   /* If the output is destined for a temporary table, open that table.
+  ** tag-select-0630
   */
   if( pDest->eDest==SRT_EphemTab ){
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iSDParm, pEList->nExpr);
@@ -7991,7 +8040,7 @@ int sqlite3Select(
     }
   }
 
-  /* Set the limiter.
+  /* Set the limiter.  tag-select-0650
   */
   iEnd = sqlite3VdbeMakeLabel(pParse);
   if( (p->selFlags & SF_FixedLimit)==0 ){
@@ -8003,7 +8052,7 @@ int sqlite3Select(
     sSort.sortFlags |= SORTFLAG_UseSorter;
   }
 
-  /* Open an ephemeral index to use for the distinct set.
+  /* Open an ephemeral index to use for the distinct set. tag-select-0680
   */
   if( p->selFlags & SF_Distinct ){
     sDistinct.tabTnct = pParse->nTab++;
@@ -8018,7 +8067,7 @@ int sqlite3Select(
   }
 
   if( !isAgg && pGroupBy==0 ){
-    /* No aggregate functions and no GROUP BY clause */
+    /* No aggregate functions and no GROUP BY clause.  tag-select-0700 */
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0)
                    | (p->selFlags & SF_FixedLimit);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -8091,8 +8140,8 @@ int sqlite3Select(
       sqlite3WhereEnd(pWInfo);
     }
   }else{
-    /* This case when there exist aggregate functions or a GROUP BY clause
-    ** or both */
+    /* This case is for when there exist aggregate functions or a GROUP BY
+    ** clause or both.  tag-select-0800 */
     NameContext sNC;    /* Name context for processing aggregate information */
     int iAMem;          /* First Mem address for storing current GROUP BY */
     int iBMem;          /* First Mem address for previous GROUP BY */
@@ -8211,7 +8260,7 @@ int sqlite3Select(
 
 
     /* Processing for aggregates with GROUP BY is very different and
-    ** much more complex than aggregates without a GROUP BY.
+    ** much more complex than aggregates without a GROUP BY.  tag-select-0810
     */
     if( pGroupBy ){
       KeyInfo *pKeyInfo;  /* Keying information for the group by clause */
@@ -8508,9 +8557,12 @@ int sqlite3Select(
       }
     } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
+      /* Aggregate functions without GROUP BY. tag-select-0820 */
       Table *pTab;
       if( (pTab = isSimpleCount(p, pAggInfo))!=0 ){
-        /* If isSimpleCount() returns a pointer to a Table structure, then
+        /* tag-select-0821
+        **
+        ** If isSimpleCount() returns a pointer to a Table structure, then
         ** the SQL statement is of the form:
         **
         **   SELECT count(*) FROM <tbl>
@@ -8569,6 +8621,8 @@ int sqlite3Select(
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);
         explainSimpleCount(pParse, pTab, pBest);
       }else{
+        /* The general case of an aggregate query without GROUP BY
+        ** tag-select-0822 */
         int regAcc = 0;           /* "populate accumulators" flag */
         ExprList *pDistinct = 0;
         u16 distFlag = 0;
@@ -8657,7 +8711,7 @@ int sqlite3Select(
   }
 
   /* If there is an ORDER BY clause, then we need to sort the results
-  ** and send them to the callback one by one.
+  ** and send them to the callback one by one.  tag-select-0900
   */
   if( sSort.pOrderBy ){
     assert( p->pEList==pEList );
@@ -8680,6 +8734,7 @@ select_end:
   assert( db->mallocFailed==0 || pParse->nErr!=0 );
   sqlite3ExprListDelete(db, pMinMaxOrderBy);
 #ifdef SQLITE_DEBUG
+  /* Internal self-checks.  tag-select-1000 */
   if( pAggInfo && !db->mallocFailed ){
 #if TREETRACE_ENABLED
     if( sqlite3TreeTrace & 0x20 ){
