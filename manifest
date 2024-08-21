@@ -1,12 +1,12 @@
-C Add\scode\scomments\sfor\sa\s"table-of-contents"\sand\svarious\smilestone\smarks\sin\nthe\s1300+\sline\slong\ssqlite3Select()\sfunction,\sto\shelp\simprove\sreadiability\nand\smaintainability.\s\sComment\schanges\sonly\s-\sno\sfunctional\schanges.
-D 2024-08-21T12:01:46.057
+C Updates\sand\senhancements\sto\sthe\sREADME.md\sfile.\s\sNo\scode\schanges.
+D 2024-08-21T13:44:40.490
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 209e9c64edf499b0ea7a15448699101c01d15828af35a3439d32fc25fdf1b787
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 6c3fe8b6ce60e73f34a148c957d78b4648745c8d30e792423aa1a8d8bf12d065
-F README.md 6358805260a03ebead84e168bbf3740ddf3f683b477e478567186aa7afb490d3
+F README.md 0f063e8688bf418c131b10b738cb0cb565188718152cc1ab59fa764396f0221d
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2210,8 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92c80af1129051c9eded8df170730ad6366b4f7715dead34c4364c8149d0dce9
-R 96f2b1d6b34bcd20452ccf075e5a2b9a
+P 00cfbb9fa5136e6a7847da4e4ab30d320ca79c22acda9db2030e558d59b8c744
+R 4f9e7c4307cf2bdaee18c0795e924886
 U drh
-Z 790a1d73ddaf8f8dea50d658062e6edf
+Z 75d46cf029113e1403bee9c72a50cf8b
 # Remove this line to create a well-formed Fossil manifest.

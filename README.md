@@ -1,14 +1,19 @@
 <h1 align="center">SQLite Source Repository</h1>
 
 This repository contains the complete source code for the
-[SQLite database engine](https://sqlite.org/).  Some test scripts
-are also included.  However, many other test scripts
+[SQLite database engine](https://sqlite.org/), including
+many test scripts.  However, other test scripts
 and most of the documentation are managed separately.
+
+See the [on-line documentation](https://sqlite.org/) for more information
+about what SQLite is and how it works from a user's perspective.  This
+README file is about the source code that goes into building SQLite,
+not about how SQLite is used.
 
 ## Version Control
 
 SQLite sources are managed using
-[Fossil](https://www.fossil-scm.org/), a distributed version control system
+[Fossil](https://fossil-scm.org/), a distributed version control system
 that was specifically designed and written to support SQLite development.
 The [Fossil repository](https://sqlite.org/src/timeline) contains the urtext.
 
@@ -68,12 +73,11 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
      then click on the "Tarball" or "ZIP Archive" links on the information
      page.
 
-If you do want to use Fossil to check out the source tree,
-first install Fossil version 2.0 or later.
-(Source tarballs and precompiled binaries available
-[here](https://www.fossil-scm.org/fossil/uv/download.html).  Fossil is
+To access sources directly using Fossil, first install Fossil version 2.0 or later.
+Source tarballs and precompiled binaries available
+[here](https://www.fossil-scm.org/fossil/uv/download.html.  Fossil is
 a stand-alone program.  To install, simply download or build the single
-executable file and put that file someplace on your $PATH.)
+executable file and put that file someplace on your $PATH.
 Then run commands like this:
 
         mkdir -p ~/sqlite ~/Fossils
@@ -81,8 +85,8 @@ Then run commands like this:
         fossil clone https://www.sqlite.org/src ~/Fossils/sqlite.fossil
         fossil open ~/Fossils/sqlite.fossil
 
-After setting up a repository using the steps above, you can always
-update to the latest version using:
+After setting up a repository using the steps above, you can do
+bandwidth-efficient updates to the latest version using:
 
         fossil update trunk   ;# latest trunk check-in
         fossil update release ;# latest official release
@@ -99,15 +103,30 @@ script found at the root of the source tree.  Then run "make".
 
 For example:
 
-        tar xzf sqlite.tar.gz    ;#  Unpack the source tree into "sqlite"
-        mkdir bld                ;#  Build will occur in a sibling directory
-        cd bld                   ;#  Change to the build directory
-        ../sqlite/configure      ;#  Run the configure script
-        make                     ;#  Builds the "sqlite3" command-line tool
-        make sqlite3.c           ;#  Build the "amalgamation" source file
-        make devtest             ;#  Run some tests (requires Tcl)
+        tar xzf sqlite.tar.gz      ;#  Unpack the source tree into "sqlite"
+        mkdir bld                  ;#  Build will occur in a sibling directory
+        cd bld                     ;#  Change to the build directory
+        ../sqlite/configure        ;#  Run the configure script
+        make sqlite3               ;#  Builds the "sqlite3" command-line tool
+        make sqlite3.c             ;#  Build the "amalgamation" source file
+        make mdevtest              ;#  Run development tests (requires tcl-dev)
+        make releasetest           ;#  Run full release tests (requires tcl-dev)
+        make sqldiff               ;#  Builds the "sqldiff" command-line tool
+        make sqlite3_analyzer      ;#  Builds the "sqlite3_analyzer" tool (requires tcl-dev)
+        make tclextension-install  ;#  Build and install the SQLite TCL extension
 
-See the makefile for additional targets.
+See the makefile for additional targets.  For debugging builds, the
+core developers typically run "configure" with options like this:
+
+        ../sqlite/configure --enable-all --enable-debug CFLAGS='-O0 -g'
+
+For release builds, the core developers usually do:
+
+        ../sqlite/configure --enable-all
+
+Almost all makefile targets require a "tclsh" TCL interpreter
+version 8.6 or later.  The targets marked with "(requires tcl-dev)" also require
+the TCL development libraries.
 
 The configure script uses autoconf 2.61 and libtool.  If the configure
 script does not work out for you, there is a generic makefile named
@@ -128,48 +147,61 @@ TCL library, using a command like this:
 
         set TCLDIR=c:\Tcl
 
-SQLite uses "tclsh.exe" as part of the build process, and so that utility
-program will need to be somewhere on your %PATH%.  The finished SQLite library
-does not contain any TCL code, but it does use TCL to help with the build process
-and to run tests.
+SQLite uses "tclsh.exe" as part of the build process, and so that
+program will need to be somewhere on your %PATH%.  SQLite itself
+does not contain any TCL code, but it does use TCL to help with the
+build process and to run tests.
 
 Build using Makefile.msc.  Example:
 
-        nmake /f Makefile.msc
+        nmake /f Makefile.msc sqlite3.exe
         nmake /f Makefile.msc sqlite3.c
-        nmake /f Makefile.msc devtest
+        nmake /f Makefile.msc mdevtest
         nmake /f Makefile.msc releasetest
+        nmake /f Makefile.msc tclextension-install
  
 There are many other makefile targets.  See comments in Makefile.msc for
 details.
 
-## Source Code Tour
+## Source Tree Map
 
-Most of the core source files are in the **src/** subdirectory.  The
-**src/** folder also contains files used to build the "testfixture" test
-harness. The names of the source files used by "testfixture" all begin
-with "test".
-The **src/** also contains the "shell.c" file
-which is the main program for the "sqlite3.exe"
-[command-line shell](https://sqlite.org/cli.html) and
-the "tclsqlite.c" file which implements the
-[Tcl bindings](https://sqlite.org/tclsqlite.html) for SQLite.
-(Historical note:  SQLite began as a Tcl
-extension and only later escaped to the wild as an independent library.)
+  *  **src/** - This directory contains the primary source code for the
+     SQLite core.  For historical reasons, C-code used for testing is
+     also found here.  Source files intended for testing begin with "`test`".
+     The `tclsqlite3.c` and `tclsqlite3.h` files are the TCL interface
+     for SQLite and are also not part of the core.
 
-Test scripts and programs are found in the **test/** subdirectory.
-Additional test code is found in other source repositories.
-See [How SQLite Is Tested](https://www.sqlite.org/testing.html) for
-additional information.
+  *  **test/** - This directory and its subdirectories contains code used
+     for testing.  Files that end in "`.test`" are TCL scripts that run
+     tests using an augmented TCL interpreter named "testfixture".  Use
+     a command like "`make testfixture`" (unix) or 
+     "`nmake /f Makefile.msc testfixture.exe`" (windows) to build that
+     augmented TCL interpreter, then run individual tests using commands like
+     "`testfixture test/main.test`".  This test/ subdirectory also contains
+     additional C code modules and scripts for other kinds of testing.
 
-The **ext/** subdirectory contains code for extensions.  The
-Full-text search engine is in **ext/fts3**.  The R-Tree engine is in
-**ext/rtree**.  The **ext/misc** subdirectory contains a number of
-smaller, single-file extensions, such as a REGEXP operator.
+  *  **tool/** - This directory contains programs and scripts used to
+     build some of the machine-generated code that goes into the SQLite
+     core, as well as to build and run tests and perform diagnostics.
+     The source code to [the Lemon parser generator](./doc/lemon.html) is
+     found here.  There are also TCL scripts used to build and/or transform
+     source code files.  For example, the tool/mksqlite3h.tcl script reads
+     the src/sqlite.h.in file and uses it as a template to construct
+     the deliverable "sqlite3.h" file that defines the SQLite interface.
 
-The **tool/** subdirectory contains various scripts and programs used
-for building generated source code files or for testing or for generating
-accessory programs such as "sqlite3_analyzer(.exe)".
+  *  **ext/** - Various extensions to SQLite are found under this
+     directory.  For example, the FTS5 subsystem is in "ext/fts5/".
+     Some of these extensions (ex: FTS3/4, FTS5, RTREE) might get built
+     into the SQLite amalgamation, but not all of them.  The
+     "ext/misc/" subdirectory contains an assortment of one-file extensions,
+     many of which are omitted from the SQLite core, but which are included
+     in the [SQLite CLI](https://sqlite.org/cli.html).
+     
+  *  **doc/** - Some documentation files about SQLite internals are found
+     here.  Note, however, that the primary documentation designed for
+     application developers and users of SQLite is in a completely separate
+     repository.  Note also that the primary API documentation is derived
+     from specially constructed comments in the src/sqlite.h.in file.
 
 ### Generated Source Code Files
 
@@ -252,31 +284,37 @@ individual source file exceeds 32K lines in length.
 SQLite is modular in design.
 See the [architectural description](https://www.sqlite.org/arch.html)
 for details. Other documents that are useful in
-(helping to understand how SQLite works include the
+helping to understand how SQLite works include the
 [file format](https://www.sqlite.org/fileformat2.html) description,
 the [virtual machine](https://www.sqlite.org/opcode.html) that runs
 prepared statements, the description of
 [how transactions work](https://www.sqlite.org/atomiccommit.html), and
 the [overview of the query planner](https://www.sqlite.org/optoverview.html).
 
-Years of effort have gone into optimizing SQLite, both
+Decades of effort have gone into optimizing SQLite, both
 for small size and high performance.  And optimizations tend to result in
 complex code.  So there is a lot of complexity in the current SQLite
 implementation.  It will not be the easiest library in the world to hack.
 
-Key files:
+### Key source code files
 
   *  **sqlite.h.in** - This file defines the public interface to the SQLite
      library.  Readers will need to be familiar with this interface before
-     trying to understand how the library works internally.
+     trying to understand how the library works internally.  This file is
+     really a template that is transformed into the "sqlite3.h" deliverable
+     using a script invoked by the makefile.
 
   *  **sqliteInt.h** - this header file defines many of the data objects
      used internally by SQLite.  In addition to "sqliteInt.h", some
-     subsystems have their own header files.
+     subsystems inside of sQLite have their own header files.  These internal
+     interfaces are not for use by applications.  They can and do change
+     from one release of SQLite to the next.
 
   *  **parse.y** - This file describes the LALR(1) grammar that SQLite uses
      to parse SQL statements, and the actions that are taken at each step
-     in the parsing process.
+     in the parsing process.  The file is processed by the
+     [Lemon Parser Generator](./doc/lemon.html) to produce the actual C code
+     used for parsing.
 
   *  **vdbe.c** - This file implements the virtual machine that runs
      prepared statements.  There are various helper files whose names
@@ -319,6 +357,11 @@ Key files:
      (and some other test programs too) is built and run when you type
      "make test".
 
+  *  **VERSION**, **manifest**, and **manifest.uuid** - These files define
+     the current SQLite version number.  The "VERSION" file is human generated,
+     but the "manifest" and "manifest.uuid" files are automatically generated
+     by the [Fossil version control system](https://fossil-scm/).
+
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
 
@@ -357,3 +400,7 @@ The main SQLite website is [https://sqlite.org/](https://sqlite.org/)
 with geographically distributed backups at
 [https://www2.sqlite.org/](https://www2.sqlite.org) and
 [https://www3.sqlite.org/](https://www3.sqlite.org).
+
+Contact the SQLite developers through the
+[SQLite Forum](https://sqlite.org/forum/).  In an emergency, you
+can send private email to the lead developer at drh at sqlite dot org.
