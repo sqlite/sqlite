@@ -7863,6 +7863,7 @@ int sqlite3Select(
       pItem->fg.viaCoroutine = 1;
       pSubq->regResult = dest.iSdst;
       sqlite3VdbeEndCoroutine(v, pSubq->regReturn);
+      VdbeComment((v, "end %!S", pItem));
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
     }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){

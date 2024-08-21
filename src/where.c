@@ -7122,15 +7122,17 @@ WhereInfo *sqlite3WhereBegin(
     pSrc = &pTabList->a[pLevel->iFrom];
     if( pSrc->fg.isMaterialized ){
       Subquery *pSubq;
+      int iOnce = 0;
       assert( pSrc->fg.isSubquery );
       pSubq = pSrc->u4.pSubq;
-      if( pSrc->fg.isCorrelated ){
-        sqlite3VdbeAddOp2(v, OP_Gosub, pSubq->regReturn, pSubq->addrFillSub);
+      if( pSrc->fg.isCorrelated==0 ){
+        iOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       }else{
-        int iOnce = sqlite3VdbeAddOp0(v, OP_Once);  VdbeCoverage(v);
-        sqlite3VdbeAddOp2(v, OP_Gosub, pSubq->regReturn, pSubq->addrFillSub);
-        sqlite3VdbeJumpHere(v, iOnce);
+        iOnce = 0;
       }
+      sqlite3VdbeAddOp2(v, OP_Gosub, pSubq->regReturn, pSubq->addrFillSub);
+      VdbeComment((v, "materialize %!S", pSrc));
+      if( iOnce )  sqlite3VdbeJumpHere(v, iOnce);
     }
     assert( pTabList == pWInfo->pTabList );
     if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
