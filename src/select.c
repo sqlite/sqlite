@@ -7696,7 +7696,7 @@ int sqlite3Select(
   }
 
   /* For each term in the FROM clause, do two things:
-  ** (1) Authorized unreferenced tables
+  ** (1) Authorize unreferenced tables
   ** (2) Generate code for all sub-queries
   */
   for(i=0; i<pTabList->nSrc; i++){
