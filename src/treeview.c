@@ -226,6 +226,9 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     if( pItem->fg.viaCoroutine )   sqlite3_str_appendf(&x, " viaCoroutine");
     if( pItem->fg.notCte )         sqlite3_str_appendf(&x, " notCte");
     if( pItem->fg.isNestedFrom )   sqlite3_str_appendf(&x, " isNestedFrom");
+    if( pItem->fg.fixedSchema )    sqlite3_str_appendf(&x, " fixedSchema");
+    if( pItem->fg.hadSchema )      sqlite3_str_appendf(&x, " hadSchema");
+    if( pItem->fg.isSubquery )     sqlite3_str_appendf(&x, " isSubquery");
 
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1);
@@ -237,12 +240,16 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
     }
     if( pItem->fg.isSubquery ){
+      assert( n==1 );
       if( pItem->pSTab ){
         Table *pTab = pItem->pSTab;
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
       assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem) );
-      sqlite3TreeViewSelect(pView, pItem->u4.pSubq->pSelect, (--n)>0);
+      sqlite3TreeViewPush(&pView, 0);
+      sqlite3TreeViewLine(pView, "SUBQUERY");
+      sqlite3TreeViewPop(&pView);
+      sqlite3TreeViewSelect(pView, pItem->u4.pSubq->pSelect, 0);
     }
     if( pItem->fg.isTabFunc ){
       sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
