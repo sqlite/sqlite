@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_INDEX_SCAN_HEX\sbit\sto\sthe\ssqlite3_index_info.idxFlags\sbitmask.\nWhen\sset,\sthis\sbit\scauses\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sto\sshow\sthe\sidxNum\nvalue\sin\shex\srather\sthan\sin\sdecimal.\s\sThis\sis\spurely\sa\sdebugging\said.
-D 2024-08-22T16:22:08.900
+C Enhance\sthe\sgenerate_series()\stable-valued\sfunction\ssuch\sthat\sit\sis\sable\sto\nrecognize\sequality\sand\sinequality\sconstraints\son\sthe\s"value"\scolumn\sand\noptimize\sits\soperating\saccordingly.
+D 2024-08-22T18:12:10.402
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -417,7 +417,7 @@ F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab840709636240
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c d96e5aac21658c6b5d54f918ac140460ec7197734c1a4fba806950831a7b1e7a
+F ext/misc/series.c a6089b5e8e3002bd1e5d9877cee6aead0b9a6426e406c09a399817db9e9ae823
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b430e8c
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1441,7 +1441,7 @@ F test/memjournal2.test dbc2c5cb5f7b38950f4f6dc3e73fcecf0fcbed3fc32c7ce913bba164
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 86b8158752af9188ed5b32a30674a1ef71183e6bc4e6808e815cd658ca9058a6
 F test/memsubsys2.test 774b93cb09ca50d1b759bb7c645baa2a9ce172edc3a3da67d5150a26a9fc2a08
-F test/merge1.test 2de6d6ef8d25402764b1aab49d8f9d7f89208c89a6674e437f76de4c812157b8
+F test/merge1.test 7dd9dc6838bcd0623a069485fe3a8dd498a051c16e1877cf84f506c0d6a29b43
 F test/minmax.test fe638b55d77d2375531a8f549b338eafcd9adfbd2f72df37ed77d9b26ca0a71a
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
@@ -1700,7 +1700,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test f150d206294471d20f50029e6b46b76b87a7a010b16dc57eb44245c76dd02802
+F test/tabfunc01.test 6002a5f37b76355f173c75c2b3b03173b19d6a8b078c5baaa4c78bbcd0fa6323
 F test/table.test 7862a00b58b5541511a26757ea9c5c7c3f8298766e98aa099deec703d9c0a8e0
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1712,7 +1712,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl e88c498c369cff6bf0898db6d04088685066730be51821ef775ef13fd2b1d077
+F test/tester.tcl 2c203a2dd664298f239f0ec3ce22fbc65b5f021c1e09edbae8452af8a694e052
 F test/testrunner.tcl 5d02deeba7a53baeadae6aa7641d90aac58fdfa3a7bcac85cfcfd752b1aab87c
 F test/testrunner_data.tcl c5ae2b1f9a99210b0600d002fb3af1fee350997cee9416551e83b93501360ebf
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2210,8 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6500baa9914b08ce19c361a69f19a80e5d800fcb82579d1c1e03601c7a664338
-R 7b7b9fd0e23c278e007dcb15333f71d2
+P 6c00e88ebdb41d6317bb8758825521614dedc2e6e6289ff415c5f0406eed815b
+R c06569ccdd3e5d2b3b096a4379f23ac8
 U drh
-Z e92224536d6b88aa809210ea20e1cd7b
+Z e410ad1cfdbbb6e926b30bd406bc8816
 # Remove this line to create a well-formed Fossil manifest.
