@@ -200,7 +200,9 @@ int sqlite3WhereExplainOneScan(
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      sqlite3_str_appendf(&str, " VIRTUAL TABLE INDEX %d:%s",
+      sqlite3_str_appendall(&str, " VIRTUAL TABLE INDEX ");
+      sqlite3_str_appendf(&str,
+                  pLoop->u.vtab.bIdxNumHex ? "0x%x:%s" : "%d:%s",
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif

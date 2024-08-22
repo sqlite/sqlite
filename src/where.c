@@ -4349,6 +4349,7 @@ static int whereLoopAddVirtualOne(
   pNew->u.vtab.idxStr = pIdxInfo->idxStr;
   pNew->u.vtab.isOrdered = (i8)(pIdxInfo->orderByConsumed ?
       pIdxInfo->nOrderBy : 0);
+  pNew->u.vtab.bIdxNumHex = (pIdxInfo->idxFlags&SQLITE_INDEX_SCAN_HEX)!=0;
   pNew->rSetup = 0;
   pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
   pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);

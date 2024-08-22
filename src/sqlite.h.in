@@ -7427,9 +7427,11 @@ struct sqlite3_module {
 ** will be returned by the strategy.
 **
 ** The xBestIndex method may optionally populate the idxFlags field with a
-** mask of SQLITE_INDEX_SCAN_* flags. Currently there is only one such flag -
-** SQLITE_INDEX_SCAN_UNIQUE. If the xBestIndex method sets this flag, SQLite
-** assumes that the strategy may visit at most one row.
+** mask of SQLITE_INDEX_SCAN_* flags. One such flag is
+** [SQLITE_INDEX_SCAN_HEX], which if set causes the [EXPLAIN QUERY PLAN]
+** output to show the idxNum has hex instead of as decimal.  Another flag is
+** SQLITE_INDEX_SCAN_UNIQUE, which if set indicates that the query plan will
+** return at most one row.
 **
 ** Additionally, if xBestIndex sets the SQLITE_INDEX_SCAN_UNIQUE flag, then
 ** SQLite also assumes that if a call to the xUpdate() method is made as
@@ -7493,7 +7495,9 @@ struct sqlite3_index_info {
 ** [sqlite3_index_info].idxFlags field to some combination of
 ** these bits.
 */
-#define SQLITE_INDEX_SCAN_UNIQUE      1     /* Scan visits at most 1 row */
+#define SQLITE_INDEX_SCAN_UNIQUE 0x00000001 /* Scan visits at most 1 row */
+#define SQLITE_INDEX_SCAN_HEX    0x00000002 /* Display idxNum as hex */
+                                            /* in EXPLAIN QUERY PLAN */
 
 /*
 ** CAPI3REF: Virtual Table Constraint Operator Codes

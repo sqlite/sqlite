@@ -1,5 +1,5 @@
-C Add\sSQLITE_TESTCTRL_GETOPT.\s\sUse\sit\sto\simplement\simprovements\sto\sthe\n".testctrl\sopt"\sdot-command\sin\sthe\sCLI,\sand\ssimilar\senhancements\sto\sTH3.
-D 2024-08-21T20:25:31.840
+C Add\sthe\sSQLITE_INDEX_SCAN_HEX\sbit\sto\sthe\ssqlite3_index_info.idxFlags\sbitmask.\nWhen\sset,\sthis\sbit\scauses\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\sto\sshow\sthe\sidxNum\nvalue\sin\shex\srather\sthan\sin\sdecimal.\s\sThis\sis\spurely\sa\sdebugging\said.
+D 2024-08-22T16:22:08.900
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -712,7 +712,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 64e4b1227b4ed123146f0aa2989131d1fbd9b927b11e80c9d58c6a68f9cd5ce3
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
 F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
-F src/dbstat.c 3b677254d512fcafd4d0b341bf267b38b235ccfddbef24f9154e19360fa22e43
+F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 444c4d1eaac40103461e3b6f0881846dd3aafc1cec1dd169d3482fa331667da7
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
@@ -766,7 +766,7 @@ F src/resolve.c 9afed5fd7b9111633bdb74a73cdc47324e28e4dc6c27113e3e9aee38fb9422ab
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
 F src/shell.c.in 9a45cd618ed3cd09927e04bb0ccfd929fb5efa03a7166daec4645d230b7267f3
-F src/sqlite.h.in c6512f60f9fe06de46e49161e3f8fca72f3875f67dad8eaf469622567f434e48
+F src/sqlite.h.in f07bff4225a1244efd604a0ffef81ed69f29d3dbaed7e22f906f26229ba3ca9e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 28c878bdf528879afefe1994ac007d094f8061f2fdacdc55d6055d7e9341151e
@@ -850,9 +850,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 61fea6c34c9c2350b114a4f64dce51ec073c2d8c50ca0734a0882ba6ab531805
-F src/whereInt.h 6444b888ce395cb80511284b8a73b63472d34247fcb1b125ee06a54fa6ae878e
-F src/wherecode.c 137797b0de9ddf1ff43e5b0edffcc76fb05184ed651fc4f5a0a01a45c0b89d04
+F src/where.c 70392f65e2c76a27ab1faed05892c2402ce547e574074a4f10282b3bc1ffe4eb
+F src/whereInt.h a5d079c346a658b7a6e9e47bb943d021e02fa1e6aed3b964ca112112a4892192
+F src/wherecode.c 5172d647798134e7c92536ddffe7e530c393d79b5dedd648b88faf2646c65baf
 F src/whereexpr.c 44f41ae554c7572e1de1485b3169b233ee04d464b2ee5881687ede3bf07cacfa
 F src/window.c 499d48f315a09242dc68f2fac635ed27dcf6bbb0d9ab9084857898c64489e975
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2210,9 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b024c85ef856e26cddac8ad862e16909b5149c3e3efb4e73ba54c97291f1cc4 0ea4e1e8fc689cb1af3a8d21dd6af9d483115412b414e85e8a42480f50d65af2
-R 5688f40bf117ffce0b629c4446a727b9
-T +closed 0ea4e1e8fc689cb1af3a8d21dd6af9d483115412b414e85e8a42480f50d65af2
+P 6500baa9914b08ce19c361a69f19a80e5d800fcb82579d1c1e03601c7a664338
+R 7b7b9fd0e23c278e007dcb15333f71d2
 U drh
-Z 0dda3a273baa063a0338cbb5653c54ad
+Z e92224536d6b88aa809210ea20e1cd7b
 # Remove this line to create a well-formed Fossil manifest.
