@@ -231,6 +231,30 @@ do_faultsim_test 9.2 -faults oom* -prep {
   faultsim_test_result {0 1}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, locale=1);
+  INSERT INTO ft VALUES(fts5_locale('hello', 'one two three i ii iii'));
+  INSERT INTO ft VALUES('four five six iv v vi');
+  INSERT INTO ft VALUES('eight nine ten viii ix x');
+} {}
+
+do_execsql_test 10.1 {
+  SELECT fts5_get_locale(ft, 0) FROM ft WHERE x MATCH 'one AND two AND three'
+} {hello}
+
+faultsim_save_and_close
+do_faultsim_test 10 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT fts5_get_locale(ft, 0) FROM ft WHERE x MATCH 'one AND two AND three'
+  }
+} -test {
+  faultsim_test_result {0 hello}
+}
 
 
 finish_test

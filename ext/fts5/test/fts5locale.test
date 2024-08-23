@@ -572,5 +572,96 @@ do_test 12.0 {
   } msg] $msg
 } {1 {error in fts5_api.xCreateTokenizer_v2()}}
 
+#-------------------------------------------------------------------------
+# Tests for auxiliary function fts5_get_locale().
+#
+reset_db
+
+# Check that if the table does not support locale=1, fts5_get_locale()
+# always returns NULL.
+do_execsql_test 13.1.0 {
+  CREATE VIRTUAL TABLE nolocale USING fts5(a, b);
+  INSERT INTO nolocale VALUES('one two three', 'four five six');
+  INSERT INTO nolocale VALUES('three two one', 'seven eight nine');
+}
+do_execsql_test 13.1.1 {
+  SELECT fts5_get_locale(nolocale, 0) IS NULL FROM nolocale;
+} {1 1}
+do_execsql_test 13.1.2 {
+  SELECT fts5_get_locale(nolocale, 1) IS NULL FROM nolocale('one + two');
+} {1}
+do_execsql_test 13.1.3 {
+  SELECT fts5_get_locale(nolocale, 0) IS NULL FROM nolocale('one AND two');
+} {1 1}
+do_execsql_test 13.1.4 {
+  SELECT 
+      fts5_get_locale(nolocale, 1) IS NULL 
+  FROM nolocale('three AND two') ORDER BY rank
+} {1 1}
+do_catchsql_test 13.1.5 {
+  SELECT fts5_get_locale(nolocale, 2) IS NULL FROM nolocale('three AND two');
+} {1 {column index out of range}}
+do_catchsql_test 13.1.6 {
+  SELECT fts5_get_locale(nolocale, -1) IS NULL FROM nolocale('three AND two');
+} {1 {column index out of range}}
+do_catchsql_test 13.1.7 {
+  SELECT fts5_get_locale(nolocale) IS NULL FROM nolocale('three AND two');
+} {1 {wrong number of arguments to function fts5_get_locale()}}
+do_catchsql_test 13.1.8 {
+  SELECT fts5_get_locale(nolocale, 0, 0) IS NULL FROM nolocale('three AND two');
+} {1 {wrong number of arguments to function fts5_get_locale()}}
+do_catchsql_test 13.1.9 {
+  SELECT fts5_get_locale(nolocale, 'text') FROM nolocale('three AND two');
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+
+
+# Check that if the table does support locale=1, fts5_get_locale()
+# returns the locale of the identified row/column.
+do_execsql_test 13.2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, locale=1);
+  INSERT INTO ft VALUES(
+      fts5_locale('th_TH', 'one two three'), 'four five six seven'
+  );
+  INSERT INTO ft VALUES(
+      'three two one', fts5_locale('en_AU', 'seven eight nine')
+  );
+}
+
+do_execsql_test 13.2.1 {
+  SELECT quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) FROM ft
+} { 'th_TH' NULL NULL 'en_AU' }
+do_execsql_test 13.2.2 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three')
+} { 'th_TH' NULL NULL 'en_AU' }
+do_execsql_test 13.2.3 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rank
+} { NULL 'en_AU' 'th_TH' NULL }
+do_execsql_test 13.2.4 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} { 'th_TH' NULL NULL 'en_AU' }
+
+do_execsql_test 13.2.5 {
+  SELECT 
+    quote(fts5_get_locale(ft, '0')), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} { 'th_TH' NULL NULL 'en_AU' }
+
+do_catchsql_test 13.2.6 {
+  SELECT 
+    quote(fts5_get_locale(ft, '0.0')), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+do_catchsql_test 13.2.7 {
+  SELECT 
+    quote(fts5_get_locale(ft, 0.0)), quote(fts5_get_locale(ft, 1)) 
+  FROM ft('one AND three') ORDER BY rowid
+} {1 {non-integer argument passed to function fts5_get_locale()}}
+
 finish_test
 
