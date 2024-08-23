@@ -82,7 +82,7 @@ proc get_struct_docs {data names} {
         set current_doc ""
       }
       set subject n/a
-      regexp {^ *([[:alpha:]]*)} $line -> subject
+      regexp {^ *([[:alnum:]_]*)} $line -> subject
       if {[lsearch $names $subject]>=0} {
         set current_header $subject
       } else {

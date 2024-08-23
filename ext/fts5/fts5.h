@@ -379,9 +379,9 @@ struct Fts5ExtensionApi {
   /* Below this point are iVersion>=4 only */
   int (*xColumnLocale)(Fts5Context*, int iCol, const char **pz, int *pn);
   int (*xTokenize_v2)(Fts5Context*,
-    const char *pText, int nText, /* Text to tokenize */
-    const char *pLoc, int nLoc,   /* Locale to pass to tokenizer */
-    void *pCtx,                   /* Context passed to xToken() */
+    const char *pText, int nText,      /* Text to tokenize */
+    const char *pLocale, int nLocale,  /* Locale to pass to tokenizer */
+    void *pCtx,                        /* Context passed to xToken() */
     int (*xToken)(void*, int, const char*, int, int, int)       /* Callback */
   );
 };

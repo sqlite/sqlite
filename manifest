@@ -1,5 +1,5 @@
-C Add\sfts5\sauxiliary\sfunction\sfts5_get_locale().\sFor\squerying\sthe\slocale\sof\sa\sstored\svalue.
-D 2024-08-23T15:18:02.618
+C Fix\sa\sproblem\sin\sthe\sext/fts5/extract_api_docs.tcl\sscript.
+D 2024-08-23T17:40:29.728
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -91,8 +91,8 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 63db9624ccf70d4887836c320eda93ab552f21008f3be7ede551eac3ead62baa
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
-F ext/fts5/extract_api_docs.tcl 1db7f85f4d84b7b6f33336155d5053fafc3c8debd074422d8003c8f7fa4d0fdb
-F ext/fts5/fts5.h c65fc7799a4cd6774628da4fa9408955623e504d7369ab5b89c4413fdfe11eb5
+F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
+F ext/fts5/fts5.h c72759fd15179934f10b71ae51ee999e8558f696335e4ec2d049243b764354ee
 F ext/fts5/fts5Int.h 26a71a09cefa4ef6b4516b204ed48da3e1380970a19b3482eea7c5d805655360
 F ext/fts5/fts5_aux.c 65a0468dd177d6093aa9ae1622e6d86b0136b8d267c62c0ad6493ad1e9a3d759
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
@@ -2210,8 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d50b784807333c5461a2d027778c746c799285b95bb1952f142b317ea2846460
-R 7170ba769edcf90a031dd78df3acb3d2
+P 396f720f36a937145ac727c2750acfd26e4eda350b46d648d82a7e9985545a9f
+R 9811f59e13ff374b57741662af2d5cd0
 U dan
-Z 6e0f0933950fea8415d62eb627301612
+Z b44a5154d84ee4e53cef82c304d55edf
 # Remove this line to create a well-formed Fossil manifest.
