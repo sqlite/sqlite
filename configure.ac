@@ -227,6 +227,18 @@ if test "x${TCLLIBDIR+set}" != "xset" ; then
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
 
+#########
+# Set up options for running tests.
+#
+AC_ARG_ENABLE(test-status, AS_HELP_STRING([--enable-test-status],[show status of testing targets using VT100 cursor movment]),
+      [use_vt100=$enableval],[use_vt100=no])
+if test $use_vt100; then
+  TSTRNNR_OPTS=--status
+else
+  TSTRNNR_OPTS=
+fi
+AC_SUBST(TSTRNNR_OPTS)
+
 
 #########
 # Set up an appropriate program prefix

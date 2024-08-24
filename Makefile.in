@@ -117,6 +117,11 @@ HAVE_TCL = @HAVE_TCL@
 #
 TCLSH_CMD = @TCLSH_CMD@
 
+# Additional options when running tests using testrunner.tcl
+# This is usually either blank, or else --status
+#
+TSTRNNR_OPTS = @TSTRNNR_OPTS@
+
 # Where do we want to install the tcl plugin
 #
 TCLLIBDIR = @TCLLIBDIR@
@@ -1363,10 +1368,10 @@ testrunner:	testfixture$(TEXE)
 devtest:	srctree-check testfixture$(TEXE) fuzztest testrunner
 
 mdevtest: srctree-check has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
 
 sdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
 
 # Validate that various generated files in the source tree
 # are up-to-date.
@@ -1377,7 +1382,7 @@ srctree-check:	$(TOP)/tool/srctree-check.tcl
 # Testing for a release
 #
 releasetest: srctree-check testfixture$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
 # Minimal testing that runs in less than 3 minutes
 #
