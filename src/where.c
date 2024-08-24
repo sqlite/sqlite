@@ -3987,6 +3987,7 @@ static int whereLoopAddBtree(
     pNew->prereq = mPrereq;
     pNew->nOut = rSize;
     pNew->u.btree.pIndex = pProbe;
+    pNew->u.btree.pOrderBy = 0;
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
 
     /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
