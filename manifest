@@ -1,5 +1,5 @@
-C When\sthe\sdatabase\sencoding\sis\sUTF-16LE\sand\sthe\sGLOB\soptimization\sis\sused,\nit\sis\sok\sto\suse\sthe\srange\ssearch\sover\san\sindex,\sbut\sit\sis\snot\sok\sto\ndisable\sthe\sactual\sGLOB\sfunction\scall.
-D 2024-08-20T14:16:26.003
+C Avoid\sa\sstack\soverflow\sthat\scould\sbe\scaused\sby\sa\srecursively\sdefined\sWINDOW()\swith\sa\sstrategically\sembedded\serror.
+D 2024-08-24T17:37:14.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -752,7 +752,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c d99931f45416652895e502328ca49fe782cfc4e1ebdcda13b3736d991ebf42ce
 F src/printf.c 8b250972305e14b365561be5117ed0fd364e4fd58968776df1ce64c6280b90f9
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resolve.c 4f4c99b8714fa04844a0f1f96ee69eefc8928e300af9247a46cfe80f78f8997c
+F src/resolve.c 682106712c043cd1d498fb6253755ca369e571b848ce9150d6e8b36e4774e67f
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 1a841c38974d45cf15a7611398479182b61ad4c187423c380741d8b1688fe607
 F src/shell.c.in ebb698028ec031e0b1595865500097d2005f977be0efd14bd8b0ddf634d5ed8d
@@ -2053,7 +2053,7 @@ F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af
 F test/windowB.test aad7c31739999f68a98a813cfd78390918fc70f56d2d925317a1523cab548ecf
 F test/windowC.test 6fd75f5bb2f1343d34e470e36e68f0ff638d8a42f6aa7d99471261b31a0d42f2
 F test/windowD.test 65cf5a765fb8072450e8a0de2979ce7f09a38d87724fe1280c6444073e3da49b
-F test/windowE.test 6ba0c8048e4cc02b942e56640f8fcd50fd7ca72c876656c40f6baf42e316684c
+F test/windowE.test c98507e0b0d95980ad25845db758557757be2d7054198ccf522c7d277057a3df
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
@@ -2192,9 +2192,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5815f13263b58c5cd9833f18c7fd8e5463255814d4cba72a5ed427cbd8105f8c
-Q +3399698376761ab8c422f8ea02bfa2759afb606f08bedbd1cf7eee834229a9aa
-R d2203ff194def87e514816fce29e69fb
+P db917d50fda6eb7ba50dfebbf56ffdc7a97411e35f19733166ecd97a62573054
+Q +bada54bd6bf54190e40aa721b77081015957d204c7b6a9fdbe8c67bcf20798f8
+R 294302942c24fa57f26ba776d31153df
 U drh
-Z 198dbb9ad980cd5bd269a3450525f65e
+Z 91067b8e9a6cd204fd08991d786d4032
 # Remove this line to create a well-formed Fossil manifest.
