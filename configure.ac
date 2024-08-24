@@ -230,9 +230,9 @@ fi
 #########
 # Set up options for running tests.
 #
-AC_ARG_ENABLE(test-status, AS_HELP_STRING([--enable-test-status],[show status of testing targets using VT100 cursor movment]),
+AC_ARG_ENABLE(test-status, AS_HELP_STRING([--enable-test-status],[Full-screen status of tests]),
       [use_vt100=$enableval],[use_vt100=no])
-if test $use_vt100; then
+if test $use_vt100 != no; then
   TSTRNNR_OPTS=--status
 else
   TSTRNNR_OPTS=
