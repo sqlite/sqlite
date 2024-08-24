@@ -3350,6 +3350,7 @@ static int fts5V2toV1Tokenize(
   Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
   Fts5TokenizerModule *pMod = p->pMod;
   assert( pMod->bV2Native==0 );
+  UNUSED_PARAM2(pLocale,nLocale);
   return pMod->x1.xTokenize(p->pReal, pCtx, flags, pText, nText, xToken);
 }
 
