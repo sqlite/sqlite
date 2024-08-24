@@ -1302,7 +1302,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
         if( pWin && pParse->nErr==0 ){
           Select *pSel = pNC->pWinSelect;
-          assert( pWin==0 || (ExprUseYWin(pExpr) && pWin==pExpr->y.pWin) );
+          assert( ExprUseYWin(pExpr) && pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
             sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
             if( pParse->db->mallocFailed ) break;
