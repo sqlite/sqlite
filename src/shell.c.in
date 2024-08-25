@@ -283,7 +283,7 @@ INCLUDE ../ext/consio/console_io.c
 #else
 /* For Fiddle, all console handling and emit redirection is omitted. */
 /* These next 3 macros are for emitting formatted output. When complaints
- * from the WASM build are issued for non-formatted output, (when a mere
+ * from the WASM build are issued for non-formatted output, when a mere
  * string literal is to be emitted, the ?putz(z) forms should be used.
  * (This permits compile-time checking of format string / argument mismatch.)
  */
@@ -11070,11 +11070,11 @@ static int do_meta_command(char *zLine, ShellState *p){
               }
               if( jj>=ArraySize(aLabel) ){
                 eputf("Error: no such optimization: \"%s\"\n", zLabel);
-                eputf("Should be one of:");
+                eputz("Should be one of:");
                 for(jj=0; jj<ArraySize(aLabel); jj++){
                   eputf(" %s", aLabel[jj].zLabel);
                 }
-                eputf("\n");
+                eputz("\n");
                 rc = 1;
                 goto meta_command_exit;
               }
@@ -11091,9 +11091,9 @@ static int do_meta_command(char *zLine, ShellState *p){
             curOpt = ~newOpt;
           }
           if( newOpt==0 ){
-            oputf("+All\n");
+            oputz("+All\n");
           }else if( newOpt==0xffffffff ){
-            oputf("-All\n");
+            oputz("-All\n");
           }else{
             int jj;
             for(jj=0; jj<ArraySize(aLabel); jj++){
