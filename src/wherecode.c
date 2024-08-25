@@ -157,7 +157,7 @@ int sqlite3WhereExplainOneScan(
       assert( pLoop->u.btree.pIndex!=0 );
       pIdx = pLoop->u.btree.pIndex;
       assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
-      if( !HasRowid(pItem->pTab) && IsPrimaryKeyIndex(pIdx) ){
+      if( !HasRowid(pItem->pSTab) && IsPrimaryKeyIndex(pIdx) ){
         if( isSearch ){
           zFmt = "PRIMARY KEY";
         }
@@ -200,7 +200,9 @@ int sqlite3WhereExplainOneScan(
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      sqlite3_str_appendf(&str, " VIRTUAL TABLE INDEX %d:%s",
+      sqlite3_str_appendall(&str, " VIRTUAL TABLE INDEX ");
+      sqlite3_str_appendf(&str,
+                  pLoop->u.vtab.bIdxNumHex ? "0x%x:%s" : "%d:%s",
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
@@ -254,7 +256,7 @@ int sqlite3WhereExplainBloomFilter(
   sqlite3_str_appendf(&str, "BLOOM FILTER ON %S (", pItem);
   pLoop = pLevel->pWLoop;
   if( pLoop->wsFlags & WHERE_IPK ){
-    const Table *pTab = pItem->pTab;
+    const Table *pTab = pItem->pSTab;
     if( pTab->iPKey>=0 ){
       sqlite3_str_appendf(&str, "%s=?", pTab->aCol[pTab->iPKey].zCnName);
     }else{
@@ -317,7 +319,9 @@ void sqlite3WhereAddScanStatus(
         sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
       }
     }else{
-      int addr = pSrclist->a[pLvl->iFrom].addrFillSub;
+      int addr;
+      assert( pSrclist->a[pLvl->iFrom].fg.isSubquery );
+      addr = pSrclist->a[pLvl->iFrom].u4.pSubq->addrFillSub;
       VdbeOp *pOp = sqlite3VdbeGetOp(v, addr-1);
       assert( sqlite3VdbeDb(v)->mallocFailed || pOp->opcode==OP_InitCoroutine );
       assert( sqlite3VdbeDb(v)->mallocFailed || pOp->p2>addr );
@@ -1454,7 +1458,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   iCur = pTabItem->iCursor;
   pLevel->notReady = notReady & ~sqlite3WhereGetMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
-  VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
+  VdbeModuleComment((v, "Begin WHERE-loop%d: %s",
+                     iLevel, pTabItem->pSTab->zName));
 #if WHERETRACE_ENABLED /* 0x4001 */
   if( sqlite3WhereTrace & 0x1 ){
     sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx  iFrom=%d\n",
@@ -1509,11 +1514,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->fg.viaCoroutine ){
-    int regYield = pTabItem->regReturn;
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    int regYield;
+    Subquery *pSubq;
+    assert( pTabItem->fg.isSubquery && pTabItem->u4.pSubq!=0 );
+    pSubq = pTabItem->u4.pSubq;
+    regYield = pSubq->regReturn;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSubq->addrFillSub);
     pLevel->p2 =  sqlite3VdbeAddOp2(v, OP_Yield, regYield, addrBrk);
     VdbeCoverage(v);
-    VdbeComment((v, "next row of %s", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of %s", pTabItem->pSTab->zName));
     pLevel->op = OP_Goto;
   }else
 
@@ -2242,7 +2251,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;                            /* Loop counter */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
-    Table *pTab = pTabItem->pTab;
+    Table *pTab = pTabItem->pSTab;
 
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
@@ -2701,7 +2710,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** least once.  This is accomplished by storing the PK for the row in
     ** both the iMatch index and the regBloom Bloom filter.
     */
-    pTab = pWInfo->pTabList->a[pLevel->iFrom].pTab;
+    pTab = pWInfo->pTabList->a[pLevel->iFrom].pSTab;
     if( HasRowid(pTab) ){
       r = sqlite3GetTempRange(pParse, 2);
       sqlite3ExprCodeGetColumnOfTable(v, pTab, pLevel->iTabCur, -1, r+1);
@@ -2808,7 +2817,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   Bitmask mAll = 0;
   int k;
 
-  ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pTab->zName));
+  ExplainQueryPlan((pParse, 1, "RIGHT-JOIN %s", pTabItem->pSTab->zName));
   sqlite3VdbeNoJumpsOutsideSubrtn(v, pRJ->addrSubrtn, pRJ->endSubrtn,
                                   pRJ->regReturn);
   for(k=0; k<iLevel; k++){
@@ -2818,9 +2827,13 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     pRight = &pWInfo->pTabList->a[pWInfo->a[k].iFrom];
     mAll |= pWInfo->a[k].pWLoop->maskSelf;
     if( pRight->fg.viaCoroutine ){
+      Subquery *pSubq;
+      assert( pRight->fg.isSubquery && pRight->u4.pSubq!=0 );
+      pSubq = pRight->u4.pSubq;
+      assert( pSubq->pSelect!=0 && pSubq->pSelect->pEList!=0 );
       sqlite3VdbeAddOp3(
-          v, OP_Null, 0, pRight->regResult, 
-          pRight->regResult + pRight->pSelect->pEList->nExpr-1
+          v, OP_Null, 0, pSubq->regResult, 
+          pSubq->regResult + pSubq->pSelect->pEList->nExpr-1
       );
     }
     sqlite3VdbeAddOp1(v, OP_NullRow, pWInfo->a[k].iTabCur);
@@ -2858,7 +2871,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     int nPk;
     int jmp;
     int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
-    Table *pTab = pTabItem->pTab;
+    Table *pTab = pTabItem->pSTab;
     if( HasRowid(pTab) ){
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, r);
       nPk = 1;

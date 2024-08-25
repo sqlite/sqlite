@@ -380,6 +380,16 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("locale", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed locale=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bLocale = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
   if( sqlite3_strnicmp("detail", zCmd, nCmd)==0 ){
     const Fts5Enum aDetail[] = {
       { "none", FTS5_DETAIL_NONE },
@@ -669,7 +679,11 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
   if( pConfig ){
     int i;
     if( pConfig->t.pTok ){
-      pConfig->t.pTokApi->xDelete(pConfig->t.pTok);
+      if( pConfig->t.pApi1 ){
+        pConfig->t.pApi1->xDelete(pConfig->t.pTok);
+      }else{
+        pConfig->t.pApi2->xDelete(pConfig->t.pTok);
+      }
     }
     sqlite3_free((char*)pConfig->t.azArg);
     sqlite3_free(pConfig->zDb);
@@ -752,9 +766,15 @@ int sqlite3Fts5Tokenize(
       rc = sqlite3Fts5LoadTokenizer(pConfig);
     }
     if( rc==SQLITE_OK ){
-      rc = pConfig->t.pTokApi->xTokenize(
-          pConfig->t.pTok, pCtx, flags, pText, nText, xToken
-      );
+      if( pConfig->t.pApi1 ){
+        rc = pConfig->t.pApi1->xTokenize(
+            pConfig->t.pTok, pCtx, flags, pText, nText, xToken
+        );
+      }else{
+        rc = pConfig->t.pApi2->xTokenize(pConfig->t.pTok, pCtx, flags, 
+            pText, nText, pConfig->t.pLocale, pConfig->t.nLocale, xToken
+        );
+      }
     }
   }
   return rc;
@@ -1011,13 +1031,10 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
    && iVersion!=FTS5_CURRENT_VERSION_SECUREDELETE
   ){
     rc = SQLITE_ERROR;
-    if( pConfig->pzErrmsg ){
-      assert( 0==*pConfig->pzErrmsg );
-      *pConfig->pzErrmsg = sqlite3_mprintf("invalid fts5 file format "
-          "(found %d, expected %d or %d) - run 'rebuild'",
-          iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
-      );
-    }
+    sqlite3Fts5ConfigErrmsg(pConfig, "invalid fts5 file format "
+        "(found %d, expected %d or %d) - run 'rebuild'",
+        iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
+    );
   }else{
     pConfig->iVersion = iVersion;
   }
@@ -1027,3 +1044,26 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   }
   return rc;
 }
+
+/*
+** Set (*pConfig->pzErrmsg) to point to an sqlite3_malloc()ed buffer 
+** containing the error message created using printf() style formatting
+** string zFmt and its trailing arguments.
+*/
+void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
+  va_list ap;                     /* ... printf arguments */
+  char *zMsg = 0;
+
+  va_start(ap, zFmt);
+  zMsg = sqlite3_vmprintf(zFmt, ap);
+  if( pConfig->pzErrmsg ){
+    assert( *pConfig->pzErrmsg==0 );
+    *pConfig->pzErrmsg = zMsg;
+  }else{
+    sqlite3_free(zMsg);
+  }
+
+  va_end(ap);
+}
+
+

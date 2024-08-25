@@ -1797,12 +1797,13 @@ static int loadStatTbl(
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     int nIdxCol = 1;              /* Number of columns in stat4 records */
 
-    char *zIndex;   /* Index name */
-    Index *pIdx;    /* Pointer to the index object */
-    int nSample;    /* Number of samples */
-    int nByte;      /* Bytes of space required */
-    int i;          /* Bytes of space required */
-    tRowcnt *pSpace;
+    char *zIndex;    /* Index name */
+    Index *pIdx;     /* Pointer to the index object */
+    int nSample;     /* Number of samples */
+    int nByte;       /* Bytes of space required */
+    int i;           /* Bytes of space required */
+    tRowcnt *pSpace; /* Available allocated memory space */
+    u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
@@ -1822,7 +1823,7 @@ static int loadStatTbl(
     }
     pIdx->nSampleCol = nIdxCol;
     pIdx->mxSample = nSample;
-    nByte = sizeof(IndexSample) * nSample;
+    nByte = ROUND8(sizeof(IndexSample) * nSample);
     nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
     nByte += nIdxCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
 
@@ -1831,7 +1832,9 @@ static int loadStatTbl(
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM_BKPT;
     }
-    pSpace = (tRowcnt*)&pIdx->aSample[nSample];
+    pPtr = (u8*)pIdx->aSample;
+    pPtr += ROUND8(nSample*sizeof(pIdx->aSample[0]));
+    pSpace = (tRowcnt*)pPtr;
     assert( EIGHT_BYTE_ALIGNMENT( pSpace ) );
     pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
     pIdx->pTable->tabFlags |= TF_HasStat4;

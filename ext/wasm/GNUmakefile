@@ -173,14 +173,14 @@ ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
 endif
 
 ########################################################################
-# minimal=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
+# barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
 # goal being to create a WASM file with only the core APIs.
-ifeq (1,$(minimal))
+ifeq (1,$(barebones))
   wasm-bare-bones := 1
 else
   wasm-bare-bones := 0
 endif
-undefine minimal
+undefine barebones
 
 # Common options for building sqlite3-wasm.c and speedtest1.c.
 # Explicit ENABLEs...
@@ -440,9 +440,9 @@ endif
 ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 else
-  $(info ========================================)
-  $(info This is a minimal-mode build. It is missing many features.)
-  $(info ========================================)
+  $(info ============================================================)
+  $(info This is a bare-bones build. It is missing many features.)
+  $(info ============================================================)
 endif
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
 $(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
@@ -1152,24 +1152,29 @@ quick: $(sqlite3.js)
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
-o-xtra :=
-#o-xtra ?= -flto
+emcc-opt-extra :=
+#ifeq (1,$(wasm-bare-bones))
+#emcc-opt-extra += -flto
 # ^^^^ -flto can have a considerably performance boost at -O0 but
 # doubles the build time and seems to have negligible, if any, effect
 # on higher optimization levels.
+#
+# -flto does ont shrink the size of bare-bones builds by any measurable
+# amount.
+#endif
 o0: clean
 	$(MAKE) -e "emcc_opt=-O0"
 o1: clean
-	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
+	$(MAKE) -e "emcc_opt=-O1 $(emcc-opt-extra)"
 o2: clean
-	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-O2 $(emcc-opt-extra)"
 o3: clean
-	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)"
+	$(MAKE) -e "emcc_opt=-O3 $(emcc-opt-extra)"
 os: clean
 	@echo "WARNING: -Os can result in a build with mysteriously missing pieces!"
-	$(MAKE) -e "emcc_opt=-Os $(o-xtra)"
+	$(MAKE) -e "emcc_opt=-Os $(emcc-opt-extra)"
 oz: clean
-	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-Oz $(emcc-opt-extra)"
 
 ########################################################################
 # Sub-makes...

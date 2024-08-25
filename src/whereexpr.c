@@ -220,11 +220,20 @@ static int isLikeOrGlob(
   }
   if( z ){
 
-    /* Count the number of prefix characters prior to the first wildcard */
+    /* Count the number of prefix characters prior to the first wildcard.
+    ** If the underlying database has a UTF16LE encoding, then only consider
+    ** ASCII characters.  Note that the encoding of z[] is UTF8 - we are
+    ** dealing with only UTF8 here in this code, but the database engine
+    ** itself might be processing content using a different encoding. */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
-      if( c==wc[3] && z[cnt]!=0 ) cnt++;
+      if( c==wc[3] && z[cnt]!=0 ){
+        cnt++;
+      }else if( c>=0x80 && ENC(db)==SQLITE_UTF16LE ){
+         cnt--;
+         break;
+      }
     }
 
     /* The optimization is possible only if (1) the pattern does not begin
@@ -239,7 +248,7 @@ static int isLikeOrGlob(
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */
-      *pisComplete = c==wc[0] && z[cnt+1]==0;
+      *pisComplete = c==wc[0] && z[cnt+1]==0 && ENC(db)!=SQLITE_UTF16LE;
 
       /* Get the pattern prefix.  Remove all escapes from the prefix. */
       pPrefix = sqlite3Expr(db, TK_STRING, (char*)z);
@@ -958,7 +967,9 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
     if( ALWAYS(pSrc!=0) ){
       int i;
       for(i=0; i<pSrc->nSrc; i++){
-        mask |= exprSelectUsage(pMaskSet, pSrc->a[i].pSelect);
+        if( pSrc->a[i].fg.isSubquery ){
+          mask |= exprSelectUsage(pMaskSet, pSrc->a[i].u4.pSubq->pSelect);
+        }
         if( pSrc->a[i].fg.isUsing==0 ){
           mask |= sqlite3WhereExprUsage(pMaskSet, pSrc->a[i].u3.pOn);
         }
@@ -996,7 +1007,7 @@ static SQLITE_NOINLINE int exprMightBeIndexed2(
   int iCur;
   do{
     iCur = pFrom->a[j].iCursor;
-    for(pIdx=pFrom->a[j].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    for(pIdx=pFrom->a[j].pSTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->aColExpr==0 ) continue;
       for(i=0; i<pIdx->nKeyCol; i++){
         if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
@@ -1040,7 +1051,7 @@ static int exprMightBeIndexed(
 
   for(i=0; i<pFrom->nSrc; i++){
     Index *pIdx;
-    for(pIdx=pFrom->a[i].pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    for(pIdx=pFrom->a[i].pSTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->aColExpr ){
         return exprMightBeIndexed2(pFrom,aiCurCol,pExpr,i);
       }
@@ -1628,7 +1639,7 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
   assert( p!=0 && p->pLimit!=0 );                 /* 1 -- checked by caller */
   if( p->pGroupBy==0
    && (p->selFlags & (SF_Distinct|SF_Aggregate))==0             /* 2 */
-   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pTab))       /* 3 */
+   && (p->pSrc->nSrc==1 && IsVirtual(p->pSrc->a[0].pSTab))      /* 3 */
   ){
     ExprList *pOrderBy = p->pOrderBy;
     int iCsr = p->pSrc->a[0].iCursor;
@@ -1849,7 +1860,7 @@ void sqlite3WhereTabFuncArgs(
   Expr *pColRef;
   Expr *pTerm;
   if( pItem->fg.isTabFunc==0 ) return;
-  pTab = pItem->pTab;
+  pTab = pItem->pSTab;
   assert( pTab!=0 );
   pArgs = pItem->u1.pFuncArg;
   if( pArgs==0 ) return;
