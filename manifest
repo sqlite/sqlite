@@ -1,5 +1,5 @@
-C Avoid\sa\sstack\soverflow\sthat\scould\sbe\scaused\sby\sa\srecursively\sdefined\sWINDOW()\swith\sa\sstrategically\sembedded\serror.
-D 2024-08-24T17:37:14.317
+C Bind\sthe\snew\sdebug\sparameters\sin\sfuzzinvariants.c.
+D 2024-08-26T16:15:39.378
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1265,7 +1265,7 @@ F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 0729b9d8ed77ad0f8c5c7601168a707d5803087d2da030ede9057c51c809cc6c
+F test/fuzzinvariants.c 81167c9a7e82c0539a1d704aeb3384046d01f4108cda160a2447cb2a149d6362
 F test/gcfault.test 4ea410ac161e685f17b19e1f606f58514a2850e806c65b846d05f60d436c5b0d
 F test/gencol1.test e169bdfa11c7ed5e9f322a98a7db3afe9e66235750b68c923efee8e1876b46ec
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2192,9 +2192,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P db917d50fda6eb7ba50dfebbf56ffdc7a97411e35f19733166ecd97a62573054
-Q +bada54bd6bf54190e40aa721b77081015957d204c7b6a9fdbe8c67bcf20798f8
-R 294302942c24fa57f26ba776d31153df
+P 074002718b2ecb9faa99e4509ee26aaf55b6d9301804e9d13b81708c4754a5a0
+Q +7e1dc263051cf50db04643d1a2aa9f91559b2b121859b750ce4446012d5f3c3e
+R c19761d380cffa4bc4370f5c2b36697e
 U drh
-Z 91067b8e9a6cd204fd08991d786d4032
+Z 2097235e256ae860360462f9c135b414
 # Remove this line to create a well-formed Fossil manifest.
