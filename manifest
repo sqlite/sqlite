@@ -1,5 +1,5 @@
-C Proof-of-concept\sgrammar\srules\sto\sparse\sGoogle-style\s"pipe"\ssyntax\sfor\sSQL,\nwithout\sthe\sghastly\s"|>"\soperator.\s\sThe\sgrammar\srules\sare\snot\sconnected\sto\nworking\scode.\s\sThey\sjust\sparse\sthe\ssyntax.\s\sPipelines\sthat\sbegin\swith\san\nordinary\sSELECT\sstatement\smust\shave\sthe\skeyword\s"INTO"\s(rather\sthan\sthe\n"|>"\soperator)\sseparating\sthe\sSELECT\sfrom\sthe\sstart\sof\sthe\spipeline,\sto\navoid\ssyntactic\sand\ssemantic\sambiguity.
-D 2024-08-26T00:15:35.199
+C Another\sversion\sof\sthe\sparser\swith\sa\sslightly\sricher\ssyntax.\s\sThe\sghastly\npipe\soperator\sis\snow\soptional,\sbut\sis\snever\srequired.\s\sPipelines\scannot\nbe\sinitiated\sfrom\san\sarbitrary\sSELECT\sunless\sthe\sarbitrary\sSELECT\sis\sa\ssubquery\non\sthe\sinitial\sFROM.
+D 2024-08-26T02:53:31.582
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -753,7 +753,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y a4067a80b2194454b7a7be110b0ab23eb69bd90e3fd42f225a47b539aa0cd3f9
+F src/parse.y 58718094002997d3ecde5b08840282e5d623429831d459154668b72097897df1
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2210,11 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9ef8317faebc29d016bdf2e8c678fb21ca2cfa95272f1f18b461fcaf0e220ac5
-R 75daf6c6e7502aa1199356969b347c15
-T *branch * sql-pipes
-T *sym-sql-pipes *
-T -sym-trunk *
+P 2c4bae3e68eea14a5edbc753a7a2d764924c95060aff95fa1d2141c11fa77fed
+R 1bcb173040dc70215ec3b6d0e2905929
 U drh
-Z 4d4c9467af5e60b6f11e2dd86c0fbd34
+Z 4734eb8c3c37dd8c83c589b63b01a613
 # Remove this line to create a well-formed Fossil manifest.

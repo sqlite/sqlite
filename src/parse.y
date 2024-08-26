@@ -296,7 +296,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %left COLLATE.
 %right BITNOT.
 %nonassoc ON FROM.
-%nonassoc JOIN_KW.
+%nonassoc JOIN_KW JOIN AS.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -629,20 +629,25 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 //%destructor pipeline {sqlite3SelectDelete(pParse->db,$$);}
 
 oneselect(A) ::= pipeline.  {A = 0;}
-oneselect(A) ::= oneselect INTO pipeline.  {A = 0;}
 pipeline ::= FROM seltablist.
-pipeline ::= TABLE nm dbnm.
-pipeline ::= pipeline pipejoinop nm dbnm as on_using.
-pipeline ::= pipeline pipejoinop nm dbnm LP exprlist RP as on_using.
-pipeline ::= pipeline pipejoinop LP select RP as on_using.
-pipeline ::= pipeline pipejoinop LP seltablist RP as on_using.
-pipeline ::= pipeline WHERE expr.
-pipeline ::= pipeline AGGREGATE selcollist groupby_opt.
-pipeline ::= pipeline SELECT selcollist.
-pipeline ::= pipeline ORDER BY nexprlist limit_opt.
+pipeline ::= pipeline pipe pipejoinop nm dbnm as on_using.
+pipeline ::= pipeline pipe pipejoinop nm dbnm LP exprlist RP as on_using.
+pipeline ::= pipeline pipe pipejoinop LP select RP as on_using.
+pipeline ::= pipeline pipe pipejoinop LP seltablist RP as on_using.
+pipeline ::= pipeline pipe WHERE expr.
+pipeline ::= pipeline pipe AGGREGATE selcollist groupby_opt.
+pipeline ::= pipeline pipe SELECT selcollist.
+pipeline ::= pipeline pipe ORDER BY nexprlist.
+pipeline ::= pipeline pipe LIMIT expr.
+pipeline ::= pipeline pipe LIMIT expr OFFSET expr.
+pipeline ::= pipeline pipe AS nm.
+pipeline ::= pipeline pipe DISTINCT ON nexprlist.
 
+pipe ::= .
+pipe ::= PIPE.
 
 %type pipejoinop {int}
+pipejoinop(X) ::= JOIN.              { X = JT_INNER; }
 pipejoinop(X) ::= JOIN_KW(A) JOIN.
                   {X = sqlite3JoinType(pParse,&A,0,0);  /*X-overwrites-A*/}
 pipejoinop(X) ::= JOIN_KW(A) nm(B) JOIN.
@@ -718,8 +723,8 @@ selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR(Y). {
 //
 %type as {Token}
 as(X) ::= AS nm(Y).    {X = Y;}
-as(X) ::= ids(X).
-as(X) ::= .            {X.n = 0; X.z = 0;}
+as(X) ::= ids(X).  [AS]
+as(X) ::= .        [AS]{X.n = 0; X.z = 0;}
 
 
 %type seltablist {SrcList*}
