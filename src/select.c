@@ -6944,6 +6944,7 @@ static void updateAccumulator(
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
+    if( pParse->nErr ) return;
   }
   if( regHit==0 && pAggInfo->nAccumulator ){
     regHit = regAcc;
