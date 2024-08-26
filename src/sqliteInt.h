@@ -3565,7 +3565,6 @@ struct Upsert {
 */
 struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
-  u8 mPipe;              /* Flags to assist with parsing the pipeline format */
   LogEst nSelectRow;     /* Estimated number of result rows */
   u32 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
@@ -3586,12 +3585,6 @@ struct Select {
   Window *pWinDefn;      /* List of named window definitions */
 #endif
 };
-
-/*
-** Allowed values for Select.mPipe.
-*/
-#define SPF_Select   0x01    /* Seen either AGGREGATE or SELECT */
-#define SPF_Agg      0x02    /* Seen an AGGREGATE clause */
 
 /*
 ** Allowed values for Select.selFlags.  The "SF" prefix stands for

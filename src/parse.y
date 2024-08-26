@@ -296,7 +296,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %left COLLATE.
 %right BITNOT.
 %nonassoc ON FROM.
-%nonassoc JOIN_KW JOIN AS.
+%nonassoc JOIN_KW JOIN.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -813,7 +813,8 @@ pipeline(A) ::= pipeline(A) pipe LIMIT expr(X) OFFSET expr(Y). {
     p->pLimit = pLimit;
   }
 }
-pipeline(A) ::= pipeline(A) pipe AS nm(X).  {A->sAs = X;}
+pipeline(A) ::= pipeline(A) PIPE AS nm(X).  {A->sAs = X;}
+pipeline(A) ::= pipeline(A) pipe VIEW nm(X).     {A->sAs = X;}
 //pipeline ::= pipeline pipe DISTINCT ON nexprlist.
 
 pipe ::= .
@@ -896,8 +897,8 @@ selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR(Y). {
 //
 %type as {Token}
 as(X) ::= AS nm(Y).    {X = Y;}
-as(X) ::= ids(X).  [AS]
-as(X) ::= .        [AS]{X.n = 0; X.z = 0;}
+as(X) ::= ids(X).
+as(X) ::= .            {X.n = 0; X.z = 0;}
 
 
 %type seltablist {SrcList*}
