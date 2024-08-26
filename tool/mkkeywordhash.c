@@ -164,11 +164,6 @@ struct Keyword {
 #else
 #  define RETURNING  0x00400000
 #endif
-#ifdef SQLITE_OMIT_RETURNING
-#  define RETURNING  0
-#else
-#  define RETURNING  0x00400000
-#endif
 #ifdef SQLITE_OMIT_FROM_FIRST
 #  define PIPE       0
 #else

@@ -1,5 +1,5 @@
-C Add\sthe\sAGGREGATE\sclause\sto\sthe\spipeline.
-D 2024-08-26T14:06:08.566
+C Remove\sredundant\s#ifdef\saccidentally\sinserted\sinto\smkkeywordhash.c
+D 2024-08-26T14:20:20.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2131,7 +2131,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 060e9785e9503bf51f8b1b11b542bdeef90fd0ceb0738154f6762acec0c61e5f x
-F tool/mkkeywordhash.c 6aa37d60b2c54a3e1215a1e7765fb83d8d5fe493ec88ab9d33ea1e46d5e58326
+F tool/mkkeywordhash.c 8a0a0401a6e0f01ca6e02f58b294a813d067554474875f4fe0222c2b8b0d6ed3
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
@@ -2210,8 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4bdcc18d2cf4d11a7ca81117f6f8932fc8d280780d2c1e612189b2f5359cc778
-R 5303cc11ae00c25bd96a8092c3ba2faf
+P 16d32676e2e98a7710787de16850c328e7519e893f81ed56f6155a8fa9cbc3a4
+R a100ff1c9bda3fc624920cd66e34ae7c
 U drh
-Z 0f7ab62e6c9d0f24ea7650535f742b30
+Z 58c98d8befdb125e16f0435abf5b1a98
 # Remove this line to create a well-formed Fossil manifest.
