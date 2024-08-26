@@ -625,23 +625,196 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 }
 %endif
 
-//%type pipeline {Select*}
-//%destructor pipeline {sqlite3SelectDelete(pParse->db,$$);}
+%ifndef SQLITE_OMIT_SUBQUERY
+%include {
+  SQLITE_NOINLINE SrcList *sqlite3SrcListAppendSubFrom(
+    Parse *pParse,           /* Parsing context */
+    SrcList *pFrom,          /* LHS of the FROM clause */
+    SrcList *pSubFrom,       /* New parenthesized sub-FROM to append */
+    Token *pAs,              /* AS-Name of the sub-FROM */
+    OnOrUsing *pOnUsing      /* ON or USING clause associated with the join */
+  ){
+    if( pFrom==0 && pAs->n==0 && pOnUsing->pOn==0 && pOnUsing->pUsing==0 ){
+      pFrom = pSubFrom;
+    }else if( ALWAYS(pSubFrom!=0) && pSubFrom->nSrc==1 ){
+      pFrom = sqlite3SrcListAppendFromTerm(pParse,pFrom,0,0,pAs,0,pOnUsing);
+      if( pFrom ){
+        SrcItem *pNew = &pFrom->a[pFrom->nSrc-1];
+        SrcItem *pOld = pSubFrom->a;
+        assert( pOld->fg.fixedSchema==0 );
+        pNew->zName = pOld->zName;
+        assert( pOld->fg.fixedSchema==0 );
+        if( pOld->fg.isSubquery ){
+          pNew->fg.isSubquery = 1;
+          pNew->u4.pSubq = pOld->u4.pSubq;
+          pOld->u4.pSubq = 0;
+          pOld->fg.isSubquery = 0;
+          assert( pNew->u4.pSubq!=0 && pNew->u4.pSubq->pSelect!=0 );
+          if( (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0 ){
+            pNew->fg.isNestedFrom = 1;
+          }
+        }else{
+          pNew->u4.zDatabase = pOld->u4.zDatabase;
+          pOld->u4.zDatabase = 0;
+        }
+        if( pOld->fg.isTabFunc ){
+          pNew->u1.pFuncArg = pOld->u1.pFuncArg;
+          pOld->u1.pFuncArg = 0;
+          pOld->fg.isTabFunc = 0;
+          pNew->fg.isTabFunc = 1;
+        }
+        pOld->zName = 0;
+      }
+      sqlite3SrcListDelete(pParse->db, pSubFrom);
+    }else{
+      Select *pSubquery;
+      sqlite3SrcListShiftJoinType(pParse,pSubFrom);
+      pSubquery = sqlite3SelectNew(pParse,0,pSubFrom,0,0,0,0,SF_NestedFrom,0);
+      pFrom = sqlite3SrcListAppendFromTerm(pParse,pFrom,0,0,pAs,pSubquery,pOnUsing);
+    }
+    return pFrom;
+  }
+}
+%endif SQLITE_OMIT_SUBQUERY
 
-oneselect(A) ::= pipeline.  {A = 0;}
-pipeline ::= FROM seltablist.
-pipeline ::= pipeline pipe pipejoinop nm dbnm as on_using.
-pipeline ::= pipeline pipe pipejoinop nm dbnm LP exprlist RP as on_using.
-pipeline ::= pipeline pipe pipejoinop LP select RP as on_using.
-pipeline ::= pipeline pipe pipejoinop LP seltablist RP as on_using.
-pipeline ::= pipeline pipe WHERE expr.
-pipeline ::= pipeline pipe AGGREGATE selcollist groupby_opt.
-pipeline ::= pipeline pipe SELECT selcollist.
-pipeline ::= pipeline pipe ORDER BY nexprlist.
-pipeline ::= pipeline pipe LIMIT expr.
-pipeline ::= pipeline pipe LIMIT expr OFFSET expr.
-pipeline ::= pipeline pipe AS nm.
-pipeline ::= pipeline pipe DISTINCT ON nexprlist.
+%ifndef SQLITE_OMIT_FROM_FIRST
+%include {
+  /* The Pipe object represents a pipe under construction.  It is a transient
+  ** object found only on the LALR(1) parser stack. */
+  typedef struct Pipe Pipe;
+  struct Pipe {
+    SrcList *pFrom;          /* The FROM clause */
+    ExprList *pProj;         /* The projection - list of columns to return */
+    ExprList *pOrderBy;      /* The ORDER BY clause */
+    ExprList *pGroupBy;      /* The GROUP BY clause */
+    Expr *pLimit;            /* The LIMIT or LIMIT/OFFSET clause */
+    Expr *pWhere;            /* The WHERE clause */
+    Expr *pHaving;           /* The HAVING clause */
+    int selFlags;            /* SF_DISTINCT or SF_ALL or 0 */
+    u8 bSeenAgg;             /* True if AGGREGATE has been seen */
+    Token sAs;               /* Value of a pending AS clause */
+  };
+
+  /* Delete a pipe object */
+  void sqlite3PipeDelete(sqlite3 *db, Pipe *p){
+    sqlite3SrcListDelete(db, p->pFrom);
+    sqlite3ExprListDelete(db, p->pProj);
+    sqlite3ExprListDelete(db, p->pOrderBy);
+    sqlite3ExprListDelete(db, p->pGroupBy);
+    sqlite3ExprDelete(db, p->pLimit);
+    sqlite3ExprDelete(db, p->pWhere);
+    sqlite3ExprDelete(db, p->pHaving);
+    sqlite3DbFree(db, p);
+  }
+
+  /* Generate a Select from the current content of a Pipe.  Reset the Pipe
+  ** to be empty, except do not remove the AS token if there is one and do
+  ** not delete the Pipe.
+  */
+  Select *sqlite3SelectFromPipe(Parse *pParse, Pipe *p){
+    Token sAs = p->sAs;
+    Select *pSel = sqlite3SelectNew(pParse, p->pProj, p->pFrom, p->pWhere,
+                                    p->pGroupBy, p->pHaving, p->pOrderBy,
+                                    p->selFlags, p->pLimit);
+    memset(p, 0, sizeof(*p));
+    p->sAs = sAs;
+    return pSel;
+  }
+
+  /* Take the current content of the pipe and make it "FROM <subquery>" pipe.
+  */
+  void sqlite3PipePush(Parse *pParse, Pipe *pPipe, int jointype){
+    Select *pSel = sqlite3SelectFromPipe(pParse, pPipe);
+    Token *pAs = pPipe->sAs.z!=0 ? &pPipe->sAs : 0;
+    SrcList *pFrom = pPipe->pFrom;
+    if( pFrom ) pFrom->a[pFrom->nSrc-1].fg.jointype = jointype;
+    pPipe->pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,pAs,pSel,0);
+    pPipe->sAs.z = 0;
+  }
+  
+}
+%type pipeline {Pipe*}
+%destructor pipeline {sqlite3PipeDelete(pParse->db,$$);}
+
+oneselect(A) ::= pipeline(X).  {
+  Pipe *pPipe = X;
+  Select *pSel = sqlite3SelectFromPipe(pParse,pPipe);
+  sqlite3DbFree(pParse->db, pPipe);
+  A = pSel; /*A-overwrites-X */
+}
+pipeline(A) ::= FROM seltablist(X). {
+  Pipe *pPipe = sqlite3DbMallocZero(pParse->db, sizeof(*pPipe));
+  A = pPipe;
+  if( pPipe ){
+    pPipe->pFrom = X;
+  }else{
+    sqlite3SrcListDelete(pParse->db, X);
+  }
+}
+pipeline(A) ::= pipeline(A) pipe pipejoinop(J) nm(Y) dbnm(D) as(Z) on_using(N). {
+  Pipe *p = A;
+  sqlite3PipePush(pParse, p, J);
+  p->pFrom = sqlite3SrcListAppendFromTerm(pParse, p->pFrom, &Y, &D, &Z, 0, &N);
+}
+pipeline(A) ::= pipeline(A) pipe 
+                pipejoinop(J) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N). {
+  Pipe *p = A;
+  sqlite3PipePush(pParse, p, J);
+  p->pFrom = sqlite3SrcListAppendFromTerm(pParse, p->pFrom, &Y, &D, &Z, 0, &N);
+  sqlite3SrcListFuncArgs(pParse, p->pFrom, E);
+}
+pipeline(A) ::= pipeline(A) pipe pipejoinop(J) LP select(S) RP as(Z) on_using(N). {
+  Pipe *p = A;
+  sqlite3PipePush(pParse, p, J);
+  p->pFrom = sqlite3SrcListAppendFromTerm(pParse,p->pFrom,0,0,&Z,S,&N);
+}  
+pipeline(A) ::= pipeline(A) pipe pipejoinop(J) LP seltablist(F) RP as(Z) on_using(N).{
+  Pipe *p = A;
+  sqlite3PipePush(pParse, p, J);
+  p->pFrom = sqlite3SrcListAppendSubFrom(pParse,p->pFrom,F,&Z,&N);
+}
+pipeline(A) ::= pipeline(A) pipe WHERE expr(W). {
+  Pipe *p = A;
+  if( p->bSeenAgg ){
+    p->pHaving = sqlite3ExprAnd(pParse, A->pHaving, W);
+  }else{
+    p->pWhere = sqlite3ExprAnd(pParse, A->pWhere, W);
+  }
+}
+pipeline(A) ::= pipeline(A) pipe HAVING expr(W). {
+  Pipe *p = A;
+  p->pHaving = sqlite3ExprAnd(pParse, A->pHaving, W);
+}
+//pipeline ::= pipeline pipe AGGREGATE selcollist groupby_opt.
+pipeline(A) ::= pipeline(A) pipe SELECT distinct(D) selcollist(W). {
+  Pipe *p = A;
+  if( p->pProj ) sqlite3PipePush(pParse, p, 0);
+  p->pProj = W;
+  p->selFlags = D;
+}
+pipeline(A) ::= pipeline(A) pipe ORDER BY sortlist(X). {
+  Pipe *p = A;
+  if( p->pOrderBy || p->pLimit ) sqlite3PipePush(pParse, p, 0);
+  p->pOrderBy = X;
+}
+pipeline(A) ::= pipeline(A) pipe LIMIT expr(X). {
+  Pipe *p = A;
+  Expr *pLimit = sqlite3PExpr(pParse,TK_LIMIT,X,0);
+  if( pLimit ){
+    sqlite3ExprDelete(pParse->db, p->pLimit);
+    p->pLimit = pLimit;
+  }
+}
+pipeline(A) ::= pipeline(A) pipe LIMIT expr(X) OFFSET expr(Y). {
+  Pipe *p = A;
+  Expr *pLimit = sqlite3PExpr(pParse,TK_LIMIT,X,Y);
+  if( pLimit ){
+    sqlite3ExprDelete(pParse->db, p->pLimit);
+    p->pLimit = pLimit;
+  }
+}
+pipeline(A) ::= pipeline(A) pipe AS nm(X).  {A->sAs = X;}
+//pipeline ::= pipeline pipe DISTINCT ON nexprlist.
 
 pipe ::= .
 pipe ::= PIPE.
@@ -655,7 +828,7 @@ pipejoinop(X) ::= JOIN_KW(A) nm(B) JOIN.
 pipejoinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
                   {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
 
-
+%endif FROM_first
 
 // Single row VALUES clause.
 //
@@ -765,44 +938,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
     A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
   }
   seltablist(A) ::= stl_prefix(A) LP seltablist(F) RP as(Z) on_using(N). {
-    if( A==0 && Z.n==0 && N.pOn==0 && N.pUsing==0 ){
-      A = F;
-    }else if( ALWAYS(F!=0) && F->nSrc==1 ){
-      A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,0,&N);
-      if( A ){
-        SrcItem *pNew = &A->a[A->nSrc-1];
-        SrcItem *pOld = F->a;
-        assert( pOld->fg.fixedSchema==0 );
-        pNew->zName = pOld->zName;
-        assert( pOld->fg.fixedSchema==0 );
-        if( pOld->fg.isSubquery ){
-          pNew->fg.isSubquery = 1;
-          pNew->u4.pSubq = pOld->u4.pSubq;
-          pOld->u4.pSubq = 0;
-          pOld->fg.isSubquery = 0;
-          assert( pNew->u4.pSubq!=0 && pNew->u4.pSubq->pSelect!=0 );
-          if( (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0 ){
-            pNew->fg.isNestedFrom = 1;
-          }
-        }else{
-          pNew->u4.zDatabase = pOld->u4.zDatabase;
-          pOld->u4.zDatabase = 0;
-        }
-        if( pOld->fg.isTabFunc ){
-          pNew->u1.pFuncArg = pOld->u1.pFuncArg;
-          pOld->u1.pFuncArg = 0;
-          pOld->fg.isTabFunc = 0;
-          pNew->fg.isTabFunc = 1;
-        }
-        pOld->zName = 0;
-      }
-      sqlite3SrcListDelete(pParse->db, F);
-    }else{
-      Select *pSubquery;
-      sqlite3SrcListShiftJoinType(pParse,F);
-      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0);
-      A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,pSubquery,&N);
-    }
+    A = sqlite3SrcListAppendSubFrom(pParse,A,F,&Z,&N);
   }
 %endif  SQLITE_OMIT_SUBQUERY
 

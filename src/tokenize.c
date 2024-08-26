@@ -372,12 +372,17 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
     }
     case CC_PIPE: {
-      if( z[1]!='|' ){
-        *tokenType = TK_BITOR;
-        return 1;
-      }else{
+      if( z[1]=='|' ){
         *tokenType = TK_CONCAT;
         return 2;
+#ifdef TK_PIPE
+      }else if( z[1]=='>' ){
+        *tokenType = TK_PIPE;
+        return 2;
+#endif
+      }else{
+        *tokenType = TK_BITOR;
+        return 1;
       }
     }
     case CC_COMMA: {
