@@ -1,5 +1,5 @@
-C shell.c.in:\suse\seputz/oputz()\sinstead\sof\seputf/oputf()\swhere\sappropriate\sto\savoid\scompilation\serrors\sin\s-std=c99\smode\s(namely\swasm\sbuilds).
-D 2024-08-25T11:59:29.477
+C Randomize\sthe\sname\sof\sthe\sattached\sdatabase\sused\sto\sdo\sVACUUM.
+D 2024-08-26T17:35:32.270
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -834,7 +834,7 @@ F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
-F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
+F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c be5f58bc29f60252e041a618eae59e8d57d460ba136c5403cf0abf955560c457
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
@@ -2210,8 +2210,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df65d00f104f31741056686f2ba41ecb192c552012bffb17c2a8b5d4db058328
-R 8d4b348b6bf673b94cab6e107b5bbb73
-U stephan
-Z 5120e8419efd39e01384da30ed409ec4
+P 9ef8317faebc29d016bdf2e8c678fb21ca2cfa95272f1f18b461fcaf0e220ac5
+R f1ecfb99c58e61a39b55af180b76bb09
+U drh
+Z 1c617d8c3be95e126399c709f0b8f264
 # Remove this line to create a well-formed Fossil manifest.
