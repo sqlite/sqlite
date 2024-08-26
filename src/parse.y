@@ -268,7 +268,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   GENERATED ALWAYS
 %endif
   MATERIALIZED
-  REINDEX RENAME CTIME_KW IF
+  REINDEX RENAME CTIME_KW IF AGGREGATE
   .
 %wildcard ANY.
 
@@ -692,6 +692,7 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
     Expr *pHaving;           /* The HAVING clause */
     int selFlags;            /* SF_DISTINCT or SF_ALL or 0 */
     u8 bSeenAgg;             /* True if AGGREGATE has been seen */
+    u8 bNeedPush;            /* PipePush needed before adding terms to pProj */
     Token sAs;               /* Value of a pending AS clause */
   };
 
@@ -725,10 +726,9 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
   */
   void sqlite3PipePush(Parse *pParse, Pipe *pPipe, int jointype){
     Select *pSel = sqlite3SelectFromPipe(pParse, pPipe);
-    Token *pAs = pPipe->sAs.z!=0 ? &pPipe->sAs : 0;
     SrcList *pFrom = pPipe->pFrom;
     if( pFrom ) pFrom->a[pFrom->nSrc-1].fg.jointype = jointype;
-    pPipe->pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,pAs,pSel,0);
+    pPipe->pFrom = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&pPipe->sAs,pSel,0);
     pPipe->sAs.z = 0;
   }
   
@@ -753,24 +753,24 @@ pipeline(A) ::= FROM seltablist(X). {
 }
 pipeline(A) ::= pipeline(A) pipe pipejoinop(J) nm(Y) dbnm(D) as(Z) on_using(N). {
   Pipe *p = A;
-  sqlite3PipePush(pParse, p, J);
+  if( p->bNeedPush ) sqlite3PipePush(pParse, p, J);
   p->pFrom = sqlite3SrcListAppendFromTerm(pParse, p->pFrom, &Y, &D, &Z, 0, &N);
 }
 pipeline(A) ::= pipeline(A) pipe 
                 pipejoinop(J) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N). {
   Pipe *p = A;
-  sqlite3PipePush(pParse, p, J);
+  if( p->bNeedPush ) sqlite3PipePush(pParse, p, J);
   p->pFrom = sqlite3SrcListAppendFromTerm(pParse, p->pFrom, &Y, &D, &Z, 0, &N);
   sqlite3SrcListFuncArgs(pParse, p->pFrom, E);
 }
 pipeline(A) ::= pipeline(A) pipe pipejoinop(J) LP select(S) RP as(Z) on_using(N). {
   Pipe *p = A;
-  sqlite3PipePush(pParse, p, J);
+  if( p->bNeedPush ) sqlite3PipePush(pParse, p, J);
   p->pFrom = sqlite3SrcListAppendFromTerm(pParse,p->pFrom,0,0,&Z,S,&N);
 }  
 pipeline(A) ::= pipeline(A) pipe pipejoinop(J) LP seltablist(F) RP as(Z) on_using(N).{
   Pipe *p = A;
-  sqlite3PipePush(pParse, p, J);
+  if( p->bNeedPush ) sqlite3PipePush(pParse, p, J);
   p->pFrom = sqlite3SrcListAppendSubFrom(pParse,p->pFrom,F,&Z,&N);
 }
 pipeline(A) ::= pipeline(A) pipe WHERE expr(W). {
@@ -780,22 +780,42 @@ pipeline(A) ::= pipeline(A) pipe WHERE expr(W). {
   }else{
     p->pWhere = sqlite3ExprAnd(pParse, A->pWhere, W);
   }
+  p->bNeedPush = 1;
 }
 pipeline(A) ::= pipeline(A) pipe HAVING expr(W). {
   Pipe *p = A;
   p->pHaving = sqlite3ExprAnd(pParse, A->pHaving, W);
+  p->bNeedPush = 1;
 }
-//pipeline ::= pipeline pipe AGGREGATE selcollist groupby_opt.
+pipeline(A) ::= pipeline(A) pipe AGGREGATE selcollist(W) groupby_opt(G). {
+  Pipe *p = A;
+  ExprList *pProj = W;
+  ExprList *pGroupby = G;
+  if( p->pProj ) sqlite3PipePush(pParse, p, 0);
+  if( pGroupby ){
+    int i;
+    for(i=0; i<pGroupby->nExpr; i++){
+      pProj = sqlite3ExprListAppend(pParse, pProj,
+                            sqlite3ExprDup(pParse->db, pGroupby->a[i].pExpr, 0));
+    }
+    p->pGroupBy = pGroupby;
+  }
+  p->pProj = pProj;
+  p->bSeenAgg = 1;
+  p->bNeedPush = 1;
+}
 pipeline(A) ::= pipeline(A) pipe SELECT distinct(D) selcollist(W). {
   Pipe *p = A;
   if( p->pProj ) sqlite3PipePush(pParse, p, 0);
   p->pProj = W;
   p->selFlags = D;
+  p->bNeedPush = 1;
 }
 pipeline(A) ::= pipeline(A) pipe ORDER BY sortlist(X). {
   Pipe *p = A;
   if( p->pOrderBy || p->pLimit ) sqlite3PipePush(pParse, p, 0);
   p->pOrderBy = X;
+  p->bNeedPush = 1;
 }
 pipeline(A) ::= pipeline(A) pipe LIMIT expr(X). {
   Pipe *p = A;
@@ -804,6 +824,7 @@ pipeline(A) ::= pipeline(A) pipe LIMIT expr(X). {
     sqlite3ExprDelete(pParse->db, p->pLimit);
     p->pLimit = pLimit;
   }
+  p->bNeedPush = 1;
 }
 pipeline(A) ::= pipeline(A) pipe LIMIT expr(X) OFFSET expr(Y). {
   Pipe *p = A;
@@ -812,9 +833,10 @@ pipeline(A) ::= pipeline(A) pipe LIMIT expr(X) OFFSET expr(Y). {
     sqlite3ExprDelete(pParse->db, p->pLimit);
     p->pLimit = pLimit;
   }
+  p->bNeedPush = 1;
 }
-pipeline(A) ::= pipeline(A) PIPE AS nm(X).  {A->sAs = X;}
-pipeline(A) ::= pipeline(A) pipe VIEW nm(X).     {A->sAs = X;}
+pipeline(A) ::= pipeline(A) PIPE AS nm(X).     {A->sAs = X; A->bNeedPush = 1;}
+pipeline(A) ::= pipeline(A) pipe VIEW nm(X).   {A->sAs = X; A->bNeedPush = 1;}
 //pipeline ::= pipeline pipe DISTINCT ON nexprlist.
 
 pipe ::= .

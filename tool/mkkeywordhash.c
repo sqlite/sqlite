@@ -164,6 +164,16 @@ struct Keyword {
 #else
 #  define RETURNING  0x00400000
 #endif
+#ifdef SQLITE_OMIT_RETURNING
+#  define RETURNING  0
+#else
+#  define RETURNING  0x00400000
+#endif
+#ifdef SQLITE_OMIT_FROM_FIRST
+#  define PIPE       0
+#else
+#  define PIPE       0x00800000
+#endif
 
 
 /*
@@ -174,6 +184,7 @@ static Keyword aKeywordTable[] = {
   { "ACTION",           "TK_ACTION",       FKEY,             0      },
   { "ADD",              "TK_ADD",          ALTER,            1      },
   { "AFTER",            "TK_AFTER",        TRIGGER,          0      },
+  { "AGGREGATE",        "TK_AGGREGATE",    PIPE,             10     },
   { "ALL",              "TK_ALL",          ALWAYS,           0      },
   { "ALTER",            "TK_ALTER",        ALTER,            0      },
   { "ALWAYS",           "TK_ALWAYS",       GENCOL,           0      },
