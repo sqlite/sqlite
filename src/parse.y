@@ -295,7 +295,8 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %left CONCAT PTR.
 %left COLLATE.
 %right BITNOT.
-%nonassoc ON.
+%nonassoc ON FROM.
+%nonassoc JOIN_KW.
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -623,6 +624,32 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
   }
 }
 %endif
+
+//%type pipeline {Select*}
+//%destructor pipeline {sqlite3SelectDelete(pParse->db,$$);}
+
+oneselect(A) ::= pipeline.  {A = 0;}
+oneselect(A) ::= oneselect INTO pipeline.  {A = 0;}
+pipeline ::= FROM seltablist.
+pipeline ::= TABLE nm dbnm.
+pipeline ::= pipeline pipejoinop nm dbnm as on_using.
+pipeline ::= pipeline pipejoinop nm dbnm LP exprlist RP as on_using.
+pipeline ::= pipeline pipejoinop LP select RP as on_using.
+pipeline ::= pipeline pipejoinop LP seltablist RP as on_using.
+pipeline ::= pipeline WHERE expr.
+pipeline ::= pipeline AGGREGATE selcollist groupby_opt.
+pipeline ::= pipeline SELECT selcollist.
+pipeline ::= pipeline ORDER BY nexprlist limit_opt.
+
+
+%type pipejoinop {int}
+pipejoinop(X) ::= JOIN_KW(A) JOIN.
+                  {X = sqlite3JoinType(pParse,&A,0,0);  /*X-overwrites-A*/}
+pipejoinop(X) ::= JOIN_KW(A) nm(B) JOIN.
+                  {X = sqlite3JoinType(pParse,&A,&B,0); /*X-overwrites-A*/}
+pipejoinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
+                  {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
+
 
 
 // Single row VALUES clause.

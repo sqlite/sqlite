@@ -1,5 +1,5 @@
-C shell.c.in:\suse\seputz/oputz()\sinstead\sof\seputf/oputf()\swhere\sappropriate\sto\savoid\scompilation\serrors\sin\s-std=c99\smode\s(namely\swasm\sbuilds).
-D 2024-08-25T11:59:29.477
+C Proof-of-concept\sgrammar\srules\sto\sparse\sGoogle-style\s"pipe"\ssyntax\sfor\sSQL,\nwithout\sthe\sghastly\s"|>"\soperator.\s\sThe\sgrammar\srules\sare\snot\sconnected\sto\nworking\scode.\s\sThey\sjust\sparse\sthe\ssyntax.\s\sPipelines\sthat\sbegin\swith\san\nordinary\sSELECT\sstatement\smust\shave\sthe\skeyword\s"INTO"\s(rather\sthan\sthe\n"|>"\soperator)\sseparating\sthe\sSELECT\sfrom\sthe\sstart\sof\sthe\spipeline,\sto\navoid\ssyntactic\sand\ssemantic\sambiguity.
+D 2024-08-26T00:15:35.199
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -753,7 +753,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 5972b7d00af4c8d96fdad781af1ea1d5d51fc3b907ad61bda60e49503274e5ed
+F src/parse.y a4067a80b2194454b7a7be110b0ab23eb69bd90e3fd42f225a47b539aa0cd3f9
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -769,7 +769,7 @@ F src/shell.c.in 5a05e1a1d187ab916afe9a628d7e9b20b5997273b595bd748db324814e0ccca
 F src/sqlite.h.in f07bff4225a1244efd604a0ffef81ed69f29d3dbaed7e22f906f26229ba3ca9e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 28c878bdf528879afefe1994ac007d094f8061f2fdacdc55d6055d7e9341151e
+F src/sqliteInt.h 0067cd2eb8cfaf15118b3ef0f8e6438cfe089e76f1aa0b20377f38bab2e36c7d
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2210,8 +2210,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df65d00f104f31741056686f2ba41ecb192c552012bffb17c2a8b5d4db058328
-R 8d4b348b6bf673b94cab6e107b5bbb73
-U stephan
-Z 5120e8419efd39e01384da30ed409ec4
+P 9ef8317faebc29d016bdf2e8c678fb21ca2cfa95272f1f18b461fcaf0e220ac5
+R 75daf6c6e7502aa1199356969b347c15
+T *branch * sql-pipes
+T *sym-sql-pipes *
+T -sym-trunk *
+U drh
+Z 4d4c9467af5e60b6f11e2dd86c0fbd34
 # Remove this line to create a well-formed Fossil manifest.
