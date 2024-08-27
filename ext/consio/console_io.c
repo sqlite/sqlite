@@ -29,6 +29,9 @@
 #ifndef HAVE_CONSOLE_IO_H
 # include "console_io.h"
 #endif
+#if defined(_MSC_VER)
+# pragma warning(disable : 4204)
+#endif
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
 # if (defined(_WIN32) || defined(WIN32)) && !SQLITE_OS_WINRT
@@ -48,11 +51,6 @@
 # endif
 #else
 # define CIO_WIN_WC_XLATE 0 /* Not exposing translation routines at all */
-#endif
-
-#if CIO_WIN_WC_XLATE
-/* Character used to represent a known-incomplete UTF-8 char group (�) */
-static WCHAR cBadGroup = 0xfffd;
 #endif
 
 #if CIO_WIN_WC_XLATE
@@ -126,6 +124,10 @@ static short streamOfConsole(FILE *pf, /* out */ PerStreamTags *ppst){
   return ppst->reachesConsole;
 # endif
 }
+
+# ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#  define ENABLE_VIRTUAL_TERMINAL_PROCESSING  (0x4)
+# endif
 
 # if CIO_WIN_WC_XLATE
 /* Define console modes for use with the Windows Console API. */
@@ -754,5 +756,9 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 # endif
 }
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
+
+#if defined(_MSC_VER)
+# pragma warning(default : 4204)
+#endif
 
 #undef SHELL_INVALID_FILE_PTR

@@ -831,11 +831,12 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
     if( rc==SQLITE_OK ){
       u8 *aOut = 0;               /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
-      sqlite3_int64 nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
+      int szData = (sizeof(Fts5Data) + 7) & ~7;
+      sqlite3_int64 nAlloc = szData + nByte + FTS5_DATA_PADDING;
       pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
       if( pRet ){
         pRet->nn = nByte;
-        aOut = pRet->p = (u8*)&pRet[1];
+        aOut = pRet->p = (u8*)pRet + szData;
       }else{
         rc = SQLITE_NOMEM;
       }
@@ -858,6 +859,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   }
 
   assert( (pRet==0)==(p->rc!=SQLITE_OK) );
+  assert( pRet==0 || EIGHT_BYTE_ALIGNMENT( pRet->p ) );
   return pRet;
 }
 
@@ -6837,23 +6839,26 @@ static void fts5IterSetOutputsTokendata(Fts5Iter *pIter){
 static void fts5TokendataIterNext(Fts5Iter *pIter, int bFrom, i64 iFrom){
   int ii;
   Fts5TokenDataIter *pT = pIter->pTokenDataIter;
+  Fts5Index *pIndex = pIter->pIndex;
 
   for(ii=0; ii<pT->nIter; ii++){
     Fts5Iter *p = pT->apIter[ii];
     if( p->base.bEof==0 
      && (p->base.iRowid==pIter->base.iRowid || (bFrom && p->base.iRowid<iFrom))
     ){
-      fts5MultiIterNext(p->pIndex, p, bFrom, iFrom);
+      fts5MultiIterNext(pIndex, p, bFrom, iFrom);
       while( bFrom && p->base.bEof==0 
           && p->base.iRowid<iFrom 
-          && p->pIndex->rc==SQLITE_OK 
+          && pIndex->rc==SQLITE_OK 
       ){
-        fts5MultiIterNext(p->pIndex, p, 0, 0);
+        fts5MultiIterNext(pIndex, p, 0, 0);
       }
     }
   }
 
-  fts5IterSetOutputsTokendata(pIter);
+  if( pIndex->rc==SQLITE_OK ){
+    fts5IterSetOutputsTokendata(pIter);
+  }
 }
 
 /*

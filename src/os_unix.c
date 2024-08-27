@@ -322,7 +322,7 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_EXCL        0x01     /* Connections from one process only */
 #define UNIXFILE_RDONLY      0x02     /* Connection is read only */
 #define UNIXFILE_PERSIST_WAL 0x04     /* Persistent WAL mode */
-#ifndef SQLITE_DISABLE_DIRSYNC
+#if !defined(SQLITE_DISABLE_DIRSYNC) && !defined(_AIX)
 # define UNIXFILE_DIRSYNC    0x08     /* Directory sync needed */
 #else
 # define UNIXFILE_DIRSYNC    0x00
@@ -1295,8 +1295,12 @@ static int unixLogErrorAtLine(
   ** available, the error message will often be an empty string. Not a
   ** huge problem. Incorrectly concluding that the GNU version is available
   ** could lead to a segfault though.
+  **
+  ** Forum post 3f13857fa4062301 reports that the Android SDK may use
+  ** int-type return, depending on its version.
   */
-#if defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)
+#if (defined(STRERROR_R_CHAR_P) || defined(__USE_GNU)) \
+  && !defined(ANDROID) && !defined(__ANDROID__)
   zErr =
 # endif
   strerror_r(iErrno, aErr, sizeof(aErr)-1);
@@ -2275,26 +2279,22 @@ static int nolockClose(sqlite3_file *id) {
 
 /*
 ** This routine checks if there is a RESERVED lock held on the specified
-** file by this or any other process. If such a lock is held, set *pResOut
-** to a non-zero value otherwise *pResOut is set to zero.  The return value
-** is set to SQLITE_OK unless an I/O error occurs during lock checking.
-**
-** In dotfile locking, either a lock exists or it does not.  So in this
-** variation of CheckReservedLock(), *pResOut is set to true if any lock
-** is held on the file and false if the file is unlocked.
+** file by this or any other process. If the caller holds a SHARED
+** or greater lock when it is called, then it is assumed that no other
+** client may hold RESERVED. Or, if the caller holds no lock, then it
+** is assumed another client holds RESERVED if the lock-file exists.
 */
 static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
-  int rc = SQLITE_OK;
-  int reserved = 0;
   unixFile *pFile = (unixFile*)id;
-
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
-  assert( pFile );
-  reserved = osAccess((const char*)pFile->lockingContext, 0)==0;
-  OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
-  *pResOut = reserved;
-  return rc;
+  if( pFile->eFileLock>=SHARED_LOCK ){
+    *pResOut = 0;
+  }else{
+    *pResOut = osAccess((const char*)pFile->lockingContext, 0)==0;
+  }
+  OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, 0, *pResOut));
+  return SQLITE_OK;
 }
 
 /*
@@ -3983,7 +3983,7 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 
 /* Forward declaration */
 static int unixGetTempname(int nBuf, char *zBuf);
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
  static int unixFcntlExternalReader(unixFile*, int*);
 #endif
 
@@ -4110,7 +4110,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
 
     case SQLITE_FCNTL_EXTERNAL_READER: {
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
       return unixFcntlExternalReader((unixFile*)id, (int*)pArg);
 #else
       *(int*)pArg = 0;
@@ -4283,7 +4283,7 @@ static int unixGetpagesize(void){
 
 #endif /* !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0 */
 
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
 
 /*
 ** Object used to represent an shared memory buffer.
@@ -5441,11 +5441,16 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 
 #if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->mmapSizeMax>0 ){
+    /* Ensure that there is always at least a 256 byte buffer of addressable
+    ** memory following the returned page. If the database is corrupt,
+    ** SQLite may overread the page slightly (in practice only a few bytes,
+    ** but 256 is safe, round, number).  */
+    const int nEofBuffer = 256;
     if( pFd->pMapRegion==0 ){
       int rc = unixMapfile(pFd, -1);
       if( rc!=SQLITE_OK ) return rc;
     }
-    if( pFd->mmapSize >= iOff+nAmt ){
+    if( pFd->mmapSize >= (iOff+nAmt+nEofBuffer) ){
       *pp = &((u8 *)pFd->pMapRegion)[iOff];
       pFd->nFetchOut++;
     }
@@ -6389,12 +6394,19 @@ static int unixOpen(
         rc = SQLITE_READONLY_DIRECTORY;
       }else if( errno!=EISDIR && isReadWrite ){
         /* Failed to open the file for read/write access. Try read-only. */
+        UnixUnusedFd *pReadonly = 0;
         flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         openFlags &= ~(O_RDWR|O_CREAT);
         flags |= SQLITE_OPEN_READONLY;
         openFlags |= O_RDONLY;
         isReadonly = 1;
-        fd = robust_open(zName, openFlags, openMode);
+        pReadonly = findReusableFd(zName, flags);
+        if( pReadonly ){
+          fd = pReadonly->fd;
+          sqlite3_free(pReadonly);
+        }else{
+          fd = robust_open(zName, openFlags, openMode);
+        }
       }
     }
     if( fd<0 ){

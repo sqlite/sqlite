@@ -1101,13 +1101,13 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
       double r1, r2;
       const char *zVal;
       r1 = sqlite3_value_double(pValue);
-      sqlite3_str_appendf(pStr, "%!.15g", r1);
+      sqlite3_str_appendf(pStr, "%!0.15g", r1);
       zVal = sqlite3_str_value(pStr);
       if( zVal ){
         sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
         if( r1!=r2 ){
           sqlite3_str_reset(pStr);
-          sqlite3_str_appendf(pStr, "%!.20e", r1);
+          sqlite3_str_appendf(pStr, "%!0.20e", r1);
         }
       }
       break;
@@ -1409,7 +1409,7 @@ static void replaceFunc(
   }
   if( zPattern[0]==0 ){
     assert( sqlite3_value_type(argv[1])!=SQLITE_NULL );
-    sqlite3_result_value(context, argv[0]);
+    sqlite3_result_text(context, (const char*)zStr, nStr, SQLITE_TRANSIENT);
     return;
   }
   nPattern = sqlite3_value_bytes(argv[1]);
@@ -1892,7 +1892,7 @@ static void sumFinalize(sqlite3_context *context){
     if( p->approx ){
       if( p->ovrfl ){
         sqlite3_result_error(context,"integer overflow",-1);
-      }else if( !sqlite3IsNaN(p->rErr) ){
+      }else if( !sqlite3IsOverflow(p->rErr) ){
         sqlite3_result_double(context, p->rSum+p->rErr);
       }else{
         sqlite3_result_double(context, p->rSum);
@@ -1909,7 +1909,7 @@ static void avgFinalize(sqlite3_context *context){
     double r;
     if( p->approx ){
       r = p->rSum;
-      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
+      if( !sqlite3IsOverflow(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -1923,7 +1923,7 @@ static void totalFinalize(sqlite3_context *context){
   if( p ){
     if( p->approx ){
       r = p->rSum;
-      if( !sqlite3IsNaN(p->rErr) ) r += p->rErr;
+      if( !sqlite3IsOverflow(p->rErr) ) r += p->rErr;
     }else{
       r = (double)(p->iSum);
     }
@@ -2206,6 +2206,8 @@ static void groupConcatValue(sqlite3_context *context){
       sqlite3_result_error_toobig(context);
     }else if( pAccum->accError==SQLITE_NOMEM ){
       sqlite3_result_error_nomem(context);
+    }else if( pGCC->nAccum>0 && pAccum->nChar==0 ){
+      sqlite3_result_text(context, "", 1, SQLITE_STATIC);
     }else{   
       const char *zText = sqlite3_str_value(pAccum);
       sqlite3_result_text(context, zText, pAccum->nChar, SQLITE_TRANSIENT);
@@ -2545,6 +2547,7 @@ static void fpdecodeFunc(
   x = sqlite3_value_double(argv[0]);
   y = sqlite3_value_int(argv[1]);
   z = sqlite3_value_int(argv[2]);
+  if( z<=0 ) z = 1;
   sqlite3FpDecode(&s, x, y, z);
   if( s.isSpecial==2 ){
     sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");

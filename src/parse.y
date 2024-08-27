@@ -21,6 +21,10 @@
 */
 }
 
+// Function used to enlarge the parser stack, if needed
+%realloc parserStackRealloc
+%free    sqlite3_free
+
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
 
@@ -45,7 +49,7 @@
   }
 }
 %stack_overflow {
-  sqlite3ErrorMsg(pParse, "parser stack overflow");
+  sqlite3OomFault(pParse->db);
 }
 
 // The name of the generated procedure that implements the parser
@@ -232,11 +236,13 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 // improve performance and reduce the executable size.  The goal here is
 // to get the "jump" operations in ISNULL through ESCAPE to have numeric
 // values that are early enough so that all jump operations are clustered
-// at the beginning.
+// at the beginning.  Also, operators like NE and EQ need to be adjacent,
+// and all of the comparison operators need to be clustered together.
+// Various assert() statements throughout the code enforce these restrictions.
 //
 %token ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST.
 %token CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL.
-%token OR AND NOT IS MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
+%token OR AND NOT IS ISNOT MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
 %token GT LE LT GE ESCAPE.
 
 // The following directive causes tokens ABORT, AFTER, ASC, etc. to
@@ -526,9 +532,9 @@ cmd ::= select(X).  {
           break;
         }
       }
-      if( (p->selFlags & SF_MultiValue)==0 && 
-        (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0 &&
-        cnt>mxSelect
+      if( (p->selFlags & (SF_MultiValue|SF_Values))==0
+       && (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0
+       && cnt>mxSelect
       ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
       }
@@ -547,12 +553,21 @@ cmd ::= select(X).  {
     }
     return pSelect;
   }
+
+  /* Memory allocator for parser stack resizing.  This is a thin wrapper around
+  ** sqlite3_realloc() that includes a call to sqlite3FaultSim() to facilitate
+  ** testing.
+  */
+  static void *parserStackRealloc(void *pOld, sqlite3_uint64 newSize){
+    return sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+  }
 }
 
 %ifndef SQLITE_OMIT_CTE
 select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W);}
 select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
                                               {A = attachWithToSelect(pParse,X,W);}
+
 %endif /* SQLITE_OMIT_CTE */
 select(A) ::= selectnowith(A). {
   Select *p = A;
@@ -610,24 +625,27 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 %endif
 
 
-oneselect(A) ::= values(A).
-
+// Single row VALUES clause.
+//
 %type values {Select*}
+oneselect(A) ::= values(A).
 %destructor values {sqlite3SelectDelete(pParse->db, $$);}
 values(A) ::= VALUES LP nexprlist(X) RP. {
   A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0);
 }
-values(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
-  Select *pRight, *pLeft = A;
-  pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0);
-  if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
-  if( pRight ){
-    pRight->op = TK_ALL;
-    pRight->pPrior = pLeft;
-    A = pRight;
-  }else{
-    A = pLeft;
-  }
+
+// Multiple row VALUES clause.
+//
+%type mvalues {Select*}
+oneselect(A) ::= mvalues(A). {
+  sqlite3MultiValuesEnd(pParse, A);
+}
+%destructor mvalues {sqlite3SelectDelete(pParse->db, $$);}
+mvalues(A) ::= values(A) COMMA LP nexprlist(Y) RP. {
+  A = sqlite3MultiValues(pParse, A, Y);
+}
+mvalues(A) ::= mvalues(A) COMMA LP nexprlist(Y) RP. {
+  A = sqlite3MultiValues(pParse, A, Y);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
@@ -722,11 +740,21 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
       if( A ){
         SrcItem *pNew = &A->a[A->nSrc-1];
         SrcItem *pOld = F->a;
+        assert( pOld->fg.fixedSchema==0 );
         pNew->zName = pOld->zName;
-        pNew->zDatabase = pOld->zDatabase;
-        pNew->pSelect = pOld->pSelect;
-        if( pNew->pSelect && (pNew->pSelect->selFlags & SF_NestedFrom)!=0 ){
-          pNew->fg.isNestedFrom = 1;
+        assert( pOld->fg.fixedSchema==0 );
+        if( pOld->fg.isSubquery ){
+          pNew->fg.isSubquery = 1;
+          pNew->u4.pSubq = pOld->u4.pSubq;
+          pOld->u4.pSubq = 0;
+          pOld->fg.isSubquery = 0;
+          assert( pNew->u4.pSubq!=0 && pNew->u4.pSubq->pSelect!=0 );
+          if( (pNew->u4.pSubq->pSelect->selFlags & SF_NestedFrom)!=0 ){
+            pNew->fg.isNestedFrom = 1;
+          }
+        }else{
+          pNew->u4.zDatabase = pOld->u4.zDatabase;
+          pOld->u4.zDatabase = 0;
         }
         if( pOld->fg.isTabFunc ){
           pNew->u1.pFuncArg = pOld->u1.pFuncArg;
@@ -734,8 +762,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pOld->fg.isTabFunc = 0;
           pNew->fg.isTabFunc = 1;
         }
-        pOld->zName = pOld->zDatabase = 0;
-        pOld->pSelect = 0;
+        pOld->zName = 0;
       }
       sqlite3SrcListDelete(pParse->db, F);
     }else{
@@ -1266,8 +1293,17 @@ expr(A) ::= NOT(B) expr(X).
 expr(A) ::= BITNOT(B) expr(X).
               {A = sqlite3PExpr(pParse, @B, X, 0);/*A-overwrites-B*/}
 expr(A) ::= PLUS|MINUS(B) expr(X). [BITNOT] {
-  A = sqlite3PExpr(pParse, @B==TK_PLUS ? TK_UPLUS : TK_UMINUS, X, 0);
-  /*A-overwrites-B*/
+  Expr *p = X;
+  u8 op = @B + (TK_UPLUS-TK_PLUS);
+  assert( TK_UPLUS>TK_PLUS );
+  assert( TK_UMINUS == TK_MINUS + (TK_UPLUS - TK_PLUS) );
+  if( p && p->op==TK_UPLUS ){
+    p->op = op;
+    A = p;
+  }else{
+    A = sqlite3PExpr(pParse, op, p, 0);
+    /*A-overwrites-B*/
+  }
 }
 
 expr(A) ::= expr(B) PTR(C) expr(D). {
@@ -1309,7 +1345,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       if( A ) sqlite3ExprIdToTrueFalse(A);
     }else{
       Expr *pRHS = Y->a[0].pExpr;
-      if( Y->nExpr==1 && sqlite3ExprIsConstant(pRHS) && A->op!=TK_VECTOR ){
+      if( Y->nExpr==1 && sqlite3ExprIsConstant(pParse,pRHS) && A->op!=TK_VECTOR ){
         Y->a[0].pExpr = 0;
         sqlite3ExprListDelete(pParse->db, Y);
         pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0);
@@ -1633,8 +1669,8 @@ expr(A) ::= RAISE LP IGNORE RP.  {
     A->affExpr = OE_Ignore;
   }
 }
-expr(A) ::= RAISE LP raisetype(T) COMMA nm(Z) RP.  {
-  A = sqlite3ExprAlloc(pParse->db, TK_RAISE, &Z, 1);
+expr(A) ::= RAISE LP raisetype(T) COMMA expr(Z) RP.  {
+  A = sqlite3PExpr(pParse, TK_RAISE, Z, 0);
   if( A ) {
     A->affExpr = (char)T;
   }
@@ -1749,9 +1785,10 @@ with ::= WITH RECURSIVE wqlist(W).    { sqlite3WithPush(pParse, W, 1); }
 wqas(A)   ::= AS.                  {A = M10d_Any;}
 wqas(A)   ::= AS MATERIALIZED.     {A = M10d_Yes;}
 wqas(A)   ::= AS NOT MATERIALIZED. {A = M10d_No;}
-wqitem(A) ::= nm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
+wqitem(A) ::= withnm(X) eidlist_opt(Y) wqas(M) LP select(Z) RP. {
   A = sqlite3CteNew(pParse, &X, Y, Z, M); /*A-overwrites-X*/
 }
+withnm(A) ::= nm(A). {pParse->bHasWith = 1;}
 wqlist(A) ::= wqitem(X). {
   A = sqlite3WithAdd(pParse, 0, X); /*A-overwrites-X*/
 }
@@ -1912,8 +1949,8 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
   TRUEFALSE       /* True or false keyword */
   ISNOT           /* Combination of IS and NOT */
   FUNCTION        /* A function invocation */
-  UMINUS          /* Unary minus */
   UPLUS           /* Unary plus */
+  UMINUS          /* Unary minus */
   TRUTH           /* IS TRUE or IS FALSE or IS NOT TRUE or IS NOT FALSE */
   REGISTER        /* Reference to a VDBE register */
   VECTOR          /* Vector */
@@ -1923,6 +1960,12 @@ filter_clause(A) ::= FILTER LP WHERE expr(X) RP.  { A = X; }
   SPAN            /* The span operator */
   ERROR           /* An expression containing an error */
 .
+
+term(A) ::= QNUMBER(X). {
+  A=tokenExpr(pParse,@X,X);
+  sqlite3DequoteNumber(pParse, A);
+}
+
 /* There must be no more than 255 tokens defined above.  If this grammar
 ** is extended with new rules and tokens, they must either be so few in
 ** number that TK_SPAN is no more than 255, or else the new tokens must

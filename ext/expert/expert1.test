@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool. Specifically,
 # the ".recommend" command.
@@ -463,6 +464,13 @@ do_execsql_test 5.3 {
   t2 t2_idx_00000064 {100 5} 
   t2 t2_idx_0001295b {100 20 5}
 }
+
+do_catchsql_test 5.4 {
+  SELECT sqlite_expert_rem(123, 123);
+} {1 {no such function: sqlite_expert_rem}}
+do_catchsql_test 5.5 {
+  SELECT sqlite_expert_sample();
+} {1 {no such function: sqlite_expert_sample}}
 
 if 0 {
 do_test expert1-6.0 {

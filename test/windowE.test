@@ -54,5 +54,25 @@ do_execsql_test 1.3 {
   5 5,4 5,4,1 5,4,1,6 5,4,1,6,3 5,4,1,6,3,2
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x);
+}
+
+sqlite3_create_aggregate db
+
+breakpoint
+do_catchsql_test 2.1 {
+  SELECT min(x) OVER w1 FROM t1
+    WINDOW w1 AS (PARTITION BY x_count(x) OVER w1);
+} {1 {x_count() may not be used as a window function}}
+
+do_catchsql_test 2.2 {
+  SELECT min(x) FILTER (WHERE x_count(x) OVER w1) OVER w1 FROM t1
+    WINDOW w1 AS (PARTITION BY x OVER w1);
+} {1 {near "OVER": syntax error}}
+
+
 finish_test
 

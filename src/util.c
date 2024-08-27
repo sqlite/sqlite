@@ -68,6 +68,19 @@ int sqlite3IsNaN(double x){
 }
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
+/*
+** Return true if the floating point value is NaN or +Inf or -Inf.
+*/
+int sqlite3IsOverflow(double x){
+  int rc;   /* The value return */
+  u64 y;
+  memcpy(&y,&x,sizeof(y));
+  rc = IsOvfl(y);
+  return rc;
+}
+#endif /* SQLITE_OMIT_FLOATING_POINT */
+
 /*
 ** Compute a string length that is limited to what can be stored in
 ** lower 30 bits of a 32-bit signed integer.
@@ -309,6 +322,44 @@ void sqlite3DequoteExpr(Expr *p){
   assert( sqlite3Isquote(p->u.zToken[0]) );
   p->flags |= p->u.zToken[0]=='"' ? EP_Quoted|EP_DblQuoted : EP_Quoted;
   sqlite3Dequote(p->u.zToken);
+}
+
+/*
+** Expression p is a QNUMBER (quoted number). Dequote the value in p->u.zToken
+** and set the type to INTEGER or FLOAT. "Quoted" integers or floats are those
+** that contain '_' characters that must be removed before further processing.
+*/
+void sqlite3DequoteNumber(Parse *pParse, Expr *p){
+  assert( p!=0 || pParse->db->mallocFailed );
+  if( p ){
+    const char *pIn = p->u.zToken;
+    char *pOut = p->u.zToken;
+    int bHex = (pIn[0]=='0' && (pIn[1]=='x' || pIn[1]=='X'));
+    int iValue;
+    assert( p->op==TK_QNUMBER );
+    p->op = TK_INTEGER;
+    do {
+      if( *pIn!=SQLITE_DIGIT_SEPARATOR ){
+        *pOut++ = *pIn;
+        if( *pIn=='e' || *pIn=='E' || *pIn=='.' ) p->op = TK_FLOAT;
+      }else{
+        if( (bHex==0 && (!sqlite3Isdigit(pIn[-1]) || !sqlite3Isdigit(pIn[1])))
+         || (bHex==1 && (!sqlite3Isxdigit(pIn[-1]) || !sqlite3Isxdigit(pIn[1])))
+        ){
+          sqlite3ErrorMsg(pParse, "unrecognized token: \"%s\"", p->u.zToken);
+        }
+      }
+    }while( *pIn++ );
+    if( bHex ) p->op = TK_INTEGER;
+
+    /* tag-20240227-a: If after dequoting, the number is an integer that
+    ** fits in 32 bits, then it must be converted into EP_IntValue.  Other
+    ** parts of the code expect this.  See also tag-20240227-b. */
+    if( p->op==TK_INTEGER && sqlite3GetInt32(p->u.zToken, &iValue) ){
+      p->u.iValue = iValue;
+      p->flags |= EP_IntValue;
+    }
+  }
 }
 
 /*
@@ -627,6 +678,9 @@ do_atof_calc:
     u64 s2;
     rr[0] = (double)s;
     s2 = (u64)rr[0];
+#if defined(_MSC_VER) && _MSC_VER<1700
+    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+#endif
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
     if( e>0 ){
       while( e>=100  ){
@@ -961,10 +1015,13 @@ int sqlite3Atoi(const char *z){
 ** Decode a floating-point value into an approximate decimal
 ** representation.
 **
-** Round the decimal representation to n significant digits if
-** n is positive.  Or round to -n signficant digits after the
-** decimal point if n is negative.  No rounding is performed if
-** n is zero.
+** If iRound<=0 then round to -iRound significant digits to the
+** the left of the decimal point, or to a maximum of mxRound total
+** significant digits.
+**
+** If iRound>0 round to min(iRound,mxRound) significant digits total.
+**
+** mxRound must be positive.
 **
 ** The significant digits of the decimal representation are
 ** stored in p->z[] which is a often (but not always) a pointer
@@ -977,6 +1034,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int e, exp = 0;
   p->isSpecial = 0;
   p->z = p->zBuf;
+
+  assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */
@@ -1069,7 +1128,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   assert( p->n>0 );
   assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
-  if( iRound<0 ){
+  if( iRound<=0 ){
     iRound = p->iDP - iRound;
     if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;

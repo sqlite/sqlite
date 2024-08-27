@@ -24,11 +24,7 @@
 #  include "os_win.h"
 #endif
 
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,6 +53,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+  Tcl_SetVar2(
+      interp, "sqlite_options", "allow_rowid_in_view", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(
+      interp, "sqlite_options", "allow_rowid_in_view", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_CASE_SENSITIVE_LIKE

@@ -234,6 +234,7 @@ do_test cast-3.1 {
 do_test cast-3.2 {
   execsql {SELECT CAST(9223372036854774800 AS numeric)}
 } 9223372036854774800
+breakpoint
 do_realnum_test cast-3.3 {
   execsql {SELECT CAST(9223372036854774800 AS real)}
 } 9.22337203685477e+18

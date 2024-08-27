@@ -161,8 +161,8 @@ static struct GlobalVars {
 /*
 ** Include the external vt02.c and randomjson.c modules.
 */
-extern int sqlite3_vt02_init(sqlite3*,char***,void*);
-extern int sqlite3_randomjson_init(sqlite3*,char***,void*);
+extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
+extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
 
 
 /*
@@ -979,7 +979,8 @@ extern int fuzz_invariant(
   int iRow,               /* The row number for pStmt */
   int nRow,               /* Total number of output rows */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
-  int eVerbosity          /* How much debugging output */
+  int eVerbosity,         /* How much debugging output */
+  unsigned int dbOpt      /* Default optimization flags */
 );
 
 /* Implementation of sqlite_dbdata and sqlite_dbptr */
@@ -1027,11 +1028,40 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+/*
+** Special parameter binding, for testing and debugging purposes.
+**
+**     $int_NNN      ->   integer value NNN
+**     $text_TTTT    ->   floating point value TTT with destructor
+*/
+static void bindDebugParameters(sqlite3_stmt *pStmt){
+  int nVar = sqlite3_bind_parameter_count(pStmt);
+  int i;
+  for(i=0; i<nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i+1);
+    if( zVar==0 ) continue;
+    if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i+1, atoi(&zVar[5]));
+    }else
+    if( strncmp(zVar, "$text_", 6)==0 ){
+      char *zBuf = sqlite3_malloc64( strlen(zVar)-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], strlen(zVar)-5);
+        sqlite3_bind_text64(pStmt, i+1, zBuf, -1, sqlite3_free, SQLITE_UTF8);
+      }
+    }
+  }
+}
 
 /*
 ** Run the SQL text
 */
-static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
+static int runDbSql(
+  sqlite3 *db,                /* Run SQL on this database connection */
+  const char *zSql,           /* The SQL to be run */
+  unsigned int *pBtsFlags,
+  unsigned int dbOpt          /* Default optimization flags */
+){
   int rc;
   sqlite3_stmt *pStmt;
   int bCorrupt = 0;
@@ -1045,6 +1075,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     int nRow = 0;
+    bindDebugParameters(pStmt);
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
       if( eVerbosity>=4 ){
@@ -1107,7 +1138,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
           iRow++;
           for(iCnt=0; iCnt<99999; iCnt++){
             rc = fuzz_invariant(db, pStmt, iCnt, iRow, nRow,
-                                &bCorrupt, eVerbosity);
+                                &bCorrupt, eVerbosity, dbOpt);
             if( rc==SQLITE_DONE ) break;
             if( rc!=SQLITE_ERROR ) g.nInvariant++;
             if( eVerbosity>0 ){
@@ -1330,7 +1361,7 @@ int runCombinedDbSqlInput(
         char cSaved = zSql[i+1];
         zSql[i+1] = 0;
         if( sqlite3_complete(zSql+j) ){
-          rc = runDbSql(cx.db, zSql+j, &btsFlags);
+          rc = runDbSql(cx.db, zSql+j, &btsFlags, dbOpt);
           j = i+1;
         }
         zSql[i+1] = cSaved;
@@ -1340,7 +1371,7 @@ int runCombinedDbSqlInput(
       }
     }
     if( j<i ){
-      runDbSql(cx.db, zSql+j, &btsFlags);
+      runDbSql(cx.db, zSql+j, &btsFlags, dbOpt);
     }
   }
 testrun_finished:

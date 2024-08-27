@@ -31,7 +31,7 @@
 ** correctly on Windows:
 **
 **     fprintf()  ->  Wfprintf()
-**     
+**
 */
 #if defined(_WIN32)
 # include "console_io.h"
@@ -65,7 +65,7 @@ struct GlobalVars {
 static void strFree(sqlite3_str *pStr){
   sqlite3_free(sqlite3_str_finish(pStr));
 }
-  
+
 /*
 ** Print an error resulting from faulting command-line arguments and
 ** abort the program.
@@ -383,7 +383,7 @@ static void printQuoted(FILE *out, sqlite3_value *X){
         fprintf(out, "'");
         for(i=j=0; zArg[i]; i++){
           char c = zArg[i];
-          int ctl = iscntrl(c);
+          int ctl = iscntrl((unsigned char)c);
           if( ctl>inctl ){
             inctl = ctl;
             fprintf(out, "%.*s'||X'%02x", i-j, &zArg[j], c);
@@ -1998,13 +1998,20 @@ int main(int argc, char **argv){
   if( g.bSchemaOnly && g.bSchemaCompare ){
     cmdlineError("The --schema option is useless with --table %s .", zTab);
   }
-  rc = sqlite3_open(zDb1, &g.db);
+  rc = sqlite3_open_v2(zDb1, &g.db, SQLITE_OPEN_READONLY, 0);
   if( rc ){
     cmdlineError("cannot open database file \"%s\"", zDb1);
   }
   rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_schema", 0, 0, &zErrMsg);
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
+  }
+  {
+    sqlite3 *db2 = 0;
+    if( sqlite3_open_v2(zDb2, &db2, SQLITE_OPEN_READONLY, 0) ){
+      cmdlineError("cannot open database file \"%s\"", zDb2);
+    }
+    sqlite3_close(db2);
   }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   sqlite3_enable_load_extension(g.db, 1);

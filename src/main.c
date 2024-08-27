@@ -765,6 +765,18 @@ int sqlite3_config(int op, ...){
     }
 #endif /* SQLITE_OMIT_DESERIALIZE */
 
+    case SQLITE_CONFIG_ROWID_IN_VIEW: {
+      int *pVal = va_arg(ap,int*);
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+      if( 0==*pVal ) sqlite3GlobalConfig.mNoVisibleRowid = TF_NoVisibleRowid;
+      if( 1==*pVal ) sqlite3GlobalConfig.mNoVisibleRowid = 0;
+      *pVal = (sqlite3GlobalConfig.mNoVisibleRowid==0);
+#else
+      *pVal = 0;
+#endif
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -4378,6 +4390,18 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_OPTIMIZATIONS: {
       sqlite3 *db = va_arg(ap, sqlite3*);
       db->dbOptFlags = va_arg(ap, u32);
+      break;
+    }
+
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, sqlite3 *db, int *N)
+    **
+    ** Write the current optimization settings into *N.  A zero bit means that
+    ** the optimization is on, and a 1 bit means that the optimization is off.
+    */
+    case SQLITE_TESTCTRL_GETOPT: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int *pN = va_arg(ap, int*);
+      *pN = db->dbOptFlags;
       break;
     }
 
