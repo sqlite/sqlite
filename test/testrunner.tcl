@@ -89,7 +89,9 @@ Other PERMUTATION arguments must be run using testfixture, not tclsh:
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
 those tcl tests for which the final component of the filename matches at
-least one specified pattern are run.
+least one specified pattern are run.  The glob wildcard '*' is prepended
+to the pattern if it does not start with '^' and appended to every
+pattern that does not end with '$'.
 
 If no PATTERN arguments are present, then various fuzztest, threadtest
 and other tests are run as part of the "release" permutation. These are
@@ -842,6 +844,17 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     if {[llength $patternlist]>0} {
       set bMatch 0
       foreach p $patternlist {
+        set p [string trim $p *]
+        if {[string index $p 0]=="^"} {
+          set p [string range $p 1 end]
+        } else {
+          set p "*$p"
+        }
+        if {[string index $p end]=="\$"} {
+          set p [string range $p 0 end-1]
+        } else {
+          set p "$p*"
+        }
         if {[string match $p [file tail $f]]} {
           set bMatch 1
           break
@@ -1062,25 +1075,13 @@ proc add_jobs_from_cmdline {patternlist} {
     }
 
     release {
-      set patternlist [lrange $patternlist 1 end]
+      set config_set {}
       foreach b [trd_builds $TRG(platform)] {
         if {$TRG(config)!="" && ![regexp "\\y$b\\y" $TRG(config)]} continue
         if {[regexp "\\y$b\\y" $TRG(omitconfig)]} continue
-        set bld [add_build_job $b $TRG(testfixture)]
-        foreach c [trd_configs $TRG(platform) $b] {
-          add_tcl_jobs $bld $c $patternlist
-        }
-
-        if {$patternlist==""} {
-          foreach e [trd_extras $TRG(platform) $b] {
-            if {$e=="fuzztest"} {
-              add_fuzztest_jobs $b
-            } else {
-              add_make_job $bld $e
-            }
-          }
-        }
+        lappend config_set $b
       }
+      add_devtest_jobs $config_set [lrange $patternlist 1 end]
     }
 
     list {
