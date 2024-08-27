@@ -427,8 +427,7 @@ static int fts5InitVtab(
 
   /* Load the initial configuration */
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
-    sqlite3Fts5IndexRollback(pTab->p.pIndex);
+    rc = sqlite3Fts5ConfigLoad(pTab->p.pConfig, pTab->p.pConfig->iCookie-1);
   }
 
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){

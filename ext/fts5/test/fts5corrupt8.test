@@ -32,20 +32,11 @@ sqlite3 db test.db
 
 do_catchsql_test 1.2 {
   SELECT * FROM t1
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 do_catchsql_test 1.3 {
   DROP TABLE t1
-} {1 {vtable constructor failed: t1}}
-do_test 1.4 {
-  sqlite3_db_config db DEFENSIVE 0
-} {0}
-do_test 1.5 {
-  sqlite3_fts5_drop_corrupt_table db main t1
-} {}
-do_test 1.6 {
-  sqlite3_db_config db DEFENSIVE -1
-} {0}
-do_execsql_test 1.7 {
+} {0 {}}
+do_execsql_test 1.4 {
   SELECT * FROM sqlite_schema
 }
 

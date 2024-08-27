@@ -44,12 +44,12 @@ do_catchsql_test 1.2.2 {
 
 do_catchsql_test 1.3.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'); 
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 do_catchsql_test 1.3.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 db close
 sqlite3 db test.db
@@ -57,12 +57,12 @@ sqlite3 db test.db
 do_catchsql_test 1.3.3 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 fts5_aux_test_functions db
 do_catchsql_test 1.3.4 {
   SELECT fts5_columntext(t1) FROM t1('*reads');
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 #-------------------------------------------------------------------------
 reset_db

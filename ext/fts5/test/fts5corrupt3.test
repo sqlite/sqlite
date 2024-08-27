@@ -680,11 +680,11 @@ do_test 12.0 {
 
 do_catchsql_test 11.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon';
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 11.2 {
   INSERT INTO t1(t1, rank) VALUES('merge', 500);
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 #
@@ -1040,7 +1040,7 @@ do_test 16.0 {
 
 do_catchsql_test 16.1 {
 INSERT INTO t1(t1) VALUES('integrity-check');
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -1126,7 +1126,7 @@ do_test 17.0 {
 
 do_catchsql_test 17.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon';
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -1630,7 +1630,7 @@ do_test 20.0 {
 
 do_catchsql_test 20.1 {
   SELECT * FROM t1 WHERE t1 MATCH 'abandon';
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -2100,7 +2100,7 @@ do_test 22.0 {
 
 do_catchsql_test 22.1 {
   INSERT INTO t1(t1) VALUES('optimize');
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -3700,7 +3700,7 @@ do_catchsql_test 32.1 {
          highlight(t1, 2, '[', ']') 
   FROM t1('g + h') 
   WHERE rank MATCH 'bm25(1.0, 1.0)' ORDER BY rank;
-} {1 {vtable constructor failed: t1}}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 32.2 {
   SELECT * FROM t3;
