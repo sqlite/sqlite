@@ -421,6 +421,8 @@ proc display_job {jobdict {tm ""}} {
   if {$tm!=""} {
     set dtm [expr {$tm-$job(starttime)}]
     set dtm [format %8s [elapsetime $dtm]]
+  } else{
+    set dtm [format %8s ""]
   }
   puts "  $dfname $dtm"
 }
@@ -495,7 +497,7 @@ proc show_status {db cls} {
     }
     set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
-      puts "$nOmit jobs omitted due to failures$clreol"
+      puts [format %-79s "$nOmit jobs omitted due to failures$clreol"]
     }
   }
   if {$cls} {
