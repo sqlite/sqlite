@@ -96,14 +96,14 @@ static int SQLITE_TCLAPI f5tDbAndApi(
 
     rc = sqlite3_prepare_v2(db, "SELECT fts5(?1)", -1, &pStmt, 0);
     if( rc!=SQLITE_OK ){
-      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), (char*)0);
       return TCL_ERROR;
     }
     sqlite3_bind_pointer(pStmt, 1, (void*)&pApi, "fts5_api_ptr", 0);
     sqlite3_step(pStmt);
 
     if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
-      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), (char*)0);
       return TCL_ERROR;
     }
 
@@ -392,7 +392,7 @@ static int SQLITE_TCLAPI xF5tApi(
     CASE(12, "xSetAuxdata") {
       F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc(sizeof(F5tAuxData));
       if( pData==0 ){
-        Tcl_AppendResult(interp, "out of memory", 0);
+        Tcl_AppendResult(interp, "out of memory", (char*)0);
         return TCL_ERROR;
       }
       pData->pObj = objv[2];
@@ -452,7 +452,7 @@ static int SQLITE_TCLAPI xF5tApi(
 
       rc = p->pApi->xPhraseFirst(p->pFts, iPhrase, &iter, &iCol, &iOff);
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+        Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
         return TCL_ERROR;
       }
       for( ;iCol>=0; p->pApi->xPhraseNext(p->pFts, &iter, &iCol, &iOff) ){
@@ -683,7 +683,7 @@ static int SQLITE_TCLAPI f5tCreateFunction(
       pApi, zName, (void*)pCtx, xF5tFunction, xF5tDestroy
   );
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), (char*)0);
     return TCL_ERROR;
   }
 
@@ -750,7 +750,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   if( objc==5 ){
     char *zOpt = Tcl_GetString(objv[1]);
     if( strcmp("-subst", zOpt) ){
-      Tcl_AppendResult(interp, "unrecognized option: ", zOpt, 0);
+      Tcl_AppendResult(interp, "unrecognized option: ", zOpt, (char*)0);
       return TCL_ERROR;
     }
   }
@@ -759,7 +759,7 @@ static int SQLITE_TCLAPI f5tTokenize(
     return TCL_ERROR;
   }
   if( nArg==0 ){
-    Tcl_AppendResult(interp, "no such tokenizer: ", 0);
+    Tcl_AppendResult(interp, "no such tokenizer: ", (char*)0);
     Tcl_Free((void*)azArg);
     return TCL_ERROR;
   }
@@ -767,13 +767,13 @@ static int SQLITE_TCLAPI f5tTokenize(
 
   rc = pApi->xFindTokenizer(pApi, azArg[0], &pUserdata, &tokenizer);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "no such tokenizer: ", azArg[0], 0);
+    Tcl_AppendResult(interp, "no such tokenizer: ", azArg[0], (char*)0);
     return TCL_ERROR;
   }
 
   rc = tokenizer.xCreate(pUserdata, &azArg[1], (int)(nArg-1), &pTok);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error in tokenizer.xCreate()", 0);
+    Tcl_AppendResult(interp, "error in tokenizer.xCreate()", (char*)0);
     return TCL_ERROR;
   }
 
@@ -787,7 +787,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   );
   tokenizer.xDelete(pTok);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", 0);
+    Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", (char*)0);
     Tcl_DecrRefCount(pRet);
     return TCL_ERROR;
   }
@@ -1049,7 +1049,7 @@ static int SQLITE_TCLAPI f5tTokenizerLocale(
 
   if( p->xToken==0 ){
     Tcl_AppendResult(interp, 
-        "sqlite3_fts5_locale may only be used by tokenizer callback", 0
+        "sqlite3_fts5_locale may only be used by tokenizer callback", (char*)0
     );
     return TCL_ERROR;
   }
@@ -1098,7 +1098,7 @@ static int SQLITE_TCLAPI f5tTokenizerReturn(
 
   if( p->xToken==0 ){
     Tcl_AppendResult(interp, 
-        "sqlite3_fts5_token may only be used by tokenizer callback", 0
+        "sqlite3_fts5_token may only be used by tokenizer callback", (char*)0
     );
     return TCL_ERROR;
   }
@@ -1250,7 +1250,7 @@ static int SQLITE_TCLAPI f5tCreateTokenizer(
     Tcl_AppendResult(interp, (
           bV2 ? "error in fts5_api.xCreateTokenizer_v2()"
           : "error in fts5_api.xCreateTokenizer()"
-    ), 0);
+    ), (char*)0);
     return TCL_ERROR;
   }
 
@@ -1540,9 +1540,89 @@ static int SQLITE_TCLAPI f5tRegisterOriginText(
 
   Tcl_ResetResult(interp);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), (void*)0);
     return TCL_ERROR;
   }
+  return TCL_OK;
+}
+
+/*
+** This function is used to DROP an fts5 table. It works even if the data
+** structures fts5 stores within the database are corrupt, which sometimes
+** prevents a straight "DROP TABLE" command from succeeding.
+**
+** The first parameter is the database handle to use for the DROP TABLE
+** operation. The second is the name of the database to drop the fts5 table
+** from (i.e. "main", "temp" or the name of an attached database). The
+** third parameter is the name of the fts5 table to drop.
+**
+** SQLITE_OK is returned if the table is successfully dropped. Or, if an
+** error occurs, an SQLite error code.
+*/
+static int sqlite3_fts5_drop_corrupt_table(
+  sqlite3 *db,                    /* Database handle */
+  const char *zDb,                /* Database name ("main", "temp" etc.) */
+  const char *zTab                /* Name of fts5 table to drop */
+){
+  int rc = SQLITE_OK;
+  int bDef = 0;
+
+  rc = sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDef);
+  if( rc==SQLITE_OK ){
+    char *zScript = sqlite3_mprintf(
+        "DELETE FROM %Q.'%q_data';"
+        "DELETE FROM %Q.'%q_config';"
+        "INSERT INTO %Q.'%q_data' VALUES(10, X'0000000000');"
+        "INSERT INTO %Q.'%q_config' VALUES('version', 4);"
+        "DROP TABLE %Q.'%q';",
+        zDb, zTab, zDb, zTab, zDb, zTab, zDb, zTab, zDb, zTab
+    );
+
+    if( zScript==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      if( bDef ) sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+      rc = sqlite3_exec(db, zScript, 0, 0, 0);
+      if( bDef ) sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, 1, 0);
+      sqlite3_free(zScript);
+    }
+  }
+
+  return rc;
+}
+
+/*
+**      sqlite3_fts5_drop_corrupt_table DB DATABASE TABLE
+**
+** Description...
+*/
+static int SQLITE_TCLAPI f5tDropCorruptTable(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  const char *zDb = 0;
+  const char *zTab = 0;
+  int rc = SQLITE_OK;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DATABASE TABLE");
+    return TCL_ERROR;
+  }
+  if( f5tDbPointer(interp, objv[1], &db) ){
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[2]);
+  zTab = Tcl_GetString(objv[3]);
+
+  rc = sqlite3_fts5_drop_corrupt_table(db, zDb, zTab);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), (void*)0);
+    return TCL_ERROR;
+  }
+
   return TCL_OK;
 }
 
@@ -1564,7 +1644,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
     { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
     { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 },
-    { "sqlite3_fts5_register_origintext",f5tRegisterOriginText, 0 }
+    { "sqlite3_fts5_register_origintext",f5tRegisterOriginText, 0 },
+    { "sqlite3_fts5_drop_corrupt_table", f5tDropCorruptTable, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;
