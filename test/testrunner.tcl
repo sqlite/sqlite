@@ -481,7 +481,7 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
-    puts "Running: "
+    puts [format %-79s "Running:"]
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
@@ -489,7 +489,7 @@ proc show_status {db cls} {
     }
   }
   if {$S(failed)>0} {
-    puts "Failures: "
+    puts [format %-79s "Failures:"]
     $db eval {
       SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
     } job {
