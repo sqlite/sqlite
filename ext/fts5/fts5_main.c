@@ -3267,7 +3267,9 @@ static int fts5NewTokenizerModule(
 */
 typedef struct Fts5VtoVTokenizer Fts5VtoVTokenizer;
 struct Fts5VtoVTokenizer {
-  Fts5TokenizerModule *pMod;
+  int bV2Native;                  /* True if v2 native tokenizer */
+  fts5_tokenizer x1;              /* Tokenizer functions */
+  fts5_tokenizer_v2 x2;           /* V2 tokenizer functions */
   Fts5Tokenizer *pReal;
 };
 
@@ -3287,7 +3289,9 @@ static int fts5VtoVCreate(
 
   pNew = (Fts5VtoVTokenizer*)sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
   if( rc==SQLITE_OK ){
-    pNew->pMod = pMod;
+    pNew->x1 = pMod->x1;
+    pNew->x2 = pMod->x2;
+    pNew->bV2Native = pMod->bV2Native;
     if( pMod->bV2Native ){
       rc = pMod->x2.xCreate(pMod->pUserData, azArg, nArg, &pNew->pReal);
     }else{
@@ -3309,11 +3313,10 @@ static int fts5VtoVCreate(
 static void fts5VtoVDelete(Fts5Tokenizer *pTok){
   Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
   if( p ){
-    Fts5TokenizerModule *pMod = p->pMod;
-    if( pMod->bV2Native ){
-      pMod->x2.xDelete(p->pReal);
+    if( p->bV2Native ){
+      p->x2.xDelete(p->pReal);
     }else{
-      pMod->x1.xDelete(p->pReal);
+      p->x1.xDelete(p->pReal);
     }
     sqlite3_free(p);
   }
@@ -3331,9 +3334,8 @@ static int fts5V1toV2Tokenize(
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
   Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
-  Fts5TokenizerModule *pMod = p->pMod;
-  assert( pMod->bV2Native );
-  return pMod->x2.xTokenize(p->pReal, pCtx, flags, pText, nText, 0, 0, xToken);
+  assert( p->bV2Native );
+  return p->x2.xTokenize(p->pReal, pCtx, flags, pText, nText, 0, 0, xToken);
 }
 
 /*
@@ -3348,10 +3350,9 @@ static int fts5V2toV1Tokenize(
   int (*xToken)(void*, int, const char*, int, int, int)
 ){
   Fts5VtoVTokenizer *p = (Fts5VtoVTokenizer*)pTok;
-  Fts5TokenizerModule *pMod = p->pMod;
-  assert( pMod->bV2Native==0 );
+  assert( p->bV2Native==0 );
   UNUSED_PARAM2(pLocale,nLocale);
-  return pMod->x1.xTokenize(p->pReal, pCtx, flags, pText, nText, xToken);
+  return p->x1.xTokenize(p->pReal, pCtx, flags, pText, nText, xToken);
 }
 
 /*
