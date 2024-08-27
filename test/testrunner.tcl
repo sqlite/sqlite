@@ -455,6 +455,11 @@ proc show_status {db cls} {
     incr S($state) $cnt
     incr total $cnt
   }
+  set nt 0
+  set ne 0
+  $db eval {
+    SELECT sum(ntest) AS nt, sum(nerr) AS ne FROM jobs HAVING nt>0
+  } break
   set fin [expr $S(done)+$S(failed)]
   if {$cmdline!=""} {set cmdline " $cmdline"}
 
@@ -467,14 +472,10 @@ proc show_status {db cls} {
   } else {
     set clreol ""
   }
-  set f ""
-  if {$S(failed)>0} {
-    set f "$S(failed) FAILED, "
-  }
   puts [format %-79s "Command line: \[testrunner.tcl$cmdline\]$clreol"]
-  puts [format %-79s "Jobs:         $nJob"]
-  puts [format %-79s "Summary:      [elapsetime $tm], ($fin/$total) finished,\
-                      ${f}$S(running) running  "]
+  puts [format %-79s "Cores:        $nJob max $S(running) active"]
+  puts [format %-79s "Summary:      [elapsetime $tm], $fin/$total tasks,\
+                      $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
