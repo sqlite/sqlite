@@ -475,7 +475,7 @@ proc show_status {db cls} {
     set clreol ""
   }
   puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]$clreol"]
-  puts [format %-79.79s "Cores:   $nJob max $S(running) active"]
+  puts [format %-79.79s "Jobs:    $nJob max $S(running) active"]
   puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total tasks,\
                          $ne errors, $nt tests"]
 
@@ -880,7 +880,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
         } else {
           set p "$p*"
         }
-        if {[string match $p [file tail $f]]} {
+        if {[string match $p "$config [file tail $f]"]} {
           set bMatch 1
           break
         }
@@ -1100,13 +1100,34 @@ proc add_jobs_from_cmdline {patternlist} {
     }
 
     release {
-      set config_set {}
+      set patternlist [lrange $patternlist 1 end]
       foreach b [trd_builds $TRG(platform)] {
         if {$TRG(config)!="" && ![regexp "\\y$b\\y" $TRG(config)]} continue
         if {[regexp "\\y$b\\y" $TRG(omitconfig)]} continue
-        lappend config_set $b
+        set bld [add_build_job $b $TRG(testfixture)]
+        foreach c [trd_configs $TRG(platform) $b] {
+          add_tcl_jobs $bld $c $patternlist SHELL
+        }
+
+        if {$patternlist==""} {
+          foreach e [trd_extras $TRG(platform) $b] {
+            if {$e=="fuzztest"} {
+              add_fuzztest_jobs $b
+            } else {
+              add_make_job $bld $e
+            }
+          }
+        }
+
+        if {[trdb one "SELECT EXISTS(SELECT 1
+                                       FROM jobs WHERE depid='SHELL')"]} {
+          set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
+          set sbldid [lindex $sbld 0]
+          trdb eval {
+            UPDATE jobs SET depid=$sbldid WHERE depid='SHELL'
+          }
+        }
       }
-      add_devtest_jobs $config_set [lrange $patternlist 1 end]
     }
 
     list {
@@ -1448,7 +1469,14 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      puts "${indent}[lindex $displayname end]"
+      set tail [lindex $displayname end]
+      set e1 [lindex $displayname 1]
+      if {[string match config=* $e1]} {
+        set cfg [string range $e1 7 end]
+        puts "${indent}($cfg) $tail"
+      } else {
+        puts "${indent}$tail"
+      }
     }
   }
 }
