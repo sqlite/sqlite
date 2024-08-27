@@ -609,7 +609,9 @@ fFlushBuffer(FILE *pfOut){
 }
 #endif
 
-# if CIO_WIN_WC_XLATE && !defined(SHELL_OMIT_FIO_DUPE)
+#if CIO_WIN_WC_XLATE \
+   && !defined(SHELL_OMIT_FIO_DUPE) \
+   && defined(SQLITE_USE_ONLY_WIN32)
 static struct FileAltIds {
   int fd;
   HANDLE fh;
