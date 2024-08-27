@@ -279,10 +279,12 @@ set TRG(schema) {
     priority INTEGER NOT NULL,          -- higher priority jobs may run earlier
   
     /* Fields updated as jobs run */
-    starttime INTEGER, 
-    endtime INTEGER,
+    starttime INTEGER,                  -- Start time (milliseconds since 1970)
+    endtime INTEGER,                    -- End time
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
-    output TEXT
+    ntest INT,                          -- Number of test cases run
+    nerr INT,                           -- Number of errors reported
+    output TEXT                         -- test output
   );
 
   CREATE TABLE config(
@@ -391,14 +393,34 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
   exit
 }
 
+# Compute an elapse time string MM:SS or HH:MM:SS based on the
+# number of milliseconds in the argument.
+#
+proc elapsetime {ms} {
+  set s [expr {int(($ms+500.0)*0.001)}]
+  set hr [expr {$s/3600}]
+  set mn [expr {($s/60)%60}]
+  set sc [expr {$s%60}]
+  if {$hr>0} {
+    return [format %02d:%02d:%02d $hr $mn $sc]
+  } else {
+    return [format %02d:%02d $mn $sc]
+  }
+}
+
 # Helper routine for show_status
 #
 proc display_job {jobdict {tm ""}} {
   array set job $jobdict
-  set dfname [format %-60s $job(displayname)]
+  if {[string length $job(displayname)]>65} {
+    set dfname [format %.65s... $job(displayname)]
+  } else {
+    set dfname [format %-68s $job(displayname)]
+  }
   set dtm ""
   if {$tm!=""} {
-    set dtm [format %-10s "\[[expr {$tm-$job(starttime)}]ms\]"]
+    set dtm [expr {$tm-$job(starttime)}]
+    set dtm [format %8s [elapsetime $dtm]]
   }
   puts "  $dfname $dtm"
 }
@@ -449,10 +471,10 @@ proc show_status {db cls} {
   if {$S(failed)>0} {
     set f "$S(failed) FAILED, "
   }
-  puts "Command line: \[testrunner.tcl$cmdline\]$clreol"
-  puts "Jobs:         $nJob  "
-  puts "Summary:      ${tm}ms, ($fin/$total) finished,\
-                      ${f}$S(running) running  "
+  puts [format %-79s "Command line: \[testrunner.tcl$cmdline\]$clreol"]
+  puts [format %-79s "Jobs:         $nJob"]
+  puts [format %-79s "Summary:      [elapsetime $tm], ($fin/$total) finished,\
+                      ${f}$S(running) running  "]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
@@ -1121,15 +1143,25 @@ proc make_new_testset {} {
 }
 
 proc mark_job_as_finished {jobid output state endtm} {
+  set ntest 1
+  set nerr 0
+  if {$endtm>0} {
+    if {[regexp {\y(\d+) errors out of (\d+) tests} $output all a b]} {
+      set nerr $a
+      set ntest $b
+    }
+  }
   r_write_db {
     if {$state=="failed"} {
       set childstate omit
+      if {$nerr<=0} {set nerr 1}
     } else {
       set childstate ready
     }
     trdb eval {
       UPDATE jobs 
-        SET output=$output, state=$state, endtime=$endtm
+        SET output=$output, state=$state, endtime=$endtm,
+            ntest=$ntest, nerr=$nerr
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
@@ -1372,6 +1404,17 @@ proc run_testset {} {
 
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
+  trdb eval {
+     SELECT sum(ntest) AS totaltest,
+            sum(nerr) AS totalerr
+       FROM jobs
+  } break
+  trdb eval {
+     SELECT max(endtime)-min(starttime) AS totaltime
+       FROM jobs WHERE endtime>0
+  } break;
+  set et [elapsetime $totaltime]
+  puts "$totalerr errors out of $totaltest tests in about $et"
 }
 
 # Handle the --buildonly option, if it was specified.
