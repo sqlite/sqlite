@@ -421,7 +421,7 @@ proc display_job {jobdict {tm ""}} {
   if {$tm!=""} {
     set dtm [expr {$tm-$job(starttime)}]
     set dtm [format %8s [elapsetime $dtm]]
-  } else{
+  } else {
     set dtm [format %8s ""]
   }
   puts "  $dfname $dtm"
@@ -474,10 +474,10 @@ proc show_status {db cls} {
   } else {
     set clreol ""
   }
-  puts [format %-79s "Command line: \[testrunner.tcl$cmdline\]$clreol"]
-  puts [format %-79s "Cores:        $nJob max $S(running) active"]
-  puts [format %-79s "Summary:      [elapsetime $tm], $fin/$total tasks,\
-                      $ne errors, $nt tests"]
+  puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]$clreol"]
+  puts [format %-79.79s "Cores:   $nJob max $S(running) active"]
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total tasks,\
+                         $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
