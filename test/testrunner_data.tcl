@@ -115,6 +115,7 @@ namespace eval trd {
   }
   set build(Stdcall) {
     -DUSE_STDCALL=1
+    -DSQLITE_USE_ONLY_WIN32=1
     -O2
   }
 
