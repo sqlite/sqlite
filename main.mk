@@ -971,9 +971,15 @@ mdevtest:
 quicktest:	./testfixture$(EXE)
 	./testfixture$(EXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-# The default test case.  Runs most of the faster standard TCL tests,
-# and fuzz tests, and sqlite3_analyzer and sqldiff tests.
-test:	fuzztest sourcetest $(TESTPROGS) tcltest
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)/tool/srctree-check.tcl
+	tclsh $(TOP)/tool/srctree-check.tcl
+
+# The default test case.
+test:	srctree-check sourcetest
+	tclsh $(TOP)/test/testrunner.tcl mdevtest
 
 
 # Run a test using valgrind.  This can take a really long time

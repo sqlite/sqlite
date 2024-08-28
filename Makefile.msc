@@ -2544,7 +2544,8 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fuzztest tcltest
+test:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
 # The veryquick.test TCL tests.
 #
@@ -2565,10 +2566,16 @@ devtest:	testfixture.exe fuzztest testrunner
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)\tool\srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)\tool\srctree-check.tcl
+
 # Testing for a release
 #
-releasetest: testfixture.exe
-	testfixture.exe $(TOP)\test\testrunner.tcl release
+releasetest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 
 smoketest:	$(TESTPROGS)

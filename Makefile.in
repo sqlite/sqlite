@@ -1381,18 +1381,16 @@ srctree-check:	$(TOP)/tool/srctree-check.tcl
 
 # Testing for a release
 #
-releasetest: srctree-check testfixture$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+releasetest: srctree-check has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-# This is the common case.  Run many tests that do not take too long,
-# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
-#
-test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
+test:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
@@ -1407,8 +1405,8 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
-	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+shelltest:
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
