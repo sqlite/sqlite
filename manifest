@@ -1,12 +1,12 @@
-C Maybe\s[7420b13238da4e6b]\swas\snot\ssuch\sa\sgood\sidea.\s\sRestore\s"make\stest"\sso\nthat\sit\sworks\sas\sbefore\s-\srunning\sa\ssingle-threaded\stest\sover\sthe\ssource\stree\nwith\soptions\sspecified\sby\s./configure\sand\ssimilar.\s\sInstead,\schange\sthe\n"make\sdevtest"\starget\sso\sthat\sruns\sthe\sautomated\smulti-threaded\stests\son\s\na\sstandard\sconfiguration.
-D 2024-08-28T13:51:51.631
+C Update\sthe\sREADME.md\sfile\sto\srecommend\srunning\s"devtest"\sinstead\sof\s"mdevtest".
+D 2024-08-28T13:55:46.396
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 100a8ba2aee96203e57f0dfeb7c75befa7db0d9d17bdb5a7f814eaa60b974e16
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 75946777a32696b6e894e686ba663f9dcdecea4730a827717e1b2be3b262234d
-F README.md 3d47ef5758e2de29d6f4e1aca714d51424baba86c8b561fef330f6ef2dc9282c
+F README.md 83335813752d41cd445c727b0918597d99e18e7de0e05024536f555a5f34cc56
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 115e68597957a9ee80de7f554ee3768c992051687c8f07eaf3a9fcaab7efd44e
-R 4897791cd3fac7134f1184e69605f11d
+P dc9fee980d4f4b5a569628702e52cef9e5d8e6c69c2b84546dce47e3e514775e
+R 1aff88f40958f7cfa960a88f6231afc4
 U drh
-Z f3181ad81fdede715ff6716653ae5e00
+Z e14775f88501d5236fe68a1292e9a48b
 # Remove this line to create a well-formed Fossil manifest.

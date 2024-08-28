@@ -109,7 +109,7 @@ For example:
         ../sqlite/configure        ;#  Run the configure script
         make sqlite3               ;#  Builds the "sqlite3" command-line tool
         make sqlite3.c             ;#  Build the "amalgamation" source file
-        make mdevtest              ;#  Run development tests (requires tcl-dev)
+        make devtest               ;#  Run development tests (requires tcl-dev)
         make releasetest           ;#  Run full release tests (requires tcl-dev)
         make sqldiff               ;#  Builds the "sqldiff" command-line tool
         make sqlite3_analyzer      ;#  Builds the "sqlite3_analyzer" tool (requires tcl-dev)
@@ -156,7 +156,7 @@ Build using Makefile.msc.  Example:
 
         nmake /f Makefile.msc sqlite3.exe
         nmake /f Makefile.msc sqlite3.c
-        nmake /f Makefile.msc mdevtest
+        nmake /f Makefile.msc devtest
         nmake /f Makefile.msc releasetest
         nmake /f Makefile.msc tclextension-install
  
