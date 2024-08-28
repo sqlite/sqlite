@@ -480,20 +480,37 @@ proc show_status {db cls} {
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
+  set nrun 0
   if {$S(running)>0} {
-    puts [format %-79s "Running:"]
+    puts [format %-79s "$S(running) Running:"]
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
+      incr nrun
       display_job [array get job] $now
     }
   }
   if {$S(failed)>0} {
-    puts [format %-79s "Failures:"]
+    puts [format %-79s "$S(failed) Failed:"]
+    set nfail 0
+
+    # $mxtoshow tries to limit the number of "Failures:" reported so that
+    # the status display does not overflow a 24-line terminal.  But it will
+    # always show at least the most recent 4 failures, even if an overflow
+    # is needed.
+    set mxtoshow [expr {16-$nrun}]
+    if {$mxtoshow<4} {set mxtoshow 4}
+
     $db eval {
-      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+      SELECT * FROM jobs WHERE state='failed' ORDER BY endtime DESC
     } job {
-      display_job [array get job]
+      incr nfail
+      if {$nfail<=$mxtoshow} {
+        display_job [array get job]
+      }
+    }
+    if {$nfail>$mxtoshow} {
+      puts [format %-79s "  ... plus [expr {$nfail-$mxtoshow}] more"]
     }
     set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
