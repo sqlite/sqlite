@@ -497,9 +497,13 @@ proc show_status {db cls} {
     # $mxtoshow tries to limit the number of "Failures:" reported so that
     # the status display does not overflow a 24-line terminal.  But it will
     # always show at least the most recent 4 failures, even if an overflow
-    # is needed.
-    set mxtoshow [expr {16-$nrun}]
-    if {$mxtoshow<4} {set mxtoshow 4}
+    # is needed.  But, do not limit the length of the output of $cls is false.
+    if {$cls} {
+      set mxtoshow [expr {16-$nrun}]
+      if {$mxtoshow<4} {set mxtoshow 4}
+    } else {
+      set mxtoshow 9999999
+    }
 
     $db eval {
       SELECT * FROM jobs WHERE state='failed' ORDER BY endtime DESC
