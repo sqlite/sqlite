@@ -256,6 +256,27 @@ do_faultsim_test 10 -faults oom* -prep {
   faultsim_test_result {0 hello}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(content);
+  CREATE TABLE g1(id, content);
+  INSERT INTO g1 VALUES(30000, 'a b c');
+  INSERT INTO g1 VALUES(40000, 'd e f');
+}
+
+faultsim_save_and_close
+
+do_faultsim_test 11 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    INSERT INTO f1(rowid, content) SELECT id, content FROM g1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test
 

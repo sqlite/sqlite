@@ -2067,9 +2067,11 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. 
 */
 static int fts5BeginMethod(sqlite3_vtab *pVtab){
-  fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_BEGIN, 0);
-  fts5NewTransaction((Fts5FullTable*)pVtab);
-  return SQLITE_OK;
+  int rc = fts5NewTransaction((Fts5FullTable*)pVtab);
+  if( rc==SQLITE_OK ){
+    fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_BEGIN, 0);
+  }
+  return rc;
 }
 
 /*
