@@ -470,19 +470,15 @@ proc show_status {db cls} {
     # overwrite.
     puts -nonewline "\033\[H"
     flush stdout
-    set clreol "\033\[K"
-  } else {
-    set clreol ""
   }
-  puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]$clreol"]
-  puts [format %-79.79s "Jobs:    $nJob max $S(running) active"]
-  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total tasks,\
+  puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]"]
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total jobs,\
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set nrun 0
+  puts [format %-79s    "Running: $S(running) (max: $nJob)"]
   if {$S(running)>0} {
-    puts [format %-79s "$S(running) Running:"]
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
@@ -491,34 +487,30 @@ proc show_status {db cls} {
     }
   }
   if {$S(failed)>0} {
-    puts [format %-79s "$S(failed) Failed:"]
-    set nfail 0
-
-    # $mxtoshow tries to limit the number of "Failures:" reported so that
-    # the status display does not overflow a 24-line terminal.  But it will
+    # $toshow is the number of failures to report.  In $cls mode,
+    # status tries to limit the number of failure reported so that
+    # the status display does not overflow a 24-line terminal.  It will
     # always show at least the most recent 4 failures, even if an overflow
-    # is needed.  But, do not limit the length of the output of $cls is false.
-    if {$cls} {
-      set mxtoshow [expr {16-$nrun}]
-      if {$mxtoshow<4} {set mxtoshow 4}
+    # is needed.  No limit is imposed for a status within $cls.
+    #
+    if {$cls && $S(failed)>18-$S(running)} {
+      set toshow [expr {18-$S(running)}]
+      if {$toshow<4} {set toshow 4}
+      set shown " (must recent $toshow shown)"
     } else {
-      set mxtoshow 9999999
+      set toshow $S(failed)
+      set shown ""
     }
-
+    puts [format %-79s  "Failed:  $S(failed) $shown"]
     $db eval {
-      SELECT * FROM jobs WHERE state='failed' ORDER BY endtime DESC
+      SELECT * FROM jobs WHERE state='failed'
+       ORDER BY endtime DESC LIMIT $toshow
     } job {
-      incr nfail
-      if {$nfail<=$mxtoshow} {
-        display_job [array get job]
-      }
-    }
-    if {$nfail>$mxtoshow} {
-      puts [format %-79s "  ... plus [expr {$nfail-$mxtoshow}] more"]
+      display_job [array get job]
     }
     set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
-      puts [format %-79s "$nOmit jobs omitted due to failures$clreol"]
+      puts [format %-79s "  ... $nOmit jobs omitted due to failures"]
     }
   }
   if {$cls} {
