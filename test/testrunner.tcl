@@ -1504,7 +1504,7 @@ if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
-    puts "splitting work across $TRG(nJob) jobs"
+    puts "splitting work across $TRG(nJob) cores"
   }
   puts "built testset in [expr $tm/1000]ms.."
   handle_buildonly
