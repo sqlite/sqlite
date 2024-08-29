@@ -8100,6 +8100,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "distinct-opt",        SQLITE_DistinctOpt    },
     { "cover-idx-scan",      SQLITE_CoverIdxScan   },
     { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
+    { "order-by-subquery",   SQLITE_OrderBySubq    },
     { "transitive",          SQLITE_Transitive     },
     { "omit-noop-join",      SQLITE_OmitNoopJoin   },
     { "stat4",               SQLITE_Stat4          },

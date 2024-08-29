@@ -2096,7 +2096,7 @@ case OP_RealAffinity: {                  /* in1 */
 }
 #endif
 
-#if !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_ANALYZE)
+#if !defined(SQLITE_OMIT_CAST) || !defined(SQLITE_OMIT_ANALYZE)
 /* Opcode: Cast P1 P2 * * *
 ** Synopsis: affinity(r[P1])
 **

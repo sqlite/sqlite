@@ -2536,6 +2536,13 @@ queryplantest:	testfixture.exe shell
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
+# Legacy testing target for third-party integrators.  The SQLite
+# developers seldom use this target themselves.  Instead
+# they use "nmake /f Makefile.msc devtest" which runs tests on
+# a standard set of options
+#
+test:	$(TESTPROGS) sourcetest fuzztest tcltest
+
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe sourcetest
@@ -2545,7 +2552,6 @@ quicktest:	testfixture.exe sourcetest
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) sourcetest fuzztest tcltest
 
 # The veryquick.test TCL tests.
 #
@@ -2559,17 +2565,27 @@ tcltest: testfixture.exe
 testrunner:	testfixture.exe
 	.\testfixture.exe $(TOP)\test\testrunner.tcl
 
-# Runs both fuzztest and testrunner, consecutively.
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration.  The devs run 
+# "nmake /f Makefile.msc devtest" prior to each check-in, at a minimum.
+# Probably other tests too, but at least this one.
 #
-devtest:	testfixture.exe fuzztest testrunner
+devtest:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)\tool\srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)\tool\srctree-check.tcl
+
 # Testing for a release
 #
-releasetest: testfixture.exe
-	testfixture.exe $(TOP)\test\testrunner.tcl release
+releasetest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 
 smoketest:	$(TESTPROGS)

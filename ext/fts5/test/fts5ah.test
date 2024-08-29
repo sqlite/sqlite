@@ -163,6 +163,17 @@ do_execsql_test 1.8.2 {
   SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid < 'text';
 } {10000}
 
+do_execsql_test 1.8.3 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid<5000 AND rowid < 'text';
+} {4999}
+do_execsql_test 1.8.4 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid>5000 AND rowid > 'text';
+} {0}
+
+do_catchsql_test 1.9 {
+  SELECT * FROM t1('*xy');
+} {1 {unknown special query: xy}}
+
 } ;# foreach_detail_mode
 
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}

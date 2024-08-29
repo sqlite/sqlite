@@ -54,13 +54,17 @@ struct Fts5Expr {
 
 /*
 ** eType:
-**   Expression node type. Always one of:
+**   Expression node type. Usually one of:
 **
 **       FTS5_AND                 (nChild, apChild valid)
 **       FTS5_OR                  (nChild, apChild valid)
 **       FTS5_NOT                 (nChild, apChild valid)
 **       FTS5_STRING              (pNear valid)
 **       FTS5_TERM                (pNear valid)
+**
+**   An expression node with eType==0 may also exist. It always matches zero
+**   rows. This is created when a phrase containing no tokens is parsed.
+**   e.g. "".
 **
 ** iHeight:
 **   Distance from this node to furthest leaf. This is always 0 for nodes
@@ -282,11 +286,12 @@ int sqlite3Fts5ExprNew(
   }while( sParse.rc==SQLITE_OK && t!=FTS5_EOF );
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
 
+  assert( sParse.pExpr || sParse.rc!=SQLITE_OK );
   assert_expr_depth_ok(sParse.rc, sParse.pExpr);
 
   /* If the LHS of the MATCH expression was a user column, apply the
   ** implicit column-filter.  */
-  if( iCol<pConfig->nCol && sParse.pExpr && sParse.rc==SQLITE_OK ){
+  if( sParse.rc==SQLITE_OK && iCol<pConfig->nCol ){
     int n = sizeof(Fts5Colset);
     Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&sParse.rc, n);
     if( pColset ){
@@ -303,15 +308,7 @@ int sqlite3Fts5ExprNew(
       sParse.rc = SQLITE_NOMEM;
       sqlite3Fts5ParseNodeFree(sParse.pExpr);
     }else{
-      if( !sParse.pExpr ){
-        const int nByte = sizeof(Fts5ExprNode);
-        pNew->pRoot = (Fts5ExprNode*)sqlite3Fts5MallocZero(&sParse.rc, nByte);
-        if( pNew->pRoot ){
-          pNew->pRoot->bEof = 1;
-        }
-      }else{
-        pNew->pRoot = sParse.pExpr;
-      }
+      pNew->pRoot = sParse.pExpr;
       pNew->pIndex = 0;
       pNew->pConfig = pConfig;
       pNew->apExprPhrase = sParse.apPhrase;
@@ -1129,7 +1126,7 @@ static int fts5ExprNodeTest_STRING(
           }
         }else{
           Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-          if( pIter->iRowid==iLast || pIter->bEof ) continue;
+          if( pIter->iRowid==iLast ) continue;
           bMatch = 0;
           if( fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &pNode->bEof) ){
             return rc;
@@ -1651,9 +1648,6 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   Fts5ExprNearset *pRet = 0;
 
   if( pParse->rc==SQLITE_OK ){
-    if( pPhrase==0 ){
-      return pNear;
-    }
     if( pNear==0 ){
       sqlite3_int64 nByte;
       nByte = sizeof(Fts5ExprNearset) + SZALLOC * sizeof(Fts5ExprPhrase*);
@@ -3112,6 +3106,7 @@ static int fts5ExprCheckPoslists(Fts5ExprNode *pNode, i64 iRowid){
   pNode->iRowid = iRowid;
   pNode->bEof = 0;
   switch( pNode->eType ){
+    case 0:
     case FTS5_TERM:
     case FTS5_STRING:
       return (pNode->pNear->apPhrase[0]->poslist.n>0);
