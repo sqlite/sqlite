@@ -42,6 +42,10 @@
 # build the SQLite library and testing tools.
 ################################################################################
 
+# If OPTIONS... is specified on the command-line, append its value to OPTS
+#
+OPTS += $(OPTIONS)
+
 # This is how we compile
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
@@ -959,9 +963,14 @@ tcltest:	./testfixture$(EXE)
 testrunner:	testfixture$(EXE)
 	./testfixture$(EXE) $(TOP)/test/testrunner.tcl
 
-# Runs both fuzztest and testrunner, consecutively.
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration, regardless of how
+# ./configure was run.  The devs run "make devtest" prior to each
+# check-in, at a minimum.  Probably other tests too, but at least this
+# one.
 #
-devtest:	testfixture$(EXE) fuzztest testrunner
+devtest:	srctree-check sourcetest
+	tclsh $(TOP)/test/testrunner.tcl mdevtest
 
 mdevtest:
 	tclsh $(TOP)/test/testrunner.tcl mdevtest
@@ -972,10 +981,19 @@ mdevtest:
 quicktest:	./testfixture$(EXE)
 	./testfixture$(EXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-# The default test case.  Runs most of the faster standard TCL tests,
-# and fuzz tests, and sqlite3_analyzer and sqldiff tests.
-test:	fuzztest sourcetest $(TESTPROGS) tcltest
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)/tool/srctree-check.tcl
+	tclsh $(TOP)/tool/srctree-check.tcl
 
+# Try to run tests on whatever options are specified by the
+# environment variables.  The SQLite developers seldom use this target.
+# Instead# they use "make devtest" which runs tests on a standard set of
+# options regardless of how SQLite is configured.  This "test"
+# target is provided for legacy only.
+#
+test:	fuzztest sourcetest $(TESTPROGS) tcltest
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.

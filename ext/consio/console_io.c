@@ -54,11 +54,6 @@
 #endif
 
 #if CIO_WIN_WC_XLATE
-/* Character used to represent a known-incomplete UTF-8 char group (�) */
-static WCHAR cBadGroup = 0xfffd;
-#endif
-
-#if CIO_WIN_WC_XLATE
 static HANDLE handleOfFile(FILE *pf){
   int fileDesc = _fileno(pf);
   union { intptr_t osfh; HANDLE fh; } fid = {
@@ -600,6 +595,86 @@ oPutbUtf8(const char *cBuf, int nAccept){
 # endif
 }
 
+/*
+** Flush the given output stream. Return non-zero for success, else 0.
+*/
+#if !defined(SQLITE_CIO_NO_FLUSH) && !defined(SQLITE_CIO_NO_SETMODE)
+SQLITE_INTERNAL_LINKAGE int
+fFlushBuffer(FILE *pfOut){
+# if CIO_WIN_WC_XLATE && !defined(SHELL_OMIT_FIO_DUPE)
+  return FlushFileBuffers(handleOfFile(pfOut))? 1 : 0;
+# else
+  return fflush(pfOut);
+# endif
+}
+#endif
+
+#if CIO_WIN_WC_XLATE \
+   && !defined(SHELL_OMIT_FIO_DUPE) \
+   && defined(SQLITE_USE_ONLY_WIN32)
+static struct FileAltIds {
+  int fd;
+  HANDLE fh;
+} altIdsOfFile(FILE *pf){
+  struct FileAltIds rv = { _fileno(pf) };
+  union { intptr_t osfh; HANDLE fh; } fid = {
+    (rv.fd>=0)? _get_osfhandle(rv.fd) : (intptr_t)INVALID_HANDLE_VALUE
+  };
+  rv.fh = fid.fh;
+  return rv;
+}
+
+SQLITE_INTERNAL_LINKAGE size_t
+cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
+  size_t rv = 0;
+  struct FileAltIds fai = altIdsOfFile(pf);
+  int fmode = _setmode(fai.fd, _O_BINARY);
+  _setmode(fai.fd, fmode);
+  while( rv < ocnt ){
+    size_t nbo = osz;
+    while( nbo > 0 ){
+      DWORD dwno = (nbo>(1L<<24))? 1L<<24 : (DWORD)nbo;
+      BOOL wrc = TRUE;
+      BOOL genCR = (fmode & _O_TEXT)!=0;
+      if( genCR ){
+        const char *pnl = (const char*)memchr(buf, '\n', nbo);
+        if( pnl ) nbo = pnl - (const char*)buf;
+        else genCR = 0;
+      }
+      if( dwno>0 ) wrc = WriteFile(fai.fh, buf, dwno, 0,0);
+      if( genCR && wrc ){
+        wrc = WriteFile(fai.fh, "\r\n", 2, 0,0);
+        ++dwno; /* Skip over the LF */
+      }
+      if( !wrc ) return rv;
+      buf = (const char*)buf + dwno;
+      nbo += dwno;
+    }
+    ++rv;
+  }
+  return rv;
+}
+
+SQLITE_INTERNAL_LINKAGE char *
+cfGets(char *cBuf, int n, FILE *pf){
+  int nci = 0;
+  struct FileAltIds fai = altIdsOfFile(pf);
+  int fmode = _setmode(fai.fd, _O_BINARY);
+  BOOL eatCR = (fmode & _O_TEXT)!=0;
+  _setmode(fai.fd, fmode);
+  while( nci < n-1 ){
+    DWORD nr;
+    if( !ReadFile(fai.fh, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
+    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ) nci += nr;
+  }
+  if( nci < n ) cBuf[nci] = 0;
+  return (nci>0)? cBuf : 0;
+}
+# else
+#  define cfWrite(b,os,no,f) fwrite(b,os,no,f)
+#  define cfGets(b,n,f) fgets(b,n,f)
+# endif
+
 # ifdef CONSIO_EPUTB
 SQLITE_INTERNAL_LINKAGE int
 ePutbUtf8(const char *cBuf, int nAccept){
@@ -611,7 +686,7 @@ ePutbUtf8(const char *cBuf, int nAccept){
     return conZstrEmit(ppst, cBuf, nAccept);
   }else {
 #  endif
-    return (int)fwrite(cBuf, 1, nAccept, pfErr);
+    return (int)cfWrite(cBuf, 1, nAccept, pfErr);
 #  if CIO_WIN_WC_XLATE
   }
 #  endif
@@ -677,7 +752,7 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 #  endif
   }else{
 # endif
-    return fgets(cBuf, ncMax, pfIn);
+    return cfGets(cBuf, ncMax, pfIn);
 # if CIO_WIN_WC_XLATE
   }
 # endif

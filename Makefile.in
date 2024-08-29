@@ -83,9 +83,13 @@ TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
 # The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
-OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
+#
+# Add OPTIONS=... on the command line to append additional options
+# to the OPT_FEATURE_FLAGS.
+#
+OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
-TCC += $(OPT_FEATURE_FLAGS)
+TCC += $(OPT_FEATURE_FLAGS) 
 
 # Add in any optional parameters specified on the make commane line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
@@ -117,13 +121,14 @@ HAVE_TCL = @HAVE_TCL@
 #
 TCLSH_CMD = @TCLSH_CMD@
 
+# Additional options when running tests using testrunner.tcl
+# This is usually either blank, or else --status
+#
+TSTRNNR_OPTS = @TSTRNNR_OPTS@
+
 # Where do we want to install the tcl plugin
 #
 TCLLIBDIR = @TCLLIBDIR@
-
-# The suffix used on shared libraries.  Ex:  ".dll", ".so", ".dylib"
-#
-SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
 
 # If gcov support was enabled by the configure script, add the appropriate
 # flags here.  It's not always as easy as just having the user add the right
@@ -802,6 +807,10 @@ has_tclsh85:
 	sh $(TOP)/tool/cktclsh.sh 8.5 $(TCLSH_CMD)
 	touch has_tclsh85
 
+has_tclconfig:
+	@ if test x"$(HAVE_TCL)" != "x1"; then	echo 'ERROR: Requires access to "tclConfig.sh" which "configure" was not able to locate'; exit 1; fi
+	touch has_tclconfig
+
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -1124,7 +1133,7 @@ tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
-tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
+tclsqlite3$(TEXE):	has_tclconfig tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
@@ -1311,7 +1320,7 @@ TESTFIXTURE_SRC1 = sqlite3.c
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
-testfixture$(TEXE):	has_tclsh85 $(TESTFIXTURE_SRC)
+testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
@@ -1360,15 +1369,20 @@ tcltest:	./testfixture$(TEXE)
 testrunner:	testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
 
-# Runs both fuzztest and testrunner, consecutively.
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration, regardless of how
+# ./configure was run.  The devs run "make devtest" prior to each
+# check-in, at a minimum.  Probably other tests too, but at least this
+# one.
 #
-devtest:	srctree-check testfixture$(TEXE) fuzztest testrunner
+devtest:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
 
 mdevtest: srctree-check has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
 
 sdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
 
 # Validate that various generated files in the source tree
 # are up-to-date.
@@ -1378,16 +1392,19 @@ srctree-check:	$(TOP)/tool/srctree-check.tcl
 
 # Testing for a release
 #
-releasetest: srctree-check testfixture$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+releasetest: srctree-check has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-# This is the common case.  Run many tests that do not take too long,
-# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
+# Try to run tests on whatever options are specified by the
+# ./configure.  The developers seldom use this target.  Instead
+# they use "make devtest" which runs tests on a standard set of
+# options regardless of how SQLite is configured.  This "test"
+# target is provided for legacy only.
 #
 test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
 
@@ -1404,19 +1421,19 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
-	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+shelltest:
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
-sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
+sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
-sqltclsh$(TEXE): sqltclsh.c
+sqltclsh$(TEXE): has_tclconfig sqltclsh.c
 	$(LTLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
 
 sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
@@ -1435,7 +1452,7 @@ CHECKER_DEPS =\
 sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
-sqlite3_checker$(TEXE):	sqlite3_checker.c
+sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
 	$(LTLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(TLIBS)
 
 dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
@@ -1560,11 +1577,36 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
+
 tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
 	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
 	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
 	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
+
+# Build the SQLite TCL extension in a way that make it compatible
+# with whatever version of TCL is running as $TCLSH_CMD, possibly defined
+# by --with-tclsh=
+#
+tclextension:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
+# to find it.
+#
+tclextension-install:	tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension that is used by $TCLSH_CMD
+#
+tclextension-uninstall: 
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
+
+# List all installed the SQLite TCL extension that is are accessible
+# by $TCLSH_CMD, included prior versions.
+#
+tclextension-list: 
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
 clean:
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
