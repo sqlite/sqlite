@@ -128,6 +128,13 @@ Almost all makefile targets require a "tclsh" TCL interpreter
 version 8.6 or later.  The targets marked with "(requires tcl-dev)" also require
 the TCL development libraries.
 
+On "make" command-lines, one can add "OPTIONS=..." to specify additional
+compile-time options over and above those set by ./configure.  For example,
+to compile with the SQLITE_OMIT_DEPRECATED compile-time option, one could say:
+
+        ./configure --enable-all
+        make OPTIONS=-DSQLITE_OMIT_DEPRECATED sqlite3
+
 The configure script uses autoconf 2.61 and libtool.  If the configure
 script does not work out for you, there is a generic makefile named
 "Makefile.linux-gcc" in the top directory of the source tree that you
@@ -162,6 +169,11 @@ Build using Makefile.msc.  Example:
  
 There are many other makefile targets.  See comments in Makefile.msc for
 details.
+
+As with the unix Makefile, the OPTIONS=... argument can be passed on the nmake
+command-line to enable new compile-time options.  For example:
+
+        nmake /f Makefile.msc OPTIONS=-DSQLITE_OMIT_DEPRECATED sqlite3.exe
 
 ## Source Tree Map
 

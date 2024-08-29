@@ -379,6 +379,7 @@ SQLITE_TCL_DEP =
 # the Windows platform.
 #
 !IFNDEF OPT_FEATURE_FLAGS
+OPT_FEATURE_FLAGS = $(OPT_XTRA)
 !IF $(MINIMAL_AMALGAMATION)==0
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS5=1
@@ -390,6 +391,14 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_DBSTAT_VTAB=1
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
 !ENDIF
 OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+# Additional feature-options above and beyond what are normally used can be
+# be added using OPTIONS=.... on the command-line.  These values are
+# appended to the OPT_FEATURE_FLAGS variable.
+#
+!IFDEF OPTIONS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) $(OPTIONS)
 !ENDIF
 
 # Should the session extension be enabled?  If so, add compilation options

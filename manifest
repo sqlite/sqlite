@@ -1,12 +1,12 @@
-C Fix\sa\scase\swhere\sthe\sBTCF_AtLast\sflag\swas\sbeing\sleft\sset\sincorrectly.\sThis\swas\scausing\sobscure\swindow\sfunction\squeries\sto\sfail.
-D 2024-08-29T16:27:57.817
+C All\smakefiles\sare\sresponsive\sto\sOPTIONS=...\scommand-line\sarguments,\sand\sadd\nthe\sRHS\svalue\sof\sOPTIONS=\sto\sbuilds\sand\sto\slemon\sand\sother\sbuild\ssteps\sthat\nmight\srespond\sto\s-D\sor\s-U\soptions.
+D 2024-08-29T18:32:56.249
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 100a8ba2aee96203e57f0dfeb7c75befa7db0d9d17bdb5a7f814eaa60b974e16
+F Makefile.in f246a6d8a8a77c35d50d5494ee9bcd8fb6f90118eff46169427f9f404057b56e
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 75946777a32696b6e894e686ba663f9dcdecea4730a827717e1b2be3b262234d
-F README.md 83335813752d41cd445c727b0918597d99e18e7de0e05024536f555a5f34cc56
+F Makefile.msc 47dfd26a401c5a33e237ecfe126c996977f34ac44e44a1a1ebf2204abb89d483
+F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -685,7 +685,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 70366119ceca019c618ab9acb1b4e8cb1ab5d342a6c4884a9d514f264bc0f2ca
+F main.mk 715c833f9733fd10b15d8773c59dd7535067d9d0f1a20073182069538f523bc7
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e84947123339f0ea2b7dabc6134a621eed09317f81647f15870ed50a0f7d1bc
-R 842b0bd8861928ef2186779e003e3d2c
-U dan
-Z 8acde417655a8746f3e46d7a85e6d010
+P e042eb024738a83eed92cd2dfac3d2a50d2589715a3d81b1a494564dd7d8e7fa
+R f410afede94c7e996193f1f14e81b108
+U drh
+Z d182fc30f4d0c921d3b91364d1eaed1e
 # Remove this line to create a well-formed Fossil manifest.
