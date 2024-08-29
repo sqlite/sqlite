@@ -1336,6 +1336,7 @@ typedef struct Savepoint Savepoint;
 typedef struct Select Select;
 typedef struct SQLiteThread SQLiteThread;
 typedef struct SelectDest SelectDest;
+typedef struct Subquery Subquery;
 typedef struct SrcItem SrcItem;
 typedef struct SrcList SrcList;
 typedef struct sqlite3_str StrAccum; /* Internal alias for sqlite3_str */
@@ -3301,6 +3302,16 @@ struct IdList {
 #define EU4_EXPR   2   /* Uses IdList.a.u4.pExpr -- NOT CURRENTLY USED */
 
 /*
+** Details of the implementation of a subquery.
+*/
+struct Subquery {
+  Select *pSelect;  /* A SELECT statement used in place of a table name */
+  int addrFillSub;  /* Address of subroutine to initialize a subquery */
+  int regReturn;    /* Register holding return address of addrFillSub */
+  int regResult;    /* Registers holding results of a co-routine */
+};
+
+/*
 ** The SrcItem object represents a single term in the FROM clause of a query.
 ** The SrcList object is mostly an array of SrcItems.
 **
@@ -3312,29 +3323,40 @@ struct IdList {
 ** In the colUsed field, the high-order bit (bit 63) is set if the table
 ** contains more than 63 columns and the 64-th or later column is used.
 **
-** Union member validity:
+** Aggressive use of "union" helps keep the size of the object small.  This
+** has been shown to boost performance, in addition to saving memory.
+** Access to union elements is gated by the following rules which should
+** always be checked, either by an if-statement or by an assert().
 **
-**    u1.zIndexedBy      fg.isIndexedBy && !fg.isTabFunc
-**    u1.pFuncArg        fg.isTabFunc   && !fg.isIndexedBy
+**    Field              Only access if this is true
+**    ---------------    -----------------------------------
+**    u1.zIndexedBy      fg.isIndexedBy
+**    u1.pFuncArg        fg.isTabFunc
 **    u1.nRow            !fg.isTabFunc  && !fg.isIndexedBy
 **
-**    u2.pIBIndex        fg.isIndexedBy && !fg.isCte
-**    u2.pCteUse         fg.isCte       && !fg.isIndexedBy
+**    u2.pIBIndex        fg.isIndexedBy
+**    u2.pCteUse         fg.isCte
+**
+**    u3.pOn             !fg.isUsing
+**    u3.pUsing          fg.isUsing
+**
+**    u4.zDatabase       !fg.fixedSchema && !fg.isSubquery
+**    u4.pSchema         fg.fixedSchema
+**    u4.pSubq           fg.isSubquery
+**
+** See also the sqlite3SrcListDelete() routine for assert() statements that
+** check invariants on the fields of this object, especially the flags
+** inside the fg struct.
 */
 struct SrcItem {
-  Schema *pSchema;  /* Schema to which this item is fixed */
-  char *zDatabase;  /* Name of database holding this table */
   char *zName;      /* Name of the table */
   char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
-  Table *pTab;      /* An SQL table corresponding to zName */
-  Select *pSelect;  /* A SELECT statement used in place of a table name */
-  int addrFillSub;  /* Address of subroutine to manifest a subquery */
-  int regReturn;    /* Register holding return address of addrFillSub */
-  int regResult;    /* Registers holding results of a co-routine */
+  Table *pSTab;     /* Table object for zName. Mnemonic: Srcitem-TABle */
   struct {
     u8 jointype;      /* Type of join between this table and the previous */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
+    unsigned isSubquery :1;    /* True if this term is a subquery */
     unsigned isTabFunc :1;     /* True if table-valued-function syntax */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
     unsigned isMaterialized:1; /* This is a materialized view */
@@ -3348,12 +3370,10 @@ struct SrcItem {
     unsigned isSynthUsing :1;  /* u3.pUsing is synthesized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
     unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
+    unsigned fixedSchema :1;   /* Uses u4.pSchema, not u4.zDatabase */
+    unsigned hadSchema :1;     /* Had u4.zDatabase before u4.pSchema */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
-  union {
-    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
-    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
-  } u3;
   Bitmask colUsed;  /* Bit N set if column N used. Details above for N>62 */
   union {
     char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
@@ -3364,6 +3384,15 @@ struct SrcItem {
     Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
     CteUse *pCteUse;  /* CTE Usage info when fg.isCte is true */
   } u2;
+  union {
+    Expr *pOn;        /* fg.isUsing==0 =>  The ON clause of a join */
+    IdList *pUsing;   /* fg.isUsing==1 =>  The USING clause of a join */
+  } u3;
+  union {
+    Schema *pSchema;  /* Schema to which this item is fixed */
+    char *zDatabase;  /* Name of database holding this table */
+    Subquery *pSubq;  /* Description of a subquery */
+  } u4;
 };
 
 /*
@@ -3623,8 +3652,10 @@ struct Select {
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 #define SF_Correlated   0x20000000 /* True if references the outer context */
 
-/* True if S exists and has SF_NestedFrom */
-#define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
+/* True if SrcItem X is a subquery that has SF_NestedFrom */
+#define IsNestedFrom(X) \
+   ((X)->fg.isSubquery && \
+    ((X)->u4.pSubq->pSelect->selFlags&SF_NestedFrom)!=0)
 
 /*
 ** The results of a SELECT can be distributed in several ways, as defined
@@ -5016,6 +5047,9 @@ int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListEnlarge(Parse*, SrcList*, int, int);
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2);
 SrcList *sqlite3SrcListAppend(Parse*, SrcList*, Token*, Token*);
+void sqlite3SubqueryDelete(sqlite3*,Subquery*);
+Select *sqlite3SubqueryDetach(sqlite3*,SrcItem*);
+int sqlite3SrcItemAttachSubquery(Parse*, SrcItem*, Select*, int);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, OnOrUsing*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);

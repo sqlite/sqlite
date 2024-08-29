@@ -121,26 +121,26 @@ do_eqp_test tabfunc01-3.10 {
   SELECT value FROM generate_series(1,10) ORDER BY value;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.11 {
   SELECT value FROM generate_series(1,10) ORDER BY +value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test tabfunc01-3.12 {
   SELECT value FROM generate_series(1,10) ORDER BY value, stop;
 } {
   QUERY PLAN
-  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+  `--SCAN generate_series VIRTUAL TABLE INDEX 0x13:
 }
 do_eqp_test tabfunc01-3.13 {
   SELECT value FROM generate_series(1,10) ORDER BY stop, value;
 } {
   QUERY PLAN
-  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  |--SCAN generate_series VIRTUAL TABLE INDEX 0x3:
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
@@ -156,9 +156,9 @@ do_eqp_test tabfunc01-3.20 {
   QUERY PLAN
   `--MERGE (UNION ALL)
      |--LEFT
-     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     |  `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
      `--RIGHT
-        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+        `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
   
 

@@ -6473,7 +6473,7 @@ int sqlite3BtreeIndexMoveto(
      && indexCellCompare(pCur, 0, pIdxKey, xRecordCompare)<=0
      && pIdxKey->errCode==SQLITE_OK
     ){
-      pCur->curFlags &= ~BTCF_ValidOvfl;
+      pCur->curFlags &= ~(BTCF_ValidOvfl|BTCF_AtLast);
       if( !pCur->pPage->isInit ){
         return SQLITE_CORRUPT_BKPT;
       }

@@ -202,7 +202,7 @@ static void updateFromSelect(
   Expr *pLimit2 = 0;
   ExprList *pOrderBy2 = 0;
   sqlite3 *db = pParse->db;
-  Table *pTab = pTabList->a[0].pTab;
+  Table *pTab = pTabList->a[0].pSTab;
   SrcList *pSrc;
   Expr *pWhere2;
   int eDest;
@@ -226,8 +226,8 @@ static void updateFromSelect(
   if( pSrc ){
     assert( pSrc->a[0].fg.notCte );
     pSrc->a[0].iCursor = -1;
-    pSrc->a[0].pTab->nTabRef--;
-    pSrc->a[0].pTab = 0;
+    pSrc->a[0].pSTab->nTabRef--;
+    pSrc->a[0].pSTab = 0;
   }
   if( pPk ){
     for(i=0; i<pPk->nKeyCol; i++){

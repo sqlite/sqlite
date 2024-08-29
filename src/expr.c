@@ -1877,15 +1877,30 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     SrcItem *pNewItem = &pNew->a[i];
     const SrcItem *pOldItem = &p->a[i];
     Table *pTab;
-    pNewItem->pSchema = pOldItem->pSchema;
-    pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
+    pNewItem->fg = pOldItem->fg;
+    if( pOldItem->fg.isSubquery ){
+      Subquery *pNewSubq = sqlite3DbMallocRaw(db, sizeof(Subquery));
+      if( pNewSubq==0 ){
+        assert( db->mallocFailed );
+        pNewItem->fg.isSubquery = 0;
+      }else{
+        memcpy(pNewSubq, pOldItem->u4.pSubq, sizeof(*pNewSubq));
+        pNewSubq->pSelect = sqlite3SelectDup(db, pNewSubq->pSelect, flags);
+        if( pNewSubq->pSelect==0 ){
+          sqlite3DbFree(db, pNewSubq);
+          pNewSubq = 0;
+          pNewItem->fg.isSubquery = 0;
+        }
+      }
+      pNewItem->u4.pSubq = pNewSubq;
+    }else if( pOldItem->fg.fixedSchema ){
+      pNewItem->u4.pSchema = pOldItem->u4.pSchema;
+    }else{
+      pNewItem->u4.zDatabase = sqlite3DbStrDup(db, pOldItem->u4.zDatabase);
+    }
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
     pNewItem->zAlias = sqlite3DbStrDup(db, pOldItem->zAlias);
-    pNewItem->fg = pOldItem->fg;
     pNewItem->iCursor = pOldItem->iCursor;
-    pNewItem->addrFillSub = pOldItem->addrFillSub;
-    pNewItem->regReturn = pOldItem->regReturn;
-    pNewItem->regResult = pOldItem->regResult;
     if( pNewItem->fg.isIndexedBy ){
       pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
     }else if( pNewItem->fg.isTabFunc ){
@@ -1898,11 +1913,10 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
     if( pNewItem->fg.isCte ){
       pNewItem->u2.pCteUse->nUse++;
     }
-    pTab = pNewItem->pTab = pOldItem->pTab;
+    pTab = pNewItem->pSTab = pOldItem->pSTab;
     if( pTab ){
       pTab->nTabRef++;
     }
-    pNewItem->pSelect = sqlite3SelectDup(db, pOldItem->pSelect, flags);
     if( pOldItem->fg.isUsing ){
       assert( pNewItem->fg.isUsing );
       pNewItem->u3.pUsing = sqlite3IdListDup(db, pOldItem->u3.pUsing);
@@ -1976,7 +1990,6 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
     pp = &pNew->pPrior;
     pNext = pNew;
   }
-
   return pRet;
 }
 #else
@@ -2996,8 +3009,8 @@ static Select *isCandidateForInOpt(const Expr *pX){
   pSrc = p->pSrc;
   assert( pSrc!=0 );
   if( pSrc->nSrc!=1 ) return 0;          /* Single term in FROM clause */
-  if( pSrc->a[0].pSelect ) return 0;     /* FROM is not a subquery or view */
-  pTab = pSrc->a[0].pTab;
+  if( pSrc->a[0].fg.isSubquery) return 0;/* FROM is not a subquery or view */
+  pTab = pSrc->a[0].pSTab;
   assert( pTab!=0 );
   assert( !IsView(pTab)  );              /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
@@ -3180,7 +3193,7 @@ int sqlite3FindInIndex(
     assert( p->pEList!=0 );             /* Because of isCandidateForInOpt(p) */
     assert( p->pEList->a[0].pExpr!=0 ); /* Because of isCandidateForInOpt(p) */
     assert( p->pSrc!=0 );               /* Because of isCandidateForInOpt(p) */
-    pTab = p->pSrc->a[0].pTab;
+    pTab = p->pSrc->a[0].pSTab;
 
     /* Code an OP_Transaction and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);

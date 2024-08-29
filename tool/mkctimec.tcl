@@ -450,6 +450,7 @@ if {[catch {set cfd [open $destfile w]}]!=0} {
   puts stderr "File '$destfile' unwritable."
   exit 1;
 }
+fconfigure $cfd -translation binary
 
 puts $cfd $::headWarning;
 puts $cfd $::headCode;
