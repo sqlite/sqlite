@@ -24,6 +24,7 @@ foreach {tn sharedschema} {
   1 0  
   2 1  
 } {
+  catch {db2 close}
   reset_db
 
   do_execsql_test 1.$tn.0 {
@@ -123,6 +124,7 @@ foreach {tn sharedschema} {
 #-------------------------------------------------------------------------
 # Test some PRAGMA statements with shared-schema connections.
 #
+db2 close
 reset_db
 do_execsql_test 2.0 {
   CREATE TABLE t1(a, b, c);
@@ -170,4 +172,3 @@ foreach {tn pragma nSchema nDelete} {
 }
 
 finish_test
-

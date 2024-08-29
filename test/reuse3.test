@@ -312,6 +312,8 @@ do_execsql_test 5.6.10 {
 } {nref=2 nschema=1}
 
 #-------------------------------------------------------------------------
+db2 close
+db3 close
 reset_db
 do_execsql_test 6.0 {
   CREATE TABLE t1(a, b);
@@ -352,4 +354,3 @@ do_test 6.4 {
 } "#/$N1 $N1/"
 
 finish_test
-

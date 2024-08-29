@@ -28,6 +28,7 @@ do_execsql_test 1.0 {
 faultsim_save_and_close
 
 do_faultsim_test 1.1 -prep {
+  catch {db close}
   faultsim_restore
   sqlite3 db test.db -shared-schema 1
 } -body {
@@ -37,6 +38,8 @@ do_faultsim_test 1.1 -prep {
 }
 
 do_faultsim_test 1.2 -prep {
+  catch {db close}
+  catch {db2 close}
   faultsim_restore
   sqlite3 db test.db -shared-schema 1
   execsql { SELECT * FROM t1 }
@@ -51,4 +54,3 @@ do_faultsim_test 1.2 -prep {
 
 
 finish_test
-
