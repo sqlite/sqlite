@@ -83,9 +83,13 @@ TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
 # The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
-OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
+#
+# Add OPTIONS=... on the command line to append additional options
+# to the OPT_FEATURE_FLAGS.
+#
+OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
-TCC += $(OPT_FEATURE_FLAGS)
+TCC += $(OPT_FEATURE_FLAGS) 
 
 # Add in any optional parameters specified on the make commane line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".

@@ -42,6 +42,10 @@
 # build the SQLite library and testing tools.
 ################################################################################
 
+# If OPTIONS... is specified on the command-line, append its value to OPTS
+#
+OPTS += $(OPTIONS)
+
 # This is how we compile
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
