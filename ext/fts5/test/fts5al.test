@@ -293,6 +293,16 @@ do_catchsql_test 4.4.4 {
   SELECT *, rank FROM t3 WHERE t3 MATCH 'a' AND rank MATCH NULL
 } {1 {parse error in rank function: }}
 
+# Check that the second and subsequent rank= constraints are ignored.
+#
+do_catchsql_test 4.3.3 {
+  SELECT *, rank FROM t3
+  WHERE t3 MATCH 'a' AND 
+  rank MATCH 'nosuch()' AND
+  rank MATCH 'rowidmod(3)'  
+  ORDER BY rank ASC
+} {1 {unable to use function MATCH in the requested context}}
+
 } ;# foreach_detail_mode
 
 

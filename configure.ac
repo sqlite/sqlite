@@ -123,6 +123,7 @@ AC_ARG_WITH(tclsh, AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tc
 AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)]))
 AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
       [use_tcl=$enableval],[use_tcl=yes])
+original_use_tcl=${use_tcl}
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
   AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh tclsh9.0],none)
   with_tclsh=${TCLSH_CMD}
@@ -136,6 +137,7 @@ if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
       AC_MSG_RESULT([$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}])
     else
       AC_MSG_WARN([$TCLSH_CMD is unable to recommend a tclConfig.sh])
+      use_tcl=no
     fi
   fi
 fi
@@ -185,8 +187,11 @@ if test x"${use_tcl}" = "xyes"; then
   # tclConfig.sh file and that could be included here.  But as of right now,
   # TCL_LIB_SPEC is the only what that the Makefile uses.
   HAVE_TCL=1
-else
+elif test x"${original_use_tcl}" = "xno"; then
   AC_MSG_RESULT([unable to run tests because of --disable-tcl])
+  HAVE_TCL=0
+else
+  AC_MSG_RESULT([unable to run tests because no tclConfig.sh file could be located])
   HAVE_TCL=0
 fi
 AC_SUBST(HAVE_TCL)
@@ -221,6 +226,18 @@ if test "x${TCLLIBDIR+set}" != "xset" ; then
   done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
+
+#########
+# Set up options for running tests.
+#
+AC_ARG_ENABLE(test-status, AS_HELP_STRING([--enable-test-status],[Full-screen status of tests]),
+      [use_vt100=$enableval],[use_vt100=no])
+if test $use_vt100 != no; then
+  TSTRNNR_OPTS=--status
+else
+  TSTRNNR_OPTS=
+fi
+AC_SUBST(TSTRNNR_OPTS)
 
 
 #########

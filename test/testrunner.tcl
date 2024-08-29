@@ -89,7 +89,9 @@ Other PERMUTATION arguments must be run using testfixture, not tclsh:
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
 those tcl tests for which the final component of the filename matches at
-least one specified pattern are run.
+least one specified pattern are run.  The glob wildcard '*' is prepended
+to the pattern if it does not start with '^' and appended to every
+pattern that does not end with '$'.
 
 If no PATTERN arguments are present, then various fuzztest, threadtest
 and other tests are run as part of the "release" permutation. These are
@@ -277,10 +279,12 @@ set TRG(schema) {
     priority INTEGER NOT NULL,          -- higher priority jobs may run earlier
   
     /* Fields updated as jobs run */
-    starttime INTEGER, 
-    endtime INTEGER,
+    starttime INTEGER,                  -- Start time (milliseconds since 1970)
+    endtime INTEGER,                    -- End time
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
-    output TEXT
+    ntest INT,                          -- Number of test cases run
+    nerr INT,                           -- Number of errors reported
+    output TEXT                         -- test output
   );
 
   CREATE TABLE config(
@@ -389,14 +393,36 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
   exit
 }
 
+# Compute an elapse time string MM:SS or HH:MM:SS based on the
+# number of milliseconds in the argument.
+#
+proc elapsetime {ms} {
+  set s [expr {int(($ms+500.0)*0.001)}]
+  set hr [expr {$s/3600}]
+  set mn [expr {($s/60)%60}]
+  set sc [expr {$s%60}]
+  if {$hr>0} {
+    return [format %02d:%02d:%02d $hr $mn $sc]
+  } else {
+    return [format %02d:%02d $mn $sc]
+  }
+}
+
 # Helper routine for show_status
 #
 proc display_job {jobdict {tm ""}} {
   array set job $jobdict
-  set dfname [format %-60s $job(displayname)]
+  if {[string length $job(displayname)]>65} {
+    set dfname [format %.65s... $job(displayname)]
+  } else {
+    set dfname [format %-68s $job(displayname)]
+  }
   set dtm ""
   if {$tm!=""} {
-    set dtm [format %-10s "\[[expr {$tm-$job(starttime)}]ms\]"]
+    set dtm [expr {$tm-$job(starttime)}]
+    set dtm [format %8s [elapsetime $dtm]]
+  } else {
+    set dtm [format %8s ""]
   }
   puts "  $dfname $dtm"
 }
@@ -431,6 +457,11 @@ proc show_status {db cls} {
     incr S($state) $cnt
     incr total $cnt
   }
+  set nt 0
+  set ne 0
+  $db eval {
+    SELECT sum(ntest) AS nt, sum(nerr) AS ne FROM jobs HAVING nt>0
+  } break
   set fin [expr $S(done)+$S(failed)]
   if {$cmdline!=""} {set cmdline " $cmdline"}
 
@@ -439,38 +470,47 @@ proc show_status {db cls} {
     # overwrite.
     puts -nonewline "\033\[H"
     flush stdout
-    set clreol "\033\[K"
-  } else {
-    set clreol ""
   }
-  set f ""
-  if {$S(failed)>0} {
-    set f "$S(failed) FAILED, "
-  }
-  puts "Command line: \[testrunner.tcl$cmdline\]$clreol"
-  puts "Jobs:         $nJob  "
-  puts "Summary:      ${tm}ms, ($fin/$total) finished,\
-                      ${f}$S(running) running  "
+  puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]"]
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total jobs,\
+                         $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
+  set nrun 0
+  puts [format %-79s    "Running: $S(running) (max: $nJob)"]
   if {$S(running)>0} {
-    puts "Running: "
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
+      incr nrun
       display_job [array get job] $now
     }
   }
   if {$S(failed)>0} {
-    puts "Failures: "
+    # $toshow is the number of failures to report.  In $cls mode,
+    # status tries to limit the number of failure reported so that
+    # the status display does not overflow a 24-line terminal.  It will
+    # always show at least the most recent 4 failures, even if an overflow
+    # is needed.  No limit is imposed for a status within $cls.
+    #
+    if {$cls && $S(failed)>18-$S(running)} {
+      set toshow [expr {18-$S(running)}]
+      if {$toshow<4} {set toshow 4}
+      set shown " (must recent $toshow shown)"
+    } else {
+      set toshow $S(failed)
+      set shown ""
+    }
+    puts [format %-79s  "Failed:  $S(failed) $shown"]
     $db eval {
-      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+      SELECT * FROM jobs WHERE state='failed'
+       ORDER BY endtime DESC LIMIT $toshow
     } job {
       display_job [array get job]
     }
     set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
-      puts "$nOmit jobs omitted due to failures$clreol"
+      puts [format %-79s "  ... $nOmit jobs omitted due to failures"]
     }
   }
   if {$cls} {
@@ -842,7 +882,18 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     if {[llength $patternlist]>0} {
       set bMatch 0
       foreach p $patternlist {
-        if {[string match $p [file tail $f]]} {
+        set p [string trim $p *]
+        if {[string index $p 0]=="^"} {
+          set p [string range $p 1 end]
+        } else {
+          set p "*$p"
+        }
+        if {[string index $p end]=="\$"} {
+          set p [string range $p 0 end-1]
+        } else {
+          set p "$p*"
+        }
+        if {[string match $p "$config [file tail $f]"]} {
           set bMatch 1
           break
         }
@@ -1068,7 +1119,7 @@ proc add_jobs_from_cmdline {patternlist} {
         if {[regexp "\\y$b\\y" $TRG(omitconfig)]} continue
         set bld [add_build_job $b $TRG(testfixture)]
         foreach c [trd_configs $TRG(platform) $b] {
-          add_tcl_jobs $bld $c $patternlist
+          add_tcl_jobs $bld $c $patternlist SHELL
         }
 
         if {$patternlist==""} {
@@ -1078,6 +1129,15 @@ proc add_jobs_from_cmdline {patternlist} {
             } else {
               add_make_job $bld $e
             }
+          }
+        }
+
+        if {[trdb one "SELECT EXISTS(SELECT 1
+                                       FROM jobs WHERE depid='SHELL')"]} {
+          set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
+          set sbldid [lindex $sbld 0]
+          trdb eval {
+            UPDATE jobs SET depid=$sbldid WHERE depid='SHELL'
           }
         }
       }
@@ -1120,15 +1180,25 @@ proc make_new_testset {} {
 }
 
 proc mark_job_as_finished {jobid output state endtm} {
+  set ntest 1
+  set nerr 0
+  if {$endtm>0} {
+    if {[regexp {\y(\d+) errors out of (\d+) tests} $output all a b]} {
+      set nerr $a
+      set ntest $b
+    }
+  }
   r_write_db {
     if {$state=="failed"} {
       set childstate omit
+      if {$nerr<=0} {set nerr 1}
     } else {
       set childstate ready
     }
     trdb eval {
       UPDATE jobs 
-        SET output=$output, state=$state, endtime=$endtm
+        SET output=$output, state=$state, endtime=$endtm,
+            ntest=$ntest, nerr=$nerr
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
@@ -1371,6 +1441,17 @@ proc run_testset {} {
 
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
+  trdb eval {
+     SELECT sum(ntest) AS totaltest,
+            sum(nerr) AS totalerr
+       FROM jobs
+  } break
+  trdb eval {
+     SELECT max(endtime)-min(starttime) AS totaltime
+       FROM jobs WHERE endtime>0
+  } break;
+  set et [elapsetime $totaltime]
+  puts "$totalerr errors out of $totaltest tests in about $et"
 }
 
 # Handle the --buildonly option, if it was specified.
@@ -1401,7 +1482,14 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      puts "${indent}[lindex $displayname end]"
+      set tail [lindex $displayname end]
+      set e1 [lindex $displayname 1]
+      if {[string match config=* $e1]} {
+        set cfg [string range $e1 7 end]
+        puts "${indent}($cfg) $tail"
+      } else {
+        puts "${indent}$tail"
+      }
     }
   }
 }
@@ -1416,7 +1504,7 @@ if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
-    puts "splitting work across $TRG(nJob) jobs"
+    puts "splitting work across $TRG(nJob) cores"
   }
   puts "built testset in [expr $tm/1000]ms.."
   handle_buildonly

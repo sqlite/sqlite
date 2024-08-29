@@ -104,7 +104,7 @@ int sqlite3UpsertAnalyzeTarget(
   int nClause = 0;        /* Counter of ON CONFLICT clauses */
 
   assert( pTabList->nSrc==1 );
-  assert( pTabList->a[0].pTab!=0 );
+  assert( pTabList->a[0].pSTab!=0 );
   assert( pUpsert!=0 );
   assert( pUpsert->pUpsertTarget!=0 );
 
@@ -123,7 +123,7 @@ int sqlite3UpsertAnalyzeTarget(
     if( rc ) return rc;
   
     /* Check to see if the conflict target matches the rowid. */  
-    pTab = pTabList->a[0].pTab;
+    pTab = pTabList->a[0].pSTab;
     pTarget = pUpsert->pUpsertTarget;
     iCursor = pTabList->a[0].iCursor;
     if( HasRowid(pTab) 

@@ -44,5 +44,9 @@ for {set ii 0} {$ii < 300} {incr ii} {
   } $res
 }
 
+do_execsql_test 1.2 {
+  SELECT rowid FROM x1 WHERE a MATCH '"..."'
+} {}
+
 finish_test
 

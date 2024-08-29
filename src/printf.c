@@ -848,16 +848,19 @@ void sqlite3_str_vappendf(
         if( pItem->zAlias && !flag_altform2 ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
         }else if( pItem->zName ){
-          if( pItem->zDatabase ){
-            sqlite3_str_appendall(pAccum, pItem->zDatabase);
+          if( pItem->fg.fixedSchema==0
+           && pItem->fg.isSubquery==0
+           && pItem->u4.zDatabase!=0
+          ){
+            sqlite3_str_appendall(pAccum, pItem->u4.zDatabase);
             sqlite3_str_append(pAccum, ".", 1);
           }
           sqlite3_str_appendall(pAccum, pItem->zName);
         }else if( pItem->zAlias ){
           sqlite3_str_appendall(pAccum, pItem->zAlias);
-        }else{
-          Select *pSel = pItem->pSelect;
-          assert( pSel!=0 ); /* Because of tag-20240424-1 */
+        }else if( ALWAYS(pItem->fg.isSubquery) ){/* Because of tag-20240424-1 */
+          Select *pSel = pItem->u4.pSubq->pSelect;
+          assert( pSel!=0 ); 
           if( pSel->selFlags & SF_NestedFrom ){
             sqlite3_str_appendf(pAccum, "(join-%u)", pSel->selId);
           }else if( pSel->selFlags & SF_MultiValue ){

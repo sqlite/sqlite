@@ -16,7 +16,6 @@ namespace eval trd {
   set tcltest(linux.Have-Not)             veryquick
   set tcltest(linux.Secure-Delete)        veryquick
   set tcltest(linux.Unlock-Notify)        veryquick
-  set tcltest(linux.User-Auth)            veryquick
   set tcltest(linux.Update-Delete-Limit)  veryquick
   set tcltest(linux.Extra-Robustness)     veryquick
   set tcltest(linux.Device-Two)           veryquick
@@ -116,6 +115,7 @@ namespace eval trd {
   }
   set build(Stdcall) {
     -DUSE_STDCALL=1
+    -DSQLITE_USE_ONLY_WIN32=1
     -O2
   }
 
@@ -138,10 +138,6 @@ namespace eval trd {
     -DSQLITE_ENABLE_UNLOCK_NOTIFY
     -DSQLITE_THREADSAFE
     -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
-  }
-  set build(User-Auth) {
-    -O2
-    -DSQLITE_USER_AUTHENTICATION=1
   }
   set build(Secure-Delete) {
     -O2
