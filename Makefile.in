@@ -1606,15 +1606,21 @@ tclextension-uninstall:
 tclextension-list: 
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
-clean:
-	rm -f *.lo *.la *.o *.c *.h *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
-	rm -rf .libs .deps tsrc libtool .target_source testrunner_*
+
+# Remove build products sufficient so that subsequent makes will recompile
+# everything from scratch.  Do not remove:
+#
+#   *   test results and test logs
+#   *   output from ./configure
+#
+tidy:
+	rm -f *.lo *.la *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
+	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -rf .libs .deps tsrc .target_source
 	rm -f lemon$(BEXE) sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
 	rm -f parse.* fts5parse.*
-	rm -rf tsrc .target_source testrunner_bld_* testdir*
-	rm -f tclsqlite3$(TEXE)
-	rm -f $(TESTPROGS) testrunner.*
+	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
@@ -1625,8 +1631,15 @@ clean:
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh*
 
+# Removes build products and test logs.  Retains ./configure outputs.
+#
+clean:	tidy
+	rm -rf omittest* testrunner* testdir*
+
+# Clean up everything.  No exceptions.
+#
 distclean:	clean
-	rm -f config.log config.status Makefile
+	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
 
 #
 # Windows section
