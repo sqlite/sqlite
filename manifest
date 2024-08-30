@@ -1,5 +1,5 @@
-C New\smakefile\starget:\s"tidy".\s\sThe\s"tidy"\starget\sremoves\sall\sbuild\sproducts\nbe\sleaves\sbehind\stest\sresults.\s\sThe\s"clean"\starget\shas\sbeen\senhanced\sto\sdo\sa\nbetter\sjob.\s\sThe\stool/omittest.tcl\sscript\sis\srewritten\sto\swork\son\sthe\nconfigure-generated\sMakefile\sand\sto\srequire\sno\sarguments.
-D 2024-08-30T16:51:41.226
+C Do\snot\sfail\sthe\somittest\sif\sICU\slibraries\sare\snot\sinstalled.
+D 2024-08-30T17:33:25.286
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2149,7 +2149,7 @@ F tool/mktoolzip.tcl c7a9b685f5131d755e7d941cec50cee7f34178b9e34c9a89811eeb08617
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
-F tool/omittest.tcl b8e9aae836d1659bf399f87d79f25c1b95b5db6f95338e94a0ff6ef73be6196e
+F tool/omittest.tcl 5ca5e4e01716d5f35b48b00fd351d929f01fbb98169a5a3cd00baf3d2e2019a9
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
@@ -2211,9 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90bc616d20e8c247691c45de2a28d41c1632b21152dc34253eefc179a90ab31f be768f80c703ac1645251ccbac83e07b3ea4cc231c8ea7e66374a4f78361f10b
-R 66ce867e5832770e836a59fc281bb0dd
-T +closed be768f80c703ac1645251ccbac83e07b3ea4cc231c8ea7e66374a4f78361f10b
+P e48add02695a41b26a04e7942b5333e2bf4dc5598e363367aea3a4690982667d
+R 3b9cf08a862640c366f07bc714e510b5
 U drh
-Z 31439099e57d3e45a34d60d97643c90d
+Z ce5d41834ddc15c40aed5b812cb5e6fa
 # Remove this line to create a well-formed Fossil manifest.

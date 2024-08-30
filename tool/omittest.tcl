@@ -175,6 +175,13 @@ set More(SQLITE_OMIT_DISKIO) {-DSQLITE_OMIT_WAL}
 #
 set MacOnly(SQLITE_ENABLE_LOCKING_STYLE) 1
 
+# Compile-time options that might fail, depending on what libraries
+# are installed.  Failures on these tests issue a warning, but testing
+# continues.
+#
+set FailIsOk(SQLITE_ENABLE_ICU) 1
+set FailIsOk(SQLITE_ENABLE_ICU_COLLATIONS) 1
+
 file mkdir omittest
 foreach sym $CompileOptionsToTest {
   if {[info exists startat]} {
@@ -196,8 +203,18 @@ foreach sym $CompileOptionsToTest {
   puts            "make tidy sqlite3.lo $opts"
   if {[catch {exec make tidy sqlite3.lo $opts >& $logfile}]} {
     puts "BUILD FAILED: see $logfile for details"
-    puts "Note:  After fixes, continue the test using:\n"
-    puts "   [info nameofexe] $argv0 --start $sym\n"
-    exit 1
+    if {[info exists FailIsOk($sym)]} {
+      set Failure($sym) 1
+    } else {
+      puts "Note:  After fixes, continue the test using:\n"
+      puts "   [info nameofexe] $argv0 --start $sym\n"
+      exit 1
+    }
+  }
+}
+if {[llength [array names Failure]]>0} {
+  puts "BUILD FAILED on the following:"
+  foreach sym [array names Failure] {
+     puts "  *  $sym"
   }
 }
