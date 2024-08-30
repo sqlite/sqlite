@@ -1,5 +1,5 @@
-C Rework\sthe\stool/omittest.tcl\sscript\sso\sthat\sit\sworks\swith\sthe\nconfigure-generated\sMakefile,\sand\srequires\sno\sarguments.\nUpdate\sthe\sconfigure-generated\sMakefile\swith\sa\snew\s"tidy"\starget\swhich\nis\slike\s"clean"\sexcept\sthat\sis\spreserves\stest\slogs.\s\sUse\s"make\stidy"\sto\nforce\severything\sto\sbe\srecompiled\sfrom\sscratch\swithout\sdestroying\slogs.
-D 2024-08-30T16:24:49.358
+C A\scouple\sof\s#defines\sso\sthat\sthe\sbuild\swork\swith\sSQLITE_OMIT_FLOATING_POINT.
+D 2024-08-30T16:43:36.050
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -770,7 +770,7 @@ F src/shell.c.in 40de636c1d90fb8a9ca7f49dc8f50d930f1b60736e73aca5eb37c4c7d0e47f9
 F src/sqlite.h.in f07bff4225a1244efd604a0ffef81ed69f29d3dbaed7e22f906f26229ba3ca9e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 28c878bdf528879afefe1994ac007d094f8061f2fdacdc55d6055d7e9341151e
+F src/sqliteInt.h 889cd632f4386bbd8619b166abb7d25f1c8ce6514e90cb7f22f63bd530fc6107
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1d775f07528192b09566ff1546b067ffbee0db5812e424e6b7f3cc33a67dc83
-R 2b82ff2fb12af001c7426b76114f4b10
+P 99491df19d68df1f0515bd5ec9240ef3dd6e0fa38a6c837a38a16a873f8e2cbb
+R 66ce867e5832770e836a59fc281bb0dd
 U drh
-Z 20d7de6f9c6ec3afe4ba157bc5616eaa
+Z 688f6234df63896134cd93de04609b1d
 # Remove this line to create a well-formed Fossil manifest.
