@@ -1,9 +1,9 @@
-C In\sthe\stestrunner.tcl\sstatus\sreport,\stry\sto\sprovide\sa\srough\sestimate\sof\nthe\stime\sremaining.
-D 2024-08-30T01:11:19.367
+C New\smakefile\starget:\s"tidy".\s\sThe\s"tidy"\starget\sremoves\sall\sbuild\sproducts\nbe\sleaves\sbehind\stest\sresults.\s\sThe\s"clean"\starget\shas\sbeen\senhanced\sto\sdo\sa\nbetter\sjob.\s\sThe\stool/omittest.tcl\sscript\sis\srewritten\sto\swork\son\sthe\nconfigure-generated\sMakefile\sand\sto\srequire\sno\sarguments.
+D 2024-08-30T16:51:41.226
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in f246a6d8a8a77c35d50d5494ee9bcd8fb6f90118eff46169427f9f404057b56e
+F Makefile.in 77627cbeeffe23606da5663458c0f8bbb86d28e2aca270a5d9b0db8e39a54bb2
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 47dfd26a401c5a33e237ecfe126c996977f34ac44e44a1a1ebf2204abb89d483
 F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
@@ -685,7 +685,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 715c833f9733fd10b15d8773c59dd7535067d9d0f1a20073182069538f523bc7
+F main.mk 40f8cd07372d7eed2fe33403a42b82c3f5d2d46b59480444384326db70bb33f1
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -770,7 +770,7 @@ F src/shell.c.in 40de636c1d90fb8a9ca7f49dc8f50d930f1b60736e73aca5eb37c4c7d0e47f9
 F src/sqlite.h.in f07bff4225a1244efd604a0ffef81ed69f29d3dbaed7e22f906f26229ba3ca9e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 28c878bdf528879afefe1994ac007d094f8061f2fdacdc55d6055d7e9341151e
+F src/sqliteInt.h 889cd632f4386bbd8619b166abb7d25f1c8ce6514e90cb7f22f63bd530fc6107
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2149,7 +2149,7 @@ F tool/mktoolzip.tcl c7a9b685f5131d755e7d941cec50cee7f34178b9e34c9a89811eeb08617
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
-F tool/omittest.tcl e99c9fecc3f7a8ca2fa75d8ec8bdbb5acce33dc69f0c280aae53064693387f65
+F tool/omittest.tcl b8e9aae836d1659bf399f87d79f25c1b95b5db6f95338e94a0ff6ef73be6196e
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
@@ -2211,8 +2211,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9de47c3611ca05e03a661807a06c6c5c0b5c6548ea7a8d73cb63832d2dff9d0e
-R c902a48c3428870b5b8747f7667d950b
+P 90bc616d20e8c247691c45de2a28d41c1632b21152dc34253eefc179a90ab31f be768f80c703ac1645251ccbac83e07b3ea4cc231c8ea7e66374a4f78361f10b
+R 66ce867e5832770e836a59fc281bb0dd
+T +closed be768f80c703ac1645251ccbac83e07b3ea4cc231c8ea7e66374a4f78361f10b
 U drh
-Z 58e0a7f0d6d1a8c7bc1acf976af98f74
+Z 31439099e57d3e45a34d60d97643c90d
 # Remove this line to create a well-formed Fossil manifest.
