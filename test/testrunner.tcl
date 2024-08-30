@@ -476,13 +476,22 @@ proc show_status {db cls} {
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
-  set nrun 0
-  puts [format %-79s    "Running: $S(running) (max: $nJob)"]
+  set line "Running: $S(running) (max: $nJob)"
+  if {$S(running)>0 && $fin>100 && $fin>0.05*$total} {
+    # Only estimate the time remaining after completing at least 100
+    # jobs amounting to 10% of the total.  Never estimate less than
+    # 2% of the total time used so far.
+    set tmleft [expr {($tm/$fin)*($total-$fin)}]
+    if {$tmleft<0.02*$tm} {
+      set tmleft [expr {$tm*0.02}]
+    }
+    append line " est time left [elapsetime $tmleft]"
+  }
+  puts [format %-79.79s $line]
   if {$S(running)>0} {
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
-      incr nrun
       display_job [array get job] $now
     }
   }
