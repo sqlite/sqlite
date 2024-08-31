@@ -60,25 +60,34 @@
 **
 **  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
 **
-**  (14)  A separate percentile_cond(Y,X) function is the equivalent of
-**        percentile(Y,X*100.0).
+**  (14)  Both median() and percentile(Y,P) can be used as window functions.
 **
-**  (15)  All three SQL functions implemented by this module can also be
-**        used as window-functions.
+** Differences from standard SQL:
+**
+**  *  The percentile(X,P) function is equivalent to the following in
+**     standard SQL:
+**
+**         (percentile(P/100.0) WITHIN GROUP (ORDER BY X))
+**
+**     The SQLite syntax is much more compact.  Note also that the
+**     range of the P argument is 0..100 in SQLite, but 0..1 in the
+**     standard.
+**
+**  *  No merge(X) function exists in the standard.  Application developers
+**     are expected to write "percentile_cont(0.5)WITHIN GROUP(ORDER BY X)".
 **
 ** Implementation notes as of 2024-08-31:
 **
-**  *  The regular aggregate-function versions of the merge(), percentile(),
-**     and percentile_cond() routines work by accumulating all values in
-**     an array of doubles, then sorting that array using a quicksort
-**     before computing the answer.  Thus the runtime is O(NlogN) where
-**     N is the number of rows of input.
+**  *  The regular aggregate-function versions of the merge() and percentile(),
+**     routines work by accumulating all values in an array of doubles, then
+**     sorting that array using a quicksort before computing the answer. Thus
+**     the runtime is O(NlogN) where N is the number of rows of input.
 **
 **  *  For the window-function versions of these routines, the array of
 **     inputs is sorted as soon as the first value is computed.  Thereafter,
 **     the array is kept in sorted order using an insert-sort.  This
 **     results in O(N*K) performance where K is the size of the window.
-**     One can devise alternative implementations that give O(N*logN*logK)
+**     One can imagine alternative implementations that give O(N*logN*logK)
 **     performance, but they require more complex logic and data structures.
 **     The developers have elected to keep the asymptotically slower
 **     algorithm for now, for simplicity, under the theory that window
@@ -180,7 +189,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   if( argc==1 ){
     /* Requirement 13:  median(Y) is the same as percentile(Y,50). */
     rPct = 50.0;
-  }else if( sqlite3_user_data(pCtx)==0 ){
+  }else{
     /* Requirement 3:  P must be a number between 0 and 100 */
     eType = sqlite3_value_numeric_type(argv[1]);
     rPct = sqlite3_value_double(argv[1]);
@@ -190,17 +199,6 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
                            "a number between 0.0 and 100.0", -1);
       return;
     }
-  }else{
-    /* Requirement 3:  P must be a number between 0 and 1 */
-    eType = sqlite3_value_numeric_type(argv[1]);
-    rPct = sqlite3_value_double(argv[1]);
-    if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
-     || rPct<0.0 || rPct>1.0 ){
-       sqlite3_result_error(pCtx, "2nd argument to percentile_cont() is not "
-                           "a number between 0.0 and 1.0", -1);
-      return;
-    }
-    rPct *= 100.0;
   }
 
   /* Allocate the session context. */
@@ -436,12 +434,6 @@ int sqlite3_percentile_init(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_window_function(db, "median", 1, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 percentStep, percentFinal,
-                                 percentValue, percentInverse, 0);
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_window_function(db, "percentile_cont", 2, 
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, &percentStep,
                                  percentStep, percentFinal,
                                  percentValue, percentInverse, 0);
   }
