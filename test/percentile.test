@@ -287,4 +287,51 @@ SELECT a, b, c, d,
   2  B  two    7.1   F.B.E          7.1   
   5  E  two    12.5  B.E            9.8   
 }
+
+# Test case adapted from examples shown at
+# https://database.guide/3-functions-to-calculate-the-median-in-sql/
+#
+do_execsql_test percential-4.0 {
+  CREATE TABLE products(
+    vendorId INT,
+    productId INTEGER PRIMARY KEY,
+    productName REAL,
+    price REAL
+  );
+  INSERT INTO products VALUES
+    (1001, 17,  'Left-handed screwdriver', 25.99),
+    (1001, 49,  'Right-handed screwdriver', 25.99),
+    (1001, 216, 'Long weight (blue)', 14.75),
+    (1001, 31,  'Long weight (green)', 11.99),
+    (1002, 37,  'Sledge hammer', 33.49),
+    (1003, 7,   'Chainsaw', 245.00),
+    (1003, 8,   'Straw dog box', 55.99),
+    (1003, 12,  'Hammock', 11.01),
+    (1004, 113, 'Teapot', 12.45),
+    (1004, 117, 'Bottomless coffee mug', 9.99);
+}
+do_execsql_test percentile-4.1 {
+  SELECT VendorId, ProductId, /* ProductName,*/ Price,
+         avg(price) OVER (PARTITION BY vendorId) AS "Average",
+         median(price) OVER (PARTITION BY vendorId) AS "Median"
+    FROM products
+   ORDER BY vendorId, productId;
+} {
+  1001      17         25.99  19.68    20.37 
+  1001      31         11.99  19.68    20.37 
+  1001      49         25.99  19.68    20.37 
+  1001      216        14.75  19.68    20.37 
+  1002      37         33.49  33.49    33.49 
+  1003      7          245.0  104.0    55.99 
+  1003      8          55.99  104.0    55.99 
+  1003      12         11.01  104.0    55.99 
+  1004      113        12.45  11.22    11.22 
+  1004      117        9.99   11.22    11.22 
+}
+do_execsql_test percentile-4.2 {
+  SELECT vendorId, median(price) FROM products
+   GROUP BY 1 ORDER BY 1;
+} {1001 20.37 1002 33.49 1003 55.99 1004 11.22}
+
+
 finish_test

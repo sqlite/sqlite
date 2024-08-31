@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\ssort\soperations\swhen\srunning\sone\sof\sthe\spercentile\naggregates\sas\sa\swindow\sfunction.
-D 2024-08-31T16:55:14.747
+C Add\smore\stest\scases.
+D 2024-08-31T17:27:55.143
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1517,7 +1517,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
-F test/percentile.test b30d92480943de8236c1522cace227ad354512ade699789636a4f50ba8a790a1
+F test/percentile.test 4c84880c6d5ca216206a92b6cb33c2fb27c972bec6afc6f5a2e53fb895020647
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 25e68229843cc84978955817285550085d1306ba4ce3b0517dd00e5d05b9ae0a
-R 1b58d4d1990506055e066a3b56b6ff9a
+P 5d311536211eb1e3c887ceb7e6516d3900e6eebbccc8c445dd43cdd556182728
+R 8645e4703962687ea28510b503521695
 U drh
-Z 10ad6a710202821993e7562cc60a54b3
+Z c1cee7eb4fe675aa957233112b675c53
 # Remove this line to create a well-formed Fossil manifest.
