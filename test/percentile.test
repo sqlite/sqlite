@@ -229,4 +229,155 @@ ifcapable vtab {
   }
 }
 
+# median() as a window function.  (2024-08-31)
+#
+do_execsql_test percentile-3.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+  INSERT INTO t1 VALUES (1, 'A', 'one',   8.4),
+                        (2, 'B', 'two',   7.1),
+                        (3, 'C', 'three', 5.9),
+                        (4, 'D', 'one',  11.0),
+                        (5, 'E', 'two',  12.5),
+                        (6, 'F', 'three', 0.0),
+                        (7, 'G', 'one',   2.7);
+}
+do_execsql_test percentile-3.1 {
+SELECT a, b, c, d,
+       group_concat(b,'.') OVER W1 AS 'elements',
+       median(d) OVER W1 AS 'median'
+  FROM t1
+ WINDOW W1 AS (ORDER BY c, a ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+} {
+  1  A  one    8.4   A.D       9.7   
+  4  D  one    11.0  A.D.G     8.4   
+  7  G  one    2.7   D.G.C     5.9   
+  3  C  three  5.9   G.C.F     2.7   
+  6  F  three  0.0   C.F.B     5.9   
+  2  B  two    7.1   F.B.E     7.1   
+  5  E  two    12.5  B.E       9.8   
+}
+do_execsql_test percentile-3.2 {
+SELECT a, b, c, d,
+       group_concat(b,'.') OVER W1 AS 'elements',
+       median(d) OVER W1 AS 'median'
+  FROM t1
+ WINDOW W1 AS (ORDER BY c, a ROWS BETWEEN UNBOUNDED PRECEDING AND 1 FOLLOWING)
+} {
+  1  A  one    8.4   A.D            9.7   
+  4  D  one    11.0  A.D.G          8.4   
+  7  G  one    2.7   A.D.G.C        7.15  
+  3  C  three  5.9   A.D.G.C.F      5.9   
+  6  F  three  0.0   A.D.G.C.F.B    6.5   
+  2  B  two    7.1   A.D.G.C.F.B.E  7.1   
+  5  E  two    12.5  A.D.G.C.F.B.E  7.1   
+}
+do_execsql_test percentile-3.3 {
+SELECT a, b, c, d,
+       group_concat(b,'.') OVER W1 AS 'elements',
+       median(d) OVER W1 AS 'median'
+  FROM t1
+ WINDOW W1 AS (ORDER BY c, a ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING)
+} {
+  1  A  one    8.4   A.D.G.C.F.B.E  7.1   
+  4  D  one    11.0  A.D.G.C.F.B.E  7.1   
+  7  G  one    2.7   D.G.C.F.B.E    6.5   
+  3  C  three  5.9   G.C.F.B.E      5.9   
+  6  F  three  0.0   C.F.B.E        6.5   
+  2  B  two    7.1   F.B.E          7.1   
+  5  E  two    12.5  B.E            9.8   
+}
+
+# Test case adapted from examples shown at
+# https://database.guide/3-functions-to-calculate-the-median-in-sql/
+#
+do_execsql_test percential-4.0 {
+  CREATE TABLE products(
+    vendorId INT,
+    productId INTEGER PRIMARY KEY,
+    productName REAL,
+    price REAL
+  );
+  INSERT INTO products VALUES
+    (1001, 17,  'Left-handed screwdriver', 25.99),
+    (1001, 49,  'Right-handed screwdriver', 25.99),
+    (1001, 216, 'Long weight (blue)', 14.75),
+    (1001, 31,  'Long weight (green)', 11.99),
+    (1002, 37,  'Sledge hammer', 33.49),
+    (1003, 7,   'Chainsaw', 245.00),
+    (1003, 8,   'Straw dog box', 55.99),
+    (1003, 12,  'Hammock', 11.01),
+    (1004, 113, 'Teapot', 12.45),
+    (1004, 117, 'Bottomless coffee mug', 9.99);
+}
+do_execsql_test percentile-4.1 {
+  SELECT VendorId, ProductId, /* ProductName,*/ Price,
+         avg(price) OVER (PARTITION BY vendorId) AS "Average",
+         median(price) OVER (PARTITION BY vendorId) AS "Median"
+    FROM products
+   ORDER BY vendorId, productId;
+} {
+  1001      17         25.99  19.68    20.37 
+  1001      31         11.99  19.68    20.37 
+  1001      49         25.99  19.68    20.37 
+  1001      216        14.75  19.68    20.37 
+  1002      37         33.49  33.49    33.49 
+  1003      7          245.0  104.0    55.99 
+  1003      8          55.99  104.0    55.99 
+  1003      12         11.01  104.0    55.99 
+  1004      113        12.45  11.22    11.22 
+  1004      117        9.99   11.22    11.22 
+}
+do_execsql_test percentile-4.2 {
+  SELECT vendorId, median(price) FROM products
+   GROUP BY 1 ORDER BY 1;
+} {1001 20.37 1002 33.49 1003 55.99 1004 11.22}
+
+do_execsql_test percentile-5.0 {
+  CREATE TABLE user(name TEXT, class TEXT, cost REAL);
+  INSERT INTO user VALUES
+    ('Alice', 'Y',  3578.27),
+    ('Bob',   'X',  3399.99),
+    ('Cindy', 'Z',  699.10),
+    ('Dave',  'Y',  3078.27),
+    ('Emma',  'Z',  2319.99),
+    ('Fred',  'Y',  539.99),
+    ('Gina',  'X',  2320.49),
+    ('Hank',  'W',  24.99),
+    ('Irma',  'W',  24.99),
+    ('Jake',  'X',  2234.99),
+    ('Kim',   'Y',  4319.99),
+    ('Liam',  'X',  4968.59),
+    ('Mia',   'W',  59.53),
+    ('Nate',  'W',  23.50);
+}
+do_execsql_test percentile-5.1 {
+  SELECT name, class, cost,
+    percentile_cont(cost, 0.00) OVER w1 AS 'P0',
+    percentile_cont(cost, 0.25) OVER w1 AS 'P1',
+    percentile_cont(cost, 0.50) OVER w1 AS 'P2',
+    percentile_cont(cost, 0.75) OVER w1 AS 'P3',
+    percentile_cont(cost, 1.00) OVER w1 AS 'P4'
+  FROM user
+  WINDOW w1 AS (PARTITION BY class)
+  ORDER BY class, cost;
+} {
+  Nate   W  23.5     23.5     24.6175    24.99     33.625     59.53  
+  Hank   W  24.99    23.5     24.6175    24.99     33.625     59.53  
+  Irma   W  24.99    23.5     24.6175    24.99     33.625     59.53  
+  Mia    W  59.53    23.5     24.6175    24.99     33.625     59.53  
+  Jake   X  2234.99  2234.99  2299.115   2860.24   3792.14    4968.59
+  Gina   X  2320.49  2234.99  2299.115   2860.24   3792.14    4968.59
+  Bob    X  3399.99  2234.99  2299.115   2860.24   3792.14    4968.59
+  Liam   X  4968.59  2234.99  2299.115   2860.24   3792.14    4968.59
+  Fred   Y  539.99   539.99   2443.7     3328.27   3763.7     4319.99
+  Dave   Y  3078.27  539.99   2443.7     3328.27   3763.7     4319.99
+  Alice  Y  3578.27  539.99   2443.7     3328.27   3763.7     4319.99
+  Kim    Y  4319.99  539.99   2443.7     3328.27   3763.7     4319.99
+  Cindy  Z  699.1    699.1    1104.3225  1509.545  1914.7675  2319.99
+  Emma   Z  2319.99  699.1    1104.3225  1509.545  1914.7675  2319.99
+}
+
+
+
 finish_test

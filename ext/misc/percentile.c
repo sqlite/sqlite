@@ -62,6 +62,29 @@
 **
 **  (14)  A separate percentile_cond(Y,X) function is the equivalent of
 **        percentile(Y,X*100.0).
+**
+**  (15)  All three SQL functions implemented by this module can also be
+**        used as window-functions.
+**
+** Implementation notes as of 2024-08-31:
+**
+**  *  The regular aggregate-function versions of the merge(), percentile(),
+**     and percentile_cond() routines work by accumulating all values in
+**     an array of doubles, then sorting that array using a quicksort
+**     before computing the answer.  Thus the runtime is O(NlogN) where
+**     N is the number of rows of input.
+**
+**  *  For the window-function versions of these routines, the array of
+**     inputs is sorted as soon as the first value is computed.  Thereafter,
+**     the array is kept in sorted order using an insert-sort.  This
+**     results in O(N*K) performance where K is the size of the window.
+**     One can devise alternative implementations that give O(N*logN*logK)
+**     performance, but they require more complex logic and data structures.
+**     The developers have elected to keep the asymptotically slower
+**     algorithm for now, for simplicity, under the theory that window
+**     functions are seldom used and when they are, the window size K is
+**     often small.  The developers might revisit that decision later,
+**     should the need arise.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -77,6 +100,8 @@ typedef struct Percentile Percentile;
 struct Percentile {
   unsigned nAlloc;     /* Number of slots allocated for a[] */
   unsigned nUsed;      /* Number of slots actually used in a[] */
+  char bSorted;        /* True if a[] is already in sorted order */
+  char bKeepSorted;    /* True if advantageous to keep a[] sorted */
   double rPct;         /* 1.0 more than the value for P */
   double *a;           /* Array of Y values */
 };
@@ -84,7 +109,7 @@ struct Percentile {
 /*
 ** Return TRUE if the input floating-point number is an infinity.
 */
-static int isInfinity(double r){
+static int percentIsInfinity(double r){
   sqlite3_uint64 u;
   assert( sizeof(u)==sizeof(r) );
   memcpy(&u, &r, sizeof(u));
@@ -92,11 +117,53 @@ static int isInfinity(double r){
 }
 
 /*
-** Return TRUE if two doubles differ by 0.001 or less
+** Return TRUE if two doubles differ by 0.001 or less.
 */
-static int sameValue(double a, double b){
+static int percentSameValue(double a, double b){
   a -= b;
   return a>=-0.001 && a<=0.001;
+}
+
+#if 0
+/* Verify that the elements of the Percentile p are in fact sorted.
+** Used for testing and debugging only.
+*/
+static void percentAssertSorted(Percentile *p){
+  int i;
+  for(i=p->nUsed-2; i>=0 && p->a[i]<=p->a[i+1]; i--){}
+  assert( i<0 );
+}
+#else
+# define percentAssertSorted(X)
+#endif
+
+/*
+** Search p (which must have p->bSorted) looking for an entry with
+** value y.  Return the index of that entry.
+**
+** If bExact is true, return -1 if the entry is not found.
+**
+** If bExact is false, return the index at which a new entry with
+** value y should be insert in order to keep the values in sorted
+** order.  The smallest return value in this case will be 0, and
+** the largest return value will be p->nUsed.
+*/
+static int percentBinarySearch(Percentile *p, double y, int bExact){
+  int iFirst = 0;              /* First element of search range */
+  int iLast = p->nUsed - 1;    /* Last element of search range */
+  while( iLast>=iFirst ){
+    int iMid = (iFirst+iLast)/2;
+    double x = p->a[iMid];
+    if( x<y ){
+      iFirst = iMid + 1;
+    }else if( x>y ){
+      iLast = iMid - 1;
+    }else{
+      return iMid;
+    }
+  }
+  if( bExact ) return -1;
+  return iFirst;
 }
 
 /*
@@ -144,7 +211,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   ** from any prior row, per Requirement (2). */
   if( p->rPct==0.0 ){
     p->rPct = rPct+1.0;
-  }else if( !sameValue(p->rPct,rPct+1.0) ){
+  }else if( !percentSameValue(p->rPct,rPct+1.0) ){
     sqlite3_result_error(pCtx, "2nd argument to percentile() is not the "
                                "same for all input rows", -1);
     return;
@@ -164,7 +231,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 
   /* Throw an error if the Y value is infinity or NaN */
   y = sqlite3_value_double(argv[0]);
-  if( isInfinity(y) ){
+  if( percentIsInfinity(y) ){
     sqlite3_result_error(pCtx, "Inf input to percentile()", -1);
     return;
   }
@@ -182,11 +249,37 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     p->nAlloc = n;
     p->a = a;
   }
-  p->a[p->nUsed++] = y;
+  if( p->nUsed==0 ){
+    p->a[p->nUsed++] = y;
+    p->bSorted = 1;
+  }else if( !p->bSorted || y>=p->a[p->nUsed-1] ){
+    p->a[p->nUsed++] = y;
+  }else if( p->bKeepSorted ){
+    int i;
+    percentAssertSorted(p);
+    i = percentBinarySearch(p, y, 0);
+    if( i<p->nUsed ){
+      memmove(&p->a[i+1], &p->a[i], (p->nUsed-i)*sizeof(p->a[0]));
+    }
+    p->a[i] = y;
+    p->nUsed++;
+  }else{
+    p->a[p->nUsed++] = y;
+    p->bSorted = 0;
+  }
 }
 
 /*
 ** Sort an array of doubles.
+**
+** Algorithm: quicksort
+**
+** This is implemented separately rather than using the qsort() routine
+** from the standard library because:
+**
+**    (1)  To avoid a dependency on qsort()
+**    (2)  To avoid the function call to the comparison routine for each
+**         comparison.
 */
 static void sortDoubles(double *a, int n){
   int iLt;       /* Entries with index less than iLt are less than rPivot */
@@ -234,11 +327,61 @@ static void sortDoubles(double *a, int n){
 #endif
 }
 
+
 /*
-** Called to compute the final output of percentile() and to clean
-** up all allocated memory.
+** The "inverse" function for percentile(Y,P) is called to remove a
+** row that was previously inserted by "step".
 */
-static void percentFinal(sqlite3_context *pCtx){
+static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
+  Percentile *p;
+  int eType;
+  double y;
+  int i;
+  assert( argc==2 || argc==1 );
+
+  /* Allocate the session context. */
+  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  assert( p!=0 );
+
+  /* Ignore rows for which Y is NULL */
+  eType = sqlite3_value_type(argv[0]);
+  if( eType==SQLITE_NULL ) return;
+
+  /* If not NULL, then Y must be numeric.  Otherwise throw an error.
+  ** Requirement 4 */
+  if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
+    return;
+  }
+
+  /* Ignore the Y value if it is infinity or NaN */
+  y = sqlite3_value_double(argv[0]);
+  if( percentIsInfinity(y) ){
+    return;
+  }
+  if( p->bSorted==0 ){
+    sortDoubles(p->a, p->nUsed);
+    p->bSorted = 1;
+  }else{
+    percentAssertSorted(p);
+  }
+  p->bKeepSorted = 1;
+
+  /* Find and remove the row */
+  i = percentBinarySearch(p, y, 1);
+  if( i>=0 ){
+    p->nUsed--;
+    if( i<p->nUsed ){
+      memmove(&p->a[i], &p->a[i+1], (p->nUsed - i)*sizeof(p->a[0]));
+    }
+  }
+  percentAssertSorted(p);
+}
+
+/*
+** Compute the final output of percentile().  Clean up all allocated
+** memory if and only if bIsFinal is true.
+*/
+static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   Percentile *p;
   unsigned i1, i2;
   double v1, v2;
@@ -247,7 +390,12 @@ static void percentFinal(sqlite3_context *pCtx){
   if( p==0 ) return;
   if( p->a==0 ) return;
   if( p->nUsed ){
-    sortDoubles(p->a, p->nUsed);
+    if( p->bSorted==0 ){
+      sortDoubles(p->a, p->nUsed);
+      p->bSorted = 1;
+    }else{
+      percentAssertSorted(p);
+    }
     ix = (p->rPct-1.0)*(p->nUsed-1)*0.01;
     i1 = (unsigned)ix;
     i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
@@ -256,10 +404,19 @@ static void percentFinal(sqlite3_context *pCtx){
     vx = v1 + (v2-v1)*(ix-i1);
     sqlite3_result_double(pCtx, vx);
   }
-  sqlite3_free(p->a);
-  memset(p, 0, sizeof(*p));
+  if( bIsFinal ){
+    sqlite3_free(p->a);
+    memset(p, 0, sizeof(*p));
+  }else{
+    p->bKeepSorted = 1;
+  }
 }
-
+static void percentFinal(sqlite3_context *pCtx){
+  percentCompute(pCtx, 1);
+}
+static void percentValue(sqlite3_context *pCtx){
+  percentCompute(pCtx, 0);
+}
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -272,18 +429,21 @@ int sqlite3_percentile_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "percentile", 2, 
-                               SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                               0, percentStep, percentFinal);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "median", 1, 
+  rc = sqlite3_create_window_function(db, "percentile", 2, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 0, percentStep, percentFinal);
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_window_function(db, "median", 1, 
+                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "percentile_cont", 2, 
+    rc = sqlite3_create_window_function(db, "percentile_cont", 2, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, &percentStep,
-                                 0, percentStep, percentFinal);
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
   }
   return rc;
 }
