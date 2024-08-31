@@ -316,6 +316,7 @@ static Keyword aKeywordTable[] = {
   { "WHERE",            "TK_WHERE",        ALWAYS,           10     },
   { "WINDOW",           "TK_WINDOW",       WINDOWFUNC,       3      },
   { "WITH",             "TK_WITH",         CTE,              4      },
+  { "WITHIN",           "TK_WITHIN",       ALWAYS,           1      },
   { "WITHOUT",          "TK_WITHOUT",      ALWAYS,           1      },
 };
 

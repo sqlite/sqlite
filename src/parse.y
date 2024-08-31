@@ -255,7 +255,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
-  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
+  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHIN WITHOUT
   NULLS FIRST LAST
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
@@ -1179,6 +1179,39 @@ expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
+%include {
+  /* Generate an expression node that represents an ordered-set aggregate function */
+  static Expr *sqlite3ExprAddOrderedsetFunction(
+    Parse *pParse,         /* Parsing context */
+    Token *pFuncname,      /* Name of the function */
+    int isDistinct,        /* DISTINCT or ALL qualifier */
+    ExprList *pOrig,       /* Arguments to the function */
+    Expr *pOrderby         /* Expression in the ORDER BY clause */                
+  ){
+    ExprList *p;           /* Modified argument list */
+    Expr *pExpr;           /* Final result */
+    p = sqlite3ExprListAppend(pParse, 0, pOrderby);
+    if( pOrig ){
+      int i;
+      for(i=0; i<pOrig->nExpr; i++){
+        p = sqlite3ExprListAppend(pParse, p, pOrig->a[i].pExpr);
+        pOrig->a[i].pExpr = 0;
+      }
+      sqlite3ExprListDelete(pParse->db, pOrig);
+    }
+    if( isDistinct==SF_Distinct ){
+      sqlite3ErrorMsg(pParse, "DISTINCT not allows on ordered-set aggregate %T()",
+                      pFuncname);
+    }
+    pExpr = sqlite3ExprFunction(pParse, p, pFuncname, 0);
+    if( pExpr ) pExpr->iTable = 1;
+    return pExpr;
+  }
+}
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP. {
+  A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
+}
+
 %ifndef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
@@ -1193,6 +1226,12 @@ expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP
+            filter_over(Z). {
+  A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
+  sqlite3WindowAttach(pParse, A, Z);
+}
+
 %endif
 
 term(A) ::= CTIME_KW(OP). {

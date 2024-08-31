@@ -1,5 +1,5 @@
-C Include\spercentile()\sand\smerge()\sin\sthe\sfuzzcheck\stest\sutility.
-D 2024-08-31T19:24:17.689
+C Demonstration\sof\show\sordered-set\saggregates\smight\sbe\sparsed\sand\sintegrated\ninto\sthe\sexisting\sparse\stree,\sshould\swe\sdecide\sto\ssupport\sthem.
+D 2024-08-31T20:09:37.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -754,7 +754,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 5972b7d00af4c8d96fdad781af1ea1d5d51fc3b907ad61bda60e49503274e5ed
+F src/parse.y 32969201e800aa9d8238a532f66ea1c6863c16a480f540cafec7e6c352c73e52
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -770,7 +770,7 @@ F src/shell.c.in 40de636c1d90fb8a9ca7f49dc8f50d930f1b60736e73aca5eb37c4c7d0e47f9
 F src/sqlite.h.in f07bff4225a1244efd604a0ffef81ed69f29d3dbaed7e22f906f26229ba3ca9e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 889cd632f4386bbd8619b166abb7d25f1c8ce6514e90cb7f22f63bd530fc6107
+F src/sqliteInt.h 8eac0c901803fc1fca0faa0ad28492c3b5f38c436d2f594c03308d9b955dbecb
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2132,7 +2132,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 48ca8eefa9e615cb9057ce6485b9c9ae5801381f24690d7d60b3b2dc8e6b7457 x
-F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
+F tool/mkkeywordhash.c d2d7369faacb45e7ec089ccbc2fd48e2fcab3d62d3533648c4017d5df1abd37d
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
@@ -2211,8 +2211,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3fe0a852978f3f1218e37a58f0d3b54016d4116a3301aa32efa7c4c12c767755
-R fe4924b06f0c2e628905b36a4804a9df
+P d1d0942a947803d45a1fd9068f3518cf412178b6b9bafcb82db44c52d5820c11
+R d8caee9c6c8e089bfb48a8d01fa2ad93
+T *branch * ordered-set-agg
+T *sym-ordered-set-agg *
+T -sym-trunk *
 U drh
-Z f104fe8dff33191117d210e31173232d
+Z b43c798c432268071337348d4788bafe
 # Remove this line to create a well-formed Fossil manifest.
