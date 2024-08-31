@@ -541,6 +541,7 @@ FUZZSRC += $(TOP)/test/vt02.c
 FUZZSRC += $(TOP)/test/fuzzinvariants.c
 FUZZSRC += $(TOP)/ext/recover/dbdata.c
 FUZZSRC += $(TOP)/ext/recover/sqlite3recover.c
+FUZZSRC += $(TOP)/ext/misc/percentile.c
 FUZZSRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 KV_OPT = -DSQLITE_THREADSAFE=0 -DSQLITE_DIRECT_OVERFLOW_READ

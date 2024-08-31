@@ -95,8 +95,12 @@
 **     often small.  The developers might revisit that decision later,
 **     should the need arise.
 */
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#ifdef SQLITE_STATIC_PERCENTILE
+#  include "sqlite3.h"
+#else
+#  include "sqlite3ext.h"
+   SQLITE_EXTENSION_INIT1
+#endif
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -425,7 +429,11 @@ int sqlite3_percentile_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+#ifdef SQLITE_STATIC_PERCENTILE
+  (void)pApi;      /* Unused parameter */
+#else
   SQLITE_EXTENSION_INIT2(pApi);
+#endif
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_window_function(db, "percentile", 2, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
