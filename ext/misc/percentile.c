@@ -436,14 +436,12 @@ int sqlite3_percentile_init(
 #endif
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_window_function(db, "percentile", 2, 
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 percentStep, percentFinal,
-                                 percentValue, percentInverse, 0);
+          SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_SELFORDER1, 0,
+          percentStep, percentFinal, percentValue, percentInverse, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_window_function(db, "median", 1, 
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 percentStep, percentFinal,
-                                 percentValue, percentInverse, 0);
+          SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_SELFORDER1, 0,
+          percentStep, percentFinal, percentValue, percentInverse, 0);
   }
   return rc;
 }

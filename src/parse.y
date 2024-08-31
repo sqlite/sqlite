@@ -1204,7 +1204,7 @@ expr(A) ::= idj(X) LP STAR RP. {
                       pFuncname);
     }
     pExpr = sqlite3ExprFunction(pParse, p, pFuncname, 0);
-    if( pExpr ) pExpr->iTable = 1;
+    if( pExpr ) pExpr->iColumn = 1;
     return pExpr;
   }
 }

@@ -5615,6 +5615,13 @@ int sqlite3_create_window_function(
 ** [sqlite3_result_subtype()] should avoid setting this property, as the
 ** purpose of this property is to disable certain optimizations that are
 ** incompatible with subtypes.
+**
+** [[SQLITE_SELFORDER1]] <dt>SQLITE_SELFORDER1</dt><dd>
+** The SQLITE_SELFORDER1 flag indicates that the function is an aggregate
+** that internally orders the values provided to the first argument.  The
+** ordered-set aggregate SQL notation can be used to invoke this function.
+** If the ordered-set aggregate notation is used on a function that lacks
+** this flag, then an error is raised.
 ** </dd>
 ** </dl>
 */
@@ -5623,6 +5630,7 @@ int sqlite3_create_window_function(
 #define SQLITE_SUBTYPE          0x000100000
 #define SQLITE_INNOCUOUS        0x000200000
 #define SQLITE_RESULT_SUBTYPE   0x001000000
+#define SQLITE_SELFORDER1       0x002000000
 
 /*
 ** CAPI3REF: Deprecated Functions

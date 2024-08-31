@@ -1292,6 +1292,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       else if( ExprHasProperty(pExpr, EP_WinFunc) || pExpr->pLeft ){
         is_agg = 1;
       }
+      if( pExpr->iColumn && (pDef->funcFlags & SQLITE_SELFORDER1)==0 ){
+        sqlite3ErrorMsg(pParse, "%#T() is not a ordered-set aggregate function",
+                        pExpr);
+      }
       sqlite3WalkExprList(pWalker, pList);
       if( is_agg ){
         if( pExpr->pLeft ){
