@@ -1,11 +1,11 @@
-C Do\snot\sfail\sthe\somittest\sif\sICU\slibraries\sare\snot\sinstalled.
-D 2024-08-30T17:33:25.286
+C Enhance\sthe\spercentile()\sand\smedian()\sextension\sfunctions\sso\sthat\sthey\scan\sbe\nwindow\sfunctions.
+D 2024-08-31T14:31:17.092
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 77627cbeeffe23606da5663458c0f8bbb86d28e2aca270a5d9b0db8e39a54bb2
+F Makefile.in 394e8c4b17d7a25b26a379573cb74bac569e6e4e9b5f1e2cf6efd53866867054
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 47dfd26a401c5a33e237ecfe126c996977f34ac44e44a1a1ebf2204abb89d483
+F Makefile.msc 8dc55cc46fabd6a01afca3a5829c4cb69b99537e42143ca6f0bf6e811b9f5068
 F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -410,7 +410,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c af1941dc87d45dd0c2698a3087fbfe9ee0d157e5e72da521430c4b784abcbe81
+F ext/misc/percentile.c 89416b108569171be1d8dda4fa2687ad116ea969b4d129d02cf3dc1fd67fc87e
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -685,7 +685,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 40f8cd07372d7eed2fe33403a42b82c3f5d2d46b59480444384326db70bb33f1
+F main.mk de83918046afeb0ac4239e88511623f3ef2a0c41aab0e2b401e0275f4fd24a8e
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -718,7 +718,7 @@ F src/delete.c 444c4d1eaac40103461e3b6f0881846dd3aafc1cec1dd169d3482fa331667da7
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 1f61e32e7a357e615b5d2e774bee563761fce4f2fd97ecb0f72c33e62a2ada5f
+F src/func.c df400a1d3f4625997d4dd8a81951c303e066277c29b861d37e03cd152d7858dd
 F src/global.c 61a419dd9e993b9be0f91de4c4ccf322b053eb829868e089f0321dd669be3b90
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2211,8 +2211,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e48add02695a41b26a04e7942b5333e2bf4dc5598e363367aea3a4690982667d
-R 3b9cf08a862640c366f07bc714e510b5
+P ddc55efd2d59df3f20743b0533550436da945453c069025a3f871d28d40e13d4
+R 5abe90c6c09c8e29fb97dabd43182a07
+T *branch * percentile-window
+T *sym-percentile-window *
+T -sym-trunk *
 U drh
-Z ce5d41834ddc15c40aed5b812cb5e6fa
+Z 85a1ed3baf7191136421a56e2c79709a
 # Remove this line to create a well-formed Fossil manifest.

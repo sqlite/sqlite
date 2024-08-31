@@ -77,6 +77,7 @@ typedef struct Percentile Percentile;
 struct Percentile {
   unsigned nAlloc;     /* Number of slots allocated for a[] */
   unsigned nUsed;      /* Number of slots actually used in a[] */
+  char bSorted;        /* True if a[] is already in sorted order */
   double rPct;         /* 1.0 more than the value for P */
   double *a;           /* Array of Y values */
 };
@@ -183,10 +184,65 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     p->a = a;
   }
   p->a[p->nUsed++] = y;
+  assert( p->nUsed>=1 );
+  if( p->nUsed==1 ){
+    p->bSorted = 1;
+  }else if( p->bSorted && p->a[p->nUsed-2]>y ){
+    p->bSorted = 0;
+  }
+}
+
+/*
+** The "inverse" function for percentile(Y,P) is called to remove a
+** row that was previously inserted by "step".
+*/
+static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
+  Percentile *p;
+  int eType;
+  double y;
+  int i;
+  assert( argc==2 || argc==1 );
+
+  /* Allocate the session context. */
+  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  assert( p!=0 );
+
+  /* Ignore rows for which Y is NULL */
+  eType = sqlite3_value_type(argv[0]);
+  if( eType==SQLITE_NULL ) return;
+
+  /* If not NULL, then Y must be numeric.  Otherwise throw an error.
+  ** Requirement 4 */
+  if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
+    return;
+  }
+
+  /* Ignore the Y value if it is infinity or NaN */
+  y = sqlite3_value_double(argv[0]);
+  if( isInfinity(y) ){
+    return;
+  }
+
+  /* Find and remove the row */
+  for(i=0; i<p->nUsed && p->a[i]!=y; i++){}
+  if( i<p->nUsed ){
+    p->a[i] = p->a[p->nUsed-1];
+    p->nUsed--;
+  }
+  p->bSorted = p->nUsed<=1;
 }
 
 /*
 ** Sort an array of doubles.
+**
+** Algorithm: quicksort
+**
+** This is implemented separately rather than using the qsort() routine
+** from the standard library because:
+**
+**    (1)  To avoid a dependency on qsort()
+**    (2)  To avoid the function call to the comparison routine for each
+**         comparison.
 */
 static void sortDoubles(double *a, int n){
   int iLt;       /* Entries with index less than iLt are less than rPivot */
@@ -238,7 +294,7 @@ static void sortDoubles(double *a, int n){
 ** Called to compute the final output of percentile() and to clean
 ** up all allocated memory.
 */
-static void percentFinal(sqlite3_context *pCtx){
+static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   Percentile *p;
   unsigned i1, i2;
   double v1, v2;
@@ -247,7 +303,10 @@ static void percentFinal(sqlite3_context *pCtx){
   if( p==0 ) return;
   if( p->a==0 ) return;
   if( p->nUsed ){
-    sortDoubles(p->a, p->nUsed);
+    if( p->bSorted==0 ){
+      sortDoubles(p->a, p->nUsed);
+      p->bSorted = 1;
+    }
     ix = (p->rPct-1.0)*(p->nUsed-1)*0.01;
     i1 = (unsigned)ix;
     i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
@@ -256,9 +315,18 @@ static void percentFinal(sqlite3_context *pCtx){
     vx = v1 + (v2-v1)*(ix-i1);
     sqlite3_result_double(pCtx, vx);
   }
-  sqlite3_free(p->a);
-  memset(p, 0, sizeof(*p));
+  if( bIsFinal ){
+    sqlite3_free(p->a);
+    memset(p, 0, sizeof(*p));
+  }
 }
+static void percentFinal(sqlite3_context *pCtx){
+  percentCompute(pCtx, 1);
+}
+static void percentValue(sqlite3_context *pCtx){
+  percentCompute(pCtx, 0);
+}
+
 
 
 #ifdef _WIN32
@@ -272,18 +340,22 @@ int sqlite3_percentile_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "percentile", 2, 
-                               SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                               0, percentStep, percentFinal);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "median", 1, 
+  rc = sqlite3_create_window_function(db, "percentile", 2, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 0, percentStep, percentFinal);
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_window_function(db, "median", 1, 
+                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
+
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "percentile_cont", 2, 
+    rc = sqlite3_create_window_function(db, "percentile_cont", 2, 
                                  SQLITE_UTF8|SQLITE_INNOCUOUS, &percentStep,
-                                 0, percentStep, percentFinal);
+                                 percentStep, percentFinal,
+                                 percentValue, percentInverse, 0);
   }
   return rc;
 }
