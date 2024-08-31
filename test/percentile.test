@@ -333,5 +333,51 @@ do_execsql_test percentile-4.2 {
    GROUP BY 1 ORDER BY 1;
 } {1001 20.37 1002 33.49 1003 55.99 1004 11.22}
 
+do_execsql_test percentile-5.0 {
+  CREATE TABLE user(name TEXT, class TEXT, cost REAL);
+  INSERT INTO user VALUES
+    ('Alice', 'Y',  3578.27),
+    ('Bob',   'X',  3399.99),
+    ('Cindy', 'Z',  699.10),
+    ('Dave',  'Y',  3078.27),
+    ('Emma',  'Z',  2319.99),
+    ('Fred',  'Y',  539.99),
+    ('Gina',  'X',  2320.49),
+    ('Hank',  'W',  24.99),
+    ('Irma',  'W',  24.99),
+    ('Jake',  'X',  2234.99),
+    ('Kim',   'Y',  4319.99),
+    ('Liam',  'X',  4968.59),
+    ('Mia',   'W',  59.53),
+    ('Nate',  'W',  23.50);
+}
+do_execsql_test percentile-5.1 {
+  SELECT name, class, cost,
+    percentile_cont(cost, 0.00) OVER w1 AS 'P0',
+    percentile_cont(cost, 0.25) OVER w1 AS 'P1',
+    percentile_cont(cost, 0.50) OVER w1 AS 'P2',
+    percentile_cont(cost, 0.75) OVER w1 AS 'P3',
+    percentile_cont(cost, 1.00) OVER w1 AS 'P4'
+  FROM user
+  WINDOW w1 AS (PARTITION BY class)
+  ORDER BY class, cost;
+} {
+  Nate   W  23.5     23.5     24.6175    24.99     33.625     59.53  
+  Hank   W  24.99    23.5     24.6175    24.99     33.625     59.53  
+  Irma   W  24.99    23.5     24.6175    24.99     33.625     59.53  
+  Mia    W  59.53    23.5     24.6175    24.99     33.625     59.53  
+  Jake   X  2234.99  2234.99  2299.115   2860.24   3792.14    4968.59
+  Gina   X  2320.49  2234.99  2299.115   2860.24   3792.14    4968.59
+  Bob    X  3399.99  2234.99  2299.115   2860.24   3792.14    4968.59
+  Liam   X  4968.59  2234.99  2299.115   2860.24   3792.14    4968.59
+  Fred   Y  539.99   539.99   2443.7     3328.27   3763.7     4319.99
+  Dave   Y  3078.27  539.99   2443.7     3328.27   3763.7     4319.99
+  Alice  Y  3578.27  539.99   2443.7     3328.27   3763.7     4319.99
+  Kim    Y  4319.99  539.99   2443.7     3328.27   3763.7     4319.99
+  Cindy  Z  699.1    699.1    1104.3225  1509.545  1914.7675  2319.99
+  Emma   Z  2319.99  699.1    1104.3225  1509.545  1914.7675  2319.99
+}
+
+
 
 finish_test

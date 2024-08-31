@@ -1,5 +1,5 @@
-C Add\smore\stest\scases.
-D 2024-08-31T17:27:55.143
+C Still\smore\stest\scases.
+D 2024-08-31T17:50:06.875
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1517,7 +1517,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
-F test/percentile.test 4c84880c6d5ca216206a92b6cb33c2fb27c972bec6afc6f5a2e53fb895020647
+F test/percentile.test 9ae96346c6f5f000eeeca023cabf85efefd744f7b66031147354a4da6dcb50d6
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d311536211eb1e3c887ceb7e6516d3900e6eebbccc8c445dd43cdd556182728
-R 8645e4703962687ea28510b503521695
+P 0d0e5456793b4bef673ebc7fcc1c393a6d3c817363d948ddfe06d60eab56dc24
+R 55d55ff8a79d8904a0d256c79a96924e
 U drh
-Z c1cee7eb4fe675aa957233112b675c53
+Z 79dbcf8ff805bbacf34d3a6772c416df
 # Remove this line to create a well-formed Fossil manifest.
