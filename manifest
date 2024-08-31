@@ -1,5 +1,5 @@
-C Enhance\sthe\spercentile()\sand\smedian()\sextension\sfunctions\sso\sthat\sthey\scan\sbe\nwindow\sfunctions.
-D 2024-08-31T14:31:17.092
+C Test\scases\sadded.
+D 2024-08-31T15:02:07.805
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1517,7 +1517,7 @@ F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035c
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
-F test/percentile.test 74e383216a075251512d6ba98beb9dccd6da465e3f73817fc438379e3a628de7
+F test/percentile.test b30d92480943de8236c1522cace227ad354512ade699789636a4f50ba8a790a1
 F test/permutations.test 405542f1d659942994a6b38a9e024cf5cfd23eaa68c806aeb24a72d7c9186e80
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 11cb9310c42f921918f7f563e3c0b6e70f9f9c3a6a1cf12af8fccb6c574f3882
@@ -2211,11 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ddc55efd2d59df3f20743b0533550436da945453c069025a3f871d28d40e13d4
-R 5abe90c6c09c8e29fb97dabd43182a07
-T *branch * percentile-window
-T *sym-percentile-window *
-T -sym-trunk *
+P 4d0e3df4b9c609755977b8a462126242d2be1310c0122a8d4ba76d98d32a7230
+R 06b03a21c6b126e146ea802b7b43139b
 U drh
-Z 85a1ed3baf7191136421a56e2c79709a
+Z a8a75faed57aa0d8766eb4f3377323de
 # Remove this line to create a well-formed Fossil manifest.
