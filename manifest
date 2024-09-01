@@ -1,5 +1,5 @@
-C Improved\sdocumentation\sof\srecent\senhancements\sto\sthe\spercentile\sextension.
-D 2024-09-01T23:47:20.435
+C More\sinternal\sdocumentation\simprovements.
+D 2024-09-01T23:56:14.104
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -754,7 +754,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 228eaa370f4467106af4b2065cd7d1e1382e7f248070dc67e86d1fc8975ad69e
+F src/parse.y 5a15f76ee1e215cd1db9741685f94768a94fbe8b4b160c6211cd996194b996d2
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c9367e2532d653738af27c4d92810eb648a9e12f72d7223017c87cb0dddc6804
-R ac4c49def40924a4942d4d05a7a36f9f
+P 51e7b4c9cf19a5986432a76c5fd30cef715c170a403d7b4304a8c5888c445a91
+R bfc4e614787c482acd37bc365c967d35
 U drh
-Z d0ae9c1e72197b37292ce151522509d5
+Z 004df0b11de984975db126394a0a1e5e
 # Remove this line to create a well-formed Fossil manifest.

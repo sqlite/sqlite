@@ -1184,7 +1184,23 @@ expr(A) ::= idj(X) LP STAR RP. {
 
 %ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
 %include {
-  /* Generate an expression node that represents an ordered-set aggregate function */
+  /* Generate an expression node that represents an ordered-set aggregate function.
+  **
+  ** SQLite does not do anything special to evaluate ordered-set aggregates.  The
+  ** aggregate function itself is expected to do any required ordering on its own.
+  ** This is just syntactic sugar.
+  **
+  ** This syntax:        percentile(f) WITHIN GROUP ( ORDER BY y )
+  **
+  ** Is equivalent to:   percentile(y,f)
+  **
+  ** The purpose of this function is to generate an Expr node from the first syntax
+  ** into a TK_FUNCTION node that looks like it came from the second syntax.
+  **
+  ** Only functions that have the SQLITE_SELFORDER1 perperty are allowed to do this
+  ** transformation.  Because DISTINCT is not allowed in the ordered-set aggregate
+  ** syntax, an error is raised if DISTINCT is used.
+  */
   static Expr *sqlite3ExprAddOrderedsetFunction(
     Parse *pParse,         /* Parsing context */
     Token *pFuncname,      /* Name of the function */
@@ -1213,7 +1229,7 @@ expr(A) ::= idj(X) LP STAR RP. {
       if( pDef==0 || (pDef->funcFlags & SQLITE_SELFORDER1)==0 ){
         sqlite3ErrorMsg(pParse, "%#T() is not an ordered-set aggregate", pExpr);
       }else if( isDistinct==SF_Distinct ){
-        sqlite3ErrorMsg(pParse, "DISTINCT not allows on ordered-set aggregate %T()",
+        sqlite3ErrorMsg(pParse, "DISTINCT not allowed on ordered-set aggregate %T()",
                         pFuncname);
       }
     }
