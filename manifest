@@ -1,5 +1,5 @@
-C The\sWITHIN\sGROUP\s(ORDER\sBY\s...)\ssyntax\sis\snow\sa\scompile-time\soption:\nSQLITE_ENABLE_ORDERED_SET_FUNCS.\s\sThere\sis\sno\sincrement\sin\sthe\scode\ssize\nif\sthe\soption\sis\somitted.
-D 2024-09-01T23:27:34.356
+C Improved\sdocumentation\sof\srecent\senhancements\sto\sthe\spercentile\sextension.
+D 2024-09-01T23:47:20.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -410,7 +410,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c 76b29311319b6875ac6deb377c8338f651feeb5f929552994d18e3f0ffe6790d
+F ext/misc/percentile.c 0a7d3e9ddff3aeb9ce4cd6b8a27291ace34d5976689f4f7481e28666cd1ccf63
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1a93f67d6b21df6fe3247c9333fead61dd425574f66ea3eb06b80c2b06f616a
-R 53af1edd1d9feb68bdee109d972b107c
+P c9367e2532d653738af27c4d92810eb648a9e12f72d7223017c87cb0dddc6804
+R ac4c49def40924a4942d4d05a7a36f9f
 U drh
-Z 4ca68917083632dff3be94c09fa2e867
+Z d0ae9c1e72197b37292ce151522509d5
 # Remove this line to create a well-formed Fossil manifest.

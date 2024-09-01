@@ -11,7 +11,7 @@
 ******************************************************************************
 **
 ** This file contains code to implement the percentile(Y,P) SQL function
-** as described below:
+** and similar as described below:
 **
 **   (1)  The percentile(Y,P) function is an aggregate function taking
 **        exactly two arguments.
@@ -60,27 +60,45 @@
 **
 **  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
 **
-**  (14)  Both median() and percentile(Y,P) can be used as window functions.
+**  (14)  A separate percentile_cont(Y,P) function is equivalent to
+**        percentile(Y,P/100.0).  In other words, the fraction value in
+**        the second argument is in the range of 0 to 1 instead of 0 to 100.
+**
+**  (15)  A separate percentile_disc(Y,P) function is like
+**        percentile_cont(Y,P) except that instead of returning the weighted
+**        average of the nearest two input values, it returns the next lower
+**        value.  So the percentile_disc(Y,P) will always return a value
+**        that was one of the inputs.
+**
+**  (16)  All of median(), percentile(Y,P), percentile_cont(Y,P) and
+**        percentile_disc(Y,P) can be used as window functions.
 **
 ** Differences from standard SQL:
 **
-**  *  The percentile(X,P) function is equivalent to the following in
+**  *  The percentile_cont(X,P) function is equivalent to the following in
 **     standard SQL:
 **
-**         (percentile(P/100.0) WITHIN GROUP (ORDER BY X))
+**         (percentile_cont(P) WITHIN GROUP (ORDER BY X))
 **
-**     The SQLite syntax is much more compact.  Note also that the
-**     range of the P argument is 0..100 in SQLite, but 0..1 in the
-**     standard.
+**     The SQLite syntax is much more compact.  The standard SQL syntax
+**     is also supported if SQLite is compiled with the
+**     -DSQLITE_ENABLE_ORDERED_SET_FUNCS option.
 **
-**  *  No merge(X) function exists in the standard.  Application developers
+**  *  No median(X) function exists in the SQL standard.  App developers
 **     are expected to write "percentile_cont(0.5)WITHIN GROUP(ORDER BY X)".
+**
+**  *  No percentile(Y,P) function exists in the SQL standard.  Instead of
+**     percential(Y,P), developers must write this:
+**     "percentile_cont(P/100.0) WITHIN GROUP (ORDER BY Y)".  Note that
+**     the fraction parameter to percentile() goes from 0 to 100 whereas
+**     the fraction parameter in SQL standard percentile_cont() goes from
+**     0 to 1.
 **
 ** Implementation notes as of 2024-08-31:
 **
-**  *  The regular aggregate-function versions of the merge() and percentile(),
-**     routines work by accumulating all values in an array of doubles, then
-**     sorting that array using a quicksort before computing the answer. Thus
+**  *  The regular aggregate-function versions of these routines work
+**     by accumulating all values in an array of doubles, then sorting
+**     that array using quicksort before computing the answer. Thus
 **     the runtime is O(NlogN) where N is the number of rows of input.
 **
 **  *  For the window-function versions of these routines, the array of
