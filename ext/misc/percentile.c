@@ -292,7 +292,12 @@ static void sortDoubles(double *a, int n){
 
   if( n<2 ) return;
   if( n>5 ){
-    rPivot = (a[0] + a[n/2] + a[n-1])/3.0;
+    double x[3];
+    x[0]= a[0];
+    x[1] = a[n/2];
+    x[2] = a[n-1];
+    sortDoubles(x,3);
+    rPivot = x[1];
   }else{
     rPivot = a[n/2];
   }
