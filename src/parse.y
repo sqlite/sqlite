@@ -255,7 +255,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW ROWS
-  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHIN WITHOUT
+  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
   NULLS FIRST LAST
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
@@ -264,6 +264,9 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
   EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
+%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
+  WITHIN
+%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
   GENERATED ALWAYS
 %endif
@@ -1179,6 +1182,7 @@ expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
+%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
 %include {
   /* Generate an expression node that represents an ordered-set aggregate function */
   static Expr *sqlite3ExprAddOrderedsetFunction(
@@ -1219,6 +1223,7 @@ expr(A) ::= idj(X) LP STAR RP. {
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP. {
   A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
 }
+%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
@@ -1234,13 +1239,15 @@ expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
+%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP
             filter_over(Z). {
   A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
   sqlite3WindowAttach(pParse, A, Z);
 }
+%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
 
-%endif
+%endif SQLITE_OMIT_WINDOWFUNC
 
 term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP, 0);

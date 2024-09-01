@@ -5621,7 +5621,9 @@ int sqlite3_create_window_function(
 ** that internally orders the values provided to the first argument.  The
 ** ordered-set aggregate SQL notation with a single ORDER BY term can be
 ** used to invoke this function.  If the ordered-set aggregate notation is
-** used on a function that lacks this flag, then an error is raised.
+** used on a function that lacks this flag, then an error is raised. Note
+** that the ordered-set aggregate syntax is only available if SQLite is
+** built using the -DSQLITE_ENABLE_ORDERED_SET_FUNCS compile-time option.
 ** </dd>
 ** </dl>
 */
