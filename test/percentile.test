@@ -358,6 +358,10 @@ do_execsql_test percentile-5.1 {
   Emma   Z  2319.99  699.1    1104.3225  1509.545  1914.7675  2319.99
 }
 
-
+# Fuzzer find.
+do_execsql_test percentile-6.0 {
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<12)
+  SELECT median(iif(n%2,0.1,1.0)) FROM c;
+} 0.55
 
 finish_test

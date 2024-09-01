@@ -272,6 +272,11 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 }
 
 /*
+** Interchange two doubles.
+*/
+#define SWAP_DOUBLE(X,Y)  {double ttt=(X);(X)=(Y);(Y)=ttt;}
+
+/*
 ** Sort an array of doubles.
 **
 ** Algorithm: quicksort
@@ -283,44 +288,44 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 **    (2)  To avoid the function call to the comparison routine for each
 **         comparison.
 */
-static void sortDoubles(double *a, int n){
-  int iLt;       /* Entries with index less than iLt are less than rPivot */
-  int iGt;       /* Entries with index iGt or more are greater than rPivot */
+static void percentSort(double *a, unsigned int n){
+  int iLt;  /* Entries before a[iLt] are less than rPivot */
+  int iGt;  /* Entries at or after a[iGt] are greater than rPivot */
   int i;         /* Loop counter */
   double rPivot; /* The pivot value */
-  double rTmp;   /* Temporary used to swap two values */
-
-  if( n<2 ) return;
-  if( n>5 ){
-    rPivot = (a[0] + a[n/2] + a[n-1])/3.0;
-  }else{
-    rPivot = a[n/2];
+  
+  assert( n>=2 );
+  if( a[0]>a[n-1] ){
+    SWAP_DOUBLE(a[0],a[n-1])
   }
-  iLt = i = 0;
-  iGt = n;
-  while( i<iGt ){
+  if( n==2 ) return;
+  iGt = n-1;
+  i = n/2;
+  if( a[0]>a[i] ){
+    SWAP_DOUBLE(a[0],a[i])
+  }else if( a[i]>a[iGt] ){
+    SWAP_DOUBLE(a[i],a[iGt])
+  }
+  if( n==3 ) return;
+  rPivot = a[i];
+  iLt = i = 1;
+  do{
     if( a[i]<rPivot ){
-      if( i>iLt ){
-        rTmp = a[i];
-        a[i] = a[iLt];
-        a[iLt] = rTmp;
-      }
+      if( i>iLt ) SWAP_DOUBLE(a[i],a[iLt])
       iLt++;
       i++;
     }else if( a[i]>rPivot ){
       do{
         iGt--;
       }while( iGt>i && a[iGt]>rPivot );
-      rTmp = a[i];
-      a[i] = a[iGt];
-      a[iGt] = rTmp;
+      SWAP_DOUBLE(a[i],a[iGt])
     }else{
       i++;
     }
-  }
-  if( iLt>=2 ) sortDoubles(a, iLt);
-  if( n-iGt>=2 ) sortDoubles(a+iGt, n-iGt);
-
+  }while( i<iGt );
+  if( iLt>=2 ) percentSort(a, iLt);
+  if( n-iGt>=2 ) percentSort(a+iGt, n-iGt);
+    
 /* Uncomment for testing */
 #if 0
   for(i=0; i<n-1; i++){
@@ -361,7 +366,8 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
     return;
   }
   if( p->bSorted==0 ){
-    sortDoubles(p->a, p->nUsed);
+    assert( p->nUsed>1 );
+    percentSort(p->a, p->nUsed);
     p->bSorted = 1;
   }else{
     percentAssertSorted(p);
@@ -393,7 +399,8 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   if( p->a==0 ) return;
   if( p->nUsed ){
     if( p->bSorted==0 ){
-      sortDoubles(p->a, p->nUsed);
+      assert( p->nUsed>1 );
+      percentSort(p->a, p->nUsed);
       p->bSorted = 1;
     }else{
       percentAssertSorted(p);
