@@ -68,7 +68,7 @@ do_test percentile-1.4 {
 } {0 4.4}
 do_test percentile-1.5 {
   catchsql {SELECT round(percentile(x, 15+0.1*rowid),1) FROM t1}
-} {1 {2nd argument to percentile() is not the same for all input rows}}
+} {1 {the fraction argument to percentile() is not the same for all input rows}}
 
 # Input values in a random order
 #
@@ -105,22 +105,28 @@ do_test percentile-1.9 {
 #
 do_test percentile-1.10 {
   catchsql {SELECT percentile(x,null) FROM t1}
-} {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+} {1 {the fraction argument to percentile() is not between 0.0 and 100.0}}
 do_test percentile-1.11 {
   catchsql {SELECT percentile(x,'fifty') FROM t1}
-} {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+} {1 {the fraction argument to percentile() is not between 0.0 and 100.0}}
 do_test percentile-1.12 {
   catchsql {SELECT percentile(x,x'3530') FROM t1}
-} {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+} {1 {the fraction argument to percentile() is not between 0.0 and 100.0}}
 
 # Second argument is out of range
 #
 do_test percentile-1.13 {
   catchsql {SELECT percentile(x,-0.0000001) FROM t1}
-} {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+} {1 {the fraction argument to percentile() is not between 0.0 and 100.0}}
 do_test percentile-1.14 {
   catchsql {SELECT percentile(x,100.0000001) FROM t1}
-} {1 {2nd argument to percentile() is not a number between 0.0 and 100.0}}
+} {1 {the fraction argument to percentile() is not between 0.0 and 100.0}}
+do_test percentile-1.14.2 {
+  catchsql {SELECT percentile_cont(x,1.0000001) FROM t1}
+} {1 {the fraction argument to percentile_cont() is not between 0.0 and 1.0}}
+do_test percentile-1.14.3 {
+  catchsql {SELECT percentile_disc(x,1.0000001) FROM t1}
+} {1 {the fraction argument to percentile_disc() is not between 0.0 and 1.0}}
 
 # First argument is not NULL and is not NUMERIC
 #
