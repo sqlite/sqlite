@@ -1199,12 +1199,20 @@ expr(A) ::= idj(X) LP STAR RP. {
       }
       sqlite3ExprListDelete(pParse->db, pOrig);
     }
-    if( isDistinct==SF_Distinct ){
-      sqlite3ErrorMsg(pParse, "DISTINCT not allows on ordered-set aggregate %T()",
-                      pFuncname);
-    }
     pExpr = sqlite3ExprFunction(pParse, p, pFuncname, 0);
-    if( pExpr ) pExpr->iColumn = 1;
+    if( pParse->nErr==0 ){
+      FuncDef *pDef;
+      u8 enc = ENC(pParse->db);
+      assert( pExpr!=0 );  /* Because otherwise pParse->nErr would not be zero */
+      assert( p!=0 );      /* Because otherwise pParse->nErr would not be zero */
+      pDef = sqlite3FindFunction(pParse->db, pExpr->u.zToken, p->nExpr, enc, 0);
+      if( pDef==0 || (pDef->funcFlags & SQLITE_SELFORDER1)==0 ){
+        sqlite3ErrorMsg(pParse, "%#T() is not an ordered-set aggregate", pExpr);
+      }else if( isDistinct==SF_Distinct ){
+        sqlite3ErrorMsg(pParse, "DISTINCT not allows on ordered-set aggregate %T()",
+                        pFuncname);
+      }
+    }
     return pExpr;
   }
 }
