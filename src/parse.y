@@ -1225,7 +1225,7 @@ expr(A) ::= idj(X) LP STAR RP. {
       u8 enc = ENC(pParse->db);
       assert( pExpr!=0 );  /* Because otherwise pParse->nErr would not be zero */
       assert( p!=0 );      /* Because otherwise pParse->nErr would not be zero */
-      pDef = sqlite3FindFunction(pParse->db, pExpr->u.zToken, p->nExpr, enc, 0);
+      pDef = sqlite3FindFunction(pParse->db, pExpr->u.zToken, -2, enc, 0);
       if( pDef==0 || (pDef->funcFlags & SQLITE_SELFORDER1)==0 ){
         sqlite3ErrorMsg(pParse, "%#T() is not an ordered-set aggregate", pExpr);
       }else if( isDistinct==SF_Distinct ){

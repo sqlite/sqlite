@@ -214,6 +214,28 @@ static int percentBinarySearch(Percentile *p, double y, int bExact){
 }
 
 /*
+** Generate an error for a percentile function.
+**
+** The error format string must have exactly one occurrance of "%%s()"
+** (with two '%' characters).  That substring will be replaced by the name
+** of the function.
+*/
+static void percentError(sqlite3_context *pCtx, const char *zFormat, ...){
+  PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
+  char *zMsg1;
+  char *zMsg2;
+  va_list ap;
+
+  va_start(ap, zFormat);
+  zMsg1 = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  zMsg2 = sqlite3_mprintf(zMsg1, pFunc->zName);
+  sqlite3_result_error(pCtx, zMsg2, -1);
+  sqlite3_free(zMsg1);
+  sqlite3_free(zMsg2);
+}
+
+/*
 ** The "step" function for percentile(Y,P) is called once for each
 ** input row.
 */
@@ -235,12 +257,9 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
      || rPct<0.0 || rPct>1.0
     ){
-      char *zMsg;
-      zMsg = sqlite3_mprintf("the fraction argument to %s()"
-                             " is not between 0.0 and %.1f",
-                             pFunc->zName, (double)pFunc->mxFrac);
-      sqlite3_result_error(pCtx, zMsg, -1);
-      sqlite3_free(zMsg);
+      percentError(pCtx, "the fraction argument to %%s()"
+                        " is not between 0.0 and %.1f",
+                        (double)pFunc->mxFrac);
       return;
     }
   }
@@ -255,13 +274,8 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     p->rPct = rPct;
     p->bPctValid = 1;
   }else if( !percentSameValue(p->rPct,rPct) ){
-    PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
-    char *zMsg;
-    zMsg = sqlite3_mprintf("the fraction argument to %s()"
-                           " is not the same for all input rows",
-                           pFunc->zName);
-    sqlite3_result_error(pCtx, zMsg, -1);
-    sqlite3_free(zMsg);
+    percentError(pCtx, "the fraction argument to %%s()"
+                      " is not the same for all input rows");
     return;
   }
 
@@ -272,15 +286,14 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   /* If not NULL, then Y must be numeric.  Otherwise throw an error.
   ** Requirement 4 */
   if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
-    sqlite3_result_error(pCtx, "1st argument to percentile() is not "
-                               "numeric", -1);
+    percentError(pCtx, "input to %%s() is not numeric");
     return;
   }
 
   /* Throw an error if the Y value is infinity or NaN */
   y = sqlite3_value_double(argv[0]);
   if( percentIsInfinity(y) ){
-    sqlite3_result_error(pCtx, "Inf input to percentile()", -1);
+    percentError(pCtx, "Inf input to %%s()");
     return;
   }
 
