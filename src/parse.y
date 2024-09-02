@@ -264,9 +264,9 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
   EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
-%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
   WITHIN
-%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
   GENERATED ALWAYS
 %endif
@@ -1182,7 +1182,7 @@ expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
-%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 %include {
   /* Generate an expression node that represents an ordered-set aggregate function.
   **
@@ -1239,7 +1239,7 @@ expr(A) ::= idj(X) LP STAR RP. {
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP. {
   A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
 }
-%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 
 %ifndef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
@@ -1255,13 +1255,13 @@ expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
-%ifdef SQLITE_ENABLE_ORDERED_SET_FUNCS
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP
             filter_over(Z). {
   A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
   sqlite3WindowAttach(pParse, A, Z);
 }
-%endif SQLITE_ENABLE_ORDERED_SET_FUNCS
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 
 %endif SQLITE_OMIT_WINDOWFUNC
 

@@ -95,7 +95,7 @@ namespace eval trd {
   #
   set build(All-Debug) {
     --enable-debug --enable-all
-    -DSQLITE_ENABLE_ORDERED_SET_FUNCS
+    -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES
   }
   set build(All-O0) {
     -O0 --enable-all

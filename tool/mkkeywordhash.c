@@ -164,7 +164,7 @@ struct Keyword {
 #else
 #  define RETURNING  0x00400000
 #endif
-#ifndef SQLITE_ENABLE_ORDERED_SET_FUNCS
+#ifndef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 #  define ORDERSET   0
 #else
 #  define ORDERSET   0x00800000

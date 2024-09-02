@@ -82,7 +82,7 @@
 **
 **     The SQLite syntax is much more compact.  The standard SQL syntax
 **     is also supported if SQLite is compiled with the
-**     -DSQLITE_ENABLE_ORDERED_SET_FUNCS option.
+**     -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES option.
 **
 **  *  No median(X) function exists in the SQL standard.  App developers
 **     are expected to write "percentile_cont(0.5)WITHIN GROUP(ORDER BY X)".
