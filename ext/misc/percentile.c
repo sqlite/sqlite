@@ -11,7 +11,7 @@
 ******************************************************************************
 **
 ** This file contains code to implement the percentile(Y,P) SQL function
-** as described below:
+** and similar as described below:
 **
 **   (1)  The percentile(Y,P) function is an aggregate function taking
 **        exactly two arguments.
@@ -60,27 +60,45 @@
 **
 **  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
 **
-**  (14)  Both median() and percentile(Y,P) can be used as window functions.
+**  (14)  A separate percentile_cont(Y,P) function is equivalent to
+**        percentile(Y,P/100.0).  In other words, the fraction value in
+**        the second argument is in the range of 0 to 1 instead of 0 to 100.
+**
+**  (15)  A separate percentile_disc(Y,P) function is like
+**        percentile_cont(Y,P) except that instead of returning the weighted
+**        average of the nearest two input values, it returns the next lower
+**        value.  So the percentile_disc(Y,P) will always return a value
+**        that was one of the inputs.
+**
+**  (16)  All of median(), percentile(Y,P), percentile_cont(Y,P) and
+**        percentile_disc(Y,P) can be used as window functions.
 **
 ** Differences from standard SQL:
 **
-**  *  The percentile(X,P) function is equivalent to the following in
+**  *  The percentile_cont(X,P) function is equivalent to the following in
 **     standard SQL:
 **
-**         (percentile(P/100.0) WITHIN GROUP (ORDER BY X))
+**         (percentile_cont(P) WITHIN GROUP (ORDER BY X))
 **
-**     The SQLite syntax is much more compact.  Note also that the
-**     range of the P argument is 0..100 in SQLite, but 0..1 in the
-**     standard.
+**     The SQLite syntax is much more compact.  The standard SQL syntax
+**     is also supported if SQLite is compiled with the
+**     -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES option.
 **
-**  *  No merge(X) function exists in the standard.  Application developers
+**  *  No median(X) function exists in the SQL standard.  App developers
 **     are expected to write "percentile_cont(0.5)WITHIN GROUP(ORDER BY X)".
+**
+**  *  No percentile(Y,P) function exists in the SQL standard.  Instead of
+**     percential(Y,P), developers must write this:
+**     "percentile_cont(P/100.0) WITHIN GROUP (ORDER BY Y)".  Note that
+**     the fraction parameter to percentile() goes from 0 to 100 whereas
+**     the fraction parameter in SQL standard percentile_cont() goes from
+**     0 to 1.
 **
 ** Implementation notes as of 2024-08-31:
 **
-**  *  The regular aggregate-function versions of the merge() and percentile(),
-**     routines work by accumulating all values in an array of doubles, then
-**     sorting that array using a quicksort before computing the answer. Thus
+**  *  The regular aggregate-function versions of these routines work
+**     by accumulating all values in an array of doubles, then sorting
+**     that array using quicksort before computing the answer. Thus
 **     the runtime is O(NlogN) where N is the number of rows of input.
 **
 **  *  For the window-function versions of these routines, the array of
@@ -105,8 +123,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* The following object is the session context for a single percentile()
-** function.  We have to remember all input Y values until the very end.
+/* The following object is the group context for a single percentile()
+** aggregate.  Remember all input Y values until the very end.
 ** Those values are accumulated in the Percentile.a[] array.
 */
 typedef struct Percentile Percentile;
@@ -115,8 +133,24 @@ struct Percentile {
   unsigned nUsed;      /* Number of slots actually used in a[] */
   char bSorted;        /* True if a[] is already in sorted order */
   char bKeepSorted;    /* True if advantageous to keep a[] sorted */
-  double rPct;         /* 1.0 more than the value for P */
+  char bPctValid;      /* True if rPct is valid */
+  double rPct;         /* Fraction.  0.0 to 1.0 */
   double *a;           /* Array of Y values */
+};
+
+/* Details of each function in the percentile family */
+typedef struct PercentileFunc PercentileFunc;
+struct PercentileFunc {
+  const char *zName;   /* Function name */
+  char nArg;           /* Number of arguments */
+  char mxFrac;         /* Maximum value of the "fraction" input */
+  char bDiscrete;      /* True for percentile_disc() */
+};
+static const PercentileFunc aPercentFunc[] = {
+  { "median",           1,   1, 0 },
+  { "percentile",       2, 100, 0 },
+  { "percentile_cont",  2,   1, 0 },
+  { "percentile_disc",  2,   1, 1 },
 };
 
 /*
@@ -180,6 +214,28 @@ static int percentBinarySearch(Percentile *p, double y, int bExact){
 }
 
 /*
+** Generate an error for a percentile function.
+**
+** The error format string must have exactly one occurrance of "%%s()"
+** (with two '%' characters).  That substring will be replaced by the name
+** of the function.
+*/
+static void percentError(sqlite3_context *pCtx, const char *zFormat, ...){
+  PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
+  char *zMsg1;
+  char *zMsg2;
+  va_list ap;
+
+  va_start(ap, zFormat);
+  zMsg1 = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  zMsg2 = sqlite3_mprintf(zMsg1, pFunc->zName);
+  sqlite3_result_error(pCtx, zMsg2, -1);
+  sqlite3_free(zMsg1);
+  sqlite3_free(zMsg2);
+}
+
+/*
 ** The "step" function for percentile(Y,P) is called once for each
 ** input row.
 */
@@ -192,15 +248,18 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 
   if( argc==1 ){
     /* Requirement 13:  median(Y) is the same as percentile(Y,50). */
-    rPct = 50.0;
+    rPct = 0.5;
   }else{
     /* Requirement 3:  P must be a number between 0 and 100 */
+    PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
     eType = sqlite3_value_numeric_type(argv[1]);
-    rPct = sqlite3_value_double(argv[1]);
+    rPct = sqlite3_value_double(argv[1])/(double)pFunc->mxFrac;
     if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
-     || rPct<0.0 || rPct>100.0 ){
-       sqlite3_result_error(pCtx, "2nd argument to percentile() is not "
-                           "a number between 0.0 and 100.0", -1);
+     || rPct<0.0 || rPct>1.0
+    ){
+      percentError(pCtx, "the fraction argument to %%s()"
+                        " is not between 0.0 and %.1f",
+                        (double)pFunc->mxFrac);
       return;
     }
   }
@@ -211,11 +270,12 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 
   /* Remember the P value.  Throw an error if the P value is different
   ** from any prior row, per Requirement (2). */
-  if( p->rPct==0.0 ){
-    p->rPct = rPct+1.0;
-  }else if( !percentSameValue(p->rPct,rPct+1.0) ){
-    sqlite3_result_error(pCtx, "2nd argument to percentile() is not the "
-                               "same for all input rows", -1);
+  if( !p->bPctValid ){
+    p->rPct = rPct;
+    p->bPctValid = 1;
+  }else if( !percentSameValue(p->rPct,rPct) ){
+    percentError(pCtx, "the fraction argument to %%s()"
+                      " is not the same for all input rows");
     return;
   }
 
@@ -226,15 +286,14 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   /* If not NULL, then Y must be numeric.  Otherwise throw an error.
   ** Requirement 4 */
   if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
-    sqlite3_result_error(pCtx, "1st argument to percentile() is not "
-                               "numeric", -1);
+    percentError(pCtx, "input to %%s() is not numeric");
     return;
   }
 
   /* Throw an error if the Y value is infinity or NaN */
   y = sqlite3_value_double(argv[0]);
   if( percentIsInfinity(y) ){
-    sqlite3_result_error(pCtx, "Inf input to percentile()", -1);
+    percentError(pCtx, "Inf input to %%s()");
     return;
   }
 
@@ -391,6 +450,7 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
 */
 static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   Percentile *p;
+  PercentileFunc *pFunc = (PercentileFunc*)sqlite3_user_data(pCtx);
   unsigned i1, i2;
   double v1, v2;
   double ix, vx;
@@ -405,12 +465,16 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
     }else{
       percentAssertSorted(p);
     }
-    ix = (p->rPct-1.0)*(p->nUsed-1)*0.01;
+    ix = p->rPct*(p->nUsed-1);
     i1 = (unsigned)ix;
-    i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
-    v1 = p->a[i1];
-    v2 = p->a[i2];
-    vx = v1 + (v2-v1)*(ix-i1);
+    if( pFunc->bDiscrete ){
+      vx = p->a[i1];
+    }else{
+      i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
+      v1 = p->a[i1];
+      v2 = p->a[i2];
+      vx = v1 + (v2-v1)*(ix-i1);
+    }
     sqlite3_result_double(pCtx, vx);
   }
   if( bIsFinal ){
@@ -436,21 +500,21 @@ int sqlite3_percentile_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+  int i;
 #ifdef SQLITE_STATIC_PERCENTILE
   (void)pApi;      /* Unused parameter */
 #else
   SQLITE_EXTENSION_INIT2(pApi);
 #endif
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_window_function(db, "percentile", 2, 
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 percentStep, percentFinal,
-                                 percentValue, percentInverse, 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_window_function(db, "median", 1, 
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 percentStep, percentFinal,
-                                 percentValue, percentInverse, 0);
+  for(i=0; i<sizeof(aPercentFunc)/sizeof(aPercentFunc[0]); i++){
+    rc = sqlite3_create_window_function(db,
+            aPercentFunc[i].zName,
+            aPercentFunc[i].nArg,
+            SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_SELFORDER1,
+            (void*)&aPercentFunc[i],
+            percentStep, percentFinal, percentValue, percentInverse, 0);
+    if( rc ) break;
   }
   return rc;
 }
