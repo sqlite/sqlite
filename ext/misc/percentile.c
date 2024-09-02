@@ -218,7 +218,7 @@ static void percentError(sqlite3_context *pCtx, const char *zFormat, ...){
   va_start(ap, zFormat);
   zMsg1 = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
-  zMsg2 = sqlite3_mprintf(zMsg1, pFunc->zName);
+  zMsg2 = zMsg1 ? sqlite3_mprintf(zMsg1, pFunc->zName) : 0;
   sqlite3_result_error(pCtx, zMsg2, -1);
   sqlite3_free(zMsg1);
   sqlite3_free(zMsg2);
