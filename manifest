@@ -1,5 +1,5 @@
-C Enhance\sthe\spercentile\sextension\sto\ssupport\spercentile_cont()\sand\npercentile_disc().\s\sAdd\ssupport\sfor\sordered-set\saggregate\snotation\sin\s\nthe\sparser\swhen\scompiling\swith\sSQLITE_ENABLE_ORDERED_SET_AGGREGATES.\s\sA\nnew\sfunction\sproperty\sSQLITE_SELFORDER1\smust\sappear\son\sany\saggregate\sfunction\nthat\swants\sto\stake\sadvantage\sof\sthe\sordered-set\saggregate\snotation.
-D 2024-09-02T12:07:37.155
+C Remove\ssome\sdebug/test\scode\sfrom\spercentile.\s\sMake\sthe\sextension\seasier\sto\nstatically\slink.
+D 2024-09-02T14:46:56.875
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -410,7 +410,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c 4e333fc78d2a7b9cf362e29f30fa3f486cdab9e69fbc9aa0f680399683aa22f7
+F ext/misc/percentile.c 519498f4b1da580c309f6101bad8ed75dae8b14b1cedeb9ed5674c5ba56dcfd8
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f84e8d59bcda642e732565e840f6a880a01b2fc65af2651248f6a8a6e1cb65a e1bca168e70335fa2f9537632fd16e374c566a564fab4974c0b8f61cb63d08ce
-R a80c34160df19b1603ad0e7833a0d0c3
+P 557bd245ef24af15da1374762bbeb9b8b0241da06e604efdf00d567a9ed09216
+R ec683c52072c14116d879dab2762a8e0
 U drh
-Z bcaae55c6dbf3569256cb9e1e280cac1
+Z 2046e8e3b6b1593905ac362bd0920672
 # Remove this line to create a well-formed Fossil manifest.

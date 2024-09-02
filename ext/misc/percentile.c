@@ -113,7 +113,9 @@
 **     often small.  The developers might revisit that decision later,
 **     should the need arise.
 */
-#ifdef SQLITE_STATIC_PERCENTILE
+#if defined(SQLITE3_H)
+  /* no-op */
+#elif defined(SQLITE_STATIC_PERCENTILE)
 #  include "sqlite3.h"
 #else
 #  include "sqlite3ext.h"
@@ -170,19 +172,6 @@ static int percentSameValue(double a, double b){
   a -= b;
   return a>=-0.001 && a<=0.001;
 }
-
-#if 0
-/* Verify that the elements of the Percentile p are in fact sorted.
-** Used for testing and debugging only.
-*/
-static void percentAssertSorted(Percentile *p){
-  int i;
-  for(i=p->nUsed-2; i>=0 && p->a[i]<=p->a[i+1]; i--){}
-  assert( i<0 );
-}
-#else
-# define percentAssertSorted(X)
-#endif
 
 /*
 ** Search p (which must have p->bSorted) looking for an entry with
@@ -317,7 +306,6 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
     p->a[p->nUsed++] = y;
   }else if( p->bKeepSorted ){
     int i;
-    percentAssertSorted(p);
     i = percentBinarySearch(p, y, 0);
     if( i<p->nUsed ){
       memmove(&p->a[i+1], &p->a[i], (p->nUsed-i)*sizeof(p->a[0]));
@@ -428,8 +416,6 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
     assert( p->nUsed>1 );
     percentSort(p->a, p->nUsed);
     p->bSorted = 1;
-  }else{
-    percentAssertSorted(p);
   }
   p->bKeepSorted = 1;
 
@@ -441,7 +427,6 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
       memmove(&p->a[i], &p->a[i+1], (p->nUsed - i)*sizeof(p->a[0]));
     }
   }
-  percentAssertSorted(p);
 }
 
 /*
@@ -462,8 +447,6 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
       assert( p->nUsed>1 );
       percentSort(p->a, p->nUsed);
       p->bSorted = 1;
-    }else{
-      percentAssertSorted(p);
     }
     ix = p->rPct*(p->nUsed-1);
     i1 = (unsigned)ix;
@@ -501,7 +484,7 @@ int sqlite3_percentile_init(
 ){
   int rc = SQLITE_OK;
   int i;
-#ifdef SQLITE_STATIC_PERCENTILE
+#if defined(SQLITE3_H) || defined(SQLITE_STATIC_PERCENTILE)
   (void)pApi;      /* Unused parameter */
 #else
   SQLITE_EXTENSION_INIT2(pApi);
