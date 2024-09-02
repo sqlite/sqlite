@@ -474,7 +474,7 @@ static void percentValue(sqlite3_context *pCtx){
   percentCompute(pCtx, 0);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(SQLITE3_H) && !defined(SQLITE_STATIC_PERCENTILE)
 __declspec(dllexport)
 #endif
 int sqlite3_percentile_init(
