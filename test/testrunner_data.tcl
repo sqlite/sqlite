@@ -89,6 +89,7 @@ namespace eval trd {
     --enable-session
     -DSQLITE_ENABLE_RBU
     -DSQLITE_ENABLE_STMT_SCANSTATUS
+    -DSQLITE_USE_ONLY_WIN32=1
   }
 
   # These two are used by [testrunner.tcl mdevtest] (All-O0) and 
@@ -117,7 +118,6 @@ namespace eval trd {
   }
   set build(Stdcall) {
     -DUSE_STDCALL=1
-    -DSQLITE_USE_ONLY_WIN32=1
     -O2
   }
 
