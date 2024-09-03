@@ -307,7 +307,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   }else if( p->bKeepSorted ){
     int i;
     i = percentBinarySearch(p, y, 0);
-    if( i<p->nUsed ){
+    if( i<(int)p->nUsed ){
       memmove(&p->a[i+1], &p->a[i], (p->nUsed-i)*sizeof(p->a[0]));
     }
     p->a[i] = y;
@@ -423,7 +423,7 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
   i = percentBinarySearch(p, y, 1);
   if( i>=0 ){
     p->nUsed--;
-    if( i<p->nUsed ){
+    if( i<(int)p->nUsed ){
       memmove(&p->a[i], &p->a[i+1], (p->nUsed - i)*sizeof(p->a[0]));
     }
   }
@@ -483,7 +483,7 @@ int sqlite3_percentile_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
-  int i;
+  unsigned int i;
 #if defined(SQLITE3_H) || defined(SQLITE_STATIC_PERCENTILE)
   (void)pApi;      /* Unused parameter */
 #else
