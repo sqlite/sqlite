@@ -54,7 +54,7 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
-    $a0 errors ?-v|--verbose?
+    $a0 errors ?-v|--verbose? ?-s|--summary? ?PATTERN?
     $a0 help
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
@@ -112,10 +112,12 @@ The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
 available configurations enter "$a0 script help".
 
-The "errors" commands shows the output of all tests that failed in the
+The "errors" commands shows the output of tests that failed in the
 most recent run.  Complete output is shown if the -v or --verbose options
 are used.  Otherwise, an attempt is made to minimize the output to show
-only the parts that contain the error messages.
+only the parts that contain the error messages.  The --summary option just
+shows the jobs that failed.  If PATTERN are provided, the error information
+is only provided for jobs that match PATTERN.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -606,15 +608,21 @@ proc aggregate_test_counts {db} {
 #--------------------------------------------------------------------------
 # Check if this is the "errors" command:
 #
-if {[llength $argv]>=1 && [llength $argv]<=2
+if {[llength $argv]>=1
  && ([string compare -nocase errors [lindex $argv 0]]==0 ||
      [string match err* [lindex $argv 0]]==1)
 } {
   set verbose 0
+  set pattern {}
+  set summary 0
   for {set ii 1} {$ii<[llength $argv]} {incr ii} {
     set a0 [lindex $argv $ii]
     if {$a0=="-v" || $a0=="--verbose" || $a0=="-verbose"} {
       set verbose 1
+    } elseif {$a0=="-s" || $a0=="--summary" || $a0=="-summary"} {
+      set summary 1
+    } elseif {$pattern==""} {
+      set pattern *[string trim $a0 *]*
     } else {
       puts "unknown option: \"$a0\"".  Use --help for more info."
       exit 1
@@ -622,9 +630,22 @@ if {[llength $argv]>=1 && [llength $argv]<=2
   }
   set cnt 0
   sqlite3 mydb $TRG(dbname)
-  mydb timeout 2000
-  mydb eval {SELECT displaytype, displayname, output
-               FROM jobs WHERE state='failed'} {
+  mydb timeout 5000
+  if {$summary} {
+    set sql "SELECT displayname FROM jobs WHERE state='failed'"
+  } else {
+    set sql "SELECT displaytype, displayname, output FROM jobs \
+              WHERE state='failed'"
+  }
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*/ ?]} $pattern . pattern
+    append sql " AND displayname GLOB '$pattern'"
+  }
+  mydb eval $sql {
+    if {$summary} {
+      puts "FAILED: $displayname"
+      continue
+    }
     puts "**** $displayname ****"
     if {$verbose || $displaytype!="tcl"} {
       puts $output
@@ -637,9 +658,13 @@ if {[llength $argv]>=1 && [llength $argv]<=2
     }
     incr cnt
   }
-  set summary [aggregate_test_counts mydb]
-  mydb close
-  puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
+  if {$pattern==""} {
+    set summary [aggregate_test_counts mydb]
+    mydb close
+    puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
+  } else {
+    mydb close
+  }
   exit
 }
 

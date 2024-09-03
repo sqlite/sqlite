@@ -1,5 +1,5 @@
-C Fix\sext/consio\sso\sthat\sit\sworks\scorrectly\swith\sSQLITE_USE_ONLY_WIN32.
-D 2024-09-03T14:15:57.425
+C Enhance\sthe\s"errors"\scommand\sin\stestrunner.tcl\sso\sthat\sit\saccepts\sthe\s\n"-s"\sor\s"--summary"\sargument\sto\ssee\sa\slist\sof\sfailed\sjobs,\sand\sso\sthat\nan\sadditional\sargument\sis\sa\sGLOB\spattern\sthat\srestricts\sthe\soutput\sto\njobs\swhose\snames\smatch\sthat\spattern.
+D 2024-09-03T16:04:34.164
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1715,7 +1715,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 2c203a2dd664298f239f0ec3ce22fbc65b5f021c1e09edbae8452af8a694e052
-F test/testrunner.tcl 92e3c63072362cd56d7dec2548284425104b5b3a5c0af3371ee2911712d89bf6
+F test/testrunner.tcl d117492b6ec7293f7906dd4ff48135dd9801bdf42db0f48f88b3328867aa94ff
 F test/testrunner_data.tcl dbc0bb1c5b912dfd1e32b25d544318e412edd6085bd5fc9e6619cb93a739b786
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2212,9 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49e8b1635f29d9fd0dc2ef6e312fd4129f2283f68e9423d95ff9b55077688ad7 2d783524d1671d988ebb1b21c83de99c9f335963b6c20cf4df612f58c13da913
-R 1f005fca5fe5df8e4ebc8001e171645f
-T +closed 2d783524d1671d988ebb1b21c83de99c9f335963b6c20cf4df612f58c13da913
+P efc6f3d7e92a25f440fb8d392daf325af5ca7dca104a5bb4bd59f7df93af53b0
+R 1cc8a7ec499a68123307944e86d4ccaa
 U drh
-Z 207a73144d24fc75006dde9e7a085311
+Z 54536ba1c60ddf4f4f932c617d6c5425
 # Remove this line to create a well-formed Fossil manifest.
