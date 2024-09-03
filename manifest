@@ -1,5 +1,5 @@
-C In\stestrunner.tcl,\sallow\ssetting\snjob\sto\szero,\swhich\scauses\sno\snew\sjobs\nto\sbe\slaunched\sand\sfor\sthe\sprocess\sto\sshut\sdown\sonce\sall\scurrent\sjobs\sare\ncompleted.
-D 2024-09-03T10:53:32.903
+C Store\sthe\svalues\sof\sany\sUNINDEXED\scolumns\sof\sa\scontentless\sfts5\stable\spersistently\sin\sthe\sdatabase.\sWarning:\sThis\scurrently\screates\sa\s(technically)\sincompatible\sfile-format\sfor\scontentless\sfts5\stables\sthat\shave\sUNINDEXED\scolumns.
+D 2024-09-03T18:55:38.957
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -93,15 +93,15 @@ F ext/fts3/unicode/mkunicode.tcl 63db9624ccf70d4887836c320eda93ab552f21008f3be7e
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h efaaac0df3d3bc740383044c144b582f47921aafa21d7b10eb98f42c24c740b0
-F ext/fts5/fts5Int.h 26a71a09cefa4ef6b4516b204ed48da3e1380970a19b3482eea7c5d805655360
+F ext/fts5/fts5Int.h d0c9bee4edfff9f0899648a9efc0afdebabbadb24403e2e50a1bb17aed6267d0
 F ext/fts5/fts5_aux.c 65a0468dd177d6093aa9ae1622e6d86b0136b8d267c62c0ad6493ad1e9a3d759
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
-F ext/fts5/fts5_config.c 353d2a0d12678cae6ab5b9ce54aed8dac0825667b69248b5a4ed81cbefc109ea
+F ext/fts5/fts5_config.c 8dba11620a7964e1e561aaae3d27fdd2d16b2769c979f157dd55a53903a9b734
 F ext/fts5/fts5_expr.c 9a56f53700d1860f0ee2f373c2b9074eaf2a7aa0637d0e27a6476de26a3fee33
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c 571483823193f09439356741669aa8c81da838ae6f5e1bfa7517f7ee2fb3addd
-F ext/fts5/fts5_main.c 1fddb53f495425d9314c74b30c5848a9dd254be0e5f445bfe38292d5ab21c288
-F ext/fts5/fts5_storage.c 9a9b880be12901f1962ae2a5a7e1b74348b3099a1e728764e419f75d98e3e612
+F ext/fts5/fts5_main.c 402a65b6d922203a90e7d440f29d71f19f6863e6b663ca9f06c7321f291bda40
+F ext/fts5/fts5_storage.c ca3bdb799b9b039133e9b6e4881fc974ba34ae4ea57530210289f82313b409b5
 F ext/fts5/fts5_tcl.c 4db9258a7882c5eac0da4433042132aaf15b87dd1e1636c7a6ca203abd2c8bfe
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
@@ -246,6 +246,7 @@ F ext/fts5/test/fts5unicode2.test 3bbd30152f9f760bf13886e5b1e5ec23ff62f56758ddda
 F ext/fts5/test/fts5unicode3.test f4891a3dac3b49c3d7c0fdb29566e9eb0ecff35263370c89f9661b1952b20818
 F ext/fts5/test/fts5unicode4.test 728c8f0caafb05567f524ad313d9f8b780fa45987b8a8df04eff87923c74b4d0
 F ext/fts5/test/fts5unindexed.test 168838d2c385e131120bbf5b516d2432a5fabc4caa2259c932e1d49ae209a4ae
+F ext/fts5/test/fts5unindexed2.test f8453dcf1df11544263d350d388d5c612be4b379079b308f1ad74cdaa940804e
 F ext/fts5/test/fts5update.test b8affd796e45c94a4d19ad5c26606ea06065a0f162a9562d9f005b5a80ccf0bc
 F ext/fts5/test/fts5version.test c22d163c17e60a99f022cbc52de5a48bb7f84deaa00fe15e9bc4c3aa1996204e
 F ext/fts5/test/fts5vocab.test 2a2bdb60d0998fa3124d541b6d30b019504918dc43a6584645b63a24be72f992
@@ -2212,8 +2213,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7891a266c4425722ae8b9231397ef9e42e2432be9e6b70632dfaf9ff15300d2c
-R 6a86d12ea82ce01298969ad043e5cc65
-U drh
-Z 5112afd2e4dab18f4b12bbba01825cee
+P 0ef65fd4ba17def4c13986365b3af300c4024725af4bc314845d1af8be568ab4
+R 87dfb79be977919afc56ac91ca0cf0b0
+T *branch * fts5-contentless-unindexed
+T *sym-fts5-contentless-unindexed *
+T -sym-trunk *
+U dan
+Z f39a0e93422c865c24dfd629a9a47017
 # Remove this line to create a well-formed Fossil manifest.

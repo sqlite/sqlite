@@ -1778,7 +1778,9 @@ static int fts5SpecialInsert(
     }
     bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
-    if( pConfig->eContent==FTS5_CONTENT_NONE ){
+    if( pConfig->eContent==FTS5_CONTENT_NONE 
+     || pConfig->eContent==FTS5_CONTENT_UNINDEXED
+    ){
       fts5SetVtabError(pTab, 
           "'rebuild' may not be used with a contentless fts5 table"
       );

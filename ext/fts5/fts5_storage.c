@@ -144,19 +144,21 @@ static int fts5StorageGetStmt(
       case FTS5_STMT_INSERT_CONTENT: 
       case FTS5_STMT_REPLACE_CONTENT: {
         int nCol = pC->nCol + 1;
-        char *zBind;
+        char *zBind = 0;
         int i;
 
-        zBind = sqlite3_malloc64(1 + nCol*2);
-        if( zBind ){
-          for(i=0; i<nCol; i++){
-            zBind[i*2] = '?';
-            zBind[i*2 + 1] = ',';
+        assert( pC->eContent==FTS5_CONTENT_NORMAL 
+             || pC->eContent==FTS5_CONTENT_UNINDEXED 
+        );
+
+        for(i=0; rc==SQLITE_OK && i<nCol; i++){
+          if( !i || pC->eContent==FTS5_CONTENT_NORMAL || pC->abUnindexed[i-1] ){
+            zBind = sqlite3Fts5Mprintf(&rc, "%z%s?%d", zBind, zBind?",":"",i+1);
           }
-          zBind[i*2-1] = '\0';
-          zSql = sqlite3_mprintf(azStmt[eStmt], pC->zDb, pC->zName, zBind);
-          sqlite3_free(zBind);
         }
+
+        zSql = sqlite3Fts5Mprintf(&rc, azStmt[eStmt], pC->zDb, pC->zName,zBind);
+        sqlite3_free(zBind);
         break;
       }
 
@@ -342,7 +344,9 @@ int sqlite3Fts5StorageOpen(
   p->pIndex = pIndex;
 
   if( bCreate ){
-    if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL 
+     || pConfig->eContent==FTS5_CONTENT_UNINDEXED 
+    ){
       int nDefn = 32 + pConfig->nCol*10;
       char *zDefn = sqlite3_malloc64(32 + (sqlite3_int64)pConfig->nCol * 10);
       if( zDefn==0 ){
@@ -353,8 +357,12 @@ int sqlite3Fts5StorageOpen(
         sqlite3_snprintf(nDefn, zDefn, "id INTEGER PRIMARY KEY");
         iOff = (int)strlen(zDefn);
         for(i=0; i<pConfig->nCol; i++){
-          sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
-          iOff += (int)strlen(&zDefn[iOff]);
+          if( pConfig->eContent==FTS5_CONTENT_NORMAL 
+           || pConfig->abUnindexed[i] 
+          ){
+            sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
+            iOff += (int)strlen(&zDefn[iOff]);
+          }
         }
         rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
       }
@@ -574,7 +582,9 @@ static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
   int rc = SQLITE_OK;
 
   assert( p->pConfig->bContentlessDelete );
-  assert( p->pConfig->eContent==FTS5_CONTENT_NONE );
+  assert( p->pConfig->eContent==FTS5_CONTENT_NONE
+       || p->pConfig->eContent==FTS5_CONTENT_UNINDEXED
+  );
 
   /* Look up the origin of the document in the %_docsize table. Store
   ** this in stack variable iOrigin.  */
@@ -714,7 +724,9 @@ int sqlite3Fts5StorageDelete(
   }
 
   /* Delete the %_content record */
-  if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+  if( pConfig->eContent==FTS5_CONTENT_NORMAL 
+   || pConfig->eContent==FTS5_CONTENT_UNINDEXED 
+  ){
     if( rc==SQLITE_OK ){
       rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
     }
@@ -746,8 +758,13 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
   );
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
     rc = fts5ExecPrintf(pConfig->db, 0,
-        "DELETE FROM %Q.'%q_docsize';",
-        pConfig->zDb, pConfig->zName
+        "DELETE FROM %Q.'%q_docsize';", pConfig->zDb, pConfig->zName
+    );
+  }
+
+  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_UNINDEXED ){
+    rc = fts5ExecPrintf(pConfig->db, 0,
+        "DELETE FROM %Q.'%q_content';", pConfig->zDb, pConfig->zName
     );
   }
 
@@ -875,7 +892,9 @@ int sqlite3Fts5StorageContentInsert(
   int rc = SQLITE_OK;
 
   /* Insert the new row into the %_content table. */
-  if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
+  if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
+   && pConfig->eContent!=FTS5_CONTENT_UNINDEXED
+  ){
     if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
       *piRowid = sqlite3_value_int64(apVal[1]);
     }else{
@@ -886,31 +905,36 @@ int sqlite3Fts5StorageContentInsert(
     int i;                        /* Counter variable */
     rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
-      sqlite3_value *pVal = apVal[i];
-      if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
-        /* This is an UPDATE statement, and column (i-2) was not modified.
-        ** Retrieve the value from Fts5Storage.pSavedRow instead. */
-        pVal = sqlite3_column_value(p->pSavedRow, i-1);
-      }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
-        assert( pConfig->bLocale );
-        assert( i>1 );
-        if( pConfig->abUnindexed[i-2] ){
-          /* At attempt to insert an fts5_locale() value into an UNINDEXED
-          ** column. Strip the locale away and just bind the text.  */
-          const char *pText = 0;
-          int nText = 0;
-          rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
-          sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
-        }else{
-          const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
-          int nBlob = sqlite3_value_bytes(pVal);
-          assert( nBlob>4 );
-          sqlite3_bind_blob(pInsert, i, pBlob+4, nBlob-4, SQLITE_TRANSIENT);
+      if( i==1 
+       || pConfig->eContent==FTS5_CONTENT_NORMAL 
+       || pConfig->abUnindexed[i-2] 
+      ){
+        sqlite3_value *pVal = apVal[i];
+        if( sqlite3_value_nochange(pVal) && p->pSavedRow ){
+          /* This is an UPDATE statement, and column (i-2) was not modified.
+          ** Retrieve the value from Fts5Storage.pSavedRow instead. */
+          pVal = sqlite3_column_value(p->pSavedRow, i-1);
+        }else if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE ){
+          assert( pConfig->bLocale );
+          assert( i>1 );
+          if( pConfig->abUnindexed[i-2] ){
+            /* At attempt to insert an fts5_locale() value into an UNINDEXED
+            ** column. Strip the locale away and just bind the text.  */
+            const char *pText = 0;
+            int nText = 0;
+            rc = sqlite3Fts5ExtractText(pConfig, pVal, 0, 0, &pText, &nText);
+            sqlite3_bind_text(pInsert, i, pText, nText, SQLITE_TRANSIENT);
+          }else{
+            const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
+            int nBlob = sqlite3_value_bytes(pVal);
+            assert( nBlob>4 );
+            sqlite3_bind_blob(pInsert, i, pBlob+4, nBlob-4, SQLITE_TRANSIENT);
+          }
+          continue;
         }
-        continue;
+  
+        rc = sqlite3_bind_value(pInsert, i, pVal);
       }
-
-      rc = sqlite3_bind_value(pInsert, i, pVal);
     }
     if( rc==SQLITE_OK ){
       sqlite3_step(pInsert);
