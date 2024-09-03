@@ -356,8 +356,8 @@ if {([llength $argv]==2 || [llength $argv]==1)
   sqlite3 mydb $TRG(dbname)
   if {[llength $argv]==2} {
     set param [lindex $argv 1]
-    if {[string is integer $param]==0 || $param<1 || $param>128} {
-      puts stderr "parameter must be an integer between 1 and 128"
+    if {[string is integer $param]==0 || $param<0 || $param>128} {
+      puts stderr "parameter must be an integer between 0 and 128"
       exit 1
     }
 

@@ -1,5 +1,5 @@
-C Fix\spossible\sNULL\spointer\sdereference\sfollowing\sOOM\sin\sthe\snew\serror\sreporting\nlogic\sof\sthe\spercentile\sextension.
-D 2024-09-02T21:59:31.581
+C In\stestrunner.tcl,\sallow\ssetting\snjob\sto\szero,\swhich\scauses\sno\snew\sjobs\nto\sbe\slaunched\sand\sfor\sthe\sprocess\sto\sshut\sdown\sonce\sall\scurrent\sjobs\sare\ncompleted.
+D 2024-09-03T10:53:32.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1715,7 +1715,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 2c203a2dd664298f239f0ec3ce22fbc65b5f021c1e09edbae8452af8a694e052
-F test/testrunner.tcl 662af46f1f0a41eb197f17583698853dd130ff3d47cf136dd519c3aecd9a9d7d
+F test/testrunner.tcl 92e3c63072362cd56d7dec2548284425104b5b3a5c0af3371ee2911712d89bf6
 F test/testrunner_data.tcl d64e69aba227492fc459eb0f6a88c3e1b252bd9323847b7e8bcf5e1faa358714
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6bec37ea1ca51e1d048941ce4c5211d8fc5c5e3556a1441f9c79b036843f9e3
-R b930e9b50558c8ecfca10ed9c4f54cf8
+P 7891a266c4425722ae8b9231397ef9e42e2432be9e6b70632dfaf9ff15300d2c
+R 6a86d12ea82ce01298969ad043e5cc65
 U drh
-Z 4d2062160b04956960419c5966a96c49
+Z 5112afd2e4dab18f4b12bbba01825cee
 # Remove this line to create a well-formed Fossil manifest.
