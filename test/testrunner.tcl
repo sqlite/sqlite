@@ -1,3 +1,6 @@
+#!/bin/sh
+# Script to runs tests for SQLite.  Run with option "help" for more info. \
+exec tclsh "$0" "$@"
 
 set dir [pwd]
 set testdir [file normalize [file dirname $argv0]]
