@@ -655,6 +655,10 @@ cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
   return rv;
 }
 
+/* An fgets() equivalent, using Win32 file API for actual input.
+** Input ends when given buffer is filled or a newline is read.
+** If the FILE object is in text mode, swallows 0x0D. (ASCII CR)
+*/
 SQLITE_INTERNAL_LINKAGE char *
 cfGets(char *cBuf, int n, FILE *pf){
   int nci = 0;
@@ -665,7 +669,10 @@ cfGets(char *cBuf, int n, FILE *pf){
   while( nci < n-1 ){
     DWORD nr;
     if( !ReadFile(fai.fh, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
-    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ) nci += nr;
+    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ){
+      nci += nr;
+      if( cBuf[nci-nr]=='\n' ) break;
+    }
   }
   if( nci < n ) cBuf[nci] = 0;
   return (nci>0)? cBuf : 0;

@@ -658,6 +658,8 @@
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # define double sqlite_int64
 # define float sqlite_int64
+# define fabs(X) ((X)<0?-(X):(X))
+# define sqlite3IsOverflow(X) 0
 # define LONGDOUBLE_TYPE sqlite_int64
 # ifndef SQLITE_BIG_DBL
 #   define SQLITE_BIG_DBL (((sqlite3_int64)1)<<50)
