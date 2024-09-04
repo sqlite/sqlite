@@ -1,3 +1,6 @@
+#!/bin/sh
+# Script to runs tests for SQLite.  Run with option "help" for more info. \
+exec tclsh "$0" "$@"
 
 set dir [pwd]
 set testdir [file normalize [file dirname $argv0]]
@@ -54,8 +57,9 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
-    $a0 errors ?-v|--verbose?
+    $a0 errors ?-v|--verbose? ?-s|--summary? ?PATTERN?
     $a0 help
+    $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
@@ -112,10 +116,12 @@ The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
 available configurations enter "$a0 script help".
 
-The "errors" commands shows the output of all tests that failed in the
+The "errors" commands shows the output of tests that failed in the
 most recent run.  Complete output is shown if the -v or --verbose options
 are used.  Otherwise, an attempt is made to minimize the output to show
-only the parts that contain the error messages.
+only the parts that contain the error messages.  The --summary option just
+shows the jobs that failed.  If PATTERN are provided, the error information
+is only provided for jobs that match PATTERN.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -356,8 +362,8 @@ if {([llength $argv]==2 || [llength $argv]==1)
   sqlite3 mydb $TRG(dbname)
   if {[llength $argv]==2} {
     set param [lindex $argv 1]
-    if {[string is integer $param]==0 || $param<1 || $param>128} {
-      puts stderr "parameter must be an integer between 1 and 128"
+    if {[string is integer $param]==0 || $param<0 || $param>128} {
+      puts stderr "parameter must be an integer between 0 and 128"
       exit 1
     }
 
@@ -476,13 +482,22 @@ proc show_status {db cls} {
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
-  set nrun 0
-  puts [format %-79s    "Running: $S(running) (max: $nJob)"]
+  set line "Running: $S(running) (max: $nJob)"
+  if {$S(running)>0 && $fin>100 && $fin>0.05*$total} {
+    # Only estimate the time remaining after completing at least 100
+    # jobs amounting to 10% of the total.  Never estimate less than
+    # 2% of the total time used so far.
+    set tmleft [expr {($tm/$fin)*($total-$fin)}]
+    if {$tmleft<0.02*$tm} {
+      set tmleft [expr {$tm*0.02}]
+    }
+    append line " est time left [elapsetime $tmleft]"
+  }
+  puts [format %-79.79s $line]
   if {$S(running)>0} {
     $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
-      incr nrun
       display_job [array get job] $now
     }
   }
@@ -568,6 +583,51 @@ if {[llength $argv]>=1
   exit
 }
 
+#--------------------------------------------------------------------------
+# Check if this is the "joblist" command:
+#
+if {[llength $argv]>=1 
+ && [string compare -nocase "joblist" [lindex $argv 0]]==0 
+} {
+  set pattern {}
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$pattern==""} {
+      set pattern [string trim $a0 *]
+    } else {
+      puts "unknown option: \"$a0\""
+      exit 1
+    }
+  }
+  set SQL {SELECT displaytype, displayname, state FROM jobs}
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*.-/]} $pattern ? pattern
+    append SQL " WHERE displayname GLOB '*$pattern*'"
+  }
+  append SQL " ORDER BY starttime"
+
+  if {![file readable $TRG(dbname)]} {
+    puts "Database missing: $TRG(dbname)"
+    exit
+  }
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 2000
+
+  mydb eval $SQL {
+    set label UNKNOWN
+    switch -- $state {
+      ready {set label READY}
+      done {set label DONE}
+      failed {set label FAILED}
+      omit {set label OMIT}
+      running {set label RUNNING}
+    }
+    puts [format {%-7s %-5s %s} $label $displaytype $displayname]
+  }
+  mydb close
+  exit
+}
+
 # Scan the output of all jobs looking for the summary lines that
 # report the number of test cases and the number of errors.
 # Aggregate these numbers and return them.
@@ -597,15 +657,21 @@ proc aggregate_test_counts {db} {
 #--------------------------------------------------------------------------
 # Check if this is the "errors" command:
 #
-if {[llength $argv]>=1 && [llength $argv]<=2
+if {[llength $argv]>=1
  && ([string compare -nocase errors [lindex $argv 0]]==0 ||
      [string match err* [lindex $argv 0]]==1)
 } {
   set verbose 0
+  set pattern {}
+  set summary 0
   for {set ii 1} {$ii<[llength $argv]} {incr ii} {
     set a0 [lindex $argv $ii]
     if {$a0=="-v" || $a0=="--verbose" || $a0=="-verbose"} {
       set verbose 1
+    } elseif {$a0=="-s" || $a0=="--summary" || $a0=="-summary"} {
+      set summary 1
+    } elseif {$pattern==""} {
+      set pattern *[string trim $a0 *]*
     } else {
       puts "unknown option: \"$a0\"".  Use --help for more info."
       exit 1
@@ -613,9 +679,22 @@ if {[llength $argv]>=1 && [llength $argv]<=2
   }
   set cnt 0
   sqlite3 mydb $TRG(dbname)
-  mydb timeout 2000
-  mydb eval {SELECT displaytype, displayname, output
-               FROM jobs WHERE state='failed'} {
+  mydb timeout 5000
+  if {$summary} {
+    set sql "SELECT displayname FROM jobs WHERE state='failed'"
+  } else {
+    set sql "SELECT displaytype, displayname, output FROM jobs \
+              WHERE state='failed'"
+  }
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*/ ?]} $pattern . pattern
+    append sql " AND displayname GLOB '$pattern'"
+  }
+  mydb eval $sql {
+    if {$summary} {
+      puts "FAILED: $displayname"
+      continue
+    }
     puts "**** $displayname ****"
     if {$verbose || $displaytype!="tcl"} {
       puts $output
@@ -628,9 +707,13 @@ if {[llength $argv]>=1 && [llength $argv]<=2
     }
     incr cnt
   }
-  set summary [aggregate_test_counts mydb]
-  mydb close
-  puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
+  if {$pattern==""} {
+    set summary [aggregate_test_counts mydb]
+    mydb close
+    puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
+  } else {
+    mydb close
+  }
   exit
 }
 

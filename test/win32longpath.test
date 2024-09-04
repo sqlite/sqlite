@@ -127,6 +127,17 @@ foreach tn {1a 1b 1c 1d 1e 1f} {
   db3 close
 }
 
+# These over-length file and directory names are difficult to delete.
+# The "file delete -force" might not work, depending on the TCL build
+# being used.  So first try to delete using the windows rmdir command.
+#
+set fd [open cleanup.bat w]
+puts $fd "rmdir /q /s $longPath(1)"
+close $fd
+if {[catch {exec cleanup.bat} msg]} {
+  puts "Command \[cleanup.bat\] returns $msg"
+}
+
 file delete -force $fileName
 file delete -force $longPath(3)
 file delete -force $longPath(2)
