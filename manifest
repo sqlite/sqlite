@@ -1,5 +1,5 @@
-C Add\sthe\s"joblist"\scommand\sto\stestrunner.tcl
-D 2024-09-04T11:22:47.766
+C Make\sextra\sefforts\sto\sdelete\sthe\sover-size\sdirectory\snames\screated\sby\nthe\swin32longpath.test\smodule.
+D 2024-09-04T13:09:58.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2051,7 +2051,7 @@ F test/wherelimit3.test 22d73e046870cf8bbe15573eda6b432b07ebe64a88711f9f849c6b36
 F test/widetab1.test c296a98e123762de79917350e45fa33fdf88577a2571eb3a64c8bf7e44ef74d1
 F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2aeee74
 F test/win32lock.test e0924eb8daac02bf80e9da88930747bd44dd9b230b7759fed927b1655b467c9c
-F test/win32longpath.test 42210789bcfc5c0ac202643d6d0237db08df2c9218f2070d9a69e8af1eccf7d7
+F test/win32longpath.test 304006024ca47104bf5a7415ef31ca83ecfc29351af202baf8588b880cffc116
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
 F test/window1.test 79dc3b9a2226f622d7e104a1fc750d1c4c3c08d6147b59085bdbe05352947ffa
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcbebe30f594a99e23b5ccd8d199b92118204a3e52e75c78d98c394601252e81
-R 526b505ed9ff61539ab1544a16cc762d
+P f64469f4806d4d5d7103c171a37a542c7aab9db09a226bccd8411e9ccd55353d
+R b8f539347cbc9843b6ed8aa52a0e1bab
 U drh
-Z ec42621d2cdae6fdf4751b132650e441
+Z f80762a3e5420a06ffd6178d73ee51c7
 # Remove this line to create a well-formed Fossil manifest.
