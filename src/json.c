@@ -2847,7 +2847,9 @@ static u32 jsonLookupStep(
     zPath++;
     if( zPath[0]=='"' ){
       zKey = zPath + 1;
-      for(i=1; zPath[i] && zPath[i]!='"'; i++){}
+      for(i=1; zPath[i] && zPath[i]!='"'; i++){
+        if( zPath[i]=='\\' && zPath[i+1]!=0 ) i++;
+      }
       nKey = i-1;
       if( zPath[i] ){
         i++;
