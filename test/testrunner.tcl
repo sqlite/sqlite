@@ -56,6 +56,7 @@ Usage:
     $a0 PERMUTATION FILE
     $a0 errors ?-v|--verbose? ?-s|--summary? ?PATTERN?
     $a0 help
+    $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
@@ -574,6 +575,51 @@ if {[llength $argv]>=1
     show_status mydb [expr {$delay>0 || $cls}]
     if {$delay<=0} break
     after [expr {$delay*1000}]
+  }
+  mydb close
+  exit
+}
+
+#--------------------------------------------------------------------------
+# Check if this is the "joblist" command:
+#
+if {[llength $argv]>=1 
+ && [string compare -nocase "joblist" [lindex $argv 0]]==0 
+} {
+  set pattern {}
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$pattern==""} {
+      set pattern [string trim $a0 *]
+    } else {
+      puts "unknown option: \"$a0\""
+      exit 1
+    }
+  }
+  set SQL {SELECT displaytype, displayname, state FROM jobs}
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*.-/]} $pattern ? pattern
+    append SQL " WHERE displayname GLOB '*$pattern*'"
+  }
+  append SQL " ORDER BY starttime"
+
+  if {![file readable $TRG(dbname)]} {
+    puts "Database missing: $TRG(dbname)"
+    exit
+  }
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 2000
+
+  mydb eval $SQL {
+    set label UNKNOWN
+    switch -- $state {
+      ready {set label READY}
+      done {set label DONE}
+      failed {set label FAILED}
+      omit {set label OMIT}
+      running {set label RUNNING}
+    }
+    puts [format {%-7s %-5s %s} $label $displaytype $displayname]
   }
   mydb close
   exit
