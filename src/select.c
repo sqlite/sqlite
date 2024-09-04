@@ -6746,6 +6746,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     ExprList *pList;
     assert( ExprUseXList(pF->pFExpr) );
+    if( pParse->nErr ) return;
     pList = pF->pFExpr->x.pList;
     if( pF->iOBTab>=0 ){
       /* For an ORDER BY aggregate, calls to OP_AggStep were deferred.  Inputs
@@ -6955,6 +6956,7 @@ static void updateAccumulator(
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
+    if( pParse->nErr ) return;
   }
   if( regHit==0 && pAggInfo->nAccumulator ){
     regHit = regAcc;
@@ -6964,6 +6966,7 @@ static void updateAccumulator(
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pCExpr, AggInfoColumnReg(pAggInfo,i));
+    if( pParse->nErr ) return;
   }
 
   pAggInfo->directMode = 0;
