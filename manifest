@@ -1,11 +1,11 @@
-C Fix\sa\sbug\sin\sthe\sparsing\sof\ssome\scorner-case\sJSON\sPATH\sstrings\sthat\scontain\nescaped\sdouble-quotes.
-D 2024-09-04T16:01:44.145
+C Make\sthe\sdefault\sTCLDIR\sbe\sC:\\Tcl\sin\sthe\sMakefile.msc.
+D 2024-09-04T18:51:59.227
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in af5fbc3453b745daa68c7aa5dfdb945c09cb724971db3b783d6b5e1a62279e28
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 2c905f4c795a628d7fd892294e8fdec6d5f719fa5b252cb839fed147e64435a0
+F Makefile.msc e72a4653ea8f48efd14c7dac1e7de308a1f3cc91f905f15cbcacc680301c8f03
 F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0c6e9abebf76358625f30a179658319b260baba6eded2a4c5ad356143e36f97
-R c9ec90e0d0ba3db3bca78a08a6c286b8
+P 60ac55c4b76355aaf7cbde38bf1f6082ff5612bf4ffc49ab69d00fd4e3d64e64
+R 7c445598106af51bfd865380701cef37
 U drh
-Z c8dd2f7c1df9f10ff01ca20270187b6f
+Z 345e63504eb5893ea2a5338064417dd5
 # Remove this line to create a well-formed Fossil manifest.
