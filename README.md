@@ -103,17 +103,19 @@ script found at the root of the source tree.  Then run "make".
 
 For example:
 
-        tar xzf sqlite.tar.gz      ;#  Unpack the source tree into "sqlite"
-        mkdir bld                  ;#  Build will occur in a sibling directory
-        cd bld                     ;#  Change to the build directory
-        ../sqlite/configure        ;#  Run the configure script
-        make sqlite3               ;#  Builds the "sqlite3" command-line tool
-        make sqlite3.c             ;#  Build the "amalgamation" source file
-        make devtest               ;#  Run development tests (requires tcl-dev)
-        make releasetest           ;#  Run full release tests (requires tcl-dev)
-        make sqldiff               ;#  Builds the "sqldiff" command-line tool
-        make sqlite3_analyzer      ;#  Builds the "sqlite3_analyzer" tool (requires tcl-dev)
-        make tclextension-install  ;#  Build and install the SQLite TCL extension
+        apt install gcc make tcl-dev  ;#  Make sure you have all the necessary build tools
+        tar xzf sqlite.tar.gz         ;#  Unpack the source tree into "sqlite"
+        mkdir bld                     ;#  Build will occur in a sibling directory
+        cd bld                        ;#  Change to the build directory
+        ../sqlite/configure           ;#  Run the configure script
+        make sqlite3                  ;#  Builds the "sqlite3" command-line tool
+        make sqlite3.c                ;#  Build the "amalgamation" source file
+        make sqldiff                  ;#  Builds the "sqldiff" command-line tool
+        # Makefile targets below this point require tcl-dev
+        make tclextension-install     ;#  Build and install the SQLite TCL extension
+        make devtest                  ;#  Run development tests
+        make releasetest              ;#  Run full release tests
+        make sqlite3_analyzer         ;#  Builds the "sqlite3_analyzer" tool
 
 See the makefile for additional targets.  For debugging builds, the
 core developers typically run "configure" with options like this:
@@ -124,9 +126,12 @@ For release builds, the core developers usually do:
 
         ../sqlite/configure --enable-all
 
-Almost all makefile targets require a "tclsh" TCL interpreter
-version 8.6 or later.  The targets marked with "(requires tcl-dev)" also require
-the TCL development libraries.
+Almost all makefile targets require a "tclsh" TCL interpreter version 8.6 or
+later.  The "tclextension-install" target and the test targets that follow
+all require TCL development libraries too.  ("apt install tcl-dev").  It is
+helpful, but is not required, to install the SQLite TCL extension (the
+"tclextension-install" target) prior to running tests.  The "releasetest"
+target has additional requiremenst, such as "valgrind".
 
 On "make" command-lines, one can add "OPTIONS=..." to specify additional
 compile-time options over and above those set by ./configure.  For example,
@@ -157,15 +162,21 @@ TCL library, using a command like this:
 SQLite uses "tclsh.exe" as part of the build process, and so that
 program will need to be somewhere on your %PATH%.  SQLite itself
 does not contain any TCL code, but it does use TCL to help with the
-build process and to run tests.
+build process and to run tests.  You may need to install TCL development
+libraries in order to successfully complete some makefile targets.
+It is helpful, but is not required, to install the SQLite TCL extension
+(the "tclextension-install" target) prior to running tests.
 
 Build using Makefile.msc.  Example:
 
         nmake /f Makefile.msc sqlite3.exe
         nmake /f Makefile.msc sqlite3.c
+        nmake /f Makefile.msc sqldiff.exe
+        # Makefile targets below this point require TCL development libraries
+        nmake /f Makefile.msc tclextension-install
         nmake /f Makefile.msc devtest
         nmake /f Makefile.msc releasetest
-        nmake /f Makefile.msc tclextension-install
+        nmake /f Makefile.msc sqlite3_analyzer.exe
  
 There are many other makefile targets.  See comments in Makefile.msc for
 details.

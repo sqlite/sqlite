@@ -1,12 +1,12 @@
-C Testrunner.tcl\senhancements:\s\s(1)\sAttempt\sto\sbuild\sthe\sSQLite\stcl\sextension\nif\sit\sis\snot\salready\savailable.\s\s(2)\stestrunner\starget\s"devtest"\sis\sadded\sas\nan\salias\sfor\s"mdevtest".\s\s(3)\sTry\sto\skeep\ssummary\sinformation\sat\sthe\send\sof\na\stest\sbelow\s80-characters\sper\sline.\s\s(4)\sUpdate\sthe\sMakefile.in\sso\sthat\nthe\s"clean"\starget\sremoves\sthe\stcl\sextension\sbuilt\sby\sitem\s1\sabove.
-D 2024-09-05T15:28:15.141
+C Update\snotes\son\sbuild\sprocedures\sin\sthe\sREADME.md\sfile.
+D 2024-09-05T15:55:04.340
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 098d9814c66d81a8bbfb3550876b7d9695a0b050c0d4680afb4931a7aa8fe7f1
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e72a4653ea8f48efd14c7dac1e7de308a1f3cc91f905f15cbcacc680301c8f03
-F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
+F README.md 282d999d14bfd1dcb36652abbfba9f8dffbda083ddcdb91361459e43164a1d23
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 80ebb7c7e686cd936ac834f2258f585a7004762593e0bc859ecd75d6fb0badfd
-R 83bee4b7a0d6a0c18b04c62c3e6012df
+P aa5f10f21dbfb24ee54ca96bfb7b013ae29e26fec05b80681f19cc63d9face49
+R 7cc85ab35bb58c1a46f86590da7723ea
 U drh
-Z 30dd6ec18ce8874d43e8198deb845f86
+Z a2b02066e2e694d910978f885128ac52
 # Remove this line to create a well-formed Fossil manifest.
