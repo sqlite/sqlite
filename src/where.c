@@ -6199,6 +6199,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     WhereTerm *pTerm, *pEnd;
     SrcItem *pItem;
     WhereLoop *pLoop;
+    Bitmask m1;
     pLoop = pWInfo->a[i].pWLoop;
     pItem = &pWInfo->pTabList->a[pLoop->iTab];
     if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ) continue;
@@ -6226,6 +6227,8 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     }
     if( pTerm<pEnd ) continue;
     WHERETRACE(0xffffffff, ("-> drop loop %c not used\n", pLoop->cId));
+    m1 = MASKBIT(i)-1;
+    pWInfo->revMask = (m1 & pWInfo->revMask) | ((pWInfo->revMask>>1) & ~m1);
     notReady &= ~pLoop->maskSelf;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
