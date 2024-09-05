@@ -1561,8 +1561,8 @@ proc run_testset {} {
   } {puts $pltfm}
   puts "$totalerr errors out of $totaltest tests in $et $pltfm"
   trdb eval {
-     SELECT DISTINCT substr(svers,1,80) FROM jobs WHERE svers IS NOT NULL
-  } {puts $svers}
+     SELECT DISTINCT substr(svers,1,80) as v1 FROM jobs WHERE svers IS NOT NULL
+  } {puts $v1}
 
 }
 
