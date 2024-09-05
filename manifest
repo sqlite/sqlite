@@ -1,9 +1,9 @@
-C Enhance\stestrunner.tcl\sto\skeep\strack\sof\sthe\splatform\sand\sSQLite\sversion\nas\sreported\sby\sindividual\stest\scases\sand\sto\sreport\sthat\sinformation\sin\sthe\nsummary\sat\sthe\send\sof\seach\stest\srun.
-D 2024-09-05T12:06:45.482
+C Testrunner.tcl\senhancements:\s\s(1)\sAttempt\sto\sbuild\sthe\sSQLite\stcl\sextension\nif\sit\sis\snot\salready\savailable.\s\s(2)\stestrunner\starget\s"devtest"\sis\sadded\sas\nan\salias\sfor\s"mdevtest".\s\s(3)\sTry\sto\skeep\ssummary\sinformation\sat\sthe\send\sof\na\stest\sbelow\s80-characters\sper\sline.\s\s(4)\sUpdate\sthe\sMakefile.in\sso\sthat\nthe\s"clean"\starget\sremoves\sthe\stcl\sextension\sbuilt\sby\sitem\s1\sabove.
+D 2024-09-05T15:28:15.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in af5fbc3453b745daa68c7aa5dfdb945c09cb724971db3b783d6b5e1a62279e28
+F Makefile.in 098d9814c66d81a8bbfb3550876b7d9695a0b050c0d4680afb4931a7aa8fe7f1
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e72a4653ea8f48efd14c7dac1e7de308a1f3cc91f905f15cbcacc680301c8f03
 F README.md 5b678e264236788390d11991f2c0052bd73f19790173883fc56d638bcb849154
@@ -1714,8 +1714,8 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 2c203a2dd664298f239f0ec3ce22fbc65b5f021c1e09edbae8452af8a694e052
-F test/testrunner.tcl 1ebde7e8b57c464b9eb6ce047977c1edb46688b2ab94cc67e3cd5e4a3645ff00 x
+F test/tester.tcl 7b44f1a9b9a2de8112695b908afc21dd9a68cd2d44e84b73f1b27b53492c0d59
+F test/testrunner.tcl 8b8052ef2abf673729eeeeb222961c99b3e08231635c196533aff315e3f12f2d x
 F test/testrunner_data.tcl dbc0bb1c5b912dfd1e32b25d544318e412edd6085bd5fc9e6619cb93a739b786
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a01d869520329fb9e786cdc65f359785a95d19d289e4c6b844c758d6e5385aaf
-R a6deed6e9bd78f423240221d74d8d7b3
+P 80ebb7c7e686cd936ac834f2258f585a7004762593e0bc859ecd75d6fb0badfd
+R 83bee4b7a0d6a0c18b04c62c3e6012df
 U drh
-Z 8cf0ea19b5a0efdaca6c57466a00e96c
+Z 30dd6ec18ce8874d43e8198deb845f86
 # Remove this line to create a well-formed Fossil manifest.

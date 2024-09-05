@@ -17,8 +17,14 @@ cd $dir
 # recommend that the user build one.
 #
 proc find_interpreter {} {
+  global dir
   set interpreter [file tail [info nameofexec]]
   set rc [catch { package require sqlite3 }]
+  if {$rc} {
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+  }
   if {$rc} {
     if { [string match -nocase testfixture* $interpreter]==0
       && [file executable ./testfixture]
@@ -31,8 +37,30 @@ proc find_interpreter {} {
     }
   }
   if {$rc} {
-    puts stderr "Failed to find tcl package sqlite3"
-    puts stderr "Run \"make testfixture\" and then try again..."
+    puts "Cannot find tcl package sqlite3: Trying to build it now..."
+    if {$::tcl_platform(platform)=="windows"} {
+      set bat [open make-tcl-extension.bat w]
+      puts $bat "nmake /f Makefile.msc tclextension"
+      close $bat
+      catch {exec -ignorestderr -- make-tcl-extension.bat}
+    } else {
+      catch {exec make tclextension}
+    }
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+    if {$rc==0} {
+      puts "The SQLite tcl extension was successfully built and loaded."
+      puts "Run \"make tclextension-install\" to avoid having to rebuild\
+            it in the future."
+    } else {
+      puts "Unable to build the SQLite tcl extension"
+    }
+  }
+  if {$rc} {
+    puts stderr "Cannot find a working instance of the SQLite tcl extension."
+    puts stderr "Run \"make tclextension\" or \"make testfixture\" and\
+                 try again..."
     exit 1
   }
 }
@@ -1166,6 +1194,7 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
 
+    devtest -
     mdevtest {
       set config_set {
         All-O0
@@ -1530,9 +1559,9 @@ proc run_testset {} {
      SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
       ORDER BY 2 DESC LIMIT 1
   } {puts $pltfm}
-  puts "$totalerr errors out of $totaltest tests in about $et $pltfm"
+  puts "$totalerr errors out of $totaltest tests in $et $pltfm"
   trdb eval {
-     SELECT DISTINCT svers FROM jobs WHERE svers IS NOT NULL
+     SELECT DISTINCT substr(svers,1,80) FROM jobs WHERE svers IS NOT NULL
   } {puts $svers}
 
 }
