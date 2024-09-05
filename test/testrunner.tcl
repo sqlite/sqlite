@@ -290,6 +290,8 @@ set TRG(schema) {
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
+    svers TEXT,                         -- Reported SQLite version
+    pltfm TEXT,                         -- Host platform reported
     output TEXT                         -- test output
   );
 
@@ -1255,6 +1257,10 @@ proc mark_job_as_finished {jobid output state endtm} {
       set nerr $a
       set ntest $b
     }
+    regexp {\y\d+ errors out of \d+ tests (on [^\n]+-bit \S+-endian)} \
+         $output all pltfm
+    regexp {\ySQLite \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d [0-9a-fA-F]+} \
+         $output svers
   }
   r_write_db {
     if {$state=="failed"} {
@@ -1266,7 +1272,7 @@ proc mark_job_as_finished {jobid output state endtm} {
     trdb eval {
       UPDATE jobs 
         SET output=$output, state=$state, endtime=$endtm,
-            ntest=$ntest, nerr=$nerr
+            ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
@@ -1519,7 +1525,16 @@ proc run_testset {} {
        FROM jobs WHERE endtime>0
   } break;
   set et [elapsetime $totaltime]
-  puts "$totalerr errors out of $totaltest tests in about $et"
+  set pltfm {}
+  trdb eval {
+     SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
+      ORDER BY 2 DESC LIMIT 1
+  } {puts $pltfm}
+  puts "$totalerr errors out of $totaltest tests in about $et $pltfm"
+  trdb eval {
+     SELECT DISTINCT svers FROM jobs WHERE svers IS NOT NULL
+  } {puts $svers}
+
 }
 
 # Handle the --buildonly option, if it was specified.
