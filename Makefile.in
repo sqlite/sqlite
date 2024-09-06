@@ -661,11 +661,16 @@ SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
 SQLITE3_SHELL_TARGET_1 =
 SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
 
+# Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
+# libtclsqlite3.la or an empty value.
+libtclsqlite3.la_0 =
+libtclsqlite3.la_1 = libtclsqlite3.la
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
 all:	sqlite3.h libsqlite3.la $(SQLITE3_SHELL_TARGET) \
-  $(HAVE_TCL:1=libtclsqlite3.la)
+  $(libtclsqlite3.la_$(HAVE_TCL))
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -1566,7 +1571,12 @@ lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 
-install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+# Use $(tcl_install_$(HAVE_TCL)) to resolve to either tcl_install or
+# an empty value.
+tcl_install_0 =
+tcl_install_1 = tcl_install
+
+install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc $(tcl_install_$(HAVE_TCL))
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
 	$(INSTALL) -d $(DESTDIR)$(includedir)
