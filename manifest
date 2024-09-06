@@ -1,12 +1,12 @@
-C Fix\sa\stestrunner\sstatus\sreporting\sproblem\sintroduced\sby\s[aa5f10f21dbfb24e].
-D 2024-09-05T23:40:13.439
+C Clarification\sand\ssimplification\sto\sthe\sREADME.md\sfile\sand\sto\sthe\sinstructions\nfor\sbuilding\son\sWindows.
+D 2024-09-06T09:49:13.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 098d9814c66d81a8bbfb3550876b7d9695a0b050c0d4680afb4931a7aa8fe7f1
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e72a4653ea8f48efd14c7dac1e7de308a1f3cc91f905f15cbcacc680301c8f03
-F README.md 282d999d14bfd1dcb36652abbfba9f8dffbda083ddcdb91361459e43164a1d23
+F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -39,7 +39,7 @@ F configure 49523f0a070b583cea040d26eff53a65fb0893eca4663b1343a4d5a9a964da53 x
 F configure.ac a100ebf7a07f5dedd319ef547dd467d1676ed059b85a7877aa9c44ac309f7000
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/compile-for-windows.md e8635eea9153dcd6a51fd2740666ebc4492b3813cb1ac31cd8e99150df91762d
+F doc/compile-for-windows.md 4d4bfafda42a7a33f166d23aed4db1bb4ea1e5751595a5cced2bad349fd14652
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22ca5a2ffb89ccb5f337993b5a95e27c449c39014284156eabc33da012a8759c
-R bc86dd135008dded1df1caf42383464b
+P d20c65c3b4256a662ebf7ed024b7b7adaceca90358f58111dc645da322000794
+R e0122c673835ce2d6d2df201e5b1e575
 U drh
-Z 5f358c18a2ed0f553bb9c3eac9d42cd6
+Z 474793855763ef2064fdff2fee5b0897
 # Remove this line to create a well-formed Fossil manifest.

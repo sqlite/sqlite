@@ -73,23 +73,26 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
      then click on the "Tarball" or "ZIP Archive" links on the information
      page.
 
-To access sources directly using Fossil, first install Fossil version 2.0 or later.
-Source tarballs and precompiled binaries available
-[here](https://www.fossil-scm.org/home/uv/download.html).  Fossil is
+To access sources directly using [Fossil](https://fossil-scm.org/home),
+first install Fossil version 2.0 or later.
+Source tarballs and precompiled binaries available at
+<https://fossil-scm.org/home/uv/download.html>.  Fossil is
 a stand-alone program.  To install, simply download or build the single
 executable file and put that file someplace on your $PATH.
 Then run commands like this:
 
-        mkdir -p ~/sqlite ~/Fossils
+        mkdir -p ~/sqlite
         cd ~/sqlite
-        fossil clone https://www.sqlite.org/src ~/Fossils/sqlite.fossil
-        fossil open ~/Fossils/sqlite.fossil
+        fossil open https://sqlite.org/src
 
-After setting up a repository using the steps above, you can do
-bandwidth-efficient updates to the latest version using:
+The "fossil open" command will take two or three minutes.  Afterwards,
+you can do fast, bandwidth-efficient updates to the whatever versions
+of SQLite you like.  Some examples:
 
-        fossil update trunk   ;# latest trunk check-in
-        fossil update release ;# latest official release
+        fossil update trunk             ;# latest trunk check-in
+        fossil update release           ;# latest official release
+        fossil update trunk:2024-01-01  ;# First trunk check-in after 2024-01-01
+        fossil update version-3.39.0    ;# Version 3.39.0
 
 Or type "fossil ui" to get a web-based user interface.
 
@@ -148,7 +151,7 @@ show what changes are needed.
 
 ## Compiling for Windows Using MSVC
 
-On Windows, all applicable build products can be compiled with MSVC.
+On Windows, everything can be compiled with MSVC.
 You will also need a working installation of TCL.
 See the [compile-for-windows.md](doc/compile-for-windows.md) document for
 additional information about how to install MSVC and TCL and configure your
@@ -383,7 +386,7 @@ implementation.  It will not be the easiest library in the world to hack.
   *  **VERSION**, **manifest**, and **manifest.uuid** - These files define
      the current SQLite version number.  The "VERSION" file is human generated,
      but the "manifest" and "manifest.uuid" files are automatically generated
-     by the [Fossil version control system](https://fossil-scm/).
+     by the [Fossil version control system](https://fossil-scm.org/).
 
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
