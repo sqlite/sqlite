@@ -57,10 +57,21 @@ canonical source on a new Windows 11 PC, as of 2023-11-01:
       <ul>
       <li>  `nmake /f makefile.msc`
       <li>  `nmake /f makefile.msc sqlite3.c`
+      <li>  `nmake /f makefile.msc sqlite3.exe`
+      <li>  `nmake /f makefile.msc sqldiff.exe`
+      <li>  `nmake /f makefile.msc tclextension-install`
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`
-      <li>  `nmake /f makefile.msc sqlite3.exe`
+      <li>  `nmake /f makefile.msc sqlite3_analyzer.exe`
       </ul>
+
+      It is not required that you run the "tclextension-install" target prior to
+      running tests.  However, the tests will run more smoothly if you do.
+      The version of SQLite used for the TCL extension does *not* need to
+      correspond to the version of SQLite under test.  So you can install the
+      SQLite TCL extension once, and then use it to test many different versions
+      of SQLite.
+
 
   7.  For a debugging build of the CLI, where the ".treetrace" and ".wheretrace"
       commands work, add the DEBUG=3 argument to nmake.  Like this:

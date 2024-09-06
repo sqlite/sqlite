@@ -17,8 +17,14 @@ cd $dir
 # recommend that the user build one.
 #
 proc find_interpreter {} {
+  global dir
   set interpreter [file tail [info nameofexec]]
   set rc [catch { package require sqlite3 }]
+  if {$rc} {
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+  }
   if {$rc} {
     if { [string match -nocase testfixture* $interpreter]==0
       && [file executable ./testfixture]
@@ -31,8 +37,30 @@ proc find_interpreter {} {
     }
   }
   if {$rc} {
-    puts stderr "Failed to find tcl package sqlite3"
-    puts stderr "Run \"make testfixture\" and then try again..."
+    puts "Cannot find tcl package sqlite3: Trying to build it now..."
+    if {$::tcl_platform(platform)=="windows"} {
+      set bat [open make-tcl-extension.bat w]
+      puts $bat "nmake /f Makefile.msc tclextension"
+      close $bat
+      catch {exec -ignorestderr -- make-tcl-extension.bat}
+    } else {
+      catch {exec make tclextension}
+    }
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+    if {$rc==0} {
+      puts "The SQLite tcl extension was successfully built and loaded."
+      puts "Run \"make tclextension-install\" to avoid having to rebuild\
+            it in the future."
+    } else {
+      puts "Unable to build the SQLite tcl extension"
+    }
+  }
+  if {$rc} {
+    puts stderr "Cannot find a working instance of the SQLite tcl extension."
+    puts stderr "Run \"make tclextension\" or \"make testfixture\" and\
+                 try again..."
     exit 1
   }
 }
@@ -290,6 +318,8 @@ set TRG(schema) {
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
+    svers TEXT,                         -- Reported SQLite version
+    pltfm TEXT,                         -- Host platform reported
     output TEXT                         -- test output
   );
 
@@ -633,25 +663,10 @@ if {[llength $argv]>=1
 # Aggregate these numbers and return them.
 #
 proc aggregate_test_counts {db} {
-  set ncase 0
-  set nerr 0
-  $db eval {SELECT output FROM jobs WHERE displaytype IN ('tcl','fuzz')} {
-    set n 0
-    set m 0
-    if {[regexp {(\d+) errors out of (\d+) tests} $output all n m]
-        && [string is integer -strict $n]
-        && [string is integer -strict $m]} {
-      incr ncase $m
-      incr nerr $n
-    } elseif {[regexp {sessionfuzz.*: *(\d+) cases, (\d+) crash} $output \
-                      all m n]
-              && [string is integer -strict $m]
-              && [string is integer -strict $n]} {
-      incr ncase $m
-      incr nerr $n
-    }
-  }
-  return [list $nerr $ncase]
+  set ne 0
+  set nt 0
+  $db eval {SELECT sum(nerr) AS ne, sum(ntest) as nt FROM jobs} break
+  return [list $ne $nt]
 }
 
 #--------------------------------------------------------------------------
@@ -1179,6 +1194,7 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
 
+    devtest -
     mdevtest {
       set config_set {
         All-O0
@@ -1266,10 +1282,13 @@ proc mark_job_as_finished {jobid output state endtm} {
   set ntest 1
   set nerr 0
   if {$endtm>0} {
-    if {[regexp {\y(\d+) errors out of (\d+) tests} $output all a b]} {
+    set re {\y(\d+) errors out of (\d+) tests( on [^\n]+\n)?}
+    if {[regexp $re $output all a b pltfm]} {
       set nerr $a
       set ntest $b
     }
+    regexp {\ySQLite \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d [0-9a-fA-F]+} \
+         $output svers
   }
   r_write_db {
     if {$state=="failed"} {
@@ -1278,10 +1297,11 @@ proc mark_job_as_finished {jobid output state endtm} {
     } else {
       set childstate ready
     }
+    if {[info exists pltfm]} {set pltfm [string trim $pltfm]}
     trdb eval {
       UPDATE jobs 
         SET output=$output, state=$state, endtime=$endtm,
-            ntest=$ntest, nerr=$nerr
+            ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
@@ -1534,7 +1554,16 @@ proc run_testset {} {
        FROM jobs WHERE endtime>0
   } break;
   set et [elapsetime $totaltime]
-  puts "$totalerr errors out of $totaltest tests in about $et"
+  set pltfm {}
+  trdb eval {
+     SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
+      ORDER BY 2 DESC LIMIT 1
+  } break
+  puts "$totalerr errors out of $totaltest tests in $et $pltfm"
+  trdb eval {
+     SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
+  } {puts $v1}
+
 }
 
 # Handle the --buildonly option, if it was specified.
