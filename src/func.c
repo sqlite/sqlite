@@ -2051,7 +2051,11 @@ static void minMaxFinalize(sqlite3_context *context){
 ** group_concat(EXPR, ?SEPARATOR?)
 ** string_agg(EXPR, SEPARATOR)
 **
-** The SEPARATOR goes before the EXPR string.  This is tragic.  The
+** Content is accumulated in GroupConcatCtx.str with the SEPARATOR
+** coming before the EXPR value, except for the first entry which
+** omits the SEPARATOR.
+**
+** It is tragic that the SEPARATOR goes before the EXPR string.  The
 ** groupConcatInverse() implementation would have been easier if the
 ** SEPARATOR were appended after EXPR.  And the order is undocumented,
 ** so we could change it, in theory.  But the old behavior has been
@@ -2155,7 +2159,7 @@ static void groupConcatInverse(
   /* pGCC is always non-NULL since groupConcatStep() will have always
   ** run first to initialize it */
   if( ALWAYS(pGCC) ){
-    int nVS;
+    int nVS;  /* Number of characters to remove */
     /* Must call sqlite3_value_text() to convert the argument into text prior
     ** to invoking sqlite3_value_bytes(), in case the text encoding is UTF16 */
     (void)sqlite3_value_text(argv[0]);

@@ -280,6 +280,9 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
   CURRENT FOLLOWING PARTITION PRECEDING RANGE UNBOUNDED
   EXCLUDE GROUPS OTHERS TIES
 %endif SQLITE_OMIT_WINDOWFUNC
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+  WITHIN
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 %ifndef SQLITE_OMIT_GENERATED_COLUMNS
   GENERATED ALWAYS
 %endif
@@ -1194,6 +1197,65 @@ expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+%include {
+  /* Generate an expression node that represents an ordered-set aggregate function.
+  **
+  ** SQLite does not do anything special to evaluate ordered-set aggregates.  The
+  ** aggregate function itself is expected to do any required ordering on its own.
+  ** This is just syntactic sugar.
+  **
+  ** This syntax:        percentile(f) WITHIN GROUP ( ORDER BY y )
+  **
+  ** Is equivalent to:   percentile(y,f)
+  **
+  ** The purpose of this function is to generate an Expr node from the first syntax
+  ** into a TK_FUNCTION node that looks like it came from the second syntax.
+  **
+  ** Only functions that have the SQLITE_SELFORDER1 perperty are allowed to do this
+  ** transformation.  Because DISTINCT is not allowed in the ordered-set aggregate
+  ** syntax, an error is raised if DISTINCT is used.
+  */
+  static Expr *sqlite3ExprAddOrderedsetFunction(
+    Parse *pParse,         /* Parsing context */
+    Token *pFuncname,      /* Name of the function */
+    int isDistinct,        /* DISTINCT or ALL qualifier */
+    ExprList *pOrig,       /* Arguments to the function */
+    Expr *pOrderby         /* Expression in the ORDER BY clause */                
+  ){
+    ExprList *p;           /* Modified argument list */
+    Expr *pExpr;           /* Final result */
+    p = sqlite3ExprListAppend(pParse, 0, pOrderby);
+    if( pOrig ){
+      int i;
+      for(i=0; i<pOrig->nExpr; i++){
+        p = sqlite3ExprListAppend(pParse, p, pOrig->a[i].pExpr);
+        pOrig->a[i].pExpr = 0;
+      }
+      sqlite3ExprListDelete(pParse->db, pOrig);
+    }
+    pExpr = sqlite3ExprFunction(pParse, p, pFuncname, 0);
+    if( pParse->nErr==0 ){
+      FuncDef *pDef;
+      u8 enc = ENC(pParse->db);
+      assert( pExpr!=0 );  /* Because otherwise pParse->nErr would not be zero */
+      assert( p!=0 );      /* Because otherwise pParse->nErr would not be zero */
+      pDef = sqlite3FindFunction(pParse->db, pExpr->u.zToken, -2, enc, 0);
+      if( pDef==0 || (pDef->funcFlags & SQLITE_SELFORDER1)==0 ){
+        sqlite3ErrorMsg(pParse, "%#T() is not an ordered-set aggregate", pExpr);
+      }else if( isDistinct==SF_Distinct ){
+        sqlite3ErrorMsg(pParse, "DISTINCT not allowed on ordered-set aggregate %T()",
+                        pFuncname);
+      }
+    }
+    return pExpr;
+  }
+}
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP. {
+  A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
+}
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+
 %ifndef SQLITE_OMIT_WINDOWFUNC
 expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, Y, &X, D);
@@ -1208,7 +1270,15 @@ expr(A) ::= idj(X) LP STAR RP filter_over(Z). {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
   sqlite3WindowAttach(pParse, A, Z);
 }
-%endif
+%ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+expr(A) ::= idj(X) LP distinct(D) exprlist(Y) RP WITHIN GROUP LP ORDER BY expr(E) RP
+            filter_over(Z). {
+  A = sqlite3ExprAddOrderedsetFunction(pParse, &X, D, Y, E);
+  sqlite3WindowAttach(pParse, A, Z);
+}
+%endif SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+
+%endif SQLITE_OMIT_WINDOWFUNC
 
 term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(pParse, 0, &OP, 0);

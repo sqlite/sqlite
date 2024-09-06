@@ -159,10 +159,11 @@ static struct GlobalVars {
 } g;
 
 /*
-** Include the external vt02.c and randomjson.c modules.
+** Include various extensions.
 */
 extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
 extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
+extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
 
 
 /*
@@ -1044,10 +1045,11 @@ static void bindDebugParameters(sqlite3_stmt *pStmt){
       sqlite3_bind_int(pStmt, i+1, atoi(&zVar[5]));
     }else
     if( strncmp(zVar, "$text_", 6)==0 ){
-      char *zBuf = sqlite3_malloc64( strlen(zVar)-5 );
+      size_t szVar = strlen(zVar);
+      char *zBuf = sqlite3_malloc64( szVar-5 );
       if( zBuf ){
-        memcpy(zBuf, &zVar[6], strlen(zVar)-5);
-        sqlite3_bind_text64(pStmt, i+1, zBuf, -1, sqlite3_free, SQLITE_UTF8);
+        memcpy(zBuf, &zVar[6], szVar-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
       }
     }
   }
@@ -1329,7 +1331,8 @@ int runCombinedDbSqlInput(
   /* Add the vt02 virtual table */
   sqlite3_vt02_init(cx.db, 0, 0);
 
-  /* Add the random_json() and random_json5() functions */
+  /* Activate extensions */
+  sqlite3_percentile_init(cx.db, 0, 0);
   sqlite3_randomjson_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used

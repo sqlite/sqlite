@@ -2343,7 +2343,7 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
     }
     for(ii=0; ii<(int)nFlag; ii++){
       int iVal = 0;
-      int res = Tcl_GetIndexFromObjStruct(
+      res = Tcl_GetIndexFromObjStruct(
           interp, aFlag[ii], aTbl, sizeof(aTbl[0]), "flag", 0, &iVal
       );
       if( res ) return TCL_ERROR;
