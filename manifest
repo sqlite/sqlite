@@ -1,5 +1,5 @@
-C Clarification\sand\ssimplification\sto\sthe\sREADME.md\sfile\sand\sto\sthe\sinstructions\nfor\sbuilding\son\sWindows.
-D 2024-09-06T09:49:13.510
+C A\stestcase()\smacro\sadded\sto\shelp\sensure\sthat\sthe\sfix\sto\sthe\somit-noop-join\noptimization\sfrom\syesterday\sdoes\snot\sregress.
+D 2024-09-06T10:35:36.196
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -852,7 +852,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 079f1cf6abc086315f5c9873626b7c0537f382c55184c516b8e3d29f7a537fdc
+F src/where.c 7fb55836eb7fd07f0a0d8400c50619fc02cda1f46a617cfb003c2990f040193d
 F src/whereInt.h a5d079c346a658b7a6e9e47bb943d021e02fa1e6aed3b964ca112112a4892192
 F src/wherecode.c 5172d647798134e7c92536ddffe7e530c393d79b5dedd648b88faf2646c65baf
 F src/whereexpr.c 44f41ae554c7572e1de1485b3169b233ee04d464b2ee5881687ede3bf07cacfa
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d20c65c3b4256a662ebf7ed024b7b7adaceca90358f58111dc645da322000794
-R e0122c673835ce2d6d2df201e5b1e575
+P f69ef1a37b2778bdf73ee7e3b3edd74f7344ab8e5eedbedc22203c782e521f5b
+R a9f753c3499efd243abe359303301f78
 U drh
-Z 474793855763ef2064fdff2fee5b0897
+Z a70e5af6a81ae35c981b5946f602f67c
 # Remove this line to create a well-formed Fossil manifest.
