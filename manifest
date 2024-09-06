@@ -1,5 +1,5 @@
-C In\stestrunner.tcl,\scorrectly\scapture\sand\sdisplay\sinformation\sabout\sthe\nsystem\sunder\stest:\s\shostname,\sOS,\spointer\ssize,\sbyte-order.
-D 2024-09-06T13:13:25.545
+C Fix\sa\sharmless\sstray\scarriage-return\scharacter.
+D 2024-09-06T14:01:48.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -484,7 +484,7 @@ F ext/rbu/rbuvacuum.test 542561741ff2b262e3694bc6012b44694ee62c545845319a06f3237
 F ext/rbu/rbuvacuum2.test ae097d04feb041446a74fac94b24bffeb3fdd60e32b848c5611e507ab702b81b
 F ext/rbu/rbuvacuum3.test 3ce42695fdf21aaa3499e857d7d4253bc499ad759bcd6c9362042c13cd37d8de
 F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69eefaebb205
-F ext/rbu/sqlite3rbu.c d90c79c2e9998e0f54da86d28c8433db7997864279fcfce02592e0838c8ce71d
+F ext/rbu/sqlite3rbu.c c07817e89477b8fc286ab6ed87da5bc82fc3490bbbe9e9b22eb2d900e81ee5dc
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c b9727c3394307d058e806c1da0f8bb7b24daf3c6bb94cb10cca88ea4d5c806c0
 F ext/recover/dbdata.c 5295f4f922b60d7035b6b9fd5846b13071b9d97ed7fad8496837bb7640d24771
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60fb8ee153ec293b6b3a4170dafa305e4c16af575aced72daef46116d8dc2bb6
-R 10b53f0d3edd4deb6d00308ae86e15b9
+P ec75cfc5d4b69e4aed64d17748cac15cd62a759a1cbe7feaa4580ad8346b0b95
+R fff388cd7307c5b0da6a2a2532ba0d3f
 U drh
-Z 1062f5bb698948cf0174718b6a1b925f
+Z 8d9185ba5e8e9cd8d975e704cf12a0ed
 # Remove this line to create a well-formed Fossil manifest.

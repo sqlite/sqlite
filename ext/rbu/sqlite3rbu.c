@@ -5329,7 +5329,7 @@ static int rbuVfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
 */
 static int rbuVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
   UNUSED_PARAMETER(pVfs);
-  UNUSED_PARAMETER(a);
+  UNUSED_PARAMETER(a);
   UNUSED_PARAMETER(b);
   return 0;
 }
