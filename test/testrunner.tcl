@@ -1282,12 +1282,11 @@ proc mark_job_as_finished {jobid output state endtm} {
   set ntest 1
   set nerr 0
   if {$endtm>0} {
-    if {[regexp {\y(\d+) errors out of (\d+) tests} $output all a b]} {
+    set re {\y(\d+) errors out of (\d+) tests( on [^\n]+\n)?}
+    if {[regexp $re $output all a b pltfm]} {
       set nerr $a
       set ntest $b
     }
-    regexp {\y\d+ errors out of \d+ tests (on [^\n]+-bit \S+-endian)} \
-         $output all pltfm
     regexp {\ySQLite \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d [0-9a-fA-F]+} \
          $output svers
   }
@@ -1298,6 +1297,7 @@ proc mark_job_as_finished {jobid output state endtm} {
     } else {
       set childstate ready
     }
+    if {[info exists pltfm]} {set pltfm [string trim $pltfm]}
     trdb eval {
       UPDATE jobs 
         SET output=$output, state=$state, endtime=$endtm,
@@ -1558,10 +1558,10 @@ proc run_testset {} {
   trdb eval {
      SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
       ORDER BY 2 DESC LIMIT 1
-  } {puts $pltfm}
+  } break
   puts "$totalerr errors out of $totaltest tests in $et $pltfm"
   trdb eval {
-     SELECT DISTINCT substr(svers,1,80) as v1 FROM jobs WHERE svers IS NOT NULL
+     SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
   } {puts $v1}
 
 }

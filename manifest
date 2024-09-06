@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2024-09-06T11:21:53.173
+C In\stestrunner.tcl,\scorrectly\scapture\sand\sdisplay\sinformation\sabout\sthe\nsystem\sunder\stest:\s\shostname,\sOS,\spointer\ssize,\sbyte-order.
+D 2024-09-06T13:13:25.545
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1715,7 +1715,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 7b44f1a9b9a2de8112695b908afc21dd9a68cd2d44e84b73f1b27b53492c0d59
-F test/testrunner.tcl a59e911e3732ba4d6b66e310f72d9599eb0392d3de659a525c519ba755cbf3e1 x
+F test/testrunner.tcl 3dd75b45593d2afa2e3bca76121297a9f163bebb98474b13536f326829a71db1 x
 F test/testrunner_data.tcl dbc0bb1c5b912dfd1e32b25d544318e412edd6085bd5fc9e6619cb93a739b786
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 224628b1039b996499e0d806fc0215f175da6f1059eb1b9ac491ac11126971ab
-R 4ffcc50319bb317830ac49a5c5529b0f
+P 60fb8ee153ec293b6b3a4170dafa305e4c16af575aced72daef46116d8dc2bb6
+R 10b53f0d3edd4deb6d00308ae86e15b9
 U drh
-Z 1e521328c9a1b05b589836828e6bb245
+Z 1062f5bb698948cf0174718b6a1b925f
 # Remove this line to create a well-formed Fossil manifest.
