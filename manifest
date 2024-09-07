@@ -1,5 +1,5 @@
-C Add\stests\sfor\san\sfts5\sNEAR()\sexpression\swith\sa\ssingle\sargument\sphrase.
-D 2024-09-06T20:12:59.105
+C Fix\san\soff-by-one\serror\sin\sthe\sroutines\sthat\sbind\sthe\sspecial\s$test_TTT\sand\n$int_NNN\sparameters\sfor\sfuzz\stesting.\s\sFix\sto\stesting\slogic\sonly\s-\sno\schanges\nto\sthe\sSQLite\score.
+D 2024-09-07T16:04:04.674
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1267,7 +1267,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 3b8b39e3c0c88422c51ef0a93481d3d528fb370668344bf0ae4c87629c18b021
+F test/fuzzcheck.c 89b71d92b150a532e945e489d6e0721a4b15353c9255e079c198ed2a1958018b
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1279,7 +1279,7 @@ F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 3de49c7b33f5641b67edc2496328a49af029738e92c8499fafbf8618ad42f68d
+F test/fuzzinvariants.c 057e910241d85aa4aaf75cef1a7adc45c632b173288d07d9dbbef4e6bda83d5a
 F test/gcfault.test 4ea410ac161e685f17b19e1f606f58514a2850e806c65b846d05f60d436c5b0d
 F test/gencol1.test e169bdfa11c7ed5e9f322a98a7db3afe9e66235750b68c923efee8e1876b46ec
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d94541ae76b5d8b69f5524f10dcccc0814283f438a03f553848ed631a1983633
-R 0ff6a7b291ffdc8dd8ae89040689ac04
-U dan
-Z 0535d08aac8a0a882873604dcc93ce4a
+P e319d43bfd5ee4ed92b93531b239af4d1be0a8215b2a06c3532122ff2c7b6a7c
+R 2c4135598e1fecddc6fdbdd8727336d2
+U drh
+Z 73b413ffeaf70ba5cf262762754b392b
 # Remove this line to create a well-formed Fossil manifest.
