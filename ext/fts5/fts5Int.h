@@ -647,6 +647,8 @@ int sqlite3Fts5ExtractText(
 
 void sqlite3Fts5ClearLocale(Fts5Config *pConfig);
 
+int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal);
+
 /*
 ** End of interface to code in fts5.c.
 **************************************************************************/

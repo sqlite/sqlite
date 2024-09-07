@@ -4404,7 +4404,7 @@ do_catchsql_test 25.5 {
 do_catchsql_test 25.6 {
   INSERT INTO t1(t1) SELECT x FROM t2;
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 #-------------------------------------------------------------------------
 reset_db

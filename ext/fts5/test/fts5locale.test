@@ -488,7 +488,7 @@ foreach_detail_mode $::testprefix {
   
     do_catchsql_test 10.2.$tn.4 "
       SELECT * FROM ft( test_setsubtype($v, 76) );
-    " {1 {SQL logic error}}
+    " {1 {fts5: syntax error near ""}}
   
     do_execsql_test 10.2.$tn.5 {
       INSERT INTO ft(rowid, x) VALUES(1, 'hello world');
@@ -523,11 +523,11 @@ foreach_detail_mode $::testprefix {
 
     do_catchsql_test 10.2.$tn.11 "
       INSERT INTO ft(ft, rowid, x) VALUES('delete', 1, test_setsubtype($v,76) )
-    " {1 {SQL logic error}}
+    " {0 {}}
 
     do_catchsql_test 10.2.$tn.12 "
       INSERT INTO ft(rowid, x) VALUES(2, test_setsubtype($v,76) )
-    " {1 {SQL logic error}}
+    " {1 {datatype mismatch}}
 
     do_execsql_test 10.2.$tn.13 {
       INSERT INTO ft2(rowid, x) VALUES(1, 'hello world');
@@ -662,6 +662,30 @@ do_catchsql_test 13.2.7 {
     quote(fts5_get_locale(ft, 0.0)), quote(fts5_get_locale(ft, 1)) 
   FROM ft('one AND three') ORDER BY rowid
 } {1 {non-integer argument passed to function fts5_get_locale()}}
+
+#-------------------------------------------------------------------------
+# Check that UPDATE statements that may affect more than one row work.
+#
+reset_db
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, locale=1);
+}
+
+do_execsql_test 14.2 {
+  INSERT INTO ft VALUES('hello', 'world');
+}
+
+do_execsql_test 14.3 {
+  UPDATE ft SET b = fts5_locale('en_AU', 'world');
+}
+
+do_catchsql_test 14.4 {
+  INSERT INTO ft VALUES(X'abcd', X'1234');
+} {1 {datatype mismatch}}
+
+do_execsql_test 14.4 {
+  SELECT * FROM ft
+} {hello world}
 
 finish_test
 

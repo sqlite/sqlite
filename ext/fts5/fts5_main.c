@@ -83,7 +83,16 @@ struct Fts5Global {
   Fts5TokenizerModule *pTok;      /* First in list of all tokenizer modules */
   Fts5TokenizerModule *pDfltTok;  /* Default tokenizer module */
   Fts5Cursor *pCsr;               /* First in list of all open cursors */
+  u32 aLocaleHdr[4];
 };
+
+/*
+** Size of header on fts5_locale() values. And macro to access a buffer
+** containing a copy of the header from an Fts5Config pointer.
+*/
+#define FTS5_LOCALE_HDR_SIZE sizeof( ((Fts5Global*)0)->aLocaleHdr )
+#define FTS5_LOCALE_HDR(pConfig) ((const u8*)(pConfig->pGlobal->aLocaleHdr))
+
 
 /*
 ** Each auxiliary function registered with the FTS5 module is represented
@@ -246,12 +255,6 @@ struct Fts5Cursor {
 
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
-
-/*
-** The subtype value and header bytes used by fts5_locale().
-*/
-#define FTS5_LOCALE_SUBTYPE ((unsigned int)'L')
-#define FTS5_LOCALE_HEADER  "\x00\xE0\xB2\xEB"
 
 
 /*
@@ -1275,6 +1278,22 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 }
 
 /*
+** Return true if the value passed as the only argument is an 
+** fts5_locale() value.  
+*/
+int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal){
+  int ret = 0;
+  if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+    if( sqlite3_value_bytes(pVal)>FTS5_LOCALE_HDR_SIZE
+     && 0==memcmp(sqlite3_value_blob(pVal), FTS5_LOCALE_HDR(pConfig), 4)
+    ){
+      ret = 1;
+    }
+  }
+  return ret;
+}
+
+/*
 ** This function is used to extract utf-8 text from an sqlite3_value. This
 ** is usually done in order to tokenize it. For example, when:
 **
@@ -1292,17 +1311,15 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 **   2) Combination text/locale blobs created by fts5_locale(). There
 **      are several cases for these:
 **
-**        * Blobs tagged with FTS5_LOCALE_SUBTYPE.
-**        * Blobs read from the content table of a locale=1 external-content
-**          table, and 
+**        * Blobs that have the 16-byte header, and
 **        * Blobs read from the content table of a locale=1 regular 
 **          content table.
 **
-**      The first two cases above should have the 4 byte FTS5_LOCALE_HEADER
-**      header. It is an error if a blob with the subtype or a blob read
-**      from the content table of an external content table does not have
-**      the required header. A blob read from the content table of a regular
-**      locale=1 table does not have the header. This is to save space.
+**      The first case above has the 16 byte FTS5_LOCALE_HDR(pConfig)
+**      header. It is an error if a blob read from the content table of 
+**      an external content table does not have the required header. A blob 
+**      read from the content table of a regular locale=1 table does not 
+**      have the header. This is to save space.
 **
 ** If successful, SQLITE_OK is returned and output parameters (*ppText)
 ** and (*pnText) are set to point to a buffer containing the extracted utf-8 
@@ -1330,53 +1347,54 @@ int sqlite3Fts5ExtractText(
   const char *pText = 0;
   int nText = 0;
   int rc = SQLITE_OK;
-  int bDecodeBlob = 0;
+
+  /* 0: Do not decode blob 
+  ** 1: Decode blob, expect fts5_locale() header
+  ** 2: Decode blob, expect no fts5_locale() header
+  */
+  int eDecodeBlob = 0;
 
   assert( pbResetTokenizer==0 || *pbResetTokenizer==0 );
   assert( bContent==0 || pConfig->eContent!=FTS5_CONTENT_NONE );
-  assert( bContent==0 || sqlite3_value_subtype(pVal)==0 );
 
   if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
-    if( sqlite3_value_subtype(pVal)==FTS5_LOCALE_SUBTYPE 
-     || (bContent && pConfig->bLocale)
+    if( bContent 
+     && pConfig->bLocale 
+     && pConfig->eContent==FTS5_CONTENT_NORMAL 
     ){
-      bDecodeBlob = 1;
+      eDecodeBlob = 2;
+    }else if( sqlite3Fts5IsLocaleValue(pConfig, pVal) ){
+      eDecodeBlob = 1;
+    }else if( bContent && pConfig->bLocale ){
+      return SQLITE_ERROR;
     }
   }
 
-  if( bDecodeBlob ){
-    const int SZHDR = sizeof(FTS5_LOCALE_HEADER)-1;
+  if( eDecodeBlob ){
     const u8 *pBlob = sqlite3_value_blob(pVal);
     int nBlob = sqlite3_value_bytes(pVal);
+    int nLocale = 0;
 
     /* Unless this blob was read from the %_content table of an 
     ** FTS5_CONTENT_NORMAL table, it should have the 4 byte fts5_locale() 
     ** header. Check for this. If it is not found, return an error.  */
-    if( (!bContent || pConfig->eContent!=FTS5_CONTENT_NORMAL) ){
-      if( nBlob<SZHDR || memcmp(FTS5_LOCALE_HEADER, pBlob, SZHDR) ){
-        rc = SQLITE_ERROR;
-      }else{
-        pBlob += 4;
-        nBlob -= 4;
-      }
+    if( eDecodeBlob==1 ){
+      pBlob += FTS5_LOCALE_HDR_SIZE;
+      nBlob -= FTS5_LOCALE_HDR_SIZE;
     }
 
-    if( rc==SQLITE_OK ){
-      int nLocale = 0;
+    for(nLocale=0; nLocale<nBlob; nLocale++){
+      if( pBlob[nLocale]==0x00 ) break;
+    }
+    if( nLocale==nBlob || nLocale==0 ){
+      rc = SQLITE_ERROR;
+    }else{
+      pText = (const char*)&pBlob[nLocale+1];
+      nText = nBlob-nLocale-1;
 
-      for(nLocale=0; nLocale<nBlob; nLocale++){
-        if( pBlob[nLocale]==0x00 ) break;
-      }
-      if( nLocale==nBlob || nLocale==0 ){
-        rc = SQLITE_ERROR;
-      }else{
-        pText = (const char*)&pBlob[nLocale+1];
-        nText = nBlob-nLocale-1;
-
-        if( pbResetTokenizer ){
-          fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
-          *pbResetTokenizer = 1;
-        }
+      if( pbResetTokenizer ){
+        fts5SetLocale(pConfig, (const char*)pBlob, nLocale);
+        *pbResetTokenizer = 1;
       }
     }
 
@@ -1966,21 +1984,22 @@ static int fts5UpdateMethod(
     else{
       int eType1 = sqlite3_value_numeric_type(apVal[1]);
 
-      /* Ensure that no fts5_locale() values are written to locale=0 tables.
-      ** And that no blobs except fts5_locale() blobs are written to indexed
-      ** (i.e. not UNINDEXED) columns of locale=1 tables. */
       int ii;
       for(ii=0; ii<pConfig->nCol; ii++){
-        if( sqlite3_value_type(apVal[ii+2])==SQLITE_BLOB ){
-          int bSub = (sqlite3_value_subtype(apVal[ii+2])==FTS5_LOCALE_SUBTYPE);
-          if( (pConfig->bLocale && !bSub && pConfig->abUnindexed[ii]==0) 
-           || (pConfig->bLocale==0 && bSub)
-          ){
-            if( pConfig->bLocale==0 ){
-              fts5SetVtabError(pTab, "fts5_locale() requires locale=1");
+        sqlite3_value *pVal = apVal[ii+2];
+        if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
+          int isLocale = sqlite3Fts5IsLocaleValue(pConfig, pVal);
+          if( pConfig->bLocale ){
+            if( isLocale==0 && pConfig->abUnindexed[ii]==0 ){
+              rc = SQLITE_MISMATCH;
+              goto update_out;
             }
-            rc = SQLITE_MISMATCH;
-            goto update_out;
+          }else{
+            if( isLocale ){
+              fts5SetVtabError(pTab, "fts5_locale() requires locale=1");
+              rc = SQLITE_MISMATCH;
+              goto update_out;
+            }
           }
         }
       }
@@ -2716,21 +2735,21 @@ static int fts5ApiColumnLocale(
       /* Load the value into pVal. pVal is a locale/text pair iff:
       **
       **   1) It is an SQLITE_BLOB, and
-      **   2) Either the subtype is FTS5_LOCALE_SUBTYPE, or else the
-      **      value was loaded from an FTS5_CONTENT_NORMAL table, and
-      **   3) It does not begin with an 0x00 byte.
+      **   2) Either the FTS5_LOCALE_HDR header is present, or else the
+      **      value was loaded from an FTS5_CONTENT_NORMAL table.
+      **
+      ** If condition (1) is met but condition (2) is not, it is an error.
       */ 
       sqlite3_value *pVal = sqlite3_column_value(pCsr->pStmt, iCol+1);
       if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
         const u8 *pBlob = (const u8*)sqlite3_value_blob(pVal);
         int nBlob = sqlite3_value_bytes(pVal);
         if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
-          const int SZHDR = sizeof(FTS5_LOCALE_HEADER)-1;
-          if( nBlob<SZHDR || memcmp(FTS5_LOCALE_HEADER, pBlob, SZHDR) ){
+          if( sqlite3Fts5IsLocaleValue(pConfig, pVal)==0 ){
             rc = SQLITE_ERROR;
           }
-          pBlob += 4;
-          nBlob -= 4;
+          pBlob += FTS5_LOCALE_HDR_SIZE;
+          nBlob -= FTS5_LOCALE_HDR_SIZE;
         }
         if( rc==SQLITE_OK ){
           int nLocale = 0;
@@ -2987,18 +3006,19 @@ static void fts5ExtractValueFromColumn(
    && sqlite3_value_type(pVal)==SQLITE_BLOB 
    && pConfig->abUnindexed[iCol]==0
   ){
-    const int SZHDR = sizeof(FTS5_LOCALE_HEADER)-1;
     const u8 *pBlob = sqlite3_value_blob(pVal);
     int nBlob = sqlite3_value_bytes(pVal);
     int ii;
 
     if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
-      if( nBlob<SZHDR || memcmp(pBlob, FTS5_LOCALE_HEADER, SZHDR) ){
+      if( nBlob<FTS5_LOCALE_HDR_SIZE 
+       || memcmp(pBlob, FTS5_LOCALE_HDR(pConfig), FTS5_LOCALE_HDR_SIZE) 
+      ){
         sqlite3_result_error_code(pCtx, SQLITE_ERROR);
         return;
       }else{
-        pBlob += 4;
-        nBlob -= 4;
+        pBlob += FTS5_LOCALE_HDR_SIZE;
+        nBlob -= FTS5_LOCALE_HDR_SIZE;
       }
     }
 
@@ -3634,13 +3654,12 @@ static void fts5LocaleFunc(
   if( zLocale==0 || zLocale[0]=='\0' ){
     sqlite3_result_text(pCtx, zText, nText, SQLITE_TRANSIENT);
   }else{
+    Fts5Global *p = (Fts5Global*)sqlite3_user_data(pCtx);
     u8 *pBlob = 0;
     u8 *pCsr = 0;
     int nBlob = 0;
-    const int nHdr = 4;
-    assert( sizeof(FTS5_LOCALE_HEADER)==nHdr+1 );
 
-    nBlob = nHdr + nLocale + 1 + nText;
+    nBlob = FTS5_LOCALE_HDR_SIZE + nLocale + 1 + nText;
     pBlob = (u8*)sqlite3_malloc(nBlob);
     if( pBlob==0 ){
       sqlite3_result_error_nomem(pCtx);
@@ -3648,8 +3667,8 @@ static void fts5LocaleFunc(
     }
 
     pCsr = pBlob;
-    memcpy(pCsr, FTS5_LOCALE_HEADER, nHdr);
-    pCsr += nHdr;
+    memcpy(pCsr, (const u8*)p->aLocaleHdr, FTS5_LOCALE_HDR_SIZE);
+    pCsr += FTS5_LOCALE_HDR_SIZE;
     memcpy(pCsr, zLocale, nLocale);
     pCsr += nLocale;
     (*pCsr++) = 0x00;
@@ -3657,7 +3676,6 @@ static void fts5LocaleFunc(
     assert( &pCsr[nText]==&pBlob[nBlob] );
 
     sqlite3_result_blob(pCtx, pBlob, nBlob, sqlite3_free);
-    sqlite3_result_subtype(pCtx, FTS5_LOCALE_SUBTYPE);
   }
 }
 
@@ -3759,6 +3777,16 @@ static int fts5Init(sqlite3 *db){
     pGlobal->api.xFindTokenizer = fts5FindTokenizer;
     pGlobal->api.xCreateTokenizer_v2 = fts5CreateTokenizer_v2;
     pGlobal->api.xFindTokenizer_v2 = fts5FindTokenizer_v2;
+
+    /* Initialize pGlobal->aLocaleHdr[] to a 128-bit pseudo-random vector.
+    ** The constants below were generated randomly.  */
+    sqlite3_randomness(sizeof(pGlobal->aLocaleHdr), pGlobal->aLocaleHdr);
+    pGlobal->aLocaleHdr[0] ^= 0xF924976D;
+    pGlobal->aLocaleHdr[1] ^= 0x16596E13;
+    pGlobal->aLocaleHdr[2] ^= 0x7C80BEAA;
+    pGlobal->aLocaleHdr[3] ^= 0x9B03A67F;
+    assert( sizeof(pGlobal->aLocaleHdr)==16 );
+
     rc = sqlite3_create_module_v2(db, "fts5", &fts5Mod, p, fts5ModuleDestroy);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5IndexInit(db);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(pGlobal, db);
