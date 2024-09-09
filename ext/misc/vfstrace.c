@@ -182,7 +182,7 @@ static const char *vfstraceNextSystemCall(sqlite3_vfs*, const char *zName);
 **     xyzzy.txt           -> xyzzy.txt
 */
 static const char *fileTail(const char *z){
-  int i;
+  size_t i;
   if( z==0 ) return 0;
   i = strlen(z)-1;
   while( i>0 && z[i-1]!='/' ){ i--; }
@@ -912,14 +912,14 @@ int vfstrace_register(
   sqlite3_vfs *pNew;
   sqlite3_vfs *pRoot;
   vfstrace_info *pInfo;
-  int nName;
-  int nByte;
+  size_t nName;
+  size_t nByte;
 
   pRoot = sqlite3_vfs_find(zOldVfsName);
   if( pRoot==0 ) return SQLITE_NOTFOUND;
   nName = strlen(zTraceName);
   nByte = sizeof(*pNew) + sizeof(*pInfo) + nName + 1;
-  pNew = sqlite3_malloc( nByte );
+  pNew = sqlite3_malloc64( nByte );
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, nByte);
   pInfo = (vfstrace_info*)&pNew[1];
