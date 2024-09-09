@@ -1194,6 +1194,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/zipfile.c \
     $(TOP)/ext/recover/dbdata.c \
     $(TOP)/ext/recover/sqlite3recover.c \

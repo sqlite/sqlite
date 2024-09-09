@@ -511,7 +511,12 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
     }
     case SQLITE_FCNTL_BUSYHANDLER:         zOp = "BUSYHANDLER";         break;
     case SQLITE_FCNTL_TEMPFILENAME:        zOp = "TEMPFILENAME";        break;
-    case SQLITE_FCNTL_MMAP_SIZE:           zOp = "MMAP_SIZE";           break;
+    case SQLITE_FCNTL_MMAP_SIZE: {
+      sqlite3_int64 iMMap = *(sqlite3_int64*)pArg;
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "MMAP_SIZE,%lld",iMMap);
+      zOp = zBuf;
+      break;
+    }
     case SQLITE_FCNTL_TRACE:               zOp = "TRACE";               break;
     case SQLITE_FCNTL_HAS_MOVED:           zOp = "HAS_MOVED";           break;
     case SQLITE_FCNTL_SYNC:                zOp = "SYNC";                break;
@@ -561,6 +566,12 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
         zRVal = *(char**)pArg;
         break;
       }
+      case SQLITE_FCNTL_MMAP_SIZE: {
+        sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%lld", *(sqlite3_int64*)pArg);
+        zRVal = zBuf2;
+        break;
+      }
+      case SQLITE_FCNTL_HAS_MOVED:
       case SQLITE_FCNTL_PERSIST_WAL: {
         sqlite3_snprintf(sizeof(zBuf2), zBuf2, "%d", *(int*)pArg);
         zRVal = zBuf2;
