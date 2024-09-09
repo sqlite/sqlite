@@ -90,7 +90,7 @@ struct Fts5Global {
 ** Size of header on fts5_locale() values. And macro to access a buffer
 ** containing a copy of the header from an Fts5Config pointer.
 */
-#define FTS5_LOCALE_HDR_SIZE sizeof( ((Fts5Global*)0)->aLocaleHdr )
+#define FTS5_LOCALE_HDR_SIZE ((int)sizeof( ((Fts5Global*)0)->aLocaleHdr ))
 #define FTS5_LOCALE_HDR(pConfig) ((const u8*)(pConfig->pGlobal->aLocaleHdr))
 
 
@@ -1284,8 +1284,16 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal){
   int ret = 0;
   if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
-    if( sqlite3_value_bytes(pVal)>(int)FTS5_LOCALE_HDR_SIZE
-     && 0==memcmp(sqlite3_value_blob(pVal), FTS5_LOCALE_HDR(pConfig), 4)
+    /* Call sqlite3_value_bytes() after sqlite3_value_blob() in this case.
+    ** If the blob was created using zeroblob(), then sqlite3_value_blob()
+    ** may call malloc(). If this malloc() fails, then the values returned
+    ** by both value_blob() and value_bytes() will be 0. If value_bytes() were 
+    ** called first, then the NULL pointer returned by value_blob() might
+    ** be dereferenced.  */
+    const u8 *pBlob = sqlite3_value_blob(pVal);
+    int nBlob = sqlite3_value_bytes(pVal); 
+    if( nBlob>FTS5_LOCALE_HDR_SIZE
+     && 0==memcmp(pBlob, FTS5_LOCALE_HDR(pConfig), FTS5_LOCALE_HDR_SIZE)
     ){
       ret = 1;
     }
@@ -3011,7 +3019,7 @@ static void fts5ExtractValueFromColumn(
     int ii;
 
     if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
-      if( nBlob<(int)FTS5_LOCALE_HDR_SIZE 
+      if( nBlob<FTS5_LOCALE_HDR_SIZE 
        || memcmp(pBlob, FTS5_LOCALE_HDR(pConfig), FTS5_LOCALE_HDR_SIZE) 
       ){
         sqlite3_result_error_code(pCtx, SQLITE_ERROR);
