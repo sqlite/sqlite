@@ -1284,7 +1284,7 @@ void sqlite3Fts5ClearLocale(Fts5Config *pConfig){
 int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal){
   int ret = 0;
   if( sqlite3_value_type(pVal)==SQLITE_BLOB ){
-    if( sqlite3_value_bytes(pVal)>FTS5_LOCALE_HDR_SIZE
+    if( sqlite3_value_bytes(pVal)>(int)FTS5_LOCALE_HDR_SIZE
      && 0==memcmp(sqlite3_value_blob(pVal), FTS5_LOCALE_HDR(pConfig), 4)
     ){
       ret = 1;
@@ -3011,7 +3011,7 @@ static void fts5ExtractValueFromColumn(
     int ii;
 
     if( pConfig->eContent==FTS5_CONTENT_EXTERNAL ){
-      if( nBlob<FTS5_LOCALE_HDR_SIZE 
+      if( nBlob<(int)FTS5_LOCALE_HDR_SIZE 
        || memcmp(pBlob, FTS5_LOCALE_HDR(pConfig), FTS5_LOCALE_HDR_SIZE) 
       ){
         sqlite3_result_error_code(pCtx, SQLITE_ERROR);
