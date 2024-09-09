@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sfts5\slocale=1\stables\sand\sUPDATE\sstatements\sthat\smay\saffect\smore\sthan\sone\srow.
-D 2024-09-07T16:22:22.943
+C Move\sthe\svfstrace\sextension\sout\sof\ssrc/\sover\sinto\sext/misc/\swhere\sit\sbelongs.\nMake\sit\spart\sof\sthe\sstandard\sbuild\sfor\sthe\sCLI.\s\sBring\ssome\sof\sthe\svfstrace\noutput\sup-to-date.
+D 2024-09-09T14:50:23.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -435,6 +435,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
+F ext/misc/vfstrace.c 54b91e641b8e76a7e9049628c104f4b33bde015969dacf0d95ef11140fb5f6bc w src/test_vfstrace.c
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -767,7 +768,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 2c127880c0634962837f16f2f48a295e514357af959330cc038de73015d5b5e8
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
-F src/shell.c.in 40de636c1d90fb8a9ca7f49dc8f50d930f1b60736e73aca5eb37c4c7d0e47f9d
+F src/shell.c.in 470db843788d74234cc1e6873ac51c0ae6529994a52146fefe2e77c0754cbf96
 F src/sqlite.h.in 77f55bd1978a04a14db211732f0a609077cf60ba4ccf9baf39988f508945419c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -823,7 +824,6 @@ F src/test_tclvar.c ae873248a0188459b1c16ca7cc431265dacce524399e8b46725c2b3b7e04
 F src/test_thread.c d7a8bcea7445f37cc2a1f7f81dd6059634f45e0c61bfe80182b02872fb0328bb
 F src/test_vdbecov.c 5c426d9cd2b351f5f9ceb30cabf8c64a63bfcad644c507e0bd9ce2f6ae1a3bf3
 F src/test_vfs.c f298475e468c7e14945b20af885917181090c265aa3c4ade897849c9fbd396f2
-F src/test_vfstrace.c a2ea82df2ed8927e9eba49bdba1aa1aeb1dcb13dbf6558cff036da813031de9a
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h da2e5b73c32d09905fbdd00f27cd802212a32a58ead882736fe4f5eb775ebc50
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
@@ -849,7 +849,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5fb499d20494b7eecaadb7584634af9afcb374cb0524912b475fcb1712458a1b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 887fc4ca3f020ebb2e376f222069570834ac63bf50111ef0cbf3ae417048ed89
+F src/wal.c ef68130ba330ee18c1cb22da36a881c82e3a3b109badbdc6a9b9acaf788a6688
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 7fb55836eb7fd07f0a0d8400c50619fc02cda1f46a617cfb003c2990f040193d
@@ -2102,7 +2102,7 @@ F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb
 F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e04534bbf
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
-F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
+F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
 F tool/buildtclext.tcl b64d250517b148e644d26fcbc097851867a0df52cd4bafe9bcd94b8421e1428a
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -2152,7 +2152,7 @@ F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c611528584
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
 F tool/omittest.tcl 5ca5e4e01716d5f35b48b00fd351d929f01fbb98169a5a3cd00baf3d2e2019a9
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
-F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
+F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafeb
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
@@ -2212,8 +2212,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6206b90a4ec3f05e3bbb4844e71569bbde7df237550569e6419ff7c3146505dc
-R a6acb083cae329c41bdac6bb67941a5b
-U dan
-Z 2566687c7d077d4a754f89b771fd38fa
+P 70e42f941c0778a04b82655409c7caf4c1039589f7e43a8ec1e736ea8f931b26
+R 1378141f27acd6b5e1f32f92428038b9
+T *branch * vfstrace
+T *sym-vfstrace *
+T -sym-trunk *
+U drh
+Z 9efca4af73cc272f57a358ecf75e82b9
 # Remove this line to create a well-formed Fossil manifest.
