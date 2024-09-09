@@ -1,5 +1,5 @@
-C Move\sthe\svfstrace\sextension\sout\sof\ssrc/\sand\sinto\sext/misc/.\s\sMake\sit\sa\nstandard\spart\sof\sthe\sCLI.\s\sImprove\sits\soutput.\s\sAlso\sfix\ssome\sunrelated\ncomment\stypos.
-D 2024-09-09T15:39:40.442
+C Generalize\sthe\ssqlite3_dbpage\svirtual\stable\sso\sthat\sit\sis\sable\sto\swrite\nnew\spages\sonto\sthe\send\sof\sthe\sdatabase\sfile\susing\sINSERT.
+D 2024-09-09T18:45:58.205
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -435,7 +435,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c 03f90dd465968e01f5d1d3e79c36cbc53a5bfe1bd55d239435ce94df19d5b0ac w src/test_vfstrace.c
+F ext/misc/vfstrace.c 03f90dd465968e01f5d1d3e79c36cbc53a5bfe1bd55d239435ce94df19d5b0ac
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -714,7 +714,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b224d3db0f28c4a5f1407c50107a0a8133bd244ff3c7f6f8cedeb896a8cf1b64
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c 80e46e1df623ec40486da7a5086cb723b0275a6e2a7b01d9f9b5da0f04ba2782
+F src/dbpage.c f8c93e845d1093554247c1e757cb443fc48ffbcb112cecfdebeca4b6aa6e5c6e
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 444c4d1eaac40103461e3b6f0881846dd3aafc1cec1dd169d3482fa331667da7
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
@@ -2212,9 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa75e701de61fe63ec15c35d70e53e950ff73b0dcb0d871dd8721412f3af297a e8f2d6313075c92fdeebcdfd8b50f43e9d45225890b2ef6b77148a766a42e940
-R d410fcc13042586e54655831c4a948f2
-T +closed e8f2d6313075c92fdeebcdfd8b50f43e9d45225890b2ef6b77148a766a42e940
+P 123cb1f579daec3ed092fe9dd1bc0d3250f2b56d4cda1efa92af139029e112e2
+R 3c119894ad399726f0c98d7eab61a4dc
 U drh
-Z 1f0ae8b76c17f7c9bad8f3f1287c0801
+Z 54e5dc5728a062a0fc19b7e3f1b82dff
 # Remove this line to create a well-formed Fossil manifest.

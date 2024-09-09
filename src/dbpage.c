@@ -321,7 +321,6 @@ static int dbpageUpdate(
   DbPage *pDbPage = 0;
   int rc = SQLITE_OK;
   char *zErr = 0;
-  const char *zSchema;
   int iDb;
   Btree *pBt;
   Pager *pPager;
@@ -336,21 +335,27 @@ static int dbpageUpdate(
     zErr = "cannot delete";
     goto update_fail;
   }
-  pgno = sqlite3_value_int(argv[0]);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL
-   || (Pgno)sqlite3_value_int(argv[1])!=pgno
-  ){
-    zErr = "cannot insert";
-    goto update_fail;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    pgno = (Pgno)sqlite3_value_int(argv[2]);
+  }else{
+    pgno = sqlite3_value_int(argv[0]);
+    if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
+      zErr = "cannot insert";
+      goto update_fail;
+    }
   }
-  zSchema = (const char*)sqlite3_value_text(argv[4]);
-  iDb = ALWAYS(zSchema) ? sqlite3FindDbName(pTab->db, zSchema) : -1;
-  if( NEVER(iDb<0) ){
-    zErr = "no such schema";
-    goto update_fail;
+  if( sqlite3_value_type(argv[4])==SQLITE_NULL ){
+    iDb = 0;
+  }else{
+    const char *zSchema = (const char*)sqlite3_value_text(argv[4]);
+    iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+    if( iDb<0 ){
+      zErr = "no such schema";
+      goto update_fail;
+    }
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( NEVER(pgno<1) || NEVER(pBt==0) || NEVER(pgno>sqlite3BtreeLastPage(pBt)) ){
+  if( pgno<1 || NEVER(pBt==0) ){
     zErr = "bad page number";
     goto update_fail;
   }
