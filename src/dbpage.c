@@ -28,7 +28,13 @@
 **
 ** The data field of sqlite_dbpage table can be updated.  The new
 ** value must be a BLOB which is the correct page size, otherwise the
-** update fails.  Rows may not be deleted or inserted.
+** update fails.  INSERT operations also work, and operate as if they
+** where REPLACE.  The size of the database can be extended by INSERT-ing
+** new pages on the end.
+**
+** Rows may not be deleted.  However, doing an INSERT to page number N
+** with NULL page data causes the N-th page and all subsequent pages to be
+** deleted and the database to be truncated.
 */
 
 #include "sqliteInt.h"   /* Requires access to internal data structures */
@@ -51,13 +57,14 @@ struct DbpageCursor {
 struct DbpageTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database */
+  int nTrunc;                     /* Entries in aTrunc[] */
+  Pgno *aTrunc;                   /* Truncation size for each database */
 };
 
 /* Columns */
 #define DBPAGE_COLUMN_PGNO    0
 #define DBPAGE_COLUMN_DATA    1
 #define DBPAGE_COLUMN_SCHEMA  2
-
 
 
 /*
@@ -100,6 +107,8 @@ static int dbpageConnect(
 ** Disconnect from or destroy a dbpagevfs virtual table.
 */
 static int dbpageDisconnect(sqlite3_vtab *pVtab){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  sqlite3_free(pTab->aTrunc);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
@@ -325,6 +334,7 @@ static int dbpageUpdate(
   Btree *pBt;
   Pager *pPager;
   int szPage;
+  int isInsert;
 
   (void)pRowid;
   if( pTab->db->flags & SQLITE_Defensive ){
@@ -337,12 +347,14 @@ static int dbpageUpdate(
   }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
     pgno = (Pgno)sqlite3_value_int(argv[2]);
+    isInsert = 1;
   }else{
     pgno = sqlite3_value_int(argv[0]);
     if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
       zErr = "cannot insert";
       goto update_fail;
     }
+    isInsert = 0;
   }
   if( sqlite3_value_type(argv[4])==SQLITE_NULL ){
     iDb = 0;
@@ -363,18 +375,28 @@ static int dbpageUpdate(
   if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
    || sqlite3_value_bytes(argv[3])!=szPage
   ){
-    zErr = "bad page value";
-    goto update_fail;
+    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert ){
+      if( iDb>=pTab->nTrunc ){
+        pTab->aTrunc = sqlite3_realloc(pTab->aTrunc, (iDb+1)*sizeof(Pgno));
+        if( pTab->aTrunc ){
+          pTab->nTrunc = iDb+1;
+        }else{
+          return SQLITE_NOMEM;
+        }
+      }
+      pTab->aTrunc[iDb] = pgno;
+    }else{
+      zErr = "bad page value";
+      goto update_fail;
+    }
   }
   pPager = sqlite3BtreePager(pBt);
   rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
     const void *pData = sqlite3_value_blob(argv[3]);
-    assert( pData!=0 || pTab->db->mallocFailed );
-    if( pData
-     && (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK
-    ){
-      memcpy(sqlite3PagerGetData(pDbPage), pData, szPage);
+    if( (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK && pData ){
+      unsigned char *aPage = sqlite3PagerGetData(pDbPage);
+      memcpy(aPage, pData, szPage);
     }
   }
   sqlite3PagerUnref(pDbPage);
@@ -397,6 +419,26 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
+  }
+  if( pTab->nTrunc>0 ){
+    memset(pTab->aTrunc, 0, sizeof(pTab->aTrunc[0])*pTab->nTrunc);
+  }
+  return SQLITE_OK;
+}
+
+/* Invoke sqlite3PagerTruncate() as necessary, just prior to COMMIT
+*/
+static int dbpageSync(sqlite3_vtab *pVtab){
+  int iDb;
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+
+  for(iDb=0; iDb<pTab->nTrunc; iDb++){
+    if( pTab->aTrunc[iDb]>0 ){
+      Btree *pBt = pTab->db->aDb[iDb].pBt;
+      Pager *pPager = sqlite3BtreePager(pBt);
+      sqlite3PagerTruncateImage(pPager, pTab->aTrunc[iDb]);
+      pTab->aTrunc[iDb] = 0;
+    }
   }
   return SQLITE_OK;
 }
@@ -422,7 +464,7 @@ int sqlite3DbpageRegister(sqlite3 *db){
     dbpageRowid,                  /* xRowid - read data */
     dbpageUpdate,                 /* xUpdate */
     dbpageBegin,                  /* xBegin */
-    0,                            /* xSync */
+    dbpageSync,                   /* xSync */
     0,                            /* xCommit */
     0,                            /* xRollback */
     0,                            /* xFindMethod */

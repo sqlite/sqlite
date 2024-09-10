@@ -1,5 +1,5 @@
-C Generalize\sthe\ssqlite3_dbpage\svirtual\stable\sso\sthat\sit\sis\sable\sto\swrite\nnew\spages\sonto\sthe\send\sof\sthe\sdatabase\sfile\susing\sINSERT.
-D 2024-09-09T18:45:58.205
+C Add\sthe\sability\sfor\ssqlite_dbpage\sto\struncate\sthe\sdatabase\sfile\sby\swriting\na\sNULL\spage.\s\sExperimental.
+D 2024-09-10T12:09:03.839
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -714,7 +714,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b224d3db0f28c4a5f1407c50107a0a8133bd244ff3c7f6f8cedeb896a8cf1b64
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c f8c93e845d1093554247c1e757cb443fc48ffbcb112cecfdebeca4b6aa6e5c6e
+F src/dbpage.c 3c437630c2933b9eefca915d191f8dea9da135195593bb17f553be58ffcd3634
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 444c4d1eaac40103461e3b6f0881846dd3aafc1cec1dd169d3482fa331667da7
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
@@ -2212,8 +2212,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 123cb1f579daec3ed092fe9dd1bc0d3250f2b56d4cda1efa92af139029e112e2
-R 3c119894ad399726f0c98d7eab61a4dc
+P fe0d67e72d4228661c021f227bfc0d5ddb1b726db0f36c7221ead8dd8bd1dc73
+R fb6f94f4d85e2b2f81d969e85d52cc7e
+T *branch * dbpage
+T *sym-dbpage *
+T -sym-trunk *
 U drh
-Z 54e5dc5728a062a0fc19b7e3f1b82dff
+Z 44b34a478a24f6c5d7a75b5688f34391
 # Remove this line to create a well-formed Fossil manifest.
