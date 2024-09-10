@@ -371,7 +371,6 @@ foreach_detail_mode $testprefix {
     CREATE VIRTUAL TABLE x3 USING fts5(x, detail=%DETAIL%);
     INSERT INTO x3 VALUES('a b c d e f');
   }
-  breakpoint
   do_execsql_test 16.1 {
     SELECT fts5_test_poslist(x3) FROM x3('(a NOT b) OR c');
   } {2.0.2}

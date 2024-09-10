@@ -1301,7 +1301,17 @@ int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal){
 }
 
 /*
-** Value pVal is guaranteed to be an fts5_locale() value.
+** Value pVal is guaranteed to be an fts5_locale() value, according to
+** sqlite3Fts5IsLocaleValue(). This function extracts the text and locale
+** from the value and returns them separately.
+**
+** If successful, SQLITE_OK is returned and (*ppText) and (*ppLoc) set
+** to point to buffers containing the text and locale, as utf-8,
+** respectively. In this case output parameters (*pnText) and (*pnLoc) are
+** set to the sizes in bytes of these two buffers.
+**
+** Or, if an error occurs, then an SQLite error code is returned. The final
+** value of the four output parameters is undefined in this case.
 */
 int sqlite3Fts5DecodeLocaleValue(
   sqlite3_value *pVal, 
@@ -2105,7 +2115,18 @@ static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
 }
 
 /*
-** Argument pStmt is an SQL statement of the type used by Fts5Cursor.
+** Argument pStmt is an SQL statement of the type used by Fts5Cursor. This
+** function extracts the text value of column iCol of the current row.
+** Additionally, if there is an associated locale, it invokes
+** sqlite3Fts5SetLocale() to configure the tokenizer. In all cases the caller
+** should invoke sqlite3Fts5ClearLocale() to clear the locale at some point
+** after this function returns.
+**
+** If successful, (*ppText) is set to point to a buffer containing the text
+** value as utf-8 and SQLITE_OK returned. (*pnText) is set to the size of that
+** buffer in bytes. It is not guaranteed to be nul-terminated. If an error
+** occurs, an SQLite error code is returned. The final values of the two
+** output parameters are undefined in this case.
 */
 static int fts5TextFromStmt(
   Fts5Config *pConfig,
