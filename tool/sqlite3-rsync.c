@@ -556,7 +556,7 @@ int main(int argc, char **argv){
   FILE *pOut = 0;
   int childPid = 0;
   const char *zSsh = "ssh";
-  const char *zExe = argv[0];
+  const char *zExe = "sqlite3-rsync";
   char *zCmd = 0;
 
   memset(&ctx, 0, sizeof(ctx));
@@ -579,7 +579,7 @@ int main(int argc, char **argv){
       continue;
     }
     if( strcmp(z, "--exe")==0 ){
-      zSsh = argv[++i];
+      zExe = argv[++i];
       continue;
     }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
@@ -659,14 +659,54 @@ int main(int argc, char **argv){
       return 1;
     }
     /* Remote ORIGIN and local REPLICA */
+    sqlite3_str *pStr = sqlite3_str_new(0);
+    append_escaped_arg(pStr, zSsh, 1);
+    sqlite3_str_appendf(pStr, " -e none");
+    *(zDiv++) = 0;
+    append_escaped_arg(pStr, ctx.zOrigin, 0);
+    append_escaped_arg(pStr, zExe, 1);
+    append_escaped_arg(pStr, "--origin", 0);
+    if( ctx.bCommCheck ){
+      append_escaped_arg(pStr, "--commcheck", 0);
+      if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+    }
+    append_escaped_arg(pStr, zDiv, 1);
+    zCmd = sqlite3_str_finish(pStr);
+    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
+      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+      return 1;
+    }
+    originSide(&ctx);
   }else if( (zDiv = strchr(ctx.zReplica,':'))!=0 ){
     /* Local ORIGIN and remote REPLICA */
-    printf("%s\n", zSsh);
+    sqlite3_str *pStr = sqlite3_str_new(0);
+    append_escaped_arg(pStr, zSsh, 1);
+    sqlite3_str_appendf(pStr, " -e none");
+    *(zDiv++) = 0;
+    append_escaped_arg(pStr, ctx.zReplica, 0);
+    append_escaped_arg(pStr, zExe, 1);
+    append_escaped_arg(pStr, "--replica", 0);
+    if( ctx.bCommCheck ){
+      append_escaped_arg(pStr, "--commcheck", 0);
+      if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+    }
+    append_escaped_arg(pStr, zDiv, 1);
+    zCmd = sqlite3_str_finish(pStr);
+    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
+      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+      return 1;
+    }
+    originSide(&ctx);
   }else{
     /* Local ORIGIN and REPLICA */
     sqlite3_str *pStr = sqlite3_str_new(0);
     append_escaped_arg(pStr, zExe, 1);
     append_escaped_arg(pStr, "--replica", 0);
+    if( ctx.bCommCheck ){
+      append_escaped_arg(pStr, "--commcheck", 0);
+    }
     append_escaped_arg(pStr, ctx.zReplica, 1);
     zCmd = sqlite3_str_finish(pStr);
     if( ctx.eVerbose ) printf("%s\n", zCmd);

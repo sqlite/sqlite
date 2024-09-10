@@ -1,9 +1,9 @@
-C Initial\sinfrastructure\sfor\sthe\ssqlite3-rsync\sutility.\s\sPrototype\sonly.\nDoes\snot\swork.
-D 2024-09-10T17:05:12.819
+C Improved\sSSH\sinfrastructure.\s\sThe\sfoundation\sis\snow\sin\splace\sto\sbegin\sworking\non\sthe\sactual\ssync\sprotocol.\s\sStill\sexperimental.\s\sStill\sa\swork\sin\sprogress.
+D 2024-09-10T22:14:18.799
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 496dab6c49377c3acdb69cc8869227eddb0614b2bee01300e4c8ed9fabcb2a63
+F Makefile.in c9a51ee844a471c950881748f21699fdbf42ef540bf5e78d269f99003f510256
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 4ecdd8ec6bb3264cc2f6c4b154cf9ddd2647e4c6fcb2a294c9725a1483cb2862
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2174,7 +2174,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 847fc8fcfddf5ce4797b7394cad6372f2f5dc17d8186e2ef8fb44d50fae4f44a
-F tool/sqlite3-rsync.c 951956172494a5091868126f36772d9c732f748e301429609638a682ffd0619f
+F tool/sqlite3-rsync.c d9fd25997c34d9a63e7afdd99b467aaa69440e3ce4d4f85cf47da3e182f4c7e9
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2213,11 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb3c89ee2e4c5425be75deaf46a06a9cd8b210c695b918dd63a78f930c6e6b63
-R 603b2a7d0991fde4fb9573d941ee4937
-T *branch * sqlite3-rsync
-T *sym-sqlite3-rsync *
-T -sym-dbpage *
+P 397b2d37b7a6619b0c1eee201065585d03496f94786b21540f613e4716d56612
+R 721e909ab77c2cd7295ba63619aaa44c
 U drh
-Z e29851e41b6e21f917894502487616d4
+Z 2e6a3a2b31db87fda5c83fa80a99e1a6
 # Remove this line to create a well-formed Fossil manifest.
