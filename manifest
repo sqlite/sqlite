@@ -1,5 +1,5 @@
-C Fix\san\sOOM-handling\sproblem\saffecting\slocale=1\sfts5\stables.
-D 2024-09-09T19:12:57.172
+C Fix\sa\stest\sin\sfts3corrupt4.test\sthat\swould\sfail\sif\sSQLITE_ENABLE_FTS5\swas\snot\sdefined.
+D 2024-09-10T16:40:08.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1184,7 +1184,7 @@ F test/fts3conf.test c9cd45433b6787d48a43e84949aa2eb8b3b3d242bac7276731c1476290d
 F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test 294684add5f235ea8a77a350b66eb74a80ac8ecee6ac38c07885348f5fb2e233
+F test/fts3corrupt4.test a451033ae31db9c5979a7612dee80fb4f221db104a2eeeabd1c9adcc8e8fe95a
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe0d67e72d4228661c021f227bfc0d5ddb1b726db0f36c7221ead8dd8bd1dc73
-R d215b5e5c87263682db579b6ad049bae
+P d8103684f660ff9b3186d0f89afb113ca580bd16f0bf413ed8a9434236b54426
+R aef238013a1ce5e62ad259c3eba70261
 U dan
-Z 3d429b85e0f7dde1fd63e360d413140d
+Z ba098087a8d44fd7d814378cea692b59
 # Remove this line to create a well-formed Fossil manifest.
