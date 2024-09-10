@@ -700,6 +700,9 @@ sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 
+sqlite3-rsync(TEXE):	$(TOP)/tool/sqlite3-rsync.c sqlite3.lo sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/sqlite3-rsync.c sqlite3.lo $(TLIBS)
+
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
 		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)

@@ -1867,6 +1867,9 @@ sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\con
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+sqlite3-rsync.exe:	$(TOP)\tool\sqlite3-rsync.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqlite3-rsync.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 

@@ -568,6 +568,10 @@ dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
 	$(TCCX) -o dbhash$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/dbhash.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+sqlite3-rsync$(EXE):	$(TOP)/tool/sqlite3-rsync.c sqlite3.o
+	$(TCCX) -o sqlite3-rsync$(EXE) -DSQLITE_THREADSAFE=0 \
+		$(TOP)/tool/sqlite3-rsync.c sqlite3.o $(TLIBS) $(THREADLIB)
+
 scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TCC) -I. -DSCRUB_STANDALONE -o scrub$(EXE) $(TOP)/ext/misc/scrub.c sqlite3.o $(THREADLIB)
 

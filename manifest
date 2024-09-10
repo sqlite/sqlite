@@ -1,11 +1,11 @@
-C Add\sthe\sability\sfor\ssqlite_dbpage\sto\struncate\sthe\sdatabase\sfile\sby\swriting\na\sNULL\spage.\s\sExperimental.
-D 2024-09-10T12:09:03.839
+C Initial\sinfrastructure\sfor\sthe\ssqlite3-rsync\sutility.\s\sPrototype\sonly.\nDoes\snot\swork.
+D 2024-09-10T17:05:12.819
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 7753650b4204e3ccd55a4e6a0d73a5a01f737dcefb099d901ce1de5df9d0b82c
+F Makefile.in 496dab6c49377c3acdb69cc8869227eddb0614b2bee01300e4c8ed9fabcb2a63
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 6e8925dca6dc8c3e9cce042bbf347d20164653e63aeafcf6f6a28e27cf976d8b
+F Makefile.msc 4ecdd8ec6bb3264cc2f6c4b154cf9ddd2647e4c6fcb2a294c9725a1483cb2862
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -687,7 +687,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 391342c3c0907f57bbb9ab60ce4b3cfe1ea61161996b449033984673d18980fd
+F main.mk 936f535d99e70cf7c1f51c485a3fad7c7c858abad34d41ce100729befc2b2afe
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2174,6 +2174,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 847fc8fcfddf5ce4797b7394cad6372f2f5dc17d8186e2ef8fb44d50fae4f44a
+F tool/sqlite3-rsync.c 951956172494a5091868126f36772d9c732f748e301429609638a682ffd0619f
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2212,11 +2213,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe0d67e72d4228661c021f227bfc0d5ddb1b726db0f36c7221ead8dd8bd1dc73
-R fb6f94f4d85e2b2f81d969e85d52cc7e
-T *branch * dbpage
-T *sym-dbpage *
-T -sym-trunk *
+P eb3c89ee2e4c5425be75deaf46a06a9cd8b210c695b918dd63a78f930c6e6b63
+R 603b2a7d0991fde4fb9573d941ee4937
+T *branch * sqlite3-rsync
+T *sym-sqlite3-rsync *
+T -sym-dbpage *
 U drh
-Z 44b34a478a24f6c5d7a75b5688f34391
+Z e29851e41b6e21f917894502487616d4
 # Remove this line to create a well-formed Fossil manifest.
