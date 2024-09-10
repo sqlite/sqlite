@@ -516,6 +516,15 @@ static int fts5ConfigMakeExprlist(Fts5Config *p){
       }
     }
   }
+  if( p->eContent==FTS5_CONTENT_NORMAL && p->bLocale ){
+    for(i=0; i<p->nCol; i++){
+      if( p->abUnindexed[i]==0 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", T.l%d", i);
+      }else{
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", NULL");
+      }
+    }
+  }
 
   assert( p->zContentExprlist==0 );
   p->zContentExprlist = (char*)buf.p;
