@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 #include "sqlite3.h"
 
 static const char zUsage[] = 
@@ -37,9 +38,28 @@ struct SQLiteRsync {
   FILE *pIn;               /* Receive from the other side */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
+  sqlite3 *db;             /* Database connection */
+  int nErr;                /* Number of errors encountered */
   int eVerbose;            /* Bigger for more output.  0 means none. */
   int bCommCheck;          /* True to debug the communication protocol */
+  int isRemote;            /* On the remote side of a connection */
 };
+
+
+/* Magic numbers to identify particular messages sent over the wire.
+*/
+#define ORIGIN_BEGIN    0x41     /* Initial message */
+#define ORIGIN_END      0x42     /* Time to quit */
+#define ORIGIN_ERROR    0x43     /* Error message from the remote */
+#define ORIGIN_PAGE     0x44     /* New page data */
+#define ORIGIN_TXN      0x45     /* Transaction commit */
+
+#define REPLICA_BEGIN   0x61     /* Welcome message */
+#define REPLICA_ERROR   0x62     /* Error.  Report and quit. */
+#define REPLICA_END     0x63     /* Replica wants to stop */
+#define REPLICA_HASH    0x64     /* One or more pages hashes to report */
+#define REPLICA_READY   0x65     /* Read to receive page content */
+
 
 /****************************************************************************
 ** Beginning of the popen2() implementation copied from Fossil  *************
@@ -87,6 +107,12 @@ static void win32_fatal_error(const char *zMsg){
 # define PTR_TO_INT(X)  ((int)(X))
 #endif
 
+/* Register SQL functions provided by ext/misc/sha1.c */
+extern int sqlite3_sha_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+);
 
 #ifdef _WIN32
 /*
@@ -471,6 +497,238 @@ static void echoOneLine(SQLiteRsync *p){
   }
 }
 
+/* Read a single big-endian 32-bit unsigned integer from the input
+** stream.  Return 0 on success and 1 if there are any errors.
+*/
+static int readUint32(SQLiteRsync *p, unsigned int *pU){
+  unsigned char buf[4];
+  if( fread(buf, sizeof(buf), 1, p->pIn)==1 ){
+    *pU = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+    return 0;
+  }else{
+    p->nErr++;
+    return 1;
+  }
+}
+
+/* Write a single big-endian 32-bit unsigned integer to the output stream.
+** Return 0 on success and 1 if there are any errors.
+*/
+static int writeUint32(SQLiteRsync *p, unsigned int x){
+  unsigned char buf[4];
+  buf[3] = x & 0xff;
+  x >>= 8;
+  buf[2] = x & 0xff;
+  x >>= 8;
+  buf[1] = x & 0xff;
+  x >>= 8;
+  buf[0] = x;
+  if( fwrite(buf, sizeof(buf), 1, p->pOut)!=1 ){
+    p->nErr++;
+    return 1;
+  }
+  return 0;
+}
+
+/* Report an error.
+**
+** If this happens on the remote side, we send back a REMOTE_ERROR
+** message.  On the local side, the error message goes to stderr.
+*/
+static void reportError(SQLiteRsync *p, const char *zFormat, ...){
+  va_list ap;
+  char *zMsg;
+  unsigned int nMsg;
+  va_start(ap, zFormat);
+  zMsg = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  nMsg = zMsg ? (unsigned int)strlen(zMsg) : 0;
+  if( p->isRemote ){
+    if( p->zReplica ){
+      putc(REPLICA_ERROR, p->pOut);
+    }else{
+      putc(ORIGIN_ERROR, p->pOut);
+    }
+    writeUint32(p, nMsg);
+    fwrite(zMsg, nMsg, 1, p->pOut);
+    fflush(p->pOut);
+  }else{
+    fprintf(stderr, "%s\n", zMsg);
+  }
+  sqlite3_free(zMsg);
+  p->nErr++;
+}
+
+/* Receive and report an error message coming from the other side.
+*/
+static void readAndDisplayError(SQLiteRsync *p){
+  unsigned int n = 0;
+  char *zMsg;
+  (void)readUint32(p, &n);
+  if( n==0 ){
+    fprintf(stderr,"ERROR: unknown (possibly out-of-memory)\n");
+  }else{
+    zMsg = sqlite3_malloc64( n+1 );
+    if( zMsg==0 ){
+      fprintf(stderr, "ERROR: out-of-memory\n");
+      return;
+    }
+    memset(zMsg, 0, n+1);
+    fread(zMsg, 1, n, p->pIn);
+    fprintf(stderr,"ERROR: %s\n", zMsg);
+    sqlite3_free(zMsg);
+  }
+  p->nErr++;
+}
+
+/* Construct a new prepared statement.  Report an error and return NULL
+** if anything goes wrong.
+*/
+static sqlite3_stmt *prepareStmtVA(
+  SQLiteRsync *p,
+  char *zFormat,
+  va_list ap
+){
+  sqlite3_stmt *pStmt = 0;
+  char *zSql;
+  char *zToFree = 0;
+  int rc;
+
+  if( strchr(zFormat,'%') ){
+    zSql = sqlite3_vmprintf(zFormat, ap);
+    if( zSql==0 ){
+      reportError(p, "out-of-memory");
+      return 0;
+    }else{
+      zToFree = zSql;
+    }
+  }else{
+    zSql = zFormat;
+  }
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  if( rc || pStmt==0 ){
+    reportError(p, "unable to prepare SQL [%s]: %s", zSql,
+                sqlite3_errmsg(p->db));
+    sqlite3_finalize(pStmt);
+    pStmt = 0;
+  }
+  if( zToFree ) sqlite3_free(zToFree);
+  return pStmt;
+}
+static sqlite3_stmt *prepareStmt(
+  SQLiteRsync *p,
+  char *zFormat,
+  ...
+){
+  sqlite3_stmt *pStmt;
+  va_list ap;
+  va_start(ap, zFormat);
+  pStmt = prepareStmtVA(p, zFormat, ap);
+  va_end(ap);
+  return pStmt;
+}
+
+/* Run a single SQL statement
+*/
+static void runSql(SQLiteRsync *p, char *zSql, ...){
+  sqlite3_stmt *pStmt;
+  va_list ap;
+
+  va_start(ap, zSql);
+  pStmt = prepareStmtVA(p, zSql, ap);
+  va_end(ap);
+  if( pStmt ){
+    int rc = sqlite3_step(pStmt);
+    if( rc!=SQLITE_OK && rc!=SQLITE_DONE ){
+      reportError(p, "SQL statement [%s] failed: %s", zSql,
+                  sqlite3_errmsg(p->db));
+    }
+    sqlite3_finalize(pStmt);
+  }
+}
+
+/* Run an SQL statement that returns a single unsigned 32-bit integer result
+*/
+static int runSqlReturnUInt(
+  SQLiteRsync *p,
+  unsigned int *pRes,
+  char *zSql,
+  ...
+){
+  sqlite3_stmt *pStmt;
+  int res = 0;
+  va_list ap;
+
+  va_start(ap, zSql);
+  pStmt = prepareStmtVA(p, zSql, ap);
+  va_end(ap);
+  if( pStmt==0 ){
+    res = 1;
+  }else{
+    int rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      *pRes = (unsigned int)(sqlite3_column_int64(pStmt, 0)&0xffffffff);
+    }else{
+      reportError(p, "SQL statement [%s] failed: %s", zSql,
+                  sqlite3_errmsg(p->db));
+      res = 1;
+    }
+    sqlite3_finalize(pStmt);
+  }
+  return res;
+}
+
+/* Run an SQL statement that returns a single TEXT value that is no more
+** than 99 bytes in length.
+*/
+static int runSqlReturnText(
+  SQLiteRsync *p,
+  char *pRes,
+  char *zSql,
+  ...
+){
+  sqlite3_stmt *pStmt;
+  int res = 0;
+  va_list ap;
+
+  va_start(ap, zSql);
+  pStmt = prepareStmtVA(p, zSql, ap);
+  va_end(ap);
+  pRes[0] = 0;
+  if( pStmt==0 ){
+    res = 1;
+  }else{
+    int rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      const unsigned char *a = sqlite3_column_text(pStmt, 0);
+      int n;
+      if( a==0 ){
+        pRes[0] = 0;
+      }else{
+        n = sqlite3_column_bytes(pStmt, 0);
+        if( n>99 ) n = 99;
+        memcpy(pRes, a, n);
+        pRes[n] = 0;
+      }
+    }else{
+      reportError(p, "SQL statement [%s] failed: %s", zSql,
+                  sqlite3_errmsg(p->db));
+      res = 1;
+    }
+    sqlite3_finalize(pStmt);
+  }
+  return res;
+}
+
+/* Close the database connection associated with p
+*/
+static void closeDb(SQLiteRsync *p){
+  if( p->db ){
+    sqlite3_close(p->db);
+    p->db = 0;
+  }
+}
+
 /*
 ** Run the origin-side protocol.
 **
@@ -484,6 +742,12 @@ static void echoOneLine(SQLiteRsync *p){
 **    7.  Send origin-end message
 */
 static void originSide(SQLiteRsync *p){
+  int rc = 0;
+  int c = 0;
+  unsigned int nPage = 0;
+  unsigned int szPg = 0;
+  char buf[100];
+
   if( p->bCommCheck ){
     fprintf(p->pOut, "sqlite3-rsync origin-begin %s\n", p->zOrigin);
     fflush(p->pOut);
@@ -493,6 +757,59 @@ static void originSide(SQLiteRsync *p){
     echoOneLine(p);
     return;
   }
+
+  /* Open the ORIGIN database. */
+  rc = sqlite3_open_v2(p->zOrigin, &p->db, SQLITE_OPEN_READONLY, 0);
+  if( rc ){
+    reportError(p, "unable to open origin database file \"%s\": %s",
+                sqlite3_errmsg(p->db));
+    closeDb(p);
+    return;
+  }
+  sqlite3_sha_init(p->db, 0, 0);
+  runSql(p, "BEGIN");
+  runSqlReturnText(p, buf, "PRAGMA journal_mode");
+  if( sqlite3_stricmp(buf,"wal")!=0 ){
+    reportError(p, "Origin database is not in WAL mode");
+  }
+  runSqlReturnUInt(p, &nPage, "PRAGMA page_count");
+  runSqlReturnUInt(p, &szPg, "PRAGMA page_size");
+
+  if( p->nErr==0 ){
+    /* Send the ORIGIN_BEGIN message */
+    fputc(ORIGIN_BEGIN, p->pOut);
+    writeUint32(p, nPage);
+    writeUint32(p, szPg);
+    fflush(p->pOut);
+  }
+
+  /* Respond to message from the replica */
+  while( p->nErr==0 && (c = fgetc(p->pIn))!=EOF ){
+    switch( c ){
+      case REPLICA_ERROR: {
+        readAndDisplayError(p);
+        break;
+      }
+      case REPLICA_BEGIN: {
+        break;
+      }
+      case REPLICA_END: {
+        break;
+      }
+      case REPLICA_HASH: {
+        break;
+      }
+      case REPLICA_READY: {
+        break;
+      }
+      default: {
+        reportError(p, "Origin side received unknown message: 0x%02x", c);
+        break;
+      }
+    }
+  }
+
+  closeDb(p);
 }
 
 /*
@@ -508,6 +825,8 @@ static void originSide(SQLiteRsync *p){
 **    7.  COMMIT
 */
 static void replicaSide(SQLiteRsync *p){
+  int c;
+  char buf[100];
   if( p->bCommCheck ){
     echoOneLine(p);
     fprintf(p->pOut, "replica-begin %s\n", p->zReplica);
@@ -517,6 +836,74 @@ static void replicaSide(SQLiteRsync *p){
     fflush(p->pOut);
     return;
   }
+
+  /* Respond to message from the origin.  The origin will initiate the
+  ** the conversation with an ORIGIN_BEGIN message.
+  */
+  while( p->nErr==0 && (c = fgetc(p->pIn))!=EOF ){
+    switch( c ){
+      case ORIGIN_ERROR: {
+        readAndDisplayError(p);
+        break;
+      }
+      case ORIGIN_BEGIN: {
+        unsigned int nOPage = 0, szOPage = 0;
+        unsigned int nRPage = 0, szRPage = 0;
+        int rc = 0;
+        sqlite3_stmt *pStmt = 0;
+
+        closeDb(p);
+        readUint32(p, &nOPage);
+        readUint32(p, &szOPage);
+        if( p->nErr ) break;
+        rc = sqlite3_open(p->zReplica, &p->db);
+        if( rc ){
+          reportError(p, "cannot open replica database \"%s\": %s",
+                      p->zReplica, sqlite3_errmsg(p->db));
+          closeDb(p);
+          break;
+        }
+        sqlite3_sha_init(p->db, 0, 0);
+        if( runSqlReturnUInt(p, &nRPage, "PRAGMA page_count") ){
+          break;
+        }
+        if( nRPage==0 ){
+          runSql(p, "PRAGMA page_size=%u", szOPage);
+          runSql(p, "PRAGMA journal_mode=WAL");
+        }
+        runSql(p, "BEGIN IMMEDIATE");
+        runSqlReturnText(p, buf, "PRAGMA journal_mode");
+        if( strcmp(buf, "wal")!=0 ){
+          reportError(p, "replica is not in WAL mode");
+          break;
+        }
+        runSqlReturnUInt(p, &nRPage, "PRAGMA page_count");
+        runSqlReturnUInt(p, &szRPage, "PRAGMA page_size");
+        if( szRPage!=szOPage ){
+          reportError(p, "page size mismatch; origin is %d bytes and "
+                         "replica is %d bytes", szOPage, szRPage);
+          break;
+        }
+        pStmt = prepareStmt(p,
+                   "SELECT pgno, sha1(data) FROM sqlite_dbpage"
+                   " WHERE pgno<=min(%d,%d)", nRPage, nOPage);
+        sqlite3_finalize(pStmt);
+        break;
+      }
+      case ORIGIN_END: {
+        break;
+      }
+      case ORIGIN_PAGE: {
+        break;
+      }
+      default: {
+        reportError(p, "Replica side received unknown message: 0x%02x", c);
+        break;
+      }
+    }
+  }
+
+  closeDb(p);
 }
 
 
@@ -544,7 +931,7 @@ static void replicaSide(SQLiteRsync *p){
 **
 ** If (3) is seen, call originSide() on stdin and stdout.
 **
-** If (4) is seen, call replicaSide() on stdin and stdout.
+q** If (4) is seen, call replicaSide() on stdin and stdout.
 */
 int main(int argc, char **argv){
   int isOrigin = 0;
@@ -635,6 +1022,7 @@ int main(int argc, char **argv){
   if( isOrigin ){
     ctx.pIn = stdin;
     ctx.pOut = stdout;
+    ctx.isRemote = 1;
     originSide(&ctx);
     return 0;
   }
@@ -643,6 +1031,7 @@ int main(int argc, char **argv){
     ctx.zOrigin = 0;
     ctx.pIn = stdin;
     ctx.pOut = stdout;
+    ctx.isRemote = 1;
     replicaSide(&ctx);
     return 0;
   }

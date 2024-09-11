@@ -1,11 +1,11 @@
-C Improved\sSSH\sinfrastructure.\s\sThe\sfoundation\sis\snow\sin\splace\sto\sbegin\sworking\non\sthe\sactual\ssync\sprotocol.\s\sStill\sexperimental.\s\sStill\sa\swork\sin\sprogress.
-D 2024-09-10T22:14:18.799
+C Progress\son\sthe\ssqlite3-rsync\sutility.\s\sThis\sis\san\sincremental\scheck-in.\s\sIt\ndoes\scompile,\sbut\sit\sdoes\snot\swork.
+D 2024-09-11T17:02:44.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in c9a51ee844a471c950881748f21699fdbf42ef540bf5e78d269f99003f510256
+F Makefile.in 54e80b016b0e58db383c0f08d340ef795b8b709ffb6f53a51a8ba7bf0c5e288f
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 4ecdd8ec6bb3264cc2f6c4b154cf9ddd2647e4c6fcb2a294c9725a1483cb2862
+F Makefile.msc a86e0f3fe5f807daa82d44b5056e3dbc311e569bd4748646a776a994124ec58b
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -420,7 +420,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c a6089b5e8e3002bd1e5d9877cee6aead0b9a6426e406c09a399817db9e9ae823
-F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
+F ext/misc/sha1.c dfd26eb3437a88fe7349d1fe080b761549c456ae17cb11242441bf66031942bf
 F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b430e8c
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd397dbea
@@ -687,7 +687,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 936f535d99e70cf7c1f51c485a3fad7c7c858abad34d41ce100729befc2b2afe
+F main.mk 9ffe4a14bdb4a0b856217a5465ca6b1ef4bef66a3c45e2da3fdb6d9bfc8d583e
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2174,7 +2174,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 847fc8fcfddf5ce4797b7394cad6372f2f5dc17d8186e2ef8fb44d50fae4f44a
-F tool/sqlite3-rsync.c d9fd25997c34d9a63e7afdd99b467aaa69440e3ce4d4f85cf47da3e182f4c7e9
+F tool/sqlite3-rsync.c eb75a24e3a47fe7b5a4d5cbd2eadd4f4b6b6d6038ec7c94eb98a879ccd1bf8c5
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 397b2d37b7a6619b0c1eee201065585d03496f94786b21540f613e4716d56612
-R 721e909ab77c2cd7295ba63619aaa44c
+P 9a1a95f523a96303aad57e2422c2b51ea7e125f5490f32f7a2929d49b6c69ef8
+R f1d49deccd29ff432816ec80f04a6271
 U drh
-Z 2e6a3a2b31db87fda5c83fa80a99e1a6
+Z f5a21c2123f254d15ff8790517b1651d
 # Remove this line to create a well-formed Fossil manifest.
