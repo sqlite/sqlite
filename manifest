@@ -1,5 +1,5 @@
-C Alternative\simplementation\sof\sfts5\slocale=1\sfeature\sthat\sallows\sblobs\sto\sbe\sstored\sin\sindexed\scolumns\sof\sfts5\slocale=1\stables.
-D 2024-09-10T20:32:36.789
+C Disable\sthe\sdebug-use-only\sfunctions\ssqlite3_mutex_held()\sand\s\nsqlite3_mutex_notheld()\swhen\scompiling\swith\sTSAN\sin\sas\smuch\sas\sthose\nroutines\scause\sTSAN\sto\scomplain.\s\sResponse\sto\n[https://issues.chromium.org/issues/41427446].
+D 2024-09-11T12:17:26.475
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -740,7 +740,7 @@ F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
 F src/memdb.c 16679def118b5fd75292a253166d3feba3ec9c6189205bf209643ecdb2174ecc
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
-F src/mutex.c 1b4c7e5e3621b510e0c18397210be27cd54c8084141144fbbafd003fde948e88
+F src/mutex.c 06bcd9c3dbf2d9b21fcd182606c00fafb9bfe0287983c8e17acd13d2c81a2fa9
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c f7ee5a2061a4c11815a2bf4fc0e2bfa6fb8d9dc89390eb613ca0cec32fc9a3d1
@@ -2212,9 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 437849c80851da842b5c4fd37d5c147f821abc541e9b4d6f9000c12983548844 7d87a27a01311153ddee122cedecedc3bcc331618dc2ab1da397a3b257dc21cf
-R cbbfe15fbc887a71ab881832205b2d5a
-T +closed 7d87a27a01311153ddee122cedecedc3bcc331618dc2ab1da397a3b257dc21cf
-U dan
-Z f39f2a1cdc64ffa8dc528a76af023d0e
+P 198305de92ebba7045d8ec7d2de98511f3b00924f808a3811f061dca47b01ec7
+R 59c068ea0c953cf7fac1b84818bf6242
+U drh
+Z 90039802f2dd6a80594d6a6b132d7045
 # Remove this line to create a well-formed Fossil manifest.
