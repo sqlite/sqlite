@@ -1,5 +1,5 @@
-C Improved\s--commcheck.\s\sAdd\sthe\sinfoMsg()\sfunction\swhich\sis\suseful\sfor\ndebugging.
-D 2024-09-12T16:54:34.620
+C Replica\smust\sbe\sin\swritable_schema\smode.
+D 2024-09-12T17:06:02.316
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2174,7 +2174,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 847fc8fcfddf5ce4797b7394cad6372f2f5dc17d8186e2ef8fb44d50fae4f44a
-F tool/sqlite3-rsync.c 72632a237c91c97a7320cf064b8f2d6662721b61fc5f123e40e6d272207b4a96
+F tool/sqlite3-rsync.c a183370f4b837ac9e6dc2d347217b1df3b47c7300151a2e8207cea228df88f39
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 435c30171d3c6073b7aaf5cc11cc4813f6a2d225ae6dce1b0e478f0cd5a0b532
-R aafd9793078a7056ec93ac4f3aad0430
+P b979d02ffd1370d8840328bce06c76c224f0fc1fb54b47d6c904547580a820a1
+R 726e2548d9f75b6be59271aa0b3ef896
 U drh
-Z 9f40e243e2ff00f83272b62111b602fb
+Z f4621da70e1b6c4b3102731ca73be41a
 # Remove this line to create a well-formed Fossil manifest.

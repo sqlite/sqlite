@@ -1116,6 +1116,7 @@ static void replicaSide(SQLiteRsync *p){
         sqlite3_finalize(pStmt);
         writeByte(p, REPLICA_READY);
         fflush(p->pOut);
+        runSql(p, "PRAGMA writable_schema=ON");
         break;
       }
       case ORIGIN_TXN: {
