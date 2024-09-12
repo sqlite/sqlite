@@ -21,12 +21,19 @@
 #include "sqlite3.h"
 
 static const char zUsage[] = 
-  "sqlite3-rsync ORIGIN REPLICA\n"
+  "sqlite3-rsync ORIGIN REPLICA ?OPTIONS?\n"
   "\n"
   "One of ORIGIN or REPLICA is a pathname to a database on the local\n"
   "machine and the other is of the form \"USER@HOST:PATH\" describing\n"
   "a database on a remote machine.  This utility makes REPLICA into a\n"
   "copy of ORIGIN\n"
+  "\n"
+  "OPTIONS:\n"
+  "\n"
+  "   --exe PATH    Name of the sqlite3-rsync program on the remote side\n"
+  "   --help        Show this help screen\n"
+  "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
+  "   -v            Verbose.  Multiple v's for increasing output\n"
 ;
 
 typedef unsigned char u8;
@@ -43,6 +50,7 @@ struct SQLiteRsync {
   u8 eVerbose;             /* Bigger for more output.  0 means none. */
   u8 bCommCheck;           /* True to debug the communication protocol */
   u8 isRemote;             /* On the remote side of a connection */
+  u8 iProtocol;            /* Protocol version number */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
   unsigned int nPage;      /* Total number of pages in the database */
@@ -50,6 +58,11 @@ struct SQLiteRsync {
   unsigned int nHashSent;  /* Hashes sent (replica to origin) */
   unsigned int nPageSent;  /* Page contents sent (origin to replica) */
 };
+
+/* The version number of the protocol.  Sent in the *_BEGIN message
+** to verify that both sides speak the same dialect.
+*/
+#define PROTOCOL_VERSION  1
 
 
 /* Magic numbers to identify particular messages sent over the wire.
@@ -553,6 +566,28 @@ void writeByte(SQLiteRsync *p, int c){
   p->nOut++;
 }
 
+/* Read a power of two encoded as a single byte.
+*/
+int readPow2(SQLiteRsync *p){
+  int x = readByte(p);
+  if( x>=32 ){
+    p->nErr++;
+    return 0;
+  }
+  return 1<<x;
+}
+
+/* Write a power-of-two value onto the wire as a single byte.
+*/
+void writePow2(SQLiteRsync *p, int c){
+  int n;
+  if( c<0 || (c&(c-1))!=0 ){
+    p->nErr++;
+  }
+  for(n=0; c>1; n++){ c /= 2; }
+  writeByte(p, n);
+}
+
 /* Read an array of bytes from the wire.
 */
 void readBytes(SQLiteRsync *p, int nByte, void *pData){
@@ -838,16 +873,30 @@ static void originSide(SQLiteRsync *p){
   if( p->nErr==0 ){
     /* Send the ORIGIN_BEGIN message */
     writeByte(p, ORIGIN_BEGIN);
+    writeByte(p, PROTOCOL_VERSION);
+    writePow2(p, szPg);
     writeUint32(p, nPage);
-    writeUint32(p, szPg);
     fflush(p->pOut);
     p->nPage = nPage;
     p->szPage = szPg;
+    p->iProtocol = PROTOCOL_VERSION;
   }
 
   /* Respond to message from the replica */
   while( p->nErr==0 && (c = readByte(p))!=EOF && c!=REPLICA_END ){
     switch( c ){
+      case REPLICA_BEGIN: {
+        /* This message is only sent if the replica received an origin-protocol
+        ** that is larger than what it knows about.  The replica sends back
+        ** a counter-proposal of an earlier protocol which the origin can
+        ** accept by resending a new ORIGIN_BEGIN. */
+        p->iProtocol = readByte(p);
+        writeByte(p, ORIGIN_BEGIN);
+        writeByte(p, p->iProtocol);
+        writePow2(p, p->szPage);
+        writeUint32(p, p->nPage);
+        break;
+      }
       case REPLICA_ERROR: {
         readAndDisplayError(p);
         break;
@@ -916,11 +965,13 @@ origin_end:
 ** Run the replica-side protocol.  The protocol is passive in the sense
 ** that it only response to message from the origin side.
 **
-**    ORIGIN_BEGIN  nPage szPage
+**    ORIGIN_BEGIN  idProtocol szPage nPage
 **
-**         The origin is reporting the number of pages and the size of each
-**         pages.  This procedure checks compatibility, and if everything is
-**         ok, it sends hash for all its extant pages.
+**         The origin is reporting the protocol version number, the size of
+**         each page in the origin database (sent as a single-byte power-of-2),
+**         and the number of pages in the origin database.
+**         This procedure checks compatibility, and if everything is ok,
+**         it starts sending hashes of pages already present back to the origin.
 **
 **    ORIGIN_ERROR  size text
 **
@@ -970,9 +1021,19 @@ static void replicaSide(SQLiteRsync *p){
         sqlite3_stmt *pStmt = 0;
 
         closeDb(p);
+        p->iProtocol = readByte(p);
+        szOPage = readPow2(p);
         readUint32(p, &nOPage);
-        readUint32(p, &szOPage);
         if( p->nErr ) break;
+        if( p->iProtocol>PROTOCOL_VERSION ){
+          /* If the protocol version on the origin side is larger, send back
+          ** a REPLICA_BEGIN message with the protocol version number of the
+          ** replica side.  This gives the origin an opportunity to resend
+          ** a new ORIGIN_BEGIN with a reduced protocol version. */
+          writeByte(p, REPLICA_BEGIN);
+          writeByte(p, PROTOCOL_VERSION);
+          break;
+        }
         p->nPage = nOPage;
         p->szPage = szOPage;
         rc = sqlite3_open(p->zReplica, &p->db);
@@ -1003,6 +1064,8 @@ static void replicaSide(SQLiteRsync *p){
                          "replica is %d bytes", szOPage, szRPage);
           break;
         }
+        
+
         pStmt = prepareStmt(p,
                    "SELECT sha1b(data) FROM sqlite_dbpage"
                    " WHERE pgno<=min(%d,%d)"
