@@ -50,6 +50,7 @@ struct SQLiteRsync {
   u8 eVerbose;             /* Bigger for more output.  0 means none. */
   u8 bCommCheck;           /* True to debug the communication protocol */
   u8 isRemote;             /* On the remote side of a connection */
+  u8 isReplica;            /* True if running on the replica side */
   u8 iProtocol;            /* Protocol version number */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
@@ -72,12 +73,14 @@ struct SQLiteRsync {
 #define ORIGIN_ERROR    0x43     /* Error message from the remote */
 #define ORIGIN_PAGE     0x44     /* New page data */
 #define ORIGIN_TXN      0x45     /* Transaction commit */
+#define ORIGIN_MSG      0x46     /* Informational message */
 
 #define REPLICA_BEGIN   0x61     /* Welcome message */
 #define REPLICA_ERROR   0x62     /* Error.  Report and quit. */
 #define REPLICA_END     0x63     /* Replica wants to stop */
 #define REPLICA_HASH    0x64     /* One or more pages hashes to report */
 #define REPLICA_READY   0x65     /* Read to receive page content */
+#define REPLICA_MSG     0x66     /* Informational message */
 
 
 /****************************************************************************
@@ -503,19 +506,6 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
 ** End of the append_escaped_arg() routine, adapted from the Fossil         **
 *****************************************************************************/
 
-
-/* For Debugging, specifically for --commcheck:
-**
-** Read a single line of text from p->pIn.  Write this to standard
-** output if and only if p->eVerbose>0.
-*/
-static void echoOneLine(SQLiteRsync *p){
-  char zLine[1000];
-  if( fgets(zLine, sizeof(zLine), p->pIn) ){
-    if( p->eVerbose ) printf("GOT: %s", zLine);
-  }
-}
-
 /*
 ** Return the tail of a file pathname.  The tail is the last component
 ** of the path.  For example, the tail of "/a/b/c.d" is "c.d".
@@ -625,7 +615,7 @@ void writeBytes(SQLiteRsync *p, int nByte, const void *pData){
 
 /* Report an error.
 **
-** If this happens on the remote side, we send back a REMOTE_ERROR
+** If this happens on the remote side, we send back a *_ERROR
 ** message.  On the local side, the error message goes to stderr.
 */
 static void reportError(SQLiteRsync *p, const char *zFormat, ...){
@@ -637,7 +627,7 @@ static void reportError(SQLiteRsync *p, const char *zFormat, ...){
   va_end(ap);
   nMsg = zMsg ? (unsigned int)strlen(zMsg) : 0;
   if( p->isRemote ){
-    if( p->zReplica ){
+    if( p->isReplica ){
       putc(REPLICA_ERROR, p->pOut);
     }else{
       putc(ORIGIN_ERROR, p->pOut);
@@ -652,12 +642,47 @@ static void reportError(SQLiteRsync *p, const char *zFormat, ...){
   p->nErr++;
 }
 
+/* Send an informational message.
+**
+** If this happens on the remote side, we send back a *_MSG 
+** message.  On the local side, the message goes to stdout.
+*/
+static void infoMsg(SQLiteRsync *p, const char *zFormat, ...){
+  va_list ap;
+  char *zMsg;
+  unsigned int nMsg;
+  va_start(ap, zFormat);
+  zMsg = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  nMsg = zMsg ? (unsigned int)strlen(zMsg) : 0;
+  if( p->isRemote ){
+    if( p->isReplica ){
+      putc(REPLICA_MSG, p->pOut);
+    }else{
+      putc(ORIGIN_MSG, p->pOut);
+    }
+    writeUint32(p, nMsg);
+    writeBytes(p, nMsg, zMsg);
+    fflush(p->pOut);
+  }else{
+    printf("%s\n", zMsg);
+  }
+  sqlite3_free(zMsg);
+}
+
 /* Receive and report an error message coming from the other side.
 */
-static void readAndDisplayError(SQLiteRsync *p){
+static void readAndDisplayMessage(SQLiteRsync *p, int c){
   unsigned int n = 0;
   char *zMsg;
-  (void)readUint32(p, &n);
+  const char *zPrefix;
+  if( c==ORIGIN_ERROR || c==REPLICA_ERROR ){
+    zPrefix = "ERROR: ";
+    p->nErr++;
+  }else{
+    zPrefix = "";
+  }
+  readUint32(p, &n);
   if( n==0 ){
     fprintf(stderr,"ERROR: unknown (possibly out-of-memory)\n");
   }else{
@@ -668,10 +693,9 @@ static void readAndDisplayError(SQLiteRsync *p){
     }
     memset(zMsg, 0, n+1);
     readBytes(p, n, zMsg);
-    fprintf(stderr,"ERROR: %s\n", zMsg);
+    fprintf(stderr,"%s%s\n", zPrefix, zMsg);
     sqlite3_free(zMsg);
   }
-  p->nErr++;
 }
 
 /* Construct a new prepared statement.  Report an error and return NULL
@@ -858,45 +882,43 @@ static void originSide(SQLiteRsync *p){
   sqlite3_stmt *pCkHash = 0;
   char buf[200];
 
+  p->isReplica = 0;
   if( p->bCommCheck ){
-    fprintf(p->pOut, "sqlite3-rsync origin-begin %s\n", p->zOrigin);
+    infoMsg(p, "origin  zOrigin=%Q zReplica=%Q isRemote=%d protocol=%d",
+               p->zOrigin, p->zReplica, p->isRemote, PROTOCOL_VERSION);
+    writeByte(p, ORIGIN_END);
     fflush(p->pOut);
-    echoOneLine(p);
-    fprintf(p->pOut, "origin-end\n");
-    fflush(p->pOut);
-    echoOneLine(p);
-    return;
+  }else{
+    /* Open the ORIGIN database. */
+    rc = sqlite3_open_v2(p->zOrigin, &p->db, SQLITE_OPEN_READWRITE, 0);
+    if( rc ){
+      reportError(p, "unable to open origin database file \"%s\": %s",
+                  sqlite3_errmsg(p->db));
+      closeDb(p);
+      return;
+    }
+    sqlite3_sha_init(p->db, 0, 0);
+    runSql(p, "BEGIN");
+    runSqlReturnText(p, buf, "PRAGMA journal_mode");
+    if( sqlite3_stricmp(buf,"wal")!=0 ){
+      reportError(p, "Origin database is not in WAL mode");
+    }
+    runSqlReturnUInt(p, &nPage, "PRAGMA page_count");
+    runSqlReturnUInt(p, &szPg, "PRAGMA page_size");
+  
+    if( p->nErr==0 ){
+      /* Send the ORIGIN_BEGIN message */
+      writeByte(p, ORIGIN_BEGIN);
+      writeByte(p, PROTOCOL_VERSION);
+      writePow2(p, szPg);
+      writeUint32(p, nPage);
+      fflush(p->pOut);
+      p->nPage = nPage;
+      p->szPage = szPg;
+      p->iProtocol = PROTOCOL_VERSION;
+    }
   }
-
-  /* Open the ORIGIN database. */
-  rc = sqlite3_open_v2(p->zOrigin, &p->db, SQLITE_OPEN_READWRITE, 0);
-  if( rc ){
-    reportError(p, "unable to open origin database file \"%s\": %s",
-                sqlite3_errmsg(p->db));
-    closeDb(p);
-    return;
-  }
-  sqlite3_sha_init(p->db, 0, 0);
-  runSql(p, "BEGIN");
-  runSqlReturnText(p, buf, "PRAGMA journal_mode");
-  if( sqlite3_stricmp(buf,"wal")!=0 ){
-    reportError(p, "Origin database is not in WAL mode");
-  }
-  runSqlReturnUInt(p, &nPage, "PRAGMA page_count");
-  runSqlReturnUInt(p, &szPg, "PRAGMA page_size");
-
-  if( p->nErr==0 ){
-    /* Send the ORIGIN_BEGIN message */
-    writeByte(p, ORIGIN_BEGIN);
-    writeByte(p, PROTOCOL_VERSION);
-    writePow2(p, szPg);
-    writeUint32(p, nPage);
-    fflush(p->pOut);
-    p->nPage = nPage;
-    p->szPage = szPg;
-    p->iProtocol = PROTOCOL_VERSION;
-  }
-
+  
   /* Respond to message from the replica */
   while( p->nErr==0 && (c = readByte(p))!=EOF && c!=REPLICA_END ){
     switch( c ){
@@ -912,8 +934,9 @@ static void originSide(SQLiteRsync *p){
         writeUint32(p, p->nPage);
         break;
       }
+      case REPLICA_MSG:
       case REPLICA_ERROR: {
-        readAndDisplayError(p);
+        readAndDisplayMessage(p, c);
         break;
       }
       case REPLICA_HASH: {
@@ -1010,14 +1033,13 @@ static void replicaSide(SQLiteRsync *p){
   sqlite3_stmt *pIns = 0;
   unsigned int szOPage = 0;
   char buf[65536];
+
+  p->isReplica = 1;
   if( p->bCommCheck ){
-    echoOneLine(p);
-    fprintf(p->pOut, "replica-begin %s\n", p->zReplica);
+    infoMsg(p, "replica zOrigin=%Q zReplica=%Q isRemote=%d protocol=%d",
+               p->zOrigin, p->zReplica, p->isRemote, PROTOCOL_VERSION);
+    writeByte(p, REPLICA_END);
     fflush(p->pOut);
-    echoOneLine(p);
-    fprintf(p->pOut, "replica-end\n");
-    fflush(p->pOut);
-    return;
   }
 
   /* Respond to message from the origin.  The origin will initiate the
@@ -1025,8 +1047,9 @@ static void replicaSide(SQLiteRsync *p){
   */
   while( p->nErr==0 && (c = readByte(p))!=EOF && c!=ORIGIN_END ){
     switch( c ){
+      case ORIGIN_MSG:
       case ORIGIN_ERROR: {
-        readAndDisplayError(p);
+        readAndDisplayMessage(p, c);
         break;
       }
       case ORIGIN_BEGIN: {
