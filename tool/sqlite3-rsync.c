@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include "sqlite3.h"
 
-static const char zUsage[] = 
+static const char zUsage[] =
   "sqlite3-rsync ORIGIN REPLICA ?OPTIONS?\n"
   "\n"
   "One of ORIGIN or REPLICA is a pathname to a database on the local\n"
@@ -82,6 +82,32 @@ struct SQLiteRsync {
 #define REPLICA_READY   0x65     /* Read to receive page content */
 #define REPLICA_MSG     0x66     /* Informational message */
 
+/* From here onward, fgets() is redirected to the console_io library. */
+# define fgets(b,n,f) fGetsUtf8(b,n,f)
+/*
+ * Define macros for emitting output text in various ways:
+ *  sputz(s, z)      => emit 0-terminated string z to given stream s
+ *  sputf(s, f, ...) => emit varargs per format f to given stream s
+ *  oputz(z)         => emit 0-terminated string z to default stream
+ *  oputf(f, ...)    => emit varargs per format f to default stream
+ *  eputz(z)         => emit 0-terminated string z to error stream
+ *  eputf(f, ...)    => emit varargs per format f to error stream
+ *  oputb(b, n)      => emit char buffer b[0..n-1] to default stream
+ *
+ * Note that the default stream is whatever has been last set via:
+ *   setOutputStream(FILE *pf)
+ * This is normally the stream that CLI normal output goes to.
+ * For the stand-alone CLI, it is stdout with no .output redirect.
+ *
+ * The ?putz(z) forms are for unformatted strings.
+ */
+# define sputz(s,z) fPutsUtf8(z,s)
+# define sputf fPrintfUtf8
+# define oputz(z) oPutsUtf8(z)
+# define oputf oPrintfUtf8
+# define eputz(z) ePutsUtf8(z)
+# define eputf ePrintfUtf8
+# define oputb(buf,na) oPutbUtf8(buf,na)
 
 /****************************************************************************
 ** Beginning of the popen2() implementation copied from Fossil  *************
@@ -93,7 +119,7 @@ struct SQLiteRsync {
 ** Print a fatal error and quit.
 */
 static void win32_fatal_error(const char *zMsg){
-  fprintf(stderr, "%s", zMsg);
+  eputz("%s\n", zMsg);
   exit(1);
 }
 #else
@@ -101,6 +127,11 @@ static void win32_fatal_error(const char *zMsg){
 #include <signal.h>
 #include <sys/wait.h>
 #endif
+
+#define SQLITE_INTERNAL_LINKAGE static
+#define CONSIO_SET_ERROR_STREAM
+#include "ext/consio/console_io.c"
+#define fflush(s) fFlushBuffer(s) /* must be defined AFTER console_io.c */
 
 /*
 ** The following macros are used to cast pointers to integers and
@@ -270,7 +301,7 @@ static int popen2(
     close(0);
     fd = dup(pout[0]);
     if( fd!=0 ) {
-      fprintf(stderr,"popen2() failed to open file descriptor 0");
+      eputz("popen2() failed to open file descriptor 0\n");
       exit(1);
     }
     close(pout[0]);
@@ -278,7 +309,7 @@ static int popen2(
     close(1);
     fd = dup(pin[1]);
     if( fd!=1 ){
-      fprintf(stderr,"popen() failed to open file descriptor 1");
+      eputz("popen() failed to open file descriptor 1\n");
       exit(1);
     }
     close(pin[0]);
@@ -636,7 +667,7 @@ static void reportError(SQLiteRsync *p, const char *zFormat, ...){
     writeBytes(p, nMsg, zMsg);
     fflush(p->pOut);
   }else{
-    fprintf(stderr, "%s\n", zMsg);
+    eputf("%s\n", zMsg);
   }
   sqlite3_free(zMsg);
   p->nErr++;
@@ -644,7 +675,7 @@ static void reportError(SQLiteRsync *p, const char *zFormat, ...){
 
 /* Send an informational message.
 **
-** If this happens on the remote side, we send back a *_MSG 
+** If this happens on the remote side, we send back a *_MSG
 ** message.  On the local side, the message goes to stdout.
 */
 static void infoMsg(SQLiteRsync *p, const char *zFormat, ...){
@@ -665,7 +696,7 @@ static void infoMsg(SQLiteRsync *p, const char *zFormat, ...){
     writeBytes(p, nMsg, zMsg);
     fflush(p->pOut);
   }else{
-    printf("%s\n", zMsg);
+    oputf("%s\n", zMsg);
   }
   sqlite3_free(zMsg);
 }
@@ -684,16 +715,16 @@ static void readAndDisplayMessage(SQLiteRsync *p, int c){
   }
   readUint32(p, &n);
   if( n==0 ){
-    fprintf(stderr,"ERROR: unknown (possibly out-of-memory)\n");
+    eputz("ERROR: unknown (possibly out-of-memory)\n");
   }else{
     zMsg = sqlite3_malloc64( n+1 );
     if( zMsg==0 ){
-      fprintf(stderr, "ERROR: out-of-memory\n");
+      eputz("ERROR: out-of-memory\n");
       return;
     }
     memset(zMsg, 0, n+1);
     readBytes(p, n, zMsg);
-    fprintf(stderr,"%s%s\n", zPrefix, zMsg);
+    eputf("%s%s\n", zPrefix, zMsg);
     sqlite3_free(zMsg);
   }
 }
@@ -905,7 +936,7 @@ static void originSide(SQLiteRsync *p){
     }
     runSqlReturnUInt(p, &nPage, "PRAGMA page_count");
     runSqlReturnUInt(p, &szPg, "PRAGMA page_size");
-  
+
     if( p->nErr==0 ){
       /* Send the ORIGIN_BEGIN message */
       writeByte(p, ORIGIN_BEGIN);
@@ -918,7 +949,7 @@ static void originSide(SQLiteRsync *p){
       p->iProtocol = PROTOCOL_VERSION;
     }
   }
-  
+
   /* Respond to message from the replica */
   while( p->nErr==0 && (c = readByte(p))!=EOF && c!=REPLICA_END ){
     switch( c ){
@@ -1197,8 +1228,8 @@ static int numVs(const char *z){
 static const char *cmdline_option_value(int argc, const char * const*argv,
                                         int i){
   if( i==argc ){
-    fprintf(stderr,"%s: Error: missing argument to %s\n",
-            argv[0], argv[argc-1]);
+    eputf("%s: Error: missing argument to %s\n",
+          argv[0], argv[argc-1]);
     exit(1);
   }
   return argv[i];
@@ -1246,6 +1277,8 @@ int main(int argc, char const * const *argv){
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
+  setOutputStream(stdout);
+  setErrorStream(stderr);
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( strcmp(z,"--origin")==0 ){
@@ -1271,7 +1304,7 @@ int main(int argc, char const * const *argv){
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
      || strcmp(z, "-?")==0
     ){
-      printf("%s", zUsage);
+      oputf("%s", zUsage);
       return 0;
     }
     if( z[0]=='-' ){
@@ -1290,11 +1323,10 @@ int main(int argc, char const * const *argv){
         for(k=0; k<argc; k++){
           append_escaped_arg(pStr, argv[k], i!=k);
         }
-        printf("%s\n", sqlite3_str_value(pStr));
+        oputf("%s\n", sqlite3_str_value(pStr));
         return 0;
       }
-      fprintf(stderr,
-         "unknown option: \"%s\". Use --help for more detail.\n", z);
+      eputf("unknown option: \"%s\". Use --help for more detail.\n", z);
       return 1;
     }
     if( ctx.zOrigin==0 ){
@@ -1302,20 +1334,20 @@ int main(int argc, char const * const *argv){
     }else if( ctx.zReplica==0 ){
       ctx.zReplica = z;
     }else{
-      fprintf(stderr, "Unknown argument: \"%s\"\n", z);
+      eputf("Unknown argument: \"%s\"\n", z);
       return 1;
     }
   }
   if( ctx.zOrigin==0 ){
-    fprintf(stderr, "missing ORIGIN database filename\n");
+    eputz("missing ORIGIN database filename\n");
     return 1;
   }
   if( ctx.zReplica==0 ){
-    fprintf(stderr, "missing REPLICA database filename\n");
+    eputz("missing REPLICA database filename\n");
     return 1;
   }
   if( isOrigin && isReplica ){
-    fprintf(stderr, "bad option combination\n");
+    eputz("bad option combination\n");
     return 1;
   }
   if( isOrigin ){
@@ -1333,13 +1365,13 @@ int main(int argc, char const * const *argv){
     return 0;
   }
   if( ctx.zReplica==0 ){
-    fprintf(stderr, "missing REPLICA database filename\n");
+    eputz("missing REPLICA database filename\n");
     return 1;
   }
   zDiv = strchr(ctx.zOrigin,':');
   if( zDiv ){
     if( strchr(ctx.zReplica,':')!=0 ){
-      fprintf(stderr,
+      eputz(
          "At least one of ORIGIN and REPLICA must be a local database\n"
          "You provided two remote databases.\n");
       return 1;
@@ -1359,9 +1391,9 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, zDiv, 1);
     append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose ) oputf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
-      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+      eputf("Could not start auxiliary process: %s\n", zCmd);
       return 1;
     }
     replicaSide(&ctx);
@@ -1381,9 +1413,9 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
     append_escaped_arg(pStr, zDiv, 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose ) oputf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
-      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+      eputf("Could not start auxiliary process: %s\n", zCmd);
       return 1;
     }
     originSide(&ctx);
@@ -1398,20 +1430,20 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, ctx.zOrigin, 1);
     append_escaped_arg(pStr, ctx.zReplica, 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose ) oputf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
-      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+      eputf("Could not start auxiliary process: %s\n", zCmd);
       return 1;
     }
     originSide(&ctx);
   }
   if( ctx.eVerbose ){
-    if( ctx.nErr ) printf("%d errors, ", ctx.nErr);
-    printf("%lld bytes sent, %lld bytes received\n", ctx.nOut, ctx.nIn);
+    if( ctx.nErr ) oputf("%d errors, ", ctx.nErr);
+    oputf("%lld bytes sent, %lld bytes received\n", ctx.nOut, ctx.nIn);
     if( ctx.eVerbose>=2 ){
-      printf("Database is %u pages of %u bytes each.\n",
+      oputf("Database is %u pages of %u bytes each.\n",
              ctx.nPage, ctx.szPage);
-      printf("Sent %u hashes, %u page contents\n",
+      oputf("Sent %u hashes, %u page contents\n",
              ctx.nHashSent, ctx.nPageSent);
     }
   }

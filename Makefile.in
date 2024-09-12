@@ -711,7 +711,11 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+RSYNC_DEP = \
+  $(TOP)/ext/consio/console_io.h \
+  $(TOP)/ext/consio/console_io.c
+
+sqlite3-rsync$(TEXE):	$(RSYNC_DEP) $(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_SRC) $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
