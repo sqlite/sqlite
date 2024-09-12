@@ -216,11 +216,15 @@ static void hash_finish(
   for (i = 0; i < 20; i++){
     digest[i] = (unsigned char)((p->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
   }
-  for(i=0; i<20; i++){
-    zOut[i*2] = zEncode[(digest[i]>>4)&0xf];
-    zOut[i*2+1] = zEncode[digest[i] & 0xf];
+  if( bAsBinary ){
+    memcpy(zOut, digest, 20);
+  }else{
+    for(i=0; i<20; i++){
+      zOut[i*2] = zEncode[(digest[i]>>4)&0xf];
+      zOut[i*2+1] = zEncode[digest[i] & 0xf];
+    }
+    zOut[i*2]= 0;
   }
-  zOut[i*2]= 0;
 }
 /* End of the hashing logic
 *****************************************************************************/
@@ -252,8 +256,13 @@ static void sha1Func(
   }else{
     hash_step(&cx, sqlite3_value_text(argv[0]), nByte);
   }
-  hash_finish(&cx, zOut, sqlite3_user_data(context)!=0);
-  sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
+  if( sqlite3_user_data(context)!=0 ){
+    hash_finish(&cx, zOut, 1);
+    sqlite3_result_blob(context, zOut, 20, SQLITE_TRANSIENT);
+  }else{
+    hash_finish(&cx, zOut, 0);
+    sqlite3_result_blob(context, zOut, 40, SQLITE_TRANSIENT);
+  }
 }
 
 /*
