@@ -1190,6 +1190,20 @@ static int numVs(const char *z){
   return 0;
 }
 
+/*
+** Get the argument to an --option.  Throw an error and die if no argument
+** is available.
+*/
+static const char *cmdline_option_value(int argc, const char * const*argv,
+                                        int i){
+  if( i==argc ){
+    fprintf(stderr,"%s: Error: missing argument to %s\n",
+            argv[0], argv[argc-1]);
+    exit(1);
+  }
+  return argv[i];
+}
+
 
 /*
 ** Parse command-line arguments.  Dispatch subroutines to do the
@@ -1207,7 +1221,7 @@ static int numVs(const char *z){
 **
 ** The user types (1) or (2).  SSH launches (3) or (4).
 **
-** If (1) is seen then popen2 is used launch (4) on the remote and 
+** If (1) is seen then popen2 is used launch (4) on the remote and
 ** originSide() is called locally.
 **
 ** If (2) is seen, then popen2() is used to launch (3) on the remote
@@ -1217,7 +1231,7 @@ static int numVs(const char *z){
 **
 q** If (4) is seen, call replicaSide() on stdin and stdout.
 */
-int main(int argc, char **argv){
+int main(int argc, char const * const *argv){
   int isOrigin = 0;
   int isReplica = 0;
   int i;
@@ -1230,6 +1244,7 @@ int main(int argc, char **argv){
   const char *zExe = "sqlite3-rsync";
   char *zCmd = 0;
 
+#define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -1246,11 +1261,11 @@ int main(int argc, char **argv){
       continue;
     }
     if( strcmp(z, "--ssh")==0 ){
-      zSsh = argv[++i];
+      zSsh = cli_opt_val;
       continue;
     }
     if( strcmp(z, "--exe")==0 ){
-      zExe = argv[++i];
+      zExe = cli_opt_val;
       continue;
     }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
@@ -1324,7 +1339,7 @@ int main(int argc, char **argv){
   zDiv = strchr(ctx.zOrigin,':');
   if( zDiv ){
     if( strchr(ctx.zReplica,':')!=0 ){
-      fprintf(stderr, 
+      fprintf(stderr,
          "At least one of ORIGIN and REPLICA must be a local database\n"
          "You provided two remote databases.\n");
       return 1;
