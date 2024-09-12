@@ -1,5 +1,5 @@
-C Disable\sthe\sdebug-use-only\sfunctions\ssqlite3_mutex_held()\sand\s\nsqlite3_mutex_notheld()\swhen\scompiling\swith\sTSAN\sin\sas\smuch\sas\sthose\nroutines\scause\sTSAN\sto\scomplain.\s\sResponse\sto\n[https://issues.chromium.org/issues/41427446].
-D 2024-09-11T12:17:26.475
+C Enhancement\sto\sthe\s"showdb"\sutility\ssuch\sthat\sthe\s"ptrmap"\scommand\sshows\nPTRMAP\sentries\sthat\sextend\soff\sthe\send\sof\sthe\sdatabase,\sas\slong\sas\sthey\nappear\sto\sbe\swell-formatted.
+D 2024-09-12T21:58:31.168
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2157,7 +2157,7 @@ F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 0f74b54cc67076c76cba9b2b7f54d3e05b78d130c70ffc394eb84c5b41bab017
+F tool/showdb.c 14215f764f3e9adcbf49f8ed730a520f27283a1d875c2feb78d9c687c772b66e
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 198305de92ebba7045d8ec7d2de98511f3b00924f808a3811f061dca47b01ec7
-R 59c068ea0c953cf7fac1b84818bf6242
+P db702dd78500a0839b0b2810a580d3634df49275470787b170973a86b73826d3
+R 96b15683ae71ad8973e2164a9c586273
 U drh
-Z 90039802f2dd6a80594d6a6b132d7045
+Z e7a5988d3eebb0fdadfa92bbc6a99e53
 # Remove this line to create a well-formed Fossil manifest.
