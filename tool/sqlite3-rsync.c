@@ -1088,6 +1088,7 @@ static void replicaSide(SQLiteRsync *p){
         if( nRPage==0 ){
           runSql(p, "PRAGMA page_size=%u", szOPage);
           runSql(p, "PRAGMA journal_mode=WAL");
+          runSql(p, "SELECT * FROM sqlite_schema");
         }
         runSql(p, "BEGIN IMMEDIATE");
         runSqlReturnText(p, buf, "PRAGMA journal_mode");
