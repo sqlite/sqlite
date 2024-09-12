@@ -154,7 +154,7 @@ static ConsoleInfo consoleInfo = {
   SAC_NoConsole /* sacSetup */
 };
 
-SQLITE_INTERNAL_LINKAGE FILE* invalidFileStream = (FILE *)~0;
+FILE* invalidFileStream = (FILE *)~0;
 
 # if CIO_WIN_WC_XLATE
 static void maybeSetupAsConsole(PerStreamTags *ppst, short odir){

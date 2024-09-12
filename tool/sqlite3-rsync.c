@@ -82,6 +82,7 @@ struct SQLiteRsync {
 #define REPLICA_READY   0x65     /* Read to receive page content */
 #define REPLICA_MSG     0x66     /* Informational message */
 
+#include "ext/consio/console_io.h"
 /* From here onward, fgets() is redirected to the console_io library. */
 # define fgets(b,n,f) fGetsUtf8(b,n,f)
 /*
@@ -108,6 +109,7 @@ struct SQLiteRsync {
 # define eputz(z) ePutsUtf8(z)
 # define eputf ePrintfUtf8
 # define oputb(buf,na) oPutbUtf8(buf,na)
+# define fflush(s) fFlushBuffer(s)
 
 /****************************************************************************
 ** Beginning of the popen2() implementation copied from Fossil  *************
@@ -127,11 +129,6 @@ static void win32_fatal_error(const char *zMsg){
 #include <signal.h>
 #include <sys/wait.h>
 #endif
-
-#define SQLITE_INTERNAL_LINKAGE static
-#define CONSIO_SET_ERROR_STREAM
-#include "ext/consio/console_io.c"
-#define fflush(s) fFlushBuffer(s) /* must be defined AFTER console_io.c */
 
 /*
 ** The following macros are used to cast pointers to integers and

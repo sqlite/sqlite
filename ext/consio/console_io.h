@@ -120,7 +120,7 @@ SQLITE_INTERNAL_LINKAGE void SQLITE_CDECL consoleRestore( void );
 ** It is error to close a stream so designated, then, without
 ** designating another, use the corresponding {o,e}Emit(...).
 */
-SQLITE_INTERNAL_LINKAGE FILE *invalidFileStream;
+extern FILE *invalidFileStream;
 SQLITE_INTERNAL_LINKAGE FILE *setOutputStream(FILE *pf);
 # ifdef CONSIO_SET_ERROR_STREAM
 SQLITE_INTERNAL_LINKAGE FILE *setErrorStream(FILE *pf);
