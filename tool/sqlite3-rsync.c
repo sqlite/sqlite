@@ -516,6 +516,21 @@ static void echoOneLine(SQLiteRsync *p){
   }
 }
 
+/*
+** Return the tail of a file pathname.  The tail is the last component
+** of the path.  For example, the tail of "/a/b/c.d" is "c.d".
+*/
+const char *file_tail(const char *z){
+  const char *zTail = z;
+  if( !zTail ) return 0;
+  while( z[0] ){
+    if( z[0]=='/' ) zTail = &z[1];
+    z++;
+  }
+  return zTail;
+}
+
+
 /* Read a single big-endian 32-bit unsigned integer from the input
 ** stream.  Return 0 on success and 1 if there are any errors.
 */
@@ -1064,7 +1079,6 @@ static void replicaSide(SQLiteRsync *p){
                          "replica is %d bytes", szOPage, szRPage);
           break;
         }
-        
 
         pStmt = prepareStmt(p,
                    "SELECT sha1b(data) FROM sqlite_dbpage"
@@ -1257,12 +1271,12 @@ int main(int argc, char **argv){
     fprintf(stderr, "missing ORIGIN database filename\n");
     return 1;
   }
-  if( isOrigin && isReplica ){
-    fprintf(stderr, "bad option combination\n");
+  if( ctx.zReplica==0 ){
+    fprintf(stderr, "missing REPLICA database filename\n");
     return 1;
   }
-  if( (isOrigin || isReplica) && ctx.zReplica!=0 ){
-    fprintf(stderr, "Unknown argument: \"%s\"\n", ctx.zReplica);
+  if( isOrigin && isReplica ){
+    fprintf(stderr, "bad option combination\n");
     return 1;
   }
   if( isOrigin ){
@@ -1273,8 +1287,6 @@ int main(int argc, char **argv){
     return 0;
   }
   if( isReplica ){
-    ctx.zReplica = ctx.zOrigin;
-    ctx.zOrigin = 0;
     ctx.pIn = stdin;
     ctx.pOut = stdout;
     ctx.isRemote = 1;
@@ -1306,6 +1318,7 @@ int main(int argc, char **argv){
       if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
     }
     append_escaped_arg(pStr, zDiv, 1);
+    append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
     zCmd = sqlite3_str_finish(pStr);
     if( ctx.eVerbose ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
@@ -1326,6 +1339,7 @@ int main(int argc, char **argv){
       append_escaped_arg(pStr, "--commcheck", 0);
       if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
     }
+    append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
     append_escaped_arg(pStr, zDiv, 1);
     zCmd = sqlite3_str_finish(pStr);
     if( ctx.eVerbose ) printf("%s\n", zCmd);
@@ -1342,6 +1356,7 @@ int main(int argc, char **argv){
     if( ctx.bCommCheck ){
       append_escaped_arg(pStr, "--commcheck", 0);
     }
+    append_escaped_arg(pStr, ctx.zOrigin, 1);
     append_escaped_arg(pStr, ctx.zReplica, 1);
     zCmd = sqlite3_str_finish(pStr);
     if( ctx.eVerbose ) printf("%s\n", zCmd);
