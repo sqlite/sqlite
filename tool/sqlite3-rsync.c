@@ -96,6 +96,7 @@ static void win32_fatal_error(const char *zMsg){
   fprintf(stderr, "%s", zMsg);
   exit(1);
 }
+extern int _open_osfhandle(intptr_t,int);
 #else
 #include <unistd.h>
 #include <signal.h>
