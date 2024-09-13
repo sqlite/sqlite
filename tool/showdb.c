@@ -1085,7 +1085,7 @@ static void ptrmap_coverage_report(const char *zDbName){
            pgno+1, pgno+perPage);
     a = fileRead((pgno-1)*g.pagesize, usable);
     for(i=0; i+5<=usable; i+=5){
-      const char *zType = "???";
+      const char *zType;
       u32 iFrom = decodeInt32(&a[i+1]);
       const char *zExtra = pgno+1+i/5>g.mxPage ? " (off end of DB)" : "";
       switch( a[i] ){
@@ -1094,7 +1094,14 @@ static void ptrmap_coverage_report(const char *zDbName){
         case 3:  zType = "first page of overflow";  break;
         case 4:  zType = "later page of overflow";  break;
         case 5:  zType = "b-tree non-root page";    break;
-        default: zType = 0;                         break;
+        default: {
+          if( zExtra[0]==0 ){
+            printf("%5llu: invalid (0x%02x), parent=%u\n", 
+                   pgno+1+i/5, a[i], iFrom);
+          }
+          zType = 0;
+          break;
+        }
       }
       if( zType ){
         printf("%5llu: %s, parent=%u%s\n", pgno+1+i/5, zType, iFrom, zExtra);
