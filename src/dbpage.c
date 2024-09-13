@@ -360,7 +360,7 @@ static int dbpageUpdate(
     iDb = 0;
   }else{
     const char *zSchema = (const char*)sqlite3_value_text(argv[4]);
-    iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+    iDb = sqlite3FindDbName(pTab->db, zSchema);
     if( iDb<0 ){
       zErr = "no such schema";
       goto update_fail;
@@ -377,8 +377,11 @@ static int dbpageUpdate(
   ){
     if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert ){
       if( iDb>=pTab->nTrunc ){
+        testcase( pTab->aTrunc!=0 );
         pTab->aTrunc = sqlite3_realloc(pTab->aTrunc, (iDb+1)*sizeof(Pgno));
         if( pTab->aTrunc ){
+          int j;
+          for(j=pTab->nTrunc; j<iDb; j++) pTab->aTrunc[j] = 0;
           pTab->nTrunc = iDb+1;
         }else{
           return SQLITE_NOMEM;

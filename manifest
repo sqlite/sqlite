@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\son\sWindows.
-D 2024-09-13T16:12:54.397
+C Merge\ssqlite_dbpage\sfixes\sinto\sthe\ssqlite3-rsync\sbranch.
+D 2024-09-13T23:41:16.081
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -714,7 +714,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b224d3db0f28c4a5f1407c50107a0a8133bd244ff3c7f6f8cedeb896a8cf1b64
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c 3c437630c2933b9eefca915d191f8dea9da135195593bb17f553be58ffcd3634
+F src/dbpage.c 12e49515d67d4a59625d71f9aa42499556cfdc2e4f1ea49086e674a7f47f46e5
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 444c4d1eaac40103461e3b6f0881846dd3aafc1cec1dd169d3482fa331667da7
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e55e3e8ec2fe3a9190872d999cee55c85bde92667040cc166233faaa2fa34266
-R 6b032d30c7c32f4ed5f1d114c751e049
+P 86e0219d977c493ac19d00c3ddcf560eb317d506c7cf6e4ef17e92daa91e1762 6aa9c8e79b440c6419e65990d9ceba8f00a6f975455138cf2aa82b113daec825
+R 9005fc31425a0253e67d368b9122f599
 U drh
-Z c5bd48112d303e775518f5a9a4f43e77
+Z 4975b1813e58aa71fc8abcda1ea8ca48
 # Remove this line to create a well-formed Fossil manifest.
