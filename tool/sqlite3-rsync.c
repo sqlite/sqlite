@@ -1697,7 +1697,14 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
-  if( ctx.eVerbose ){
+  if( ctx.nErr ){
+    printf("Databases where not synced due to errors\n");
+  }
+  if( ctx.eVerbose==1 ){
+    printf("Network traffic is %.1f%% of database size\n",
+           (100.0*(double)(ctx.nIn+ctx.nOut))/(ctx.szPage*(double)ctx.nPage));
+  }
+  if( ctx.eVerbose>=2 ){
     if( ctx.nErr ) printf("%d errors, ", ctx.nErr);
     printf("%lld bytes sent, %lld bytes received\n", ctx.nOut, ctx.nIn);
     if( ctx.eVerbose>=2 ){
@@ -1711,5 +1718,5 @@ int main(int argc, char const * const *argv){
   if( pIn!=0 && pOut!=0 ){
     pclose2(pIn, pOut, childPid);
   }
-  return 0;
+  return ctx.nErr;
 }
