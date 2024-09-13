@@ -1,5 +1,5 @@
-C Further\senhancement\sto\sPTRMAP\sdisplay\sin\sshowdb:\s\sShow\sthe\sdetails\sof\sinvalid\nentries\sthat\sare\swithin\sthe\srange\sof\sthe\sdatabase\sfile.\s\sContinue\sto\signore\ninvalid\sentries\sbeyond\sthe\send\sof\sthe\sdatabase\sfile.
-D 2024-09-13T11:14:10.057
+C Close\sthe\sdb\sas\ssqlite3_analyzer\sexits.\s(See\s[forum:af384c2315d9718a|forum\spost,\s"sqlite3_analyzer\snot\sclosing\sWAL-mode\sdb\scleanly"\s].)
+D 2024-09-13T16:10:04.337
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2164,7 +2164,7 @@ F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a80
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
-F tool/spaceanal.tcl 3568b2b15b83dcaf789e787a4db0980da81eb6fa0e1e00783e4a927fdf584550
+F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
 F tool/speed-check.sh e8d20cc2eb9c85ec1ba562226de144435456dcdff4ee618de49603c6958f6116
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
@@ -2212,8 +2212,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9f95fe5ce90ab9864165e603f3a34013c3c98d03f1db689996f4a32086e2ed6
-R 5fde967f0ed3ce1cc53a6d5bcb8024a9
-U drh
-Z 8b78883255183c9952b265920384a36e
+P 4cad385b90eaca2d90e3375e473472145af4134160b81097a8535d06638c2e4a
+R 506f0349cf71d4b56754bbc21843c2e9
+U larrybr
+Z 8cfad2cb033fbf4c7a29251fd8b9a990
 # Remove this line to create a well-formed Fossil manifest.
