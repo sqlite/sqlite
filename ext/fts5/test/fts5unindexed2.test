@@ -1,4 +1,4 @@
-# 2015 Apr 24
+# 2024 Sep 13
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -24,7 +24,9 @@ ifcapable !fts5 {
 
 
 do_execsql_test 1.1 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b UNINDEXED, content=);
+  CREATE VIRTUAL TABLE t1 USING fts5(
+      a, b UNINDEXED, content=, contentless_unindexed=1
+  );
 } {}
 
 do_execsql_test 1.2 {
@@ -93,7 +95,7 @@ do_execsql_test 1.15 {
 
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE t4 USING fts5(
-      x, y UNINDEXED, z, columnsize=0, content=''
+      x, y UNINDEXED, z, columnsize=0, content='', contentless_unindexed=1
   );
 }
 
@@ -106,7 +108,8 @@ reset_db
 
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE x1 USING fts5(
-      a UNINDEXED, b, c UNINDEXED, d, content=, contentless_delete=1
+      a UNINDEXED, b, c UNINDEXED, d, content=, contentless_delete=1,
+      contentless_unindexed=1
   );
 }
 
@@ -171,6 +174,32 @@ fts5_aux_test_functions db
 do_execsql_test 3.10 {
   SELECT rowid, fts5_test_columntext(x1) FROM x1('b*')
 } {1000 {AAA {} CCC {}}}
+
+#-------------------------------------------------------------------------
+# Check that if contentless_unindexed=1 is not specified, the values
+# of UNINDEXED columns are not stored in the database.
+#
+# Also check that contentless_unindexed=1 is not allowed unless the table
+# is actually contentless.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, b, c UNINDEXED, content='');
+  INSERT INTO ft VALUES('one', 'two', 'three');
+  SELECT rowid, * FROM ft;
+} {1 {} {} {}}
+
+do_execsql_test 4.1 {
+  SELECT name FROM sqlite_schema ORDER BY 1
+} {
+  ft ft_config ft_data ft_docsize ft_idx
+}
+
+do_catchsql_test 4.2 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(
+      a, b, c UNINDEXED, contentless_unindexed=1
+  );
+} {1 {contentless_unindexed=1 requires a contentless table}}
 
 finish_test
 

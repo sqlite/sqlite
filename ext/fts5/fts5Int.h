@@ -224,6 +224,7 @@ struct Fts5Config {
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   int eContent;                   /* An FTS5_CONTENT value */
   int bContentlessDelete;         /* "contentless_delete=" option (dflt==0) */
+  int bContentlessUnindexed;      /* "contentless_unindexed=" option (dflt=0) */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
