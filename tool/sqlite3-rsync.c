@@ -109,7 +109,7 @@ struct SQLiteRsync {
 # define eputz(z) ePutsUtf8(z)
 # define eputf ePrintfUtf8
 # define oputb(buf,na) oPutbUtf8(buf,na)
-# define fflush(s) fFlushBuffer(s)
+/*# define fflush(s) fFlushBuffer(s)*/
 
 /****************************************************************************
 ** Beginning of the popen2() implementation copied from Fossil  *************
