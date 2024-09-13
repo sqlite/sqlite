@@ -706,6 +706,7 @@ RSYNC_SRC = \
   sqlite3.c
 
 RSYNC_OPT = \
+  -I$(TOP)/ext/consio \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
   -USQLITE_THREADSAFE \
   -DSQLITE_THREADSAFE=0 \

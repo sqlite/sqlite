@@ -82,7 +82,7 @@ struct SQLiteRsync {
 #define REPLICA_READY   0x65     /* Read to receive page content */
 #define REPLICA_MSG     0x66     /* Informational message */
 
-#include "ext/consio/console_io.h"
+#include "console_io.h"
 /* From here onward, fgets() is redirected to the console_io library. */
 # define fgets(b,n,f) fGetsUtf8(b,n,f)
 /*
@@ -121,9 +121,10 @@ struct SQLiteRsync {
 ** Print a fatal error and quit.
 */
 static void win32_fatal_error(const char *zMsg){
-  eputz("%s\n", zMsg);
+  eputf("%s\n", zMsg);
   exit(1);
 }
+extern int _open_osfhandle(intptr_t,int);
 #else
 #include <unistd.h>
 #include <signal.h>

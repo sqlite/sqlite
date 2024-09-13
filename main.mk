@@ -570,15 +570,21 @@ dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
 
 RSYNC_SRC = \
   $(TOP)/tool/sqlite3-rsync.c \
+  $(TOP)/ext/consio/console_io.c \
   sqlite3.c
 
+RSYNC_DEP = \
+  $(TOP)/ext/consio/console_io.h
+
 RSYNC_OPT = \
+  -I$(TOP)/ext/consio \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
   -DSQLITE_THREADSAFE=0 \
   -DSQLITE_OMIT_LOAD_EXTENSION \
-  -DSQLITE_OMIT_DEPRECATED
+  -DSQLITE_OMIT_DEPRECATED \
+  -DCONSIO_SET_ERROR_STREAM
 
-sqlite3-rsync$(EXE):	$(RSYNC_SRC)
+sqlite3-rsync$(EXE):	$(RSYNC_SRC) $(RSYNC_DEP)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
