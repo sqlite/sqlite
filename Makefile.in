@@ -702,7 +702,6 @@ dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 
 RSYNC_SRC = \
   $(TOP)/tool/sqlite3-rsync.c \
-  $(TOP)/ext/misc/sha1.c \
   sqlite3.c
 
 RSYNC_OPT = \

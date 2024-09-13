@@ -1869,7 +1869,6 @@ dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 
 RSYNC_SRC = \
   $(TOP)\tool\sqlite3-rsync.c \
-  $(TOP)\ext\misc\sha1.c \
   $(SQLITE3C)
 
 RSYNC_OPT = \

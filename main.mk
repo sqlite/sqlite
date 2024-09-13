@@ -570,7 +570,6 @@ dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
 
 RSYNC_SRC = \
   $(TOP)/tool/sqlite3-rsync.c \
-  $(TOP)/ext/misc/sha1.c \
   sqlite3.c
 
 RSYNC_OPT = \
