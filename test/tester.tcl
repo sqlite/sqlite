@@ -1279,10 +1279,15 @@ proc finalize_testing {} {
          out of $nTest tests"
   } else {
     set cpuinfo {}
-    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    if {[catch {exec hostname} hname]==0} {
+      regsub {\.local$} $hname {} hname
+      set cpuinfo [string trim $hname]
+    }
     append cpuinfo " $::tcl_platform(os)"
     append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
-    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    if {[string match big* $::tcl_platform(byteOrder)]} {
+      append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    }
     output2 "SQLite [sqlite3 -sourceid]"
     output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }

@@ -88,6 +88,7 @@ namespace eval trd {
     --disable-amalgamation --disable-shared
     --enable-session
     -DSQLITE_ENABLE_RBU
+    -DSQLITE_ENABLE_STMT_SCANSTATUS
   }
 
   # These two are used by [testrunner.tcl mdevtest] (All-O0) and 

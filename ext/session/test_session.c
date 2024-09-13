@@ -383,10 +383,10 @@ static int SQLITE_TCLAPI test_session_cmd(
         { "rowid", SQLITE_SESSION_OBJCONFIG_ROWID },
         { 0, 0 }
       };
-      size_t sz = sizeof(aOpt[0]);
+      int sz = (int)sizeof(aOpt[0]);
 
       int iArg;
-      int iOpt;
+      Tcl_Size iOpt;
       if( Tcl_GetIndexFromObjStruct(interp,objv[2],aOpt,sz,"option",0,&iOpt) ){
         return TCL_ERROR;
       }
@@ -803,7 +803,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   if( bV2 ){
     while( objc>1 ){
       const char *z1 = Tcl_GetString(objv[1]);
-      int n = strlen(z1);
+      int n = (int)strlen(z1);
       if( n>3 && n<=12 && 0==sqlite3_strnicmp("-nosavepoint", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
       }
@@ -1119,7 +1119,7 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
 
   while( objc>1 ){
     char *zOpt = Tcl_GetString(objv[1]);
-    int nOpt = strlen(zOpt);
+    int nOpt = (int)strlen(zOpt);
     if( zOpt[0]!='-' ) break;
     if( nOpt<=7 && 0==sqlite3_strnicmp(zOpt, "-invert", nOpt) ){
       isInvert = 1;

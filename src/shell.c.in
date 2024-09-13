@@ -1236,6 +1236,7 @@ INCLUDE ../ext/expert/sqlite3expert.c
 INCLUDE ../ext/intck/sqlite3intck.h
 INCLUDE ../ext/intck/sqlite3intck.c
 INCLUDE ../ext/misc/stmtrand.c
+INCLUDE ../ext/misc/vfstrace.c
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 #define SQLITE_SHELL_HAVE_RECOVER 1
@@ -12254,9 +12255,7 @@ static const char zOptions[] =
   "   -unsafe-testing      allow unsafe commands and modes for testing\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
-#ifdef SQLITE_ENABLE_VFSTRACE
   "   -vfstrace            enable tracing of all VFS calls\n"
-#endif
 #ifdef SQLITE_HAVE_ZLIB
   "   -zip                 open the file as a ZIP Archive\n"
 #endif
@@ -12382,6 +12381,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int readStdin = 1;
   int nCmd = 0;
   int nOptsEnd = argc;
+  int bEnableVfstrace = 0;
   char **azCmd = 0;
   const char *zVfs = 0;           /* Value of -vfs command-line option */
 #if !SQLITE_SHELL_IS_UTF8
@@ -12576,17 +12576,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
          case 2:  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);   break;
          default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
       }
-#ifdef SQLITE_ENABLE_VFSTRACE
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
-      extern int vfstrace_register(
-         const char *zTraceName,
-         const char *zOldVfsName,
-         int (*xOut)(const char*,void*),
-         void *pOutArg,
-         int makeDefault
-      );
       vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
-#endif
+      bEnableVfstrace = 1;
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( cli_strcmp(z,"-multiplex")==0 ){
       extern int sqlite3_multiplex_initialize(const char*,int);
@@ -12642,7 +12634,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }
   }
 #ifndef SQLITE_SHELL_FIDDLE
-  verify_uninitialized();
+  if( !bEnableVfstrace ) verify_uninitialized();
 #endif
 
 
@@ -12831,10 +12823,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
     }else if( cli_strcmp(z,"-vfs")==0 ){
       i++;
-#ifdef SQLITE_ENABLE_VFSTRACE
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
       i++;
-#endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( cli_strcmp(z,"-multiplex")==0 ){
       i++;
@@ -13002,6 +12992,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));
+  if( bEnableVfstrace ){
+    vfstrace_unregister("trace");
+  }
 #ifdef SQLITE_DEBUG
   if( sqlite3_memory_used()>mem_main_enter ){
     eputf("Memory leaked: %u bytes\n",
