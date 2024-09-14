@@ -34,6 +34,7 @@ static const char zUsage[] =
   "   --help        Show this help screen\n"
   "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
   "   -v            Verbose.  Multiple v's for increasing output\n"
+  "   --version     Show detailed version information\n"
 ;
 
 typedef unsigned char u8;
@@ -1653,6 +1654,10 @@ int main(int argc, char const * const *argv){
      || strcmp(z, "-?")==0
     ){
       printf("%s", zUsage);
+      return 0;
+    }
+    if( strcmp(z, "--version")==0 ){
+      printf("%s\n", sqlite3_sourceid());
       return 0;
     }
     if( z[0]=='-' ){
