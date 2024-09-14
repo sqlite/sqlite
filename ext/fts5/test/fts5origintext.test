@@ -166,6 +166,13 @@ do_execsql_test 3.3.3 { SELECT rowid FROM ft2('HELLO') } {1 2 3}
 
 do_execsql_test 3.3.4 { SELECT rowid FROM ft2('hello*') } {1 2 3 10}
 
+do_execsql_test 3.3.5.1 { SELECT rowid FROM ft2('HELLO') ORDER BY rowid DESC} {
+  3 2 1
+}
+do_execsql_test 3.3.5.2 { SELECT rowid FROM ft2('HELLO') ORDER BY +rowid DESC} {
+  3 2 1
+}
+
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -285,11 +292,11 @@ do_execsql_test 6.1 {
 
 do_execsql_test 6.2 {
   SELECT rowid, tokens(ft) FROM ft('on*');
-} {1 {{}} 2 {{} {}}}
+} {1 one.One 2 {one one.One}}
 
 do_execsql_test 6.3 {
   SELECT rowid, tokens(ft) FROM ft('Three*');
-} {1 {{}} 2 {{}}}
+} {1 three.Three 2 three.Three}
 
 fts5_aux_test_functions db
 do_catchsql_test 6.4 {

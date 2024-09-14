@@ -6571,12 +6571,13 @@ int sqlite3Fts5IndexWrite(
 static int fts5IsTokendataPrefix(
   Fts5Buffer *pBuf,
   const u8 *pToken,
-  int nToken
+  int nToken,
+  int bPrefix
 ){
   return (
       pBuf->n>=nToken 
    && 0==memcmp(pBuf->p, pToken, nToken)
-   && (pBuf->n==nToken || pBuf->p[nToken]==0x00)
+   && (bPrefix || pBuf->n==nToken || pBuf->p[nToken]==0x00)
   );
 }
 
@@ -6879,7 +6880,8 @@ static Fts5Iter *fts5SetupTokendataIter(
   Fts5Index *p,                   /* FTS index to query */
   const u8 *pToken,               /* Buffer containing query term */
   int nToken,                     /* Size of buffer pToken in bytes */
-  Fts5Colset *pColset             /* Colset to filter on */
+  Fts5Colset *pColset,            /* Colset to filter on */
+  int bPrefix                     /* True to match any prefix */
 ){
   Fts5Iter *pRet = 0;
   Fts5TokenDataIter *pSet = 0;
@@ -6961,7 +6963,7 @@ static Fts5Iter *fts5SetupTokendataIter(
     pSmall = 0;
     for(ii=0; ii<pNew->nSeg; ii++){
       Fts5SegIter *pII = &pNew->aSeg[ii];
-      if( 0==fts5IsTokendataPrefix(&pII->term, pToken, nToken) ){
+      if( 0==fts5IsTokendataPrefix(&pII->term, pToken, nToken, bPrefix) ){
         fts5SegIterSetEOF(pII);
       }
       if( pII->pLeaf && (!pSmall || fts5BufferCompare(pSmall, &pII->term)>0) ){
@@ -7037,6 +7039,9 @@ int sqlite3Fts5IndexQuery(
     int bTokendata = pConfig->bTokendata;
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
+    /* The NOTOKENDATA flag is set when it is known that tokendata data will
+    ** not be required. e.g. for queries performed as part of an 
+    ** integrity-check, or by the fts5vocab module.  */
     if( flags & (FTS5INDEX_QUERY_NOTOKENDATA|FTS5INDEX_QUERY_SCAN) ){
       bTokendata = 0;
     }
@@ -7066,9 +7071,9 @@ int sqlite3Fts5IndexQuery(
       }
     }
 
-    if( bTokendata && iIdx==0 ){
-      buf.p[0] = '0';
-      pRet = fts5SetupTokendataIter(p, buf.p, nToken+1, pColset);
+    if( (bTokendata && iIdx==0) || iIdx>pConfig->nPrefix ){
+      buf.p[0] = FTS5_MAIN_PREFIX;
+      pRet = fts5SetupTokendataIter(p, buf.p, nToken+1, pColset, iIdx>0);
     }else if( iIdx<=pConfig->nPrefix ){
       /* Straight index lookup */
       Fts5Structure *pStruct = fts5StructureRead(p);
