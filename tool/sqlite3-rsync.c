@@ -1184,8 +1184,8 @@ static void originSide(SQLiteRsync *p){
     /* Open the ORIGIN database. */
     rc = sqlite3_open_v2(p->zOrigin, &p->db, SQLITE_OPEN_READWRITE, 0);
     if( rc ){
-      reportError(p, "unable to open origin database file \"%s\": %s",
-                  sqlite3_errmsg(p->db));
+      reportError(p, "cannot open origin \"%s\": %s",
+                  p->zOrigin, sqlite3_errmsg(p->db));
       closeDb(p);
       return;
     }
@@ -1368,7 +1368,7 @@ static void replicaSide(SQLiteRsync *p){
         p->szPage = szOPage;
         rc = sqlite3_open(p->zReplica, &p->db);
         if( rc ){
-          reportError(p, "cannot open replica database \"%s\": %s",
+          reportError(p, "cannot open replica \"%s\": %s",
                       p->zReplica, sqlite3_errmsg(p->db));
           closeDb(p);
           break;
@@ -1430,6 +1430,7 @@ static void replicaSide(SQLiteRsync *p){
                    sqlite3_sql(pIns), sqlite3_errmsg(p->db));
           }
           sqlite3_reset(pIns);
+          p->nPage = nOPage;
           runSql(p, "COMMIT");
         }
         break;
@@ -1734,14 +1735,16 @@ int main(int argc, char const * const *argv){
     }else{
       printf("\n");
     }
-    if( nIO<=szTotal && nIO>0 ){
-      zMsg = sqlite3_mprintf("total size %,lld  speedup is %.2f",
-         szTotal, (double)szTotal/(double)nIO);
-    }else{
-      zMsg = sqlite3_mprintf("total size %,lld", szTotal);
+    if( ctx.nErr==0 ){
+      if( nIO<=szTotal && nIO>0 ){
+        zMsg = sqlite3_mprintf("total size %,lld  speedup is %.2f",
+           szTotal, (double)szTotal/(double)nIO);
+      }else{
+        zMsg = sqlite3_mprintf("total size %,lld", szTotal);
+      }
+      printf("%s\n", zMsg);
+      sqlite3_free(zMsg);
     }
-    printf("%s\n", zMsg);
-    sqlite3_free(zMsg);
   }
   sqlite3_free(zCmd);
   if( pIn!=0 && pOut!=0 ){
