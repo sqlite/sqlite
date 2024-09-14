@@ -1497,6 +1497,17 @@ static const char *cmdline_option_value(int argc, const char * const*argv,
   return argv[i];
 }
 
+/*
+** Return the current time in milliseconds since the Julian epoch.
+*/
+sqlite3_int64 currentTime(void){
+  sqlite3_int64 now = 0;
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  if( pVfs && pVfs->iVersion>=2 && pVfs->xCurrentTimeInt64!=0 ){
+    pVfs->xCurrentTimeInt64(pVfs, &now);
+  }
+  return now;
+}
 
 /*
 ** Parse command-line arguments.  Dispatch subroutines to do the
@@ -1536,6 +1547,9 @@ int main(int argc, char const * const *argv){
   const char *zSsh = "ssh";
   const char *zExe = "sqlite3-rsync";
   char *zCmd = 0;
+  sqlite3_int64 tmStart;
+  sqlite3_int64 tmEnd;
+  sqlite3_int64 tmElapse;
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
@@ -1629,6 +1643,7 @@ int main(int argc, char const * const *argv){
     fprintf(stderr, "missing REPLICA database filename\n");
     return 1;
   }
+  tmStart = currentTime();
   zDiv = strchr(ctx.zOrigin,':');
   if( zDiv ){
     if( strchr(ctx.zReplica,':')!=0 ){
@@ -1652,7 +1667,7 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, zDiv, 1);
     append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
       fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
       return 1;
@@ -1674,7 +1689,7 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
     append_escaped_arg(pStr, zDiv, 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
       fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
       return 1;
@@ -1691,29 +1706,42 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, ctx.zOrigin, 1);
     append_escaped_arg(pStr, ctx.zReplica, 1);
     zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose ) printf("%s\n", zCmd);
+    if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
       fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
       return 1;
     }
     originSide(&ctx);
   }
+  tmEnd = currentTime();
+  tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */
   if( ctx.nErr ){
     printf("Databases where not synced due to errors\n");
   }
   if( ctx.eVerbose==1 ){
-    printf("Network traffic is %.1f%% of database size\n",
-           (100.0*(double)(ctx.nIn+ctx.nOut))/(ctx.szPage*(double)ctx.nPage));
-  }
-  if( ctx.eVerbose>=2 ){
-    if( ctx.nErr ) printf("%d errors, ", ctx.nErr);
-    printf("%lld bytes sent, %lld bytes received\n", ctx.nOut, ctx.nIn);
-    if( ctx.eVerbose>=2 ){
-      printf("Database is %u pages of %u bytes each.\n",
-             ctx.nPage, ctx.szPage);
-      printf("Sent %u hashes, %u page contents\n",
-             ctx.nHashSent, ctx.nPageSent);
+    char *zMsg;
+    sqlite3_int64 szTotal = (sqlite3_int64)ctx.nPage*(sqlite3_int64)ctx.szPage;
+    sqlite3_int64 nIO = ctx.nOut +ctx.nIn;
+    zMsg = sqlite3_mprintf("sent %,lld bytes, received %,lld bytes",
+                           ctx.nOut, ctx.nIn);
+    printf("%s", zMsg);
+    sqlite3_free(zMsg);
+    if( tmElapse>0 ){
+      zMsg = sqlite3_mprintf(", %,.2f bytes/sec",
+                             1000.0*(double)nIO/(double)tmElapse);
+      printf("%s\n", zMsg);
+      sqlite3_free(zMsg);
+    }else{
+      printf("\n");
     }
+    if( nIO<=szTotal && nIO>0 ){
+      zMsg = sqlite3_mprintf("total size %,lld  speedup is %.2f",
+         szTotal, (double)szTotal/(double)nIO);
+    }else{
+      zMsg = sqlite3_mprintf("total size %,lld", szTotal);
+    }
+    printf("%s\n", zMsg);
+    sqlite3_free(zMsg);
   }
   sqlite3_free(zCmd);
   if( pIn!=0 && pOut!=0 ){
