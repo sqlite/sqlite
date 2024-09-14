@@ -1629,8 +1629,9 @@ int main(int argc, char const * const *argv){
     if( strcmp(z, "--logfile")==0 ){
       /* DEBUG OPTION:  --logfile FILENAME
       ** Cause all local output traffic to be duplicated in FILENAME */
+      const char *zLog = cli_opt_val;
       if( ctx.pLog ) fclose(ctx.pLog);
-      ctx.pLog = fopen(argv[++i],"wb");
+      ctx.pLog = fopen(zLog, "wb");
       if( ctx.pLog==0 ){
         fprintf(stderr, "cannot open \"%s\" for writing\n", argv[i]);
         return 1;
@@ -1640,14 +1641,14 @@ int main(int argc, char const * const *argv){
     if( strcmp(z, "--errorfile")==0 ){
       /* DEBUG OPTION:  --errorfile FILENAME
       ** Error messages on the local side are written into FILENAME */
-      ctx.zErrFile = argv[++i];
+      ctx.zErrFile = cli_opt_val;
       continue;
     }
     if( strcmp(z, "--remote-errorfile")==0 ){
       /* DEBUG OPTION:  --remote-errorfile FILENAME
       ** Error messages on the remote side are written into FILENAME on
       ** the remote side. */
-      zRemoteErrFile = argv[++i];
+      zRemoteErrFile = cli_opt_val;
       continue;
     }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
