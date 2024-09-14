@@ -45,6 +45,7 @@ struct SQLiteRsync {
   const char *zReplica;    /* Name of the replica */
   FILE *pOut;              /* Transmit to the other side */
   FILE *pIn;               /* Receive from the other side */
+  FILE *pLog;              /* Duplicate output here if not NULL */
   sqlite3 *db;             /* Database connection */
   int nErr;                /* Number of errors encountered */
   u8 eVerbose;             /* Bigger for more output.  0 means none. */
@@ -840,6 +841,7 @@ static int writeUint32(SQLiteRsync *p, unsigned int x){
   buf[1] = x & 0xff;
   x >>= 8;
   buf[0] = x;
+  if( p->pLog ) fwrite(buf, sizeof(buf), 1, p->pLog);
   if( fwrite(buf, sizeof(buf), 1, p->pOut)!=1 ){
     p->nErr++;
     return 1;
@@ -859,6 +861,7 @@ int readByte(SQLiteRsync *p){
 /* Write a single byte into the wire.
 */
 void writeByte(SQLiteRsync *p, int c){
+  if( p->pLog ) fputc(c, p->pLog);
   fputc(c, p->pOut);
   p->nOut++;
 }
@@ -898,6 +901,7 @@ void readBytes(SQLiteRsync *p, int nByte, void *pData){
 /* Write an array of bytes onto the wire.
 */
 void writeBytes(SQLiteRsync *p, int nByte, const void *pData){
+  if( p->pLog ) fwrite(pData, 1, nByte, p->pLog);
   if( fwrite(pData, 1, nByte, p->pOut)==nByte ){
     p->nOut += nByte;
   }else{
@@ -1576,6 +1580,15 @@ int main(int argc, char const * const *argv){
       zExe = cli_opt_val;
       continue;
     }
+    if( strcmp(z, "--logfile")==0 ){
+      if( ctx.pLog ) fclose(ctx.pLog);
+      ctx.pLog = fopen(argv[++i],"wb");
+      if( ctx.pLog==0 ){
+        fprintf(stderr, "cannot open \"%s\" for writing\n", argv[i]);
+        return 1;
+      }
+      continue;
+    }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
      || strcmp(z, "-?")==0
     ){
@@ -1714,6 +1727,7 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
+  if( ctx.pLog ) fclose(ctx.pLog);
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */
   if( ctx.nErr ){
