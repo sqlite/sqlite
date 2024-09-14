@@ -43,6 +43,7 @@ typedef struct SQLiteRsync SQLiteRsync;
 struct SQLiteRsync {
   const char *zOrigin;     /* Name of the origin */
   const char *zReplica;    /* Name of the replica */
+  const char *zErrFile;    /* Append error messages to this file */
   FILE *pOut;              /* Transmit to the other side */
   FILE *pIn;               /* Receive from the other side */
   FILE *pLog;              /* Duplicate output here if not NULL */
@@ -813,6 +814,24 @@ const char *file_tail(const char *z){
   return zTail;
 }
 
+/*
+** Append error message text to the error file, if an error file is
+** specified.  In any case, increment the error count.
+*/
+static void logError(SQLiteRsync *p, const char *zFormat, ...){
+  if( p->zErrFile ){
+    FILE *pErr = fopen(p->zErrFile, "a");
+    if( pErr ){
+      va_list ap;
+      va_start(ap, zFormat);
+      vfprintf(pErr, zFormat, ap);
+      va_end(ap);
+      fclose(pErr);
+    }
+  }
+  p->nErr++;
+}
+
 
 /* Read a single big-endian 32-bit unsigned integer from the input
 ** stream.  Return 0 on success and 1 if there are any errors.
@@ -843,7 +862,7 @@ static int writeUint32(SQLiteRsync *p, unsigned int x){
   buf[0] = x;
   if( p->pLog ) fwrite(buf, sizeof(buf), 1, p->pLog);
   if( fwrite(buf, sizeof(buf), 1, p->pOut)!=1 ){
-    p->nErr++;
+    logError(p, "failed to write 32-bit integer 0x%x", x);
     return 1;
   }
   p->nOut += 4;
@@ -871,7 +890,7 @@ void writeByte(SQLiteRsync *p, int c){
 int readPow2(SQLiteRsync *p){
   int x = readByte(p);
   if( x>=32 ){
-    p->nErr++;
+    logError(p, "read invalid page size %d\n", x);
     return 0;
   }
   return 1<<x;
@@ -882,7 +901,7 @@ int readPow2(SQLiteRsync *p){
 void writePow2(SQLiteRsync *p, int c){
   int n;
   if( c<0 || (c&(c-1))!=0 ){
-    p->nErr++;
+    logError(p, "trying to read invalid page size %d\n", c);
   }
   for(n=0; c>1; n++){ c /= 2; }
   writeByte(p, n);
@@ -894,7 +913,7 @@ void readBytes(SQLiteRsync *p, int nByte, void *pData){
   if( fread(pData, 1, nByte, p->pIn)==nByte ){
     p->nIn += nByte;
   }else{
-    p->nErr++;
+    logError(p, "failed to read %d bytes", nByte);
   }
 }
 
@@ -905,7 +924,7 @@ void writeBytes(SQLiteRsync *p, int nByte, const void *pData){
   if( fwrite(pData, 1, nByte, p->pOut)==nByte ){
     p->nOut += nByte;
   }else{
-    p->nErr++;
+    logError(p, "failed to write %d bytes", nByte);
   }
 }
 
@@ -934,8 +953,8 @@ static void reportError(SQLiteRsync *p, const char *zFormat, ...){
   }else{
     fprintf(stderr, "%s\n", zMsg);
   }
+  logError(p, "%s\n", zMsg);
   sqlite3_free(zMsg);
-  p->nErr++;
 }
 
 /* Send an informational message.
@@ -974,7 +993,6 @@ static void readAndDisplayMessage(SQLiteRsync *p, int c){
   const char *zPrefix;
   if( c==ORIGIN_ERROR || c==REPLICA_ERROR ){
     zPrefix = "ERROR: ";
-    p->nErr++;
   }else{
     zPrefix = "";
   }
@@ -990,6 +1008,7 @@ static void readAndDisplayMessage(SQLiteRsync *p, int c){
     memset(zMsg, 0, n+1);
     readBytes(p, n, zMsg);
     fprintf(stderr,"%s%s\n", zPrefix, zMsg);
+    if( zPrefix[0] ) logError(p, "%s%s\n", zPrefix, zMsg);
     sqlite3_free(zMsg);
   }
 }
@@ -1259,32 +1278,56 @@ static void originSide(SQLiteRsync *p){
       }
       case REPLICA_READY: {
         sqlite3_stmt *pStmt;
+        int needPageOne = 0;
         sqlite3_finalize(pCkHash);
         pCkHash = 0;
+        if( iPage+1<p->nPage ){
+          runSql(p, "WITH RECURSIVE c(n) AS"
+                    " (VALUES(%d) UNION ALL SELECT n+1 FROM c WHERE n<%d)"
+                    " INSERT INTO badHash SELECT n FROM c",
+                    iPage+1, p->nPage);
+        }
         pStmt = prepareStmt(p,
                "SELECT pgno, data"
-               "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno) "
-               "UNION ALL "
-               "SELECT pgno, data"
-               "  FROM sqlite_dbpage('main')"
-               " WHERE pgno>%d",
-               iPage);
+               "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno)");
         if( pStmt==0 ) break;
         while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+          unsigned int pgno = (unsigned int)sqlite3_column_int64(pStmt,0);
           const void *pContent = sqlite3_column_blob(pStmt, 1);
-          writeByte(p, ORIGIN_PAGE);
-          writeUint32(p, (unsigned int)sqlite3_column_int64(pStmt, 0));
-          writeBytes(p, szPg, pContent);
-          p->nPageSent++;
+          if( pgno==1 ){
+            needPageOne = 1;
+          }else{
+            writeByte(p, ORIGIN_PAGE);
+            writeUint32(p, (unsigned int)sqlite3_column_int64(pStmt, 0));
+            writeBytes(p, szPg, pContent);
+            p->nPageSent++;
+          }
         }
         sqlite3_finalize(pStmt);
+        if( needPageOne ){
+          pStmt = prepareStmt(p,
+                 "SELECT data"
+                 "  FROM sqlite_dbpage('main')"
+                 " WHERE pgno=1"
+          );
+          if( pStmt==0 ) break;
+          while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+            const void *pContent = sqlite3_column_blob(pStmt, 0);
+            writeByte(p, ORIGIN_PAGE);
+            writeUint32(p, 1);
+            writeBytes(p, szPg, pContent);
+            p->nPageSent++;
+          }
+          sqlite3_finalize(pStmt);
+        }
         writeByte(p, ORIGIN_TXN);
         writeUint32(p, nPage);
         writeByte(p, ORIGIN_END);
         goto origin_end;
       }
       default: {
-        reportError(p, "Origin side received unknown message: 0x%02x", c);
+        reportError(p, "Unknown message 0x%02x %lld bytes into conversation",
+                       c, p->nIn);
         break;
       }
     }
@@ -1446,7 +1489,7 @@ static void replicaSide(SQLiteRsync *p){
         if( p->nErr ) break;
         if( pIns==0 ){
           pIns = prepareStmt(p,
-            "INSERT INTO sqlite_dbpage(pgno,data,schema) VALUES(?1,?2,'main')"
+            "INSERT INTO sqlite_dbpage(pgno,data) VALUES(?1,?2)"
           );
           if( pIns==0 ) break;
         }
@@ -1457,14 +1500,15 @@ static void replicaSide(SQLiteRsync *p){
         sqlite3_bind_blob(pIns, 2, buf, szOPage, SQLITE_STATIC);
         rc = sqlite3_step(pIns);
         if( rc!=SQLITE_DONE ){
-          reportError(p, "SQL statement [%s] failed: %s",
-                 sqlite3_sql(pIns), sqlite3_errmsg(p->db));
+          reportError(p, "SQL statement [%s] failed (pgno=%u): %s",
+                 sqlite3_sql(pIns), pgno, sqlite3_errmsg(p->db));
         }
         sqlite3_reset(pIns);
         break;
       }
       default: {
-        reportError(p, "Replica side received unknown message: 0x%02x", c);
+        reportError(p, "Unknown message 0x%02x %lld bytes into conversation",
+                       c, p->nIn);
         break;
       }
     }
@@ -1555,6 +1599,7 @@ int main(int argc, char const * const *argv){
   sqlite3_int64 tmStart;
   sqlite3_int64 tmEnd;
   sqlite3_int64 tmElapse;
+  const char *zRemoteErrFile = 0;
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
@@ -1581,12 +1626,27 @@ int main(int argc, char const * const *argv){
       continue;
     }
     if( strcmp(z, "--logfile")==0 ){
+      /* DEBUG OPTION:  --logfile FILENAME
+      ** Cause all local output traffic to be duplicated in FILENAME */
       if( ctx.pLog ) fclose(ctx.pLog);
       ctx.pLog = fopen(argv[++i],"wb");
       if( ctx.pLog==0 ){
         fprintf(stderr, "cannot open \"%s\" for writing\n", argv[i]);
         return 1;
       }
+      continue;
+    }
+    if( strcmp(z, "--errorfile")==0 ){
+      /* DEBUG OPTION:  --errorfile FILENAME
+      ** Error messages on the local side are written into FILENAME */
+      ctx.zErrFile = argv[++i];
+      continue;
+    }
+    if( strcmp(z, "--remote-errorfile")==0 ){
+      /* DEBUG OPTION:  --remote-errorfile FILENAME
+      ** Error messages on the remote side are written into FILENAME on
+      ** the remote side. */
+      zRemoteErrFile = argv[++i];
       continue;
     }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
@@ -1678,6 +1738,10 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, "--commcheck", 0);
       if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
     }
+    if( zRemoteErrFile ){
+      append_escaped_arg(pStr, "--errorfile", 0);
+      append_escaped_arg(pStr, zRemoteErrFile, 1);
+    }
     append_escaped_arg(pStr, zDiv, 1);
     append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
     zCmd = sqlite3_str_finish(pStr);
@@ -1700,6 +1764,10 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, "--commcheck", 0);
       if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
     }
+    if( zRemoteErrFile ){
+      append_escaped_arg(pStr, "--errorfile", 0);
+      append_escaped_arg(pStr, zRemoteErrFile, 1);
+    }
     append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
     append_escaped_arg(pStr, zDiv, 1);
     zCmd = sqlite3_str_finish(pStr);
@@ -1716,6 +1784,10 @@ int main(int argc, char const * const *argv){
     append_escaped_arg(pStr, "--replica", 0);
     if( ctx.bCommCheck ){
       append_escaped_arg(pStr, "--commcheck", 0);
+    }
+    if( zRemoteErrFile ){
+      append_escaped_arg(pStr, "--errorfile", 0);
+      append_escaped_arg(pStr, zRemoteErrFile, 1);
     }
     append_escaped_arg(pStr, ctx.zOrigin, 1);
     append_escaped_arg(pStr, ctx.zReplica, 1);
