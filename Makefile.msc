@@ -1867,6 +1867,19 @@ sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\con
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+RSYNC_SRC = \
+  $(TOP)\tool\sqlite3-rsync.c \
+  $(SQLITE3C)
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -2317,6 +2330,7 @@ SHELL_DEP = \
     $(TOP)\ext\misc\percentile.c \
     $(TOP)\ext\misc\regexp.c \
     $(TOP)\ext\misc\series.c \
+    $(TOP)\ext\misc\sha1.c \
     $(TOP)\ext\misc\shathree.c \
     $(TOP)\ext\misc\sqlar.c \
     $(TOP)\ext\misc\uint.c \

@@ -568,6 +568,19 @@ dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
 	$(TCCX) -o dbhash$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/dbhash.c sqlite3.c $(TLIBS) $(THREADLIB)
 
+RSYNC_SRC = \
+  $(TOP)/tool/sqlite3-rsync.c \
+  sqlite3.c
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync$(EXE):	$(RSYNC_SRC)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
+
 scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TCC) -I. -DSCRUB_STANDALONE -o scrub$(EXE) $(TOP)/ext/misc/scrub.c sqlite3.o $(THREADLIB)
 
@@ -768,6 +781,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/uint.c \

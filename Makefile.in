@@ -700,6 +700,20 @@ sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 
+RSYNC_SRC = \
+  $(TOP)/tool/sqlite3-rsync.c \
+  sqlite3.c
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -USQLITE_THREADSAFE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
+
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
 		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
@@ -1191,6 +1205,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/uint.c \
