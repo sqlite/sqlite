@@ -50,6 +50,7 @@ struct SQLiteRsync {
   FILE *pLog;              /* Duplicate output here if not NULL */
   sqlite3 *db;             /* Database connection */
   int nErr;                /* Number of errors encountered */
+  int nWrErr;              /* Number of failed attempts to write on the pipe */
   u8 eVerbose;             /* Bigger for more output.  0 means none. */
   u8 bCommCheck;           /* True to debug the communication protocol */
   u8 isRemote;             /* On the remote side of a connection */
@@ -844,7 +845,7 @@ static int readUint32(SQLiteRsync *p, unsigned int *pU){
     p->nIn += 4;
     return 0;
   }else{
-    p->nErr++;
+    logError(p, "failed to read a 32-bit integer\n");
     return 1;
   }
 }
@@ -863,7 +864,8 @@ static int writeUint32(SQLiteRsync *p, unsigned int x){
   buf[0] = x;
   if( p->pLog ) fwrite(buf, sizeof(buf), 1, p->pLog);
   if( fwrite(buf, sizeof(buf), 1, p->pOut)!=1 ){
-    logError(p, "failed to write 32-bit integer 0x%x", x);
+    logError(p, "failed to write 32-bit integer 0x%x\n", x);
+    p->nWrErr++;
     return 1;
   }
   p->nOut += 4;
@@ -914,7 +916,7 @@ void readBytes(SQLiteRsync *p, int nByte, void *pData){
   if( fread(pData, 1, nByte, p->pIn)==nByte ){
     p->nIn += nByte;
   }else{
-    logError(p, "failed to read %d bytes", nByte);
+    logError(p, "failed to read %d bytes\n", nByte);
   }
 }
 
@@ -925,7 +927,8 @@ void writeBytes(SQLiteRsync *p, int nByte, const void *pData){
   if( fwrite(pData, 1, nByte, p->pOut)==nByte ){
     p->nOut += nByte;
   }else{
-    logError(p, "failed to write %d bytes", nByte);
+    logError(p, "failed to write %d bytes\n", nByte);
+    p->nWrErr++;
   }
 }
 
@@ -1236,7 +1239,7 @@ static void originSide(SQLiteRsync *p){
   }
   
   /* Respond to message from the replica */
-  while( p->nErr==0 && (c = readByte(p))!=EOF && c!=REPLICA_END ){
+  while( p->nErr<=p->nWrErr && (c = readByte(p))!=EOF && c!=REPLICA_END ){
     switch( c ){
       case REPLICA_BEGIN: {
         /* This message is only sent if the replica received an origin-protocol
@@ -1292,7 +1295,7 @@ static void originSide(SQLiteRsync *p){
                "SELECT pgno, data"
                "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno)");
         if( pStmt==0 ) break;
-        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
           unsigned int pgno = (unsigned int)sqlite3_column_int64(pStmt,0);
           const void *pContent = sqlite3_column_blob(pStmt, 1);
           if( pgno==1 ){
@@ -1312,7 +1315,7 @@ static void originSide(SQLiteRsync *p){
                  " WHERE pgno=1"
           );
           if( pStmt==0 ) break;
-          while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+          while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 &&p->nWrErr==0 ){
             const void *pContent = sqlite3_column_blob(pStmt, 0);
             writeByte(p, ORIGIN_PAGE);
             writeUint32(p, 1);
@@ -1324,7 +1327,8 @@ static void originSide(SQLiteRsync *p){
         writeByte(p, ORIGIN_TXN);
         writeUint32(p, nPage);
         writeByte(p, ORIGIN_END);
-        goto origin_end;
+        fflush(p->pOut);
+        break;
       }
       default: {
         reportError(p, "Unknown message 0x%02x %lld bytes into conversation",
@@ -1334,7 +1338,6 @@ static void originSide(SQLiteRsync *p){
     }
   }
 
-origin_end:
   if( pCkHash ) sqlite3_finalize(pCkHash);
   closeDb(p);
 }
@@ -1385,7 +1388,7 @@ static void replicaSide(SQLiteRsync *p){
   /* Respond to message from the origin.  The origin will initiate the
   ** the conversation with an ORIGIN_BEGIN message.
   */
-  while( p->nErr==0 && (c = readByte(p))!=EOF && c!=ORIGIN_END ){
+  while( p->nErr<=p->nWrErr && (c = readByte(p))!=EOF && c!=ORIGIN_END ){
     switch( c ){
       case ORIGIN_MSG:
       case ORIGIN_ERROR: {
@@ -1448,7 +1451,7 @@ static void replicaSide(SQLiteRsync *p){
                    "SELECT hash(data) FROM sqlite_dbpage"
                    " WHERE pgno<=min(%d,%d)"
                    " ORDER BY pgno", nRPage, nOPage);
-        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
           const unsigned char *a = sqlite3_column_blob(pStmt, 0);
           writeByte(p, REPLICA_HASH);
           writeBytes(p, 20, a);
@@ -1805,6 +1808,7 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
+  pclose2(ctx.pIn, ctx.pOut, childPid);
   if( ctx.pLog ) fclose(ctx.pLog);
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */
