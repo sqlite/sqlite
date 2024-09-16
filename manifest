@@ -1,5 +1,5 @@
-C Provide\smore\sopportunity\sfor\sthe\sremote\sside\sin\ssqlite3-rsync\sto\ssend\serror\nmessages\sback\sto\sthe\slocal\sside.\s\sBe\ssure\sto\sinvoke\spclose2()\swhen\sdone.
-D 2024-09-15T18:37:34.119
+C Improved\serror\smessage\sin\ssqlite3-rsync\sif\sthe\sSQL\sstatement\sfor\sORIGIN_TXN\nfails.
+D 2024-09-16T09:12:11.717
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2174,7 +2174,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 847fc8fcfddf5ce4797b7394cad6372f2f5dc17d8186e2ef8fb44d50fae4f44a
-F tool/sqlite3-rsync.c dfcfd6b9994b7fc63b0aaba86caf8451ccab4ea7948c3a5137bc8582fd305505
+F tool/sqlite3-rsync.c 2606fcc8f62d7620c5d32866583be604734ef0a5ffb912672af29ebcef7e0942
 F tool/sqlite3_analyzer.c.in 8da2b08f56eeac331a715036cf707cc20f879f231362be0c22efd682e2b89b4f
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 50762ba0783a04e0dcd9456a1ae17d875b0a9272f2f09854a23d9d5253761e9f
-R 2c49475f6717a04e54580dcd0fa36eb0
+P 23a63505152ff995e4ce0963dc4ab9f76ed55da7e7f5e1b85a2577473642e3ad
+R 7ac67254bf574f521c3ff56a758b7b73
 U drh
-Z 06be86caecfa360efd4dbe55e1ffa14d
+Z d4fb228b1805959bd390d87ed1c481a4
 # Remove this line to create a well-formed Fossil manifest.

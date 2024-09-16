@@ -1477,8 +1477,8 @@ static void replicaSide(SQLiteRsync *p){
           sqlite3_bind_null(pIns, 2);
           rc = sqlite3_step(pIns);
           if( rc!=SQLITE_DONE ){
-            reportError(p, "SQL statement [%s] failed: %s",
-                   sqlite3_sql(pIns), sqlite3_errmsg(p->db));
+            reportError(p, "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
+                   sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
           }
           sqlite3_reset(pIns);
           p->nPage = nOPage;
