@@ -1282,7 +1282,6 @@ static void originSide(SQLiteRsync *p){
       }
       case REPLICA_READY: {
         sqlite3_stmt *pStmt;
-        int needPageOne = 0;
         sqlite3_finalize(pCkHash);
         pCkHash = 0;
         if( iPage+1<p->nPage ){
@@ -1298,32 +1297,12 @@ static void originSide(SQLiteRsync *p){
         while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
           unsigned int pgno = (unsigned int)sqlite3_column_int64(pStmt,0);
           const void *pContent = sqlite3_column_blob(pStmt, 1);
-          if( pgno==1 ){
-            needPageOne = 1;
-          }else{
-            writeByte(p, ORIGIN_PAGE);
-            writeUint32(p, (unsigned int)sqlite3_column_int64(pStmt, 0));
-            writeBytes(p, szPg, pContent);
-            p->nPageSent++;
-          }
+          writeByte(p, ORIGIN_PAGE);
+          writeUint32(p, pgno);
+          writeBytes(p, szPg, pContent);
+          p->nPageSent++;
         }
         sqlite3_finalize(pStmt);
-        if( needPageOne ){
-          pStmt = prepareStmt(p,
-                 "SELECT data"
-                 "  FROM sqlite_dbpage('main')"
-                 " WHERE pgno=1"
-          );
-          if( pStmt==0 ) break;
-          while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 &&p->nWrErr==0 ){
-            const void *pContent = sqlite3_column_blob(pStmt, 0);
-            writeByte(p, ORIGIN_PAGE);
-            writeUint32(p, 1);
-            writeBytes(p, szPg, pContent);
-            p->nPageSent++;
-          }
-          sqlite3_finalize(pStmt);
-        }
         writeByte(p, ORIGIN_TXN);
         writeUint32(p, nPage);
         writeByte(p, ORIGIN_END);
@@ -1417,30 +1396,35 @@ static void replicaSide(SQLiteRsync *p){
         }
         p->nPage = nOPage;
         p->szPage = szOPage;
-        rc = sqlite3_open(p->zReplica, &p->db);
+        rc = sqlite3_open(":memory:", &p->db);
         if( rc ){
-          reportError(p, "cannot open replica \"%s\": %s",
-                      p->zReplica, sqlite3_errmsg(p->db));
+          reportError(p, "cannot open in-memory database: %s",
+                      sqlite3_errmsg(p->db));
+          closeDb(p);
+          break;
+        }
+        runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+        if( p->nErr ){
           closeDb(p);
           break;
         }
         hashRegister(p->db);
-        if( runSqlReturnUInt(p, &nRPage, "PRAGMA page_count") ){
+        if( runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count") ){
           break;
         }
         if( nRPage==0 ){
-          runSql(p, "PRAGMA page_size=%u", szOPage);
-          runSql(p, "PRAGMA journal_mode=WAL");
-          runSql(p, "SELECT * FROM sqlite_schema");
+          runSql(p, "PRAGMA replica.page_size=%u", szOPage);
+          runSql(p, "PRAGMA replica.journal_mode=WAL");
+          runSql(p, "SELECT * FROM replica.sqlite_schema");
         }
         runSql(p, "BEGIN IMMEDIATE");
-        runSqlReturnText(p, buf, "PRAGMA journal_mode");
+        runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
         if( strcmp(buf, "wal")!=0 ){
           reportError(p, "replica is not in WAL mode");
           break;
         }
-        runSqlReturnUInt(p, &nRPage, "PRAGMA page_count");
-        runSqlReturnUInt(p, &szRPage, "PRAGMA page_size");
+        runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count");
+        runSqlReturnUInt(p, &szRPage, "PRAGMA replica.page_size");
         if( szRPage!=szOPage ){
           reportError(p, "page size mismatch; origin is %d bytes and "
                          "replica is %d bytes", szOPage, szRPage);
@@ -1448,7 +1432,7 @@ static void replicaSide(SQLiteRsync *p){
         }
 
         pStmt = prepareStmt(p,
-                   "SELECT hash(data) FROM sqlite_dbpage"
+                   "SELECT hash(data) FROM sqlite_dbpage('replica')"
                    " WHERE pgno<=min(%d,%d)"
                    " ORDER BY pgno", nRPage, nOPage);
         while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
@@ -1493,7 +1477,7 @@ static void replicaSide(SQLiteRsync *p){
         if( p->nErr ) break;
         if( pIns==0 ){
           pIns = prepareStmt(p,
-            "INSERT INTO sqlite_dbpage(pgno,data) VALUES(?1,?2)"
+            "INSERT INTO sqlite_dbpage(pgno,data,schema)VALUES(?1,?2,'replica')"
           );
           if( pIns==0 ) break;
         }
