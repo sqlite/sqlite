@@ -1797,7 +1797,7 @@ int main(int argc, char const * const *argv){
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */
   if( ctx.nErr ){
-    printf("Databases where not synced due to errors\n");
+    printf("Databases were not synced due to errors\n");
   }
   if( ctx.eVerbose>=1 ){
     char *zMsg;
