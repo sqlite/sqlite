@@ -1547,6 +1547,28 @@ sqlite3_int64 currentTime(void){
 }
 
 /*
+** Input string zIn might be in any of these formats:
+**
+**    (1) PATH
+**    (2) HOST:PATH
+**    (3) USER@HOST:PATH
+**
+** For format 1, return NULL.  For formats 2 and 3, return
+** a pointer to the ':' character that separates the hostname
+** from the path.
+*/
+static char *hostSeparator(const char *zIn){
+  char *zColon;
+  char *zDirSep;
+
+  zColon = strchr(zIn, ':');
+  if( zColon==0 ) return 0;
+  zDirSep = strchr(zIn, '/');
+  if( zDirSep==0 || zDirSep>zColon ) return zColon;
+  return 0;
+}
+
+/*
 ** Parse command-line arguments.  Dispatch subroutines to do the
 ** requested work.
 **
@@ -1711,9 +1733,9 @@ int main(int argc, char const * const *argv){
     return 1;
   }
   tmStart = currentTime();
-  zDiv = strchr(ctx.zOrigin,':');
+  zDiv = hostSeparator(ctx.zOrigin);
   if( zDiv ){
-    if( strchr(ctx.zReplica,':')!=0 ){
+    if( hostSeparator(ctx.zReplica)!=0 ){
       fprintf(stderr,
          "At least one of ORIGIN and REPLICA must be a local database\n"
          "You provided two remote databases.\n");
@@ -1744,7 +1766,7 @@ int main(int argc, char const * const *argv){
       return 1;
     }
     replicaSide(&ctx);
-  }else if( (zDiv = strchr(ctx.zReplica,':'))!=0 ){
+  }else if( (zDiv = hostSeparator(ctx.zReplica))!=0 ){
     /* Local ORIGIN and remote REPLICA */
     sqlite3_str *pStr = sqlite3_str_new(0);
     append_escaped_arg(pStr, zSsh, 1);
