@@ -892,7 +892,7 @@ void writeByte(SQLiteRsync *p, int c){
 */
 int readPow2(SQLiteRsync *p){
   int x = readByte(p);
-  if( x>=32 ){
+  if( x<0 || x>=32 ){
     logError(p, "read invalid page size %d\n", x);
     return 0;
   }
