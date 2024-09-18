@@ -2222,7 +2222,28 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   if( iIdx==p->pTab->iPKey ){
     sqlite3VdbeMemSetInt64(pMem, p->iKey1);
   }else if( iIdx>=p->pUnpacked->nField ){
-    *ppValue = (sqlite3_value *)columnNullValue();
+    /* This occurs when the table has been extended using ALTER TABLE
+    ** ADD COLUMN. The value to return is the default value of the column. */
+    Column *pCol = &p->pTab->aCol[iIdx];
+    if( pCol->iDflt>0 ){
+      if( p->apDflt==0 ){
+        int nByte = sizeof(sqlite3_value*)*p->pTab->nCol;
+        p->apDflt = (sqlite3_value**)sqlite3DbMallocZero(db, nByte);
+        if( p->apDflt==0 ) goto preupdate_old_out;
+      }
+      if( p->apDflt[iIdx]==0 ){
+        Expr *pDflt = p->pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
+        sqlite3_value *pVal = 0;
+        rc = sqlite3ValueFromExpr(db, pDflt, ENC(db), pCol->affinity, &pVal);
+        if( rc==SQLITE_OK && pVal==0 ){
+          rc = SQLITE_CORRUPT_BKPT;
+        }
+        p->apDflt[iIdx] = pVal;
+      }
+      *ppValue = p->apDflt[iIdx];
+    }else{
+      *ppValue = (sqlite3_value *)columnNullValue();
+    }
   }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
     if( pMem->flags & (MEM_Int|MEM_IntReal) ){
       testcase( pMem->flags & MEM_Int );
