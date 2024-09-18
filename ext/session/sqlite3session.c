@@ -48,8 +48,7 @@ struct sqlite3_session {
   int bEnable;                    /* True if currently recording */
   int bIndirect;                  /* True if all changes are indirect */
   int bAutoAttach;                /* True to auto-attach tables */
-  int bImplicitPK;                /* True to handle tables with implicit PK */
-  int rc;                         /* Non-zero if an error has occurred */
+  int bImplicitPK;                /* True to handle tables with implicit PK */ int rc;                         /* Non-zero if an error has occurred */
   void *pFilterCtx;               /* First argument to pass to xTableFilter */
   int (*xTableFilter)(void *pCtx, const char *zTab);
   i64 nMalloc;                    /* Number of bytes of data allocated */
@@ -1757,16 +1756,19 @@ static void sessionPreupdateOneChange(
       for(i=0; i<(pTab->nCol-pTab->bRowid); i++){
         sqlite3_value *p = 0;
         if( op!=SQLITE_INSERT ){
-          TESTONLY(int trc = ) pSession->hook.xOld(pSession->hook.pCtx, i, &p);
-          assert( trc==SQLITE_OK );
+          /* This may fail if the column has a non-NULL default and was added 
+          ** using ALTER TABLE ADD COLUMN after this record was created. */
+          rc = pSession->hook.xOld(pSession->hook.pCtx, i, &p);
         }else if( pTab->abPK[i] ){
           TESTONLY(int trc = ) pSession->hook.xNew(pSession->hook.pCtx, i, &p);
           assert( trc==SQLITE_OK );
         }
 
-        /* This may fail if SQLite value p contains a utf-16 string that must
-        ** be converted to utf-8 and an OOM error occurs while doing so. */
-        rc = sessionSerializeValue(0, p, &nByte);
+        if( rc==SQLITE_OK ){
+          /* This may fail if SQLite value p contains a utf-16 string that must
+          ** be converted to utf-8 and an OOM error occurs while doing so. */
+          rc = sessionSerializeValue(0, p, &nByte);
+        }
         if( rc!=SQLITE_OK ) goto error_out;
       }
       if( pTab->bRowid ){
