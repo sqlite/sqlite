@@ -1558,14 +1558,20 @@ sqlite3_int64 currentTime(void){
 ** from the path.
 */
 static char *hostSeparator(const char *zIn){
-  char *zColon;
-  char *zDirSep;
+  char *zPath = strchr(zIn, ':');
+  if( zPath==0 ) return 0;
+#ifdef _WIN32
+  if( isalpha(zIn[0]) && zIn[1]==':' && (zIn[2]=='/' || zIn[2]=='\\') ){
+    return 0;
+  }
+#endif
+  while( zIn<zPath ){
+    if( zIn[0]=='/' ) return 0;
+    if( zIn[0]=='\\' ) return 0;
+    zIn++;
+  }
+  return zPath;
 
-  zColon = strchr(zIn, ':');
-  if( zColon==0 ) return 0;
-  zDirSep = strchr(zIn, '/');
-  if( zDirSep==0 || zDirSep>zColon ) return zColon;
-  return 0;
 }
 
 /*
