@@ -48,7 +48,8 @@ struct sqlite3_session {
   int bEnable;                    /* True if currently recording */
   int bIndirect;                  /* True if all changes are indirect */
   int bAutoAttach;                /* True to auto-attach tables */
-  int bImplicitPK;                /* True to handle tables with implicit PK */ int rc;                         /* Non-zero if an error has occurred */
+  int bImplicitPK;                /* True to handle tables with implicit PK */
+  int rc;                         /* Non-zero if an error has occurred */
   void *pFilterCtx;               /* First argument to pass to xTableFilter */
   int (*xTableFilter)(void *pCtx, const char *zTab);
   i64 nMalloc;                    /* Number of bytes of data allocated */
