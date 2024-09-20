@@ -40,7 +40,7 @@
 **   modification-time of the target file is set to this value before
 **   returning.
 **
-**   If three or more arguments are passed to this function and an
+**   If five or more arguments are passed to this function and an
 **   error is encountered, an exception is raised.
 **
 ** READFILE(FILE):

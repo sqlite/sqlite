@@ -1,5 +1,5 @@
-C New\sassert()s\sto\shelp\sverify\sunion\saccess.\s\sNo\slogic\schanges.\s\sTesting\sand\nvalidation\scode\sonly.
-D 2024-09-20T12:58:15.340
+C Fix\scomment\stypo\sin\sthe\sfileio.c\sextension.\s\sNo\schanges\sto\scode.
+D 2024-09-20T17:41:05.772
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -399,7 +399,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 172cf81a8634e6a0f0bedaf71a8372fee63348cf5a3c4e1b78bb233c35889fdc
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 916638042f318701460485032e33981056747d0f92e6757aa9499f2363ea7047
+F ext/misc/fileio.c 001179b29735639c607586c9e9398c92505c0833de06eefc27e13acf60dd1577
 F ext/misc/fossildelta.c 8c026e086e406e2b69947f1856fa3b848fff5379962276430d10085b8756b05a
 F ext/misc/fuzzer.c 8b28acf1a7e95d50e332bdd47e792ff27054ad99d3f9bc2e91273814d4b31a5a
 F ext/misc/ieee754.c 62a90978204d2c956d5036eb89e548e736ca5fac0e965912867ddd7bb833256d
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8b4d092a22d87f1231424c8e3fa6a02f17fb965cb2a931621e1b51f4d215de7
-R a719963bd0139770f47d5fdf5d10ac23
+P b7b64c53f5d7f6b405ee3f1f1be1d84230aa79db5a502c8ad78d3e524f4384fb
+R efa3798a2e871ab467bfd4c7e6c3fd95
 U drh
-Z 19717bb5d108ea5ef842c202f9af3f34
+Z d0451af717108db8bd53fb0341024543
 # Remove this line to create a well-formed Fossil manifest.
