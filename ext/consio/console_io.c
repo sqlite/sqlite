@@ -64,6 +64,7 @@ static HANDLE handleOfFile(FILE *pf){
 #endif
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
+
 typedef struct PerStreamTags {
 # if CIO_WIN_WC_XLATE
   HANDLE hx;
@@ -75,8 +76,9 @@ typedef struct PerStreamTags {
   FILE *pf;
 } PerStreamTags;
 
-/* Define NULL-like value for things which can validly be 0. */
+/* Define NULL-like value for FILE* which can validly be 0. */
 # define SHELL_INVALID_FILE_PTR ((FILE *)~0)
+
 # if CIO_WIN_WC_XLATE
 #  define SHELL_INVALID_CONS_MODE 0xFFFF0000
 # endif
@@ -88,7 +90,7 @@ typedef struct PerStreamTags {
 #  define PST_INITIALIZER { 0, SHELL_INVALID_FILE_PTR }
 # endif
 
-/* Quickly say whether a known output is going to the console. */
+/* Quickly say whether a known output is going to the console on Windows. */
 # if CIO_WIN_WC_XLATE
 static short pstReachesConsole(PerStreamTags *ppst){
   return (ppst->hx != INVALID_HANDLE_VALUE);
@@ -154,7 +156,7 @@ static ConsoleInfo consoleInfo = {
   SAC_NoConsole /* sacSetup */
 };
 
-SQLITE_INTERNAL_LINKAGE FILE* invalidFileStream = (FILE *)~0;
+FILE* invalidFileStream = SHELL_INVALID_FILE_PTR;
 
 # if CIO_WIN_WC_XLATE
 static void maybeSetupAsConsole(PerStreamTags *ppst, short odir){
@@ -296,6 +298,77 @@ SQLITE_INTERNAL_LINKAGE void setTextMode(FILE *pf, short bFlush){
 # define setTextMode(f, bFlush) do{ if((bFlush)) fflush(f); }while(0)
 #endif /* defined(SQLITE_CIO_NO_SETMODE) */
 
+
+#if CIO_WIN_WC_XLATE
+static struct FileAltIds {
+  int fd;
+  HANDLE fh;
+} altIdsOfFile(FILE *pf){
+  struct FileAltIds rv = { _fileno(pf) };
+  union { intptr_t osfh; HANDLE fh; } fid = {
+    (rv.fd>=0)? _get_osfhandle(rv.fd) : (intptr_t)INVALID_HANDLE_VALUE
+  };
+  rv.fh = fid.fh;
+  return rv;
+}
+
+SQLITE_INTERNAL_LINKAGE size_t
+cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
+  size_t rv = 0;
+  struct FileAltIds fai = altIdsOfFile(pf);
+  int fmode = _setmode(fai.fd, _O_BINARY);
+  _setmode(fai.fd, fmode);
+  while( rv < ocnt ){
+    size_t nbo = osz;
+    while( nbo > 0 ){
+      DWORD dwno = (nbo>(1L<<24))? 1L<<24 : (DWORD)nbo;
+      BOOL wrc = TRUE;
+      BOOL genCR = (fmode & _O_TEXT)!=0;
+      if( genCR ){
+        const char *pnl = (const char*)memchr(buf, '\n', nbo);
+        if( pnl ) nbo = pnl - (const char*)buf;
+        else genCR = 0;
+      }
+      if( dwno>0 ) wrc = WriteFile(fai.fh, buf, dwno, 0,0);
+      if( genCR && wrc ){
+        wrc = WriteFile(fai.fh, "\r\n", 2, 0,0);
+        ++dwno; /* Skip over the LF */
+      }
+      if( !wrc ) return rv;
+      buf = (const char*)buf + dwno;
+      nbo -= dwno;
+    }
+    ++rv;
+  }
+  return rv;
+}
+
+/* An fgets() equivalent, using Win32 file API for actual input.
+** Input ends when given buffer is filled or a newline is read.
+** If the FILE object is in text mode, swallows 0x0D. (ASCII CR)
+** This is inefficient, reading single characters at a time.
+** With some buffering and complexity, this could be sped up.
+*/
+SQLITE_INTERNAL_LINKAGE char *
+cfGets(char *cBuf, int n, FILE *pf){
+  int nci = 0;
+  struct FileAltIds fai = altIdsOfFile(pf);
+  int fmode = _setmode(fai.fd, _O_BINARY);
+  BOOL eatCR = (fmode & _O_TEXT)!=0;
+  _setmode(fai.fd, fmode);
+  while( nci < n-1 ){
+    DWORD nr;
+    if( !ReadFile(fai.fh, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
+    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ){
+      nci += nr;
+      if( cBuf[nci-nr]=='\n' ) break;
+    }
+  }
+  if( nci < n ) cBuf[nci] = 0;
+  return (nci>0)? cBuf : 0;
+}
+#endif
+
 #ifndef SQLITE_CIO_NO_TRANSLATE
 # if CIO_WIN_WC_XLATE
 /* Write buffer cBuf as output to stream known to reach console,
@@ -330,6 +403,17 @@ static int conioVmPrintf(PerStreamTags *ppst, const char *zFormat, va_list ap){
     return rv;
   }else return 0;
 }
+
+/* For {f,o,e}PrintfUtf8() when stream is not known to reach console. */
+static int streamVmPrintf(FILE *pso, const char *zFormat, va_list ap){
+  char *z = sqlite3_vmprintf(zFormat, ap);
+  if( z ){
+    int rv = (int)cfWrite(z, (int)strlen(z), 1, pso);
+    sqlite3_free(z);
+    return rv;
+  }else return 0;
+}
+
 # endif /* CIO_WIN_WC_XLATE */
 
 # ifdef CONSIO_GET_EMIT_STREAM
@@ -392,10 +476,10 @@ SQLITE_INTERNAL_LINKAGE int oPrintfUtf8(const char *zFormat, ...){
   if( pstReachesConsole(ppst) ){
     rv = conioVmPrintf(ppst, zFormat, ap);
   }else{
-# endif
-    rv = vfprintf(pfOut, zFormat, ap);
-# if CIO_WIN_WC_XLATE
+    rv = streamVmPrintf(pfOut, zFormat, ap);
   }
+# else
+  rv = vfprintf(pfOut, zFormat, ap);
 # endif
   va_end(ap);
   return rv;
@@ -417,10 +501,10 @@ SQLITE_INTERNAL_LINKAGE int ePrintfUtf8(const char *zFormat, ...){
   if( pstReachesConsole(ppst) ){
     rv = conioVmPrintf(ppst, zFormat, ap);
   }else{
-# endif
-    rv = vfprintf(pfErr, zFormat, ap);
-# if CIO_WIN_WC_XLATE
+    rv = streamVmPrintf(pfErr, zFormat, ap);
   }
+# else
+  rv = vfprintf(pfErr, zFormat, ap);
 # endif
   va_end(ap);
   return rv;
@@ -443,10 +527,10 @@ SQLITE_INTERNAL_LINKAGE int fPrintfUtf8(FILE *pfO, const char *zFormat, ...){
     rv = conioVmPrintf(ppst, zFormat, ap);
     if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
   }else{
-# endif
-    rv = vfprintf(pfO, zFormat, ap);
-# if CIO_WIN_WC_XLATE
+    rv = streamVmPrintf(pfO, zFormat, ap);
   }
+# else
+  rv = vfprintf(pfO, zFormat, ap);
 # endif
   va_end(ap);
   return rv;
@@ -468,10 +552,11 @@ SQLITE_INTERNAL_LINKAGE int fPutsUtf8(const char *z, FILE *pfO){
     if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
     return rv;
   }else {
-# endif
-    return (fputs(z, pfO)<0)? 0 : (int)strlen(z);
-# if CIO_WIN_WC_XLATE
+    int rv = (int)cfWrite(z, 1, (int)strlen(z), pfO);
+    return (rv<0)? 0 : rv;
   }
+# else
+  return (fputs(z, pfO)<0)? 0 : (int)strlen(z);
 # endif
 }
 
@@ -487,10 +572,11 @@ SQLITE_INTERNAL_LINKAGE int ePutsUtf8(const char *z){
 # if CIO_WIN_WC_XLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
-# endif
-    return (fputs(z, pfErr)<0)? 0 : (int)strlen(z);
-# if CIO_WIN_WC_XLATE
+    int no = (int)cfWrite(z, 1, (int)strlen(z), pfErr);
+    return (no<0)? 0 : no;
   }
+# else
+  return (fputs(z, pfErr)<0)? 0 : (int)strlen(z);
 # endif
 }
 
@@ -506,10 +592,11 @@ SQLITE_INTERNAL_LINKAGE int oPutsUtf8(const char *z){
 # if CIO_WIN_WC_XLATE
   if( pstReachesConsole(ppst) ) return conZstrEmit(ppst, z, (int)strlen(z));
   else {
-# endif
-    return (fputs(z, pfOut)<0)? 0 : (int)strlen(z);
-# if CIO_WIN_WC_XLATE
+    int no = (int)cfWrite(z, 1, (int)strlen(z), pfOut);
+    return (no<0)? 0 : no;
   }
+# else
+  return (fputs(z, pfOut)<0)? 0 : (int)strlen(z);
 # endif
 }
 
@@ -567,10 +654,10 @@ fPutbUtf8(FILE *pfO, const char *cBuf, int nAccept){
     if( 0 == isKnownWritable(ppst->pf) ) restoreConsoleArb(ppst);
     return rv;
   }else {
-#  endif
-    return (int)fwrite(cBuf, 1, nAccept, pfO);
-#  if CIO_WIN_WC_XLATE
+    return (int)cfWrite(cBuf, 1, nAccept, pfO);
   }
+#  else
+  return (int)fwrite(cBuf, 1, nAccept, pfO);
 #  endif
 }
 # endif
@@ -588,101 +675,15 @@ oPutbUtf8(const char *cBuf, int nAccept){
   if( pstReachesConsole(ppst) ){
     return conZstrEmit(ppst, cBuf, nAccept);
   }else {
-# endif
-    return (int)fwrite(cBuf, 1, nAccept, pfOut);
-# if CIO_WIN_WC_XLATE
+    return (int)cfWrite(cBuf, 1, nAccept, pfOut);
   }
-# endif
-}
-
-/*
-** Flush the given output stream. Return non-zero for success, else 0.
-*/
-#if !defined(SQLITE_CIO_NO_FLUSH) && !defined(SQLITE_CIO_NO_SETMODE)
-SQLITE_INTERNAL_LINKAGE int
-fFlushBuffer(FILE *pfOut){
-# if CIO_WIN_WC_XLATE && !defined(SHELL_OMIT_FIO_DUPE)
-  return FlushFileBuffers(handleOfFile(pfOut))? 1 : 0;
 # else
-  return fflush(pfOut);
+  return (int)fwrite(cBuf, 1, nAccept, pfOut);
 # endif
 }
-#endif
-
-#if CIO_WIN_WC_XLATE \
-   && !defined(SHELL_OMIT_FIO_DUPE) \
-   && defined(SQLITE_USE_ONLY_WIN32)
-static struct FileAltIds {
-  int fd;
-  HANDLE fh;
-} altIdsOfFile(FILE *pf){
-  struct FileAltIds rv = { _fileno(pf) };
-  union { intptr_t osfh; HANDLE fh; } fid = {
-    (rv.fd>=0)? _get_osfhandle(rv.fd) : (intptr_t)INVALID_HANDLE_VALUE
-  };
-  rv.fh = fid.fh;
-  return rv;
-}
-
-SQLITE_INTERNAL_LINKAGE size_t
-cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
-  size_t rv = 0;
-  struct FileAltIds fai = altIdsOfFile(pf);
-  int fmode = _setmode(fai.fd, _O_BINARY);
-  _setmode(fai.fd, fmode);
-  while( rv < ocnt ){
-    size_t nbo = osz;
-    while( nbo > 0 ){
-      DWORD dwno = (nbo>(1L<<24))? 1L<<24 : (DWORD)nbo;
-      BOOL wrc = TRUE;
-      BOOL genCR = (fmode & _O_TEXT)!=0;
-      if( genCR ){
-        const char *pnl = (const char*)memchr(buf, '\n', nbo);
-        if( pnl ) nbo = pnl - (const char*)buf;
-        else genCR = 0;
-      }
-      if( dwno>0 ) wrc = WriteFile(fai.fh, buf, dwno, 0,0);
-      if( genCR && wrc ){
-        wrc = WriteFile(fai.fh, "\r\n", 2, 0,0);
-        ++dwno; /* Skip over the LF */
-      }
-      if( !wrc ) return rv;
-      buf = (const char*)buf + dwno;
-      nbo += dwno;
-    }
-    ++rv;
-  }
-  return rv;
-}
-
-/* An fgets() equivalent, using Win32 file API for actual input.
-** Input ends when given buffer is filled or a newline is read.
-** If the FILE object is in text mode, swallows 0x0D. (ASCII CR)
-*/
-SQLITE_INTERNAL_LINKAGE char *
-cfGets(char *cBuf, int n, FILE *pf){
-  int nci = 0;
-  struct FileAltIds fai = altIdsOfFile(pf);
-  int fmode = _setmode(fai.fd, _O_BINARY);
-  BOOL eatCR = (fmode & _O_TEXT)!=0;
-  _setmode(fai.fd, fmode);
-  while( nci < n-1 ){
-    DWORD nr;
-    if( !ReadFile(fai.fh, cBuf+nci, 1, &nr, 0) || nr==0 ) break;
-    if( nr>0 && (!eatCR || cBuf[nci]!='\r') ){
-      nci += nr;
-      if( cBuf[nci-nr]=='\n' ) break;
-    }
-  }
-  if( nci < n ) cBuf[nci] = 0;
-  return (nci>0)? cBuf : 0;
-}
-# else
-#  define cfWrite(b,os,no,f) fwrite(b,os,no,f)
-#  define cfGets(b,n,f) fgets(b,n,f)
-# endif
 
 # ifdef CONSIO_EPUTB
+/* ePutbUtf8() might be omitted. (Error stream gets formatted output.) */
 SQLITE_INTERNAL_LINKAGE int
 ePutbUtf8(const char *cBuf, int nAccept){
   FILE *pfErr;
@@ -699,7 +700,23 @@ ePutbUtf8(const char *cBuf, int nAccept){
 #  endif
 }
 # endif /* defined(CONSIO_EPUTB) */
+#endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
 
+/*
+** Flush the given output stream. Return non-zero for success, else 0.
+*/
+#if !defined(SQLITE_CIO_NO_FLUSH) && !defined(SQLITE_CIO_NO_SETMODE)
+SQLITE_INTERNAL_LINKAGE int
+fFlushBuffer(FILE *pfOut){
+# if CIO_WIN_WC_XLATE && !defined(SHELL_OMIT_FIO_DUPE)
+  return FlushFileBuffers(handleOfFile(pfOut))? 1 : 0;
+# else
+  return fflush(pfOut);
+# endif
+}
+#endif
+
+#ifndef SQLITE_CIO_NO_TRANSLATE
 SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   if( pfIn==0 ) pfIn = stdin;
 # if CIO_WIN_WC_XLATE
