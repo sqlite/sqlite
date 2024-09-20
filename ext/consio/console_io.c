@@ -722,15 +722,14 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 # if CIO_WIN_WC_XLATE
   if( pfIn == consoleInfo.pstSetup[0].pf
       && (consoleInfo.sacSetup & SAC_InConsole)!=0 ){
-#  if CIO_WIN_WC_XLATE==1
-#   define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
+#  define SHELL_GULP 150 /* Count of WCHARS to be gulped at a time */
     WCHAR wcBuf[SHELL_GULP+1];
     int lend = 0, noc = 0;
     if( ncMax > 0 ) cBuf[0] = 0;
     while( noc < ncMax-8-1 && !lend ){
       /* There is room for at least 2 more characters and a 0-terminator. */
       int na = (ncMax > SHELL_GULP*4+1 + noc)? SHELL_GULP : (ncMax-1 - noc)/4;
-#   undef SHELL_GULP
+#  undef SHELL_GULP
       DWORD nbr = 0;
       BOOL bRC = ReadConsoleW(consoleInfo.pstSetup[0].hx, wcBuf, na, &nbr, 0);
       if( bRC && nbr>0 && (wcBuf[nbr-1]&0xF800)==0xD800 ){
@@ -773,12 +772,11 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
       cBuf[noc] = 0;
       return cBuf;
     }else return 0;
-#  endif
   }else{
-# endif
     return cfGets(cBuf, ncMax, pfIn);
-# if CIO_WIN_WC_XLATE
   }
+# else
+  return fgets(cBuf, ncMax, pfIn);
 # endif
 }
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */

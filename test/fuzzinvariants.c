@@ -47,17 +47,18 @@ static void reportInvariantFailed(
 static void bindDebugParameters(sqlite3_stmt *pStmt){
   int nVar = sqlite3_bind_parameter_count(pStmt);
   int i;
-  for(i=0; i<nVar; i++){
-    const char *zVar = sqlite3_bind_parameter_name(pStmt, i+1);
+  for(i=1; i<=nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
     if( zVar==0 ) continue;
     if( strncmp(zVar, "$int_", 5)==0 ){
-      sqlite3_bind_int(pStmt, i+1, atoi(&zVar[5]));
+      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
     }else
     if( strncmp(zVar, "$text_", 6)==0 ){
-      char *zBuf = sqlite3_malloc64( strlen(zVar)-5 );
+      size_t szVar = strlen(zVar);
+      char *zBuf = sqlite3_malloc64( szVar-5 );
       if( zBuf ){
-        memcpy(zBuf, &zVar[6], strlen(zVar)-5);
-        sqlite3_bind_text64(pStmt, i+1, zBuf, -1, sqlite3_free, SQLITE_UTF8);
+        memcpy(zBuf, &zVar[6], szVar-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
       }
     }
   }

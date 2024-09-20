@@ -73,23 +73,26 @@ archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
      then click on the "Tarball" or "ZIP Archive" links on the information
      page.
 
-To access sources directly using Fossil, first install Fossil version 2.0 or later.
-Source tarballs and precompiled binaries available
-[here](https://www.fossil-scm.org/home/uv/download.html).  Fossil is
+To access sources directly using [Fossil](https://fossil-scm.org/home),
+first install Fossil version 2.0 or later.
+Source tarballs and precompiled binaries available at
+<https://fossil-scm.org/home/uv/download.html>.  Fossil is
 a stand-alone program.  To install, simply download or build the single
 executable file and put that file someplace on your $PATH.
 Then run commands like this:
 
-        mkdir -p ~/sqlite ~/Fossils
+        mkdir -p ~/sqlite
         cd ~/sqlite
-        fossil clone https://www.sqlite.org/src ~/Fossils/sqlite.fossil
-        fossil open ~/Fossils/sqlite.fossil
+        fossil open https://sqlite.org/src
 
-After setting up a repository using the steps above, you can do
-bandwidth-efficient updates to the latest version using:
+The "fossil open" command will take two or three minutes.  Afterwards,
+you can do fast, bandwidth-efficient updates to the whatever versions
+of SQLite you like.  Some examples:
 
-        fossil update trunk   ;# latest trunk check-in
-        fossil update release ;# latest official release
+        fossil update trunk             ;# latest trunk check-in
+        fossil update release           ;# latest official release
+        fossil update trunk:2024-01-01  ;# First trunk check-in after 2024-01-01
+        fossil update version-3.39.0    ;# Version 3.39.0
 
 Or type "fossil ui" to get a web-based user interface.
 
@@ -103,17 +106,19 @@ script found at the root of the source tree.  Then run "make".
 
 For example:
 
-        tar xzf sqlite.tar.gz      ;#  Unpack the source tree into "sqlite"
-        mkdir bld                  ;#  Build will occur in a sibling directory
-        cd bld                     ;#  Change to the build directory
-        ../sqlite/configure        ;#  Run the configure script
-        make sqlite3               ;#  Builds the "sqlite3" command-line tool
-        make sqlite3.c             ;#  Build the "amalgamation" source file
-        make mdevtest              ;#  Run development tests (requires tcl-dev)
-        make releasetest           ;#  Run full release tests (requires tcl-dev)
-        make sqldiff               ;#  Builds the "sqldiff" command-line tool
-        make sqlite3_analyzer      ;#  Builds the "sqlite3_analyzer" tool (requires tcl-dev)
-        make tclextension-install  ;#  Build and install the SQLite TCL extension
+        apt install gcc make tcl-dev  ;#  Make sure you have all the necessary build tools
+        tar xzf sqlite.tar.gz         ;#  Unpack the source tree into "sqlite"
+        mkdir bld                     ;#  Build will occur in a sibling directory
+        cd bld                        ;#  Change to the build directory
+        ../sqlite/configure           ;#  Run the configure script
+        make sqlite3                  ;#  Builds the "sqlite3" command-line tool
+        make sqlite3.c                ;#  Build the "amalgamation" source file
+        make sqldiff                  ;#  Builds the "sqldiff" command-line tool
+        # Makefile targets below this point require tcl-dev
+        make tclextension-install     ;#  Build and install the SQLite TCL extension
+        make devtest                  ;#  Run development tests
+        make releasetest              ;#  Run full release tests
+        make sqlite3_analyzer         ;#  Builds the "sqlite3_analyzer" tool
 
 See the makefile for additional targets.  For debugging builds, the
 core developers typically run "configure" with options like this:
@@ -124,9 +129,19 @@ For release builds, the core developers usually do:
 
         ../sqlite/configure --enable-all
 
-Almost all makefile targets require a "tclsh" TCL interpreter
-version 8.6 or later.  The targets marked with "(requires tcl-dev)" also require
-the TCL development libraries.
+Almost all makefile targets require a "tclsh" TCL interpreter version 8.6 or
+later.  The "tclextension-install" target and the test targets that follow
+all require TCL development libraries too.  ("apt install tcl-dev").  It is
+helpful, but is not required, to install the SQLite TCL extension (the
+"tclextension-install" target) prior to running tests.  The "releasetest"
+target has additional requiremenst, such as "valgrind".
+
+On "make" command-lines, one can add "OPTIONS=..." to specify additional
+compile-time options over and above those set by ./configure.  For example,
+to compile with the SQLITE_OMIT_DEPRECATED compile-time option, one could say:
+
+        ./configure --enable-all
+        make OPTIONS=-DSQLITE_OMIT_DEPRECATED sqlite3
 
 The configure script uses autoconf 2.61 and libtool.  If the configure
 script does not work out for you, there is a generic makefile named
@@ -136,7 +151,7 @@ show what changes are needed.
 
 ## Compiling for Windows Using MSVC
 
-On Windows, all applicable build products can be compiled with MSVC.
+On Windows, everything can be compiled with MSVC.
 You will also need a working installation of TCL.
 See the [compile-for-windows.md](doc/compile-for-windows.md) document for
 additional information about how to install MSVC and TCL and configure your
@@ -150,18 +165,29 @@ TCL library, using a command like this:
 SQLite uses "tclsh.exe" as part of the build process, and so that
 program will need to be somewhere on your %PATH%.  SQLite itself
 does not contain any TCL code, but it does use TCL to help with the
-build process and to run tests.
+build process and to run tests.  You may need to install TCL development
+libraries in order to successfully complete some makefile targets.
+It is helpful, but is not required, to install the SQLite TCL extension
+(the "tclextension-install" target) prior to running tests.
 
 Build using Makefile.msc.  Example:
 
         nmake /f Makefile.msc sqlite3.exe
         nmake /f Makefile.msc sqlite3.c
-        nmake /f Makefile.msc mdevtest
-        nmake /f Makefile.msc releasetest
+        nmake /f Makefile.msc sqldiff.exe
+        # Makefile targets below this point require TCL development libraries
         nmake /f Makefile.msc tclextension-install
+        nmake /f Makefile.msc devtest
+        nmake /f Makefile.msc releasetest
+        nmake /f Makefile.msc sqlite3_analyzer.exe
  
 There are many other makefile targets.  See comments in Makefile.msc for
 details.
+
+As with the unix Makefile, the OPTIONS=... argument can be passed on the nmake
+command-line to enable new compile-time options.  For example:
+
+        nmake /f Makefile.msc OPTIONS=-DSQLITE_OMIT_DEPRECATED sqlite3.exe
 
 ## Source Tree Map
 
@@ -360,7 +386,7 @@ implementation.  It will not be the easiest library in the world to hack.
   *  **VERSION**, **manifest**, and **manifest.uuid** - These files define
      the current SQLite version number.  The "VERSION" file is human generated,
      but the "manifest" and "manifest.uuid" files are automatically generated
-     by the [Fossil version control system](https://fossil-scm/).
+     by the [Fossil version control system](https://fossil-scm.org/).
 
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
