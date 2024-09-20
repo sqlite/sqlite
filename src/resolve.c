@@ -1119,8 +1119,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     /* Resolve function names
     */
     case TK_FUNCTION: {
-      ExprList *pList = pExpr->x.pList;    /* The argument list */
-      int n = pList ? pList->nExpr : 0;    /* Number of arguments */
+      ExprList *pList;            /* The argument list */
+      int n;                      /* Number of arguments */
       int no_such_func = 0;       /* True if no such function exists */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
@@ -1133,6 +1133,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
       assert( pExpr->pLeft==0 || pExpr->pLeft->op==TK_ORDER );
+      pList = pExpr->x.pList;
+      n = pList ? pList->nExpr : 0;
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){

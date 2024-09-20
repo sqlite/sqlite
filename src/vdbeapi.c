@@ -2232,8 +2232,10 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
         if( p->apDflt==0 ) goto preupdate_old_out;
       }
       if( p->apDflt[iIdx]==0 ){
-        Expr *pDflt = p->pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
         sqlite3_value *pVal = 0;
+        Expr *pDflt;
+        assert( p->pTab!=0 && IsOrdinaryTable(p->pTab) );
+        pDflt = p->pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
         rc = sqlite3ValueFromExpr(db, pDflt, ENC(db), pCol->affinity, &pVal);
         if( rc==SQLITE_OK && pVal==0 ){
           rc = SQLITE_CORRUPT_BKPT;
