@@ -319,14 +319,14 @@ cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
   int fmode = _setmode(fai.fd, _O_BINARY);
   _setmode(fai.fd, fmode);
   while( rv < ocnt ){
-    size_t nbo = osz;
-    while( nbo > 0 ){
-      DWORD dwno = (nbo>(1L<<24))? 1L<<24 : (DWORD)nbo;
+    size_t nbe = osz;
+    while( nbe != 0 ){
+      DWORD dwno = (nbe>(1L<<24))? 1L<<24 : (DWORD)nbe;
       BOOL wrc = TRUE;
       BOOL genCR = (fmode & _O_TEXT)!=0;
       if( genCR ){
-        const char *pnl = (const char*)memchr(buf, '\n', nbo);
-        if( pnl ) nbo = pnl - (const char*)buf;
+        const char *pnl = (const char*)memchr(buf, '\n', nbe);
+        if( pnl ) dwno = pnl - (const char*)buf;
         else genCR = 0;
       }
       if( dwno>0 ) wrc = WriteFile(fai.fh, buf, dwno, 0,0);
@@ -336,7 +336,7 @@ cfWrite(const void *buf, size_t osz, size_t ocnt, FILE *pf){
       }
       if( !wrc ) return rv;
       buf = (const char*)buf + dwno;
-      nbo -= dwno;
+      nbe -= dwno;
     }
     ++rv;
   }

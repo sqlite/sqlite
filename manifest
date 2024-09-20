@@ -1,5 +1,5 @@
-C Sync\swith\strunk.\sBuildable.\s(A\sWIP,\sto\sbe\sfurther\stested)
-D 2024-09-20T13:13:11.414
+C Fix\sflub\sin\scfWrite().\s(for\sWin32)
+D 2024-09-20T14:18:36.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -53,7 +53,7 @@ F ext/README.md fd5f78013b0a2bc6f0067afb19e6ad040e89a10179b4f6f03eee58fac5f169bd
 F ext/async/README.txt e12275968f6fde133a80e04387d0e839b0c51f91
 F ext/async/sqlite3async.c 6f247666b495c477628dd19364d279c78ea48cd90c72d9f9b98ad1aff3294f94
 F ext/async/sqlite3async.h 46b47c79357b97ad85d20d2795942c0020dc20c532114a49808287f04aa5309a
-F ext/consio/console_io.c 0bfb970e55fa080fbba5fc7b6fb2cd03029664e5bcce8dae4c60c2823871c0a4 x
+F ext/consio/console_io.c 056c5617c7aabdddf10dcb7483d354671131577574c6a06da4832ac78c3c5000 x
 F ext/consio/console_io.h 6212909529c4ab3deeeee29db2d0b2b9cd5c881cc9dd51dede079273ce91db3d
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
@@ -435,7 +435,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594accaaca w src/test_vfstrace.c
+F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594accaaca
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b769ed002794405f1967206b8b8aab4e449d297b0c34fc2d70e1dcc71d4c91b1 c8b4d092a22d87f1231424c8e3fa6a02f17fb965cb2a931621e1b51f4d215de7
-R 9a524876eb18ca8463a3009c2ddb5ed1
+P 187f1d0a1c375db4bbf5bbdb29295578c891b9cb25e890e1f9bed364f2938055
+R 75ec56560f3199f8903e5143b2f08961
 U larrybr
-Z 96ca3eaf86ad31e91c567dfd0a49b250
+Z 049f72b085c539c3c77e6149a5b2d84e
 # Remove this line to create a well-formed Fossil manifest.
