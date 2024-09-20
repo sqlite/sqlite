@@ -283,5 +283,48 @@ shellGetLine(FILE *pfIn, char *zBufPrior, int nLen,
  */
 SQLITE_INTERNAL_LINKAGE const char*
 zSkipValidUtf8(const char *z, int nAccept, long ccm);
+#endif
+
+#if !defined(SQLITE_CIO_NO_TRANSLATE) \
+ && (defined(_WIN32) || defined(WIN32)) && !SQLITE_OS_WINRT
+/* For Win32 builds, block most FILE* API content transfers. */
+# define getc() assert(0)
+# define fputc(c,fp) assert(0)
+# define putc(c,fp) assert(0)
+# define getchar() assert(0)
+# define gets() assert(0)
+# define putchar(c) assert(0)
+# define ungetc(c,fp) assert(0)
+# define scanf assert(0)
+# define fscanf assert(0)
+# define vscanf assert(0)
+# define vfscanf assert(0)
+
+/* Leave ftell, fgetpos, fseek, fsetpos, rewind, fread and fwrite alone.
+ * They are used in the ext/misc/fileio.c extension embedded in the CLI.
+ */
+
+/* Block feof because we do not trust it mixed with Win32 file I/O. */
+# define feof(fp) assert(0)
+
+/* Divert a few FILE* content transfers which have good substitutes. */
+# define fflush(fp) fFlushBuffer(fp)
+# define fgets(b,n,fp) fGetsUtf8(b,n,fp)
+# define fputs fPutsUtf8
+# define puts(z) oPutsUtf8(z)
+# define printf oPrintfUtf8
+# define fprintf fPrintfUtf8
+
+# ifndef SQLITE_CIO_NO_FGETC
+/* As a dispensation for .import's char-at-a-time parsing, provide an
+ * equivalent which gets them via ReadFile(), without UTF-8 translation.
+ * They could (conceivably) come from the console, with odd results.
+ */
+SQLITE_INTERNAL_LINKAGE int fGetCh(FILE *pfIn);
+#  define fgetc(fp) fGetCh(fp)
+# else
+#  define fgetc(fp) assert(0),0
+# endif
+
 
 #endif

@@ -779,6 +779,23 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
   return fgets(cBuf, ncMax, pfIn);
 # endif
 }
+
+# if CIO_WIN_WC_XLATE && !defined(SQLITE_CIO_NO_FGETC)
+SQLITE_INTERNAL_LINKAGE int fGetCh(FILE *pfIn){
+  struct FileAltIds fai = altIdsOfFile(pfIn);
+  int fmode = _setmode(fai.fd, _O_BINARY);
+  BOOL eatCR = (fmode & _O_TEXT)!=0;
+  _setmode(fai.fd, fmode);
+  while( 1 ){
+    DWORD nr, rf;
+    char ci;
+    rf = ReadFile(fai.fh, &ci, 1, &nr, 0);
+    if( !rf || nr<1 ) return -1;
+    if( !eatCR || ci!='\r' ) return (int)(unsigned char)ci;
+  }
+}
+# endif
+
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
 
 #if defined(_MSC_VER)
