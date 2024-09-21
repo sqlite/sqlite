@@ -1,5 +1,5 @@
-C Fix\scomment\stypo\sin\sthe\sfileio.c\sextension.\s\sNo\schanges\sto\scode.
-D 2024-09-20T17:41:05.772
+C If\sthe\sdatabase\sfilename\spointer\spassed\sto\ssqlite3_open(),\schange\sit\ninto\s":memory:".
+D 2024-09-21T15:57:06.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -730,7 +730,7 @@ F src/insert.c f8d1a0f8ee258411009c6b7f2d93170e351bd19f5ad89d57e1180644297cbe70
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c e7b53893f9fb3ad76baa8513f85c167b34d5c8e25ce64608db440f5637d0fe9e
+F src/main.c 4db6e3bde55ba0b24ccc83600c2b6ea11429f61ce7b3a2e7e3b42e1b45366c3e
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7b64c53f5d7f6b405ee3f1f1be1d84230aa79db5a502c8ad78d3e524f4384fb
-R efa3798a2e871ab467bfd4c7e6c3fd95
+P bf2c5b368ac094e048ca33a5e9175fe6a1fb5e2b1e392935eb29388e8999c40b
+R 0036a28eaffdb4017ab4d0d8d4b55569
 U drh
-Z d0451af717108db8bd53fb0341024543
+Z d239270ef20c9332ad4104c5155536d6
 # Remove this line to create a well-formed Fossil manifest.
