@@ -1,11 +1,11 @@
-C If\sthe\sdatabase\sfilename\spointer\spassed\sto\ssqlite3_open(),\schange\sit\ninto\s":memory:".
-D 2024-09-21T15:57:06.445
+C Add\sthe\srun-fuzzcheck\starget\sto\sthe\sMSVC\smakefile.
+D 2024-09-21T17:27:47.017
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in fa448c4c0567623fd140efebecb570ab58d955d766a5ea0fd8a94e9b5697007c
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc bf58bbf9acb3d2b592adffb2f17130737fb26055f381da01258607c72dafd0b0
+F Makefile.msc e3c4723c27464acc31da4420b808c8d2690180ba2b915897bece0a9d5d2cecf6
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf2c5b368ac094e048ca33a5e9175fe6a1fb5e2b1e392935eb29388e8999c40b
-R 0036a28eaffdb4017ab4d0d8d4b55569
+P 62e11a3a78edf9853b74d6495ccd8ae9ac1966c7d78eb3682cf2d5885e3740ec
+R 44ce456c4e740a869984e636809287df
 U drh
-Z d239270ef20c9332ad4104c5155536d6
+Z fb345da7ed81e5875e018c3667e473a3
 # Remove this line to create a well-formed Fossil manifest.

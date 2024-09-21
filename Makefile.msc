@@ -1907,6 +1907,10 @@ fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 fuzzcheck-asan.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) /fsanitize=address $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+run-fuzzcheck:	fuzzcheck.exe fuzzcheck-asan.exe
+	fuzzcheck --spinner $(FUZZDB)
+	fuzzcheck-asan --spinner $(FUZZDB)
+
 ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
