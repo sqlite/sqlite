@@ -1757,16 +1757,19 @@ static void sessionPreupdateOneChange(
       for(i=0; i<(pTab->nCol-pTab->bRowid); i++){
         sqlite3_value *p = 0;
         if( op!=SQLITE_INSERT ){
-          TESTONLY(int trc = ) pSession->hook.xOld(pSession->hook.pCtx, i, &p);
-          assert( trc==SQLITE_OK );
+          /* This may fail if the column has a non-NULL default and was added 
+          ** using ALTER TABLE ADD COLUMN after this record was created. */
+          rc = pSession->hook.xOld(pSession->hook.pCtx, i, &p);
         }else if( pTab->abPK[i] ){
           TESTONLY(int trc = ) pSession->hook.xNew(pSession->hook.pCtx, i, &p);
           assert( trc==SQLITE_OK );
         }
 
-        /* This may fail if SQLite value p contains a utf-16 string that must
-        ** be converted to utf-8 and an OOM error occurs while doing so. */
-        rc = sessionSerializeValue(0, p, &nByte);
+        if( rc==SQLITE_OK ){
+          /* This may fail if SQLite value p contains a utf-16 string that must
+          ** be converted to utf-8 and an OOM error occurs while doing so. */
+          rc = sessionSerializeValue(0, p, &nByte);
+        }
         if( rc!=SQLITE_OK ) goto error_out;
       }
       if( pTab->bRowid ){
@@ -5660,6 +5663,9 @@ static int sessionChangesetExtendRecord(
     sessionAppendBlob(pOut, aRec, nRec, &rc);
     if( rc==SQLITE_OK && pTab->pDfltStmt==0 ){
       rc = sessionPrepareDfltStmt(pGrp->db, pTab, &pTab->pDfltStmt);
+      if( rc==SQLITE_OK && SQLITE_ROW!=sqlite3_step(pTab->pDfltStmt) ){
+        rc = sqlite3_errcode(pGrp->db);
+      }
     }
     for(ii=nCol; rc==SQLITE_OK && ii<pTab->nCol; ii++){
       int eType = sqlite3_column_type(pTab->pDfltStmt, ii);
@@ -5676,6 +5682,7 @@ static int sessionChangesetExtendRecord(
           }
           if( SQLITE_OK==sessionBufferGrow(pOut, 8, &rc) ){
             sessionPutI64(&pOut->aBuf[pOut->nBuf], iVal);
+            pOut->nBuf += 8;
           }
           break;
         }

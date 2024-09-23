@@ -1926,7 +1926,8 @@ int sqlite3CreateFunc(
   assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
   assert( SQLITE_FUNC_DIRECT==SQLITE_DIRECTONLY );
   extraFlags = enc &  (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY|
-                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS|SQLITE_RESULT_SUBTYPE);
+                       SQLITE_SUBTYPE|SQLITE_INNOCUOUS|
+                       SQLITE_RESULT_SUBTYPE|SQLITE_SELFORDER1);
   enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
 
   /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
@@ -3481,6 +3482,7 @@ static int openDatabase(
   if( ((1<<(flags&7)) & 0x46)==0 ){
     rc = SQLITE_MISUSE_BKPT;  /* IMP: R-18321-05872 */
   }else{
+    if( zFilename==0 ) zFilename = ":memory:";
     rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   }
   if( rc!=SQLITE_OK ){

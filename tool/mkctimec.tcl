@@ -159,6 +159,7 @@ set boolean_defnil_options {
   SQLITE_ENABLE_MULTIPLEX
   SQLITE_ENABLE_NORMALIZE
   SQLITE_ENABLE_NULL_TRIM
+  SQLITE_ENABLE_ORDERED_SET_AGGREGATES
   SQLITE_ENABLE_OFFSET_SQL_FUNC
   SQLITE_ENABLE_OVERSIZE_CELL_CHECK
   SQLITE_ENABLE_PREUPDATE_HOOK
@@ -448,6 +449,7 @@ if {[catch {set cfd [open $destfile w]}]!=0} {
   puts stderr "File '$destfile' unwritable."
   exit 1;
 }
+fconfigure $cfd -translation binary
 
 puts $cfd $::headWarning;
 puts $cfd $::headCode;

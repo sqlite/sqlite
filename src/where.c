@@ -1636,9 +1636,11 @@ static void freeIndexInfo(sqlite3 *db, sqlite3_index_info *pIdxInfo){
 ** that this is required.
 */
 static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
-  sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
   int rc;
+  sqlite3_vtab *pVtab;
 
+  assert( IsVirtual(pTab) );
+  pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
   whereTraceIndexInfoInputs(p, pTab);
   pParse->db->nSchemaLock++;
   rc = pVtab->pModule->xBestIndex(pVtab, p);
@@ -6199,6 +6201,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     WhereTerm *pTerm, *pEnd;
     SrcItem *pItem;
     WhereLoop *pLoop;
+    Bitmask m1;
     pLoop = pWInfo->a[i].pWLoop;
     pItem = &pWInfo->pTabList->a[pLoop->iTab];
     if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ) continue;
@@ -6225,7 +6228,10 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
       }
     }
     if( pTerm<pEnd ) continue;
-    WHERETRACE(0xffffffff, ("-> drop loop %c not used\n", pLoop->cId));
+    WHERETRACE(0xffffffff,("-> omit unused FROM-clause term %c\n",pLoop->cId));
+    m1 = MASKBIT(i)-1;
+    testcase( ((pWInfo->revMask>>1) & ~m1)!=0 );
+    pWInfo->revMask = (m1 & pWInfo->revMask) | ((pWInfo->revMask>>1) & ~m1);
     notReady &= ~pLoop->maskSelf;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){

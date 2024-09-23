@@ -83,9 +83,13 @@ TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
 # The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
-OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
+#
+# Add OPTIONS=... on the command line to append additional options
+# to the OPT_FEATURE_FLAGS.
+#
+OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
-TCC += $(OPT_FEATURE_FLAGS)
+TCC += $(OPT_FEATURE_FLAGS) 
 
 # Add in any optional parameters specified on the make commane line
 # ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
@@ -646,6 +650,7 @@ FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
 FUZZCHECK_SRC += $(TOP)/test/vt02.c
+FUZZCHECK_SRC += $(TOP)/ext/misc/percentile.c
 FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
@@ -656,11 +661,16 @@ SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
 SQLITE3_SHELL_TARGET_1 =
 SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
 
+# Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
+# libtclsqlite3.la or an empty value.
+libtclsqlite3.la_0 =
+libtclsqlite3.la_1 = libtclsqlite3.la
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
 all:	sqlite3.h libsqlite3.la $(SQLITE3_SHELL_TARGET) \
-  $(HAVE_TCL:1=libtclsqlite3.la)
+  $(libtclsqlite3.la_$(HAVE_TCL))
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -689,6 +699,20 @@ sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
+
+RSYNC_SRC = \
+  $(TOP)/tool/sqlite3-rsync.c \
+  sqlite3.c
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -USQLITE_THREADSAFE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1178,11 +1202,14 @@ SHELL_DEP = \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \
     $(TOP)/ext/misc/pcachetrace.c \
+    $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/zipfile.c \
     $(TOP)/ext/recover/dbdata.c \
     $(TOP)/ext/recover/sqlite3recover.c \
@@ -1363,9 +1390,14 @@ tcltest:	./testfixture$(TEXE)
 testrunner:	testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
 
-# Runs both fuzztest and testrunner, consecutively.
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration, regardless of how
+# ./configure was run.  The devs run "make devtest" prior to each
+# check-in, at a minimum.  Probably other tests too, but at least this
+# one.
 #
-devtest:	srctree-check testfixture$(TEXE) fuzztest testrunner
+devtest:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
 
 mdevtest: srctree-check has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
@@ -1381,16 +1413,19 @@ srctree-check:	$(TOP)/tool/srctree-check.tcl
 
 # Testing for a release
 #
-releasetest: srctree-check testfixture$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+releasetest: srctree-check has_tclsh85 verify-source
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-# This is the common case.  Run many tests that do not take too long,
-# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
+# Try to run tests on whatever options are specified by the
+# ./configure.  The developers seldom use this target.  Instead
+# they use "make devtest" which runs tests on a standard set of
+# options regardless of how SQLite is configured.  This "test"
+# target is provided for legacy only.
 #
 test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
 
@@ -1407,8 +1442,8 @@ valgrindtest:	$(TESTPROGS) valgrindfuzz
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
-	./testfixture$(TEXT) $(TOP)/test/permutations.test shell
+shelltest:
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
@@ -1552,7 +1587,12 @@ lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 
-install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+# Use $(tcl_install_$(HAVE_TCL)) to resolve to either tcl_install or
+# an empty value.
+tcl_install_0 =
+tcl_install_1 = tcl_install
+
+install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc $(tcl_install_$(HAVE_TCL))
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
 	$(INSTALL) -d $(DESTDIR)$(includedir)
@@ -1594,43 +1634,40 @@ tclextension-uninstall:
 tclextension-list: 
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
-clean:
-	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
-	rm -f sqlite3.h opcodes.*
-	rm -rf .libs .deps
-	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
-	rm -f mkkeywordhash$(BEXE) keywordhash.h
-	rm -f mksourceid$(BEXE)
-	rm -f *.da *.bb *.bbg gmon.out
-	rm -rf tsrc .target_source
-	rm -f tclsqlite3$(TEXE)
-	rm -f testfixture$(TEXE) test.db
+
+# Remove build products sufficient so that subsequent makes will recompile
+# everything from scratch.  Do not remove:
+#
+#   *   test results and test logs
+#   *   output from ./configure
+#
+tidy:
+	rm -f *.lo *.la *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
+	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -rf .libs .deps tsrc .target_source
+	rm -f lemon$(BEXE) sqlite*.tar.gz
+	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
+	rm -f parse.* fts5parse.*
+	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
-	rm -f wordcount$(TEXE) changeset$(TEXE)
-	rm -f version-info$(TEXT)
-	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
-	rm -f sqlite3.c
-	rm -f sqlite3rc.h
-	rm -f shell.c sqlite3ext.h
-	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
-	rm -f sqlite-*-output.vsix
-	rm -f mptester mptester.exe
-	rm -f rbu rbu.exe
-	rm -f srcck1 srcck1.exe
-	rm -f fuzzershell fuzzershell.exe
-	rm -f fuzzcheck fuzzcheck.exe
-	rm -f sqldiff sqldiff.exe
-	rm -f dbhash dbhash.exe
-	rm -f fts5.* fts5parse.*
-	rm -f threadtest5
-	rm -f src-verify
-	rm -f custom.rws
-	rm -f has_tclsh84 has_tclsh85
+	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
+	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
+	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
+	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
+	rm -f threadtest5$(TEXE)
+	rm -f src-verify has_tclsh*
 
+# Removes build products and test logs.  Retains ./configure outputs.
+#
+clean:	tidy
+	rm -rf omittest* testrunner* testdir*
+
+# Clean up everything.  No exceptions.
+#
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc \
-		$(TESTPROGS)
+	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
 
 #
 # Windows section

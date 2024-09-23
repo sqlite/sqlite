@@ -84,6 +84,14 @@ do_test shell5-1.4.1 {
 .import FOO t1}]
 } {1 {Error: cannot open "FOO"}}
 
+# the remainder of these test cases require virtual tables.
+#
+ifcapable !vtab {
+  puts "Skipping subsequent tests due to SQLITE_OMIT_VIRTUALTABLE"
+  finish_test
+  return
+}
+
 # empty import file
 do_test shell5-1.4.2 {
   forcedelete shell5.csv
