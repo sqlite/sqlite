@@ -237,6 +237,57 @@ extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
+#ifdef _WIN32
+/* On Windows, we normally run with output mode of TEXT so that \n characters
+** are automatically translated into \r\n.  However, this behavior needs
+** to be disabled in some cases (ex: when generating CSV output and when
+** rendering quoted strings that contain \n characters).  The following
+** routines take care of that.
+*/
+static void setBinaryMode(FILE *file, int isOutput){
+  if( isOutput ) fflush(file);
+  _setmode(_fileno(file), _O_BINARY);
+}
+static void setTextMode(FILE *file, int isOutput){
+  if( isOutput ) fflush(file);
+  _setmode(_fileno(file), _O_TEXT);
+}
+#else
+  /* Unix equivalents to set*Mode() */
+# define setBinaryMode(X,Y)
+# define setTextMode(X,Y)
+#endif
+
+#ifdef _WIN32
+/* fgets() for windows */
+static char *cli_fgets(char *buf, int sz, FILE *in){
+  if( isatty(_fileno(in)) ){
+    /* When reading from the command-prompt in Windows, it is necessary
+    ** to use _O_WTEXT input mode to read UTF-16 characters, then translate
+    ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
+    ** into '?'.
+    */
+    wchar_t *b1 = malloc( sz*sizeof(wchar_t) );
+    if( b1==0 ) return 0;
+    _setmode(_fileno(in), _O_WTEXT);
+    if( fgetws(b1, sz/4, in)==0 ){
+      sqlite3_free(b1);
+      return 0;
+    }
+    WideCharToMultiByte(CP_UTF8, 0, b1, -1, buf, sz, 0, 0);
+    sqlite3_free(b1);
+    return buf;
+  }else{
+    /* Reading from a file or other input source, just read bytes without
+    ** any translation. */
+    return fgets(buf, sz, in);
+  }
+}
+#else
+/* library version works for everybody else */
+# define cli_fgets fgets
+#endif
+
 /* Use console I/O package as a direct INCLUDE. */
 #define SQLITE_INTERNAL_LINKAGE static
 
@@ -248,57 +299,15 @@ extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 # define SQLITE_CIO_NO_SETMODE
 # define SQLITE_CIO_NO_FLUSH
 #endif
-INCLUDE ../ext/consio/console_io.h
-INCLUDE ../ext/consio/console_io.c
 
-#ifndef SQLITE_SHELL_FIDDLE
-
-/* From here onward, fgets() is redirected to the console_io library. */
-# define fgets(b,n,f) fGetsUtf8(b,n,f)
-/*
- * Define macros for emitting output text in various ways:
- *  sputz(s, z)      => emit 0-terminated string z to given stream s
- *  sputf(s, f, ...) => emit varargs per format f to given stream s
- *  oputz(z)         => emit 0-terminated string z to default stream
- *  oputf(f, ...)    => emit varargs per format f to default stream
- *  eputz(z)         => emit 0-terminated string z to error stream
- *  eputf(f, ...)    => emit varargs per format f to error stream
- *  oputb(b, n)      => emit char buffer b[0..n-1] to default stream
- *
- * Note that the default stream is whatever has been last set via:
- *   setOutputStream(FILE *pf)
- * This is normally the stream that CLI normal output goes to.
- * For the stand-alone CLI, it is stdout with no .output redirect.
- *
- * The ?putz(z) forms are required for the Fiddle builds for string literal
- * output, in aid of enforcing format string to argument correspondence.
- */
-# define sputz(s,z) fPutsUtf8(z,s)
-# define sputf fPrintfUtf8
-# define oputz(z) oPutsUtf8(z)
-# define oputf oPrintfUtf8
-# define eputz(z) ePutsUtf8(z)
-# define eputf ePrintfUtf8
-# define oputb(buf,na) oPutbUtf8(buf,na)
-# define fflush(s) fFlushBuffer(s);
-
-#else
-/* For Fiddle, all console handling and emit redirection is omitted. */
-/* These next 3 macros are for emitting formatted output. When complaints
- * from the WASM build are issued for non-formatted output, when a mere
- * string literal is to be emitted, the ?putz(z) forms should be used.
- * (This permits compile-time checking of format string / argument mismatch.)
- */
-# define oputf(fmt, ...) printf(fmt,__VA_ARGS__)
-# define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
-# define sputf(fp,fmt, ...) fprintf(fp,fmt,__VA_ARGS__)
+#define oputf(fmt, ...) printf(fmt,__VA_ARGS__)
+#define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
+#define sputf(fp,fmt, ...) fprintf(fp,fmt,__VA_ARGS__)
 /* These next 3 macros are for emitting simple string literals. */
-# define oputz(z) fputs(z,stdout)
-# define eputz(z) fputs(z,stderr)
-# define sputz(fp,z) fputs(z,fp)
-# define oputb(buf,na) fwrite(buf,1,na,stdout)
-# undef fflush
-#endif
+#define oputz(z) fputs(z,stdout)
+#define eputz(z) fputs(z,stderr)
+#define sputz(fp,z) fputs(z,fp)
+#define oputb(buf,na) fwrite(buf,1,na,stdout)
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -343,6 +352,7 @@ struct rusage {
 };
 #define getrusage(A,B) memset(B,0,sizeof(*B))
 #endif
+
 
 /* Saved resource information for the beginning of an operation */
 static struct rusage sBegin;  /* CPU time at start */
@@ -802,7 +812,7 @@ static char *local_getline(char *zLine, FILE *in){
       zLine = realloc(zLine, nLine);
       shell_check_oom(zLine);
     }
-    if( fgets(&zLine[n], nLine - n, in)==0 ){
+    if( cli_fgets(&zLine[n], nLine - n, in)==0 ){
       if( n==0 ){
         free(zLine);
         return 0;
@@ -1766,10 +1776,7 @@ static const char *unused_string(
 static void output_quoted_string(const char *z){
   int i;
   char c;
-#ifndef SQLITE_SHELL_FIDDLE
-  FILE *pfO = setOutputStream(invalidFileStream);
-  setBinaryMode(pfO, 1);
-#endif
+  setBinaryMode(stdout, 1);
   if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
   if( c==0 ){
@@ -1794,11 +1801,7 @@ static void output_quoted_string(const char *z){
     }
     oputz("'");
   }
-#ifndef SQLITE_SHELL_FIDDLE
-  setTextMode(pfO, 1);
-#else
   setTextMode(stdout, 1);
-#endif
 }
 
 /*
@@ -1813,10 +1816,7 @@ static void output_quoted_string(const char *z){
 static void output_quoted_escaped_string(const char *z){
   int i;
   char c;
-#ifndef SQLITE_SHELL_FIDDLE
-  FILE *pfO = setOutputStream(invalidFileStream);
-  setBinaryMode(pfO, 1);
-#endif
+  setBinaryMode(stdout, 1);
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
     oputf("'%s'",z);
@@ -1868,11 +1868,7 @@ static void output_quoted_escaped_string(const char *z){
       oputf(",'%s',char(10))", zNL);
     }
   }
-#ifndef SQLITE_SHELL_FIDDLE
-  setTextMode(pfO, 1);
-#else
   setTextMode(stdout, 1);
-#endif
 }
 
 /*
@@ -1892,6 +1888,42 @@ static const char *anyOfInStr(const char *s, const char *zAny, size_t ns){
   }
   return pcFirst;
 }
+
+/* Skip over as much z[] input char sequence as is valid UTF-8,
+** limited per nAccept char's or whole characters and containing
+** no char cn such that ((1<<cn) & ccm)!=0. On return, the
+** sequence z:return (inclusive:exclusive) is validated UTF-8.
+** Limit: nAccept>=0 => char count, nAccept<0 => character
+ */
+const char *zSkipValidUtf8(const char *z, int nAccept, long ccm){
+  int ng = (nAccept<0)? -nAccept : 0;
+  const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
+  assert(z!=0);
+  while( (pcLimit)? (z<pcLimit) : (ng-- != 0) ){
+    char c = *z;
+    if( (c & 0x80) == 0 ){
+      if( ccm != 0L && c < 0x20 && ((1L<<c) & ccm) != 0 ) return z;
+      ++z; /* ASCII */
+    }else if( (c & 0xC0) != 0xC0 ) return z; /* not a lead byte */
+    else{
+      const char *zt = z+1; /* Got lead byte, look at trail bytes.*/
+      do{
+        if( pcLimit && zt >= pcLimit ) return z;
+        else{
+          char ct = *zt++;
+          if( ct==0 || (zt-z)>4 || (ct & 0xC0)!=0x80 ){
+            /* Trailing bytes are too few, too many, or invalid. */
+            return z;
+          }
+        }
+      } while( ((c <<= 1) & 0x40) == 0x40 ); /* Eat lead byte's count. */
+      z = zt;
+    }
+  }
+  return z;
+}
+
+
 /*
 ** Output the given string as a quoted according to C or TCL quoting rules.
 */
@@ -3027,7 +3059,7 @@ static void displayLinuxIoStats(void){
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
   in = fopen(z, "rb");
   if( in==0 ) return;
-  while( fgets(z, sizeof(z), in)!=0 ){
+  while( cli_fgets(z, sizeof(z), in)!=0 ){
     static const struct {
       const char *zPattern;
       const char *zDesc;
@@ -5238,7 +5270,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   }
   *pnData = 0;
   nLine++;
-  if( fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
+  if( cli_fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
@@ -5251,7 +5283,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     eputz("invalid pagesize\n");
     goto readHexDb_error;
   }
-  for(nLine++; fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+  for(nLine++; cli_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
@@ -5283,7 +5315,7 @@ readHexDb_error:
   if( in!=p->in ){
     fclose(in);
   }else{
-    while( fgets(zLine, sizeof(zLine), p->in)!=0 ){
+    while( cli_fgets(zLine, sizeof(zLine), p->in)!=0 ){
       nLine++;
       if(cli_strncmp(zLine, "| end ", 6)==0 ) break;
     }
@@ -6177,10 +6209,10 @@ static void tryToClone(ShellState *p, const char *zNewDb){
 ** Change the output stream (file or pipe or console) to something else.
 */
 static void output_redir(ShellState *p, FILE *pfNew){
-  if( p->out != stdout ) eputz("Output already redirected.\n");
-  else{
+  if( p->out != stdout ){
+    eputz("Output already redirected.\n");
+  }else{
     p->out = pfNew;
-    setOutputStream(pfNew);
   }
 }
 
@@ -6226,7 +6258,6 @@ static void output_reset(ShellState *p){
   }
   p->outfile[0] = 0;
   p->out = stdout;
-  setOutputStream(stdout);
 }
 #else
 # define output_redir(SS,pfO)
@@ -10719,9 +10750,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
-    consoleRestore();
+    /*consoleRestore();*/
     x = zCmd!=0 ? system(zCmd) : 1;
-    consoleRenewSetup();
+    /*consoleRenewSetup();*/
     sqlite3_free(zCmd);
     if( x ) eputf("System command returns %d\n", x);
   }else
@@ -12374,7 +12405,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #  define data shellState
 #else
   ShellState data;
-  StreamsAreConsole consStreams = SAC_NoConsole;
 #endif
   const char *zInitFile = 0;
   int i;
@@ -12397,10 +12427,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdout_is_console = 1;
   data.wasm.zDefaultDbName = "/fiddle.sqlite3";
 #else
-  consStreams = consoleClassifySetup(stdin, stdout, stderr);
-  stdin_is_interactive = (consStreams & SAC_InConsole)!=0;
-  stdout_is_console = (consStreams & SAC_OutConsole)!=0;
-  atexit(consoleRestore);
+  stdin_is_interactive = isatty(0);
+  stdout_is_console = isatty(1);
 #endif
   atexit(sayAbnormalExit);
 #ifdef SQLITE_DEBUG

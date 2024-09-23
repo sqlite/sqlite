@@ -1,11 +1,11 @@
-C Add\sthe\srun-fuzzcheck\starget\sto\sthe\sMSVC\smakefile.
-D 2024-09-21T17:27:47.017
+C CLI\suses\sonly\slib-c\sfor\sI/O\son\sWindows.\s\sNo\scalls\sto\sWin32.\s\sWorks\son\sWin11,\nat\sleast.\s\sReads\sand\swrites\sunicode\sto/from\sthe\sconsole\sand\sUTF-8\sto/from\sfiles.\nPrototype\scode\sonly\s-\smust\stesting\sand\sadditional\swork\srequired.
+D 2024-09-23T20:23:43.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in fa448c4c0567623fd140efebecb570ab58d955d766a5ea0fd8a94e9b5697007c
+F Makefile.in aa594119c3c7f699e87a767fca6598452f77d4c32c41a6486c40d4f156d4efc1
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc e3c4723c27464acc31da4420b808c8d2690180ba2b915897bece0a9d5d2cecf6
+F Makefile.msc add7e29bae33ad5b8c464daf6de84a1a01e31e6337d79fb0c1062e53fa7657da
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -687,7 +687,7 @@ F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 67e622f31d10fee8f0f62655b4f9b47cd97fe70a125674ca6754b3549d69cc0e
+F main.mk b897586c0c7b77b7e39f0a0e9ed79fed7346b09af1ed35a08da745e02b795772
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -768,7 +768,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c b2cd748488012312824508639b6af908461e45403037d5c4e19d9b0e8195507f
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
-F src/shell.c.in 375f8a183126be96ec73db4e42c57917ff10a0900846b1b722dd4f8cef537812
+F src/shell.c.in 265c877932142ee8ef05a6aa5a0a5bff92905ffef97dc6f566062a27814274a1
 F src/sqlite.h.in 77f55bd1978a04a14db211732f0a609077cf60ba4ccf9baf39988f508945419c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -2213,8 +2213,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62e11a3a78edf9853b74d6495ccd8ae9ac1966c7d78eb3682cf2d5885e3740ec
-R 44ce456c4e740a869984e636809287df
+P 2e5194407a1b34dd0659c350ea8098bfef7b3f11aa5b2a07ecd2bce5582655a2
+R 7c20c2fd1880ef1b062b32c88da2e8e4
+T *branch * cli-stdlib
+T *sym-cli-stdlib *
+T -sym-trunk *
 U drh
-Z fb345da7ed81e5875e018c3667e473a3
+Z cdf0bc25a30881c9fe4f62b1ff96af22
 # Remove this line to create a well-formed Fossil manifest.
