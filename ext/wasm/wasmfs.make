@@ -6,12 +6,10 @@
 # GNUMakefile.
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
-$(warning The WASMFS build is currently incomplete.)
+$(warning The WASMFS build is not well-supported. \
+  WASMFS is a proverbial moving target, so what builds today might not tomorrow.)
 
-#dir.wasmfs := $(dir.wasm)
-dir.wasmfs := $(dir.dout)
 sqlite3-wasmfs.js     := $(dir.wasmfs)/sqlite3-wasmfs.js
-sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
 sqlite3-wasmfs.wasm   := $(dir.wasmfs)/sqlite3-wasmfs.wasm
 
 ########################################################################
@@ -25,9 +23,11 @@ cflags.sqlite3-wasmfs += -DSQLITE_ENABLE_WASMFS
 # emcc flags specific to building the final .js/.wasm file...
 emcc.flags.sqlite3-wasmfs :=
 emcc.flags.sqlite3-wasmfs += \
-  -sEXPORTED_RUNTIME_METHODS=wasmMemory,allocateUTF8OnStack,stringToUTF8OnStack
+  -sEXPORTED_RUNTIME_METHODS=wasmMemory
                           # wasmMemory ==> for -sIMPORTED_MEMORY
-                          # *OnStack ==> wasmfs internals (leaky abstraction)
+# Some version of emcc between 3.1.60-ish and 3.1.62 deprecated the use of
+# (allocateUTF8OnStack,stringToUTF8OnStack). Earlier emcc versions will
+# fail to build without those in EXPORTED_RUNTIME_METHODS.
 emcc.flags.sqlite3-wasmfs += -sUSE_CLOSURE_COMPILER=0
 emcc.flags.sqlite3-wasmfs += -Wno-limited-postlink-optimizations
 # ^^^^^ it likes to warn when we have "limited optimizations" via the -g3 flag.
@@ -46,12 +46,7 @@ emcc.flags.sqlite3-wasmfs += -sALLOW_MEMORY_GROWTH=0
 # And, indeed, it runs slowly if memory is permitted to grow.
 #emcc.flags.sqlite3-wasmfs.vanilla :=
 #emcc.flags.sqlite3-wasmfs.esm := -sEXPORT_ES6 -sUSE_ES6_IMPORT_META
-sqlite3-api.mjs.wasmfs := $(dir.tmp)/sqlite3-api-wasmfs.mjs
-$(eval $(call SETUP_LIB_BUILD_MODE,sqlite3-wasmfs,esm,1,\
-    $(sqlite3-api.mjs.wasmfs), $(sqlite3-wasmfs.mjs),\
-    $(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs,\
-    -sEXPORT_ES6 -sUSE_ES6_IMPORT_META\
-))
+all: $(sqlite3-wasmfs.mjs)
 $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.mjs): $(MAKEFILE.wasmfs)
 ########################################################################
 # Build quirk: we cannot build BOTH .js and .mjs with our current
@@ -98,7 +93,7 @@ $(speedtest1-wasmfs.mjs): $(speedtest1.cfiles) $(sqlite3-wasmfs.js) \
         $(emcc.flags.sqlite3-wasmfs) \
         $(emcc.flags.speedtest1-wasmfs) \
         -o $@ $(speedtest1.cfiles) -lm
-	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,1)
+	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,1,1)
 	$(maybe-wasm-strip) $(speedtest1-wasmfs.wasm)
 	chmod -x $(speedtest1-wasmfs.wasm)
 	ls -la $@ $(speedtest1-wasmfs.wasm)

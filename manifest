@@ -1,5 +1,5 @@
-C Merge\scurrent\strunk\sinto\sthis\sbranch.
-D 2024-09-23T17:06:06.957
+C wasm:\sreplace\smuch\sof\sthe\seval\smakefile\sspaghetti\swith\sequivalent\scode\sgenerated\sfrom\sa\ssmall\sC\sapp.\sIt\sturns\sout\sthat's\seasier\sto\sread\sand\swrite\sthan\sdoing\sthe\ssame\sthing\sfrom\sshell\sor\stcl\scode,\sdue\sentirely\sto\sC's\slack\sof\sneed\sfor\sescaping\sdollar\ssigns.
+D 2024-09-23T21:22:09.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -435,7 +435,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594accaaca w src/test_vfstrace.c
+F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594accaaca
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -601,7 +601,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 1bce318cef54073492b461bbad7d3d0ac5e535f48c514725222672925d9e79ff
+F ext/wasm/GNUmakefile 9ad87c7b7cdbbf4b3d48ff8aad8b12ffca2f48cb0190d366efa1c25386601f99
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -637,7 +637,7 @@ F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 05ec254f5dbfe605146d9640b3db17d6ef8c3fbef6aa8396051ca72bb5884e3f
-F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25b4
+F ext/wasm/c-pp.c e230a9f71a6179971a65d87e2d393a16c87285f6a3bbad232f494fbc5ab9f82f
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -661,12 +661,12 @@ F ext/wasm/index-dist.html 564b5ec5669676482c5a25dea9e721d8eafed426ecb155f93d29a
 F ext/wasm/index.html 4337f495416756802669f69f9f9f3df9f87ee4c1918e6718719b4b5718e4713a
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 59a20df389abcc3606eb4eaea7fb7ba14504beb3e345dbea9b99a0618ba3bec8
-F ext/wasm/make-make.sh 3c1964f5ed80af79c21e583abb9adac2eb11141c98c1cf57eba7ebcb210f1025 x
+F ext/wasm/mkwasmbuilds.c 958b5572d46a0d22ab1f85c9f47d7e9789532fbd8bb1ff5ce7bde1d2d369f063
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
-F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
+F ext/wasm/speedtest1-wasmfs.mjs c77c7231338ed5c0e1ce16aa29106df8e5b5cf11a48319c49433490a8d3ded30
 F ext/wasm/speedtest1-worker.html 864b65ed78ce24847a348c180e7f267621a02ca027068a1863ec1c90187c1852
 F ext/wasm/speedtest1-worker.js 95e549e13a4d35863a9a7fc66122b5f546c0130d3be7b06dfcc556eb66d24bde
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
@@ -681,7 +681,7 @@ F ext/wasm/tester1.c-pp.js bb8c41a56ca0eabb945ca2e8f06324a7b63ad91630959d714b071
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
-F ext/wasm/wasmfs.make e508db7fb82653a9c9d3c7f4e2c75010abfdefa5c413a9603a2c59547bec8709
+F ext/wasm/wasmfs.make fb12389969139fd379bb4aa8455bf110cf6856fc54c8901e7451fab23834a8ef
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2211,8 +2211,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1cf3095a87e101ff83ad64f20ae2e61858c7049181abfb18aece6f0a8451c15 2e5194407a1b34dd0659c350ea8098bfef7b3f11aa5b2a07ecd2bce5582655a2
-R df1e63607b5dc38491534a54bc1b4ba5
+P ed47d7f9a44b2af8ab7dd956495e71ea9a159cec438d1909f7022254a779e068
+R 5e878cdc4be0241d281da58d079e76d8
 U stephan
-Z 777957ea3a8879fa12050cc8a1414fec
+Z 829f227b6ca9fd723c1b5f2aaff1937c
 # Remove this line to create a well-formed Fossil manifest.
