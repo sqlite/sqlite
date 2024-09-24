@@ -192,8 +192,6 @@ typedef unsigned char u8;
 #  ifndef strdup
 #   define strdup _strdup
 #  endif
-#  undef popen
-#  define popen _popen
 #  undef pclose
 #  define pclose _pclose
 # endif
@@ -237,139 +235,8 @@ extern char *sqlite3_win32_unicode_to_utf8(LPCWSTR);
 extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
-#ifdef _WIN32
-/* On Windows, we normally run with output mode of TEXT so that \n characters
-** are automatically translated into \r\n.  However, this behavior needs
-** to be disabled in some cases (ex: when generating CSV output and when
-** rendering quoted strings that contain \n characters).  The following
-** routines take care of that.
-*/
-static void setBinaryMode(FILE *file, int isOutput){
-  if( isOutput ) fflush(file);
-  _setmode(_fileno(file), _O_BINARY);
-}
-static void setTextMode(FILE *file, int isOutput){
-  if( isOutput ) fflush(file);
-  _setmode(_fileno(file), _O_TEXT);
-}
-#else
-  /* Unix equivalents to set*Mode() */
-# define setBinaryMode(X,Y)
-# define setTextMode(X,Y)
-#endif
-
-#ifdef _WIN32
-/* fgets() for windows */
-static char *cli_fgets(char *buf, int sz, FILE *in){
-  if( isatty(_fileno(in)) ){
-    /* When reading from the command-prompt in Windows, it is necessary
-    ** to use _O_WTEXT input mode to read UTF-16 characters, then translate
-    ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
-    ** into '?'.
-    */
-    wchar_t *b1 = malloc( sz*sizeof(wchar_t) );
-    if( b1==0 ) return 0;
-    _setmode(_fileno(in), _O_WTEXT);
-    if( fgetws(b1, sz/4, in)==0 ){
-      sqlite3_free(b1);
-      return 0;
-    }
-    WideCharToMultiByte(CP_UTF8, 0, b1, -1, buf, sz, 0, 0);
-    sqlite3_free(b1);
-    return buf;
-  }else{
-    /* Reading from a file or other input source, just read bytes without
-    ** any translation. */
-    return fgets(buf, sz, in);
-  }
-}
-#else
-/* library version works for everybody else */
-# define cli_fgets fgets
-#endif
-
-#ifdef _WIN32
-/* fputs() for windows */
-static int cli_fputs(const char *z, FILE *out){
-  if( isatty(_fileno(out)) ){
-    /* When writing to the command-prompt in Windows, it is necessary
-    ** to use _O_WTEXT input mode and write UTF-16 characters.
-    */
-    int sz = (int)strlen(z);
-    wchar_t *b1 = malloc( (sz+1)*sizeof(wchar_t) );
-    if( b1==0 ) return 0;
-    sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
-    b1[sz] = 0;
-    _setmode(_fileno(out), _O_WTEXT);
-    fputws(b1, out);
-    sqlite3_free(b1);
-    return 0;
-  }else{
-    /* Writing to a file or other destination, just write bytes without
-    ** any translation. */
-    return fputs(z, out);
-  }
-}
-#else
-/* library version works for everybody else */
-# define cli_fputs fputs
-#endif
-
-#ifdef _WIN32
-/* fprintf() for windows */
-static void cli_fprintf(FILE *out, const char *zFormat, ...){
-  if( isatty(fileno(out)) ){
-    /* When writing to the command-prompt in Windows, it is necessary
-    ** to use _O_WTEXT input mode and write UTF-16 characters.
-    */
-    char *z;
-    va_list ap;
-
-    va_start(ap, zFormat);
-    z = sqlite3_vmprintf(zFormat, ap);
-    va_end(ap);
-    cli_fputs(z, out);
-    sqlite3_free(z);
-  }else{
-    /* Writing to a file or other destination, just write bytes without
-    ** any translation. */
-    va_list ap;
-    va_start(ap, zFormat);
-    vfprintf(out, zFormat, ap);
-    va_end(ap);
-  }
-}
-#else
-/* library version works for everybody else */
-# define cli_fprintf fprintf
-#endif
-
-#ifdef _WIN32
-/* fopen() for windows */
-static FILE *cli_fopen(const char *zFilename, const char *zMode){
-  FILE *fp = 0;
-  wchar_t *b1, *b2;
-  int sz1, sz2;
-
-  sz1 = (int)strlen(zFilename);
-  sz2 = (int)strlen(zMode);
-  b1 = malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = malloc( (sz2+1)*sizeof(b1[0]) );
-  if( b1 && b2 ){
-    sz1 = MultiByteToWideChar(CP_UTF8, 0, zFilename, sz1, b1, sz1);
-    b1[sz1] = 0;
-    sz2 = MultiByteToWideChar(CP_UTF8, 0, zMode, sz2, b2, sz2);
-    b2[sz2] = 0;
-    fp = _wfopen(b1, b2);
-  }
-  free(b1);
-  free(b2);
-  return fp;
-}
-#else
-/* library version works for everybody else */
-# define cli_fopen fopen
-#endif
+INCLUDE ../ext/misc/sqlite3_stdio.h
+INCLUDE ../ext/misc/sqlite3_stdio.c
 
 /* Use console I/O package as a direct INCLUDE. */
 #define SQLITE_INTERNAL_LINKAGE static
@@ -383,13 +250,13 @@ static FILE *cli_fopen(const char *zFilename, const char *zMode){
 # define SQLITE_CIO_NO_FLUSH
 #endif
 
-#define oputf(fmt, ...) cli_fprintf(stdout,fmt,__VA_ARGS__)
-#define eputf(fmt, ...) cli_fprintf(stderr,fmt,__VA_ARGS__)
-#define sputf(fp,fmt, ...) cli_fprintf(fp,fmt,__VA_ARGS__)
+#define oputf(fmt, ...) sqlite3_fprintf(stdout,fmt,__VA_ARGS__)
+#define eputf(fmt, ...) sqlite3_fprintf(stderr,fmt,__VA_ARGS__)
+#define sputf(fp,fmt, ...) sqlite3_fprintf(fp,fmt,__VA_ARGS__)
 /* These next 3 macros are for emitting simple string literals. */
-#define oputz(z) cli_fputs(z,stdout)
-#define eputz(z) cli_fputs(z,stderr)
-#define sputz(fp,z) cli_fputs(z,fp)
+#define oputz(z) sqlite3_fputs(z,stdout)
+#define eputz(z) sqlite3_fputs(z,stderr)
+#define sputz(fp,z) sqlite3_fputs(z,fp)
 #define oputb(buf,na) fwrite(buf,1,na,stdout)
 
 /* True if the timer is enabled */
@@ -854,7 +721,7 @@ static FILE * openChrSource(const char *zFile){
   /* On Windows, open first, then check the stream nature. This order
   ** is necessary because _stat() and sibs, when checking a named pipe,
   ** effectively break the pipe as its supplier sees it. */
-  FILE *rv = cli_fopen(zFile, "rb");
+  FILE *rv = sqlite3_fopen(zFile, "rb");
   if( rv==0 ) return 0;
   if( _fstat64(_fileno(rv), &x) != 0
       || !STAT_CHR_SRC(x.st_mode)){
@@ -868,7 +735,7 @@ static FILE * openChrSource(const char *zFile){
 # define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
   if( rc!=0 ) return 0;
   if( STAT_CHR_SRC(x.st_mode) ){
-    return cli_fopen(zFile, "rb");
+    return sqlite3_fopen(zFile, "rb");
   }else{
     return 0;
   }
@@ -895,7 +762,7 @@ static char *local_getline(char *zLine, FILE *in){
       zLine = realloc(zLine, nLine);
       shell_check_oom(zLine);
     }
-    if( cli_fgets(&zLine[n], nLine - n, in)==0 ){
+    if( sqlite3_fgets(&zLine[n], nLine - n, in)==0 ){
       if( n==0 ){
         free(zLine);
         return 0;
@@ -1708,7 +1575,7 @@ static void editFunc(
   bBin = sqlite3_value_type(argv[0])==SQLITE_BLOB;
   /* When writing the file to be edited, do \n to \r\n conversions on systems
   ** that want \r\n line endings */
-  f = cli_fopen(zTempFile, bBin ? "wb" : "w");
+  f = sqlite3_fopen(zTempFile, bBin ? "wb" : "w");
   if( f==0 ){
     sqlite3_result_error(context, "edit() cannot open temp file", -1);
     goto edit_func_end;
@@ -1739,7 +1606,7 @@ static void editFunc(
     sqlite3_result_error(context, "EDITOR returned non-zero", -1);
     goto edit_func_end;
   }
-  f = cli_fopen(zTempFile, "rb");
+  f = sqlite3_fopen(zTempFile, "rb");
   if( f==0 ){
     sqlite3_result_error(context,
       "edit() cannot reopen temp file after edit", -1);
@@ -1859,7 +1726,7 @@ static const char *unused_string(
 static void output_quoted_string(const char *z){
   int i;
   char c;
-  setBinaryMode(stdout, 1);
+  sqlite3_fsetmode(stdout, _O_BINARY);
   if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
   if( c==0 ){
@@ -1884,7 +1751,7 @@ static void output_quoted_string(const char *z){
     }
     oputz("'");
   }
-  setTextMode(stdout, 1);
+  sqlite3_fsetmode(stdout, _O_TEXT);
 }
 
 /*
@@ -1899,7 +1766,7 @@ static void output_quoted_string(const char *z){
 static void output_quoted_escaped_string(const char *z){
   int i;
   char c;
-  setBinaryMode(stdout, 1);
+  sqlite3_fsetmode(stdout, _O_BINARY);
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
     oputf("'%s'",z);
@@ -1951,7 +1818,7 @@ static void output_quoted_escaped_string(const char *z){
       oputf(",'%s',char(10))", zNL);
     }
   }
-  setTextMode(stdout, 1);
+  sqlite3_fsetmode(stdout, _O_TEXT);
 }
 
 /*
@@ -2722,7 +2589,7 @@ static int shell_callback(
       break;
     }
     case MODE_Csv: {
-      setBinaryMode(p->out, 1);
+      sqlite3_fsetmode(p->out, _O_BINARY);
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
@@ -2735,7 +2602,7 @@ static int shell_callback(
         }
         oputz(p->rowSeparator);
       }
-      setTextMode(p->out, 1);
+      sqlite3_fsetmode(p->out, _O_TEXT);
       break;
     }
     case MODE_Insert: {
@@ -3140,9 +3007,9 @@ static void displayLinuxIoStats(void){
   FILE *in;
   char z[200];
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
-  in = cli_fopen(z, "rb");
+  in = sqlite3_fopen(z, "rb");
   if( in==0 ) return;
-  while( cli_fgets(z, sizeof(z), in)!=0 ){
+  while( sqlite3_fgets(z, sizeof(z), in)!=0 ){
     static const struct {
       const char *zPattern;
       const char *zDesc;
@@ -5197,7 +5064,7 @@ static int process_input(ShellState *p);
 ** is undefined in this case.
 */
 static char *readFile(const char *zName, int *pnByte){
-  FILE *in = cli_fopen(zName, "rb");
+  FILE *in = sqlite3_fopen(zName, "rb");
   long nIn;
   size_t nRead;
   char *pBuf;
@@ -5287,7 +5154,7 @@ static int session_filter(void *pCtx, const char *zTab){
 ** the type cannot be determined from content.
 */
 int deduceDatabaseType(const char *zName, int dfltZip){
-  FILE *f = cli_fopen(zName, "rb");
+  FILE *f = sqlite3_fopen(zName, "rb");
   size_t n;
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
@@ -5340,7 +5207,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned int x[16];
   char zLine[1000];
   if( zDbFilename ){
-    in = cli_fopen(zDbFilename, "r");
+    in = sqlite3_fopen(zDbFilename, "r");
     if( in==0 ){
       eputf("cannot open \"%s\" for reading\n", zDbFilename);
       return 0;
@@ -5353,7 +5220,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   }
   *pnData = 0;
   nLine++;
-  if( cli_fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
+  if( sqlite3_fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
@@ -5366,7 +5233,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     eputz("invalid pagesize\n");
     goto readHexDb_error;
   }
-  for(nLine++; cli_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+  for(nLine++; sqlite3_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
@@ -5398,7 +5265,7 @@ readHexDb_error:
   if( in!=p->in ){
     fclose(in);
   }else{
-    while( cli_fgets(zLine, sizeof(zLine), p->in)!=0 ){
+    while( sqlite3_fgets(zLine, sizeof(zLine), p->in)!=0 ){
       nLine++;
       if(cli_strncmp(zLine, "| end ", 6)==0 ) break;
     }
@@ -5827,7 +5694,7 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   }else if( cli_strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = cli_fopen(zFile, bTextMode ? "w" : "wb");
+    f = sqlite3_fopen(zFile, bTextMode ? "w" : "wb");
     if( f==0 ){
       eputf("Error: cannot open \"%s\"\n", zFile);
     }
@@ -8287,9 +8154,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
     if( nArg==2 ){
       if( booleanValue(azArg[1]) ){
-        setBinaryMode(p->out, 1);
+        sqlite3_fsetmode(p->out, _O_BINARY);
       }else{
-        setTextMode(p->out, 1);
+        sqlite3_fsetmode(p->out, _O_TEXT);
       }
     }else{
       eputz("The \".binary\" command is deprecated. Use \".crnl\" instead.\n"
@@ -8422,9 +8289,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
     if( nArg==2 ){
       if( booleanValue(azArg[1]) ){
-        setTextMode(p->out, 1);
+        sqlite3_fsetmode(p->out, _O_TEXT);
       }else{
-        setBinaryMode(p->out, 1);
+        sqlite3_fsetmode(p->out, _O_BINARY);
       }
     }else{
 #if !defined(_WIN32) && !defined(WIN32)
@@ -9051,12 +8918,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputz("Error: pipes are not supported in this OS\n");
       goto meta_command_exit;
 #else
-      sCtx.in = popen(sCtx.zFile+1, "r");
+      sCtx.in = sqlite3_popen(sCtx.zFile+1, "r");
       sCtx.zFile = "<pipe>";
       sCtx.xCloser = pclose;
 #endif
     }else{
-      sCtx.in = cli_fopen(sCtx.zFile, "rb");
+      sCtx.in = sqlite3_fopen(sCtx.zFile, "rb");
       sCtx.xCloser = fclose;
     }
     if( sCtx.in==0 ){
@@ -9385,7 +9252,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3IoTrace = iotracePrintf;
       iotrace = stdout;
     }else{
-      iotrace = cli_fopen(azArg[1], "w");
+      iotrace = sqlite3_fopen(azArg[1], "w");
       if( iotrace==0 ){
         eputf("Error: cannot open \"%s\"\n", azArg[1]);
         sqlite3IoTrace = 0;
@@ -9832,7 +9699,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       output_redir(p, stdout);
 #else
-      FILE *pfPipe = popen(zFile + 1, "w");
+      FILE *pfPipe = sqlite3_popen(zFile + 1, "w");
       if( pfPipe==0 ){
         eputf("Error: cannot open pipe \"%s\"\n", zFile + 1);
         rc = 1;
@@ -10049,7 +9916,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       p->out = stdout;
 #else
-      p->in = popen(azArg[1]+1, "r");
+      p->in = sqlite3_popen(azArg[1]+1, "r");
       if( p->in==0 ){
         eputf("Error: cannot open \"%s\"\n", azArg[1]);
         rc = 1;
@@ -10354,7 +10221,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       failIfSafeMode(p, "cannot run \".session %s\" in safe mode", azCmd[0]);
       if( nCmd!=2 ) goto session_syntax_error;
       if( pSession->p==0 ) goto session_not_open;
-      out = cli_fopen(azCmd[1], "wb");
+      out = sqlite3_fopen(azCmd[1], "wb");
       if( out==0 ){
         eputf("ERROR: cannot open \"%s\" for writing\n",
               azCmd[1]);
@@ -12294,7 +12161,7 @@ static void process_sqliterc(
     shell_check_oom(zBuf);
     sqliterc = zBuf;
   }
-  p->in = cli_fopen(sqliterc,"rb");
+  p->in = sqlite3_fopen(sqliterc,"rb");
   if( p->in ){
     if( stdin_is_interactive ){
       eputf("-- Loading resources from %s\n", sqliterc);
