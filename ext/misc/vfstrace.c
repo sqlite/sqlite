@@ -416,7 +416,7 @@ static const char *lockName(int eLock){
   const char *azLockNames[] = {
      "NONE", "SHARED", "RESERVED", "PENDING", "EXCLUSIVE"
   };
-  if( eLock<0 || eLock>=sizeof(azLockNames)/sizeof(azLockNames[0]) ){
+  if( eLock<0 || eLock>=(int)(sizeof(azLockNames)/sizeof(azLockNames[0])) ){
     return "???";
   }else{
     return azLockNames[eLock];

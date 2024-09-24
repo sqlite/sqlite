@@ -50,6 +50,7 @@ struct SQLiteRsync {
   FILE *pLog;              /* Duplicate output here if not NULL */
   sqlite3 *db;             /* Database connection */
   int nErr;                /* Number of errors encountered */
+  int nWrErr;              /* Number of failed attempts to write on the pipe */
   u8 eVerbose;             /* Bigger for more output.  0 means none. */
   u8 bCommCheck;           /* True to debug the communication protocol */
   u8 isRemote;             /* On the remote side of a connection */
@@ -844,7 +845,7 @@ static int readUint32(SQLiteRsync *p, unsigned int *pU){
     p->nIn += 4;
     return 0;
   }else{
-    p->nErr++;
+    logError(p, "failed to read a 32-bit integer\n");
     return 1;
   }
 }
@@ -863,7 +864,8 @@ static int writeUint32(SQLiteRsync *p, unsigned int x){
   buf[0] = x;
   if( p->pLog ) fwrite(buf, sizeof(buf), 1, p->pLog);
   if( fwrite(buf, sizeof(buf), 1, p->pOut)!=1 ){
-    logError(p, "failed to write 32-bit integer 0x%x", x);
+    logError(p, "failed to write 32-bit integer 0x%x\n", x);
+    p->nWrErr++;
     return 1;
   }
   p->nOut += 4;
@@ -890,7 +892,7 @@ void writeByte(SQLiteRsync *p, int c){
 */
 int readPow2(SQLiteRsync *p){
   int x = readByte(p);
-  if( x>=32 ){
+  if( x<0 || x>=32 ){
     logError(p, "read invalid page size %d\n", x);
     return 0;
   }
@@ -914,7 +916,7 @@ void readBytes(SQLiteRsync *p, int nByte, void *pData){
   if( fread(pData, 1, nByte, p->pIn)==nByte ){
     p->nIn += nByte;
   }else{
-    logError(p, "failed to read %d bytes", nByte);
+    logError(p, "failed to read %d bytes\n", nByte);
   }
 }
 
@@ -925,7 +927,8 @@ void writeBytes(SQLiteRsync *p, int nByte, const void *pData){
   if( fwrite(pData, 1, nByte, p->pOut)==nByte ){
     p->nOut += nByte;
   }else{
-    logError(p, "failed to write %d bytes", nByte);
+    logError(p, "failed to write %d bytes\n", nByte);
+    p->nWrErr++;
   }
 }
 
@@ -1236,7 +1239,7 @@ static void originSide(SQLiteRsync *p){
   }
   
   /* Respond to message from the replica */
-  while( p->nErr==0 && (c = readByte(p))!=EOF && c!=REPLICA_END ){
+  while( p->nErr<=p->nWrErr && (c = readByte(p))!=EOF && c!=REPLICA_END ){
     switch( c ){
       case REPLICA_BEGIN: {
         /* This message is only sent if the replica received an origin-protocol
@@ -1279,7 +1282,6 @@ static void originSide(SQLiteRsync *p){
       }
       case REPLICA_READY: {
         sqlite3_stmt *pStmt;
-        int needPageOne = 0;
         sqlite3_finalize(pCkHash);
         pCkHash = 0;
         if( iPage+1<p->nPage ){
@@ -1292,39 +1294,20 @@ static void originSide(SQLiteRsync *p){
                "SELECT pgno, data"
                "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno)");
         if( pStmt==0 ) break;
-        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
           unsigned int pgno = (unsigned int)sqlite3_column_int64(pStmt,0);
           const void *pContent = sqlite3_column_blob(pStmt, 1);
-          if( pgno==1 ){
-            needPageOne = 1;
-          }else{
-            writeByte(p, ORIGIN_PAGE);
-            writeUint32(p, (unsigned int)sqlite3_column_int64(pStmt, 0));
-            writeBytes(p, szPg, pContent);
-            p->nPageSent++;
-          }
+          writeByte(p, ORIGIN_PAGE);
+          writeUint32(p, pgno);
+          writeBytes(p, szPg, pContent);
+          p->nPageSent++;
         }
         sqlite3_finalize(pStmt);
-        if( needPageOne ){
-          pStmt = prepareStmt(p,
-                 "SELECT data"
-                 "  FROM sqlite_dbpage('main')"
-                 " WHERE pgno=1"
-          );
-          if( pStmt==0 ) break;
-          while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
-            const void *pContent = sqlite3_column_blob(pStmt, 0);
-            writeByte(p, ORIGIN_PAGE);
-            writeUint32(p, 1);
-            writeBytes(p, szPg, pContent);
-            p->nPageSent++;
-          }
-          sqlite3_finalize(pStmt);
-        }
         writeByte(p, ORIGIN_TXN);
         writeUint32(p, nPage);
         writeByte(p, ORIGIN_END);
-        goto origin_end;
+        fflush(p->pOut);
+        break;
       }
       default: {
         reportError(p, "Unknown message 0x%02x %lld bytes into conversation",
@@ -1334,7 +1317,6 @@ static void originSide(SQLiteRsync *p){
     }
   }
 
-origin_end:
   if( pCkHash ) sqlite3_finalize(pCkHash);
   closeDb(p);
 }
@@ -1385,7 +1367,7 @@ static void replicaSide(SQLiteRsync *p){
   /* Respond to message from the origin.  The origin will initiate the
   ** the conversation with an ORIGIN_BEGIN message.
   */
-  while( p->nErr==0 && (c = readByte(p))!=EOF && c!=ORIGIN_END ){
+  while( p->nErr<=p->nWrErr && (c = readByte(p))!=EOF && c!=ORIGIN_END ){
     switch( c ){
       case ORIGIN_MSG:
       case ORIGIN_ERROR: {
@@ -1414,30 +1396,35 @@ static void replicaSide(SQLiteRsync *p){
         }
         p->nPage = nOPage;
         p->szPage = szOPage;
-        rc = sqlite3_open(p->zReplica, &p->db);
+        rc = sqlite3_open(":memory:", &p->db);
         if( rc ){
-          reportError(p, "cannot open replica \"%s\": %s",
-                      p->zReplica, sqlite3_errmsg(p->db));
+          reportError(p, "cannot open in-memory database: %s",
+                      sqlite3_errmsg(p->db));
+          closeDb(p);
+          break;
+        }
+        runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+        if( p->nErr ){
           closeDb(p);
           break;
         }
         hashRegister(p->db);
-        if( runSqlReturnUInt(p, &nRPage, "PRAGMA page_count") ){
+        if( runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count") ){
           break;
         }
         if( nRPage==0 ){
-          runSql(p, "PRAGMA page_size=%u", szOPage);
-          runSql(p, "PRAGMA journal_mode=WAL");
-          runSql(p, "SELECT * FROM sqlite_schema");
+          runSql(p, "PRAGMA replica.page_size=%u", szOPage);
+          runSql(p, "PRAGMA replica.journal_mode=WAL");
+          runSql(p, "SELECT * FROM replica.sqlite_schema");
         }
         runSql(p, "BEGIN IMMEDIATE");
-        runSqlReturnText(p, buf, "PRAGMA journal_mode");
+        runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
         if( strcmp(buf, "wal")!=0 ){
           reportError(p, "replica is not in WAL mode");
           break;
         }
-        runSqlReturnUInt(p, &nRPage, "PRAGMA page_count");
-        runSqlReturnUInt(p, &szRPage, "PRAGMA page_size");
+        runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count");
+        runSqlReturnUInt(p, &szRPage, "PRAGMA replica.page_size");
         if( szRPage!=szOPage ){
           reportError(p, "page size mismatch; origin is %d bytes and "
                          "replica is %d bytes", szOPage, szRPage);
@@ -1445,10 +1432,10 @@ static void replicaSide(SQLiteRsync *p){
         }
 
         pStmt = prepareStmt(p,
-                   "SELECT hash(data) FROM sqlite_dbpage"
+                   "SELECT hash(data) FROM sqlite_dbpage('replica')"
                    " WHERE pgno<=min(%d,%d)"
                    " ORDER BY pgno", nRPage, nOPage);
-        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 ){
+        while( sqlite3_step(pStmt)==SQLITE_ROW && p->nErr==0 && p->nWrErr==0 ){
           const unsigned char *a = sqlite3_column_blob(pStmt, 0);
           writeByte(p, REPLICA_HASH);
           writeBytes(p, 20, a);
@@ -1474,8 +1461,8 @@ static void replicaSide(SQLiteRsync *p){
           sqlite3_bind_null(pIns, 2);
           rc = sqlite3_step(pIns);
           if( rc!=SQLITE_DONE ){
-            reportError(p, "SQL statement [%s] failed: %s",
-                   sqlite3_sql(pIns), sqlite3_errmsg(p->db));
+            reportError(p, "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
+                   sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
           }
           sqlite3_reset(pIns);
           p->nPage = nOPage;
@@ -1490,7 +1477,7 @@ static void replicaSide(SQLiteRsync *p){
         if( p->nErr ) break;
         if( pIns==0 ){
           pIns = prepareStmt(p,
-            "INSERT INTO sqlite_dbpage(pgno,data) VALUES(?1,?2)"
+            "INSERT INTO sqlite_dbpage(pgno,data,schema)VALUES(?1,?2,'replica')"
           );
           if( pIns==0 ) break;
         }
@@ -1557,6 +1544,34 @@ sqlite3_int64 currentTime(void){
     pVfs->xCurrentTimeInt64(pVfs, &now);
   }
   return now;
+}
+
+/*
+** Input string zIn might be in any of these formats:
+**
+**    (1) PATH
+**    (2) HOST:PATH
+**    (3) USER@HOST:PATH
+**
+** For format 1, return NULL.  For formats 2 and 3, return
+** a pointer to the ':' character that separates the hostname
+** from the path.
+*/
+static char *hostSeparator(const char *zIn){
+  char *zPath = strchr(zIn, ':');
+  if( zPath==0 ) return 0;
+#ifdef _WIN32
+  if( isalpha(zIn[0]) && zIn[1]==':' && (zIn[2]=='/' || zIn[2]=='\\') ){
+    return 0;
+  }
+#endif
+  while( zIn<zPath ){
+    if( zIn[0]=='/' ) return 0;
+    if( zIn[0]=='\\' ) return 0;
+    zIn++;
+  }
+  return zPath;
+
 }
 
 /*
@@ -1724,9 +1739,9 @@ int main(int argc, char const * const *argv){
     return 1;
   }
   tmStart = currentTime();
-  zDiv = strchr(ctx.zOrigin,':');
+  zDiv = hostSeparator(ctx.zOrigin);
   if( zDiv ){
-    if( strchr(ctx.zReplica,':')!=0 ){
+    if( hostSeparator(ctx.zReplica)!=0 ){
       fprintf(stderr,
          "At least one of ORIGIN and REPLICA must be a local database\n"
          "You provided two remote databases.\n");
@@ -1757,7 +1772,7 @@ int main(int argc, char const * const *argv){
       return 1;
     }
     replicaSide(&ctx);
-  }else if( (zDiv = strchr(ctx.zReplica,':'))!=0 ){
+  }else if( (zDiv = hostSeparator(ctx.zReplica))!=0 ){
     /* Local ORIGIN and remote REPLICA */
     sqlite3_str *pStr = sqlite3_str_new(0);
     append_escaped_arg(pStr, zSsh, 1);
@@ -1805,11 +1820,12 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
+  pclose2(ctx.pIn, ctx.pOut, childPid);
   if( ctx.pLog ) fclose(ctx.pLog);
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */
   if( ctx.nErr ){
-    printf("Databases where not synced due to errors\n");
+    printf("Databases were not synced due to errors\n");
   }
   if( ctx.eVerbose>=1 ){
     char *zMsg;
