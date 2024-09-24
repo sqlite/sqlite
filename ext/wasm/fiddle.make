@@ -20,7 +20,7 @@ endif
 ifeq (,$(SHELL_DEP))
 $(error Could not parse SHELL_DEP from $(dir.top)/Makefile.)
 endif
-$(dir.top)/shell.c: $(SHELL_DEP) $(dir.top)/tool/mkshellc.tcl $(sqlite3.c)
+$(dir.top)/shell.c: $(SHELL_DEP) $(dir.tool)/mkshellc.tcl $(sqlite3.c)
 	$(MAKE) -C $(dir.top) shell.c
 # /shell.c
 ########################################################################

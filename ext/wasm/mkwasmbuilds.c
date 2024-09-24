@@ -45,31 +45,15 @@
 ** "sqlite3-wasmfs" build, only "esm" (ES6 Module) is legal.
 */
 #define JS_BUILD_MODES vanilla esm bundler-friendly node
-
-/*
-** Emits common vars needed by the rest of the emitted code (but not
-** needed by code outside of these generated pieces).
-*/
-static void mk_prologue(void){
-  ps("########################################################################");
-  ps("# extern-post-js* and extern-pre-js* are files for use with");
-  ps("# Emscripten's --extern-pre-js and --extern-post-js flags.");
-  ps("extern-pre-js.js := $(dir.api)/extern-pre-js.js");
-  ps("extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js");
-  ps("# Emscripten flags for --[extern-][pre|post]-js=... for the");
-  ps("# various builds.");
-  ps("pre-post-common.flags := --extern-pre-js=$(sqlite3-license-version.js)");
-  ps("# pre-post-jses.deps.* = a list of dependencies for the");
-  ps("# --[extern-][pre/post]-js files.");
-  ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
-}
-
+static const char * zBanner =
+  "\n########################################################################\n";
 /*
 ** Emits makefile code for setting up values for the --pre-js=FILE,
 ** --post-js=FILE, and --extern-post-js=FILE emcc flags, as well as
 ** populating those files.
 */
 static void mk_pre_post(const char *zName, const char *zMode){
+  pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zName, zMode);
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
@@ -81,7 +65,7 @@ static void mk_pre_post(const char *zName, const char *zMode){
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 #else
   /* This part is needed if/when we re-enable the custom
-  ** Module.instantiateModule() impl. */
+  ** Module.instantiateModule() impl in api/pre-js.c-pp.js. */
   pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
   pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
@@ -123,6 +107,25 @@ static void mk_pre_post(const char *zName, const char *zMode){
      zNM, zNM, zNM);
   pf("pre-post-%s-%s.deps := $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM, zNM);
+  pf("# End --pre/--post flags for %s-%s%s", zName, zMode, zBanner);
+}
+
+/*
+** Emits common vars needed by the rest of the emitted code (but not
+** needed by code outside of these generated pieces).
+*/
+static void mk_prologue(void){
+  pf("%s", zBanner);
+  ps("# extern-post-js* and extern-pre-js* are files for use with");
+  ps("# Emscripten's --extern-pre-js and --extern-post-js flags.");
+  ps("extern-pre-js.js := $(dir.api)/extern-pre-js.js");
+  ps("extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js");
+  ps("# Emscripten flags for --[extern-][pre|post]-js=... for the");
+  ps("# various builds.");
+  ps("pre-post-common.flags := --extern-pre-js=$(sqlite3-license-version.js)");
+  ps("# pre-post-jses.deps.* = a list of dependencies for the");
+  ps("# --[extern-][pre/post]-js files.");
+  ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
 }
 
 /*
@@ -144,12 +147,12 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zCmppD ) zCmppD = "";
   if( !zEmcc ) zEmcc = "";
 
-  pf("#################### begin build [%s-%s]\n", zNM);
+  pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
   pf("ifneq (1,$(MAKING_CLEAN))\n");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
   pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD);
   mk_pre_post(zNM);
-  pf("emcc.flags.%s.%s ?=\n", zNM);
+  pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, zEmcc);
   }
@@ -199,7 +202,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
     pf("all: %s\n", zJsOut);
   }
   ps("endif\n# ^^^ !$(MAKING_CLEAN)");
-  pf("#################### end build [%s-%s]\n\n", zNM);
+  pf("# End build [%s-%s]%s", zNM, zBanner);
 }
 
 int main(void){
@@ -221,5 +224,8 @@ int main(void){
               "$(sqlite3-api-wasmfs.mjs)", "$(sqlite3-wasmfs.mjs)",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
+
+  mk_pre_post("speedtest1","vanilla");
+  mk_pre_post("speedtest1-wasmfs","esm");
   return rc;
 }

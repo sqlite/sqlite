@@ -48,7 +48,7 @@ Module['locateFile'] = function(path, prefix) {
   }else{
     theFile = prefix + path;
   }
-  sqlite3InitModuleState.debugModule(
+  this.debugModule(
     "locateFile(",arguments[0], ',', arguments[1],")",
     'sqlite3InitModuleState.scriptDir =',this.scriptDir,
     'up.entries() =',Array.from(up.entries()),

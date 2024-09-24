@@ -819,12 +819,11 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 ########################################################################
 
 ########################################################################
-# SQLITE3.xJS.ESM-EXPORT-DEFAULT is part of SQLITE3-WASMFS.xJS.RECIPE
-# and SETUP_LIB_BUILD_MODE, factored into a separate piece to avoid
-# code duplication. $1 is 1 if the build mode needs this workaround
-# (esm, bundler-friendly, node) and 0 if not (vanilla). $2 must be
-# 0 for all builds except sqlite3-wasmfs.mjs, in which case it
-# must be 1.
+# SQLITE3.xJS.ESM-EXPORT-DEFAULT is used by mkwasmbuilds.c and the
+# wasmfs build. $1 is 1 if the build mode needs this workaround
+# (modes: esm, bundler-friendly, node) and 0 if not (vanilla). $2 must
+# be 0 for all builds except sqlite3-wasmfs.mjs, in which case it must
+# be 1.
 #
 # Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
 # adds:
@@ -843,7 +842,7 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 # use awk instead of sed for this.
 define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
-		echo "Fragile workaround for emscripten/issues/18237. See SQLITE3.xJS.RECIPE."; \
+		echo "Fragile workaround for emscripten/issues/18237. See SQLITE3.xJS.ESM-EXPORT-DEFAULT."; \
 		{\
 			awk '/^export default/ && !f{f=1; next} 1' $@ > $@.tmp && mv $@.tmp $@; \
 		} || exit $$?; \
@@ -1030,9 +1029,7 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
 speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(dir.dout)/speedtest1.wasm
 emcc.flags.speedtest1-vanilla := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
-
 speedtest1.cfiles := $(speedtest1.c) $(sqlite3-wasm.c)
-$(eval $(call call-make-pre-post,speedtest1,vanilla))
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
     $(pre-post-speedtest1-vanilla.deps) \
     $(EXPORTED_FUNCTIONS.speedtest1)
