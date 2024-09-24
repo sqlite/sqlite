@@ -494,4 +494,17 @@ USE TEMP B-TREE FOR ORDER BY
 }}
 }
 
+do_execsql_test 6.0 {
+  CREATE TABLE x1(a, b, c, d);
+  CREATE INDEX x1ab ON x1(a, lower(b));
+  CREATE INDEX x1dcba ON x1(d, b+c, a);
+}
+
+do_candidates_test 6.1 {
+  SELECT * FROM x1 WHERE b=? ORDER BY a;
+} {
+  CREATE INDEX x1_idx_0001267f ON x1(b, a); 
+  CREATE INDEX x1_idx_00000062 ON x1(b);
+}
+
 finish_test

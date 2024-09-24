@@ -1626,6 +1626,7 @@ static int idxPopulateOneStat1(
     if( zName==0 ){
       /* This index contains an expression. Ignore it. */
       sqlite3_free(zCols);
+      sqlite3_free(zOrder);
       return sqlite3_reset(pIndexXInfo);
     }
     zCols = idxAppendText(&rc, zCols, 
