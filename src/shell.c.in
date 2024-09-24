@@ -288,6 +288,62 @@ static char *cli_fgets(char *buf, int sz, FILE *in){
 # define cli_fgets fgets
 #endif
 
+#ifdef _WIN32
+/* fputs() for windows */
+static int cli_fputs(const char *z, FILE *out){
+  if( isatty(_fileno(out)) ){
+    /* When writing to the command-prompt in Windows, it is necessary
+    ** to use _O_WTEXT input mode and write UTF-16 characters.
+    */
+    int sz = (int)strlen(z);
+    wchar_t *b1 = malloc( (sz+1)*sizeof(wchar_t) );
+    if( b1==0 ) return 0;
+    sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
+    b1[sz] = 0;
+    _setmode(_fileno(out), _O_WTEXT);
+    fputws(b1, out);
+    sqlite3_free(b1);
+    return 0;
+  }else{
+    /* Writing to a file or other destination, just write bytes without
+    ** any translation. */
+    return fputs(z, out);
+  }
+}
+#else
+/* library version works for everybody else */
+# define cli_fputs fputs
+#endif
+
+#ifdef _WIN32
+/* fprintf() for windows */
+static void cli_fprintf(FILE *out, const char *zFormat, ...){
+  if( isatty(fileno(out)) ){
+    /* When writing to the command-prompt in Windows, it is necessary
+    ** to use _O_WTEXT input mode and write UTF-16 characters.
+    */
+    char *z;
+    va_list ap;
+
+    va_start(ap, zFormat);
+    z = sqlite3_vmprintf(zFormat, ap);
+    va_end(ap);
+    cli_fputs(z, out);
+    sqlite3_free(z);
+  }else{
+    /* Writing to a file or other destination, just write bytes without
+    ** any translation. */
+    va_list ap;
+    va_start(ap, zFormat);
+    vfprintf(out, zFormat, ap);
+    va_end(ap);
+  }
+}
+#else
+/* library version works for everybody else */
+# define cli_fprintf fprintf
+#endif
+
 /* Use console I/O package as a direct INCLUDE. */
 #define SQLITE_INTERNAL_LINKAGE static
 
@@ -300,13 +356,13 @@ static char *cli_fgets(char *buf, int sz, FILE *in){
 # define SQLITE_CIO_NO_FLUSH
 #endif
 
-#define oputf(fmt, ...) printf(fmt,__VA_ARGS__)
-#define eputf(fmt, ...) fprintf(stderr,fmt,__VA_ARGS__)
-#define sputf(fp,fmt, ...) fprintf(fp,fmt,__VA_ARGS__)
+#define oputf(fmt, ...) cli_fprintf(stdout,fmt,__VA_ARGS__)
+#define eputf(fmt, ...) cli_fprintf(stderr,fmt,__VA_ARGS__)
+#define sputf(fp,fmt, ...) cli_fprintf(fp,fmt,__VA_ARGS__)
 /* These next 3 macros are for emitting simple string literals. */
-#define oputz(z) fputs(z,stdout)
-#define eputz(z) fputs(z,stderr)
-#define sputz(fp,z) fputs(z,fp)
+#define oputz(z) cli_fputs(z,stdout)
+#define eputz(z) cli_fputs(z,stderr)
+#define sputz(fp,z) cli_fputs(z,fp)
 #define oputb(buf,na) fwrite(buf,1,na,stdout)
 
 /* True if the timer is enabled */
