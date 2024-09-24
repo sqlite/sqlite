@@ -92,7 +92,7 @@ static void mk_pre_post(const char *zName  /* build name */,
   pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
   pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
-     "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+     "$(c-pp.D.%s-%s) -Dcustom-Module.instantiateModule))\n", zNM, zNM);
   pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
   pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
 
@@ -230,6 +230,6 @@ int main(void){
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
 
   mk_pre_post("speedtest1","vanilla", 0);
-  mk_pre_post("speedtest1-wasmfs","esm", 0);
+  mk_pre_post("speedtest1-wasmfs","esm", "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
   return rc;
 }
