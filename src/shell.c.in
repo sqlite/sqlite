@@ -13065,7 +13065,7 @@ sqlite3_vfs * fiddle_db_vfs(const char *zDbName){
 
 /* Only for emcc experimentation purposes. */
 sqlite3 * fiddle_db_arg(sqlite3 *arg){
-    sqlite3_fprintf(p->out, "fiddle_db_arg(%p)\n", (const void*)arg);
+    sqlite3_fprintf(stdout, "fiddle_db_arg(%p)\n", (const void*)arg);
     return arg;
 }
 
