@@ -344,6 +344,33 @@ static void cli_fprintf(FILE *out, const char *zFormat, ...){
 # define cli_fprintf fprintf
 #endif
 
+#ifdef _WIN32
+/* fopen() for windows */
+static FILE *cli_fopen(const char *zFilename, const char *zMode){
+  FILE *fp = 0;
+  wchar_t *b1, *b2;
+  int sz1, sz2;
+
+  sz1 = (int)strlen(zFilename);
+  sz2 = (int)strlen(zMode);
+  b1 = malloc( (sz1+1)*sizeof(b1[0]) );
+  b2 = malloc( (sz2+1)*sizeof(b1[0]) );
+  if( b1 && b2 ){
+    sz1 = MultiByteToWideChar(CP_UTF8, 0, zFilename, sz1, b1, sz1);
+    b1[sz1] = 0;
+    sz2 = MultiByteToWideChar(CP_UTF8, 0, zMode, sz2, b2, sz2);
+    b2[sz2] = 0;
+    fp = _wfopen(b1, b2);
+  }
+  free(b1);
+  free(b2);
+  return fp;
+}
+#else
+/* library version works for everybody else */
+# define cli_fopen fopen
+#endif
+
 /* Use console I/O package as a direct INCLUDE. */
 #define SQLITE_INTERNAL_LINKAGE static
 
@@ -827,7 +854,7 @@ static FILE * openChrSource(const char *zFile){
   /* On Windows, open first, then check the stream nature. This order
   ** is necessary because _stat() and sibs, when checking a named pipe,
   ** effectively break the pipe as its supplier sees it. */
-  FILE *rv = fopen(zFile, "rb");
+  FILE *rv = cli_fopen(zFile, "rb");
   if( rv==0 ) return 0;
   if( _fstat64(_fileno(rv), &x) != 0
       || !STAT_CHR_SRC(x.st_mode)){
@@ -841,7 +868,7 @@ static FILE * openChrSource(const char *zFile){
 # define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
   if( rc!=0 ) return 0;
   if( STAT_CHR_SRC(x.st_mode) ){
-    return fopen(zFile, "rb");
+    return cli_fopen(zFile, "rb");
   }else{
     return 0;
   }
@@ -1681,7 +1708,7 @@ static void editFunc(
   bBin = sqlite3_value_type(argv[0])==SQLITE_BLOB;
   /* When writing the file to be edited, do \n to \r\n conversions on systems
   ** that want \r\n line endings */
-  f = fopen(zTempFile, bBin ? "wb" : "w");
+  f = cli_fopen(zTempFile, bBin ? "wb" : "w");
   if( f==0 ){
     sqlite3_result_error(context, "edit() cannot open temp file", -1);
     goto edit_func_end;
@@ -1712,7 +1739,7 @@ static void editFunc(
     sqlite3_result_error(context, "EDITOR returned non-zero", -1);
     goto edit_func_end;
   }
-  f = fopen(zTempFile, "rb");
+  f = cli_fopen(zTempFile, "rb");
   if( f==0 ){
     sqlite3_result_error(context,
       "edit() cannot reopen temp file after edit", -1);
@@ -3113,7 +3140,7 @@ static void displayLinuxIoStats(void){
   FILE *in;
   char z[200];
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/io", getpid());
-  in = fopen(z, "rb");
+  in = cli_fopen(z, "rb");
   if( in==0 ) return;
   while( cli_fgets(z, sizeof(z), in)!=0 ){
     static const struct {
@@ -5170,7 +5197,7 @@ static int process_input(ShellState *p);
 ** is undefined in this case.
 */
 static char *readFile(const char *zName, int *pnByte){
-  FILE *in = fopen(zName, "rb");
+  FILE *in = cli_fopen(zName, "rb");
   long nIn;
   size_t nRead;
   char *pBuf;
@@ -5260,7 +5287,7 @@ static int session_filter(void *pCtx, const char *zTab){
 ** the type cannot be determined from content.
 */
 int deduceDatabaseType(const char *zName, int dfltZip){
-  FILE *f = fopen(zName, "rb");
+  FILE *f = cli_fopen(zName, "rb");
   size_t n;
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
@@ -5313,7 +5340,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned int x[16];
   char zLine[1000];
   if( zDbFilename ){
-    in = fopen(zDbFilename, "r");
+    in = cli_fopen(zDbFilename, "r");
     if( in==0 ){
       eputf("cannot open \"%s\" for reading\n", zDbFilename);
       return 0;
@@ -5800,7 +5827,7 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   }else if( cli_strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = fopen(zFile, bTextMode ? "w" : "wb");
+    f = cli_fopen(zFile, bTextMode ? "w" : "wb");
     if( f==0 ){
       eputf("Error: cannot open \"%s\"\n", zFile);
     }
@@ -9029,7 +9056,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sCtx.xCloser = pclose;
 #endif
     }else{
-      sCtx.in = fopen(sCtx.zFile, "rb");
+      sCtx.in = cli_fopen(sCtx.zFile, "rb");
       sCtx.xCloser = fclose;
     }
     if( sCtx.in==0 ){
@@ -9358,7 +9385,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3IoTrace = iotracePrintf;
       iotrace = stdout;
     }else{
-      iotrace = fopen(azArg[1], "w");
+      iotrace = cli_fopen(azArg[1], "w");
       if( iotrace==0 ){
         eputf("Error: cannot open \"%s\"\n", azArg[1]);
         sqlite3IoTrace = 0;
@@ -10327,7 +10354,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       failIfSafeMode(p, "cannot run \".session %s\" in safe mode", azCmd[0]);
       if( nCmd!=2 ) goto session_syntax_error;
       if( pSession->p==0 ) goto session_not_open;
-      out = fopen(azCmd[1], "wb");
+      out = cli_fopen(azCmd[1], "wb");
       if( out==0 ){
         eputf("ERROR: cannot open \"%s\" for writing\n",
               azCmd[1]);
@@ -12267,7 +12294,7 @@ static void process_sqliterc(
     shell_check_oom(zBuf);
     sqliterc = zBuf;
   }
-  p->in = fopen(sqliterc,"rb");
+  p->in = cli_fopen(sqliterc,"rb");
   if( p->in ){
     if( stdin_is_interactive ){
       eputf("-- Loading resources from %s\n", sqliterc);
