@@ -14,7 +14,9 @@
 ** on Windows.
 */
 #ifdef _WIN32  /* This file is a no-op on all platforms except Windows */
+#ifndef _SQLITE3_STDIO_H_
 #include "sqlite3_stdio.h"
+#endif
 #undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
