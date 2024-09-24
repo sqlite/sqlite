@@ -47,13 +47,36 @@
 #define JS_BUILD_MODES vanilla esm bundler-friendly node
 static const char * zBanner =
   "\n########################################################################\n";
+
+/*
+** Emits common vars needed by the rest of the emitted code (but not
+** needed by makefile code outside of these generated pieces).
+*/
+static void mk_prologue(void){
+  pf("%s", zBanner);
+  ps("# extern-post-js* and extern-pre-js* are files for use with");
+  ps("# Emscripten's --extern-pre-js and --extern-post-js flags.");
+  ps("extern-pre-js.js := $(dir.api)/extern-pre-js.js");
+  ps("extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js");
+  ps("# Emscripten flags for --[extern-][pre|post]-js=... for the");
+  ps("# various builds.");
+  ps("pre-post-common.flags := --extern-pre-js=$(sqlite3-license-version.js)");
+  ps("# pre-post-jses.deps.* = a list of dependencies for the");
+  ps("# --[extern-][pre/post]-js files.");
+  ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
+}
+
 /*
 ** Emits makefile code for setting up values for the --pre-js=FILE,
 ** --post-js=FILE, and --extern-post-js=FILE emcc flags, as well as
 ** populating those files.
 */
-static void mk_pre_post(const char *zName, const char *zMode){
+static void mk_pre_post(const char *zName  /* build name */,
+                        const char *zMode  /* build mode */,
+                        const char *zCmppD /* optional -D flags for c-pp for the
+                                           ** --pre/--post-js files. */){
   pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zName, zMode);
+  pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD ? zCmppD : "");
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
@@ -111,24 +134,6 @@ static void mk_pre_post(const char *zName, const char *zMode){
 }
 
 /*
-** Emits common vars needed by the rest of the emitted code (but not
-** needed by code outside of these generated pieces).
-*/
-static void mk_prologue(void){
-  pf("%s", zBanner);
-  ps("# extern-post-js* and extern-pre-js* are files for use with");
-  ps("# Emscripten's --extern-pre-js and --extern-post-js flags.");
-  ps("extern-pre-js.js := $(dir.api)/extern-pre-js.js");
-  ps("extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js");
-  ps("# Emscripten flags for --[extern-][pre|post]-js=... for the");
-  ps("# various builds.");
-  ps("pre-post-common.flags := --extern-pre-js=$(sqlite3-license-version.js)");
-  ps("# pre-post-jses.deps.* = a list of dependencies for the");
-  ps("# --[extern-][pre/post]-js files.");
-  ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
-}
-
-/*
 ** Emits makefile code for one build of the library, primarily defined
 ** by the combination of zName and zMode, each of which must be values
 ** from JS_BUILD_NAMES resp. JS_BUILD_MODES.
@@ -150,8 +155,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
   pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
   pf("ifneq (1,$(MAKING_CLEAN))\n");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
-  pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD);
-  mk_pre_post(zNM);
+  mk_pre_post(zNM, zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, zEmcc);
@@ -225,7 +229,7 @@ int main(void){
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
 
-  mk_pre_post("speedtest1","vanilla");
-  mk_pre_post("speedtest1-wasmfs","esm");
+  mk_pre_post("speedtest1","vanilla", 0);
+  mk_pre_post("speedtest1-wasmfs","esm", 0);
   return rc;
 }
