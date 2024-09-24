@@ -670,24 +670,195 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
 }
 #endif
 
+/* Lookup table to determine the number of columns consumed by a Unicode
+** character.
+*/
+static const struct {
+  unsigned char w;    /* Width of the character in columns */
+  int iFirst;         /* First character in a span having this width */
+} aUWidth[] = {
+   /* {0, 0x00000},  {1, 0x00020},  {0, 0x0007f},  {1, 0x000a0}, */
+  {0, 0x00300},  {1, 0x00370},  {0, 0x00483},  {1, 0x00487},  {0, 0x00488},
+  {1, 0x0048a},  {0, 0x00591},  {1, 0x005be},  {0, 0x005bf},  {1, 0x005c0},
+  {0, 0x005c1},  {1, 0x005c3},  {0, 0x005c4},  {1, 0x005c6},  {0, 0x005c7},
+  {1, 0x005c8},  {0, 0x00600},  {1, 0x00604},  {0, 0x00610},  {1, 0x00616},
+  {0, 0x0064b},  {1, 0x0065f},  {0, 0x00670},  {1, 0x00671},  {0, 0x006d6},
+  {1, 0x006e5},  {0, 0x006e7},  {1, 0x006e9},  {0, 0x006ea},  {1, 0x006ee},
+  {0, 0x0070f},  {1, 0x00710},  {0, 0x00711},  {1, 0x00712},  {0, 0x00730},
+  {1, 0x0074b},  {0, 0x007a6},  {1, 0x007b1},  {0, 0x007eb},  {1, 0x007f4},
+  {0, 0x00901},  {1, 0x00903},  {0, 0x0093c},  {1, 0x0093d},  {0, 0x00941},
+  {1, 0x00949},  {0, 0x0094d},  {1, 0x0094e},  {0, 0x00951},  {1, 0x00955},
+  {0, 0x00962},  {1, 0x00964},  {0, 0x00981},  {1, 0x00982},  {0, 0x009bc},
+  {1, 0x009bd},  {0, 0x009c1},  {1, 0x009c5},  {0, 0x009cd},  {1, 0x009ce},
+  {0, 0x009e2},  {1, 0x009e4},  {0, 0x00a01},  {1, 0x00a03},  {0, 0x00a3c},
+  {1, 0x00a3d},  {0, 0x00a41},  {1, 0x00a43},  {0, 0x00a47},  {1, 0x00a49},
+  {0, 0x00a4b},  {1, 0x00a4e},  {0, 0x00a70},  {1, 0x00a72},  {0, 0x00a81},
+  {1, 0x00a83},  {0, 0x00abc},  {1, 0x00abd},  {0, 0x00ac1},  {1, 0x00ac6},
+  {0, 0x00ac7},  {1, 0x00ac9},  {0, 0x00acd},  {1, 0x00ace},  {0, 0x00ae2},
+  {1, 0x00ae4},  {0, 0x00b01},  {1, 0x00b02},  {0, 0x00b3c},  {1, 0x00b3d},
+  {0, 0x00b3f},  {1, 0x00b40},  {0, 0x00b41},  {1, 0x00b44},  {0, 0x00b4d},
+  {1, 0x00b4e},  {0, 0x00b56},  {1, 0x00b57},  {0, 0x00b82},  {1, 0x00b83},
+  {0, 0x00bc0},  {1, 0x00bc1},  {0, 0x00bcd},  {1, 0x00bce},  {0, 0x00c3e},
+  {1, 0x00c41},  {0, 0x00c46},  {1, 0x00c49},  {0, 0x00c4a},  {1, 0x00c4e},
+  {0, 0x00c55},  {1, 0x00c57},  {0, 0x00cbc},  {1, 0x00cbd},  {0, 0x00cbf},
+  {1, 0x00cc0},  {0, 0x00cc6},  {1, 0x00cc7},  {0, 0x00ccc},  {1, 0x00cce},
+  {0, 0x00ce2},  {1, 0x00ce4},  {0, 0x00d41},  {1, 0x00d44},  {0, 0x00d4d},
+  {1, 0x00d4e},  {0, 0x00dca},  {1, 0x00dcb},  {0, 0x00dd2},  {1, 0x00dd5},
+  {0, 0x00dd6},  {1, 0x00dd7},  {0, 0x00e31},  {1, 0x00e32},  {0, 0x00e34},
+  {1, 0x00e3b},  {0, 0x00e47},  {1, 0x00e4f},  {0, 0x00eb1},  {1, 0x00eb2},
+  {0, 0x00eb4},  {1, 0x00eba},  {0, 0x00ebb},  {1, 0x00ebd},  {0, 0x00ec8},
+  {1, 0x00ece},  {0, 0x00f18},  {1, 0x00f1a},  {0, 0x00f35},  {1, 0x00f36},
+  {0, 0x00f37},  {1, 0x00f38},  {0, 0x00f39},  {1, 0x00f3a},  {0, 0x00f71},
+  {1, 0x00f7f},  {0, 0x00f80},  {1, 0x00f85},  {0, 0x00f86},  {1, 0x00f88},
+  {0, 0x00f90},  {1, 0x00f98},  {0, 0x00f99},  {1, 0x00fbd},  {0, 0x00fc6},
+  {1, 0x00fc7},  {0, 0x0102d},  {1, 0x01031},  {0, 0x01032},  {1, 0x01033},
+  {0, 0x01036},  {1, 0x01038},  {0, 0x01039},  {1, 0x0103a},  {0, 0x01058},
+  {1, 0x0105a},  {2, 0x01100},  {0, 0x01160},  {1, 0x01200},  {0, 0x0135f},
+  {1, 0x01360},  {0, 0x01712},  {1, 0x01715},  {0, 0x01732},  {1, 0x01735},
+  {0, 0x01752},  {1, 0x01754},  {0, 0x01772},  {1, 0x01774},  {0, 0x017b4},
+  {1, 0x017b6},  {0, 0x017b7},  {1, 0x017be},  {0, 0x017c6},  {1, 0x017c7},
+  {0, 0x017c9},  {1, 0x017d4},  {0, 0x017dd},  {1, 0x017de},  {0, 0x0180b},
+  {1, 0x0180e},  {0, 0x018a9},  {1, 0x018aa},  {0, 0x01920},  {1, 0x01923},
+  {0, 0x01927},  {1, 0x01929},  {0, 0x01932},  {1, 0x01933},  {0, 0x01939},
+  {1, 0x0193c},  {0, 0x01a17},  {1, 0x01a19},  {0, 0x01b00},  {1, 0x01b04},
+  {0, 0x01b34},  {1, 0x01b35},  {0, 0x01b36},  {1, 0x01b3b},  {0, 0x01b3c},
+  {1, 0x01b3d},  {0, 0x01b42},  {1, 0x01b43},  {0, 0x01b6b},  {1, 0x01b74},
+  {0, 0x01dc0},  {1, 0x01dcb},  {0, 0x01dfe},  {1, 0x01e00},  {0, 0x0200b},
+  {1, 0x02010},  {0, 0x0202a},  {1, 0x0202f},  {0, 0x02060},  {1, 0x02064},
+  {0, 0x0206a},  {1, 0x02070},  {0, 0x020d0},  {1, 0x020f0},  {2, 0x02329},
+  {1, 0x0232b},  {2, 0x02e80},  {0, 0x0302a},  {2, 0x03030},  {1, 0x0303f},
+  {2, 0x03040},  {0, 0x03099},  {2, 0x0309b},  {1, 0x0a4d0},  {0, 0x0a806},
+  {1, 0x0a807},  {0, 0x0a80b},  {1, 0x0a80c},  {0, 0x0a825},  {1, 0x0a827},
+  {2, 0x0ac00},  {1, 0x0d7a4},  {2, 0x0f900},  {1, 0x0fb00},  {0, 0x0fb1e},
+  {1, 0x0fb1f},  {0, 0x0fe00},  {2, 0x0fe10},  {1, 0x0fe1a},  {0, 0x0fe20},
+  {1, 0x0fe24},  {2, 0x0fe30},  {1, 0x0fe70},  {0, 0x0feff},  {2, 0x0ff00},
+  {1, 0x0ff61},  {2, 0x0ffe0},  {1, 0x0ffe7},  {0, 0x0fff9},  {1, 0x0fffc},
+  {0, 0x10a01},  {1, 0x10a04},  {0, 0x10a05},  {1, 0x10a07},  {0, 0x10a0c},
+  {1, 0x10a10},  {0, 0x10a38},  {1, 0x10a3b},  {0, 0x10a3f},  {1, 0x10a40},
+  {0, 0x1d167},  {1, 0x1d16a},  {0, 0x1d173},  {1, 0x1d183},  {0, 0x1d185},
+  {1, 0x1d18c},  {0, 0x1d1aa},  {1, 0x1d1ae},  {0, 0x1d242},  {1, 0x1d245},
+  {2, 0x20000},  {1, 0x2fffe},  {2, 0x30000},  {1, 0x3fffe},  {0, 0xe0001},
+  {1, 0xe0002},  {0, 0xe0020},  {1, 0xe0080},  {0, 0xe0100},  {1, 0xe01f0}
+};
+
 /*
-** Output string zUtf to Out stream as w characters.  If w is negative,
+** Return the width, in columns, of the single Unicode character c.
+** For normal characters, the answer is always 1.  But it might be 0 or 2
+** for zero-width and double-width characters.
+*/
+int cli_wcwidth(int c){
+  int iFirst, iLast;
+
+  /* Fast path for common characters */
+  if( c<0x20 ) return 0;
+  if( c<0x7f ) return 1;
+  if( c<0xa0 ) return 0;
+  if( c<=0x300 ) return 1;
+
+  /* The general case */
+  iFirst = 0;
+  iLast = sizeof(aUWidth)/sizeof(aUWidth[0]) - 1;
+  while( iFirst<iLast-1 ){
+    int iMid = (iFirst+iLast)/2;
+    int cMid = aUWidth[iMid].iFirst;
+    if( cMid < c ){
+      iFirst = iMid;
+    }else if( cMid > c ){
+      iLast = iMid - 1;
+    }else{
+      return aUWidth[iMid].w;
+    }
+  }
+  if( aUWidth[iLast].iFirst > c ) return aUWidth[iFirst].w;
+  return aUWidth[iLast].w;
+}
+
+/*
+** Compute the value and length of a multi-byte UTF-8 character that
+** begins at z[0].   Return the length.  Write the Unicode value into *pU.
+*/
+static int decodeUtf8(const unsigned char *z, int *pU){
+  if( (z[0] & 0xe0)==0xc0 && (z[1] & 0xc0)==0x80 ){
+    *pU = ((z[0] & 0x1f)<<6) | (z[1] & 0x3f);
+    return 2;
+  }
+  if( (z[0] & 0xf0)==0xe0 && (z[1] & 0xc0)==0x80 && (z[2] & 0xc0)==0x80 ){
+    *pU = ((z[0] & 0x0f)<<12) | ((z[1] & 0x3f)<<6) | (z[2] & 0x3f);
+    return 3;
+  }
+  if( (z[0] & 0xf8)==0xf0 && (z[1] & 0xc0)==0x80 && (z[2] & 0xc0)==0x80
+   && (z[3] & 0xc0)==0x80
+  ){
+    *pU = ((z[0] & 0x0f)<<18) | ((z[1] & 0x3f)<<12) | ((z[2] & 0x3f))<<6
+                              | (z[4] & 0x3f);
+    return 4;
+  }
+  *pU = 0;
+  return 1;
+}
+
+
+#if 0 /* NOT USED */
+/*
+** Return the width, in display columns, of a UTF-8 string.
+**
+** Each normal character counts as 1.  Zero-width characters count
+** as zero, and double-width characters count as 2.
+*/
+int cli_wcswidth(const char *z){
+  const unsigned char *a = (const unsigned char*)z;
+  int n = 0;
+  int i = 0;
+  unsigned char c;
+  while( (c = a[i])!=0 ){
+    if( c>=0xc0 ){
+      int u;
+      int len = decodeUtf8(&a[i], &u);
+      i += len;
+      n += cli_wcwidth(u);
+    }else if( c>=' ' ){
+      n++;
+      i++;
+    }else{
+      i++;
+    }
+  }
+  return n;
+}
+#endif
+
+/*
+** Output string zUtf to stdout as w characters.  If w is negative,
 ** then right-justify the text.  W is the width in UTF-8 characters, not
 ** in bytes.  This is different from the %*.*s specification in printf
 ** since with %*.*s the width is measured in bytes, not characters.
+**
+** Take into account zero-width and double-width Unicode characters.
+** In other words, a zero-width character does not count toward the
+** the w limit.  A double-width character counts as two.
 */
 static void utf8_width_print(int w, const char *zUtf){
-  int i;
-  int n;
+  const unsigned char *a = (const unsigned char*)zUtf;
+  unsigned char c;
+  int i = 0;
+  int n = 0;
   int aw = w<0 ? -w : w;
   if( zUtf==0 ) zUtf = "";
-  for(i=n=0; zUtf[i]; i++){
-    if( (zUtf[i]&0xc0)!=0x80 ){
-      n++;
-      if( n==aw ){
-        do{ i++; }while( (zUtf[i]&0xc0)==0x80 );
+  while( (c = a[i])!=0 ){
+    if( (c&0xc0)==0xc0 ){
+      int u;
+      int len = decodeUtf8(a+i, &u);
+      int x = cli_wcwidth(u);
+      if( x+n>aw ){
         break;
       }
+      i += len;
+      n += x;
+    }else if( n>=aw ){
+      break;
+    }else{
+      n++;
+      i++;
     }
   }
   if( n>=aw ){
@@ -3670,12 +3841,22 @@ static char *translateForDisplayAndDup(
   if( mxWidth==0 ) mxWidth = 1000000;
   i = j = n = 0;
   while( n<mxWidth ){
-    if( z[i]>=' ' ){
-      n++;
-      do{ i++; j++; }while( (z[i]&0xc0)==0x80 );
+    unsigned char c = z[i];
+    if( c>=0xc0 ){
+      int u;
+      int len = decodeUtf8(&z[i], &u);
+      i += len;
+      j += len;
+      n += cli_wcwidth(u);
       continue;
     }
-    if( z[i]=='\t' ){
+    if( c>=' ' ){
+      n++;
+      i++;
+      j++;
+      continue;
+    }
+    if( c=='\t' ){
       do{
         n++;
         j++;
@@ -3717,9 +3898,17 @@ static char *translateForDisplayAndDup(
   shell_check_oom(zOut);
   i = j = n = 0;
   while( i<k ){
-    if( z[i]>=' ' ){
+    unsigned char c = z[i];
+    if( c>=0xc0 ){
+      int u;
+      int len = decodeUtf8(&z[i], &u);
+      do{ zOut[j++] = z[i++]; }while( (--len)>0 );
+      n += cli_wcwidth(u);
+      continue;
+    }
+    if( c>=' ' ){
       n++;
-      do{ zOut[j++] = z[i++]; }while( (z[i]&0xc0)==0x80 );
+      zOut[j++] = z[i++];
       continue;
     }
     if( z[i]=='\t' ){
