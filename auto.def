@@ -1,0 +1,10 @@
+# Initial auto.def created by 'autosetup --init=make'
+
+use cc
+
+# Add any user options here
+options {
+}
+
+make-config-header config.h
+make-template Makefile.in
