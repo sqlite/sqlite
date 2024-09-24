@@ -13,12 +13,12 @@
 ** This app's single purpose is to emit parts of the Makefile code for
 ** building sqlite3's WASM build. The main motivation is to generate
 ** code which "can" be created via GNU Make's eval command but is
-** highly illegible when built that way. Attempts to write this app in
-** Bash and TCL have failed because both require escaping $ symbols,
-** making the resulting script code as illegible as the eval spaghetti
-** we want to get away from. Writing it in C is, somewhat
-** surprisingly, _slightly_ less illegible than writing it in bash,
-** tcl, or native Make code.
+** highly illegible when constructed that way. Attempts to write this
+** app in Bash and TCL have suffered from the problem that both
+** require escaping $ symbols, making the resulting script code as
+** illegible as the eval spaghetti we want to get away from. Writing
+** it in C is, somewhat surprisingly, _slightly_ less illegible than
+** writing it in bash, tcl, or native Make code.
 **
 ** The emitted makefile code is not standalone - it depends on
 ** variables and $(call)able functions from the main makefile.
@@ -41,7 +41,8 @@
 */
 #define JS_BUILD_NAMES sqlite3 sqlite3-wasmfs
 /*
-** Valid names for the zMode arguments.
+** Valid names for the zMode arguments of the "sqlite3" build. For the
+** "sqlite3-wasmfs" build, only "esm" (ES6 Module) is legal.
 */
 #define JS_BUILD_MODES vanilla esm bundler-friendly node
 
@@ -72,12 +73,30 @@ static void mk_pre_post(const char *zName, const char *zMode){
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
-  pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
-     zNM, zNM);
   pf("pre-js.js.%s-%s := $(dir.tmp)/pre-js.%s-%s.js\n",
+     zNM, zNM);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE)\n", zNM);
+#if 1
+  pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
+     "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+#else
+  /* This part is needed if/when we re-enable the custom
+  ** Module.instantiateModule() impl. */
+  pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
   pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+  pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
+  pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
+
+  /* Amend $(pre-js.js.zName-zMode) for all targets except the plain
+  ** "sqlite3" build... */
+  if( 0!=strcmp("sqlite3-wasmfs", zName)
+      && 0!=strcmp("sqlite3", zName) ){
+    pf("\t@echo 'Module[xNameOfInstantiateWasm].uri = "
+       "\"%s.wasm\";' >> $@\n", zName);
+  }
+#endif
 
   /* --post-js=... */
   pf("post-js.js.%s-%s := $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
@@ -97,18 +116,6 @@ static void mk_pre_post(const char *zName, const char *zMode){
 
   pf("pre-post-%s-%s.flags += $(pre-post-common.flags.%s-%s) "
      "--pre-js=$(pre-js.js.%s-%s)\n", zNM, zNM, zNM);
-
-  pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary) $(MAKEFILE)\n",
-     zNM, zNM);
-  pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
-  /* Amend $(pre-js.js.zName-zMode) for all targets except the plain
-     "sqlite3" build... */
-  if( 0==strcmp("sqlite3-wasmfs", zName) ){
-    pf("\t@echo 'delete Module[xNameOfInstantiateWasm]; /"
-       "* for %s build *" "/' >> $@\n", zName);
-  }else if( 0!=strcmp("sqlite3", zName) ){
-    pf("\t@echo 'Module[xNameOfInstantiateWasm].uri = \"$(1).wasm\";' >> $@\n");
-  }
 
   /* Set up deps... */
   pf("pre-post-jses.%s-%s.deps := $(pre-post-jses.deps.common) "
@@ -138,6 +145,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zEmcc ) zEmcc = "";
 
   pf("#################### begin build [%s-%s]\n", zNM);
+  pf("ifneq (1,$(MAKING_CLEAN))\n");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
   pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD);
   mk_pre_post(zNM);
@@ -190,6 +198,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
     ** conditionally using info we don't have here. */
     pf("all: %s\n", zJsOut);
   }
+  ps("endif\n# ^^^ !$(MAKING_CLEAN)");
   pf("#################### end build [%s-%s]\n\n", zNM);
 }
 

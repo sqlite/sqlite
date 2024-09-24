@@ -6,8 +6,16 @@
 # GNUMakefile.
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
-$(warning The WASMFS build is not well-supported. \
-  WASMFS is a proverbial moving target, so what builds today might not tomorrow.)
+# ensure that the following message starts on line 10 or higher for proper
+# alignment!
+ifneq (1,$(MAKING_CLEAN))
+  $(warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+  $(warning !! The WASMFS build is not well-supported. WASMFS is a proverbial)
+  $(warning !! moving target, sometimes changing in incompatible ways between)
+  $(warning !! Emscripten versions. This build is provided for adventurous folks)
+  $(warning !! and is not a supported deliverable of the SQLite project.)
+  $(warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+endif
 
 sqlite3-wasmfs.js     := $(dir.wasmfs)/sqlite3-wasmfs.js
 sqlite3-wasmfs.wasm   := $(dir.wasmfs)/sqlite3-wasmfs.wasm
@@ -25,12 +33,13 @@ emcc.flags.sqlite3-wasmfs :=
 emcc.flags.sqlite3-wasmfs += \
   -sEXPORTED_RUNTIME_METHODS=wasmMemory
                           # wasmMemory ==> for -sIMPORTED_MEMORY
-# Some version of emcc between 3.1.60-ish and 3.1.62 deprecated the use of
-# (allocateUTF8OnStack,stringToUTF8OnStack). Earlier emcc versions will
-# fail to build without those in EXPORTED_RUNTIME_METHODS.
+# Some version of emcc between 3.1.60-ish(?) and 3.1.62 deprecated the
+# use of (allocateUTF8OnStack,stringToUTF8OnStack). Earlier emcc
+# versions will fail to build without those in the
+# EXPORTED_RUNTIME_METHODS list.
 emcc.flags.sqlite3-wasmfs += -sUSE_CLOSURE_COMPILER=0
 emcc.flags.sqlite3-wasmfs += -Wno-limited-postlink-optimizations
-# ^^^^^ it likes to warn when we have "limited optimizations" via the -g3 flag.
+# ^^^^^ emcc likes to warn when we have "limited optimizations" via the -g3 flag.
 emcc.flags.sqlite3-wasmfs += -sMEMORY64=0
 emcc.flags.sqlite3-wasmfs += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.128)
 # ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
@@ -57,8 +66,8 @@ $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.mjs): $(MAKEFILE.wasmfs)
 # build both modes they would need to have distinct base names or
 # output directories. "The problem" with giving them distinct base
 # names is that it means that the corresponding .wasm file is also
-# built/saved multiple times.
-#
+# built/saved multiple times. It is likely that anyone wanting to use
+# WASMFS will want an ES6 module, so that's what we build here.
 wasmfs.build.ext := mjs
 $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.mjs): $(SOAP.js.bld)
 ifeq (js,$(wasmfs.build.ext))
@@ -68,7 +77,6 @@ else
   $(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.mjs)
   wasmfs: $(sqlite3-wasmfs.mjs)
 endif
-#all: wasmfs
 
 ########################################################################
 # speedtest1 for wasmfs.

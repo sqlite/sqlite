@@ -158,31 +158,43 @@ $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
-ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
-  $(info Development build. Use 'release' or 'snapshot' target for a smaller release build.)
+ifneq (1,$(MAKING_CLEAN))
+  ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
+    $(info ==============================================================)
+    $(info == Development build. Use 'release' or 'snapshot' target)
+    $(info == for a smaller release build.)
+    $(info ==============================================================)
+  endif
 endif
 
 ########################################################################
 # Find emcc (Emscripten compiler)...
-emcc.bin := $(shell which emcc 2>/dev/null)
-ifeq (,$(emcc.bin))
-  ifneq (,$(EMSDK_HOME))
-    emcc.bin := $(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc)
-  endif
+ifeq (1,$(MAKING_CLEAN))
+  emcc.bin := echo
+  emcc.version := unknown
+else
+  emcc.bin := $(shell which emcc 2>/dev/null)
   ifeq (,$(emcc.bin))
-    $(error Cannot find emcc in path.)
+    ifneq (,$(EMSDK_HOME))
+      emcc.bin := $(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc)
+    endif
+    ifeq (,$(emcc.bin))
+      $(error Cannot find emcc in path.)
+    endif
   endif
+  emcc.version := $(shell $(emcc.bin) --version | sed -n 1p | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
+  $(info using emcc version [$(emcc.version)])
 endif
-emcc.version := $(shell $(emcc.bin) --version | sed -n 1p | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
-$(info using emcc version [$(emcc.version)])
 #########################################################################
 # Find wasm-strip, which we need for release builds (see below for
 # why) but not strictly for non-release builds.
-wasm-strip.bin ?= $(shell which wasm-strip 2>/dev/null)
-ifeq (,$(wasm-strip.bin))
-  ifeq (,$(filter clean,$(MAKECMDGOALS)))
+ifeq (1,$(MAKING_CLEAN))
+  wasm-strip-bin := irrelevant
+else
+  wasm-strip.bin ?= $(shell which wasm-strip 2>/dev/null)
+  ifeq (,$(wasm-strip.bin))
     $(info WARNING: *******************************************************************)
-    $(info WARNING: builds using -O2/-O3/-Os/-Oz will minify WASM-exported names,)
+    $(info WARNING: Builds using -O2/-O3/-Os/-Oz will minify WASM-exported names,)
     $(info WARNING: breaking _All The Things_. The workaround for that is to build)
     $(info WARNING: with -g3 (which explodes the file size) and then strip the debug)
     $(info WARNING: info after compilation, using wasm-strip, to shrink the wasm file.)
@@ -194,11 +206,11 @@ ifeq (,$(wasm-strip.bin))
     $(info WARNING: on Ubuntu-like systems it can be installed with:)
     $(info WARNING:    sudo apt install wabt)
     $(info WARNING: *******************************************************************)
+    wasm-strip.bin := echo "not wasm-stripping"
   endif
   ifneq (,$(filter release snapshot,$(MAKECMDGOALS)))
     $(error Cannot make release-quality binary because wasm-strip is not available.)
   endif
-  wasm-strip.bin := echo "not wasm-stripping"
 endif
 maybe-wasm-strip := $(wasm-strip.bin)
 
@@ -207,6 +219,10 @@ maybe-wasm-strip := $(wasm-strip.bin)
 # goal being to create a WASM file with only the core APIs.
 ifeq (1,$(barebones))
   wasm-bare-bones := 1
+  $(info ==============================================================)
+  $(info == This is a bare-bones build. It trades away features for)
+  $(info == a smaller .wasm file.)
+  $(info ==============================================================)
 else
   wasm-bare-bones := 0
 endif
@@ -413,6 +429,7 @@ $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
+DISTCLEAN_FILES += $(bin.c-pp)
 C-PP.FILTER.global ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
   C-PP.FILTER.global += -Denable-see
@@ -481,10 +498,6 @@ ifeq (1,$(SQLITE_C_IS_SEE))
 endif
 ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
-else
-  $(info ============================================================)
-  $(info This is a bare-bones build. It is missing many features.)
-  $(info ============================================================)
 endif
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
 $(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
@@ -853,12 +866,15 @@ sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
 sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 sqlite3-api-wasmfs.mjs := $(dir.tmp)/sqlite3-api-wasmfs.mjs
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
+ifneq (1,$(MAKING_CLEAN))
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
 	$(bin.mkwb) > $@
 	@chmod -w $@
-DISTCLEAN_FILES += .wasmbuilds.make
 -include .wasmbuilds.make
+endif
+DISTCLEAN_FILES += .wasmbuilds.make
+
 # The various -D... values used by *.c-pp.js include:
 #
 # -Dtarget=es6-module: for all ESM module builds
