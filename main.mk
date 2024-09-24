@@ -560,8 +560,8 @@ sqlite3$(EXE):	sqlite3.h libsqlite3.a shell.c
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
 		shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
-sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
-	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
+sqldiff$(EXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.c sqlite3.h
+	$(TCCX) -I$(TOP)/ext/misc -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h

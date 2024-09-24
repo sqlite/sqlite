@@ -26,6 +26,8 @@
 ** also link in the accompanying sqlite3_stdio.c source file when compiling
 ** to get compatible interfaces.
 */
+#ifndef _SQLITE3_STDIO_H_
+#define _SQLITE3_STDIO_H_ 1
 #ifdef _WIN32
 /**** Definitions For Windows ****/
 #include <stdio.h>
@@ -50,3 +52,4 @@ void sqlite3_fsetmode(FILE *stream, int mode);
 #define sqlite3_fsetmode(F,X)   /*no-op*/
 
 #endif
+#endif /* _SQLITE3_STDIO_H_ */

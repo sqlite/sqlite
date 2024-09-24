@@ -14,6 +14,19 @@
 ** on Windows.
 */
 #ifdef _WIN32  /* This file is a no-op on all platforms except Windows */
+#include "sqlite3_stdio.h"
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+#include "sqlite3.h"
+#include <ctype.h>
+#include <stdarg.h>
+#include <io.h>
+#include <fcntl.h>
 
 /*
 ** Work-alike for the fopen() routine from the standard C library.
@@ -68,7 +81,7 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
 ** Work-alike for fgets() from the standard C library.
 */
 char *sqlite3_fgets(char *buf, int sz, FILE *in){
-  if( isatty(_fileno(in)) ){
+  if( _isatty(_fileno(in)) ){
     /* When reading from the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode to read UTF-16 characters, then translate
     ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
@@ -95,7 +108,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
 ** Work-alike for fputs() from the standard C library.
 */
 int sqlite3_fputs(const char *z, FILE *out){
-  if( isatty(_fileno(out)) ){
+  if( _isatty(_fileno(out)) ){
     /* When writing to the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode and write UTF-16 characters.
     */
@@ -121,7 +134,7 @@ int sqlite3_fputs(const char *z, FILE *out){
 */
 int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
   int rc;
-  if( isatty(fileno(out)) ){
+  if( _isatty(fileno(out)) ){
     /* When writing to the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode and write UTF-16 characters.
     */
