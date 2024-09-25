@@ -3,6 +3,17 @@
 use cc cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE defines.list
 
+########################################################################
+# Note that boolean flags...
+#
+# 1) Are in the form flagname (default=false) or flagname=0 (false) or
+# flagname=1 (true).
+#
+# 2) If they default to false, the actual flag mapped to them is
+# --enable-FLAG.
+#
+# 3) If they default to true, the actual flag mapped to them is
+# --disable-FLAG.
 options {
   with-tclsh:PATHNAME  =>  {Full pathname of tclsh to use}
   with-tcl:DIR         =>  {Directory containing tclConfig.sh}
@@ -18,10 +29,10 @@ options {
   with-readline-inc  =>  {readline include paths}
   with-linenoise:DIR   => {}
   disable-amalgamation=0   =>  {Disable the amalgamation and instead build all files separately}
-  disable-load-extension=0  =>  {Disable loading of external extensions}
-  disable-math=0           =>  {math functions}
-  disable-json=0           =>  {JSON functions}
-  enable-all=0            =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+  load-extension=1  =>  {loading of external extensions}
+  math=1            =>  {math functions}
+  json=1            =>  {JSON functions}
+  all=0             =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   enable-memsys5=0        =>  MEMSYS5
   enable-memsys3=0        =>  MEMSYS3
   enable-fts3=0           =>  {Enable the FTS3 extension}
@@ -32,7 +43,7 @@ options {
   enable-rtree=0          =>  {Enable the RTREE extension}
   enable-session=0        =>  {Enable the SESSION extension}
   enable-gcov=0           =>  {Enable coverage testing using gcov}
-  dump-defines=1          =>  {Dump autosetup defines to $DUMP_DEFINES_FILE}
+  dump-defines=1         =>  {Dump autosetup defines to $DUMP_DEFINES_FILE}
 }
 #  debug=0          =>  {debugging & verbose explain}
 
@@ -84,11 +95,6 @@ puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #        Libraries that the build compiler needs in order to construct
 #        command-line programs.
 #
-#    BUILD_EXEEXT
-#
-#        The filename extension for executables on the build
-#        platform.  "" for Unix and ".exe" for Windows.
-#
 #    TCL_*
 #
 #        Lots of values are read in from the tclConfig.sh script,
@@ -107,49 +113,94 @@ puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #        This variables define the directory that contain header
 #        files for the readline library.  If the compiler is able
 #        to find <readline.h> on its own, then this can be blank.
-#
-#    TARGET_EXEEXT
-#
-#        The filename extension for executables on the
-#        target platform.  "" for Unix and ".exe" for windows.
-#
-# This configure.in file is easy to reuse on other projects.  Just
-# change the argument to AC_INIT.  And disable any features that
-# you don't need (for example BLT) by erasing or commenting out
-# the corresponding code.
-#
 
+hwaci-check-exeext
 
-#set sqlite_version_sanity_check `cat $autosetup(srcdir)/VERSION | tr -d '\n'`
-# XXX if test "$PACKAGE_VERSION" != "$sqlite_version_sanity_check" ; then
-#user-error "configure script is out of date:
-# configure \$PACKAGE_VERSION = $PACKAGE_VERSION
-# top level VERSION file     = $sqlite_version_sanity_check
-#please regen with autoconf"
-# XXX fi
+########################################################################
+# OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
+define OPT_FEATURE_FLAGS {}
+proc add-feature-flag {flag} {
+  define-append OPT_FEATURE_FLAGS $flag
+}
+# add-feature-flag -DSQLITE_JUST_TESTING=3
 
 #########
 # Programs needed
-cc-check-progs install
+if {1} {
+  if {"" eq [hwaci-bin-define install]} {
+    msg-result "Cannot find install binary, so 'make install' will not work."
+  }
+}
 
 #########
 # Enable large file support (if special flags are necessary)
-cc-check-lfs
+if {1} {
+  cc-check-lfs
+}
 
 #########
 # Check for needed/wanted data types
 if {1} {
-  cc-check-types int8_t int16_t int32_t int64_t intptr_t uint8_t uint16_t uint32_t uint64_t uintptr_t
+  cc-check-types int8_t int16_t int32_t int64_t intptr_t \
+    uint8_t uint16_t uint32_t uint64_t uintptr_t
 }
 
 #########
 # Check for needed/wanted headers
-cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+if {1} {
+  cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+}
 
 #########
 # Figure out whether or not we have these functions
+if {1} {
+  cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
+    malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+}
+
+
+##########
+# Handle --with-wasi-sdk=DIR
 #
-cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+# This must be early because it changes the toolchain.
+#
+# It's unclear whether we can actually get away with these changes in
+# autosetup.
+if {1} {
+  set wasiSdkDir [lindex [opt-val with-wasi-sdk] end]
+  if {$wasiSdkDir eq ""} {
+    define HAVE_WASI_SDK 0
+    define WASI_SDK_DIR ""
+  } else {
+    msg-checking "Checking WASI SDK directory \[$wasiSdkDir]... "
+    if {![file exists $wasiSdkDir/bin/clang]} {
+      user-error "--with-wasi-sdk=${wasiSdkDir} directory does not contain bin/clang"
+    }
+    msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
+    define HAVE_WASI_SDK 1
+    define WASI_SDK_DIR $wasiSdkDir
+
+    # Changing --host and --target have no effect here except to possibly
+    # cause confusion. autoconf has finished processing them by this
+    # point.
+    #
+    #  host_alias=wasm32-wasi
+    #  target=wasm32-wasi
+    #
+    # Merely changing CC and LD to the wasi-sdk's is enough to get
+    # sqlite3.o building in WASM format.
+    # XXX CC="${with_wasi_sdk}/bin/clang"
+    # XXX LD="${with_wasi_sdk}/bin/wasm-ld"
+    # XXX RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
+    #  set cross_compiling yes
+    #  set enable_threadsafe no
+    #  set use_tcl no
+    #  set enable_tcl no
+    # libtool is apparently hard-coded to use gcc for linking DLLs, so
+    # we disable the DLL build...
+    #  set enable_shared no
+  }
+}; # --wasi-sdk-dir
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -282,9 +333,9 @@ if {0} {
   # Set up options for running tests.
   #
   if {[opt-bool test-status]} {
-    set use_vt100 $enableval
+    define TSTRNNR_OPTS {--status}
   } else {
-    set use_vt100 no
+    define TSTRNNR_OPTS {}
   }
   # XXX if test $use_vt100 != no; then
   # XXX TSTRNNR_OPTS=--status
@@ -293,74 +344,6 @@ if {0} {
   # XXX fi
   # XXX AC_SUBST TSTRNNR_OPTS
 }
-
-if {0} {
-  #########
-  # Set up an appropriate program prefix
-  #
-  # XXX if test "$program_prefix" = "NONE"; then
-  set program_prefix ""
-  # XXX fi
-  # XXX AC_SUBST program_prefix
-
-  # XXX VERSION=[`cat $srcdir/VERSION | sed 's/^\([0-9]*\.*[0-9]*\).*/\1/'`]
-  # msg-result "Version set to $VERSION"
-  # XXX AC_SUBST VERSION
-  # XXX RELEASE=`cat $srcdir/VERSION`
-  # msg-result "Release set to $RELEASE"
-  # XXX AC_SUBST RELEASE
-}
-
-if {0} {
-  ##########
-  # Handle --with-wasi-sdk=DIR
-  #
-  # This must be early because it changes the toolchain.
-  #
-  if {[opt-val with-wasi-sdk] ne {}} {
-    set withval [lindex [opt-val with-wasi-sdk] end]
-    set with_wasisdk ${withval}
-  }
-  msg-checking "Checking for WASI SDK directory..."
-  # First check to see if --with-tcl was specified.
-  # XXX if test x"${with_wasi_sdk}" != x ; then
-  # XXX if ! test -d "${with_wasi_sdk}" ; then
-  user-error "${with_wasi_sdk} directory doesn't exist"
-  # XXX fi
-  msg-result "${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
-  set use_wasi_sdk yes
-  # XXX else
-  set use_wasi_sdk no
-  # XXX fi
-  # XXX if test "${use_wasi_sdk}" = "no" ; then
-  # XXX HAVE_WASI_SDK=""
-  msg-result "no"
-  # XXX else
-  # XXX HAVE_WASI_SDK=1
-  # Changing --host and --target have no effect here except to possibly
-  # cause confusion. autoconf has finished processing them by this
-  # point.
-  #
-  #  host_alias=wasm32-wasi
-  #  target=wasm32-wasi
-  #
-  # Merely changing CC and LD to the wasi-sdk's is enough to get
-  # sqlite3.o building in WASM format.
-  # XXX CC="${with_wasi_sdk}/bin/clang"
-  # XXX LD="${with_wasi_sdk}/bin/wasm-ld"
-  # XXX RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
-  set cross_compiling yes
-  set enable_threadsafe no
-  set use_tcl no
-  set enable_tcl no
-  # libtool is apparently hard-coded to use gcc for linking DLLs, so
-  # we disable the DLL build...
-  set enable_shared no
-  msg-result "yes"
-  # XXX fi
-  # XXX AC_SUBST HAVE_WASI_SDK
-}
-
 
 #########
 # Locate a compiler for the build machine.  This compiler should
@@ -675,56 +658,56 @@ if {0} {
   # XXX AC_SUBST HAVE_ZLIB
 }
 
-if {0} {
-  #########
-  # See whether we should allow loadable extensions
-  if {![opt-bool load-extension]} {
+proc if-disabled {boolFlag then {else {}}} {
+  if {![opt-bool $boolFlag]} {
+    eval $then
   } else {
-    set enable_load_extension yes
+    eval $else
   }
-  # XXX if test "${enable_load_extension}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS=""
-  cc-check-function-in-lib dlopen dl
-  # XXX else
-  # XXX OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
-  # XXX fi
 }
 
-if {0} {
-  ##########
-  # Do we want to support math functions
-  #
-  if {![opt-bool math]} {
+proc if-enabled {boolFlag then {else {}}} {
+  if {[opt-bool $boolFlag]} {
+    eval $then
+  } else {
+    eval $else
   }
-  msg-checking "Checking whether to support math functions..."
-  # XXX if test "$enable_math" = "no"; then
-  msg-result "no"
-  # XXX else
-  msg-result "yes"
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
-  cc-check-function-in-lib ceil m
-  # XXX fi
 }
 
-if {0} {
-  ##########
-  # Do we want to support JSON functions
-  #
-  if {![opt-bool json]} {
+if-enabled load-extension {
+  if {[cc-check-function-in-lib dlopen dl]} {
+    define LDFLAGS_DLOPEN [get-define lib_dlopen]
+  } else {
+    user-error "dlopen() not found. Use --disable-load-extension to bypass this check."
   }
-  msg-checking "Checking whether to support JSON functions..."
-  # XXX if test "$enable_json" = "no"; then
-  msg-result "no"
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
-  # XXX else
-  msg-result "yes"
-  # XXX fi
+} {
+  define LDFLAGS_DLOPEN ""
+  add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
+  msg-result "Disabling loadable extensions."
 }
 
-########
-# The --enable-all argument is short-hand to enable
-# multiple extensions.
-if {[opt-bool enable-all]} {
+if-enabled math {
+  if {![cc-check-function-in-lib ceil m]} {
+    user-error "Cannot find libm functions. Use --disable-math to bypass this."
+  }
+  define LDFLAGS_MATH [get-define lib_ceil]
+  undefine lib_ceil
+  add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
+  msg-result "Enabling math functions."
+} {
+  define LDFLAGS_MATH ""
+  msg-result "Disabling math functions."
+}
+
+if-enabled json {
+  msg-result "Enabling JSON SQL functions."
+} {
+  add-feature-flag {-DSQLITE_OMIT_JSON}
+  msg-result "Disabling JSON SQL functions."
+}
+
+if-enabled all {
+  msg-result "TODO: handle --enable-all"
 }
 
 if {0} {
@@ -941,5 +924,5 @@ if {0} {
 
 if {[opt-bool dump-defines]} {
     msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
-    make-config-header $DUMP_DEFINES_FILE -auto {*}
+    make-config-header $DUMP_DEFINES_FILE -bare OPT_FEATURE_FLAGS -auto {*}
 }

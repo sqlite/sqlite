@@ -53,15 +53,14 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 }
 
 ########################################################################
-# Look for binary named $binName and `define`s $defName to that full
+# Looks for binary named $binName and `define`s $defName to that full
 # path, or an empty string if not found. Returns the value it defines.
 # This caches the result for a given $binName/$defName combination, so
 # calls after the first for a given combination will always return the
 # same result.
 #
 # If defName is empty then "BIN_X" is used, where X is the upper-case
-# form of $binName with any '-' characters removed. (TODO: map them to
-# "_" instead, but i'll need to fix my affected builds in parallel.)
+# form of $binName with any '-' characters replaced with '_'.
 proc hwaci-bin-define {binName {defName {}}} {
     global hwaciCache
     set cacheName "$binName:$defName"
@@ -88,7 +87,7 @@ proc hwaci-bin-define {binName {defName {}}} {
         set hwaciCache($cacheName) $check
     }
     if {"" eq $defName} {
-        set defName "BIN_[string toupper [string map {- {}} $binName]]"
+        set defName "BIN_[string toupper [string map {- _} $binName]]"
     }
     define $defName $check
     return $check
@@ -321,4 +320,46 @@ proc hwaci-check-profile-flag {{flagname profile}} {
   }
   define CC_PROFILE_FLAG ""
   return 0
+}
+
+########################################################################
+# Returns 1 if this appears to be a Windows environment (MinGw,
+# Cygwin, MSys), else returns 0. The optional argument is the name of
+# an autosetup define which contains platform name info, defaulting to
+# "host". The other legal value is "target".
+proc hwaci-looks-like-windows {{key host}} {
+  switch -glob -- [get-define $key] {
+    *-*-ming* - *-*-cygwin - *-*-msys {
+      return 1
+    }
+    default {
+      return 0
+    }
+  }
+}
+
+########################################################################
+# Checks autosetup's "host" and "target" defines to see if the build
+# host and target are Windows-esque (Cygwin, MinGW, MSys). If the
+# build host is then BUILD_EXEEXT is [define]'d to ".exe", else "". If
+# the build target is then TARGET_EXEEXT is [define]'d to ".exe", else
+# "".
+proc hwaci-check-exeext {} {
+  msg-checking "Build host is Windows-esque? "
+  if {[hwaci-looks-like-windows host]} {
+    define BUILD_EXEEXT ".exe"
+    msg-result yes
+  } else {
+    define BUILD_EXEEXT ""
+    msg-result no
+  }
+
+  msg-checking "Build target is Windows-esque? "
+  if {[hwaci-looks-like-windows target]} {
+    define TARGET_EXEEXT ".exe"
+    msg-result yes
+  } else {
+    define TARGET_EXEEXT ""
+    msg-result no
+  }
 }
