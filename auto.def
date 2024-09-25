@@ -938,8 +938,8 @@ foreach {boolFlag featureFlag} {
   fts4    -DSQLITE_ENABLE_FTS4
   fts5    -DSQLITE_ENABLE_FTS5
   geopoly -DSQLITE_ENABLE_GEOPOLY
-  rtree   -DSQLITE_ENABLE_GEOPOLY
-  session -DSQLITE_ENABLE_GEOPOLY
+  rtree   -DSQLITE_ENABLE_RTREE
+  session -DSQLITE_ENABLE_SESSION
 } {
   if {[opt-bool $boolFlag]} {
     add-feature-flag $featureFlag
