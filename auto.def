@@ -14,35 +14,48 @@ set DUMP_DEFINES_FILE defines.list
 #
 # 3) If they default to true, the actual flag mapped to them is
 # --disable-FLAG.
+#
+# 4) For boolean options, configure will accept any of --flag, --enable-flag,
+# or --disable-flag. Unfortunately, it reserves --debug for its own use.
+#
+# 5) Mapping with their full name, e.g. enable-foo=1 or disable-bar=0,
+# will lead to breakage in calls to either [opt-bool foo] or
+# [opt-bool enable-foo].
+#
+# (2) and (3) mean that the help text for flag=1 should start with
+# "Disable" and flag=0 should start with "Enable".
+#
+# In trying to helpfully map between --foo/--enable-foo/--disable-foo,
+# it ends up creating some degree of confusion.
 options {
   with-tclsh:PATHNAME  =>  {Full pathname of tclsh to use}
   with-tcl:DIR         =>  {Directory containing tclConfig.sh}
-  disable-tcl=0        =>  {building accessory programs that require TCL-dev}
-  enable-test-status=0 =>  {status of tests}
-  with-wasi-sdk:=/opt/wasi-sdk  =>  {Path to the wasi-dsk}
-  disable-threadsafe=0    =>  mutexing
-  enable-releasemode=0   =>  {libtool link to release mode}
-  enable-tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
-  enable-editline=0    =>  {BSD editline support}
-  disable-readline=0       =>  {readline support}
+  tcl=1                =>  {Disable building accessory programs that require TCL-dev}
+  test-status        =>  {Enable status of tests}
+  threadsafe=1         =>  {Disable mutexing}
+  releasemode   =>  {libtool link to release mode}
+  tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
+  editline=0           =>  {BSD editline support}
+  readline=0           =>  {readline support}
   with-readline-lib  =>  {readline library}
   with-readline-inc  =>  {readline include paths}
   with-linenoise:DIR   => {}
-  disable-amalgamation=0   =>  {Disable the amalgamation and instead build all files separately}
-  load-extension=1  =>  {loading of external extensions}
-  math=1            =>  {math functions}
-  json=1            =>  {JSON functions}
-  all=0             =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
-  enable-memsys5=0        =>  MEMSYS5
-  enable-memsys3=0        =>  MEMSYS3
-  enable-fts3=0           =>  {Enable the FTS3 extension}
-  enable-fts4=0           =>  {Enable the FTS4 extension}
-  enable-fts5=0           =>  {Enable the FTS5 extension}
-  enable-update-limit=0   =>  {Enable the UPDATE/DELETE LIMIT clause}
-  enable-geopoly=0        =>  {Enable the GEOPOLY extension}
-  enable-rtree=0          =>  {Enable the RTREE extension}
-  enable-session=0        =>  {Enable the SESSION extension}
-  enable-gcov=0           =>  {Enable coverage testing using gcov}
+  amalgamation=1   =>  {Disable the amalgamation and instead build all files separately}
+  load-extension=1  =>  {Disable loading of external extensions}
+  math=1            =>  {Disable math functions}
+  json=1            =>  {Disable JSON functions}
+  all             =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+  memsys5        =>  {Enable MEMSYS5}
+  memsys3        =>  {Enable MEMSYS3}
+  fts3           =>  {Enable the FTS3 extension}
+  fts4           =>  {Enable the FTS4 extension}
+  fts5           =>  {Enable the FTS5 extension}
+  update-limit   =>  {Enable the UPDATE/DELETE LIMIT clause}
+  geopoly        =>  {Enable the GEOPOLY extension}
+  rtree          =>  {Enable the RTREE extension}
+  session        =>  {Enable the SESSION extension}
+  gcov           =>  {Enable coverage testing using gcov}
+  with-wasi-sdk:=/opt/wasi-sdk  =>  {Top-most dir of the wasi-sdk for a WASI build}
   dump-defines=1         =>  {Dump autosetup defines to $DUMP_DEFINES_FILE}
 }
 #  debug=0          =>  {debugging & verbose explain}
@@ -124,6 +137,29 @@ proc add-feature-flag {flag} {
 }
 # add-feature-flag -DSQLITE_JUST_TESTING=3
 
+########################################################################
+# Force-set autosetup option $flag to $val.
+proc opt-bool-set {flag {val 1}} {
+  if {![dict exists ::autosetup(options) $flag]} {
+    # We have to add this to autosetup(options) or else future calls
+    # to [opt-bool $flag] will fail validation of $flag.
+    dict set ::autosetup(options) $flag {}
+  }
+  dict set ::autosetup(optset) $flag $val
+}
+
+########################################################################
+# If [opt-bool $boolFlag] is true, eval $then, else eval $else.
+proc if-enabled {boolFlag then {else {}}} {
+  if {[opt-bool $boolFlag]} {eval $then} else {eval $else}
+}
+
+########################################################################
+# If [opt-bool $boolFlag] is false, eval $then, else eval $else.
+proc if-disabled {boolFlag then {else {}}} {
+  if {![opt-bool $boolFlag]} {eval $then} else {eval $else}
+}
+
 #########
 # Programs needed
 if {1} {
@@ -157,7 +193,6 @@ if {1} {
   cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
     malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 }
-
 
 ##########
 # Handle --with-wasi-sdk=DIR
@@ -362,6 +397,14 @@ if {0} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
+if-enabled all {
+  opt-bool-set fts4
+  opt-bool-set fts5
+  opt-bool-set geopoly
+  opt-bool-set rtree
+  opt-bool-set session
+}
+
 ##########
 # Do we want to support multithreaded use of sqlite
 #
@@ -387,9 +430,11 @@ if {0} {
 ##########
 # Do we want to support release
 #
-if {[opt-bool enable-releasemode]} {
+if-enabled releasemode {
+  msg-result "Release-mode build."
   set enable_releasemode 1
-} else {
+} {
+  msg-result "Non-release-mode build."
   set enable_releasemode 0
 }
 
@@ -658,22 +703,6 @@ if {0} {
   # XXX AC_SUBST HAVE_ZLIB
 }
 
-proc if-disabled {boolFlag then {else {}}} {
-  if {![opt-bool $boolFlag]} {
-    eval $then
-  } else {
-    eval $else
-  }
-}
-
-proc if-enabled {boolFlag then {else {}}} {
-  if {[opt-bool $boolFlag]} {
-    eval $then
-  } else {
-    eval $else
-  }
-}
-
 if-enabled load-extension {
   if {[cc-check-function-in-lib dlopen dl]} {
     define LDFLAGS_DLOPEN [get-define lib_dlopen]
@@ -693,21 +722,17 @@ if-enabled math {
   define LDFLAGS_MATH [get-define lib_ceil]
   undefine lib_ceil
   add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
-  msg-result "Enabling math functions."
+  msg-result "Enabling math SQL functions"
 } {
   define LDFLAGS_MATH ""
-  msg-result "Disabling math functions."
+  msg-result "Disabling math SQL functions"
 }
 
 if-enabled json {
-  msg-result "Enabling JSON SQL functions."
+  msg-result "Enabling JSON SQL functions"
 } {
   add-feature-flag {-DSQLITE_OMIT_JSON}
-  msg-result "Disabling JSON SQL functions."
-}
-
-if-enabled all {
-  msg-result "TODO: handle --enable-all"
+  msg-result "Disabling JSON SQL functions"
 }
 
 if {0} {
@@ -909,8 +934,18 @@ if {0} {
   # XXX AC_SUBST AMALGAMATION_LINE_MACROS
 }
 
-#########
-# Output the config header
+foreach {boolFlag featureFlag} {
+  fts4    -DSQLITE_ENABLE_FTS4
+  fts5    -DSQLITE_ENABLE_FTS5
+  geopoly -DSQLITE_ENABLE_GEOPOLY
+  rtree   -DSQLITE_ENABLE_GEOPOLY
+  session -DSQLITE_ENABLE_GEOPOLY
+} {
+  if {[opt-bool $boolFlag]} {
+    add-feature-flag $featureFlag
+    msg-result "Enabling $boolFlag"
+  }
+}
 
 if {0} {
   #########
@@ -920,6 +955,10 @@ if {0} {
   make-template Makefile.in
   make-template sqlite3.pc.in
   make-config-header sqlite_cfg.h
+}
+
+if {"" ne [get-define OPT_FEATURE_FLAGS]} {
+  msg-result "Final feature flags: [get-define OPT_FEATURE_FLAGS]"
 }
 
 if {[opt-bool dump-defines]} {
