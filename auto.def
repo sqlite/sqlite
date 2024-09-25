@@ -1,5 +1,4 @@
 # Created by migrate-autoconf - fix items marked XXX
-
 use cc cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE defines.list
 
@@ -28,37 +27,39 @@ set DUMP_DEFINES_FILE defines.list
 # In trying to helpfully map between --foo/--enable-foo/--disable-foo,
 # it ends up creating some degree of confusion.
 options {
-  with-tclsh:PATHNAME  =>  {Full pathname of tclsh to use}
-  with-tcl:DIR         =>  {Directory containing tclConfig.sh}
-  tcl=1                =>  {Disable building accessory programs that require TCL-dev}
-  test-status        =>  {Enable status of tests}
-  threadsafe=1         =>  {Disable mutexing}
-  releasemode   =>  {libtool link to release mode}
-  tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
-  editline=0           =>  {BSD editline support}
-  readline=0           =>  {readline support}
-  with-readline-lib  =>  {readline library}
-  with-readline-inc  =>  {readline include paths}
+  with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
+  with-tcl:DIR         => {Directory containing tclConfig.sh}
+  tcl=1                => {Disable building accessory programs that require TCL-dev}
+  test-status          => {Enable status of tests}
+  threadsafe=1         => {Disable mutexing}
+  releasemode          => {libtool link to release mode}
+  tempstore=0          => {an in-ram database for temporary tables never,no,yes,always}
+  editline=0           => {BSD editline support}
+  readline=0           => {readline support}
+  with-readline-lib    => {readline library}
+  with-readline-inc    => {readline include paths}
   with-linenoise:DIR   => {}
-  amalgamation=1   =>  {Disable the amalgamation and instead build all files separately}
-  load-extension=1  =>  {Disable loading of external extensions}
-  math=1            =>  {Disable math functions}
-  json=1            =>  {Disable JSON functions}
-  all             =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
-  memsys5        =>  {Enable MEMSYS5}
-  memsys3        =>  {Enable MEMSYS3}
-  fts3           =>  {Enable the FTS3 extension}
-  fts4           =>  {Enable the FTS4 extension}
-  fts5           =>  {Enable the FTS5 extension}
-  update-limit   =>  {Enable the UPDATE/DELETE LIMIT clause}
-  geopoly        =>  {Enable the GEOPOLY extension}
-  rtree          =>  {Enable the RTREE extension}
-  session        =>  {Enable the SESSION extension}
-  gcov           =>  {Enable coverage testing using gcov}
-  with-wasi-sdk:=/opt/wasi-sdk  =>  {Top-most dir of the wasi-sdk for a WASI build}
-  dump-defines=1         =>  {Dump autosetup defines to $DUMP_DEFINES_FILE}
+  amalgamation=1       => {Disable the amalgamation and instead build all files separately}
+  load-extension=1     => {Disable loading of external extensions}
+  math=1               => {Disable math functions}
+  json=1               => {Disable JSON functions}
+  all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+  memsys5              => {Enable MEMSYS5}
+  memsys3              => {Enable MEMSYS3}
+  fts3                 => {Enable the FTS3 extension}
+  fts4                 => {Enable the FTS4 extension}
+  fts5                 => {Enable the FTS5 extension}
+  update-limit         => {Enable the UPDATE/DELETE LIMIT clause}
+  geopoly              => {Enable the GEOPOLY extension}
+  rtree                => {Enable the RTREE extension}
+  session              => {Enable the SESSION extension}
+  gcov                 => {Enable coverage testing using gcov}
+  linemacros           => {Enable #line macros in the amalgamation.}
+  with-wasi-sdk:=/opt/wasi-sdk
+                       => {Top-most dir of the wasi-sdk for a WASI build}
+  dump-defines=1       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
 }
-#  debug=0          =>  {debugging & verbose explain}
+#  debug=0          => {debugging & verbose explain}
 
 set srcdir $autosetup(srcdir)
 puts "srcdir = $srcdir"
@@ -139,13 +140,20 @@ proc add-feature-flag {flag} {
 
 ########################################################################
 # Force-set autosetup option $flag to $val.
+#
+# BUG: dies with "missing value to go with key, which indicates an arg
+# count error to [dict exists]. Why it does that is a mystery, though.
 proc opt-bool-set {flag {val 1}} {
-  if {![dict exists ::autosetup(options) $flag]} {
+  global autosetup
+  #puts "DEBUG: opt-bool-set $flag $val. DICT=<<$::autosetup(options)>>"
+  if {![dict exists $::autosetup(options) $flag]} {
     # We have to add this to autosetup(options) or else future calls
     # to [opt-bool $flag] will fail validation of $flag.
     dict set ::autosetup(options) $flag {}
   }
   dict set ::autosetup(optset) $flag $val
+  #puts "DEBUG: opt-bool-set $flag $val = [opt-bool $flag]"
+  #puts "DEBUG: opt-bool-set $flag $val = [dict get $::autosetup(optset) $flag]"
 }
 
 ########################################################################
@@ -199,8 +207,8 @@ if {1} {
 #
 # This must be early because it changes the toolchain.
 #
-# It's unclear whether we can actually get away with these changes in
-# autosetup.
+# It's unclear whether we can actually get away with making these
+# changes to the autosetup environment.
 if {1} {
   set wasiSdkDir [lindex [opt-val with-wasi-sdk] end]
   if {$wasiSdkDir eq ""} {
@@ -397,13 +405,20 @@ if {0} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
-if-enabled all {
-  opt-bool-set fts4
-  opt-bool-set fts5
-  opt-bool-set geopoly
-  opt-bool-set rtree
-  opt-bool-set session
-}
+#opt-bool-set why-does-this-puke
+#if-enabled all {
+#  opt-bool-set fts4
+#  opt-bool-set fts5
+#  opt-bool-set geopoly
+#  opt-bool-set rtree
+#  opt-bool-set session
+#}
+
+#if-enabled geopoly {opt-bool-set rtree}
+#if {[opt-bool geopoly]} {
+#  opt-bool-set rtree
+#}
+
 
 ##########
 # Do we want to support multithreaded use of sqlite
@@ -793,69 +808,6 @@ if {0} {
   # XXX fi
 }
 
-
-if {0} {
-  #########
-  # See whether we should enable the LIMIT clause on UPDATE and DELETE
-  # statements.
-  if {[opt-bool update-limit]} {
-  }
-  msg-checking "Checking whether to support LIMIT on UPDATE and DELETE statements..."
-  # XXX if test "${enable_update_limit}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-}
-
-if {0} {
-  #########
-  # See whether we should enable GEOPOLY
-  if {[opt-bool geopoly]} {
-    set enable_geopoly yes
-  } else {
-    set enable_geopoly no
-  }
-  msg-checking "Checking whether to support GEOPOLY..."
-  # XXX if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_GEOPOLY"
-  set enable_rtree yes
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-}
-
-if {0} {
-  #########
-  # See whether we should enable RTREE
-  if {[opt-bool rtree]} {
-  }
-  msg-checking "Checking whether to support RTREE..."
-  # XXX if test "${enable_rtree}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-}
-
-if {0} {
-  #########
-  # See whether we should enable the SESSION extension
-  if {[opt-bool session]} {
-  }
-  msg-checking "Checking whether to support SESSION..."
-  # XXX if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-}
-
 #########
 # attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
 # XXX for option in $CFLAGS $CPPFLAGS
@@ -866,7 +818,6 @@ if {0} {
 # XXX esac
 # XXX done
 # XXX AC_SUBST OPT_FEATURE_FLAGS
-
 
 # attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
 # XXX ac_temp_CFLAGS=""
@@ -880,7 +831,6 @@ if {0} {
 # XXX done
 # XXX CFLAGS=$ac_temp_CFLAGS
 
-
 # attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
 # XXX ac_temp_CPPFLAGS=""
 # XXX for option in $CPPFLAGS
@@ -892,7 +842,6 @@ if {0} {
 # XXX esac
 # XXX done
 # XXX CPPFLAGS=$ac_temp_CPPFLAGS
-
 
 # attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
 # XXX ac_temp_BUILD_CFLAGS=""
@@ -907,44 +856,37 @@ if {0} {
 # XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 
 
-if {0} {
-  #########
-  # See whether we should use GCOV
-  if {[opt-bool gcov]} {
-  }
-  # XXX if test "${use_gcov}" = "yes" ; then
-  # XXX USE_GCOV=1
-  # XXX else
-  # XXX USE_GCOV=0
-  # XXX fi
-  # XXX AC_SUBST USE_GCOV
-}
-
-if {0} {
-  #########
-  # Enable/disabled amalagamation line macros
-  ########
-  set linemacros 0
-  # XXX if test "${amalgamation_line_macros}" = "yes" ; then
-  set linemacros 1
-  # XXX fi
-  # XXX if test "${amalgamation_line_macros}" = "no" ; then
-  set linemacros 0
-  # XXX fi
-  # XXX AC_SUBST AMALGAMATION_LINE_MACROS
+if-enabled gcov {
+  define USE_GCOV 1
+  msg-result "Enabling gcov"
+} {
+  define USE_GCOV 0
 }
 
 foreach {boolFlag featureFlag} {
-  fts4    -DSQLITE_ENABLE_FTS4
-  fts5    -DSQLITE_ENABLE_FTS5
-  geopoly -DSQLITE_ENABLE_GEOPOLY
-  rtree   -DSQLITE_ENABLE_RTREE
-  session -DSQLITE_ENABLE_SESSION
+  fts4         -DSQLITE_ENABLE_FTS4
+  fts5         -DSQLITE_ENABLE_FTS5
+  geopoly      -DSQLITE_ENABLE_GEOPOLY
+  rtree        -DSQLITE_ENABLE_RTREE
+  session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK}
+  update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT
 } {
   if {[opt-bool $boolFlag]} {
     add-feature-flag $featureFlag
-    msg-result "Enabling $boolFlag"
+    msg-checking "Enabling "
+  } else {
+    msg-checking "Not enabling "
   }
+  msg-result "$boolFlag"
+}
+
+msg-checking "Use #line macros in the amalgamation: "
+if-enabled linemacros {
+  define AMALGAMATION_LINE_MACROS {--linemacros=1}
+  msg-result yes
+} {
+  define AMALGAMATION_LINE_MACROS {--linemacros=0}
+  msg-result no
 }
 
 if {0} {
@@ -961,7 +903,8 @@ if {"" ne [get-define OPT_FEATURE_FLAGS]} {
   msg-result "Final feature flags: [get-define OPT_FEATURE_FLAGS]"
 }
 
-if {[opt-bool dump-defines]} {
-    msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
-    make-config-header $DUMP_DEFINES_FILE -bare OPT_FEATURE_FLAGS -auto {*}
+if-enabled dump-defines {
+  global DUMP_DEFINES_FILE
+  msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
+  make-config-header $DUMP_DEFINES_FILE -bare OPT_FEATURE_FLAGS -auto {*}
 }

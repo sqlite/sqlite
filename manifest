@@ -1,5 +1,5 @@
-C Correct\ssome\scopy/paste\serrors\sin\sthe\sprevious\scheckin.
-D 2024-09-25T04:34:16.974
+C Disable\swith\s--enable-all\sbits,\sas\sthe\shelper\sfunction\sit\suses\sis\sdying\sfor\sreasons\sbeyond\smy\smeager\stcl-fu.
+D 2024-09-25T06:07:54.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 6f4df7f8eda3c5e4268eece057dfb8174d0bef3ee187f0d4bc239d691f8ab543
+F auto.def b40b43d5a875219ce95e4f79e2af2e94dda6794499191be2f40bfee2c83f5a7e
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2232,8 +2232,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a49436c983848c3d88f3f5ec33fb9ac31cce62e94bf515ab1c357a10f5cd515
-R 56e31490266a3fa122787b87ec5fdcc3
+P 9752768d8a83052cb69fa07d51e2c82e710c20482cc02c33a4412ffdfa3dc699
+R 0eddc38894d4661d5c3724c85feb2c7f
 U stephan
-Z 843bdfe8c3ebf9cba90f35ae570af0f3
+Z feae9d13f636f6426ad2f0979409e029
 # Remove this line to create a well-formed Fossil manifest.
