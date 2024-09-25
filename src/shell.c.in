@@ -2735,7 +2735,10 @@ static int shell_callback(
     case MODE_Html: {
       if( p->cnt==0 && p->cMode==MODE_Www ){
         sqlite3_fputs(
-          "<TABLE border='1' cellspacing='0' cellpadding='2'>\n",p->out);
+          "</PRE>\n"
+          "<TABLE border='1' cellspacing='0' cellpadding='2'>\n"
+          ,p->out
+        );
       }
       if( p->cnt==0 && p->showHeader ){
         sqlite3_fputs("<TR>", p->out);
@@ -4285,7 +4288,7 @@ static void exec_prepared_stmt(
       if( pArg->cMode==MODE_Json ){
         sqlite3_fputs("]\n", pArg->out);
       }else if( pArg->cMode==MODE_Www ){
-        sqlite3_fputs("</TABLE>\n", pArg->out);
+        sqlite3_fputs("</TABLE>\n<PRE>\n", pArg->out);
       }else if( pArg->cMode==MODE_Count ){
         char zBuf[200];
         sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
@@ -6409,6 +6412,13 @@ static void output_redir(ShellState *p, FILE *pfNew){
     sqlite3_fputs("Output already redirected.\n", stderr);
   }else{
     p->out = pfNew;
+    if( p->mode==MODE_Www ){
+      sqlite3_fputs(
+        "<!DOCTYPE html>\n"
+        "<HTML><BODY><PRE>\n",
+        p->out
+      );
+    }
   }
 }
 
@@ -6425,6 +6435,9 @@ static void output_reset(ShellState *p){
     pclose(p->out);
 #endif
   }else{
+    if( p->mode==MODE_Www ){
+      sqlite3_fputs("</PRE></BODY></HTML>\n", p->out);
+    }
     output_file_close(p->out);
 #ifndef SQLITE_NOHAVE_SYSTEM
     if( p->doXdgOpen ){
@@ -9717,8 +9730,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"html",n2)==0 ){
       p->mode = MODE_Html;
-    }else if( cli_strncmp(zMode,"www",n2)==0 ){
-      p->mode = MODE_Www;
     }else if( cli_strncmp(zMode,"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
@@ -13007,8 +13018,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       i++;
     }else if( cli_strcmp(z,"-html")==0 ){
       data.mode = MODE_Html;
-    }else if( cli_strcmp(z,"-www")==0 ){
-      data.mode = MODE_Www;
     }else if( cli_strcmp(z,"-list")==0 ){
       data.mode = MODE_List;
     }else if( cli_strcmp(z,"-quote")==0 ){
