@@ -1,10 +1,944 @@
-# Initial auto.def created by 'autosetup --init=make'
+# Created by migrate-autoconf - fix items marked XXX
 
-use cc
+use cc cc-shared cc-lib hwaci-common
+set DUMP_DEFINES_FILE defines.list
 
-# Add any user options here
 options {
+  with-tclsh:PATHNAME  =>  {Full pathname of tclsh to use}
+  with-tcl:DIR         =>  {Directory containing tclConfig.sh}
+  tcl=1                =>  {building accessory programs that require TCL-dev}
+  test-status=0        =>  {status of tests}
+  with-wasi-sdk:=/opt/wasi-sdk  =>  {Path to the wasi-dsk}
+  threadsafe=1         =>  mutexing
+  releasemode=0        =>  {libtool link to release mode}
+  tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
+  editline=0           =>  {BSD editline support}
+  readline=1       =>  {readline support}
+  with-readline-lib  =>  {readline library}
+  with-readline-inc  =>  {readline include paths}
+  with-linenoise:DIR   => {}
+  amalgamation=1   =>  {Disable the amalgamation and instead build all files separately}
+  load-extension=1  =>  {Disable loading of external extensions}
+  math=1           =>  {math functions}
+  json=1           =>  {JSON functions}
+  enable-all=0            =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+  enable-memsys5=0        =>  MEMSYS5
+  enable-memsys3=0        =>  MEMSYS3
+  enable-fts3=0           =>  {Enable the FTS3 extension}
+  enable-fts4=0           =>  {Enable the FTS4 extension}
+  enable-fts5=0           =>  {Enable the FTS5 extension}
+  enable-update-limit=0   =>  {Enable the UPDATE/DELETE LIMIT clause}
+  enable-geopoly=0        =>  {Enable the GEOPOLY extension}
+  enable-rtree=0          =>  {Enable the RTREE extension}
+  enable-session=0        =>  {Enable the SESSION extension}
+  enable-gcov=0           =>  {Enable coverage testing using gcov}
+  dump-defines=1          =>  {Dump autosetup defines to $DUMP_DEFINES_FILE}
+}
+#  debug=0          =>  {debugging & verbose explain}
+
+set srcdir $autosetup(srcdir)
+puts "srcdir = $srcdir"
+set VERSION [readfile $srcdir/VERSION]
+puts "VERSION = $VERSION"
+puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
+
+#
+# The build process allows for using a cross-compiler.  But the default
+# action is to target the same platform that we are running on.  The
+# configure script needs to discover the following properties of the
+# build and target systems:
+#
+#    srcdir
+#
+#        The is the name of the directory that contains the
+#        "configure" shell script.  All source files are
+#        located relative to this directory.
+#
+#    bindir
+#
+#        The name of the directory where executables should be
+#        written by the "install" target of the makefile.
+#
+#    program_prefix
+#
+#        Add this prefix to the names of all executables that run
+#        on the target machine.  Default: ""
+#
+#    ENABLE_SHARED
+#
+#        True if shared libraries should be generated.
+#
+#    BUILD_CC
+#
+#        The name of a command that is used to convert C
+#        source files into executables that run on the build
+#        platform.
+#
+#    BUILD_CFLAGS
+#
+#        Switches that the build compiler needs in order to construct
+#        command-line programs.
+#
+#    BUILD_LIBS
+#
+#        Libraries that the build compiler needs in order to construct
+#        command-line programs.
+#
+#    BUILD_EXEEXT
+#
+#        The filename extension for executables on the build
+#        platform.  "" for Unix and ".exe" for Windows.
+#
+#    TCL_*
+#
+#        Lots of values are read in from the tclConfig.sh script,
+#        if that script is available.  This values are used for
+#        constructing and installing the TCL extension.
+#
+#    TARGET_READLINE_LIBS
+#
+#        This is the library directives passed to the target linker
+#        that cause the executable to link against the readline library.
+#        This might be a switch like "-lreadline" or pathnames of library
+#        file like "../../src/libreadline.a".
+#
+#    TARGET_READLINE_INC
+#
+#        This variables define the directory that contain header
+#        files for the readline library.  If the compiler is able
+#        to find <readline.h> on its own, then this can be blank.
+#
+#    TARGET_EXEEXT
+#
+#        The filename extension for executables on the
+#        target platform.  "" for Unix and ".exe" for windows.
+#
+# This configure.in file is easy to reuse on other projects.  Just
+# change the argument to AC_INIT.  And disable any features that
+# you don't need (for example BLT) by erasing or commenting out
+# the corresponding code.
+#
+
+
+#set sqlite_version_sanity_check `cat $autosetup(srcdir)/VERSION | tr -d '\n'`
+# XXX if test "$PACKAGE_VERSION" != "$sqlite_version_sanity_check" ; then
+#user-error "configure script is out of date:
+# configure \$PACKAGE_VERSION = $PACKAGE_VERSION
+# top level VERSION file     = $sqlite_version_sanity_check
+#please regen with autoconf"
+# XXX fi
+
+#########
+# Programs needed
+cc-check-progs install
+
+#########
+# Enable large file support (if special flags are necessary)
+cc-check-lfs
+
+#########
+# Check for needed/wanted data types
+if {1} {
+  cc-check-types int8_t int16_t int32_t int64_t intptr_t uint8_t uint16_t uint32_t uint64_t uintptr_t
 }
 
-make-config-header config.h
-make-template Makefile.in
+#########
+# Check for needed/wanted headers
+cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+
+#########
+# Figure out whether or not we have these functions
+#
+cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+
+#########
+# By default, we use the amalgamation (this may be changed below...)
+#
+# XXX USE_AMALGAMATION=1
+
+if {0} {
+  #########
+  # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
+  # The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
+  #
+  # XXX AC_ARG_WITH tclsh AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use])
+  # XXX AC_ARG_WITH tcl AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)])
+  # if {![opt-bool tcl]} {
+  #   set use_tcl $enableval
+  # } else {
+  #   set use_tcl yes
+  # }
+  #set original_use_tcl ${use_tcl}
+  # XXX if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
+  # XXX AC_CHECK_PROGS TCLSH_CMD tclsh8.6 tclsh tclsh9.0 none
+  #set with_tclsh ${TCLSH_CMD}
+  # XXX fi
+  # XXX if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
+  # XXX TCLSH_CMD=${with_tclsh}
+  #msg-result "using tclsh at \"$TCLSH_CMD\""
+  # XXX if test x"${use_tcl}" = "xyes"; then
+  #set with_tcl `${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
+  # XXX if test x"${with_tcl}" != x; then
+  #msg-result "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}"
+  # XXX else
+  #msg-result Warning: "$TCLSH_CMD is unable to recommend a tclConfig.sh"
+  #set use_tcl no
+  # XXX fi
+  # XXX fi
+  # XXX fi
+  # XXX if test x"${use_tcl}" = "xyes"; then
+  # XXX if test x"${with_tcl}" != x; then
+  # XXX if test -r ${with_tcl}/tclConfig.sh; then
+  # set tclconfig "${with_tcl}/tclConfig.sh"
+  # XXX else
+  # XXX for i in tcl8.6 tcl9.0 lib; do
+  # XXX if test -r ${with_tcl}/$i/tclConfig.sh; then
+  #set tclconfig ${with_tcl}/$i/tclConfig.sh
+  # XXX break
+  # XXX fi
+  # XXX done
+  # XXX fi
+  # XXX if test ! -r "${tclconfig}"; then
+  #user-error "no tclConfig.sh file found under ${with_tcl}"
+  # XXX fi
+  # XXX else
+  # If we have not yet found a tclConfig.sh file, look in $libdir whic is
+  # set automatically by autoconf or by the --prefix command-line option.
+  # See https://sqlite.org/forum/forumpost/e04e693439a22457
+  #set libdir ${prefix}/lib
+  # XXX if test -r ${libdir}/tclConfig.sh; then
+  #set tclconfig ${libdir}/tclConfig.sh
+  # XXX else
+  # XXX for i in tcl8.6 tcl9.0 lib; do
+  # XXX if test -r ${libdir}/$i/tclConfig.sh; then
+  #set tclconfig ${libdir}/$i/tclConfig.sh
+  # XXX break
+  # XXX fi
+  # XXX done
+  # XXX fi
+  # XXX if test ! -r "${tclconfig}"; then
+  #user-error "cannot find a usable tclConfig.sh file.
+  #        Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
+  #        SQLite does not use TCL internally, but TCL is required to build SQLite
+  #        from canonical sources and TCL is required for testing."
+  # XXX fi
+  # XXX fi
+  # msg-result "loading TCL configuration from ${tclconfig}"
+  # XXX . ${tclconfig}
+  # XXX autosetup automatically substitutes all define'd values
+  #     In general, simply 'define' the value rather than using a shell
+  #     variable and AC_SUBST.
+  #
+  # XXX AC_SUBST TCL_INCLUDE_SPEC
+  # XXX AC_SUBST TCL_LIB_SPEC
+  # XXX AC_SUBST TCL_STUB_LIB_SPEC
+  # There are lots of other configuration variables that are provided by the
+  # tclConfig.sh file and that could be included here.  But as of right now,
+  # TCL_LIB_SPEC is the only what that the Makefile uses.
+  # XXX HAVE_TCL=1
+  # XXX elif test x"${original_use_tcl}" = "xno"; then
+  # msg-result "unable to run tests because of --disable-tcl"
+  # XXX HAVE_TCL=0
+  # XXX else
+  # msg-result "unable to run tests because no tclConfig.sh file could be located"
+  # XXX HAVE_TCL=0
+  # XXX fi
+  # XXX AC_SUBST HAVE_TCL
+  # XXX if test x"$TCLSH_CMD" == x; then
+  # XXX TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
+  # XXX if test ! -x ${TCLSH_CMD}; then
+  # set _2 ${TCL_EXEC_PREFIX}/bin/tclsh
+  # XXX if test ! -x ${TCLSH_CMD_2}; then
+  # msg-result Warning: "cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}"
+  # XXX TCLSH_CMD=none
+  # XXX else
+  # XXX TCLSH_CMD=${TCLSH_CMD_2}
+  # XXX fi
+  # XXX fi
+  # XXX fi
+  # XXX if test "$TCLSH_CMD" = "none"; then
+  # If we can't find a local tclsh, then building the amalgamation will fail.
+  # We act as though --disable-amalgamation has been used.
+  # msg-result Warning: "Warning: can't find tclsh - defaulting to non-amalgamation build."
+  # XXX USE_AMALGAMATION=0
+  # XXX TCLSH_CMD="tclsh"
+  # XXX fi
+  # XXX AC_SUBST TCLSH_CMD
+
+  # XXX AC_ARG_VAR TCLLIBDIR Where to install tcl plugin
+  # XXX if test "x${TCLLIBDIR+set}" != "xset" ; then
+  # XXX for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
+  # XXX if test -d $i ; then
+  # XXX TCLLIBDIR=$i
+  # XXX break
+  # XXX fi
+  # XXX done
+  # XXX TCLLIBDIR="${TCLLIBDIR}/sqlite3"
+  # XXX fi
+}
+
+if {0} {
+  #########
+  # Set up options for running tests.
+  #
+  if {[opt-bool test-status]} {
+    set use_vt100 $enableval
+  } else {
+    set use_vt100 no
+  }
+  # XXX if test $use_vt100 != no; then
+  # XXX TSTRNNR_OPTS=--status
+  # XXX else
+  # XXX TSTRNNR_OPTS=
+  # XXX fi
+  # XXX AC_SUBST TSTRNNR_OPTS
+}
+
+if {0} {
+  #########
+  # Set up an appropriate program prefix
+  #
+  # XXX if test "$program_prefix" = "NONE"; then
+  set program_prefix ""
+  # XXX fi
+  # XXX AC_SUBST program_prefix
+
+  # XXX VERSION=[`cat $srcdir/VERSION | sed 's/^\([0-9]*\.*[0-9]*\).*/\1/'`]
+  # msg-result "Version set to $VERSION"
+  # XXX AC_SUBST VERSION
+  # XXX RELEASE=`cat $srcdir/VERSION`
+  # msg-result "Release set to $RELEASE"
+  # XXX AC_SUBST RELEASE
+}
+
+if {0} {
+  ##########
+  # Handle --with-wasi-sdk=DIR
+  #
+  # This must be early because it changes the toolchain.
+  #
+  if {[opt-val with-wasi-sdk] ne {}} {
+    set withval [lindex [opt-val with-wasi-sdk] end]
+    set with_wasisdk ${withval}
+  }
+  msg-checking "Checking for WASI SDK directory..."
+  # First check to see if --with-tcl was specified.
+  # XXX if test x"${with_wasi_sdk}" != x ; then
+  # XXX if ! test -d "${with_wasi_sdk}" ; then
+  user-error "${with_wasi_sdk} directory doesn't exist"
+  # XXX fi
+  msg-result "${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
+  set use_wasi_sdk yes
+  # XXX else
+  set use_wasi_sdk no
+  # XXX fi
+  # XXX if test "${use_wasi_sdk}" = "no" ; then
+  # XXX HAVE_WASI_SDK=""
+  msg-result "no"
+  # XXX else
+  # XXX HAVE_WASI_SDK=1
+  # Changing --host and --target have no effect here except to possibly
+  # cause confusion. autoconf has finished processing them by this
+  # point.
+  #
+  #  host_alias=wasm32-wasi
+  #  target=wasm32-wasi
+  #
+  # Merely changing CC and LD to the wasi-sdk's is enough to get
+  # sqlite3.o building in WASM format.
+  # XXX CC="${with_wasi_sdk}/bin/clang"
+  # XXX LD="${with_wasi_sdk}/bin/wasm-ld"
+  # XXX RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
+  set cross_compiling yes
+  set enable_threadsafe no
+  set use_tcl no
+  set enable_tcl no
+  # libtool is apparently hard-coded to use gcc for linking DLLs, so
+  # we disable the DLL build...
+  set enable_shared no
+  msg-result "yes"
+  # XXX fi
+  # XXX AC_SUBST HAVE_WASI_SDK
+}
+
+
+#########
+# Locate a compiler for the build machine.  This compiler should
+# generate command-line programs that run on the build machine.
+#
+# XXX if test x"$cross_compiling" = xno; then
+# XXX BUILD_CC=$CC
+# XXX BUILD_CFLAGS=$CFLAGS
+# XXX else
+# XXX if test "${BUILD_CC+set}" != set; then
+# XXX AC_CHECK_PROGS BUILD_CC gcc cc cl
+# XXX fi
+# XXX if test "${BUILD_CFLAGS+set}" != set; then
+# XXX BUILD_CFLAGS="-g"
+# XXX fi
+# XXX fi
+# XXX AC_SUBST BUILD_CC
+
+##########
+# Do we want to support multithreaded use of sqlite
+#
+if {0} {
+  if {![opt-bool threadsafe]} {
+  }
+  msg-checking "Checking whether to support threadsafe operation..."
+  # XXX if test "$enable_threadsafe" = "no"; then
+  # XXX SQLITE_THREADSAFE=0
+  msg-result "no"
+  # XXX else
+  # XXX SQLITE_THREADSAFE=1
+  msg-result "yes"
+  # XXX fi
+  # XXX AC_SUBST SQLITE_THREADSAFE
+
+  # XXX if test "$SQLITE_THREADSAFE" = "1"; then
+  cc-check-function-in-lib pthread_create pthread
+  cc-check-function-in-lib pthread_mutexattr_init pthread
+  # XXX fi
+}
+
+##########
+# Do we want to support release
+#
+if {[opt-bool releasemode]} {
+} else {
+  set enable_releasemode no
+}
+
+if {0} {
+  msg-checking "Checking whether to support shared library linked as release mode or not..."
+  # XXX if test "$enable_releasemode" = "no"; then
+  # XXX ALLOWRELEASE=""
+  msg-result "no"
+  # XXX else
+  # XXX ALLOWRELEASE="-release `cat $srcdir/VERSION`"
+  msg-result "yes"
+  # XXX fi
+  # XXX AC_SUBST ALLOWRELEASE
+}
+
+##########
+# Do we want temporary databases in memory
+#
+if {0} {
+  if {[opt-bool tempstore]} {
+  } else {
+    set enable_tempstore no
+  }
+  msg-checking "Checking whether to use an in-ram database for temporary tables..."
+  # XXX case "$enable_tempstore" in
+  # XXX never )
+  # XXX TEMP_STORE=0
+  msg-result "never"
+  # XXX ;;
+  # XXX no )
+  # XXX TEMP_STORE=1
+  msg-result "no"
+  # XXX ;;
+  # XXX yes )
+  # XXX TEMP_STORE=2
+  msg-result "yes"
+  # XXX ;;
+  # XXX always )
+  # XXX TEMP_STORE=3
+  msg-result "always"
+  # XXX ;;
+  # XXX * )
+  # XXX TEMP_STORE=1
+  msg-result "no"
+  # XXX ;;
+  # XXX esac
+
+  # XXX AC_SUBST TEMP_STORE
+}
+
+if {0} {
+  ###########
+  # Lots of things are different if we are compiling for Windows using
+  # the CYGWIN environment.  So check for that special case and handle
+  # things accordingly.
+  #
+  msg-checking "Checking if executables have the .exe suffix..."
+  # XXX if test "$config_BUILD_EXEEXT" = ".exe"; then
+  # XXX CYGWIN=yes
+  msg-result "yes"
+  # XXX else
+  msg-result "unknown"
+  # XXX fi
+  # XXX if test "$CYGWIN" != "yes"; then
+  # XXX m4_warn([obsolete],
+  # XXX [AC_CYGWIN is obsolete: use AC_CANONICAL_HOST and check if $host_os
+  # XXX matches *cygwin*])
+  # XXX case $host_os in
+  # XXX *cygwin* ) CYGWIN=yes;;
+  # XXX * ) CYGWIN=no;;
+  # XXX esac
+
+  # XXX fi
+  # XXX if test "$CYGWIN" = "yes"; then
+  # XXX BUILD_EXEEXT=.exe
+  # XXX else
+  # XXX BUILD_EXEEXT=$EXEEXT
+  # XXX fi
+  # XXX if test x"$cross_compiling" = xno; then
+  # XXX TARGET_EXEEXT=$BUILD_EXEEXT
+  # XXX else
+  # XXX TARGET_EXEEXT=$config_TARGET_EXEEXT
+  # XXX fi
+  # XXX if test "$TARGET_EXEEXT" = ".exe"; then
+  # XXX SQLITE_OS_UNIX=0
+  # XXX SQLITE_OS_WIN=1
+  # XXX CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
+  # XXX else
+  # XXX SQLITE_OS_UNIX=1
+  # XXX SQLITE_OS_WIN=0
+  # XXX CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
+  # XXX fi
+
+  # XXX AC_SUBST BUILD_EXEEXT
+  # XXX AC_SUBST SQLITE_OS_UNIX
+  # XXX AC_SUBST SQLITE_OS_WIN
+  # XXX AC_SUBST TARGET_EXEEXT
+}
+
+if {0} {
+  ##########
+  # Figure out what C libraries are required to compile programs
+  # that use "readline()" library.
+  #
+  # XXX TARGET_READLINE_LIBS=""
+  # XXX TARGET_READLINE_INC=""
+  # XXX TARGET_HAVE_READLINE=0
+  # XXX TARGET_HAVE_EDITLINE=0
+  if {[opt-bool editline]} {
+    set with_editline $enableval
+  } else {
+    set with_editline auto
+  }
+  if {![opt-bool readline]} {
+    set with_readline $enableval
+  } else {
+    set with_readline auto
+  }
+
+  # XXX if test x"$with_editline" != xno; then
+  # XXX sLIBS=$LIBS
+  # XXX LIBS=""
+  # XXX TARGET_HAVE_EDITLINE=1
+  if {[cc-check-function-in-lib readline edit]} {
+    set with_readline no
+  } else {
+    # XXX TARGET_HAVE_EDITLINE=0
+  }
+  # XXX TARGET_READLINE_LIBS=$LIBS
+  # XXX LIBS=$sLIBS
+  # XXX fi
+  # XXX if test x"$with_readline" != xno; then
+  set found "yes"
+
+  if {[opt-val with-readline-lib] ne {}} {
+    set withval [lindex [opt-val with-readline-lib] end]
+    set with_readline_lib $withval
+  } else {
+    set with_readline_lib "auto"
+  }
+  # XXX if test "x$with_readline_lib" = xauto; then
+  # XXX save_LIBS="$LIBS"
+  # XXX LIBS=""
+  if {[cc-check-function-in-lib tgetent readline ncurses curses termcap]} {
+    # XXX term_LIBS="$LIBS"
+  } else {
+    # XXX term_LIBS=""
+  }
+  if {[cc-check-function-in-lib readline readline]} {
+    # XXX TARGET_READLINE_LIBS="-lreadline"
+  } else {
+    set found "no"
+  }
+  # XXX TARGET_READLINE_LIBS="$TARGET_READLINE_LIBS $term_LIBS"
+  # XXX LIBS="$save_LIBS"
+  # XXX else
+  # XXX TARGET_READLINE_LIBS="$with_readline_lib"
+  # XXX fi
+
+  if {[opt-val with-readline-inc] ne {}} {
+    set withval [lindex [opt-val with-readline-inc] end]
+    set with_readline_inc $withval
+  } else {
+    set with_readline_inc "auto"
+  }
+  # XXX if test "x$with_readline_inc" = xauto; then
+  if {[cc-check-includes readline.h]} {
+    set found "yes"
+  } else {
+    set found "no"
+    # XXX if test "$cross_compiling" != yes; then
+    # XXX for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
+    # XXX for subdir in include include/readline; do
+    # XXX AC_CHECK_FILE $dir/$subdir/readline.h found=yes
+    # XXX if test "$found" = "yes"; then
+    # XXX TARGET_READLINE_INC="-I$dir/$subdir"
+    # XXX break
+    # XXX fi
+    # XXX done
+    # XXX test "$found" = "yes" && break
+    # XXX done
+    # XXX fi
+  }
+  # XXX else
+  # XXX TARGET_READLINE_INC="$with_readline_inc"
+  # XXX fi
+
+  # XXX if test x"$found" = xno; then
+  # XXX TARGET_READLINE_LIBS=""
+  # XXX TARGET_READLINE_INC=""
+  # XXX TARGET_HAVE_READLINE=0
+  # XXX else
+  # XXX TARGET_HAVE_READLINE=1
+  # XXX fi
+  # XXX fi
+  if {[opt-val with-linenoise] ne {}} {
+    set withval [lindex [opt-val with-linenoise] end]
+    set with_linenoise $withval
+  } else {
+    set with_linenoise "no"
+  }
+  # XXX if test "x$with_linenoise" != "xno"; then
+  # XXX TARGET_HAVE_READLINE=0
+  # XXX TARGET_HAVE_EDITLINE=0
+  # XXX TARGET_HAVE_LINENOISE=1
+  # XXX TARGET_READLINE_INC="-I${with_linenoise}"
+  # XXX TARGET_READLINE_LIBS="${with_linenoise}/linenoise.c"
+  # XXX echo "using linenoise source code at ${with_linenoise}"
+  # XXX else
+  # XXX TARGET_HAVE_LINENOISE=0
+  # XXX echo "not using linenoise"
+  # XXX fi
+
+  # XXX AC_SUBST TARGET_READLINE_LIBS
+  # XXX AC_SUBST TARGET_READLINE_INC
+  # XXX AC_SUBST TARGET_HAVE_READLINE
+  # XXX AC_SUBST TARGET_HAVE_EDITLINE
+  # XXX AC_SUBST TARGET_HAVE_LINENOISE
+}
+
+if {0} {
+  ##########
+  # Figure out what C libraries are required to compile programs
+  # that use "fdatasync()" function.
+  #
+  cc-check-function-in-lib fdatasync rt
+}
+
+if {0} {
+  #########
+  # check for debug enabled
+  if {[opt-bool debug]} {
+  }
+  msg-checking "Checking build type..."
+  # XXX if test "${enable_debug}" = "yes" ; then
+  # XXX TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall"
+  msg-result "debug"
+  # XXX else
+  # XXX TARGET_DEBUG="-DNDEBUG"
+  msg-result "release"
+  # XXX fi
+  # XXX AC_SUBST TARGET_DEBUG
+}
+
+if {0} {
+  #########
+  # See whether we should use the amalgamation to build
+
+  if {![opt-bool amalgamation]} {
+  }
+  # XXX if test "${enable_amalgamation}" = "no" ; then
+  # XXX USE_AMALGAMATION=0
+  # XXX fi
+  # XXX AC_SUBST USE_AMALGAMATION
+}
+
+if {0} {
+  #########
+  # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
+  cc-check-includes zlib.h
+  if {[cc-check-function-in-lib deflate z]} {
+    define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
+  } else {
+    define HAVE_ZLIB 0; # HAVE_ZLIB=""
+  }
+  # XXX AC_SUBST HAVE_ZLIB
+}
+
+if {0} {
+  #########
+  # See whether we should allow loadable extensions
+  if {![opt-bool load-extension]} {
+  } else {
+    set enable_load_extension yes
+  }
+  # XXX if test "${enable_load_extension}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS=""
+  cc-check-function-in-lib dlopen dl
+  # XXX else
+  # XXX OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+  # XXX fi
+}
+
+if {0} {
+  ##########
+  # Do we want to support math functions
+  #
+  if {![opt-bool math]} {
+  }
+  msg-checking "Checking whether to support math functions..."
+  # XXX if test "$enable_math" = "no"; then
+  msg-result "no"
+  # XXX else
+  msg-result "yes"
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
+  cc-check-function-in-lib ceil m
+  # XXX fi
+}
+
+if {0} {
+  ##########
+  # Do we want to support JSON functions
+  #
+  if {![opt-bool json]} {
+  }
+  msg-checking "Checking whether to support JSON functions..."
+  # XXX if test "$enable_json" = "no"; then
+  msg-result "no"
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
+  # XXX else
+  msg-result "yes"
+  # XXX fi
+}
+
+########
+# The --enable-all argument is short-hand to enable
+# multiple extensions.
+if {[opt-bool enable-all]} {
+}
+
+if {0} {
+  ##########
+  # Do we want to support memsys3 and/or memsys5
+  #
+  if {[opt-bool memsys5]} {
+  }
+  msg-checking "Checking whether to support MEMSYS5..."
+  # XXX if test "${enable_memsys5}" = "yes"; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+  if {[opt-bool memsys3]} {
+  }
+  msg-checking "Checking whether to support MEMSYS3..."
+  # XXX if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+if {0} {
+  #########
+  # See whether we should enable Full Text Search extensions
+  if {[opt-bool fts3]} {
+  }
+  msg-checking "Checking whether to support FTS3..."
+  # XXX if test "${enable_fts3}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+  if {[opt-bool fts4]} {
+  }
+  msg-checking "Checking whether to support FTS4..."
+  # XXX if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
+  msg-result "yes"
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
+  cc-check-function-in-lib log m
+  # XXX else
+  msg-result "no"
+  # XXX fi
+  if {[opt-bool fts5]} {
+  }
+  msg-checking "Checking whether to support FTS5..."
+  # XXX if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
+  msg-result "yes"
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
+  cc-check-function-in-lib log m
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+
+if {0} {
+  #########
+  # See whether we should enable the LIMIT clause on UPDATE and DELETE
+  # statements.
+  if {[opt-bool update-limit]} {
+  }
+  msg-checking "Checking whether to support LIMIT on UPDATE and DELETE statements..."
+  # XXX if test "${enable_update_limit}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+if {0} {
+  #########
+  # See whether we should enable GEOPOLY
+  if {[opt-bool geopoly]} {
+    set enable_geopoly yes
+  } else {
+    set enable_geopoly no
+  }
+  msg-checking "Checking whether to support GEOPOLY..."
+  # XXX if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_GEOPOLY"
+  set enable_rtree yes
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+if {0} {
+  #########
+  # See whether we should enable RTREE
+  if {[opt-bool rtree]} {
+  }
+  msg-checking "Checking whether to support RTREE..."
+  # XXX if test "${enable_rtree}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+if {0} {
+  #########
+  # See whether we should enable the SESSION extension
+  if {[opt-bool session]} {
+  }
+  msg-checking "Checking whether to support SESSION..."
+  # XXX if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
+  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_PREUPDATE_HOOK"
+  msg-result "yes"
+  # XXX else
+  msg-result "no"
+  # XXX fi
+}
+
+#########
+# attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
+# XXX for option in $CFLAGS $CPPFLAGS
+# XXX do
+# XXX case $option in
+# XXX -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+# XXX -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+# XXX esac
+# XXX done
+# XXX AC_SUBST OPT_FEATURE_FLAGS
+
+
+# attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
+# XXX ac_temp_CFLAGS=""
+# XXX for option in $CFLAGS
+# XXX do
+# XXX case $option in
+# XXX -DSQLITE_OMIT*) ;;
+# XXX -DSQLITE_ENABLE*) ;;
+# XXX *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
+# XXX esac
+# XXX done
+# XXX CFLAGS=$ac_temp_CFLAGS
+
+
+# attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
+# XXX ac_temp_CPPFLAGS=""
+# XXX for option in $CPPFLAGS
+# XXX do
+# XXX case $option in
+# XXX -DSQLITE_OMIT*) ;;
+# XXX -DSQLITE_ENABLE*) ;;
+# XXX *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
+# XXX esac
+# XXX done
+# XXX CPPFLAGS=$ac_temp_CPPFLAGS
+
+
+# attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
+# XXX ac_temp_BUILD_CFLAGS=""
+# XXX for option in $BUILD_CFLAGS
+# XXX do
+# XXX case $option in
+# XXX -DSQLITE_OMIT*) ;;
+# XXX -DSQLITE_ENABLE*) ;;
+# XXX *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
+# XXX esac
+# XXX done
+# XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
+
+
+if {0} {
+  #########
+  # See whether we should use GCOV
+  if {[opt-bool gcov]} {
+  }
+  # XXX if test "${use_gcov}" = "yes" ; then
+  # XXX USE_GCOV=1
+  # XXX else
+  # XXX USE_GCOV=0
+  # XXX fi
+  # XXX AC_SUBST USE_GCOV
+}
+
+if {0} {
+  #########
+  # Enable/disabled amalagamation line macros
+  ########
+  set linemacros 0
+  # XXX if test "${amalgamation_line_macros}" = "yes" ; then
+  set linemacros 1
+  # XXX fi
+  # XXX if test "${amalgamation_line_macros}" = "no" ; then
+  set linemacros 0
+  # XXX fi
+  # XXX AC_SUBST AMALGAMATION_LINE_MACROS
+}
+
+#########
+# Output the config header
+
+if {0} {
+  #########
+  # Generate the output files.
+  #
+  # XXX AC_SUBST BUILD_CFLAGS
+  make-template Makefile.in
+  make-template sqlite3.pc.in
+  make-config-header sqlite_cfg.h
+}
+
+if {[opt-bool dump-defines]} {
+    msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
+    make-config-header $DUMP_DEFINES_FILE -auto {*}
+}

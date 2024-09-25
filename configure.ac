@@ -119,9 +119,12 @@ USE_AMALGAMATION=1
 # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
 # The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
 #
-AC_ARG_WITH(tclsh, AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use]))
-AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)]))
-AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
+AC_ARG_WITH(tclsh,
+  AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use]))
+AC_ARG_WITH(tcl,
+  AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)]))
+AC_ARG_ENABLE(tcl,
+  AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
       [use_tcl=$enableval],[use_tcl=yes])
 original_use_tcl=${use_tcl}
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
@@ -261,21 +264,21 @@ AC_SUBST(RELEASE)
 # This must be early because it changes the toolchain.
 #
 AC_ARG_WITH(wasi-sdk,
-AS_HELP_STRING([--with-wasi-sdk=DIR],
+  AS_HELP_STRING([--with-wasi-sdk=DIR],
        [directory containing the WASI SDK. Triggers cross-compile to WASM.]), with_wasisdk=${withval})
-AC_MSG_CHECKING([for WASI SDK directory])
-AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
-  # First check to see if --with-tcl was specified.
-  if test x"${with_wasi_sdk}" != x ; then
-    if ! test -d "${with_wasi_sdk}" ; then
-      AC_MSG_ERROR([${with_wasi_sdk} directory doesn't exist])
+  AC_MSG_CHECKING([for WASI SDK directory])
+  AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
+    # First check to see if --with-tcl was specified.
+    if test x"${with_wasi_sdk}" != x ; then
+      if ! test -d "${with_wasi_sdk}" ; then
+        AC_MSG_ERROR([${with_wasi_sdk} directory doesn't exist])
+      fi
+      AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL])
+      use_wasi_sdk=yes
+    else
+      use_wasi_sdk=no
     fi
-    AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL])
-    use_wasi_sdk=yes
-  else
-    use_wasi_sdk=no
-  fi
-])
+  ])
 if test "${use_wasi_sdk}" = "no" ; then
   HAVE_WASI_SDK=""
   AC_MSG_RESULT([no])
@@ -326,15 +329,15 @@ AC_SUBST(BUILD_CC)
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-AS_HELP_STRING([--disable-threadsafe],[Disable mutexing]))
-AC_MSG_CHECKING([whether to support threadsafe operation])
-if test "$enable_threadsafe" = "no"; then
-  SQLITE_THREADSAFE=0
-  AC_MSG_RESULT([no])
-else
-  SQLITE_THREADSAFE=1
-  AC_MSG_RESULT([yes])
-fi
+  AS_HELP_STRING([--disable-threadsafe],[Disable mutexing]))
+  AC_MSG_CHECKING([whether to support threadsafe operation])
+  if test "$enable_threadsafe" = "no"; then
+    SQLITE_THREADSAFE=0
+    AC_MSG_RESULT([no])
+  else
+    SQLITE_THREADSAFE=1
+    AC_MSG_RESULT([yes])
+  fi
 AC_SUBST(SQLITE_THREADSAFE)
 
 if test "$SQLITE_THREADSAFE" = "1"; then
@@ -346,45 +349,45 @@ fi
 # Do we want to support release
 #
 AC_ARG_ENABLE(releasemode, 
-AS_HELP_STRING([--enable-releasemode],[Support libtool link to release mode]),,enable_releasemode=no)
-AC_MSG_CHECKING([whether to support shared library linked as release mode or not])
-if test "$enable_releasemode" = "no"; then
-  ALLOWRELEASE=""
-  AC_MSG_RESULT([no])
-else
-  ALLOWRELEASE="-release `cat $srcdir/VERSION`"
-  AC_MSG_RESULT([yes])
-fi
+  AS_HELP_STRING([--enable-releasemode],[Support libtool link to release mode]),,enable_releasemode=no)
+  AC_MSG_CHECKING([whether to support shared library linked as release mode or not])
+  if test "$enable_releasemode" = "no"; then
+    ALLOWRELEASE=""
+    AC_MSG_RESULT([no])
+  else
+    ALLOWRELEASE="-release `cat $srcdir/VERSION`"
+    AC_MSG_RESULT([yes])
+  fi
 AC_SUBST(ALLOWRELEASE)
 
 ##########
 # Do we want temporary databases in memory
 #
 AC_ARG_ENABLE(tempstore, 
-AS_HELP_STRING([--enable-tempstore],[Use an in-ram database for temporary tables (never,no,yes,always)]),,enable_tempstore=no)
-AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
-case "$enable_tempstore" in
-  never ) 
-    TEMP_STORE=0
-    AC_MSG_RESULT([never])
-  ;;
-  no ) 
-    TEMP_STORE=1
-    AC_MSG_RESULT([no])
-  ;;
-  yes ) 
-     TEMP_STORE=2
-    AC_MSG_RESULT([yes])
-  ;;
-  always ) 
-     TEMP_STORE=3
-    AC_MSG_RESULT([always])
-  ;;
-  * ) 
-    TEMP_STORE=1
-    AC_MSG_RESULT([no])
-  ;;
-esac
+  AS_HELP_STRING([--enable-tempstore],[Use an in-ram database for temporary tables (never,no,yes,always)]),,enable_tempstore=no)
+  AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
+  case "$enable_tempstore" in
+    never ) 
+      TEMP_STORE=0
+      AC_MSG_RESULT([never])
+    ;;
+    no ) 
+      TEMP_STORE=1
+      AC_MSG_RESULT([no])
+    ;;
+    yes ) 
+       TEMP_STORE=2
+      AC_MSG_RESULT([yes])
+    ;;
+    always ) 
+       TEMP_STORE=3
+      AC_MSG_RESULT([always])
+    ;;
+    * ) 
+      TEMP_STORE=1
+      AC_MSG_RESULT([no])
+    ;;
+  esac
 
 AC_SUBST(TEMP_STORE)
 
@@ -584,28 +587,28 @@ fi
 # Do we want to support math functions
 #
 AC_ARG_ENABLE(math, 
-AS_HELP_STRING([--disable-math],[Disable math functions]))
-AC_MSG_CHECKING([whether to support math functions])
-if test "$enable_math" = "no"; then
-  AC_MSG_RESULT([no])
-else
-  AC_MSG_RESULT([yes])
-  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
-  AC_SEARCH_LIBS(ceil, m)
-fi
+  AS_HELP_STRING([--disable-math],[Disable math functions]))
+  AC_MSG_CHECKING([whether to support math functions])
+  if test "$enable_math" = "no"; then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MATH_FUNCTIONS"
+    AC_SEARCH_LIBS(ceil, m)
+  fi
 
 ##########
 # Do we want to support JSON functions
 #
 AC_ARG_ENABLE(json, 
-AS_HELP_STRING([--disable-json],[Disable JSON functions]))
-AC_MSG_CHECKING([whether to support JSON functions])
-if test "$enable_json" = "no"; then
-  AC_MSG_RESULT([no])
-  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
-else
-  AC_MSG_RESULT([yes])
-fi
+  AS_HELP_STRING([--disable-json],[Disable JSON functions]))
+  AC_MSG_CHECKING([whether to support JSON functions])
+  if test "$enable_json" = "no"; then
+    AC_MSG_RESULT([no])
+    OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_OMIT_JSON"
+  else
+    AC_MSG_RESULT([yes])
+  fi
 
 ########
 # The --enable-all argument is short-hand to enable
@@ -619,12 +622,12 @@ AC_ARG_ENABLE(all, AS_HELP_STRING([--enable-all],
 AC_ARG_ENABLE(memsys5, 
   AS_HELP_STRING([--enable-memsys5],[Enable MEMSYS5]))
 AC_MSG_CHECKING([whether to support MEMSYS5])
-if test "${enable_memsys5}" = "yes"; then
-  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-fi
+  if test "${enable_memsys5}" = "yes"; then
+    OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+  fi
 AC_ARG_ENABLE(memsys3, 
   AS_HELP_STRING([--enable-memsys3],[Enable MEMSYS3]))
 AC_MSG_CHECKING([whether to support MEMSYS3])
