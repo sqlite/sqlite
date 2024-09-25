@@ -9941,6 +9941,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         p->mode = MODE_Csv;
         sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
         sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+#ifdef _WIN32
+        zBom = zBomUtf8;  /* Always include the BOM on Windows, as Excel does
+                          ** not work without it. */
+#endif
       }else{
         /* text editor mode */
         newTempFile(p, "txt");
