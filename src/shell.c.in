@@ -670,7 +670,7 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
 }
 #endif
 
-/* Lookup table to determine the number of columns consumed by a Unicode
+/* Lookup table to estimate the number of columns consumed by a Unicode
 ** character.
 */
 static const struct {
@@ -742,9 +742,14 @@ static const struct {
 };
 
 /*
-** Return the width, in columns, of the single Unicode character c.
-** For normal characters, the answer is always 1.  But it might be 0 or 2
-** for zero-width and double-width characters.
+** Return an estimate of the width, in columns, for the single Unicode
+** character c.  For normal characters, the answer is always 1.  But the
+** estimate might be 0 or 2 for zero-width and double-width characters.
+**
+** Different display devices display unicode using different widths.  So
+** it is impossible to know that true display width with 100% accuracy.
+** Inaccuracies in the width estimates might cause columns to be misaligned.
+** Unfortunately, there is nothing we can do about that.
 */
 int cli_wcwidth(int c){
   int iFirst, iLast;
@@ -776,6 +781,8 @@ int cli_wcwidth(int c){
 /*
 ** Compute the value and length of a multi-byte UTF-8 character that
 ** begins at z[0].   Return the length.  Write the Unicode value into *pU.
+**
+** This routine only works for *multi-byte* UTF-8 characters.
 */
 static int decodeUtf8(const unsigned char *z, int *pU){
   if( (z[0] & 0xe0)==0xc0 && (z[1] & 0xc0)==0x80 ){
