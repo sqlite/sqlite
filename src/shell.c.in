@@ -12672,10 +12672,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
     if( isatty(0) && isatty(2) ){
+      char zLine[100];
       sqlite3_fprintf(stderr,
-            "attach debugger to process %d and press any key to continue.\n",
+            "attach debugger to process %d and press ENTER to continue...",
             GETPID());
-      fgetc(stdin);
+      sqlite3_fgets(zLine, sizeof(zLine), stdin);
     }else{
 #if defined(_WIN32) || defined(WIN32)
 #if SQLITE_OS_WINRT
