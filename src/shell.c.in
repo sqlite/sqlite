@@ -2740,7 +2740,7 @@ static int shell_callback(
           ,p->out
         );
       }
-      if( p->cnt==0 && p->showHeader ){
+      if( p->cnt==0 && (p->showHeader || p->cMode==MODE_Www) ){
         sqlite3_fputs("<TR>", p->out);
         for(i=0; i<nArg; i++){
           sqlite3_fputs("<TH>", p->out);
