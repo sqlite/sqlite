@@ -26,6 +26,32 @@ set DUMP_DEFINES_FILE defines.list
 #
 # In trying to helpfully map between --foo/--enable-foo/--disable-foo,
 # it ends up creating some degree of confusion.
+#
+# Reminders about flag handling quirks..
+#
+# 1) autosetup treats prefixes of 'enable' and 'disable' specially,
+# leading to some incompatibilities with the historical sqlite3
+# configure script.
+#
+# Defining non-boolean flags named enable-foo requires different
+# downstream handling of those flags. e.g.
+#
+#   enable-tempstore:=no => {...}
+#
+# requires that [opt-val enable-tempstore], rather than [opt-val
+# tempstore], be used, which is in constrast to boolean flags, where
+# [opt-bool flag] must be used instead of [opt-bool enable-flag].
+#
+# Also, passing --enable-tempstore with no value (to presumably get the
+# default value) breaks: autosetup tries to find a boolean-type tempstore
+# flag and cannot, so it complains that flag --tempstore is not defined.
+# i.e. --enable-tempstore requires that it be passed a value.
+#
+# An awkward workaround for that, discovered only by random trial and
+# error, is to define both {tempstore=1} and {enable-tempstore:}. With
+# that in place --enable-tempstore, with no value, works as expected
+# (why? Nobody knows!) but --tempstore can only ever be legally passed 0 or
+# 1.
 options {
   with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
@@ -33,7 +59,8 @@ options {
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
   releasemode          => {libtool link to release mode}
-  tempstore=0          => {an in-ram database for temporary tables never,no,yes,always}
+  tempstore=1          => {}
+  enable-tempstore:    => {Use an in-ram database for temporary tables: never,no,yes,always}
   editline=0           => {BSD editline support}
   readline=0           => {readline support}
   with-readline-lib    => {readline library}
@@ -226,13 +253,13 @@ if {1} {
     #
     # Merely changing CC and LD to the wasi-sdk's is enough to get
     # sqlite3.o building in WASM format.
-    # XXX CC="${with_wasi_sdk}/bin/clang"
-    # XXX LD="${with_wasi_sdk}/bin/wasm-ld"
-    # XXX RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
+    # XXX CC="${wasiSdkDir}/bin/clang"
+    # XXX LD="${wasiSdkDir}/bin/wasm-ld"
+    # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
     #  set cross_compiling yes
-    #  set enable_threadsafe no
+    #  opt-set threadsafe 0
     #  set use_tcl no
-    #  set enable_tcl no
+    #  opt-set tcl 0
     # libtool is apparently hard-coded to use gcc for linking DLLs, so
     # we disable the DLL build...
     #  set enable_shared no
@@ -457,37 +484,22 @@ if {0} {
 
 ##########
 # Do we want temporary databases in memory
-#
-if {0} {
-  if {[opt-bool tempstore]} {
-  } else {
-    set enable_tempstore no
+if {1} {
+  set ts [opt-val enable-tempstore no]
+  set tsn 1
+  msg-checking "Use an in-ram database for temporary tables? "
+  switch -- $ts {
+    never  { set tsn 0 }
+    no     { set tsn 1 }
+    yes    { set tsn 2 }
+    always { set tsn 3 }
+    default {
+      user-error "Invalid enable-tempstore value \[$ts]. Use one of: no, yes, always, never"
+    }
   }
-  msg-checking "Checking whether to use an in-ram database for temporary tables..."
-  # XXX case "$enable_tempstore" in
-  # XXX never )
-  # XXX TEMP_STORE=0
-  msg-result "never"
-  # XXX ;;
-  # XXX no )
-  # XXX TEMP_STORE=1
-  msg-result "no"
-  # XXX ;;
-  # XXX yes )
-  # XXX TEMP_STORE=2
-  msg-result "yes"
-  # XXX ;;
-  # XXX always )
-  # XXX TEMP_STORE=3
-  msg-result "always"
-  # XXX ;;
-  # XXX * )
-  # XXX TEMP_STORE=1
-  msg-result "no"
-  # XXX ;;
-  # XXX esac
-
-  # XXX AC_SUBST TEMP_STORE
+  msg-result $ts
+  define TEMP_STORE $tsn
+  unset ts tsn
 }
 
 if {0} {
