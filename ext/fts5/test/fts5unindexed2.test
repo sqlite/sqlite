@@ -201,5 +201,59 @@ do_catchsql_test 4.2 {
   );
 } {1 {contentless_unindexed=1 requires a contentless table}}
 
+do_catchsql_test 4.3 {
+  DELETE FROM ft WHERE rowid=1
+} {1 {cannot DELETE from contentless fts5 table: ft}}
+
+#-------------------------------------------------------------------------
+# Check that the usual restrictions on contentless tables apply to 
+# contentless_unindexed=1 tables.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      a, b UNINDEXED, c, content='', contentless_unindexed=1
+  );
+  INSERT INTO ft VALUES('one', 'two', 'three');
+  INSERT INTO ft VALUES('four', 'five', 'six');
+  INSERT INTO ft VALUES('seven', 'eight', 'nine');
+  SELECT rowid, * FROM ft;
+} {
+  1 {} two {}
+  2 {} five {}
+  3 {} eight {}
+}
+
+do_execsql_test 5.1 {
+  PRAGMA integrity_check
+} {ok}
+
+do_catchsql_test 5.2 {
+  DELETE FROM ft WHERE rowid=2
+} {1 {cannot DELETE from contentless fts5 table: ft}}
+
+do_execsql_test 5.3 {
+  SELECT rowid, * FROM ft('six')
+} {
+  2 {} five {}
+}
+
+do_catchsql_test 5.4 {
+  UPDATE ft SET a='x', b='y', c='z' WHERE rowid=3
+} {1 {cannot UPDATE contentless fts5 table: ft}}
+
+fts5_aux_test_functions db
+
+do_execsql_test 5.5 {
+  SELECT fts5_test_columntext(ft) FROM ft WHERE rowid=3
+} {
+  {{} eight {}}
+}
+do_execsql_test 5.6 {
+  SELECT fts5_test_columntext(ft) FROM ft('three');
+} {
+  {{} two {}}
+}
+
 finish_test
 

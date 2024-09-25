@@ -332,10 +332,16 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
 #endif
 
 /*
-** Return true if pTab is a contentless table.
+** Return true if pTab is a contentless table. If parameter bIncludeUnindexed
+** is true, this includes contentless tables that store UNINDEXED columns
+** only.
 */
-static int fts5IsContentless(Fts5FullTable *pTab){
-  return pTab->p.pConfig->eContent==FTS5_CONTENT_NONE;
+static int fts5IsContentless(Fts5FullTable *pTab, int bIncludeUnindexed){
+  int eContent = pTab->p.pConfig->eContent;
+  return (
+    eContent==FTS5_CONTENT_NONE 
+    || (bIncludeUnindexed && eContent==FTS5_CONTENT_UNINDEXED)
+  );
 }
 
 /*
@@ -1726,9 +1732,7 @@ static int fts5SpecialInsert(
     }
     bLoadConfig = 1;
   }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
-    if( pConfig->eContent==FTS5_CONTENT_NONE 
-     || pConfig->eContent==FTS5_CONTENT_UNINDEXED
-    ){
+    if( fts5IsContentless(pTab, 1) ){
       fts5SetVtabError(pTab, 
           "'rebuild' may not be used with a contentless fts5 table"
       );
@@ -1895,7 +1899,7 @@ static int fts5UpdateMethod(
     ** This is not suported. Except - they are both supported if the CREATE
     ** VIRTUAL TABLE statement contained "contentless_delete=1". */
     if( eType0==SQLITE_INTEGER 
-     && pConfig->eContent==FTS5_CONTENT_NONE 
+     && fts5IsContentless(pTab, 1)
      && pConfig->bContentlessDelete==0
     ){
       pTab->p.base.zErrMsg = sqlite3_mprintf(
@@ -2172,7 +2176,7 @@ static int fts5ApiColumnText(
   assert( pCsr->ePlan!=FTS5_PLAN_SPECIAL );
   if( iCol<0 || iCol>=pTab->pConfig->nCol ){
     rc = SQLITE_RANGE;
-  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab)) ){
+  }else if( fts5IsContentless((Fts5FullTable*)(pCsr->base.pVtab), 0) ){
     *pz = 0;
     *pn = 0;
   }else{
@@ -2205,7 +2209,7 @@ static int fts5CsrPoslist(
   if( iPhrase<0 || iPhrase>=sqlite3Fts5ExprPhraseCount(pCsr->pExpr) ){
     rc = SQLITE_RANGE;
   }else if( pConfig->eDetail!=FTS5_DETAIL_FULL 
-         && pConfig->eContent==FTS5_CONTENT_NONE 
+         && fts5IsContentless((Fts5FullTable*)pCsr->base.pVtab, 1)
   ){
     *pa = 0;
     *pn = 0;
@@ -2689,7 +2693,7 @@ static int fts5ApiColumnLocale(
     rc = SQLITE_RANGE;
   }else if(
       pConfig->abUnindexed[iCol]==0
-   && pConfig->eContent!=FTS5_CONTENT_NONE
+   && 0==fts5IsContentless((Fts5FullTable*)pCsr->base.pVtab, 1)
    && pConfig->bLocale
   ){
     rc = fts5SeekCursor(pCsr, 0);
@@ -2967,13 +2971,15 @@ static int fts5ColumnMethod(
     /* A column created by the user containing values. */
     int bNochange = sqlite3_vtab_nochange(pCtx);
 
-    if( fts5IsContentless(pTab) ){
-      if( bNochange && pConfig->bContentlessDelete ){
+    if( bNochange ){
+      if( pConfig->bContentlessDelete 
+       && (pConfig->eContent==FTS5_CONTENT_NONE || !pConfig->abUnindexed[iCol])
+      ){
         fts5ResultError(pCtx, "cannot UPDATE a subset of "
             "columns on fts5 contentless-delete table: %s", pConfig->zName
         );
       }
-    }else if( bNochange==0 || pConfig->eContent!=FTS5_CONTENT_NORMAL ){
+    }else if( pConfig->eContent!=FTS5_CONTENT_NONE ){
       pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
       rc = fts5SeekCursor(pCsr, 1);
       if( rc==SQLITE_OK ){
