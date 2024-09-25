@@ -1596,6 +1596,7 @@ static ShellState shellState;
 #define MODE_Count   17  /* Output only a count of the rows of output */
 #define MODE_Off     18  /* No query output shown */
 #define MODE_ScanExp 19  /* Like MODE_Explain, but for ".scanstats vm" */
+#define MODE_Www     20  /* Full web-page output */
 
 static const char *modeDescr[] = {
   "line",
@@ -1616,7 +1617,9 @@ static const char *modeDescr[] = {
   "table",
   "box",
   "count",
-  "off"
+  "off",
+  "scanexp",
+  "www",
 };
 
 /*
@@ -2728,8 +2731,13 @@ static int shell_callback(
       }
       break;
     }
+    case MODE_Www:
     case MODE_Html: {
-      if( p->cnt++==0 && p->showHeader ){
+      if( p->cnt==0 && p->cMode==MODE_Www ){
+        sqlite3_fputs(
+          "<TABLE border='1' cellspacing='0' cellpadding='2'>\n",p->out);
+      }
+      if( p->cnt==0 && p->showHeader ){
         sqlite3_fputs("<TR>", p->out);
         for(i=0; i<nArg; i++){
           sqlite3_fputs("<TH>", p->out);
@@ -2738,6 +2746,7 @@ static int shell_callback(
         }
         sqlite3_fputs("</TR>\n", p->out);
       }
+      p->cnt++;
       if( azArg==0 ) break;
       sqlite3_fputs("<TR>", p->out);
       for(i=0; i<nArg; i++){
@@ -4275,6 +4284,8 @@ static void exec_prepared_stmt(
       sqlite3_free(pData);
       if( pArg->cMode==MODE_Json ){
         sqlite3_fputs("]\n", pArg->out);
+      }else if( pArg->cMode==MODE_Www ){
+        sqlite3_fputs("</TABLE>\n", pArg->out);
       }else if( pArg->cMode==MODE_Count ){
         char zBuf[200];
         sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
@@ -5029,6 +5040,7 @@ static const char *(azHelp[]) = {
   "     If FILE begins with '|' then open as a pipe",
   "       --bom  Put a UTF8 byte-order mark at the beginning",
   "       -e     Send output to the system text editor",
+  "       -w     Send output as HTML to a web browser (same as \".www\")",
   "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
   /* Note that .open is (partially) available in WASM builds but is
   ** currently only intended to be used by the fiddle tool, not
@@ -5165,6 +5177,9 @@ static const char *(azHelp[]) = {
   ".vfsname ?AUX?           Print the name of the VFS stack",
   ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
   "     Negative values right-justify",
+#ifndef SQLITE_SHELL_FIDDLE
+  ".www                     Display output of the next command in web browser",
+#endif
 };
 
 /*
@@ -9702,6 +9717,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( cli_strncmp(zMode,"html",n2)==0 ){
       p->mode = MODE_Html;
+    }else if( cli_strncmp(zMode,"www",n2)==0 ){
+      p->mode = MODE_Www;
     }else if( cli_strncmp(zMode,"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
@@ -9873,18 +9890,22 @@ static int do_meta_command(char *zLine, ShellState *p){
         && (cli_strncmp(azArg[0], "output", n)==0
             || cli_strncmp(azArg[0], "once", n)==0))
    || (c=='e' && n==5 && cli_strcmp(azArg[0],"excel")==0)
+   || (c=='w' && n==3 && cli_strcmp(azArg[0],"www")==0)
   ){
     char *zFile = 0;
     int bTxtMode = 0;
     int i;
     int eMode = 0;
-    int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel */
+    int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel/.www */
     static const char *zBomUtf8 = "\xef\xbb\xbf﻿";
     const char *zBom = 0;
 
     failIfSafeMode(p, "cannot run .%s in safe mode", azArg[0]);
     if( c=='e' ){
       eMode = 'x';
+      bOnce = 2;
+    }else if( c=='w' ){
+      eMode = 'w';
       bOnce = 2;
     }else if( cli_strncmp(azArg[0],"once",n)==0 ){
       bOnce = 1;
@@ -9895,10 +9916,12 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( z[1]=='-' ) z++;
         if( cli_strcmp(z,"-bom")==0 ){
           zBom = zBomUtf8;
-        }else if( c!='e' && cli_strcmp(z,"-x")==0 ){
+        }else if( c=='o' && cli_strcmp(z,"-x")==0 ){
           eMode = 'x';  /* spreadsheet */
-        }else if( c!='e' && cli_strcmp(z,"-e")==0 ){
+        }else if( c=='o' && cli_strcmp(z,"-e")==0 ){
           eMode = 'e';  /* text editor */
+        }else if( c=='o' && cli_strcmp(z,"-w")==0 ){
+          eMode = 'w';  /* Web browser */
         }else{
           sqlite3_fprintf(p->out, 
                           "ERROR: unknown option: \"%s\". Usage:\n", azArg[i]);
@@ -9906,7 +9929,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           rc = 1;
           goto meta_command_exit;
         }
-      }else if( zFile==0 && eMode!='e' && eMode!='x' ){
+      }else if( zFile==0 && eMode==0 ){
         zFile = sqlite3_mprintf("%s", z);
         if( zFile && zFile[0]=='|' ){
           while( i+1<nArg ) zFile = sqlite3_mprintf("%z %s", zFile, azArg[++i]);
@@ -9931,7 +9954,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     output_reset(p);
 #ifndef SQLITE_NOHAVE_SYSTEM
-    if( eMode=='e' || eMode=='x' ){
+    if( eMode=='e' || eMode=='x' || eMode=='w' ){
       p->doXdgOpen = 1;
       outputModePush(p);
       if( eMode=='x' ){
@@ -9945,6 +9968,11 @@ static int do_meta_command(char *zLine, ShellState *p){
         zBom = zBomUtf8;  /* Always include the BOM on Windows, as Excel does
                           ** not work without it. */
 #endif
+      }else if( eMode=='w' ){
+        /* web-browser mode. */
+        newTempFile(p, "html");
+        p->mode = MODE_Www;
+        bTxtMode = 1;
       }else{
         /* text editor mode */
         newTempFile(p, "txt");
@@ -12979,6 +13007,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       i++;
     }else if( cli_strcmp(z,"-html")==0 ){
       data.mode = MODE_Html;
+    }else if( cli_strcmp(z,"-www")==0 ){
+      data.mode = MODE_Www;
     }else if( cli_strcmp(z,"-list")==0 ){
       data.mode = MODE_List;
     }else if( cli_strcmp(z,"-quote")==0 ){
