@@ -5041,10 +5041,11 @@ static const char *(azHelp[]) = {
 #ifndef SQLITE_SHELL_FIDDLE
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
   "     If FILE begins with '|' then open as a pipe",
-  "       --bom  Put a UTF8 byte-order mark at the beginning",
-  "       -e     Send output to the system text editor",
-  "       -w     Send output as HTML to a web browser (same as \".www\")",
-  "       -x     Send output as CSV to a spreadsheet (same as \".excel\")",
+  "       --bom    Put a UTF8 byte-order mark at the beginning",
+  "       -e       Send output to the system text editor",
+  "       --plain  Use text/plain output instead of HTML for -w option",
+  "       -w       Send output as HTML to a web browser (same as \".www\")",
+  "       -x       Send output as CSV to a spreadsheet (same as \".excel\")",
   /* Note that .open is (partially) available in WASM builds but is
   ** currently only intended to be used by the fiddle tool, not
   ** end users, so is "undocumented." */
@@ -5067,6 +5068,8 @@ static const char *(azHelp[]) = {
   "   Options:",
   "     --bom                 Prefix output with a UTF8 byte-order mark",
   "     -e                    Send output to the system text editor",
+  "     --plain               Use text/plain for -w option",
+  "     -w                    Send output to a web browser",
   "     -x                    Send output as CSV to a spreadsheet",
 #endif
   ".parameter CMD ...       Manage SQL parameter bindings",
@@ -5182,6 +5185,7 @@ static const char *(azHelp[]) = {
   "     Negative values right-justify",
 #ifndef SQLITE_SHELL_FIDDLE
   ".www                     Display output of the next command in web browser",
+  "    --plain                 Show results as text/plain, not as HTML",
 #endif
 };
 
@@ -9908,6 +9912,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     int i;
     int eMode = 0;
     int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel/.www */
+    int bPlain = 0;           /* --plain option */
     static const char *zBomUtf8 = "\xef\xbb\xbf﻿";
     const char *zBom = 0;
 
@@ -9927,6 +9932,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( z[1]=='-' ) z++;
         if( cli_strcmp(z,"-bom")==0 ){
           zBom = zBomUtf8;
+        }else if( cli_strcmp(z,"-plain")==0 ){
+          bPlain = 1;
         }else if( c=='o' && cli_strcmp(z,"-x")==0 ){
           eMode = 'x';  /* spreadsheet */
         }else if( c=='o' && cli_strcmp(z,"-e")==0 ){
@@ -9982,7 +9989,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( eMode=='w' ){
         /* web-browser mode. */
         newTempFile(p, "html");
-        p->mode = MODE_Www;
+        if( !bPlain ) p->mode = MODE_Www;
         bTxtMode = 1;
       }else{
         /* text editor mode */
@@ -10019,6 +10026,12 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
       } else {
         output_redir(p, pfFile);
+        if( bPlain && eMode=='w' ){
+          sqlite3_fputs(
+            "<!DOCTYPE html>\n<BODY>\n<PLAINTEXT>\n",
+            pfFile
+          );
+        }
         if( zBom ) sqlite3_fputs(zBom, pfFile);
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
