@@ -54,7 +54,11 @@ set enable_shared 1
 # error, is to define both {tempstore=1} and {enable-tempstore:}. With
 # that in place --enable-tempstore, with no value, works as expected
 # (why? Nobody knows!) but --tempstore can only ever be legally passed
-# a boolean value (0, 1, yes, no, enabled, disabled).
+# a boolean value (0, 1, yes, no, enabled, disabled). It does,
+# however, pollute the --help with a synthetic --disable-tempstore
+# option. After an hour of fighting with it, a switch from
+# --enable-tempstore to --with-tempstore seems like the better
+# approach, in that it doesn't lead to a losing fight with autosetup.
 options {
   with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
@@ -62,8 +66,7 @@ options {
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
   releasemode          => {libtool link to release mode}
-  tempstore=1          => {}
-  enable-tempstore:    => {Use an in-ram database for temporary tables: never,no,yes,always}
+  with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always}
   editline=0           => {BSD editline support}
   readline=0           => {readline support}
   with-readline-lib    => {readline library}
@@ -493,7 +496,7 @@ if {0} {
 ##########
 # Do we want temporary databases in memory
 if {1} {
-  set ts [opt-val enable-tempstore no]
+  set ts [opt-val with-tempstore no]
   set tsn 1
   msg-checking "Use an in-ram database for temporary tables? "
   switch -- $ts {
@@ -502,7 +505,7 @@ if {1} {
     yes    { set tsn 2 }
     always { set tsn 3 }
     default {
-      user-error "Invalid enable-tempstore value \[$ts]. Use one of: no, yes, always, never"
+      user-error "Invalid with-tempstore value \[$ts]. Use one of: no, yes, always, never"
     }
   }
   msg-result $ts
