@@ -106,9 +106,48 @@ proc hwaci-require-bash {} {
 }
 
 ########################################################################
+# Force-set autosetup option $flag to $val. The value can be fetched
+# later with [opt-val], [opt-bool], and friends.
+proc hwaci-opt-set {flag {val 1}} {
+  global autosetup
+  if {$flag ni $::autosetup(options)} {
+    # We have to add this to autosetup(options) or else future calls
+    # to [opt-bool $flag] will fail validation of $flag.
+    lappend ::autosetup(options) $flag
+  }
+  dict set ::autosetup(optset) $flag $val
+}
+
+########################################################################
+# Returns 1 if $val appears to be a truthy value, else returns
+# 0. Truthy values are any of {1 on enabled yes}
+proc hwaci-val-truthy {val} {
+  return [expr {$val in {1 on enabled yes}}]
+}
+
+########################################################################
+# Returns 1 if [opt-val $flag] appears to be a truthy value or
+# [opt-bool $flag] is true. See hwaci-val-truthy.
+proc hwaci-opt-truthy {flag} {
+  if {[hwaci-val-truthy [opt-val $flag]]} { return 1 }
+  set rc 0
+  catch {
+    # opt-bool will throw if $flag is not a known boolean flag
+    set rc [opt-bool $flag]
+  }
+  return $rc
+}
+
+########################################################################
+# If [hwaci-opt-truthy $flag] is true, eval $then, else eval $else.
+proc hwaci-if-opt-truthy {flag then {else {}}} {
+  if {[hwaci-opt-truthy $flag]} {eval $then} else {eval $else}
+}
+
+########################################################################
 # Args: [-v] optName defName {descr {}}
 #
-# Checks [opt-bool $optName] and does [define $defName X] where X is 0
+# Checks [hwaci-opt-truthy $optName] and does [define $defName X] where X is 0
 # for false and 1 for true. descr is an optional [msg-checking]
 # argument which defaults to $defName. Returns X.
 #
@@ -129,7 +168,7 @@ proc hwaci-opt-bool-01 {args} {
     }
     set rc 0
     msg-checking "$descr ... "
-    if {[opt-bool $optName]} {
+    if {[hwaci-opt-truthy $optName]} {
         if {0 eq $invert} {
             set rc 1
         } else {
@@ -305,7 +344,8 @@ proc hwaci-make-from-dot-in {filename {touch 0}} {
 # tokens, and interfering with autosetup's use of these vars, this
 # routine does not directly modify CFLAGS or LDFLAGS.
 proc hwaci-check-profile-flag {{flagname profile}} {
-  if {[opt-bool $flagname]} {
+  #puts "flagname=$flagname ?[hwaci-opt-truthy $flagname]?"
+  if {[hwaci-opt-truthy $flagname]} {
     set CC [get-define CC]
     regsub {.*ccache *} $CC "" CC
     # ^^^ if CC="ccache gcc" then [exec] treats "ccache gcc" as a
@@ -328,6 +368,8 @@ proc hwaci-check-profile-flag {{flagname profile}} {
 # an autosetup define which contains platform name info, defaulting to
 # "host". The other legal value is "target".
 proc hwaci-looks-like-windows {{key host}} {
+  global autosetup
+  if {$::autosetup(iswin)} { return 1 }
   switch -glob -- [get-define $key] {
     *-*-ming* - *-*-cygwin - *-*-msys {
       return 1

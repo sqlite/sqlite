@@ -60,6 +60,7 @@ set enable_shared 1
 # --enable-tempstore to --with-tempstore seems like the better
 # approach, in that it doesn't lead to a losing fight with autosetup.
 options {
+  with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
   tcl=1                => {Disable building accessory programs that require TCL-dev}
@@ -86,10 +87,11 @@ options {
   geopoly              => {Enable the GEOPOLY extension}
   rtree                => {Enable the RTREE extension}
   session              => {Enable the SESSION extension}
-  gcov                 => {Enable coverage testing using gcov}
+  gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation.}
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build}
+  with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
   dump-defines=1       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
 }
 #  debug=0          => {debugging & verbose explain}
@@ -98,7 +100,9 @@ set srcdir $autosetup(srcdir)
 puts "srcdir = $srcdir"
 set VERSION [readfile $srcdir/VERSION]
 puts "VERSION = $VERSION"
-puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
+define PACKAGE_VERSION $VERSION
+#puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
+#puts "with-debug? = [opt-val with-debug]"
 
 #
 # The build process allows for using a cross-compiler.  But the default
@@ -164,8 +168,11 @@ puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 ########################################################################
 # OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
 define OPT_FEATURE_FLAGS {}
+# Adds $flag, if not empty, to OPT_FEATURE_FLAGS.
 proc add-feature-flag {flag} {
-  define-append OPT_FEATURE_FLAGS $flag
+  if {"" ne $flag} {
+    define-append OPT_FEATURE_FLAGS $flag
+  }
 }
 # add-feature-flag -DSQLITE_JUST_TESTING=3
 
@@ -178,30 +185,6 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_UNIX 1
   define SQLITE_OS_WIN 0
   # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS?
-}
-
-########################################################################
-# Force-set autosetup option $flag to $val.
-proc opt-set {flag {val 1}} {
-  global autosetup
-  if {$flag ni $::autosetup(options)} {
-    # We have to add this to autosetup(options) or else future calls
-    # to [opt-bool $flag] will fail validation of $flag.
-    lappend ::autosetup(options) $flag
-  }
-  dict set ::autosetup(optset) $flag $val
-}
-
-########################################################################
-# If [opt-bool $boolFlag] is true, eval $then, else eval $else.
-proc if-enabled {boolFlag then {else {}}} {
-  if {[opt-bool $boolFlag]} {eval $then} else {eval $else}
-}
-
-########################################################################
-# If [opt-bool $boolFlag] is false, eval $then, else eval $else.
-proc if-disabled {boolFlag then {else {}}} {
-  if {![opt-bool $boolFlag]} {eval $then} else {eval $else}
 }
 
 #########
@@ -220,13 +203,27 @@ cc-check-types int8_t int16_t int32_t int64_t intptr_t \
   uint8_t uint16_t uint32_t uint64_t uintptr_t
 
 #########
-# Check for needed/wanted headers
-cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
-
-#########
 # Figure out whether or not we have these functions
 cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
   malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+
+#########
+# Check for needed/wanted headers
+cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
+  define HAVE_ZLIB 1
+  define LDFLAGS_ZLIB -lz
+} else {
+  define HAVE_ZLIB 0
+  define LDFLAGS_ZLIB ""
+}
+
+msg-checking "Debug build? "
+hwaci-if-opt-truthy with-debug {
+  msg-result yes
+} {
+  msg-result "no. Use --with-debug to enable."
+}
 
 ##########
 # Handle --with-wasi-sdk=DIR
@@ -249,8 +246,8 @@ if {1} {
     msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
     define HAVE_WASI_SDK 1
     define WASI_SDK_DIR $wasiSdkDir
-    opt-set tcl 0
-    opt-set threadsafe 0
+    hwaci-opt-set tcl 0
+    hwaci-opt-set threadsafe 0
     set cross_compiling 1
     set enable_shared 0
 
@@ -267,9 +264,9 @@ if {1} {
     # XXX LD="${wasiSdkDir}/bin/wasm-ld"
     # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
     #  set cross_compiling yes
-    #  opt-set threadsafe 0
+    #  hwaci-opt-set threadsafe 0
     #  set use_tcl no
-    #  opt-set tcl 0
+    #  hwaci-opt-set tcl 0
     # libtool is apparently hard-coded to use gcc for linking DLLs, so
     # we disable the DLL build...
     #  set enable_shared no
@@ -437,48 +434,46 @@ if {0} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
-if-enabled all {
-  opt-set fts4
-  opt-set fts5
-  opt-set geopoly
-  opt-set rtree
-  opt-set session
-} {
-  if-enabled geopoly {opt-set rtree}
+hwaci-if-opt-truthy all {
+  hwaci-opt-set fts4
+  hwaci-opt-set fts5
+  hwaci-opt-set geopoly
+  hwaci-opt-set rtree
+  hwaci-opt-set session
 }
+#{
+#  hwaci-if-opt-truthy geopoly {}
+#}
 
 
 ##########
 # Do we want to support multithreaded use of sqlite
 #
-if {0} {
-  if {![opt-bool threadsafe]} {
-  }
-  msg-checking "Checking whether to support threadsafe operation..."
-  # XXX if test "$enable_threadsafe" = "no"; then
-  # XXX SQLITE_THREADSAFE=0
-  msg-result "no"
-  # XXX else
-  # XXX SQLITE_THREADSAFE=1
-  msg-result "yes"
-  # XXX fi
-  # XXX AC_SUBST SQLITE_THREADSAFE
-
-  # XXX if test "$SQLITE_THREADSAFE" = "1"; then
+msg-checking "Checking whether to support threadsafe operation... "
+hwaci-if-opt-truthy threadsafe {
+  msg-result yes
+  add-feature-flag -DSQLITE_THREADSAFE=1
   cc-check-function-in-lib pthread_create pthread
   cc-check-function-in-lib pthread_mutexattr_init pthread
-  # XXX fi
+} {
+  msg-result no
+  add-feature-flag -DSQLITE_THREADSAFE=0
 }
 
 ##########
-# Do we want to support release
+# Do we want to support release?
 #
-if-enabled releasemode {
-  msg-result "Release-mode build."
-  set enable_releasemode 1
-} {
-  msg-result "Non-release-mode build."
-  set enable_releasemode 0
+# Maintenance note: this might be irrelevant with an autosetup port,
+# as it appears to be related to libtool (part of the autotools).
+#
+if {0} {
+  hwaci-if-opt-truthy releasemode {
+    msg-result "Release-mode build."
+    set enable_releasemode 1
+  } {
+    msg-result "Non-release-mode build."
+    set enable_releasemode 0
+  }
 }
 
 if {0} {
@@ -494,7 +489,8 @@ if {0} {
 }
 
 ##########
-# Do we want temporary databases in memory
+# Do we want temporary databases in memory?
+#
 if {1} {
   set ts [opt-val with-tempstore no]
   set tsn 1
@@ -505,61 +501,12 @@ if {1} {
     yes    { set tsn 2 }
     always { set tsn 3 }
     default {
-      user-error "Invalid with-tempstore value \[$ts]. Use one of: no, yes, always, never"
+      user-error "Invalid with-tempstore value \[$ts]. Use one of: never, no, yes, always"
     }
   }
   msg-result $ts
   define TEMP_STORE $tsn
   unset ts tsn
-}
-
-if {0} {
-  ###########
-  # Lots of things are different if we are compiling for Windows using
-  # the CYGWIN environment.  So check for that special case and handle
-  # things accordingly.
-  #
-  msg-checking "Checking if executables have the .exe suffix..."
-  # XXX if test "$config_BUILD_EXEEXT" = ".exe"; then
-  # XXX CYGWIN=yes
-  msg-result "yes"
-  # XXX else
-  msg-result "unknown"
-  # XXX fi
-  # XXX if test "$CYGWIN" != "yes"; then
-  # XXX m4_warn([obsolete],
-  # XXX [AC_CYGWIN is obsolete: use AC_CANONICAL_HOST and check if $host_os
-  # XXX matches *cygwin*])
-  # XXX case $host_os in
-  # XXX *cygwin* ) CYGWIN=yes;;
-  # XXX * ) CYGWIN=no;;
-  # XXX esac
-
-  # XXX fi
-  # XXX if test "$CYGWIN" = "yes"; then
-  # XXX BUILD_EXEEXT=.exe
-  # XXX else
-  # XXX BUILD_EXEEXT=$EXEEXT
-  # XXX fi
-  # XXX if test x"$cross_compiling" = xno; then
-  # XXX TARGET_EXEEXT=$BUILD_EXEEXT
-  # XXX else
-  # XXX TARGET_EXEEXT=$config_TARGET_EXEEXT
-  # XXX fi
-  # XXX if test "$TARGET_EXEEXT" = ".exe"; then
-  # XXX SQLITE_OS_UNIX=0
-  # XXX SQLITE_OS_WIN=1
-  # XXX CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
-  # XXX else
-  # XXX SQLITE_OS_UNIX=1
-  # XXX SQLITE_OS_WIN=0
-  # XXX CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
-  # XXX fi
-
-  # XXX AC_SUBST BUILD_EXEEXT
-  # XXX AC_SUBST SQLITE_OS_UNIX
-  # XXX AC_SUBST SQLITE_OS_WIN
-  # XXX AC_SUBST TARGET_EXEEXT
 }
 
 if {0} {
@@ -731,7 +678,7 @@ if {0} {
   # XXX AC_SUBST HAVE_ZLIB
 }
 
-if-enabled load-extension {
+hwaci-if-opt-truthy load-extension {
   if {[cc-check-function-in-lib dlopen dl]} {
     define LDFLAGS_DLOPEN [get-define lib_dlopen]
   } else {
@@ -743,7 +690,7 @@ if-enabled load-extension {
   msg-result "Disabling loadable extensions."
 }
 
-if-enabled math {
+hwaci-if-opt-truthy math {
   if {![cc-check-function-in-lib ceil m]} {
     user-error "Cannot find libm functions. Use --disable-math to bypass this."
   }
@@ -756,7 +703,7 @@ if-enabled math {
   msg-result "Disabling math SQL functions"
 }
 
-if-enabled json {
+hwaci-if-opt-truthy json {
   msg-result "Enabling JSON SQL functions"
 } {
   add-feature-flag {-DSQLITE_OMIT_JSON}
@@ -816,85 +763,98 @@ if {0} {
   msg-result "yes"
   # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
   cc-check-function-in-lib log m
-  # XXX else
   msg-result "no"
-  # XXX fi
 }
 
-#########
-# attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
-# XXX for option in $CFLAGS $CPPFLAGS
-# XXX do
-# XXX case $option in
-# XXX -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
-# XXX -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
-# XXX esac
-# XXX done
-# XXX AC_SUBST OPT_FEATURE_FLAGS
+if {0} {
+  # is this still relevant?
 
-# attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
-# XXX ac_temp_CFLAGS=""
-# XXX for option in $CFLAGS
-# XXX do
-# XXX case $option in
-# XXX -DSQLITE_OMIT*) ;;
-# XXX -DSQLITE_ENABLE*) ;;
-# XXX *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
-# XXX esac
-# XXX done
-# XXX CFLAGS=$ac_temp_CFLAGS
+  #########
+  # attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
+  # XXX for option in $CFLAGS $CPPFLAGS
+  # XXX do
+  # XXX case $option in
+  # XXX -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+  # XXX -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+  # XXX esac
+  # XXX done
+  # XXX AC_SUBST OPT_FEATURE_FLAGS
 
-# attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
-# XXX ac_temp_CPPFLAGS=""
-# XXX for option in $CPPFLAGS
-# XXX do
-# XXX case $option in
-# XXX -DSQLITE_OMIT*) ;;
-# XXX -DSQLITE_ENABLE*) ;;
-# XXX *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
-# XXX esac
-# XXX done
-# XXX CPPFLAGS=$ac_temp_CPPFLAGS
+  # attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
+  # XXX ac_temp_CFLAGS=""
+  # XXX for option in $CFLAGS
+  # XXX do
+  # XXX case $option in
+  # XXX -DSQLITE_OMIT*) ;;
+  # XXX -DSQLITE_ENABLE*) ;;
+  # XXX *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
+  # XXX esac
+  # XXX done
+  # XXX CFLAGS=$ac_temp_CFLAGS
 
-# attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
-# XXX ac_temp_BUILD_CFLAGS=""
-# XXX for option in $BUILD_CFLAGS
-# XXX do
-# XXX case $option in
-# XXX -DSQLITE_OMIT*) ;;
-# XXX -DSQLITE_ENABLE*) ;;
-# XXX *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
-# XXX esac
-# XXX done
-# XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
+  # attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
+  # XXX ac_temp_CPPFLAGS=""
+  # XXX for option in $CPPFLAGS
+  # XXX do
+  # XXX case $option in
+  # XXX -DSQLITE_OMIT*) ;;
+  # XXX -DSQLITE_ENABLE*) ;;
+  # XXX *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
+  # XXX esac
+  # XXX done
+  # XXX CPPFLAGS=$ac_temp_CPPFLAGS
 
+  # attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
+  # XXX ac_temp_BUILD_CFLAGS=""
+  # XXX for option in $BUILD_CFLAGS
+  # XXX do
+  # XXX case $option in
+  # XXX -DSQLITE_OMIT*) ;;
+  # XXX -DSQLITE_ENABLE*) ;;
+  # XXX *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
+  # XXX esac
+  # XXX done
+  # XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
+}
 
-if-enabled gcov {
+msg-checking "Enable gcov? "
+hwaci-if-opt-truthy gcov {
   define USE_GCOV 1
-  msg-result "Enabling gcov"
+  msg-result yes
 } {
   define USE_GCOV 0
+  msg-result no
 }
 
-foreach {boolFlag featureFlag} {
-  fts4         -DSQLITE_ENABLE_FTS4
-  fts5         -DSQLITE_ENABLE_FTS5
-  geopoly      -DSQLITE_ENABLE_GEOPOLY
-  rtree        -DSQLITE_ENABLE_RTREE
-  session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK}
-  update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT
-} {
-  if {[opt-bool $boolFlag]} {
-    add-feature-flag $featureFlag
-    msg-checking "Enabling "
-  } else {
-    msg-checking "Not enabling "
+########################################################################
+# Handle various SQLITE_ENABLE_... feature flags.
+foreach {boolFlag featureFlag ifSetEvalThis} {
+  fts4         -DSQLITE_ENABLE_FTS4    {cc-check-function-in-lib log m}
+  fts5         -DSQLITE_ENABLE_FTS5    {cc-check-function-in-lib log m}
+  geopoly      -DSQLITE_ENABLE_GEOPOLY {hwaci-opt-set rtree}
+  rtree        -DSQLITE_ENABLE_RTREE   {}
+  session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK} {}
+  update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT {}
+  memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
+  memsys3      {} {
+    if {[opt-bool memsys5]} {
+      msg-result "NOT enabling memsys3 because memsys5 is enabled."
+    } else {
+      add-feature-flag -DSQLITE_ENABLE_MEMSYS3
+    }
   }
-  msg-result "$boolFlag"
+} {
+  if {[hwaci-opt-truthy $boolFlag]} {
+    add-feature-flag $featureFlag
+    msg-result "Enabling $boolFlag"
+    eval $ifSetEvalThis
+  } else {
+    msg-result "Not enabling $boolFlag"
+  }
 }
 
 msg-checking "Use #line macros in the amalgamation: "
-if-enabled linemacros {
+hwaci-if-opt-truthy linemacros {
   define AMALGAMATION_LINE_MACROS {--linemacros=1}
   msg-result yes
 } {
@@ -902,21 +862,43 @@ if-enabled linemacros {
   msg-result no
 }
 
-if {0} {
-  #########
-  # Generate the output files.
-  #
-  # XXX AC_SUBST BUILD_CFLAGS
-  make-template Makefile.in
-  make-template sqlite3.pc.in
-  make-config-header sqlite_cfg.h
+
+##########
+# Emscripten SDK
+#
+if {1} {
+  # TODO: port this bit and its associated shell script from the
+  # Fossil source tree's auto.def and tools/emcc.sh.in.
 }
 
-if {"" ne [get-define OPT_FEATURE_FLAGS]} {
+#########
+# Generate the output files.
+#
+if {1} {
+  # mystery: why are defines (srcdir, top_srcdir) both absolute when emitted
+  # from make-config-header but relative when emitted via make-template?
+
+  hwaci-make-from-dot-in Makefile
+  hwaci-make-from-dot-in sqlite3.pc
+  #hwaci-make-from-dot-in ext/wasm/GNUmakefile
+  if {0} {
+    # output from make-config-header is not quite the same as that from the
+    # autotools. We may need to write a custom replacement.
+    # hwaci-make-from-dot-in sqlite_cfg.h
+    # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_DECL_*} -auto HAVE_* -none *
+    # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_*} -none *
+    # make-config-header sqlite_cfg.h
+  }
+}
+
+set oFF [get-define OPT_FEATURE_FLAGS]
+if {"" ne $oFF} {
+  define OPT_FEATURE_FLAGS [lsort -unique $oFF]
   msg-result "Final feature flags: [get-define OPT_FEATURE_FLAGS]"
 }
+unset oFF
 
-if-enabled dump-defines {
+hwaci-if-opt-truthy dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
   make-config-header $DUMP_DEFINES_FILE -bare {OPT_FEATURE_FLAGS SQLITE_OS_*} -auto {*}

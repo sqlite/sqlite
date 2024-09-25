@@ -1,9 +1,9 @@
-C Change\s--enable-tempstore\sto\s--with-tempstore\sto\savoid\sthe\suphill\s(and\slosing)\sbattle\swith\sautosetup's\sbuilt-in\shandling\sof\sthe\s--enable/--disable\sprefixes.
-D 2024-09-25T12:16:13.024
+C Lots\sof\swork\son\sauto.def\sand\sthe\sutility\stcl\slib.\sStill\slots\smore\sto\sdo.
+D 2024-09-25T14:38:46.807
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in fa448c4c0567623fd140efebecb570ab58d955d766a5ea0fd8a94e9b5697007c
+F Makefile.in cc79c614f589bda2a0995851ca652f1713490dc9f79867f3ad2c82121d07cbfa
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc e3c4723c27464acc31da4420b808c8d2690180ba2b915897bece0a9d5d2cecf6
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 46adeff81937896526e074fb26dad88f482f44ab4577468a43da73304158d357
+F auto.def acffcaef405d1a93e5af1a6bfc9ad175e045f0113b896e31812294155aa729e1
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -46,7 +46,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 1b52de228642c1db5a714d54ca974d723ec8b4092e8c3765d348b625850f7311
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl b6f0c57b377898b8837bd031ca9a37c021d4fe859c9d3967dbb36deab6748459
+F autosetup/hwaci-common.tcl c676836141db22751ab9c4e8ff9e66e744546691643f2c2cce459f3af6647f28
 F autosetup/jimsh0.c 1b5fe91fffcddbc29f2b16acb80f1650632ea2edbe8336b8155ef7b4c66f6d8d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2232,8 +2232,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c223dbb4fb8e800089752617c6c986b6c80be0d180e9d1610f28cf95253e5674
-R 780005d9a0ea48859fdd0440470d05eb
+P 8bea45fbbf8557760e792cdfcede72afa9e25dd7b90e4ce3297efebe8d0cfb1c
+R cd70ad4d06f521a1f30a01bf2a129759
 U stephan
-Z 67206b818d975312f9c5773e94dde53e
+Z 9f732b0583b6db454836916ab8f6e46b
 # Remove this line to create a well-formed Fossil manifest.
