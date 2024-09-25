@@ -321,12 +321,12 @@ static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
 /*
 ** Print the timing results.
 */
-static void endTimer(void){
+static void endTimer(FILE *out){
   if( enableTimer ){
     sqlite3_int64 iEnd = timeOfDay();
     struct rusage sEnd;
     getrusage(RUSAGE_SELF, &sEnd);
-    sqlite3_fprintf(stdout, "Run Time: real %.3f user %f sys %f\n",
+    sqlite3_fprintf(out, "Run Time: real %.3f user %f sys %f\n",
           (iEnd - iBegin)*0.001,
           timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
           timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
@@ -334,7 +334,7 @@ static void endTimer(void){
 }
 
 #define BEGIN_TIMER beginTimer()
-#define END_TIMER endTimer()
+#define END_TIMER(X) endTimer(X)
 #define HAS_TIMER 1
 
 #elif (defined(_WIN32) || defined(WIN32))
@@ -400,12 +400,12 @@ static double timeDiff(FILETIME *pStart, FILETIME *pEnd){
 /*
 ** Print the timing results.
 */
-static void endTimer(void){
+static void endTimer(FILE *out){
   if( enableTimer && getProcessTimesAddr){
     FILETIME ftCreation, ftExit, ftKernelEnd, ftUserEnd;
     sqlite3_int64 ftWallEnd = timeOfDay();
     getProcessTimesAddr(hProcess,&ftCreation,&ftExit,&ftKernelEnd,&ftUserEnd);
-    sqlite3_fprintf(stdout, "Run Time: real %.3f user %f sys %f\n",
+    sqlite3_fprintf(out, "Run Time: real %.3f user %f sys %f\n",
           (ftWallEnd - ftWallBegin)*0.001,
           timeDiff(&ftUserBegin, &ftUserEnd),
           timeDiff(&ftKernelBegin, &ftKernelEnd));
@@ -413,12 +413,12 @@ static void endTimer(void){
 }
 
 #define BEGIN_TIMER beginTimer()
-#define END_TIMER endTimer()
+#define END_TIMER(X) endTimer(X)
 #define HAS_TIMER hasTimer()
 
 #else
 #define BEGIN_TIMER
-#define END_TIMER
+#define END_TIMER(X)  /*no-op*/
 #define HAS_TIMER 0
 #endif
 
@@ -12157,7 +12157,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
   if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
   BEGIN_TIMER;
   rc = shell_exec(p, zSql, &zErrMsg);
-  END_TIMER;
+  END_TIMER(p->out);
   if( rc || zErrMsg ){
     char zPrefix[100];
     const char *zErrorTail;
