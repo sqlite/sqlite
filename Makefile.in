@@ -19,10 +19,10 @@ TOP = @abs_top_srcdir@
 # top_srcdir = @top_srcdir@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
-# LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
-# LDFLAGS_MATH = @LDFLAGS_MATH@
-# LD = @LD@
-# AR = @AR@
+LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
+LDFLAGS_MATH = @LDFLAGS_MATH@
+LD = @LD@
+AR = @AR@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -80,12 +80,12 @@ CFLAGS = @CPPFLAGS@ @CFLAGS@
 #XX##
 #XX#TLIBS = @LIBS@ $(LIBS)
 #XX#
-#XX## Flags controlling use of the in memory btree implementation
-#XX##
-#XX## SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
-#XX## default to file, 2 to default to memory, and 3 to force temporary
-#XX## tables to always be in memory.
-#XX##
+# Flags controlling use of the in memory btree implementation
+#
+# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
+# default to file, 2 to default to memory, and 3 to force temporary
+# tables to always be in memory.
+#
 TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 # Enable/disable loadable extensions, and other optional features
@@ -98,27 +98,29 @@ TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 # the build is specifically configured to account for them.
 #
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
-#XX#
-#XX#TCC += $(OPT_FEATURE_FLAGS)
-#XX#
-#XX## Add in any optional parameters specified on the make commane line
-#XX## ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
-#XX#TCC += $(OPTS)
-#XX#
-#XX## Add in compile-time options for some libraries used by extensions
-#XX#TCC += @HAVE_ZLIB@
-#XX#
-#XX## Version numbers and release number for the SQLite being compiled.
-#XX##
-#XX#VERSION = @VERSION@
+
+TCC += $(OPT_FEATURE_FLAGS)
+
+# Add in any optional parameters specified on the make commane line
+# ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+TCC += $(OPTS)
+
+# Add in compile-time options for some libraries used by extensions
+TCC += @LDFLAGS_ZLIB@
+
+# Version numbers and release number for the SQLite being compiled.
+#
+VERSION = @VERSION@
 #XX#VERSION_NUMBER = @VERSION_NUMBER@
 #XX#RELEASE = @RELEASE@
-#XX#
-#XX## Filename extensions
-#XX##
-#XX#BEXE = @BUILD_EXEEXT@
-#XX#TEXE = @TARGET_EXEEXT@
-#XX#
+
+# Filename extensions for binaries
+#
+BEXE = @BUILD_EXEEXT@
+TEXE = @TARGET_EXEEXT@
+BOBJ = @BUILD_OBJEXT@
+TOBJ = @TARGET_OBJEXT@
+
 #XX## The following variable is "1" if the configure script was able to locate
 #XX## the tclConfig.sh file.  It is an empty string otherwise.  When this
 #XX## variable is "1", the TCL extension library (libtclsqlite3.so) is built
@@ -134,41 +136,42 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 #XX## Additional options when running tests using testrunner.tcl
 #XX## This is usually either blank, or else --status
 #XX##
-#XX#TSTRNNR_OPTS = @TSTRNNR_OPTS@
-#XX#
+TSTRNNR_OPTS = @TSTRNNR_OPTS@
+#
 #XX## Where do we want to install the tcl plugin
 #XX##
 #XX#TCLLIBDIR = @TCLLIBDIR@
-#XX#
-#XX## If gcov support was enabled by the configure script, add the appropriate
-#XX## flags here.  It's not always as easy as just having the user add the right
-#XX## CFLAGS / LDFLAGS, because libtool wants to use CFLAGS when linking, which
-#XX## causes build errors with -fprofile-arcs -ftest-coverage with some GCCs.
-#XX## Supposedly GCC does the right thing if you use --coverage, but in
-#XX## practice it still fails.  See:
-#XX##
-#XX## http://www.mail-archive.com/debian-gcc@lists.debian.org/msg26197.html
-#XX##
-#XX## for more info.
-#XX##
-#XX#GCOV_CFLAGS1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
-#XX#GCOV_LDFLAGS1 = -lgcov
-#XX#USE_GCOV = @USE_GCOV@
+
+#
+# If gcov support was enabled by the configure script, add the appropriate
+# flags here.  It's not always as easy as just having the user add the right
+# CFLAGS / LDFLAGS, because libtool wants to use CFLAGS when linking, which
+# causes build errors with -fprofile-arcs -ftest-coverage with some GCCs.
+# Supposedly GCC does the right thing if you use --coverage, but in
+# practice it still fails.  See:
+#
+# http://www.mail-archive.com/debian-gcc@lists.debian.org/msg26197.html
+#
+# for more info.
+#
+GCOV_CFLAGS1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
+GCOV_LDFLAGS1 = -lgcov
+USE_GCOV = @USE_GCOV@
 #XX#LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
 #XX#LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
-#XX#
-#XX#
-#XX## The directory into which to store package information for
-#XX#
-#XX## Some standard variables and programs
-#XX##
-#XX#prefix = @prefix@
-#XX#exec_prefix = @exec_prefix@
-#XX#libdir = @libdir@
-#XX#pkgconfigdir = $(libdir)/pkgconfig
-#XX#bindir = @bindir@
-#XX#includedir = @includedir@
-#XX#INSTALL = @INSTALL@
+
+
+# The directory into which to store package information for
+
+# Some standard variables and programs
+#
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+pkgconfigdir = $(libdir)/pkgconfig
+bindir = @bindir@
+includedir = @includedir@
+INSTALL = @BIN_INSTALL@
 #XX#LIBTOOL = ./libtool
 #XX#ALLOWRELEASE = @ALLOWRELEASE@
 #XX#
@@ -176,13 +179,14 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 #XX#LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
 #XX#LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
 #XX#LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-#XX#
-#XX## You should not have to change anything below this line
-#XX################################################################################
-#XX#
-#XX#USE_AMALGAMATION = @USE_AMALGAMATION@
-#XX#AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
-#XX#
+
+#
+# You should not have to change anything below this line
+################################################################################
+#
+USE_AMALGAMATION = @USE_AMALGAMATION@
+AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
+#
 #XX## Object files for the SQLite library (non-amalgamation).
 #XX##
 #XX#LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
@@ -222,455 +226,457 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 #XX#
 #XX## All of the source code files.
 #XX##
-#XX#SRC = \
-#XX#  $(TOP)/src/alter.c \
-#XX#  $(TOP)/src/analyze.c \
-#XX#  $(TOP)/src/attach.c \
-#XX#  $(TOP)/src/auth.c \
-#XX#  $(TOP)/src/backup.c \
-#XX#  $(TOP)/src/bitvec.c \
-#XX#  $(TOP)/src/btmutex.c \
-#XX#  $(TOP)/src/btree.c \
-#XX#  $(TOP)/src/btree.h \
-#XX#  $(TOP)/src/btreeInt.h \
-#XX#  $(TOP)/src/build.c \
-#XX#  $(TOP)/src/callback.c \
-#XX#  $(TOP)/src/complete.c \
-#XX#  $(TOP)/src/ctime.c \
-#XX#  $(TOP)/src/date.c \
-#XX#  $(TOP)/src/dbpage.c \
-#XX#  $(TOP)/src/dbstat.c \
-#XX#  $(TOP)/src/delete.c \
-#XX#  $(TOP)/src/expr.c \
-#XX#  $(TOP)/src/fault.c \
-#XX#  $(TOP)/src/fkey.c \
-#XX#  $(TOP)/src/func.c \
-#XX#  $(TOP)/src/global.c \
-#XX#  $(TOP)/src/hash.c \
-#XX#  $(TOP)/src/hash.h \
-#XX#  $(TOP)/src/hwtime.h \
-#XX#  $(TOP)/src/insert.c \
-#XX#  $(TOP)/src/json.c \
-#XX#  $(TOP)/src/legacy.c \
-#XX#  $(TOP)/src/loadext.c \
-#XX#  $(TOP)/src/main.c \
-#XX#  $(TOP)/src/malloc.c \
-#XX#  $(TOP)/src/mem0.c \
-#XX#  $(TOP)/src/mem1.c \
-#XX#  $(TOP)/src/mem2.c \
-#XX#  $(TOP)/src/mem3.c \
-#XX#  $(TOP)/src/mem5.c \
-#XX#  $(TOP)/src/memdb.c \
-#XX#  $(TOP)/src/memjournal.c \
-#XX#  $(TOP)/src/msvc.h \
-#XX#  $(TOP)/src/mutex.c \
-#XX#  $(TOP)/src/mutex.h \
-#XX#  $(TOP)/src/mutex_noop.c \
-#XX#  $(TOP)/src/mutex_unix.c \
-#XX#  $(TOP)/src/mutex_w32.c \
-#XX#  $(TOP)/src/notify.c \
-#XX#  $(TOP)/src/os.c \
-#XX#  $(TOP)/src/os.h \
-#XX#  $(TOP)/src/os_common.h \
-#XX#  $(TOP)/src/os_setup.h \
-#XX#  $(TOP)/src/os_kv.c \
-#XX#  $(TOP)/src/os_unix.c \
-#XX#  $(TOP)/src/os_win.c \
-#XX#  $(TOP)/src/os_win.h \
-#XX#  $(TOP)/src/pager.c \
-#XX#  $(TOP)/src/pager.h \
-#XX#  $(TOP)/src/parse.y \
-#XX#  $(TOP)/src/pcache.c \
-#XX#  $(TOP)/src/pcache.h \
-#XX#  $(TOP)/src/pcache1.c \
-#XX#  $(TOP)/src/pragma.c \
-#XX#  $(TOP)/src/pragma.h \
-#XX#  $(TOP)/src/prepare.c \
-#XX#  $(TOP)/src/printf.c \
-#XX#  $(TOP)/src/random.c \
-#XX#  $(TOP)/src/resolve.c \
-#XX#  $(TOP)/src/rowset.c \
-#XX#  $(TOP)/src/select.c \
-#XX#  $(TOP)/src/status.c \
-#XX#  $(TOP)/src/shell.c.in \
-#XX#  $(TOP)/src/sqlite.h.in \
-#XX#  $(TOP)/src/sqlite3ext.h \
-#XX#  $(TOP)/src/sqliteInt.h \
-#XX#  $(TOP)/src/sqliteLimit.h \
-#XX#  $(TOP)/src/table.c \
-#XX#  $(TOP)/src/tclsqlite.c \
-#XX#  $(TOP)/src/threads.c \
-#XX#  $(TOP)/src/tokenize.c \
-#XX#  $(TOP)/src/treeview.c \
-#XX#  $(TOP)/src/trigger.c \
-#XX#  $(TOP)/src/utf.c \
-#XX#  $(TOP)/src/update.c \
-#XX#  $(TOP)/src/upsert.c \
-#XX#  $(TOP)/src/util.c \
-#XX#  $(TOP)/src/vacuum.c \
-#XX#  $(TOP)/src/vdbe.c \
-#XX#  $(TOP)/src/vdbe.h \
-#XX#  $(TOP)/src/vdbeapi.c \
-#XX#  $(TOP)/src/vdbeaux.c \
-#XX#  $(TOP)/src/vdbeblob.c \
-#XX#  $(TOP)/src/vdbemem.c \
-#XX#  $(TOP)/src/vdbesort.c \
-#XX#  $(TOP)/src/vdbetrace.c \
-#XX#  $(TOP)/src/vdbevtab.c \
-#XX#  $(TOP)/src/vdbeInt.h \
-#XX#  $(TOP)/src/vtab.c \
-#XX#  $(TOP)/src/vxworks.h \
-#XX#  $(TOP)/src/wal.c \
-#XX#  $(TOP)/src/wal.h \
-#XX#  $(TOP)/src/walker.c \
-#XX#  $(TOP)/src/where.c \
-#XX#  $(TOP)/src/wherecode.c \
-#XX#  $(TOP)/src/whereexpr.c \
-#XX#  $(TOP)/src/whereInt.h \
-#XX#  $(TOP)/src/window.c
-#XX#
-#XX## Source code for extensions
-#XX##
-#XX#SRC += \
-#XX#  $(TOP)/ext/fts3/fts3.c \
-#XX#  $(TOP)/ext/fts3/fts3.h \
-#XX#  $(TOP)/ext/fts3/fts3Int.h \
-#XX#  $(TOP)/ext/fts3/fts3_aux.c \
-#XX#  $(TOP)/ext/fts3/fts3_expr.c \
-#XX#  $(TOP)/ext/fts3/fts3_hash.c \
-#XX#  $(TOP)/ext/fts3/fts3_hash.h \
-#XX#  $(TOP)/ext/fts3/fts3_icu.c \
-#XX#  $(TOP)/ext/fts3/fts3_porter.c \
-#XX#  $(TOP)/ext/fts3/fts3_snippet.c \
-#XX#  $(TOP)/ext/fts3/fts3_tokenizer.h \
-#XX#  $(TOP)/ext/fts3/fts3_tokenizer.c \
-#XX#  $(TOP)/ext/fts3/fts3_tokenizer1.c \
-#XX#  $(TOP)/ext/fts3/fts3_tokenize_vtab.c \
-#XX#  $(TOP)/ext/fts3/fts3_unicode.c \
-#XX#  $(TOP)/ext/fts3/fts3_unicode2.c \
-#XX#  $(TOP)/ext/fts3/fts3_write.c
-#XX#SRC += \
-#XX#  $(TOP)/ext/icu/sqliteicu.h \
-#XX#  $(TOP)/ext/icu/icu.c
-#XX#SRC += \
-#XX#  $(TOP)/ext/rtree/rtree.h \
-#XX#  $(TOP)/ext/rtree/rtree.c \
-#XX#  $(TOP)/ext/rtree/geopoly.c
-#XX#SRC += \
-#XX#  $(TOP)/ext/session/sqlite3session.c \
-#XX#  $(TOP)/ext/session/sqlite3session.h
-#XX#SRC += \
-#XX#  $(TOP)/ext/userauth/userauth.c \
-#XX#  $(TOP)/ext/userauth/sqlite3userauth.h
-#XX#SRC += \
-#XX#  $(TOP)/ext/rbu/sqlite3rbu.h \
-#XX#  $(TOP)/ext/rbu/sqlite3rbu.c
-#XX#SRC += \
-#XX#  $(TOP)/ext/misc/stmt.c
-#XX#
-#XX## Generated source code files
-#XX##
-#XX#SRC += \
-#XX#  keywordhash.h \
-#XX#  opcodes.c \
-#XX#  opcodes.h \
-#XX#  parse.c \
-#XX#  parse.h \
-#XX#  sqlite_cfg.h \
-#XX#  shell.c \
-#XX#  sqlite3.h
-#XX#
-#XX## Source code to the test files.
-#XX##
-#XX#TESTSRC = \
-#XX#  $(TOP)/src/test1.c \
-#XX#  $(TOP)/src/test2.c \
-#XX#  $(TOP)/src/test3.c \
-#XX#  $(TOP)/src/test4.c \
-#XX#  $(TOP)/src/test5.c \
-#XX#  $(TOP)/src/test6.c \
-#XX#  $(TOP)/src/test8.c \
-#XX#  $(TOP)/src/test9.c \
-#XX#  $(TOP)/src/test_autoext.c \
-#XX#  $(TOP)/src/test_async.c \
-#XX#  $(TOP)/src/test_backup.c \
-#XX#  $(TOP)/src/test_bestindex.c \
-#XX#  $(TOP)/src/test_blob.c \
-#XX#  $(TOP)/src/test_btree.c \
-#XX#  $(TOP)/src/test_config.c \
-#XX#  $(TOP)/src/test_delete.c \
-#XX#  $(TOP)/src/test_demovfs.c \
-#XX#  $(TOP)/src/test_devsym.c \
-#XX#  $(TOP)/src/test_fs.c \
-#XX#  $(TOP)/src/test_func.c \
-#XX#  $(TOP)/src/test_hexio.c \
-#XX#  $(TOP)/src/test_init.c \
-#XX#  $(TOP)/src/test_intarray.c \
-#XX#  $(TOP)/src/test_journal.c \
-#XX#  $(TOP)/src/test_malloc.c \
-#XX#  $(TOP)/src/test_md5.c \
-#XX#  $(TOP)/src/test_multiplex.c \
-#XX#  $(TOP)/src/test_mutex.c \
-#XX#  $(TOP)/src/test_onefile.c \
-#XX#  $(TOP)/src/test_osinst.c \
-#XX#  $(TOP)/src/test_pcache.c \
-#XX#  $(TOP)/src/test_quota.c \
-#XX#  $(TOP)/src/test_rtree.c \
-#XX#  $(TOP)/src/test_schema.c \
-#XX#  $(TOP)/src/test_superlock.c \
-#XX#  $(TOP)/src/test_syscall.c \
-#XX#  $(TOP)/src/test_tclsh.c \
-#XX#  $(TOP)/src/test_tclvar.c \
-#XX#  $(TOP)/src/test_thread.c \
-#XX#  $(TOP)/src/test_vdbecov.c \
-#XX#  $(TOP)/src/test_vfs.c \
-#XX#  $(TOP)/src/test_windirent.c \
-#XX#  $(TOP)/src/test_window.c \
-#XX#  $(TOP)/src/test_wsd.c       \
-#XX#  $(TOP)/ext/fts3/fts3_term.c \
-#XX#  $(TOP)/ext/fts3/fts3_test.c  \
-#XX#  $(TOP)/ext/session/test_session.c \
-#XX#  $(TOP)/ext/recover/sqlite3recover.c \
-#XX#  $(TOP)/ext/recover/dbdata.c \
-#XX#  $(TOP)/ext/recover/test_recover.c \
-#XX#  $(TOP)/ext/intck/test_intck.c  \
-#XX#  $(TOP)/ext/intck/sqlite3intck.c \
-#XX#  $(TOP)/ext/rbu/test_rbu.c
-#XX#
-#XX## Statically linked extensions
-#XX##
-#XX#TESTSRC += \
-#XX#  $(TOP)/ext/expert/sqlite3expert.c \
-#XX#  $(TOP)/ext/expert/test_expert.c \
-#XX#  $(TOP)/ext/misc/amatch.c \
-#XX#  $(TOP)/ext/misc/appendvfs.c \
-#XX#  $(TOP)/ext/misc/basexx.c \
-#XX#  $(TOP)/ext/misc/carray.c \
-#XX#  $(TOP)/ext/misc/cksumvfs.c \
-#XX#  $(TOP)/ext/misc/closure.c \
-#XX#  $(TOP)/ext/misc/csv.c \
-#XX#  $(TOP)/ext/misc/decimal.c \
-#XX#  $(TOP)/ext/misc/eval.c \
-#XX#  $(TOP)/ext/misc/explain.c \
-#XX#  $(TOP)/ext/misc/fileio.c \
-#XX#  $(TOP)/ext/misc/fuzzer.c \
-#XX#  $(TOP)/ext/fts5/fts5_tcl.c \
-#XX#  $(TOP)/ext/fts5/fts5_test_mi.c \
-#XX#  $(TOP)/ext/fts5/fts5_test_tok.c \
-#XX#  $(TOP)/ext/misc/ieee754.c \
-#XX#  $(TOP)/ext/misc/mmapwarm.c \
-#XX#  $(TOP)/ext/misc/nextchar.c \
-#XX#  $(TOP)/ext/misc/normalize.c \
-#XX#  $(TOP)/ext/misc/percentile.c \
-#XX#  $(TOP)/ext/misc/prefixes.c \
-#XX#  $(TOP)/ext/misc/qpvtab.c \
-#XX#  $(TOP)/ext/misc/randomjson.c \
-#XX#  $(TOP)/ext/misc/regexp.c \
-#XX#  $(TOP)/ext/misc/remember.c \
-#XX#  $(TOP)/ext/misc/series.c \
-#XX#  $(TOP)/ext/misc/spellfix.c \
-#XX#  $(TOP)/ext/misc/stmtrand.c \
-#XX#  $(TOP)/ext/misc/totype.c \
-#XX#  $(TOP)/ext/misc/unionvtab.c \
-#XX#  $(TOP)/ext/misc/wholenumber.c \
-#XX#  $(TOP)/ext/misc/zipfile.c \
-#XX#  $(TOP)/ext/userauth/userauth.c \
-#XX#  $(TOP)/ext/rtree/test_rtreedoc.c
-#XX#
-#XX## Source code to the library files needed by the test fixture
-#XX##
-#XX#TESTSRC2 = \
-#XX#  $(TOP)/src/attach.c \
-#XX#  $(TOP)/src/backup.c \
-#XX#  $(TOP)/src/bitvec.c \
-#XX#  $(TOP)/src/btree.c \
-#XX#  $(TOP)/src/build.c \
-#XX#  $(TOP)/src/ctime.c \
-#XX#  $(TOP)/src/date.c \
-#XX#  $(TOP)/src/dbpage.c \
-#XX#  $(TOP)/src/dbstat.c \
-#XX#  $(TOP)/src/expr.c \
-#XX#  $(TOP)/src/func.c \
-#XX#  $(TOP)/src/global.c \
-#XX#  $(TOP)/src/insert.c \
-#XX#  $(TOP)/src/wal.c \
-#XX#  $(TOP)/src/main.c \
-#XX#  $(TOP)/src/mem5.c \
-#XX#  $(TOP)/src/os.c \
-#XX#  $(TOP)/src/os_kv.c \
-#XX#  $(TOP)/src/os_unix.c \
-#XX#  $(TOP)/src/os_win.c \
-#XX#  $(TOP)/src/pager.c \
-#XX#  $(TOP)/src/pragma.c \
-#XX#  $(TOP)/src/prepare.c \
-#XX#  $(TOP)/src/printf.c \
-#XX#  $(TOP)/src/random.c \
-#XX#  $(TOP)/src/pcache.c \
-#XX#  $(TOP)/src/pcache1.c \
-#XX#  $(TOP)/src/select.c \
-#XX#  $(TOP)/src/tokenize.c \
-#XX#  $(TOP)/src/treeview.c \
-#XX#  $(TOP)/src/utf.c \
-#XX#  $(TOP)/src/util.c \
-#XX#  $(TOP)/src/vdbeapi.c \
-#XX#  $(TOP)/src/vdbeaux.c \
-#XX#  $(TOP)/src/vdbe.c \
-#XX#  $(TOP)/src/vdbemem.c \
-#XX#  $(TOP)/src/vdbetrace.c \
-#XX#  $(TOP)/src/vdbevtab.c \
-#XX#  $(TOP)/src/where.c \
-#XX#  $(TOP)/src/wherecode.c \
-#XX#  $(TOP)/src/whereexpr.c \
-#XX#  $(TOP)/src/window.c \
-#XX#  parse.c \
-#XX#  $(TOP)/ext/fts3/fts3.c \
-#XX#  $(TOP)/ext/fts3/fts3_aux.c \
-#XX#  $(TOP)/ext/fts3/fts3_expr.c \
-#XX#  $(TOP)/ext/fts3/fts3_term.c \
-#XX#  $(TOP)/ext/fts3/fts3_tokenizer.c \
-#XX#  $(TOP)/ext/fts3/fts3_write.c \
-#XX#  $(TOP)/ext/async/sqlite3async.c \
-#XX#  $(TOP)/ext/session/sqlite3session.c \
-#XX#  $(TOP)/ext/misc/stmt.c \
-#XX#  fts5.c
-#XX#
-#XX## Header files used by all library source files.
-#XX##
-#XX#HDR = \
-#XX#   $(TOP)/src/btree.h \
-#XX#   $(TOP)/src/btreeInt.h \
-#XX#   $(TOP)/src/hash.h \
-#XX#   $(TOP)/src/hwtime.h \
-#XX#   keywordhash.h \
-#XX#   $(TOP)/src/msvc.h \
-#XX#   $(TOP)/src/mutex.h \
-#XX#   opcodes.h \
-#XX#   $(TOP)/src/os.h \
-#XX#   $(TOP)/src/os_common.h \
-#XX#   $(TOP)/src/os_setup.h \
-#XX#   $(TOP)/src/os_win.h \
-#XX#   $(TOP)/src/pager.h \
-#XX#   $(TOP)/src/pcache.h \
-#XX#   parse.h  \
-#XX#   $(TOP)/src/pragma.h \
-#XX#   sqlite3.h  \
-#XX#   $(TOP)/src/sqlite3ext.h \
-#XX#   $(TOP)/src/sqliteInt.h  \
-#XX#   $(TOP)/src/sqliteLimit.h \
-#XX#   $(TOP)/src/vdbe.h \
-#XX#   $(TOP)/src/vdbeInt.h \
-#XX#   $(TOP)/src/vxworks.h \
-#XX#   $(TOP)/src/whereInt.h \
-#XX#   sqlite_cfg.h
-#XX#
-#XX## Header files used by extensions
-#XX##
-#XX#EXTHDR += \
-#XX#  $(TOP)/ext/fts3/fts3.h \
-#XX#  $(TOP)/ext/fts3/fts3Int.h \
-#XX#  $(TOP)/ext/fts3/fts3_hash.h \
-#XX#  $(TOP)/ext/fts3/fts3_tokenizer.h
-#XX#EXTHDR += \
-#XX#  $(TOP)/ext/rtree/rtree.h \
-#XX#  $(TOP)/ext/rtree/geopoly.c
-#XX#EXTHDR += \
-#XX#  $(TOP)/ext/icu/sqliteicu.h
-#XX#EXTHDR += \
-#XX#  $(TOP)/ext/rtree/sqlite3rtree.h
-#XX#EXTHDR += \
-#XX#  $(TOP)/ext/userauth/sqlite3userauth.h
-#XX#
-#XX## executables needed for testing
-#XX##
-#XX#TESTPROGS = \
-#XX#  testfixture$(TEXE) \
-#XX#  sqlite3$(TEXE) \
-#XX#  sqlite3_analyzer$(TEXE) \
-#XX#  sqldiff$(TEXE) \
-#XX#  dbhash$(TEXE) \
-#XX#  sqltclsh$(TEXE)
-#XX#
-#XX## Databases containing fuzzer test cases
-#XX##
-#XX#FUZZDATA = \
-#XX#  $(TOP)/test/fuzzdata1.db \
-#XX#  $(TOP)/test/fuzzdata2.db \
-#XX#  $(TOP)/test/fuzzdata3.db \
-#XX#  $(TOP)/test/fuzzdata4.db \
-#XX#  $(TOP)/test/fuzzdata5.db \
-#XX#  $(TOP)/test/fuzzdata6.db \
-#XX#  $(TOP)/test/fuzzdata7.db \
-#XX#  $(TOP)/test/fuzzdata8.db
-#XX#
-#XX## Standard options to testfixture
-#XX##
-#XX#TESTOPTS = --verbose=file --output=test-out.txt
-#XX#
-#XX## Extra compiler options for various shell tools
-#XX##
-#XX#SHELL_OPT += -DSQLITE_DQS=0
-#XX#SHELL_OPT += -DSQLITE_ENABLE_FTS4
-#XX##SHELL_OPT += -DSQLITE_ENABLE_FTS5
-#XX#SHELL_OPT += -DSQLITE_ENABLE_RTREE
-#XX#SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
-#XX#SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#XX#SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
-#XX#SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
-#XX#SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
-#XX#SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
-#XX#SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
-#XX#SHELL_OPT += -DSQLITE_STRICT_SUBTYPE=1
-#XX#FUZZERSHELL_OPT =
-#XX#FUZZCHECK_OPT += -I$(TOP)/test
-#XX#FUZZCHECK_OPT += -I$(TOP)/ext/recover
-#XX#FUZZCHECK_OPT += \
-#XX#  -DSQLITE_OSS_FUZZ \
-#XX#  -DSQLITE_ENABLE_BYTECODE_VTAB \
-#XX#  -DSQLITE_ENABLE_DBPAGE_VTAB \
-#XX#  -DSQLITE_ENABLE_DBSTAT_VTAB \
-#XX#  -DSQLITE_ENABLE_BYTECODE_VTAB \
-#XX#  -DSQLITE_ENABLE_DESERIALIZE \
-#XX#  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
-#XX#  -DSQLITE_ENABLE_FTS3_PARENTHESIS \
-#XX#  -DSQLITE_ENABLE_FTS4 \
-#XX#  -DSQLITE_ENABLE_FTS5 \
-#XX#  -DSQLITE_ENABLE_GEOPOLY \
-#XX#  -DSQLITE_ENABLE_MATH_FUNCTIONS \
-#XX#  -DSQLITE_ENABLE_MEMSYS5 \
-#XX#  -DSQLITE_ENABLE_NORMALIZE \
-#XX#  -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
-#XX#  -DSQLITE_ENABLE_PREUPDATE_HOOK \
-#XX#  -DSQLITE_ENABLE_RTREE \
-#XX#  -DSQLITE_ENABLE_SESSION \
-#XX#  -DSQLITE_ENABLE_STMTVTAB \
-#XX#  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
-#XX#  -DSQLITE_ENABLE_STAT4 \
-#XX#  -DSQLITE_ENABLE_STMT_SCANSTATUS \
-#XX#  -DSQLITE_MAX_MEMORY=50000000 \
-#XX#  -DSQLITE_MAX_MMAP_SIZE=0 \
-#XX#  -DSQLITE_OMIT_LOAD_EXTENSION \
-#XX#  -DSQLITE_PRINTF_PRECISION_LIMIT=1000 \
-#XX#  -DSQLITE_PRIVATE="" \
-#XX#  -DSQLITE_STRICT_SUBTYPE=1 \
-#XX#  -DSQLITE_STATIC_RANDOMJSON
-#XX#
-#XX#FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
-#XX#FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
-#XX#FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
-#XX#FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
-#XX#FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
-#XX#FUZZCHECK_SRC += $(TOP)/test/vt02.c
-#XX#FUZZCHECK_SRC += $(TOP)/ext/misc/percentile.c
-#XX#FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
-#XX#DBFUZZ_OPT =
-#XX#ST_OPT = -DSQLITE_OS_KV_OPTIONAL
-#XX#
-#XX#
-#XX## In wasi-sdk builds, disable the CLI shell build in the "all" target.
-#XX#SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
-#XX#SQLITE3_SHELL_TARGET_1 =
-#XX#SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
-#XX#
+SRC = \
+  $(TOP)/src/alter.c \
+  $(TOP)/src/analyze.c \
+  $(TOP)/src/attach.c \
+  $(TOP)/src/auth.c \
+  $(TOP)/src/backup.c \
+  $(TOP)/src/bitvec.c \
+  $(TOP)/src/btmutex.c \
+  $(TOP)/src/btree.c \
+  $(TOP)/src/btree.h \
+  $(TOP)/src/btreeInt.h \
+  $(TOP)/src/build.c \
+  $(TOP)/src/callback.c \
+  $(TOP)/src/complete.c \
+  $(TOP)/src/ctime.c \
+  $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
+  $(TOP)/src/dbstat.c \
+  $(TOP)/src/delete.c \
+  $(TOP)/src/expr.c \
+  $(TOP)/src/fault.c \
+  $(TOP)/src/fkey.c \
+  $(TOP)/src/func.c \
+  $(TOP)/src/global.c \
+  $(TOP)/src/hash.c \
+  $(TOP)/src/hash.h \
+  $(TOP)/src/hwtime.h \
+  $(TOP)/src/insert.c \
+  $(TOP)/src/json.c \
+  $(TOP)/src/legacy.c \
+  $(TOP)/src/loadext.c \
+  $(TOP)/src/main.c \
+  $(TOP)/src/malloc.c \
+  $(TOP)/src/mem0.c \
+  $(TOP)/src/mem1.c \
+  $(TOP)/src/mem2.c \
+  $(TOP)/src/mem3.c \
+  $(TOP)/src/mem5.c \
+  $(TOP)/src/memdb.c \
+  $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
+  $(TOP)/src/mutex.c \
+  $(TOP)/src/mutex.h \
+  $(TOP)/src/mutex_noop.c \
+  $(TOP)/src/mutex_unix.c \
+  $(TOP)/src/mutex_w32.c \
+  $(TOP)/src/notify.c \
+  $(TOP)/src/os.c \
+  $(TOP)/src/os.h \
+  $(TOP)/src/os_common.h \
+  $(TOP)/src/os_setup.h \
+  $(TOP)/src/os_kv.c \
+  $(TOP)/src/os_unix.c \
+  $(TOP)/src/os_win.c \
+  $(TOP)/src/os_win.h \
+  $(TOP)/src/pager.c \
+  $(TOP)/src/pager.h \
+  $(TOP)/src/parse.y \
+  $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache.h \
+  $(TOP)/src/pcache1.c \
+  $(TOP)/src/pragma.c \
+  $(TOP)/src/pragma.h \
+  $(TOP)/src/prepare.c \
+  $(TOP)/src/printf.c \
+  $(TOP)/src/random.c \
+  $(TOP)/src/resolve.c \
+  $(TOP)/src/rowset.c \
+  $(TOP)/src/select.c \
+  $(TOP)/src/status.c \
+  $(TOP)/src/shell.c.in \
+  $(TOP)/src/sqlite.h.in \
+  $(TOP)/src/sqlite3ext.h \
+  $(TOP)/src/sqliteInt.h \
+  $(TOP)/src/sqliteLimit.h \
+  $(TOP)/src/table.c \
+  $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/threads.c \
+  $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
+  $(TOP)/src/trigger.c \
+  $(TOP)/src/utf.c \
+  $(TOP)/src/update.c \
+  $(TOP)/src/upsert.c \
+  $(TOP)/src/util.c \
+  $(TOP)/src/vacuum.c \
+  $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbe.h \
+  $(TOP)/src/vdbeapi.c \
+  $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbeblob.c \
+  $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbesort.c \
+  $(TOP)/src/vdbetrace.c \
+  $(TOP)/src/vdbevtab.c \
+  $(TOP)/src/vdbeInt.h \
+  $(TOP)/src/vtab.c \
+  $(TOP)/src/vxworks.h \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/wal.h \
+  $(TOP)/src/walker.c \
+  $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
+  $(TOP)/src/whereInt.h \
+  $(TOP)/src/window.c
+
+# Source code for extensions
+#
+SRC += \
+  $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_aux.c \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_hash.c \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_icu.c \
+  $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_snippet.c \
+  $(TOP)/ext/fts3/fts3_tokenizer.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.c \
+  $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_tokenize_vtab.c \
+  $(TOP)/ext/fts3/fts3_unicode.c \
+  $(TOP)/ext/fts3/fts3_unicode2.c \
+  $(TOP)/ext/fts3/fts3_write.c
+SRC += \
+  $(TOP)/ext/icu/sqliteicu.h \
+  $(TOP)/ext/icu/icu.c
+SRC += \
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/rtree.c \
+  $(TOP)/ext/rtree/geopoly.c
+SRC += \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/sqlite3session.h
+SRC += \
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/userauth/sqlite3userauth.h
+SRC += \
+  $(TOP)/ext/rbu/sqlite3rbu.h \
+  $(TOP)/ext/rbu/sqlite3rbu.c
+SRC += \
+  $(TOP)/ext/misc/stmt.c
+
+# Generated source code files
+#
+SRC += \
+  keywordhash.h \
+  opcodes.c \
+  opcodes.h \
+  parse.c \
+  parse.h \
+  sqlite_cfg.h \
+  shell.c \
+  sqlite3.h
+
+# Source code to the test files.
+#
+TESTSRC = \
+  $(TOP)/src/test1.c \
+  $(TOP)/src/test2.c \
+  $(TOP)/src/test3.c \
+  $(TOP)/src/test4.c \
+  $(TOP)/src/test5.c \
+  $(TOP)/src/test6.c \
+  $(TOP)/src/test8.c \
+  $(TOP)/src/test9.c \
+  $(TOP)/src/test_autoext.c \
+  $(TOP)/src/test_async.c \
+  $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_bestindex.c \
+  $(TOP)/src/test_blob.c \
+  $(TOP)/src/test_btree.c \
+  $(TOP)/src/test_config.c \
+  $(TOP)/src/test_delete.c \
+  $(TOP)/src/test_demovfs.c \
+  $(TOP)/src/test_devsym.c \
+  $(TOP)/src/test_fs.c \
+  $(TOP)/src/test_func.c \
+  $(TOP)/src/test_hexio.c \
+  $(TOP)/src/test_init.c \
+  $(TOP)/src/test_intarray.c \
+  $(TOP)/src/test_journal.c \
+  $(TOP)/src/test_malloc.c \
+  $(TOP)/src/test_md5.c \
+  $(TOP)/src/test_multiplex.c \
+  $(TOP)/src/test_mutex.c \
+  $(TOP)/src/test_onefile.c \
+  $(TOP)/src/test_osinst.c \
+  $(TOP)/src/test_pcache.c \
+  $(TOP)/src/test_quota.c \
+  $(TOP)/src/test_rtree.c \
+  $(TOP)/src/test_schema.c \
+  $(TOP)/src/test_superlock.c \
+  $(TOP)/src/test_syscall.c \
+  $(TOP)/src/test_tclsh.c \
+  $(TOP)/src/test_tclvar.c \
+  $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_vdbecov.c \
+  $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_windirent.c \
+  $(TOP)/src/test_window.c \
+  $(TOP)/src/test_wsd.c       \
+  $(TOP)/ext/fts3/fts3_term.c \
+  $(TOP)/ext/fts3/fts3_test.c  \
+  $(TOP)/ext/session/test_session.c \
+  $(TOP)/ext/recover/sqlite3recover.c \
+  $(TOP)/ext/recover/dbdata.c \
+  $(TOP)/ext/recover/test_recover.c \
+  $(TOP)/ext/intck/test_intck.c  \
+  $(TOP)/ext/intck/sqlite3intck.c \
+  $(TOP)/ext/rbu/test_rbu.c
+
+# Statically linked extensions
+#
+TESTSRC += \
+  $(TOP)/ext/expert/sqlite3expert.c \
+  $(TOP)/ext/expert/test_expert.c \
+  $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/appendvfs.c \
+  $(TOP)/ext/misc/basexx.c \
+  $(TOP)/ext/misc/carray.c \
+  $(TOP)/ext/misc/cksumvfs.c \
+  $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/csv.c \
+  $(TOP)/ext/misc/decimal.c \
+  $(TOP)/ext/misc/eval.c \
+  $(TOP)/ext/misc/explain.c \
+  $(TOP)/ext/misc/fileio.c \
+  $(TOP)/ext/misc/fuzzer.c \
+  $(TOP)/ext/fts5/fts5_tcl.c \
+  $(TOP)/ext/fts5/fts5_test_mi.c \
+  $(TOP)/ext/fts5/fts5_test_tok.c \
+  $(TOP)/ext/misc/ieee754.c \
+  $(TOP)/ext/misc/mmapwarm.c \
+  $(TOP)/ext/misc/nextchar.c \
+  $(TOP)/ext/misc/normalize.c \
+  $(TOP)/ext/misc/percentile.c \
+  $(TOP)/ext/misc/prefixes.c \
+  $(TOP)/ext/misc/qpvtab.c \
+  $(TOP)/ext/misc/randomjson.c \
+  $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/remember.c \
+  $(TOP)/ext/misc/series.c \
+  $(TOP)/ext/misc/spellfix.c \
+  $(TOP)/ext/misc/stmtrand.c \
+  $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/unionvtab.c \
+  $(TOP)/ext/misc/wholenumber.c \
+  $(TOP)/ext/misc/zipfile.c \
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/rtree/test_rtreedoc.c
+
+# Source code to the library files needed by the test fixture
+#
+TESTSRC2 = \
+  $(TOP)/src/attach.c \
+  $(TOP)/src/backup.c \
+  $(TOP)/src/bitvec.c \
+  $(TOP)/src/btree.c \
+  $(TOP)/src/build.c \
+  $(TOP)/src/ctime.c \
+  $(TOP)/src/date.c \
+  $(TOP)/src/dbpage.c \
+  $(TOP)/src/dbstat.c \
+  $(TOP)/src/expr.c \
+  $(TOP)/src/func.c \
+  $(TOP)/src/global.c \
+  $(TOP)/src/insert.c \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/main.c \
+  $(TOP)/src/mem5.c \
+  $(TOP)/src/os.c \
+  $(TOP)/src/os_kv.c \
+  $(TOP)/src/os_unix.c \
+  $(TOP)/src/os_win.c \
+  $(TOP)/src/pager.c \
+  $(TOP)/src/pragma.c \
+  $(TOP)/src/prepare.c \
+  $(TOP)/src/printf.c \
+  $(TOP)/src/random.c \
+  $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache1.c \
+  $(TOP)/src/select.c \
+  $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
+  $(TOP)/src/utf.c \
+  $(TOP)/src/util.c \
+  $(TOP)/src/vdbeapi.c \
+  $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
+  $(TOP)/src/vdbevtab.c \
+  $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
+  $(TOP)/src/window.c \
+  parse.c \
+  $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3_aux.c \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_term.c \
+  $(TOP)/ext/fts3/fts3_tokenizer.c \
+  $(TOP)/ext/fts3/fts3_write.c \
+  $(TOP)/ext/async/sqlite3async.c \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/misc/stmt.c \
+  fts5.c
+
+# Header files used by all library source files.
+#
+HDR = \
+   $(TOP)/src/btree.h \
+   $(TOP)/src/btreeInt.h \
+   $(TOP)/src/hash.h \
+   $(TOP)/src/hwtime.h \
+   keywordhash.h \
+   $(TOP)/src/msvc.h \
+   $(TOP)/src/mutex.h \
+   opcodes.h \
+   $(TOP)/src/os.h \
+   $(TOP)/src/os_common.h \
+   $(TOP)/src/os_setup.h \
+   $(TOP)/src/os_win.h \
+   $(TOP)/src/pager.h \
+   $(TOP)/src/pcache.h \
+   parse.h  \
+   $(TOP)/src/pragma.h \
+   sqlite3.h  \
+   $(TOP)/src/sqlite3ext.h \
+   $(TOP)/src/sqliteInt.h  \
+   $(TOP)/src/sqliteLimit.h \
+   $(TOP)/src/vdbe.h \
+   $(TOP)/src/vdbeInt.h \
+   $(TOP)/src/vxworks.h \
+   $(TOP)/src/whereInt.h \
+   sqlite_cfg.h
+
+# Header files used by extensions
+#
+EXTHDR += \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.h
+EXTHDR += \
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/geopoly.c
+EXTHDR += \
+  $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/rtree/sqlite3rtree.h
+EXTHDR += \
+  $(TOP)/ext/userauth/sqlite3userauth.h
+
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture$(TEXE) \
+  sqlite3$(TEXE) \
+  sqlite3_analyzer$(TEXE) \
+  sqldiff$(TEXE) \
+  dbhash$(TEXE) \
+  sqltclsh$(TEXE)
+
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)/test/fuzzdata1.db \
+  $(TOP)/test/fuzzdata2.db \
+  $(TOP)/test/fuzzdata3.db \
+  $(TOP)/test/fuzzdata4.db \
+  $(TOP)/test/fuzzdata5.db \
+  $(TOP)/test/fuzzdata6.db \
+  $(TOP)/test/fuzzdata7.db \
+  $(TOP)/test/fuzzdata8.db
+
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
+
+# Extra compiler options for various shell tools
+#
+SHELL_OPT += -DSQLITE_DQS=0
+SHELL_OPT += -DSQLITE_ENABLE_FTS4
+#SHELL_OPT += -DSQLITE_ENABLE_FTS5
+SHELL_OPT += -DSQLITE_ENABLE_RTREE
+SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+SHELL_OPT += -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+SHELL_OPT += -DSQLITE_ENABLE_STMTVTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
+SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+SHELL_OPT += -DSQLITE_STRICT_SUBTYPE=1
+FUZZERSHELL_OPT =
+FUZZCHECK_OPT += -I$(TOP)/test
+FUZZCHECK_OPT += -I$(TOP)/ext/recover
+FUZZCHECK_OPT += \
+  -DSQLITE_OSS_FUZZ \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_DESERIALIZE \
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
+  -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5 \
+  -DSQLITE_ENABLE_GEOPOLY \
+  -DSQLITE_ENABLE_MATH_FUNCTIONS \
+  -DSQLITE_ENABLE_MEMSYS5 \
+  -DSQLITE_ENABLE_NORMALIZE \
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_ENABLE_PREUPDATE_HOOK \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_SESSION \
+  -DSQLITE_ENABLE_STMTVTAB \
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
+  -DSQLITE_ENABLE_STAT4 \
+  -DSQLITE_ENABLE_STMT_SCANSTATUS \
+  -DSQLITE_MAX_MEMORY=50000000 \
+  -DSQLITE_MAX_MMAP_SIZE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_PRINTF_PRECISION_LIMIT=1000 \
+  -DSQLITE_PRIVATE="" \
+  -DSQLITE_STRICT_SUBTYPE=1 \
+  -DSQLITE_STATIC_RANDOMJSON
+
+FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
+FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
+FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
+FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
+FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
+FUZZCHECK_SRC += $(TOP)/test/vt02.c
+FUZZCHECK_SRC += $(TOP)/ext/misc/percentile.c
+FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
+DBFUZZ_OPT =
+ST_OPT = -DSQLITE_OS_KV_OPTIONAL
+
+
+# In wasi-sdk builds, disable the CLI shell build in the "all" target.
+SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
+SQLITE3_SHELL_TARGET_1 =
+SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
+
+SQLITE3_O = $(TOP)/sqlite3.o
+
 #XX## Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
 #XX## libtclsqlite3.la or an empty value.
 #XX#libtclsqlite3.la_0 =
@@ -1643,42 +1649,42 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 #XX##
 #XX#tclextension-list: 
 #XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
-#XX#
-#XX#
-#XX## Remove build products sufficient so that subsequent makes will recompile
-#XX## everything from scratch.  Do not remove:
-#XX##
-#XX##   *   test results and test logs
-#XX##   *   output from ./configure
-#XX##
-#XX#tidy:
-#XX#	rm -f *.lo *.la *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
-#XX#	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
-#XX#	rm -rf .libs .deps tsrc .target_source
-#XX#	rm -f lemon$(BEXE) sqlite*.tar.gz
-#XX#	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
-#XX#	rm -f parse.* fts5parse.*
-#XX#	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
-#XX#	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
-#XX#	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
-#XX#	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
-#XX#	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
-#XX#	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
-#XX#	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
-#XX#	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
-#XX#	rm -f threadtest5$(TEXE)
-#XX#	rm -f src-verify has_tclsh*
-#XX#
-#XX## Removes build products and test logs.  Retains ./configure outputs.
-#XX##
-#XX#clean:	tidy
-#XX#	rm -rf omittest* testrunner* testdir*
-#XX#
-#XX## Clean up everything.  No exceptions.
-#XX##
-#XX#distclean:	clean
-#XX#	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
-#XX#
+
+
+# Remove build products sufficient so that subsequent makes will recompile
+# everything from scratch.  Do not remove:
+#
+#   *   test results and test logs
+#   *   output from ./configure
+#
+tidy:
+	rm -f *.lo *.la *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
+	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -rf .libs .deps tsrc .target_source
+	rm -f lemon$(BEXE) sqlite*.tar.gz
+	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
+	rm -f parse.* fts5parse.*
+	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
+	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
+	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
+	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
+	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
+	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
+	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
+	rm -f threadtest5$(TEXE)
+	rm -f src-verify has_tclsh*
+
+# Removes build products and test logs.  Retains ./configure outputs.
+#
+clean:	tidy
+	rm -rf omittest* testrunner* testdir*
+
+# Clean up everything.  No exceptions.
+#
+distclean:	clean
+	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
+
 #XX##
 #XX## Windows section
 #XX##

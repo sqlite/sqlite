@@ -408,23 +408,29 @@ proc hwaci-looks-like-windows {{key host}} {
 # host and target are Windows-esque (Cygwin, MinGW, MSys). If the
 # build host is then BUILD_EXEEXT is [define]'d to ".exe", else "". If
 # the build target is then TARGET_EXEEXT is [define]'d to ".exe", else
-# "".
+# "". It also sets BUILD_OBJEXT and TARGET_OBJEXT to the conventional
+# file extension for object files: .obj or .o.
 proc hwaci-check-exeext {} {
   msg-checking "Build host is Windows-esque? "
   if {[hwaci-looks-like-windows host]} {
     define BUILD_EXEEXT ".exe"
+    define BUILD_OBJEXT ".obj"
     msg-result yes
   } else {
     define BUILD_EXEEXT ""
+    define BUILD_OBJEXT ".o"
     msg-result no
   }
 
   msg-checking "Build target is Windows-esque? "
   if {[hwaci-looks-like-windows target]} {
     define TARGET_EXEEXT ".exe"
+    define TARGET_OBJEXT ".obj"
     msg-result yes
   } else {
     define TARGET_EXEEXT ""
+    define TARGET_OBJEXT ".o"
+
     msg-result no
   }
 }

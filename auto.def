@@ -11,17 +11,24 @@ if {[get-define host] ne [get-define build]} {
 }
 define cross_compiling ${cross_compiling}
 
-if {0 && $cross_compiling} {
+if {$cross_compiling} {
   # gcc's cross-compiler is named platform-os-vendor-gcc instead of
   # platform-os-vendor-cc. Checking for cc here will find the CC which
   # was already found via (use cc).  Checking for gcc here would be
   # unportable - the client may well have a different cross-compiler.
-  define-push {GCC LD AR} {
-    cc-check-tools gcc ld ar
-    define BIN_host_GCC [get-define GCC]
+  define-push {LD AR} {
+    cc-check-tools ld ar
+    #define BIN_host_GCC [get-define GCC]
     define BIN_host_LD [get-define LD]
     define BIN_host_AR [get-define AR]
   }
+  #define BIN_host_CC [get-define CC]
+}
+#define CC [get-define CC_FOR_BUILD]
+if {![cc-path-progs ld ar]} {
+  # ^^^^ not cc-check-tools because that one resolves cross-compile
+  # binaries when --host=... is set.
+  user-error "Missing required binary"
 }
 
 ########################################################################
@@ -82,7 +89,7 @@ set srcdir $autosetup(srcdir)
 #puts "srcdir = $srcdir"
 set VERSION [readfile $autosetup(srcdir)/VERSION]
 puts "VERSION = $VERSION"
-define PACKAGE_VERSION $VERSION
+define VERSION $VERSION
 #puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #puts "with-debug? = [opt-val with-debug]"
 
