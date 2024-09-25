@@ -486,7 +486,7 @@ static int lookupName(
           */
           if( cntTab==0
            || (cntTab==1
-               && ALWAYS(pMatch!=0)
+               && pMatch!=0
                && ALWAYS(pMatch->pSTab!=0)
                && (pMatch->pSTab->tabFlags & TF_Ephemeral)!=0
                && (pTab->tabFlags & TF_Ephemeral)==0)
