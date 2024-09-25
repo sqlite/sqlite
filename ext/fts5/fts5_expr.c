@@ -3241,7 +3241,8 @@ int sqlite3Fts5ExprInstToken(
   pTerm = &pPhrase->aTerm[iToken];
   if( pExpr->pConfig->bTokendata || pTerm->bPrefix ){
     rc = sqlite3Fts5IterToken(
-        pTerm->pIter, iRowid, iCol, iOff+iToken, ppOut, pnOut
+        pTerm->pIter, pTerm->pTerm, pTerm->nQueryTerm, 
+        iRowid, iCol, iOff+iToken, ppOut, pnOut
     );
   }else{
     *ppOut = pTerm->pTerm;
