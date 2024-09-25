@@ -6,21 +6,21 @@ set DUMP_DEFINES_FILE defines.list
 options {
   with-tclsh:PATHNAME  =>  {Full pathname of tclsh to use}
   with-tcl:DIR         =>  {Directory containing tclConfig.sh}
-  tcl=1                =>  {building accessory programs that require TCL-dev}
-  test-status=0        =>  {status of tests}
+  disable-tcl=0        =>  {building accessory programs that require TCL-dev}
+  enable-test-status=0 =>  {status of tests}
   with-wasi-sdk:=/opt/wasi-sdk  =>  {Path to the wasi-dsk}
-  threadsafe=1         =>  mutexing
-  releasemode=0        =>  {libtool link to release mode}
-  tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
-  editline=0           =>  {BSD editline support}
-  readline=1       =>  {readline support}
+  disable-threadsafe=0    =>  mutexing
+  enable-releasemode=0   =>  {libtool link to release mode}
+  enable-tempstore=0          =>  {an in-ram database for temporary tables never,no,yes,always}
+  enable-editline=0    =>  {BSD editline support}
+  disable-readline=0       =>  {readline support}
   with-readline-lib  =>  {readline library}
   with-readline-inc  =>  {readline include paths}
   with-linenoise:DIR   => {}
-  amalgamation=1   =>  {Disable the amalgamation and instead build all files separately}
-  load-extension=1  =>  {Disable loading of external extensions}
-  math=1           =>  {math functions}
-  json=1           =>  {JSON functions}
+  disable-amalgamation=0   =>  {Disable the amalgamation and instead build all files separately}
+  disable-load-extension=0  =>  {Disable loading of external extensions}
+  disable-math=0           =>  {math functions}
+  disable-json=0           =>  {JSON functions}
   enable-all=0            =>  {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   enable-memsys5=0        =>  MEMSYS5
   enable-memsys3=0        =>  MEMSYS3
@@ -404,9 +404,10 @@ if {0} {
 ##########
 # Do we want to support release
 #
-if {[opt-bool releasemode]} {
+if {[opt-bool enable-releasemode]} {
+  set enable_releasemode 1
 } else {
-  set enable_releasemode no
+  set enable_releasemode 0
 }
 
 if {0} {
