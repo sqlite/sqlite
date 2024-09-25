@@ -15,6 +15,10 @@
 #
 TOP = @abs_top_srcdir@
 
+# Just testing expansions...
+# LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
+# LDFLAGS_MATH = @LDFLAGS_MATH@
+
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #

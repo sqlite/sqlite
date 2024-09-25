@@ -434,22 +434,11 @@ if {0} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
-hwaci-if-opt-truthy all {
-  hwaci-opt-set fts4
-  hwaci-opt-set fts5
-  hwaci-opt-set geopoly
-  hwaci-opt-set rtree
-  hwaci-opt-set session
-}
-#{
-#  hwaci-if-opt-truthy geopoly {}
-#}
-
 
 ##########
 # Do we want to support multithreaded use of sqlite
 #
-msg-checking "Checking whether to support threadsafe operation... "
+msg-checking "Support threadsafe operation? "
 hwaci-if-opt-truthy threadsafe {
   msg-result yes
   add-feature-flag -DSQLITE_THREADSAFE=1
@@ -735,38 +724,6 @@ if {0} {
 }
 
 if {0} {
-  #########
-  # See whether we should enable Full Text Search extensions
-  if {[opt-bool fts3]} {
-  }
-  msg-checking "Checking whether to support FTS3..."
-  # XXX if test "${enable_fts3}" = "yes" ; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-  if {[opt-bool fts4]} {
-  }
-  msg-checking "Checking whether to support FTS4..."
-  # XXX if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
-  msg-result "yes"
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS4"
-  cc-check-function-in-lib log m
-  # XXX else
-  msg-result "no"
-  # XXX fi
-  if {[opt-bool fts5]} {
-  }
-  msg-checking "Checking whether to support FTS5..."
-  # XXX if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
-  msg-result "yes"
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS5"
-  cc-check-function-in-lib log m
-  msg-result "no"
-}
-
-if {0} {
   # is this still relevant?
 
   #########
@@ -826,16 +783,29 @@ hwaci-if-opt-truthy gcov {
   msg-result no
 }
 
+proc affirm-have-math {} {
+  if {![cc-check-function-in-lib log m]} {
+    user-error "Missing required math APIs"
+  }
+  define LDFLAGS_MATH [get-define lib_log ""]
+}
+
 ########################################################################
 # Handle various SQLITE_ENABLE_... feature flags.
 foreach {boolFlag featureFlag ifSetEvalThis} {
-  fts4         -DSQLITE_ENABLE_FTS4    {cc-check-function-in-lib log m}
-  fts5         -DSQLITE_ENABLE_FTS5    {cc-check-function-in-lib log m}
+  all         {} {
+    hwaci-opt-set fts4
+    hwaci-opt-set fts5
+    hwaci-opt-set geopoly
+    hwaci-opt-set rtree
+    hwaci-opt-set session
+  }
+  fts4         -DSQLITE_ENABLE_FTS4    {affirm-have-math}
+  fts5         -DSQLITE_ENABLE_FTS5    {affirm-have-math}
   geopoly      -DSQLITE_ENABLE_GEOPOLY {hwaci-opt-set rtree}
   rtree        -DSQLITE_ENABLE_RTREE   {}
   session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK} {}
   update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT {}
-  memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
   memsys3      {} {
     if {[opt-bool memsys5]} {
       msg-result "NOT enabling memsys3 because memsys5 is enabled."
@@ -843,6 +813,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
+  memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
 } {
   if {[hwaci-opt-truthy $boolFlag]} {
     add-feature-flag $featureFlag
@@ -901,7 +872,9 @@ unset oFF
 hwaci-if-opt-truthy dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
-  make-config-header $DUMP_DEFINES_FILE -bare {OPT_FEATURE_FLAGS SQLITE_OS_*} -auto {*}
+  make-config-header $DUMP_DEFINES_FILE \
+    -bare {OPT_FEATURE_FLAGS SQLITE_OS_* LDFLAGS_* USE_*} \
+    -auto {*}
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.
 }
