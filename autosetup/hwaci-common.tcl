@@ -145,6 +145,29 @@ proc hwaci-if-opt-truthy {flag then {else {}}} {
 }
 
 ########################################################################
+# If [hwaci-opt-truthy $flag] then [define $def $iftrue] else
+# [define $def $iffalse]. Output [msg-checking $msg] and a
+# [msg-results ...] which corresponds to the result. Returns 1
+# if the opt-truthy check passes, else 0.
+proc hwaci-define-if-opt-truthy {flag def msg {iftrue 1} {iffalse 0}} {
+  msg-checking "$msg "
+  set rc 0
+  if {[hwaci-opt-truthy $flag]} {
+    define $def $iftrue
+    set rc 1
+  } else {
+    define $def $iffalse
+  }
+  set msg [get-define $def]
+  switch -- $msg {
+    0 { set msg no }
+    1 { set msg yes }
+  }
+  msg-result $msg
+  return $rc
+}
+
+########################################################################
 # Args: [-v] optName defName {descr {}}
 #
 # Checks [hwaci-opt-truthy $optName] and does [define $defName X] where X is 0

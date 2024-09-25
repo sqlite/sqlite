@@ -70,6 +70,7 @@ options {
   with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always}
   editline=0           => {BSD editline support}
   readline=0           => {readline support}
+  largefile=1          => {Disable large file support}
   with-readline-lib    => {readline library}
   with-readline-inc    => {readline include paths}
   with-linenoise:DIR   => {}
@@ -194,41 +195,27 @@ if {"" eq [hwaci-bin-define install]} {
 }
 
 #########
-# Enable large file support (if special flags are necessary)
-cc-check-lfs
-
-#########
-# Check for needed/wanted data types
-cc-check-types int8_t int16_t int32_t int64_t intptr_t \
-  uint8_t uint16_t uint32_t uint64_t uintptr_t
-
-#########
-# Figure out whether or not we have these functions
-cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
-  malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
-
-#########
-# Check for needed/wanted headers
-cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
-if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
-  define HAVE_ZLIB 1
-  define LDFLAGS_ZLIB -lz
-} else {
-  define HAVE_ZLIB 0
-  define LDFLAGS_ZLIB ""
-}
-
-msg-checking "Debug build? "
-hwaci-if-opt-truthy with-debug {
-  msg-result yes
-} {
-  msg-result "no. Use --with-debug to enable."
-}
+# Locate a compiler for the build machine.  This compiler should
+# generate command-line programs that run on the build machine.
+#
+# XXX if test x"$cross_compiling" = xno; then
+# XXX BUILD_CC=$CC
+# XXX BUILD_CFLAGS=$CFLAGS
+# XXX else
+# XXX if test "${BUILD_CC+set}" != set; then
+# XXX AC_CHECK_PROGS BUILD_CC gcc cc cl
+# XXX fi
+# XXX if test "${BUILD_CFLAGS+set}" != set; then
+# XXX BUILD_CFLAGS="-g"
+# XXX fi
+# XXX fi
+# XXX AC_SUBST BUILD_CC
 
 ##########
 # Handle --with-wasi-sdk=DIR
 #
-# This must be early because it changes the toolchain.
+# This must be early because it may change the toolchain and several
+# config options.
 #
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
@@ -243,7 +230,7 @@ if {1} {
     if {![file exists $wasiSdkDir/bin/clang]} {
       user-error "--with-wasi-sdk=${wasiSdkDir} directory does not contain bin/clang"
     }
-    msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
+    msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL, threading"
     define HAVE_WASI_SDK 1
     define WASI_SDK_DIR $wasiSdkDir
     hwaci-opt-set tcl 0
@@ -271,13 +258,40 @@ if {1} {
     # we disable the DLL build...
     #  set enable_shared no
   }
-#  unset wasiSdkDir
+  unset wasiSdkDir
 }; # --wasi-sdk-dir
 
 #########
-# By default, we use the amalgamation (this may be changed below...)
-#
-# XXX USE_AMALGAMATION=1
+# Enable large file support (if special flags are necessary)
+cc-check-lfs
+
+#########
+# Check for needed/wanted data types
+cc-check-types int8_t int16_t int32_t int64_t intptr_t \
+  uint8_t uint16_t uint32_t uint64_t uintptr_t
+
+cc-check-functions gmtime_r isnan localtime_r localtime_s \
+  malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+
+cc-check-function-in-lib fdatasync rt
+define LDFLAGS_FDATASYNC [get-define lib_fdatasync]
+undefine lib_fdatasync
+
+#########
+# Check for needed/wanted headers
+cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
+  define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
+  define LDFLAGS_ZLIB -lz
+} else {
+  define HAVE_ZLIB 0
+  define LDFLAGS_ZLIB ""
+}
+
+hwaci-define-if-opt-truthy with-debug SQLITE_DEBUG "Debug build?"
+hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+hwaci-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
+hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS "test-runner flags?" {--status} {}
 
 if {0} {
   #########
@@ -400,53 +414,21 @@ if {0} {
   # XXX fi
 }
 
-if {0} {
-  #########
-  # Set up options for running tests.
-  #
-  if {[opt-bool test-status]} {
-    define TSTRNNR_OPTS {--status}
-  } else {
-    define TSTRNNR_OPTS {}
-  }
-  # XXX if test $use_vt100 != no; then
-  # XXX TSTRNNR_OPTS=--status
-  # XXX else
-  # XXX TSTRNNR_OPTS=
-  # XXX fi
-  # XXX AC_SUBST TSTRNNR_OPTS
-}
 
-#########
-# Locate a compiler for the build machine.  This compiler should
-# generate command-line programs that run on the build machine.
-#
-# XXX if test x"$cross_compiling" = xno; then
-# XXX BUILD_CC=$CC
-# XXX BUILD_CFLAGS=$CFLAGS
-# XXX else
-# XXX if test "${BUILD_CC+set}" != set; then
-# XXX AC_CHECK_PROGS BUILD_CC gcc cc cl
-# XXX fi
-# XXX if test "${BUILD_CFLAGS+set}" != set; then
-# XXX BUILD_CFLAGS="-g"
-# XXX fi
-# XXX fi
-# XXX AC_SUBST BUILD_CC
-
-
-##########
-# Do we want to support multithreaded use of sqlite
-#
 msg-checking "Support threadsafe operation? "
 hwaci-if-opt-truthy threadsafe {
   msg-result yes
   add-feature-flag -DSQLITE_THREADSAFE=1
-  cc-check-function-in-lib pthread_create pthread
-  cc-check-function-in-lib pthread_mutexattr_init pthread
+  if {![cc-check-function-in-lib pthread_create pthread]
+      || ![cc-check-function-in-lib pthread_mutexattr_init pthread]} {
+    user-error "Missing required pthread bits"
+  }
+  define LDFLAGS_PTHREAD [get-define lib_pthread_create]
+  undefine lib_pthread_create
 } {
   msg-result no
   add-feature-flag -DSQLITE_THREADSAFE=0
+  define LDFLAGS_PTHREAD ""
 }
 
 ##########
@@ -619,57 +601,10 @@ if {0} {
   # XXX AC_SUBST TARGET_HAVE_LINENOISE
 }
 
-if {0} {
-  ##########
-  # Figure out what C libraries are required to compile programs
-  # that use "fdatasync()" function.
-  #
-  cc-check-function-in-lib fdatasync rt
-}
-
-if {0} {
-  #########
-  # check for debug enabled
-  if {[opt-bool debug]} {
-  }
-  msg-checking "Checking build type..."
-  # XXX if test "${enable_debug}" = "yes" ; then
-  # XXX TARGET_DEBUG="-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall"
-  msg-result "debug"
-  # XXX else
-  # XXX TARGET_DEBUG="-DNDEBUG"
-  msg-result "release"
-  # XXX fi
-  # XXX AC_SUBST TARGET_DEBUG
-}
-
-if {0} {
-  #########
-  # See whether we should use the amalgamation to build
-
-  if {![opt-bool amalgamation]} {
-  }
-  # XXX if test "${enable_amalgamation}" = "no" ; then
-  # XXX USE_AMALGAMATION=0
-  # XXX fi
-  # XXX AC_SUBST USE_AMALGAMATION
-}
-
-if {0} {
-  #########
-  # Look for zlib.  Only needed by extensions and by the sqlite3.exe shell
-  cc-check-includes zlib.h
-  if {[cc-check-function-in-lib deflate z]} {
-    define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
-  } else {
-    define HAVE_ZLIB 0; # HAVE_ZLIB=""
-  }
-  # XXX AC_SUBST HAVE_ZLIB
-}
-
 hwaci-if-opt-truthy load-extension {
   if {[cc-check-function-in-lib dlopen dl]} {
     define LDFLAGS_DLOPEN [get-define lib_dlopen]
+    undefine lib_dlopen
   } else {
     user-error "dlopen() not found. Use --disable-load-extension to bypass this check."
   }
@@ -697,30 +632,6 @@ hwaci-if-opt-truthy json {
 } {
   add-feature-flag {-DSQLITE_OMIT_JSON}
   msg-result "Disabling JSON SQL functions"
-}
-
-if {0} {
-  ##########
-  # Do we want to support memsys3 and/or memsys5
-  #
-  if {[opt-bool memsys5]} {
-  }
-  msg-checking "Checking whether to support MEMSYS5..."
-  # XXX if test "${enable_memsys5}" = "yes"; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS5"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
-  if {[opt-bool memsys3]} {
-  }
-  msg-checking "Checking whether to support MEMSYS3..."
-  # XXX if test "${enable_memsys3}" = "yes" -a "${enable_memsys5}" = "no"; then
-  # XXX OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_MEMSYS3"
-  msg-result "yes"
-  # XXX else
-  msg-result "no"
-  # XXX fi
 }
 
 if {0} {
@@ -772,15 +683,6 @@ if {0} {
   # XXX esac
   # XXX done
   # XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
-}
-
-msg-checking "Enable gcov? "
-hwaci-if-opt-truthy gcov {
-  define USE_GCOV 1
-  msg-result yes
-} {
-  define USE_GCOV 0
-  msg-result no
 }
 
 proc affirm-have-math {} {
@@ -873,7 +775,7 @@ hwaci-if-opt-truthy dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
   make-config-header $DUMP_DEFINES_FILE \
-    -bare {OPT_FEATURE_FLAGS SQLITE_OS_* LDFLAGS_* USE_*} \
+    -bare {OPT_FEATURE_FLAGS SQLITE_OS* SQLITE_DEBUG LDFLAGS_* USE_*} \
     -auto {*}
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.
