@@ -140,20 +140,14 @@ proc add-feature-flag {flag} {
 
 ########################################################################
 # Force-set autosetup option $flag to $val.
-#
-# BUG: dies with "missing value to go with key, which indicates an arg
-# count error to [dict exists]. Why it does that is a mystery, though.
-proc opt-bool-set {flag {val 1}} {
+proc opt-set {flag {val 1}} {
   global autosetup
-  #puts "DEBUG: opt-bool-set $flag $val. DICT=<<$::autosetup(options)>>"
-  if {![dict exists $::autosetup(options) $flag]} {
+  if {$flag ni $::autosetup(options)} {
     # We have to add this to autosetup(options) or else future calls
     # to [opt-bool $flag] will fail validation of $flag.
-    dict set ::autosetup(options) $flag {}
+    lappend ::autosetup(options) $flag
   }
   dict set ::autosetup(optset) $flag $val
-  #puts "DEBUG: opt-bool-set $flag $val = [opt-bool $flag]"
-  #puts "DEBUG: opt-bool-set $flag $val = [dict get $::autosetup(optset) $flag]"
 }
 
 ########################################################################
@@ -405,19 +399,15 @@ if {0} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
-#opt-bool-set why-does-this-puke
-#if-enabled all {
-#  opt-bool-set fts4
-#  opt-bool-set fts5
-#  opt-bool-set geopoly
-#  opt-bool-set rtree
-#  opt-bool-set session
-#}
-
-#if-enabled geopoly {opt-bool-set rtree}
-#if {[opt-bool geopoly]} {
-#  opt-bool-set rtree
-#}
+if-enabled all {
+  opt-set fts4
+  opt-set fts5
+  opt-set geopoly
+  opt-set rtree
+  opt-set session
+} {
+  if-enabled geopoly {opt-set rtree}
+}
 
 
 ##########
