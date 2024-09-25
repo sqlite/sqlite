@@ -14,10 +14,15 @@
 # that contains this "Makefile.in" and the "configure" script.
 #
 TOP = @abs_top_srcdir@
-
 # Just testing expansions...
+# srcdir = @srcdir@
+# top_srcdir = @top_srcdir@
+# abs_top_srcdir = @abs_top_srcdir@
+# abs_top_builddir = @abs_top_builddir@
 # LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
 # LDFLAGS_MATH = @LDFLAGS_MATH@
+# LD = @LD@
+# AR = @AR@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.

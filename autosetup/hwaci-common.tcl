@@ -428,3 +428,58 @@ proc hwaci-check-exeext {} {
     msg-result no
   }
 }
+
+########################################################################
+# Emscripten is used for doing in-tree builds of web-based WASM stuff,
+# as opposed to WASI-based WASM or WASM binaries we import from other
+# places. This is only set up for Unix-style OSes and is untested
+# anywhere but Linux.
+#
+# Defines the following:
+#
+# - EMSDK_HOME = top dir of the emsdk or "". It looks for
+#   --with-emsdk=DIR or the $EMSDK environment variable.
+# - EMSDK_ENV = path to EMSDK_HOME/emsdk_env.sh or ""
+# - BIN_EMCC = $EMSDK_HOME/upstream/emscripten/emcc or ""
+#
+# Returns 1 if EMSDK_ENV is found, else 0.  If EMSDK_HOME is not empty
+# but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
+# case we have to rely on the fact that sourcing $EMSDK_ENV from a
+# shell will add emcc to the $PATH.
+proc hwaci-check-emsdk {} {
+  set emsdkHome [opt-val with-emsdk]
+  define EMSDK_HOME ""
+  define EMSDK_ENV ""
+  define BIN_EMCC ""
+#  define EMCC_OPT "-Oz"
+  msg-checking "Emscripten SDK? "
+  if {$emsdkHome eq "" && [info exists ::env(EMSDK)]} {
+    # Fall back to checking the environment. $EMSDK gets set
+    # by sourcing emsdk_env.sh.
+    set emsdkHome $::env(EMSDK)
+  }
+  set rc 0
+  if {$emsdkHome ne ""} {
+    define EMSDK_HOME $emsdkHome
+    set emsdkEnv "$emsdkHome/emsdk_env.sh"
+    if {[file exists $emsdkEnv]} {
+      msg-result "$emsdkHome"
+      define EMSDK_ENV $emsdkEnv
+#      if {[info exists ::env(EMCC_OPT)]} {
+#        define EMCC_OPT $::env(EMCC_OPT)
+#      }
+      set rc 1
+      set emcc "$emsdkHome/upstream/emscripten/emcc"
+      if {[file exists $emcc]} {
+        # puts "is emcc == $emcc ???"
+        define BIN_EMCC $emcc
+      }
+    } else {
+      msg-result "emsdk_env.sh not found in $emsdkHome"
+    }
+  } else {
+    msg-result "not found"
+  }
+  define HAVE_EMSDK $rc
+  return $rc
+}

@@ -1,64 +1,46 @@
 # Created by migrate-autoconf - fix items marked XXX
 global autosetup
-use cc cc-shared cc-lib hwaci-common
+use cc cc-db cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE defines.list
-set cross_compiling 0
 set enable_shared 1
 
+# Are we cross compiling?
+set cross_compiling 0
+if {[get-define host] ne [get-define build]} {
+  set cross_compiling 1
+}
+define cross_compiling ${cross_compiling}
+
+if {0 && $cross_compiling} {
+  # gcc's cross-compiler is named platform-os-vendor-gcc instead of
+  # platform-os-vendor-cc. Checking for cc here will find the CC which
+  # was already found via (use cc).  Checking for gcc here would be
+  # unportable - the client may well have a different cross-compiler.
+  define-push {GCC LD AR} {
+    cc-check-tools gcc ld ar
+    define BIN_host_GCC [get-define GCC]
+    define BIN_host_LD [get-define LD]
+    define BIN_host_AR [get-define AR]
+  }
+}
+
 ########################################################################
-# Note that boolean flags...
+# A very long story made short, autosetup's --flag handling has
+# some behaviors which make it impossible to implement 100% identical
+# flags, compared to the historical autotools build. The differences
+# are documented here:
 #
-# 1) Are in the form flagname (default=false) or flagname=0 (false) or
-# flagname=1 (true).
 #
-# 2) If they default to false, the actual flag mapped to them is
-# --enable-FLAG.
+# 1) --debug is used by autosetup itself, so we have to rename it to
+# --with-debug. We cannot use --enable-debug because that is, for
+# autosetup, and alias for --debug=1.
 #
-# 3) If they default to true, the actual flag mapped to them is
-# --disable-FLAG.
+# 2) In autosetup, all flags starting with (--enable, --disable) are
+# forced to be booleans and received special handling in how they're
+# resolved. Because of that we have to rename:
 #
-# 4) For boolean options, configure will accept any of --flag, --enable-flag,
-# or --disable-flag. Unfortunately, it reserves --debug for its own use.
+#   2.1) --enable-tempstore[=no] to --with-tempstore[=no].
 #
-# 5) Mapping with their full name, e.g. enable-foo=1 or disable-bar=0,
-# will lead to breakage in calls to either [opt-bool foo] or
-# [opt-bool enable-foo].
-#
-# (2) and (3) mean that the help text for flag=1 should start with
-# "Disable" and flag=0 should start with "Enable".
-#
-# In trying to helpfully map between --foo/--enable-foo/--disable-foo,
-# it ends up creating some degree of confusion.
-#
-# Reminders about flag handling quirks..
-#
-# 1) autosetup treats prefixes of 'enable' and 'disable' specially,
-# leading to some incompatibilities with the historical sqlite3
-# configure script flags.
-#
-# Defining non-boolean flags named enable-foo requires different
-# downstream handling of those flags. e.g.
-#
-#   enable-tempstore:=no => {...}
-#
-# requires that [opt-val enable-tempstore], rather than [opt-val
-# tempstore], be used, which is in constrast to boolean flags, where
-# [opt-bool flag] must be used instead of [opt-bool enable-flag].
-#
-# Also, passing --enable-tempstore with no value (to presumably get the
-# default value) breaks: autosetup tries to find a boolean-type tempstore
-# flag and cannot, so it complains that flag --tempstore is not defined.
-# i.e. --enable-tempstore requires that it be passed a value.
-#
-# An awkward workaround for that, discovered only by random trial and
-# error, is to define both {tempstore=1} and {enable-tempstore:}. With
-# that in place --enable-tempstore, with no value, works as expected
-# (why? Nobody knows!) but --tempstore can only ever be legally passed
-# a boolean value (0, 1, yes, no, enabled, disabled). It does,
-# however, pollute the --help with a synthetic --disable-tempstore
-# option. After an hour of fighting with it, a switch from
-# --enable-tempstore to --with-tempstore seems like the better
-# approach, in that it doesn't lead to a losing fight with autosetup.
 options {
   with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
@@ -95,15 +77,20 @@ options {
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
   dump-defines=1       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
 }
-#  debug=0          => {debugging & verbose explain}
 
 set srcdir $autosetup(srcdir)
-puts "srcdir = $srcdir"
-set VERSION [readfile $srcdir/VERSION]
+#puts "srcdir = $srcdir"
+set VERSION [readfile $autosetup(srcdir)/VERSION]
 puts "VERSION = $VERSION"
 define PACKAGE_VERSION $VERSION
 #puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #puts "with-debug? = [opt-val with-debug]"
+
+set outOfTreeBuild 0
+if {![file exists sqlite3.pc.in]} {
+  puts "This appears to be an out-of-tree build."
+  set outOfTreeBuild 1
+}
 
 #
 # The build process allows for using a cross-compiler.  But the default
@@ -281,6 +268,7 @@ undefine lib_fdatasync
 # Check for needed/wanted headers
 cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
 if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
+  # TODO: port over the more sophisticated zlib search from the fossil auto.def
   define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
   define LDFLAGS_ZLIB -lz
 } else {
@@ -289,9 +277,13 @@ if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
 }
 
 hwaci-define-if-opt-truthy with-debug SQLITE_DEBUG "Debug build?"
-hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
+  "Use amalgamation for builds?"
 hwaci-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
-hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS "test-runner flags?" {--status} {}
+hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS \
+  "test-runner flags:" {--status} {}
+hwaci-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
+  "Use #line macros in the amalgamation:" {--linemacros=1} {--linemacros=0}
 
 if {0} {
   #########
@@ -685,6 +677,20 @@ if {0} {
   # XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 }
 
+##########
+# Emscripten SDK for building the web-based wasm components.
+#
+if {[hwaci-check-emsdk]} {
+  set wrapper $srcdir/tool/emcc.sh
+  define EMCC_WRAPPER $wrapper
+  hwaci-make-from-dot-in $wrapper 1
+  catch {exec chmod u+x $wrapper}
+  unset wrapper
+} else {
+  define EMCC_WRAPPER ""
+  catch {exec rm -f $srcdir/tool/emcc.sh}
+}
+
 proc affirm-have-math {} {
   if {![cc-check-function-in-lib log m]} {
     user-error "Missing required math APIs"
@@ -726,23 +732,6 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   }
 }
 
-msg-checking "Use #line macros in the amalgamation: "
-hwaci-if-opt-truthy linemacros {
-  define AMALGAMATION_LINE_MACROS {--linemacros=1}
-  msg-result yes
-} {
-  define AMALGAMATION_LINE_MACROS {--linemacros=0}
-  msg-result no
-}
-
-
-##########
-# Emscripten SDK
-#
-if {1} {
-  # TODO: port this bit and its associated shell script from the
-  # Fossil source tree's auto.def and tools/emcc.sh.in.
-}
 
 #########
 # Generate the output files.
@@ -776,7 +765,13 @@ hwaci-if-opt-truthy dump-defines {
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
   make-config-header $DUMP_DEFINES_FILE \
     -bare {OPT_FEATURE_FLAGS SQLITE_OS* SQLITE_DEBUG LDFLAGS_* USE_*} \
+    -str {BIN_* CC LD AR} \
     -auto {*}
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.
+  if {0} {
+    foreach x $::define {
+      puts "\t$x"
+    }
+  }
 }
