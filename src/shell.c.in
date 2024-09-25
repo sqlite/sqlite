@@ -2891,14 +2891,14 @@ static int shell_callback(
       if( azArg==0 ) break;
       if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          if( i>0 ) fputs(p->colSeparator, p->out);
+          if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
           output_quoted_string(p->out, azCol[i]);
         }
-        fputs(p->rowSeparator, p->out);
+        sqlite3_fputs(p->rowSeparator, p->out);
       }
       p->cnt++;
       for(i=0; i<nArg; i++){
-        if( i>0 ) fputs(p->colSeparator, p->out);
+        if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           sqlite3_fputs("NULL", p->out);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
@@ -2920,7 +2920,7 @@ static int shell_callback(
           output_quoted_string(p->out, azArg[i]);
         }
       }
-      fputs(p->rowSeparator, p->out);
+      sqlite3_fputs(p->rowSeparator, p->out);
       break;
     }
     case MODE_Ascii: {
@@ -4104,7 +4104,7 @@ static void exec_prepared_stmt_columnar(
         }
         for(i=0; i<nColumn; i++){
           print_dashes(p->out, p->actualWidth[i]);
-          fputs(i==nColumn-1?"\n":"  ", p->out);
+          sqlite3_fputs(i==nColumn-1?"\n":"  ", p->out);
         }
       }
       break;
@@ -4113,7 +4113,7 @@ static void exec_prepared_stmt_columnar(
       colSep = " | ";
       rowSep = " |\n";
       print_row_separator(p, nColumn, "+");
-      fputs("| ", p->out);
+      sqlite3_fputs("| ", p->out);
       for(i=0; i<nColumn; i++){
         w = p->actualWidth[i];
         n = strlenChar(azData[i]);
@@ -4127,7 +4127,7 @@ static void exec_prepared_stmt_columnar(
     case MODE_Markdown: {
       colSep = " | ";
       rowSep = " |\n";
-      fputs("| ", p->out);
+      sqlite3_fputs("| ", p->out);
       for(i=0; i<nColumn; i++){
         w = p->actualWidth[i];
         n = strlenChar(azData[i]);
@@ -4274,7 +4274,7 @@ static void exec_prepared_stmt(
       } while( SQLITE_ROW == rc );
       sqlite3_free(pData);
       if( pArg->cMode==MODE_Json ){
-        fputs("]\n", pArg->out);
+        sqlite3_fputs("]\n", pArg->out);
       }else if( pArg->cMode==MODE_Count ){
         char zBuf[200];
         sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
@@ -12845,7 +12845,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
          default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
       }
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
-      vfstrace_register("trace",0,(int(*)(const char*,void*))fputs,stderr,1);
+      vfstrace_register("trace",0,(int(*)(const char*,void*))sqlite3_fputs,
+                        stderr,1);
       bEnableVfstrace = 1;
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( cli_strcmp(z,"-multiplex")==0 ){
