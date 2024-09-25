@@ -1,5 +1,5 @@
-C Redirect\stimer\soutput\sjust\slike\sany\sother\stext.
-D 2024-09-25T14:09:47.920
+C Have\sthe\szipfile\sand\sfileio\sextensions\suse\ssqlite3_stdio.c\swhen\sit\sis\navailable\s-\ssuch\sas\swhen\sthose\sextensions\sare\spreloaded\sinto\sthe\sCLI.
+D 2024-09-25T15:26:37.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -399,7 +399,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 172cf81a8634e6a0f0bedaf71a8372fee63348cf5a3c4e1b78bb233c35889fdc
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 001179b29735639c607586c9e9398c92505c0833de06eefc27e13acf60dd1577
+F ext/misc/fileio.c e6b34db4df4b55b96265086c0010264e257b6eab1644e665697a6da587659403
 F ext/misc/fossildelta.c 8c026e086e406e2b69947f1856fa3b848fff5379962276430d10085b8756b05a
 F ext/misc/fuzzer.c 8b28acf1a7e95d50e332bdd47e792ff27054ad99d3f9bc2e91273814d4b31a5a
 F ext/misc/ieee754.c 62a90978204d2c956d5036eb89e548e736ca5fac0e965912867ddd7bb833256d
@@ -441,7 +441,7 @@ F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594a
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
-F ext/misc/zipfile.c 5a3bf1b9cccb8e0da2389fe9e39e9c7f2b1351474b7e5090635f817d495eee3f
+F ext/misc/zipfile.c b62147ac4985eaac4e368d529b1f4f43ad6bc9ac13d6805d907fff3afdac64d3
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f8ef65c52305b2180ec56760f5762ac5638584cd504c79d57e86f61736901aa4
-R ac074bfeea03930c231c06a9d210f518
+P 3b5ae21074958788b23ccf449e52fbbad1f81779e07a6ca62ad8395f88a37286
+R 5afd3bdce6fbcc9f56c686c2625824c5
 U drh
-Z 51901a5607650ec168b6e659dbb210c8
+Z a729cfecd90e8d587c0a925f42031223
 # Remove this line to create a well-formed Fossil manifest.
