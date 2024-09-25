@@ -1,6 +1,9 @@
 # Created by migrate-autoconf - fix items marked XXX
+global autosetup
 use cc cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE defines.list
+set cross_compiling 0
+set enable_shared 1
 
 ########################################################################
 # Note that boolean flags...
@@ -31,7 +34,7 @@ set DUMP_DEFINES_FILE defines.list
 #
 # 1) autosetup treats prefixes of 'enable' and 'disable' specially,
 # leading to some incompatibilities with the historical sqlite3
-# configure script.
+# configure script flags.
 #
 # Defining non-boolean flags named enable-foo requires different
 # downstream handling of those flags. e.g.
@@ -50,8 +53,8 @@ set DUMP_DEFINES_FILE defines.list
 # An awkward workaround for that, discovered only by random trial and
 # error, is to define both {tempstore=1} and {enable-tempstore:}. With
 # that in place --enable-tempstore, with no value, works as expected
-# (why? Nobody knows!) but --tempstore can only ever be legally passed 0 or
-# 1.
+# (why? Nobody knows!) but --tempstore can only ever be legally passed
+# a boolean value (0, 1, yes, no, enabled, disabled).
 options {
   with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
@@ -155,8 +158,6 @@ puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #        files for the readline library.  If the compiler is able
 #        to find <readline.h> on its own, then this can be blank.
 
-hwaci-check-exeext
-
 ########################################################################
 # OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
 define OPT_FEATURE_FLAGS {}
@@ -164,6 +165,17 @@ proc add-feature-flag {flag} {
   define-append OPT_FEATURE_FLAGS $flag
 }
 # add-feature-flag -DSQLITE_JUST_TESTING=3
+
+hwaci-check-exeext
+if {".exe" eq [get-define TARGET_EXEEXT]} {
+  define SQLITE_OS_UNIX 0
+  define SQLITE_OS_WIN 1
+  # todo? add -DSQLITE_OS_WIN=1 to CFLAGS?
+} else {
+  define SQLITE_OS_UNIX 1
+  define SQLITE_OS_WIN 0
+  # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS?
+}
 
 ########################################################################
 # Force-set autosetup option $flag to $val.
@@ -191,37 +203,27 @@ proc if-disabled {boolFlag then {else {}}} {
 
 #########
 # Programs needed
-if {1} {
-  if {"" eq [hwaci-bin-define install]} {
-    msg-result "Cannot find install binary, so 'make install' will not work."
-  }
+if {"" eq [hwaci-bin-define install]} {
+  msg-result "Cannot find install binary, so 'make install' will not work."
 }
 
 #########
 # Enable large file support (if special flags are necessary)
-if {1} {
-  cc-check-lfs
-}
+cc-check-lfs
 
 #########
 # Check for needed/wanted data types
-if {1} {
-  cc-check-types int8_t int16_t int32_t int64_t intptr_t \
-    uint8_t uint16_t uint32_t uint64_t uintptr_t
-}
+cc-check-types int8_t int16_t int32_t int64_t intptr_t \
+  uint8_t uint16_t uint32_t uint64_t uintptr_t
 
 #########
 # Check for needed/wanted headers
-if {1} {
-  cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
-}
+cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
 
 #########
 # Figure out whether or not we have these functions
-if {1} {
-  cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
-    malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
-}
+cc-check-functions fdatasync gmtime_r isnan localtime_r localtime_s \
+  malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 
 ##########
 # Handle --with-wasi-sdk=DIR
@@ -231,7 +233,8 @@ if {1} {
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
 if {1} {
-  set wasiSdkDir [lindex [opt-val with-wasi-sdk] end]
+  set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
+  #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
   if {$wasiSdkDir eq ""} {
     define HAVE_WASI_SDK 0
     define WASI_SDK_DIR ""
@@ -243,6 +246,10 @@ if {1} {
     msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL"
     define HAVE_WASI_SDK 1
     define WASI_SDK_DIR $wasiSdkDir
+    opt-set tcl 0
+    opt-set threadsafe 0
+    set cross_compiling 1
+    set enable_shared 0
 
     # Changing --host and --target have no effect here except to possibly
     # cause confusion. autoconf has finished processing them by this
@@ -264,6 +271,7 @@ if {1} {
     # we disable the DLL build...
     #  set enable_shared no
   }
+#  unset wasiSdkDir
 }; # --wasi-sdk-dir
 
 #########
@@ -908,5 +916,7 @@ if {"" ne [get-define OPT_FEATURE_FLAGS]} {
 if-enabled dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
-  make-config-header $DUMP_DEFINES_FILE -bare OPT_FEATURE_FLAGS -auto {*}
+  make-config-header $DUMP_DEFINES_FILE -bare {OPT_FEATURE_FLAGS SQLITE_OS_*} -auto {*}
+  # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
+  # get _undefined_ here unless it's part of the -bare set.
 }
