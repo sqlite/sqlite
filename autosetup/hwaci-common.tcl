@@ -27,18 +27,18 @@ array set hwaciCache {} ; # used for caching various results.
 #
 # On an empty list, returns "".
 proc hwaci-lshift {listVar {count 1}} {
-    upvar 1 $listVar l
-    if {![info exists l]} {
-        # make the error message show the real variable name
-        error "can't read \"$listVar\": no such variable"
-    }
-    if {![llength $l]} {
-        # error Empty
-        return ""
-    }
-    set r [lrange $l 0 [incr count -1]]
-    set l [lreplace $l [set l 0] $count]
-    return $r
+  upvar 1 $listVar l
+  if {![info exists l]} {
+    # make the error message show the real variable name
+    error "can't read \"$listVar\": no such variable"
+  }
+  if {![llength $l]} {
+    # error Empty
+    return ""
+  }
+  set r [lrange $l 0 [incr count -1]]
+  set l [lreplace $l [set l 0] $count]
+  return $r
 }
 
 ########################################################################
@@ -46,10 +46,10 @@ proc hwaci-lshift {listVar {count 1}} {
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
 proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
-    set _LIBS [get-define LIBS]
-    set found [cc-check-function-in-lib $function $libs $otherlibs]
-    define LIBS $_LIBS
-    return $found
+  set _LIBS [get-define LIBS]
+  set found [cc-check-function-in-lib $function $libs $otherlibs]
+  define LIBS $_LIBS
+  return $found
 }
 
 ########################################################################
@@ -62,35 +62,35 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 # If defName is empty then "BIN_X" is used, where X is the upper-case
 # form of $binName with any '-' characters replaced with '_'.
 proc hwaci-bin-define {binName {defName {}}} {
-    global hwaciCache
-    set cacheName "$binName:$defName"
-    set check {}
-    if {[info exists hwaciCache($cacheName)]} {
-        set check $hwaciCache($cacheName)
+  global hwaciCache
+  set cacheName "$binName:$defName"
+  set check {}
+  if {[info exists hwaciCache($cacheName)]} {
+    set check $hwaciCache($cacheName)
+  }
+  msg-checking "Looking for $binName ... "
+  if {"" ne $check} {
+    set lbl $check
+    if {" _ 0 _ " eq $check} {
+      set lbl "not found"
+      set check ""
     }
-    msg-checking "Looking for $binName ... "
-    if {"" ne $check} {
-        set lbl $check
-        if {" _ 0 _ " eq $check} {
-            set lbl "not found"
-            set check ""
-        }
-        msg-result "(cached) $lbl"
-        return $check
-    }
-    set check [find-executable-path $binName]
-    if {"" eq $check} {
-        msg-result "not found"
-        set hwaciCache($cacheName) " _ 0 _ "
-    } else {
-        msg-result $check
-        set hwaciCache($cacheName) $check
-    }
-    if {"" eq $defName} {
-        set defName "BIN_[string toupper [string map {- _} $binName]]"
-    }
-    define $defName $check
+    msg-result "(cached) $lbl"
     return $check
+  }
+  set check [find-executable-path $binName]
+  if {"" eq $check} {
+    msg-result "not found"
+    set hwaciCache($cacheName) " _ 0 _ "
+  } else {
+    msg-result $check
+    set hwaciCache($cacheName) $check
+  }
+  if {"" eq $defName} {
+    set defName "BIN_[string toupper [string map {- _} $binName]]"
+  }
+  define $defName $check
+  return $check
 }
 
 ########################################################################
@@ -98,11 +98,11 @@ proc hwaci-bin-define {binName {defName {}}} {
 # BIN_BASH to the full path to bash and returns that value. We
 # _require_ bash because it's the SHELL value used in our makefiles.
 proc hwaci-require-bash {} {
-    set bash [hwaci-bin-define bash]
-    if {"" eq $bash} {
-        user-error "Our Makefiles require the bash shell."
-    }
-    return $bash
+  set bash [hwaci-bin-define bash]
+  if {"" eq $bash} {
+    user-error "Our Makefiles require the bash shell."
+  }
+  return $bash
 }
 
 ########################################################################
@@ -178,31 +178,31 @@ proc hwaci-define-if-opt-truthy {flag def msg {iftrue 1} {iffalse 0}} {
 # the option is set, it gets define'd to 0, else 1. Returns the
 # define'd value.
 proc hwaci-opt-bool-01 {args} {
-    set invert 0
-    if {[lindex $args 0] eq "-v"} {
-      set invert 1
-      set args [lrange $args 1 end]
+  set invert 0
+  if {[lindex $args 0] eq "-v"} {
+    set invert 1
+    set args [lrange $args 1 end]
+  }
+  set optName [hwaci-lshift args]
+  set defName [hwaci-lshift args]
+  set descr [hwaci-lshift args]
+  if {"" eq $descr} {
+    set descr $defName
+  }
+  set rc 0
+  msg-checking "$descr ... "
+  if {[hwaci-opt-truthy $optName]} {
+    if {0 eq $invert} {
+      set rc 1
+    } else {
+      set rc 0
     }
-    set optName [hwaci-lshift args]
-    set defName [hwaci-lshift args]
-    set descr [hwaci-lshift args]
-    if {"" eq $descr} {
-        set descr $defName
-    }
-    set rc 0
-    msg-checking "$descr ... "
-    if {[hwaci-opt-truthy $optName]} {
-        if {0 eq $invert} {
-            set rc 1
-        } else {
-            set rc 0
-        }
-    } elseif {0 ne $invert} {
-        set rc 1
-    }
-    msg-result $rc
-    define $defName $rc
-    return $rc
+  } elseif {0 ne $invert} {
+    set rc 1
+  }
+  msg-result $rc
+  define $defName $rc
+  return $rc
 }
 
 ########################################################################
@@ -224,48 +224,48 @@ proc hwaci-opt-bool-01 {args} {
 # Note that if it finds LIBLTDL it does not look for LIBDL, so will
 # report only that is has LIBLTDL.
 proc hwaci-check-module-loader {} {
-    msg-checking "Looking for module-loader APIs... "
-    if {99 ne [get-define LDFLAGS_MODULE_LOADER]} {
-        if {1 eq [get-define HAVE_LIBLTDL 0]} {
-            msg-result "(cached) libltdl"
-            return 1
-        } elseif {1 eq [get-define HAVE_LIBDL 0]} {
-            msg-result "(cached) libdl"
-            return 1
-        }
-        # else: wha???
+  msg-checking "Looking for module-loader APIs... "
+  if {99 ne [get-define LDFLAGS_MODULE_LOADER]} {
+    if {1 eq [get-define HAVE_LIBLTDL 0]} {
+      msg-result "(cached) libltdl"
+      return 1
+    } elseif {1 eq [get-define HAVE_LIBDL 0]} {
+      msg-result "(cached) libdl"
+      return 1
     }
-    set HAVE_LIBLTDL 0
-    set HAVE_LIBDL 0
+    # else: wha???
+  }
+  set HAVE_LIBLTDL 0
+  set HAVE_LIBDL 0
+  set LDFLAGS_MODULE_LOADER ""
+  set rc 0
+  puts "" ;# cosmetic kludge for cc-check-XXX
+  if {[cc-check-includes ltdl.h] && [cc-check-function-in-lib lt_dlopen ltdl]} {
+    set HAVE_LIBLTDL 1
+    set LDFLAGS_MODULE_LOADER "-lltdl -rdynamic"
+    puts " - Got libltdl."
+    set rc 1
+  } elseif {[cc-with {-includes dlfcn.h} {
+    cctest -link 1 -declare "extern char* dlerror(void);" -code "dlerror();"}]} {
+    puts " - This system can use dlopen() without -ldl."
+    set HAVE_LIBDL 1
     set LDFLAGS_MODULE_LOADER ""
-    set rc 0
-    puts "" ;# cosmetic kludge for cc-check-XXX
-    if {[cc-check-includes ltdl.h] && [cc-check-function-in-lib lt_dlopen ltdl]} {
-        set HAVE_LIBLTDL 1
-        set LDFLAGS_MODULE_LOADER "-lltdl -rdynamic"
-        puts " - Got libltdl."
-        set rc 1
-    } elseif {[cc-with {-includes dlfcn.h} {
-        cctest -link 1 -declare "extern char* dlerror(void);" -code "dlerror();"}]} {
-        puts " - This system can use dlopen() without -ldl."
-        set HAVE_LIBDL 1
-        set LDFLAGS_MODULE_LOADER ""
-        set rc 1
-    } elseif {[cc-check-includes dlfcn.h]} {
-        set HAVE_LIBDL 1
-        set rc 1
-        if {[cc-check-function-in-lib dlopen dl]} {
-            puts " - dlopen() needs libdl."
-            set LDFLAGS_MODULE_LOADER "-ldl -rdynamic"
-        } else {
-            puts " - dlopen() not found in libdl. Assuming dlopen() is built-in."
-            set LDFLAGS_MODULE_LOADER "-rdynamic"
-        }
+    set rc 1
+  } elseif {[cc-check-includes dlfcn.h]} {
+    set HAVE_LIBDL 1
+    set rc 1
+    if {[cc-check-function-in-lib dlopen dl]} {
+      puts " - dlopen() needs libdl."
+      set LDFLAGS_MODULE_LOADER "-ldl -rdynamic"
+    } else {
+      puts " - dlopen() not found in libdl. Assuming dlopen() is built-in."
+      set LDFLAGS_MODULE_LOADER "-rdynamic"
     }
-    define HAVE_LIBLTDL $HAVE_LIBLTDL
-    define HAVE_LIBDL $HAVE_LIBDL
-    define LDFLAGS_MODULE_LOADER $LDFLAGS_MODULE_LOADER
-    return $rc
+  }
+  define HAVE_LIBLTDL $HAVE_LIBLTDL
+  define HAVE_LIBDL $HAVE_LIBDL
+  define LDFLAGS_MODULE_LOADER $LDFLAGS_MODULE_LOADER
+  return $rc
 }
 
 ########################################################################
@@ -274,30 +274,30 @@ proc hwaci-check-module-loader {} {
 # loader. Intended to be called in place of that function when
 # a module loader is explicitly not desired.
 proc hwaci-no-check-module-loader {} {
-    define HAVE_LIBDL 0
-    define HAVE_LIBLTDL 0
-    define LDFLAGS_MODULE_LOADER ""
+  define HAVE_LIBDL 0
+  define HAVE_LIBLTDL 0
+  define LDFLAGS_MODULE_LOADER ""
 }
 
 ########################################################################
 # Opens the given file, reads all of its content, and returns it.
 proc hwaci-file-content {fname} {
-    set fp [open $fname r]
-    set rc [read $fp]
-    close $fp
-    return $rc
+  set fp [open $fname r]
+  set rc [read $fp]
+  close $fp
+  return $rc
 }
 
 ########################################################################
 # Returns the contents of the given file as an array of lines, with
 # the EOL stripped from each input line.
 proc hwaci-file-content-list {fname} {
-    set fp [open $fname r]
-    set rc {}
-    while { [gets $fp line] >= 0 } {
-        lappend rc $line
-    }
-    return $rc
+  set fp [open $fname r]
+  set rc {}
+  while { [gets $fp line] >= 0 } {
+    lappend rc $line
+  }
+  return $rc
 }
 
 ########################################################################
@@ -308,25 +308,25 @@ proc hwaci-file-content-list {fname} {
 # Returns 1 if supported, else 0. Defines MAKE_COMPILATION_DB to "yes"
 # if supported, "no" if not.
 proc hwaci-check-compile-commands {{configOpt {}}} {
-    msg-checking "compile_commands.json support... "
-    if {"" ne $configOpt && [opt-bool $configOpt]} {
-        msg-result "explicitly disabled"
-        define MAKE_COMPILATION_DB no
-        return 0
+  msg-checking "compile_commands.json support... "
+  if {"" ne $configOpt && [opt-bool $configOpt]} {
+    msg-result "explicitly disabled"
+    define MAKE_COMPILATION_DB no
+    return 0
+  } else {
+    if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
+      # This test reportedly incorrectly succeeds on one of
+      # Martin G.'s older systems. drh also reports a false
+      # positive on an unspecified older Mac system.
+      msg-result "compiler supports compile_commands.json"
+      define MAKE_COMPILATION_DB yes
+      return 1
     } else {
-        if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
-            # This test reportedly incorrectly succeeds on one of
-            # Martin G.'s older systems. drh also reports a false
-            # positive on an unspecified older Mac system.
-            msg-result "compiler supports compile_commands.json"
-            define MAKE_COMPILATION_DB yes
-            return 1
-        } else {
-            msg-result "compiler does not support compile_commands.json"
-            define MAKE_COMPILATION_DB no
-            return 0
-        }
+      msg-result "compiler does not support compile_commands.json"
+      define MAKE_COMPILATION_DB no
+      return 0
     }
+  }
 }
 
 ########################################################################
@@ -474,7 +474,7 @@ proc hwaci-check-emsdk {} {
   define EMSDK_HOME ""
   define EMSDK_ENV ""
   define BIN_EMCC ""
-#  define EMCC_OPT "-Oz"
+  #  define EMCC_OPT "-Oz"
   msg-checking "Emscripten SDK? "
   if {$emsdkHome eq "" && [info exists ::env(EMSDK)]} {
     # Fall back to checking the environment. $EMSDK gets set

@@ -889,12 +889,15 @@ SQLITE3_O = $(TOP)/sqlite3.o
 #XX##
 #XX#sqlite3.lo:	sqlite3.c
 #XX#	$(LTCOMPILE) $(TEMP_STORE) -c sqlite3.c
-#XX#
-#XX## Rules to build the LEMON compiler generator
-#XX##
-#XX#lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
-#XX#	$(BCC) -o $@ $(TOP)/tool/lemon.c
-#XX#	cp $(TOP)/tool/lempar.c .
+
+# Rules to build the LEMON compiler generator
+#
+lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+	$(BCC) -o $@ $(TOP)/tool/lemon.c
+	cp $(TOP)/tool/lempar.c .
+@if BUILD_EXEEXT ne ""
+lemon: lemon$(BEXE)
+@endif
 #XX#
 #XX## Rules to build the program that generates the source-id
 #XX##

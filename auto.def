@@ -36,7 +36,7 @@ options {
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
   releasemode          => {libtool link to release mode}
-  with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always}
+  with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always.}
   editline=0           => {BSD editline support}
   readline=0           => {readline support}
   largefile=1          => {Disable large file support}
@@ -60,9 +60,9 @@ options {
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation.}
   with-wasi-sdk:=/opt/wasi-sdk
-                       => {Top-most dir of the wasi-sdk for a WASI build}
+                       => {Top-most dir of the wasi-sdk for a WASI build.}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
-  dump-defines=1       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
+  dump-defines=1       => {Disable dump of autosetup defines to $DUMP_DEFINES_FILE}
 }
 
 set srcdir $autosetup(srcdir)
@@ -73,8 +73,6 @@ define VERSION $VERSION
 define RELEASE $RELEASE
 puts "RELEASE = $RELEASE"
 puts "VERSION = $VERSION"
-#puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
-#puts "with-debug? = [opt-val with-debug]"
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
