@@ -1631,7 +1631,13 @@ static const char *modeDescr[] = {
 #define SEP_Tab       "\t"
 #define SEP_Space     " "
 #define SEP_Comma     ","
-#define SEP_CrLf      "\r\n"
+#ifdef SQLITE_U8TEXT_ONLY
+  /* With the SQLITE_U8TEXT_ONLY option, the output will always be in
+  ** text mode.  The \r will be inserted automatically. */
+# define SEP_CrLf      "\n"
+#else
+# define SEP_CrLf      "\r\n"
+#endif
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
 
@@ -4933,9 +4939,10 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-#if defined(_WIN32) || defined(WIN32)
+#if defined(_WIN32) && !defined(SQLITE_U8TEXT_ONLY) \
+                    && !defined(SQLITE_U8TEXT_STDIO)
   ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
-#endif
+#endif /* _WIN32 && U8TEXT_ONLY && U8TEXT_STDIO */
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -8425,17 +8432,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   /* Undocumented.  Legacy only.  See "crnl" below */
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
-    if( nArg==2 ){
-      if( booleanValue(azArg[1]) ){
-        sqlite3_fsetmode(p->out, _O_BINARY);
-      }else{
-        sqlite3_fsetmode(p->out, _O_TEXT);
-      }
-    }else{
-      eputz("The \".binary\" command is deprecated. Use \".crnl\" instead.\n"
-            "Usage: .binary on|off\n");
-      rc = 1;
-    }
+    eputz("The \".binary\" command is deprecated. Use \".crnl\" instead.\n");
+    rc = 1;
   }else
 
   /* The undocumented ".breakpoint" command causes a call to the no-op
@@ -8561,6 +8559,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
+#if !defined(_WIN32) || defined(SQLITE_U8TEXT_ONLY) \
+                     || defined(SQLITE_U8TEXT_STDIO)
+    sqlite3_fputs("The \".crnl\" command is disable in this build.\n", p->out);
+#else
     if( nArg==2 ){
       if( booleanValue(azArg[1]) ){
         sqlite3_fsetmode(p->out, _O_TEXT);
@@ -8568,12 +8570,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_fsetmode(p->out, _O_BINARY);
       }
     }else{
-#if !defined(_WIN32) && !defined(WIN32)
-      eputz("The \".crnl\" is a no-op on non-Windows machines.\n");
-#endif
       eputz("Usage: .crnl on|off\n");
       rc = 1;
     }
+#endif
   }else
 
   if( c=='d' && n>1 && cli_strncmp(azArg[0], "databases", n)==0 ){

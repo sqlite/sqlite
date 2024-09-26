@@ -31,6 +31,43 @@
 #include <fcntl.h>
 
 /*
+** If the SQLITE_U8TEXT_ONLY option is defined, then only use
+** _O_U8TEXT, _O_WTEXT, and similar together with the UTF-16
+** interfaces to the Windows CRT.  The use of ANSI-only routines
+** like fputs() and ANSI modes like _O_TEXT and _O_BINARY is
+** avoided.
+**
+** The downside of using SQLITE_U8TEXT_ONLY is that it becomes
+** impossible to output a bare newline character (0x0a) - that is,
+** a newline that is not preceded by a carriage return (0x0d).
+** And without that capability, sometimes the output will be slightly
+** incorrect, as extra 0x0d characters will have been inserted where
+** they do not belong.
+**
+** The SQLITE_U8TEXT_STDIO compile-time option is a compromise.
+** It always enables _O_WTEXT or similar for stdin, stdout, stderr,
+** but allows other streams to be _O_TEXT and/or O_BINARY.  The
+** SQLITE_U8TEXT_STDIO option has the same downside as SQLITE_U8TEXT_ONLY
+** in that stray 0x0d characters might appear where they ought not, but
+** at least with this option those characters only appear on standard
+** I/O streams, and not on new streams that might be created by the
+** application using sqlite3_fopen() or sqlite3_popen().
+*/
+#if defined(SQLITE_U8TEXT_ONLY)
+# define UseWtextForOutput(fd) 1
+# define UseWtextForInput(fd)  1
+# define IsConsole(fd)         _isatty(_fileno(fd))
+#elif defined(SQLITE_U8TEXT_STDIO)
+# define UseWtextForOutput(fd) ((fd)==stdout || (fd)==stderr)
+# define UseWtextForInput(fd)  ((fd)==stdin)
+# define IsConsole(fd)         _isatty(_fileno(fd))
+#else
+# define UseWtextForOutput(fd) _isatty(_fileno(fd))
+# define UseWtextForInput(fd)  _isatty(_fileno(fd))
+# define IsConsole(fd)         1
+#endif
+
+/*
 ** Work-alike for the fopen() routine from the standard C library.
 */
 FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
@@ -83,7 +120,7 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
 ** Work-alike for fgets() from the standard C library.
 */
 char *sqlite3_fgets(char *buf, int sz, FILE *in){
-  if( _isatty(_fileno(in)) ){
+  if( UseWtextForInput(in) ){
     /* When reading from the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode to read UTF-16 characters, then translate
     ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
@@ -91,7 +128,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     */
     wchar_t *b1 = malloc( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
-    _setmode(_fileno(in), _O_WTEXT);
+    _setmode(_fileno(in), IsConsole(in) ? _O_WTEXT : _O_U8TEXT);
     if( fgetws(b1, sz/4, in)==0 ){
       sqlite3_free(b1);
       return 0;
@@ -110,7 +147,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
 ** Work-alike for fputs() from the standard C library.
 */
 int sqlite3_fputs(const char *z, FILE *out){
-  if( _isatty(_fileno(out)) ){
+  if( UseWtextForOutput(out) ){
     /* When writing to the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode and write UTF-16 characters.
     */
@@ -119,7 +156,7 @@ int sqlite3_fputs(const char *z, FILE *out){
     if( b1==0 ) return 0;
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;
-    _setmode(_fileno(out), _O_WTEXT);
+    _setmode(_fileno(out), _O_U8TEXT);
     fputws(b1, out);
     sqlite3_free(b1);
     return 0;
@@ -136,7 +173,7 @@ int sqlite3_fputs(const char *z, FILE *out){
 */
 int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
   int rc;
-  if( _isatty(fileno(out)) ){
+  if( UseWtextForOutput(out) ){
     /* When writing to the command-prompt in Windows, it is necessary
     ** to use _O_WTEXT input mode and write UTF-16 characters.
     */
@@ -161,12 +198,14 @@ int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
 }
 
 /*
-** Set the mode for a stream.  mode argument is typically _O_BINARY or
+** Set the mode for an output stream.  mode argument is typically _O_BINARY or
 ** _O_TEXT.
 */
 void sqlite3_fsetmode(FILE *fp, int mode){
-  fflush(fp);
-  _setmode(_fileno(fp), mode);
+  if( !UseWtextForOutput(fp) ){
+    fflush(fp);
+    _setmode(_fileno(fp), mode);
+  }
 }
 
 #endif /* defined(_WIN32) */
