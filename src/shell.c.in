@@ -12732,7 +12732,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       sqlite3_fprintf(stderr,
             "attach debugger to process %d and press ENTER to continue...",
             GETPID());
-      sqlite3_fgets(zLine, sizeof(zLine), stdin);
+      if( sqlite3_fgets(zLine, sizeof(zLine), stdin)!=0
+       && cli_strcmp(zLine,"stop")==0
+      ){
+        exit(1);
+      }
     }else{
 #if defined(_WIN32) || defined(WIN32)
 #if SQLITE_OS_WINRT
