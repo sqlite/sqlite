@@ -10,14 +10,15 @@
 #
 ########################################################################
 # Routines for Steve Bennett's autosetup which are common to trees
-# managed under the umbrella of the SQLite project.
+# managed in and around the umbrella of the SQLite project.
 #
 # This file was initially derived from one used in the libfossil
 # project, authored by the same person who ported it here (so there's
-# no licensing issue despite this code having a twin running around).
+# no licensing issue despite this code having at least two near-twins
+# running around).
 ########################################################################
 
-array set hwaciCache {} ; # used for caching various results.
+array set _hwaciCache {} ; # used for caching various results.
 
 ########################################################################
 # hwaci-lshift shifts $count elements from the list named $listVar and
@@ -46,6 +47,7 @@ proc hwaci-lshift {listVar {count 1}} {
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
 proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
+  # TODO: this can now be implemented using autosetup's define-push
   set _LIBS [get-define LIBS]
   set found [cc-check-function-in-lib $function $libs $otherlibs]
   define LIBS $_LIBS
@@ -62,11 +64,11 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 # If defName is empty then "BIN_X" is used, where X is the upper-case
 # form of $binName with any '-' characters replaced with '_'.
 proc hwaci-bin-define {binName {defName {}}} {
-  global hwaciCache
+  global _hwaciCache
   set cacheName "$binName:$defName"
   set check {}
-  if {[info exists hwaciCache($cacheName)]} {
-    set check $hwaciCache($cacheName)
+  if {[info exists _hwaciCache($cacheName)]} {
+    set check $_hwaciCache($cacheName)
   }
   msg-checking "Looking for $binName ... "
   if {"" ne $check} {
@@ -81,10 +83,10 @@ proc hwaci-bin-define {binName {defName {}}} {
   set check [find-executable-path $binName]
   if {"" eq $check} {
     msg-result "not found"
-    set hwaciCache($cacheName) " _ 0 _ "
+    set _hwaciCache($cacheName) " _ 0 _ "
   } else {
     msg-result $check
-    set hwaciCache($cacheName) $check
+    set _hwaciCache($cacheName) $check
   }
   if {"" eq $defName} {
     set defName "BIN_[string toupper [string map {- _} $binName]]"
@@ -140,6 +142,15 @@ proc hwaci-opt-truthy {flag} {
 
 ########################################################################
 # If [hwaci-opt-truthy $flag] is true, eval $then, else eval $else.
+#
+# Note that this may or may not, depending on the content of $then and
+# $else, be functionally equivalent to:
+#
+# if {[hwaci-if-opt-truthy flag]} {...} else {...}
+#
+# When referencing $vars in $then and $else, the latter can resolve
+# (without further assistance) the vars from its current scope,
+# whereas $then and $else will not.
 proc hwaci-if-opt-truthy {flag then {else {}}} {
   if {[hwaci-opt-truthy $flag]} {eval $then} else {eval $else}
 }
@@ -303,30 +314,33 @@ proc hwaci-file-content-list {fname} {
 ########################################################################
 # Checks the compiler for compile_commands.json support. If passed an
 # argument it is assumed to be the name of an autosetup boolean config
-# option to explicitly DISABLE the compile_commands.json support.
+# which controls whether to run/skip this check.
 #
 # Returns 1 if supported, else 0. Defines MAKE_COMPILATION_DB to "yes"
 # if supported, "no" if not.
+#
+# This test has a long history of false positive results because of
+# compilers reacting differently to the -MJ flag.
 proc hwaci-check-compile-commands {{configOpt {}}} {
-  msg-checking "compile_commands.json support... "
-  if {"" ne $configOpt && [opt-bool $configOpt]} {
-    msg-result "explicitly disabled"
-    define MAKE_COMPILATION_DB no
-    return 0
-  } else {
-    if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
-      # This test reportedly incorrectly succeeds on one of
-      # Martin G.'s older systems. drh also reports a false
-      # positive on an unspecified older Mac system.
-      msg-result "compiler supports compile_commands.json"
-      define MAKE_COMPILATION_DB yes
-      return 1
+    msg-checking "compile_commands.json support... "
+    if {"" ne $configOpt && ![hwaci-opt-truthy $configOpt]} {
+        msg-result "explicitly disabled"
+        define MAKE_COMPILATION_DB no
+        return 0
     } else {
-      msg-result "compiler does not support compile_commands.json"
-      define MAKE_COMPILATION_DB no
-      return 0
+        if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
+            # This test reportedly incorrectly succeeds on one of
+            # Martin G.'s older systems. drh also reports a false
+            # positive on an unspecified older Mac system.
+            msg-result "compiler supports compile_commands.json"
+            define MAKE_COMPILATION_DB yes
+            return 1
+        } else {
+            msg-result "compiler does not support compile_commands.json"
+            define MAKE_COMPILATION_DB no
+            return 0
+        }
     }
-  }
 }
 
 ########################################################################
@@ -389,18 +403,25 @@ proc hwaci-check-profile-flag {{flagname profile}} {
 # Returns 1 if this appears to be a Windows environment (MinGw,
 # Cygwin, MSys), else returns 0. The optional argument is the name of
 # an autosetup define which contains platform name info, defaulting to
-# "host". The other legal value is "target".
+# "host". The other legal value is "build" (the build machine). If
+# $key == "build" then some additional checks may be performed which
+# are not applicable when $key == "host".
 proc hwaci-looks-like-windows {{key host}} {
   global autosetup
-  if {$::autosetup(iswin)} { return 1 }
   switch -glob -- [get-define $key] {
     *-*-ming* - *-*-cygwin - *-*-msys {
       return 1
     }
-    default {
-      return 0
+  }
+  if {$key eq "build"} {
+    # These apply only to the local OS, not a cross-compilation target,
+    # as the above check can potentially.
+    if {$::autosetup(iswin)} { return 1 }
+    if {[find-an-executable cygpath] ne "" || $::tcl_platform(os)=="Windows NT"} {
+      return 1
     }
   }
+  return 0
 }
 
 ########################################################################
