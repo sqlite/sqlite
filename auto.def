@@ -688,7 +688,7 @@ if {0} {
 if {[hwaci-check-emsdk]} {
   set wrapper $srcdir/tool/emcc.sh
   define EMCC_WRAPPER $wrapper
-  hwaci-make-from-dot-in $wrapper 1
+  hwaci-make-from-dot-in $wrapper
   catch {exec chmod u+x $wrapper}
   unset wrapper
 } else {
