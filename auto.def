@@ -67,9 +67,12 @@ options {
 
 set srcdir $autosetup(srcdir)
 #puts "srcdir = $srcdir"
-set VERSION [readfile $autosetup(srcdir)/VERSION]
-puts "VERSION = $VERSION"
+set RELEASE [readfile $autosetup(srcdir)/VERSION]
+regsub {([0-9]*\.*[0-9]*).*} $RELEASE {\1} VERSION
 define VERSION $VERSION
+define RELEASE $RELEASE
+puts "RELEASE = $RELEASE"
+puts "VERSION = $VERSION"
 #puts "with-wasi-sdk? = [opt-val with-wasi-sdk]"
 #puts "with-debug? = [opt-val with-debug]"
 
@@ -78,6 +81,8 @@ if {![file exists sqlite3.pc.in]} {
   puts "This appears to be an out-of-tree build."
   set outOfTreeBuild 1
 }
+
+cc-check-tools ld ar
 
 #
 # The build process allows for using a cross-compiler.  But the default
@@ -185,6 +190,9 @@ if {"" eq [hwaci-bin-define install]} {
 # XXX fi
 # XXX AC_SUBST BUILD_CC
 
+define BUILD_CC [get-define CC_FOR_BUILD]
+define BUILD_CFLAGS [get-env CFLAGS {-g}]
+
 ##########
 # Handle --with-wasi-sdk=DIR
 #
@@ -201,15 +209,18 @@ if {1} {
     define WASI_SDK_DIR ""
   } else {
     msg-checking "Checking WASI SDK directory \[$wasiSdkDir]... "
-    if {![file exists $wasiSdkDir/bin/clang]} {
-      user-error "--with-wasi-sdk=${wasiSdkDir} directory does not contain bin/clang"
-    }
-    msg-result "using wasi-sdk clang, disabling: tcl, CLI shell, DLL, threading"
+    puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
+    hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
+    msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
     define HAVE_WASI_SDK 1
     define WASI_SDK_DIR $wasiSdkDir
-    hwaci-opt-set tcl 0
-    hwaci-opt-set threadsafe 0
+    hwaci-opt-set load-extension 0; # ==> --disable-load-extension
+    hwaci-opt-set threadsafe 0; # ==> --threadsafe
+    hwaci-opt-set tcl 0; # ==> --disable-tcl
+    define HAVE_TCL 0
     set cross_compiling 1
+    # libtool is apparently hard-coded to use gcc for linking DLLs, so
+    # we disable the DLL build.
     set enable_shared 0
 
     # Changing --host and --target have no effect here except to possibly
@@ -224,13 +235,9 @@ if {1} {
     # XXX CC="${wasiSdkDir}/bin/clang"
     # XXX LD="${wasiSdkDir}/bin/wasm-ld"
     # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
-    #  set cross_compiling yes
-    #  hwaci-opt-set threadsafe 0
-    #  set use_tcl no
-    #  hwaci-opt-set tcl 0
-    # libtool is apparently hard-coded to use gcc for linking DLLs, so
-    # we disable the DLL build...
-    #  set enable_shared no
+    define CC "${wasiSdkDir}/bin/clang"
+    define LD "${wasiSdkDir}/bin/wasm-ld"
+    #define STRIP "${wasiSdkDir}/bin/strip"
   }
   unset wasiSdkDir
 }; # --wasi-sdk-dir
@@ -737,6 +744,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   }
 }
 
+define ENABLE_SHARED $enable_shared
 
 #########
 # Generate the output files.
@@ -775,7 +783,7 @@ hwaci-if-opt-truthy dump-defines {
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.
   if {0} {
-    foreach x $::define {
+    foreach x [all-defines] {
       puts "\t$x"
     }
   }

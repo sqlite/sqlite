@@ -122,7 +122,7 @@ proc hwaci-opt-set {flag {val 1}} {
 # Returns 1 if $val appears to be a truthy value, else returns
 # 0. Truthy values are any of {1 on enabled yes}
 proc hwaci-val-truthy {val} {
-  return [expr {$val in {1 on enabled yes}}]
+  expr {$val in {1 on enabled yes}}
 }
 
 ########################################################################
@@ -433,6 +433,29 @@ proc hwaci-check-exeext {} {
 
     msg-result no
   }
+}
+
+########################################################################
+# Expects a list of file names. If any one of them does not exist in
+# the filesystem, it fails fatally with an informative message.
+# Returns the last file name it checks. If the first argument is -v
+# then it emits msg-checking/msg-result messages for each file.
+proc hwaci-affirm-files-exist {args} {
+  set rc ""
+  set verbose 1
+  if {[lindex $args 0] eq "-v"} {
+    set verbose 1
+    set args [lrange $args 1 end]
+  }
+  foreach f $args {
+    if {$verbose} { msg-checking "looking for file... " }
+    if {![file exists $f]} {
+      user-error "not found: $f"
+    }
+    if {$verbose} { msg-result "$f" }
+    set rc $f
+  }
+  return rc
 }
 
 ########################################################################

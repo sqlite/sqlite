@@ -27,7 +27,7 @@ AR = @AR@
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
-BCC = @CC_FOR_BUILD@
+BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # TODO: @BUILD_CFLAGS@
 #
 #XX## TCC is the C Compile and options for use in building executables that
@@ -37,22 +37,22 @@ BCC = @CC_FOR_BUILD@
 #XX## on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #XX##
 CC = @CC@
-CFLAGS = @CPPFLAGS@ @CFLAGS@
-#TODO: figure out how to get autosetup to do CC_FOR_TARGET.
-#XX#TCC = ${CC} ${CFLAGS} -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
-#XX#TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
-#XX#TCC += -I${TOP}/ext/userauth
-#XX#
-#XX## Define this for the autoconf-based build, so that the code knows it can
-#XX## include the generated sqlite_cfg.h
-#XX##
-#XX#TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
-#XX#
-#XX## Define -DNDEBUG to compile without debugging (i.e., for production usage)
-#XX## Omitting the define will cause extra debugging code to be inserted and
-#XX## includes extra comments when "EXPLAIN stmt" is used.
-#XX##
-#XX#TCC += @TARGET_DEBUG@
+CFLAGS ?= @CFLAGS@
+CPPFLAGS ?= @CPPFLAGS@
+TCC = ${CC} ${CFLAGS} -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
+TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
+TCC += -I${TOP}/ext/userauth
+
+# Define this for the autoconf-based build, so that the code knows it can
+# include the generated sqlite_cfg.h
+#
+TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+
+# Define -DNDEBUG to compile without debugging (i.e., for production usage)
+# Omitting the define will cause extra debugging code to be inserted and
+# includes extra comments when "EXPLAIN stmt" is used.
+#
+TCC += @TARGET_DEBUG@
 #XX#
 #XX## Compiler options needed for programs that use the TCL library.
 #XX##
@@ -111,8 +111,7 @@ TCC += @LDFLAGS_ZLIB@
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = @VERSION@
-#XX#VERSION_NUMBER = @VERSION_NUMBER@
-#XX#RELEASE = @RELEASE@
+RELEASE = @RELEASE@
 
 # Filename extensions for binaries
 #
