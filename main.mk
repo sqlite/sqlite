@@ -560,8 +560,8 @@ sqlite3$(EXE):	sqlite3.h libsqlite3.a shell.c
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
 		shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
-sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
-	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
+sqldiff$(EXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.c sqlite3.h
+	$(TCCX) -I$(TOP)/ext/misc -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
@@ -763,8 +763,6 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)/src/shell.c.in \
-    $(TOP)/ext/consio/console_io.c \
-    $(TOP)/ext/consio/console_io.h \
     $(TOP)/ext/expert/sqlite3expert.c \
     $(TOP)/ext/expert/sqlite3expert.h \
     $(TOP)/ext/intck/sqlite3intck.c \
@@ -784,6 +782,8 @@ SHELL_DEP = \
     $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/sqlite3_stdio.c \
+    $(TOP)/ext/misc/sqlite3_stdio.h \
     $(TOP)/ext/misc/uint.c \
     $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/zipfile.c \

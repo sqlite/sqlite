@@ -694,8 +694,8 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
-sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.lo sqlite3.h
+	$(LTLINK) -I$(TOP)/ext/misc -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
@@ -1187,8 +1187,6 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)/src/shell.c.in \
-    $(TOP)/ext/consio/console_io.c \
-    $(TOP)/ext/consio/console_io.h \
     $(TOP)/ext/expert/sqlite3expert.c \
     $(TOP)/ext/expert/sqlite3expert.h \
     $(TOP)/ext/intck/sqlite3intck.c \
@@ -1208,6 +1206,8 @@ SHELL_DEP = \
     $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/sqlite3_stdio.c \
+    $(TOP)/ext/misc/sqlite3_stdio.h \
     $(TOP)/ext/misc/uint.c \
     $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/zipfile.c \
