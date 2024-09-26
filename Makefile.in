@@ -7,7 +7,7 @@
 # the makefile manually.  Just set the parameters below to values that
 # work well for your system.
 #
-
+all:
 #XX# Lines starting with #XX# are TODOs for the port to autosetup
 
 # The toplevel directory of the source tree.  This is the directory
@@ -117,8 +117,6 @@ RELEASE = @RELEASE@
 #
 BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
-BOBJ = @BUILD_OBJEXT@
-TOBJ = @TARGET_OBJEXT@
 
 #XX## The following variable is "1" if the configure script was able to locate
 #XX## the tclConfig.sh file.  It is an empty string otherwise.  When this
@@ -1667,13 +1665,14 @@ tidy:
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
-	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
+	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
 	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh*
-
+# FIXME? (rm *.def) will remove auto.def (part of autosetup)
+#
 # Removes build products and test logs.  Retains ./configure outputs.
 #
 clean:	tidy
