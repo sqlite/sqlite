@@ -1,5 +1,5 @@
-C Latest\shwaci-common.tcl\safter\srefactoring\sto\sfacilitate\sincluding\sa\scopy\sin\sthe\slibfossil\stree.
-D 2024-09-26T21:08:00.671
+C Re-indent\ssome\stcl\scode.
+D 2024-09-26T21:09:22.501
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -46,7 +46,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 1b52de228642c1db5a714d54ca974d723ec8b4092e8c3765d348b625850f7311
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl d5c192839c2a233380e880df90ee0a3427eef623b3ddf258b466f67ada8f4639
+F autosetup/hwaci-common.tcl ed4b9197d06dce03938e9f0b59a0d605a37761f23098b8c63fc581c5c0eda1ef
 F autosetup/jimsh0.c 1b5fe91fffcddbc29f2b16acb80f1650632ea2edbe8336b8155ef7b4c66f6d8d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2233,8 +2233,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53dc33d5e20062e8c4c9856349bbc143c858327ef41f356ffcc574b36d0cc73c
-R 6b7f18b95913add9b8d87d074deb4cfd
+P feea65bcd54f9266445bc4d65ea5e3cfadee8e3abff5b682e31cdc0034354fbf
+R 43bb192919b9c029a6389c0f03cc26a7
 U stephan
-Z 0ed9ac144e699edbea90d5afd0259dab
+Z d85ef6beb4955ef9438b7cb0c396c13b
 # Remove this line to create a well-formed Fossil manifest.

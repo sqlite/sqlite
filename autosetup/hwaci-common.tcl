@@ -322,25 +322,25 @@ proc hwaci-file-content-list {fname} {
 # This test has a long history of false positive results because of
 # compilers reacting differently to the -MJ flag.
 proc hwaci-check-compile-commands {{configOpt {}}} {
-    msg-checking "compile_commands.json support... "
-    if {"" ne $configOpt && ![hwaci-opt-truthy $configOpt]} {
-        msg-result "explicitly disabled"
-        define MAKE_COMPILATION_DB no
-        return 0
+  msg-checking "compile_commands.json support... "
+  if {"" ne $configOpt && ![hwaci-opt-truthy $configOpt]} {
+    msg-result "explicitly disabled"
+    define MAKE_COMPILATION_DB no
+    return 0
+  } else {
+    if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
+      # This test reportedly incorrectly succeeds on one of
+      # Martin G.'s older systems. drh also reports a false
+      # positive on an unspecified older Mac system.
+      msg-result "compiler supports compile_commands.json"
+      define MAKE_COMPILATION_DB yes
+      return 1
     } else {
-        if {[cctest -lang c -cflags {/dev/null -MJ} -source {}]} {
-            # This test reportedly incorrectly succeeds on one of
-            # Martin G.'s older systems. drh also reports a false
-            # positive on an unspecified older Mac system.
-            msg-result "compiler supports compile_commands.json"
-            define MAKE_COMPILATION_DB yes
-            return 1
-        } else {
-            msg-result "compiler does not support compile_commands.json"
-            define MAKE_COMPILATION_DB no
-            return 0
-        }
+      msg-result "compiler does not support compile_commands.json"
+      define MAKE_COMPILATION_DB no
+      return 0
     }
+  }
 }
 
 ########################################################################
