@@ -4963,7 +4963,11 @@ int sqlite3_snapshot_get(
     if( iDb==0 || iDb>1 ){
       Btree *pBt = db->aDb[iDb].pBt;
       if( SQLITE_TXN_WRITE!=sqlite3BtreeTxnState(pBt) ){
+        Pager *pPager = sqlite3BtreePager(pBt);
+        i64 dummy = 0;
+        sqlite3PagerSnapshotOpen(pPager, (sqlite3_snapshot*)&dummy);
         rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
+        sqlite3PagerSnapshotOpen(pPager, 0);
         if( rc==SQLITE_OK ){
           rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
         }
