@@ -11,26 +11,6 @@ if {[get-define host] ne [get-define build]} {
 }
 define cross_compiling ${cross_compiling}
 
-if {$cross_compiling} {
-  # gcc's cross-compiler is named platform-os-vendor-gcc instead of
-  # platform-os-vendor-cc. Checking for cc here will find the CC which
-  # was already found via (use cc).  Checking for gcc here would be
-  # unportable - the client may well have a different cross-compiler.
-  define-push {LD AR} {
-    cc-check-tools ld ar
-    #define BIN_host_GCC [get-define GCC]
-    define BIN_host_LD [get-define LD]
-    define BIN_host_AR [get-define AR]
-  }
-  #define BIN_host_CC [get-define CC]
-}
-#define CC [get-define CC_FOR_BUILD]
-if {![cc-path-progs ld ar]} {
-  # ^^^^ not cc-check-tools because that one resolves cross-compile
-  # binaries when --host=... is set.
-  user-error "Missing required binary"
-}
-
 ########################################################################
 # A very long story made short, autosetup's --flag handling has
 # some behaviors which make it impossible to implement 100% identical
@@ -283,7 +263,6 @@ if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
   define LDFLAGS_ZLIB ""
 }
 
-hwaci-define-if-opt-truthy with-debug SQLITE_DEBUG "Debug build?"
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
   "Use amalgamation for builds?"
 hwaci-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
@@ -291,8 +270,27 @@ hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS \
   "test-runner flags:" {--status} {}
 hwaci-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:" {--linemacros=1} {--linemacros=0}
+msg-checking "Debug build? "
+hwaci-if-opt-truthy with-debug {
+  define SQLITE_DEBUG 1
+  define TARGET_DEBUG {-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+  msg-result yes
+} {
+  define TARGET_DEBUG {-DNDEBUG}
+  msg-result no
+}
 
-if {0} {
+if {1} {
+  # Temporary quick hack for finding "a" tclsh. TODO is port the
+  # full-featured check which lives in the elseif part of this block.
+  #
+  # Also TODO is figure out whether we can use jimtcl for our internal
+  # build-tool uses (as opposed to testing purposes, which requires
+  # the tcl SQLite module).
+  if {![cc-path-progs tclsh]} {
+    user-error "Cannot find tclsh"
+  }
+} elseif {0} {
   #########
   # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
   # The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
