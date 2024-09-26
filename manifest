@@ -1,5 +1,5 @@
-C Always\sshow\sHTML\stable\sheaders\sin\s".www"\soutput\smode.
-D 2024-09-25T16:11:27.958
+C Fix\sshell\stest\scases\sto\saccount\sfor\srecent\sadditions\sto\sthe\s".help"\soutput.
+D 2024-09-26T01:29:22.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1628,7 +1628,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 490bf9d0c7c9564fea318c46d49369f4690b825b584c9a544dbdccf61bc0babc
+F test/shell1.test b02d628494fa284cdb2b7b2fecdadea96913796afd623f340a79d68f055dcb7e
 F test/shell2.test 01a01f76ed98088ce598794fbf5b359e148271541a8ddbf79d21cc353cc67a24
 F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
 F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a9209519f612e66cfe11c89e70efd8285a0185ac0d3e5795846aafbd05d7a21f
-R 5a9e599155b273bd1e8c309df5248f6e
+P 660ca5ce6600d897cc2b00b9d39e5d993c1c0e71ec0d5dc706246c053a163281
+R 3b1b1ac1efd2caefa25e8d6c9bf0ff2f
 U drh
-Z 4b89dbbffeeb17eaffa0b5d5ca63c4c0
+Z 1e00c19e9c0388401e635e4bb988cbfe
 # Remove this line to create a well-formed Fossil manifest.
