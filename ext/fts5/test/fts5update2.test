@@ -117,6 +117,27 @@ foreach {tn cu} {
   do_catchsql_test 1.$tn.14 {
     UPDATE ft1 SET d='d11' WHERE rowid=1
   } {1 {cannot UPDATE contentless fts5 table: ft1}}
+
+  # It should be possible to update the rowid if contentless_delete=1 is
+  # set and all indexed columns are updated.
+  if {$tn==2} breakpoint
+  do_execsql_test 1.$tn.15 {
+    UPDATE ft2 SET a='a_one', d='d_one', rowid=11 WHERE rowid=1
+  } 
+
+  set res(0) {
+    2 {} {} {} {}
+    3 {} {} {} {}
+    11 {} {} {} {}
+  }
+  set res(1) {
+    2 {} b2.1.2 c2.2 {}
+    3 {} b3 c3.2 {}
+    11 {} b1.1.2 c1.2 {}
+  }
+  do_execsql_test 1.$tn.16 {
+    SELECT rowid, * FROM ft2
+  } $res($cu)
 }
 
 finish_test

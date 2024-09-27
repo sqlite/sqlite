@@ -2031,10 +2031,10 @@ static int fts5UpdateMethod(
               rc = sqlite3Fts5StorageContentInsert(pStorage, 0, apVal, pRowid);
             }
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 1);
+              rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 0);
             }
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageIndexInsert(pStorage, apVal,*pRowid);
+              rc = sqlite3Fts5StorageIndexInsert(pStorage, apVal, *pRowid);
             }
           }
         }else if( bContent ){
