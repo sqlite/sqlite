@@ -760,6 +760,16 @@ sourcetest:	srcck1$(BEXE) sqlite3.c
 
 src-verify:	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
+
+
+# JimTCL is part of the autosetup suite and is suitable for certain
+# in-tree TCL jobs, but it requires that we build it with non-default
+# flags.
+#
+JIMSH = @srcdir@/jimsh
+$(JIMSH): $(TOP)/autosetup/jimsh0.c Makefile
+	$(BCC) -o $(JIMSH) -DHAVE_REALPATH $<
+
 #XX#
 #XX#verify-source:	./src-verify
 #XX#	./src-verify $(TOP)
@@ -1251,8 +1261,8 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.c \
     $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/tool/mkshellc.tcl >shell.c
 #XX#
 #XX#
 #XX#
@@ -1668,7 +1678,6 @@ fts5.c: $(FTS5_SRC) has_tclsh84
 #XX#tclextension-list: 
 #XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
-
 # Remove build products sufficient so that subsequent makes will recompile
 # everything from scratch.  Do not remove:
 #
@@ -1702,7 +1711,7 @@ clean:	tidy
 # Clean up everything.  No exceptions.
 #
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
+	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile $(LIBTOOL)
 
 #XX##
 #XX## Windows section
