@@ -128,7 +128,8 @@ HAVE_TCL = @HAVE_TCL@
 # This is the command to use for tclsh - normally just "tclsh", but we may
 # know the specific version we want to use
 #
-TCLSH_CMD = @TCLSH_CMD@
+# TCLSH_CMD = @TCLSH_CMD@
+TCLSH_CMD = exit 1
 
 # Additional options when running tests using testrunner.tcl
 # This is usually either blank, or else --status
@@ -880,12 +881,12 @@ has_tclsh85:
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl has_tclsh84 fts5.c
+.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c $(JIMSH) # has_tclsh84
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
+	$(JIMSH) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
 	mv vdbe.new tsrc/vdbe.c
 	cp fts5.c fts5.h tsrc
 	touch .target_source
@@ -896,14 +897,14 @@ sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify \
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
-sqlite3r.h: sqlite3.h has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+sqlite3r.h: sqlite3.h $(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
 
-sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
+sqlite3r.c: sqlite3.c sqlite3r.h $(JIMSH) # has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+	$(JIMSH) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
@@ -1202,11 +1203,12 @@ mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
-opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl has_tclsh84
-	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
+opcodes.h:	parse.h $(TOP)/src/vdbe.c \
+		$(TOP)/tool/mkopcodeh.tcl $(JIMSH) # has_tclsh84
+	cat parse.h $(TOP)/src/vdbe.c | $(JIMSH) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -1351,8 +1353,8 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC) has_tclsh84
-	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
+fts5.c: $(FTS5_SRC) $(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
 #XX#fts5.lo:	fts5.c $(HDR) $(EXTHDR)
