@@ -30,8 +30,8 @@ define cross_compiling ${cross_compiling}
 #
 options {
   with-debug:=1        => {Enable debug build flags}
-  with-tclsh:PATHNAME  => {Full pathname of tclsh to use}
-  with-tcl:DIR         => {Directory containing tclConfig.sh}
+  with-tclsh:          => {Full pathname of tclsh to use}
+  with-tcl:            => {Directory containing tclConfig.sh}
   tcl=1                => {Disable building accessory programs that require TCL-dev}
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
@@ -66,13 +66,18 @@ options {
 }
 
 set srcdir $autosetup(srcdir)
-#puts "srcdir = $srcdir"
+set top_srcdir [get-define abs_top_srcdir]
+puts "srcdir = $srcdir"
+puts "top_srcdir = $top_srcdir"
 set RELEASE [readfile $autosetup(srcdir)/VERSION]
 regsub {([0-9]*\.*[0-9]*).*} $RELEASE {\1} VERSION
 define VERSION $VERSION
 define RELEASE $RELEASE
 puts "RELEASE = $RELEASE"
 puts "VERSION = $VERSION"
+
+define SQLITE_AUTOREMAKE cd
+define-append SQLITE_AUTOREMAKE $autosetup(srcdir) && $top_srcdir/configure {*}$autosetup(argv)
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
@@ -258,7 +263,12 @@ undefine lib_fdatasync
 
 #########
 # Check for needed/wanted headers
-cc-check-includes sys/types.h stdlib.h stdint.h inttypes.h malloc.h
+cc-check-includes \
+  sys/types.h sys/stat.h dlfcn.h unistd.h \
+  stdlib.h malloc.h memory.h \
+  string.h strings.h \
+  stdint.h inttypes.h
+
 if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
   # TODO: port over the more sophisticated zlib search from the fossil auto.def
   define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
@@ -292,39 +302,55 @@ if {1} {
   # Also TODO is figure out whether we can use jimtcl for our internal
   # build-tool uses (as opposed to testing purposes, which requires
   # the tcl SQLite module).
-  if {![cc-path-progs tclsh]} {
-    user-error "Cannot find tclsh"
+  set tclsh [hwaci-first-bin-of tclsh8.6 tclsh tclsh9.0]
+  if {"" eq $tclsh} {
+    user-error "Cannot find tclsh, which is required to build certain files."
   }
+  define TCLSH_CMD $tclsh
+  define HAVE_TCL 0 ; # until the following elseif block is ported
 } elseif {0} {
+  # Porting this section of configure.ac is going to be a bit of a slog...
+  set tEnable [hwaci-opt-truthy tcl]
+  set use_tcl $tEnable
+  set tclsh ""
+  #set original_use_tcl ${use_tcl}
   #########
   # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
   # The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
   #
   # XXX AC_ARG_WITH tclsh AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use])
   # XXX AC_ARG_WITH tcl AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)])
-  # if {![opt-bool tcl]} {
-  #   set use_tcl $enableval
-  # } else {
-  #   set use_tcl yes
-  # }
-  #set original_use_tcl ${use_tcl}
-  # XXX if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
-  # XXX AC_CHECK_PROGS TCLSH_CMD tclsh8.6 tclsh tclsh9.0 none
-  #set with_tclsh ${TCLSH_CMD}
-  # XXX fi
-  # XXX if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
-  # XXX TCLSH_CMD=${with_tclsh}
-  #msg-result "using tclsh at \"$TCLSH_CMD\""
-  # XXX if test x"${use_tcl}" = "xyes"; then
-  #set with_tcl `${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
-  # XXX if test x"${with_tcl}" != x; then
-  #msg-result "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}"
-  # XXX else
-  #msg-result Warning: "$TCLSH_CMD is unable to recommend a tclConfig.sh"
-  #set use_tcl no
-  # XXX fi
-  # XXX fi
-  # XXX fi
+  set with_tclsh [opt-val with-tclsh]
+  set with_tcl [opt-val with-tcl]
+
+  if {"" eq $with_tclsh && "" eq $with_tcl} {
+    # XXX if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
+    # XXX AC_CHECK_PROGS TCLSH_CMD tclsh8.6 tclsh tclsh9.0 none
+    #set with_tclsh ${TCLSH_CMD}
+    # XXX fi
+    set with_tclsh [hwaci-first-bin-of tclsh8.6 tclsh tclsh9.0]
+  }
+
+  if {"" ne $with_tclsh } {
+    # XXX if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
+    # XXX TCLSH_CMD=${with_tclsh}
+    set tclsh $with_tclsh
+    puts "using tclsh at \"$tclsh\""
+    if {$use_tcl} {
+      # XXX if test x"${use_tcl}" = "xyes"; then
+      #set with_tcl `${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
+      # XXX if test x"${with_tcl}" != x; then
+      #msg-result "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}"
+      # XXX else
+      #msg-result Warning: "$TCLSH_CMD is unable to recommend a tclConfig.sh"
+      #set use_tcl no
+      # XXX fi
+      # XXX fi
+    }
+    # XXX fi
+  }
+
+
   # XXX if test x"${use_tcl}" = "xyes"; then
   # XXX if test x"${with_tcl}" != x; then
   # XXX if test -r ${with_tcl}/tclConfig.sh; then
@@ -414,7 +440,9 @@ if {1} {
   # XXX done
   # XXX TCLLIBDIR="${TCLLIBDIR}/sqlite3"
   # XXX fi
-}
+
+  unset tEnable with_tclsh with_tcl
+}; # end of tcl
 
 
 msg-checking "Support threadsafe operation? "
@@ -744,24 +772,28 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
 
 define ENABLE_SHARED $enable_shared
 
+if {1} {
+  # for sqlite_cfg.h
+  define PACKAGE_URL {https://sqlite.org}
+  define PACKAGE_VERSION [get-define VERSION]
+}
+
 #########
 # Generate the output files.
 #
 if {1} {
-  # mystery: why are defines (srcdir, top_srcdir) both absolute when emitted
-  # from make-config-header but relative when emitted via make-template?
-
   hwaci-make-from-dot-in Makefile
   hwaci-make-from-dot-in sqlite3.pc
-  #hwaci-make-from-dot-in ext/wasm/GNUmakefile
-  if {0} {
-    # output from make-config-header is not quite the same as that from the
-    # autotools. We may need to write a custom replacement.
-    # hwaci-make-from-dot-in sqlite_cfg.h
-    # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_DECL_*} -auto HAVE_* -none *
-    # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_*} -none *
-    # make-config-header sqlite_cfg.h
+  # hwaci-make-from-dot-in sqlite_cfg.h
+  if {1} {
+    hwaci-make-from-dot-in sqlite_cfg.h
+  } else {
+    make-config-header -bare {SIZEOF_* HAVE_DECL_*} \
+      -auto {HAVE_* PACKAGE_*} -none *
   }
+  # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_*} -none *
+  # make-config-header sqlite_cfg.h
+  #hwaci-make-from-dot-in ext/wasm/GNUmakefile
 }
 
 set oFF [get-define OPT_FEATURE_FLAGS]

@@ -96,6 +96,19 @@ proc hwaci-bin-define {binName {defName {}}} {
 }
 
 ########################################################################
+# Each argument is passed to cc-path-progs. If that function returns
+# true, the full path to that binary is returned. If no matches are
+# found, "" is returned.
+proc hwaci-first-bin-of {args} {
+  foreach b $args {
+    if {[cc-path-progs $b]} {
+      return [get-define [string toupper $b]]
+    }
+  }
+  return ""
+}
+
+########################################################################
 # Looks for `bash` binary and dies if not found. On success, defines
 # BIN_BASH to the full path to bash and returns that value. We
 # _require_ bash because it's the SHELL value used in our makefiles.

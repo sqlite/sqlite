@@ -118,23 +118,23 @@ RELEASE = @RELEASE@
 BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
 
-#XX## The following variable is "1" if the configure script was able to locate
-#XX## the tclConfig.sh file.  It is an empty string otherwise.  When this
-#XX## variable is "1", the TCL extension library (libtclsqlite3.so) is built
-#XX## and installed.
-#XX##
-#XX#HAVE_TCL = @HAVE_TCL@
-#XX#
-#XX## This is the command to use for tclsh - normally just "tclsh", but we may
-#XX## know the specific version we want to use
-#XX##
-#XX#TCLSH_CMD = @TCLSH_CMD@
-#XX#
-#XX## Additional options when running tests using testrunner.tcl
-#XX## This is usually either blank, or else --status
-#XX##
-TSTRNNR_OPTS = @TSTRNNR_OPTS@
+# The following variable is "1" if the configure script was able to locate
+# the tclConfig.sh file.  It is an empty string otherwise.  When this
+# variable is "1", the TCL extension library (libtclsqlite3.so) is built
+# and installed.
 #
+HAVE_TCL = @HAVE_TCL@
+
+# This is the command to use for tclsh - normally just "tclsh", but we may
+# know the specific version we want to use
+#
+TCLSH_CMD = @TCLSH_CMD@
+
+# Additional options when running tests using testrunner.tcl
+# This is usually either blank, or else --status
+#
+TSTRNNR_OPTS = @TSTRNNR_OPTS@
+
 #XX## Where do we want to install the tcl plugin
 #XX##
 #XX#TCLLIBDIR = @TCLLIBDIR@
@@ -181,8 +181,16 @@ INSTALL = @BIN_INSTALL@
 # You should not have to change anything below this line
 ################################################################################
 #
+
+# Vars with the AS_ prefix are specifically related to AutoSetup.
+#
+# AS_AUTO_DEF is the main configure script.
+#
+AS_AUTO_DEF = $(TOP)/auto.def
+
 USE_AMALGAMATION = @USE_AMALGAMATION@
 AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
+
 #
 #XX## Object files for the SQLite library (non-amalgamation).
 #XX##
@@ -674,23 +682,36 @@ SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
 
 SQLITE3_O = $(TOP)/sqlite3.o
 
-#XX## Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
-#XX## libtclsqlite3.la or an empty value.
-#XX#libtclsqlite3.la_0 =
-#XX#libtclsqlite3.la_1 = libtclsqlite3.la
-#XX#
-#XX## This is the default Makefile target.  The objects listed here
-#XX## are what get build when you type just "make" with no arguments.
-#XX##
-#XX#all:	sqlite3.h libsqlite3.la $(SQLITE3_SHELL_TARGET) \
+# Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
+# libtclsqlite3.la or an empty value.
+libtclsqlite3.la_0 =
+libtclsqlite3.la_1 = libtclsqlite3.la
+#
+# This is the default Makefile target.  The objects listed here
+# are what get build when you type just "make" with no arguments.
+#
+
+all:	sqlite3.h
+#all:	libsqlite3.la $(SQLITE3_SHELL_TARGET) \
 #XX#  $(libtclsqlite3.la_$(HAVE_TCL))
-#XX#
-#XX#Makefile: $(TOP)/Makefile.in
-#XX#	./config.status
-#XX#
-#XX#sqlite3.pc: $(TOP)/sqlite3.pc.in
-#XX#	./config.status
-#XX#
+
+# Re-run $(TOP)/configure with the same args invoked to produce this
+# makefile.
+#
+AUTOREMAKE = @SQLITE_AUTOREMAKE@
+
+Makefile: $(TOP)/Makefile.in
+	$(AUTOREMAKE)
+	@touch $@
+
+sqlite3.pc: $(TOP)/sqlite3.pc.in
+	$(AUTOREMAKE)
+	@touch $@
+
+sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
+	$(AUTOREMAKE)
+	@touch $@
+
 #XX#libsqlite3.la:	$(LIBOBJ)
 #XX#	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
 #XX#		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
@@ -731,14 +752,14 @@ SQLITE3_O = $(TOP)/sqlite3.o
 #XX#	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
 #XX#		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
 #XX#
-#XX#srcck1$(BEXE):	$(TOP)/tool/srcck1.c
-#XX#	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
-#XX#
-#XX#sourcetest:	srcck1$(BEXE) sqlite3.c
-#XX#	./srcck1 sqlite3.c
-#XX#
-#XX#src-verify:	$(TOP)/tool/src-verify.c
-#XX#	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
+srcck1$(BEXE):	$(TOP)/tool/srcck1.c
+	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
+
+sourcetest:	srcck1$(BEXE) sqlite3.c
+	./srcck1 sqlite3.c
+
+src-verify:	$(TOP)/tool/src-verify.c
+	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
 #XX#
 #XX#verify-source:	./src-verify
 #XX#	./src-verify $(TOP)
@@ -830,52 +851,52 @@ SQLITE3_O = $(TOP)/sqlite3.o
 #XX#	$(MPTEST2) --journalmode DELETE
 #XX#
 #XX#
-#XX#has_tclsh84:
-#XX#	sh $(TOP)/tool/cktclsh.sh 8.4 $(TCLSH_CMD)
-#XX#	touch has_tclsh84
-#XX#
-#XX#has_tclsh85:
-#XX#	sh $(TOP)/tool/cktclsh.sh 8.5 $(TCLSH_CMD)
-#XX#	touch has_tclsh85
-#XX#
+has_tclsh84:
+	sh $(TOP)/tool/cktclsh.sh 8.4 $(TCLSH_CMD)
+	touch has_tclsh84
+
+has_tclsh85:
+	sh $(TOP)/tool/cktclsh.sh 8.5 $(TCLSH_CMD)
+	touch has_tclsh85
+
 #XX#has_tclconfig:
 #XX#	@ if test x"$(HAVE_TCL)" != "x1"; then	echo 'ERROR: Requires access to "tclConfig.sh" which "configure" was not able to locate'; exit 1; fi
 #XX#	touch has_tclconfig
 #XX#
 #XX#
-#XX## This target creates a directory named "tsrc" and fills it with
-#XX## copies of all of the C source code and header files needed to
-#XX## build on the target system.  Some of the C source code and header
-#XX## files are automatically generated.  This target takes care of
-#XX## all that automatic generation.
-#XX##
-#XX#.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl has_tclsh84 fts5.c
-#XX#	rm -rf tsrc
-#XX#	mkdir tsrc
-#XX#	cp -f $(SRC) tsrc
-#XX#	rm tsrc/sqlite.h.in tsrc/parse.y
-#XX#	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
-#XX#	mv vdbe.new tsrc/vdbe.c
-#XX#	cp fts5.c fts5.h tsrc
-#XX#	touch .target_source
-#XX#
-#XX#sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
-#XX#	cp tsrc/sqlite3ext.h .
-#XX#	cp $(TOP)/ext/session/sqlite3session.h .
-#XX#
-#XX#sqlite3r.h: sqlite3.h has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
-#XX#
-#XX#sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
-#XX#	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
-#XX#	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
-#XX#	cp $(TOP)/ext/recover/dbdata.c tsrc/
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
-#XX#
-#XX#sqlite3ext.h:	.target_source
-#XX#	cp tsrc/sqlite3ext.h .
-#XX#
+# This target creates a directory named "tsrc" and fills it with
+# copies of all of the C source code and header files needed to
+# build on the target system.  Some of the C source code and header
+# files are automatically generated.  This target takes care of
+# all that automatic generation.
+#
+.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl has_tclsh84 fts5.c
+	rm -rf tsrc
+	mkdir tsrc
+	cp -f $(SRC) tsrc
+	rm tsrc/sqlite.h.in tsrc/parse.y
+	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
+	mv vdbe.new tsrc/vdbe.c
+	cp fts5.c fts5.h tsrc
+	touch .target_source
+
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+	cp tsrc/sqlite3ext.h .
+	cp $(TOP)/ext/session/sqlite3session.h .
+
+sqlite3r.h: sqlite3.h has_tclsh84
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+
+sqlite3r.c: sqlite3.c sqlite3r.h has_tclsh84
+	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
+	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
+	cp $(TOP)/ext/recover/dbdata.c tsrc/
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+
+sqlite3ext.h:	.target_source
+	cp tsrc/sqlite3ext.h .
+
 #XX#tclsqlite3.c:	sqlite3.c
 #XX#	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 #XX#	cat sqlite3.c >>tclsqlite3.c
@@ -898,12 +919,15 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 @if BUILD_EXEEXT ne ""
 lemon: lemon$(BEXE)
 @endif
-#XX#
-#XX## Rules to build the program that generates the source-id
-#XX##
-#XX#mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
-#XX#	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
-#XX#
+
+# Rules to build the program that generates the source-id
+#
+mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
+	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
+@if BUILD_EXEEXT ne ""
+mksourceid: mksourceid$(BEXE)
+@endif
+
 #XX## Rules to build individual *.o files from generated *.c files. This
 #XX## applies to:
 #XX##
@@ -1170,71 +1194,71 @@ lemon: lemon$(BEXE)
 #XX#tclsqlite3$(TEXE):	has_tclconfig tclsqlite-shell.lo libsqlite3.la
 #XX#	$(LTLINK) -o $@ tclsqlite-shell.lo \
 #XX#		 libsqlite3.la $(LIBTCL)
-#XX#
-#XX## Rules to build opcodes.c and opcodes.h
-#XX##
-#XX#opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
-#XX#
-#XX#opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl has_tclsh84
-#XX#	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
-#XX#
-#XX## Rules to build parse.c and parse.h - the outputs of lemon.
-#XX##
-#XX#parse.h:	parse.c
-#XX#
-#XX#parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
-#XX#	cp $(TOP)/src/parse.y .
-#XX#	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
-#XX#
-#XX#sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
-#XX#
+
+# Rules to build opcodes.c and opcodes.h
+#
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl has_tclsh84
+	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
+
+opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl has_tclsh84
+	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
+
+# Rules to build parse.c and parse.h - the outputs of lemon.
+#
+parse.h:	parse.c
+
+parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
+	cp $(TOP)/src/parse.y .
+	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
+
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION has_tclsh84
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+
 #XX#sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION has_tclsh84
 #XX#	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
 #XX#	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
 #XX#	cat $(TOP)/VERSION | $(TCLSH_CMD) $(TOP)/tool/replace.tcl exact . , >>$@
 #XX#	echo '#endif' >>sqlite3rc.h
-#XX#
-#XX#keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
-#XX#	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
-#XX#	./mkkeywordhash$(BEXE) >keywordhash.h
-#XX#
-#XX## Source and header files that shell.c depends on
-#XX#SHELL_DEP = \
-#XX#    $(TOP)/src/shell.c.in \
-#XX#    $(TOP)/ext/consio/console_io.c \
-#XX#    $(TOP)/ext/consio/console_io.h \
-#XX#    $(TOP)/ext/expert/sqlite3expert.c \
-#XX#    $(TOP)/ext/expert/sqlite3expert.h \
-#XX#    $(TOP)/ext/intck/sqlite3intck.c \
-#XX#    $(TOP)/ext/intck/sqlite3intck.h \
-#XX#    $(TOP)/ext/misc/appendvfs.c \
-#XX#    $(TOP)/ext/misc/base64.c \
-#XX#    $(TOP)/ext/misc/base85.c \
-#XX#    $(TOP)/ext/misc/completion.c \
-#XX#    $(TOP)/ext/misc/decimal.c \
-#XX#    $(TOP)/ext/misc/fileio.c \
-#XX#    $(TOP)/ext/misc/ieee754.c \
-#XX#    $(TOP)/ext/misc/memtrace.c \
-#XX#    $(TOP)/ext/misc/pcachetrace.c \
-#XX#    $(TOP)/ext/misc/percentile.c \
-#XX#    $(TOP)/ext/misc/regexp.c \
-#XX#    $(TOP)/ext/misc/series.c \
-#XX#    $(TOP)/ext/misc/sha1.c \
-#XX#    $(TOP)/ext/misc/shathree.c \
-#XX#    $(TOP)/ext/misc/sqlar.c \
-#XX#    $(TOP)/ext/misc/uint.c \
-#XX#    $(TOP)/ext/misc/vfstrace.c \
-#XX#    $(TOP)/ext/misc/zipfile.c \
-#XX#    $(TOP)/ext/recover/dbdata.c \
-#XX#    $(TOP)/ext/recover/sqlite3recover.c \
-#XX#    $(TOP)/ext/recover/sqlite3recover.h \
-#XX#    $(TOP)/src/test_windirent.c \
-#XX#    $(TOP)/src/test_windirent.h
-#XX#
-#XX#shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
+
+keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
+	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
+	./mkkeywordhash$(BEXE) >keywordhash.h
+
+# Source and header files that shell.c depends on
+SHELL_DEP = \
+    $(TOP)/src/shell.c.in \
+    $(TOP)/ext/consio/console_io.c \
+    $(TOP)/ext/consio/console_io.h \
+    $(TOP)/ext/expert/sqlite3expert.c \
+    $(TOP)/ext/expert/sqlite3expert.h \
+    $(TOP)/ext/intck/sqlite3intck.c \
+    $(TOP)/ext/intck/sqlite3intck.h \
+    $(TOP)/ext/misc/appendvfs.c \
+    $(TOP)/ext/misc/base64.c \
+    $(TOP)/ext/misc/base85.c \
+    $(TOP)/ext/misc/completion.c \
+    $(TOP)/ext/misc/decimal.c \
+    $(TOP)/ext/misc/fileio.c \
+    $(TOP)/ext/misc/ieee754.c \
+    $(TOP)/ext/misc/memtrace.c \
+    $(TOP)/ext/misc/pcachetrace.c \
+    $(TOP)/ext/misc/percentile.c \
+    $(TOP)/ext/misc/regexp.c \
+    $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/sha1.c \
+    $(TOP)/ext/misc/shathree.c \
+    $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/vfstrace.c \
+    $(TOP)/ext/misc/zipfile.c \
+    $(TOP)/ext/recover/dbdata.c \
+    $(TOP)/ext/recover/sqlite3recover.c \
+    $(TOP)/ext/recover/sqlite3recover.h \
+    $(TOP)/src/test_windirent.c \
+    $(TOP)/src/test_windirent.h
+
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl has_tclsh84
+	$(TCLSH_CMD) $(TOP)/tool/mkshellc.tcl >shell.c
 #XX#
 #XX#
 #XX#
@@ -1294,37 +1318,37 @@ lemon: lemon$(BEXE)
 #XX#
 #XX#stmt.lo:	$(TOP)/ext/misc/stmt.c
 #XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
-#XX#
-#XX## FTS5 things
-#XX##
-#XX#FTS5_SRC = \
-#XX#   $(TOP)/ext/fts5/fts5.h \
-#XX#   $(TOP)/ext/fts5/fts5Int.h \
-#XX#   $(TOP)/ext/fts5/fts5_aux.c \
-#XX#   $(TOP)/ext/fts5/fts5_buffer.c \
-#XX#   $(TOP)/ext/fts5/fts5_main.c \
-#XX#   $(TOP)/ext/fts5/fts5_config.c \
-#XX#   $(TOP)/ext/fts5/fts5_expr.c \
-#XX#   $(TOP)/ext/fts5/fts5_hash.c \
-#XX#   $(TOP)/ext/fts5/fts5_index.c \
-#XX#   fts5parse.c fts5parse.h \
-#XX#   $(TOP)/ext/fts5/fts5_storage.c \
-#XX#   $(TOP)/ext/fts5/fts5_tokenize.c \
-#XX#   $(TOP)/ext/fts5/fts5_unicode2.c \
-#XX#   $(TOP)/ext/fts5/fts5_varint.c \
-#XX#   $(TOP)/ext/fts5/fts5_vocab.c  \
-#XX#
-#XX#fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
-#XX#	cp $(TOP)/ext/fts5/fts5parse.y .
-#XX#	rm -f fts5parse.h
-#XX#	./lemon$(BEXE) $(OPTS) -S fts5parse.y
-#XX#
-#XX#fts5parse.h: fts5parse.c
-#XX#
-#XX#fts5.c: $(FTS5_SRC) has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
-#XX#	cp $(TOP)/ext/fts5/fts5.h .
-#XX#
+
+# FTS5 things
+#
+FTS5_SRC = \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5_main.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
+   $(TOP)/ext/fts5/fts5_vocab.c  \
+
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
+	cp $(TOP)/ext/fts5/fts5parse.y .
+	rm -f fts5parse.h
+	./lemon$(BEXE) $(OPTS) -S fts5parse.y
+
+fts5parse.h: fts5parse.c
+
+fts5.c: $(FTS5_SRC) has_tclsh84
+	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
+	cp $(TOP)/ext/fts5/fts5.h .
+
 #XX#fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 #XX#	$(LTCOMPILE) -DSQLITE_CORE -c fts5.c
 #XX#
