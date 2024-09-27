@@ -87,7 +87,6 @@ if {![file exists sqlite3.pc.in]} {
 
 cc-check-tools ld ar
 
-#
 # The build process allows for using a cross-compiler.  But the default
 # action is to target the same platform that we are running on.  The
 # configure script needs to discover the following properties of the
@@ -245,6 +244,20 @@ if {1} {
   unset wasiSdkDir
 }; # --wasi-sdk-dir
 
+########
+# Check which TCL to use as a code generator
+define CFLAGS_JIMSH {}
+puts "Looking for path-resolution function for JimTCL... "
+define TCL_GENERATOR "\$(JIMSH)"
+if {[cc-check-functions realpath]} {
+  define-append CFLAGS_JIMSH -DHAVE_REALPATH
+} elseif {[cc-check-functions _fullpath]} {
+  # _fullpath() is a Windows API
+  define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+} else {
+  puts "Cannot find realpath() or _fullpath(). Falling back to system's TCL for code generation."
+}
+
 #########
 # Enable large file support (if special flags are necessary)
 cc-check-lfs
@@ -295,18 +308,19 @@ hwaci-if-opt-truthy with-debug {
   msg-result no
 }
 
-if {1} {
-  # Temporary quick hack for finding "a" tclsh. TODO is port the
-  # full-featured check which lives in the elseif part of this block.
+define HAVE_TCL 0
+define TCLSH_CMD {exit 1}
+if {"" eq [get-define CFLAGS_JIMSH]} {
+  # We can't use JimTCL for in-tree generation on this system, so...
   #
-  # Also TODO is figure out whether we can use jimtcl for our internal
-  # build-tool uses (as opposed to testing purposes, which requires
-  # the tcl SQLite module).
+  # Temporary solution for finding "a" tclsh. TODO is port the
+  # full-featured check which lives in the elseif part of this block.
   set tclsh [hwaci-first-bin-of tclsh8.6 tclsh tclsh9.0]
   if {"" eq $tclsh} {
     user-error "Cannot find tclsh, which is required to build certain files."
   }
   define TCLSH_CMD $tclsh
+  define TCL_GENERATOR $tclsh
   define HAVE_TCL 0 ; # until the following elseif block is ported
 } elseif {0} {
   # Porting this section of configure.ac is going to be a bit of a slog...
