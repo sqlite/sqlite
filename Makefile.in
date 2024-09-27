@@ -916,17 +916,11 @@ sqlite3ext.h:	.target_source
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
-@if BUILD_EXEEXT ne ""
-lemon: lemon$(BEXE)
-@endif
 
 # Rules to build the program that generates the source-id
 #
 mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
 	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
-@if BUILD_EXEEXT ne ""
-mksourceid: mksourceid$(BEXE)
-@endif
 
 #XX## Rules to build individual *.o files from generated *.c files. This
 #XX## applies to:
