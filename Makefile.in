@@ -890,8 +890,9 @@ has_tclsh85:
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify \
+		$(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
@@ -1215,8 +1216,9 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) $(TOP)/VERSION has_tclsh84
-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
+		$(TOP)/VERSION $(JIMSH) # has_tclsh84
+	$(JIMSH) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 #XX#sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION has_tclsh84
 #XX#	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
