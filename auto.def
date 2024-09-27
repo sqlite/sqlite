@@ -781,11 +781,11 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   }
   memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
 } {
-  if {[hwaci-opt-truthy $boolFlag]} {
+  hwaci-if-opt-truthy $boolFlag {
     add-feature-flag $featureFlag
     msg-result "Enabling $boolFlag"
     eval $ifSetEvalThis
-  } else {
+  } {
     msg-result "Not enabling $boolFlag"
   }
 }
@@ -817,8 +817,6 @@ define ENABLE_SHARED $enable_shared
 if {1} {
   hwaci-make-from-dot-in Makefile
   hwaci-make-from-dot-in sqlite3.pc
-  # hwaci-make-from-dot-in sqlite_cfg.h
-
   if {1} {
     # for sqlite_cfg.h
     define PACKAGE_URL {https://sqlite.org}
@@ -834,8 +832,6 @@ if {1} {
       -bare {SIZEOF_* HAVE_DECL_*} \
       -auto {HAVE_* PACKAGE_*} -none *
   }
-  # make-config-header sqlite_cfg.h -bare {SIZEOF_* HAVE_*} -none *
-  # make-config-header sqlite_cfg.h
   #hwaci-make-from-dot-in ext/wasm/GNUmakefile
 }
 

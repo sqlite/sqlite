@@ -12,22 +12,36 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
+# Routines with a suffix of - are intended for internal use,
+# within this file, and are not part of the API which auto.def files
+# should rely on.
+#
 # This file was initially derived from one used in the libfossil
-# project, authored by the same person who ported it here (so there's
-# no licensing issue despite this code having at least two near-twins
-# running around).
+# project, authored by the same person who ported it here, noted here
+# only as an indication that there are no licensing issue despite this
+# code having at least two near-twins running around in other trees.
 ########################################################################
 
-array set _hwaciCache {} ; # used for caching various results.
+array set hwaci-cache- {} ; # used for caching various results.
+
+proc hwaci-warn {msg} {
+  puts "WARNING: $msg"
+}
+proc hwaci-notice {msg} {
+  puts "NOTICE: $msg"
+}
+proc hwaci-error {msg} {
+  user-error "ERROR: $msg"
+}
 
 ########################################################################
-# hwaci-lshift shifts $count elements from the list named $listVar and
+# hwaci-lshift- shifts $count elements from the list named $listVar and
 # returns them.
 #
 # Modified slightly from: https://wiki.tcl-lang.org/page/lshift
 #
 # On an empty list, returns "".
-proc hwaci-lshift {listVar {count 1}} {
+proc hwaci-lshift- {listVar {count 1}} {
   upvar 1 $listVar l
   if {![info exists l]} {
     # make the error message show the real variable name
@@ -47,10 +61,10 @@ proc hwaci-lshift {listVar {count 1}} {
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
 proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
-  # TODO: this can now be implemented using autosetup's define-push
-  set _LIBS [get-define LIBS]
-  set found [cc-check-function-in-lib $function $libs $otherlibs]
-  define LIBS $_LIBS
+  set found ""
+  define-push {LIBS} {
+    set found [cc-check-function-in-lib $function $libs $otherlibs]
+  }
   return $found
 }
 
@@ -64,11 +78,11 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 # If defName is empty then "BIN_X" is used, where X is the upper-case
 # form of $binName with any '-' characters replaced with '_'.
 proc hwaci-bin-define {binName {defName {}}} {
-  global _hwaciCache
+  global hwaci-cache-
   set cacheName "$binName:$defName"
   set check {}
-  if {[info exists _hwaciCache($cacheName)]} {
-    set check $_hwaciCache($cacheName)
+  if {[info exists hwaci-cache-($cacheName)]} {
+    set check $hwaci-cache-($cacheName)
   }
   msg-checking "Looking for $binName ... "
   if {"" ne $check} {
@@ -83,10 +97,10 @@ proc hwaci-bin-define {binName {defName {}}} {
   set check [find-executable-path $binName]
   if {"" eq $check} {
     msg-result "not found"
-    set _hwaciCache($cacheName) " _ 0 _ "
+    set hwaci-cache-($cacheName) " _ 0 _ "
   } else {
     msg-result $check
-    set _hwaciCache($cacheName) $check
+    set hwaci-cache-($cacheName) $check
   }
   if {"" eq $defName} {
     set defName "BIN_[string toupper [string map {- _} $binName]]"
@@ -155,17 +169,12 @@ proc hwaci-opt-truthy {flag} {
 
 ########################################################################
 # If [hwaci-opt-truthy $flag] is true, eval $then, else eval $else.
-#
-# Note that this may or may not, depending on the content of $then and
-# $else, be functionally equivalent to:
-#
-# if {[hwaci-if-opt-truthy flag]} {...} else {...}
-#
-# When referencing $vars in $then and $else, the latter can resolve
-# (without further assistance) the vars from its current scope,
-# whereas $then and $else will not.
-proc hwaci-if-opt-truthy {flag then {else {}}} {
-  if {[hwaci-opt-truthy $flag]} {eval $then} else {eval $else}
+proc hwaci-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
+  if {[hwaci-opt-truthy $boolFlag]} {
+    uplevel 1 $thenScript
+  } else {
+    uplevel 1 $elseScript
+  }
 }
 
 ########################################################################
@@ -201,15 +210,15 @@ proc hwaci-define-if-opt-truthy {flag def msg {iftrue 1} {iffalse 0}} {
 # If args[0] is -v then the boolean semantics are inverted: if
 # the option is set, it gets define'd to 0, else 1. Returns the
 # define'd value.
-proc hwaci-opt-bool-01 {args} {
+proc hwaci-set-bool-01 {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
     set invert 1
     set args [lrange $args 1 end]
   }
-  set optName [hwaci-lshift args]
-  set defName [hwaci-lshift args]
-  set descr [hwaci-lshift args]
+  set optName [hwaci-lshift- args]
+  set defName [hwaci-lshift- args]
+  set descr [hwaci-lshift- args]
   if {"" eq $descr} {
     set descr $defName
   }

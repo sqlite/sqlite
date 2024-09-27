@@ -764,7 +764,10 @@ src-verify:	$(TOP)/tool/src-verify.c
 
 # JimTCL is part of the autosetup suite and is suitable for certain
 # in-tree TCL jobs, but it requires that we build it with non-default
-# flags.
+# flags. Note that the build tree will, if no system-level tclsh is
+# found, also have a ./jimsh0. That one is a bare-bones build for the
+# configure process, whereas we need to build it with another option
+# enabled for use with the various code generators.
 #
 JIMSH = @srcdir@/jimsh
 @if CFLAGS_JIMSH
