@@ -248,7 +248,7 @@ if {1} {
 # Check which TCL to use as a code generator
 define CFLAGS_JIMSH {}
 puts "Looking for path-resolution function for JimTCL... "
-define TCL_GENERATOR "\$(JIMSH)"
+define BTCL "\$(JIMSH)"
 if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE_REALPATH
 } elseif {[cc-check-functions _fullpath]} {
@@ -325,7 +325,7 @@ if {"" eq [get-define CFLAGS_JIMSH]} {
     user-error "Cannot find tclsh, which is required to build certain files."
   }
   define TCLSH_CMD $tclsh
-  define TCL_GENERATOR $tclsh
+  define BTCL $tclsh
   define HAVE_TCL 0 ; # until the following elseif block is ported
 } elseif {0} {
   # Porting this section of configure.ac is going to be a bit of a slog...

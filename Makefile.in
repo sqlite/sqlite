@@ -772,8 +772,12 @@ $(JIMSH): $(TOP)/autosetup/jimsh0.c Makefile
 	$(BCC) -o $(JIMSH) @CFLAGS_JIMSH@ $<
 @endif
 
-TCL_GENERATOR = @TCL_GENERATOR@
-$(TCL_GENERATOR):
+# BTCL is the tclsh-compatible app used for running various code
+# generators and other in-tree tools, as opposed to the TCL-based
+# tests, which must be built and run using the canonical TCL
+# distribution.
+BTCL = @BTCL@
+$(BTCL):
 
 #XX#
 #XX#verify-source:	./src-verify
@@ -885,30 +889,30 @@ has_tclsh85:
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c $(TCL_GENERATOR) # has_tclsh84
+.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c $(BTCL) # has_tclsh84
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	$(TCL_GENERATOR) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
+	$(BTCL) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
 	mv vdbe.new tsrc/vdbe.c
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify \
-		$(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+		$(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
-sqlite3r.h: sqlite3.h $(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+sqlite3r.h: sqlite3.h $(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
 
-sqlite3r.c: sqlite3.c sqlite3r.h $(TCL_GENERATOR) # has_tclsh84
+sqlite3r.c: sqlite3.c sqlite3r.h $(BTCL) # has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
-	$(TCL_GENERATOR) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+	$(BTCL) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
@@ -1207,12 +1211,12 @@ mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c \
-		$(TOP)/tool/mkopcodeh.tcl $(TCL_GENERATOR) # has_tclsh84
-	cat parse.h $(TOP)/src/vdbe.c | $(TCL_GENERATOR) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
+		$(TOP)/tool/mkopcodeh.tcl $(BTCL) # has_tclsh84
+	cat parse.h $(TOP)/src/vdbe.c | $(BTCL) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -1223,8 +1227,8 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
-		$(TOP)/VERSION $(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+		$(TOP)/VERSION $(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 #XX#sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION has_tclsh84
 #XX#	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
@@ -1269,8 +1273,8 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.c \
     $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/tool/mkshellc.tcl >shell.c
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/tool/mkshellc.tcl >shell.c
 #XX#
 #XX#
 #XX#
@@ -1357,8 +1361,8 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(BEXE)
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC) $(TCL_GENERATOR) # has_tclsh84
-	$(TCL_GENERATOR) $(TOP)/ext/fts5/tool/mkfts5c.tcl
+fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
+	$(BTCL) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
 #XX#fts5.lo:	fts5.c $(HDR) $(EXTHDR)
@@ -1719,7 +1723,7 @@ clean:	tidy
 # Clean up everything.  No exceptions.
 #
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status $(TCL_GENERATOR) Makefile $(LIBTOOL)
+	rm -f sqlite_cfg.h config.log config.status $(BTCL) Makefile $(LIBTOOL)
 
 #XX##
 #XX## Windows section
