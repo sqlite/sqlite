@@ -791,8 +791,11 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
 }
 
 ########################################################################
-# Extend JimTCL a bit...
-if {"" ne [get-define CFLAGS_JIMSH]} {
+# Maybe extend JimTCL a bit. As of this writing (2024-09-27) it only
+# needs -DHAVE_REALPATH or -DHAVE__FULLPATH to be compatible with our
+# code generators. It can, however, be slightly extended via
+# easy-to-detect features, should we need them.
+if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   foreach jimFunc {opendir fsync isascii} {
     if {[cc-check-functions $jimFunc]} {
       define-append CFLAGS_JIMSH -DHAVE_[string toupper $jimFunc]
