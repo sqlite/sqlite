@@ -63,7 +63,6 @@ $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
-$(eval $(call call-make-pre-post,fiddle-module,vanilla))
 
 ########################################################################
 # emit rules for one of the two fiddle builds. $1 must be

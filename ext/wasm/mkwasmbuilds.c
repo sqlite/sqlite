@@ -229,6 +229,7 @@ int main(void){
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
 
+  mk_pre_post("fiddle-module","vanilla", 0);
   mk_pre_post("speedtest1","vanilla", 0);
   mk_pre_post("speedtest1-wasmfs","esm", "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
   return rc;
