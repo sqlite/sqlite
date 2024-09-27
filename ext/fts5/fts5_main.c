@@ -1809,16 +1809,38 @@ static void fts5StorageInsert(
   *pRc = rc;
 }
 
-static int fts5ContentlessUpdateOk(
+/*
+**
+** This function is called when the user attempts an UPDATE on a contentless
+** table. Parameter bRowidModified is true if the UPDATE statement modifies
+** the rowid value. Parameter apVal[] contains the new values for each user
+** defined column of the fts5 table. pConfig is the configuration object of the
+** table being updated (guaranteed to be contentless). The contentless_delete=1
+** and contentless_unindexed=1 options may or may not be set. 
+**
+** This function returns SQLITE_OK if the UPDATE can go ahead, or an SQLite
+** error code if it cannot. In this case an error message is also loaded into
+** pConfig. Output parameter (*pbContent) is set to true if the caller should
+** update the %_content table only - not the FTS index or any other shadow
+** table. This occurs when an UPDATE modifies only UNINDEXED columns of the
+** table.
+**
+** An UPDATE may proceed if:
+**
+**   * The only columns modified are UNINDEXED columns, or
+**
+**   * The contentless_delete=1 option was specified and all of the indexed
+**     columns (not a subset) have been modified.
+*/
+static int fts5ContentlessUpdate(
   Fts5Config *pConfig,
   sqlite3_value **apVal,
-  i64 iOld,
-  i64 iNew,
+  int bRowidModified,
   int *pbContent
 ){
   int ii;
-  int bSeenIndex = 0;
-  int bSeenIndexNC = 0;
+  int bSeenIndex = 0;             /* Have seen modified indexed column */
+  int bSeenIndexNC = 0;           /* Have seen unmodified indexed column */
   int rc = SQLITE_OK;
 
   for(ii=0; ii<pConfig->nCol; ii++){
@@ -1831,7 +1853,7 @@ static int fts5ContentlessUpdateOk(
     }
   }
 
-  if( bSeenIndex==0 && iOld==iNew ){
+  if( bSeenIndex==0 && bRowidModified==0 ){
     *pbContent = 1;
   }else{
     if( bSeenIndexNC || pConfig->bContentlessDelete==0 ){
@@ -1934,25 +1956,10 @@ static int fts5UpdateMethod(
     assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
-    /*
-    ** Extra rule for contentless tables:
-    **
-    ** DELETE:
-    **   It is only possible to DELETE if the contentless_delete=1 flag
-    **   is set.
-    **
-    ** UPDATE:
-    **   A "content-only" UPDATE is one that only affects UNINDEXED
-    **   columns. And that does not modify the rowid value.
-    **
-    **   If the contentless_delete flag is clear, then content-only UPDATEs
-    **   are the only ones supported. Or, if contentless_delete=1 is set,
-    **   then updates that modify all indexed columns are also supported.
-    **   If all indexed columns are updated, then rowid updates are allowed.
-    */
-
     /* DELETE */
     if( nArg==1 ){
+      /* It is only possible to DELETE from a contentless table if the
+      ** contentless_delete=1 flag is set. */
       if( fts5IsContentless(pTab, 1) && pConfig->bContentlessDelete==0 ){
         fts5SetVtabError(pTab, 
             "cannot DELETE from contentless fts5 table: %s", pConfig->zName
@@ -2001,8 +2008,10 @@ static int fts5UpdateMethod(
         i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
         int bContent = 0;         /* Content only update */
 
+        /* If this is a contentless table (including contentless_unindexed=1
+        ** tables), check if the UPDATE may proceed.  */
         if( fts5IsContentless(pTab, 1) ){
-          rc = fts5ContentlessUpdateOk(pConfig,&apVal[2],iOld,iNew,&bContent);
+          rc = fts5ContentlessUpdate(pConfig, &apVal[2], iOld!=iNew, &bContent);
           if( rc!=SQLITE_OK ) goto update_out;
         }
 
@@ -2029,6 +2038,10 @@ static int fts5UpdateMethod(
             }
           }
         }else if( bContent ){
+          /* This occurs when an UPDATE on a contentless table affects *only*
+          ** UNINDEXED columns. This is a no-op for contentless_unindexed=0
+          ** tables, or a write to the %_content table only for =1 tables.  */
+          assert( fts5IsContentless(pTab, 1) );
           rc = sqlite3Fts5StorageFindDeleteRow(pStorage, iOld);
           if( rc==SQLITE_OK ){
             rc = sqlite3Fts5StorageContentInsert(pStorage, 1, apVal, pRowid);

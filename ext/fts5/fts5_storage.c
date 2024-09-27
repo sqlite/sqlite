@@ -739,6 +739,12 @@ int sqlite3Fts5StorageDelete(
   if( rc==SQLITE_OK ){
     if( p->pConfig->bContentlessDelete ){
       rc = fts5StorageContentlessDelete(p, iDel);
+      if( rc==SQLITE_OK 
+       && bSaveRow 
+       && p->pConfig->eContent==FTS5_CONTENT_UNINDEXED
+      ){
+        rc = sqlite3Fts5StorageFindDeleteRow(p, iDel);
+      }
     }else{
       rc = fts5StorageDeleteFromIndex(p, iDel, apVal, bSaveRow);
     }
