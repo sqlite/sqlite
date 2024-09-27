@@ -1801,12 +1801,51 @@ static void fts5StorageInsert(
 ){
   int rc = *pRc;
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, apVal, piRowid);
+    rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, 0, apVal, piRowid);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal, *piRowid);
   }
   *pRc = rc;
+}
+
+static int fts5ContentlessUpdateOk(
+  Fts5Config *pConfig,
+  sqlite3_value **apVal,
+  i64 iOld,
+  i64 iNew,
+  int *pbContent
+){
+  int ii;
+  int bSeenIndex = 0;
+  int bSeenIndexNC = 0;
+  int rc = SQLITE_OK;
+
+  for(ii=0; ii<pConfig->nCol; ii++){
+    if( pConfig->abUnindexed[ii]==0 ){
+      if( sqlite3_value_nochange(apVal[ii]) ){
+        bSeenIndexNC++;
+      }else{
+        bSeenIndex++;
+      }
+    }
+  }
+
+  if( bSeenIndex==0 && iOld==iNew ){
+    *pbContent = 1;
+  }else{
+    if( bSeenIndexNC || pConfig->bContentlessDelete==0 ){
+      rc = SQLITE_ERROR;
+      sqlite3Fts5ConfigErrmsg(pConfig, 
+          (pConfig->bContentlessDelete ?
+          "%s a subset of columns on fts5 contentless-delete table: %s" :
+          "%s contentless fts5 table: %s")
+          , "cannot UPDATE", pConfig->zName
+      );
+    }
+  }
+
+  return rc;
 }
 
 /* 
@@ -1895,25 +1934,35 @@ static int fts5UpdateMethod(
     assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
-    /* Filter out attempts to run UPDATE or DELETE on contentless tables.
-    ** This is not suported. Except - they are both supported if the CREATE
-    ** VIRTUAL TABLE statement contained "contentless_delete=1". */
-    if( eType0==SQLITE_INTEGER 
-     && fts5IsContentless(pTab, 1)
-     && pConfig->bContentlessDelete==0
-    ){
-      pTab->p.base.zErrMsg = sqlite3_mprintf(
-          "cannot %s contentless fts5 table: %s", 
-          (nArg>1 ? "UPDATE" : "DELETE from"), pConfig->zName
-      );
-      rc = SQLITE_ERROR;
-    }
+    /*
+    ** Extra rule for contentless tables:
+    **
+    ** DELETE:
+    **   It is only possible to DELETE if the contentless_delete=1 flag
+    **   is set.
+    **
+    ** UPDATE:
+    **   A "content-only" UPDATE is one that only affects UNINDEXED
+    **   columns. And that does not modify the rowid value.
+    **
+    **   If the contentless_delete flag is clear, then content-only UPDATEs
+    **   are the only ones supported. Or, if contentless_delete=1 is set,
+    **   then updates that modify all indexed columns are also supported.
+    **   If all indexed columns are updated, then rowid updates are allowed.
+    */
 
     /* DELETE */
-    else if( nArg==1 ){
-      i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
-      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0, 0);
-      bUpdateOrDelete = 1;
+    if( nArg==1 ){
+      if( fts5IsContentless(pTab, 1) && pConfig->bContentlessDelete==0 ){
+        fts5SetVtabError(pTab, 
+            "cannot DELETE from contentless fts5 table: %s", pConfig->zName
+        );
+        rc = SQLITE_ERROR;
+      }else{
+        i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
+        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0, 0);
+        bUpdateOrDelete = 1;
+      }
     }
 
     /* INSERT or UPDATE */
@@ -1947,35 +1996,49 @@ static int fts5UpdateMethod(
 
       /* UPDATE */
       else{
+        Fts5Storage *pStorage = pTab->pStorage;
         i64 iOld = sqlite3_value_int64(apVal[0]);  /* Old rowid */
         i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
+        int bContent = 0;         /* Content only update */
+
+        if( fts5IsContentless(pTab, 1) ){
+          rc = fts5ContentlessUpdateOk(pConfig,&apVal[2],iOld,iNew,&bContent);
+          if( rc!=SQLITE_OK ) goto update_out;
+        }
+
         if( eType1!=SQLITE_INTEGER ){
           rc = SQLITE_MISMATCH;
         }else if( iOld!=iNew ){
+          assert( bContent==0 );
           if( eConflict==SQLITE_REPLACE ){
-            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
+            rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 1);
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
+              rc = sqlite3Fts5StorageDelete(pStorage, iNew, 0, 0);
             }
             fts5StorageInsert(&rc, pTab, apVal, pRowid);
           }else{
-            rc = sqlite3Fts5StorageFindDeleteRow(pTab->pStorage, iOld);
+            rc = sqlite3Fts5StorageFindDeleteRow(pStorage, iOld);
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageContentInsert(pTab->pStorage,apVal,pRowid);
+              rc = sqlite3Fts5StorageContentInsert(pStorage, 0, apVal, pRowid);
             }
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
+              rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 1);
             }
             if( rc==SQLITE_OK ){
-              rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal,*pRowid);
+              rc = sqlite3Fts5StorageIndexInsert(pStorage, apVal,*pRowid);
             }
           }
+        }else if( bContent ){
+          rc = sqlite3Fts5StorageFindDeleteRow(pStorage, iOld);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5StorageContentInsert(pStorage, 1, apVal, pRowid);
+          }
         }else{
-          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0, 1);
+          rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 1);
           fts5StorageInsert(&rc, pTab, apVal, pRowid);
         }
         bUpdateOrDelete = 1;
-        sqlite3Fts5StorageReleaseDeleteRow(pTab->pStorage);
+        sqlite3Fts5StorageReleaseDeleteRow(pStorage);
       }
 
     }
@@ -2968,18 +3031,7 @@ static int fts5ColumnMethod(
       }
     }
   }else{
-    /* A column created by the user containing values. */
-    int bNochange = sqlite3_vtab_nochange(pCtx);
-
-    if( bNochange ){
-      if( pConfig->bContentlessDelete 
-       && (pConfig->eContent==FTS5_CONTENT_NONE || !pConfig->abUnindexed[iCol])
-      ){
-        fts5ResultError(pCtx, "cannot UPDATE a subset of "
-            "columns on fts5 contentless-delete table: %s", pConfig->zName
-        );
-      }
-    }else if( pConfig->eContent!=FTS5_CONTENT_NONE ){
+    if( !sqlite3_vtab_nochange(pCtx) && pConfig->eContent!=FTS5_CONTENT_NONE ){
       pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
       rc = fts5SeekCursor(pCsr, 1);
       if( rc==SQLITE_OK ){

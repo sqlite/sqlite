@@ -141,7 +141,8 @@ static int fts5StorageGetStmt(
         );
         break;
 
-      case FTS5_STMT_INSERT_CONTENT: {
+      case FTS5_STMT_INSERT_CONTENT: 
+      case FTS5_STMT_REPLACE_CONTENT: {
         char *zBind = 0;
         int i;
 
@@ -930,6 +931,7 @@ static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
 */
 int sqlite3Fts5StorageContentInsert(
   Fts5Storage *p, 
+  int bReplace,                   /* True to use REPLACE instead of INSERT */
   sqlite3_value **apVal, 
   i64 *piRowid
 ){
@@ -948,7 +950,10 @@ int sqlite3Fts5StorageContentInsert(
   }else{
     sqlite3_stmt *pInsert = 0;    /* Statement to write %_content table */
     int i;                        /* Counter variable */
-    rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
+
+    assert( FTS5_STMT_INSERT_CONTENT+1==FTS5_STMT_REPLACE_CONTENT );
+    assert( bReplace==0 || bReplace==1 );
+    rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT+bReplace, &pInsert, 0);
     if( pInsert ) sqlite3_clear_bindings(pInsert);
 
     /* Bind the rowid value */
