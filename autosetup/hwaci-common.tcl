@@ -61,7 +61,7 @@ proc hwaci-lshift- {listVar {count 1}} {
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
 proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
-  set found ""
+  set found 0
   define-push {LIBS} {
     set found [cc-check-function-in-lib $function $libs $otherlibs]
   }
@@ -425,9 +425,11 @@ proc hwaci-check-profile-flag {{flagname profile}} {
 # Returns 1 if this appears to be a Windows environment (MinGw,
 # Cygwin, MSys), else returns 0. The optional argument is the name of
 # an autosetup define which contains platform name info, defaulting to
-# "host". The other legal value is "build" (the build machine). If
-# $key == "build" then some additional checks may be performed which
-# are not applicable when $key == "host".
+# "host" (meaning, somewhat counterintuitively, the target system, not
+# the current host). The other legal value is "build" (the build
+# machine, i.e. the local host). If $key == "build" then some
+# additional checks may be performed which are not applicable when
+# $key == "host".
 proc hwaci-looks-like-windows {{key host}} {
   global autosetup
   switch -glob -- [get-define $key] {
@@ -447,14 +449,14 @@ proc hwaci-looks-like-windows {{key host}} {
 }
 
 ########################################################################
-# Checks autosetup's "host" and "target" defines to see if the build
+# Checks autosetup's "host" and "build" defines to see if the build
 # host and target are Windows-esque (Cygwin, MinGW, MSys). If the
-# build host is then BUILD_EXEEXT is [define]'d to ".exe", else "". If
-# the build target is then TARGET_EXEEXT is [define]'d to ".exe", else
-# "".
+# build environment is then BUILD_EXEEXT is [define]'d to ".exe", else
+# "". If the target, a.k.a. "host", is then TARGET_EXEEXT is
+# [define]'d to ".exe", else "".
 proc hwaci-check-exeext {} {
   msg-checking "Build host is Windows-esque? "
-  if {[hwaci-looks-like-windows host]} {
+  if {[hwaci-looks-like-windows build]} {
     define BUILD_EXEEXT ".exe"
     msg-result yes
   } else {
@@ -463,7 +465,7 @@ proc hwaci-check-exeext {} {
   }
 
   msg-checking "Build target is Windows-esque? "
-  if {[hwaci-looks-like-windows target]} {
+  if {[hwaci-looks-like-windows host]} {
     define TARGET_EXEEXT ".exe"
     msg-result yes
   } else {
@@ -548,4 +550,55 @@ proc hwaci-check-emsdk {} {
   }
   define HAVE_EMSDK $rc
   return $rc
+}
+
+########################################################################
+# Tries various approaches to handling the -rpath link-time
+# flag. Defines LDFLAGS_RPATH to that/those flag(s) or an empty
+# string. Returns 1 if it finds an option, else 0.
+proc hwaci-check-rpath {} {
+  if {[cc-check-flags -Wl,-R/tmp]} {
+    define LDFLAGS_RPATH "-Wl,-R[get-define libdir]"
+    return 1
+  } elseif {[cc-check-flags -Wl,-rpath -Wl,/tmp]} {
+    define LDFLAGS_RPATH "-Wl,-rpath -Wl,[get-define libdir]"
+    return 1
+  } else {
+    define LDFLAGS_RPATH ""
+    return 0
+  }
+}
+
+########################################################################
+# Under construction - check for libreadline functionality
+proc hwaci-check-readline {} {
+  define HAVE_READLINE 0
+  define LDFLAGS_READLINE ""
+  define CFLAGS_READLINE ""
+  define READLINE_H ""
+  if {![opt-bool readline]} {
+    msg-result "libreadline disabled via --disable-readline."
+    return 0
+  }
+  set h "readline/readline.h"
+  if {[cc-check-includes $h]} {
+    define READLINE_H $h
+    if {[hwaci-check-function-in-lib readline readline]} {
+      msg-result "Enabling libreadline."
+      define HAVE_READLINE 1
+      define LDFLAGS_READLINE [get-define lib_readline]
+      undefine lib_readline
+      return 1
+    }
+    # else TODO: look in various places and [define CFLAGS_READLINE
+    # -I...]
+  }
+  # Numerous TODOs:
+  # - Requires linking with ncurses or similar on some platforms.
+  # - Headers are in a weird place on some BSD systems.
+  # - Add --with-readline=DIR
+  # - Add --with-readline-lib=lib file
+  # - Add --with-readline-inc=dir -Idir
+  msg-result "libreadline not found."
+  return 0
 }

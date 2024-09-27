@@ -38,7 +38,7 @@ options {
   releasemode          => {libtool link to release mode}
   with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always.}
   editline=0           => {BSD editline support}
-  readline=0           => {readline support}
+  readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
   with-readline-lib    => {readline library}
   with-readline-inc    => {readline include paths}
@@ -150,13 +150,19 @@ cc-check-tools ld ar
 ########################################################################
 # OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
 define OPT_FEATURE_FLAGS {}
+define OPT_SHELL {}; # CFLAGS for the sqlite3 CLI app
 # Adds $flag, if not empty, to OPT_FEATURE_FLAGS.
-proc add-feature-flag {flag} {
-  if {"" ne $flag} {
-    define-append OPT_FEATURE_FLAGS $flag
+proc add-feature-flag {args} {
+  if {"" ne $args} {
+    define-append OPT_FEATURE_FLAGS {*}$args
   }
 }
 # add-feature-flag -DSQLITE_JUST_TESTING=3
+proc add-shell-opt {args} {
+  if {"" ne $args} {
+    define-append OPT_SHELL {*}$args
+  }
+}
 
 hwaci-check-exeext
 if {".exe" eq [get-define TARGET_EXEEXT]} {
@@ -206,10 +212,7 @@ define BUILD_CFLAGS [get-env CFLAGS {-g}]
 if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
-  if {$wasiSdkDir eq ""} {
-    define HAVE_WASI_SDK 0
-    define WASI_SDK_DIR ""
-  } else {
+  if {$wasiSdkDir ne ""} {
     msg-checking "Checking WASI SDK directory \[$wasiSdkDir]... "
     puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
     hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
@@ -267,6 +270,8 @@ cc-check-lfs
 cc-check-types int8_t int16_t int32_t int64_t intptr_t \
   uint8_t uint16_t uint32_t uint64_t uintptr_t
 
+########################################################################
+# Check for needed/wanted functions
 cc-check-functions gmtime_r isnan localtime_r localtime_s \
   malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 
@@ -296,12 +301,17 @@ if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
 
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
   "Use amalgamation for builds?"
+
 hwaci-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
+
 hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS \
   "test-runner flags:" {--status} {}
+
 hwaci-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:" {--linemacros=1} {--linemacros=0}
+
 msg-checking "Debug build? "
+
 hwaci-if-opt-truthy with-debug {
   define SQLITE_DEBUG 1
   define TARGET_DEBUG {-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
@@ -310,6 +320,8 @@ hwaci-if-opt-truthy with-debug {
   define TARGET_DEBUG {-DNDEBUG}
   msg-result no
 }
+
+hwaci-check-rpath
 
 ########################################################################
 # TCL...
@@ -530,10 +542,13 @@ if {1} {
   unset ts tsn
 }
 
-if {0} {
+if {1} {
   ##########
   # Figure out what C libraries are required to compile programs
   # that use "readline()" library.
+  hwaci-check-readline
+} else {
+  # Older impl solely for reference while porting...
   #
   # XXX TARGET_READLINE_LIBS=""
   # XXX TARGET_READLINE_INC=""
@@ -839,6 +854,10 @@ set oFF [get-define OPT_FEATURE_FLAGS]
 if {"" ne $oFF} {
   define OPT_FEATURE_FLAGS [lsort -unique $oFF]
   msg-result "Final feature flags: [get-define OPT_FEATURE_FLAGS]"
+}
+set oFF [get-define SHELL_OPT]
+if {"" ne $oFF} {
+  msg-result "Final shell opts: [get-define OPT_SHELL]"
 }
 unset oFF
 

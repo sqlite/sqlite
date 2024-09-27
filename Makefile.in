@@ -62,9 +62,9 @@ TCC += @TARGET_DEBUG@
 #XX##
 #XX#LIBTCL = @TCL_LIB_SPEC@
 #XX#
-#XX## Compiler options needed for programs that use the readline() library.
-#XX##
-#XX#READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
+# Compiler options needed for programs that use the readline() library.
+#
+READLINE_FLAGS = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 #XX#READLINE_FLAGS += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
 #XX#READLINE_FLAGS += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
 #XX#
@@ -76,9 +76,9 @@ TCC += @TARGET_DEBUG@
 #XX##
 #XX#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 #XX#
-#XX## Any target libraries which libsqlite must be linked against
-#XX##
-#XX#TLIBS = @LIBS@ $(LIBS)
+# Any target libraries which libsqlite must be linked against
+#
+TLIBS = @LIBS@ $(LIBS)
 #XX#
 # Flags controlling use of the in memory btree implementation
 #
@@ -617,6 +617,7 @@ TESTOPTS = --verbose=file --output=test-out.txt
 
 # Extra compiler options for various shell tools
 #
+SHELL_OPT = @OPT_SHELL@
 SHELL_OPT += -DSQLITE_DQS=0
 SHELL_OPT += -DSQLITE_ENABLE_FTS4
 #SHELL_OPT += -DSQLITE_ENABLE_FTS5
@@ -675,12 +676,13 @@ DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
 
-# In wasi-sdk builds, disable the CLI shell build in the "all" target.
-SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
-SQLITE3_SHELL_TARGET_1 =
-SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
-
-SQLITE3_O = $(TOP)/sqlite3.o
+# In wasi-sdk builds, disable the CLI shell build.
+@if HAVE_WASI_SDK
+  SQLITE3_SHELL_TARGET =
+@else
+  SQLITE3_SHELL_TARGET = sqlite3$(TEXE)
+@endif
+#XXX#??? SQLITE3_O = $(TOP)/sqlite3.o
 
 # Use $(libtclsqlite3.la_$(HAVE_TCL)) to resolve to either
 # libtclsqlite3.la or an empty value.
@@ -691,8 +693,8 @@ libtclsqlite3.la_1 = libtclsqlite3.la
 # are what get build when you type just "make" with no arguments.
 #
 
-all:	sqlite3.h sqlite3.c shell.c
-#all:	libsqlite3.la $(SQLITE3_SHELL_TARGET) \
+all:	sqlite3.h sqlite3.c shell.c $(SQLITE3_SHELL_TARGET)
+#all:	libsqlite3.la  \
 #XX#  $(libtclsqlite3.la_$(HAVE_TCL))
 
 # Re-run $(TOP)/configure with the same args invoked to produce this
@@ -723,10 +725,10 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 #XX#		-version-info "8:6:8" \
 #XX#		-avoid-version
 #XX#
-#XX#sqlite3$(TEXE):	shell.c sqlite3.c
-#XX#	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
-#XX#		shell.c sqlite3.c \
-#XX#		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+sqlite3$(TEXE):	shell.c sqlite3.c
+	$(TCC) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
+		shell.c sqlite3.c \
+		@LDFLAGS_RPATH@ @LDFLAGS_READLINE@ $(TLIBS)
 #XX#
 #XX#sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 #XX#	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
