@@ -1534,7 +1534,8 @@ static int valueFromFunction(
       goto value_from_function_out;
     }
     for(i=0; i<nVal; i++){
-      rc = sqlite3ValueFromExpr(db, pList->a[i].pExpr, enc, aff, &apVal[i]);
+      rc = sqlite3Stat4ValueFromExpr(pCtx->pParse, pList->a[i].pExpr, aff,
+                                     &apVal[i]);
       if( apVal[i]==0 || rc!=SQLITE_OK ) goto value_from_function_out;
     }
   }
