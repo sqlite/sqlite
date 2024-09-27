@@ -1861,8 +1861,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\consio $(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2316,8 +2316,6 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)\src\shell.c.in \
-    $(TOP)\ext\consio\console_io.c \
-    $(TOP)\ext\consio\console_io.h \
     $(TOP)\ext\expert\sqlite3expert.c \
     $(TOP)\ext\expert\sqlite3expert.h \
     $(TOP)\ext\intck\sqlite3intck.c \
@@ -2337,6 +2335,8 @@ SHELL_DEP = \
     $(TOP)\ext\misc\sha1.c \
     $(TOP)\ext\misc\shathree.c \
     $(TOP)\ext\misc\sqlar.c \
+    $(TOP)\ext\misc\sqlite3_stdio.c \
+    $(TOP)\ext\misc\sqlite3_stdio.h \
     $(TOP)\ext\misc\uint.c \
     $(TOP)\ext\misc\vfstrace.c \
     $(TOP)\ext\misc\zipfile.c \
@@ -2624,7 +2624,7 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
