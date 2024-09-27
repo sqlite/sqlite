@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sCLI.
-D 2024-09-26T22:25:13.188
+C Squash\ssign-comparison\swarnings\sreported\sin\s[forum:5e605a763a65c3f8\s|\sforum\spost\s5e605a763a65c3f8].
+D 2024-09-27T16:20:03.346
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -423,7 +423,7 @@ F ext/misc/series.c a6089b5e8e3002bd1e5d9877cee6aead0b9a6426e406c09a399817db9e9a
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b430e8c
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c c0aa7b80d6df45f7da59d912b38752bcac1af53a5766966160e6c5cdd397dbea
+F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
 F ext/misc/sqlite3_stdio.c f110e6f2dc97c67e89f941f82af7dbd221193fa44d1e3ef38a691454a2cbccda
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f97f9944b829a49da12786f934da0a5ad51591afd6d8a19a4a0835f51bbdbff2
-R a6968f0fc463c15c807b790b3704b8a0
-U drh
-Z 47d3a59057a462e974fa3c72ad894820
+P 27ef1909bb0c4d9470c6074b40500632c68341127a079a3eb3b6a19dbfb2aeac
+R 81a4d040bd5425cfeac10fd5ca0ed96b
+U stephan
+Z 6359f322b683086f026c8375d9816233
 # Remove this line to create a well-formed Fossil manifest.
