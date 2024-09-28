@@ -5,7 +5,7 @@
 #
 # The 'cc' module supports checking various 'features' of the C or C++
 # compiler/linker environment. Common commands are 'cc-check-includes',
-# 'cc-check-types', 'cc-check-functions', 'cc-with', 'make-config-header' and 'make-template'.
+# 'cc-check-types', 'cc-check-functions', 'cc-with' and 'make-config-header'
 #
 # The following environment variables are used if set:
 #

@@ -566,7 +566,10 @@ proc options-show {what} {
 	set indent [string repeat " " [expr {$max+4}]]
 	set cols [getenv COLUMNS 80]
 	catch {
-		lassign [exec stty size] rows cols
+		lassign [exec stty size] _ sttycols
+		if {[string is integer -strict $sttycols]} {
+			set cols $sttycols
+		}
 	}
 	incr cols -1
 	# Now output
@@ -910,8 +913,7 @@ proc list-non-empty {list} {
 # Searches the path for an executable with the given name.
 # Note that the name may include some parameters, e.g. 'cc -mbig-endian',
 # in which case the parameters are ignored.
-# The full path to the executable if found, or "" if not found.
-# Returns 1 if found, or 0 if not.
+# Returns the full path to the executable if found, or "" if not found.
 #
 proc find-executable-path {name} {
 	# Ignore any parameters
