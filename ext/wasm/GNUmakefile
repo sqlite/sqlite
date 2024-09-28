@@ -458,8 +458,11 @@ emcc.WASM_BIGINT ?= 1
 # the various oX targets. build times for -O levels higher than 0 are
 # painful at dev-time.
 #
-# When running any of the $(OPTIMIZED_TARGETS) explicitly, e.g. for
-# a release distribution
+# When running any of the $(OPTIMIZED_TARGETS) explicitly, e.g. for a
+# release distribution, use a higher optimization level. Experience
+# has shown -Oz to produce the smallest deliverables with only a
+# roughly 10% performance hit in the resulting WASM file compared to
+# -O2 (which consistently creates the fastest-running deliverables).
 ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
   emcc_opt ?= -O0
 else
