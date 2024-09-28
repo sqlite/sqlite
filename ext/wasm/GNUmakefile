@@ -145,11 +145,19 @@ $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
+########################################################################
+# Special-case builds for which we require certain pre-conditions
+# which, if not met, may cause warnings or fatal errors in the build.
+# This also affects the default optimization level flags. Note that
+# the fiddle targets are in this list because they are used for
+# generating sqlite.org/fiddle.
+OPTIMIZED_TARGETS := dist snapshot fiddle fiddle.debug
+
 ifneq (1,$(MAKING_CLEAN))
-  ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
+  ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
     $(info ==============================================================)
-    $(info == Development build. Use 'release' or 'snapshot' target)
-    $(info == for a smaller release build.)
+    $(info == Development build. Make one of (dist, snapshot) for a)
+    $(info == smaller release build.)
     $(info ==============================================================)
   endif
 endif
@@ -193,10 +201,10 @@ else
     $(info WARNING: on Ubuntu-like systems it can be installed with:)
     $(info WARNING:    sudo apt install wabt)
     $(info WARNING: *******************************************************************)
+    ifneq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
+      $(error Cannot make release-quality binary because wasm-strip is not available.)
+    endif
     wasm-strip.bin := echo "not wasm-stripping"
-  endif
-  ifneq (,$(filter release snapshot,$(MAKECMDGOALS)))
-    $(error Cannot make release-quality binary because wasm-strip is not available.)
   endif
 endif
 maybe-wasm-strip := $(wasm-strip.bin)
@@ -443,7 +451,14 @@ emcc.WASM_BIGINT ?= 1
 # emcc_opt = optimization-related flags. These are primarily used by
 # the various oX targets. build times for -O levels higher than 0 are
 # painful at dev-time.
-emcc_opt ?= -O0
+#
+# When running any of the $(OPTIMIZED_TARGETS) explicitly, e.g. for
+# a release distribution
+ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
+  emcc_opt ?= -O0
+else
+  emcc_opt ?= -Oz
+endif
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...

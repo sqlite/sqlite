@@ -68,6 +68,8 @@ fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
 # emit rules for one of the two fiddle builds. $1 must be
 # either $(dir.fiddle) or $(dir.fiddle-debug). $2 must be empty
 # in the former case and .debug in the latter.
+#
+# TODO: move this into mkwasmbuilds.c.
 define make-fiddle-rules
 fiddle-module.js$(2) := $(1)/fiddle-module.js
 fiddle-module.wasm$(2) := $$(subst .js,.wasm,$$(fiddle-module.js$(2)))
