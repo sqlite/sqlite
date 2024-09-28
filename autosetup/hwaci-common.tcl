@@ -449,6 +449,27 @@ proc hwaci-looks-like-windows {{key host}} {
 }
 
 ########################################################################
+# Looks at either the 'host' (==compilation target platform) or
+# 'build' (==the being-built-on platform) define value and returns a
+# file extension for DLLs on that platform, including the leading ".".
+#
+# TODO: have someone verify whether this is correct for the
+# non-Linux/BSD platforms.
+proc hwaci-dll-extension {{key host}} {
+  switch -glob -- [get-define $key] {
+    *apple* {
+      return ".dylib"
+    }
+    *-*-ming* - *-*-cygwin - *-*-msys {
+      return ".dll"
+    }
+    default {
+      return ".so"
+    }
+  }
+}
+
+########################################################################
 # Checks autosetup's "host" and "build" defines to see if the build
 # host and target are Windows-esque (Cygwin, MinGW, MSys). If the
 # build environment is then BUILD_EXEEXT is [define]'d to ".exe", else

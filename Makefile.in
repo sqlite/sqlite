@@ -39,7 +39,11 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 CC = @CC@
 CFLAGS ?= @CFLAGS@
 CPPFLAGS ?= @CPPFLAGS@
-TCC = ${CC} ${CFLAGS} -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
+@if SH_CFLAGS
+CFLAGS += @SH_CFLAGS@
+@endif
+TCC = ${CC} ${CFLAGS}
+TCC += -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
 TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
 TCC += -I${TOP}/ext/userauth
 
@@ -79,6 +83,7 @@ READLINE_FLAGS = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 # Any target libraries which libsqlite must be linked against
 #
 TLIBS = @LIBS@ $(LIBS)
+
 #XX#
 # Flags controlling use of the in memory btree implementation
 #
@@ -113,10 +118,12 @@ TCC += @LDFLAGS_ZLIB@
 VERSION = @VERSION@
 RELEASE = @RELEASE@
 
-# Filename extensions for binaries
+# Filename extensions for binaries and shared libraries
 #
 BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
+BDLL = @BDLL@
+TDLL = @TDLL@
 
 # The following variable is "1" if the configure script was able to locate
 # the tclConfig.sh file.  It is an empty string otherwise.  When this
@@ -154,9 +161,8 @@ TSTRNNR_OPTS = @TSTRNNR_OPTS@
 GCOV_CFLAGS1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 GCOV_LDFLAGS1 = -lgcov
 USE_GCOV = @USE_GCOV@
-#XX#LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
-#XX#LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
-
+LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
+LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
 
 # The directory into which to store package information for
 
@@ -176,6 +182,9 @@ INSTALL = @BIN_INSTALL@
 #XX#LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
 #XX#LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
 #XX#LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+TCOMPILE = $(TCC) $(LTCOMPILE_EXTRAS)
+TLINK = $(TCC) $(LTLINK_EXTRAS)
+TINSTALL = $(INSTALL)
 
 #
 # You should not have to change anything below this line
@@ -192,45 +201,44 @@ USE_AMALGAMATION = @USE_AMALGAMATION@
 AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
 
 #
-#XX## Object files for the SQLite library (non-amalgamation).
-#XX##
-#XX#LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
-#XX#         backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-#XX#         callback.lo complete.lo ctime.lo \
-#XX#         date.lo dbpage.lo dbstat.lo delete.lo \
-#XX#         expr.lo fault.lo fkey.lo \
-#XX#         fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
-#XX#         fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
-#XX#         fts3_tokenize_vtab.lo \
-#XX#         fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
-#XX#	 fts5.lo \
-#XX#         func.lo global.lo hash.lo \
-#XX#         icu.lo insert.lo json.lo legacy.lo loadext.lo \
-#XX#         main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
-#XX#         memdb.lo memjournal.lo \
-#XX#         mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
-#XX#         notify.lo opcodes.lo os.lo os_kv.lo os_unix.lo os_win.lo \
-#XX#         pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
-#XX#         random.lo resolve.lo rowset.lo rtree.lo \
-#XX#         sqlite3session.lo select.lo sqlite3rbu.lo status.lo stmt.lo \
-#XX#         table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
-#XX#         update.lo userauth.lo upsert.lo util.lo vacuum.lo \
-#XX#         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-#XX#         vdbetrace.lo vdbevtab.lo \
-#XX#         wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
-#XX#         window.lo utf.lo vtab.lo
-#XX#
-#XX## Object files for the amalgamation.
-#XX##
-#XX#LIBOBJS1 = sqlite3.lo
-#XX#
-#XX## Determine the real value of LIBOBJ based on the 'configure' script
-#XX##
-#XX#LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
-#XX#
-#XX#
-#XX## All of the source code files.
-#XX##
+# Object files for the SQLite library (non-amalgamation).
+#
+LIBOBJS0 = alter.o analyze.o attach.o auth.o \
+         backup.o bitvec.o btmutex.o btree.o build.o \
+         callback.o complete.o ctime.o \
+         date.o dbpage.o dbstat.o delete.o \
+         expr.o fault.o fkey.o \
+         fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o \
+         fts3_porter.o fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
+         fts3_tokenize_vtab.o \
+         fts3_unicode.o fts3_unicode2.o fts3_write.o \
+         fts5.o \
+         func.o global.o hash.o \
+         icu.o insert.o json.o legacy.o loadext.o \
+         main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
+         memdb.o memjournal.o \
+         mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
+         notify.o opcodes.o os.o os_kv.o os_unix.o os_win.o \
+         pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
+         random.o resolve.o rowset.o rtree.o \
+         sqlite3session.o select.o sqlite3rbu.o status.o stmt.o \
+         table.o threads.o tokenize.o treeview.o trigger.o \
+         update.o userauth.o upsert.o util.o vacuum.o \
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
+         vdbetrace.o vdbevtab.o \
+         wal.o walker.o where.o wherecode.o whereexpr.o \
+         window.o utf.o vtab.o
+
+# Object files for the amalgamation.
+#
+LIBOBJS1 = sqlite3.o
+
+# Determine the real value of LIBOBJ based on the 'configure' script
+#
+LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
+
+# All of the source code files.
+#
 SRC = \
   $(TOP)/src/alter.c \
   $(TOP)/src/analyze.c \
@@ -714,21 +722,27 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	$(AUTOREMAKE)
 	@touch $@
 
-#XX#libsqlite3.la:	$(LIBOBJ)
-#XX#	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
-#XX#		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
-#XX#
+libsqlite3.DLL = libsqlite3$(TDLL)
+$(libsqlite3.DLL):	$(LIBOBJ)
+	$(TLINK) -o $@ \
+		@SHOBJ_LDFLAGS@  $(LIBOBJ) $(TLIBS) \
+		@LDFLAGS_RPATH@
+dll: $(libsqlite3.DLL)
+all: dll
+
 #XX#libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 #XX#	$(LTLINK) -no-undefined -o $@ tclsqlite.lo \
 #XX#		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
 #XX#		-rpath "$(TCLLIBDIR)" \
 #XX#		-version-info "8:6:8" \
 #XX#		-avoid-version
-#XX#
+
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(TCC) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		@LDFLAGS_RPATH@ @LDFLAGS_READLINE@ $(TLIBS)
+cli: sqlite3$(TEXE)
+all: cli
 #XX#
 #XX#sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 #XX#	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
