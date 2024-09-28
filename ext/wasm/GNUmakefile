@@ -107,7 +107,7 @@ dir.wasmfs := $(dir.dout)
 
 MKDIR.bld := $(dir.tmp)
 $(MKDIR.bld):
-	-mkdir $@
+	-mkdir -p $@ $(dir.dout)
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
   $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
