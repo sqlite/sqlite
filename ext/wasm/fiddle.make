@@ -20,7 +20,7 @@ endif
 ifeq (,$(SHELL_DEP))
 $(error Could not parse SHELL_DEP from $(dir.top)/Makefile.)
 endif
-$(dir.top)/shell.c: $(SHELL_DEP) $(dir.top)/tool/mkshellc.tcl $(sqlite3.c)
+$(dir.top)/shell.c: $(SHELL_DEP) $(dir.tool)/mkshellc.tcl $(sqlite3.c)
 	$(MAKE) -C $(dir.top) shell.c
 # /shell.c
 ########################################################################
@@ -41,10 +41,11 @@ fiddle.emcc-flags = \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
-  $(SQLITE_OPT) $(SHELL_OPT) \
-  -USQLITE_WASM_MINIMAL \
+  $(SQLITE_OPT.full-featured) \
+  $(SQLITE_OPT.common) \
+  $(SHELL_OPT) \
+  -USQLITE_WASM_BARE_BONES \
   -DSQLITE_SHELL_FIDDLE
-# -D_POSIX_C_SOURCE is needed for strdup() with emcc
 
 # Flags specifically for debug builds of fiddle. Performance suffers
 # greatly in debug builds.
@@ -55,13 +56,13 @@ fiddle.emcc-flags.debug := $(fiddle.emcc-flags) \
 
 fiddle.EXPORTED_FUNCTIONS.in := \
     EXPORTED_FUNCTIONS.fiddle.in \
-    $(EXPORTED_FUNCTIONS.api)
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 
 $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
-$(eval $(call call-make-pre-post,fiddle-module,vanilla))
 
 ########################################################################
 # emit rules for one of the two fiddle builds. $1 must be
