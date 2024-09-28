@@ -6198,6 +6198,101 @@ static void fts5MergePrefixLists(
   *p1 = out;
 }
 
+
+static int fts5VisitPrefixRange(
+  Fts5Index *p,
+  Fts5Colset *pColset,
+  u8 *pToken,
+  int nToken,
+  void (*xVisit)(Fts5Index*, void *pCtx, Fts5Iter *pIter, const u8*, int),
+  void *pCtx
+){
+  const int flags = FTS5INDEX_QUERY_SCAN 
+                  | FTS5INDEX_QUERY_SKIPEMPTY 
+                  | FTS5INDEX_QUERY_NOOUTPUT;
+  Fts5Iter *p1 = 0;     /* Iterator used to gather data from index */
+  int bNewTerm = 1;
+  Fts5Structure *pStruct = fts5StructureRead(p);
+
+  fts5MultiIterNew(p, pStruct, flags, pColset, pToken, nToken, -1, 0, &p1);
+  fts5IterSetOutputCb(&p->rc, p1);
+  for( /* no-op */ ;
+      fts5MultiIterEof(p, p1)==0;
+      fts5MultiIterNext2(p, p1, &bNewTerm)
+  ){
+    Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
+    int nNew = 0;
+    const u8 *pNew = 0;
+
+    p1->xSetOutputs(p1, pSeg);
+
+
+    if( bNewTerm ){
+      nNew = pSeg->term.n;
+      pNew = pSeg->term.p;
+      if( nNew<nToken || memcmp(pToken, pNew, nToken) ) break;
+    }
+
+    xVisit(p, pCtx, p1, pNew, nNew);
+  }
+  fts5MultiIterFree(p1);
+
+  fts5StructureRelease(pStruct);
+  return p->rc;
+}
+
+typedef struct PrefixSetupCtx PrefixSetupCtx;
+struct PrefixSetupCtx {
+  void (*xMerge)(Fts5Index*, Fts5Buffer*, int, Fts5Buffer*);
+  void (*xAppend)(Fts5Index*, u64, Fts5Iter*, Fts5Buffer*);
+  i64 iLastRowid;
+  int nMerge;
+  Fts5Buffer *aBuf;
+  int nBuf;
+  Fts5Buffer doclist;
+};
+
+static void prefixIterSetupCb(
+  Fts5Index *p, 
+  void *pCtx, 
+  Fts5Iter *p1, 
+  const u8 *pNew,
+  int nNew
+){
+  PrefixSetupCtx *pSetup = (PrefixSetupCtx*)pCtx;
+  const int nMerge = pSetup->nMerge;
+
+  if( p1->base.nData>0 ){
+    if( p1->base.iRowid<=pSetup->iLastRowid && pSetup->doclist.n>0 ){
+      int i;
+      for(i=0; p->rc==SQLITE_OK && pSetup->doclist.n; i++){
+        int i1 = i*nMerge;
+        int iStore;
+        assert( i1+nMerge<=pSetup->nBuf );
+        for(iStore=i1; iStore<i1+nMerge; iStore++){
+          if( pSetup->aBuf[iStore].n==0 ){
+            fts5BufferSwap(&pSetup->doclist, &pSetup->aBuf[iStore]);
+            fts5BufferZero(&pSetup->doclist);
+            break;
+          }
+        }
+        if( iStore==i1+nMerge ){
+          pSetup->xMerge(p, &pSetup->doclist, nMerge, &pSetup->aBuf[i1]);
+          for(iStore=i1; iStore<i1+nMerge; iStore++){
+            fts5BufferZero(&pSetup->aBuf[iStore]);
+          }
+        }
+      }
+      pSetup->iLastRowid = 0;
+    }
+
+    pSetup->xAppend(
+        p, (u64)p1->base.iRowid-(u64)pSetup->iLastRowid, p1, &pSetup->doclist
+    );
+    pSetup->iLastRowid = p1->base.iRowid;
+  }
+}
+
 static void fts5SetupPrefixIter(
   Fts5Index *p,                   /* Index to read from */
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
@@ -6208,38 +6303,30 @@ static void fts5SetupPrefixIter(
   Fts5Iter **ppIter               /* OUT: New iterator */
 ){
   Fts5Structure *pStruct;
-  Fts5Buffer *aBuf;
-  int nBuf = 32;
-  int nMerge = 1;
+  PrefixSetupCtx s;
 
-  void (*xMerge)(Fts5Index*, Fts5Buffer*, int, Fts5Buffer*);
-  void (*xAppend)(Fts5Index*, u64, Fts5Iter*, Fts5Buffer*);
+  memset(&s, 0, sizeof(s));
+  s.nMerge = 1;
+  s.iLastRowid = 0;
+  s.nBuf = 32;
+
   if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
-    xMerge = fts5MergeRowidLists;
-    xAppend = fts5AppendRowid;
+    s.xMerge = fts5MergeRowidLists;
+    s.xAppend = fts5AppendRowid;
   }else{
-    nMerge = FTS5_MERGE_NLIST-1;
-    nBuf = nMerge*8;   /* Sufficient to merge (16^8)==(2^32) lists */
-    xMerge = fts5MergePrefixLists;
-    xAppend = fts5AppendPoslist;
+    s.nMerge = FTS5_MERGE_NLIST-1;
+    s.nBuf = s.nMerge*8;   /* Sufficient to merge (16^8)==(2^32) lists */
+    s.xMerge = fts5MergePrefixLists;
+    s.xAppend = fts5AppendPoslist;
   }
 
-  aBuf = (Fts5Buffer*)fts5IdxMalloc(p, sizeof(Fts5Buffer)*nBuf);
+  s.aBuf = (Fts5Buffer*)fts5IdxMalloc(p, sizeof(Fts5Buffer)*s.nBuf);
   pStruct = fts5StructureRead(p);
-  assert( p->rc!=SQLITE_OK || (aBuf && pStruct) );
+  assert( p->rc!=SQLITE_OK || (s.aBuf && pStruct) );
 
   if( p->rc==SQLITE_OK ){
-    const int flags = FTS5INDEX_QUERY_SCAN 
-                    | FTS5INDEX_QUERY_SKIPEMPTY 
-                    | FTS5INDEX_QUERY_NOOUTPUT;
     int i;
-    i64 iLastRowid = 0;
-    Fts5Iter *p1 = 0;     /* Iterator used to gather data from index */
     Fts5Data *pData;
-    Fts5Buffer doclist;
-    int bNewTerm = 1;
-
-    memset(&doclist, 0, sizeof(doclist));
 
     /* If iIdx is non-zero, then it is the number of a prefix-index for
     ** prefixes 1 character longer than the prefix being queried for. That
@@ -6247,6 +6334,7 @@ static void fts5SetupPrefixIter(
     ** corresponding to the prefix itself. That one is extracted from the
     ** main term index here.  */
     if( iIdx!=0 ){
+      Fts5Iter *p1 = 0;     /* Iterator used to gather data from index */
       int dummy = 0;
       const int f2 = FTS5INDEX_QUERY_SKIPEMPTY|FTS5INDEX_QUERY_NOOUTPUT;
       pToken[0] = FTS5_MAIN_PREFIX;
@@ -6259,82 +6347,41 @@ static void fts5SetupPrefixIter(
         Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
         p1->xSetOutputs(p1, pSeg);
         if( p1->base.nData ){
-          xAppend(p, (u64)p1->base.iRowid-(u64)iLastRowid, p1, &doclist);
-          iLastRowid = p1->base.iRowid;
+          s.xAppend(p, (u64)p1->base.iRowid-(u64)s.iLastRowid, p1, &s.doclist);
+          s.iLastRowid = p1->base.iRowid;
         }
       }
       fts5MultiIterFree(p1);
     }
 
     pToken[0] = FTS5_MAIN_PREFIX + iIdx;
-    fts5MultiIterNew(p, pStruct, flags, pColset, pToken, nToken, -1, 0, &p1);
-    fts5IterSetOutputCb(&p->rc, p1);
+    fts5VisitPrefixRange(
+        p, pColset, pToken, nToken, prefixIterSetupCb, (void*)&s
+    );
 
-    for( /* no-op */ ;
-        fts5MultiIterEof(p, p1)==0;
-        fts5MultiIterNext2(p, p1, &bNewTerm)
-    ){
-      Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
-      int nTerm = pSeg->term.n;
-      const u8 *pTerm = pSeg->term.p;
-      p1->xSetOutputs(p1, pSeg);
-
-      assert_nc( memcmp(pToken, pTerm, MIN(nToken, nTerm))<=0 );
-      if( bNewTerm ){
-        if( nTerm<nToken || memcmp(pToken, pTerm, nToken) ) break;
-      }
-
-      if( p1->base.nData==0 ) continue;
-      if( p1->base.iRowid<=iLastRowid && doclist.n>0 ){
-        for(i=0; p->rc==SQLITE_OK && doclist.n; i++){
-          int i1 = i*nMerge;
-          int iStore;
-          assert( i1+nMerge<=nBuf );
-          for(iStore=i1; iStore<i1+nMerge; iStore++){
-            if( aBuf[iStore].n==0 ){
-              fts5BufferSwap(&doclist, &aBuf[iStore]);
-              fts5BufferZero(&doclist);
-              break;
-            }
-          }
-          if( iStore==i1+nMerge ){
-            xMerge(p, &doclist, nMerge, &aBuf[i1]);
-            for(iStore=i1; iStore<i1+nMerge; iStore++){
-              fts5BufferZero(&aBuf[iStore]);
-            }
-          }
-        }
-        iLastRowid = 0;
-      }
-
-      xAppend(p, (u64)p1->base.iRowid-(u64)iLastRowid, p1, &doclist);
-      iLastRowid = p1->base.iRowid;
-    }
-
-    assert( (nBuf%nMerge)==0 );
-    for(i=0; i<nBuf; i+=nMerge){
+    assert( (s.nBuf%s.nMerge)==0 );
+    for(i=0; i<s.nBuf; i+=s.nMerge){
       int iFree;
       if( p->rc==SQLITE_OK ){
-        xMerge(p, &doclist, nMerge, &aBuf[i]);
+        s.xMerge(p, &s.doclist, s.nMerge, &s.aBuf[i]);
       }
-      for(iFree=i; iFree<i+nMerge; iFree++){
-        fts5BufferFree(&aBuf[iFree]);
+      for(iFree=i; iFree<i+s.nMerge; iFree++){
+        fts5BufferFree(&s.aBuf[iFree]);
       }
     }
-    fts5MultiIterFree(p1);
 
-    pData = fts5IdxMalloc(p, sizeof(*pData)+doclist.n+FTS5_DATA_ZERO_PADDING);
+    pData = fts5IdxMalloc(p, sizeof(*pData)+s.doclist.n+FTS5_DATA_ZERO_PADDING);
     if( pData ){
       pData->p = (u8*)&pData[1];
-      pData->nn = pData->szLeaf = doclist.n;
-      if( doclist.n ) memcpy(pData->p, doclist.p, doclist.n);
+      pData->nn = pData->szLeaf = s.doclist.n;
+      if( s.doclist.n ) memcpy(pData->p, s.doclist.p, s.doclist.n);
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
-    fts5BufferFree(&doclist);
   }
 
+  fts5BufferFree(&s.doclist);
   fts5StructureRelease(pStruct);
-  sqlite3_free(aBuf);
+  sqlite3_free(s.aBuf);
 }
 
 
@@ -7021,7 +7068,6 @@ static Fts5Iter *fts5SetupTokendataIter(
   return pRet;
 }
 
-
 /*
 ** Open a new iterator to iterate though all rowid that match the 
 ** specified token or token prefix.
@@ -7046,9 +7092,11 @@ int sqlite3Fts5IndexQuery(
     int bTokendata = pConfig->bTokendata;
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
-    /* The NOTOKENDATA flag is set when it is known that tokendata data will
-    ** not be required. e.g. for queries performed as part of an 
-    ** integrity-check, or by the fts5vocab module.  */
+    /* The NOTOKENDATA flag is set when each token in a tokendata=1 table
+    ** should be treated individually, instead of merging all those with
+    ** a common prefix into a single entry. This is used, for example, by
+    ** queries performed as part of an integrity-check, or by the fts5vocab
+    ** module.  */
     if( flags & (FTS5INDEX_QUERY_NOTOKENDATA|FTS5INDEX_QUERY_SCAN) ){
       bTokendata = 0;
     }
@@ -7092,7 +7140,7 @@ int sqlite3Fts5IndexQuery(
         fts5StructureRelease(pStruct);
       }
     }else{
-      /* Scan multiple terms in the main index */
+      /* Scan multiple terms in the main index for a prefix query. */
       int bDesc = (flags & FTS5INDEX_QUERY_DESC)!=0;
       fts5SetupPrefixIter(p, bDesc, iPrefixIdx, buf.p, nToken+1, pColset,&pRet);
       if( pRet==0 ){
@@ -7250,6 +7298,39 @@ static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
   }
 }
 
+typedef struct TokendataSetupCtx TokendataSetupCtx;
+struct TokendataSetupCtx {
+  Fts5TokenDataIter *pT;
+  int iTermOff;
+  int nTermByte;
+};
+
+static void prefixIterSetupTokendataCb(
+  Fts5Index *p, 
+  void *pCtx, 
+  Fts5Iter *p1, 
+  const u8 *pNew,
+  int nNew
+){
+  TokendataSetupCtx *pSetup = (TokendataSetupCtx*)pCtx;
+  int iPosOff = 0;
+  i64 iPos = 0;
+
+  if( pNew ){
+    pSetup->nTermByte = nNew-1;
+    pSetup->iTermOff = pSetup->pT->terms.n;
+    fts5BufferAppendBlob(&p->rc, &pSetup->pT->terms, nNew-1, pNew+1);
+  }
+
+  while( 0==sqlite3Fts5PoslistNext64(
+     p1->base.pData, p1->base.nData, &iPosOff, &iPos
+  ) ){
+    fts5TokendataIterAppendMap(p, 
+        pSetup->pT, pSetup->iTermOff, pSetup->nTermByte, p1->base.iRowid, iPos
+    );
+  }
+}
+
 static int fts5SetupPrefixIterTokendata(
   Fts5Iter *pIter,
   const char *pToken,
@@ -7257,73 +7338,31 @@ static int fts5SetupPrefixIterTokendata(
 ){
   Fts5Index *p = pIter->pIndex;
   Fts5Buffer token = {0, 0, 0};
-  Fts5TokenDataIter *pT = 0;
+  TokendataSetupCtx ctx;
+
+  memset(&ctx, 0, sizeof(ctx));
 
   fts5BufferGrow(&p->rc, &token, nToken+1);
-  pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*pT));
+  ctx.pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*ctx.pT));
 
   if( p->rc==SQLITE_OK ){
-    const int flags = FTS5INDEX_QUERY_SCAN 
-                    | FTS5INDEX_QUERY_SKIPEMPTY 
-                    | FTS5INDEX_QUERY_NOOUTPUT;
-    Fts5Structure *pStruct = 0;
-    Fts5Iter *p1 = 0;             /* Iterator used to find tokendata */
-
-    int bNewTerm = 1;
-    int iTermOff = 0;
-    int nTermByte = 0;
 
     /* Fill in the token prefix to search for */
     token.p[0] = FTS5_MAIN_PREFIX;
     memcpy(&token.p[1], pToken, nToken);
     token.n = nToken+1;
 
-    /* Grab a reference to the table structure. That will be released before
-    ** this function returns.  */
-    pStruct = fts5StructureRead(p);
+    fts5VisitPrefixRange(
+        p, 0, token.p, token.n, prefixIterSetupTokendataCb, (void*)&ctx
+    );
 
-    fts5MultiIterNew(p, pStruct, flags, 0, token.p, token.n, -1, 0, &p1);
-    fts5IterSetOutputCb(&p->rc, p1);
-    for( /* no-op */ ;
-        fts5MultiIterEof(p, p1)==0;
-        fts5MultiIterNext2(p, p1, &bNewTerm)
-    ){
-      i64 iPos = 0;
-      int iPosOff = 0;
-
-      Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
-      p1->xSetOutputs(p1, pSeg);
-
-      if( bNewTerm ){
-        int nTerm = pSeg->term.n;
-        const u8 *pTerm = pSeg->term.p;
-        assert_nc( memcmp(token.p, pTerm, MIN(token.n, nTerm))<=0 );
-        if( nTerm<token.n || memcmp(token.p, pTerm, token.n) ) break;
-        nTermByte = nTerm-1;
-        iTermOff = pT->terms.n;
-        fts5BufferAppendBlob(&p->rc, &pT->terms, nTermByte, pTerm+1);
-      }
-
-      while( 0==sqlite3Fts5PoslistNext64(
-            p1->base.pData, p1->base.nData, &iPosOff, &iPos
-      ) ){
-        fts5TokendataIterAppendMap(
-            p, pT, iTermOff, nTermByte, p1->base.iRowid, iPos
-        );
-      }
-    }
-
-    /* fts5SetupPrefixIter */
-    fts5MultiIterFree(p1);
-    fts5StructureRelease(pStruct);
-
-    fts5TokendataIterSortMap(p, pT);
+    fts5TokendataIterSortMap(p, ctx.pT);
   }
 
   if( p->rc==SQLITE_OK ){
-    pIter->pTokenDataIter = pT;
+    pIter->pTokenDataIter = ctx.pT;
   }else{
-    fts5TokendataIterDelete(pT);
+    fts5TokendataIterDelete(ctx.pT);
   }
   fts5BufferFree(&token);
 

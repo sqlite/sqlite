@@ -1,5 +1,5 @@
-C Change\sthe\sway\stokendata\sindexes\sare\scollected\sfor\sprefix\squeries.
-D 2024-09-25T18:55:11.223
+C Rationalize\ssome\sof\sthe\snew\scode\son\sthis\sbranch.
+D 2024-09-28T20:45:11.387
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -99,7 +99,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c da21548ddbc1a457cb42545f527065221ede8ada6a734891b8c34317a7a9506b
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c 8dfb22c5e42cd56d3abbe107a5561fc3b4f731fc4c821ac049482d9dedc50acc
+F ext/fts5/fts5_index.c c1005920192146452a3545500761ecc8cfab84572d251e8536103a01899f67d5
 F ext/fts5/fts5_main.c 4503498d3453e29a3cd89dacaba029011e89cb8c481a6241611d106e7a369bd4
 F ext/fts5/fts5_storage.c 3332497823c3d171cf56379f2bd8c971ce15a19aadacff961106462022c92470
 F ext/fts5/fts5_tcl.c 4db9258a7882c5eac0da4433042132aaf15b87dd1e1636c7a6ca203abd2c8bfe
@@ -2214,8 +2214,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9945206e6e26a48a49b9747650d299eb983cc21a3a61c621cd81f0bbc85a74d7
-R d12c6f9d3e41d3b7f32c957f52650189
+P 204ddf4e726b695dd12ab4a945ec2461655aa0bcc38b74e970f07ed2ac43c6ff
+R da06610bae74973a44f69a92b9b60e12
 U dan
-Z 0b9676f39cb90827333f01676ed89ac5
+Z ca9c653ea5575a07920ac6ddffa15d1d
 # Remove this line to create a well-formed Fossil manifest.
