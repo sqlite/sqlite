@@ -367,12 +367,12 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 
 ########################################################################
 # bin.mkwb is used for generating some of the makefile code for the
-# various build builds. It used to be generated in this makefile via a
+# various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
 # made to generate it from tcl and bash (shell) but having to escape
 # the $ references in those languages made it just as illegible as the
 # native makefile code. Somewhat surprisingly, moving that code generation
-# to C makes it slightly less illegible than the previousq 3 options.
+# to C makes it slightly less illegible than the previous 3 options.
 bin.mkwb := ./mkwasmbuilds
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
 	$(CC) -o $@ $<

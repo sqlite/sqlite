@@ -1,5 +1,5 @@
-C Merge\swasm-build-rework\sbranch\sinto\strunk.\sSummary:\s1)\sadd\soptional\sbare-bones\sbuild,\sstripped\sof\smany\soptional\slibrary\sfeatures,\s2)\sreplace\smuch\sof\sthe\shyper-spaghetti\swasm-specific\smakefile\scode\swith\sa\smore\slegible\sstatic\scode\sgenerator.
-D 2024-09-28T00:02:52.169
+C Minor\smakefile\sdoc\sfixes.\sNo\sfunctional\schanges.
+D 2024-09-28T00:39:19.799
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 34a4590ae3f7ce5a70bf1c6f0384a7935e6c9809281e40165381ba04df34ceae
+F ext/wasm/GNUmakefile a35f8f9cd8fca7a8ea5c76492c3b72f8656ff6e62dd770f755d9b024dbdb2a4b
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -612,7 +612,7 @@ F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ce
 F ext/wasm/SQLTester/index.html 3f8a016df0776be76605abf20e815ecaafbe055abac0e1fe5ea080e7846b760d
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-core 2bcbbfe3b95c043ed6037e2708a2ee078d212dd1612c364f93588d8dc97300fe
-F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-extras fe40d6d758646e38f8b15f709044951e10884214f5453d35502100179c388c13 w ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-session
+F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-extras fe40d6d758646e38f8b15f709044951e10884214f5453d35502100179c388c13
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 34fe11466f9c1d81b10a0469e1114e5f1c5a6365c73d80a1a6ca639a1a358b73
@@ -683,7 +683,7 @@ F ext/wasm/tester1.c-pp.js bb8c41a56ca0eabb945ca2e8f06324a7b63ad91630959d714b071
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
-F ext/wasm/wasmfs.make 8067daf346482cdb91414c3f6b8f6ff110bfa874294f73e13479c755af67ec20
+F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2213,9 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e74fce93c518296bdb0a4273cd5fd3f785d37d27750ca456b61a3502135775f9 f904b3b7842da036c3e8423bae02cdf207573c92dc379a601eae289eb3c5f547
-R 00aae997005fe8baf8a0564b28d0f4b3
-T +closed f904b3b7842da036c3e8423bae02cdf207573c92dc379a601eae289eb3c5f547 Closed\sby\sintegrate-merge.
+P 208c27714646c9bc26eef11266086a71da04bc24e87078de0955e7beb68a821e
+R 2a15755da1c3e9e619c193a945de5bc6
 U stephan
-Z 285fd3333f337a65629db5a9e7f33975
+Z 991ac6d8780a391427387df58194645e
 # Remove this line to create a well-formed Fossil manifest.
