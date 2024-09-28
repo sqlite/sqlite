@@ -133,11 +133,13 @@ sqlite3.canonical.c := $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
 sqlite3.h := $(dir.top)/sqlite3.h
 
+ifneq (1,$(MAKING_CLEAN))
 ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c)))
   SQLITE_C_IS_SEE := 0
 else
   SQLITE_C_IS_SEE := 1
   $(info This is an SEE build)
+endif
 endif
 
 ########################################################################@
@@ -871,6 +873,7 @@ sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
 sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 sqlite3-api-wasmfs.mjs := $(dir.tmp)/sqlite3-api-wasmfs.mjs
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
+EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 ifneq (1,$(MAKING_CLEAN))
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
