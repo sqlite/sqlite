@@ -105,6 +105,10 @@ dir.dout := $(dir.wasm)/jswasm
 dir.tmp := $(dir.wasm)/bld
 dir.wasmfs := $(dir.dout)
 
+MKDIR.bld := $(dir.tmp)
+$(MKDIR.bld):
+	-mkdir $@
+
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
   $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
 
@@ -502,7 +506,7 @@ ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 endif
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
-$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
+$(EXPORTED_FUNCTIONS.api): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 ########################################################################
@@ -586,7 +590,7 @@ $(SOAP.js.bld): $(SOAP.js)
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
 # Emscripten-specific headers and footers.
 sqlite3-api.js.in := $(dir.tmp)/sqlite3-api.c-pp.js
-$(sqlite3-api.js.in): $(sqlite3-api.jses) $(MAKEFILE)
+$(sqlite3-api.js.in): $(MKDIR.bld) $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -753,7 +757,7 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 ########################################################################
 # $(sqlite3-api-build-version.js) injects the build version info into
 # the bundle in JSON form.
-$(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
+$(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
     echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
@@ -769,7 +773,7 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 #
 # Maintenance reminder: there are awk binaries out there which do not
 # support -e SCRIPT.
-$(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) \
+$(sqlite3-license-version.js): $(MKDIR.bld) $(sqlite3.h) $(sqlite3-license-version-header.js) \
   $(MAKEFILE)
 	@echo "Making $@..."; { \
     cat $(sqlite3-license-version-header.js); \
@@ -797,7 +801,7 @@ post-jses.js := \
   $(dir.api)/post-js-header.js \
   $(sqlite3-api.js.in) \
   $(dir.api)/post-js-footer.js
-$(post-js.js.in): $(post-jses.js) $(MAKEFILE)
+$(post-js.js.in): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(post-jses.js); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -1025,7 +1029,7 @@ speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
+$(EXPORTED_FUNCTIONS.speedtest1): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.core)
 	@echo "Making $@ ..."
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1.js := $(dir.dout)/speedtest1.js

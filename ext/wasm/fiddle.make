@@ -59,7 +59,8 @@ fiddle.EXPORTED_FUNCTIONS.in := \
     $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
     $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 
-$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
+$(EXPORTED_FUNCTIONS.fiddle): $(MKDIR.bld) $(fiddle.EXPORTED_FUNCTIONS.in) \
+    $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
 fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
