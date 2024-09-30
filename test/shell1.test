@@ -516,6 +516,8 @@ do_test shell1-3.15.3 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 
@@ -532,6 +534,8 @@ do_test shell1-3.16.2 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 

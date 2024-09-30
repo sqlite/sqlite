@@ -75,6 +75,7 @@ void sqlite3CodeChangeCount(Vdbe *v, int regCounter, const char *zColName){
 **      is for a top-level SQL statement.
 */
 static int vtabIsReadOnly(Parse *pParse, Table *pTab){
+  assert( IsVirtual(pTab) );
   if( sqlite3GetVTable(pParse->db, pTab)->pMod->pModule->xUpdate==0 ){
     return 1;
   }

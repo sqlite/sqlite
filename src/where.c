@@ -1636,9 +1636,11 @@ static void freeIndexInfo(sqlite3 *db, sqlite3_index_info *pIdxInfo){
 ** that this is required.
 */
 static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
-  sqlite3_vtab *pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
   int rc;
+  sqlite3_vtab *pVtab;
 
+  assert( IsVirtual(pTab) );
+  pVtab = sqlite3GetVTable(pParse->db, pTab)->pVtab;
   whereTraceIndexInfoInputs(p, pTab);
   pParse->db->nSchemaLock++;
   rc = pVtab->pModule->xBestIndex(pVtab, p);

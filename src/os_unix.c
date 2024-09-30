@@ -4181,7 +4181,7 @@ static void setDeviceCharacteristics(unixFile *pFd){
 static void setDeviceCharacteristics(unixFile *pFile){
   if( pFile->sectorSize == 0 ){
     struct statvfs fsInfo;
-     
+
     /* Set defaults for non-supported filesystems */
     pFile->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
     pFile->deviceCharacteristics = 0;
@@ -4221,7 +4221,7 @@ static void setDeviceCharacteristics(unixFile *pFile){
       pFile->sectorSize = fsInfo.f_bsize;
       pFile->deviceCharacteristics =
         /* full bitset of atomics from max sector size and smaller */
-        ((pFile->sectorSize / 512 * SQLITE_IOCAP_ATOMIC512) << 1) - 2 |
+        (((pFile->sectorSize / 512 * SQLITE_IOCAP_ATOMIC512) << 1) - 2) |
         SQLITE_IOCAP_SEQUENTIAL |     /* The ram filesystem has no write behind
                                       ** so it is ordered */
         0;
@@ -4229,7 +4229,7 @@ static void setDeviceCharacteristics(unixFile *pFile){
       pFile->sectorSize = fsInfo.f_bsize;
       pFile->deviceCharacteristics =
         /* full bitset of atomics from max sector size and smaller */
-        ((pFile->sectorSize / 512 * SQLITE_IOCAP_ATOMIC512) << 1) - 2 |
+        (((pFile->sectorSize / 512 * SQLITE_IOCAP_ATOMIC512) << 1) - 2) |
         SQLITE_IOCAP_SEQUENTIAL |     /* The ram filesystem has no write behind
                                       ** so it is ordered */
         0;
