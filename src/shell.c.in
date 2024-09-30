@@ -631,7 +631,7 @@ static const struct {
   unsigned char w;    /* Width of the character in columns */
   int iFirst;         /* First character in a span having this width */
 } aUWidth[] = {
-   /* {0, 0x00000},  {1, 0x00020},  {0, 0x0007f},  {1, 0x000a0}, */
+   /* {1, 0x00000}, */
   {0, 0x00300},  {1, 0x00370},  {0, 0x00483},  {1, 0x00487},  {0, 0x00488},
   {1, 0x0048a},  {0, 0x00591},  {1, 0x005be},  {0, 0x005bf},  {1, 0x005c0},
   {0, 0x005c1},  {1, 0x005c3},  {0, 0x005c4},  {1, 0x005c6},  {0, 0x005c7},
@@ -709,9 +709,6 @@ int cli_wcwidth(int c){
   int iFirst, iLast;
 
   /* Fast path for common characters */
-  if( c<0x20 ) return 0;
-  if( c<0x7f ) return 1;
-  if( c<0xa0 ) return 0;
   if( c<=0x300 ) return 1;
 
   /* The general case */
