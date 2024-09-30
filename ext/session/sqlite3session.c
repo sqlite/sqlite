@@ -81,6 +81,10 @@ struct SessionBuffer {
 ** input data. Input data may be supplied either as a single large buffer
 ** (e.g. sqlite3changeset_start()) or using a stream function (e.g.
 **  sqlite3changeset_start_strm()).
+**
+** bNoDiscard:
+**   If true, then the only time data is discarded is as a result of explicit
+**   sessionDiscardData() calls. Not within every sessionInputBuffer() call.
 */
 struct SessionInput {
   int bNoDiscard;                 /* If true, do not discard in InputBuffer() */
@@ -1765,16 +1769,19 @@ static void sessionPreupdateOneChange(
       for(i=0; i<(pTab->nCol-pTab->bRowid); i++){
         sqlite3_value *p = 0;
         if( op!=SQLITE_INSERT ){
-          TESTONLY(int trc = ) pSession->hook.xOld(pSession->hook.pCtx, i, &p);
-          assert( trc==SQLITE_OK );
+          /* This may fail if the column has a non-NULL default and was added 
+          ** using ALTER TABLE ADD COLUMN after this record was created. */
+          rc = pSession->hook.xOld(pSession->hook.pCtx, i, &p);
         }else if( pTab->abPK[i] ){
           TESTONLY(int trc = ) pSession->hook.xNew(pSession->hook.pCtx, i, &p);
           assert( trc==SQLITE_OK );
         }
 
-        /* This may fail if SQLite value p contains a utf-16 string that must
-        ** be converted to utf-8 and an OOM error occurs while doing so. */
-        rc = sessionSerializeValue(0, p, &nByte);
+        if( rc==SQLITE_OK ){
+          /* This may fail if SQLite value p contains a utf-16 string that must
+          ** be converted to utf-8 and an OOM error occurs while doing so. */
+          rc = sessionSerializeValue(0, p, &nByte);
+        }
         if( rc!=SQLITE_OK ) goto error_out;
       }
       if( pTab->bRowid ){
@@ -5155,15 +5162,21 @@ static int sessionChangesetApply(
   int nTab = 0;                   /* Result of sqlite3Strlen30(zTab) */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
   int bPatchset;
+  u64 savedFlag = db->flags & SQLITE_FkNoAction;
 
   assert( xConflict!=0 );
+
+  sqlite3_mutex_enter(sqlite3_db_mutex(db));
+  if( flags & SQLITE_CHANGESETAPPLY_FKNOACTION ){
+    db->flags |= ((u64)SQLITE_FkNoAction);
+    db->aDb[0].pSchema->schema_cookie -= 32;
+  }
 
   pIter->in.bNoDiscard = 1;
   memset(&sApply, 0, sizeof(sApply));
   sApply.bRebase = (ppRebase && pnRebase);
   sApply.bInvertConstraints = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
   sApply.bIgnoreNoop = !!(flags & SQLITE_CHANGESETAPPLY_IGNORENOOP);
-  sqlite3_mutex_enter(sqlite3_db_mutex(db));
   if( (flags & SQLITE_CHANGESETAPPLY_NOSAVEPOINT)==0 ){
     rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
   }
@@ -5325,6 +5338,12 @@ static int sessionChangesetApply(
   sqlite3_free((char*)sApply.azCol);  /* cast works around VC++ bug */
   sqlite3_free((char*)sApply.constraints.aBuf);
   sqlite3_free((char*)sApply.rebase.aBuf);
+
+  if( (flags & SQLITE_CHANGESETAPPLY_FKNOACTION) && savedFlag==0 ){
+    assert( db->flags & SQLITE_FkNoAction );
+    db->flags &= ~((u64)SQLITE_FkNoAction);
+    db->aDb[0].pSchema->schema_cookie -= 32;
+  }
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }
@@ -5353,12 +5372,6 @@ int sqlite3changeset_apply_v2(
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
   int bInv = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
   int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset, bInv, 1);
-  u64 savedFlag = db->flags & SQLITE_FkNoAction;
-
-  if( flags & SQLITE_CHANGESETAPPLY_FKNOACTION ){
-    db->flags |= ((u64)SQLITE_FkNoAction);
-    db->aDb[0].pSchema->schema_cookie -= 32;
-  }
 
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(
@@ -5366,11 +5379,6 @@ int sqlite3changeset_apply_v2(
     );
   }
 
-  if( (flags & SQLITE_CHANGESETAPPLY_FKNOACTION) && savedFlag==0 ){
-    assert( db->flags & SQLITE_FkNoAction );
-    db->flags &= ~((u64)SQLITE_FkNoAction);
-    db->aDb[0].pSchema->schema_cookie -= 32;
-  }
   return rc;
 }
 
@@ -5691,6 +5699,9 @@ static int sessionChangesetExtendRecord(
     sessionAppendBlob(pOut, aRec, nRec, &rc);
     if( rc==SQLITE_OK && pTab->pDfltStmt==0 ){
       rc = sessionPrepareDfltStmt(pGrp->db, pTab, &pTab->pDfltStmt);
+      if( rc==SQLITE_OK && SQLITE_ROW!=sqlite3_step(pTab->pDfltStmt) ){
+        rc = sqlite3_errcode(pGrp->db);
+      }
     }
     for(ii=nCol; rc==SQLITE_OK && ii<pTab->nCol; ii++){
       int eType = sqlite3_column_type(pTab->pDfltStmt, ii);
@@ -5707,6 +5718,7 @@ static int sessionChangesetExtendRecord(
           }
           if( SQLITE_OK==sessionBufferGrow(pOut, 8, &rc) ){
             sessionPutI64(&pOut->aBuf[pOut->nBuf], iVal);
+            pOut->nBuf += 8;
           }
           break;
         }
@@ -5846,6 +5858,8 @@ static int sessionOneChangeToHash(
   u8 *aRec = &pIter->in.aData[pIter->in.iCurrent + 2];
   int nRec = (pIter->in.iNext - pIter->in.iCurrent) - 2;
 
+  assert( nRec>0 );
+
   /* Ensure that only changesets, or only patchsets, but not a mixture
   ** of both, are being combined. It is an error to try to combine a
   ** changeset and a patchset.  */
@@ -5923,6 +5937,7 @@ static int sessionChangesetToHash(
   int nRec;
   int rc = SQLITE_OK;
 
+  pIter->in.bNoDiscard = 1;
   while( SQLITE_ROW==(sessionChangesetNext(pIter, &aRec, &nRec, 0)) ){
     rc = sessionOneChangeToHash(pGrp, pIter, bRebase);
     if( rc!=SQLITE_OK ) break;

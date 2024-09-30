@@ -103,13 +103,13 @@ do_execsql_test 3.0 {
 
 do_catchsql_test 3.1 {
   INSERT INTO x1(rowid, a, b) VALUES(113, 'hello world', X'123456');
-} {1 {datatype mismatch}}
+} {0 {}}
 do_catchsql_test 3.2 {
   INSERT INTO x2(rowid, a, b) VALUES(113, 'hello world', X'123456');
-} {1 {datatype mismatch}}
+} {0 {}}
 do_catchsql_test 3.3 {
   INSERT INTO x3(rowid, a, b) VALUES(113, 'hello world', X'123456');
-} {1 {datatype mismatch}}
+} {0 {}}
 
 
 #--------------------------------------------------------------------------

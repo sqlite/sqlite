@@ -428,6 +428,8 @@ do_execsql_test 5.0 {
 
   WITH s(i) AS ( VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100)
   INSERT INTO t2 SELECT (i-1)/20, (i-1)/5 FROM s;
+
+  CREATE INDEX i1 ON t1( lower(a) );
 }
 do_candidates_test 5.1 {
   SELECT * FROM t1,t2 WHERE (b=? OR a=?) AND (c=? OR d=?)
@@ -457,6 +459,7 @@ do_execsql_test 5.3 {
   ANALYZE;
   SELECT * FROM sqlite_stat1 ORDER BY 1, 2;
 } {
+  t1 i1 {100 50} 
   t1 t1_idx_00000061 {100 50} 
   t1 t1_idx_00000062 {100 20}
   t1 t1_idx_000123a7 {100 50 17}
@@ -489,6 +492,19 @@ SCAN CONSTANT ROW
 SCAN pragma_collation_list VIRTUAL TABLE INDEX 0:
 USE TEMP B-TREE FOR ORDER BY
 }}
+}
+
+do_execsql_test 6.0 {
+  CREATE TABLE x1(a, b, c, d);
+  CREATE INDEX x1ab ON x1(a, lower(b));
+  CREATE INDEX x1dcba ON x1(d, b+c, a);
+}
+
+do_candidates_test 6.1 {
+  SELECT * FROM x1 WHERE b=? ORDER BY a;
+} {
+  CREATE INDEX x1_idx_0001267f ON x1(b, a); 
+  CREATE INDEX x1_idx_00000062 ON x1(b);
 }
 
 finish_test

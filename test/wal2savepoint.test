@@ -22,6 +22,7 @@ source $testdir/wal_common.tcl
 set testprefix wal2savepoint
 ifcapable !wal {finish_test ; return }
 
+reset_prng_state
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
   CREATE INDEX t1a ON t1(a);
@@ -71,4 +72,3 @@ do_execsql_test 1.4 {
 
 
 finish_test
-

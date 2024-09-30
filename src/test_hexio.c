@@ -232,9 +232,9 @@ static int SQLITE_TCLAPI hexio_get_int(
   }
   sqlite3_free(aOut);
   if( bLittle ){
-    val = (aNum[3]<<24) | (aNum[2]<<16) | (aNum[1]<<8) | aNum[0];
+    val = (int)((u32)aNum[3]<<24) | (aNum[2]<<16) | (aNum[1]<<8) | aNum[0];
   }else{
-    val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
+    val = (int)((u32)aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(val));
   return TCL_OK;

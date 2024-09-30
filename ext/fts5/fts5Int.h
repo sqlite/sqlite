@@ -636,16 +636,13 @@ Fts5Table *sqlite3Fts5TableFromCsrid(Fts5Global*, i64);
 
 int sqlite3Fts5FlushToDisk(Fts5Table*);
 
-int sqlite3Fts5ExtractText(
-  Fts5Config *pConfig,
-  sqlite3_value *pVal,            /* Value to extract text from */
-  int bContent,                   /* Loaded from content table */
-  int *pbResetTokenizer,          /* OUT: True if ClearLocale() required */
-  const char **ppText,            /* OUT: Pointer to text buffer */
-  int *pnText                     /* OUT: Size of (*ppText) in bytes */
-);
-
 void sqlite3Fts5ClearLocale(Fts5Config *pConfig);
+void sqlite3Fts5SetLocale(Fts5Config *pConfig, const char *pLoc, int nLoc);
+
+int sqlite3Fts5IsLocaleValue(Fts5Config *pConfig, sqlite3_value *pVal);
+int sqlite3Fts5DecodeLocaleValue(sqlite3_value *pVal, 
+    const char **ppText, int *pnText, const char **ppLoc, int *pnLoc
+);
 
 /*
 ** End of interface to code in fts5.c.
