@@ -276,7 +276,7 @@ cc-check-types int8_t int16_t int32_t int64_t intptr_t \
 cc-check-functions gmtime_r isnan localtime_r localtime_s \
   malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 
-cc-check-function-in-lib fdatasync rt
+hwaci-check-function-in-lib fdatasync rt
 define LDFLAGS_FDATASYNC [get-define lib_fdatasync]
 undefine lib_fdatasync
 
@@ -291,7 +291,7 @@ cc-check-includes \
 # These are optional for JimTCL:
 cc-check-includes dirent.h sys/time.h
 
-if {[cc-check-includes zlib.h] && [cc-check-function-in-lib deflate z]} {
+if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
   # TODO: port over the more sophisticated zlib search from the fossil auto.def
   define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
   define LDFLAGS_ZLIB -lz
@@ -482,8 +482,8 @@ msg-checking "Support threadsafe operation? "
 hwaci-if-opt-truthy threadsafe {
   msg-result yes
   add-feature-flag -DSQLITE_THREADSAFE=1
-  if {![cc-check-function-in-lib pthread_create pthread]
-      || ![cc-check-function-in-lib pthread_mutexattr_init pthread]} {
+  if {![hwaci-check-function-in-lib pthread_create pthread]
+      || ![hwaci-check-function-in-lib pthread_mutexattr_init pthread]} {
     user-error "Missing required pthread bits"
   }
   define LDFLAGS_PTHREAD [get-define lib_pthread_create]
@@ -570,7 +570,7 @@ if {1} {
   # XXX sLIBS=$LIBS
   # XXX LIBS=""
   # XXX TARGET_HAVE_EDITLINE=1
-  if {[cc-check-function-in-lib readline edit]} {
+  if {[hwaci-check-function-in-lib readline edit]} {
     set with_readline no
   } else {
     # XXX TARGET_HAVE_EDITLINE=0
@@ -590,12 +590,12 @@ if {1} {
   # XXX if test "x$with_readline_lib" = xauto; then
   # XXX save_LIBS="$LIBS"
   # XXX LIBS=""
-  if {[cc-check-function-in-lib tgetent readline ncurses curses termcap]} {
+  if {[hwaci-check-function-in-lib tgetent readline ncurses curses termcap]} {
     # XXX term_LIBS="$LIBS"
   } else {
     # XXX term_LIBS=""
   }
-  if {[cc-check-function-in-lib readline readline]} {
+  if {[hwaci-check-function-in-lib readline readline]} {
     # XXX TARGET_READLINE_LIBS="-lreadline"
   } else {
     set found "no"
@@ -668,7 +668,7 @@ if {1} {
 }
 
 hwaci-if-opt-truthy load-extension {
-  if {[cc-check-function-in-lib dlopen dl]} {
+  if {[hwaci-check-function-in-lib dlopen dl]} {
     define LDFLAGS_DLOPEN [get-define lib_dlopen]
     undefine lib_dlopen
   } else {
@@ -681,23 +681,16 @@ hwaci-if-opt-truthy load-extension {
 }
 
 hwaci-if-opt-truthy math {
-  if {![cc-check-function-in-lib ceil m]} {
+  if {![hwaci-check-function-in-lib ceil m]} {
     user-error "Cannot find libm functions. Use --disable-math to bypass this."
   }
   define LDFLAGS_MATH [get-define lib_ceil]
   undefine lib_ceil
   add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
-  msg-result "Enabling math SQL functions"
+  msg-result "Enabling math SQL functions [get-define LDFLAGS_MATH]"
 } {
   define LDFLAGS_MATH ""
   msg-result "Disabling math SQL functions"
-}
-
-hwaci-if-opt-truthy json {
-  msg-result "Enabling JSON SQL functions"
-} {
-  add-feature-flag {-DSQLITE_OMIT_JSON}
-  msg-result "Disabling JSON SQL functions"
 }
 
 if {0} {
@@ -766,7 +759,7 @@ if {[hwaci-check-emsdk]} {
 }
 
 proc affirm-have-math {} {
-  if {![cc-check-function-in-lib log m]} {
+  if {![hwaci-check-function-in-lib log m]} {
     user-error "Missing required math APIs"
   }
   define LDFLAGS_MATH [get-define lib_log ""]
@@ -803,6 +796,22 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
     eval $ifSetEvalThis
   } {
     msg-result "Not enabling $boolFlag"
+  }
+}
+
+########################################################################
+# Invert the above loop's logic for some explicit
+# SQLITE_OMIT_... cases. If config option $boolFlag is set,
+# [add-feature-flag $featureFlag], where $featureFlag is intended to
+# be -DSQLITE_OMIT_...
+foreach {boolFlag featureFlag} {
+  json        -DSQLITE_OMIT_JSON
+} {
+  if {[hwaci-opt-truthy $boolFlag]} {
+    msg-result "Enabling $boolFlag"
+  } else {
+    add-feature-flag $featureFlag
+    msg-result "Disabling $boolFlag"
   }
 }
 
@@ -876,4 +885,8 @@ hwaci-if-opt-truthy dump-defines {
       puts "\t$x"
     }
   }
+}
+
+puts {
+Done! Now run "make".
 }

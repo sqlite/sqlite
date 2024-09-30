@@ -21,6 +21,8 @@ TOP = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
 LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
 LDFLAGS_MATH = @LDFLAGS_MATH@
+LDFLAGS_RPATH = @LDFLAGS_RPATH@
+LDFLAGS_READLINE = @LDFLAGS_READLINE@
 LD = @LD@
 AR = @AR@
 
@@ -723,10 +725,11 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	@touch $@
 
 libsqlite3.DLL = libsqlite3$(TDLL)
+LDFLAGS_libsqlite = $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH)
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
 		@SHOBJ_LDFLAGS@  $(LIBOBJ) $(TLIBS) \
-		@LDFLAGS_RPATH@
+		$(LDFLAGS_libsqlite)
 dll: $(libsqlite3.DLL)
 all: dll
 
@@ -740,7 +743,7 @@ all: dll
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(TCC) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
-		@LDFLAGS_RPATH@ @LDFLAGS_READLINE@ $(TLIBS)
+		$(LDFLAGS_libsqlite) $(LDFLAGS_READLINE)
 cli: sqlite3$(TEXE)
 all: cli
 #XX#

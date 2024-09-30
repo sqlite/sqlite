@@ -20,6 +20,25 @@
 # project, authored by the same person who ported it here, noted here
 # only as an indication that there are no licensing issue despite this
 # code having at least two near-twins running around in other trees.
+#
+########################################################################
+#
+# Design notes: by and large, autosetup prefers to update global state
+# with the results of feature checks, e.g. whether the compiler
+# supports flag --X.  In this developer's opinion that (A) causes more
+# confusion than it solves[^1] and (B) adds an unnecessary layer of
+# "voodoo" between the autosetup user and its internals. This module,
+# in contrast, instead injects the results of its own tests into
+# well-defined variables and leaves the integration of those values to
+# the caller's discretion.
+#
+# [1]: As an example: testing for the -rpath flag, using
+# cc-check-flags, can break later checks which use
+# [cc-check-function-in-lib ...] because the resulting -rpath flag
+# implicitly becomes part of those tests. In the case of an rpath
+# test, downstream tests may not like the $prefix/lib path added by
+# the rpath test. To avoid such problems, we avoid (intentionally)
+# updating global state via feature tests.
 ########################################################################
 
 array set hwaci-cache- {} ; # used for caching various results.
@@ -602,13 +621,18 @@ proc hwaci-check-emsdk {} {
 # order of checks reflects that.
 proc hwaci-check-rpath {} {
   set rc 1
+  set lp "[get-define prefix]/lib"
+  # If we _don't_ use cc-with {} here (to avoid updating the global
+  # CFLAGS or LIBS or whatever it is that cc-check-flags updates) then
+  # downstream tests may fail because the resulting rpath gets
+  # implicitly injected into them.
   cc-with {} {
-    if {[cc-check-flags {-rpath /tmp}]} {
-      define LDFLAGS_RPATH "-rpath [get-define prefix]/lib"
-    } elseif {[cc-check-flags {-Wl,-rpath -Wl,/tmp}]} {
-      define LDFLAGS_RPATH "-Wl,-rpath -Wl,[get-define prefix]/lib"
-    } elseif {[cc-check-flags -Wl,-R/tmp]} {
-      define LDFLAGS_RPATH "-Wl,-R[get-define prefix]/lib"
+    if {[cc-check-flags {-rpath $lp}]} {
+      define LDFLAGS_RPATH "-rpath $lp"
+    } elseif {[cc-check-flags {-Wl,-rpath -Wl,$lp}]} {
+      define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
+    } elseif {[cc-check-flags -Wl,-R$lp]} {
+      define LDFLAGS_RPATH "-Wl,-R$lp"
     } else {
       define LDFLAGS_RPATH ""
       set rc 0
@@ -618,7 +642,15 @@ proc hwaci-check-rpath {} {
 }
 
 ########################################################################
-# Under construction - check for libreadline functionality
+# Under construction - check for libreadline functionality.
+# Defines the following vars:
+#
+# - HAVE_READLINE: 0 or 1
+# - LDFLAGS_READLINE: "" or linker flags
+# - CFLAGS_READLINE: "" or c-flags
+# - READLINE_H: "" or "readline/readlin.h" (or similar)
+#
+# Returns the value of HAVE_READLINE.
 proc hwaci-check-readline {} {
   define HAVE_READLINE 0
   define LDFLAGS_READLINE ""
