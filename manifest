@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements,\sincluding\sfix\sfor\sassert()\sfailure\sin\sfts5,\sinto\sthe\swal2\sbranch.
-D 2024-09-30T17:32:08.647
+C Fix\sa\susan\swarning\sin\stest_hexio.c\son\sthis\sbranch.
+D 2024-09-30T17:53:47.829
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -800,7 +800,7 @@ F src/test_demovfs.c 3efa2adf4f21e10d95521721687d5ca047aea91fa62dd8cc22ac9e5a9c9
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
 F src/test_fs.c c411c40baba679536fc34e2679349f59d8225570aed3488b5b3ef1908525a3d5
 F src/test_func.c 8c0e89192f70fac307822d1ac2911ee51751288780b3db0c5ab5ca75fa0fe851
-F src/test_hexio.c 35704e7db83fe1a0e1a014bacb17de97d7d1e89af3356a9da04e37cdaa087c09
+F src/test_hexio.c 7449504e4bde876ba91b202617a9228c7c8c2e7bd8b957302f3803ac0e9e353c
 F src/test_init.c 17313332d58e90defc527129d5eda4a08bd6b6e8de7207a231523c8d98fb445e
 F src/test_intarray.c e4216aadee9df2de7d1aee7e70f6b22c80ee79ece72a63d57105db74217639e5
 F src/test_intarray.h 6c3534641108cd1bea517a8e117dcba237081310a29a4c35bd2190caa8972293
@@ -2227,8 +2227,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f9e2fceecdb7fad0a2528a4244a786d17274d11b83f336d6012420675a2e4cd 350c6e75ce3c1e81458d1baa73045df489284206e8b279ab3c2f5e3d011c262a
-R cb26b1a66669f9ba73a72b529dcc5094
+P ab6356181274016571124989bc10e16256666567bb284612a0a689cf18a50adb
+R b05282f64f82f52e60568844e5597fe7
 U dan
-Z 6f705badf675793272d3710bf9fc6490
+Z 7723f16e0d8ec4b8fecc8e3015d59289
 # Remove this line to create a well-formed Fossil manifest.
