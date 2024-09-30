@@ -1623,6 +1623,12 @@ static int idxPopulateOneStat1(
     const char *zComma = zCols==0 ? "" : ", ";
     const char *zName = (const char*)sqlite3_column_text(pIndexXInfo, 0);
     const char *zColl = (const char*)sqlite3_column_text(pIndexXInfo, 1);
+    if( zName==0 ){
+      /* This index contains an expression. Ignore it. */
+      sqlite3_free(zCols);
+      sqlite3_free(zOrder);
+      return sqlite3_reset(pIndexXInfo);
+    }
     zCols = idxAppendText(&rc, zCols, 
         "%sx.%Q IS sqlite_expert_rem(%d, x.%Q) COLLATE %s", 
         zComma, zName, nCol, zName, zColl

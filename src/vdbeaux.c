@@ -5544,5 +5544,12 @@ void sqlite3VdbePreUpdateHook(
     }
     sqlite3DbNNFreeNN(db, preupdate.aNew);
   }
+  if( preupdate.apDflt ){
+    int i;
+    for(i=0; i<pTab->nCol; i++){
+      sqlite3ValueFree(preupdate.apDflt[i]);
+    }
+    sqlite3DbFree(db, preupdate.apDflt);
+  }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */

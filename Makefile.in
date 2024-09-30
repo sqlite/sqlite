@@ -695,11 +695,25 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
-sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.lo sqlite3.h
+	$(LTLINK) -I$(TOP)/ext/misc -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
+
+RSYNC_SRC = \
+  $(TOP)/tool/sqlite3-rsync.c \
+  sqlite3.c
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -USQLITE_THREADSAFE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1174,8 +1188,6 @@ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)/src/shell.c.in \
-    $(TOP)/ext/consio/console_io.c \
-    $(TOP)/ext/consio/console_io.h \
     $(TOP)/ext/expert/sqlite3expert.c \
     $(TOP)/ext/expert/sqlite3expert.h \
     $(TOP)/ext/intck/sqlite3intck.c \
@@ -1192,9 +1204,13 @@ SHELL_DEP = \
     $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
+    $(TOP)/ext/misc/sha1.c \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
+    $(TOP)/ext/misc/sqlite3_stdio.c \
+    $(TOP)/ext/misc/sqlite3_stdio.h \
     $(TOP)/ext/misc/uint.c \
+    $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/zipfile.c \
     $(TOP)/ext/recover/dbdata.c \
     $(TOP)/ext/recover/sqlite3recover.c \
@@ -1638,7 +1654,7 @@ tidy:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
