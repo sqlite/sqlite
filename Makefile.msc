@@ -1862,11 +1862,24 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\consio $(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+RSYNC_SRC = \
+  $(TOP)\tool\sqlite3-rsync.c \
+  $(SQLITE3C)
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -1894,6 +1907,10 @@ fuzzcheck.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 
 fuzzcheck-asan.exe:	$(FUZZCHECK_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) /fsanitize=address $(FUZZCHECK_OPTS) $(FUZZCHECK_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+run-fuzzcheck:	fuzzcheck.exe fuzzcheck-asan.exe
+	fuzzcheck --spinner $(FUZZDB)
+	fuzzcheck-asan --spinner $(FUZZDB)
 
 ossshell.exe:	$(OSSSHELL_SRC) $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPTS) $(OSSSHELL_SRC) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2300,8 +2317,6 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)\src\shell.c.in \
-    $(TOP)\ext\consio\console_io.c \
-    $(TOP)\ext\consio\console_io.h \
     $(TOP)\ext\expert\sqlite3expert.c \
     $(TOP)\ext\expert\sqlite3expert.h \
     $(TOP)\ext\intck\sqlite3intck.c \
@@ -2318,9 +2333,13 @@ SHELL_DEP = \
     $(TOP)\ext\misc\percentile.c \
     $(TOP)\ext\misc\regexp.c \
     $(TOP)\ext\misc\series.c \
+    $(TOP)\ext\misc\sha1.c \
     $(TOP)\ext\misc\shathree.c \
     $(TOP)\ext\misc\sqlar.c \
+    $(TOP)\ext\misc\sqlite3_stdio.c \
+    $(TOP)\ext\misc\sqlite3_stdio.h \
     $(TOP)\ext\misc\uint.c \
+    $(TOP)\ext\misc\vfstrace.c \
     $(TOP)\ext\misc\zipfile.c \
     $(TOP)\ext\recover\dbdata.c \
     $(TOP)\ext\recover\sqlite3recover.c \
@@ -2606,7 +2625,7 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
@@ -2761,7 +2780,7 @@ clean:
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3-rsync.exe 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL

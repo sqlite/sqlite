@@ -3494,6 +3494,7 @@ static int openDatabase(
   if( ((1<<(flags&7)) & 0x46)==0 ){
     rc = SQLITE_MISUSE_BKPT;  /* IMP: R-18321-05872 */
   }else{
+    if( zFilename==0 ) zFilename = ":memory:";
     rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   }
   if( rc!=SQLITE_OK ){

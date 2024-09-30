@@ -74,6 +74,16 @@ Options:
 }
   exit 1
 }
+
+# Exit with given code, but first close db if open.
+#
+proc exit_clean {exit_code} {
+  if {0 < [llength [info commands db]]} {
+    db close
+  }
+  exit $exit_code
+}
+
 set file_to_analyze {}
 set flags(-pageinfo) 0
 set flags(-stats) 0
@@ -157,7 +167,7 @@ if {![db exists {SELECT 1 FROM pragma_compile_options
         lacks required capabilities. Recompile using the\
         -DSQLITE_ENABLE_DBSTAT_VTAB compile-time option to fix\
         this problem."
-  exit 1
+  exit_clean 1
 }
 
 db eval {SELECT count(*) FROM sqlite_schema}
@@ -168,7 +178,7 @@ if {$flags(-pageinfo)} {
   db eval {SELECT name, path, pageno FROM temp.stat ORDER BY pageno} {
     puts "$pageno $name $path"
   }
-  exit 0
+  exit_clean 0
 }
 if {$flags(-stats)} {
   db eval {CREATE VIRTUAL TABLE temp.stat USING dbstat}
@@ -198,7 +208,7 @@ if {$flags(-stats)} {
     puts "INSERT INTO stats VALUES($x);"
   }
   puts "COMMIT;"
-  exit 0
+  exit_clean 0
 }
 
 
@@ -901,5 +911,7 @@ puts "COMMIT;"
 } err]} {
   puts "ERROR: $err"
   puts $errorInfo
-  exit 1
+  exit_clean 1
 }
+
+exit_clean 0

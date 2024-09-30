@@ -246,7 +246,7 @@ do_execsql_test 10.1 {
 } {hello}
 
 faultsim_save_and_close
-do_faultsim_test 10 -faults oom* -prep {
+do_faultsim_test 10.1 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql {
@@ -254,6 +254,18 @@ do_faultsim_test 10 -faults oom* -prep {
   }
 } -test {
   faultsim_test_result {0 hello}
+}
+
+breakpoint
+faultsim_save_and_close
+do_faultsim_test 10.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    INSERT INTO ft VALUES(zeroblob(10000));
+  }
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 #-------------------------------------------------------------------------

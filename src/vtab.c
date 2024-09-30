@@ -906,6 +906,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       Table *pNew = sParse.pNewTable;
       Index *pIdx;
       pTab->aCol = pNew->aCol;
+      assert( IsOrdinaryTable(pNew) );
       sqlite3ExprListDelete(db, pNew->u.tab.pDfltList);
       pTab->nNVCol = pTab->nCol = pNew->nCol;
       pTab->tabFlags |= pNew->tabFlags & (TF_WithoutRowid|TF_NoVisibleRowid);
