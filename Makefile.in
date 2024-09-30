@@ -113,7 +113,7 @@ TCC += $(OPT_FEATURE_FLAGS)
 TCC += $(OPTS)
 
 # Add in compile-time options for some libraries used by extensions
-TCC += @LDFLAGS_ZLIB@
+TCC += @CFLAGS_ZLIB@
 
 # Version numbers and release number for the SQLite being compiled.
 #
@@ -126,6 +126,8 @@ BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
 BDLL = @BUILD_DLLEXT@
 TDLL = @TARGET_DLLEXT@
+BLIB = @BUILD_LIBEXT@
+TLIB = @TARGET_LIBEXT@
 
 # The following variable is "1" if the configure script was able to locate
 # the tclConfig.sh file.  It is an empty string otherwise.  When this
@@ -163,8 +165,8 @@ TSTRNNR_OPTS = @TSTRNNR_OPTS@
 GCOV_CFLAGS1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 GCOV_LDFLAGS1 = -lgcov
 USE_GCOV = @USE_GCOV@
-LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
-LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
+TCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
+TLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
 
 # The directory into which to store package information for
 
@@ -181,11 +183,11 @@ INSTALL = @BIN_INSTALL@
 #XX#ALLOWRELEASE = @ALLOWRELEASE@
 #XX#
 #XX## libtool compile/link/install
-#XX#LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
-#XX#LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
+#XX#TCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(TCOMPILE_EXTRAS)
+#XX#TLINK = $(LIBTOOL) --mode=link $(TCC) $(TCOMPILE_EXTRAS) @LDFLAGS@ $(TLINK_EXTRAS)
 #XX#LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-TCOMPILE = $(TCC) $(LTCOMPILE_EXTRAS)
-TLINK = $(TCC) $(LTLINK_EXTRAS)
+TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
+TLINK = $(TCC) $(TLINK_EXTRAS)
 TINSTALL = $(INSTALL)
 
 #
@@ -712,11 +714,11 @@ all:	sqlite3.h sqlite3.c shell.c $(SQLITE3_SHELL_TARGET)
 #
 AUTOREMAKE = @SQLITE_AUTOREMAKE@
 
-Makefile: $(TOP)/Makefile.in
+Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
 	$(AUTOREMAKE)
 	@touch $@
 
-sqlite3.pc: $(TOP)/sqlite3.pc.in
+sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	$(AUTOREMAKE)
 	@touch $@
 
@@ -725,7 +727,9 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	@touch $@
 
 libsqlite3.DLL = libsqlite3$(TDLL)
+libsqlite3.LIB = libsqlite3$(TLIB)
 LDFLAGS_libsqlite = $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH)
+
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
 		@SHOBJ_LDFLAGS@  $(LIBOBJ) $(TLIBS) \
@@ -733,8 +737,13 @@ $(libsqlite3.DLL):	$(LIBOBJ)
 dll: $(libsqlite3.DLL)
 all: dll
 
+$(libsqlite3.LIB):	$(LIBOBJ)
+	$(AR) r $@ $(LIBOBJ)
+lib: $(libsqlite3.LIB)
+all: lib
+
 #XX#libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
-#XX#	$(LTLINK) -no-undefined -o $@ tclsqlite.lo \
+#XX#	$(TLINK) -no-undefined -o $@ tclsqlite.lo \
 #XX#		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
 #XX#		-rpath "$(TCLLIBDIR)" \
 #XX#		-version-info "8:6:8" \
@@ -748,10 +757,10 @@ cli: sqlite3$(TEXE)
 all: cli
 #XX#
 #XX#sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#RSYNC_SRC = \
 #XX#  $(TOP)/tool/sqlite3-rsync.c \
@@ -768,7 +777,7 @@ all: cli
 #XX#	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 #XX#
 #XX#scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
+#XX#	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
 #XX#		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
 #XX#
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
@@ -806,17 +815,17 @@ $(BTCL):
 #XX#	./src-verify $(TOP)
 #XX#
 #XX#fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-#XX#	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
+#XX#	$(TLINK) -o $@ $(FUZZERSHELL_OPT) \
 #XX#	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
 #XX#
 #XX#fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+#XX#	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 #XX#
 #XX#fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(LTLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+#XX#	$(TLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 #XX#
 #XX#fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(LTLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+#XX#	$(TLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 #XX#
 #XX## Usage:    FUZZDB=filename make run-fuzzcheck
 #XX##
@@ -834,14 +843,14 @@ $(BTCL):
 #XX#	./fuzzcheck-ubsan$(TEXE) --spinner $(FUZZDB)
 #XX#
 #XX#ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
-#XX#	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
+#XX#	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
 #XX#             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
 #XX#
 #XX#sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
-#XX#	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
 #XX#
 #XX#dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
-#XX#	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
+#XX#	$(TLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
 #XX#
 #XX#DBFUZZ2_OPTS = \
 #XX#  -DSQLITE_THREADSAFE=0 \
@@ -875,7 +884,7 @@ $(BTCL):
 #XX#	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 #XX#
 #XX#mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
-#XX#	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
+#XX#	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 #XX#		$(TLIBS) -rpath "$(libdir)"
 #XX#
 #XX#MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
@@ -951,7 +960,7 @@ sqlite3ext.h:	.target_source
 #XX## Rule to build the amalgamation
 #XX##
 #XX#sqlite3.lo:	sqlite3.c
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c sqlite3.c
+#XX#	$(TCOMPILE) $(TEMP_STORE) -c sqlite3.c
 
 # Rules to build the LEMON compiler generator
 #
@@ -964,271 +973,271 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
 	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
 
-#XX## Rules to build individual *.o files from generated *.c files. This
-#XX## applies to:
-#XX##
-#XX##     parse.o
-#XX##     opcodes.o
-#XX##
-#XX#parse.lo:	parse.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c parse.c
-#XX#
-#XX#opcodes.lo:	opcodes.c
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c opcodes.c
-#XX#
-#XX## Rules to build individual *.o files from files in the src directory.
-#XX##
-#XX#alter.lo:	$(TOP)/src/alter.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/alter.c
-#XX#
-#XX#analyze.lo:	$(TOP)/src/analyze.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/analyze.c
-#XX#
-#XX#attach.lo:	$(TOP)/src/attach.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/attach.c
-#XX#
-#XX#auth.lo:	$(TOP)/src/auth.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/auth.c
-#XX#
-#XX#backup.lo:	$(TOP)/src/backup.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/backup.c
-#XX#
-#XX#bitvec.lo:	$(TOP)/src/bitvec.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/bitvec.c
-#XX#
-#XX#btmutex.lo:	$(TOP)/src/btmutex.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btmutex.c
-#XX#
-#XX#btree.lo:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btree.c
-#XX#
-#XX#build.lo:	$(TOP)/src/build.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/build.c
-#XX#
-#XX#callback.lo:	$(TOP)/src/callback.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/callback.c
-#XX#
-#XX#complete.lo:	$(TOP)/src/complete.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/complete.c
-#XX#
-#XX#ctime.lo:	$(TOP)/src/ctime.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/ctime.c
-#XX#
-#XX#date.lo:	$(TOP)/src/date.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
-#XX#
-#XX#dbpage.lo:	$(TOP)/src/dbpage.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbpage.c
-#XX#
-#XX#dbstat.lo:	$(TOP)/src/dbstat.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
-#XX#
-#XX#delete.lo:	$(TOP)/src/delete.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/delete.c
-#XX#
-#XX#expr.lo:	$(TOP)/src/expr.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/expr.c
-#XX#
-#XX#fault.lo:	$(TOP)/src/fault.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fault.c
-#XX#
-#XX#fkey.lo:	$(TOP)/src/fkey.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fkey.c
-#XX#
-#XX#func.lo:	$(TOP)/src/func.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/func.c
-#XX#
-#XX#global.lo:	$(TOP)/src/global.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/global.c
-#XX#
-#XX#hash.lo:	$(TOP)/src/hash.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/hash.c
-#XX#
-#XX#insert.lo:	$(TOP)/src/insert.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
-#XX#
-#XX#json.lo:	$(TOP)/src/json.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
-#XX#
-#XX#legacy.lo:	$(TOP)/src/legacy.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/legacy.c
-#XX#
-#XX#loadext.lo:	$(TOP)/src/loadext.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/loadext.c
-#XX#
-#XX#main.lo:	$(TOP)/src/main.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c
-#XX#
-#XX#malloc.lo:	$(TOP)/src/malloc.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
-#XX#
-#XX#mem0.lo:	$(TOP)/src/mem0.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem0.c
-#XX#
-#XX#mem1.lo:	$(TOP)/src/mem1.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem1.c
-#XX#
-#XX#mem2.lo:	$(TOP)/src/mem2.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem2.c
-#XX#
-#XX#mem3.lo:	$(TOP)/src/mem3.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem3.c
-#XX#
-#XX#mem5.lo:	$(TOP)/src/mem5.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
-#XX#
-#XX#memdb.lo:	$(TOP)/src/memdb.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memdb.c
-#XX#
-#XX#memjournal.lo:	$(TOP)/src/memjournal.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memjournal.c
-#XX#
-#XX#mutex.lo:	$(TOP)/src/mutex.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
-#XX#
-#XX#mutex_noop.lo:	$(TOP)/src/mutex_noop.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_noop.c
-#XX#
-#XX#mutex_unix.lo:	$(TOP)/src/mutex_unix.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_unix.c
-#XX#
-#XX#mutex_w32.lo:	$(TOP)/src/mutex_w32.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_w32.c
-#XX#
-#XX#notify.lo:	$(TOP)/src/notify.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/notify.c
-#XX#
-#XX#pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pager.c
-#XX#
-#XX#pcache.lo:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache.c
-#XX#
-#XX#pcache1.lo:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache1.c
-#XX#
-#XX#os.lo:	$(TOP)/src/os.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os.c
-#XX#
-#XX#os_kv.lo:	$(TOP)/src/os_kv.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_kv.c
-#XX#
-#XX#os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_unix.c
-#XX#
-#XX#os_win.lo:	$(TOP)/src/os_win.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_win.c
-#XX#
-#XX#pragma.lo:	$(TOP)/src/pragma.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pragma.c
-#XX#
-#XX#prepare.lo:	$(TOP)/src/prepare.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/prepare.c
-#XX#
-#XX#printf.lo:	$(TOP)/src/printf.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/printf.c
-#XX#
-#XX#random.lo:	$(TOP)/src/random.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/random.c
-#XX#
-#XX#resolve.lo:	$(TOP)/src/resolve.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/resolve.c
-#XX#
-#XX#rowset.lo:	$(TOP)/src/rowset.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/rowset.c
-#XX#
-#XX#select.lo:	$(TOP)/src/select.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/select.c
-#XX#
-#XX#status.lo:	$(TOP)/src/status.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/status.c
-#XX#
-#XX#table.lo:	$(TOP)/src/table.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c
-#XX#
-#XX#threads.lo:	$(TOP)/src/threads.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/threads.c
-#XX#
-#XX#tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/tokenize.c
-#XX#
-#XX#treeview.lo:	$(TOP)/src/treeview.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/treeview.c
-#XX#
-#XX#trigger.lo:	$(TOP)/src/trigger.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/trigger.c
-#XX#
-#XX#update.lo:	$(TOP)/src/update.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/update.c
-#XX#
-#XX#upsert.lo:	$(TOP)/src/upsert.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/upsert.c
-#XX#
-#XX#utf.lo:	$(TOP)/src/utf.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/utf.c
-#XX#
-#XX#util.lo:	$(TOP)/src/util.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/util.c
-#XX#
-#XX#vacuum.lo:	$(TOP)/src/vacuum.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vacuum.c
-#XX#
-#XX#vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbe.c
-#XX#
-#XX#vdbeapi.lo:	$(TOP)/src/vdbeapi.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeapi.c
-#XX#
-#XX#vdbeaux.lo:	$(TOP)/src/vdbeaux.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeaux.c
-#XX#
-#XX#vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeblob.c
-#XX#
-#XX#vdbemem.lo:	$(TOP)/src/vdbemem.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbemem.c
-#XX#
-#XX#vdbesort.lo:	$(TOP)/src/vdbesort.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbesort.c
-#XX#
-#XX#vdbetrace.lo:	$(TOP)/src/vdbetrace.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
-#XX#
-#XX#vdbevtab.lo:	$(TOP)/src/vdbevtab.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbevtab.c
-#XX#
-#XX#vtab.lo:	$(TOP)/src/vtab.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c
-#XX#
-#XX#wal.lo:	$(TOP)/src/wal.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wal.c
-#XX#
-#XX#walker.lo:	$(TOP)/src/walker.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/walker.c
-#XX#
-#XX#where.lo:	$(TOP)/src/where.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/where.c
-#XX#
-#XX#wherecode.lo:	$(TOP)/src/wherecode.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wherecode.c
-#XX#
-#XX#whereexpr.lo:	$(TOP)/src/whereexpr.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/whereexpr.c
-#XX#
-#XX#window.lo:	$(TOP)/src/window.c $(HDR)
-#XX#	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/window.c
-#XX#
-#XX#tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-#XX#	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c
-#XX#
-#XX#tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-#XX#	$(LTCOMPILE) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c
-#XX#
-#XX#tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-#XX#	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
+# Rules to build individual *.o files from generated *.c files. This
+# applies to:
+#
+#     parse.o
+#     opcodes.o
+#
+parse.o:	parse.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c parse.c
+
+opcodes.o:	opcodes.c
+	$(TCOMPILE) $(TEMP_STORE) -c opcodes.c
+
+# Rules to build individual *.o files from files in the src directory.
+#
+alter.o:	$(TOP)/src/alter.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/alter.c
+
+analyze.o:	$(TOP)/src/analyze.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/analyze.c
+
+attach.o:	$(TOP)/src/attach.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/attach.c
+
+auth.o:	$(TOP)/src/auth.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/auth.c
+
+backup.o:	$(TOP)/src/backup.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/backup.c
+
+bitvec.o:	$(TOP)/src/bitvec.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/bitvec.c
+
+btmutex.o:	$(TOP)/src/btmutex.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btmutex.c
+
+btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btree.c
+
+build.o:	$(TOP)/src/build.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/build.c
+
+callback.o:	$(TOP)/src/callback.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/callback.c
+
+complete.o:	$(TOP)/src/complete.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/complete.c
+
+ctime.o:	$(TOP)/src/ctime.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/ctime.c
+
+date.o:	$(TOP)/src/date.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
+
+dbpage.o:	$(TOP)/src/dbpage.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbpage.c
+
+dbstat.o:	$(TOP)/src/dbstat.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
+
+delete.o:	$(TOP)/src/delete.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/delete.c
+
+expr.o:	$(TOP)/src/expr.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/expr.c
+
+fault.o:	$(TOP)/src/fault.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fault.c
+
+fkey.o:	$(TOP)/src/fkey.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fkey.c
+
+func.o:	$(TOP)/src/func.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/func.c
+
+global.o:	$(TOP)/src/global.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/global.c
+
+hash.o:	$(TOP)/src/hash.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/hash.c
+
+insert.o:	$(TOP)/src/insert.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
+
+json.o:	$(TOP)/src/json.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
+
+legacy.o:	$(TOP)/src/legacy.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/legacy.c
+
+loadext.o:	$(TOP)/src/loadext.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/loadext.c
+
+main.o:	$(TOP)/src/main.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c
+
+malloc.o:	$(TOP)/src/malloc.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
+
+mem0.o:	$(TOP)/src/mem0.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem0.c
+
+mem1.o:	$(TOP)/src/mem1.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem1.c
+
+mem2.o:	$(TOP)/src/mem2.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem2.c
+
+mem3.o:	$(TOP)/src/mem3.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem3.c
+
+mem5.o:	$(TOP)/src/mem5.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
+
+memdb.o:	$(TOP)/src/memdb.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memdb.c
+
+memjournal.o:	$(TOP)/src/memjournal.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memjournal.c
+
+mutex.o:	$(TOP)/src/mutex.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
+
+mutex_noop.o:	$(TOP)/src/mutex_noop.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_noop.c
+
+mutex_unix.o:	$(TOP)/src/mutex_unix.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_unix.c
+
+mutex_w32.o:	$(TOP)/src/mutex_w32.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_w32.c
+
+notify.o:	$(TOP)/src/notify.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/notify.c
+
+pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pager.c
+
+pcache.o:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache.c
+
+pcache1.o:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache1.c
+
+os.o:	$(TOP)/src/os.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os.c
+
+os_kv.o:	$(TOP)/src/os_kv.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_kv.c
+
+os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_unix.c
+
+os_win.o:	$(TOP)/src/os_win.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_win.c
+
+pragma.o:	$(TOP)/src/pragma.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pragma.c
+
+prepare.o:	$(TOP)/src/prepare.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/prepare.c
+
+printf.o:	$(TOP)/src/printf.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/printf.c
+
+random.o:	$(TOP)/src/random.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/random.c
+
+resolve.o:	$(TOP)/src/resolve.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/resolve.c
+
+rowset.o:	$(TOP)/src/rowset.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/rowset.c
+
+select.o:	$(TOP)/src/select.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/select.c
+
+status.o:	$(TOP)/src/status.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/status.c
+
+table.o:	$(TOP)/src/table.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c
+
+threads.o:	$(TOP)/src/threads.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/threads.c
+
+tokenize.o:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/tokenize.c
+
+treeview.o:	$(TOP)/src/treeview.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/treeview.c
+
+trigger.o:	$(TOP)/src/trigger.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/trigger.c
+
+update.o:	$(TOP)/src/update.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/update.c
+
+upsert.o:	$(TOP)/src/upsert.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/upsert.c
+
+utf.o:	$(TOP)/src/utf.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/utf.c
+
+util.o:	$(TOP)/src/util.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/util.c
+
+vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vacuum.c
+
+vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbe.c
+
+vdbeapi.o:	$(TOP)/src/vdbeapi.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeapi.c
+
+vdbeaux.o:	$(TOP)/src/vdbeaux.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeaux.c
+
+vdbeblob.o:	$(TOP)/src/vdbeblob.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeblob.c
+
+vdbemem.o:	$(TOP)/src/vdbemem.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbemem.c
+
+vdbesort.o:	$(TOP)/src/vdbesort.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbesort.c
+
+vdbetrace.o:	$(TOP)/src/vdbetrace.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
+
+vdbevtab.o:	$(TOP)/src/vdbevtab.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbevtab.c
+
+vtab.o:	$(TOP)/src/vtab.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c
+
+wal.o:	$(TOP)/src/wal.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wal.c
+
+walker.o:	$(TOP)/src/walker.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/walker.c
+
+where.o:	$(TOP)/src/where.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/where.c
+
+wherecode.o:	$(TOP)/src/wherecode.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wherecode.c
+
+whereexpr.o:	$(TOP)/src/whereexpr.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/whereexpr.c
+
+window.o:	$(TOP)/src/window.c $(HDR)
+	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/window.c
+
+#XX#tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
+#XX#	$(TCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c
+#XX#
+#XX#tclsqlite-shell.o:	$(TOP)/src/tclsqlite.c $(HDR)
+#XX#	$(TCOMPILE) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c
+#XX#
+#XX#tclsqlite-stubs.o:	$(TOP)/src/tclsqlite.c $(HDR)
+#XX#	$(TCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 #XX#
 #XX#tclsqlite3$(TEXE):	has_tclconfig tclsqlite-shell.lo libsqlite3.la
-#XX#	$(LTLINK) -o $@ tclsqlite-shell.lo \
+#XX#	$(TLINK) -o $@ tclsqlite-shell.lo \
 #XX#		 libsqlite3.la $(LIBTCL)
 
 # Rules to build opcodes.c and opcodes.h
@@ -1297,65 +1306,63 @@ SHELL_DEP = \
 
 shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(BTCL) # has_tclsh84
 	$(BTCL) $(TOP)/tool/mkshellc.tcl >shell.c
-#XX#
-#XX#
-#XX#
-#XX#
-#XX## Rules to build the extension objects.
-#XX##
-#XX#icu.lo:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/icu/icu.c
-#XX#
-#XX#fts3.lo:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
-#XX#
-#XX#fts3_aux.lo:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_aux.c
-#XX#
-#XX#fts3_expr.lo:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c
-#XX#
-#XX#fts3_hash.lo:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_hash.c
-#XX#
-#XX#fts3_icu.lo:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_icu.c
-#XX#
-#XX#fts3_porter.lo:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_porter.c
-#XX#
-#XX#fts3_snippet.lo:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_snippet.c
-#XX#
-#XX#fts3_tokenizer.lo:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer.c
-#XX#
-#XX#fts3_tokenizer1.lo:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
-#XX#
-#XX#fts3_tokenize_vtab.lo:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
-#XX#
-#XX#fts3_unicode.lo:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode.c
-#XX#
-#XX#fts3_unicode2.lo:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode2.c
-#XX#
-#XX#fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
-#XX#
-#XX#rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
-#XX#
-#XX#userauth.lo:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
-#XX#
-#XX#sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
-#XX#
-#XX#stmt.lo:	$(TOP)/ext/misc/stmt.c
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
+
+
+# Rules to build the extension objects.
+#
+icu.o:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/icu/icu.c
+
+fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
+
+fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_aux.c
+
+fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c
+
+fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_hash.c
+
+fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_icu.c
+
+fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_porter.c
+
+fts3_snippet.o:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_snippet.c
+
+fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer.c
+
+fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
+
+fts3_tokenize_vtab.o:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
+
+fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode.c
+
+fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode2.c
+
+fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
+
+rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
+
+sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
+
+stmt.o:	$(TOP)/ext/misc/stmt.c
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
 
 # FTS5 things
 #
@@ -1387,13 +1394,13 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 	$(BTCL) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
-#XX#fts5.lo:	fts5.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c fts5.c
-#XX#
-#XX#sqlite3rbu.lo:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
-#XX#	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
-#XX#
-#XX#
+fts5.o:	fts5.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c fts5.c
+
+sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
+
+
 #XX## Rules to build the 'testfixture' application.
 #XX##
 #XX## If using the amalgamation, use sqlite3.c directly to build the test
@@ -1420,7 +1427,7 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 #XX#TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 #XX#
 #XX#testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
-#XX#	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
+#XX#	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 #XX#		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 #XX#
 #XX#coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
@@ -1527,16 +1534,16 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 #XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 #XX#
 #XX#sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
-#XX#	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
+#XX#	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 #XX#
 #XX#sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
 #XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 #XX#
 #XX#sqltclsh$(TEXE): has_tclconfig sqltclsh.c
-#XX#	$(LTLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
+#XX#	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
 #XX#
 #XX#sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
-#XX#	$(LTLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(TLIBS)
+#XX#	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(TLIBS)
 #XX#
 #XX#CHECKER_DEPS =\
 #XX#  $(TOP)/tool/mkccode.tcl \
@@ -1552,53 +1559,53 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 #XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 #XX#
 #XX#sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
-#XX#	$(LTLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(TLIBS)
+#XX#	$(TLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(TLIBS)
 #XX#
 #XX#dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
-#XX#	$(LTLINK) -DDBDUMP_STANDALONE -o $@ \
+#XX#	$(TLINK) -DDBDUMP_STANDALONE -o $@ \
 #XX#           $(TOP)/ext/misc/dbdump.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#dbtotxt$(TEXE): $(TOP)/tool/dbtotxt.c
-#XX#	$(LTLINK)-o $@ $(TOP)/tool/dbtotxt.c
+#XX#	$(TLINK)-o $@ $(TOP)/tool/dbtotxt.c
 #XX#
 #XX#showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#showshm$(TEXE):	$(TOP)/tool/showshm.c
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/showshm.c
+#XX#	$(TLINK) -o $@ $(TOP)/tool/showshm.c
 #XX#
 #XX#index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.lo
-#XX#	$(LTLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
-#XX#	$(LTLINK) -I. -o $@ $(TOP)/tool/logest.c
+#XX#	$(TLINK) -I. -o $@ $(TOP)/tool/logest.c
 #XX#
 #XX#wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
-#XX#	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
-#XX#	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
+#XX#	$(TLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
 #XX#
 #XX#startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
 #XX#	$(CC) -Os -g -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(TLIBS)
@@ -1606,13 +1613,13 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 #XX#KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 #XX#
 #XX#kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
-#XX#	$(LTLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
+#XX#	$(TLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
 #XX#
 #XX#rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo
-#XX#	$(LTLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
+#XX#	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
 #XX#
 #XX#loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
-#XX#	$(LTLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(TLIBS)
+#XX#	$(TLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(TLIBS)
 #XX#
 #XX## This target will fail if the SQLite amalgamation contains any exported
 #XX## symbols that do not begin with "sqlite3_". It is run as part of the
@@ -1651,13 +1658,13 @@ fts5.c: $(FTS5_SRC) $(BTCL) # has_tclsh84
 #XX#                  $(TOP)/test/tt3_lookaside1.c
 #XX#
 #XX#threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
-#XX#	$(LTLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(TLIBS)
+#XX#	$(TLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(TLIBS)
 #XX#
 #XX#threadtest: threadtest3$(TEXE)
 #XX#	./threadtest3$(TEXE)
 #XX#
 #XX#threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
-#XX#	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
+#XX#	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
 #XX#
 #XX## Standard install and cleanup targets
 #XX##
@@ -1725,6 +1732,7 @@ tidy:
 	rm -f lemon$(BEXE) sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
 	rm -f parse.* fts5parse.*
+	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB)
 	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
@@ -1789,10 +1797,9 @@ distclean:	clean
 #XX#misspell: ./custom.rws has_tclsh84
 #XX#	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
 #XX#
-#XX##
-#XX## tool/version-info: a utility for emitting sqlite3 version info
-#XX## in various forms.
-#XX##
-#XX#version-info$(TEXE):	$(TOP)/tool/version-info.c Makefile sqlite3.h
-#XX#	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
-#XX#
+#
+# tool/version-info: a utility for emitting sqlite3 version info
+# in various forms.
+#
+version-info$(TEXE):	$(TOP)/tool/version-info.c Makefile sqlite3.h
+	$(TLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c

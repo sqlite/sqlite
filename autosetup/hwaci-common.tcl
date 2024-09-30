@@ -534,6 +534,28 @@ proc hwaci-dll-extension {} {
 }
 
 ########################################################################
+# Static-library counterpart of hwaci-dll-extension. Defines
+# BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
+# extension for the being-built-on resp. the target platform.
+proc hwaci-lib-extension {} {
+  proc inner {key} {
+    switch -glob -- [get-define $key] {
+      *apple* {
+        return ".lib"
+      }
+      *-*-ming* - *-*-cygwin - *-*-msys {
+        return ".lib"
+      }
+      default {
+        return ".a"
+      }
+    }
+  }
+  define BUILD_LIBEXT [inner host]
+  define TARGET_LIBEXT [inner build]
+}
+
+########################################################################
 # Expects a list of file names. If any one of them does not exist in
 # the filesystem, it fails fatally with an informative message.
 # Returns the last file name it checks. If the first argument is -v
