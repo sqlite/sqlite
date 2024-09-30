@@ -164,7 +164,7 @@ proc add-shell-opt {args} {
   }
 }
 
-hwaci-check-exeext
+hwaci-exe-extension
 if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_UNIX 0
   define SQLITE_OS_WIN 1
@@ -174,8 +174,7 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_WIN 0
   # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS?
 }
-define BDLL [hwaci-dll-extension build]
-define TDLL [hwaci-dll-extension host]
+hwaci-dll-extension
 
 #########
 # Programs needed
@@ -322,8 +321,6 @@ hwaci-if-opt-truthy with-debug {
   define TARGET_DEBUG {-DNDEBUG}
   msg-result no
 }
-
-hwaci-check-rpath
 
 ########################################################################
 # TCL...
@@ -476,6 +473,8 @@ if {"" eq [get-define CFLAGS_JIMSH]} {
   unset tEnable with_tclsh with_tcl
 }; # end of tcl
 
+
+hwaci-check-rpath
 
 ########################################################################
 # Thread safety?
@@ -867,8 +866,8 @@ hwaci-if-opt-truthy dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
   make-config-header $DUMP_DEFINES_FILE \
-    -bare {OPT_FEATURE_FLAGS SQLITE_OS* SQLITE_DEBUG LDFLAGS_* USE_*} \
-    -str {BIN_* CC LD AR} \
+    -bare {SQLITE_OS* SQLITE_DEBUG USE_*} \
+    -str {BIN_* CC LD AR LDFLAG* OPT_*} \
     -auto {*}
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.

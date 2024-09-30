@@ -178,12 +178,15 @@ proc hwaci-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
 }
 
 ########################################################################
-# If [hwaci-opt-truthy $flag] then [define $def $iftrue] else
-# [define $def $iffalse]. Output [msg-checking $msg] and a
-# [msg-results ...] which corresponds to the result. Returns 1
-# if the opt-truthy check passes, else 0.
-proc hwaci-define-if-opt-truthy {flag def msg {iftrue 1} {iffalse 0}} {
-  msg-checking "$msg "
+# If [hwaci-opt-truthy $flag] then [define $def $iftrue] else [define
+# $def $iffalse]. If $msg is not empty, output [msg-checking $msg] and
+# a [msg-results ...] which corresponds to the result. Returns 1 if
+# the opt-truthy check passes, else 0.
+proc hwaci-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
+  if {"" ne $msg} {
+    msg-checking "$msg "
+  }
+  set rcMsg ""
   set rc 0
   if {[hwaci-opt-truthy $flag]} {
     define $def $iftrue
@@ -191,26 +194,27 @@ proc hwaci-define-if-opt-truthy {flag def msg {iftrue 1} {iffalse 0}} {
   } else {
     define $def $iffalse
   }
-  set msg [get-define $def]
-  switch -- $msg {
-    0 { set msg no }
-    1 { set msg yes }
+  switch -- [hwaci-val-truthy [get-define $def]] {
+    0 { set rcMsg no }
+    1 { set rcMsg yes }
   }
-  msg-result $msg
+  if {"" ne $msg} {
+    msg-result $rcMsg
+  }
   return $rc
 }
 
 ########################################################################
 # Args: [-v] optName defName {descr {}}
 #
-# Checks [hwaci-opt-truthy $optName] and does [define $defName X] where X is 0
-# for false and 1 for true. descr is an optional [msg-checking]
-# argument which defaults to $defName. Returns X.
+# Checks [hwaci-opt-truthy $optName] and calls [define $defName X]
+# where X is 0 for false and 1 for true. descr is an optional
+# [msg-checking] argument which defaults to $defName. Returns X.
 #
 # If args[0] is -v then the boolean semantics are inverted: if
 # the option is set, it gets define'd to 0, else 1. Returns the
 # define'd value.
-proc hwaci-set-bool-01 {args} {
+proc hwaci-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
     set invert 1
@@ -450,21 +454,19 @@ proc hwaci-looks-like-windows {{key host}} {
 
 ########################################################################
 # Looks at either the 'host' (==compilation target platform) or
-# 'build' (==the being-built-on platform) define value and returns a
-# file extension for DLLs on that platform, including the leading ".".
+# 'build' (==the being-built-on platform) define value and returns if
+# if that value seems to indicate that it represents a Mac platform,
+# else returns 0.
 #
 # TODO: have someone verify whether this is correct for the
 # non-Linux/BSD platforms.
-proc hwaci-dll-extension {{key host}} {
+proc hwaci-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
     *apple* {
-      return ".dylib"
-    }
-    *-*-ming* - *-*-cygwin - *-*-msys {
-      return ".dll"
+      return 1
     }
     default {
-      return ".so"
+      return 0
     }
   }
 }
@@ -475,24 +477,41 @@ proc hwaci-dll-extension {{key host}} {
 # build environment is then BUILD_EXEEXT is [define]'d to ".exe", else
 # "". If the target, a.k.a. "host", is then TARGET_EXEEXT is
 # [define]'d to ".exe", else "".
-proc hwaci-check-exeext {} {
-  msg-checking "Build host is Windows-esque? "
-  if {[hwaci-looks-like-windows build]} {
-    define BUILD_EXEEXT ".exe"
-    msg-result yes
-  } else {
-    define BUILD_EXEEXT ""
-    msg-result no
-  }
-
-  msg-checking "Build target is Windows-esque? "
+proc hwaci-exe-extension {} {
+  set rH ""
+  set rB ""
   if {[hwaci-looks-like-windows host]} {
-    define TARGET_EXEEXT ".exe"
-    msg-result yes
-  } else {
-    define TARGET_EXEEXT ""
-    msg-result no
+    set rH ".exe"
   }
+  if {[hwaci-looks-like-windows build]} {
+    set rB ".exe"
+  }
+  define BUILD_EXEEXT $rH
+  define TARGET_EXEEXT $rB
+}
+
+########################################################################
+# Works like hwaci-exe-extension except that it defines BUILD_DLLEXT
+# and TARGET_DLLEXT to one of (.so, ,dll, .dylib).
+#
+# TODO: have someone verify whether this is correct for the
+# non-Linux/BSD platforms.
+proc hwaci-dll-extension {} {
+  proc inner {key} {
+    switch -glob -- [get-define $key] {
+      *apple* {
+        return ".dylib"
+      }
+      *-*-ming* - *-*-cygwin - *-*-msys {
+        return ".dll"
+      }
+      default {
+        return ".so"
+      }
+    }
+  }
+  define BUILD_DLLEXT [inner host]
+  define TARGET_DLLEXT [inner build]
 }
 
 ########################################################################
@@ -577,17 +596,25 @@ proc hwaci-check-emsdk {} {
 # Tries various approaches to handling the -rpath link-time
 # flag. Defines LDFLAGS_RPATH to that/those flag(s) or an empty
 # string. Returns 1 if it finds an option, else 0.
+#
+# Achtung: we have seen platforms which report that a given option
+# checked here will work but then fails at build-time, and the current
+# order of checks reflects that.
 proc hwaci-check-rpath {} {
-  if {[cc-check-flags -Wl,-R/tmp]} {
-    define LDFLAGS_RPATH "-Wl,-R[get-define libdir]"
-    return 1
-  } elseif {[cc-check-flags -Wl,-rpath -Wl,/tmp]} {
-    define LDFLAGS_RPATH "-Wl,-rpath -Wl,[get-define libdir]"
-    return 1
-  } else {
-    define LDFLAGS_RPATH ""
-    return 0
+  set rc 1
+  cc-with {} {
+    if {[cc-check-flags {-rpath /tmp}]} {
+      define LDFLAGS_RPATH "-rpath [get-define prefix]/lib"
+    } elseif {[cc-check-flags {-Wl,-rpath -Wl,/tmp}]} {
+      define LDFLAGS_RPATH "-Wl,-rpath -Wl,[get-define prefix]/lib"
+    } elseif {[cc-check-flags -Wl,-R/tmp]} {
+      define LDFLAGS_RPATH "-Wl,-R[get-define prefix]/lib"
+    } else {
+      define LDFLAGS_RPATH ""
+      set rc 0
+    }
   }
+  return $rc
 }
 
 ########################################################################

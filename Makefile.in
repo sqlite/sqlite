@@ -122,8 +122,8 @@ RELEASE = @RELEASE@
 #
 BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
-BDLL = @BDLL@
-TDLL = @TDLL@
+BDLL = @BUILD_DLLEXT@
+TDLL = @TARGET_DLLEXT@
 
 # The following variable is "1" if the configure script was able to locate
 # the tclConfig.sh file.  It is an empty string otherwise.  When this
