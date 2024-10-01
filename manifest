@@ -1,5 +1,5 @@
-C Another\scomment\sabout\sthe\sLONGDOUBLE\swasm\stopic.\sNo\scode\schanges.
-D 2024-10-01T17:57:55.467
+C New\s#ifdefs\sto\somit\scode\sthat\sis\sunused\swhen\sSQLITE_USE_LONG\sDOUBLE\sis\sdefined.
+D 2024-10-01T19:10:47.855
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -835,13 +835,13 @@ F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7bc550af6f3ddd5f5dc82d092c41f728acb760c92e0b47f391963b01ae52569b
-F src/util.c ae41aadb960cb15d17e8bb9ec0ebb514e1f7ead773ae9fba281ed67c4d240c48
+F src/util.c aea7987484ec05764eabdd63b55eb63ea85cfb5b95dde70a667711c1d326f1a7
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c be5f58bc29f60252e041a618eae59e8d57d460ba136c5403cf0abf955560c457
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h af7d7e8291edd0b19f2cd698e60e4d4031078f9a2f2328ac8f0b7efb134f8a1d
 F src/vdbeapi.c 53c7e26a2c0821a892b20eee2cde4656e31998212f3d515576c780dfaa45fd17
-F src/vdbeaux.c aa1bd97dc53406c26619b847f4c7f4f0137ee8c7ba9b266f93351e06aefb522e
+F src/vdbeaux.c a30204ae8820ee5165736c2e67fe9b62ad47690c72248b4adba0435b0b3f8bfe
 F src/vdbeblob.c 255be187436da38b01f276c02e6a08103489bbe2a7c6c21537b7aecbe0e1f797
 F src/vdbemem.c df568ef0187e4be2788c35174f6d9b8566ab9475f9aff2d73907ed05aa5684b2
 F src/vdbesort.c d0a3c7056c081703c8b6d91ad60f17da5e062a5c64bf568ed0fa1b5f4cae311f
@@ -1668,7 +1668,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 19c9b60908d25502d2831f97efee8b81006c356ab8c08327e25d24a4144f2131
+F test/speedtest1.c 82f273f6df420bb1563d5202277e4a907e4e032a96a86fa7cf8c7aed34b32724
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2213,8 +2213,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa7b56f776b715d061581fad6f04b871504ff5d808e7364419d1d6cdef82c5ee
-R f9afa03cdf9385554f9061800ab5a24b
-U stephan
-Z 7a6ac00554cffba6a7d224734b670d11
+P 1755831cb1ac58241e0b11d8d003b5eca39b65aa3cb84229b215662028b1b3c0
+R aec30d14f5d302123caffa8ac548b88e
+U drh
+Z 3d8c02a9a1123f16b58018bc4d458ba9
 # Remove this line to create a well-formed Fossil manifest.

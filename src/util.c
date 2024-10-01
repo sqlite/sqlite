@@ -458,6 +458,7 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
+#if !defined(SQLITE_USE_LONG_DOUBLE) || SQLITE_USE_LONG_DOUBLE+0==0
 /* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
 **
 ** Reference:
@@ -493,6 +494,9 @@ static void dekkerMul2(volatile double *x, double y, double yy){
   x[1] = c - x[0];
   x[1] += cc;
 }
+#else
+# define dekkerMul2(A,B,C)  /* No-op if SqliteUseLongDouble is always true */
+#endif
 
 /*
 ** The string z[] is an text representation of a real number.
