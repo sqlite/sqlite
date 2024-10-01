@@ -239,6 +239,7 @@ SQLITE_OPT.common := \
   '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
+  -DSQLITE_USE_LONG_DOUBLE=0 \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_UTF16 \
   -DSQLITE_OMIT_LOAD_EXTENSION \
@@ -251,6 +252,7 @@ SQLITE_OPT.common := \
 # to be able to run without this:
 SQLITE_OPT.common += -DSQLITE_WASM_ENABLE_C_TESTS
 
+# Extra flags for full-featured builds...
 SQLITE_OPT.full-featured := \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \

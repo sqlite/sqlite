@@ -127,6 +127,10 @@
 #  define SQLITE_USE_URI 1
 #endif
 
+#ifndef SQLITE_USE_LONG_DOUBLE
+#  define SQLITE_USE_LONG_DOUBLE 0
+#endif
+
 #ifdef SQLITE_WASM_EXTRA_INIT
 #  define SQLITE_EXTRA_INIT sqlite3_wasm_extra_init
 #endif
@@ -159,6 +163,8 @@
 #  define SQLITE_OMIT_PROGRESS_CALLBACK
 #  undef  SQLITE_OMIT_WAL
 #  define SQLITE_OMIT_WAL
+#  undef  SQLITE_USE_LONG_DOUBLE
+#  define SQLITE_USE_LONG_DOUBLE 0
 /*
   The following OMITs do not work with the standard amalgamation, so
   require a custom build:
