@@ -4528,7 +4528,7 @@ int sqlite3IntFloatCompare(i64 i, double r){
     ** than NULL */
     return 1;
   }
-  if( sqlite3Config.bUseLongDouble ){
+  if( SqliteUseLongDouble ){
     LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
     testcase( x<r );
     testcase( x>r );

@@ -652,7 +652,7 @@ do_atof_calc:
 
   if( e==0 ){
     *pResult = s;
-  }else if( sqlite3Config.bUseLongDouble ){
+  }else if( SqliteUseLongDouble ){
     LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
     if( e>0 ){
       while( e>=100  ){ e-=100; r *= 1.0e+100L; }
@@ -1063,7 +1063,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
   */
-  if( sqlite3Config.bUseLongDouble ){
+  if( SqliteUseLongDouble ){
     LONGDOUBLE_TYPE rr = r;
     if( rr>=1.0e+19 ){
       while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
