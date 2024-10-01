@@ -95,6 +95,29 @@ foreach_detail_mode $testprefix {
   do_execsql_test 1.8 { SELECT rowid FROM ft2('aaa AND bbb'); } {10 24}
   do_execsql_test 1.9 { SELECT rowid FROM ft2('bbb AND aaa'); } {10 24}
 
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE ft3 USING fts5(
+        x, tokenize="origintext unicode61", tokendata=1, detail=%DETAIL%,
+        prefix=2
+    );
+  }
+  do_execsql_test 2.1 {
+    INSERT INTO ft3(rowid, x) VALUES(1, 'one');
+    INSERT INTO ft3(rowid, x) VALUES(2, 'ONE');
+    INSERT INTO ft3(rowid, x) VALUES(3, 'ONT');
+    INSERT INTO ft3(rowid, x) VALUES(4, 'on');
+    INSERT INTO ft3(rowid, x) VALUES(5, 'On');
+  }
+
+  do_execsql_test 2.2 {
+    SELECT rowid FROM ft3('on*');
+  } {1 2 3 4 5}
+
+  do_execsql_test 2.3 {
+    SELECT rowid, insttoken(ft3, 0, 0) FROM ft3('on*');
+  } {1 one 2 one.ONE 3 ont.ONT 4 on 5 on.On}
+
+
 }
 
 finish_test

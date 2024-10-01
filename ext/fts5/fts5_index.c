@@ -6199,15 +6199,45 @@ static void fts5MergePrefixLists(
 }
 
 
-static int fts5VisitPrefixRange(
-  Fts5Index *p,
-  Fts5Colset *pColset,
-  u8 *pToken,
-  int nToken,
+/*
+** Iterate through a range of entries in the FTS index, invoking the xVisit
+** callback for each of them.
+**
+** Parameter pToken points to an nToken buffer containing an FTS index term
+** (i.e. a document term with the preceding 1 byte index identifier -
+** FTS5_MAIN_PREFIX or similar). If bPrefix is true, then the call visits
+** all entries for terms that have pToken/nToken as a prefix. If bPrefix
+** is false, then only entries with pToken/nToken as the entire key are
+** visited. 
+**
+** If the current table is a tokendata=1 table, then if bPrefix is true then
+** each index term is treated separately. However, if bPrefix is false, then
+** all index terms corresponding to pToken/nToken are collapsed into a single
+** term before the callback is invoked.
+**
+** The callback invoked for each entry visited is specified by paramter xVisit.
+** Each time it is invoked, it is passed a pointer to the Fts5Index object,
+** a copy of the 7th paramter to this function (pCtx) and a pointer to the
+** iterator that indicates the current entry. If the current entry is the
+** first with a new term (i.e. different from that of the previous entry,
+** including the very first term), then the final two parameters are passed
+** a pointer to the term and its size in bytes, respectively. If the current
+** entry is not the first associated with its term, these two parameters
+** are passed 0.
+**
+** If parameter pColset is not NULL, then it is used to filter entries before
+** the callback is invoked.
+*/
+static int fts5VisitEntries(
+  Fts5Index *p,                   /* Fts5 index object */
+  Fts5Colset *pColset,            /* Columns filter to apply, or NULL */
+  u8 *pToken,                     /* Buffer containing token */
+  int nToken,                     /* Size of buffer pToken in bytes */
+  int bPrefix,                    /* True for a prefix scan */
   void (*xVisit)(Fts5Index*, void *pCtx, Fts5Iter *pIter, const u8*, int),
-  void *pCtx
+  void *pCtx                      /* Passed as second argument to xVisit() */
 ){
-  const int flags = FTS5INDEX_QUERY_SCAN 
+  const int flags = (bPrefix ? FTS5INDEX_QUERY_SCAN : 0)
                   | FTS5INDEX_QUERY_SKIPEMPTY 
                   | FTS5INDEX_QUERY_NOOUTPUT;
   Fts5Iter *p1 = 0;     /* Iterator used to gather data from index */
@@ -6226,7 +6256,6 @@ static int fts5VisitPrefixRange(
 
     p1->xSetOutputs(p1, pSeg);
 
-
     if( bNewTerm ){
       nNew = pSeg->term.n;
       pNew = pSeg->term.p;
@@ -6241,6 +6270,9 @@ static int fts5VisitPrefixRange(
   return p->rc;
 }
 
+/*
+** Context object passed by fts5SetupPrefixIter() to fts5VisitEntries().
+*/
 typedef struct PrefixSetupCtx PrefixSetupCtx;
 struct PrefixSetupCtx {
   void (*xMerge)(Fts5Index*, Fts5Buffer*, int, Fts5Buffer*);
@@ -6252,6 +6284,9 @@ struct PrefixSetupCtx {
   Fts5Buffer doclist;
 };
 
+/*
+** fts5VisitEntries() callback used by fts5SetupPrefixIter()
+*/
 static void prefixIterSetupCb(
   Fts5Index *p, 
   void *pCtx, 
@@ -6325,6 +6360,7 @@ static void fts5SetupPrefixIter(
   assert( p->rc!=SQLITE_OK || (s.aBuf && pStruct) );
 
   if( p->rc==SQLITE_OK ){
+    void *pCtx = (void*)&s;
     int i;
     Fts5Data *pData;
 
@@ -6334,30 +6370,12 @@ static void fts5SetupPrefixIter(
     ** corresponding to the prefix itself. That one is extracted from the
     ** main term index here.  */
     if( iIdx!=0 ){
-      Fts5Iter *p1 = 0;     /* Iterator used to gather data from index */
-      int dummy = 0;
-      const int f2 = FTS5INDEX_QUERY_SKIPEMPTY|FTS5INDEX_QUERY_NOOUTPUT;
       pToken[0] = FTS5_MAIN_PREFIX;
-      fts5MultiIterNew(p, pStruct, f2, pColset, pToken, nToken, -1, 0, &p1);
-      fts5IterSetOutputCb(&p->rc, p1);
-      for(;
-        fts5MultiIterEof(p, p1)==0;
-        fts5MultiIterNext2(p, p1, &dummy)
-      ){
-        Fts5SegIter *pSeg = &p1->aSeg[ p1->aFirst[1].iFirst ];
-        p1->xSetOutputs(p1, pSeg);
-        if( p1->base.nData ){
-          s.xAppend(p, (u64)p1->base.iRowid-(u64)s.iLastRowid, p1, &s.doclist);
-          s.iLastRowid = p1->base.iRowid;
-        }
-      }
-      fts5MultiIterFree(p1);
+      fts5VisitEntries(p, pColset, pToken, nToken, 0, prefixIterSetupCb, pCtx);
     }
 
     pToken[0] = FTS5_MAIN_PREFIX + iIdx;
-    fts5VisitPrefixRange(
-        p, pColset, pToken, nToken, prefixIterSetupCb, (void*)&s
-    );
+    fts5VisitEntries(p, pColset, pToken, nToken, 1, prefixIterSetupCb, pCtx);
 
     assert( (s.nBuf%s.nMerge)==0 );
     for(i=0; i<s.nBuf; i+=s.nMerge){
@@ -6637,29 +6655,57 @@ static void fts5SegIterSetEOF(Fts5SegIter *pSeg){
 
 /*
 ** Usually, a tokendata=1 iterator (struct Fts5TokenDataIter) accumulates an
-** array of these for each row it visits. Or, for an iterator used by an
-** "ORDER BY rank" query, it accumulates an array of these for the entire
-** query.
+** array of these for each row it visits (so all iRowid fields are the same).
+** Or, for an iterator used by an "ORDER BY rank" query, it accumulates an
+** array of these for the entire query (in which case iRowid fields may take
+** a variety of values).
 **
 ** Each instance in the array indicates the iterator (and therefore term)
 ** associated with position iPos of rowid iRowid. This is used by the
 ** xInstToken() API.
+**
+** iRowid:
+**   Rowid for the current entry.
+**
+** iPos:
+**   Position of current entry within row. In the usual ((iCol<<32)+iOff)
+**   format (e.g. see macros FTS5_POS2COLUMN() and FTS5_POS2OFFSET()).
+**
+** iIter:
+**   If the Fts5TokenDataIter iterator that the entry is part of is
+**   actually an iterator (i.e. with nIter>0, not just a container for
+**   Fts5TokenDataMap structures), then this variable is an index into
+**   the apIter[] array. The corresponding term is that which the iterator
+**   at apIter[iIter] currently points to.
+**
+**   Or, if the Fts5TokenDataIter iterator is just a container object
+**   (nIter==0), then iIter is an index into the term.p[] buffer where
+**   the term is stored.
+**
+** nByte:
+**   In the case where iIter is an index into term.p[], this variable
+**   is the size of the term in bytes. If iIter is an index into apIter[],
+**   this variable is unused.
 */
 struct Fts5TokenDataMap {
   i64 iRowid;                     /* Row this token is located in */
   i64 iPos;                       /* Position of token */
-
   int iIter;                      /* Iterator token was read from */
   int nByte;                      /* Length of token in bytes (or 0) */
 };
 
 /*
 ** An object used to supplement Fts5Iter for tokendata=1 iterators.
+**
+** This object serves two purposes. The first is as a container for an array
+** of Fts5TokenDataMap structures, which are used to find the token required
+** when the xInstToken() API is used. This is done by the nMapAlloc, nMap and
+** aMap[] variables.
 */
 struct Fts5TokenDataIter {
-  int nMap;
-  int nMapAlloc;
-  Fts5TokenDataMap *aMap;
+  int nMapAlloc;                  /* Allocated size of aMap[] in entries */
+  int nMap;                       /* Number of valid entries in aMap[] */
+  Fts5TokenDataMap *aMap;         /* Array of (rowid+pos -> token) mappings */
 
   /* The following are used for prefix-queries only. */
   Fts5Buffer terms;
@@ -7234,10 +7280,18 @@ const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIndexIter, int *pn){
   return (z ? &z[1] : 0);
 }
 
+/*
+** The two input arrays - a1[] and a2[] - are in sorted order. This function
+** merges the two arrays together and writes the result to output array 
+** aOut[]. aOut[] is guaranteed to be large enough to hold the result.
+**
+** Duplicate entries are copied into the output. So the size of the output
+** array is always (n1+n2) entries.
+*/
 static void fts5TokendataMerge(
-  Fts5TokenDataMap *a1, int n1,
-  Fts5TokenDataMap *a2, int n2,
-  Fts5TokenDataMap *aOut
+  Fts5TokenDataMap *a1, int n1,   /* Input array 1 */
+  Fts5TokenDataMap *a2, int n2,   /* Input array 2 */
+  Fts5TokenDataMap *aOut          /* Output array */
 ){
   int i1 = 0;
   int i2 = 0;
@@ -7258,6 +7312,12 @@ static void fts5TokendataMerge(
   }
 }
 
+/*
+** Sort the contents of the pT->aMap[] array.
+**
+** The sorting algorithm requries a malloc(). If this fails, an error code
+** is left in Fts5Index.rc before returning.
+*/
 static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
   Fts5TokenDataMap *aTmp = 0;
   int nByte = pT->nMap * sizeof(Fts5TokenDataMap);
@@ -7298,13 +7358,23 @@ static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
   }
 }
 
+/*
+** fts5VisitEntries() context object used by fts5SetupPrefixIterTokendata()
+** to pass data to prefixIterSetupTokendataCb().
+*/
 typedef struct TokendataSetupCtx TokendataSetupCtx;
 struct TokendataSetupCtx {
-  Fts5TokenDataIter *pT;
-  int iTermOff;
-  int nTermByte;
+  Fts5TokenDataIter *pT;          /* Object being populated with mappings */
+  int iTermOff;                   /* Offset of current term in terms.p[] */
+  int nTermByte;                  /* Size of current term in bytes */
 };
 
+/*
+** fts5VisitEntries() callback used by fts5SetupPrefixIterTokendata(). This
+** callback adds an entry to the Fts5TokenDataIter.aMap[] array for each
+** position in the current position-list. It doesn't matter that some of
+** these may be out of order - they will be sorted later.
+*/
 static void prefixIterSetupTokendataCb(
   Fts5Index *p, 
   void *pCtx, 
@@ -7331,10 +7401,15 @@ static void prefixIterSetupTokendataCb(
   }
 }
 
+/*
+** pIter is a prefix query. This function populates pIter->pTokenDataIter
+** with an Fts5TokenDataIter object containing mappings for all rows
+** matched by the query.
+*/
 static int fts5SetupPrefixIterTokendata(
   Fts5Iter *pIter,
-  const char *pToken,
-  int nToken
+  const char *pToken,             /* Token prefix to search for */
+  int nToken                      /* Size of pToken in bytes */
 ){
   Fts5Index *p = pIter->pIndex;
   Fts5Buffer token = {0, 0, 0};
@@ -7352,8 +7427,8 @@ static int fts5SetupPrefixIterTokendata(
     memcpy(&token.p[1], pToken, nToken);
     token.n = nToken+1;
 
-    fts5VisitPrefixRange(
-        p, 0, token.p, token.n, prefixIterSetupTokendataCb, (void*)&ctx
+    fts5VisitEntries(
+        p, 0, token.p, token.n, 1, prefixIterSetupTokendataCb, (void*)&ctx
     );
 
     fts5TokendataIterSortMap(p, ctx.pT);
