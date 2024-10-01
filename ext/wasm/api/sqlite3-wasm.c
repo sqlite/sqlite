@@ -237,6 +237,8 @@
 ** for wasm builds with very little risk of problems. Clang 18.1 maps
 ** `long double` to float128 but Emscripten doesn't (cannot) expose
 ** that to JS.
+**
+** See also: SQLITE_USE_LONG_DOUBLE
 */
 #undef LONGDOUBLE_TYPE
 #define LONGDOUBLE_TYPE double
