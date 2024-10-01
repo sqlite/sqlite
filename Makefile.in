@@ -728,7 +728,8 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 
 libsqlite3.DLL = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
-LDFLAGS_libsqlite = $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH)
+LDFLAGS_libsqlite = \
+  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
