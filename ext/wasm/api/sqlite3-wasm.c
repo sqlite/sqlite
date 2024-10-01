@@ -221,6 +221,21 @@
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
 
+#if 0
+/* Details at https://sqlite.org/forum/forumpost/cbfb0d0ac0a4e349
+**
+** Summary: changing to `double` reduces the wasm file size by a mere
+** 2k.  It is hypothetically not possible that any clients rely on
+** doubles larger than 64-bit because there is no mapping between C
+** and JS for them. i.e. we "could" switch LONGDOUBLE_TYPE to double
+** for wasm builds with very little risk of problems. Clang 18.1 maps
+** `long double` to float128 but Emscripten doesn't (cannot) expose
+** that to JS.
+*/
+#undef LONGDOUBLE_TYPE
+#define LONGDOUBLE_TYPE double
+#endif
+
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. Note that we
