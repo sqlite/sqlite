@@ -660,7 +660,6 @@
 # define float sqlite_int64
 # define fabs(X) ((X)<0?-(X):(X))
 # define sqlite3IsOverflow(X) 0
-# define LONGDOUBLE_TYPE sqlite_int64
 # ifndef SQLITE_BIG_DBL
 #   define SQLITE_BIG_DBL (((sqlite3_int64)1)<<50)
 # endif
@@ -834,9 +833,6 @@
 # else
 #  define INT8_TYPE signed char
 # endif
-#endif
-#ifndef LONGDOUBLE_TYPE
-# define LONGDOUBLE_TYPE long double
 #endif
 typedef sqlite_int64 i64;          /* 8-byte signed integer */
 typedef sqlite_uint64 u64;         /* 8-byte unsigned integer */
@@ -4249,41 +4245,6 @@ typedef struct {
 # define Tuning(X)  0
 #endif
 
-/* By default, SQLite will use long double if the long double type
-** actually provides higher resolution than double.  This use or non-use
-** of long double is switchable at run-time by a test-control. Dekker
-** algorithms are used for high-precision floating point when long double
-** is not available.
-**
-** Having the run-time option to enable/disable long double support
-** causes problems for some compiler tool chains.  So the following
-** compile-time option is available to permanently enable/disable the use
-** of long double.
-**
-**    -DSQLITE_USE_LONG_DOUBLE=0      Omit all use of "long double" from
-**                                    the code. Instead, the Dekker algorithm
-**                                    is always used when high-precision
-**                                    floating point is required.
-**
-**    -DSQLITE_USE_LONG_DOUBLE=1      Always use long double when high
-**                                    precision is needed. Never fall back
-**                                    to using Dekker algorithms.
-**
-** If the SQLITE_USE_LONG_DOUBLE macro is not defined, then the determination
-** of whether or not to use long double is made at run-time.
-*/
-#ifndef SQLITE_USE_LONG_DOUBLE
-# define SqliteUseLongDouble  sqlite3Config.bUseLongDouble
-#elif SQLITE_USE_LONG_DOUBLE+0==1
-# define SqliteUseLongDouble  1
-#elif SQLITE_USE_LONG_DOUBLE+0==0
-# undef LONGDOUBLE_TYPE
-# define LONGDOUBLE_TYPE double
-# define SqliteUseLongDouble  0
-#else
-#  error "SQLITE_USE_LONG_DOUBLE should be set to either 0 or 1"
-#endif
-
 /*
 ** Structure containing global configuration data for the SQLite library.
 **
@@ -4297,7 +4258,6 @@ struct Sqlite3Config {
   u8 bUseCis;                       /* Use covering indices for full-scans */
   u8 bSmallMalloc;                  /* Avoid large memory allocations if true */
   u8 bExtraSchemaChecks;            /* Verify type,name,tbl_name in schema */
-  u8 bUseLongDouble;                /* Make use of long double */
 #ifdef SQLITE_DEBUG
   u8 bJsonSelfcheck;                /* Double-check JSON parsing */
 #endif
