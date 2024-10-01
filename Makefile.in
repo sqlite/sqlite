@@ -44,6 +44,8 @@ CPPFLAGS ?= @CPPFLAGS@
 @if SH_CFLAGS
 CFLAGS += @SH_CFLAGS@
 @endif
+CFLAGS_stdio3 := -I${TOP}/ext/misc
+# CFLAGS_stdio3 ==> for sqlite3_stdio.h
 TCC = ${CC} ${CFLAGS}
 TCC += -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/icu
 TCC += -I${TOP}/ext/fts3 -I${TOP}/ext/async -I${TOP}/ext/session
@@ -730,6 +732,9 @@ libsqlite3.DLL = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
 LDFLAGS_libsqlite = \
   $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
+# LDFLAGS_libsqlite should be used with any target which
+# either results in building libsqlite3.so, builds sqlite3.c
+# directly, links in sqlite3.o, or links in $(LIBOBJS0).
 
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
@@ -739,7 +744,7 @@ dll: $(libsqlite3.DLL)
 all: dll
 
 $(libsqlite3.LIB):	$(LIBOBJ)
-	$(AR) r $@ $(LIBOBJ)
+	$(AR) crs $@ $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
@@ -756,31 +761,31 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 		$(LDFLAGS_libsqlite) $(LDFLAGS_READLINE)
 cli: sqlite3$(TEXE)
 all: cli
-#XX#
-#XX#sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
-#XX#	$(TLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
-#XX#	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#RSYNC_SRC = \
-#XX#  $(TOP)/tool/sqlite3-rsync.c \
-#XX#  sqlite3.c
-#XX#
-#XX#RSYNC_OPT = \
-#XX#  -DSQLITE_ENABLE_DBPAGE_VTAB \
-#XX#  -USQLITE_THREADSAFE \
-#XX#  -DSQLITE_THREADSAFE=0 \
-#XX#  -DSQLITE_OMIT_LOAD_EXTENSION \
-#XX#  -DSQLITE_OMIT_DEPRECATED
-#XX#
-#XX#sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
-#XX#	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
-#XX#
-#XX#scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
-#XX#	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
-#XX#		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
-#XX#
+
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
+	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite)
+
+dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
+	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite)
+
+RSYNC_SRC = \
+  $(TOP)/tool/sqlite3-rsync.c \
+  sqlite3.c
+
+RSYNC_OPT = \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -USQLITE_THREADSAFE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_OMIT_DEPRECATED
+
+sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite)
+
+scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
+	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
+		$(TOP)/ext/misc/scrub.c sqlite3.lo $(LDFLAGS_libsqlite)
+
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
 
@@ -1543,9 +1548,9 @@ sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 #XX#sqltclsh$(TEXE): has_tclconfig sqltclsh.c
 #XX#	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
 #XX#
-#XX#sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
-#XX#	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(TLIBS)
-#XX#
+sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
+	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite)
+
 #XX#CHECKER_DEPS =\
 #XX#  $(TOP)/tool/mkccode.tcl \
 #XX#  sqlite3.c \

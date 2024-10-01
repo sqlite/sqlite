@@ -1,9 +1,9 @@
-C Correct\smissing\sLDFLAGS_ZLIB\sfor\slibsqlite3.so.
-D 2024-10-01T11:09:50.892
+C Get\smore\sof\sthe\sCLI\sutils\sbuilding.
+D 2024-10-01T13:40:59.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 03b37ca1ca620ae9074bf79c6f3357a54f2fe8f9befee918aa52b107d78b4040
+F Makefile.in 19afd3c31ea260e22eea118053b97d79f2b8d40b5d388e2c9c8a573554b97d4d
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 9c6d80d9d103fa42e931f4c464884a5e577fae8563acc7589bff4e43fbe8f864
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2233,8 +2233,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fde7257ad9ce84be6d907be3c6d277b04dd9466ee6828bfded4cfefc86db22db
-R 04bf171d78ee7f138b5f990ba32f5afc
+P 98bbba3a05734e080a0c8c51fac0368436809d4ff3c39959a51970400b4470cb
+R d61b1bae6c19264b9c460b550873251d
 U stephan
-Z 22b8ec3ae34f09b70dd7dcbd99830d71
+Z 5f773d8b1897a9c16436ea21d9b0af59
 # Remove this line to create a well-formed Fossil manifest.
