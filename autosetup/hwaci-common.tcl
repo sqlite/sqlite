@@ -505,8 +505,8 @@ proc hwaci-exe-extension {} {
   if {[hwaci-looks-like-windows build]} {
     set rB ".exe"
   }
-  define BUILD_EXEEXT $rH
-  define TARGET_EXEEXT $rB
+  define BUILD_EXEEXT $rB
+  define TARGET_EXEEXT $rH
 }
 
 ########################################################################
@@ -529,8 +529,8 @@ proc hwaci-dll-extension {} {
       }
     }
   }
-  define BUILD_DLLEXT [inner host]
-  define TARGET_DLLEXT [inner build]
+  define BUILD_DLLEXT [inner build]
+  define TARGET_DLLEXT [inner host]
 }
 
 ########################################################################
@@ -541,7 +541,7 @@ proc hwaci-lib-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
       *apple* {
-        return ".lib"
+        return ".a"
       }
       *-*-ming* - *-*-cygwin - *-*-msys {
         return ".lib"
@@ -551,8 +551,8 @@ proc hwaci-lib-extension {} {
       }
     }
   }
-  define BUILD_LIBEXT [inner host]
-  define TARGET_LIBEXT [inner build]
+  define BUILD_LIBEXT [inner build]
+  define TARGET_LIBEXT [inner host]
 }
 
 ########################################################################

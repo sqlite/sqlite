@@ -1,5 +1,5 @@
-C Add\sstatic\slibrary\sbuild.\sGet\sbuild\sworking\s(for\sa\sgiven\svalue\sof\sworking)\swith\sthe\s--disable-amalgamation\sflag.
-D 2024-09-30T19:01:41.209
+C Fix\sreversed\slogic\sin\sthe\sbuild/target/host\snames\sin\sseveral\shwaci-*\sfunctions.
+D 2024-10-01T11:04:02.571
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -46,7 +46,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl 8d8e8f7f4f0387c8683d6a3b2105c9d42ebb7595cceaac6a273b002f7755b3ba
+F autosetup/hwaci-common.tcl 4961de5c660cfe3f4616d119c5aef0af9dccf8a54b7a7f98064024735cb2e26d
 F autosetup/jimsh0.c 1b5fe91fffcddbc29f2b16acb80f1650632ea2edbe8336b8155ef7b4c66f6d8d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2233,8 +2233,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 433bfc790258e1d2e7c9ea4839a9edb25dde0b99d1e888d1e2a4cf669825fb79
-R 8f22d9dd2b4c58fa46771476eda60898
+P ddfda58004fa3e43c4f2d497c6feecbea3b195d14196bf179f4aafd21ea089ea
+R c63f6b95b69f924ec60d866a54529dc8
 U stephan
-Z 1648d4959e73cfe83c15546006463525
+Z 38ecc5a009d6d90955debf1069637c2a
 # Remove this line to create a well-formed Fossil manifest.
