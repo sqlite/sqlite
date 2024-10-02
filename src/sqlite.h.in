@@ -10543,6 +10543,14 @@ typedef struct sqlite3_snapshot {
 ** If there is not already a read-transaction open on schema S when
 ** this function is called, one is opened automatically.
 **
+** If a read-transaction is opened by this function, then it is guaranteed 
+** that the returned snapshot object may not be invalidated by a database 
+** writer or checkpointer until after the read-transaction is closed. This 
+** is not guaranteed if a read-transaction is already open when this 
+** function is called. In that case, any subsequent write or checkpoint 
+** operation on the database may invalidate the returned snapshot handle, 
+** even while the read-transaction remains open.
+**
 ** The following must be true for this function to succeed. If any of
 ** the following statements are false when sqlite3_snapshot_get() is
 ** called, SQLITE_ERROR is returned. The final value of *P is undefined
