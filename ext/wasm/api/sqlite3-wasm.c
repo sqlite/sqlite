@@ -127,10 +127,6 @@
 #  define SQLITE_USE_URI 1
 #endif
 
-#ifndef SQLITE_USE_LONG_DOUBLE
-#  define SQLITE_USE_LONG_DOUBLE 0
-#endif
-
 #ifdef SQLITE_WASM_EXTRA_INIT
 #  define SQLITE_EXTRA_INIT sqlite3_wasm_extra_init
 #endif
@@ -163,8 +159,6 @@
 #  define SQLITE_OMIT_PROGRESS_CALLBACK
 #  undef  SQLITE_OMIT_WAL
 #  define SQLITE_OMIT_WAL
-#  undef  SQLITE_USE_LONG_DOUBLE
-#  define SQLITE_USE_LONG_DOUBLE 0
 /*
   The following OMITs do not work with the standard amalgamation, so
   require a custom build:
@@ -226,23 +220,6 @@
 #define SQLITE_WASM_EXPORT __attribute__((used,visibility("default")))
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
-
-#if 0
-/* Details at https://sqlite.org/forum/forumpost/cbfb0d0ac0a4e349
-**
-** Summary: changing to `double` reduces the wasm file size by a mere
-** 2k.  It is hypothetically not possible that any clients rely on
-** doubles larger than 64-bit because there is no mapping between C
-** and JS for them. i.e. we "could" switch LONGDOUBLE_TYPE to double
-** for wasm builds with very little risk of problems. Clang 18.1 maps
-** `long double` to float128 but Emscripten doesn't (cannot) expose
-** that to JS.
-**
-** See also: SQLITE_USE_LONG_DOUBLE
-*/
-#undef LONGDOUBLE_TYPE
-#define LONGDOUBLE_TYPE double
-#endif
 
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable

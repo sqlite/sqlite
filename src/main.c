@@ -159,33 +159,6 @@ char *sqlite3_temp_directory = 0;
 */
 char *sqlite3_data_directory = 0;
 
-#if !defined(SQLITE_OMIT_WSD) && !defined(SQLITE_USE_LONG_DOUBLE)
-/*
-** Determine whether or not high-precision (long double) floating point
-** math works correctly on CPU currently running.
-*/
-static SQLITE_NOINLINE int hasHighPrecisionDouble(int rc){
-  if( sizeof(LONGDOUBLE_TYPE)<=8 ){
-    /* If the size of "long double" is not more than 8, then
-    ** high-precision math is not possible. */
-    return 0;
-  }else{
-    /* Just because sizeof(long double)>8 does not mean that the underlying
-    ** hardware actually supports high-precision floating point.  For example,
-    ** clearing the 0x100 bit in the floating-point control word on Intel
-    ** processors will make long double work like double, even though long
-    ** double takes up more space.  The only way to determine if long double
-    ** actually works is to run an experiment. */
-    LONGDOUBLE_TYPE a, b, c;
-    rc++;
-    a = 1.0+rc*0.1;
-    b = 1.0e+18+rc*25.0;
-    c = a+b;
-    return b!=c;
-  }
-}
-#endif /* !SQLITE_OMIT_WSD && !SQLITE_USE_LONG_DOUBLE */
-
 /*
 ** Initialize SQLite. 
 **
@@ -380,11 +353,6 @@ int sqlite3_initialize(void){
     rc = SQLITE_EXTRA_INIT(0);
   }
 #endif
-
-#if !defined(SQLITE_OMIT_WSD) && !defined(SQLITE_USE_LONG_DOUBLE)
-  sqlite3Config.bUseLongDouble = hasHighPrecisionDouble(rc);
-#endif
-
   return rc;
 }
 
@@ -4636,30 +4604,6 @@ int sqlite3_test_control(int op, ...){
       *pI2 = sqlite3LogEst(*pU64);
       break;
     }
-
-#if !defined(SQLITE_OMIT_WSD)
-    /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
-    **
-    **   X<0     Make no changes to the bUseLongDouble.  Just report value.
-    **   X==0    Disable bUseLongDouble
-    **   X==1    Enable bUseLongDouble
-    **   X>=2    Set bUseLongDouble to its default value for this platform
-    **
-    ** If the SQLITE_USE_LONG_DOUBLE compile-time option has been used, then
-    ** the bUseLongDouble setting is fixed.  This test-control becomes a
-    ** no-op, except that it still reports the fixed setting.
-    */
-    case SQLITE_TESTCTRL_USELONGDOUBLE: {
-#if !defined(SQLITE_USE_LONG_DOUBLE)
-      int b = va_arg(ap, int);
-      if( b>=2 ) b = hasHighPrecisionDouble(b);
-      if( b>=0 ) sqlite3Config.bUseLongDouble = b>0;
-#endif
-      rc = SqliteUseLongDouble!=0;
-      break;
-    }
-#endif
-
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)

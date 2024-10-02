@@ -21,7 +21,6 @@ static const char zHelp[] =
   "  --memdb             Use an in-memory database\n"
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
-  "  --nolongdouble      Disable the use of long double\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nomutex           Open db with SQLITE_OPEN_NOMUTEX\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
@@ -2277,7 +2276,6 @@ int main(int argc, char **argv){
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
-  int useLongDouble = -1;       /* True to set use of long-double */
 
 #ifdef SQLITE_SPEEDTEST1_WASM
   /* Resetting all state is important for the WASM build, which may
@@ -2335,8 +2333,6 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"key")==0 ){
         ARGC_VALUE_CHECK(1);
         zKey = argv[++i];
-      }else if( strcmp(z,"longdouble")==0 ){
-        useLongDouble = 1;
       }else if( strcmp(z,"lookaside")==0 ){
         ARGC_VALUE_CHECK(2);
         nLook = integerValue(argv[i+1]);
@@ -2355,8 +2351,6 @@ int main(int argc, char **argv){
         ARGC_VALUE_CHECK(1);
         mmapSize = integerValue(argv[++i]);
  #endif
-      }else if( strcmp(z,"nolongdouble")==0 ){
-        useLongDouble = 0;
       }else if( strcmp(z,"nomutex")==0 ){
         openFlags |= SQLITE_OPEN_NOMUTEX;
       }else if( strcmp(z,"nosync")==0 ){
@@ -2529,11 +2523,6 @@ int main(int argc, char **argv){
     if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
 #endif
-#ifdef SQLITE_TESTCTRL_USELONGDOUBLE
-  if( useLongDouble>=0 ){
-    sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, useLongDouble);
-  }
-#endif       
   if( g.nReserve>0 ){
     sqlite3_file_control(g.db, 0, SQLITE_FCNTL_RESERVE_BYTES, &g.nReserve);
   }

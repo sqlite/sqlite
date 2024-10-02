@@ -15,7 +15,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-set mxpow [expr {[use_long_double]?100:35}]
+set mxpow 35
 expr srand(1)
 for {set i 1} {$i<20000} {incr i} {
   set pow [expr {int((rand()-0.5)*$mxpow)}]

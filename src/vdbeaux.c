@@ -4512,13 +4512,9 @@ SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
 ** We must use separate SQLITE_NOINLINE functions here, since otherwise
 ** optimizer code movement causes gcov to become very confused.
 */
-#if  (defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)) \
-  && (!defined(SQLITE_USE_LONG_DOUBLE) || SQLITE_USE_LONG_DOUBLE+0==0)
+#if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
 static int SQLITE_NOINLINE doubleLt(double a, double b){ return a<b; }
 static int SQLITE_NOINLINE doubleEq(double a, double b){ return a==b; }
-#else
-# define doubleLt(A,B) 1
-# define doubleEq(A,B) 1
 #endif
 
 /*
@@ -4531,13 +4527,6 @@ int sqlite3IntFloatCompare(i64 i, double r){
     /* SQLite considers NaN to be a NULL. And all integer values are greater
     ** than NULL */
     return 1;
-  }
-  if( SqliteUseLongDouble ){
-    LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
-    testcase( x<r );
-    testcase( x>r );
-    testcase( x==r );
-    return (x<r) ? -1 : (x>r);
   }else{
     i64 y;
     if( r<-9223372036854775808.0 ) return +1;
