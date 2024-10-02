@@ -161,8 +161,9 @@ do_execsql_test 4.4 {
 do_execsql_test 4.5 {
   SELECT * FROM ft1_content
 } {1 i 3 iii}
+
 do_execsql_test 4.6 {
-  SELECT * FROM ft1_content
+  SELECT * FROM ft2_content
 } {1 i 3 iii}
 
 finish_test
