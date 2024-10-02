@@ -375,7 +375,9 @@ static int dbpageUpdate(
   if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
    || sqlite3_value_bytes(argv[3])!=szPage
   ){
-    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert ){
+    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert && pgno>1 ){
+      /* "INSERT INTO dbpage($PGNO,NULL)" causes page number $PGNO and
+      ** all subsequent pages to be deleted. */
       if( iDb>=pTab->nTrunc ){
         testcase( pTab->aTrunc!=0 );
         pTab->aTrunc = sqlite3_realloc(pTab->aTrunc, (iDb+1)*sizeof(Pgno));
@@ -387,6 +389,7 @@ static int dbpageUpdate(
           return SQLITE_NOMEM;
         }
       }
+      pgno--;
       pTab->aTrunc[iDb] = pgno;
     }else{
       zErr = "bad page value";

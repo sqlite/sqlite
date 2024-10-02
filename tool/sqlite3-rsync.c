@@ -1456,15 +1456,18 @@ static void replicaSide(SQLiteRsync *p){
         }else if( p->nErr ){
           runSql(p, "ROLLBACK");
         }else{
-          int rc;
-          sqlite3_bind_int64(pIns, 1, nOPage);
-          sqlite3_bind_null(pIns, 2);
-          rc = sqlite3_step(pIns);
-          if( rc!=SQLITE_DONE ){
-            reportError(p, "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
-                   sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
+          if( nOPage<0xffffffff ){
+            int rc;
+            sqlite3_bind_int64(pIns, 1, nOPage+1);
+            sqlite3_bind_null(pIns, 2);
+            rc = sqlite3_step(pIns);
+            if( rc!=SQLITE_DONE ){
+              reportError(p,
+                  "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
+                  sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
+            }
+            sqlite3_reset(pIns);
           }
-          sqlite3_reset(pIns);
           p->nPage = nOPage;
           runSql(p, "COMMIT");
         }
