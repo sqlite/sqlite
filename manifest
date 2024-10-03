@@ -1,5 +1,5 @@
-C Fix\sto\sthe\sprevious:\s\sThe\sdbpageRollbackTo()\smethod\sshould\sreturn\sSQLITE_OK.
-D 2024-10-03T10:06:51.322
+C Unconditionally\sinclude\s&lt;ctype.h&gt;\sin\ssqliteInt.h,\seven\sin\sbuilds\swhere\nit\sis\snot\sneeded.
+D 2024-10-03T16:31:08.852
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -774,7 +774,7 @@ F src/shell.c.in 981efe98f98a983c1d0193d18528eb2d765207c0c82b67b610be60f17995a43
 F src/sqlite.h.in 8a6dfab34cf3ad687346446a8c930e49132770ac380e8317f1aa3383e86fcaed
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 6ffd984ac04b5cfbe03f985a79d4664fe40be1198482add1c3de1137a8d9b86f
+F src/sqliteInt.h 989dca8b25ca11f5c52e5a457cc500042c43b0b3e5fea9a12d9020d0350722cd
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d1e0992e1f2885be9725d872b8688806e06788f3d66a70de86255179d93f74d3
-R 07d0f94fc8d3eb3dc6f1d0e0fdfaf3d3
+P 4dea7221129350a15df8dee5aabd5567e47adda4d255b65d4ba82fd821913759
+R f2244f797434d5d72e0a77b20c024462
 U drh
-Z a4eec9783f650abfafca00d3ce1f718c
+Z 01a73e86129b00ff79017b970432daf9
 # Remove this line to create a well-formed Fossil manifest.

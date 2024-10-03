@@ -638,6 +638,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
+#include <ctype.h>
 
 /*
 ** Use a macro to replace memcpy() if compiled with SQLITE_INLINE_MEMCPY.
@@ -4630,15 +4631,6 @@ int sqlite3CantopenError(int);
 */
 #if defined(SQLITE_ENABLE_FTS4) && !defined(SQLITE_ENABLE_FTS3)
 # define SQLITE_ENABLE_FTS3 1
-#endif
-
-/*
-** The ctype.h header is needed for non-ASCII systems.  It is also
-** needed by FTS3 when FTS3 is included in the amalgamation.
-*/
-#if !defined(SQLITE_ASCII) || \
-    (defined(SQLITE_ENABLE_FTS3) && defined(SQLITE_AMALGAMATION))
-# include <ctype.h>
 #endif
 
 /*
