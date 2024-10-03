@@ -438,6 +438,7 @@ static int dbpageRollbackTo(sqlite3_vtab *pVtab, int notUsed1){
   DbpageTable *pTab = (DbpageTable *)pVtab;
   pTab->pgnoTrunc = 0;
   (void)notUsed1;
+  return SQLITE_OK;
 }
 
 /*

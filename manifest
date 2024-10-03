@@ -1,5 +1,5 @@
-C Fix\smissing\sreturn\svalue\sfrom\sthe\snew\sdbpageRollbackTo()\scallback.
-D 2024-10-03T09:53:44.301
+C Fix\sto\sthe\sprevious:\s\sThe\sdbpageRollbackTo()\smethod\sshould\sreturn\sSQLITE_OK.
+D 2024-10-03T10:06:51.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -716,7 +716,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c b224d3db0f28c4a5f1407c50107a0a8133bd244ff3c7f6f8cedeb896a8cf1b64
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c 83d8ac377c3dc293ff8b6d36edceffe3b703be954807ae44b1207086e9dff839
+F src/dbpage.c db1be8adaf1f839ad733c08baeac5c22aa912f7b535865c0c061382602081360
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b869a7d9ce9567a61d2257272032aaee705bbc6158c7f2cd36e7f3ee66d72722
-R 7bc0596096bbb333fc73b05e652b41df
+P d1e0992e1f2885be9725d872b8688806e06788f3d66a70de86255179d93f74d3
+R 07d0f94fc8d3eb3dc6f1d0e0fdfaf3d3
 U drh
-Z 0297a20d69432f196ae033089ef7da4d
+Z a4eec9783f650abfafca00d3ce1f718c
 # Remove this line to create a well-formed Fossil manifest.
