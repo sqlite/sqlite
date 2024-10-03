@@ -15,6 +15,8 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#include "btreeInt.h"
+
 /* Forward references */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef);
 static void vdbeFreeOpArray(sqlite3 *, Op *, int);
@@ -3000,12 +3002,17 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(db->aDb[0].pBt))
    || nTrans<=1
   ){
+    sqlite3CommitTimeSet(p->aCommitTime, COMMIT_TIME_BEFORE_PHASEONE);
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
+        pBt->pBt->aCommitTime = p->aCommitTime;
         rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
+        pBt->pBt->aCommitTime = 0;
       }
     }
+
+    sqlite3CommitTimeSet(p->aCommitTime, COMMIT_TIME_BEFORE_PHASETWO);
 
     /* Do the commit only if all databases successfully complete phase 1.
     ** If one of the BtreeCommitPhaseOne() calls fails, this indicates an
@@ -3018,6 +3025,8 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
         rc = sqlite3BtreeCommitPhaseTwo(pBt, 0);
       }
     }
+
+    sqlite3CommitTimeSet(p->aCommitTime, COMMIT_TIME_AFTER_PHASETWO);
     if( rc==SQLITE_OK ){
       sqlite3VtabCommit(db);
     }
@@ -3414,7 +3423,9 @@ int sqlite3VdbeHalt(Vdbe *p){
           ** or hit an 'OR FAIL' constraint and there are no deferred foreign
           ** key constraints to hold up the transaction. This means a commit
           ** is required. */
+          sqlite3CommitTimeSet(p->aCommitTime, COMMIT_TIME_BEFORE_VDBECOMMIT);
           rc = vdbeCommit(db, p);
+          sqlite3CommitTimeSet(p->aCommitTime, COMMIT_TIME_AFTER_VDBECOMMIT);
         }
         if( (rc & 0xFF)==SQLITE_BUSY && p->readOnly ){
           sqlite3VdbeLeave(p);
@@ -5445,6 +5456,34 @@ int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr){
   return WRC_Continue;
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS && SQLITE_DEBUG */
+
+#include <sys/time.h>
+void sqlite3CommitTimeLog(u64 *aCommit){
+  u64 i1 = aCommit[COMMIT_TIME_START];
+  assert( COMMIT_TIME_START==0 && COMMIT_TIME_FINISH==COMMIT_TIME_N-1 );
+  if( aCommit[COMMIT_TIME_FINISH]>(i1+COMMIT_TIME_TIMEOUT) ){
+    char *zStr = 0;
+    int ii;
+    for(ii=1; ii<COMMIT_TIME_N; ii++){
+      zStr = sqlite3_mprintf("%z%s%d", zStr, (zStr?", ":""), 
+        (aCommit[ii]==0 ? 0 : (int)(aCommit[ii] - i1))
+      );
+    }
+    sqlite3_log(SQLITE_WARNING, "slow commit (v=1): (%s)", zStr);
+    sqlite3_free(zStr);
+  }
+}
+u64 sqlite3STimeNow(){
+  struct timeval time;
+  gettimeofday(&time, 0);
+  return ((u64)time.tv_sec * 1000000 + (u64)time.tv_usec);
+}
+void sqlite3CommitTimeSet(u64 *aCommit, int iCommit){
+  if( aCommit ){
+    aCommit[iCommit] = sqlite3STimeNow();
+  }
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*

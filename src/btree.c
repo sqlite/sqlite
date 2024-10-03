@@ -4732,6 +4732,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
 #endif
     if( rc==SQLITE_OK && ISCONCURRENT && p->db->eConcurrent==CONCURRENT_OPEN ){
       rc = btreeFixUnlocked(p);
+      sqlite3CommitTimeSet(p->pBt->aCommitTime, COMMIT_TIME_AFTER_FIXUNLOCKED);
     }
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zSuperJrnl, 0);

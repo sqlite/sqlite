@@ -425,4 +425,27 @@ void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
 int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr);
 #endif
 
+
+#define COMMIT_TIME_START 0
+#define COMMIT_TIME_BEFORE_HALT 1
+#define COMMIT_TIME_BEFORE_VDBECOMMIT 2
+
+#define COMMIT_TIME_BEFORE_PHASEONE 3
+#define COMMIT_TIME_AFTER_FIXUNLOCKED 4
+#define COMMIT_TIME_BEFORE_PHASETWO 5
+#define COMMIT_TIME_AFTER_PHASETWO 6
+
+#define COMMIT_TIME_AFTER_VDBECOMMIT 7
+#define COMMIT_TIME_AFTER_HALT 8
+#define COMMIT_TIME_FINISH 9
+
+#define COMMIT_TIME_N 10
+
+#define COMMIT_TIME_TIMEOUT (2*1000*1000)
+/* #define COMMIT_TIME_TIMEOUT 0 */
+
+void sqlite3CommitTimeLog(u64*);
+u64 sqlite3STimeNow();
+void sqlite3CommitTimeSet(u64*, int);
+
 #endif /* SQLITE_VDBE_H */
