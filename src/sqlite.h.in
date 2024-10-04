@@ -5603,7 +5603,7 @@ int sqlite3_create_window_function(
 ** This flag instructs SQLite to omit some corner-case optimizations that
 ** might disrupt the operation of the [sqlite3_value_subtype()] function,
 ** causing it to return zero rather than the correct subtype().
-** SQL functions that invokes [sqlite3_value_subtype()] should have this
+** All SQL functions that invoke [sqlite3_value_subtype()] should have this
 ** property.  If the SQLITE_SUBTYPE property is omitted, then the return
 ** value from [sqlite3_value_subtype()] might sometimes be zero even though
 ** a non-zero subtype was specified by the function argument expression.
