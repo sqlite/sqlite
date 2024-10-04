@@ -1,5 +1,5 @@
-C Add\sfurther\slogging\sintended\sfor\suse\sin\sanalyzing\sCOMMIT\sperformance.
-D 2024-10-04T14:11:12.210
+C Ensure\sthat\slogging\sis\sonly\sperformed\sfor\sCOMMIT\soperations\sthat\stake\s2\sseconds\sor\slonger.
+D 2024-10-04T14:49:08.253
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -846,7 +846,7 @@ F src/utf.c 7bc550af6f3ddd5f5dc82d092c41f728acb760c92e0b47f391963b01ae52569b
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 25e407a6dc8b288fa4295b3d92fa9ce9318503e84df53cdf403a50fccbc1ba31
 F src/vdbe.c fea60cfe46d8839a08e4680d90a96898d542d3f6d7954e2e99cd92596f1a01f8
-F src/vdbe.h 1290838cf62f6ec7f5fa26afd9a7737c79f03bb245e0488b9ab0614977211109
+F src/vdbe.h 9d165dc3a3fc2794d0097c279104fe82acbda6f1cfe4379fc0c7d8a935c8fd7f
 F src/vdbeInt.h 6ee567f7d9be264766f62aa331c33d702abdcaeeceea2a4e81a81c35411577ba
 F src/vdbeapi.c 53c7e26a2c0821a892b20eee2cde4656e31998212f3d515576c780dfaa45fd17
 F src/vdbeaux.c 41553ba9ad84f363ed3e3af86490fcde46e9b27796814124464dde3edf60bfd7
@@ -2250,8 +2250,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 72404dfc0d692bc21b3263d04c9c45dda9e61eb13dc87d2014416703bdf537de
-R cb5255d507a2478cae056fcb7fb0296b
+P bbbd3d9be88194039bb5e2862cb14733403d37ec6c8f21fccc8447172c999343
+R 7594d33035f2afb1abaf8a5f38785c25
 U dan
-Z 9e0f00af082fbe4c948e45d716f37584
+Z 890965784261ddbb3c7c4c6098f9ec9d
 # Remove this line to create a well-formed Fossil manifest.
