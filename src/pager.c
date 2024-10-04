@@ -703,6 +703,7 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+  u64 *aCommitTime;
 };
 
 /*
@@ -6654,6 +6655,7 @@ int sqlite3PagerCommitPhaseOne(
       assert( rc==SQLITE_OK );
       if( ALWAYS(pList) ){
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1);
+        sqlite3CommitTimeSet(pPager->aCommitTime, COMMIT_TIME_AFTER_WALFRAMES);
       }
       sqlite3PagerUnref(pPageOne);
       if( rc==SQLITE_OK ){
@@ -6827,6 +6829,10 @@ commit_phase_one_exit:
   return rc;
 }
 
+void sqlite3PagerSetCommitTime(Pager *pPager, u64 *aCommitTime){
+  pPager->aCommitTime = aCommitTime;
+  sqlite3WalSetCommitTime(pPager->pWal, aCommitTime);
+}
 
 /*
 ** When this function is called, the database file has been completely

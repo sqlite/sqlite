@@ -4735,7 +4735,9 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
       sqlite3CommitTimeSet(p->pBt->aCommitTime, COMMIT_TIME_AFTER_FIXUNLOCKED);
     }
     if( rc==SQLITE_OK ){
+      sqlite3PagerSetCommitTime(pBt->pPager, p->pBt->aCommitTime);
       rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zSuperJrnl, 0);
+      sqlite3PagerSetCommitTime(pBt->pPager, 0);
     }
 #ifndef SQLITE_OMIT_CONCURRENT
     if( rc==SQLITE_OK ){
@@ -4840,7 +4842,9 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup){
     BtShared *pBt = p->pBt;
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
+    sqlite3PagerSetCommitTime(pBt->pPager, p->pBt->aCommitTime);
     rc = sqlite3PagerCommitPhaseTwo(pBt->pPager);
+    sqlite3PagerSetCommitTime(pBt->pPager, 0);
     if( rc!=SQLITE_OK && bCleanup==0 ){
       sqlite3BtreeLeave(p);
       return rc;

@@ -3022,7 +3022,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
+        pBt->pBt->aCommitTime = p->aCommitTime;
         rc = sqlite3BtreeCommitPhaseTwo(pBt, 0);
+        pBt->pBt->aCommitTime = 0;
       }
     }
 
