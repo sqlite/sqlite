@@ -1663,13 +1663,11 @@ tidy:
 #
 clean:	tidy
 	rm -rf omittest* testrunner* testdir*
-	-gmake -C ext/wasm clean
 
 # Clean up everything.  No exceptions.
 #
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status Makefile $(LIBTOOL)
-	-gmake -C ext/wasm distclean
 
 #
 # Windows section
