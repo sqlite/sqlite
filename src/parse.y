@@ -755,7 +755,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
       pParse->db->errByteOffset = (int)(Y.z - pParse->zTail);
     }
     pSrc = A = sqlite3SrcListAppendFromTerm(pParse,A,0,0,&Z,S,&N);
-    if( pSrc && pSrc->nSrc>1 ){
+    if( pParse->nErr==0 && ALWAYS(pSrc!=0) && pSrc->nSrc>1 ){
       pSrc->a[pSrc->nSrc-1].fg.isLateral = 1;
       pSrc->a[pSrc->nSrc-2].fg.jointype |= JT_LATERAL;
       if( ALWAYS(S!=0) ) S->selFlags |= SF_Lateral;

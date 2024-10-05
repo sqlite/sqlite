@@ -1,5 +1,5 @@
-C Merge\sthe\sMakefile\sfix\sfrom\strunk.
-D 2024-10-05T22:02:40.815
+C Fix\sminor\sproblem\swith\serror\srecovery\safter\sOOM\sin\sthe\sparser.
+D 2024-10-05T22:28:51.256
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -758,7 +758,7 @@ F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 23a12d93e29c14b8e80b352fcbe04a53f392256e2523331403f0702d22566584
+F src/parse.y 66f160f94a9d85fc6078e20c8df38960663bf950c2adf40dcb4e5eb284937e7c
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a92bb48a48bd3430493e234c1f57f439f09d1b34b15dda2d5f2f8daab36d9923 cc6f3de0320aceb0e9d81413fa4c021ad2b4ee1c72ecef13438d80c4d3701135
-R 6e08024ef64cdff541e2a4112a943410
+P 9403bbaaffc9be781cc0e5c032e5e30ef3e49bea4760f028b0184169e660fea6
+R dead0665c57a72ea14821b0018edc129
 U drh
-Z b052fb3916c5776ba2b364ca2cc09a34
+Z b6417185e0bd26768614c2095c512db7
 # Remove this line to create a well-formed Fossil manifest.
