@@ -1164,6 +1164,7 @@ Expr *sqlite3ExprFunction(
 ){
   Expr *pNew;
   sqlite3 *db = pParse->db;
+  int ii;
   assert( pToken );
   pNew = sqlite3ExprAlloc(db, TK_FUNCTION, pToken, 1);
   if( pNew==0 ){
@@ -1177,6 +1178,11 @@ Expr *sqlite3ExprFunction(
    && !pParse->nested
   ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", pToken);
+  }
+  if( pList && pParse->nErr==0 ){
+    for(ii=0; ii<pList->nExpr; ii++){
+      ExprSetProperty(pList->a[ii].pExpr, EP_FuncArg);
+    }
   }
   pNew->x.pList = pList;
   ExprSetProperty(pNew, EP_HasFunc);
@@ -4555,6 +4561,59 @@ static int exprCodeInlineFunction(
 }
 
 /*
+** Expression Node callback for sqlite3ExprCanReturnSubtype().
+**
+** Only a function call is able to return a subtype.  So if the node
+** is not a function call, return WRC_Prune immediately.
+**
+** A function call is able to return a subtype if it has the
+** SQLITE_RESULT_SUBTYPE property.
+**
+** Assume that every function is able to pass-through a subtype from
+** one of its argument (using sqlite3_result_value()).  Most functions
+** are not this way, but we don't have a mechanism to distinguish those
+** that are from those that are not, so assume they all work this way.
+** That means that if one of its arguments is another function and that
+** other function is able to return a subtype, then this function is
+** able to return a subtype.
+*/
+static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
+  int n;
+  FuncDef *pDef;
+  sqlite3 *db;
+  if( pExpr->op!=TK_FUNCTION ){
+    return WRC_Prune;
+  }
+  assert( ExprUseXList(pExpr) );
+  db = pWalker->pParse->db;
+  n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
+  pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
+  if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+    pWalker->eCode = 1;
+    return WRC_Prune;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return TRUE if expression pExpr is able to return a subtype.
+**
+** A TRUE return does not guarantee that a subtype will be returned.
+** It only indicates that a subtype return is possible.  False positives
+** are acceptable as they only disable an optimization.  False negatives,
+** on the other hand, can lead to incorrect answers.
+*/
+static int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.pParse = pParse;
+  w.xExprCallback = exprNodeCanReturnSubtype;
+  sqlite3WalkExpr(&w, pExpr);
+  return w.eCode;
+}
+
+
+/*
 ** Check to see if pExpr is one of the indexed expressions on pParse->pIdxEpr.
 ** If it is, then resolve the expression by reading from the index and
 ** return the register into which the value has been read.  If pExpr is
@@ -4583,6 +4642,17 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
      || (exprAff>=SQLITE_AFF_NUMERIC && p->aff!=SQLITE_AFF_NUMERIC)
     ){
       /* Affinity mismatch on a generated column */
+      continue;
+    }
+
+
+    /* Functions that might set a subtype should not be replaced by the
+    ** value taken from an expression index if they are themselves an
+    ** argument to another scalar function or aggregate. 
+    ** https://sqlite.org/forum/forumpost/68d284c86b082c3e */
+    if( ExprHasProperty(pExpr, EP_FuncArg)
+     && sqlite3ExprCanReturnSubtype(pParse, pExpr) 
+    ){
       continue;
     }
 
