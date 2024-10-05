@@ -1164,7 +1164,6 @@ Expr *sqlite3ExprFunction(
 ){
   Expr *pNew;
   sqlite3 *db = pParse->db;
-  int ii;
   assert( pToken );
   pNew = sqlite3ExprAlloc(db, TK_FUNCTION, pToken, 1);
   if( pNew==0 ){
@@ -1178,11 +1177,6 @@ Expr *sqlite3ExprFunction(
    && !pParse->nested
   ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", pToken);
-  }
-  if( pList && pParse->nErr==0 ){
-    for(ii=0; ii<pList->nExpr; ii++){
-      ExprSetProperty(pList->a[ii].pExpr, EP_FuncArg);
-    }
   }
   pNew->x.pList = pList;
   ExprSetProperty(pNew, EP_HasFunc);
@@ -4650,7 +4644,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
     ** value taken from an expression index if they are themselves an
     ** argument to another scalar function or aggregate. 
     ** https://sqlite.org/forum/forumpost/68d284c86b082c3e */
-    if( ExprHasProperty(pExpr, EP_FuncArg)
+    if( ExprHasProperty(pExpr, EP_SubtArg)
      && sqlite3ExprCanReturnSubtype(pParse, pExpr) 
     ){
       continue;

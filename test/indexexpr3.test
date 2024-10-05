@@ -28,15 +28,15 @@ do_execsql_test 1.0 {
 }
 
 proc do_hasfunction_test {tn sql res} {
-  set bFunction 0
+  set nFunction 0
   db eval "EXPLAIN $sql" x {
     if {$x(opcode)=="Function"} {
-      set bFunction 1
+      incr nFunction 
     }
   }
 
   do_execsql_test $tn "
-    SELECT $bFunction;
+    SELECT $nFunction;
     $sql
   " $res
 }
@@ -54,15 +54,28 @@ do_hasfunction_test 1.2 {
 }
 
 do_hasfunction_test 1.3 {
-  SELECT coalesce(json_extract(j, '$.x'), 0) FROM t1 WHERE a=2
+  SELECT coalesce(json_extract(j, '$.x'), 'five') FROM t1 WHERE a=2
 } {
-  1 two
+  0 two
 }
 
-do_hasfunction_test 1.3 {
+do_hasfunction_test 1.4 {
   SELECT json_extract(j, '$.x') || '.two' FROM t1 WHERE a=2
 } {
   0 two.two
+}
+
+do_hasfunction_test 1.5 {
+  SELECT json_insert( '{}', '$.y', json_extract(j, '$.x') ) FROM t1 WHERE a=2
+} {
+  2 {{"y":"two"}}
+}
+
+do_hasfunction_test 1.6 {
+  SELECT json_insert( '{}', '$.y', coalesce( json_extract(j, '$.x'), 'five' ) )
+  FROM t1 WHERE a=2
+} {
+  2 {{"y":"two"}}
 }
 
 
