@@ -143,11 +143,13 @@ struct WhereLoop {
       u16 nTop;              /* Size of TOP vector */
       u16 nDistinctCol;      /* Index columns used to sort for DISTINCT */
       Index *pIndex;         /* Index used, or NULL */
+      ExprList *pOrderBy;    /* ORDER BY clause if this is really a subquery */
     } btree;
     struct {               /* Information for virtual tables */
       int idxNum;            /* Index number */
       u32 needFree : 1;      /* True if sqlite3_free(idxStr) is needed */
       u32 bOmitOffset : 1;   /* True to let virtual table handle offset */
+      u32 bIdxNumHex : 1;    /* Show idxNum as hex in EXPLAIN QUERY PLAN */
       i8 isOrdered;          /* True if satisfies ORDER BY */
       u16 omitMask;          /* Terms that may be omitted */
       char *idxStr;          /* Index identifier string */
@@ -636,7 +638,8 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_BLOOMFILTER  0x00400000  /* Consider using a Bloom-filter */
 #define WHERE_SELFCULL     0x00800000  /* nOut reduced by extra WHERE terms */
 #define WHERE_OMIT_OFFSET  0x01000000  /* Set offset counter to zero */
-                      /*   0x02000000  -- available for reuse */
+#define WHERE_COROUTINE    0x02000000  /* Implemented by co-routine.
+                                       ** NB: False-negatives are possible */
 #define WHERE_EXPRIDX      0x04000000  /* Uses an index-on-expressions */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */

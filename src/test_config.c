@@ -189,6 +189,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "offset_sql_func","0",TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
+  Tcl_SetVar2(interp, "sqlite_options",
+                      "ordered_set_aggregates","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options",
+                      "ordered_set_aggregates","0",TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   Tcl_SetVar2(interp, "sqlite_options", "preupdate", "1", TCL_GLOBAL_ONLY);
 #else
@@ -339,6 +347,14 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "0", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_ORDEREDSETFUNC
+  Tcl_SetVar2(interp, "sqlite_options", "ordered_set_funcs", "1",
+              TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "ordered_set_funcs", "0",
+              TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_ENABLE_OVERSIZE_CELL_CHECK
@@ -495,10 +511,6 @@ static void set_options(Tcl_Interp *interp){
 #else
   Tcl_SetVar2(interp, "sqlite_options", "lookaside", "1", TCL_GLOBAL_ONLY);
 #endif
-
-Tcl_SetVar2(interp, "sqlite_options", "long_double",
-              sizeof(LONGDOUBLE_TYPE)>sizeof(double) ? "1" : "0",
-              TCL_GLOBAL_ONLY);
 
 #ifdef SQLITE_OMIT_MEMORYDB
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "0", TCL_GLOBAL_ONLY);

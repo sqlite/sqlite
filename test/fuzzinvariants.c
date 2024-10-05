@@ -39,6 +39,32 @@ static void reportInvariantFailed(
 );
 
 /*
+** Special parameter binding, for testing and debugging purposes.
+**
+**     $int_NNN      ->   integer value NNN
+**     $text_TTTT    ->   floating point value TTT with destructor
+*/
+static void bindDebugParameters(sqlite3_stmt *pStmt){
+  int nVar = sqlite3_bind_parameter_count(pStmt);
+  int i;
+  for(i=1; i<=nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    if( zVar==0 ) continue;
+    if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
+    }else
+    if( strncmp(zVar, "$text_", 6)==0 ){
+      size_t szVar = strlen(zVar);
+      char *zBuf = sqlite3_malloc64( szVar-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], szVar-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
+      }
+    }
+  }
+}
+
+/*
 ** Do an invariant check on pStmt.  iCnt determines which invariant check to
 ** perform.  The first check is iCnt==0.
 **
@@ -107,6 +133,7 @@ int fuzz_invariant(
     return rc;
   }
   sqlite3_free(zTest);
+  bindDebugParameters(pTestStmt);
   nCol = sqlite3_column_count(pStmt);
   for(i=0; i<nCol; i++){
     rc = sqlite3_bind_value(pTestStmt,i+1+nParam,sqlite3_column_value(pStmt,i));
@@ -171,6 +198,7 @@ int fuzz_invariant(
       printf("invariant-validity-check #2:\n%s\n", zSql);
       sqlite3_free(zSql);
     }
+    bindDebugParameters(pCk);
     while( (rc = sqlite3_step(pCk))==SQLITE_ROW ){
       for(i=0; i<nCol; i++){
         if( !sameValue(pStmt, i, pTestStmt, i, 0) ) break;
@@ -199,6 +227,7 @@ int fuzz_invariant(
       }
 
       sqlite3_reset(pTestStmt);
+      bindDebugParameters(pCk);
       while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
         for(i=0; i<nCol; i++){
           if( !sameValue(pStmt, i, pTestStmt, i, pCk) ) break;
@@ -298,6 +327,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     sqlite3_finalize(pBase);
     pBase = pStmt;
   }
+  bindDebugParameters(pBase);
   for(i=0; i<sqlite3_column_count(pStmt); i++){
     const char *zColName = sqlite3_column_name(pBase,i);
     const char *zSuffix = zColName ? strrchr(zColName, ':') : 0;

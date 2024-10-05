@@ -215,7 +215,7 @@ static void extendFJMatch(
   if( pNew ){
     pNew->iTable = pMatch->iCursor;
     pNew->iColumn = iColumn;
-    pNew->y.pTab = pMatch->pTab;
+    pNew->y.pTab = pMatch->pSTab;
     assert( (pMatch->fg.jointype & (JT_LEFT|JT_LTORJ))!=0 );
     ExprSetProperty(pNew, EP_CanBeNull);
     *ppList = sqlite3ExprListAppend(pParse, *ppList, pNew);
@@ -346,10 +346,10 @@ static int lookupName(
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
         u8 hCol;
-        pTab = pItem->pTab;
+        pTab = pItem->pSTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
-        assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem->pSelect) );
+        assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem));
         if( pItem->fg.isNestedFrom ){
           /* In this case, pItem is a subquery that has been formed from a
           ** parenthesized subset of the FROM clause terms.  Example:
@@ -358,8 +358,12 @@ static int lookupName(
           **             This pItem -------------^
           */
           int hit = 0;
-          assert( pItem->pSelect!=0 );
-          pEList = pItem->pSelect->pEList;
+          Select *pSel;
+          assert( pItem->fg.isSubquery );
+          assert( pItem->u4.pSubq!=0 );
+          pSel = pItem->u4.pSubq->pSelect;
+          assert( pSel!=0 );
+          pEList = pSel->pEList;
           assert( pEList!=0 );
           assert( pEList->nExpr==pTab->nCol );
           for(j=0; j<pEList->nExpr; j++){
@@ -482,9 +486,9 @@ static int lookupName(
           */
           if( cntTab==0
            || (cntTab==1
-               && ALWAYS(pMatch!=0)
-               && ALWAYS(pMatch->pTab!=0)
-               && (pMatch->pTab->tabFlags & TF_Ephemeral)!=0
+               && pMatch!=0
+               && ALWAYS(pMatch->pSTab!=0)
+               && (pMatch->pSTab->tabFlags & TF_Ephemeral)!=0
                && (pTab->tabFlags & TF_Ephemeral)==0)
           ){
             cntTab = 1;
@@ -505,7 +509,7 @@ static int lookupName(
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
         assert( ExprUseYTab(pExpr) );
-        pExpr->y.pTab = pMatch->pTab;
+        pExpr->y.pTab = pMatch->pSTab;
         if( (pMatch->fg.jointype & (JT_LEFT|JT_LTORJ))!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
@@ -547,7 +551,7 @@ static int lookupName(
       if( (pNC->ncFlags & NC_UUpsert)!=0 && zTab!=0 ){
         Upsert *pUpsert = pNC->uNC.pUpsert;
         if( pUpsert && sqlite3StrICmp("excluded",zTab)==0 ){
-          pTab = pUpsert->pUpsertSrc->a[0].pTab;
+          pTab = pUpsert->pUpsertSrc->a[0].pSTab;
           pExpr->iTable = EXCLUDED_TABLE_NUMBER;
         }
       }
@@ -630,11 +634,11 @@ static int lookupName(
      && pMatch
      && (pNC->ncFlags & (NC_IdxExpr|NC_GenCol))==0
      && sqlite3IsRowid(zCol)
-     && ALWAYS(VisibleRowid(pMatch->pTab) || pMatch->fg.isNestedFrom)
+     && ALWAYS(VisibleRowid(pMatch->pSTab) || pMatch->fg.isNestedFrom)
     ){
       cnt = cntTab;
 #if SQLITE_ALLOW_ROWID_IN_VIEW+0==2
-      if( pMatch->pTab!=0 && IsView(pMatch->pTab) ){
+      if( pMatch->pSTab!=0 && IsView(pMatch->pSTab) ){
         eNewExprOp = TK_NULL;
       }
 #endif
@@ -871,7 +875,7 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
     SrcItem *pItem = &pSrc->a[iSrc];
     Table *pTab;
     assert( ExprUseYTab(p) );
-    pTab = p->y.pTab = pItem->pTab;
+    pTab = p->y.pTab = pItem->pSTab;
     p->iTable = pItem->iCursor;
     if( p->y.pTab->iPKey==iCol ){
       p->iColumn = -1;
@@ -990,7 +994,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       pItem = pSrcList->a;
       pExpr->op = TK_COLUMN;
       assert( ExprUseYTab(pExpr) );
-      pExpr->y.pTab = pItem->pTab;
+      pExpr->y.pTab = pItem->pSTab;
       pExpr->iTable = pItem->iCursor;
       pExpr->iColumn--;
       pExpr->affExpr = SQLITE_AFF_INTEGER;
@@ -1115,8 +1119,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     /* Resolve function names
     */
     case TK_FUNCTION: {
-      ExprList *pList = pExpr->x.pList;    /* The argument list */
-      int n = pList ? pList->nExpr : 0;    /* Number of arguments */
+      ExprList *pList;            /* The argument list */
+      int n;                      /* Number of arguments */
       int no_such_func = 0;       /* True if no such function exists */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
@@ -1129,6 +1133,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
       assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
       assert( pExpr->pLeft==0 || pExpr->pLeft->op==TK_ORDER );
+      pList = pExpr->x.pList;
+      n = pList ? pList->nExpr : 0;
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(pParse->db, zId, n, enc, 0);
       if( pDef==0 ){
@@ -1296,9 +1302,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           sqlite3WalkExprList(pWalker, pExpr->pLeft->x.pList);
         }
 #ifndef SQLITE_OMIT_WINDOWFUNC
-        if( pWin ){
+        if( pWin && pParse->nErr==0 ){
           Select *pSel = pNC->pWinSelect;
-          assert( pWin==0 || (ExprUseYWin(pExpr) && pWin==pExpr->y.pWin) );
+          assert( ExprUseYWin(pExpr) && pWin==pExpr->y.pWin );
           if( IN_RENAME_OBJECT==0 ){
             sqlite3WindowUpdate(pParse, pSel ? pSel->pWinDefn : 0, pWin, pDef);
             if( pParse->db->mallocFailed ) break;
@@ -1879,7 +1885,11 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** moves the pOrderBy down to the sub-query. It will be moved back
     ** after the names have been resolved.  */
     if( p->selFlags & SF_Converted ){
-      Select *pSub = p->pSrc->a[0].pSelect;
+      Select *pSub;
+      assert( p->pSrc->a[0].fg.isSubquery );
+      assert( p->pSrc->a[0].u4.pSubq!=0 );
+      pSub = p->pSrc->a[0].u4.pSubq->pSelect;
+      assert( pSub!=0 );
       assert( p->pSrc->nSrc==1 && p->pOrderBy );
       assert( pSub->pPrior && pSub->pOrderBy==0 );
       pSub->pOrderBy = p->pOrderBy;
@@ -1892,8 +1902,11 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     nSrc = p->pSrc->nSrc;
     for(i=0; i<nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
-      assert( pItem->zName!=0 || pItem->pSelect!=0 );/* Test of tag-20240424-1*/
-      if( pItem->pSelect && (pItem->pSelect->selFlags & SF_Resolved)==0 ){
+      assert( pItem->zName!=0
+              || pItem->fg.isSubquery );  /* Test of tag-20240424-1*/
+      if( pItem->fg.isSubquery
+       && (pItem->u4.pSubq->pSelect->selFlags & SF_Resolved)==0
+      ){
         int nRef = pOuterNC ? pOuterNC->nRef : 0;
         int nRef2 = sNC.nRef;
         NameContext *pSubNC;
@@ -1901,16 +1914,16 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
         if( pItem->fg.isLateral ){
           assert( i>0 );  /* Because p->pSub->a[0] is never marked LATERAL */
-          assert( pItem->pSelect!=0 );
-          assert( pItem->pSelect->selFlags & SF_Lateral );
+          assert( pItem->u4.pSubq->pSelect!=0 );
+          assert( pItem->u4.pSubq->pSelect->selFlags & SF_Lateral );
           p->pSrc->nSrc = i;
           sNC.pSrcList = p->pSrc;
-          if( pItem->pSelect->pLimit ){
+          if( pItem->u4.pSubq->pSelect->pLimit ){
             /* If a LIMIT/OFFSET clause exists on a LATERAL subquery, allow
             ** variables from other FROM clause terms to the left of the
             ** subquery to be used in the LIMIT/OFFSET clause. */
             sNC.pNext = 0;
-            (void)sqlite3ResolveExprNames(&sNC, pItem->pSelect->pLimit);
+            (void)sqlite3ResolveExprNames(&sNC, pItem->u4.pSubq->pSelect->pLimit);
           }
           sNC.pNext = pOuterNC;
           pSubNC = &sNC;
@@ -1919,7 +1932,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
           sNC.pNext = 0;
           pSubNC = pOuterNC;
         }
-        sqlite3ResolveSelectNames(pParse, pItem->pSelect, pSubNC);
+        sqlite3ResolveSelectNames(pParse, pItem->u4.pSubq->pSelect, pSubNC);
         p->pSrc->nSrc = nSrc;
         if( sNC.nRef>nRef2 ){
           pItem->fg.isCorrelated = 1;
@@ -2024,7 +2037,10 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** These integers will be replaced by copies of the corresponding result
     ** set expressions by the call to resolveOrderGroupBy() below.  */
     if( p->selFlags & SF_Converted ){
-      Select *pSub = p->pSrc->a[0].pSelect;
+      Select *pSub;
+      assert( p->pSrc->a[0].fg.isSubquery );
+      pSub = p->pSrc->a[0].u4.pSubq->pSelect;
+      assert( pSub!=0 );
       p->pOrderBy = pSub->pOrderBy;
       pSub->pOrderBy = 0;
     }
@@ -2178,6 +2194,9 @@ int sqlite3ResolveExprNames(
 ** Resolve all names for all expression in an expression list.  This is
 ** just like sqlite3ResolveExprNames() except that it works for an expression
 ** list rather than a single expression.
+**
+** The return value is SQLITE_OK (0) for success or SQLITE_ERROR (1) for a
+** failure.
 */
 int sqlite3ResolveExprListNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
@@ -2186,7 +2205,7 @@ int sqlite3ResolveExprListNames(
   int i;
   int savedHasAgg = 0;
   Walker w;
-  if( pList==0 ) return WRC_Continue;
+  if( pList==0 ) return SQLITE_OK;
   w.pParse = pNC->pParse;
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
@@ -2200,7 +2219,7 @@ int sqlite3ResolveExprListNames(
 #if SQLITE_MAX_EXPR_DEPTH>0
     w.pParse->nHeight += pExpr->nHeight;
     if( sqlite3ExprCheckHeight(w.pParse, w.pParse->nHeight) ){
-      return WRC_Abort;
+      return SQLITE_ERROR;
     }
 #endif
     sqlite3WalkExprNN(&w, pExpr);
@@ -2217,10 +2236,10 @@ int sqlite3ResolveExprListNames(
                           (NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
       pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
     }
-    if( w.pParse->nErr>0 ) return WRC_Abort;
+    if( w.pParse->nErr>0 ) return SQLITE_ERROR;
   }
   pNC->ncFlags |= savedHasAgg;
-  return WRC_Continue;
+  return SQLITE_OK;
 }
 
 /*
@@ -2288,7 +2307,7 @@ int sqlite3ResolveSelfReference(
   if( pTab ){
     sSrc.nSrc = 1;
     sSrc.a[0].zName = pTab->zName;
-    sSrc.a[0].pTab = pTab;
+    sSrc.a[0].pSTab = pTab;
     sSrc.a[0].iCursor = -1;
     if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
       /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP

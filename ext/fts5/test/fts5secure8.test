@@ -58,6 +58,10 @@ do_execsql_test 2.1 {
   pragma quick_check;
 } {ok}
 
+do_catchsql_test 2.2 {
+  INSERT INTO xyz(xyz, rank) VALUES('secure-delete', 'hello world');
+} {1 {SQL logic error}}
+
 
 
 

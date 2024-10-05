@@ -2343,7 +2343,7 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
     }
     for(ii=0; ii<(int)nFlag; ii++){
       int iVal = 0;
-      int res = Tcl_GetIndexFromObjStruct(
+      res = Tcl_GetIndexFromObjStruct(
           interp, aFlag[ii], aTbl, sizeof(aTbl[0]), "flag", 0, &iVal
       );
       if( res ) return TCL_ERROR;
@@ -7314,37 +7314,6 @@ static int SQLITE_TCLAPI extra_schema_checks(
 }
 
 /*
-** tclcmd:  use_long_double BOOLEAN|"default"
-**
-** If no argument, report the current value of the use-long-double flag.
-**
-** If argument is "default", set the use-long-double flag to the default
-** value for this build, based on the size of LONGDOUBLE_TYPE.
-**
-** If argument is a boolean, set the use-long-double flag accordingly.
-**
-** Return the new setting.
-*/
-static int SQLITE_TCLAPI use_long_double(
-  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int objc,              /* Number of arguments */
-  Tcl_Obj *CONST objv[]  /* Command arguments */
-){
-  int i = -1;
-  if( objc==2 ){
-    if( strcmp(Tcl_GetString(objv[1]),"default")==0 ){
-      i = 2;
-    }else{
-      if( Tcl_GetBooleanFromObj(interp,objv[1],&i) ) return TCL_ERROR;
-    }
-  }
-  i = sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, i);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
-  return TCL_OK;
-}
-
-/*
 ** tclcmd:  database_may_be_corrupt
 **
 ** Indicate that database files might be corrupt. In other words, set the normal
@@ -8100,6 +8069,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "distinct-opt",        SQLITE_DistinctOpt    },
     { "cover-idx-scan",      SQLITE_CoverIdxScan   },
     { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
+    { "order-by-subquery",   SQLITE_OrderBySubq    },
     { "transitive",          SQLITE_Transitive     },
     { "omit-noop-join",      SQLITE_OmitNoopJoin   },
     { "stat4",               SQLITE_Stat4          },
@@ -8324,7 +8294,7 @@ static int SQLITE_TCLAPI sorter_test_sort4_helper(
   for(iStep=0; iStep<nStep && SQLITE_ROW==sqlite3_step(pStmt); iStep++){
     int a = sqlite3_column_int(pStmt, 0);
     if( a!=sqlite3_column_int(pStmt, iB) ){
-      Tcl_AppendResult(interp, "data error: (a!=b)", 0);
+      Tcl_AppendResult(interp, "data error: (a!=b)", (void*)0);
       return TCL_ERROR;
     }
 
@@ -8343,13 +8313,13 @@ static int SQLITE_TCLAPI sorter_test_sort4_helper(
   if( rc!=SQLITE_OK ) goto sql_error;
 
   if( iCksum1!=iCksum2 ){
-    Tcl_AppendResult(interp, "checksum mismatch", 0);
+    Tcl_AppendResult(interp, "checksum mismatch", (void*)0);
     return TCL_ERROR;
   }
 
   return TCL_OK;
  sql_error:
-  Tcl_AppendResult(interp, "sql error: ", sqlite3_errmsg(db), 0);
+  Tcl_AppendResult(interp, "sql error: ", sqlite3_errmsg(db),  (void*)0);
   return TCL_ERROR;
 }
 
@@ -8398,7 +8368,7 @@ static int SQLITE_TCLAPI test_user_add(
 ){
   char *zUser = 0;
   char *zPasswd = 0;
-  int nPasswd = 0;
+  Tcl_Size nPasswd = 0;
   int isAdmin = 0;
   sqlite3 *db;
   int rc;
@@ -8413,7 +8383,7 @@ static int SQLITE_TCLAPI test_user_add(
   zUser = Tcl_GetString(objv[2]);
   zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
   Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
-  rc = sqlite3_user_add(db, zUser, zPasswd, nPasswd, isAdmin);
+  rc = sqlite3_user_add(db, zUser, zPasswd, (int)nPasswd, isAdmin);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }
@@ -8431,7 +8401,7 @@ static int SQLITE_TCLAPI test_user_change(
 ){
   char *zUser = 0;
   char *zPasswd = 0;
-  int nPasswd = 0;
+  Tcl_Size nPasswd = 0;
   int isAdmin = 0;
   sqlite3 *db;
   int rc;
@@ -8446,7 +8416,7 @@ static int SQLITE_TCLAPI test_user_change(
   zUser = Tcl_GetString(objv[2]);
   zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
   Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
-  rc = sqlite3_user_change(db, zUser, zPasswd, nPasswd, isAdmin);
+  rc = sqlite3_user_change(db, zUser, zPasswd, (int)nPasswd, isAdmin);
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
   return TCL_OK;
 }
@@ -9149,7 +9119,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "reset_prng_state",              reset_prng_state,   0 },
      { "prng_seed",                     prng_seed,          0 },
      { "extra_schema_checks",           extra_schema_checks,    0},
-     { "use_long_double",               use_long_double,        0},
      { "database_never_corrupt",        database_never_corrupt, 0},
      { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},
@@ -9298,7 +9267,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
-  static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
   int i;
   extern int sqlite3_sync_count, sqlite3_fullsync_count;
   extern int sqlite3_opentemp_count;
@@ -9399,8 +9367,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_data_directory, TCL_LINK_STRING);
   Tcl_LinkVar(interp, "bitmask_size",
       (char*)&bitmask_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  Tcl_LinkVar(interp, "longdouble_size",
-      (char*)&longdouble_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   Tcl_LinkVar(interp, "sqlite_sync_count",
       (char*)&sqlite3_sync_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_fullsync_count",

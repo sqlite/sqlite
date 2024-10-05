@@ -2185,7 +2185,7 @@ static void fts5SegIterNext_None(
 
   if( iOff<pIter->iEndofDoclist ){
     /* Next entry is on the current page */
-    i64 iDelta;
+    u64 iDelta;
     iOff += sqlite3Fts5GetVarint(&pIter->pLeaf->p[iOff], (u64*)&iDelta);
     pIter->iLeafOffset = iOff;
     pIter->iRowid += iDelta;
@@ -4889,6 +4889,11 @@ static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
           nBest = nPercent;
         }
       }
+
+      /* If pLvl is already the input level to an ongoing merge, look no
+      ** further for a merge candidate. The caller should be allowed to
+      ** continue merging from pLvl first.  */
+      if( pLvl->nMerge ) break;
     }
   }
   return iRet;
@@ -8813,7 +8818,7 @@ static int fts5structConnectMethod(
 
 /*
 ** We must have a single struct=? constraint that will be passed through
-** into the xFilter method.  If there is no valid stmt=? constraint,
+** into the xFilter method.  If there is no valid struct=? constraint,
 ** then return an SQLITE_CONSTRAINT error.
 */
 static int fts5structBestIndexMethod(

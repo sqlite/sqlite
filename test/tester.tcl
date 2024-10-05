@@ -985,7 +985,7 @@ proc query_plan_graph {sql} {
   }
   set a "\n  QUERY PLAN\n"
   append a [append_graph "  " dx cx 0]
-  regsub -all { 0x[A-F0-9]+\y} $a { xxxxxx} a
+  regsub -all {SUBQUERY 0x[A-F0-9]+\y} $a {SUBQUERY xxxxxx} a
   regsub -all {(MATERIALIZE|CO-ROUTINE|SUBQUERY) \d+\y} $a {\1 xxxxxx} a
   regsub -all {\((join|subquery)-\d+\)} $a {(\1-xxxxxx)} a
   return $a
@@ -1054,6 +1054,29 @@ proc do_eqp_test {name sql res} {
     }
     uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
   }
+}
+
+# Do both an eqp_test and an execsql_test on the same SQL.
+#
+proc do_eqp_execsql_test {name sql res1 res2} {
+  if {[regexp {^\s+QUERY PLAN\n} $res1]} {
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res1]} {
+      uplevel [list do_test ${name}a [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test ${name}a [list query_plan_graph $sql] $res1
+      ]
+    }
+  } else {
+    if {[string index $res 0]!="/"} {
+      set res1 "/*$res1*/"
+    }
+    uplevel do_execsql_test ${name}a [list "EXPLAIN QUERY PLAN $sql"] [list $res1]
+  }
+  uplevel do_execsql_test ${name}b [list $sql] [list $res2]
 }
 
 
@@ -1256,10 +1279,15 @@ proc finalize_testing {} {
          out of $nTest tests"
   } else {
     set cpuinfo {}
-    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    if {[catch {exec hostname} hname]==0} {
+      regsub {\.local$} $hname {} hname
+      set cpuinfo [string trim $hname]
+    }
     append cpuinfo " $::tcl_platform(os)"
     append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
-    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    if {[string match big* $::tcl_platform(byteOrder)]} {
+      append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    }
     output2 "SQLite [sqlite3 -sourceid]"
     output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }

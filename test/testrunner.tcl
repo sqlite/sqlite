@@ -1,3 +1,6 @@
+#!/bin/sh
+# Script to runs tests for SQLite.  Run with option "help" for more info. \
+exec tclsh "$0" "$@"
 
 set dir [pwd]
 set testdir [file normalize [file dirname $argv0]]
@@ -14,8 +17,14 @@ cd $dir
 # recommend that the user build one.
 #
 proc find_interpreter {} {
+  global dir
   set interpreter [file tail [info nameofexec]]
   set rc [catch { package require sqlite3 }]
+  if {$rc} {
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+  }
   if {$rc} {
     if { [string match -nocase testfixture* $interpreter]==0
       && [file executable ./testfixture]
@@ -28,8 +37,30 @@ proc find_interpreter {} {
     }
   }
   if {$rc} {
-    puts stderr "Failed to find tcl package sqlite3"
-    puts stderr "Run \"make testfixture\" and then try again..."
+    puts "Cannot find tcl package sqlite3: Trying to build it now..."
+    if {$::tcl_platform(platform)=="windows"} {
+      set bat [open make-tcl-extension.bat w]
+      puts $bat "nmake /f Makefile.msc tclextension"
+      close $bat
+      catch {exec -ignorestderr -- make-tcl-extension.bat}
+    } else {
+      catch {exec make tclextension}
+    }
+    if {[file readable pkgIndex.tcl] && [catch {source pkgIndex.tcl}]==0} {
+      set rc [catch { package require sqlite3 }]
+    }
+    if {$rc==0} {
+      puts "The SQLite tcl extension was successfully built and loaded."
+      puts "Run \"make tclextension-install\" to avoid having to rebuild\
+            it in the future."
+    } else {
+      puts "Unable to build the SQLite tcl extension"
+    }
+  }
+  if {$rc} {
+    puts stderr "Cannot find a working instance of the SQLite tcl extension."
+    puts stderr "Run \"make tclextension\" or \"make testfixture\" and\
+                 try again..."
     exit 1
   }
 }
@@ -54,10 +85,12 @@ proc usage {} {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
+    $a0 errors ?-v|--verbose? ?-s|--summary? ?PATTERN?
     $a0 help
+    $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
-    $a0 status
+    $a0 status ?-d SECS? ?--cls?
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
@@ -66,6 +99,7 @@ Usage:
     --explain                Write summary to stdout
     --jobs NUM               Run tests using NUM separate processes
     --omit CONFIGS           Omit configs on comma-separated list CONFIGS
+    --status                 Show the full "status" report while running
     --stop-on-coredump       Stop running if any test segfaults
     --stop-on-error          Stop running after any reported error
     --zipvfs ZIPVFSDIR       ZIPVFS source directory
@@ -87,7 +121,9 @@ Other PERMUTATION arguments must be run using testfixture, not tclsh:
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
 those tcl tests for which the final component of the filename matches at
-least one specified pattern are run.
+least one specified pattern are run.  The glob wildcard '*' is prepended
+to the pattern if it does not start with '^' and appended to every
+pattern that does not end with '$'.
 
 If no PATTERN arguments are present, then various fuzztest, threadtest
 and other tests are run as part of the "release" permutation. These are
@@ -100,12 +136,20 @@ with the specified permutation.
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
 "status" command prints a report describing the current state and progress 
-of the tests. The "njob" command may be used to query or modify the number
-of sub-processes the test script uses to run tests.
+of the tests.  Use the "-d N" option to have the status display clear the
+screen and repeat every N seconds.  The "njob" command may be used to query
+or modify the number of sub-processes the test script uses to run tests.
 
 The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
 available configurations enter "$a0 script help".
+
+The "errors" commands shows the output of tests that failed in the
+most recent run.  Complete output is shown if the -v or --verbose options
+are used.  Otherwise, an attempt is made to minimize the output to show
+only the parts that contain the error messages.  The --summary option just
+shows the jobs that failed.  If PATTERN are provided, the error information
+is only provided for jobs that match PATTERN.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -180,6 +224,7 @@ set TRG(dryrun) 0                   ;# True if --dryrun option
 set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
+set TRG(fullstatus) 0               ;# Full "status" report while running
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -268,10 +313,14 @@ set TRG(schema) {
     priority INTEGER NOT NULL,          -- higher priority jobs may run earlier
   
     /* Fields updated as jobs run */
-    starttime INTEGER, 
-    endtime INTEGER,
+    starttime INTEGER,                  -- Start time (milliseconds since 1970)
+    endtime INTEGER,                    -- End time
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
-    output TEXT
+    ntest INT,                          -- Number of test cases run
+    nerr INT,                           -- Number of errors reported
+    svers TEXT,                         -- Reported SQLite version
+    pltfm TEXT,                         -- Host platform reported
+    output TEXT                         -- test output
   );
 
   CREATE TABLE config(
@@ -343,8 +392,8 @@ if {([llength $argv]==2 || [llength $argv]==1)
   sqlite3 mydb $TRG(dbname)
   if {[llength $argv]==2} {
     set param [lindex $argv 1]
-    if {[string is integer $param]==0 || $param<1 || $param>128} {
-      puts stderr "parameter must be an integer between 1 and 128"
+    if {[string is integer $param]==0 || $param<0 || $param>128} {
+      puts stderr "parameter must be an integer between 0 and 128"
       exit 1
     }
 
@@ -379,34 +428,58 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
   puts [trd_buildscript $config [file dirname $testdir] $bMsvc]
   exit
 }
-  
 
-#--------------------------------------------------------------------------
-# Check if this is the "status" command:
+# Compute an elapse time string MM:SS or HH:MM:SS based on the
+# number of milliseconds in the argument.
 #
-if {[llength $argv]==1 
- && [string compare -nocase status [lindex $argv 0]]==0 
-} {
-
-  proc display_job {jobdict {tm ""}} {
-    array set job $jobdict
-
-    set dfname [format %-60s $job(displayname)]
-
-    set dtm ""
-    if {$tm!=""} { set dtm "\[[expr {$tm-$job(starttime)}]ms\]" }
-    puts "  $dfname $dtm"
+proc elapsetime {ms} {
+  set s [expr {int(($ms+500.0)*0.001)}]
+  set hr [expr {$s/3600}]
+  set mn [expr {($s/60)%60}]
+  set sc [expr {$s%60}]
+  if {$hr>0} {
+    return [format %02d:%02d:%02d $hr $mn $sc]
+  } else {
+    return [format %02d:%02d $mn $sc]
   }
+}
 
-  sqlite3 mydb $TRG(dbname)
-  mydb timeout 2000
-  mydb eval BEGIN
+# Helper routine for show_status
+#
+proc display_job {jobdict {tm ""}} {
+  array set job $jobdict
+  if {[string length $job(displayname)]>65} {
+    set dfname [format %.65s... $job(displayname)]
+  } else {
+    set dfname [format %-68s $job(displayname)]
+  }
+  set dtm ""
+  if {$tm!=""} {
+    set dtm [expr {$tm-$job(starttime)}]
+    set dtm [format %8s [elapsetime $dtm]]
+  } else {
+    set dtm [format %8s ""]
+  }
+  puts "  $dfname $dtm"
+}
 
-  set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
-  set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
-
+# This procedure shows the "status" page.  It uses the database
+# connect passed in as the "db" parameter.  If the "cls" parameter
+# is true, then VT100 escape codes are used to format the display.
+#
+proc show_status {db cls} {
+  global TRG
+  $db eval BEGIN
+  if {[catch {
+    set cmdline [$db one { SELECT value FROM config WHERE name='cmdline' }]
+    set nJob [$db one { SELECT value FROM config WHERE name='njob' }]
+  } msg]} {
+    if {$cls} {puts "\033\[H\033\[2J"}
+    puts "Cannot read database: $TRG(dbname)"
+    return
+  }
   set now [clock_milliseconds]
-  set tm [mydb one {
+  set tm [$db one {
     SELECT 
       COALESCE((SELECT value FROM config WHERE name='end'), $now) -
       (SELECT value FROM config WHERE name='start')
@@ -414,46 +487,248 @@ if {[llength $argv]==1
 
   set total 0
   foreach s {"" ready running done failed} { set S($s) 0 }
-  mydb eval {
+  $db eval {
     SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
   } {
     incr S($state) $cnt
     incr total $cnt
   }
+  set nt 0
+  set ne 0
+  $db eval {
+    SELECT sum(ntest) AS nt, sum(nerr) AS ne FROM jobs HAVING nt>0
+  } break
   set fin [expr $S(done)+$S(failed)]
   if {$cmdline!=""} {set cmdline " $cmdline"}
 
-  set f ""
-  if {$S(failed)>0} {
-    set f "$S(failed) FAILED, "
+  if {$cls} {
+    # Move the cursor to the top-left corner.  Each iteration will simply
+    # overwrite.
+    puts -nonewline "\033\[H"
+    flush stdout
   }
-  puts "Command line: \[testrunner.tcl$cmdline\]"
-  puts "Jobs:         $nJob"
-  puts "Summary:      ${tm}ms, ($fin/$total) finished, ${f}$S(running) running"
+  puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]"]
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total jobs,\
+                         $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
+  set line "Running: $S(running) (max: $nJob)"
+  if {$S(running)>0 && $fin>100 && $fin>0.05*$total} {
+    # Only estimate the time remaining after completing at least 100
+    # jobs amounting to 10% of the total.  Never estimate less than
+    # 2% of the total time used so far.
+    set tmleft [expr {($tm/$fin)*($total-$fin)}]
+    if {$tmleft<0.02*$tm} {
+      set tmleft [expr {$tm*0.02}]
+    }
+    append line " est time left [elapsetime $tmleft]"
+  }
+  puts [format %-79.79s $line]
   if {$S(running)>0} {
-    puts "Running: "
-    mydb eval {
+    $db eval {
       SELECT * FROM jobs WHERE state='running' ORDER BY starttime 
     } job {
       display_job [array get job] $now
     }
   }
   if {$S(failed)>0} {
-    puts "Failures: "
-    mydb eval {
-      SELECT * FROM jobs WHERE state='failed' ORDER BY starttime
+    # $toshow is the number of failures to report.  In $cls mode,
+    # status tries to limit the number of failure reported so that
+    # the status display does not overflow a 24-line terminal.  It will
+    # always show at least the most recent 4 failures, even if an overflow
+    # is needed.  No limit is imposed for a status within $cls.
+    #
+    if {$cls && $S(failed)>18-$S(running)} {
+      set toshow [expr {18-$S(running)}]
+      if {$toshow<4} {set toshow 4}
+      set shown " (must recent $toshow shown)"
+    } else {
+      set toshow $S(failed)
+      set shown ""
+    }
+    puts [format %-79s  "Failed:  $S(failed) $shown"]
+    $db eval {
+      SELECT * FROM jobs WHERE state='failed'
+       ORDER BY endtime DESC LIMIT $toshow
     } job {
       display_job [array get job]
     }
-    set nOmit [mydb one {SELECT count(*) FROM jobs WHERE state='omit'}]
+    set nOmit [$db one {SELECT count(*) FROM jobs WHERE state='omit'}]
     if {$nOmit} {
-      puts "$nOmit jobs omitted due to failures"
+      puts [format %-79s "  ... $nOmit jobs omitted due to failures"]
     }
   }
- 
+  if {$cls} {
+    # Clear everything else to the bottom of the screen
+    puts -nonewline "\033\[0J"
+    flush stdout
+  }
+  $db eval COMMIT
+}
+
+  
+
+#--------------------------------------------------------------------------
+# Check if this is the "status" command:
+#
+if {[llength $argv]>=1 
+ && [string compare -nocase status [lindex $argv 0]]==0 
+} {
+  set delay 0
+  set cls 0
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$a0=="-d" && $ii+1<[llength $argv]} {
+      incr ii
+      set delay [lindex $argv $ii]
+      if {![string is integer -strict $delay]} {
+        puts "Argument to -d should be an integer"
+        exit 1
+      }
+    } elseif {$a0=="-cls" || $a0=="--cls"} {
+      set cls 1
+    } else {
+      puts "unknown option: \"$a0\""
+      exit 1
+    }
+  }
+
+  if {![file readable $TRG(dbname)]} {
+    puts "Database missing: $TRG(dbname)"
+    exit
+  }
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 2000
+
+  # Clear the whole screen initially.
+  #
+  if {$delay>0 || $cls} {puts -nonewline "\033\[2J"}
+
+  while {1} {
+    show_status mydb [expr {$delay>0 || $cls}]
+    if {$delay<=0} break
+    after [expr {$delay*1000}]
+  }
   mydb close
+  exit
+}
+
+#--------------------------------------------------------------------------
+# Check if this is the "joblist" command:
+#
+if {[llength $argv]>=1 
+ && [string compare -nocase "joblist" [lindex $argv 0]]==0 
+} {
+  set pattern {}
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$pattern==""} {
+      set pattern [string trim $a0 *]
+    } else {
+      puts "unknown option: \"$a0\""
+      exit 1
+    }
+  }
+  set SQL {SELECT displaytype, displayname, state FROM jobs}
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*.-/]} $pattern ? pattern
+    append SQL " WHERE displayname GLOB '*$pattern*'"
+  }
+  append SQL " ORDER BY starttime"
+
+  if {![file readable $TRG(dbname)]} {
+    puts "Database missing: $TRG(dbname)"
+    exit
+  }
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 2000
+
+  mydb eval $SQL {
+    set label UNKNOWN
+    switch -- $state {
+      ready {set label READY}
+      done {set label DONE}
+      failed {set label FAILED}
+      omit {set label OMIT}
+      running {set label RUNNING}
+    }
+    puts [format {%-7s %-5s %s} $label $displaytype $displayname]
+  }
+  mydb close
+  exit
+}
+
+# Scan the output of all jobs looking for the summary lines that
+# report the number of test cases and the number of errors.
+# Aggregate these numbers and return them.
+#
+proc aggregate_test_counts {db} {
+  set ne 0
+  set nt 0
+  $db eval {SELECT sum(nerr) AS ne, sum(ntest) as nt FROM jobs} break
+  return [list $ne $nt]
+}
+
+#--------------------------------------------------------------------------
+# Check if this is the "errors" command:
+#
+if {[llength $argv]>=1
+ && ([string compare -nocase errors [lindex $argv 0]]==0 ||
+     [string match err* [lindex $argv 0]]==1)
+} {
+  set verbose 0
+  set pattern {}
+  set summary 0
+  for {set ii 1} {$ii<[llength $argv]} {incr ii} {
+    set a0 [lindex $argv $ii]
+    if {$a0=="-v" || $a0=="--verbose" || $a0=="-verbose"} {
+      set verbose 1
+    } elseif {$a0=="-s" || $a0=="--summary" || $a0=="-summary"} {
+      set summary 1
+    } elseif {$pattern==""} {
+      set pattern *[string trim $a0 *]*
+    } else {
+      puts "unknown option: \"$a0\"".  Use --help for more info."
+      exit 1
+    }
+  }
+  set cnt 0
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 5000
+  if {$summary} {
+    set sql "SELECT displayname FROM jobs WHERE state='failed'"
+  } else {
+    set sql "SELECT displaytype, displayname, output FROM jobs \
+              WHERE state='failed'"
+  }
+  if {$pattern!=""} {
+    regsub -all {[^a-zA-Z0-9*/ ?]} $pattern . pattern
+    append sql " AND displayname GLOB '$pattern'"
+  }
+  mydb eval $sql {
+    if {$summary} {
+      puts "FAILED: $displayname"
+      continue
+    }
+    puts "**** $displayname ****"
+    if {$verbose || $displaytype!="tcl"} {
+      puts $output
+    } else {
+      foreach line [split $output \n] {
+        if {[string match {!*} $line] || [string match *failed* $line]} {
+          puts $line
+        }
+      }
+    }
+    incr cnt
+  }
+  if {$pattern==""} {
+    set summary [aggregate_test_counts mydb]
+    mydb close
+    puts "Total [lindex $summary 0] errors out of [lindex $summary 1] tests"
+  } else {
+    mydb close
+  }
   exit
 }
 
@@ -490,6 +765,16 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(stopOnError) 1
     } elseif {[string match "$a*" --stop-on-coredump]} {
       set TRG(stopOnCore) 1
+    } elseif {[string match "$a*" --status]} {
+      if {$tcl_platform(platform)=="windows"} {
+        puts stdout \
+"The --status option is not available on Windows. A suggested work-around"
+        puts stdout \
+"is to run the following command in a separate window:\n"
+        puts stdout "   [info nameofexe] $argv0 status -d 2\n"
+      } else {
+        set TRG(fullstatus) 1
+      }
     } else {
       usage
     }
@@ -603,12 +888,6 @@ proc r_get_next_job {iJob} {
   return $ret
 }
 
-#rename r_get_next_job r_get_next_job_r
-#proc r_get_next_job {iJob} {
-  #puts [time { set res [r_get_next_job_r $iJob] }]
-  #set res
-#}
-
 # Usage:
 #
 #   add_job OPTION ARG OPTION ARG...
@@ -701,7 +980,18 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     if {[llength $patternlist]>0} {
       set bMatch 0
       foreach p $patternlist {
-        if {[string match $p [file tail $f]]} {
+        set p [string trim $p *]
+        if {[string index $p 0]=="^"} {
+          set p [string range $p 1 end]
+        } else {
+          set p "*$p"
+        }
+        if {[string index $p end]=="\$"} {
+          set p [string range $p 0 end-1]
+        } else {
+          set p "$p*"
+        }
+        if {[string match $p "$config [file tail $f]"]} {
           set bMatch 1
           break
         }
@@ -904,6 +1194,7 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
 
+    devtest -
     mdevtest {
       set config_set {
         All-O0
@@ -927,7 +1218,7 @@ proc add_jobs_from_cmdline {patternlist} {
         if {[regexp "\\y$b\\y" $TRG(omitconfig)]} continue
         set bld [add_build_job $b $TRG(testfixture)]
         foreach c [trd_configs $TRG(platform) $b] {
-          add_tcl_jobs $bld $c $patternlist
+          add_tcl_jobs $bld $c $patternlist SHELL
         }
 
         if {$patternlist==""} {
@@ -937,6 +1228,15 @@ proc add_jobs_from_cmdline {patternlist} {
             } else {
               add_make_job $bld $e
             }
+          }
+        }
+
+        if {[trdb one "SELECT EXISTS(SELECT 1
+                                       FROM jobs WHERE depid='SHELL')"]} {
+          set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
+          set sbldid [lindex $sbld 0]
+          trdb eval {
+            UPDATE jobs SET depid=$sbldid WHERE depid='SHELL'
           }
         }
       }
@@ -979,15 +1279,29 @@ proc make_new_testset {} {
 }
 
 proc mark_job_as_finished {jobid output state endtm} {
+  set ntest 1
+  set nerr 0
+  if {$endtm>0} {
+    set re {\y(\d+) errors out of (\d+) tests( on [^\n]+\n)?}
+    if {[regexp $re $output all a b pltfm]} {
+      set nerr $a
+      set ntest $b
+    }
+    regexp {\ySQLite \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d [0-9a-fA-F]+} \
+         $output svers
+  }
   r_write_db {
     if {$state=="failed"} {
       set childstate omit
+      if {$nerr<=0} {set nerr 1}
     } else {
       set childstate ready
     }
+    if {[info exists pltfm]} {set pltfm [string trim $pltfm]}
     trdb eval {
       UPDATE jobs 
-        SET output=$output, state=$state, endtime=$endtm
+        SET output=$output, state=$state, endtime=$endtm,
+            ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
     }
@@ -1125,49 +1439,58 @@ proc launch_another_job {iJob} {
   return 1
 }
 
-proc one_line_report {} {
+# Show the testing progress report
+#
+proc progress_report {} {
   global TRG
 
-  set tm [expr [clock_milliseconds] - $TRG(starttime)]
-  set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
-
-  r_write_db {
-    trdb eval { 
-      SELECT displaytype, state, count(*) AS cnt 
-      FROM jobs 
-      GROUP BY 1, 2 
-    } {
-      set v($state,$displaytype) $cnt
-      incr t($displaytype) $cnt
+  if {$TRG(fullstatus)} {
+    if {$::tcl_platform(platform)=="windows"} {
+      exec [info nameofexe] $::argv0 status --cls
+    } else {
+      show_status trdb 1
     }
-  }
-
-  set text ""
-  foreach j [lsort [array names t]] {
-    foreach k {done failed running} { incr v($k,$j) 0 }
-    set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "${j}($fin/$t($j))"
-    if {$v(failed,$j)>0} {
-      lappend text "f$v(failed,$j)"
-    }
-    if {$v(running,$j)>0} {
-      lappend text "r$v(running,$j)"
-    }
-  }
-
-  if {[info exists TRG(reportlength)]} {
-    puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-  }
-  set report "${tm} [join $text { }]"
-  set TRG(reportlength) [string length $report]
-  if {[string length $report]<100} {
-    puts -nonewline "$report\r"
-    flush stdout
   } else {
-    puts $report
+    set tm [expr [clock_milliseconds] - $TRG(starttime)]
+    set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
+  
+    r_write_db {
+      trdb eval { 
+        SELECT displaytype, state, count(*) AS cnt 
+        FROM jobs 
+        GROUP BY 1, 2 
+      } {
+        set v($state,$displaytype) $cnt
+        incr t($displaytype) $cnt
+      }
+    }
+  
+    set text ""
+    foreach j [lsort [array names t]] {
+      foreach k {done failed running} { incr v($k,$j) 0 }
+      set fin [expr $v(done,$j) + $v(failed,$j)]
+      lappend text "${j}($fin/$t($j))"
+      if {$v(failed,$j)>0} {
+        lappend text "f$v(failed,$j)"
+      }
+      if {$v(running,$j)>0} {
+        lappend text "r$v(running,$j)"
+      }
+    }
+  
+    if {[info exists TRG(reportlength)]} {
+      puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
+    }
+    set report "${tm} [join $text { }]"
+    set TRG(reportlength) [string length $report]
+    if {[string length $report]<100} {
+      puts -nonewline "$report\r"
+      flush stdout
+    } else {
+      puts $report
+    }
   }
-
-  after $TRG(reporttime) one_line_report
+  after $TRG(reporttime) progress_report
 }
 
 proc launch_some_jobs {} {
@@ -1192,13 +1515,14 @@ proc run_testset {} {
 
   launch_some_jobs
 
-  one_line_report
+  if {$TRG(fullstatus)} {puts "\033\[2J"}
+  progress_report
   while {[dirs_nHelper]>0} {
     after 500 {incr ::wakeup}
     vwait ::wakeup
   }
   close $TRG(log)
-  one_line_report
+  progress_report
 
   r_write_db {
     set tm [clock_milliseconds]
@@ -1220,6 +1544,26 @@ proc run_testset {} {
 
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
+  trdb eval {
+     SELECT sum(ntest) AS totaltest,
+            sum(nerr) AS totalerr
+       FROM jobs
+  } break
+  trdb eval {
+     SELECT max(endtime)-min(starttime) AS totaltime
+       FROM jobs WHERE endtime>0
+  } break;
+  set et [elapsetime $totaltime]
+  set pltfm {}
+  trdb eval {
+     SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
+      ORDER BY 2 DESC LIMIT 1
+  } break
+  puts "$totalerr errors out of $totaltest tests in $et $pltfm"
+  trdb eval {
+     SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
+  } {puts $v1}
+
 }
 
 # Handle the --buildonly option, if it was specified.
@@ -1250,7 +1594,14 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      puts "${indent}[lindex $displayname end]"
+      set tail [lindex $displayname end]
+      set e1 [lindex $displayname 1]
+      if {[string match config=* $e1]} {
+        set cfg [string range $e1 7 end]
+        puts "${indent}($cfg) $tail"
+      } else {
+        puts "${indent}$tail"
+      }
     }
   }
 }
@@ -1265,7 +1616,7 @@ if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
-    puts "splitting work across $TRG(nJob) jobs"
+    puts "splitting work across $TRG(nJob) cores"
   }
   puts "built testset in [expr $tm/1000]ms.."
   handle_buildonly

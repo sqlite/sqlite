@@ -159,10 +159,11 @@ static struct GlobalVars {
 } g;
 
 /*
-** Include the external vt02.c and randomjson.c modules.
+** Include various extensions.
 */
 extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
 extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
+extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
 
 
 /*
@@ -1028,6 +1029,31 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+/*
+** Special parameter binding, for testing and debugging purposes.
+**
+**     $int_NNN      ->   integer value NNN
+**     $text_TTTT    ->   floating point value TTT with destructor
+*/
+static void bindDebugParameters(sqlite3_stmt *pStmt){
+  int nVar = sqlite3_bind_parameter_count(pStmt);
+  int i;
+  for(i=1; i<=nVar; i++){
+    const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+    if( zVar==0 ) continue;
+    if( strncmp(zVar, "$int_", 5)==0 ){
+      sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
+    }else
+    if( strncmp(zVar, "$text_", 6)==0 ){
+      size_t szVar = strlen(zVar);
+      char *zBuf = sqlite3_malloc64( szVar-5 );
+      if( zBuf ){
+        memcpy(zBuf, &zVar[6], szVar-5);
+        sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
+      }
+    }
+  }
+}
 
 /*
 ** Run the SQL text
@@ -1051,6 +1077,7 @@ static int runDbSql(
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     int nRow = 0;
+    bindDebugParameters(pStmt);
     while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       nRow++;
       if( eVerbosity>=4 ){
@@ -1304,7 +1331,8 @@ int runCombinedDbSqlInput(
   /* Add the vt02 virtual table */
   sqlite3_vt02_init(cx.db, 0, 0);
 
-  /* Add the random_json() and random_json5() functions */
+  /* Activate extensions */
+  sqlite3_percentile_init(cx.db, 0, 0);
   sqlite3_randomjson_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
