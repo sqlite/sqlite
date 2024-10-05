@@ -37,7 +37,7 @@ set highPrecision(3) [expr \
     {[db eval {SELECT toreal(9007199254740992 + 1);}] eq {{}}}]
 
 if {!$highPrecision(1) || !$highPrecision(2) || !$highPrecision(3)} {
-  puts "NOTICE: use_long_double: [use_long_double] \
+  puts "NOTICE:\
         highPrecision: $highPrecision(1) $highPrecision(2) $highPrecision(3)"
 }
 

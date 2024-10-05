@@ -734,7 +734,7 @@ LDFLAGS_libsqlite = \
   $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 # LDFLAGS_libsqlite should be used with any target which
 # either results in building libsqlite3.so, builds sqlite3.c
-# directly, links in sqlite3.o, or links in $(LIBOBJS0).
+# directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
 
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
@@ -1744,7 +1744,7 @@ tidy:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE) sqlite3_expert$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
@@ -1755,11 +1755,12 @@ tidy:
 #
 clean:	tidy
 	rm -rf omittest* testrunner* testdir*
+	-gmake -C ext/wasm distclean
 
 # Clean up everything.  No exceptions.
-#
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status $(BTCL) Makefile $(LIBTOOL)
+	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
+	-gmake -C ext/wasm distclean
 
 #XX##
 #XX## Windows section

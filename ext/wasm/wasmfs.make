@@ -7,7 +7,7 @@
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
 # ensure that the following message starts on line 10 or higher for proper
-# alignment!
+# $(warning) alignment!
 ifneq (1,$(MAKING_CLEAN))
   $(warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
   $(warning !! The WASMFS build is not well-supported. WASMFS is a proverbial)

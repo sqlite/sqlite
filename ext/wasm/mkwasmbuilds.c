@@ -134,6 +134,54 @@ static void mk_pre_post(const char *zName  /* build name */,
 }
 
 /*
+** Emits rules for the fiddle builds.
+**
+*/
+static void mk_fiddle(){
+  int i = 0;
+
+  mk_pre_post("fiddle-module","vanilla", 0);
+  for( ; i < 2; ++i ){
+    const char *zTail = i ? ".debug" : "";
+    const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
+
+    pf("%s# Begin fiddle%s\n", zBanner, zTail);
+    pf("fiddle-module.js%s := %s/fiddle-module.js\n", zTail, zDir);
+    pf("fiddle-module.wasm%s := "
+       "$(subst .js,.wasm,$(fiddle-module.js%s))\n", zTail, zTail);
+    pf("$(fiddle-module.js%s):%s $(MAKEFILE) $(MAKEFILE.fiddle) "
+       "$(EXPORTED_FUNCTIONS.fiddle) "
+       "$(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) "
+       "$(SOAP.js)\n",
+       zTail, (i ? " $(fiddle-module.js)" : ""));
+    if( 1==i ){/*fiddle.debug*/
+      pf("	@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
+    }
+    pf("	$(emcc.bin) -o $@ $(fiddle.emcc-flags%s) "
+       "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
+       zTail);
+    pf("	$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
+    pf("	@cp -p $(SOAP.js) $(dir $@)\n");
+    if( 1==i ){/*fiddle.debug*/
+      pf("	cp -p $(dir.fiddle)/index.html "
+         "$(dir.fiddle)/fiddle.js "
+         "$(dir.fiddle)/fiddle-worker.js "
+         "$(dir $@)\n");
+    }
+    pf("	@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
+       "		test -f $${i} || continue;             \\\n"
+       "		gzip < $${i} > $${i}.gz; \\\n"
+       "	done\n", zDir, zDir, zDir);
+    if( 0==i ){
+      ps("fiddle: $(fiddle-module.js)");
+    }else{
+      ps("fiddle-debug: $(fiddle-module-debug.js)");
+    }
+    pf("# End fiddle%s%s", zTail, zBanner);
+  }
+}
+
+/*
 ** Emits makefile code for one build of the library, primarily defined
 ** by the combination of zName and zMode, each of which must be values
 ** from JS_BUILD_NAMES resp. JS_BUILD_MODES.
@@ -229,7 +277,7 @@ int main(void){
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
 
-  mk_pre_post("fiddle-module","vanilla", 0);
+  mk_fiddle();
   mk_pre_post("speedtest1","vanilla", 0);
   mk_pre_post("speedtest1-wasmfs","esm", "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
   return rc;

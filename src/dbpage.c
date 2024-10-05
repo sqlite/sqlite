@@ -57,8 +57,8 @@ struct DbpageCursor {
 struct DbpageTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database */
-  int nTrunc;                     /* Entries in aTrunc[] */
-  Pgno *aTrunc;                   /* Truncation size for each database */
+  int iDbTrunc;                   /* Database to truncate */
+  Pgno pgnoTrunc;                 /* Size to truncate to */
 };
 
 /* Columns */
@@ -107,8 +107,6 @@ static int dbpageConnect(
 ** Disconnect from or destroy a dbpagevfs virtual table.
 */
 static int dbpageDisconnect(sqlite3_vtab *pVtab){
-  DbpageTable *pTab = (DbpageTable *)pVtab;
-  sqlite3_free(pTab->aTrunc);
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
@@ -375,19 +373,12 @@ static int dbpageUpdate(
   if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
    || sqlite3_value_bytes(argv[3])!=szPage
   ){
-    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert ){
-      if( iDb>=pTab->nTrunc ){
-        testcase( pTab->aTrunc!=0 );
-        pTab->aTrunc = sqlite3_realloc(pTab->aTrunc, (iDb+1)*sizeof(Pgno));
-        if( pTab->aTrunc ){
-          int j;
-          for(j=pTab->nTrunc; j<iDb; j++) pTab->aTrunc[j] = 0;
-          pTab->nTrunc = iDb+1;
-        }else{
-          return SQLITE_NOMEM;
-        }
-      }
-      pTab->aTrunc[iDb] = pgno;
+    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert && pgno>1 ){
+      /* "INSERT INTO dbpage($PGNO,NULL)" causes page number $PGNO and
+      ** all subsequent pages to be deleted. */
+      pTab->iDbTrunc = iDb;
+      pgno--;
+      pTab->pgnoTrunc = pgno;
     }else{
       zErr = "bad page value";
       goto update_fail;
@@ -400,6 +391,7 @@ static int dbpageUpdate(
     if( (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK && pData ){
       unsigned char *aPage = sqlite3PagerGetData(pDbPage);
       memcpy(aPage, pData, szPage);
+      pTab->pgnoTrunc = 0;
     }
   }
   sqlite3PagerUnref(pDbPage);
@@ -423,29 +415,31 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
-  if( pTab->nTrunc>0 ){
-    memset(pTab->aTrunc, 0, sizeof(pTab->aTrunc[0])*pTab->nTrunc);
-  }
+  pTab->pgnoTrunc = 0;
   return SQLITE_OK;
 }
 
 /* Invoke sqlite3PagerTruncate() as necessary, just prior to COMMIT
 */
 static int dbpageSync(sqlite3_vtab *pVtab){
-  int iDb;
   DbpageTable *pTab = (DbpageTable *)pVtab;
-
-  for(iDb=0; iDb<pTab->nTrunc; iDb++){
-    if( pTab->aTrunc[iDb]>0 ){
-      Btree *pBt = pTab->db->aDb[iDb].pBt;
-      Pager *pPager = sqlite3BtreePager(pBt);
-      sqlite3PagerTruncateImage(pPager, pTab->aTrunc[iDb]);
-      pTab->aTrunc[iDb] = 0;
-    }
+  if( pTab->pgnoTrunc>0 ){
+    Btree *pBt = pTab->db->aDb[pTab->iDbTrunc].pBt;
+    Pager *pPager = sqlite3BtreePager(pBt);
+    sqlite3PagerTruncateImage(pPager, pTab->pgnoTrunc);
   }
+  pTab->pgnoTrunc = 0;
   return SQLITE_OK;
 }
 
+/* Cancel any pending truncate.
+*/
+static int dbpageRollbackTo(sqlite3_vtab *pVtab, int notUsed1){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  pTab->pgnoTrunc = 0;
+  (void)notUsed1;
+  return SQLITE_OK;
+}
 
 /*
 ** Invoke this routine to register the "dbpage" virtual table module
@@ -474,7 +468,7 @@ int sqlite3DbpageRegister(sqlite3 *db){
     0,                            /* xRename */
     0,                            /* xSavepoint */
     0,                            /* xRelease */
-    0,                            /* xRollbackTo */
+    dbpageRollbackTo,             /* xRollbackTo */
     0,                            /* xShadowName */
     0                             /* xIntegrity */
   };

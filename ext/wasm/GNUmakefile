@@ -105,6 +105,10 @@ dir.dout := $(dir.wasm)/jswasm
 dir.tmp := $(dir.wasm)/bld
 dir.wasmfs := $(dir.dout)
 
+MKDIR.bld := $(dir.tmp)
+$(MKDIR.bld):
+	-mkdir -p $@ $(dir.dout)
+
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
   $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
 
@@ -129,11 +133,13 @@ sqlite3.canonical.c := $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
 sqlite3.h := $(dir.top)/sqlite3.h
 
+ifneq (1,$(MAKING_CLEAN))
 ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c)))
   SQLITE_C_IS_SEE := 0
 else
   SQLITE_C_IS_SEE := 1
   $(info This is an SEE build)
+endif
 endif
 
 ########################################################################@
@@ -145,11 +151,19 @@ $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
+########################################################################
+# Special-case builds for which we require certain pre-conditions
+# which, if not met, may cause warnings or fatal errors in the build.
+# This also affects the default optimization level flags. Note that
+# the fiddle targets are in this list because they are used for
+# generating sqlite.org/fiddle.
+OPTIMIZED_TARGETS := dist snapshot fiddle fiddle.debug
+
 ifneq (1,$(MAKING_CLEAN))
-  ifeq (,$(filter release snapshot,$(MAKECMDGOALS)))
+  ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
     $(info ==============================================================)
-    $(info == Development build. Use 'release' or 'snapshot' target)
-    $(info == for a smaller release build.)
+    $(info == Development build. Make one of (dist, snapshot) for a)
+    $(info == smaller release build.)
     $(info ==============================================================)
   endif
 endif
@@ -193,10 +207,10 @@ else
     $(info WARNING: on Ubuntu-like systems it can be installed with:)
     $(info WARNING:    sudo apt install wabt)
     $(info WARNING: *******************************************************************)
+    ifneq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
+      $(error Cannot make release-quality binary because wasm-strip is not available.)
+    endif
     wasm-strip.bin := echo "not wasm-stripping"
-  endif
-  ifneq (,$(filter release snapshot,$(MAKECMDGOALS)))
-    $(error Cannot make release-quality binary because wasm-strip is not available.)
   endif
 endif
 maybe-wasm-strip := $(wasm-strip.bin)
@@ -237,6 +251,7 @@ SQLITE_OPT.common := \
 # to be able to run without this:
 SQLITE_OPT.common += -DSQLITE_WASM_ENABLE_C_TESTS
 
+# Extra flags for full-featured builds...
 SQLITE_OPT.full-featured := \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
@@ -367,12 +382,12 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 
 ########################################################################
 # bin.mkwb is used for generating some of the makefile code for the
-# various build builds. It used to be generated in this makefile via a
+# various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
 # made to generate it from tcl and bash (shell) but having to escape
 # the $ references in those languages made it just as illegible as the
 # native makefile code. Somewhat surprisingly, moving that code generation
-# to C makes it slightly less illegible than the previousq 3 options.
+# to C makes it slightly less illegible than the previous 3 options.
 bin.mkwb := ./mkwasmbuilds
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
 	$(CC) -o $@ $<
@@ -443,7 +458,17 @@ emcc.WASM_BIGINT ?= 1
 # emcc_opt = optimization-related flags. These are primarily used by
 # the various oX targets. build times for -O levels higher than 0 are
 # painful at dev-time.
-emcc_opt ?= -O0
+#
+# When running any of the $(OPTIMIZED_TARGETS) explicitly, e.g. for a
+# release distribution, use a higher optimization level. Experience
+# has shown -Oz to produce the smallest deliverables with only a
+# roughly 10% performance hit in the resulting WASM file compared to
+# -O2 (which consistently creates the fastest-running deliverables).
+ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
+  emcc_opt ?= -O0
+else
+  emcc_opt ?= -Oz
+endif
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -487,7 +512,7 @@ ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 endif
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
-$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
+$(EXPORTED_FUNCTIONS.api): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 ########################################################################
@@ -571,7 +596,7 @@ $(SOAP.js.bld): $(SOAP.js)
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
 # Emscripten-specific headers and footers.
 sqlite3-api.js.in := $(dir.tmp)/sqlite3-api.c-pp.js
-$(sqlite3-api.js.in): $(sqlite3-api.jses) $(MAKEFILE)
+$(sqlite3-api.js.in): $(MKDIR.bld) $(sqlite3-api.jses) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(sqlite3-api.jses); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -738,7 +763,7 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 ########################################################################
 # $(sqlite3-api-build-version.js) injects the build version info into
 # the bundle in JSON form.
-$(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
+$(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
     echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
@@ -754,7 +779,7 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 #
 # Maintenance reminder: there are awk binaries out there which do not
 # support -e SCRIPT.
-$(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js) \
+$(sqlite3-license-version.js): $(MKDIR.bld) $(sqlite3.h) $(sqlite3-license-version-header.js) \
   $(MAKEFILE)
 	@echo "Making $@..."; { \
     cat $(sqlite3-license-version-header.js); \
@@ -782,7 +807,7 @@ post-jses.js := \
   $(dir.api)/post-js-header.js \
   $(sqlite3-api.js.in) \
   $(dir.api)/post-js-footer.js
-$(post-js.js.in): $(post-jses.js) $(MAKEFILE)
+$(post-js.js.in): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)
 	@echo "Making $@..."
 	@for i in $(post-jses.js); do \
 		echo "/* BEGIN FILE: $$i */"; \
@@ -852,6 +877,7 @@ sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
 sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 sqlite3-api-wasmfs.mjs := $(dir.tmp)/sqlite3-api-wasmfs.mjs
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
+EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 ifneq (1,$(MAKING_CLEAN))
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
@@ -1010,7 +1036,7 @@ speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
+$(EXPORTED_FUNCTIONS.speedtest1): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.core)
 	@echo "Making $@ ..."
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1.js := $(dir.dout)/speedtest1.js
