@@ -1197,6 +1197,7 @@ static void originSide(SQLiteRsync *p){
   int c = 0;
   unsigned int nPage = 0;
   unsigned int iPage = 0;
+  unsigned int lockBytePage = 0;
   unsigned int szPg = 0;
   sqlite3_stmt *pCkHash = 0;
   char buf[200];
@@ -1235,6 +1236,7 @@ static void originSide(SQLiteRsync *p){
       p->nPage = nPage;
       p->szPage = szPg;
       p->iProtocol = PROTOCOL_VERSION;
+      lockBytePage = (1<<30)/szPg + 1;
     }
   }
   
@@ -1290,6 +1292,7 @@ static void originSide(SQLiteRsync *p){
                     " INSERT INTO badHash SELECT n FROM c",
                     iPage+1, p->nPage);
         }
+        runSql(p, "DELETE FROM badHash WHERE pgno=%d", lockBytePage);
         pStmt = prepareStmt(p,
                "SELECT pgno, data"
                "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno)");
