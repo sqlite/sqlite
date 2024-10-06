@@ -1,5 +1,5 @@
-C Back\sout\s[2f7eab381e16]\sbecause\sthe\sstderr\soutput\son\ssystems\swithout\sgmake\scauses\sgrief\sin\sthe\stesting\stools.
-D 2024-10-05T21:44:21.913
+C New\sSQL\sfunction\sfor\stesting/debugging\suse\sonly:\sparseuri().
+D 2024-10-06T15:01:31.737
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,7 +722,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 6d5f2c38fe3ec06a7eac599dac822788b36064124e20112a844e9cd5156cb239
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c df400a1d3f4625997d4dd8a81951c303e066277c29b861d37e03cd152d7858dd
+F src/func.c ed6baeeb414ef18ce729793587dae8bd30f11e6aacec8675bd33727e0bcb3765
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2215,8 +2215,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f7eab381e16760952d1c90a9119d2a217933f0136442d8f6eeb6d95e366ca4f
-R 97cc1dd0446101afb82e95a43b8cd5d1
-U stephan
-Z 6431efa2a9010e78c1fbe7fa1b33270f
+P cc6f3de0320aceb0e9d81413fa4c021ad2b4ee1c72ecef13438d80c4d3701135
+R 6e07384677af3f3c36d6573a7730f2e0
+T *branch * parseuri
+T *sym-parseuri *
+T -sym-trunk *
+U drh
+Z a932a90a1e85d41407c9c1eb7bdee53f
 # Remove this line to create a well-formed Fossil manifest.
