@@ -1,5 +1,5 @@
-C Back\sout\s[2f7eab381e16]\sbecause\sthe\sstderr\soutput\son\ssystems\swithout\sgmake\scauses\sgrief\sin\sthe\stesting\stools.
-D 2024-10-05T21:44:21.913
+C Fix\san\sassert()\sfailure\sin\s"PRAGMA\sintegrity_check"\sthat\scould\soccur\swhen\schecking\sa\scorrupt\sdatabase.
+D 2024-10-07T11:47:05.013
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -762,7 +762,7 @@ F src/parse.y a7a8d42eeff01d267444ddb476029b0b1726fb70ae3d77984140f17ad02e2d61
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
-F src/pragma.c 52bfbf6dfd668b69b5eb9bd1186e3a67367c8453807150d6e75239229924f684
+F src/pragma.c cd613126f7cdd0c2ded4648c3c7b7b0239e678d7f3489e88c4b6d6858372fd07
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 3ba0ad907b7773ed642f66cea8a2c9c8edc18841aa1050b6218dbb3479e86225
 F src/printf.c 6a87534ebfb9e5346011191b1f3a7ebc457f5938c7e4feeea478ecf53f6a41b2
@@ -1042,7 +1042,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc23dcb
 F test/corruptL.test 652fc8ac0763a6fd3eb28b951d481924167b2d9936083bcc68253b2274a0c8fe
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test 7c099d153a554001b4fb829c799b01f2ea6276cbc32479131e0db0da4efd9cc4
+F test/corruptN.test 40bc47aee4af9aadff902be43f14d69dc17b3731448dad6c7cc722da913f1455
 F test/cost.test cc434a026b1e9d0d98137a147e24e5daf1b1ad09e9ff7da63b34c83ddd136d92
 F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
 F test/countofview.test 4088e461a10ee33e69803c177a69aa1d7bba81a9ffc2df66d76465a22ca7fdfc
@@ -2215,8 +2215,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f7eab381e16760952d1c90a9119d2a217933f0136442d8f6eeb6d95e366ca4f
-R 97cc1dd0446101afb82e95a43b8cd5d1
-U stephan
-Z 6431efa2a9010e78c1fbe7fa1b33270f
+P cc6f3de0320aceb0e9d81413fa4c021ad2b4ee1c72ecef13438d80c4d3701135
+R 886d14b6c55746d1f77a7d0f4215362a
+U dan
+Z 224c1064901e8a73a6947d128b8e36d7
 # Remove this line to create a well-formed Fossil manifest.
