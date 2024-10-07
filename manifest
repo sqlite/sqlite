@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sindexed-subtype-expr\sbranch.
-D 2024-10-07T16:53:41.722
+C The\s(undocumented)\ssubtype()\sSQL\sfunction\sshould\shave\sthe\sSQLITE_SUBTYPE\sflag.
+D 2024-10-07T18:06:17.888
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,7 +722,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 0aafe1b0d3893e9f568f30efa2e7b96a6e6bcc072e481ae68c5abe3f01d81367
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c ed6baeeb414ef18ce729793587dae8bd30f11e6aacec8675bd33727e0bcb3765
+F src/func.c 281b373af97eba0a014aed754da952001fbf2899af362a268cdf59061eb749ad
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa440e78e9004c7ca3e03beaf264f54d0070ad7298a3c96ca097d8b35c872e5f 011fab70cb3d194b27742ebb236b05be582230567cf78e3e6cac6911de86922f
-R 42a50f33acc0ba8243932461cf488c55
+P 2fe2f374584b025676684ebe4ef29304883a3b0b125b62abc1dbf74815eecdfb
+R a94f143c3aa0e261df71b070177a6103
 U drh
-Z 5fcca3b69bb5d4d198a98a886d1914e0
+Z daf7125707a76e5c147ce1091b351dd3
 # Remove this line to create a well-formed Fossil manifest.
