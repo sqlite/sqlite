@@ -2535,7 +2535,13 @@ static void signFunc(
 ** Implementation of fpdecode(x,y,z) function.
 **
 ** x is a real number that is to be decoded.  y is the precision.
-** z is the maximum real precision.
+** z is the maximum real precision.  Return a string that shows the
+** results of the sqlite3FpDecode() function.
+**
+** Used for testing and debugging only, specifically testing and debugging
+** of the sqlite3FpDecode() function.  This SQL function does not appear
+** in production builds.  This function is not an API and is subject to
+** modification or removal in future versions of SQLite.
 */
 static void fpdecodeFunc(
   sqlite3_context *context,
@@ -2559,6 +2565,82 @@ static void fpdecodeFunc(
     sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d", s.sign, s.n, s.z, s.iDP);
   }
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+#endif /* SQLITE_DEBUG */
+
+#ifdef SQLITE_DEBUG
+/*
+** Implementation of parseuri(uri,flags) function.
+**
+** Required Arguments:
+**    "uri"        The URI to parse.
+**    "flags"      Bitmask of flags, as if to sqlite3_open_v2().
+**
+** Additional arguments beyond the first two make calls to
+** sqlite3_uri_key() for integers and sqlite3_uri_parameter for
+** anything else.
+**
+** The result is a string showing the results of calling sqlite3ParseUri().
+**
+** Used for testing and debugging only, specifically testing and debugging
+** of the sqlite3ParseUri() function.  This SQL function does not appear
+** in production builds.  This function is not an API and is subject to
+** modification or removal in future versions of SQLite.
+*/
+static void parseuriFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_str *pResult;
+  const char *zVfs;
+  const char *zUri;
+  unsigned int flgs;
+  int rc;
+  sqlite3_vfs *pVfs = 0;
+  char *zFile = 0;
+  char *zErr = 0;
+
+  if( argc<2 ) return;
+  pVfs = sqlite3_vfs_find(0);
+  assert( pVfs );
+  zVfs = pVfs->zName;
+  zUri = (const char*)sqlite3_value_text(argv[0]);
+  if( zUri==0 ) return;
+  flgs = (unsigned int)sqlite3_value_int(argv[1]);
+  rc = sqlite3ParseUri(zVfs, zUri, &flgs, &pVfs, &zFile, &zErr);
+  pResult = sqlite3_str_new(0);
+  if( pResult ){
+    int i;
+    sqlite3_str_appendf(pResult, "rc=%d", rc);
+    sqlite3_str_appendf(pResult, ", flags=0x%x", flgs);
+    sqlite3_str_appendf(pResult, ", vfs=%Q", pVfs ? pVfs->zName: 0);
+    sqlite3_str_appendf(pResult, ", err=%Q", zErr);
+    sqlite3_str_appendf(pResult, ", file=%Q", zFile);
+    if( zFile ){
+      const char *z = zFile;
+      z += sqlite3Strlen30(z)+1;
+      while( z[0] ){
+        sqlite3_str_appendf(pResult, ", %Q", z);
+        z += sqlite3Strlen30(z)+1;
+      }
+      for(i=2; i<argc; i++){
+        const char *zArg;
+        if( sqlite3_value_type(argv[i])==SQLITE_INTEGER ){
+          int k = sqlite3_value_int(argv[i]);
+          sqlite3_str_appendf(pResult, ", '%d:%q'",k,sqlite3_uri_key(zFile, k));
+        }else if( (zArg = (const char*)sqlite3_value_text(argv[i]))!=0 ){
+          sqlite3_str_appendf(pResult, ", '%q:%q'",
+                 zArg, sqlite3_uri_parameter(zFile,zArg));
+        }else{
+          sqlite3_str_appendf(pResult, ", NULL");
+        }
+      }
+    }
+    sqlite3_result_text(ctx, sqlite3_str_finish(pResult), -1, sqlite3_free);
+  }
+  sqlite3_free_filename(zFile);
+  sqlite3_free(zErr);
 }
 #endif /* SQLITE_DEBUG */
 
@@ -2635,6 +2717,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(abs,                1, 0, 0, absFunc          ),
 #ifdef SQLITE_DEBUG
     FUNCTION(fpdecode,           3, 0, 0, fpdecodeFunc     ),
+    FUNCTION(parseuri,          -1, 0, 0, parseuriFunc     ),
 #endif
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
