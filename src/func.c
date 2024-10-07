@@ -2813,7 +2813,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(sqrt,              1, sqrt,      math1Func   ),
     MFUNCTION(radians,           1, degToRad,  math1Func   ),
     MFUNCTION(degrees,           1, radToDeg,  math1Func   ),
-    FUNCTION(pi,                 0, 0, 0,      piFunc      ),
+    MFUNCTION(pi,                0, 0,         piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
     INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
