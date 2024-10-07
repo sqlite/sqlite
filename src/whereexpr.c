@@ -213,20 +213,25 @@ static int isLikeOrGlob(
      z = (u8*)pRight->u.zToken;
   }
   if( z ){
-
-    /* Count the number of prefix characters prior to the first wildcard.
-    ** If the underlying database has a UTF16LE encoding, then only consider
-    ** ASCII characters.  Note that the encoding of z[] is UTF8 - we are
-    ** dealing with only UTF8 here in this code, but the database engine
-    ** itself might be processing content using a different encoding. */
+    /* Count the number of prefix bytes prior to the first wildcard.
+    ** or U+fffd character.  If the underlying database has a UTF16LE
+    ** encoding, then only consider ASCII characters.  Note that the
+    ** encoding of z[] is UTF8 - we are dealing with only UTF8 here in
+    ** this code, but the database engine itself might be processing
+    ** content using a different encoding. */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
       if( c==wc[3] && z[cnt]!=0 ){
         cnt++;
-      }else if( c>=0x80 && ENC(db)==SQLITE_UTF16LE ){
-         cnt--;
-         break;
+      }else if( c>=0x80 ){
+        const u8 *z2 = z+cnt-1;
+        if( sqlite3Utf8Read(&z2)==0xfffd || ENC(db)==SQLITE_UTF16LE ){
+          cnt--;
+          break;
+        }else{
+          cnt = (int)(z2-z);
+        }
       }
     }
 
@@ -238,7 +243,7 @@ static int isLikeOrGlob(
     ** range search. The third is because the caller assumes that the pattern
     ** consists of at least one character after all escapes have been
     ** removed.  */
-    if( (cnt>1 || (cnt>0 && z[0]!=wc[3])) && 255!=(u8)z[cnt-1] ){
+    if( (cnt>1 || (cnt>0 && z[0]!=wc[3])) && ALWAYS(255!=(u8)z[cnt-1]) ){
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */
