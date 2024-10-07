@@ -280,4 +280,6 @@ int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
 int sqlite3PagerWalSystemErrno(Pager*);
 #endif
 
+void sqlite3PagerSetCommitTime(Pager *pPager, u64 *aCommitTime);
+
 #endif /* SQLITE_PAGER_H */

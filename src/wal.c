@@ -810,6 +810,7 @@ struct Wal {
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
 #endif
+  u64 *aCommitTime;
 };
 
 /*
@@ -5820,6 +5821,12 @@ int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame){
 int sqlite3WalJournalMode(Wal *pWal){
   assert( pWal );
   return (isWalMode2(pWal) ? PAGER_JOURNALMODE_WAL2 : PAGER_JOURNALMODE_WAL);
+}
+
+void sqlite3WalSetCommitTime(Wal *pWal, u64 *aCommitTime){
+  if( pWal ){
+    pWal->aCommitTime = aCommitTime;
+  }
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

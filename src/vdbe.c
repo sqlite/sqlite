@@ -3955,6 +3955,11 @@ case OP_AutoCommit: {
   assert( p->bIsReader );
 
   if( desiredAutoCommit!=db->autoCommit ){
+
+    u64 aCommit[COMMIT_TIME_N];
+    memset(aCommit, 0, sizeof(aCommit));
+    sqlite3CommitTimeSet(aCommit, COMMIT_TIME_START);
+
     if( iRollback ){
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
@@ -3979,7 +3984,11 @@ case OP_AutoCommit: {
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
     }
+    sqlite3CommitTimeSet(aCommit, COMMIT_TIME_BEFORE_HALT);
+    p->aCommitTime = aCommit;
     hrc = sqlite3VdbeHalt(p);
+    p->aCommitTime = 0;
+    sqlite3CommitTimeSet(aCommit, COMMIT_TIME_AFTER_HALT);
     if( (hrc & 0xFF)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
       db->autoCommit = (u8)(1-desiredAutoCommit);
@@ -3995,6 +4004,8 @@ case OP_AutoCommit: {
     }else{
       rc = SQLITE_ERROR;
     }
+    sqlite3CommitTimeSet(aCommit, COMMIT_TIME_FINISH);
+    if( desiredAutoCommit ) sqlite3CommitTimeLog(aCommit);
     goto vdbe_return;
   }else{
     sqlite3VdbeError(p,

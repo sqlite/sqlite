@@ -137,6 +137,8 @@ struct VdbeCursor {
   ** static element declared in the structure.  nField total array slots for
   ** aType[] and nField+1 array slots for aOffset[] */
   u32 aType[1];           /* Type values record decode.  MUST BE LAST */
+
+  u8 *aCommit;
 };
 
 /* Return true if P is a null-only cursor
@@ -514,6 +516,7 @@ struct Vdbe {
   int nScan;              /* Entries in aScan[] */
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
+  u64 *aCommitTime;
 };
 
 /*
