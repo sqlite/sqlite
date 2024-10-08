@@ -5485,6 +5485,25 @@ void sqlite3CommitTimeSet(u64 *aCommit, int iCommit){
     aCommit[iCommit] = sqlite3STimeNow();
   }
 }
+void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepare){
+  u64 i1 = aPrepare[PREPARE_TIME_START];
+  assert( PREPARE_TIME_START==0 && PREPARE_TIME_FINISH==PREPARE_TIME_N-1 );
+  if( aPrepare[PREPARE_TIME_FINISH]>(i1+PREPARE_TIME_TIMEOUT) ){
+    int nByte = nSql;
+    char *zStr = 0;
+    int ii;
+    for(ii=1; ii<PREPARE_TIME_N; ii++){
+      zStr = sqlite3_mprintf("%z%s%d", zStr, (zStr?", ":""), 
+        (aPrepare[ii]==0 ? 0 : (int)(aPrepare[ii] - i1))
+      );
+    }
+    if( nByte<0 ){ nByte = sqlite3Strlen30(zSql); }
+    sqlite3_log(SQLITE_WARNING, 
+        "slow prepare (v=1): (%s) [%.*s]", zStr, nByte, zSql
+    );
+    sqlite3_free(zStr);
+  }
+}
 
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE

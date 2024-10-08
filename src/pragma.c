@@ -426,6 +426,7 @@ void sqlite3Pragma(
   Vdbe *v = sqlite3GetVdbe(pParse);  /* Prepared statement */
   const PragmaName *pPragma;   /* The pragma */
 
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINPRAGMA);
   if( v==0 ) return;
   sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
@@ -866,6 +867,7 @@ void sqlite3Pragma(
   */
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINCACHESIZE);
     if( !zRight ){
       returnSingleInt(v, pDb->pSchema->cache_size);
     }else{
@@ -873,6 +875,7 @@ void sqlite3Pragma(
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
+    sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDCACHESIZE);
     break;
   }
 
@@ -2759,6 +2762,7 @@ void sqlite3Pragma(
 pragma_out:
   sqlite3DbFree(db, zLeft);
   sqlite3DbFree(db, zRight);
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDPRAGMA);
 }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*****************************************************************************

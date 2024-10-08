@@ -3228,7 +3228,9 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
   BtShared *pBt = p->pBt;
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
+  sqlite3PrepareTimeSet(p->db->aPrepareTime, PREPARE_TIME_BEGINSETCACHESIZE);
   sqlite3PagerSetCachesize(pBt->pPager, mxPage);
+  sqlite3PrepareTimeSet(p->db->aPrepareTime, PREPARE_TIME_ENDSETCACHESIZE);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }

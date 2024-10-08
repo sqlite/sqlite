@@ -1826,7 +1826,28 @@ struct sqlite3 {
   */
   u32 aCommit[5];
 #endif
+
+  u64 *aPrepareTime;
 };
+
+#define PREPARE_TIME_START 0
+#define PREPARE_TIME_BEGINPARSE 1
+#define PREPARE_TIME_BEGINPRAGMA 2
+#define PREPARE_TIME_BEGINCACHESIZE 3
+#define PREPARE_TIME_BEGINSETCACHESIZE 4
+#define PREPARE_TIME_ENDSETCACHESIZE 5
+#define PREPARE_TIME_ENDCACHESIZE 6
+#define PREPARE_TIME_ENDPRAGMA 7
+#define PREPARE_TIME_ENDPARSE 8
+#define PREPARE_TIME_FINISH 9
+
+#define PREPARE_TIME_N 10
+
+#define sqlite3PrepareTimeSet(x,y) sqlite3CommitTimeSet(x,y)
+void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepareTime);
+
+#define PREPARE_TIME_TIMEOUT (2 * 1000 * 1000)    /* 2 second timeout */
+
 
 /*
 ** Candidate values for sqlite3.eConcurrent

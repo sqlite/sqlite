@@ -782,14 +782,18 @@ static int sqlite3Prepare(
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
+      sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINPARSE);
       sqlite3RunParser(&sParse, zSqlCopy);
+      sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDPARSE);
       sParse.zTail = &zSql[sParse.zTail-zSqlCopy];
       sqlite3DbFree(db, zSqlCopy);
     }else{
       sParse.zTail = &zSql[nBytes];
     }
   }else{
+    sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINPARSE);
     sqlite3RunParser(&sParse, zSql);
+    sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDPARSE);
   }
   assert( 0==sParse.nQueryLoop );
 
@@ -850,6 +854,12 @@ static int sqlite3LockAndPrepare(
 ){
   int rc;
   int cnt = 0;
+  u64 *aPrepareSave = db->aPrepareTime;
+
+  u64 aPrepareTime[PREPARE_TIME_N];
+  memset(aPrepareTime, 0, sizeof(aPrepareTime));
+  sqlite3PrepareTimeSet(aPrepareTime, PREPARE_TIME_START);
+  db->aPrepareTime = aPrepareTime;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( ppStmt==0 ) return SQLITE_MISUSE_BKPT;
@@ -875,6 +885,11 @@ static int sqlite3LockAndPrepare(
   db->busyHandler.nBusy = 0;
   sqlite3_mutex_leave(db->mutex);
   assert( rc==SQLITE_OK || (*ppStmt)==0 );
+
+  db->aPrepareTime = aPrepareSave;
+  sqlite3PrepareTimeSet(aPrepareTime, PREPARE_TIME_FINISH);
+  sqlite3PrepareTimeLog(zSql, nBytes, aPrepareTime);
+
   return rc;
 }
 
