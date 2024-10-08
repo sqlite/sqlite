@@ -6436,6 +6436,7 @@ static void output_redir(ShellState *p, FILE *pfNew){
     sqlite3_fputs("Output already redirected.\n", stderr);
   }else{
     p->out = pfNew;
+    setCrnlMode(p);
     if( p->mode==MODE_Www ){
       sqlite3_fputs(
         "<!DOCTYPE html>\n"
@@ -6491,6 +6492,7 @@ static void output_reset(ShellState *p){
   }
   p->outfile[0] = 0;
   p->out = stdout;
+  setCrnlMode(p);
 }
 #else
 # define output_redir(SS,pfO)
@@ -10239,7 +10241,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef SQLITE_OMIT_POPEN
       eputz("Error: pipes are not supported in this OS\n");
       rc = 1;
-      p->out = stdout;
 #else
       p->in = sqlite3_popen(azArg[1]+1, "r");
       if( p->in==0 ){
@@ -12620,6 +12621,14 @@ static void main_init(ShellState *data) {
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
+
+  /* By default, come up in O_BINARY mode.  That way, the default output is
+  ** the same for Windows and non-Windows systems.  Use the ".crnl on"
+  ** command to change into O_TEXT mode to do automatic NL-to-CRLF
+  ** conversions on output for Windows.  Windows console output is not
+  ** subject to the crnlMode setting and is unaffected either way. This
+  ** setting only affects output going into a file or pipe. */
+  data->crnlMode = 0;
 }
 
 /*
