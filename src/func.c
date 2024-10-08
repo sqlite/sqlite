@@ -2706,7 +2706,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
-    FUNCTION2(subtype,           1, 0, 0, subtypeFunc, SQLITE_FUNC_TYPEOF),
+    FUNCTION2(subtype,           1, 0, 0, subtypeFunc,
+                                           SQLITE_FUNC_TYPEOF|SQLITE_SUBTYPE),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION2(octet_length,      1, 0, 0, bytelengthFunc,SQLITE_FUNC_BYTELEN),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
@@ -2812,7 +2813,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(sqrt,              1, sqrt,      math1Func   ),
     MFUNCTION(radians,           1, degToRad,  math1Func   ),
     MFUNCTION(degrees,           1, radToDeg,  math1Func   ),
-    FUNCTION(pi,                 0, 0, 0,      piFunc      ),
+    MFUNCTION(pi,                0, 0,         piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
     INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
