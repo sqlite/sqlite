@@ -4952,10 +4952,9 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-#if defined(_WIN32) && !defined(SQLITE_U8TEXT_ONLY) \
-                    && !defined(SQLITE_U8TEXT_STDIO)
+#if defined(_WIN32)
   ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
-#endif /* _WIN32 && U8TEXT_ONLY && U8TEXT_STDIO */
+#endif
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -8574,8 +8573,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
-#if !defined(_WIN32) || defined(SQLITE_U8TEXT_ONLY) \
-                     || defined(SQLITE_U8TEXT_STDIO)
+#if !defined(_WIN32)
     sqlite3_fputs("The \".crnl\" command is disable in this build.\n", p->out);
 #else
     if( nArg==2 ){
