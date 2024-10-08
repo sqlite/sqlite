@@ -106,7 +106,7 @@ proc hwaci-bin-define {binName {defName {}}} {
   msg-checking "Looking for $binName ... "
   if {"" ne $check} {
     set lbl $check
-    if {" _ 0 _ " eq $check} {
+    if {"<not found>" eq $check} {
       set lbl "not found"
       set check ""
     }
@@ -116,7 +116,7 @@ proc hwaci-bin-define {binName {defName {}}} {
   set check [find-executable-path $binName]
   if {"" eq $check} {
     msg-result "not found"
-    set hwaci-cache-($cacheName) " _ 0 _ "
+    set hwaci-cache-($cacheName) "<not found>"
   } else {
     msg-result $check
     set hwaci-cache-($cacheName) $check
@@ -143,8 +143,7 @@ proc hwaci-first-bin-of {args} {
 
 ########################################################################
 # Looks for `bash` binary and dies if not found. On success, defines
-# BIN_BASH to the full path to bash and returns that value. We
-# _require_ bash because it's the SHELL value used in our makefiles.
+# BIN_BASH to the full path to bash and returns that value.
 proc hwaci-require-bash {} {
   set bash [hwaci-bin-define bash]
   if {"" eq $bash} {

@@ -35,7 +35,6 @@ options {
   tcl=1                => {Disable building accessory programs that require TCL-dev}
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
-  releasemode          => {libtool link to release mode}
   with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always.}
   editline=0           => {BSD editline support}
   readline=1           => {Disable readline support}
@@ -64,6 +63,14 @@ options {
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
   dump-defines=1       => {Disable dump of autosetup defines to $DUMP_DEFINES_FILE}
 }
+
+########################################################################
+# Notes about certain historical flags:
+#
+#  --releasemode: libtool-specific (which we don't have now)
+#
+########################################################################
+
 
 set srcdir $autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]

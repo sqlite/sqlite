@@ -181,6 +181,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 bindir = @bindir@
 includedir = @includedir@
 INSTALL = @BIN_INSTALL@
+INSTALL_noexec = $(INSTALL) --mode=0644
 #XX#LIBTOOL = ./libtool
 #XX#ALLOWRELEASE = @ALLOWRELEASE@
 #XX#
@@ -190,7 +191,6 @@ INSTALL = @BIN_INSTALL@
 #XX#LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
 TLINK = $(TCC) $(TLINK_EXTRAS)
-TINSTALL = $(INSTALL)
 
 #
 # You should not have to change anything below this line
@@ -748,6 +748,36 @@ $(libsqlite3.LIB):	$(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
+install.bindir = $(DESTDIR)$(bindir)
+install.libdir = $(DESTDIR)$(libdir)
+install.includedir = $(DESTDIR)$(prefix)/include
+$(install.bindir) $(install.libdir) $(install.includedir):
+	$(INSTALL) -d "$@"
+
+# Install the $(libsqlite3.DLL) as $(libsqlite3.DLL).@RELEASE@ and
+# create symlinks which point to it. Do we really need all of this
+# hoop-jumping? Can we not simply install the .so as-is?
+#
+# The historical SQLite build always used a version number of 0.8.6
+# for reasons lost to history.
+install-dll: $(install.libdir) $(libsqlite3.DLL)
+	$(INSTALL) $(libsqlite3.DLL) "$(install.libdir)"
+	cd "$(install.libdir)"; \
+		rm -f $(libsqlite3.DLL).3 $(libsqlite3.DLL).@RELEASE@; \
+		mv $(libsqlite3.DLL) $(libsqlite3.DLL).@RELEASE@; \
+		ln -s $(libsqlite3.DLL).@RELEASE@ $(libsqlite3.DLL).3; \
+		ln -s $(libsqlite3.DLL).3 $(libsqlite3.DLL)
+
+# Install $(libsqlite3.LIB)
+install-lib: $(install.libdir) $(libsqlite3.LIB)
+	$(INSTALL_noexec) $(libsqlite3.LIB) "$(install.libdir)"
+
+install-includes: sqlite3.h $(install.includedir)
+	$(INSTALL_noexec) sqlite3.h "$(install.includedir)"
+
+install-libs: install-lib install-dll
+install: install-libs install-includes
+
 #XX#libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 #XX#	$(TLINK) -no-undefined -o $@ tclsqlite.lo \
 #XX#		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
@@ -762,8 +792,18 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 cli: sqlite3$(TEXE)
 all: cli
 
+install-cli: sqlite3$(TEXT) $(install.bindir)
+	$(INSTALL) -s sqlite3$(TEXT) "$(install.bindir)"
+
+install: install-cli
+
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
 	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite)
+
+install-diff: sqldiff$(TEXE) $(install.bindir)
+	$(INSTALL) -s sqldiff$(TEXT) "$(install.bindir)"
+
+#install: install-diff
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
 	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite)
@@ -781,6 +821,11 @@ RSYNC_OPT = \
 
 sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite)
+
+install-rsync: sqlite3-rsync$(TEXE) $(install.bindir)
+	$(INSTALL) sqlite3-rsync$(TEXT) "$(install.bindir)"
+
+#install: install-rsync
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1755,12 +1800,12 @@ tidy:
 #
 clean:	tidy
 	rm -rf omittest* testrunner* testdir*
-	-gmake -C ext/wasm distclean
+	-gmake -C ext/wasm distclean 2>/dev/null; true
 
 # Clean up everything.  No exceptions.
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
-	-gmake -C ext/wasm distclean
+	-gmake -C ext/wasm distclean 2>/dev/null; true
 
 #XX##
 #XX## Windows section
