@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sautosetup\sbranch.
-D 2024-10-05T12:06:31.859
+C Make\stool/emcc.sh.in\sBourne-friendly.
+D 2024-10-08T16:05:54.098
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2132,7 +2132,7 @@ F tool/custom.txt 6cdf298f43e1db4bb91406d14777669b8fb1df790837823fa6754c4308decc
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
-F tool/emcc.sh.in bc3f3a29f5a7272afe605a483d6463617f27d31c74fa9135c7eaa3b844345b74
+F tool/emcc.sh.in ccd415e9784d8efdb6e29bd2289bff57d37a928122620a244fcb99f445ae276c
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -2235,8 +2235,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6838b7b5d6130b1e0af9a71ad2c5922b1ef35f082907dffeed03811e1e62406f 2f7eab381e16760952d1c90a9119d2a217933f0136442d8f6eeb6d95e366ca4f
-R 718af76a1b8b829ff662e805c69f5727
+P 6cbb05fde1b74ced6d56d6ec7f815c989697381531175daccebc4311bfef61d9
+R 2c8a1ade7d9f0039a6c4438b17ebd26a
 U stephan
-Z d5ebe1dc79c6b40a021966341f66c463
+Z 1d93be3fe611f8efdba1c2ce6cdf2d85
 # Remove this line to create a well-formed Fossil manifest.

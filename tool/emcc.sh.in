@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/sh
+# ^^^^^^^ Please try to keep this script Bourne-compatible.
 ########################################################################
 # WARNING: emcc.sh is generated from emcc.sh.in by the configure
 # process. Do not edit emcc.sh directly, as it may be deleted or
@@ -16,7 +17,7 @@ EMSDK_ENV="@EMSDK_ENV@"
 emcc="@BIN_EMCC@"
 
 if [x = "x${emcc}" ]; then
-    emcc=$(which emcc 2>/dev/null)
+    emcc=`which emcc 2>/dev/null`
 fi
 
 if [ x = "x${emcc}" ]; then
@@ -53,9 +54,9 @@ if [ x = "x${emcc}" ]; then
       exit $rc
     }
   fi
-  emcc=$(which emcc 2>/dev/null)
+  emcc=`which emcc 2>/dev/null`
   if [ x = "x${emcc}" ]; then
-    echo "emcc not found in PATH. Normally that's set up by EMSDK_ENV." 1>&2
+    echo "emcc not found in PATH. Normally that's set up by ${EMSDK_ENV}." 1>&2
     exit 4
   fi
 fi
