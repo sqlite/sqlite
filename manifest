@@ -1,9 +1,9 @@
-C Get\ssome\sbasic\sinstall\srules\sworking.
-D 2024-10-08T16:06:11.707
+C Fix\sbuild\sportability\sproblems\sdiscovered\son\san\sARM\sOpenBSD\ssystem.
+D 2024-10-08T16:33:42.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in fc2ef4e2955bf2f773ccefdadb5d8c27b66f04556178f3112d56f0a95c92255b
+F Makefile.in 4cb6e44af5d0ed2a1ad347f008c00d3ddeae8f1dd2089a1348e7c6aa6be8e63d
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 9c6d80d9d103fa42e931f4c464884a5e577fae8563acc7589bff4e43fbe8f864
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2235,8 +2235,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a69ab88474a7b917679633e366364b05a99c348dabc37f1bbc5010f7005d5500
-R ba28a71964131b9ba3350911d33dc11d
+P e9ab211f82f789c89ab52e8d5fe7526c09943b2b8b3002fa7a16fb2b40addc8f
+R 83d7d512ee4d92805faea47e6da138cb
 U stephan
-Z 03e49a16b7d4bc0546430cb7f164dfa8
+Z 65540e91f90dac7f75bdfc0fac8976f3
 # Remove this line to create a well-formed Fossil manifest.

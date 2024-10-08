@@ -23,6 +23,7 @@ LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
 LDFLAGS_MATH = @LDFLAGS_MATH@
 LDFLAGS_RPATH = @LDFLAGS_RPATH@
 LDFLAGS_READLINE = @LDFLAGS_READLINE@
+LDFLAGS_PTHREAD = @LDFLAGS_PTHREAD@
 LD = @LD@
 AR = @AR@
 
@@ -181,7 +182,9 @@ pkgconfigdir = $(libdir)/pkgconfig
 bindir = @bindir@
 includedir = @includedir@
 INSTALL = @BIN_INSTALL@
-INSTALL_noexec = $(INSTALL) --mode=0644
+INSTALL_noexec = $(INSTALL) -m 0644
+# ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
+
 #XX#LIBTOOL = ./libtool
 #XX#ALLOWRELEASE = @ALLOWRELEASE@
 #XX#
@@ -731,7 +734,8 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 libsqlite3.DLL = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
 LDFLAGS_libsqlite = \
-  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
+  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
+  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 # LDFLAGS_libsqlite should be used with any target which
 # either results in building libsqlite3.so, builds sqlite3.c
 # directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
