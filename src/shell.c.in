@@ -1448,6 +1448,7 @@ struct ShellState {
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
+  u8 crnlMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
@@ -1852,6 +1853,19 @@ static void outputModePop(ShellState *p){
 }
 
 /*
+** Set output mode to text or binary for Windows.
+*/
+static void setCrnlMode(ShellState *p){
+#ifdef _WIN32
+  if( p->crnlMode ){
+    sqlite3_fsetmode(p->out, _O_TEXT);
+  }else{
+    sqlite3_fsetmode(p->out, _O_BINARY);
+  }
+#endif    
+}
+
+/*
 ** Output the given string as a hex-encoded blob (eg. X'1234' )
 */
 static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
@@ -1901,9 +1915,10 @@ static const char *unused_string(
 **
 ** See also: output_quoted_escaped_string()
 */
-static void output_quoted_string(FILE *out, const char *z){
+static void output_quoted_string(ShellState *p, const char *z){
   int i;
   char c;
+  FILE *out = p->out;
   sqlite3_fsetmode(out, _O_BINARY);
   if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
@@ -1929,7 +1944,7 @@ static void output_quoted_string(FILE *out, const char *z){
     }
     sqlite3_fputs("'", out);
   }
-  sqlite3_fsetmode(out, _O_TEXT);
+  setCrnlMode(p);
 }
 
 /*
@@ -1941,9 +1956,10 @@ static void output_quoted_string(FILE *out, const char *z){
 ** This is like output_quoted_string() but with the addition of the \r\n
 ** escape mechanism.
 */
-static void output_quoted_escaped_string(FILE *out, const char *z){
+static void output_quoted_escaped_string(ShellState *p, const char *z){
   int i;
   char c;
+  FILE *out = p->out;
   sqlite3_fsetmode(out, _O_BINARY);
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
@@ -1996,7 +2012,7 @@ static void output_quoted_escaped_string(FILE *out, const char *z){
       sqlite3_fprintf(out, ",'%s',char(10))", zNL);
     }
   }
-  sqlite3_fsetmode(stdout, _O_TEXT);
+  setCrnlMode(p);
 }
 
 /*
@@ -2793,7 +2809,7 @@ static int shell_callback(
         }
         sqlite3_fputs(p->rowSeparator, p->out);
       }
-      sqlite3_fsetmode(p->out, _O_TEXT);
+      setCrnlMode(p);
       break;
     }
     case MODE_Insert: {
@@ -2821,9 +2837,9 @@ static int shell_callback(
           sqlite3_fputs("NULL", p->out);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
           if( ShellHasFlag(p, SHFLG_Newlines) ){
-            output_quoted_string(p->out, azArg[i]);
+            output_quoted_string(p, azArg[i]);
           }else{
-            output_quoted_escaped_string(p->out, azArg[i]);
+            output_quoted_escaped_string(p, azArg[i]);
           }
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           sqlite3_fputs(azArg[i], p->out);
@@ -2852,9 +2868,9 @@ static int shell_callback(
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
         }else if( ShellHasFlag(p, SHFLG_Newlines) ){
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }else{
-          output_quoted_escaped_string(p->out, azArg[i]);
+          output_quoted_escaped_string(p, azArg[i]);
         }
       }
       sqlite3_fputs(");\n", p->out);
@@ -2907,7 +2923,7 @@ static int shell_callback(
       if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
-          output_quoted_string(p->out, azCol[i]);
+          output_quoted_string(p, azCol[i]);
         }
         sqlite3_fputs(p->rowSeparator, p->out);
       }
@@ -2917,7 +2933,7 @@ static int shell_callback(
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           sqlite3_fputs("NULL", p->out);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           sqlite3_fputs(azArg[i], p->out);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
@@ -2932,7 +2948,7 @@ static int shell_callback(
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
         }else{
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }
       }
       sqlite3_fputs(p->rowSeparator, p->out);
@@ -8429,7 +8445,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   /* Undocumented.  Legacy only.  See "crnl" below */
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
-    eputz("The \".binary\" command is deprecated. Use \".crnl\" instead.\n");
+    eputz("The \".binary\" command is deprecated.\n");
     rc = 1;
   }else
 
@@ -8561,11 +8577,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_fputs("The \".crnl\" command is disable in this build.\n", p->out);
 #else
     if( nArg==2 ){
-      if( booleanValue(azArg[1]) ){
-        sqlite3_fsetmode(p->out, _O_TEXT);
-      }else{
-        sqlite3_fsetmode(p->out, _O_BINARY);
-      }
+      p->crnlMode = booleanValue(azArg[1]);
+      setCrnlMode(p);
     }else{
       eputz("Usage: .crnl on|off\n");
       rc = 1;
