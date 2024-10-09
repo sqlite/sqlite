@@ -1,11 +1,11 @@
-C Add\squotes\saround\s$(CC)\sin\stclextension-related\stargets\sso\sthat\sa\sCC\sof\s"ccache\scc"\sworks.
-D 2024-10-09T17:47:43.543
+C Improvements\sto\sMakefile.msc:\s(1)\sAttempt\sto\sfind\ssane\svalues\sfor\skey\nvariables\sbased\son\sthe\svalue\sof\sTCLDIR.\s\s(2)\sDefault\sto\sTCLVERSION\s90\sinstead\nof\s86.\s\s(3)\sAdd\sthe\s"tcl-env"\starget\sthat\sshows\sthe\svalues\sof\skey\svariables\nassociated\swith\sTCL.
+D 2024-10-09T20:05:26.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in e504a9f003b2de41447b81296d9a6988a67ffabc34fa396b60ffd89b0c63a7bf
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 13357270c2434dfda7e38dd95bd1d1bd7f832c77fe275ec867c12d14d7a4631b
+F Makefile.msc c6abbbe25cef6bf1eb255884cd9137b6afa4f850f4bdc78ba718f4035c35000b
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28e2b9a23f61530bc5eea364a74817fca03fa31f70d4eefb0942a89c1d79f765
-R 5d1fcd827a8facd387ccc45fec2ba4a3
-U stephan
-Z 4ca8372b73f0c06cd72b28d7956268de
+P e8f719d13fbcbaf1b52b421d7af59759b1b4692d4010a68d5865dfeaf3cf8cb0
+R 6adacab87cffb89c84a1bbdbcff4792d
+U drh
+Z f45d0adbf7e7e6e176374a9b7492aa02
 # Remove this line to create a well-formed Fossil manifest.
