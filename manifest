@@ -1,11 +1,11 @@
-C Improved\shandling\sof\sunicode\scharacters\sin\sthe\sLIKE\soptimization.\nFollow-up\sto\s[bce52ce2a6e7f3d3].
-D 2024-10-09T11:52:29.532
+C Changes\sto\sthe\sTCL\sextension\sand\show\sit\sis\sbuilt,\ssuggested\sby\sJan\sNijtmans.
+D 2024-10-09T13:19:21.954
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 07a52a88eabbb996b91b82f17e7a6b11202845b06056c620b2c4f3a7e473554f
+F Makefile.in a994d7642ebb6cb9cd49884a929ed33dc6b309b6bc55ea85c33db9ec5aa96af6
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc 9c6d80d9d103fa42e931f4c464884a5e577fae8563acc7589bff4e43fbe8f864
+F Makefile.msc 13357270c2434dfda7e38dd95bd1d1bd7f832c77fe275ec867c12d14d7a4631b
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -27,10 +27,10 @@ F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.ac 0deb5d6c49c8119f75f436488219fc043127d72057af5dfba2c9ce096a5734bc
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
-F autoconf/tea/pkgIndex.tcl.in b9eb6dd37f64e08e637d576b3c83259814b9cddd78bec4af2e5abfc6c5c750ce
+F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
 F autoconf/tea/tclconfig/install-sh bdd5e293591621ae60d9824d86a4b1c5f22c3d00
 F autoconf/tea/tclconfig/tcl.m4 c6e5f2fc7178f40d087403daa044ef3b86a8e30793f3b121bdcbdf152c6a776a
-F autoconf/tea/win/makefile.vc 2c478a9a962e48b2bf9062734e04d7c63c556e217095419173f9d7938d7d78f7
+F autoconf/tea/win/makefile.vc 9b33af4214a5c8360549b96380f55ece1a2df76a51ab4c726296e5c43d8a2227
 F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea00342d1a1a7eaa19cb
 F autoconf/tea/win/rules.vc 7b3bb2ef32ade0f3f14d951231811678722725e3bca240dd9727ae0dfe10f6a5
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
@@ -778,7 +778,7 @@ F src/sqliteInt.h ad02397dc4d22b77f9a331412d46e4c1e49459dd386fba8373fa148998e1e7
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c c6888598f08dee3d9112a38ef42c8f5c89ca7f3190f4694744d0b84250f4bf8c
+F src/tclsqlite.c b3fea4c31c22e7b545681221a53eba9a358602706e04e066f88e2c63d99fe12f
 F src/tclsqlite.h c6af51f31a2b2172d674608763a4b98fdf5cd587e4025053e546fb8077757262
 F src/test1.c 8bf8b74145b768f42386787f93f6d6dad7bc400a4ee2d50e4ad5a06a20a97ef1
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -1728,7 +1728,7 @@ F test/thread005.test 50d10b5684399676174bd96c94ad4250b1a2c8b6
 F test/thread1.test df115faa10a4ba1d456e9d4d9ec165016903eae4
 F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread3.test a12656a56cdf67acb6a2ff7638826c6d6a645f79909d86df521045ad31cf547d
-F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
+F test/thread_common.tcl b3b19a769fe30ef5537cdfa60acd49b78f771301627720d1add2d3bac77d9039
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
 F test/threadtest3.c 655bff6c0895ec03f014126aa65e808fac9aae8c5a7a7da58a510cbe8b43b781
@@ -2216,8 +2216,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1218a203483cecdc8c9abdc970ad68eba0dfa9cafbed95c63cefb7e8af8babee
-R caf8280fa8e7a7de178081dbae97667f
+P 9d0eb3980409115f2f6fd1720a03f34e3968c93be55feafdfef20bf5f711c17f
+R 525968629ef8a97f7864de3317394574
+T *branch * make-install-fixes
+T *sym-make-install-fixes *
+T -sym-trunk *
 U drh
-Z 3adb35abb1bf3d691bca5f7e2785786d
+Z 004d1cd0c9856b8ead77a78c5a8afb90
 # Remove this line to create a well-formed Fossil manifest.

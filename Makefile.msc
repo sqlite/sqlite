@@ -1824,7 +1824,7 @@ tclsqlite3.def:	tclsqlite.lo
 
 pkgIndex.tcl:	$(TOP)\VERSION
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
-		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] Sqlite3] \
 			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
 	)
 
