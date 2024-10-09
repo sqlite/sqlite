@@ -1376,11 +1376,11 @@ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
 		$(TOP)/VERSION $(BTCL) # has_tclsh84
 	$(BTCL) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
-#XX#sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION has_tclsh84
-#XX#	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
-#XX#	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
-#XX#	cat $(TOP)/VERSION | $(TCLSH_CMD) $(TOP)/tool/replace.tcl exact . , >>$@
-#XX#	echo '#endif' >>sqlite3rc.h
+sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(BTCL) # has_tclsh84
+	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
+	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
+	cat $(TOP)/VERSION | $(BTCL) $(TOP)/tool/replace.tcl exact . , >>$@
+	echo '#endif' >>sqlite3rc.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
@@ -1833,6 +1833,7 @@ tidy:
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh*
 	rm -f tclsqlite3.c
+	rm -f sqlite3rc.h
 # FIXME? (rm *.def) will remove auto.def (part of autosetup)
 #
 # Removes build products and test logs.  Retains ./configure outputs.
