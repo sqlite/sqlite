@@ -323,10 +323,28 @@ hwaci-if-opt-truthy with-debug {
 ########################################################################
 # TCL...
 #
-# Under construction. An attempt to port most of the
-# --with-tcl/--with-tclsh logic from configure.ac to autosetup.  This
-# part would actually be easier in the shell, and some of it will
-# seemingly be impossible without shell code.
+# hwaci-check-tcl performs most of the --with-tcl and --with-tclsh
+# handling. Some related bits and pieces are performed before and
+# after that function is called.
+#
+# Important [define]'d vars:
+#
+#  - HAVE_TCL indicates whether we have a tclsh suitable for building
+#    the TCL SQLite extension and, by extension, the testing
+#    infrastructure. This must only be 1 for environments where
+#    tclConfig.sh can be found.
+#
+#  - TCLSH_CMD is the path to the canonical tclsh. It never refers to
+#    jimtcl.
+#
+#  - TCL_CONFIG_SH is the path to tclConfig.sh or "".
+#
+#  - TCLLIBDIR is the dir to which libtclsqlite3 gets installed.
+#
+#  - TCLLIB_RPATH = the -rpath flag specific to libtclsqlite3.
+#
+#  - BTCL = the path to the tcl interpreter used for in-tree code
+#    generation.  It may be jimtcl or the canonical tclsh.
 define HAVE_TCL 0
 define TCLSH_CMD {exit 1}
 proc hwaci-check-tcl {} {
@@ -334,7 +352,6 @@ proc hwaci-check-tcl {} {
   puts "Checking for a suitable tcl... "
   set optTcl [hwaci-opt-truthy tcl]
   set use_tcl $optTcl
-  set tclsh ""
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
 #  puts "hwaci-check-tcl: use_tcl ${use_tcl}"
@@ -426,7 +443,33 @@ proc hwaci-check-tcl {} {
 #  puts "hwaci-check-tcl: with_tcl=$with_tcl"
 #  puts "hwaci-check-tcl: cfg=$cfg"
 #  puts "hwaci-check-tcl: use_tcl ${use_tcl}"
-}
+
+  if {$use_tcl} {
+    # Set up the TCLLIBDIR and TCLLIB_RPATH
+    set tcllibdir [getenv TCLLIBDIR ""]
+    if {"" eq $tcllibdir} {
+      if {[catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
+        foreach i $result {
+          if {[file isdir $i]} {
+            set tcllibdir $i
+            break
+          }
+        }
+      } else {
+        hwaci-warn "Cannot determine TCLLIBDIR"
+      }
+    }
+    set tclrpath ""
+    if {"" ne $tcllibdir} {
+      set tcllibdir "${tcllibdir}/sqlite3"
+      set rp [get-define SH_LINKRPATH]
+      set tclrpath [string map [list "%s" $tcllibdir] $rp]
+    }
+    define TCLLIBDIR $tcllibdir
+    define TCLLIB_RPATH $tclrpath
+    #hwaci-error "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
+  }
+}; # hwaci-check-tcl
 
 hwaci-check-tcl
 
@@ -470,6 +513,7 @@ if {[cc-check-functions realpath]} {
 }
 puts "TCL for code generation: $cgtcl"
 unset cgtcl
+
 # /TCL
 ########################################################################
 
