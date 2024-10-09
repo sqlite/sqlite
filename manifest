@@ -1,9 +1,9 @@
-C Fix\sbuild\sportability\sproblems\sdiscovered\son\san\sARM\sOpenBSD\ssystem.
-D 2024-10-08T16:33:42.863
+C Get\smuch\sof\sthe\s--with-tcl-related\sbits\sworking.
+D 2024-10-09T04:01:14.131
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 4cb6e44af5d0ed2a1ad347f008c00d3ddeae8f1dd2089a1348e7c6aa6be8e63d
+F Makefile.in 3d237163c5cf5817eb63f2ce20119372e36f5cf48609dd22292160a26b599de4
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 9c6d80d9d103fa42e931f4c464884a5e577fae8563acc7589bff4e43fbe8f864
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def afec3012da348dd0214047f575131d0a69e1aa67588e212daf604d4393453a3b
+F auto.def 6c4f3b9d88ae343f0634a1534d3918cb3f7a215c65c85d1c3d0cce2f5dd47686
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2207,6 +2207,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
+F tool/tclConfigShToTcl.sh e385583402655b1626f7ff737a607687f84aa4660d2125c2bd7daeb91ba424ba x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
@@ -2235,8 +2236,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e9ab211f82f789c89ab52e8d5fe7526c09943b2b8b3002fa7a16fb2b40addc8f
-R 83d7d512ee4d92805faea47e6da138cb
+P ef5348dc3f5b9fbe19753ff85e4da461ee962f0790e5f9cfda6eba522576451b
+R 53257972217ca0415948a8eb62c6c23b
 U stephan
-Z 65540e91f90dac7f75bdfc0fac8976f3
+Z f49c2f1fcffe6fc0ebe3c9d93e81fc78
 # Remove this line to create a well-formed Fossil manifest.

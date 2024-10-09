@@ -143,6 +143,14 @@ HAVE_TCL = @HAVE_TCL@
 # know the specific version we want to use
 #
 TCLSH_CMD = @TCLSH_CMD@
+TCL_CONFIG_SH = @TCL_CONFIG_SH@
+
+# TCL config info from tclConfig.sh
+TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
+TCL_LIB_SPEC = @TCL_LIB_SPEC@
+TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
+TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
+
 
 # Additional options when running tests using testrunner.tcl
 # This is usually either blank, or else --status
@@ -844,13 +852,14 @@ sourcetest:	srcck1$(BEXE) sqlite3.c
 src-verify:	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
 
-
-# JimTCL is part of the autosetup suite and is suitable for certain
-# in-tree TCL jobs, but it requires that we build it with non-default
-# flags. Note that the build tree will, if no system-level tclsh is
-# found, also have a ./jimsh0. That one is a bare-bones build for the
-# configure process, whereas we need to build it with another option
-# enabled for use with the various code generators.
+#
+# JimTCL is part of the autosetup suite and is suitable for all
+# current in-tree code-generation TCL jobs, but it requires that we
+# build it with non-default flags. Note that the build tree will, if
+# no system-level tclsh is found, also have a ./jimsh0. That one is a
+# bare-bones build for the configure process, whereas we need to build
+# it with another option enabled for use with the various code
+# generators.
 #
 JIMSH = @srcdir@/jimsh
 @if CFLAGS_JIMSH

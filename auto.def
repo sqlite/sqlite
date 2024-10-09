@@ -30,8 +30,8 @@ define cross_compiling ${cross_compiling}
 #
 options {
   with-debug:=1        => {Enable debug build flags}
-  with-tclsh:          => {Full pathname of tclsh to use}
-  with-tcl:            => {Directory containing tclConfig.sh}
+  with-tclsh:PATH      => {Full pathname of tclsh to use}
+  with-tcl:DIR         => {Directory containing tclConfig.sh}
   tcl=1                => {Disable building accessory programs that require TCL-dev}
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
@@ -69,7 +69,7 @@ options {
 #
 #  --releasemode: libtool-specific (which we don't have now)
 #
-########################################################################
+#
 
 
 set srcdir $autosetup(srcdir)
@@ -94,6 +94,7 @@ if {![file exists sqlite3.pc.in]} {
 
 cc-check-tools ld ar
 
+########################################################################
 # The build process allows for using a cross-compiler.  But the default
 # action is to target the same platform that we are running on.  The
 # configure script needs to discover the following properties of the
@@ -154,7 +155,7 @@ cc-check-tools ld ar
 #        files for the readline library.  If the compiler is able
 #        to find <readline.h> on its own, then this can be blank.
 
-########################################################################
+#
 # OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
 define OPT_FEATURE_FLAGS {}
 define OPT_SHELL {}; # CFLAGS for the sqlite3 CLI app
@@ -218,6 +219,7 @@ define BUILD_CFLAGS [get-env CFLAGS {-g}]
 #
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
+#
 if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
@@ -256,30 +258,16 @@ if {1} {
   unset wasiSdkDir
 }; # --wasi-sdk-dir
 
-########################################################################
-# Check which TCL to use as a code generator
-define CFLAGS_JIMSH {}
-puts "Looking for path-resolution function for JimTCL... "
-define BTCL "\$(JIMSH)"
-if {[cc-check-functions realpath]} {
-  define-append CFLAGS_JIMSH -DHAVE_REALPATH
-} elseif {[cc-check-functions _fullpath]} {
-  # _fullpath() is a Windows API
-  define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-} else {
-  puts "Cannot find realpath() or _fullpath(). Falling back to system's TCL for code generation."
-}
-
-########################################################################
+#
 # Enable large file support (if special flags are necessary)
 cc-check-lfs
 
-########################################################################
+#
 # Check for needed/wanted data types
 cc-check-types int8_t int16_t int32_t int64_t intptr_t \
   uint8_t uint16_t uint32_t uint64_t uintptr_t
 
-########################################################################
+#
 # Check for needed/wanted functions
 cc-check-functions gmtime_r isnan localtime_r localtime_s \
   malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
@@ -288,7 +276,7 @@ hwaci-check-function-in-lib fdatasync rt
 define LDFLAGS_FDATASYNC [get-define lib_fdatasync]
 undefine lib_fdatasync
 
-########################################################################
+#
 # Check for needed/wanted headers
 cc-check-includes \
   sys/types.h sys/stat.h dlfcn.h unistd.h \
@@ -296,7 +284,8 @@ cc-check-includes \
   string.h strings.h \
   stdint.h inttypes.h
 
-# These are optional for JimTCL:
+# These are optional for JimTCL but necessary if we want to use it for
+# code generation:
 cc-check-includes dirent.h sys/time.h
 
 if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
@@ -337,157 +326,135 @@ hwaci-if-opt-truthy with-debug {
 
 ########################################################################
 # TCL...
+#
+# Under construction. An attempt to port most of the
+# --with-tcl/--with-tclsh logic from configure.ac to autosetup.  This
+# part would actually be easier in the shell, and some of it will
+# seemingly be impossible without shell code.
 define HAVE_TCL 0
 define TCLSH_CMD {exit 1}
-if {"" eq [get-define CFLAGS_JIMSH]} {
-  # We can't use JimTCL for in-tree generation on this system, so...
-  #
-  # Temporary solution for finding "a" tclsh. TODO is port the
-  # full-featured check which lives in the elseif part of this block.
-  set tclsh [hwaci-first-bin-of tclsh8.6 tclsh tclsh9.0]
-  if {"" eq $tclsh} {
-    user-error "Cannot find tclsh, which is required to build certain files."
-  }
-  define TCLSH_CMD $tclsh
-  define BTCL $tclsh
-  define HAVE_TCL 0 ; # until the following elseif block is ported
-} elseif {0} {
-  # Porting this section of configure.ac is going to be a bit of a slog...
-  set tEnable [hwaci-opt-truthy tcl]
-  set use_tcl $tEnable
+proc hwaci-check-tcl {} {
+  global top_srcdir
+  puts "Checking for a suitable tcl... "
+  set optTcl [hwaci-opt-truthy tcl]
+  set use_tcl $optTcl
   set tclsh ""
-  #set original_use_tcl ${use_tcl}
-  #########
-  # Figure out all the name of a working tclsh and parameters needed to compile against Tcl.
-  # The --with-tcl= and/or --with-tclsh= configuration arguments might be useful for this.
-  #
-  # XXX AC_ARG_WITH tclsh AS_HELP_STRING([--with-tclsh=PATHNAME],[full pathname of a tclsh to use])
-  # XXX AC_ARG_WITH tcl AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfig.sh)])
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
-
+#  puts "hwaci-check-tcl: use_tcl ${use_tcl}"
+#  puts "hwaci-check-tcl: with_tclsh=${with_tclsh}"
+#  puts "hwaci-check-tcl: with_tcl=$with_tcl"
   if {"" eq $with_tclsh && "" eq $with_tcl} {
-    # XXX if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
-    # XXX AC_CHECK_PROGS TCLSH_CMD tclsh8.6 tclsh tclsh9.0 none
-    #set with_tclsh ${TCLSH_CMD}
-    # XXX fi
     set with_tclsh [hwaci-first-bin-of tclsh8.6 tclsh tclsh9.0]
   }
 
-  if {"" ne $with_tclsh } {
-    # XXX if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
-    # XXX TCLSH_CMD=${with_tclsh}
-    set tclsh $with_tclsh
-    puts "using tclsh at \"$tclsh\""
-    if {$use_tcl} {
-      # XXX if test x"${use_tcl}" = "xyes"; then
-      #set with_tcl `${with_tclsh} <${srcdir}/tool/find_tclconfig.tcl`
-      # XXX if test x"${with_tcl}" != x; then
-      #msg-result "$TCLSH_CMD recommends the tclConfig.sh at ${with_tcl}"
-      # XXX else
-      #msg-result Warning: "$TCLSH_CMD is unable to recommend a tclConfig.sh"
-      #set use_tcl no
-      # XXX fi
-      # XXX fi
+  if {"" ne $with_tclsh} {
+    if {![file isfile $with_tclsh]} {
+      hwaci-error "TCL shell $with_tclsh is not a file"
+    } elseif {![file executable $with_tclsh]} {
+      hwaci-error "TCL shell $with_tclsh is not executable"
+    } else {
+      define TCLSH_CMD $with_tclsh
+      puts "Using tclsh at \"$with_tclsh\""
     }
-    # XXX fi
+    if {$use_tcl} {
+      #set with_tcl [exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl]
+      if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
+        set with_tcl $result
+      }
+      if {"" ne $with_tcl && [file isdir $with_tcl]} {
+        puts "$with_tclsh recommends the tclConfig.sh from $with_tcl"
+      } else {
+        puts "$with_tclsh is unable to recommand a tclConfig.sh"
+        set use_tcl 0
+      }
+    }
   }
 
-  # XXX if test x"${use_tcl}" = "xyes"; then
-  # XXX if test x"${with_tcl}" != x; then
-  # XXX if test -r ${with_tcl}/tclConfig.sh; then
-  # set tclconfig "${with_tcl}/tclConfig.sh"
-  # XXX else
-  # XXX for i in tcl8.6 tcl9.0 lib; do
-  # XXX if test -r ${with_tcl}/$i/tclConfig.sh; then
-  #set tclconfig ${with_tcl}/$i/tclConfig.sh
-  # XXX break
-  # XXX fi
-  # XXX done
-  # XXX fi
-  # XXX if test ! -r "${tclconfig}"; then
-  #user-error "no tclConfig.sh file found under ${with_tcl}"
-  # XXX fi
-  # XXX else
-  # If we have not yet found a tclConfig.sh file, look in $libdir whic is
-  # set automatically by autoconf or by the --prefix command-line option.
-  # See https://sqlite.org/forum/forumpost/e04e693439a22457
-  #set libdir ${prefix}/lib
-  # XXX if test -r ${libdir}/tclConfig.sh; then
-  #set tclconfig ${libdir}/tclConfig.sh
-  # XXX else
-  # XXX for i in tcl8.6 tcl9.0 lib; do
-  # XXX if test -r ${libdir}/$i/tclConfig.sh; then
-  #set tclconfig ${libdir}/$i/tclConfig.sh
-  # XXX break
-  # XXX fi
-  # XXX done
-  # XXX fi
-  # XXX if test ! -r "${tclconfig}"; then
-  #user-error "cannot find a usable tclConfig.sh file.
-  #        Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
-  #        SQLite does not use TCL internally, but TCL is required to build SQLite
-  #        from canonical sources and TCL is required for testing."
-  # XXX fi
-  # XXX fi
-  # msg-result "loading TCL configuration from ${tclconfig}"
-  # XXX . ${tclconfig}
-  # XXX autosetup automatically substitutes all define'd values
-  #     In general, simply 'define' the value rather than using a shell
-  #     variable and AC_SUBST.
-  #
-  # XXX AC_SUBST TCL_INCLUDE_SPEC
-  # XXX AC_SUBST TCL_LIB_SPEC
-  # XXX AC_SUBST TCL_STUB_LIB_SPEC
-  # There are lots of other configuration variables that are provided by the
-  # tclConfig.sh file and that could be included here.  But as of right now,
-  # TCL_LIB_SPEC is the only what that the Makefile uses.
-  # XXX HAVE_TCL=1
-  # XXX elif test x"${original_use_tcl}" = "xno"; then
-  # msg-result "unable to run tests because of --disable-tcl"
-  # XXX HAVE_TCL=0
-  # XXX else
-  # msg-result "unable to run tests because no tclConfig.sh file could be located"
-  # XXX HAVE_TCL=0
-  # XXX fi
-  # XXX AC_SUBST HAVE_TCL
-  # XXX if test x"$TCLSH_CMD" == x; then
-  # XXX TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
-  # XXX if test ! -x ${TCLSH_CMD}; then
-  # set _2 ${TCL_EXEC_PREFIX}/bin/tclsh
-  # XXX if test ! -x ${TCLSH_CMD_2}; then
-  # msg-result Warning: "cannot find a usable tclsh at either ${TCLSH_CMD} or ${TCLSH_CMD_2}"
-  # XXX TCLSH_CMD=none
-  # XXX else
-  # XXX TCLSH_CMD=${TCLSH_CMD_2}
-  # XXX fi
-  # XXX fi
-  # XXX fi
-  # XXX if test "$TCLSH_CMD" = "none"; then
-  # If we can't find a local tclsh, then building the amalgamation will fail.
-  # We act as though --disable-amalgamation has been used.
-  # msg-result Warning: "Warning: can't find tclsh - defaulting to non-amalgamation build."
-  # XXX USE_AMALGAMATION=0
-  # XXX TCLSH_CMD="tclsh"
-  # XXX fi
-  # XXX AC_SUBST TCLSH_CMD
+  set cfg ""
+  set tclSubdirs {tcl8.6 tcl9.0 lib}
+  if {$use_tcl} {
+    if {"" ne $with_tcl} {
+      if {[file readable "${with_tcl}/tclConfig.sh"]} {
+        set cfg "${with_tcl}/tclConfig.sh"
+      } else {
+        foreach i $tclSubdirs {
+          if {[file readable "${with_tcl}/$i/tclConfig.sh"]} {
+            set cfg "${with_tcl}/$i/tclConfig.sh"
+            break
+          }
+        }
+      }
+      if {"" eq $cfg} {
+        hwaci-error "No tclConfig.sh found under ${with_tcl}"
+      }
+    } else {
+      # If we have not yet found a tclConfig.sh file, look in $libdir which is
+      # set automatically by autosetup or by the --prefix command-line option.
+      # See https://sqlite.org/forum/forumpost/e04e693439a22457
+      set libdir [get-define libdir]
+      if {[file readable "${libdir}/tclConfig.sh"]} {
+        set cfg "${libdir}/tclConfig.sh"
+      } else {
+        foreach i $tclSubdirs {
+          if {[file readable "${libdir}/$i/tclConfig.sh"]} {
+            set cfg "${libdir}/$i/tclConfig.sh"
+            break
+          }
+        }
+      }
+      if {![file readable $cfg]} {
+        hwaci-error {
+          Cannot find a usable tclConfig.sh file.
+          Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
+          SQLite does not use TCL internally, but TCL is required to build SQLite
+          from canonical sources and TCL is required for testing.
+        }
+      }
+    }
+  } elseif {!$optTcl} {
+    puts "Unable to run tests because of --disable-tcl"
+  } else {
+    puts "Unable to run tests because no tclConfig.sh file could be located"
+  }
 
-  # XXX AC_ARG_VAR TCLLIBDIR Where to install tcl plugin
-  # XXX if test "x${TCLLIBDIR+set}" != "xset" ; then
-  # XXX for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
-  # XXX if test -d $i ; then
-  # XXX TCLLIBDIR=$i
-  # XXX break
-  # XXX fi
-  # XXX done
-  # XXX TCLLIBDIR="${TCLLIBDIR}/sqlite3"
-  # XXX fi
+  define HAVE_TCL $use_tcl
+  define TCL_CONFIG_SH $cfg
+#  puts "hwaci-check-tcl: with_tclsh=$with_tclsh"
+#  puts "hwaci-check-tcl: with_tcl=$with_tcl"
+#  puts "hwaci-check-tcl: cfg=$cfg"
+#  puts "hwaci-check-tcl: use_tcl ${use_tcl}"
+}
 
-  unset tEnable with_tclsh with_tcl
-}; # end of tcl
+hwaci-check-tcl
 
+# The historical configure.ac sources tclConfig.sh so that it can use
+# the several TCL_... env vars. We obviously cannot do that from TCL,
+# so we apply a level of indirection. Note that if the config is not
+# available, this generates empty-string entries for the various
+# options we're interested in.
+eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
 
-hwaci-check-rpath
+########################################################################
+# Check which TCL to use as a code generator. Prefer jimsh simply
+# because we have it in-tree (it's part of autosetup).
+define CFLAGS_JIMSH {}
+puts "Looking for path-resolution function for JimTCL... "
+if {[cc-check-functions realpath]} {
+  define-append CFLAGS_JIMSH -DHAVE_REALPATH
+  define BTCL "\$(JIMSH)"
+} elseif {[cc-check-functions _fullpath]} {
+  # _fullpath() is a Windows API
+  define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+  define BTCL "\$(JIMSH)"
+} elseif {"" ne [get-define TCLSH_CMD]} {
+  define BTCL "\$(TCLSH_CMD)"
+} else {
+  hwaci-error "Cannot find a tclsh to use for code generation."
+}
+
+# /TCL
+########################################################################
 
 ########################################################################
 # Thread safety?
@@ -505,34 +472,6 @@ hwaci-if-opt-truthy threadsafe {
   msg-result no
   add-feature-flag -DSQLITE_THREADSAFE=0
   define LDFLAGS_PTHREAD ""
-}
-
-########################################################################
-# Do we want to support release?
-#
-# Maintenance note: this might be irrelevant with an autosetup port,
-# as it appears to be related to libtool (part of the autotools).
-#
-if {0} {
-  hwaci-if-opt-truthy releasemode {
-    msg-result "Release-mode build."
-    set enable_releasemode 1
-  } {
-    msg-result "Non-release-mode build."
-    set enable_releasemode 0
-  }
-}
-
-if {0} {
-  msg-checking "Checking whether to support shared library linked as release mode or not..."
-  # XXX if test "$enable_releasemode" = "no"; then
-  # XXX ALLOWRELEASE=""
-  msg-result "no"
-  # XXX else
-  # XXX ALLOWRELEASE="-release `cat $srcdir/VERSION`"
-  msg-result "yes"
-  # XXX fi
-  # XXX AC_SUBST ALLOWRELEASE
 }
 
 ########################################################################
@@ -706,57 +645,6 @@ hwaci-if-opt-truthy math {
   msg-result "Disabling math SQL functions"
 }
 
-if {0} {
-  # is this still relevant?
-
-  #########
-  # attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
-  # XXX for option in $CFLAGS $CPPFLAGS
-  # XXX do
-  # XXX case $option in
-  # XXX -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
-  # XXX -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
-  # XXX esac
-  # XXX done
-  # XXX AC_SUBST OPT_FEATURE_FLAGS
-
-  # attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
-  # XXX ac_temp_CFLAGS=""
-  # XXX for option in $CFLAGS
-  # XXX do
-  # XXX case $option in
-  # XXX -DSQLITE_OMIT*) ;;
-  # XXX -DSQLITE_ENABLE*) ;;
-  # XXX *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
-  # XXX esac
-  # XXX done
-  # XXX CFLAGS=$ac_temp_CFLAGS
-
-  # attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
-  # XXX ac_temp_CPPFLAGS=""
-  # XXX for option in $CPPFLAGS
-  # XXX do
-  # XXX case $option in
-  # XXX -DSQLITE_OMIT*) ;;
-  # XXX -DSQLITE_ENABLE*) ;;
-  # XXX *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
-  # XXX esac
-  # XXX done
-  # XXX CPPFLAGS=$ac_temp_CPPFLAGS
-
-  # attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
-  # XXX ac_temp_BUILD_CFLAGS=""
-  # XXX for option in $BUILD_CFLAGS
-  # XXX do
-  # XXX case $option in
-  # XXX -DSQLITE_OMIT*) ;;
-  # XXX -DSQLITE_ENABLE*) ;;
-  # XXX *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
-  # XXX esac
-  # XXX done
-  # XXX BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
-}
-
 ########################################################################
 # Emscripten SDK for building the web-based wasm components.
 #
@@ -813,10 +701,10 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
 }
 
 ########################################################################
-# Invert the above loop's logic for some explicit
-# SQLITE_OMIT_... cases. If config option $boolFlag is set,
-# [add-feature-flag $featureFlag], where $featureFlag is intended to
-# be -DSQLITE_OMIT_...
+# Invert the above loop's logic for some explicit SQLITE_OMIT_...
+# cases. If config option $boolFlag is set, [add-feature-flag
+# $featureFlag], where $featureFlag is intended to be
+# -DSQLITE_OMIT_...
 foreach {boolFlag featureFlag} {
   json        -DSQLITE_OMIT_JSON
 } {
@@ -830,15 +718,16 @@ foreach {boolFlag featureFlag} {
 
 ########################################################################
 # Maybe extend JimTCL a bit. As of this writing (2024-09-27) it only
-# needs -DHAVE_REALPATH or -DHAVE__FULLPATH to be compatible with our
-# code generators. It can, however, be slightly extended via
-# easy-to-detect features, should we need them.
+# needs (-DHAVE_REALPATH or -DHAVE__FULLPATH) and -DHAVE_DIRENT_H to
+# be compatible with our code generators. It can, however, be slightly
+# extended via easy-to-detect features, should we need them.
 if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   foreach jimFunc {opendir fsync isascii} {
     if {[cc-check-functions $jimFunc]} {
       define-append CFLAGS_JIMSH -DHAVE_[string toupper $jimFunc]
     }
   }
+  #These are hard-coded into jimsh0.c, so we must not -D them:
   #foreach jimDef {HAVE_UNISTD_H HAVE_DIRENT_H} {
   #  if {[is-defined $jimDef]} {
   #    define-append CFLAGS_JIMSH -D$jimDef
@@ -848,6 +737,11 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
 }; # JimTCL
 
 define ENABLE_SHARED $enable_shared
+
+
+########################################################################
+# Determine proper rpath-handling flags
+hwaci-check-rpath
 
 ########################################################################
 # Generate the output files.
@@ -884,6 +778,8 @@ if {"" ne $oFF} {
 }
 unset oFF
 
+########################################################################
+# Some build-dev/debug-only output
 hwaci-if-opt-truthy dump-defines {
   global DUMP_DEFINES_FILE
   msg-result "--dump-defines is creating file: $DUMP_DEFINES_FILE"
