@@ -198,7 +198,7 @@ install.libdir = "$(DESTDIR)$(libdir)"
 install.includedir = "$(DESTDIR)$(prefix)/include"
 install.pkgconfigdir = "$(DESTDIR)$(pkgconfigdir)"
 $(install.bindir) $(install.libdir) $(install.includedir) $(install.pkgconfigdir):
-	$(INSTALL) -d "$@"
+	$(INSTALL) -d $@
 
 #XX## libtool compile/link/install
 #XX#TCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(TCOMPILE_EXTRAS)
