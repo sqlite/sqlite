@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sunicode\scharacters\sin\sthe\sLIKE\soptimization.\nFollow-up\sto\s[bce52ce2a6e7f3d3].
-D 2024-10-09T11:52:29.532
+C Fix\sthe\sxCheckReservedLock()\smethod\sof\sthe\sflock\sVFS\sto\savoid\sdropping\sthe\sfile\slock.
+D 2024-10-09T16:28:26.644
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -753,7 +753,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 779e83666ecd535f6725497ba6da069c1d15138ff6a4ee123edad1ae0cdfbe83
+F src/os_unix.c 4086be39edc253ca75d4f447972e26f6998023ab519d1a176e3b3a72fae609d0
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
@@ -1405,7 +1405,7 @@ F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test 27143363eda1622f03c133efc8db808fc331afd973486cb571ea71cd717d37b8
-F test/lock5.test 24693e40a805f71d80836f720d1f2034684a39b64f1e1990989002c7968c11ee
+F test/lock5.test 51e9e2e8d5aed4ec470be19dfc0d630388a7444a8fc812ec8d08e46469a15726
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 2f3f7f2e9637f93ccf609df48ef5b27a50278b6b1cd752b445d52262e5841413
@@ -2216,8 +2216,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1218a203483cecdc8c9abdc970ad68eba0dfa9cafbed95c63cefb7e8af8babee
-R caf8280fa8e7a7de178081dbae97667f
-U drh
-Z 3adb35abb1bf3d691bca5f7e2785786d
+P 9d0eb3980409115f2f6fd1720a03f34e3968c93be55feafdfef20bf5f711c17f 8ffaf85249ff38ceea037a6e96b3484c912f1c1aa55b8642297d592768661344
+R 1326bd74517af8f0c3bf930ca135c7cd
+T +closed 8ffaf85249ff38ceea037a6e96b3484c912f1c1aa55b8642297d592768661344
+U dan
+Z f63fcc94a9c77284788c7f94ef1468fb
 # Remove this line to create a well-formed Fossil manifest.
