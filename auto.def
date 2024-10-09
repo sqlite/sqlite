@@ -2,14 +2,13 @@
 global autosetup
 use cc cc-db cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE defines.list
-set enable_shared 1
+define ENABLE_SHARED 1
 
 # Are we cross compiling?
 set cross_compiling 0
 if {[get-define host] ne [get-define build]} {
   set cross_compiling 1
 }
-define cross_compiling ${cross_compiling}
 
 ########################################################################
 # A very long story made short, autosetup's --flag handling has
@@ -172,7 +171,7 @@ proc add-shell-opt {args} {
   }
 }
 
-hwaci-exe-extension
+hwaci-file-extensions
 if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_UNIX 0
   define SQLITE_OS_WIN 1
@@ -182,8 +181,6 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_WIN 0
   # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS?
 }
-hwaci-dll-extension
-hwaci-lib-extension
 
 #########
 # Programs needed
@@ -219,7 +216,6 @@ define BUILD_CFLAGS [get-env CFLAGS {-g}]
 #
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
-#
 if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
@@ -231,13 +227,13 @@ if {1} {
     define HAVE_WASI_SDK 1
     define WASI_SDK_DIR $wasiSdkDir
     hwaci-opt-set load-extension 0; # ==> --disable-load-extension
-    hwaci-opt-set threadsafe 0; # ==> --threadsafe
+    hwaci-opt-set threadsafe 0; # ==> --threadsafe=0
     hwaci-opt-set tcl 0; # ==> --disable-tcl
     define HAVE_TCL 0
     set cross_compiling 1
     # libtool is apparently hard-coded to use gcc for linking DLLs, so
     # we disable the DLL build.
-    set enable_shared 0
+    define ENABLE_SHARED 0
 
     # Changing --host and --target have no effect here except to possibly
     # cause confusion. autoconf has finished processing them by this
@@ -420,6 +416,12 @@ proc hwaci-check-tcl {} {
 
   define HAVE_TCL $use_tcl
   define TCL_CONFIG_SH $cfg
+  # The historical configure.ac sources tclConfig.sh so that it can
+  # use the several TCL_... env vars. We obviously cannot do that from
+  # TCL, so we apply a level of indirection. If the config is not
+  # available, this generates empty-string entries for the various
+  # options we're interested in.
+  eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
 #  puts "hwaci-check-tcl: with_tclsh=$with_tclsh"
 #  puts "hwaci-check-tcl: with_tcl=$with_tcl"
 #  puts "hwaci-check-tcl: cfg=$cfg"
@@ -427,13 +429,6 @@ proc hwaci-check-tcl {} {
 }
 
 hwaci-check-tcl
-
-# The historical configure.ac sources tclConfig.sh so that it can use
-# the several TCL_... env vars. We obviously cannot do that from TCL,
-# so we apply a level of indirection. Note that if the config is not
-# available, this generates empty-string entries for the various
-# options we're interested in.
-eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
 
 ########################################################################
 # Check which TCL to use as a code generator. Prefer jimsh simply
@@ -667,6 +662,8 @@ hwaci-if-opt-truthy math {
   msg-result "Disabling math SQL functions"
 }
 
+define cross_compiling ${cross_compiling}
+
 ########################################################################
 # Emscripten SDK for building the web-based wasm components.
 #
@@ -681,11 +678,18 @@ if {[hwaci-check-emsdk]} {
   catch {exec rm -f $srcdir/tool/emcc.sh}
 }
 
-proc affirm-have-math {} {
+########################################################################
+# Check for log(3) in libm and die with an error if it is not
+# found. $why should be the feature name which requires that function
+# (it's used only in error messages). defines LDFLAGS_MATH to the
+# required linker flags (which may be empty even if the math APIs are
+# found, depending on the OS).
+proc affirm-have-math {why} {
   if {![hwaci-check-function-in-lib log m]} {
-    user-error "Missing required math APIs"
+    user-error "Missing math APIs for $why"
   }
   define LDFLAGS_MATH [get-define lib_log ""]
+  undefine lib_log
 }
 
 ########################################################################
@@ -698,8 +702,8 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
     hwaci-opt-set rtree
     hwaci-opt-set session
   }
-  fts4         -DSQLITE_ENABLE_FTS4    {affirm-have-math}
-  fts5         -DSQLITE_ENABLE_FTS5    {affirm-have-math}
+  fts4         -DSQLITE_ENABLE_FTS4    {affirm-have-math fts4}
+  fts5         -DSQLITE_ENABLE_FTS5    {affirm-have-math fts5}
   geopoly      -DSQLITE_ENABLE_GEOPOLY {hwaci-opt-set rtree}
   rtree        -DSQLITE_ENABLE_RTREE   {}
   session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK} {}
@@ -715,8 +719,10 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
 } {
   hwaci-if-opt-truthy $boolFlag {
     add-feature-flag $featureFlag
-    msg-result "Enabling $boolFlag"
     eval $ifSetEvalThis
+    if {"all" ne $boolFlag} {
+      msg-result "Enabling $boolFlag"
+    }
   } {
     msg-result "Not enabling $boolFlag"
   }
@@ -757,8 +763,6 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   #}
   define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
 }; # JimTCL
-
-define ENABLE_SHARED $enable_shared
 
 
 ########################################################################

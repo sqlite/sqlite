@@ -512,6 +512,9 @@ proc hwaci-exe-extension {} {
 # Works like hwaci-exe-extension except that it defines BUILD_DLLEXT
 # and TARGET_DLLEXT to one of (.so, ,dll, .dylib).
 #
+# Trivia: for .dylib files, the linker needs the -dynamiclib flag
+# instead of -shared.
+#
 # TODO: have someone verify whether this is correct for the
 # non-Linux/BSD platforms.
 proc hwaci-dll-extension {} {
@@ -539,9 +542,6 @@ proc hwaci-dll-extension {} {
 proc hwaci-lib-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
-      *apple* {
-        return ".a"
-      }
       *-*-ming* - *-*-cygwin - *-*-msys {
         return ".lib"
       }
@@ -555,13 +555,21 @@ proc hwaci-lib-extension {} {
 }
 
 ########################################################################
+# Calls all of the hwaci-*-extension functions.
+proc hwaci-file-extensions {} {
+  hwaci-exe-extension
+  hwaci-dll-extension
+  hwaci-lib-extension
+}
+
+########################################################################
 # Expects a list of file names. If any one of them does not exist in
 # the filesystem, it fails fatally with an informative message.
 # Returns the last file name it checks. If the first argument is -v
 # then it emits msg-checking/msg-result messages for each file.
 proc hwaci-affirm-files-exist {args} {
   set rc ""
-  set verbose 1
+  set verbose 0
   if {[lindex $args 0] eq "-v"} {
     set verbose 1
     set args [lrange $args 1 end]
@@ -589,6 +597,7 @@ proc hwaci-affirm-files-exist {args} {
 #   --with-emsdk=DIR or the $EMSDK environment variable.
 # - EMSDK_ENV = path to EMSDK_HOME/emsdk_env.sh or ""
 # - BIN_EMCC = $EMSDK_HOME/upstream/emscripten/emcc or ""
+# - HAVE_EMSDK = 0 or 1 (this function's return value)
 #
 # Returns 1 if EMSDK_ENV is found, else 0.  If EMSDK_HOME is not empty
 # but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
@@ -648,9 +657,9 @@ proc hwaci-check-rpath {} {
   # downstream tests may fail because the resulting rpath gets
   # implicitly injected into them.
   cc-with {} {
-    if {[cc-check-flags {-rpath $lp}]} {
+    if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
-    } elseif {[cc-check-flags {-Wl,-rpath -Wl,$lp}]} {
+    } elseif {[cc-check-flags "-Wl,-rpath -Wl,$lp"]} {
       define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
     } elseif {[cc-check-flags -Wl,-R$lp]} {
       define LDFLAGS_RPATH "-Wl,-R$lp"

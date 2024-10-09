@@ -749,12 +749,17 @@ LDFLAGS_libsqlite = \
 # either results in building libsqlite3.so, builds sqlite3.c
 # directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
 
+@if ENABLE_SHARED
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK) -o $@ \
 		@SHOBJ_LDFLAGS@  $(LIBOBJ) $(TLIBS) \
 		$(LDFLAGS_libsqlite)
 dll: $(libsqlite3.DLL)
 all: dll
+@else
+$(libsqlite3.DLL):
+	@echo "Build of $@ was explicitly disabled."; exit 1
+@endif
 
 $(libsqlite3.LIB):	$(LIBOBJ)
 	$(AR) crs $@ $(LIBOBJ)
@@ -803,7 +808,9 @@ sqlite3$(TEXE):	shell.c sqlite3.c
 		shell.c sqlite3.c \
 		$(LDFLAGS_libsqlite) $(LDFLAGS_READLINE)
 cli: sqlite3$(TEXE)
+@if !HAVE_WASI_SDK
 all: cli
+@endif
 
 install-cli: sqlite3$(TEXT) $(install.bindir)
 	$(INSTALL) -s sqlite3$(TEXT) "$(install.bindir)"
@@ -848,10 +855,13 @@ srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
 
 sourcetest:	srcck1$(BEXE) sqlite3.c
-	./srcck1 sqlite3.c
+	./srcck1$(BEXE) sqlite3.c
 
-src-verify:	$(TOP)/tool/src-verify.c
+src-verify$(BEXE):	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
+
+verify-source:	./src-verify$(BEXE)
+	./src-verify$(BEXE) $(TOP)
 
 #
 # JimTCL is part of the autosetup suite and is suitable for all
@@ -875,9 +885,6 @@ $(JIMSH): $(TOP)/autosetup/jimsh0.c
 BTCL = @BTCL@
 $(BTCL):
 
-#XX#
-#XX#verify-source:	./src-verify
-#XX#	./src-verify $(TOP)
 #XX#
 #XX#fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 #XX#	$(TLINK) -o $@ $(FUZZERSHELL_OPT) \
@@ -1839,12 +1846,18 @@ distclean:	clean
 #XX#	$(TCC) -shared -o $@ sqlite3.def \
 #XX#		-Wl,"--strip-all" $(REAL_LIBOBJ)
 #XX#
-#XX##
-#XX## Fiddle app
-#XX##
-#XX#fiddle: sqlite3.c shell.c
-#XX#	make -C ext/wasm fiddle emcc_opt=-Os
-#XX#
+
+#
+# Fiddle app
+#
+@if EMCC_WRAPPER
+fiddle: sqlite3.c shell.c
+	make -C ext/wasm fiddle emcc_opt=-Os
+@else
+fiddle:
+	@echo "Configure script did not find emcc, so fiddle build is not available."; exit 1
+@endif
+
 #XX##
 #XX## Spell-checking for source comments
 #XX## The sources checked are either C sources or C source templates.
