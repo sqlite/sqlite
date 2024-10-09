@@ -722,13 +722,13 @@ srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
 
 sourcetest:	srcck1$(BEXE) sqlite3.c
-	./srcck1 sqlite3.c
+	./srcck1$(BEXE) sqlite3.c
 
-src-verify:	$(TOP)/tool/src-verify.c
+src-verify$(BEXE):	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
 
-verify-source:	./src-verify
-	./src-verify $(TOP)
+verify-source:	./src-verify$(BEXE)
+	./src-verify$(BEXE) $(TOP)
 
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \

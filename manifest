@@ -1,9 +1,9 @@
-C Enable\sthe\s".crnl"\scommand\son\sWindows\sbuilds\sof\sthe\sCLI\seven\sif\sthe\nSQLITE_U8TEXT_ONLY\sor\sSQLITE_U8TEST_STDIO\scompile-time\soptions\sare\sused.
-D 2024-10-08T17:27:00.361
+C Add\sa\sfew\smissing\s$(BEXE)\ssuffixes\son\smakefile\stargets\swhich\sare\sapparently\snever\srun\son\splatforms\swhere\sthat\svar\sis\snon-empty.
+D 2024-10-09T05:20:32.007
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 6a826facc78c3c8ad38bf00ed588f6aa3665ccd7a9749b891d20582fc290c77e
+F Makefile.in 07a52a88eabbb996b91b82f17e7a6b11202845b06056c620b2c4f3a7e473554f
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 9c6d80d9d103fa42e931f4c464884a5e577fae8563acc7589bff4e43fbe8f864
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dbfc10b8981bcce4f875c4adef43f398871b41551074445087e343ded50253c5
-R 4c54522422d06a33902f30cd91a1b430
-U drh
-Z 9d705152c398cbd25be925515dab0f70
+P 6364a2f0449794b0c089ba9fbc099f5558b88ac91c459caf7fae3a43dfcd192e
+R 36fe54ac92487d52d0151526708ec7a1
+U stephan
+Z d3bb00965caef64bd9a43497ec172f45
 # Remove this line to create a well-formed Fossil manifest.
