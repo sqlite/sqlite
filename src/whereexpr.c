@@ -228,7 +228,7 @@ static int isLikeOrGlob(
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
-      if( c==wc[3] && z[cnt]!=0 ){
+      if( c==wc[3] && z[cnt]>0 && z[cnt]<0x80 ){
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;

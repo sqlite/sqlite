@@ -1,5 +1,5 @@
-C Add\sa\sfew\smissing\s$(BEXE)\ssuffixes\son\smakefile\stargets\swhich\sare\sapparently\snever\srun\son\splatforms\swhere\sthat\svar\sis\snon-empty.
-D 2024-10-09T05:20:32.007
+C Improved\shandling\sof\sunicode\scharacters\sin\sthe\sLIKE\soptimization.\nFollow-up\sto\s[bce52ce2a6e7f3d3].
+D 2024-10-09T11:52:29.532
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -857,7 +857,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 12fe24880901997372b88fd7ca9a21457404ad35201712c02cc57978578abb10
 F src/whereInt.h a5d079c346a658b7a6e9e47bb943d021e02fa1e6aed3b964ca112112a4892192
 F src/wherecode.c 5172d647798134e7c92536ddffe7e530c393d79b5dedd648b88faf2646c65baf
-F src/whereexpr.c 562ce89d7f1c24a54c5124576e04928600061c87d83a30e63dcbaadf20eb0653
+F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
 F src/window.c 499d48f315a09242dc68f2fac635ed27dcf6bbb0d9ab9084857898c64489e975
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6364a2f0449794b0c089ba9fbc099f5558b88ac91c459caf7fae3a43dfcd192e
-R 36fe54ac92487d52d0151526708ec7a1
-U stephan
-Z d3bb00965caef64bd9a43497ec172f45
+P 1218a203483cecdc8c9abdc970ad68eba0dfa9cafbed95c63cefb7e8af8babee
+R caf8280fa8e7a7de178081dbae97667f
+U drh
+Z 3adb35abb1bf3d691bca5f7e2785786d
 # Remove this line to create a well-formed Fossil manifest.
