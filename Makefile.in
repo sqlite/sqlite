@@ -811,13 +811,54 @@ $(libtclsqlite3.DLL): tclsqlite.o $(libsqlite3.LIB)
 		$(TCL_STUB_LIB_SPEC) $(TLIBS) \
 		@TCLLIB_RPATH@
 libtcl:	$(libtclsqlite3.DLL)
+
 all:	$(libtclsqlite3.DLL)
+
+pkgIndex.tcl:
+	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
+
 install.tcldir = "$(DESTDIR)@TCLLIBDIR@"
 install-tcl: $(libtclsqlite3.DLL) pkgIndex.tcl
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.DLL) $(install.tcldir)
 	$(INSTALL_noexec) pkgIndex.tcl $(install.tcldir)
+
 install: install-tcl
+
+tclsqlite3.c:	sqlite3.c
+	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
+	cat sqlite3.c >>tclsqlite3.c
+	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
+	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+
+#sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(BTCL) # has_tclsh84
+#	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
+
+# Build the SQLite TCL extension in a way that make it compatible
+# with whatever version of TCL is running as $TCLSH_CMD, possibly defined
+# by --with-tclsh=
+#
+tclextension: tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
+# to find it.
+#
+tclextension-install: tclsqlite3.c
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+
+# Install the SQLite TCL extension that is used by $TCLSH_CMD
+#
+tclextension-uninstall:
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
+
+# List all installed the SQLite TCL extension that is are accessible
+# by $TCLSH_CMD, included prior versions.
+#
+tclextension-list:
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+
+# end of @if HAVE_TCL
 @endif
 
 sqlite3$(TEXE):	shell.c sqlite3.c
@@ -1034,16 +1075,6 @@ sqlite3r.c: sqlite3.c sqlite3r.h $(BTCL) # has_tclsh84
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
-
-#XX#tclsqlite3.c:	sqlite3.c
-#XX#	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
-#XX#	cat sqlite3.c >>tclsqlite3.c
-#XX#	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
-#XX#	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
-#XX#
-#XX#sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl has_tclsh84
-#XX#	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
-#XX#
 
 # Rules to build the LEMON compiler generator
 #
@@ -1770,38 +1801,12 @@ sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlit
 #XX#	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 #XX#	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 #XX#
-pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 #XX#
 #XX#tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 #XX#	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
 #XX#	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
 #XX#	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
 #XX#	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
-#XX#
-#XX## Build the SQLite TCL extension in a way that make it compatible
-#XX## with whatever version of TCL is running as $TCLSH_CMD, possibly defined
-#XX## by --with-tclsh=
-#XX##
-#XX#tclextension:	tclsqlite3.c
-#XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
-#XX#
-#XX## Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
-#XX## to find it.
-#XX##
-#XX#tclextension-install:	tclsqlite3.c
-#XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
-#XX#
-#XX## Install the SQLite TCL extension that is used by $TCLSH_CMD
-#XX##
-#XX#tclextension-uninstall: 
-#XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
-#XX#
-#XX## List all installed the SQLite TCL extension that is are accessible
-#XX## by $TCLSH_CMD, included prior versions.
-#XX##
-#XX#tclextension-list: 
-#XX#	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
 # Remove build products sufficient so that subsequent makes will recompile
 # everything from scratch.  Do not remove:
@@ -1827,6 +1832,7 @@ tidy:
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh*
+	rm -f tclsqlite3.c
 # FIXME? (rm *.def) will remove auto.def (part of autosetup)
 #
 # Removes build products and test logs.  Retains ./configure outputs.
