@@ -1,5 +1,5 @@
-C Fix\sthe\sxCheckReservedLock()\smethod\sof\sthe\sflock\sVFS\sto\savoid\sdropping\sthe\sfile\slock.
-D 2024-10-09T16:28:26.644
+C Fix\sa\sproblem\sin\sthe\sgenerate_series()\sextension\sintroduced\sby\n[d50b784807333c54].
+D 2024-10-09T16:32:19.421
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -421,7 +421,7 @@ F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab840709636240
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c a6089b5e8e3002bd1e5d9877cee6aead0b9a6426e406c09a399817db9e9ae823
+F ext/misc/series.c 596afbfbbc81ccf4ea6da11f016f7eed630ed195b5e9d548117e19f06d63f641
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b430e8c
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2216,9 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9d0eb3980409115f2f6fd1720a03f34e3968c93be55feafdfef20bf5f711c17f 8ffaf85249ff38ceea037a6e96b3484c912f1c1aa55b8642297d592768661344
-R 1326bd74517af8f0c3bf930ca135c7cd
-T +closed 8ffaf85249ff38ceea037a6e96b3484c912f1c1aa55b8642297d592768661344
-U dan
-Z f63fcc94a9c77284788c7f94ef1468fb
+P f7acb189d8eadf2de2fa992b3ff7293838fd0f8fd3c61e9f0238226a36ea6bcf
+R a2ee738e138d3fd76c622231c3a068a8
+U drh
+Z 898a13abf8610a35615e136dfd53c619
 # Remove this line to create a well-formed Fossil manifest.
