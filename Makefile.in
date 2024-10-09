@@ -150,6 +150,7 @@ TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
 TCL_LIB_SPEC = @TCL_LIB_SPEC@
 TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
+TCL_VERSION = @TCL_VERSION@
 
 
 # Additional options when running tests using testrunner.tcl
@@ -863,7 +864,7 @@ src-verify:	$(TOP)/tool/src-verify.c
 #
 JIMSH = @srcdir@/jimsh
 @if CFLAGS_JIMSH
-$(JIMSH): $(TOP)/autosetup/jimsh0.c Makefile
+$(JIMSH): $(TOP)/autosetup/jimsh0.c
 	$(BCC) -o $(JIMSH) @CFLAGS_JIMSH@ $<
 @endif
 

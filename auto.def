@@ -439,7 +439,8 @@ eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"
 # Check which TCL to use as a code generator. Prefer jimsh simply
 # because we have it in-tree (it's part of autosetup).
 define CFLAGS_JIMSH {}
-puts "Looking for path-resolution function for JimTCL... "
+puts "Which TCL to use for code generation... "
+set cgtcl jimtcl
 if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE_REALPATH
   define BTCL "\$(JIMSH)"
@@ -448,11 +449,32 @@ if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE__FULLPATH
   define BTCL "\$(JIMSH)"
 } elseif {"" ne [get-define TCLSH_CMD]} {
+  set cgtcl [get-define TCLSH_CMD]
   define BTCL "\$(TCLSH_CMD)"
 } else {
-  hwaci-error "Cannot find a tclsh to use for code generation."
+  # One last-ditch effort to find TCLSH_CMD: use info from
+  # tclConfig.sh to try to find a tclsh
+  if {"" eq [get-define TCLSH_CMD]} {
+    set tpre [get-define TCL_EXEC_PREFIX]
+    if {"" ne $tpre} {
+      set tv [get-define TCL_VERSION]
+      if {[file executable "${tpre}/bin/tclsh${tv}"]} {
+        define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
+      } elseif {[file executable "${tpre}/bin/tclsh"]} {
+        define TCLSH_CMD "${tpre}/bin/tclsh"
+      }
+      unset tv
+    }
+    unset tpre
+    if {"" eq [get-define TCLSH_CMD]} {
+      hwaci-error "Cannot find a tclsh to use for code generation."
+    }
+  }
+  set cgtcl [get-define TCLSH_CMD]
+  define BTCL "\$(TCLSH_CMD)"
 }
-
+puts "TCL for code generation: $cgtcl"
+unset cgtcl
 # /TCL
 ########################################################################
 

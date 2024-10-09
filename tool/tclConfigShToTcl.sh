@@ -17,6 +17,7 @@ if test x = "x$1"; then
   TCL_LIB_SPEC=
   TCL_STUB_LIB_SPEC=
   TCL_EXEC_PREFIX=
+  TCL_VERSION=
 else
   . "$1"
 fi
@@ -25,3 +26,4 @@ echo "define TCL_INCLUDE_SPEC {$TCL_INCLUDE_SPEC} ;"
 echo "define TCL_LIB_SPEC {$TCL_LIB_SPEC} ;"
 echo "define TCL_STUB_LIB_SPEC {$TCL_STUB_LIB_SPEC} ;"
 echo "define TCL_EXEC_PREFIX {$TCL_EXEC_PREFIX} ;"
+echo "define TCL_VERSION {$TCL_VERSION} ;"
