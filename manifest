@@ -1,5 +1,5 @@
-C Add\sextra\slogging\spoints\sto\sthe\scode\son\sthis\sbranch.
-D 2024-10-10T14:31:37.100
+C Fix\sa\stypo\sin\sthe\sprevious\scommit.
+D 2024-10-10T15:28:18.193
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -846,7 +846,7 @@ F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 25e407a6dc8b288fa4295b3d92fa9ce9318503e84df53cdf403a50fccbc1ba31
 F src/vdbe.c fea60cfe46d8839a08e4680d90a96898d542d3f6d7954e2e99cd92596f1a01f8
-F src/vdbe.h 0409222debcb215b13eaabc97afb4d38e64e6eb9d6deda5b0067000d19ba2cb0
+F src/vdbe.h ed70dc763f22fe856884cc065473061bfe9954bd221daaf3ac517f01c33d0b0f
 F src/vdbeInt.h 494b7b3430fb53adef43e5fd9ede20029750f188f2dbb064e7b86cdf9fb755d7
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
 F src/vdbeaux.c 593f95af78e249b3f4de32df9475c792ab3f82d526c97103219f2a029ae9c3dc
@@ -2249,8 +2249,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cd6f585cadfe40778c3bf59dfbfa5f02c50cf5e10af1bd553cad4dfa56ea2249
-R 4927122397c1b68485053501762e9365
+P f29ff2f308d7f7c757a8bdf9624fadbda55bd5291c18268e10d3bb7e311b229e
+R 607f1797ef1e134122bc0ac1ab5dace0
 U dan
-Z 0fc8cc666acc9a587659cdfa77c14ae5
+Z 32c285001d194978689cb95ccaa3d7d5
 # Remove this line to create a well-formed Fossil manifest.

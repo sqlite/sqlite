@@ -448,7 +448,7 @@ int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr);
 #define COMMIT_TIME_N 14
 
 /* #define COMMIT_TIME_TIMEOUT (2*1000*1000) */
-#define COMMIT_TIME_TIMEOUT (0*1000)         /* 10ms threshold */
+#define COMMIT_TIME_TIMEOUT (10*1000)         /* 10ms threshold */
 
 void sqlite3CommitTimeLog(u64*);
 u64 sqlite3STimeNow();
