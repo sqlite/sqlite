@@ -10335,7 +10335,7 @@ fi
 
 original_use_tcl=${use_tcl}
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
-  for ac_prog in tclsh8.6 tclsh tclsh9.0
+  for ac_prog in tclsh9.0 tclsh8.6 tclsh
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2

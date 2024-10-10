@@ -407,7 +407,7 @@ install-libraries:
         @echo Installing package index in '$(SCRIPT_INSTALL_DIR)'
         @type << >"$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
 package ifneeded $(PROJECT) $(DOTVERSION) \
-    [list load [file join $$dir $(PRJLIBNAME)] sqlite3]
+    [list load [file join $$dir $(PRJLIBNAME)] Sqlite3]
 <<
 
 install-docs:

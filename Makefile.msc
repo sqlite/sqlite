@@ -929,16 +929,25 @@ TCC = $(TCC) /fsanitize=address
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!IFNDEF TCLVERSION
-TCLVERSION = 86
-!ENDIF
-
 !IFNDEF TCLSUFFIX
 TCLSUFFIX =
 !ENDIF
 
 !IFNDEF TCLDIR
 TCLDIR = C:\Tcl
+!ENDIF
+
+!IFNDEF TCLVERSION
+!IF EXISTS("$(TCLDIR)\lib\tcl90$(TCLSUFFIX).lib")
+TCLVERSION = 90
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86$(TCLSUFFIX).lib")
+TCLVERSION = 86
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86t.lib")
+TCLSUFFIX = t
+TCLVERSION = 86
+!ELSE
+TCLVERSION = 90
+!ENDIF
 !ENDIF
 
 !IFNDEF TCLINCDIR
@@ -953,8 +962,16 @@ TCLLIBDIR = $(TCLDIR)\lib
 LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
+!IFNDEF TCLLIBS
+TCLLIBS = /NODEFAULTLIB:libucrt.lib netapi32.lib user32.lib ucrt.lib
+!ENDIF
+
 !IFNDEF LIBTCLSTUB
+!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
+LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
+!ELSE
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
+!ENDIF
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -1013,10 +1030,18 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-!IF $(USE_TCLSH_IN_PATH)!=0 || !EXIST("$(TCLDIR)\bin\tclsh.exe")
-TCLSH_CMD = tclsh
-!ELSE
+!IF EXISTS("$(TCLDIR)\bin\tclsh$(TCLVERSION).exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh$(TCLVERSION).exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh90.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh90.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86t.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86t.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh.exe")
 TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ELSE
+TCLSH_CMD = tclsh
 !ENDIF
 !ENDIF
 # <</mark>>
@@ -1824,7 +1849,7 @@ tclsqlite3.def:	tclsqlite.lo
 
 pkgIndex.tcl:	$(TOP)\VERSION
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
-		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] Sqlite3] \
 			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
 	)
 
@@ -2745,6 +2770,16 @@ THREADTEST3_SRC = \
 
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+# Display key variables that control which version of TCL is to be used.
+#
+tcl-env:
+	@echo TCLDIR = $(TCLDIR)
+	@echo TCLVERSION = $(TCLVERSION)
+	@echo TCLSUFFIX = $(TCLSUFFIX)
+	@echo LIBTCL = $(LIBTCL)
+	@echo LIBTCLSTUB = $(LIBTCLSTUB)
+	@echo TCLSH_CMD = $(TCLSH_CMD)
 
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
