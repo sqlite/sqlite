@@ -1,5 +1,5 @@
-C Adjustments\sto\sthe\sMakefile.msc\sto\sget\sstatic\sbuilds\sof\ssqlite3_analyzer.exe\nworking\swith\sTCL9.\s\sUpdate\sthe\scompile-for-windows.md\sdocument\sfor\sTCL9.
-D 2024-10-10T09:59:06.503
+C For\scompatibility,\sallow\sthe\sTCL\sinterfact\sto\scontinue\sworking\swith\sTCL\s8.5.
+D 2024-10-10T10:33:31.177
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -778,7 +778,7 @@ F src/sqliteInt.h ad02397dc4d22b77f9a331412d46e4c1e49459dd386fba8373fa148998e1e7
 F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c b3fea4c31c22e7b545681221a53eba9a358602706e04e066f88e2c63d99fe12f
+F src/tclsqlite.c e4bd0a252e7f73f338b98b8a0d8fe1017cfd0e171841cefc7776307b7304424d
 F src/tclsqlite.h c6af51f31a2b2172d674608763a4b98fdf5cd587e4025053e546fb8077757262
 F src/test1.c 8bf8b74145b768f42386787f93f6d6dad7bc400a4ee2d50e4ad5a06a20a97ef1
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b7a789a416fb62a532882d10e41c7048a6805f5fbbc008f36f9802be45d9ebb
-R c9f14e0cb6269b0c33c6b11339c3cd13
+P df16d07d8db042cdb1dc6bb9a00a0265ba791a615d74f9152d0b3344e618fe93
+R 1604dcef7855fc28056bdb569bc407b0
 U drh
-Z 3a6d1e8e76a2ebf4de7346b7f2c5b6fe
+Z 991f53deff2137d0600e8c28c3576019
 # Remove this line to create a well-formed Fossil manifest.
