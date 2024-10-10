@@ -4607,6 +4607,8 @@ static int btreeFixUnlocked(Btree *p){
   Pgno nPage = btreePagecount(pBt);
   u32 nFree = get4byte(&p1[36]);
 
+  sqlite3CommitTimeSet(p->pBt->aCommitTime, COMMIT_TIME_START_FIXUNLOCKED);
+
   assert( pBt->pMap );
   rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage);
   assert( p1==pPage1->aData );
@@ -4653,6 +4655,7 @@ static int btreeFixUnlocked(Btree *p){
 
         nCurrent = MAX(nPage, nHPage);
         pBt->nPage = nCurrent;
+        sqlite3CommitTimeSet(p->pBt->aCommitTime, COMMIT_TIME_START_RELOCATE1);
         rc = btreeRelocateRange(pBt, pMap->iFirst, iLast, &nCurrent);
 
         /* There are now no collisions with the snapshot at the head of the
@@ -4669,6 +4672,9 @@ static int btreeFixUnlocked(Btree *p){
             nFin--;
           }
           nFin = MAX(nFin, nHPage);
+          sqlite3CommitTimeSet(
+              p->pBt->aCommitTime, COMMIT_TIME_START_RELOCATE2
+          );
           rc = btreeRelocateRange(pBt, nFin+1, nCurrent, 0);
         }
 

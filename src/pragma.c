@@ -452,11 +452,13 @@ void sqlite3Pragma(
     zRight = sqlite3NameFromToken(db, pValue);
   }
 
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINAUTHCHECK);
   assert( pId2 );
   zDb = pId2->n>0 ? pDb->zDbSName : 0;
   if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, zDb) ){
     goto pragma_out;
   }
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDAUTHCHECK);
 
   /* Send an SQLITE_FCNTL_PRAGMA file-control to the underlying VFS
   ** connection.  If it returns SQLITE_OK, then assume that the VFS
@@ -504,10 +506,12 @@ void sqlite3Pragma(
     goto pragma_out;
   }
 
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_BEGINLOADSCHEMA);
   /* Make sure the database schema is loaded if the pragma requires that */
   if( (pPragma->mPragFlg & PragFlg_NeedSchema)!=0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
   }
+  sqlite3PrepareTimeSet(db->aPrepareTime, PREPARE_TIME_ENDLOADSCHEMA);
 
   /* Register the result column names for pragmas that return results */
   if( (pPragma->mPragFlg & PragFlg_NoColumns)==0

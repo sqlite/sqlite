@@ -5471,7 +5471,7 @@ void sqlite3CommitTimeLog(u64 *aCommit){
         (aCommit[ii]==0 ? 0 : (int)(aCommit[ii] - i1))
       );
     }
-    sqlite3_log(SQLITE_WARNING, "slow commit (v=1): (%s)", zStr);
+    sqlite3_log(SQLITE_WARNING, "slow commit (v=2): (%s)", zStr);
     sqlite3_free(zStr);
   }
 }
@@ -5481,7 +5481,7 @@ u64 sqlite3STimeNow(){
   return ((u64)time.tv_sec * 1000000 + (u64)time.tv_usec);
 }
 void sqlite3CommitTimeSet(u64 *aCommit, int iCommit){
-  if( aCommit ){
+  if( aCommit && aCommit[iCommit]==0 ){
     aCommit[iCommit] = sqlite3STimeNow();
   }
 }
@@ -5499,7 +5499,7 @@ void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepare){
     }
     if( nByte<0 ){ nByte = sqlite3Strlen30(zSql); }
     sqlite3_log(SQLITE_WARNING, 
-        "slow prepare (v=1): (%s) [%.*s]", zStr, nByte, zSql
+        "slow prepare (v=2): (%s) [%.*s]", zStr, nByte, zSql
     );
     sqlite3_free(zStr);
   }
