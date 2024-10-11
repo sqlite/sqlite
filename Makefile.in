@@ -846,7 +846,7 @@ has_tclconfig:
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify$(BEXE) has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -1648,7 +1648,7 @@ tidy:
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
-	rm -f src-verify has_tclsh*
+	rm -f src-verify$(BEXE) has_tclsh*
 
 # Removes build products and test logs.  Retains ./configure outputs.
 #

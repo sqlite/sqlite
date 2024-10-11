@@ -1,9 +1,9 @@
-C Improved\sinstructions\sin\sthe\sTEA\sreadme\sfor\sbuilding\sthe\sTCL\sextension.
-D 2024-10-11T19:13:02.143
+C Add\stwo\smissing\s$(BEXE)\ssuffixes,\sas\sreported\sin\s[forum:9ad28680d394afda\s|\sforum\spost\s9ad28680d3].\sProblem\sintroduced\sby\s[1218a203483cecdc]\sbeing\sincomplete\sin\swhere\sit\sadded\sthat\ssuffix.
+D 2024-10-11T19:18:44.588
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in e504a9f003b2de41447b81296d9a6988a67ffabc34fa396b60ffd89b0c63a7bf
+F Makefile.in 209f43b9a484118a838d52d2b351f756bd8ec5cbc1181c6308f185ea364d4420
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 829ad1543511bd2953b0f9ac41e494daf96e25b4ec2e00c2abe76a08d7b46b3d
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P acc866c8f1b73fd57f434c5cb2576c2a7b9475a127febbcc27e8c714bbe29a8a
-R 712bf875e7c1c6a34f715ccf3b4ae9ee
-U drh
-Z eb48fec82885f230614043e4219cfa3f
+P bf996f710212fbc0c0c67789e3f6f1a805e7b81e0265b312265ca7286e76d6f3
+R c1596485fe08faef2532f3355a796371
+U stephan
+Z c9b6b67c140ab2544242449edb704a7d
 # Remove this line to create a well-formed Fossil manifest.
