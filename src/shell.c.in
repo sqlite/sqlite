@@ -1629,13 +1629,7 @@ static const char *modeDescr[] = {
 #define SEP_Tab       "\t"
 #define SEP_Space     " "
 #define SEP_Comma     ","
-#ifdef SQLITE_U8TEXT_ONLY
-  /* With the SQLITE_U8TEXT_ONLY option, the output will always be in
-  ** text mode.  The \r will be inserted automatically. */
-# define SEP_CrLf      "\n"
-#else
-# define SEP_CrLf      "\r\n"
-#endif
+#define SEP_CrLf      "\n"   /* Use ".crnl on" to get \r\n line endings */
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
 
@@ -2801,13 +2795,21 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        sqlite3_fputs(p->rowSeparator, p->out);
+        if( p->crnlMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
+          sqlite3_fputs("\r\n", p->out);
+        }else{
+          sqlite3_fputs(p->rowSeparator, p->out);
+        }
       }
       if( nArg>0 ){
         for(i=0; i<nArg; i++){
           output_csv(p, azArg[i], i<nArg-1);
         }
-        sqlite3_fputs(p->rowSeparator, p->out);
+        if( p->crnlMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
+          sqlite3_fputs("\r\n", p->out);
+        }else{
+          sqlite3_fputs(p->rowSeparator, p->out);
+        }
       }
       setCrnlMode(p);
       break;
@@ -4952,9 +4954,7 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-#if defined(_WIN32)
-  ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
-#endif
+  ".crnl on|off             Translate \\n to \\r\\n sometimes.  Default OFF",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -8573,17 +8573,13 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
-#if !defined(_WIN32)
-    sqlite3_fputs("The \".crnl\" command is disable in this build.\n", p->out);
-#else
     if( nArg==2 ){
       p->crnlMode = booleanValue(azArg[1]);
       setCrnlMode(p);
     }else{
-      eputz("Usage: .crnl on|off\n");
-      rc = 1;
+      sqlite3_fprintf(stderr, "crnl is currently %s\n",
+                      p->crnlMode ? "ON" : "OFF");
     }
-#endif
   }else
 
   if( c=='d' && n>1 && cli_strncmp(azArg[0], "databases", n)==0 ){
@@ -12620,9 +12616,11 @@ static void main_init(ShellState *data) {
   /* By default, come up in O_BINARY mode.  That way, the default output is
   ** the same for Windows and non-Windows systems.  Use the ".crnl on"
   ** command to change into O_TEXT mode to do automatic NL-to-CRLF
-  ** conversions on output for Windows.  Windows console output is not
-  ** subject to the crnlMode setting and is unaffected either way. This
-  ** setting only affects output going into a file or pipe. */
+  ** conversions on output for Windows.
+  **
+  ** End-of-line marks on CVS output is CRLF when in .crnl is on and
+  ** NL when .crnl is off.
+  */
   data->crnlMode = 0;
 }
 
