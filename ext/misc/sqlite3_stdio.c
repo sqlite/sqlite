@@ -32,16 +32,20 @@
 
 /*
 ** If the SQLITE_U8TEXT_ONLY option is defined, then use O_U8TEXT
-** when appropriate on all output.
+** when appropriate on all output.  (Sometimes use O_BINARY when
+** rendering ASCII text in cases where NL-to-CRLF expansion would
+** not be correct.)
 **
 ** If the SQLITE_U8TEXT_STDIO option is defined, then use O_U8TEXT
-** when appropriate when writing to stdout or stderr.  Use O_BINARY for
-** anything else.
+** when appropriate when writing to stdout or stderr.  Use O_BINARY
+** or O_TEXT (depending on things like the .mode and the .crnl setting
+** in the CLI, or other context clues in other applications) for all
+** other output channels.
 **
 ** The default behavior, if neither of the above is defined is to
 ** use O_U8TEXT when writing to the Windows console (or anything
-** else for which _isatty() returns true) and to use O_BINARY for
-** all other output.
+** else for which _isatty() returns true) and to use O_BINARY or O_TEXT
+** for all other output channels.
 */
 #if defined(SQLITE_U8TEXT_ONLY)
 # define UseWtextForOutput(fd) 1
