@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\sMakefile.msc
-D 2024-10-11T17:43:47.578
+C Avoid\srunning\ssome\snew\stests\sin\slock5.test\swith\sthe\sinmemory_journal\spermutation.
+D 2024-10-11T18:59:29.579
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1405,7 +1405,7 @@ F test/lock.test be4fe08118fb988fed741f429b7dd5d65e1c90db
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test 27143363eda1622f03c133efc8db808fc331afd973486cb571ea71cd717d37b8
-F test/lock5.test 51e9e2e8d5aed4ec470be19dfc0d630388a7444a8fc812ec8d08e46469a15726
+F test/lock5.test 583cae05992af0f66607286917f7d5f8aed3b6053c52df5994efb98f2a8fdbaf
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 2f3f7f2e9637f93ccf609df48ef5b27a50278b6b1cd752b445d52262e5841413
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b87ea219bce5689a69efac31063b9b11928e59124c0d36194715ff7faa5129d
-R 415017f225f4ead5616580cc6f510f56
-U drh
-Z f7c4ce89fa70bec4a747e36d57c54025
+P 911ab3299771a607a135f0bcde3057b0ed337870362396bf72506210fdff729e
+R 390e9a5d3a3b1b4ebd0cb5dbdeac1eef
+U dan
+Z c3b55c0485ea7f9cce6371c8af190d47
 # Remove this line to create a well-formed Fossil manifest.

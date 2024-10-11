@@ -175,19 +175,21 @@ do_test lock5-flock.10 {
   } db2
 } {1 {database is locked}}
 
-do_test lock5-flock.11 {
-  forcecopy test.db test.db2
-  forcecopy test.db-journal test.db2-journal
-  db2 close
-  sqlite3 db2 test.db2 -vfs unix-flock
-  catchsql {
-    SELECT * FROM t1
-  } db2
-} {0 {1 2}}
-
-do_test lock5-flock.12 {
-  file exists test.db2-journal
-} 0
+if {[permutation]!="inmemory_journal"} {
+  do_test lock5-flock.11 {
+    forcecopy test.db test.db2
+    forcecopy test.db-journal test.db2-journal
+    db2 close
+    sqlite3 db2 test.db2 -vfs unix-flock
+    catchsql {
+      SELECT * FROM t1
+    } db2
+  } {0 {1 2}}
+  
+  do_test lock5-flock.12 {
+    file exists test.db2-journal
+  } 0
+}
 
 db close
 db2 close
