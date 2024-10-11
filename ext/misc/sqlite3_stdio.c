@@ -31,27 +31,17 @@
 #include <fcntl.h>
 
 /*
-** If the SQLITE_U8TEXT_ONLY option is defined, then only use
-** _O_U8TEXT, _O_WTEXT, and similar together with the UTF-16
-** interfaces to the Windows CRT.  The use of ANSI-only routines
-** like fputs() and ANSI modes like _O_TEXT and _O_BINARY is
-** avoided.
+** If the SQLITE_U8TEXT_ONLY option is defined, then use O_U8TEXT
+** when appropriate on all output.
 **
-** The downside of using SQLITE_U8TEXT_ONLY is that it becomes
-** impossible to output a bare newline character (0x0a) - that is,
-** a newline that is not preceded by a carriage return (0x0d).
-** And without that capability, sometimes the output will be slightly
-** incorrect, as extra 0x0d characters will have been inserted where
-** they do not belong.
+** If the SQLITE_U8TEXT_STDIO option is defined, then use O_U8TEXT
+** when appropriate when writing to stdout or stderr.  Use O_BINARY for
+** anything else.
 **
-** The SQLITE_U8TEXT_STDIO compile-time option is a compromise.
-** It always enables _O_WTEXT or similar for stdin, stdout, stderr,
-** but allows other streams to be _O_TEXT and/or O_BINARY.  The
-** SQLITE_U8TEXT_STDIO option has the same downside as SQLITE_U8TEXT_ONLY
-** in that stray 0x0d characters might appear where they ought not, but
-** at least with this option those characters only appear on standard
-** I/O streams, and not on new streams that might be created by the
-** application using sqlite3_fopen() or sqlite3_popen().
+** The default behavior, if neither of the above is defined is to
+** use O_U8TEXT when writing to the Windows console (or anything
+** else for which _isatty() returns true) and to use O_BINARY for
+** all other output.
 */
 #if defined(SQLITE_U8TEXT_ONLY)
 # define UseWtextForOutput(fd) 1

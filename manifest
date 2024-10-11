@@ -1,5 +1,5 @@
-C Add\sthe\sdoc/compile-for-unix.md\sdocument.
-D 2024-10-11T19:33:22.928
+C Update\scomments\sin\sext/misc/sqlite3_stdio.c\sto\sreflect\sthe\slatest\senhancements.\nNo\schanges\sto\scode.
+D 2024-10-11T19:57:41.456
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -428,7 +428,7 @@ F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 74d86044cc45475cb0f7fa0d07e7bb5b3cc77c4339b084af7a4afe1b9cc008ef
+F ext/misc/sqlite3_stdio.c 3ffe113d4d56ca05a2e2df0f79fede7d255ab40a1be3c5a5e8cdf74333031663
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2217,8 +2217,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0c4e6f111b9b16538aad33e83f02f8d7835e952649f5cee610c068722bea4a4
-R df2e0da3465ed81f9803a54efe976008
+P a3e16e478b03ccc12888eb5700c2e480a446957368f4b37ed322af2f4c9cd7c4
+R 1291abc09c87e338ea2cfa1281bb85ca
 U drh
-Z d3c0161590f1e87174d191e4d2fda132
+Z 347c97452247d4e75e184990772431fa
 # Remove this line to create a well-formed Fossil manifest.
