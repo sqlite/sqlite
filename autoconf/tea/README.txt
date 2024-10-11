@@ -9,11 +9,15 @@ Update 2024-10-11:
 A better way to build the TCL extension for SQLite is to use the
 canonical source code tarball.  For Unix:
 
-   ./configure && make tclextension-install
+   ./configure --with-tclsh=$(TCLSH)
+   make tclextension-install
 
 For Windows:
 
-   nmake /f Makefile.msc tclextension-install
+   nmake /f Makefile.msc tclextension-install TCLSH_CMD=$(TCLSH)
+
+In both of the above, replace $(TCLSH) with the full pathname of
+of the tclsh that you want the SQLite extension to work with.
 
 This TEA builder is antiquated.  It does not work for TCL9.  The
 SQLite devs don't know how to fix it.  If you would like to help

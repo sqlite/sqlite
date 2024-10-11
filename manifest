@@ -1,5 +1,5 @@
-C Update\sthe\sREADME\sfor\sthe\sTEA\sextension\sin\sthe\samalgamation\starball.
-D 2024-10-11T19:08:45.077
+C Improved\sinstructions\sin\sthe\sTEA\sreadme\sfor\sbuilding\sthe\sTCL\sextension.
+D 2024-10-11T19:13:02.143
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -22,7 +22,7 @@ F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
 F autoconf/tea/Makefile.in 106a96f2f745d41a0f6193f1de98d7355830b65d45032c18cd7c90295ec24196
-F autoconf/tea/README.txt be9392c4c5b417376847fa48b129a2ef7963e32a5a49ee42f70cf78f6633ec0b w autoconf/tea/README
+F autoconf/tea/README.txt 94fa2472d3ee4139ab24b364d99a70445d0a25531dac3ce03af2055d581f76b4
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.ac 0deb5d6c49c8119f75f436488219fc043127d72057af5dfba2c9ce096a5734bc
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
@@ -2216,8 +2216,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b12e2e55c6d4b329f0a7629965f313f48b6d3918d36d3371953c56e0c688a28
-R 8170fa711e2545cebc17a8c24d23cbab
+P acc866c8f1b73fd57f434c5cb2576c2a7b9475a127febbcc27e8c714bbe29a8a
+R 712bf875e7c1c6a34f715ccf3b4ae9ee
 U drh
-Z bceed50e054186e2b2112bc60382b7f2
+Z eb48fec82885f230614043e4219cfa3f
 # Remove this line to create a well-formed Fossil manifest.
