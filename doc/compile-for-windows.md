@@ -148,15 +148,15 @@ statically linked so that it does not depend on separate DLL:
       "`C:\Tcl\lib`" for 64-bit builds.)
 
   5.  CD into your SQLite source code directory and build the desired
-      utility program, but add the following extra arguments to the
+      utility program, but add the following extra argument to the
       nmake command line:
       <blockquote><pre>
-      CCOPTS="-DSTATIC_BUILD" LIBTCL="tcl90s.lib"
+      STATICALLY_LINK_TCL=1
       </pre></blockquote>
       <p>So, for example, to build a statically linked version of
       sqlite3_analyzer.exe, you might type:
       <blockquote><pre>
-      nmake /f Makefile.msc CCOPTS="-DSTATIC_BUILD" LIBTCL="tcl90s.lib" sqlite3_analyzer.exe
+      nmake /f Makefile.msc STATICALLY_LINK_TCL=1 sqlite3_analyzer.exe
       </pre></blockquote>
 
   6.  After your executable is built, you can verify that it does not

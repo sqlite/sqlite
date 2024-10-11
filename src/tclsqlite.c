@@ -4037,6 +4037,20 @@ EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =
     "if {[llength $argv]>=1} {\n"
+#ifdef WIN32
+      "set new [list]\n"
+      "foreach arg $argv {\n"
+        "if {[file exists $arg]} {\n"
+          "lappend new $arg\n"
+        "} else {\n"
+          "foreach match [lsort [glob -nocomplain $arg]] {\n"
+            "lappend new $match\n"
+          "}\n"
+        "}\n"
+      "}\n"
+      "set argv $new\n"
+      "unset new\n"
+#endif
       "set argv0 [lindex $argv 0]\n"
       "set argv [lrange $argv 1 end]\n"
       "source $argv0\n"

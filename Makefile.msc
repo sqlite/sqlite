@@ -66,6 +66,14 @@ USE_STDCALL = 0
 USE_SEH = 1
 !ENDIF
 
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -929,6 +937,9 @@ TCC = $(TCC) /fsanitize=address
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLSUFFIX = s
+!ENDIF
 !IFNDEF TCLSUFFIX
 TCLSUFFIX =
 !ENDIF
@@ -963,7 +974,11 @@ LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
 !IFNDEF TCLLIBS
+!IF $(STATICALLY_LINK_TCL)!=0
 TCLLIBS = /NODEFAULTLIB:libucrt.lib netapi32.lib user32.lib ucrt.lib
+!ELSE
+TCLLIBS =
+!ENDIF
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
