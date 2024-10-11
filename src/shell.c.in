@@ -5953,7 +5953,7 @@ static void output_file_close(FILE *f){
 ** recognized and do the right thing.  NULL is returned if the output
 ** filename is "off".
 */
-static FILE *output_file_open(const char *zFile, int bTextMode){
+static FILE *output_file_open(const char *zFile){
   FILE *f;
   if( cli_strcmp(zFile,"stdout")==0 ){
     f = stdout;
@@ -5962,7 +5962,7 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   }else if( cli_strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = sqlite3_fopen(zFile, bTextMode ? "w" : "wb");
+    f = sqlite3_fopen(zFile, "w");
     if( f==0 ){
       sqlite3_fprintf(stderr,"Error: cannot open \"%s\"\n", zFile);
     }
@@ -9663,7 +9663,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
       output_file_close(p->pLog);
       if( cli_strcmp(zFile,"on")==0 ) zFile = "stdout";
-      p->pLog = output_file_open(zFile, 0);
+      p->pLog = output_file_open(zFile);
     }
   }else
 
@@ -9918,7 +9918,6 @@ static int do_meta_command(char *zLine, ShellState *p){
    || (c=='w' && n==3 && cli_strcmp(azArg[0],"www")==0)
   ){
     char *zFile = 0;
-    int bTxtMode = 0;
     int i;
     int eMode = 0;
     int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel/.www */
@@ -10000,11 +9999,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* web-browser mode. */
         newTempFile(p, "html");
         if( !bPlain ) p->mode = MODE_Www;
-        bTxtMode = 1;
       }else{
         /* text editor mode */
         newTempFile(p, "txt");
-        bTxtMode = 1;
       }
       sqlite3_free(zFile);
       zFile = sqlite3_mprintf("%s", p->zTempFile);
@@ -10028,7 +10025,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
 #endif
     }else{
-      FILE *pfFile = output_file_open(zFile, bTxtMode);
+      FILE *pfFile = output_file_open(zFile);
       if( pfFile==0 ){
         if( cli_strcmp(zFile,"off")!=0 ){
           sqlite3_fprintf(stderr,"Error: cannot write to \"%s\"\n", zFile);
@@ -10036,13 +10033,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
       } else {
         output_redir(p, pfFile);
+        if( zBom ) sqlite3_fputs(zBom, pfFile);
         if( bPlain && eMode=='w' ){
           sqlite3_fputs(
             "<!DOCTYPE html>\n<BODY>\n<PLAINTEXT>\n",
             pfFile
           );
         }
-        if( zBom ) sqlite3_fputs(zBom, pfFile);
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
@@ -11225,7 +11222,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && cli_strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
-    p->out = output_file_open("testcase-out.txt", 0);
+    p->out = output_file_open("testcase-out.txt");
     if( p->out==0 ){
       eputz("Error: cannot open 'testcase-out.txt'\n");
     }
@@ -11729,7 +11726,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }else{
         output_file_close(p->traceOut);
-        p->traceOut = output_file_open(z, 0);
+        p->traceOut = output_file_open(z);
       }
     }
     if( p->traceOut==0 ){
