@@ -1,5 +1,5 @@
-C Allow\sthe\s".expert"\scommand\sto\sanalyze\sstatements\sthat\suse\sbuilt-in\svirtual\stables.
-D 2024-10-12T18:00:22.050
+C Ensure\sthat\stest\sfile\sext/expert/expert1.test\sworks\swith\snon-fts5\sbuilds.
+D 2024-10-12T18:33:40.532
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -58,7 +58,7 @@ F ext/consio/console_io.c d2b74afae8d301de2e8447b1045fcd33eb59df13bf581d906d99c7
 F ext/consio/console_io.h b5ebe34aa15b357621ebbea3d3f2e2b24750d4280b5802516409e23947fd9ee5
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test e049c507d33f7a7cf92ea6b15ac630cbc22598e387ec6749c2c5e1a5405e15a7
+F ext/expert/expert1.test 1fa0201d8610883c32214b1d83e3a6cc582694ac1067be8319b280235145a555
 F ext/expert/sqlite3expert.c b7cbbd7cc109c66ebdf6091467d790abb9d7c25ae3b822bb76388509641d37de
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c b767b2039a0df707eb3147e86bcf68b252d8455d9a41774b1a836cd052ceca70
@@ -2217,11 +2217,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2db24c5364808008fa503f37ca8ccf5d135e8f6bfac2efb29e509e26f7190470
-R 3ec70cb458fa17a25b97de6754d185ac
-T *branch * expert-vtab-fix
-T *sym-expert-vtab-fix *
-T -sym-trunk *
+P a201906cd3c85080f9b739c2d347c51348ebebd3dc9b647d33d8dcae4b6e5850
+R 6f739da0cd1664c0785c7542d02d878e
 U dan
-Z e6ab462e3ffdb8d19a80b4f488adc3f5
+Z 0f71cd593125b9b696ef9a239504e6a3
 # Remove this line to create a well-formed Fossil manifest.
