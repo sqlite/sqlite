@@ -1705,7 +1705,7 @@ char sqlite3AffinityType(const char *zIn, Column *pCol){
       }
     }
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
-    if( v>=sqlite3GlobalConfig.szSorterRef ){
+    if( (u32)v>=sqlite3GlobalConfig.szSorterRef ){
       pCol->colFlags |= COLFLAG_SORTERREF;
     }
 #endif
