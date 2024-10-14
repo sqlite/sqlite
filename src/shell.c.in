@@ -1629,7 +1629,7 @@ static const char *modeDescr[] = {
 #define SEP_Tab       "\t"
 #define SEP_Space     " "
 #define SEP_Comma     ","
-#define SEP_CrLf      "\n"   /* Use ".crlf on" to get \r\n line endings */
+#define SEP_CrLf      "\r\n"
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
 
@@ -2797,21 +2797,13 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        if( p->crlfMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
-          sqlite3_fputs("\r\n", p->out);
-        }else{
-          sqlite3_fputs(p->rowSeparator, p->out);
-        }
+        sqlite3_fputs(p->rowSeparator, p->out);
       }
       if( nArg>0 ){
         for(i=0; i<nArg; i++){
           output_csv(p, azArg[i], i<nArg-1);
         }
-        if( p->crlfMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
-          sqlite3_fputs("\r\n", p->out);
-        }else{
-          sqlite3_fputs(p->rowSeparator, p->out);
-        }
+        sqlite3_fputs(p->rowSeparator, p->out);
       }
       setCrlfMode(p);
       break;
@@ -4956,7 +4948,7 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-  ".crlf on|off             Translate \\n to \\r\\n sometimes.  Default OFF",
+  ".crlf ?on|off?           Whether or not to use \\r\\n line endings",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -8579,12 +8571,13 @@ static int do_meta_command(char *zLine, ShellState *p){
        || cli_strncmp(azArg[0], "crnl",n)==0)
   ){
     if( nArg==2 ){
+#ifdef _WIN32
       p->crlfMode = booleanValue(azArg[1]);
-      setCrlfMode(p);
-    }else{
-      sqlite3_fprintf(stderr, "crlf is currently %s\n",
-                      p->crlfMode ? "ON" : "OFF");
+#else
+      p->crlfMode = 0;
+#endif
     }
+    sqlite3_fprintf(stderr, "crlf is %s\n", p->crlfMode ? "ON" : "OFF");
   }else
 
   if( c=='d' && n>1 && cli_strncmp(azArg[0], "databases", n)==0 ){
@@ -12604,6 +12597,9 @@ static void main_init(ShellState *data) {
   memset(data, 0, sizeof(*data));
   data->normalMode = data->cMode = data->mode = MODE_List;
   data->autoExplain = 1;
+#ifdef _WIN32
+  data->crlfMode = 1;
+#endif
   data->pAuxDb = &data->aAuxDb[0];
   memcpy(data->colSeparator,SEP_Column, 2);
   memcpy(data->rowSeparator,SEP_Row, 2);
@@ -12617,16 +12613,6 @@ static void main_init(ShellState *data) {
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
-
-  /* By default, come up in O_BINARY mode.  That way, the default output is
-  ** the same for Windows and non-Windows systems.  Use the ".crlf on"
-  ** command to change into O_TEXT mode to do automatic NL-to-CRLF
-  ** conversions on output for Windows.
-  **
-  ** End-of-line marks on CVS output is CRLF when in .crlf is on and
-  ** NL when .crlf is off.
-  */
-  data->crlfMode = 0;
 }
 
 /*
