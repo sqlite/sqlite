@@ -4763,7 +4763,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
   if( cli_strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
-    if( !dataOnly ) sqlite3_fputs("DELETE FROM sqlite_sequence;\n", p->out);
+    /* no-op */
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
   }else if( cli_strncmp(zTable, "sqlite_", 7)==0 ){
