@@ -1448,7 +1448,7 @@ struct ShellState {
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
-  u8 crnlMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
+  u8 crlfMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
@@ -1629,7 +1629,7 @@ static const char *modeDescr[] = {
 #define SEP_Tab       "\t"
 #define SEP_Space     " "
 #define SEP_Comma     ","
-#define SEP_CrLf      "\n"   /* Use ".crnl on" to get \r\n line endings */
+#define SEP_CrLf      "\n"   /* Use ".crlf on" to get \r\n line endings */
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
 
@@ -1714,7 +1714,7 @@ static void editFunc(
   char *zCmd = 0;
   int bBin;
   int rc;
-  int hasCRNL = 0;
+  int hasCRLF = 0;
   FILE *f = 0;
   sqlite3_int64 sz;
   sqlite3_int64 x;
@@ -1759,7 +1759,7 @@ static void editFunc(
   }else{
     const char *z = (const char*)sqlite3_value_text(argv[0]);
     /* Remember whether or not the value originally contained \r\n */
-    if( z && strstr(z,"\r\n")!=0 ) hasCRNL = 1;
+    if( z && strstr(z,"\r\n")!=0 ) hasCRLF = 1;
     x = fwrite(sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
   }
   fclose(f);
@@ -1804,7 +1804,7 @@ static void editFunc(
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
     sqlite3_int64 i, j;
-    if( hasCRNL ){
+    if( hasCRLF ){
       /* If the original contains \r\n then do no conversions back to \n */
     }else{
       /* If the file did not originally contain \r\n then convert any new
@@ -1849,9 +1849,9 @@ static void outputModePop(ShellState *p){
 /*
 ** Set output mode to text or binary for Windows.
 */
-static void setCrnlMode(ShellState *p){
+static void setCrlfMode(ShellState *p){
 #ifdef _WIN32
-  if( p->crnlMode ){
+  if( p->crlfMode ){
     sqlite3_fsetmode(p->out, _O_TEXT);
   }else{
     sqlite3_fsetmode(p->out, _O_BINARY);
@@ -1940,7 +1940,7 @@ static void output_quoted_string(ShellState *p, const char *z){
     }
     sqlite3_fputs("'", out);
   }
-  setCrnlMode(p);
+  setCrlfMode(p);
 }
 
 /*
@@ -2008,7 +2008,7 @@ static void output_quoted_escaped_string(ShellState *p, const char *z){
       sqlite3_fprintf(out, ",'%s',char(10))", zNL);
     }
   }
-  setCrnlMode(p);
+  setCrlfMode(p);
 }
 
 /*
@@ -2797,7 +2797,7 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        if( p->crnlMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
+        if( p->crlfMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
           sqlite3_fputs("\r\n", p->out);
         }else{
           sqlite3_fputs(p->rowSeparator, p->out);
@@ -2807,13 +2807,13 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           output_csv(p, azArg[i], i<nArg-1);
         }
-        if( p->crnlMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
+        if( p->crlfMode && cli_strcmp(p->rowSeparator,SEP_CrLf)==0 ){
           sqlite3_fputs("\r\n", p->out);
         }else{
           sqlite3_fputs(p->rowSeparator, p->out);
         }
       }
-      setCrnlMode(p);
+      setCrlfMode(p);
       break;
     }
     case MODE_Insert: {
@@ -4956,7 +4956,7 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-  ".crnl on|off             Translate \\n to \\r\\n sometimes.  Default OFF",
+  ".crlf on|off             Translate \\n to \\r\\n sometimes.  Default OFF",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -6437,7 +6437,7 @@ static void output_redir(ShellState *p, FILE *pfNew){
     sqlite3_fputs("Output already redirected.\n", stderr);
   }else{
     p->out = pfNew;
-    setCrnlMode(p);
+    setCrlfMode(p);
     if( p->mode==MODE_Www ){
       sqlite3_fputs(
         "<!DOCTYPE html>\n"
@@ -6493,7 +6493,7 @@ static void output_reset(ShellState *p){
   }
   p->outfile[0] = 0;
   p->out = stdout;
-  setCrnlMode(p);
+  setCrlfMode(p);
 }
 #else
 # define output_redir(SS,pfO)
@@ -8446,7 +8446,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  /* Undocumented.  Legacy only.  See "crnl" below */
+  /* Undocumented.  Legacy only.  See "crlf" below */
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
     eputz("The \".binary\" command is deprecated.\n");
     rc = 1;
@@ -8574,13 +8574,16 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
+  if( c=='c' && n==4
+   && (cli_strncmp(azArg[0], "crlf", n)==0
+       || cli_strncmp(azArg[0], "crnl",n)==0)
+  ){
     if( nArg==2 ){
-      p->crnlMode = booleanValue(azArg[1]);
-      setCrnlMode(p);
+      p->crlfMode = booleanValue(azArg[1]);
+      setCrlfMode(p);
     }else{
-      sqlite3_fprintf(stderr, "crnl is currently %s\n",
-                      p->crnlMode ? "ON" : "OFF");
+      sqlite3_fprintf(stderr, "crlf is currently %s\n",
+                      p->crlfMode ? "ON" : "OFF");
     }
   }else
 
@@ -12616,14 +12619,14 @@ static void main_init(ShellState *data) {
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
 
   /* By default, come up in O_BINARY mode.  That way, the default output is
-  ** the same for Windows and non-Windows systems.  Use the ".crnl on"
+  ** the same for Windows and non-Windows systems.  Use the ".crlf on"
   ** command to change into O_TEXT mode to do automatic NL-to-CRLF
   ** conversions on output for Windows.
   **
-  ** End-of-line marks on CVS output is CRLF when in .crnl is on and
-  ** NL when .crnl is off.
+  ** End-of-line marks on CVS output is CRLF when in .crlf is on and
+  ** NL when .crlf is off.
   */
-  data->crnlMode = 0;
+  data->crlfMode = 0;
 }
 
 /*

@@ -38,7 +38,7 @@
 **
 ** If the SQLITE_U8TEXT_STDIO option is defined, then use O_U8TEXT
 ** when appropriate when writing to stdout or stderr.  Use O_BINARY
-** or O_TEXT (depending on things like the .mode and the .crnl setting
+** or O_TEXT (depending on things like the .mode and the .crlf setting
 ** in the CLI, or other context clues in other applications) for all
 ** other output channels.
 **
