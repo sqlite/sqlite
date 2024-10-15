@@ -2577,7 +2577,7 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3-rsync.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	testfixture.exe sqlite3.exe
