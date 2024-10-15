@@ -2464,7 +2464,11 @@ static int robust_flock(int fd, int op){
 ** is set to SQLITE_OK unless an I/O error occurs during lock checking.
 */
 static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
+#ifdef SQLITE_DEBUG
   unixFile *pFile = (unixFile*)id;
+#else
+  UNUSED_PARAMETER(id);
+#endif
 
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 

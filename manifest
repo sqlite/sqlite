@@ -1,5 +1,5 @@
-C Fix\sthe\s"tool-zip"\smakefile\starget\sso\sthat\sit\sincludes\ssqlite3-rsync.
-D 2024-10-15T18:45:21.791
+C Fix\sharmless\scompiler\swarning\sin\sflockCheckReservedLock().
+D 2024-10-15T22:22:53.374
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -754,7 +754,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 4086be39edc253ca75d4f447972e26f6998023ab519d1a176e3b3a72fae609d0
+F src/os_unix.c 14d0f80e4779f5f76bcc71e7af97e3efe318fa3d0b22335623c59fab7d39302b
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
@@ -2217,8 +2217,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b4bc5c4c1dc7c4ba359babc71c07ac3a6719971766951a8d2cb1df9e2396a83
-R 2ed74e1453ff42b0ea3799af4d62c8c1
+P ecdbedb16bbc467b0bc56badae2a4d407b4ea2085312b50af56af8cd110f055c
+R 9f52713e8eaa9976f4131eab2f8af10c
 U drh
-Z 58979b2cefb747fe9b44a98ef6a6d211
+Z 789bdcffe52cd99fcbdd811406537eae
 # Remove this line to create a well-formed Fossil manifest.
