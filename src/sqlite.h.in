@@ -4232,7 +4232,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** is the number of bytes in the input string <i>including</i>
 ** the nul-terminator.
 ** Note that nByte measure the length of the input in bytes, not
-** characters, even for the UTF-16 inferfaces.
+** characters, even for the UTF-16 interfaces.
 **
 ** ^If pzTail is not NULL then *pzTail is made to point to the first byte
 ** past the end of the first SQL statement in zSql.  These routines only

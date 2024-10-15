@@ -1,5 +1,5 @@
-C Cross-reference\sthe\ssqlite3_backup_init()\sfunction\sto\sthe\sdocumentation\sfor\nVACUUM\sINTO\sand\ssqlite3-rsync.\s\sComment\schanges\sonly.\s\sNo\schanges\sto\scode.
-D 2024-10-15T14:00:29.768
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocument.\s\sNo\scode\schanges.
+D 2024-10-15T14:28:23.268
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -772,7 +772,7 @@ F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
 F src/shell.c.in 0662f9bcf0725461778d0254a06150e5d61c08c5a87a7281ccdf45552050c79d
-F src/sqlite.h.in b4bb0ef2209199ff39946adb62abfb316d288a3ce9ef46cc1e8514d46f7bbcf7
+F src/sqlite.h.in 547508e419f83421fea0282dee4ea82fc575cc8bfd6ec13d333fc1bd82b9f70e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h ad02397dc4d22b77f9a331412d46e4c1e49459dd386fba8373fa148998e1e7d0
@@ -2217,8 +2217,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20e60bf058c54bc818ea1b8ce54ace8bcd50699734713cef622bf79e49a9a279
-R b5b1ff932683ee99575e97488a29d8d4
+P 405c23ce02cc7f970e732afc26e01d0267b8fa89d8edc3d53fae2b3bc8405cbb
+R 9fb12d9ed97d139a0344d179255e7067
 U drh
-Z 5f285a9b6162aaeb2664fdd848672415
+Z e131015db60bc2c35aa320017b31d7a0
 # Remove this line to create a well-formed Fossil manifest.
