@@ -224,6 +224,7 @@ struct Fts5Config {
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   int eContent;                   /* An FTS5_CONTENT value */
   int bContentlessDelete;         /* "contentless_delete=" option (dflt==0) */
+  int bContentlessUnindexed;      /* "contentless_unindexed=" option (dflt=0) */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
@@ -262,9 +263,10 @@ struct Fts5Config {
 #define FTS5_CURRENT_VERSION               4
 #define FTS5_CURRENT_VERSION_SECUREDELETE  5
 
-#define FTS5_CONTENT_NORMAL   0
-#define FTS5_CONTENT_NONE     1
-#define FTS5_CONTENT_EXTERNAL 2
+#define FTS5_CONTENT_NORMAL    0
+#define FTS5_CONTENT_NONE      1
+#define FTS5_CONTENT_EXTERNAL  2
+#define FTS5_CONTENT_UNINDEXED 3
 
 #define FTS5_DETAIL_FULL      0
 #define FTS5_DETAIL_NONE      1
@@ -724,7 +726,7 @@ int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64, sqlite3_value**, int);
-int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
+int sqlite3Fts5StorageContentInsert(Fts5Storage *p, int, sqlite3_value**, i64*);
 int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p, int iArg);

@@ -1183,6 +1183,24 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           }
         }
 #endif
+
+        /* If the function may call sqlite3_value_subtype(), then set the 
+        ** EP_SubtArg flag on all of its argument expressions. This prevents
+        ** where.c from replacing the expression with a value read from an
+        ** index on the same expression, which will not have the correct 
+        ** subtype. Also set the flag if the function expression itself is
+        ** an EP_SubtArg expression. In this case subtypes are required as 
+        ** the function may return a value with a subtype back to its 
+        ** caller using sqlite3_result_value().  */
+        if( (pDef->funcFlags & SQLITE_SUBTYPE) 
+         || ExprHasProperty(pExpr, EP_SubtArg) 
+        ){
+          int ii;
+          for(ii=0; ii<n; ii++){
+            ExprSetProperty(pList->a[ii].pExpr, EP_SubtArg);
+          }
+        }
+
         if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
           /* For the purposes of the EP_ConstFunc flag, date and time
           ** functions and other functions that change slowly are considered

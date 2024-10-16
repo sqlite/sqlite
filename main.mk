@@ -571,7 +571,7 @@ dbhash$(EXE):	$(TOP)/tool/dbhash.c sqlite3.c sqlite3.h
 		$(TOP)/tool/dbhash.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 RSYNC_SRC = \
-  $(TOP)/tool/sqlite3-rsync.c \
+  $(TOP)/tool/sqlite3_rsync.c \
   sqlite3.c
 
 RSYNC_OPT = \
@@ -580,7 +580,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync$(EXE):	$(RSYNC_SRC)
+sqlite3_rsync$(EXE):	$(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(EXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
@@ -1165,7 +1165,7 @@ clean:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.def *.pc *.vsix
-	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
