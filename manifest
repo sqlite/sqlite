@@ -1,9 +1,9 @@
-C Fix\sharmless\scompiler\swarning\sin\sflockCheckReservedLock().
-D 2024-10-15T22:22:53.374
+C In\sthe\sunix\sMakefile,\sstrip\scompiled\sbinaries\sprior\sto\sadding\sthem\sto\sthe\ntool\sZIP\sarchive.
+D 2024-10-16T10:20:30.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in b4e88cf9a1260273ad88ef8e65de3de81c0af8010782a7fc685884551220445f
+F Makefile.in 78e76e161981608a8c96ef92045d024ff8fced0b6d6ff442c1bafb93e2cf4467
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 12d2c38554bddf5e698aba580eb863c762c0e1d46f5cad60d028e7270c33cdc2
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2217,8 +2217,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ecdbedb16bbc467b0bc56badae2a4d407b4ea2085312b50af56af8cd110f055c
-R 9f52713e8eaa9976f4131eab2f8af10c
+P f369de3d8fa34a403b5c9f6269f7e3fdb16a13784a70460c5032ad4e66615d64
+R a516d4923c3cbd6116cdc55d9e1d772d
 U drh
-Z 789bdcffe52cd99fcbdd811406537eae
+Z 650ee0412157fb1bcbcde3dfc36af0ff
 # Remove this line to create a well-formed Fossil manifest.
