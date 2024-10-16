@@ -9352,7 +9352,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** <ul>
 ** <li> The [VACUUM INTO] command.
-** <li> The [sqlite3-rsync] utility program.
+** <li> The [sqlite3_rsync] utility program.
 ** </ul>
 */
 sqlite3_backup *sqlite3_backup_init(

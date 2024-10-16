@@ -58,7 +58,7 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       <li>  `nmake /f makefile.msc sqlite3.c`
       <li>  `nmake /f makefile.msc sqlite3.exe`
       <li>  `nmake /f makefile.msc sqldiff.exe`
-      <li>  `nmake /f makefile.msc sqlite3-rsync.exe`
+      <li>  `nmake /f makefile.msc sqlite3_rsync.exe`
       <li>  `nmake /f makefile.msc tclextension-install`
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`

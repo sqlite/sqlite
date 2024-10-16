@@ -1908,7 +1908,7 @@ dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 RSYNC_SRC = \
-  $(TOP)\tool\sqlite3-rsync.c \
+  $(TOP)\tool\sqlite3_rsync.c \
   $(SQLITE3C)
 
 RSYNC_OPT = \
@@ -1917,7 +1917,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+sqlite3_rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
 	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
@@ -2577,7 +2577,7 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3-rsync.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	testfixture.exe sqlite3.exe
@@ -2829,7 +2829,7 @@ clean:
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3-rsync.exe 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3_rsync.exe 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL

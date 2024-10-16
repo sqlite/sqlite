@@ -39,7 +39,7 @@ are general and should work on most any modern unix platform.
       <li>  `make sqlite3.c`
       <li>  `make sqlite3`
       <li>  `make sqldiff`
-      <li>  `make sqlite3-rsync`
+      <li>  `make sqlite3_rsync`
       <li>  `make tclextension-install`
       <li>  `make devtest`
       <li>  `make releasetest`

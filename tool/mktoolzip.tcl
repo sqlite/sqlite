@@ -54,7 +54,7 @@ close $in
 scan $vers %d.%d.%d v1 v2 v3
 set v2 [format 3%02d%02d00 $v2 $v3]
 set name sqlite-tools-$OS-$ARCH-$v2.zip
-set toollist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3-rsync$EXE"
+set toollist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
 puts "zip $name {*}$toollist"
 exec zip $name {*}$toollist
 puts "$name: [file size $name] bytes"

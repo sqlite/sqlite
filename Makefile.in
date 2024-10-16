@@ -701,7 +701,7 @@ dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 
 RSYNC_SRC = \
-  $(TOP)/tool/sqlite3-rsync.c \
+  $(TOP)/tool/sqlite3_rsync.c \
   sqlite3.c
 
 RSYNC_OPT = \
@@ -711,7 +711,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
@@ -1558,8 +1558,8 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer sqlite3-rsync $(TOP)/tool/mktoolzip.tcl
-	strip sqlite3 sqldiff sqlite3_analyzer sqlite3-rsync
+tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync
 	./testfixture $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building
@@ -1645,7 +1645,7 @@ tidy:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)

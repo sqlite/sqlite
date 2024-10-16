@@ -21,7 +21,7 @@
 #include "sqlite3.h"
 
 static const char zUsage[] = 
-  "sqlite3-rsync ORIGIN REPLICA ?OPTIONS?\n"
+  "sqlite3_rsync ORIGIN REPLICA ?OPTIONS?\n"
   "\n"
   "One of ORIGIN or REPLICA is a pathname to a database on the local\n"
   "machine and the other is of the form \"USER@HOST:PATH\" describing\n"
@@ -30,7 +30,7 @@ static const char zUsage[] =
   "\n"
   "OPTIONS:\n"
   "\n"
-  "   --exe PATH    Name of the sqlite3-rsync program on the remote side\n"
+  "   --exe PATH    Name of the sqlite3_rsync program on the remote side\n"
   "   --help        Show this help screen\n"
   "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
   "   -v            Verbose.  Multiple v's for increasing output\n"
@@ -1586,13 +1586,13 @@ static char *hostSeparator(const char *zIn){
 **
 ** Input formats:
 **
-**  (1)    sqlite3-rsync  FILENAME1  USER@HOST:FILENAME2
+**  (1)    sqlite3_rsync  FILENAME1  USER@HOST:FILENAME2
 **
-**  (2)    sqlite3-rsync  USER@HOST:FILENAME1  FILENAME2
+**  (2)    sqlite3_rsync  USER@HOST:FILENAME1  FILENAME2
 **
-**  (3)    sqlite3-rsync --origin FILENAME1
+**  (3)    sqlite3_rsync --origin FILENAME1
 **
-**  (4)    sqlite3-rsync --replica FILENAME2
+**  (4)    sqlite3_rsync --replica FILENAME2
 **
 ** The user types (1) or (2).  SSH launches (3) or (4).
 **
@@ -1616,7 +1616,7 @@ int main(int argc, char const * const *argv){
   FILE *pOut = 0;
   int childPid = 0;
   const char *zSsh = "ssh";
-  const char *zExe = "sqlite3-rsync";
+  const char *zExe = "sqlite3_rsync";
   char *zCmd = 0;
   sqlite3_int64 tmStart;
   sqlite3_int64 tmEnd;
