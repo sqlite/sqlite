@@ -1649,7 +1649,7 @@ tidy:
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
-	rm -f src-verify$(BEXE) has_tclsh*
+	rm -f src-verify$(BEXE) has_tclsh* has_tclconfig
 
 # Removes build products and test logs.  Retains ./configure outputs.
 #
