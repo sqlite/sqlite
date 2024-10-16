@@ -702,7 +702,7 @@ dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
 
 RSYNC_SRC = \
-  $(TOP)/tool/sqlite3-rsync.c \
+  $(TOP)/tool/sqlite3_rsync.c \
   sqlite3.c
 
 RSYNC_OPT = \
@@ -712,7 +712,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(TLIBS)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
@@ -723,13 +723,13 @@ srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
 
 sourcetest:	srcck1$(BEXE) sqlite3.c
-	./srcck1 sqlite3.c
+	./srcck1$(BEXE) sqlite3.c
 
-src-verify:	$(TOP)/tool/src-verify.c
+src-verify$(BEXE):	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
 
-verify-source:	./src-verify
-	./src-verify $(TOP)
+verify-source:	./src-verify$(BEXE)
+	./src-verify$(BEXE) $(TOP)
 
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
@@ -847,7 +847,7 @@ has_tclconfig:
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify has_tclsh84
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify$(BEXE) has_tclsh84
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -1559,7 +1559,8 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer $(TOP)/tool/mktoolzip.tcl
+tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync
 	./testfixture $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building
@@ -1588,10 +1589,10 @@ lib_install:	libsqlite3.la
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 
-# Use $(tcl_install_$(HAVE_TCL)) to resolve to either tcl_install or
+# Use $(tcl_install_$(HAVE_TCL)) to resolve to either tclextension-install or
 # an empty value.
 tcl_install_0 =
-tcl_install_1 = tcl_install
+tcl_install_1 = tclextension-install
 
 install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc $(tcl_install_$(HAVE_TCL))
 	$(INSTALL) -d $(DESTDIR)$(bindir)
@@ -1602,27 +1603,18 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc $(tcl_install_$(HAVE_TC
 	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
-pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
-
-tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
-	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
-	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
-	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
-	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
-
 # Build the SQLite TCL extension in a way that make it compatible
 # with whatever version of TCL is running as $TCLSH_CMD, possibly defined
 # by --with-tclsh=
 #
 tclextension:	tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
 
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
 tclextension-install:	tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc $(CC) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
 
 # Install the SQLite TCL extension that is used by $TCLSH_CMD
 #
@@ -1654,11 +1646,11 @@ tidy:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.def *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
-	rm -f src-verify has_tclsh*
+	rm -f src-verify$(BEXE) has_tclsh* has_tclconfig
 
 # Removes build products and test logs.  Retains ./configure outputs.
 #

@@ -744,7 +744,7 @@ static const char *recoverUnusedString(
 }
 
 /*
-** Implementation of scalar SQL function "escape_crnl".  The argument passed to
+** Implementation of scalar SQL function "escape_crlf".  The argument passed to
 ** this function is the output of built-in function quote(). If the first
 ** character of the input is "'", indicating that the value passed to quote()
 ** was a text value, then this function searches the input for "\n" and "\r"
@@ -755,7 +755,7 @@ static const char *recoverUnusedString(
 ** Or, if the first character of the input is not "'", then a copy of the input
 ** is returned.
 */
-static void recoverEscapeCrnl(
+static void recoverEscapeCrlf(
   sqlite3_context *context, 
   int argc, 
   sqlite3_value **argv
@@ -970,7 +970,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
     { "getpage", 1, recoverGetPage },
     { "page_is_used", 1, recoverPageIsUsed },
     { "read_i32", 2, recoverReadI32 },
-    { "escape_crnl", 1, recoverEscapeCrnl },
+    { "escape_crlf", 1, recoverEscapeCrlf },
   };
 
   const int flags = SQLITE_OPEN_URI|SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
@@ -1323,7 +1323,7 @@ static sqlite3_stmt *recoverInsertStmt(
 
       if( bSql ){
         zBind = recoverMPrintf(p, 
-            "%z%sescape_crnl(quote(?%d))", zBind, zSqlSep, pTab->aCol[ii].iBind
+            "%z%sescape_crlf(quote(?%d))", zBind, zSqlSep, pTab->aCol[ii].iBind
         );
         zSqlSep = "||', '||";
       }else{

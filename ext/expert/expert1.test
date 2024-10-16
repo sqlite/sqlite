@@ -402,6 +402,19 @@ do_setup_rec_test $tn.19.0 {
   SCAN t1 USING COVERING INDEX t1_idx_01a7214e
 }
 
+ifcapable fts5 {
+  do_setup_rec_test $tn.20.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    CREATE TABLE t1(x, y);
+  } {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+    SCAN ft VIRTUAL TABLE INDEX 0:
+    SEARCH t1 USING INDEX t1_idx_00000078 (x=?)
+  }
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
@@ -505,6 +518,67 @@ do_candidates_test 6.1 {
 } {
   CREATE INDEX x1_idx_0001267f ON x1(b, a); 
   CREATE INDEX x1_idx_00000062 ON x1(b);
+}
+
+#-------------------------------------------------------------------------
+ifcapable fts5 {
+  reset_db
+  do_execsql_test 7.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    CREATE TABLE t1(x, y);
+  }
+  
+  do_candidates_test 7.1 {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+  }
+  
+  register_tcl_module db
+  proc vtab_command {method args} {
+    global G
+  
+    switch -- $method {
+      xConnect {
+        return "CREATE TABLE t1(a, b, c);"
+      }
+  
+      xBestIndex {
+        return [list]
+      }
+  
+      xFilter {
+        return [list sql "SELECT rowid, * FROM t0"]
+      }
+    }
+  
+    return {}
+  }
+  
+  do_execsql_test 7.2 {
+    CREATE TABLE t0(a, b, c);
+    INSERT INTO t0 VALUES(1, 2, 3), (11, 22, 33);
+    CREATE VIRTUAL TABLE t2 USING tcl(vtab_command);
+  }
+  
+  do_execsql_test 7.3 {
+    SELECT * FROM t2
+  } {
+    1 2 3
+    11 22 33
+  }
+  
+  do_candidates_test 7.4 {
+    SELECT * FROM ft, t1 WHERE a=x
+  } {
+    CREATE INDEX t1_idx_00000078 ON t1(x);
+  }
+  
+  do_test 7.5 {
+    set expert [sqlite3_expert_new db]
+    list [catch { $expert sql "SELECT * FROM ft, t2 WHERE b=1" } msg] $msg
+  } {1 {no such table: t2}}
+  $expert destroy
 }
 
 finish_test
