@@ -66,6 +66,14 @@ USE_STDCALL = 0
 USE_SEH = 1
 !ENDIF
 
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -929,16 +937,28 @@ TCC = $(TCC) /fsanitize=address
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!IFNDEF TCLVERSION
-TCLVERSION = 86
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLSUFFIX = s
 !ENDIF
-
 !IFNDEF TCLSUFFIX
 TCLSUFFIX =
 !ENDIF
 
 !IFNDEF TCLDIR
 TCLDIR = C:\Tcl
+!ENDIF
+
+!IFNDEF TCLVERSION
+!IF EXISTS("$(TCLDIR)\lib\tcl90$(TCLSUFFIX).lib")
+TCLVERSION = 90
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86$(TCLSUFFIX).lib")
+TCLVERSION = 86
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86t.lib")
+TCLSUFFIX = t
+TCLVERSION = 86
+!ELSE
+TCLVERSION = 90
+!ENDIF
 !ENDIF
 
 !IFNDEF TCLINCDIR
@@ -953,8 +973,20 @@ TCLLIBDIR = $(TCLDIR)\lib
 LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
+!IFNDEF TCLLIBS
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLLIBS = /NODEFAULTLIB:libucrt.lib netapi32.lib user32.lib ucrt.lib
+!ELSE
+TCLLIBS =
+!ENDIF
+!ENDIF
+
 !IFNDEF LIBTCLSTUB
+!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
+LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
+!ELSE
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
+!ENDIF
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -1013,10 +1045,18 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-!IF $(USE_TCLSH_IN_PATH)!=0 || !EXIST("$(TCLDIR)\bin\tclsh.exe")
-TCLSH_CMD = tclsh
-!ELSE
+!IF EXISTS("$(TCLDIR)\bin\tclsh$(TCLVERSION).exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh$(TCLVERSION).exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh90.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh90.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86t.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86t.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh.exe")
 TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ELSE
+TCLSH_CMD = tclsh
 !ENDIF
 !ENDIF
 # <</mark>>
@@ -1824,7 +1864,7 @@ tclsqlite3.def:	tclsqlite.lo
 
 pkgIndex.tcl:	$(TOP)\VERSION
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
-		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] Sqlite3] \
 			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
 	)
 
@@ -1868,7 +1908,7 @@ dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 RSYNC_SRC = \
-  $(TOP)\tool\sqlite3-rsync.c \
+  $(TOP)\tool\sqlite3_rsync.c \
   $(SQLITE3C)
 
 RSYNC_OPT = \
@@ -1877,7 +1917,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+sqlite3_rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
 	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
@@ -2537,7 +2577,7 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	testfixture.exe sqlite3.exe
@@ -2746,6 +2786,16 @@ THREADTEST3_SRC = \
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+# Display key variables that control which version of TCL is to be used.
+#
+tcl-env:
+	@echo TCLDIR = $(TCLDIR)
+	@echo TCLVERSION = $(TCLVERSION)
+	@echo TCLSUFFIX = $(TCLSUFFIX)
+	@echo LIBTCL = $(LIBTCL)
+	@echo LIBTCLSTUB = $(LIBTCLSTUB)
+	@echo TCLSH_CMD = $(TCLSH_CMD)
+
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
 
@@ -2779,7 +2829,7 @@ clean:
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3-rsync.exe 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3_rsync.exe 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL

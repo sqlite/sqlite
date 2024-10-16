@@ -3104,7 +3104,7 @@ struct Expr {
 #define EP_IsTrue   0x10000000 /* Always has boolean value of TRUE */
 #define EP_IsFalse  0x20000000 /* Always has boolean value of FALSE */
 #define EP_FromDDL  0x40000000 /* Originates from sqlite_schema */
-               /*   0x80000000 // Available */
+#define EP_SubtArg  0x80000000 /* Is argument to SQLITE_SUBTYPE function */
 
 /* The EP_Propagate mask is a set of properties that automatically propagate
 ** upwards into parent nodes.
