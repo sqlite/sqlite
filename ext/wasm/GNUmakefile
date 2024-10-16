@@ -251,6 +251,7 @@ SQLITE_OPT.common := \
 # to be able to run without this:
 SQLITE_OPT.common += -DSQLITE_WASM_ENABLE_C_TESTS
 
+# Extra flags for full-featured builds...
 SQLITE_OPT.full-featured := \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_DBPAGE_VTAB \

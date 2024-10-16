@@ -160,32 +160,6 @@ char *sqlite3_temp_directory = 0;
 char *sqlite3_data_directory = 0;
 
 /*
-** Determine whether or not high-precision (long double) floating point
-** math works correctly on CPU currently running.
-*/
-static SQLITE_NOINLINE int hasHighPrecisionDouble(int rc){
-  if( sizeof(LONGDOUBLE_TYPE)<=8 ){
-    /* If the size of "long double" is not more than 8, then
-    ** high-precision math is not possible. */
-    return 0;
-  }else{
-    /* Just because sizeof(long double)>8 does not mean that the underlying
-    ** hardware actually supports high-precision floating point.  For example,
-    ** clearing the 0x100 bit in the floating-point control word on Intel
-    ** processors will make long double work like double, even though long
-    ** double takes up more space.  The only way to determine if long double
-    ** actually works is to run an experiment. */
-    LONGDOUBLE_TYPE a, b, c;
-    rc++;
-    a = 1.0+rc*0.1;
-    b = 1.0e+18+rc*25.0;
-    c = a+b;
-    return b!=c;
-  }
-}
-
-
-/*
 ** Initialize SQLite. 
 **
 ** This routine must be called to initialize the memory allocation,
@@ -379,13 +353,6 @@ int sqlite3_initialize(void){
     rc = SQLITE_EXTRA_INIT(0);
   }
 #endif
-
-  /* Experimentally determine if high-precision floating point is
-  ** available. */
-#ifndef SQLITE_OMIT_WSD
-  sqlite3Config.bUseLongDouble = hasHighPrecisionDouble(rc);
-#endif
-
   return rc;
 }
 
@@ -4666,24 +4633,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-#if !defined(SQLITE_OMIT_WSD)
-    /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
-    **
-    **   X<0     Make no changes to the bUseLongDouble.  Just report value.
-    **   X==0    Disable bUseLongDouble
-    **   X==1    Enable bUseLongDouble
-    **   X>=2    Set bUseLongDouble to its default value for this platform
-    */
-    case SQLITE_TESTCTRL_USELONGDOUBLE: {
-      int b = va_arg(ap, int);
-      if( b>=2 ) b = hasHighPrecisionDouble(b);
-      if( b>=0 ) sqlite3Config.bUseLongDouble = b>0;
-      rc = sqlite3Config.bUseLongDouble!=0;
-      break;
-    }
-#endif
-
-
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **
@@ -4991,7 +4940,11 @@ int sqlite3_snapshot_get(
     if( iDb==0 || iDb>1 ){
       Btree *pBt = db->aDb[iDb].pBt;
       if( SQLITE_TXN_WRITE!=sqlite3BtreeTxnState(pBt) ){
+        Pager *pPager = sqlite3BtreePager(pBt);
+        i64 dummy = 0;
+        sqlite3PagerSnapshotOpen(pPager, (sqlite3_snapshot*)&dummy);
         rc = sqlite3BtreeBeginTrans(pBt, 0, 0);
+        sqlite3PagerSnapshotOpen(pPager, 0);
         if( rc==SQLITE_OK ){
           rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
         }

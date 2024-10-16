@@ -146,6 +146,54 @@ do_test lock5-flock.8 {
   db2 close
 } {}
 
+do_test lock5-flock.9 {
+  sqlite3 db test.db -vfs unix-flock
+  execsql {
+    SELECT * FROM t1
+  }
+} {1 2}
+
+do_test lock5-flock.10 {
+  sqlite3 db2 test.db -vfs unix-flock
+  execsql {
+    SELECT * FROM t1
+  } db2
+} {1 2}
+
+do_test lock5-flock.10 {
+  execsql {
+    PRAGMA cache_size = 1;
+    BEGIN;
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+      )
+      INSERT INTO t1 SELECT i, i+1 FROM s;
+  }
+
+  catchsql {
+    SELECT * FROM t1
+  } db2
+} {1 {database is locked}}
+
+if {[permutation]!="inmemory_journal"} {
+  do_test lock5-flock.11 {
+    forcecopy test.db test.db2
+    forcecopy test.db-journal test.db2-journal
+    db2 close
+    sqlite3 db2 test.db2 -vfs unix-flock
+    catchsql {
+      SELECT * FROM t1
+    } db2
+  } {0 {1 2}}
+  
+  do_test lock5-flock.12 {
+    file exists test.db2-journal
+  } 0
+}
+
+db close
+db2 close
+
 }
 
 #####################################################################

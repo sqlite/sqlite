@@ -1767,6 +1767,7 @@ void sqlite3Pragma(
 
       /* Make sure sufficient number of registers have been allocated */
       sqlite3TouchRegister(pParse, 8+cnt);
+      sqlite3VdbeAddOp3(v, OP_Null, 0, 8, 8+cnt);
       sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */

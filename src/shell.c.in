@@ -631,7 +631,7 @@ static const struct {
   unsigned char w;    /* Width of the character in columns */
   int iFirst;         /* First character in a span having this width */
 } aUWidth[] = {
-   /* {0, 0x00000},  {1, 0x00020},  {0, 0x0007f},  {1, 0x000a0}, */
+   /* {1, 0x00000}, */
   {0, 0x00300},  {1, 0x00370},  {0, 0x00483},  {1, 0x00487},  {0, 0x00488},
   {1, 0x0048a},  {0, 0x00591},  {1, 0x005be},  {0, 0x005bf},  {1, 0x005c0},
   {0, 0x005c1},  {1, 0x005c3},  {0, 0x005c4},  {1, 0x005c6},  {0, 0x005c7},
@@ -709,9 +709,6 @@ int cli_wcwidth(int c){
   int iFirst, iLast;
 
   /* Fast path for common characters */
-  if( c<0x20 ) return 0;
-  if( c<0x7f ) return 1;
-  if( c<0xa0 ) return 0;
   if( c<=0x300 ) return 1;
 
   /* The general case */
@@ -1451,6 +1448,7 @@ struct ShellState {
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
+  u8 crlfMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
@@ -1632,13 +1630,7 @@ static const char *modeDescr[] = {
 #define SEP_Tab       "\t"
 #define SEP_Space     " "
 #define SEP_Comma     ","
-#ifdef SQLITE_U8TEXT_ONLY
-  /* With the SQLITE_U8TEXT_ONLY option, the output will always be in
-  ** text mode.  The \r will be inserted automatically. */
-# define SEP_CrLf      "\n"
-#else
-# define SEP_CrLf      "\r\n"
-#endif
+#define SEP_CrLf      "\r\n"
 #define SEP_Unit      "\x1F"
 #define SEP_Record    "\x1E"
 
@@ -1723,7 +1715,7 @@ static void editFunc(
   char *zCmd = 0;
   int bBin;
   int rc;
-  int hasCRNL = 0;
+  int hasCRLF = 0;
   FILE *f = 0;
   sqlite3_int64 sz;
   sqlite3_int64 x;
@@ -1768,7 +1760,7 @@ static void editFunc(
   }else{
     const char *z = (const char*)sqlite3_value_text(argv[0]);
     /* Remember whether or not the value originally contained \r\n */
-    if( z && strstr(z,"\r\n")!=0 ) hasCRNL = 1;
+    if( z && strstr(z,"\r\n")!=0 ) hasCRLF = 1;
     x = fwrite(sqlite3_value_text(argv[0]), 1, (size_t)sz, f);
   }
   fclose(f);
@@ -1813,7 +1805,7 @@ static void editFunc(
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
     sqlite3_int64 i, j;
-    if( hasCRNL ){
+    if( hasCRLF ){
       /* If the original contains \r\n then do no conversions back to \n */
     }else{
       /* If the file did not originally contain \r\n then convert any new
@@ -1853,6 +1845,21 @@ static void outputModePop(ShellState *p){
   p->shellFlgs = p->priorShFlgs;
   memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
   memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
+}
+
+/*
+** Set output mode to text or binary for Windows.
+*/
+static void setCrlfMode(ShellState *p){
+#ifdef _WIN32
+  if( p->crlfMode ){
+    sqlite3_fsetmode(p->out, _O_TEXT);
+  }else{
+    sqlite3_fsetmode(p->out, _O_BINARY);
+  }
+#else
+  UNUSED_PARAMETER(p);
+#endif    
 }
 
 /*
@@ -1905,9 +1912,10 @@ static const char *unused_string(
 **
 ** See also: output_quoted_escaped_string()
 */
-static void output_quoted_string(FILE *out, const char *z){
+static void output_quoted_string(ShellState *p, const char *z){
   int i;
   char c;
+  FILE *out = p->out;
   sqlite3_fsetmode(out, _O_BINARY);
   if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
@@ -1933,7 +1941,7 @@ static void output_quoted_string(FILE *out, const char *z){
     }
     sqlite3_fputs("'", out);
   }
-  sqlite3_fsetmode(out, _O_TEXT);
+  setCrlfMode(p);
 }
 
 /*
@@ -1945,9 +1953,10 @@ static void output_quoted_string(FILE *out, const char *z){
 ** This is like output_quoted_string() but with the addition of the \r\n
 ** escape mechanism.
 */
-static void output_quoted_escaped_string(FILE *out, const char *z){
+static void output_quoted_escaped_string(ShellState *p, const char *z){
   int i;
   char c;
+  FILE *out = p->out;
   sqlite3_fsetmode(out, _O_BINARY);
   for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
   if( c==0 ){
@@ -2000,7 +2009,7 @@ static void output_quoted_escaped_string(FILE *out, const char *z){
       sqlite3_fprintf(out, ",'%s',char(10))", zNL);
     }
   }
-  sqlite3_fsetmode(stdout, _O_TEXT);
+  setCrlfMode(p);
 }
 
 /*
@@ -2797,7 +2806,7 @@ static int shell_callback(
         }
         sqlite3_fputs(p->rowSeparator, p->out);
       }
-      sqlite3_fsetmode(p->out, _O_TEXT);
+      setCrlfMode(p);
       break;
     }
     case MODE_Insert: {
@@ -2825,9 +2834,9 @@ static int shell_callback(
           sqlite3_fputs("NULL", p->out);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
           if( ShellHasFlag(p, SHFLG_Newlines) ){
-            output_quoted_string(p->out, azArg[i]);
+            output_quoted_string(p, azArg[i]);
           }else{
-            output_quoted_escaped_string(p->out, azArg[i]);
+            output_quoted_escaped_string(p, azArg[i]);
           }
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           sqlite3_fputs(azArg[i], p->out);
@@ -2856,9 +2865,9 @@ static int shell_callback(
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
         }else if( ShellHasFlag(p, SHFLG_Newlines) ){
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }else{
-          output_quoted_escaped_string(p->out, azArg[i]);
+          output_quoted_escaped_string(p, azArg[i]);
         }
       }
       sqlite3_fputs(");\n", p->out);
@@ -2911,7 +2920,7 @@ static int shell_callback(
       if( p->cnt==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
-          output_quoted_string(p->out, azCol[i]);
+          output_quoted_string(p, azCol[i]);
         }
         sqlite3_fputs(p->rowSeparator, p->out);
       }
@@ -2921,7 +2930,7 @@ static int shell_callback(
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           sqlite3_fputs("NULL", p->out);
         }else if( aiType && aiType[i]==SQLITE_TEXT ){
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_INTEGER ){
           sqlite3_fputs(azArg[i], p->out);
         }else if( aiType && aiType[i]==SQLITE_FLOAT ){
@@ -2936,7 +2945,7 @@ static int shell_callback(
         }else if( isNumber(azArg[i], 0) ){
           sqlite3_fputs(azArg[i], p->out);
         }else{
-          output_quoted_string(p->out, azArg[i]);
+          output_quoted_string(p, azArg[i]);
         }
       }
       sqlite3_fputs(p->rowSeparator, p->out);
@@ -4755,7 +4764,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
   if( cli_strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
-    if( !dataOnly ) sqlite3_fputs("DELETE FROM sqlite_sequence;\n", p->out);
+    /* no-op */
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
   }else if( cli_strncmp(zTable, "sqlite_", 7)==0 ){
@@ -4940,10 +4949,7 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
-#if defined(_WIN32) && !defined(SQLITE_U8TEXT_ONLY) \
-                    && !defined(SQLITE_U8TEXT_STDIO)
-  ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
-#endif /* _WIN32 && U8TEXT_ONLY && U8TEXT_STDIO */
+  ".crlf ?on|off?           Whether or not to use \\r\\n line endings",
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -5953,7 +5959,7 @@ static void output_file_close(FILE *f){
 ** recognized and do the right thing.  NULL is returned if the output
 ** filename is "off".
 */
-static FILE *output_file_open(const char *zFile, int bTextMode){
+static FILE *output_file_open(const char *zFile){
   FILE *f;
   if( cli_strcmp(zFile,"stdout")==0 ){
     f = stdout;
@@ -5962,7 +5968,7 @@ static FILE *output_file_open(const char *zFile, int bTextMode){
   }else if( cli_strcmp(zFile, "off")==0 ){
     f = 0;
   }else{
-    f = sqlite3_fopen(zFile, bTextMode ? "w" : "wb");
+    f = sqlite3_fopen(zFile, "w");
     if( f==0 ){
       sqlite3_fprintf(stderr,"Error: cannot open \"%s\"\n", zFile);
     }
@@ -6435,6 +6441,7 @@ static void output_redir(ShellState *p, FILE *pfNew){
     sqlite3_fputs("Output already redirected.\n", stderr);
   }else{
     p->out = pfNew;
+    setCrlfMode(p);
     if( p->mode==MODE_Www ){
       sqlite3_fputs(
         "<!DOCTYPE html>\n"
@@ -6490,6 +6497,7 @@ static void output_reset(ShellState *p){
   }
   p->outfile[0] = 0;
   p->out = stdout;
+  setCrlfMode(p);
 }
 #else
 # define output_redir(SS,pfO)
@@ -8711,9 +8719,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  /* Undocumented.  Legacy only.  See "crnl" below */
+  /* Undocumented.  Legacy only.  See "crlf" below */
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
-    eputz("The \".binary\" command is deprecated. Use \".crnl\" instead.\n");
+    eputz("The \".binary\" command is deprecated.\n");
     rc = 1;
   }else
 
@@ -8839,22 +8847,18 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
-  if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
-#if !defined(_WIN32) || defined(SQLITE_U8TEXT_ONLY) \
-                     || defined(SQLITE_U8TEXT_STDIO)
-    sqlite3_fputs("The \".crnl\" command is disable in this build.\n", p->out);
-#else
+  if( c=='c' && n==4
+   && (cli_strncmp(azArg[0], "crlf", n)==0
+       || cli_strncmp(azArg[0], "crnl",n)==0)
+  ){
     if( nArg==2 ){
-      if( booleanValue(azArg[1]) ){
-        sqlite3_fsetmode(p->out, _O_TEXT);
-      }else{
-        sqlite3_fsetmode(p->out, _O_BINARY);
-      }
-    }else{
-      eputz("Usage: .crnl on|off\n");
-      rc = 1;
-    }
+#ifdef _WIN32
+      p->crlfMode = booleanValue(azArg[1]);
+#else
+      p->crlfMode = 0;
 #endif
+    }
+    sqlite3_fprintf(stderr, "crlf is %s\n", p->crlfMode ? "ON" : "OFF");
   }else
 
   if( c=='d' && n>1 && cli_strncmp(azArg[0], "databases", n)==0 ){
@@ -9934,7 +9938,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
       output_file_close(p->pLog);
       if( cli_strcmp(zFile,"on")==0 ) zFile = "stdout";
-      p->pLog = output_file_open(zFile, 0);
+      p->pLog = output_file_open(zFile);
     }
   }else
 
@@ -10189,7 +10193,6 @@ static int do_meta_command(char *zLine, ShellState *p){
    || (c=='w' && n==3 && cli_strcmp(azArg[0],"www")==0)
   ){
     char *zFile = 0;
-    int bTxtMode = 0;
     int i;
     int eMode = 0;
     int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel/.www */
@@ -10271,11 +10274,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* web-browser mode. */
         newTempFile(p, "html");
         if( !bPlain ) p->mode = MODE_Www;
-        bTxtMode = 1;
       }else{
         /* text editor mode */
         newTempFile(p, "txt");
-        bTxtMode = 1;
       }
       sqlite3_free(zFile);
       zFile = sqlite3_mprintf("%s", p->zTempFile);
@@ -10299,7 +10300,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
 #endif
     }else{
-      FILE *pfFile = output_file_open(zFile, bTxtMode);
+      FILE *pfFile = output_file_open(zFile);
       if( pfFile==0 ){
         if( cli_strcmp(zFile,"off")!=0 ){
           sqlite3_fprintf(stderr,"Error: cannot write to \"%s\"\n", zFile);
@@ -10307,13 +10308,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
       } else {
         output_redir(p, pfFile);
+        if( zBom ) sqlite3_fputs(zBom, pfFile);
         if( bPlain && eMode=='w' ){
           sqlite3_fputs(
             "<!DOCTYPE html>\n<BODY>\n<PLAINTEXT>\n",
             pfFile
           );
         }
-        if( zBom ) sqlite3_fputs(zBom, pfFile);
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
     }
@@ -10510,7 +10511,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifdef SQLITE_OMIT_POPEN
       eputz("Error: pipes are not supported in this OS\n");
       rc = 1;
-      p->out = stdout;
 #else
       p->in = sqlite3_popen(azArg[1]+1, "r");
       if( p->in==0 ){
@@ -11504,7 +11504,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && cli_strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
-    p->out = output_file_open("testcase-out.txt", 0);
+    p->out = output_file_open("testcase-out.txt");
     if( p->out==0 ){
       eputz("Error: cannot open 'testcase-out.txt'\n");
     }
@@ -11548,7 +11548,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,  0, ""               },
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
     {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
-    {"uselongdouble",  SQLITE_TESTCTRL_USELONGDOUBLE,0,"?BOOLEAN|\"default\"?"},
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -11782,21 +11781,6 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           break;
 
-        /* sqlite3_test_control(int, int) */
-        case SQLITE_TESTCTRL_USELONGDOUBLE: {
-          int opt = -1;
-          if( nArg==3 ){
-            if( cli_strcmp(azArg[2],"default")==0 ){
-              opt = 2;
-            }else{
-              opt = booleanValue(azArg[2]);
-            }
-          }
-          rc2 = sqlite3_test_control(testctrl, opt);
-          isOk = 1;
-          break;
-        }
-
         /* sqlite3_test_control(sqlite3*) */
         case SQLITE_TESTCTRL_INTERNAL_FUNCTIONS:
           rc2 = sqlite3_test_control(testctrl, p->db);
@@ -12024,7 +12008,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
       }else{
         output_file_close(p->traceOut);
-        p->traceOut = output_file_open(z, 0);
+        p->traceOut = output_file_open(z);
       }
     }
     if( p->traceOut==0 ){
@@ -12901,6 +12885,9 @@ static void main_init(ShellState *data) {
   memset(data, 0, sizeof(*data));
   data->normalMode = data->cMode = data->mode = MODE_List;
   data->autoExplain = 1;
+#ifdef _WIN32
+  data->crlfMode = 1;
+#endif
   data->pAuxDb = &data->aAuxDb[0];
   memcpy(data->colSeparator,SEP_Column, 2);
   memcpy(data->rowSeparator,SEP_Row, 2);

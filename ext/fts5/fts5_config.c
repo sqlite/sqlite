@@ -241,6 +241,7 @@ static int fts5ConfigParseSpecial(
 ){
   int rc = SQLITE_OK;
   int nCmd = (int)strlen(zCmd);
+
   if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
     const char *p;
@@ -356,6 +357,16 @@ static int fts5ConfigParseSpecial(
       rc = SQLITE_ERROR;
     }else{
       pConfig->bContentlessDelete = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
+  if( sqlite3_strnicmp("contentless_unindexed", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed contentless_delete=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bContentlessUnindexed = (zArg[0]=='1');
     }
     return rc;
   }
@@ -477,7 +488,8 @@ static int fts5ConfigParseColumn(
   Fts5Config *p, 
   char *zCol, 
   char *zArg, 
-  char **pzErr
+  char **pzErr,
+  int *pbUnindexed
 ){
   int rc = SQLITE_OK;
   if( 0==sqlite3_stricmp(zCol, FTS5_RANK_NAME) 
@@ -488,6 +500,7 @@ static int fts5ConfigParseColumn(
   }else if( zArg ){
     if( 0==sqlite3_stricmp(zArg, "unindexed") ){
       p->abUnindexed[p->nCol] = 1;
+      *pbUnindexed = 1;
     }else{
       *pzErr = sqlite3_mprintf("unrecognized column option: %s", zArg);
       rc = SQLITE_ERROR;
@@ -508,11 +521,17 @@ static int fts5ConfigMakeExprlist(Fts5Config *p){
 
   sqlite3Fts5BufferAppendPrintf(&rc, &buf, "T.%Q", p->zContentRowid);
   if( p->eContent!=FTS5_CONTENT_NONE ){
+    assert( p->eContent==FTS5_CONTENT_EXTERNAL
+         || p->eContent==FTS5_CONTENT_NORMAL
+         || p->eContent==FTS5_CONTENT_UNINDEXED
+    );
     for(i=0; i<p->nCol; i++){
       if( p->eContent==FTS5_CONTENT_EXTERNAL ){
         sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", T.%Q", p->azCol[i]);
-      }else{
+      }else if( p->eContent==FTS5_CONTENT_NORMAL || p->abUnindexed[i] ){
         sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", T.c%d", i);
+      }else{
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", NULL");
       }
     }
   }
@@ -555,6 +574,7 @@ int sqlite3Fts5ConfigParse(
   Fts5Config *pRet;               /* New object to return */
   int i;
   sqlite3_int64 nByte;
+  int bUnindexed = 0;             /* True if there are one or more UNINDEXED */
 
   *ppOut = pRet = (Fts5Config*)sqlite3_malloc(sizeof(Fts5Config));
   if( pRet==0 ) return SQLITE_NOMEM;
@@ -614,7 +634,7 @@ int sqlite3Fts5ConfigParse(
             pzErr
           );
         }else{
-          rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr);
+          rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr, &bUnindexed);
           zOne = 0;
         }
       }
@@ -646,13 +666,29 @@ int sqlite3Fts5ConfigParse(
     rc = SQLITE_ERROR;
   }
 
+  /* We only allow contentless_unindexed=1 if the table is actually a
+  ** contentless one.
+  */
+  if( rc==SQLITE_OK 
+   && pRet->bContentlessUnindexed 
+   && pRet->eContent!=FTS5_CONTENT_NONE
+  ){
+    *pzErr = sqlite3_mprintf(
+        "contentless_unindexed=1 requires a contentless table"
+    );
+    rc = SQLITE_ERROR;
+  }
+
   /* If no zContent option was specified, fill in the default values. */
   if( rc==SQLITE_OK && pRet->zContent==0 ){
     const char *zTail = 0;
-    assert( pRet->eContent==FTS5_CONTENT_NORMAL 
-         || pRet->eContent==FTS5_CONTENT_NONE 
+    assert( pRet->eContent==FTS5_CONTENT_NORMAL
+         || pRet->eContent==FTS5_CONTENT_NONE
     );
     if( pRet->eContent==FTS5_CONTENT_NORMAL ){
+      zTail = "content";
+    }else if( bUnindexed && pRet->bContentlessUnindexed ){
+      pRet->eContent = FTS5_CONTENT_UNINDEXED;
       zTail = "content";
     }else if( pRet->bColumnsize ){
       zTail = "docsize";
