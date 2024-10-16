@@ -68,7 +68,7 @@ TCC += @TARGET_DEBUG@
 #XX#
 #XX## The library that programs using TCL must link against.
 #XX##
-#XX#LIBTCL = @TCL_LIB_SPEC@
+LIBTCL = @TCL_LIB_SPEC@
 #XX#
 # Compiler options needed for programs that use the readline() library.
 #
@@ -157,9 +157,9 @@ TCL_VERSION = @TCL_VERSION@
 #
 TSTRNNR_OPTS = @TSTRNNR_OPTS@
 
-#XX## Where do we want to install the tcl plugin
-#XX##
-#XX#TCLLIBDIR = @TCLLIBDIR@
+# Where do we want to install the tcl plugin
+#
+TCLLIBDIR = @TCLLIBDIR@
 
 #
 # If gcov support was enabled by the configure script, add the appropriate
@@ -752,12 +752,12 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 
 libsqlite3.DLL = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
-LDFLAGS_libsqlite = \
-  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
-  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 # LDFLAGS_libsqlite should be used with any target which
 # either results in building libsqlite3.so, builds sqlite3.c
 # directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
+LDFLAGS_libsqlite = \
+  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
+  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 @if ENABLE_SHARED
 $(libsqlite3.DLL):	$(LIBOBJ)
@@ -1038,8 +1038,11 @@ has_tclsh85:
 	touch has_tclsh85
 
 has_tclconfig:
-	@ if test x"$(HAVE_TCL)" != "x1"; then	echo 'ERROR: Requires access to "tclConfig.sh" which "configure" was not able to locate'; exit 1; fi
+@if !TCL_CONFIG_SH
+	@echo 'ERROR: Requires access to "tclConfig.sh" which "configure" was not able to locate'; exit 1;
+@else
 	touch has_tclconfig
+@endif
 
 #
 # This target creates a directory named "tsrc" and fills it with
@@ -1516,37 +1519,37 @@ sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
-#XX## Rules to build the 'testfixture' application.
-#XX##
-#XX## If using the amalgamation, use sqlite3.c directly to build the test
-#XX## fixture.  Otherwise link against libsqlite3.la.  (This distinction is
-#XX## necessary because the test fixture requires non-API symbols which are
-#XX## hidden when the library is built via the amalgamation).
-#XX##
-#XX#TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-#XX#TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
-#XX#TESTFIXTURE_FLAGS += -DBUILD_sqlite
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_STATIC_RANDOMJSON
-#XX#TESTFIXTURE_FLAGS += -DSQLITE_STRICT_SUBTYPE=1
-#XX#
-#XX#TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.la
-#XX#TESTFIXTURE_SRC1 = sqlite3.c
-#XX#TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
-#XX#TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
-#XX#
-#XX#testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
-#XX#	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
-#XX#		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
-#XX#
-#XX#coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
-#XX#
+# Rules to build the 'testfixture' application.
+#
+# If using the amalgamation, use sqlite3.c directly to build the test
+# fixture.  Otherwise link against libsqlite3.a.  (This distinction is
+# necessary because the test fixture requires non-API symbols which are
+# hidden when the library is built via the amalgamation).
+#
+TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
+TESTFIXTURE_FLAGS += -DTCLSH_INIT_PROC=sqlite3TestInit
+TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS += -DBUILD_sqlite
+TESTFIXTURE_FLAGS += -DSQLITE_SERIES_CONSTRAINT_VERIFY=1
+TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
+TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
+TESTFIXTURE_FLAGS += -DSQLITE_STATIC_RANDOMJSON
+TESTFIXTURE_FLAGS += -DSQLITE_STRICT_SUBTYPE=1
+
+TESTFIXTURE_SRC0 = $(TESTSRC2) $(libsqlite3.LIB)
+TESTFIXTURE_SRC1 = sqlite3.c
+TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
+TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
+
+testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
+	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite) @TCL_INCLUDE_SPEC@
+
+coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
+
 #XX#testprogs:	$(TESTPROGS) srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 #XX#
 #XX## A very detailed test running most or all test cases
@@ -1831,7 +1834,7 @@ tidy:
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f threadtest5$(TEXE)
-	rm -f src-verify has_tclsh*
+	rm -f src-verify has_tclsh* has_tclconfig
 	rm -f tclsqlite3.c
 	rm -f sqlite3rc.h
 # FIXME? (rm *.def) will remove auto.def (part of autosetup)
