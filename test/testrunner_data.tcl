@@ -203,7 +203,6 @@ namespace eval trd {
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_MAX_MMAP_SIZE=12884901888
     -DSQLITE_ENABLE_SORTER_MMAP=1
-    -DLONGDOUBLE_TYPE=double
     --enable-session
   }
   set build(Device-One) {
@@ -343,7 +342,6 @@ namespace eval trd {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
-    -DLONGDOUBLE_TYPE=double
     -DCONFIG_SLOWDOWN_FACTOR=8.0
   }
 

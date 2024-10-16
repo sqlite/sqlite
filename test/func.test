@@ -261,9 +261,6 @@ ifcapable floatingpoint {
     catchsql {SELECT round(b,2.0) FROM t1 ORDER BY b}
   } {0 {-2.0 1.23 2.0}}
   # Verify some values reported on the mailing list.
-  # Some of these fail on MSVC builds with 64-bit
-  # long doubles, but not on GCC builds with 80-bit
-  # long doubles.
   for {set i 1} {$i<999} {incr i} {
     set x1 [expr 40222.5 + $i]
     set x2 [expr 40223.0 + $i]

@@ -125,7 +125,7 @@ AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory progr
       [use_tcl=$enableval],[use_tcl=yes])
 original_use_tcl=${use_tcl}
 if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
-  AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.6 tclsh tclsh9.0],none)
+  AC_CHECK_PROGS(TCLSH_CMD, [tclsh9.0 tclsh8.6 tclsh],none)
   with_tclsh=${TCLSH_CMD}
 fi
 if test x"${with_tclsh}" != x -a x"${with_tclsh}" != xnone; then
