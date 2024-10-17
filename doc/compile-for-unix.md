@@ -11,13 +11,12 @@ are general and should work on most any modern unix platform.
   2.  Install TCL9 development libraries.  In this note, we'll do a
       private install in the $HOME/local directory, but you can make
       adjustments to install TCL9 wherever you like.
-      install the TCL development libraries in the "`c:\Tcl`" directory.
       <p>
       This document assumes you are working with <b>TCL version 9.0</b>.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
-      [https://www.tcl.tk/software/tcltk/download.html](https://www.tcl.tk/software/tcltk/download.html)
-      or [https://sqlite.org/tmp/tcl9.0.0.tar.gz](https://sqlite.org/tmp/tcl9.0.0.tar.gz)
+      <https://www.tcl.tk/software/tcltk/download.html>
+      or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar the source archive.  CD into the "unix/" subfolder
           of the source tree.
       <li>Run: `mkdir $HOME/local`

@@ -1,5 +1,5 @@
-C Improved\sREADME.txt\sfile\sin\sthe\samalgamation-autoconf\starball.
-D 2024-10-17T13:29:49.356
+C Fix\sa\stypo\sin\scompile-for-unix.md.\s\sSimplify\shyperlinks\sin\sthe\scompile-for-*\ndocuments.
+D 2024-10-17T16:22:47.929
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -41,8 +41,8 @@ F configure 135e050689ea244477582e6d77cc7867dfcfe6e0f82e3eab3e47655a67035f8f x
 F configure.ac aca8ebf47b7644c473e11e599ea986eeb23860a8732a8812039ad961ef52a713
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/compile-for-unix.md 90f17554cc3d19b2dae8142b5aeda1a8890692d5f2e091ed4a6f9b46b8f10f62
-F doc/compile-for-windows.md a9ab9f6c49763d63d177a386a9e53ee670101f80e8bcb73cafca438156229076
+F doc/compile-for-unix.md 343fe9334260d8695c36b465f55221f0187c8e7abaaa4d5afb4d564ed1d22dc1
+F doc/compile-for-windows.md 0bbde603ca2f6fc102fbedce823e232b8acf80e323dc8292cc44dceaa66e1ff8
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad9d7bdef95a8da76da0f6db358b6ffb0a0aa9097df2ff52f042e16e62afa8f5
-R 99182b0dc45226dc9a37e81279321b21
+P b7814350381a2929e9fa6444867a80437291b8bbe59479d4525350b2719bc72c
+R 41ef52182737ee6c673485c4ad35cdd9
 U drh
-Z 9be98c0bc29ecdc1f1469de16d6f86f8
+Z 3badfef879b8ce9fc836d61b07f80550
 # Remove this line to create a well-formed Fossil manifest.
