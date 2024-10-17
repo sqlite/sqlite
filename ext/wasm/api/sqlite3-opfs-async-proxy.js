@@ -492,8 +492,7 @@ const installAsyncProxy = function(){
           dirHandle: hDir,
           fileHandle: hFile,
           sabView: state.sabFileBufView,
-          readOnly: create
-            ? false : (state.sq3Codes.SQLITE_OPEN_READONLY & flags),
+          readOnly: !create && !!(state.sq3Codes.SQLITE_OPEN_READONLY & flags),
           deleteOnClose: !!(state.sq3Codes.SQLITE_OPEN_DELETEONCLOSE & flags)
         });
         fh.releaseImplicitLocks =
