@@ -922,6 +922,8 @@ const installOpfsVfs = function callee(options){
         fh.filename = zName;
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
+        fh.readOnly = !(sqlite3.SQLITE_OPEN_CREATE & flags)
+          && !!(flags & capi.SQLITE_OPEN_READONLY);
         const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
         if(!rc){
           /* Recall that sqlite3_vfs::xClose() will be called, even on
