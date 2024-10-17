@@ -1,5 +1,5 @@
-C Fixes\sfrom\scode\sinspection:\n(1)\sExtra\sparanoid\sdefense\sagainst\sinteger\soverflow.\n(2)\sRemove\sa\sstray\sblank\sline\sin\san\sFTS5\scomment.
-D 2024-10-17T18:12:03.331
+C Fix\sobsolete\sM4\smacro\sin\sthe\sconfigure\sscript\sfor\sthe\sTEA\sextension\swithin\nthe\sautoconf\starball.
+D 2024-10-17T23:14:27.868
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -24,7 +24,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 8912dfa3e6a8ce2219ecad8186f6e7f0c192df66dc0fe95995821e2fdc0bf22b
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 0deb5d6c49c8119f75f436488219fc043127d72057af5dfba2c9ce096a5734bc
+F autoconf/tea/configure.ac a73dff08c9aee25cb65bb5f83f511ac71760a7a288c59cfcea6504c1ac0f7ced
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cd7d157741f207c3a38744f2d85a5bb808824b5e83b9e033a8ce3954fe38f43
-R 68ac21e06c409b5e8cfd0bbb21036d42
+P 8563728deeb1d3ead9ff99a3ad2c7819b2223ead44e7374ecc7bbeda2d955ade
+R 334ebb591d1a98c5e5bcd07feaef3d49
 U drh
-Z 0c654ab2726756e8cae3d22724d28a73
+Z 7e411ef052c6b114cea0b3e23bfbb6e4
 # Remove this line to create a well-formed Fossil manifest.
