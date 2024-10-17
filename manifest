@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sOPFS\sVFS's\sxOpen()\swrites\sback\sthe\sread-only\sflag\sto\sthe\soutput\sflags.\sResolves\sthe\sproblem\sreported\sin\s[forum:cf37d5ff1182c31081\s|\sforum\spost\scf37d5ff1182c31081].
-D 2024-10-17T12:14:34.534
+C Attempt\sto\sget\sthe\sTEA\sbuilder\sin\sthe\samalgamation-autoconf\starball\sworking\nusing\shints\sfrom\sJan\sNijtmans.
+D 2024-10-17T13:00:56.798
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -21,18 +21,20 @@ F autoconf/Makefile.msc 0a1fdef1f2c618815cf7c82c817a7369c1e07b3cfed490803db16fb4
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
-F autoconf/tea/Makefile.in 106a96f2f745d41a0f6193f1de98d7355830b65d45032c18cd7c90295ec24196
-F autoconf/tea/README.txt 94fa2472d3ee4139ab24b364d99a70445d0a25531dac3ce03af2055d581f76b4
+F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
+F autoconf/tea/README.txt 8912dfa3e6a8ce2219ecad8186f6e7f0c192df66dc0fe95995821e2fdc0bf22b
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.ac 0deb5d6c49c8119f75f436488219fc043127d72057af5dfba2c9ce096a5734bc
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
-F autoconf/tea/tclconfig/install-sh bdd5e293591621ae60d9824d86a4b1c5f22c3d00
-F autoconf/tea/tclconfig/tcl.m4 c6e5f2fc7178f40d087403daa044ef3b86a8e30793f3b121bdcbdf152c6a776a
-F autoconf/tea/win/makefile.vc 9b33af4214a5c8360549b96380f55ece1a2df76a51ab4c726296e5c43d8a2227
+F autoconf/tea/tclconfig/install-sh 2182b3705d92e25753411e2c28cf788c69e35a48fbb8aa332e342dfc6b95b80d
+F autoconf/tea/tclconfig/tcl.m4 284faa1d9cf66c1efb42817beb5c8a63626fb35bf903993d4f11fde75677cc1a
+F autoconf/tea/win/makefile.vc 55721106928894cb818164a8ce054da11d948948f5a92a54d262dd0a6a891d4d
 F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea00342d1a1a7eaa19cb
-F autoconf/tea/win/rules.vc 7b3bb2ef32ade0f3f14d951231811678722725e3bca240dd9727ae0dfe10f6a5
+F autoconf/tea/win/rules-ext.vc fd5740d97aac8c41c97eaa0fbcc0c15a41b6f7075d5f9f593e147d7a284a247a
+F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0999d66484f4c
+F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
 F configure 135e050689ea244477582e6d77cc7867dfcfe6e0f82e3eab3e47655a67035f8f x
@@ -2217,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7f7a5deeae61920dbfec7606cf9014de711f959a285b29e12673abfd2f88646
-R 556651a7ceaf11a031d680d31500bcba
-U stephan
-Z c682d4ab99e571cd5091abebe964c27a
+P 0a32624015f16fd881a4ecbb56b7833391028d327a95f4c899eee864ed7fe00d
+R b46e996d43b6a1f81a9ffde97ccc1ae3
+U drh
+Z 028f07783077affaca7a4d9f85e39602
 # Remove this line to create a well-formed Fossil manifest.
