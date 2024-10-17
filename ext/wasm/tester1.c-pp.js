@@ -3360,40 +3360,48 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
       //predicate: ()=>false,
       test: async function(sqlite3){
-        /* https://sqlite.org/forum/forumpost/cf37d5ff11 */
+        /* https://sqlite.org/forum/forumpost/cf37d5ff1182c31081
+
+           The "opfs" VFS (but not SAHPool) was formerly misbehaving
+           after a write attempt was made on a db opened with
+           mode=ro. This test ensures that that behavior is fixed and
+           compares that behavior with other VFSes. */
+        const tryOne = function(vfsName,descr){
+          const uri = 'file:///foo.db';
+          let db = new sqlite3.oo1.DB(uri + (vfsName ? '?vfs='+vfsName : ''));
+          db.exec([
+            "drop table if exists t;",
+            "create table t(a);",
+            "insert into t(a) values('abc'),('def'),('ghi');"
+          ]);
+          db.close();
+          db = new sqlite3.oo1.DB(uri+'?mode=ro'+
+                                  (vfsName ? '&vfs='+vfsName : ''));
+          let err;
+          try {
+            db.exec('insert into t(a) values(1)');
+          }catch(e){
+            err = e;
+          }
+          T.assert(err && (err.message.indexOf('SQLITE_READONLY')===0));
+          try{
+            db.exec('select a from t');
+          }finally{
+            db.close();
+          }
+        };
         const poolConfig = JSON.parse(JSON.stringify(sahPoolConfig));
         poolConfig.name = 'opfs-sahpool-cf37d5ff11';
-        const vfsName = 0 ? poolConfig.name : (1 ? undefined : 'opfs');
         let poolUtil;
-        const uri = 'file:///foo.db';
-        //log('poolConfig =',poolConfig);
-        if( poolConfig.name === vfsName ){
-          await sqlite3.installOpfsSAHPoolVfs(poolConfig).then(p=>poolUtil=p);
-          T.assert(!!sqlite3.capi.sqlite3_vfs_find(poolConfig.name), "Expecting to find just-registered VFS");
-        }
-        let db = new sqlite3.oo1.DB(uri + (vfsName ? '?vfs='+vfsName : ''));
-        db.exec([
-          "drop table if exists t;",
-          "create table t(a);",
-          "insert into t(a) values('abc'),('def'),('ghi');"
-        ]);
-        db.close();
-        db = new sqlite3.oo1.DB(uri+'?mode=ro'+(vfsName ? '&vfs='+vfsName : ''));
-        let err;
-        try {
-          db.exec('insert into t(a) values(1)');
-        }catch(e){
-          err = e;
-        }
-        //log("err =",err);
-        T.assert(err && (err.message.indexOf('SQLITE_IOERR_WRITE')===0/*opfs*/
-                         || err.message.indexOf('readonly')>0)/*Emscripten FS*/);
+        await sqlite3.installOpfsSAHPoolVfs(poolConfig).then(p=>poolUtil=p);
+        T.assert(!!sqlite3.capi.sqlite3_vfs_find(poolConfig.name), "Expecting to find just-registered VFS");
         try{
-          db.exec('select a from t');
+          tryOne(false, "Emscripten filesystem");
+          tryOne(poolConfig.name);
+          tryOne('opfs');
         }finally{
-          db.close();
+          await poolUtil.removeVfs();
         }
-        if( poolUtil ) await poolUtil.removeVfs();
       }
     })
   ;/*end of Bug Reports group*/;
