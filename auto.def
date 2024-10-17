@@ -343,7 +343,7 @@ hwaci-if-opt-truthy with-debug {
 #
 #  - TCLLIB_RPATH = the -rpath flag specific to libtclsqlite3.
 #
-#  - BTCL = the path to the tcl interpreter used for in-tree code
+#  - BTCLSH = the path to the tcl interpreter used for in-tree code
 #    generation.  It may be jimtcl or the canonical tclsh.
 define HAVE_TCL 0
 define TCLSH_CMD {exit 1}
@@ -510,14 +510,14 @@ puts "Which TCL to use for code generation... "
 set cgtcl jimtcl
 if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE_REALPATH
-  define BTCL "\$(JIMSH)"
+  define BTCLSH "\$(JIMSH)"
 } elseif {[cc-check-functions _fullpath]} {
   # _fullpath() is a Windows API
   define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-  define BTCL "\$(JIMSH)"
+  define BTCLSH "\$(JIMSH)"
 } elseif {"" ne [get-define TCLSH_CMD]} {
   set cgtcl [get-define TCLSH_CMD]
-  define BTCL "\$(TCLSH_CMD)"
+  define BTCLSH "\$(TCLSH_CMD)"
 } else {
   # One last-ditch effort to find TCLSH_CMD: use info from
   # tclConfig.sh to try to find a tclsh
@@ -538,7 +538,7 @@ if {[cc-check-functions realpath]} {
     }
   }
   set cgtcl [get-define TCLSH_CMD]
-  define BTCL "\$(TCLSH_CMD)"
+  define BTCLSH "\$(TCLSH_CMD)"
 }
 puts "TCL for code generation: $cgtcl"
 unset cgtcl
