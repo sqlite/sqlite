@@ -3355,6 +3355,47 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         db.close();
       }
     })
+    .t({
+      name: 'r/o connection recovery from write op error',
+      predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
+      //predicate: ()=>false,
+      test: async function(sqlite3){
+        /* https://sqlite.org/forum/forumpost/cf37d5ff11 */
+        const poolConfig = JSON.parse(JSON.stringify(sahPoolConfig));
+        poolConfig.name = 'opfs-sahpool-cf37d5ff11';
+        const vfsName = 0 ? poolConfig.name : (1 ? undefined : 'opfs');
+        let poolUtil;
+        const uri = 'file:///foo.db';
+        //log('poolConfig =',poolConfig);
+        if( poolConfig.name === vfsName ){
+          await sqlite3.installOpfsSAHPoolVfs(poolConfig).then(p=>poolUtil=p);
+          T.assert(!!sqlite3.capi.sqlite3_vfs_find(poolConfig.name), "Expecting to find just-registered VFS");
+        }
+        let db = new sqlite3.oo1.DB(uri + (vfsName ? '?vfs='+vfsName : ''));
+        db.exec([
+          "drop table if exists t;",
+          "create table t(a);",
+          "insert into t(a) values('abc'),('def'),('ghi');"
+        ]);
+        db.close();
+        db = new sqlite3.oo1.DB(uri+'?mode=ro'+(vfsName ? '&vfs='+vfsName : ''));
+        let err;
+        try {
+          db.exec('insert into t(a) values(1)');
+        }catch(e){
+          err = e;
+        }
+        //log("err =",err);
+        T.assert(err && (err.message.indexOf('SQLITE_IOERR_WRITE')===0/*opfs*/
+                         || err.message.indexOf('readonly')>0)/*Emscripten FS*/);
+        try{
+          db.exec('select a from t');
+        }finally{
+          db.close();
+        }
+        if( poolUtil ) await poolUtil.removeVfs();
+      }
+    })
   ;/*end of Bug Reports group*/;
 
   ////////////////////////////////////////////////////////////////////////
