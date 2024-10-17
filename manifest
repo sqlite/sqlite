@@ -1,5 +1,5 @@
-C Attempt\sto\sget\sthe\sTEA\sbuilder\sin\sthe\samalgamation-autoconf\starball\sworking\nusing\shints\sfrom\sJan\sNijtmans.
-D 2024-10-17T13:00:56.798
+C Improved\sREADME.txt\sfile\sin\sthe\samalgamation-autoconf\starball.
+D 2024-10-17T13:29:49.356
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -19,7 +19,7 @@ F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4e
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.msc 0a1fdef1f2c618815cf7c82c817a7369c1e07b3cfed490803db16fb43326d506
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
-F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
+F autoconf/README.txt 5e946ffb6fbdbb114c81e1bdc862df27fce8beab557d7b0421820b0fe8fc048f
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 8912dfa3e6a8ce2219ecad8186f6e7f0c192df66dc0fe95995821e2fdc0bf22b
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a32624015f16fd881a4ecbb56b7833391028d327a95f4c899eee864ed7fe00d
-R b46e996d43b6a1f81a9ffde97ccc1ae3
+P ad9d7bdef95a8da76da0f6db358b6ffb0a0aa9097df2ff52f042e16e62afa8f5
+R 99182b0dc45226dc9a37e81279321b21
 U drh
-Z 028f07783077affaca7a4d9f85e39602
+Z 9be98c0bc29ecdc1f1469de16d6f86f8
 # Remove this line to create a well-formed Fossil manifest.
