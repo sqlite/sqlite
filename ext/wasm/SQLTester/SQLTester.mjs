@@ -706,7 +706,7 @@ class SQLTester {
         if( capi.SQLITE_ROW===rc || capi.SQLITE_DONE===rc) rc = 0;
         else if( rc!=0 ){
           if( sb ){
-            self.#appendDbErr(db, sb, rc);
+            self.#appendDbErr(pDb, sb, rc);
           }
           break;
         }
