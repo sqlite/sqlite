@@ -1106,7 +1106,7 @@ emcc-opt-extra :=
 # doubles the build time and seems to have negligible, if any, effect
 # on higher optimization levels.
 #
-# -flto does ont shrink the size of bare-bones builds by any measurable
+# -flto does not shrink the size of bare-bones builds by any measurable
 # amount.
 #endif
 o0: clean

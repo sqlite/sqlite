@@ -785,20 +785,6 @@ dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 
-dbfuzz2-asan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-
-dbfuzz2-msan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-
 mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 		$(TLIBS) -rpath "$(libdir)"
