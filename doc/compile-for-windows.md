@@ -52,6 +52,12 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       <li> `set TCLDIR=c:\Tcl`
       </ul>
 
+      If you install TCL in the "`c:\Tcl`" directory (as recommended
+      in step 3 above), then this step is optional because
+      "`c:\Tcl`" is the default value for TCLDIR.  You can also skip this
+      step by specifying "`TCLDIR=c:\Tcl`" as an argument to the nmake
+      commands in step 6 below.
+
   6.  Run the "`Makefile.msc`" makefile with an appropriate target.
       Examples:
       <ul>
