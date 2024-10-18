@@ -69,11 +69,13 @@ intentional error;
 SELECT json_array(1,2,3)
 --json [1,2,3]
 --testcase tableresult-1
-  select 1, 'a';
-  select 2, 'b';
+  select 1, 'a' UNION
+  select 2, 'b' UNION
+  select 3, 'c' ORDER by 1
 --tableresult
   # [a-z]
   2 b
+  3 c
 --end
 --testcase json-block-1
   select json_array(1,2,3);
@@ -110,14 +112,15 @@ const runTests = function(){
       ts.run(sqt);
       affirm( 'zilch' === sqt.nullValue() );
       sqt.addTestScript(ts);
-      sqt.runTests();
+    }else if(0){
+      sqt.addTestScript(ts);
     }else{
       for(const t of allTests){
         sqt.addTestScript( new ns.TestScript(t) );
       }
       allTests.length = 0;
-      sqt.runTests();
     }
+    sqt.runTests();
   }finally{
     //log( "Metrics:", sqt.metrics );
     sqt.reset();

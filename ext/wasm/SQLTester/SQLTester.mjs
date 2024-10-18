@@ -352,7 +352,7 @@ class SQLTester {
     this.closeAllDbs();
     this.metrics.nTest = 0;
     this.#nullView = "nil";
-    this.emitColNames = false;
+    this.#emitColNames = false;
     this.#db.iCurrentDb = 0;
     //this.#db.initSql.push("SELECT 1;");
   }
@@ -605,7 +605,7 @@ class SQLTester {
         }
       }
     }
-    sb.append("\"");
+    sb.push("\"");
     return sb.join('');
   }
 
@@ -694,11 +694,11 @@ class SQLTester {
                   break;
               }
             }/* column loop */
+            if( ResultRowMode.NEWLINE === rowMode ){
+              spacing = 0;
+              sb.push('\n');
+            }
           }/* row loop */
-          if( ResultRowMode.NEWLINE === rowMode ){
-            spacing = 0;
-            sb.push('\n');
-          }
         }else{ // no output but possibly other side effects
           while( capi.SQLITE_ROW === (rc = capi.sqlite3_step(pStmt)) ) {}
         }
