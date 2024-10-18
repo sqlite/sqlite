@@ -1,5 +1,5 @@
-C Minor\senhancements\sto\sthe\scompile-for-windows.md\sdocument.
-D 2024-10-18T10:51:43.165
+C Remove\sa\snot-strictly-necessary\s'undefine'\sinvocation\sfrom\sext/wasm/GNUmakefile,\sas\sit\sis\snot\scompatible\swith\stoo-old\sversions\sof\sgmake.\sResolves\sthe\sproblem\sreported\sin\s[forum:e57932e3ccdc2c9c\s|\sforum\spost\se57932e3ccdc2c9c].
+D 2024-10-18T12:31:21.263
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt ca7e9ee82ca4e1c1744295f8184dd70edfae1992865d26c64303f539eb6c084c
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile bfd63f0462ac7e5b814a267e9101b8284d61731574ec673dae3178643cdb89ef
+F ext/wasm/GNUmakefile fadc8a6cee24a824ef162cbe0e5533fdc3bca97e503ca0d5ada84eacd1288d33
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62d24a69fe9cf6c07aa7e554f54aa7874b90e64c7c5597a78a824c6c9dc8847e
-R 73f2b6ee7875b5121b90a2623b302a1b
-U drh
-Z 271a77f2acde493c63c91af11b7fab05
+P 5f0cc7f26453faaea20a7bb0a1bcbab381a9bae7a81e099bb27f4b05fac1cd6c
+R 402673aaf78460573e4fbfaa376f1a85
+U stephan
+Z 15052def333bcbcd9777fccd1ca6a37e
 # Remove this line to create a well-formed Fossil manifest.

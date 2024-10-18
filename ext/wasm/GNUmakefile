@@ -227,7 +227,7 @@ ifeq (1,$(barebones))
 else
   wasm-bare-bones := 0
 endif
-undefine barebones
+# undefine barebones # relatively new gmake feature, not ubiquitous
 
 # Common options for building sqlite3-wasm.c and speedtest1.c.
 # Explicit ENABLEs...
