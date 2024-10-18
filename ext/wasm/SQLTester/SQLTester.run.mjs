@@ -9,7 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains a test application for SQLTester.js.
+** This file contains a test application for SQLTester.mjs. It loads
+** test scripts and runs them through the SQLTester class.
 */
 import {default as ns} from './SQLTester.mjs';
 import {default as allTests} from './test-list.mjs';
@@ -33,7 +34,7 @@ const affirm = function(expr, msg){
   }
 }
 
-let ts = new ns.TestScript('/foo.test',`
+let ts = new ns.TestScript('SQLTester-sanity-check.test',`
 /*
 ** This is a comment. There are many like it but this one is mine.
 **
@@ -93,6 +94,7 @@ SELECT json_array(1,2,3)
   select 1 as 'a', 2 as 'b';
 --result 1 2
 --close
+--testcase the-end
 --print Until next time
 `);
 
@@ -111,8 +113,6 @@ const runTests = function(){
       affirm( 'zilch' !== sqt.nullValue() );
       ts.run(sqt);
       affirm( 'zilch' === sqt.nullValue() );
-      sqt.addTestScript(ts);
-    }else if(0){
       sqt.addTestScript(ts);
     }else{
       for(const t of allTests){

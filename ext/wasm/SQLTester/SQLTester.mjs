@@ -13,8 +13,8 @@
 ** implementation of the SQLTester framework.
 **
 ** This version is not well-documented because it's a direct port of
-** the Java immplementation, which is documented: in the main SQLite3
-** source tree, see ext/jni/src/org/sqlite/jni/tester/SQLite3Tester.java.
+** the Java implementation, which is documented: in the main SQLite3
+** source tree, see ext/jni/src/org/sqlite/jni/capi/SQLTester.java.
 */
 
 import sqlite3ApiInit from '/jswasm/sqlite3.mjs';
@@ -28,7 +28,7 @@ const log = (...args)=>{
 /**
    Try to install vfsName as the new default VFS. Once this succeeds
    (returns true) then it becomes a no-op on future calls. Throws if
-   vfs registration as the default VFS fails but has no side effects
+   VFS registration as the default VFS fails but has no side effects
    if vfsName is not currently registered.
 */
 const tryInstallVfs = function f(vfsName){
@@ -48,11 +48,10 @@ tryInstallVfs.vfsName = undefined;
 
 if( 0 && globalThis.WorkerGlobalScope ){
   // Try OPFS storage, if available...
-  if( 0 && sqlite3.oo1.OpfsDb ){
+  if( 1 && sqlite3.oo1.OpfsDb ){
     /* Really slow with these tests */
     tryInstallVfs("opfs");
-  }
-  if( sqlite3.installOpfsSAHPoolVfs ){
+  }else if( sqlite3.installOpfsSAHPoolVfs ){
     await sqlite3.installOpfsSAHPoolVfs({
       clearOnInit: true,
       initialCapacity: 15,
@@ -207,6 +206,9 @@ const Util = newObj({
                               ['string','string'])
 })/*Util*/;
 
+/**
+   Output logger utility.
+*/
 class Outer {
   #lnBuf = [];
   #verbosity = 0;
