@@ -1,9 +1,9 @@
-C Merge\scurrent\strunk\sinto\sthe\sautosetup\sbranch.
-D 2024-10-17T22:20:27.470
+C Get\smost\sof\sthe\sfuzzing-related\sapps\sbuilding,\ssans\sdbuzz2-asan/msan,\sboth\sof\swhich\srefuse\sto\slink\swith\sclang\sv18\sbecause\sit's\strying\sto\suse\s-lstdc++\sdespite\sthe\sapp\sbeing\sonly\sC.
+D 2024-10-18T16:39:17.498
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in a01307498cd4d2c615be19a0fea96a488ec18924c0c0fa30a9a828aa9f28f0ee
+F Makefile.in 7cfcce78e311c64e04a28bb5695d2ef7c2c4d6e1a165e8e944150cf373bf8a4e
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 6b669b781de0eec9ad7dea65079c469ac7013c115487cf3e66c068e40b2a6df3
+F auto.def 74a6b53f7050ab342e21e96fd67fa7044421e8c700b0ba7a2bfa28253319db6c
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2238,8 +2238,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83eaef7d62677a85a2c42f98d52ff2e8e5356724ad6d12b2907409d96d4757f1 0a32624015f16fd881a4ecbb56b7833391028d327a95f4c899eee864ed7fe00d
-R 5bf6ee4a5edead94a59479d61cb4229f
+P 352da23b46f13fbb2c38fcdd0b6092bf39a391a0bfed587004c85f7f5b99a58d
+R c42c85ba5209b7fc0431438c5c54d35b
 U stephan
-Z 0e34f05747acefc37ecfc30a7ac64e71
+Z b9cb46d76e081b85eda921cc556eb271
 # Remove this line to create a well-formed Fossil manifest.

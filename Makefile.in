@@ -83,9 +83,14 @@ READLINE_FLAGS = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 #XX## Should the database engine be compiled threadsafe
 #XX##
 #XX#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
-#XX#
+
+#
 # Any target libraries which libsqlite must be linked against
 #
+# With the autosetup build, the intended way to do this is to set
+# those in $(LDFLAGS_libsqlite3) and include those flags for both
+# $(libsqlite3.DLL) and any apps which directly link in either
+# sqlite3.o or its origin sources.
 TLIBS = @LIBS@ $(LIBS)
 
 #
@@ -773,17 +778,17 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 
 libsqlite3.DLL = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
-# LDFLAGS_libsqlite should be used with any target which
+# LDFLAGS_libsqlite3 should be used with any target which
 # either results in building libsqlite3.so, builds sqlite3.c
 # directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
-LDFLAGS_libsqlite = \
-  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
+LDFLAGS_libsqlite3 = \
+  $(LDFLAGS_RPATH) @LIBS@ $(LIBS) $(LDFLAGS_PTHREAD) \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 @if ENABLE_SHARED
 $(libsqlite3.DLL):	$(LIBOBJ)
 	$(TLINK_shared) -o $@ \
-		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite)
+		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite3)
 all: dll
 @else
 $(libsqlite3.DLL):
@@ -888,7 +893,7 @@ tclextension-list:
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(TCC) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
-		$(LDFLAGS_libsqlite) $(LDFLAGS_READLINE)
+		$(LDFLAGS_libsqlite3) $(LDFLAGS_READLINE)
 cli: sqlite3$(TEXE)
 @if !HAVE_WASI_SDK
 all: cli
@@ -900,14 +905,14 @@ install-cli: sqlite3$(TEXT) $(install.bindir)
 install: install-cli
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
-	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite)
+	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite3)
 
 install-diff: sqldiff$(TEXE) $(install.bindir)
 	$(INSTALL) -s sqldiff$(TEXT) $(install.bindir)
 #install: install-diff
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
-	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite)
+	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite3)
 
 RSYNC_SRC = \
   $(TOP)/tool/sqlite3-rsync.c \
@@ -921,7 +926,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_DEPRECATED
 
 sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
-	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite)
+	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
 
 install-rsync: sqlite3-rsync$(TEXE) $(install.bindir)
 	$(INSTALL) sqlite3-rsync$(TEXT) $(install.bindir)
@@ -929,7 +934,7 @@ install-rsync: sqlite3-rsync$(TEXE) $(install.bindir)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
-		$(TOP)/ext/misc/scrub.c sqlite3.o $(LDFLAGS_libsqlite)
+		$(TOP)/ext/misc/scrub.c sqlite3.o $(LDFLAGS_libsqlite3)
 
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
@@ -943,76 +948,97 @@ src-verify$(BEXE):	$(TOP)/tool/src-verify.c
 verify-source:	./src-verify$(BEXE)
 	./src-verify$(BEXE) $(TOP)
 
-#XX#
-#XX#fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-#XX#	$(TLINK) -o $@ $(FUZZERSHELL_OPT) \
-#XX#	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
-#XX#
-#XX#fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
-#XX#
-#XX#fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(TLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
-#XX#
-#XX#fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-#XX#	$(TLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
-#XX#
-#XX## Usage:    FUZZDB=filename make run-fuzzcheck
-#XX##
-#XX## Where filename is a fuzzcheck database, this target builds and runs
-#XX## fuzzcheck, fuzzcheck-asan, and fuzzcheck-ubsan on that database.
-#XX##
-#XX## FUZZDB can be a glob pattern of two or more databases. Example:
-#XX##
-#XX##     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
-#XX##
-#XX#run-fuzzcheck:	fuzzcheck$(TEXE) fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE)
-#XX#	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
-#XX#	./fuzzcheck$(TEXE) --spinner $(FUZZDB)
-#XX#	./fuzzcheck-asan$(TEXE) --spinner $(FUZZDB)
-#XX#	./fuzzcheck-ubsan$(TEXE) --spinner $(FUZZDB)
-#XX#
-#XX#ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
-#XX#	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
-#XX#             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
-#XX#
-#XX#sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
-#XX#	$(TLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
-#XX#
-#XX#dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
-#XX#	$(TLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
-#XX#
-#XX#DBFUZZ2_OPTS = \
-#XX#  -DSQLITE_THREADSAFE=0 \
-#XX#  -DSQLITE_OMIT_LOAD_EXTENSION \
-#XX#  -DSQLITE_DEBUG \
-#XX#  -DSQLITE_ENABLE_DBSTAT_VTAB \
-#XX#  -DSQLITE_ENABLE_BYTECODE_VTAB \
-#XX#  -DSQLITE_ENABLE_RTREE \
-#XX#  -DSQLITE_ENABLE_FTS4 \
-#XX#  -DSQLITE_ENABLE_FTS5
-#XX#
-#XX#dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-#XX#	$(CC) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-#XX#		-DSTANDALONE -o dbfuzz2 \
-#XX#		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-#XX#	mkdir -p dbfuzz2-dir
-#XX#	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-#XX#
-#XX#dbfuzz2-asan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-#XX#	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-#XX#		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan \
-#XX#		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-#XX#	mkdir -p dbfuzz2-dir
-#XX#	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-#XX#
-#XX#dbfuzz2-msan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-#XX#	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-#XX#		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan \
-#XX#		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-#XX#	mkdir -p dbfuzz2-dir
-#XX#	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-#XX#
+fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
+	$(TLINK) -o $@ $(FUZZERSHELL_OPT) \
+	  $(TOP)/tool/fuzzershell.c sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: fuzzershell$(TEXE)
+
+fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: fuzzcheck$(TEXE)
+
+fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+	$(TLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
+		sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: fuzzcheck-asan$(TEXE)
+
+
+fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+	$(TLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
+		sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: fuzzcheck-ubsan$(TEXE)
+
+# Usage:    FUZZDB=filename make run-fuzzcheck
+#
+# Where filename is a fuzzcheck database, this target builds and runs
+# fuzzcheck, fuzzcheck-asan, and fuzzcheck-ubsan on that database.
+#
+# FUZZDB can be a glob pattern of two or more databases. Example:
+#
+#     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
+#
+run-fuzzcheck:	fuzzcheck$(TEXE) fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-asan$(TEXE) --spinner $(FUZZDB)
+	./fuzzcheck-ubsan$(TEXE) --spinner $(FUZZDB)
+
+ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
+	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
+             $(TOP)/test/ossfuzz.c sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: ossshell$(TEXE)
+
+sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
+	$(TLINK) -o $@ $(TOP)/test/sessionfuzz.c $(LDFLAGS_libsqlite3)
+fuzzy: sessionfuzz$(TEXE)
+
+dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
+	$(TLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(LDFLAGS_libsqlite3)
+fuzzy: dbfuzz$(TEXE)
+
+DBFUZZ2_OPTS = \
+  -USQLITE_THREADSAFE \
+  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5
+
+dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	$(CC) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
+		-DSTANDALONE -o dbfuzz2 \
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS_libsqlite3)
+	mkdir -p dbfuzz2-dir
+	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
+fuzzy: dbfuzz2$(TEXE)
+
+@if BIN_CLANG
+# ^^^ modern clangs are failing to build the dbfuzz2-... apps with the
+# error "cannot find -lstdc++", even though we don't use C++ here.
+CC_CLANG = @BIN_CLANG@
+dbfuzz2-asan$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	$(CC_CLANG) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
+		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan$(TEXE) \
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS_libsqlite3)
+	mkdir -p dbfuzz2-dir
+	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
+#fuzzy: dbfuzz2-asan$(TEXE)
+
+dbfuzz2-msan$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
+	$(CC_CLANG) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
+		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan$(TEXE) \
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS_libsqlite3)
+	mkdir -p dbfuzz2-dir
+	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
+#fuzzy: dbfuzz2-msan$(TEXE)
+@else
+dbfuzz2-asan$(TEXE) dbfuzz2-ubsan$(TEXE):
+	@echo "Missing clang required by for $@"; exit 1
+@endif
+
 #XX#mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 #XX#	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 #XX#		$(TLIBS) -rpath "$(libdir)"
@@ -1548,7 +1574,7 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
 testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
 	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
-		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite) @TCL_INCLUDE_SPEC@
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite3) @TCL_INCLUDE_SPEC@
 
 coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
@@ -1663,7 +1689,7 @@ coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 #XX#	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
 #XX#
 sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
-	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite)
+	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite3)
 
 #XX#CHECKER_DEPS =\
 #XX#  $(TOP)/tool/mkccode.tcl \
@@ -1835,11 +1861,15 @@ tidy:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE) sqlite3_expert$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
+	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE) dbfuzz2-asan$(TEXE) dbfuzz2-msan$(TEXE)
+	rm -f fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE) ossshell$(TEXE)
+	rm -f sessionfuzz$(TEXE)
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh* has_tclconfig
 	rm -f tclsqlite3.c
 	rm -f sqlite3rc.h
-# FIXME? (rm *.def) will remove auto.def (part of autosetup)
+# FIXME? (rm *.def) from the historical build will remove auto.def (part of autosetup)
+
 #
 # Removes build products and test logs.  Retains ./configure outputs.
 #
