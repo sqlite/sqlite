@@ -1,9 +1,9 @@
-C Get\smost\sof\sthe\sfuzzing-related\sapps\sbuilding,\ssans\sdbuzz2-asan/msan,\sboth\sof\swhich\srefuse\sto\slink\swith\sclang\sv18\sbecause\sit's\strying\sto\suse\s-lstdc++\sdespite\sthe\sapp\sbeing\sonly\sC.
-D 2024-10-18T16:39:17.498
+C Remove\sthe\sproblematic\sdbfuzz2-asan/msan\stargets,\swhich\sRichard\ssays\sare\snot\sused\sanymore.
+D 2024-10-18T16:47:54.809
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 7cfcce78e311c64e04a28bb5695d2ef7c2c4d6e1a165e8e944150cf373bf8a4e
+F Makefile.in b070ca8dd62ca803547f888f4e44391bf73d806789b3ea754bc6392140fdf3a6
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2238,8 +2238,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 352da23b46f13fbb2c38fcdd0b6092bf39a391a0bfed587004c85f7f5b99a58d
-R c42c85ba5209b7fc0431438c5c54d35b
+P 3e843452927aaea152eab60213337912c34966e2c77d3cfd50d2ee9eb77c6796
+R f96b7f8acba78c395f1ccebf70c56c0a
 U stephan
-Z b9cb46d76e081b85eda921cc556eb271
+Z 8726b6ffa28a328589337a2d1c2ae656
 # Remove this line to create a well-formed Fossil manifest.

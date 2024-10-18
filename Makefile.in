@@ -1015,30 +1015,6 @@ dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 fuzzy: dbfuzz2$(TEXE)
 
-@if BIN_CLANG
-# ^^^ modern clangs are failing to build the dbfuzz2-... apps with the
-# error "cannot find -lstdc++", even though we don't use C++ here.
-CC_CLANG = @BIN_CLANG@
-dbfuzz2-asan$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	$(CC_CLANG) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan$(TEXE) \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS_libsqlite3)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-#fuzzy: dbfuzz2-asan$(TEXE)
-
-dbfuzz2-msan$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	$(CC_CLANG) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan$(TEXE) \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS_libsqlite3)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-#fuzzy: dbfuzz2-msan$(TEXE)
-@else
-dbfuzz2-asan$(TEXE) dbfuzz2-ubsan$(TEXE):
-	@echo "Missing clang required by for $@"; exit 1
-@endif
-
 #XX#mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 #XX#	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 #XX#		$(TLIBS) -rpath "$(libdir)"
