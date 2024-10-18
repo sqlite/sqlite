@@ -40,7 +40,7 @@ The SQLite developers do not understand how it works.  It seems to
 work for us.  It might also work for you.  But we cannot promise that.
 
 If you want to use this TEA builder and it works for you, that's fine.
-But if you have trouble, your the first thing you should do is go back
+But if you have trouble, the first thing you should do is go back
 to using the canonical Makefile in the SQLite source tree.
 
 ------------------------------------------------------------------
