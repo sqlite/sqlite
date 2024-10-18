@@ -1,5 +1,5 @@
-C Fix\sobsolete\sM4\smacro\sin\sthe\sconfigure\sscript\sfor\sthe\sTEA\sextension\swithin\nthe\sautoconf\starball.
-D 2024-10-17T23:14:27.868
+C New\sassert()\sstatements\sto\svalidate\sOP_OpenEphemeral\slogic.
+D 2024-10-18T01:14:14.392
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -711,8 +711,8 @@ F src/auth.c 4c1ea890e0069ad73bead5d17a5b12c34cfa4f1a24175c8147ea439b64be271c
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 8c5592c618741c5fc9733e7efe3927bfafad3e999d15b0a0f3f1d3f3e17b919e
-F src/btree.h 55066f513eb095db935169dab1dc2f7c7a747ef223c533f5d4ad4dfed346cbd0
+F src/btree.c 63ca6b647342e8cef643863cd0962a542f133e1069460725ba4461dcda92b03c
+F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
 F src/build.c 3a1840d9d171ce2d24f4c1f7acda7266ab796c664290c1acba65ff98ce2bd01e
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
@@ -842,7 +842,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
 F src/util.c 4d57ae861d0e234019be9596818228d7715e44e6efaccb612cf4498bedc2e023
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
-F src/vdbe.c be5f58bc29f60252e041a618eae59e8d57d460ba136c5403cf0abf955560c457
+F src/vdbe.c 756acc7ce04b5b6b275fb7849d137cb3692155f131cda4098ff988bfc373d90b
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h af7d7e8291edd0b19f2cd698e60e4d4031078f9a2f2328ac8f0b7efb134f8a1d
 F src/vdbeapi.c 53c7e26a2c0821a892b20eee2cde4656e31998212f3d515576c780dfaa45fd17
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8563728deeb1d3ead9ff99a3ad2c7819b2223ead44e7374ecc7bbeda2d955ade
-R 334ebb591d1a98c5e5bcd07feaef3d49
+P 360613a2246ae193d9a1d4bc7a91a0f63f159146709dac8a2de3e0ca8eb62752
+R 5824c5683a5946c62282fa59c69f0837
 U drh
-Z 7e411ef052c6b114cea0b3e23bfbb6e4
+Z 772734cf288738e032a96f7cd3284f4a
 # Remove this line to create a well-formed Fossil manifest.

@@ -240,6 +240,9 @@ int sqlite3BtreeCursor(
 );
 BtCursor *sqlite3BtreeFakeValidCursor(void);
 int sqlite3BtreeCursorSize(void);
+#ifdef SQLITE_DEBUG
+int sqlite3BtreeClosesWithCursor(Btree*,BtCursor*);
+#endif
 void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
