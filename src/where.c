@@ -2583,7 +2583,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** and Y has additional constraints that might speed the search that X lacks
 ** but the cost of running X is not more than the cost of running Y.
 **
-** In other words, return true if the cost relationwship between X and Y
+** In other words, return true if the cost relationship between X and Y
 ** is inverted and needs to be adjusted.
 **
 ** Case 1:
