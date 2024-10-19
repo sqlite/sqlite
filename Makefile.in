@@ -89,7 +89,7 @@ READLINE_FLAGS = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 #
 # With the autosetup build, the intended way to do this is to set
 # those in $(LDFLAGS_libsqlite3) and include those flags for both
-# $(libsqlite3.DLL) and any apps which directly link in either
+# $(libsqlite3.SO) and any apps which directly link in either
 # sqlite3.o or its origin sources.
 TLIBS = @LIBS@ $(LIBS)
 
@@ -165,7 +165,8 @@ TLIB = @TARGET_LIBEXT@
 HAVE_TCL = @HAVE_TCL@
 
 # This is the command to use for tclsh - normally just "tclsh", but we may
-# know the specific version we want to use
+# know the specific version we want to use. This must point to the canonical
+# TCL interpreter, not JimTCL.
 #
 TCLSH_CMD = @TCLSH_CMD@
 TCL_CONFIG_SH = @TCL_CONFIG_SH@
@@ -744,9 +745,9 @@ ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 @endif
 
 @if HAVE_TCL
-libtclsqlite3.DLL = libtclsqlite3$(TDLL)
+libtclsqlite3.SO = libtclsqlite3$(TDLL)
 @else
-libtclsqlite3.DLL =
+libtclsqlite3.SO =
 @endif
 
 #
@@ -776,7 +777,7 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	$(AUTOREMAKE)
 	@touch $@
 
-libsqlite3.DLL = libsqlite3$(TDLL)
+libsqlite3.SO = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
 # LDFLAGS_libsqlite3 should be used with any target which
 # either results in building libsqlite3.so, builds sqlite3.c
@@ -786,15 +787,15 @@ LDFLAGS_libsqlite3 = \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 @if ENABLE_SHARED
-$(libsqlite3.DLL):	$(LIBOBJ)
+$(libsqlite3.SO):	$(LIBOBJ)
 	$(TLINK_shared) -o $@ \
 		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite3)
-all: dll
+all: so
 @else
-$(libsqlite3.DLL):
+$(libsqlite3.SO):
 	@echo "Build of $@ was explicitly disabled."; exit 1
 @endif
-dll: $(libsqlite3.DLL)
+so: $(libsqlite3.SO)
 
 $(libsqlite3.LIB):	$(LIBOBJ)
 	$(AR) crs $@ $(LIBOBJ)
@@ -802,22 +803,22 @@ lib: $(libsqlite3.LIB)
 all: lib
 
 #
-# Install the $(libsqlite3.DLL) as $(libsqlite3.DLL).@RELEASE@ and
+# Install the $(libsqlite3.SO) as $(libsqlite3.SO).@RELEASE@ and
 # create symlinks which point to it. Do we really need all of this
 # hoop-jumping? Can we not simply install the .so as-is to
 # libsqlite3.so (without the versioned bits)?
 #
 # The historical SQLite build always used a version number of 0.8.6
 # for reasons lost to history.
-install-dll: $(install.libdir) $(libsqlite3.DLL)
-	$(INSTALL) $(libsqlite3.DLL) $(install.libdir)
+install-so: $(install.libdir) $(libsqlite3.SO)
+	$(INSTALL) $(libsqlite3.SO) $(install.libdir)
 	cd $(install.libdir); \
-		rm -f $(libsqlite3.DLL).3 $(libsqlite3.DLL).@RELEASE@; \
-		mv $(libsqlite3.DLL) $(libsqlite3.DLL).@RELEASE@; \
-		ln -s $(libsqlite3.DLL).@RELEASE@ $(libsqlite3.DLL).3; \
-		ln -s $(libsqlite3.DLL).3 $(libsqlite3.DLL)
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).@RELEASE@; \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).@RELEASE@; \
+		ln -s $(libsqlite3.SO).@RELEASE@ $(libsqlite3.SO).3; \
+		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO)
 @if ENABLE_SHARED
-install: install-dll
+install: install-so
 @endif
 
 #
@@ -833,23 +834,23 @@ install-includes: sqlite3.h $(install.includedir)
 install: install-includes
 
 @if HAVE_TCL
-$(libtclsqlite3.DLL): tclsqlite.o $(libsqlite3.LIB)
+$(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 	$(TLINK_shared) -o $@ tclsqlite.o \
 		$(libsqlite3.LIB) $(TCL_INCLUDE_SPEC) \
 		$(TCL_STUB_LIB_SPEC) $(TLIBS) \
 		@TCLLIB_RPATH@
-libtcl:	$(libtclsqlite3.DLL)
+libtcl:	$(libtclsqlite3.SO)
 
-all:	$(libtclsqlite3.DLL)
+all:	$(libtclsqlite3.SO)
 
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 
 @if TCLLIBDIR
 install.tcldir = "$(DESTDIR)@TCLLIBDIR@"
-install-tcl: $(libtclsqlite3.DLL) pkgIndex.tcl
+install-tcl: $(libtclsqlite3.SO) pkgIndex.tcl
 	$(INSTALL) -d $(install.tcldir)
-	$(INSTALL) $(libtclsqlite3.DLL) $(install.tcldir)
+	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
 	$(INSTALL_noexec) pkgIndex.tcl $(install.tcldir)
 install: install-tcl
 @endif
@@ -1827,7 +1828,7 @@ tidy:
 	rm -f lemon$(BEXE) sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB)
+	rm -f $(libsqlite3.SO) $(libsqlite3.LIB)
 	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
@@ -1842,8 +1843,7 @@ tidy:
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify has_tclsh* has_tclconfig
 	rm -f tclsqlite3.c
-	rm -f sqlite3rc.h
-# FIXME? (rm *.def) from the historical build will remove auto.def (part of autosetup)
+	rm -f sqlite3rc.h sqlite3.def
 
 #
 # Removes build products and test logs.  Retains ./configure outputs.
@@ -1857,24 +1857,19 @@ distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
 	-gmake -C ext/wasm distclean 2>/dev/null; true
 
-#XX##
-#XX## Windows section
-#XX##
-#XX#dll: sqlite3.dll
-#XX#
-#XX#REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
-#XX#
-#XX#$(REAL_LIBOBJ): $(LIBOBJ)
-#XX#
-#XX#sqlite3.def: $(REAL_LIBOBJ)
-#XX#	echo 'EXPORTS' >sqlite3.def
-#XX#	nm $(REAL_LIBOBJ) | grep ' T ' | grep ' _sqlite3_' \
-#XX#		| sed 's/^.* _//' >>sqlite3.def
-#XX#
-#XX#sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
-#XX#	$(TCC) @SHOBJ_LDFLAGS@ -o $@ sqlite3.def \
-#XX#		-Wl,"--strip-all" $(REAL_LIBOBJ)
-#XX#
+#
+# Windows section
+#
+dll: sqlite3.dll
+sqlite3.def: $(LIBOBJ)
+	echo 'EXPORTS' >sqlite3.def
+	nm $(LIBOBJ) | grep ' T ' | grep ' _sqlite3_' \
+		| sed 's/^.* _//' >>sqlite3.def
+
+sqlite3.dll: $(LIBOBJ) sqlite3.def
+	$(TCC) @SHOBJ_LDFLAGS@ -o $@ sqlite3.def \
+		-Wl,"--strip-all" $(LIBOBJ)
+
 
 #
 # Fiddle app
@@ -1884,27 +1879,28 @@ fiddle: sqlite3.c shell.c
 	make -C ext/wasm fiddle emcc_opt=-Os
 @else
 fiddle:
-	@echo "Configure script did not find emcc, so fiddle build is not available."; exit 1
+	@echo "Configure script did not find emcc, so fiddle build is not available." 2>&1; exit 1
 @endif
 
-#XX##
-#XX## Spell-checking for source comments
-#XX## The sources checked are either C sources or C source templates.
-#XX## Their comments are extracted and processed through aspell using
-#XX## a custom dictionary that contains scads of odd identifiers that
-#XX## find their way into the comments.
-#XX##
-#XX## Currently, this target is setup to be "made" in-tree only.
-#XX## The output is ephemeral. Redirect it to guide spelling fixups,
-#XX## either to correct spelling or add words to tool/custom.txt.
-#XX##
-#XX#./custom.rws: ./tool/custom.txt
-#XX#	@echo 'Updating custom dictionary from tool/custom.txt'
-#XX#	aspell --lang=en create master ./custom.rws < $<
-#XX#
-#XX#misspell: ./custom.rws has_tclsh84
-#XX#	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
-#XX#
+#
+# Spell-checking for source comments
+# The sources checked are either C sources or C source templates.
+# Their comments are extracted and processed through aspell using
+# a custom dictionary that contains scads of odd identifiers that
+# find their way into the comments.
+#
+# Currently, this target is setup to be "made" in-tree only.
+# The output is ephemeral. Redirect it to guide spelling fixups,
+# either to correct spelling or add words to tool/custom.txt.
+#
+./custom.rws: ./tool/custom.txt
+	@echo 'Updating custom dictionary from tool/custom.txt'
+	aspell --lang=en create master ./custom.rws < $<
+# Note that jimsh does not work here:
+# https://github.com/msteveb/jimtcl/issues/319
+misspell: ./custom.rws has_tclsh84
+	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
+
 #
 # tool/version-info: a utility for emitting sqlite3 version info
 # in various forms.
