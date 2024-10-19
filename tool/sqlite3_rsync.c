@@ -1426,12 +1426,10 @@ static void replicaSide(SQLiteRsync *p){
         if( p->wrongEncoding ){
           p->wrongEncoding = 0;
           runSql(p, "PRAGMA encoding=utf16le");
-          runSql(p, "VACUUM");
           runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
           if( p->wrongEncoding ){
             p->wrongEncoding = 0;
             runSql(p, "PRAGMA encoding=utf16be");
-            runSql(p, "VACUUM");
             runSql(p, "Attach %Q AS 'replica'", p->zReplica);
           }
         }
