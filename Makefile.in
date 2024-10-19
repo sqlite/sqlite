@@ -148,7 +148,7 @@ TCC += @CFLAGS_ZLIB@
 VERSION = @VERSION@
 RELEASE = @RELEASE@
 
-# Filename extensions for binaries and shared libraries
+# Filename extensions for binaries and libraries
 #
 BEXE = @BUILD_EXEEXT@
 TEXE = @TARGET_EXEEXT@
@@ -783,6 +783,7 @@ libsqlite3.LIB = libsqlite3$(TLIB)
 # results in building libsqlite3.so, compiles sqlite3.c directly, or
 # links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
 # flags are for the target build platform, not necessarily localhost.
+# i.e. it should be used with $(TCC) or $(TLINK) but not $(BCC).
 LDFLAGS_libsqlite3 = \
   $(LDFLAGS_RPATH) @LIBS@ $(LIBS) $(LDFLAGS_PTHREAD) \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
@@ -917,7 +918,7 @@ dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
 	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite3)
 
 RSYNC_SRC = \
-  $(TOP)/tool/sqlite3-rsync.c \
+  $(TOP)/tool/sqlite3_rsync.c \
   sqlite3.c
 
 RSYNC_OPT = \
@@ -927,11 +928,11 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync$(TEXE):	$(RSYNC_SRC)
+sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCC) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
 
-install-rsync: sqlite3-rsync$(TEXE) $(install.bindir)
-	$(INSTALL) sqlite3-rsync$(TEXT) $(install.bindir)
+install-rsync: sqlite3_rsync$(TEXE) $(install.bindir)
+	$(INSTALL) sqlite3_rsync$(TEXT) $(install.bindir)
 #install: install-rsync
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
@@ -1551,7 +1552,7 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
 testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
 	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
-		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite3) @TCL_INCLUDE_SPEC@
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite3) $(TCL_INCLUDE_SPEC)
 
 coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
@@ -1653,19 +1654,23 @@ smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 shelltest:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
+                    $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
-	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
+	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TCL_INCLUDE_SPEC) $(LDFLAGS_libsqlite3)
 
-sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
+            $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
+            $(TOP)/tool/sqltclsh.c.in has_tclsh85
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): has_tclconfig sqltclsh.c
 	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(LDFLAGS_libsqlite3)
 
-sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
+sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
+                       $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite3)
 
@@ -1733,6 +1738,8 @@ speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 
 #XX#startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
 #XX#	$(CC) -Os -g -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(TLIBS)
+# ^^^ note that it wants $(TLIBS) (a.k.a. $(LDFLAGS_libsqlite3) but is using $(CC)
+# instead of $(BCC).
 
 KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 
@@ -1745,15 +1752,15 @@ rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo
 loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
 	$(TLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(LDFLAGS_libsqlite3)
 
-#XX## This target will fail if the SQLite amalgamation contains any exported
-#XX## symbols that do not begin with "sqlite3_". It is run as part of the
-#XX## releasetest.tcl script.
-#XX##
-#XX#VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
-#XX#checksymbols: sqlite3.o
-#XX#	nm -g --defined-only sqlite3.o
-#XX#	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
-#XX#	echo '0 errors out of 1 tests'
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o
+	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
+	echo '0 errors out of 1 tests'
 #XX#
 #XX## Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
 #XX## a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
@@ -1765,33 +1772,35 @@ loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
 #XX#snapshot-tarball: sqlite3.c sqlite3rc.h
 #XX#	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 #XX#
-#XX## Build a ZIP archive containing various command-line tools.
-#XX##
-#XX#tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer $(TOP)/tool/mktoolzip.tcl
-#XX#	./testfixture $(TOP)/tool/mktoolzip.tcl
-#XX#
-#XX## The next two rules are used to support the "threadtest" target. Building
-#XX## threadtest runs a few thread-safety tests that are implemented in C. This
-#XX## target is invoked by the releasetest.tcl script.
-#XX##
-#XX#THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
-#XX#                  $(TOP)/test/tt3_checkpoint.c \
-#XX#                  $(TOP)/test/tt3_index.c      \
-#XX#                  $(TOP)/test/tt3_vacuum.c      \
-#XX#                  $(TOP)/test/tt3_stress.c      \
-#XX#                  $(TOP)/test/tt3_lookaside1.c
-#XX#
-#XX#threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
-#XX#	$(TLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(TLIBS)
-#XX#
-#XX#threadtest: threadtest3$(TEXE)
-#XX#	./threadtest3$(TEXE)
-#XX#
-#XX#threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
-#XX#	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
-#XX#
-#XX## Standard install and cleanup targets
-#XX##
+# Build a ZIP archive containing various command-line tools.
+#
+tool-zip:	testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE) \
+            sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(TEXE) sqldiff$(TEXE) sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
+	./testfixture$(TEXE) $(TOP)/tool/mktoolzip.tcl
+
+# The next two rules are used to support the "threadtest" target. Building
+# threadtest runs a few thread-safety tests that are implemented in C. This
+# target is invoked by the releasetest.tcl script.
+#
+THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
+                  $(TOP)/test/tt3_checkpoint.c \
+                  $(TOP)/test/tt3_index.c      \
+                  $(TOP)/test/tt3_vacuum.c      \
+                  $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_lookaside1.c
+
+threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
+	$(TLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(LDFLAGS_libsqlite3)
+
+threadtest: threadtest3$(TEXE)
+	./threadtest3$(TEXE)
+
+threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
+	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS_libsqlite3)
+
+# Standard install and cleanup targets
+#
 #XX#lib_install:	libsqlite3.la
 #XX#	$(INSTALL) -d $(DESTDIR)$(libdir)
 #XX#	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
@@ -1836,7 +1845,7 @@ tidy:
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
 	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE) sqlite3-rsync$(TEXE) sqlite3_expert$(TEXE)
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) sqlite3_expert$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE) dbfuzz2-asan$(TEXE) dbfuzz2-msan$(TEXE)
