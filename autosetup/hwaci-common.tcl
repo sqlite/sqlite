@@ -132,10 +132,18 @@ proc hwaci-bin-define {binName {defName {}}} {
 # Each argument is passed to cc-path-progs. If that function returns
 # true, the full path to that binary is returned. If no matches are
 # found, "" is returned.
+#
+# Despite using cc-path-progs to do the search, this function clears
+# any define'd name that function stores for the result (because the
+# caller has no sensible way of knowing which result it was unless
+# they pass only a single argument).
 proc hwaci-first-bin-of {args} {
   foreach b $args {
     if {[cc-path-progs $b]} {
-      return [get-define [string toupper $b]]
+      set u [string toupper $b]
+      set x [get-define $u]
+      undefine $u
+      return $x
     }
   }
   return ""
@@ -144,10 +152,13 @@ proc hwaci-first-bin-of {args} {
 ########################################################################
 # Looks for `bash` binary and dies if not found. On success, defines
 # BIN_BASH to the full path to bash and returns that value.
+#
+# TODO: move this out of this file and back into the 1 or 2 downstream
+# trees which use it.
 proc hwaci-require-bash {} {
   set bash [hwaci-bin-define bash]
   if {"" eq $bash} {
-    user-error "Our Makefiles require the bash shell."
+    user-error "Cannot find required bash shell"
   }
   return $bash
 }

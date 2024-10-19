@@ -345,17 +345,21 @@ hwaci-if-opt-truthy with-debug {
 #    infrastructure. This must only be 1 for environments where
 #    tclConfig.sh can be found.
 #
-#  - TCLSH_CMD is the path to the canonical tclsh. It never refers to
-#    jimtcl.
+#  - TCLSH_CMD is the path to the canonical tclsh or "". It never
+#    refers to jimtcl.
 #
 #  - TCL_CONFIG_SH is the path to tclConfig.sh or "".
 #
 #  - TCLLIBDIR is the dir to which libtclsqlite3 gets installed.
 #
-#  - TCLLIB_RPATH = the -rpath flag specific to libtclsqlite3.
+#  - TCLLIB_RPATH = the -rpath flag specific to libtclsqlite3, which
+#    will usually differ from the rpath used by the rest of the lib.
 #
 #  - BTCLSH = the path to the tcl interpreter used for in-tree code
-#    generation.  It may be jimtcl or the canonical tclsh.
+#    generation.  It may be jimtcl or the canonical tclsh but may not
+#    be empty - this tree requires TCL to generated numerous
+#    components.
+#
 define HAVE_TCL 0
 define TCLSH_CMD {exit 1}
 proc hwaci-check-tcl {} {
@@ -551,7 +555,7 @@ if {[cc-check-functions realpath]} {
   set cgtcl [get-define TCLSH_CMD]
   define BTCLSH "\$(TCLSH_CMD)"
 }
-puts "TCL for code generation: $cgtcl"
+msg-result "TCL for code generation: $cgtcl"
 unset cgtcl
 
 # /TCL
@@ -559,7 +563,7 @@ unset cgtcl
 
 ########################################################################
 # Some of the fuzzer bits require clang
-define BIN_CLANG [hwaci-first-bin-of clang-6.0 clang]
+define BIN_CLANG [hwaci-first-bin-of clang-18]
 
 
 ########################################################################

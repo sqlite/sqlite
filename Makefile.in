@@ -27,8 +27,8 @@ LDFLAGS_PTHREAD ?= @LDFLAGS_PTHREAD@
 LDFLAGS_SHOBJ ?= @SHOBJ_LDFLAGS@
 ENABLE_SHARED ?= @ENABLE_SHARED@
 HAVE_WASI_SDK ?= @HAVE_WASI_SDK@
-AR ?= @AR@
-CC ?= @CC@
+AR = @AR@
+CC = @CC@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -42,11 +42,11 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # are provide so that these aspects of the build process can be changed
 # on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
-CFLAGS ?= @CFLAGS@ @SH_CFLAGS@
-CPPFLAGS ?= @CPPFLAGS@
+CFLAGS = @CFLAGS@ @SH_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
 # CFLAGS_stdio3 ==> for sqlite3_stdio.h
 CFLAGS_stdio3 := -I$(TOP)/ext/misc
-TCC = $(CC) $(CFLAGS)
+TCC ?= $(CC) $(CFLAGS)
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -106,7 +106,7 @@ TLIBS = $(LIBS)
 JIMSH = @srcdir@/jimsh
 CFLAGS_JIMSH ?= @CFLAGS_JIMSH@
 $(JIMSH): $(TOP)/autosetup/jimsh0.c
-	$(BCC) -o $(JIMSH) $(CFLAGS_JIMSH) $<
+	$(BCC) -o $(JIMSH) $(CFLAGS_JIMSH) $(TOP)/autosetup/jimsh0.c
 
 # BTCLSH is the tclsh-compatible app used for running various code
 # generators and other in-tree tools, as opposed to the TCL-based
@@ -297,7 +297,7 @@ fiddle: sqlite3.c shell.c
 #
 ./custom.rws: ./tool/custom.txt
 	@echo 'Updating custom dictionary from tool/custom.txt'
-	aspell --lang=en create master ./custom.rws < $<
+	aspell --lang=en create master ./custom.rws < ./tool/custom.txt
 # Note that jimsh does not work here:
 # https://github.com/msteveb/jimtcl/issues/319
 misspell: ./custom.rws has_tclsh84

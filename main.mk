@@ -35,8 +35,9 @@
 ################################################################################
 
 #
-# Ideally these all come from the calling makefile, but we can provide some
-# sane defaults for many of them...
+# Ideally these all come from the calling makefile, but we can provide
+# some sane defaults for many of them, where "sane" essentially means
+# "should suffice for conventional Unix-style OSes"...
 #
 prefix ?= /usr/local
 exec_prefix ?= $(prefix)
@@ -44,9 +45,19 @@ libdir ?= $(prefix)/lib
 pkgconfigdir ?= $(libdir)/pkgconfig
 bindir ?= $(prefix)/bin
 includedir ?= $(prefix)/include
-USE_AMALGAMATION ?= 2
+
+USE_AMALGAMATION ?= 1
 AMALGAMATION_LINE_MACROS ?= --linemacros=0
 INSTALL ?= install
+
+BCC ?= $(CC)
+TCC ?= $(BCC)
+BEXE ?=
+TEXE ?=
+BDLL ?= .so
+TDLL ?= .so
+BLIB ?= .lib
+TLIB ?= .lib
 
 LDFLAGS_ZLIB ?= -lz
 LDFLAGS_MATH ?= -lm
