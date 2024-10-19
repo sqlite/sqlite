@@ -250,7 +250,7 @@ TLINK_shared = $(TLINK) @SHOBJ_LDFLAGS@
 AS_AUTO_DEF = $(TOP)/auto.def
 
 USE_AMALGAMATION = @USE_AMALGAMATION@
-AMALGAMATION_LINE_MACROS = @AMALGAMATION_LINE_MACROS@
+AMALGAMATION_LINE_MACROS = --linemacros=@AMALGAMATION_LINE_MACROS@
 
 #
 # Object files for the SQLite library (non-amalgamation).
@@ -275,11 +275,11 @@ LIBOBJS0 = alter.o analyze.o attach.o auth.o \
          random.o resolve.o rowset.o rtree.o \
          sqlite3session.o select.o sqlite3rbu.o status.o stmt.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
-         update.o userauth.o upsert.o util.o vacuum.o \
+         update.o upsert.o userauth.o utf.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
-         vdbetrace.o vdbevtab.o \
+         vdbetrace.o vdbevtab.o vtab.o \
          wal.o walker.o where.o wherecode.o whereexpr.o \
-         window.o utf.o vtab.o
+         window.o
 
 # Object files for the amalgamation.
 #
@@ -1015,23 +1015,22 @@ dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 fuzzy: dbfuzz2$(TEXE)
 
-#XX#mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
-#XX#	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
-#XX#		$(TLIBS) -rpath "$(libdir)"
-#XX#
-#XX#MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-#XX#MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
-#XX#mptest:	mptester$(TEXE)
-#XX#	rm -f mptest.db
-#XX#	$(MPTEST1) --journalmode DELETE
-#XX#	$(MPTEST2) --journalmode WAL
-#XX#	$(MPTEST1) --journalmode WAL
-#XX#	$(MPTEST2) --journalmode PERSIST
-#XX#	$(MPTEST1) --journalmode PERSIST
-#XX#	$(MPTEST2) --journalmode TRUNCATE
-#XX#	$(MPTEST1) --journalmode TRUNCATE
-#XX#	$(MPTEST2) --journalmode DELETE
-#XX#
+mptester$(TEXE):	$(libsqlite3.LIB) $(TOP)/mptest/mptest.c
+	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c $(libsqlite3.LIB) \
+		$(LDFLAGS_libsqlite3)
+
+MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+mptest:	mptester$(TEXE)
+	rm -f mptest.db
+	$(MPTEST1) --journalmode DELETE
+	$(MPTEST2) --journalmode WAL
+	$(MPTEST1) --journalmode WAL
+	$(MPTEST2) --journalmode PERSIST
+	$(MPTEST1) --journalmode PERSIST
+	$(MPTEST2) --journalmode TRUNCATE
+	$(MPTEST1) --journalmode TRUNCATE
+	$(MPTEST2) --journalmode DELETE
 
 has_tclsh84:
 	sh $(TOP)/tool/cktclsh.sh 8.4 $(TCLSH_CMD)

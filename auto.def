@@ -307,7 +307,7 @@ hwaci-define-if-opt-truthy test-status TSTRNNR_OPTS \
   "test-runner flags:" {--status} {}
 
 hwaci-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
-  "Use #line macros in the amalgamation:" {--linemacros=1} {--linemacros=0}
+  "Use #line macros in the amalgamation:"
 
 msg-checking "Debug build? "
 
