@@ -1,5 +1,5 @@
-C Add\smissing\s$(TEXE)\ssuffixes\sin\sthe\stool-zip\smakefile\starget.
-D 2024-10-19T13:38:51.754
+C Add\ssqlite3_rsync\sto\sthe\sdocs\sat\sthe\stop\sof\smktoolzip.tcl.\sNo\scode\schanges.
+D 2024-10-19T22:45:50.359
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2152,7 +2152,7 @@ F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6
 F tool/mksqlite3c.tcl c6acfdf4e4ef93478ff3ce3cd593e17abb03f446036ce710c3156bcfa18665e0
 F tool/mksqlite3h.tcl d391cff7cad0a372ee1406faee9ccc7dad9cb80a0c95cae0f73d10dd26e06762
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mktoolzip.tcl 1b3383c6cd1ca3e1bfdf157d1383f29d6264b9600c381e682789c83617dc1014
+F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5f23036a87f443c82fa7fd48fdac16a31128bb9288b71f97228c29bcfeb632fb
-R f08a9ca6e3dbf12abe2c182a8dad1fb5
+P 5a594dbcd533aa1e37acea1702db993672c3c0e621add9ea26a497c52037617f
+R f52c4332ad1b572fa4ee0e481be2b2fc
 U stephan
-Z 3c4963818c18353d16f17a7c184768fc
+Z 6df76b62cd44ada8a9bbd1113c02daf3
 # Remove this line to create a well-formed Fossil manifest.
