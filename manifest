@@ -1,5 +1,5 @@
-C Get\sthe\sspell-checking\stargets\sworking.\sRename\ssome\ssymbols.
-D 2024-10-19T12:47:06.049
+C Work\saround\sa\sJimTCL\sregsub\sincompatibility\sin\smkccode.tcl.
+D 2024-10-19T13:18:56.950
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2155,7 +2155,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
-F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
+F tool/mkccode.tcl 4cb8ad7e7330aaed052b0657a1bfacbc67103c400e41860aff643a482cfc2d3e x
 F tool/mkctimec.tcl e3af51acc2ef92062fe6d622de010a27a34b497258a248dada04388b916c61c6 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
@@ -2238,8 +2238,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f740f6a4447543751800465ddfa11c9e3c89fb7054a9dfb5450938885b8f9633
-R 92bffff764d6aa32a69b501acd00c78b
+P e389ef9c14f2421fe8cad09a8539e6a3215c96da61af790b144fccbd8bf1ca12
+R 4e3a079db29464a0ceb7d25aad967be0
 U stephan
-Z bf61fb6150d287bec94e8a376b3574aa
+Z 5f082cb2e15de55893148dff61edc58e
 # Remove this line to create a well-formed Fossil manifest.
