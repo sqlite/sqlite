@@ -9051,7 +9051,7 @@ case OP_ReleaseReg: {
 ** As with all opcodes, the meanings of the parameters for OP_Explain
 ** are subject to change from one release to the next.  Applications
 ** should not attempt to interpret or use any of the information
-** contined in the OP_Explain opcode.  The information provided by this
+** contained in the OP_Explain opcode.  The information provided by this
 ** opcode is intended for testing and debugging use only.
 */
 default: {          /* This is really OP_Noop, OP_Explain */
