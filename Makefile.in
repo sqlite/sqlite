@@ -779,9 +779,10 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 
 libsqlite3.SO = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
-# LDFLAGS_libsqlite3 should be used with any target which
-# either results in building libsqlite3.so, builds sqlite3.c
-# directly, links in either of $(LIBOBJSO) or $(LIBOBJS1).
+# LDFLAGS_libsqlite3 should be used with any target which either
+# results in building libsqlite3.so, compiles sqlite3.c directly, or
+# links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
+# flags are for the target build platform, not necessarily localhost.
 LDFLAGS_libsqlite3 = \
   $(LDFLAGS_RPATH) @LIBS@ $(LIBS) $(LDFLAGS_PTHREAD) \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
@@ -1554,195 +1555,196 @@ testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
 
 coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
-#XX#testprogs:	$(TESTPROGS) srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
-#XX#
-#XX## A very detailed test running most or all test cases
-#XX#fulltest:	alltest fuzztest
-#XX#
-#XX## Run most or all tcl test cases
-#XX#alltest:	$(TESTPROGS)
-#XX#	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
-#XX#
-#XX## Really really long testing
-#XX#soaktest:	$(TESTPROGS)
-#XX#	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
-#XX#
-#XX## Do extra testing but not everything.
-#XX#fulltestonly:	$(TESTPROGS) fuzztest
-#XX#	./testfixture$(TEXE) $(TOP)/test/full.test
-#XX#
-#XX## Fuzz testing
-#XX##
-#XX## WARNING: When the "fuzztest" target is run by the testrunner.tcl script,
-#XX## it does not actually run this code. Instead, it schedules equivalent 
-#XX## commands. Therefore, if this target is updated, then code in
-#XX## testrunner_data.tcl (search for "trd_fuzztest_data") must also be updated.
-#XX##
-#XX#fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE)
-#XX#	./fuzzcheck$(TEXE) $(FUZZDATA)
-#XX#	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
-#XX#
-#XX#valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE)
-#XX#	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
-#XX#	valgrind ./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
-#XX#
-#XX## The veryquick.test TCL tests.
-#XX##
-#XX#tcltest:	./testfixture$(TEXE)
-#XX#	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
-#XX#
-#XX## Runs all the same tests cases as the "tcltest" target but uses
-#XX## the testrunner.tcl script to run them in multiple cores
-#XX## concurrently.
-#XX#testrunner:	testfixture$(TEXE)
-#XX#	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
-#XX#
-#XX## This is the testing target preferred by the core SQLite developers.
-#XX## It runs tests under a standard configuration, regardless of how
-#XX## ./configure was run.  The devs run "make devtest" prior to each
-#XX## check-in, at a minimum.  Probably other tests too, but at least this
-#XX## one.
-#XX##
-#XX#devtest:	srctree-check sourcetest
-#XX#	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
-#XX#
-#XX#mdevtest: srctree-check has_tclsh85
-#XX#	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
-#XX#
-#XX#sdevtest: has_tclsh85
-#XX#	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
-#XX#
-#XX## Validate that various generated files in the source tree
-#XX## are up-to-date.
-#XX##
-#XX#srctree-check:	$(TOP)/tool/srctree-check.tcl
-#XX#	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
-#XX#
-#XX## Testing for a release
-#XX##
-#XX#releasetest: srctree-check has_tclsh85 verify-source
-#XX#	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
-#XX#
-#XX## Minimal testing that runs in less than 3 minutes
-#XX##
-#XX#quicktest:	./testfixture$(TEXE)
-#XX#	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
-#XX#
-#XX## Try to run tests on whatever options are specified by the
-#XX## ./configure.  The developers seldom use this target.  Instead
-#XX## they use "make devtest" which runs tests on a standard set of
-#XX## options regardless of how SQLite is configured.  This "test"
-#XX## target is provided for legacy only.
-#XX##
-#XX#test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
-#XX#
-#XX## Run a test using valgrind.  This can take a really long time
-#XX## because valgrind is so much slower than a native machine.
-#XX##
-#XX#valgrindtest:	$(TESTPROGS) valgrindfuzz
-#XX#	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
-#XX#
-#XX## A very fast test that checks basic sanity.  The name comes from
-#XX## the 60s-era electronics testing:  "Turn it on and see if smoke
-#XX## comes out."
-#XX##
-#XX#smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
-#XX#	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
-#XX#
-#XX#shelltest:
-#XX#	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
-#XX#
-#XX#sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
-#XX#
-#XX#sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
-#XX#	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
-#XX#
-#XX#sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
-#XX#
-#XX#sqltclsh$(TEXE): has_tclconfig sqltclsh.c
-#XX#	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(TLIBS)
-#XX#
-sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
-	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite3)
+testprogs:	$(TESTPROGS) srcck1$(BEXE) fuzzcheck$(TEXE) sessionfuzz$(TEXE)
 
-#XX#CHECKER_DEPS =\
-#XX#  $(TOP)/tool/mkccode.tcl \
-#XX#  sqlite3.c \
-#XX#  $(TOP)/src/tclsqlite.c \
-#XX#  $(TOP)/ext/repair/sqlite3_checker.tcl \
-#XX#  $(TOP)/ext/repair/checkindex.c \
-#XX#  $(TOP)/ext/repair/checkfreelist.c \
-#XX#  $(TOP)/ext/misc/btreeinfo.c \
-#XX#  $(TOP)/ext/repair/sqlite3_checker.c.in
-#XX#
-#XX#sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
-#XX#	$(TCLSH_CMD) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
-#XX#
-#XX#sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
-#XX#	$(TLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(TLIBS)
-#XX#
-#XX#dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
-#XX#	$(TLINK) -DDBDUMP_STANDALONE -o $@ \
-#XX#           $(TOP)/ext/misc/dbdump.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#dbtotxt$(TEXE): $(TOP)/tool/dbtotxt.c
-#XX#	$(TLINK)-o $@ $(TOP)/tool/dbtotxt.c
-#XX#
-#XX#showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#showshm$(TEXE):	$(TOP)/tool/showshm.c
-#XX#	$(TLINK) -o $@ $(TOP)/tool/showshm.c
-#XX#
-#XX#index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.lo
-#XX#	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
-#XX#	$(TLINK) -I. -o $@ $(TOP)/tool/logest.c
-#XX#
-#XX#wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
-#XX#	$(TLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
-#XX#	$(TLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(TLIBS)
-#XX#
+# A very detailed test running most or all test cases
+fulltest:	alltest fuzztest
+
+# Run most or all tcl test cases
+alltest:	$(TESTPROGS)
+	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
+
+# Really really long testing
+soaktest:	$(TESTPROGS)
+	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
+
+# Do extra testing but not everything.
+fulltestonly:	$(TESTPROGS) fuzztest
+	./testfixture$(TEXE) $(TOP)/test/full.test
+
+# Fuzz testing
+#
+# WARNING: When the "fuzztest" target is run by the testrunner.tcl script,
+# it does not actually run this code. Instead, it schedules equivalent
+# commands. Therefore, if this target is updated, then code in
+# testrunner_data.tcl (search for "trd_fuzztest_data") must also be updated.
+#
+fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE)
+	./fuzzcheck$(TEXE) $(FUZZDATA)
+	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
+
+valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
+	valgrind ./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
+
+# The veryquick.test TCL tests.
+#
+tcltest:	./testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
+
+# Runs all the same tests cases as the "tcltest" target but uses
+# the testrunner.tcl script to run them in multiple cores
+# concurrently.
+testrunner:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
+
+# This is the testing target preferred by the core SQLite developers.
+# It runs tests under a standard configuration, regardless of how
+# ./configure was run.  The devs run "make devtest" prior to each
+# check-in, at a minimum.  Probably other tests too, but at least this
+# one.
+#
+devtest:	srctree-check sourcetest
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+
+mdevtest: srctree-check has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+
+sdevtest: has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
+
+# Validate that various generated files in the source tree
+# are up-to-date.
+#
+srctree-check:	$(TOP)/tool/srctree-check.tcl
+	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
+
+# Testing for a release
+#
+releasetest: srctree-check has_tclsh85 verify-source
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+
+# Minimal testing that runs in less than 3 minutes
+#
+quicktest:	./testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
+
+# Try to run tests on whatever options are specified by the
+# ./configure.  The developers seldom use this target.  Instead
+# they use "make devtest" which runs tests on a standard set of
+# options regardless of how SQLite is configured.  This "test"
+# target is provided for legacy only.
+#
+test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
+
+# Run a test using valgrind.  This can take a really long time
+# because valgrind is so much slower than a native machine.
+#
+valgrindtest:	$(TESTPROGS) valgrindfuzz
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
+
+# A very fast test that checks basic sanity.  The name comes from
+# the 60s-era electronics testing:  "Turn it on and see if smoke
+# comes out."
+#
+smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
+
+shelltest:
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
+
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
+	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
+
+sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
+	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
+
+sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in has_tclsh85
+	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
+
+sqltclsh$(TEXE): has_tclconfig sqltclsh.c
+	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(LDFLAGS_libsqlite3)
+
+sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c $(TOP)/ext/expert/expert.c sqlite3.c
+	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
+		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite3)
+
+CHECKER_DEPS =\
+  $(TOP)/tool/mkccode.tcl \
+  sqlite3.c \
+  $(TOP)/src/tclsqlite.c \
+  $(TOP)/ext/repair/sqlite3_checker.tcl \
+  $(TOP)/ext/repair/checkindex.c \
+  $(TOP)/ext/repair/checkfreelist.c \
+  $(TOP)/ext/misc/btreeinfo.c \
+  $(TOP)/ext/repair/sqlite3_checker.c.in
+
+sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
+	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
+
+sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
+	$(TLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(LDFLAGS_libsqlite3)
+
+dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
+	$(TLINK) -DDBDUMP_STANDALONE -o $@ \
+           $(TOP)/ext/misc/dbdump.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+dbtotxt$(TEXE): $(TOP)/tool/dbtotxt.c
+	$(TLINK)-o $@ $(TOP)/tool/dbtotxt.c
+
+showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+showshm$(TEXE):	$(TOP)/tool/showshm.c
+	$(TLINK) -o $@ $(TOP)/tool/showshm.c
+
+index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.lo
+	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
+	$(TLINK) -I. -o $@ $(TOP)/tool/logest.c
+
+wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
+	$(TLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
+	$(TLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(LDFLAGS_libsqlite3)
+
 #XX#startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
 #XX#	$(CC) -Os -g -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(TLIBS)
-#XX#
-#XX#KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
-#XX#
-#XX#kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
-#XX#	$(TLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(TLIBS)
-#XX#
-#XX#rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo
-#XX#	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(TLIBS)
-#XX#
-#XX#loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
-#XX#	$(TLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(TLIBS)
-#XX#
+
+KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
+
+kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
+	$(TLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(LDFLAGS_libsqlite3)
+
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.lo
+	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.lo $(LDFLAGS_libsqlite3)
+
+loadfts$(EXE): $(TOP)/tool/loadfts.c libsqlite3.la
+	$(TLINK) $(TOP)/tool/loadfts.c libsqlite3.la -o $@ $(LDFLAGS_libsqlite3)
+
 #XX## This target will fail if the SQLite amalgamation contains any exported
 #XX## symbols that do not begin with "sqlite3_". It is run as part of the
 #XX## releasetest.tcl script.

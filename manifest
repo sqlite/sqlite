@@ -1,9 +1,9 @@
-C Work\saround\sa\sJimTCL\sregsub\sincompatibility\sin\smkccode.tcl.
-D 2024-10-19T13:18:56.950
+C Get\smore\sof\sthe\stest/utility\stargets\sbuilding.
+D 2024-10-19T13:19:05.750
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 2e171cb50ebbffcea1de43eea2134965d4aa7fe80f932226018ccaf97d1f3337
+F Makefile.in f091aa7b46c21afce2dc7573004f44f46436eb3d831bf51a4f052241c339e410
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2238,8 +2238,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e389ef9c14f2421fe8cad09a8539e6a3215c96da61af790b144fccbd8bf1ca12
-R 4e3a079db29464a0ceb7d25aad967be0
+P c2e5dd791cce3ec4f1f009e945b8c66e8c5e01ae25077f345389f04e3c004ecf
+R e01f3b946a09b5bd21efb738dbf29e3d
 U stephan
-Z 5f082cb2e15de55893148dff61edc58e
+Z fe21ae573c4d67c553a6b02aa3d73807
 # Remove this line to create a well-formed Fossil manifest.
