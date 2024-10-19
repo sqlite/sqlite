@@ -82,8 +82,7 @@ define RELEASE $RELEASE
 puts "RELEASE = $RELEASE"
 puts "VERSION = $VERSION"
 
-define SQLITE_AUTOREMAKE cd
-define-append SQLITE_AUTOREMAKE $autosetup(srcdir) && $top_srcdir/configure {*}$autosetup(argv)
+define-append SQLITE_AUTOREMAKE cd $autosetup(srcdir) && $top_srcdir/configure {*}$autosetup(argv)
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
@@ -188,9 +187,14 @@ if {"" eq [hwaci-bin-define install]} {
   msg-result "Cannot find install binary, so 'make install' will not work."
   # Reminder: we historically have ./install-sh in the source tree.
   # Can we not simply use that?
+  #
   # define BIN_INSTALL "$top_srcdir/install-sh"
-  # Nope: it MOVES its source files over the target, which
-  # break the installation in some cases.
+  #
+  # Nope: it MOVES its source files over the target, which breaks the
+  # installation in some cases. It's easy to hack to copy instead of
+  # mv (simply replace the instcmd=... bit) but that won't retain the
+  # source timestamp and permissions unless we use cp's -p flag, which
+  # may not be portable enough.
 }
 
 
@@ -222,6 +226,7 @@ define BUILD_CFLAGS [get-env CFLAGS {-g}]
 #
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
+define HAVE_WASI_SDK 0
 if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
@@ -319,7 +324,7 @@ msg-checking "Debug build? "
 
 hwaci-if-opt-truthy with-debug {
   define SQLITE_DEBUG 1
-  define TARGET_DEBUG {-DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+  define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
   msg-result yes
 } {
   define TARGET_DEBUG {-DNDEBUG}
@@ -848,6 +853,11 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
 }; # JimTCL
 
+if {"" eq [get-define CFLAGS_JIMSH]} {
+  define USE_OWN_JIMSH 0
+} else {
+  define USE_OWN_JIMSH 1
+}
 
 ########################################################################
 # Determine proper rpath-handling flags

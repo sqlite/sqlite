@@ -19,13 +19,15 @@ TOP = @abs_top_srcdir@
 # top_srcdir = @top_srcdir@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
-LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
-LDFLAGS_MATH = @LDFLAGS_MATH@
-LDFLAGS_RPATH = @LDFLAGS_RPATH@
-LDFLAGS_READLINE = @LDFLAGS_READLINE@
-LDFLAGS_PTHREAD = @LDFLAGS_PTHREAD@
-LD = @LD@
-AR = @AR@
+LDFLAGS_ZLIB ?= @LDFLAGS_ZLIB@
+LDFLAGS_MATH ?= @LDFLAGS_MATH@
+LDFLAGS_RPATH ?= @LDFLAGS_RPATH@
+LDFLAGS_READLINE ?= @LDFLAGS_READLINE@
+LDFLAGS_PTHREAD ?= @LDFLAGS_PTHREAD@
+ENABLE_SHARED ?= @ENABLE_SHARED@
+HAVE_WASI_SDK ?= @HAVE_WASI_SDK@
+AR ?= @AR@
+CC ?= @CC@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -38,12 +40,8 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # are provide so that these aspects of the build process can be changed
 # on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
-CC = @CC@
-CFLAGS ?= @CFLAGS@
+CFLAGS ?= @CFLAGS@ @SH_CFLAGS@
 CPPFLAGS ?= @CPPFLAGS@
-@if SH_CFLAGS
-CFLAGS += @SH_CFLAGS@
-@endif
 # CFLAGS_stdio3 ==> for sqlite3_stdio.h
 CFLAGS_stdio3 := -I${TOP}/ext/misc
 TCC = ${CC} ${CFLAGS}
@@ -91,7 +89,8 @@ CFLAGS_readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 # those in $(LDFLAGS_libsqlite3) and include those flags for both
 # $(libsqlite3.SO) and any apps which directly link in either
 # sqlite3.o or its origin sources.
-TLIBS = @LIBS@ $(LIBS)
+LIBS += @LIBS@
+TLIBS = $(LIBS)
 
 #
 # JimTCL is part of the autosetup suite and is suitable for all
@@ -103,10 +102,9 @@ TLIBS = @LIBS@ $(LIBS)
 # generators.
 #
 JIMSH = @srcdir@/jimsh
-@if CFLAGS_JIMSH
+CFLAGS_JIMSH ?= @CFLAGS_JIMSH@
 $(JIMSH): $(TOP)/autosetup/jimsh0.c
-	$(BCC) -o $(JIMSH) @CFLAGS_JIMSH@ $<
-@endif
+	$(BCC) -o $(JIMSH) $(CFLAGS_JIMSH) $<
 
 # BTCLSH is the tclsh-compatible app used for running various code
 # generators and other in-tree tools, as opposed to the TCL-based
@@ -177,6 +175,13 @@ TCL_LIB_SPEC = @TCL_LIB_SPEC@
 TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 TCL_VERSION = @TCL_VERSION@
+TCLLIB_RPATH = @TCLLIB_RPATH@
+TCLLIBDIR = @TCLLIBDIR@
+
+# EMCC_WRAPPER must refer to the genuine emcc binary, or a
+# call-compatible wrapper, e.g. $(TOP)/tool/emcc.sh. If it's empty,
+# build components requiring Emscripten will not build.
+EMCC_WRAPPER = @EMCC_WRAPPER@
 
 
 # Additional options when running tests using testrunner.tcl
@@ -210,12 +215,12 @@ TLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
 
 # Some standard variables and programs
 #
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-libdir = @libdir@
-pkgconfigdir = $(libdir)/pkgconfig
-bindir = @bindir@
-includedir = @includedir@
+prefix ?= @prefix@
+exec_prefix ?= @exec_prefix@
+libdir ?= @libdir@
+pkgconfigdir ?= $(libdir)/pkgconfig
+bindir ?= @bindir@
+includedir ?= @includedir@
 INSTALL = @BIN_INSTALL@
 INSTALL_noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
@@ -229,11 +234,6 @@ install.includedir = "$(DESTDIR)$(prefix)/include"
 install.pkgconfigdir = "$(DESTDIR)$(pkgconfigdir)"
 $(install.bindir) $(install.libdir) $(install.includedir) $(install.pkgconfigdir):
 	$(INSTALL) -d $@
-
-#XX## libtool compile/link/install
-#XX#TCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(TCOMPILE_EXTRAS)
-#XX#TLINK = $(LIBTOOL) --mode=link $(TCC) $(TCOMPILE_EXTRAS) @LDFLAGS@ $(TLINK_EXTRAS)
-#XX#LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # TCOMPILE = generic target platform compiler invocation
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
@@ -741,90 +741,83 @@ ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
 
 # In wasi-sdk builds, remove the CLI shell build from 'all'.
-@if HAVE_WASI_SDK
-  SQLITE3_SHELL_TARGET =
-@else
-  SQLITE3_SHELL_TARGET = sqlite3$(TEXE)
-@endif
-
-@if HAVE_TCL
-libtclsqlite3.SO = libtclsqlite3$(TDLL)
-@else
-libtclsqlite3.SO =
-@endif
+target_sqlite3_shell_1 =
+target_sqlite3_shell_0 = sqlite3$(TEXE)
+target_sqlite3_shell = $(target_sqlite3_shell_$(HAVE_WASI_SDK))
 
 #
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
 
-all:	sqlite3.h sqlite3.c shell.c $(SQLITE3_SHELL_TARGET)
+all:	sqlite3.h sqlite3.c shell.c $(target_sqlite3_shell)
 
 # Re-run $(TOP)/configure with the same args invoked to produce this
 # makefile.
 #
-AUTOREMAKE = @SQLITE_AUTOREMAKE@
+AS_AUTOREMAKE = @SQLITE_AUTOREMAKE@
 
 Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
-	$(AUTOREMAKE)
+	$(AS_AUTOREMAKE)
 	@touch $@
 
 sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
-	$(AUTOREMAKE)
+	$(AS_AUTOREMAKE)
 	@touch $@
 install-pc: sqlite3.pc $(install.pkgconfigdir)
 	$(INSTALL_noexec) sqlite3.pc $(install.pkgconfigdir)
 install: install-pc
 
 sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
-	$(AUTOREMAKE)
+	$(AS_AUTOREMAKE)
 	@touch $@
 
-libsqlite3.SO = libsqlite3$(TDLL)
 libsqlite3.LIB = libsqlite3$(TLIB)
-# LDFLAGS_libsqlite3 should be used with any target which either
-# results in building libsqlite3.so, compiles sqlite3.c directly, or
-# links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
-# flags are for the target build platform, not necessarily localhost.
-# i.e. it should be used with $(TCC) or $(TLINK) but not $(BCC).
-LDFLAGS_libsqlite3 = \
-  $(LDFLAGS_RPATH) @LIBS@ $(LIBS) $(LDFLAGS_PTHREAD) \
-  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
-
-@if ENABLE_SHARED
-$(libsqlite3.SO):	$(LIBOBJ)
-	$(TLINK_shared) -o $@ \
-		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite3)
-so: $(libsqlite3.SO)
-all: so
-@else
-$(libsqlite3.SO):
-	@echo "Build of $@ was explicitly disabled."; exit 1
-@endif
 
 $(libsqlite3.LIB): $(LIBOBJ)
 	$(AR) crs $@ $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
-# Install the $(libsqlite3.SO) as $(libsqlite3.SO).@RELEASE@ and
+# LDFLAGS_libsqlite3 should be used with any target which either
+# results in building libsqlite3.so, compiles sqlite3.c directly, or
+# links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
+# flags are for the target build platform, not necessarily localhost.
+# i.e. it should be used with $(TCC) or $(TLINK) but not $(BCC).
+LDFLAGS_libsqlite3 = \
+  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
+  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
+
+libsqlite3.SO = libsqlite3$(TDLL)
+target_libsqlite3_so_0 =
+target_libsqlite3_so_1 = $(libsqlite3.SO)
+target_libsqlite3_so = $(target_libsqlite3_so_$(ENABLE_SHARED))
+
+$(libsqlite3.SO):	$(LIBOBJ)
+	@if [ "x1" != "x$(ENABLE_SHARED)" ]; then echo "Shared lib build is disabled." 1>&2; exit 1; fi
+	$(TLINK_shared) -o $@ \
+		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite3)
+so: $(target_libsqlite3_so)
+all: so
+
+# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(RELEASE) and
 # create symlinks which point to it. Do we really need all of this
 # hoop-jumping? Can we not simply install the .so as-is to
 # libsqlite3.so (without the versioned bits)?
 #
 # The historical SQLite build always used a version number of 0.8.6
-# for reasons lost to history.
+# for reasons lost to history but having something to do with libtool
+# (which is not longer used in this tree).
 #
-install-so: $(install.libdir) $(libsqlite3.SO)
-	$(INSTALL) $(libsqlite3.SO) $(install.libdir)
+install-so-1: $(install.libdir) $(libsqlite3.SO)
+	$(INSTALL) $(libsqlite3.SO) $(install.libdir); \
 	cd $(install.libdir); \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).@RELEASE@; \
-		mv $(libsqlite3.SO) $(libsqlite3.SO).@RELEASE@; \
-		ln -s $(libsqlite3.SO).@RELEASE@ $(libsqlite3.SO).3; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(RELEASE); \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).$(RELEASE); \
+		ln -s $(libsqlite3.SO).$(RELEASE) $(libsqlite3.SO).3; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO)
-@if ENABLE_SHARED
-install: install-so
-@endif
+install-so-0:
+install: install-so-$(ENABLE_SHARED)
 
 # Install $(libsqlite3.LIB)
 #
@@ -838,26 +831,31 @@ install-includes: sqlite3.h $(install.includedir)
 	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install.includedir)
 install: install-includes
 
-@if HAVE_TCL
+# libtclsqlite3...
+#
+libtclsqlite3.SO = libtclsqlite3$(TDLL)
+target_libtclsqlite3_1 = $(libtclsqlite3.SO)
+target_libtclsqlite3_0 =
+target_libtclsqlite3 = $(target_libtclsqlite3_$(HAVE_TCL))
 $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 	$(TLINK_shared) -o $@ tclsqlite.o \
 		$(TCL_INCLUDE_SPEC) $(TCL_STUB_LIB_SPEC) $(LDFLAGS_libsqlite3) \
-		$(libsqlite3.LIB) @TCLLIB_RPATH@
-libtcl:	$(libtclsqlite3.SO)
+		$(libsqlite3.LIB) $(TCLLIB_RPATH)
 
-all:	$(libtclsqlite3.SO)
+libtcl:	$(target_libtclsqlite3)
+
+all:	$(target_libtclsqlite3)
 
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 
-@if TCLLIBDIR
-install.tcldir = "$(DESTDIR)@TCLLIBDIR@"
-install-tcl: install-lib $(libtclsqlite3.SO) pkgIndex.tcl
+install.tcldir = "$(DESTDIR)$(TCLLIBDIR)"
+install-tcl: install-lib $(target_libtclsqlite3) pkgIndex.tcl
+	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
 	$(INSTALL_noexec) pkgIndex.tcl $(install.tcldir)
 install: install-tcl
-@endif
 
 tclsqlite3.c:	sqlite3.c
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
@@ -892,21 +890,15 @@ tclextension-uninstall:
 tclextension-list:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
-# end of @if HAVE_TCL
-@endif
-
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(TCC) $(CFLAGS_readline) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LDFLAGS_libsqlite3) $(LDFLAGS_READLINE)
-cli: sqlite3$(TEXE)
-@if !HAVE_WASI_SDK
-all: cli
-@endif
 
-install-cli: sqlite3$(TEXT) $(install.bindir)
+install-cli-0: sqlite3$(TEXT) $(install.bindir)
 	$(INSTALL) -s sqlite3$(TEXT) $(install.bindir)
-install: install-cli
+install-cli-1:
+install: install-cli-$(HAVE_WASI_SDK)
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
 	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite3)
@@ -1045,11 +1037,10 @@ has_tclsh85:
 	touch has_tclsh85
 
 has_tclconfig:
-@if !TCL_CONFIG_SH
-	@echo 'ERROR: Requires access to "tclConfig.sh" which "configure" was not able to locate'; exit 1;
-@else
+	@if [ x = "x$(TCL_CONFIG_SH)" ]; then
+		echo 'TCL_CONFIG_SH must be set to point to a "tclConfig.sh"' 1>&2; exit 1; \
+	fi
 	touch has_tclconfig
-@endif
 
 #
 # This target creates a directory named "tsrc" and fills it with
@@ -1819,13 +1810,12 @@ sqlite3.dll: $(LIBOBJ) sqlite3.def
 #
 # Fiddle app
 #
-@if EMCC_WRAPPER
 fiddle: sqlite3.c shell.c
+	@if [ x = "x$(EMCC_WRAPPER)" ]; then \
+		echo "Emscripten's emcc not found. Cannot build fiddle." 1&>2; \
+		exit 1; \
+	fi
 	make -C ext/wasm fiddle emcc_opt=-Os
-@else
-fiddle:
-	@echo "Configure script did not find emcc, so fiddle build is not available." 2>&1; exit 1
-@endif
 
 #
 # Spell-checking for source comments
