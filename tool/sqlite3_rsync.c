@@ -56,6 +56,7 @@ struct SQLiteRsync {
   u8 isRemote;             /* On the remote side of a connection */
   u8 isReplica;            /* True if running on the replica side */
   u8 iProtocol;            /* Protocol version number */
+  u8 wrongEncoding;        /* ATTACH failed due to wrong encoding */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
   unsigned int nPage;      /* Total number of pages in the database */
@@ -1064,7 +1065,15 @@ static sqlite3_stmt *prepareStmt(
   return pStmt;
 }
 
-/* Run a single SQL statement
+/* Run a single SQL statement.  Report an error if something goes
+** wrong.
+**
+** As a special case, if the statement starts with "ATTACH" (but not
+** "Attach") and if the error message is about an incorrect encoding,
+** then do not report the error, but instead set the wrongEncoding flag.
+** This is a kludgy work-around to the problem of attaching a database
+** with a non-UTF8 encoding to the empty :memory: database that is
+** opened on the replica.
 */
 static void runSql(SQLiteRsync *p, char *zSql, ...){
   sqlite3_stmt *pStmt;
@@ -1077,8 +1086,15 @@ static void runSql(SQLiteRsync *p, char *zSql, ...){
     int rc = sqlite3_step(pStmt);
     if( rc==SQLITE_ROW ) rc = sqlite3_step(pStmt);
     if( rc!=SQLITE_OK && rc!=SQLITE_DONE ){
-      reportError(p, "SQL statement [%s] failed: %s", zSql,
-                  sqlite3_errmsg(p->db));
+      const char *zErr = sqlite3_errmsg(p->db);
+      if( strncmp(zSql,"ATTACH ", 7)==0
+       && strstr(zErr,"must use the same text encoding")!=0
+      ){
+        p->wrongEncoding = 1;
+      }else{
+        reportError(p, "SQL statement [%s] failed: %s", zSql,
+                    sqlite3_errmsg(p->db));
+      }
     }
     sqlite3_finalize(pStmt);
   }
@@ -1407,6 +1423,18 @@ static void replicaSide(SQLiteRsync *p){
           break;
         }
         runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+        if( p->wrongEncoding ){
+          p->wrongEncoding = 0;
+          runSql(p, "PRAGMA encoding=utf16le");
+          runSql(p, "VACUUM");
+          runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+          if( p->wrongEncoding ){
+            p->wrongEncoding = 0;
+            runSql(p, "PRAGMA encoding=utf16be");
+            runSql(p, "VACUUM");
+            runSql(p, "Attach %Q AS 'replica'", p->zReplica);
+          }
+        }
         if( p->nErr ){
           closeDb(p);
           break;
