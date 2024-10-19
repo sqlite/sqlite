@@ -22,6 +22,15 @@
 #include "vdbeInt.h"
 
 /*
+** High-resolution hardware timer used for debugging and testing only.
+*/
+#if defined(VDBE_PROFILE)  \
+ || defined(SQLITE_PERFORMANCE_TRACE) \
+ || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+# include "hwtime.h"
+#endif
+
+/*
 ** Invoke this macro on memory cells just prior to changing the
 ** value of the cell.  This macro verifies that shallow copies are
 ** not misused.  A shallow copy of a string or blob just copies a
