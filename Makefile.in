@@ -72,9 +72,9 @@ LIBTCL = @TCL_LIB_SPEC@
 #XX#
 # Compiler options needed for programs that use the readline() library.
 #
-READLINE_FLAGS = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
-#XX#READLINE_FLAGS += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#READLINE_FLAGS += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
+CFLAGS_readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
+#XX#CFLAGS_readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
+#XX#CFLAGS_readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
 #XX#
 #XX## The library that programs using readline() must link against.
 #XX##
@@ -220,6 +220,9 @@ INSTALL = @BIN_INSTALL@
 INSTALL_noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
+# install.XYZ = dirs for installation. They're in quotes to
+# accommodate installations where paths have spaces in them.
+#
 install.bindir = "$(DESTDIR)$(bindir)"
 install.libdir = "$(DESTDIR)$(libdir)"
 install.includedir = "$(DESTDIR)$(prefix)/include"
@@ -792,19 +795,18 @@ LDFLAGS_libsqlite3 = \
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(TLINK_shared) -o $@ \
 		$(LIBOBJ) $(TLIBS) $(LDFLAGS_libsqlite3)
+so: $(libsqlite3.SO)
 all: so
 @else
 $(libsqlite3.SO):
 	@echo "Build of $@ was explicitly disabled."; exit 1
 @endif
-so: $(libsqlite3.SO)
 
-$(libsqlite3.LIB):	$(LIBOBJ)
+$(libsqlite3.LIB): $(LIBOBJ)
 	$(AR) crs $@ $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
-#
 # Install the $(libsqlite3.SO) as $(libsqlite3.SO).@RELEASE@ and
 # create symlinks which point to it. Do we really need all of this
 # hoop-jumping? Can we not simply install the .so as-is to
@@ -812,6 +814,7 @@ all: lib
 #
 # The historical SQLite build always used a version number of 0.8.6
 # for reasons lost to history.
+#
 install-so: $(install.libdir) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) $(install.libdir)
 	cd $(install.libdir); \
@@ -823,14 +826,14 @@ install-so: $(install.libdir) $(libsqlite3.SO)
 install: install-so
 @endif
 
-#
 # Install $(libsqlite3.LIB)
+#
 install-lib: $(install.libdir) $(libsqlite3.LIB)
 	$(INSTALL_noexec) $(libsqlite3.LIB) $(install.libdir)
 install: install-lib
 
-#
 # Install C header files
+#
 install-includes: sqlite3.h $(install.includedir)
 	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install.includedir)
 install: install-includes
@@ -838,9 +841,8 @@ install: install-includes
 @if HAVE_TCL
 $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 	$(TLINK_shared) -o $@ tclsqlite.o \
-		$(libsqlite3.LIB) $(TCL_INCLUDE_SPEC) \
-		$(TCL_STUB_LIB_SPEC) $(TLIBS) \
-		@TCLLIB_RPATH@
+		$(TCL_INCLUDE_SPEC) $(TCL_STUB_LIB_SPEC) $(LDFLAGS_libsqlite3) \
+		$(libsqlite3.LIB) @TCLLIB_RPATH@
 libtcl:	$(libtclsqlite3.SO)
 
 all:	$(libtclsqlite3.SO)
@@ -850,7 +852,7 @@ pkgIndex.tcl:
 
 @if TCLLIBDIR
 install.tcldir = "$(DESTDIR)@TCLLIBDIR@"
-install-tcl: $(libtclsqlite3.SO) pkgIndex.tcl
+install-tcl: install-lib $(libtclsqlite3.SO) pkgIndex.tcl
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
 	$(INSTALL_noexec) pkgIndex.tcl $(install.tcldir)
@@ -894,7 +896,7 @@ tclextension-list:
 @endif
 
 sqlite3$(TEXE):	shell.c sqlite3.c
-	$(TCC) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
+	$(TCC) $(CFLAGS_readline) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LDFLAGS_libsqlite3) $(LDFLAGS_READLINE)
 cli: sqlite3$(TEXE)
@@ -904,7 +906,6 @@ all: cli
 
 install-cli: sqlite3$(TEXT) $(install.bindir)
 	$(INSTALL) -s sqlite3$(TEXT) $(install.bindir)
-
 install: install-cli
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
@@ -1067,7 +1068,11 @@ has_tclconfig:
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify \
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
+		$(TOP)/VERSION $(BTCLSH) # has_tclsh84
+	$(BTCLSH) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+
+sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify \
 		$(BTCLSH) # has_tclsh84
 	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
@@ -1380,10 +1385,6 @@ parse.h:	parse.c
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
-
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
-		$(TOP)/VERSION $(BTCLSH) # has_tclsh84
-	$(BTCLSH) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(BTCLSH) # has_tclsh84
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
@@ -1761,6 +1762,15 @@ checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o
 	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
+
+# Build a ZIP archive containing various command-line tools.
+#
+tool-zip:	testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE) \
+            sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(TEXE) sqldiff$(TEXE) sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
+	./testfixture$(TEXE) $(TOP)/tool/mktoolzip.tcl
+
+#XX# TODO: adapt the autoconf amalgamation for autosetup
 #XX#
 #XX## Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
 #XX## a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
@@ -1772,12 +1782,6 @@ checksymbols: sqlite3.o
 #XX#snapshot-tarball: sqlite3.c sqlite3rc.h
 #XX#	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 #XX#
-# Build a ZIP archive containing various command-line tools.
-#
-tool-zip:	testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE) \
-            sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) $(TOP)/tool/mktoolzip.tcl
-	strip sqlite3$(TEXE) sqldiff$(TEXE) sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
-	./testfixture$(TEXE) $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
@@ -1799,75 +1803,6 @@ threadtest: threadtest3$(TEXE)
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS_libsqlite3)
 
-# Standard install and cleanup targets
-#
-#XX#lib_install:	libsqlite3.la
-#XX#	$(INSTALL) -d $(DESTDIR)$(libdir)
-#XX#	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
-#XX#
-#XX## Use $(tcl_install_$(HAVE_TCL)) to resolve to either tcl_install or
-#XX## an empty value.
-#XX#tcl_install_0 =
-#XX#tcl_install_1 = tcl_install
-#XX#
-#XX#install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc $(tcl_install_$(HAVE_TCL))
-#XX#	$(INSTALL) -d $(DESTDIR)$(bindir)
-#XX#	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
-#XX#	$(INSTALL) -d $(DESTDIR)$(includedir)
-#XX#	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
-#XX#	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
-#XX#	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
-#XX#	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
-#XX#
-#XX#
-#XX#tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
-#XX#	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
-#XX#	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
-#XX#	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
-#XX#	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
-
-# Remove build products sufficient so that subsequent makes will recompile
-# everything from scratch.  Do not remove:
-#
-#   *   test results and test logs
-#   *   output from ./configure
-#
-tidy:
-	rm -f *.lo *.la *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
-	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
-	rm -rf .libs .deps tsrc .target_source
-	rm -f lemon$(BEXE) sqlite*.tar.gz
-	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
-	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.SO) $(libsqlite3.LIB)
-	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
-	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
-	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
-	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
-	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
-	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) sqlite3_expert$(TEXE)
-	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
-	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
-	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE) dbfuzz2-asan$(TEXE) dbfuzz2-msan$(TEXE)
-	rm -f fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE) ossshell$(TEXE)
-	rm -f sessionfuzz$(TEXE)
-	rm -f threadtest5$(TEXE)
-	rm -f src-verify has_tclsh* has_tclconfig
-	rm -f tclsqlite3.c
-	rm -f sqlite3rc.h sqlite3.def
-
-#
-# Removes build products and test logs.  Retains ./configure outputs.
-#
-clean:	tidy
-	rm -rf omittest* testrunner* testdir*
-	-gmake -C ext/wasm distclean 2>/dev/null; true
-
-# Clean up everything.  No exceptions.
-distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
-	-gmake -C ext/wasm distclean 2>/dev/null; true
-
 #
 # Windows section
 #
@@ -1880,7 +1815,6 @@ sqlite3.def: $(LIBOBJ)
 sqlite3.dll: $(LIBOBJ) sqlite3.def
 	$(TCC) @SHOBJ_LDFLAGS@ -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ)
-
 
 #
 # Fiddle app
@@ -1918,3 +1852,47 @@ misspell: ./custom.rws has_tclsh84
 #
 version-info$(TEXE):	$(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(TLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
+
+
+# Remove build products sufficient so that subsequent makes will recompile
+# everything from scratch.  Do not remove:
+#
+#   *   test results and test logs
+#   *   output from ./configure
+#
+tidy:
+	rm -f *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
+	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -rf .libs .deps tsrc .target_source
+	rm -f lemon$(BEXE) sqlite*.tar.gz
+	rm -f mkkeywordhash$(BEXE) mksourceid$(BEXE)
+	rm -f parse.* fts5parse.*
+	rm -f $(libsqlite3.SO) $(libsqlite3.LIB)
+	rm -f tclsqlite3$(TEXE) $(TESTPROGS)
+	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
+	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
+	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
+	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
+	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) sqlite3_expert$(TEXE)
+	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
+	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
+	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE) dbfuzz2-asan$(TEXE) dbfuzz2-msan$(TEXE)
+	rm -f fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE) ossshell$(TEXE)
+	rm -f sessionfuzz$(TEXE)
+	rm -f threadtest5$(TEXE)
+	rm -f src-verify$(BEXE) has_tclsh* has_tclconfig
+	rm -f tclsqlite3.c
+	rm -f sqlite3rc.h sqlite3.def
+
+#
+# Removes build products and test logs.  Retains ./configure outputs.
+#
+clean:	tidy
+	rm -rf omittest* testrunner* testdir*
+	-gmake -C ext/wasm distclean 2>/dev/null; true
+
+# Clean up everything.  No exceptions.
+distclean:	clean
+	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
+	rm -f $(TOP)/tool/emcc.sh
+	-gmake -C ext/wasm distclean 2>/dev/null; true

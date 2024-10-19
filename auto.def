@@ -186,7 +186,13 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
 # Programs needed
 if {"" eq [hwaci-bin-define install]} {
   msg-result "Cannot find install binary, so 'make install' will not work."
+  # Reminder: we historically have ./install-sh in the source tree.
+  # Can we not simply use that?
+  # define BIN_INSTALL "$top_srcdir/install-sh"
+  # Nope: it MOVES its source files over the target, which
+  # break the installation in some cases.
 }
+
 
 ########################################################################
 # Locate a compiler for the build machine.  This compiler should
