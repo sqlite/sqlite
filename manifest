@@ -1,5 +1,5 @@
-C Add\ssqlite3_rsync\sto\sthe\sdocs\sat\sthe\stop\sof\smktoolzip.tcl.\sNo\scode\schanges.
-D 2024-10-19T22:45:50.359
+C Fix\sanother\sproblem\swith\s".expert"\sand\svirtual\stables.\s[forum:/forumpost/49d6a19ec|Forum\spost\s49d6a19ec].
+D 2024-10-20T07:19:38.106
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -60,8 +60,8 @@ F ext/consio/console_io.c d2b74afae8d301de2e8447b1045fcd33eb59df13bf581d906d99c7
 F ext/consio/console_io.h b5ebe34aa15b357621ebbea3d3f2e2b24750d4280b5802516409e23947fd9ee5
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 1fa0201d8610883c32214b1d83e3a6cc582694ac1067be8319b280235145a555
-F ext/expert/sqlite3expert.c b7cbbd7cc109c66ebdf6091467d790abb9d7c25ae3b822bb76388509641d37de
+F ext/expert/expert1.test 1d2da6606623b57bb47064e02140823ce1daecd4cacbf402c73ad3473d7f000c
+F ext/expert/sqlite3expert.c 9c5d1509407e00e6ed92ca68de33a6310d8f85c6760cfa07aa0083091da85b32
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c b767b2039a0df707eb3147e86bcf68b252d8455d9a41774b1a836cd052ceca70
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a594dbcd533aa1e37acea1702db993672c3c0e621add9ea26a497c52037617f
-R f52c4332ad1b572fa4ee0e481be2b2fc
-U stephan
-Z 6df76b62cd44ada8a9bbd1113c02daf3
+P 10f5c4a2fce8a9ea9b1533cabbaf4ca8549e72950d5c460c0f4501a9fc50e3e8
+R 6bc83e3b61f3cce2168614e10c5b279e
+U dan
+Z cf287584db61588d64066982eaae1b83
 # Remove this line to create a well-formed Fossil manifest.

@@ -1463,7 +1463,7 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   **   2) Create the equivalent virtual table in dbv.
   */
   rc = idxPrepareStmt(p->db, &pSchema, pzErrmsg,
-      "SELECT type, name, sql, 1, sql LIKE 'create virtual%' "
+      "SELECT type, name, sql, 1, sql LIKE 'create virtual%%' "
       "FROM sqlite_schema "
       "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%%' "
       " UNION ALL "
@@ -2024,9 +2024,9 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pSql = 0;
     rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
-        "SELECT sql, name "
+        "SELECT sql, name, sql LIKE 'create virtual%%' AS virt "
         " FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
-        " ORDER BY rowid"
+        " ORDER BY virt DESC, rowid"
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
