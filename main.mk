@@ -1,7 +1,14 @@
+#!/do/not/make
+# ^^^^ help out editors which guess this file's type.
 ###############################################################################
 # This is the main makefile for sqlite. It expects to be included from
 # a higher-level makefile which configures any dynamic state needed by
 # this one.
+#
+# Maintenance reminder: this file must remain devoid of GNU Make-isms.
+# i.e. it must be POSIX Make compatible.
+#
+#XX# Lines starting with #XX# are TODOs for the port to autosetup
 #
 # The following variables must be defined before this script is
 # invoked:
@@ -20,7 +27,7 @@
 #                  will run on the target platform.  This is usually the same
 #                  as BCC, unless you are cross-compiling.
 #
-# AR               Tools used to build a static library.
+# AR               Tool used to build a static library.
 #
 # BEXE             File extension for executables on the build platform. ".exe"
 #                  for Windows and "" everywhere else.
@@ -28,16 +35,20 @@
 # TEXE             File extension for executables on the target platform. ".exe"
 #                  for Windows and "" everywhere else.
 #
+# BTCLSH           The TCL interpreter for in-tree code generation. May be
+#                  either JimTCL or the canonical TCL.
+#
 # ... and many, many more ...
 #
 # Once the variables above are defined, the rest of this make script
 # will build the SQLite library and testing tools.
 ################################################################################
+all:	sqlite3.h sqlite3.c
 
 #
-# Ideally these all come from the calling makefile, but we can provide
-# some sane defaults for many of them, where "sane" essentially means
-# "should suffice for conventional Unix-style OSes"...
+# Ideally these variables are all defined in the calling makefile, but
+# we can provide some sensible defaults for many of them which should
+# suffice for conventional Unix-style OSes.
 #
 prefix ?= /usr/local
 exec_prefix ?= $(prefix)
@@ -63,32 +74,54 @@ LDFLAGS_ZLIB ?= -lz
 LDFLAGS_MATH ?= -lm
 LDFLAGS_RPATH ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS_READLINE ?= -lreadline
+CFLAGS_READLINE ?=
 LDFLAGS_PTHREAD ?= -lpthread
 LDFLAGS_SHOBJ ?= -shared
 ENABLE_SHARED ?= 1
 HAVE_WASI_SDK ?= 0
+OPT_FEATURE_FLAGS ?=
 
+#
+# $(INSTALL) invocation for use with non-executable files.
+#
 INSTALL_noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
 # TCOMPILE = generic target platform compiler invocation
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
 # TLINK = compiler invocation for when the target will be an executable
-TLINK = $(TCC) $(TLINK_EXTRAS)
+TLINK = $(TCCX) $(TLINK_EXTRAS)
 # TLINK_shared = $(TLINK) invocation specifically for shared libraries
 LDFLAGS_SHOBJ ?= -shared
 TLINK_shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
 # TCCX is $(TCC) plus any CFLAGS which are common to most compilations
-# for the target platform. In auto-configured builds it is typically
-# defined by the main makefile to include configure-time-dependent
-# options.
+# for the target platform. In auto-configured builds it is defined by
+# the main makefile to include configure-time-dependent options.
 TCCX ?= $(TCC)
 TCCX += -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu
 TCCX += -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session
 TCCX += -I$(TOP)/ext/userauth
+# CFLAGS_stdio3 ==> for sqlite3_stdio.h
+CFLAGS_stdio3 := -I$(TOP)/ext/misc
 
-TEMP_STORE ?= -DSQLITE_TEMP_STORE=1
+CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
+
+#
+# The following TCL_vars come from tclConfig.sh
+#
+TCL_INCLUDE_SPEC ?=
+TCL_LIB_SPEC ?=
+TCL_STUB_LIB_SPEC ?=
+TCL_EXEC_PREFIX ?=
+TCL_VERSION ?=
+TCLLIBDIR ?=
+#
+# $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
+# libsqlite3, and will usually differ from $(LDFLAGS_RPATH).
+#
+TCLLIB_RPATH ?=
+
 
 #
 # LDFLAGS_libsqlite3 should be used with any target which either
@@ -102,16 +135,26 @@ LDFLAGS_libsqlite3 = \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 #
-# install.XYZ = dirs for installation. They're in quotes to
-# accommodate installations where paths have spaces in them.
+# install-dir.XYZ = dirs for installation.
 #
-install.bindir = "$(DESTDIR)$(bindir)"
-install.libdir = "$(DESTDIR)$(libdir)"
-install.includedir = "$(DESTDIR)$(prefix)/include"
-install.pkgconfigdir = "$(DESTDIR)$(pkgconfigdir)"
-$(install.bindir) $(install.libdir) $(install.includedir) $(install.pkgconfigdir):
+# Design note: these should arguably all be defined with surrounding
+# double-quotes so that targets which have spaces in their paths will
+# work, but that leads to Make treating the quotes as part of the dir
+# name, which in turn leads to it never finding a matching name in the
+# filesystem and always invoking ($(INSTALL) -d ...) for them. The
+# moral of this story is that spaces in installation paths will break
+# the install process.
+#
+install-dir.bin = $(DESTDIR)$(bindir)
+install-dir.lib = $(DESTDIR)$(libdir)
+install-dir.include = $(DESTDIR)$(prefix)/include
+install-dir.pkgconfig = $(DESTDIR)$(pkgconfigdir)
+install-dir.man1 = $(DESTDIR)$(prefix)/share/man/man1
+install-dir.all = $(install-dir.bin) $(install-dir.include) \
+  $(install-dir.lib) $(install-dir.man1) \
+  $(install-dir.pkgconfig)
+$(install-dir.all):
 	$(INSTALL) -d $@
-
 
 #
 # Object files for the SQLite library (non-amalgamation).
@@ -493,6 +536,7 @@ HDR = \
    $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
    sqlite_cfg.h
+# Reminder: sqlite_cfg.h is typically created by the configure script
 
 # Header files used by extensions
 #
@@ -511,7 +555,8 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
 
-# executables needed for testing
+#
+# Executables needed for testing
 #
 TESTPROGS = \
   testfixture$(TEXE) \
@@ -533,10 +578,12 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata7.db \
   $(TOP)/test/fuzzdata8.db
 
+#
 # Standard options to testfixture
 #
 TESTOPTS = --verbose=file --output=test-out.txt
 
+#
 # Extra compiler options for various shell tools
 #
 SHELL_OPT += -DSQLITE_DQS=0
@@ -671,255 +718,255 @@ sqlite3ext.h:	.target_source
 #     opcodes.o
 #
 parse.o:	parse.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c parse.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c parse.c
 
 opcodes.o:	opcodes.c
-	$(TCOMPILE) $(TEMP_STORE) -c opcodes.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c opcodes.c
 
 # Rules to build individual *.o files from files in the src directory.
 #
 alter.o:	$(TOP)/src/alter.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/alter.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/alter.c
 
 analyze.o:	$(TOP)/src/analyze.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/analyze.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/analyze.c
 
 attach.o:	$(TOP)/src/attach.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/attach.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/attach.c
 
 auth.o:	$(TOP)/src/auth.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/auth.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/auth.c
 
 backup.o:	$(TOP)/src/backup.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/backup.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/backup.c
 
 bitvec.o:	$(TOP)/src/bitvec.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/bitvec.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/bitvec.c
 
 btmutex.o:	$(TOP)/src/btmutex.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btmutex.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/btmutex.c
 
 btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/btree.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/build.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/build.c
 
 callback.o:	$(TOP)/src/callback.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/callback.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/callback.c
 
 complete.o:	$(TOP)/src/complete.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/complete.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/complete.c
 
 ctime.o:	$(TOP)/src/ctime.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/ctime.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/ctime.c
 
 date.o:	$(TOP)/src/date.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/date.c
 
 dbpage.o:	$(TOP)/src/dbpage.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbpage.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbpage.c
 
 dbstat.o:	$(TOP)/src/dbstat.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbstat.c
 
 delete.o:	$(TOP)/src/delete.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/delete.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/delete.c
 
 expr.o:	$(TOP)/src/expr.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/expr.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/expr.c
 
 fault.o:	$(TOP)/src/fault.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fault.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/fault.c
 
 fkey.o:	$(TOP)/src/fkey.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fkey.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/fkey.c
 
 func.o:	$(TOP)/src/func.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/func.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/func.c
 
 global.o:	$(TOP)/src/global.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/global.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/global.c
 
 hash.o:	$(TOP)/src/hash.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/hash.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/hash.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/insert.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/insert.c
 
 json.o:	$(TOP)/src/json.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/json.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/json.c
 
 legacy.o:	$(TOP)/src/legacy.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/legacy.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/legacy.c
 
 loadext.o:	$(TOP)/src/loadext.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/loadext.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/loadext.c
 
 main.o:	$(TOP)/src/main.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/main.c
 
 malloc.o:	$(TOP)/src/malloc.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/malloc.c
 
 mem0.o:	$(TOP)/src/mem0.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem0.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem0.c
 
 mem1.o:	$(TOP)/src/mem1.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem1.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem1.c
 
 mem2.o:	$(TOP)/src/mem2.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem2.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem2.c
 
 mem3.o:	$(TOP)/src/mem3.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem3.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem3.c
 
 mem5.o:	$(TOP)/src/mem5.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem5.c
 
 memdb.o:	$(TOP)/src/memdb.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memdb.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/memdb.c
 
 memjournal.o:	$(TOP)/src/memjournal.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/memjournal.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/memjournal.c
 
 mutex.o:	$(TOP)/src/mutex.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex.c
 
 mutex_noop.o:	$(TOP)/src/mutex_noop.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_noop.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_noop.c
 
 mutex_unix.o:	$(TOP)/src/mutex_unix.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_unix.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_unix.c
 
 mutex_w32.o:	$(TOP)/src/mutex_w32.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex_w32.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_w32.c
 
 notify.o:	$(TOP)/src/notify.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/notify.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/notify.c
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pager.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/pager.c
 
 pcache.o:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache.c
 
 pcache1.o:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pcache1.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache1.c
 
 os.o:	$(TOP)/src/os.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/os.c
 
 os_kv.o:	$(TOP)/src/os_kv.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_kv.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_kv.c
 
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_unix.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_unix.c
 
 os_win.o:	$(TOP)/src/os_win.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/os_win.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_win.c
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/pragma.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/pragma.c
 
 prepare.o:	$(TOP)/src/prepare.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/prepare.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/prepare.c
 
 printf.o:	$(TOP)/src/printf.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/printf.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/printf.c
 
 random.o:	$(TOP)/src/random.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/random.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/random.c
 
 resolve.o:	$(TOP)/src/resolve.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/resolve.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/resolve.c
 
 rowset.o:	$(TOP)/src/rowset.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/rowset.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/rowset.c
 
 select.o:	$(TOP)/src/select.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/select.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/select.c
 
 status.o:	$(TOP)/src/status.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/status.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/status.c
 
 sqlite3.o:	sqlite3.h sqlite3.c
-	$(TCOMPILE) $(TEMP_STORE) -c sqlite3.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c sqlite3.c
 
 table.o:	$(TOP)/src/table.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/table.c
 
 threads.o:	$(TOP)/src/threads.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/threads.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/threads.c
 
 tokenize.o:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/tokenize.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/tokenize.c
 
 treeview.o:	$(TOP)/src/treeview.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/treeview.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/treeview.c
 
 trigger.o:	$(TOP)/src/trigger.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/trigger.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/trigger.c
 
 update.o:	$(TOP)/src/update.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/update.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/update.c
 
 upsert.o:	$(TOP)/src/upsert.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/upsert.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/upsert.c
 
 utf.o:	$(TOP)/src/utf.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/utf.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/utf.c
 
 util.o:	$(TOP)/src/util.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/util.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/util.c
 
 vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vacuum.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vacuum.c
 
 vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbe.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbe.c
 
 vdbeapi.o:	$(TOP)/src/vdbeapi.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeapi.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeapi.c
 
 vdbeaux.o:	$(TOP)/src/vdbeaux.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeaux.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeaux.c
 
 vdbeblob.o:	$(TOP)/src/vdbeblob.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbeblob.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeblob.c
 
 vdbemem.o:	$(TOP)/src/vdbemem.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbemem.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbemem.c
 
 vdbesort.o:	$(TOP)/src/vdbesort.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbesort.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbesort.c
 
 vdbetrace.o:	$(TOP)/src/vdbetrace.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbetrace.c
 
 vdbevtab.o:	$(TOP)/src/vdbevtab.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbevtab.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbevtab.c
 
 vtab.o:	$(TOP)/src/vtab.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/vtab.c
 
 wal.o:	$(TOP)/src/wal.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wal.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/wal.c
 
 walker.o:	$(TOP)/src/walker.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/walker.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/walker.c
 
 where.o:	$(TOP)/src/where.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/where.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/where.c
 
 wherecode.o:	$(TOP)/src/wherecode.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wherecode.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/wherecode.c
 
 whereexpr.o:	$(TOP)/src/whereexpr.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/whereexpr.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/whereexpr.c
 
 window.o:	$(TOP)/src/window.c $(HDR)
-	$(TCOMPILE) $(TEMP_STORE) -c $(TOP)/src/window.c
+	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/window.c
 
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(TCOMPILE) -DUSE_TCL_STUBS=1 $(TCL_INCLUDE_SPEC) \
@@ -963,16 +1010,19 @@ mkkeywordhash$(BEXE): $(TOP)/tool/mkkeywordhash.c
 keywordhash.h:	mkkeywordhash$(BEXE)
 	./mkkeywordhash$(BEXE) > $@
 
-
+# Static libsqlite3
+#
 $(libsqlite3.LIB): $(LIBOBJ)
 	$(AR) crs $@ $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
-target_libsqlite3_so_1 = $(libsqlite3.SO)
-target_libsqlite3_so = $(target_libsqlite3_so_$(ENABLE_SHARED))
+# Dynamic libsqlite3
+#
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(TLINK_shared) -o $@ $(LIBOBJ) $(LDFLAGS_libsqlite3)
+target_libsqlite3_so_1 = $(libsqlite3.SO)
+target_libsqlite3_so = $(target_libsqlite3_so_$(ENABLE_SHARED))
 so: $(target_libsqlite3_so)
 all: so
 
@@ -988,26 +1038,28 @@ sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(BTCLSH) # has_tclsh84
 # for reasons lost to history but having something to do with libtool
 # (which is not longer used in this tree).
 #
-install-so-1: $(install.libdir) $(libsqlite3.SO)
-	$(INSTALL) $(libsqlite3.SO) $(install.libdir); \
-	cd $(install.libdir); \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(RELEASE); \
-		mv $(libsqlite3.SO) $(libsqlite3.SO).$(RELEASE); \
-		ln -s $(libsqlite3.SO).$(RELEASE) $(libsqlite3.SO).3; \
-		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO)
-install-so-0:
+install-so-1: $(install-dir.lib) $(libsqlite3.SO)
+	$(INSTALL) $(libsqlite3.SO) $(install-dir.lib)
+	@echo "Setting up SO symlinks..."; \
+		cd $(install-dir.lib) || exit $$?; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(RELEASE) || exit $$?; \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).$(RELEASE) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(RELEASE) $(libsqlite3.SO).3 || exit $$?; \
+		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3 $(libsqlite3.SO).$(RELEASE)
+install-so-0 install-so-:
 install: install-so-$(ENABLE_SHARED)
 
 # Install $(libsqlite3.LIB)
 #
-install-lib: $(install.libdir) $(libsqlite3.LIB)
-	$(INSTALL_noexec) $(libsqlite3.LIB) $(install.libdir)
+install-lib: $(install-dir.lib) $(libsqlite3.LIB)
+	$(INSTALL_noexec) $(libsqlite3.LIB) $(install-dir.lib)
 install: install-lib
 
 # Install C header files
 #
-install-includes: sqlite3.h $(install.includedir)
-	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install.includedir)
+install-includes: sqlite3.h $(install-dir.include)
+	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install-dir.include)
 install: install-includes
 
 # libtclsqlite3...
@@ -1024,7 +1076,7 @@ $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 libtcl:	$(target_libtclsqlite3)
 all:	libtcl
 
-install.tcldir = "$(DESTDIR)$(TCLLIBDIR)"
+install.tcldir = $(DESTDIR)$(TCLLIBDIR)
 install-tcl-1: install-lib $(target_libtclsqlite3) pkgIndex.tcl
 	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
 	$(INSTALL) -d $(install.tcldir)
@@ -1126,8 +1178,10 @@ TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
 testfixture$(TEXE):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
-	$(TLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
-		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(LDFLAGS_libsqlite3) $(TCL_INCLUDE_SPEC)
+	$(TLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
+		-o $@ $(TESTFIXTURE_SRC) \
+		$(TCL_LIB_SPEC) $(TCL_INCLUDE_SPEC) \
+		$(CFLAGS_libsqlite3) $(LDFLAGS_libsqlite3)
 
 coretestprogs:	testfixture$(BEXE) sqlite3$(BEXE)
 
@@ -1234,7 +1288,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(TEXE): has_tclconfig sqlite3_analyzer.c
-	$(TLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TCL_INCLUDE_SPEC) $(LDFLAGS_libsqlite3)
+	$(TLINK) sqlite3_analyzer.c -o $@ $(TCL_LIB_SPEC) $(TCL_INCLUDE_SPEC) $(LDFLAGS_libsqlite3)
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
@@ -1242,7 +1296,7 @@ sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): has_tclconfig sqltclsh.c
-	$(TLINK) sqltclsh.c -o $@ $(LIBTCL) $(LDFLAGS_libsqlite3)
+	$(TLINK) sqltclsh.c -o $@ $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
 
 sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
                        $(TOP)/ext/expert/expert.c sqlite3.c
@@ -1263,7 +1317,7 @@ sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
-	$(TLINK) sqlite3_checker.c -o $@ $(LIBTCL) $(LDFLAGS_libsqlite3)
+	$(TLINK) sqlite3_checker.c -o $@ $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
 
 dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
 	$(TLINK) -DDBDUMP_STANDALONE -o $@ \
@@ -1343,7 +1397,9 @@ tool-zip:	testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE) \
             sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) $(TOP)/tool/mktoolzip.tcl
 	strip sqlite3$(TEXE) sqldiff$(TEXE) sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
 	./testfixture$(TEXE) $(TOP)/tool/mktoolzip.tcl
-
+clean-tool-zip:
+	rm -f sqlite-tools-*.zip
+clean: clean-tool-zip
 #XX# TODO: adapt the autoconf amalgamation for autosetup
 #XX#
 #XX## Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
@@ -1378,20 +1434,27 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS_libsqlite3)
 
 sqlite3$(TEXE):	shell.c sqlite3.c
-	$(TCCX) $(CFLAGS_readline) $(SHELL_OPT) -o $@ \
+	$(TCCX) $(CFLAGS_READLINE) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LDFLAGS_libsqlite3) $(LDFLAGS_READLINE)
+#
+# Build sqlite3$(TEXE) by default except in wasi-sdk builds.  Yes, the
+# semantics of 0 and 1 are confusingly swapped here.
+#
+target_sqlite3_shell_1 =
+target_sqlite3_shell_0 = sqlite3$(TEXE)
+all: $(target_sqlite3_shell_$(HAVE_WASI_SDK))
 
-install-cli-0: sqlite3$(TEXT) $(install.bindir)
-	$(INSTALL) -s sqlite3$(TEXT) $(install.bindir)
-install-cli-1:
-install: install-cli-$(HAVE_WASI_SDK)
+install-shell-0: sqlite3$(TEXT) $(install-dir.bin)
+	$(INSTALL) -s sqlite3$(TEXT) $(install-dir.bin)
+install-shell-1 install-shell-:
+install: install-shell-$(HAVE_WASI_SDK)
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
 	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite3)
 
-install-diff: sqldiff$(TEXE) $(install.bindir)
-	$(INSTALL) -s sqldiff$(TEXT) $(install.bindir)
+install-diff: sqldiff$(TEXE) $(install-dir.bin)
+	$(INSTALL) -s sqldiff$(TEXT) $(install-dir.bin)
 #install: install-diff
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
@@ -1411,9 +1474,19 @@ RSYNC_OPT = \
 sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCCX) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
 
-install-rsync: sqlite3_rsync$(TEXE) $(install.bindir)
-	$(INSTALL) sqlite3_rsync$(TEXT) $(install.bindir)
+install-rsync: sqlite3_rsync$(TEXE) $(install-dir.bin)
+	$(INSTALL) sqlite3_rsync$(TEXT) $(install-dir.bin)
 #install: install-rsync
+
+install-man1: $(install-dir.man1)
+	$(INSTALL_noexec) $(TOP)/sqlite3.1 $(install-dir.man1)
+install: install-man1
+
+#
+# sqlite3.pc is typically generated by the configure script but could
+# conceivably be generated by hand.
+install-pc: sqlite3.pc $(install-dir.pkgconfig)
+	$(INSTALL_noexec) sqlite3.pc $(install-dir.pkgconfig)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1647,11 +1720,11 @@ tidy:
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE) version-info$(TEXE)
-	rm -f *.dll *.lib *.exp *.pc *.vsix *.so *.dylib pkgIndex.tcl
+	rm -f *.exp *.vsix pkgIndex.tcl
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) sqlite3_expert$(TEXE)
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
-	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE) dbfuzz2-asan$(TEXE) dbfuzz2-msan$(TEXE)
+	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE)
 	rm -f fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE) ossshell$(TEXE)
 	rm -f sessionfuzz$(TEXE)
 	rm -f threadtest5$(TEXE)
@@ -1664,10 +1737,6 @@ tidy:
 #
 clean:	tidy
 	rm -rf omittest* testrunner* testdir*
-	-gmake -C ext/wasm distclean 2>/dev/null; true
 
 # Clean up everything.  No exceptions.
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile
-	rm -f $(TOP)/tool/emcc.sh
-	-gmake -C ext/wasm distclean 2>/dev/null; true

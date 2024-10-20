@@ -1,4 +1,5 @@
 #!/usr/bin/make
+# ^^^^ help out editors which guess this file's type.
 #
 # Makefile for SQLITE
 #
@@ -7,33 +8,89 @@
 # certain blocks are added or removed depending on configure-time
 # information.
 #
-all:
-#XX# Lines starting with #XX# are TODOs for the port to autosetup
 
-# The toplevel directory of the source tree.  This is the directory
+########################################################################
+#XX# Lines starting with #XX# are TODOs for the port to autosetup.
+#
+# Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
+# particular order...
+#
+# - libreadline detection and handling of its -I, -L, and -l flags.
+# These can vary considerably across systems. e.g. some need -lncurses,
+# and some don't know what -lncurses is.
+#
+# - TEA pieces
+#
+# - Replace the autotools-specific distribution deliverable(s).
+#
+# - Provide Makefile.msc, Makefile.linux-gcc, and any required similar
+# makefile stubs for platforms where the configure script will not
+# run. The core makefile rules in main.mk "should" apply as-is for
+# most platforms.
+#
+# - Confirm whether cross-compilation works and patch it
+# appropriately.
+#
+all:
+clean:
+
+#
+# Maintenance reminder: When using the X?=Y variable assignment
+# formulation, please test the build with both GNU make and a POSIX
+# make (e.g. BSD make, a.k.a. bmake). On at least one occassion, that
+# formulation has led to inconsistent behavior between the two major
+# make flavors when used with variable names which might sensibly be
+# in the developer's environment (namely CC).
+#
+
+#
+# The top-most directory of the source tree.  This is the directory
 # that contains this "Makefile.in" and the "configure" script.
 #
 TOP = @abs_top_srcdir@
-# Just testing expansions...
+
+#
+# Just testing some default dir expansions...
 # srcdir = @srcdir@
 # top_srcdir = @top_srcdir@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
-LDFLAGS_ZLIB ?= @LDFLAGS_ZLIB@
-LDFLAGS_MATH ?= @LDFLAGS_MATH@
-LDFLAGS_RPATH ?= @LDFLAGS_RPATH@
-LDFLAGS_READLINE ?= @LDFLAGS_READLINE@
-LDFLAGS_PTHREAD ?= @LDFLAGS_PTHREAD@
-LDFLAGS_SHOBJ ?= @SHOBJ_LDFLAGS@
-ENABLE_SHARED ?= @ENABLE_SHARED@
-HAVE_WASI_SDK ?= @HAVE_WASI_SDK@
+#
+
+#
+# Some standard variables and programs
+#
+prefix ?= @prefix@
+exec_prefix ?= @exec_prefix@
+libdir ?= @libdir@
+pkgconfigdir ?= $(libdir)/pkgconfig
+bindir ?= @bindir@
+includedir ?= @includedir@
+INSTALL = @BIN_INSTALL@
 AR = @AR@
 CC = @CC@
+#LD = @LD@ # isn't actually needed, at least on modern Unixes.
 
+#
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
+
+#
+# Rather that stuffing all CFLAGS and LDFLAGS into a single set, we
+# break them down on a per-feature basis and expect the build targets
+# to use the one(s) it needs.
+#
+LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
+LDFLAGS_MATH = @LDFLAGS_MATH@
+LDFLAGS_RPATH = @LDFLAGS_RPATH@
+LDFLAGS_READLINE = @LDFLAGS_READLINE@
+LDFLAGS_PTHREAD = @LDFLAGS_PTHREAD@
+LDFLAGS_SHOBJ = @SHOBJ_LDFLAGS@
+
+ENABLE_SHARED = @ENABLE_SHARED@
+HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
 #
 # TCC is the C Compile and options for use in building executables that
@@ -43,38 +100,26 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
 CFLAGS = @CFLAGS@ @SH_CFLAGS@
-CPPFLAGS = @CPPFLAGS@
-# CFLAGS_stdio3 ==> for sqlite3_stdio.h
-CFLAGS_stdio3 := -I$(TOP)/ext/misc
-TCC ?= $(CC) $(CFLAGS)
+TCC = $(CC) $(CFLAGS)
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCCX ?= $(TCC) @TARGET_DEBUG@
-# Define this for the autoconf-based build, so that the code knows it can
-# include the generated sqlite_cfg.h
+TCCX = $(TCC) @TARGET_DEBUG@
+# Define this for the autoconf-based build, so that the code knows it
+# can include the generated sqlite_cfg.h.
 #
 TCCX += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
 # main.mk will fill out TCCX with some flags common to all builds.
 
-#XX#
-#XX## Compiler options needed for programs that use the TCL library.
-#XX##
-#XX#TCC += @TCL_INCLUDE_SPEC@
-#XX#
-#XX## The library that programs using TCL must link against.
-#XX##
-LIBTCL = @TCL_LIB_SPEC@
-
 #
 # Compiler options needed for programs that use the readline() library.
 #
-CFLAGS_readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
-#XX#CFLAGS_readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#CFLAGS_readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
+CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
+#XX#CFLAGS_READLINE += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
+#XX#CFLAGS_READLINE += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
 #XX#
 #XX## The library that programs using readline() must link against.
 #XX##
@@ -115,14 +160,20 @@ $(JIMSH): $(TOP)/autosetup/jimsh0.c
 BTCLSH = @BTCLSH@
 $(BTCLSH):
 
-# Flags controlling use of the in memory btree implementation
 #
-# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
-# default to file, 2 to default to memory, and 3 to force temporary
+# $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
+# compiling the library's own sources, including (sometimes) when
+# compiling sqlite3.c directly in to another app.  Most notably, it
+# should always contain -DSQLITE_TEMP_STORE=N for the sake of
+# historical build expecations.
+#
+# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1
+# to default to file, 2 to default to memory, and 3 to force temporary
 # tables to always be in memory.
 #
-TEMP_STORE ?= -DSQLITE_TEMP_STORE=@TEMP_STORE@
+CFLAGS_libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
+#
 # Enable/disable loadable extensions, and other optional features
 # based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
 # The same set of OMIT and ENABLE flags should be passed to the
@@ -141,7 +192,7 @@ TCC += $(OPT_FEATURE_FLAGS)
 TCC += $(OPTS)
 
 # Add in compile-time options for some libraries used by extensions
-TCC += @CFLAGS_ZLIB@
+#TCC += @CFLAGS_ZLIB@
 
 # Version numbers and release number for the SQLite being compiled.
 #
@@ -180,12 +231,6 @@ TCL_VERSION = @TCL_VERSION@
 TCLLIB_RPATH = @TCLLIB_RPATH@
 TCLLIBDIR = @TCLLIBDIR@
 
-# EMCC_WRAPPER must refer to the genuine emcc binary, or a
-# call-compatible wrapper, e.g. $(TOP)/tool/emcc.sh. If it's empty,
-# build components requiring Emscripten will not build.
-EMCC_WRAPPER = @EMCC_WRAPPER@
-
-
 # Additional options when running tests using testrunner.tcl
 # This is usually either blank, or else --status
 #
@@ -213,18 +258,6 @@ USE_GCOV = @USE_GCOV@
 TCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
 TLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
 
-# The directory into which to store package information for
-
-# Some standard variables and programs
-#
-prefix ?= @prefix@
-exec_prefix ?= @exec_prefix@
-libdir ?= @libdir@
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir ?= @bindir@
-includedir ?= @includedir@
-INSTALL = @BIN_INSTALL@
-
 #
 # You should not have to change anything below this line
 ################################################################################
@@ -235,28 +268,24 @@ INSTALL = @BIN_INSTALL@
 # AS_AUTO_DEF is the main configure script.
 #
 AS_AUTO_DEF = $(TOP)/auto.def
+#
+# Shell commands to re-run $(TOP)/configure with the same args it was
+# invoked with to produce this makefile.
+#
+AS_AUTOREMAKE = @SQLITE_AUTOREMAKE@
 
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
 AMALGAMATION_LINE_MACROS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 
+#
+# CFLAGS for sqlite3$(TEXE)
+#
 SHELL_OPT ?= @OPT_SHELL@
-
-
-# In wasi-sdk builds, remove the CLI shell build from 'all'.
-target_sqlite3_shell_0 = sqlite3$(TEXE)
-target_sqlite3_shell = $(target_sqlite3_shell_$(HAVE_WASI_SDK))
 
 #
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-
-all:	sqlite3.h sqlite3.c shell.c $(target_sqlite3_shell)
-
-# Re-run $(TOP)/configure with the same args invoked to produce this
-# makefile.
-#
-AS_AUTOREMAKE = @SQLITE_AUTOREMAKE@
 
 Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
 	$(AS_AUTOREMAKE)
@@ -265,24 +294,26 @@ Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
 sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	$(AS_AUTOREMAKE)
 	@touch $@
-install-pc: sqlite3.pc $(install.pkgconfigdir)
-	$(INSTALL_noexec) sqlite3.pc $(install.pkgconfigdir)
 install: install-pc
 
 sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	$(AS_AUTOREMAKE)
 	@touch $@
 
-
 #
 # Fiddle app
 #
+# EMCC_WRAPPER must refer to the genuine emcc binary, or a
+# call-compatible wrapper, e.g. $(TOP)/tool/emcc.sh. If it's empty,
+# build components requiring Emscripten will not build.
+#
+EMCC_WRAPPER = @EMCC_WRAPPER@
 fiddle: sqlite3.c shell.c
 	@if [ x = "x$(EMCC_WRAPPER)" ]; then \
 		echo "Emscripten's emcc not found. Cannot build fiddle." 1&>2; \
 		exit 1; \
 	fi
-	make -C ext/wasm fiddle emcc_opt=-Os
+	$(MAKE) -C ext/wasm fiddle emcc_opt=-Os
 
 #
 # Spell-checking for source comments
@@ -302,5 +333,20 @@ fiddle: sqlite3.c shell.c
 # https://github.com/msteveb/jimtcl/issues/319
 misspell: ./custom.rws has_tclsh84
 	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
+
+#
+# clean/distclean are mostly defined in main.mk. In this makefile we
+# perform cleanup only known to be relevant to (only) the canonical
+# (autosetup-driven) build.
+#
+clean-autosetup:
+	-gmake -C ext/wasm distclean 2>/dev/null; true
+clean: clean-autosetup
+
+distclean-autosetup:	clean
+	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile sqlite3.pc
+	rm -f $(TOP)/tool/emcc.sh
+	-gmake -C ext/wasm distclean 2>/dev/null; true
+distclean: distclean-autosetup
 
 include $(TOP)/main.mk

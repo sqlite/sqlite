@@ -13,16 +13,15 @@ if {[get-define host] ne [get-define build]} {
 ########################################################################
 # A very long story made short, autosetup's --flag handling has
 # some behaviors which make it impossible to implement 100% identical
-# flags, compared to the historical autotools build. The differences
+# flags compared to the historical autotools build. The differences
 # are documented here:
-#
 #
 # 1) --debug is used by autosetup itself, so we have to rename it to
 # --with-debug. We cannot use --enable-debug because that is, for
 # autosetup, and alias for --debug=1.
 #
 # 2) In autosetup, all flags starting with (--enable, --disable) are
-# forced to be booleans and received special handling in how they're
+# forced to be booleans and receive special handling in how they're
 # resolved. Because of that we have to rename:
 #
 #   2.1) --enable-tempstore[=no] to --with-tempstore[=no].
@@ -870,26 +869,25 @@ hwaci-check-rpath
 ########################################################################
 # Generate the output files.
 #
-if {1} {
-  hwaci-make-from-dot-in Makefile
-  hwaci-make-from-dot-in sqlite3.pc
-  if {1} {
-    # for sqlite_cfg.h
-    define PACKAGE_URL {https://sqlite.org}
-    define PACKAGE_VERSION [get-define VERSION]
-  }
-  if {0} {
-    # Requires a hand-written sqlite_cfg.h.in...
-    hwaci-make-from-dot-in sqlite_cfg.h
-    # vs...
-  } else {
-    # Requires no input template...
-    make-config-header sqlite_cfg.h \
-      -bare {SIZEOF_* HAVE_DECL_*} \
-      -auto {HAVE_* PACKAGE_*} -none *
-  }
-  #hwaci-make-from-dot-in ext/wasm/GNUmakefile
+hwaci-make-from-dot-in Makefile
+hwaci-make-from-dot-in sqlite3.pc
+# for sqlite_cfg.h
+define PACKAGE_URL {https://sqlite.org}
+define PACKAGE_VERSION [get-define VERSION]
+if {0} {
+  # Requires a hand-written sqlite_cfg.h.in...
+  hwaci-make-from-dot-in sqlite_cfg.h
+  # vs...
+} else {
+  # Requires no input template...
+  make-config-header sqlite_cfg.h \
+    -bare {SIZEOF_* HAVE_DECL_*} \
+    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE
+      TARGET_* USE_GCOV USE_OWN_JIMSH TCL_*} \
+    -auto {HAVE_* PACKAGE_*} \
+    -none *
 }
+#TODO hwaci-make-from-dot-in ext/wasm/GNUmakefile
 
 set oFF [get-define OPT_FEATURE_FLAGS]
 if {"" ne $oFF} {
