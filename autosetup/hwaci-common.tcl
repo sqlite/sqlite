@@ -291,7 +291,7 @@ proc hwaci-opt-define-bool {args} {
 # report only that is has LIBLTDL.
 proc hwaci-check-module-loader {} {
   msg-checking "Looking for module-loader APIs... "
-  if {99 ne [get-define LDFLAGS_MODULE_LOADER]} {
+  if {99 ne [get-define LDFLAGS_MODULE_LOADER 99]} {
     if {1 eq [get-define HAVE_LIBLTDL 0]} {
       msg-result "(cached) libltdl"
       return 1
