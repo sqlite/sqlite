@@ -157,13 +157,16 @@ cc-check-tools ld ar
 # OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
 define OPT_FEATURE_FLAGS {}
 define OPT_SHELL {}; # CFLAGS for the sqlite3 CLI app
-# Adds $flag, if not empty, to OPT_FEATURE_FLAGS.
+
+# Adds $args, if not empty, to OPT_FEATURE_FLAGS.
 proc add-feature-flag {args} {
   if {"" ne $args} {
     define-append OPT_FEATURE_FLAGS {*}$args
   }
 }
 # add-feature-flag -DSQLITE_JUST_TESTING=3
+
+# Adds $args, if not empty, to OPT_SHELL.
 proc add-shell-opt {args} {
   if {"" ne $args} {
     define-append OPT_SHELL {*}$args
@@ -191,30 +194,20 @@ if {"" eq [hwaci-bin-define install]} {
   # define BIN_INSTALL "$top_srcdir/install-sh"
   #
   # Nope: it MOVES its source files over the target, which breaks the
-  # installation in some cases. It's easy to hack to copy instead of
-  # mv (simply replace the instcmd=... bit) but that won't retain the
-  # source timestamp and permissions unless we use cp's -p flag, which
-  # may not be portable enough.
+  # installation in some cases, e.g. when libtclsqlite3.so is built in
+  # response to 'make install' and libsqlite3.a is moved before
+  # libtclsqlite3.so is linked.  It's easy to hack to use cp instead
+  # of mv (simply replace the instcmd=... bit) but that won't retain
+  # the source timestamp and permissions unless we use cp's -p flag,
+  # which may not be portable enough.
 }
 
-
 ########################################################################
-# Locate a compiler for the build machine.  This compiler should
-# generate command-line programs that run on the build machine.
-#
-# XXX if test x"$cross_compiling" = xno; then
-# XXX BUILD_CC=$CC
-# XXX BUILD_CFLAGS=$CFLAGS
-# XXX else
-# XXX if test "${BUILD_CC+set}" != set; then
-# XXX AC_CHECK_PROGS BUILD_CC gcc cc cl
-# XXX fi
-# XXX if test "${BUILD_CFLAGS+set}" != set; then
-# XXX BUILD_CFLAGS="-g"
-# XXX fi
-# XXX fi
-# XXX AC_SUBST BUILD_CC
-
+# We differentiate between two C compilers: the one used for binaries
+# which are to run on the build system (BUILD_CC, a.k.a. BCC) and the
+# one used for compiling binaries for the target system (CC,
+# a.k.a. TCC).  Normally they're the same, but they will differ when
+# cross-compiling.
 define BUILD_CC [get-define CC_FOR_BUILD]
 define BUILD_CFLAGS [get-env CFLAGS {-g}]
 

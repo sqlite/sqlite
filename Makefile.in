@@ -32,6 +32,14 @@
 # - Confirm whether cross-compilation works and patch it
 # appropriately.
 #
+# - There are some lingering dependencies issues which cause a
+# re-configure to trigger more often than it should.  This is
+# especially a problem in parallel builds, which may launch multiple
+# re-configures in parallel.  GNU Make offers ways of controlling
+# that, but we're limited to POSIX Make compatibility here. The
+# automatic reconfigures are not too onerous, though, because they're
+# much, much faster than Autotools configure runs.
+#
 all:
 clean:
 
