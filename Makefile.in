@@ -17,16 +17,17 @@
 #
 # - libreadline detection and handling of its -I, -L, and -l flags.
 # These can vary considerably across systems. e.g. some need -lncurses,
-# and some don't know what -lncurses is.
+# and some don't know what an -lncurses is.
 #
-# - TEA pieces
+# - TEA pieces.
 #
 # - Replace the autotools-specific distribution deliverable(s).
 #
 # - Provide Makefile.msc, Makefile.linux-gcc, and any required similar
-# makefile stubs for platforms where the configure script will not
+# makefile stubs for environments where the configure script will not
 # run. The core makefile rules in main.mk "should" apply as-is for
-# most platforms.
+# most platforms.  We can potentially generate those makefiles, along
+# with main.mk, like we do in the Fossil project.
 #
 # - Confirm whether cross-compilation works and patch it
 # appropriately.
@@ -336,8 +337,8 @@ misspell: ./custom.rws has_tclsh84
 
 #
 # clean/distclean are mostly defined in main.mk. In this makefile we
-# perform cleanup only known to be relevant to (only) the canonical
-# (autosetup-driven) build.
+# perform cleanup known to be relevant to (only) the autosetup-driven
+# build.
 #
 clean-autosetup:
 	-gmake -C ext/wasm distclean 2>/dev/null; true
