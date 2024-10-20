@@ -230,8 +230,8 @@ if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
   if {$wasiSdkDir ne ""} {
-    msg-checking "Checking WASI SDK directory \[$wasiSdkDir]... "
-    puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
+    puts "Checking WASI SDK directory \[$wasiSdkDir]... "
+    #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
     hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
     msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
     define HAVE_WASI_SDK 1
@@ -759,7 +759,7 @@ define cross_compiling ${cross_compiling}
 ########################################################################
 # Emscripten SDK for building the web-based wasm components.
 #
-if {[hwaci-check-emsdk]} {
+if {0 eq [get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
   set wrapper $srcdir/tool/emcc.sh
   define EMCC_WRAPPER $wrapper
   hwaci-make-from-dot-in $wrapper
