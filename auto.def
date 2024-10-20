@@ -1,10 +1,11 @@
-# Created by migrate-autoconf - fix items marked XXX
+# This is the main autosetup-compatible configure script for the
+# SQLite project.
 global autosetup
 use cc cc-db cc-shared cc-lib hwaci-common
-set DUMP_DEFINES_FILE defines.list
+set DUMP_DEFINES_FILE ./defines.list
 define ENABLE_SHARED 1
 
-# Are we cross compiling?
+# Are we cross-compiling?
 set cross_compiling 0
 if {[get-define host] ne [get-define build]} {
   set cross_compiling 1
@@ -26,7 +27,7 @@ if {[get-define host] ne [get-define build]} {
 #
 #   2.1) --enable-tempstore[=no] to --with-tempstore[=no].
 #
-options {
+options [subst {
   with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATH      => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
@@ -59,8 +60,8 @@ options {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build.}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
-  dump-defines=1       => {Disable dump of autosetup defines to $DUMP_DEFINES_FILE}
-}
+  dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
+}]
 
 ########################################################################
 # Notes about certain historical flags:
@@ -892,11 +893,12 @@ if {0} {
 set oFF [get-define OPT_FEATURE_FLAGS]
 if {"" ne $oFF} {
   define OPT_FEATURE_FLAGS [lsort -unique $oFF]
-  msg-result "Final feature flags: [get-define OPT_FEATURE_FLAGS]"
+  msg-result "Library feature flags: [get-define OPT_FEATURE_FLAGS]"
 }
 set oFF [get-define OPT_SHELL]
 if {"" ne $oFF} {
-  msg-result "Final shell opts: [get-define OPT_SHELL]"
+  define OPT_SHELL [lsort -unique $oFF]
+  msg-result "Shell options: [get-define OPT_SHELL]"
 }
 unset oFF
 

@@ -1,5 +1,5 @@
-C Minor\sdoc\supdates.
-D 2024-10-20T01:34:13.073
+C Cosmetic\stweaks\sto\sauto.def.
+D 2024-10-20T01:41:36.276
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 0a2c00810f7de3d92ec7d5b3716bdaa9877993437ba428873322d9c59fc1ec64
+F auto.def afe12f8c9d4cf77fe3defba7a8118f7616590cfdf8068d04890c14475a3463e2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 111cff2cf38886ccec11b45db8b891ec84e24d0b61d413b35fd474b51003e8f2
-R eb1d3ad6d8fd4deffdae2ad46361c659
+P 6578a8d59e351182ee16a1f4e4b2c88a042a92dd8b32049947aa0436464b8588
+R 5f54b7f4d43245e67f911311e0b2a7d6
 U stephan
-Z 5c51cfa3902f73d3236a2a627a46a106
+Z fca397da1036769e5affb85d40ffe113
 # Remove this line to create a well-formed Fossil manifest.
