@@ -94,9 +94,6 @@ CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
-# TCCX is $(TCC) plus any flags which are desired for the library
-# as a whole, but not necessarily needed for every binary.
-#
 TCCX = $(TCC) @TARGET_DEBUG@
 # Define this for the autoconf-based build, so that the code knows it
 # can include the generated sqlite_cfg.h.
@@ -261,7 +258,7 @@ Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
 sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	$(AS_AUTOREMAKE)
 	@touch $@
-install: install-pc
+install: install-pc # defined in main.mk
 
 sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 	$(AS_AUTOREMAKE)

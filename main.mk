@@ -137,12 +137,6 @@ USE_AMALGAMATION ?= 1
 # Optional flags for the amalgamation generator.
 AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 #
-# $(HAVE_WASI_SDK) =
-#
-# 1 when building with the WASI SDK. This disables certain build
-# targets.
-HAVE_WASI_SDK ?= 0
-#
 # $(OPT_FEATURE_FLAGS) =
 #
 # Preprocessor flags for enabling and disabling specific libsqlite3
@@ -155,6 +149,12 @@ HAVE_WASI_SDK ?= 0
 # is specifically configured to account for them. Adding them later,
 # when compiling the amalgamation, may or may not work.
 OPT_FEATURE_FLAGS ?=
+#
+# $(SHELL_OPT) =
+#
+# CFLAGS specific to the sqlite3 CLI shell app and its close cousins.
+#
+SHELL_OPT ?=
 #
 # The following TCL_vars come from tclConfig.sh
 #
@@ -170,6 +170,12 @@ TCLLIBDIR ?=
 # $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
 # libsqlite3, and will usually differ from $(LDFLAGS_RPATH).
 TCLLIB_RPATH ?=
+#
+# $(HAVE_WASI_SDK) =
+#
+# 1 when building with the WASI SDK. This disables certain build
+# targets.
+HAVE_WASI_SDK ?= 0
 #
 # ... and many, many more. Sane defaults are selected where possible.
 #
@@ -1114,6 +1120,13 @@ mkkeywordhash$(BEXE): $(TOP)/tool/mkkeywordhash.c
 keywordhash.h:	mkkeywordhash$(BEXE)
 	./mkkeywordhash$(BEXE) > $@
 
+#
+# sqlite3.c split into many smaller files.
+#
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(BTCLSH) # has_tclsh84
+	$(BTCLSH) $(TOP)/tool/split-sqlite3c.tcl
+
+#
 # Static libsqlite3
 #
 $(libsqlite3.LIB): $(LIBOBJ)
@@ -1121,17 +1134,15 @@ $(libsqlite3.LIB): $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
+#
 # Dynamic libsqlite3
 #
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(TLINK_shared) -o $@ $(LIBOBJ) $(LDFLAGS_libsqlite3)
-target_libsqlite3_so_1 = $(libsqlite3.SO)
-target_libsqlite3_so = $(target_libsqlite3_so_$(ENABLE_SHARED))
-so: $(target_libsqlite3_so)
+$(libsqlite3.SO)-1: $(libsqlite3.SO)
+$(libsqlite3.SO)-0 $(libsqlite3.SO)-:
+so: $(libsqlite3.SO)-$(ENABLE_SHARED)
 all: so
-
-sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(BTCLSH) # has_tclsh84
-	$(BTCLSH) $(TOP)/tool/split-sqlite3c.tcl
 
 #
 # Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(RELEASE) and
@@ -1175,17 +1186,17 @@ install: install-includes
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(TDLL)
-target_libtclsqlite3_1 = $(libtclsqlite3.SO)
-target_libtclsqlite3 = $(target_libtclsqlite3_$(HAVE_TCL))
 $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 	$(TLINK_shared) -o $@ tclsqlite.o \
 		$(TCL_INCLUDE_SPEC) $(TCL_STUB_LIB_SPEC) $(LDFLAGS_libsqlite3) \
 		$(libsqlite3.LIB) $(TCLLIB_RPATH)
-libtcl:	$(target_libtclsqlite3)
-all:	libtcl
+$(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
+$(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
+libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
+all: libtcl
 
 install.tcldir = $(DESTDIR)$(TCLLIBDIR)
-install-tcl-1: install-lib $(target_libtclsqlite3) pkgIndex.tcl
+install-tcl-1: install-lib $(libtclsqlite3.SO) pkgIndex.tcl
 	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
@@ -1557,16 +1568,16 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS_libsqlite3)
 
 sqlite3$(TEXE):	shell.c sqlite3.c
-	$(TCCX) $(CFLAGS_READLINE) $(SHELL_OPT) -o $@ \
+	$(TLINK) $(CFLAGS_READLINE) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LDFLAGS_libsqlite3) $(LDFLAGS_READLINE)
 #
 # Build sqlite3$(TEXE) by default except in wasi-sdk builds.  Yes, the
 # semantics of 0 and 1 are confusingly swapped here.
 #
-target_sqlite3_shell_1 =
-target_sqlite3_shell_0 = sqlite3$(TEXE)
-all: $(target_sqlite3_shell_$(HAVE_WASI_SDK))
+sqlite3$(TEXE)-1:
+sqlite3$(TEXE)-0 sqlite3$(TEXE)-: sqlite3$(TEXE)
+all: sqlite3$(TEXE)-$(HAVE_WASI_SDK)
 
 install-shell-0: sqlite3$(TEXT) $(install-dir.bin)
 	$(INSTALL) -s sqlite3$(TEXT) $(install-dir.bin)
