@@ -245,6 +245,15 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
+  *openbsd* {
+    set TRG(platform)    linux
+    set TRG(make)        make.sh
+    set TRG(makecmd)     "sh make.sh"
+    set TRG(testfixture) testfixture
+    set TRG(shell)       sqlite3
+    set TRG(run)         run.sh
+    set TRG(runcmd)      "sh run.sh"
+  }
   *win* {
     set TRG(platform)    win
     set TRG(make)        make.bat

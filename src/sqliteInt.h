@@ -3680,8 +3680,8 @@ struct Select {
 **                     row of result as the key in table pDest->iSDParm.
 **                     Apply the affinity pDest->affSdst before storing
 **                     results.  if pDest->iSDParm2 is positive, then it is
-**                     a regsiter holding a Bloom filter for the IN operator
-**                     that should be populated in addition to the 
+**                     a register holding a Bloom filter for the IN operator
+**                     that should be populated in addition to the
 **                     pDest->iSDParm table.  This SRT is used to
 **                     implement "IN (SELECT ...)".
 **

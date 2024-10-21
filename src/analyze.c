@@ -1801,8 +1801,8 @@ static int loadStatTbl(
     char *zIndex;    /* Index name */
     Index *pIdx;     /* Pointer to the index object */
     int nSample;     /* Number of samples */
-    int nByte;       /* Bytes of space required */
-    int i;           /* Bytes of space required */
+    i64 nByte;       /* Bytes of space required */
+    i64 i;           /* Bytes of space required */
     tRowcnt *pSpace; /* Available allocated memory space */
     u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
 
