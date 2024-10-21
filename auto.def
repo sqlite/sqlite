@@ -545,7 +545,7 @@ proc hwaci-check-tcl {} {
 
   if {$use_tcl} {
     # Set up the TCLLIBDIR and TCLLIB_RPATH
-    set tcllibdir [getenv TCLLIBDIR ""]
+    set tcllibdir [get-env TCLLIBDIR ""]
     if {"" eq $tcllibdir} {
       if {[catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
         foreach i $result {
@@ -565,7 +565,7 @@ proc hwaci-check-tcl {} {
       set tclrpath [string map [list "%s" $tcllibdir] $rp]
       # Reminder: tclConfig.sh has TCL_LD_SEARCH_FLAGS to set the
       # rpath but (A) it includes an unexpand var ref to
-      # ${LIB_RUNTIME_DIR}, which must tbe set in the makefile and (B)
+      # ${LIB_RUNTIME_DIR}, which must be set in the makefile and (B)
       # that flag is inherently compiler-dependent so it's not as
       # portable as tclConfig.sh assumes. We'll instead use the rpath
       # flag which autosetup determines for the current compiler.

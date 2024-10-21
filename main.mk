@@ -20,25 +20,25 @@
 #XX# needs to be updated for autosetup.
 
 #
-# RELEASE =
+# $(RELEASE) =
 #
 # The MAJOR.MINOR.PATCH version number of this build.
 RELEASE ?= MAJOR.MINOR.PATCH
 #
-# TOP =
+# $(TOP) =
 #
 # The toplevel directory of the source tree.  For canonical builds
 # this is the directory that contains this "Makefile.in" and the
 # "configure.in" script.
 TOP ?= $(PWD)
 #
-# BCC =
+# $(BCC) =
 #
 # C Compiler and options for use in building executables that will run
 # on the platform that is doing the build.
 BCC ?= $(CC)
 #
-# TCC =
+# $(TCC) =
 #
 # C Compiler and options for use in building executables that will run
 # on the target platform.  This is usually the same as BCC, unless you
@@ -47,48 +47,50 @@ BCC ?= $(CC)
 # targets are defined elsewhere.
 TCC ?= $(BCC)
 #
-# AR =
+# $(AR) =
 # Tool used to build a static library from object files.
 #
 AR      ?= ar
 #
-# BEXE =
+# $(BEXE) =
 #
 # File extension for executables on the build platform. ".exe" for
 # Windows and "" everywhere else.
 BEXE ?=
 #
-# BDLL and BLIB =
+# $(BDLL) and $(BLIB) =
 #
-# The DLL resp. static library counterparts of BEXE.
+# The DLL resp. static library counterparts of $(BEXE).
 BDLL ?= .so
 BLIB ?= .lib
 #
-# TEXE =
+# $(TEXE) =
 #
 # File extension for executables on the target platform. ".exe" for
 # Windows and "" everywhere else.
 TEXE ?=
 #
-# TDLL and TLIB    The DLL resp. static library counterparts of TEXE.
+# $(TDLL) and $(TLIB) =
+#
+# The DLL resp. static library counterparts of $(TEXE).
 TDLL ?= .so
 TLIB ?= .lib
 #
-# TCLSH_CMD =
+# $(TCLSH_CMD) =
 #
 # The canonical tclsh.
 TCLSH_CMD ?= tclsh
 #
-# BTCLSH =
+# $(BTCLSH) =
 #
 # The TCL interpreter for in-tree code generation. May be either the
 # in-tree JimTCL or the canonical TCL.
 BTCLSH ?= $(TCLSH_CMD)
 #
-# LDFLAGS_(FEATURE) and CFLAGS_(FEATURE) =
+# $(LDFLAGS_{FEATURE}) and $(CFLAGS_{FEATURE}) =
 #
 # Linker resp. C/CPP flags required by a specific feature, e.g.
-# LDFLAGS_PTHREAD or CFLAGS_READLINE.
+# $(LDFLAGS_PTHREAD) or $(CFLAGS_READLINE).
 #
 # Rather that stuffing all CFLAGS and LDFLAGS into a single set, we
 # break them down on a per-feature basis and expect the build targets
@@ -110,7 +112,7 @@ pkgconfigdir ?= $(libdir)/pkgconfig
 bindir       ?= $(prefix)/bin
 includedir   ?= $(prefix)/include
 #
-# INSTALL =
+# $(INSTALL) =
 #
 # Tool for installing files and directories. It must be compatible
 # with conventional Unix /usr/bin/install. Note that libtool's
@@ -119,34 +121,55 @@ includedir   ?= $(prefix)/include
 # built after others are installed.
 INSTALL ?= install
 #
-# ENABLE_SHARED
+# $(ENABLE_SHARED) =
 #
 # 1 if libsqlite3.$(TDLL) should be built.
 ENABLE_SHARED ?= 1
 #
-# USE_AMALGAMATION 1 if the amalgamation (sqlite3.c/h) should be built/used,
-#                  otherwise the library is built from all of its original
-#                  source files.
+# $(USE_AMALGAMATION)
+#
+# 1 if the amalgamation (sqlite3.c/h) should be built/used, otherwise
+# the library is built from all of its original source files.
 USE_AMALGAMATION ?= 1
 #
-# AMALGAMATION_GEN_FLAGS  Optional flags for the amalgamation generator.
+# $(AMALGAMATION_GEN_FLAGS) =
+#
+# Optional flags for the amalgamation generator.
 AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 #
-# HAVE_WASI_SDK    1 when building with the WASI SDK. This disables certain
-#                  build targets.
+# $(HAVE_WASI_SDK) =
+#
+# 1 when building with the WASI SDK. This disables certain build
+# targets.
 HAVE_WASI_SDK ?= 0
 #
-# OPT_FEATURE_FLAGS is intended to hold preprocessor flags for
-# enabling and disabling specific libsqlite3 features (-DSQLITE_OMIT*,
-# -DSQLITE_ENABLE*). The same set of OMIT and ENABLE flags must be
-# passed to the LEMON parser generator and the mkkeywordhash tool as
-# well.
+# $(OPT_FEATURE_FLAGS) =
+#
+# Preprocessor flags for enabling and disabling specific libsqlite3
+# features (-DSQLITE_OMIT*, -DSQLITE_ENABLE*). The same set of OMIT
+# and ENABLE flags must be passed to the LEMON parser generator and
+# the mkkeywordhash tool as well.
 #
 # Add OPTIONS=... on the command line to append additional options to
 # the OPT_FEATURE_FLAGS. Note that some flags only work if the build
 # is specifically configured to account for them. Adding them later,
 # when compiling the amalgamation, may or may not work.
 OPT_FEATURE_FLAGS ?=
+#
+# The following TCL_vars come from tclConfig.sh
+#
+# Potential TODO: a shell script, similar tool/tclConfigShToTcl.sh,
+# which emits these vars in a format which we can include from this
+# makefile.
+TCL_INCLUDE_SPEC ?=
+TCL_LIB_SPEC ?=
+TCL_STUB_LIB_SPEC ?=
+TCL_EXEC_PREFIX ?=
+TCL_VERSION ?=
+TCLLIBDIR ?=
+# $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
+# libsqlite3, and will usually differ from $(LDFLAGS_RPATH).
+TCLLIB_RPATH ?=
 #
 # ... and many, many more. Sane defaults are selected where possible.
 #
@@ -172,17 +195,24 @@ TLINK = $(TCCX) $(TLINK_EXTRAS)
 # TLINK_shared = $(TLINK) invocation specifically for shared libraries
 TLINK_shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
-# TCCX is $(TCC) plus any flags which are desired for the library
-# as a whole, but not necessarily needed for every binary.
+#
+# $(TCCX) is $(TCC) plus any flags which are desired for the library
+# as a whole, but not necessarily needed for every binary. It will
+# normally get initially populated by the configure-generated
+# makefile, so should not be overwritten here.
 #
 TCCX ?= $(TCC)
+#
+# $(CFLAGS_intree_includes) = -I... flags relevant specifically to
+# this tree, including any subdirectories commonly needed for building
+# various tools.
 CFLAGS_intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
     -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session \
     -I$(TOP)/ext/userauth
-TCCX += $(CFLAGS_intree_includes)
 # CFLAGS_stdio3 ==> for sqlite3_stdio.h
 CFLAGS_stdio3 := -I$(TOP)/ext/misc
+TCCX += $(CFLAGS_intree_includes)
 
 #
 # $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
@@ -196,21 +226,6 @@ CFLAGS_stdio3 := -I$(TOP)/ext/misc
 # tables to always be in memory.
 #
 CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
-
-#
-# The following TCL_vars come from tclConfig.sh
-#
-TCL_INCLUDE_SPEC ?=
-TCL_LIB_SPEC ?=
-TCL_STUB_LIB_SPEC ?=
-TCL_EXEC_PREFIX ?=
-TCL_VERSION ?=
-TCLLIBDIR ?=
-#
-# $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
-# libsqlite3, and will usually differ from $(LDFLAGS_RPATH).
-#
-TCLLIB_RPATH ?=
 
 #
 # LDFLAGS_libsqlite3 should be used with any target which either
@@ -1118,6 +1133,7 @@ all: so
 sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(BTCLSH) # has_tclsh84
 	$(BTCLSH) $(TOP)/tool/split-sqlite3c.tcl
 
+#
 # Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(RELEASE) and
 # create symlinks which point to it. Do we really need all of this
 # hoop-jumping? Can we not simply install the .so as-is to
@@ -1139,18 +1155,21 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 install-so-0 install-so-:
 install: install-so-$(ENABLE_SHARED)
 
+#
 # Install $(libsqlite3.LIB)
 #
 install-lib: $(install-dir.lib) $(libsqlite3.LIB)
 	$(INSTALL_noexec) $(libsqlite3.LIB) $(install-dir.lib)
 install: install-lib
 
+#
 # Install C header files
 #
 install-includes: sqlite3.h $(install-dir.include)
 	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install-dir.include)
 install: install-includes
 
+#
 # libtclsqlite3...
 #
 pkgIndex.tcl:
@@ -1181,6 +1200,7 @@ tclsqlite3.c:	sqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
 CFLAGS_tclextension = $(CFLAGS_intree_includes) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+#
 # Build the SQLite TCL extension in a way that make it compatible
 # with whatever version of TCL is running as $TCLSH_CMD, possibly defined
 # by --with-tclsh=
@@ -1188,23 +1208,27 @@ CFLAGS_tclextension = $(CFLAGS_intree_includes) $(CFLAGS) $(OPT_FEATURE_FLAGS) $
 tclextension: tclsqlite3.c
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS_tclextension)
 
+#
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
 tclextension-install: tclsqlite3.c
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS_tclextension)
 
+#
 # Install the SQLite TCL extension that is used by $TCLSH_CMD
 #
 tclextension-uninstall:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
 
+#
 # List all installed the SQLite TCL extension that is are accessible
 # by $TCLSH_CMD, included prior versions.
 #
 tclextension-list:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
+#
 # FTS5 things
 #
 FTS5_SRC = \
@@ -1242,6 +1266,7 @@ sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(TCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
+#
 # Rules to build the 'testfixture' application.
 #
 # If using the amalgamation, use sqlite3.c directly to build the test
@@ -1292,6 +1317,7 @@ soaktest:	$(TESTPROGS)
 fulltestonly:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
+#
 # Fuzz testing
 #
 # WARNING: When the "fuzztest" target is run by the testrunner.tcl script,
@@ -1307,17 +1333,20 @@ valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(TEXE)
 	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 	valgrind ./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
 
+#
 # The veryquick.test TCL tests.
 #
 tcltest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
+#
 # Runs all the same tests cases as the "tcltest" target but uses
 # the testrunner.tcl script to run them in multiple cores
 # concurrently.
 testrunner:	testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
 
+#
 # This is the testing target preferred by the core SQLite developers.
 # It runs tests under a standard configuration, regardless of how
 # ./configure was run.  The devs run "make devtest" prior to each
@@ -1333,22 +1362,26 @@ mdevtest: srctree-check has_tclsh85
 sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
 
+#
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
 srctree-check:	$(TOP)/tool/srctree-check.tcl
 	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
 
+#
 # Testing for a release
 #
 releasetest: srctree-check has_tclsh85 verify-source
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
+#
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
+#
 # Try to run tests on whatever options are specified by the
 # ./configure.  The developers seldom use this target.  Instead
 # they use "make devtest" which runs tests on a standard set of
@@ -1357,12 +1390,14 @@ quicktest:	./testfixture$(TEXE)
 #
 test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
 
+#
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
 valgrindtest:	$(TESTPROGS) valgrindfuzz
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
 
+#
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
@@ -1455,10 +1490,8 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 	$(TLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(LDFLAGS_libsqlite3)
 
-#XX#startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
-#XX#	$(CC) -Os -g -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(TLIBS)
-# ^^^ note that it wants $(TLIBS) (a.k.a. $(LDFLAGS_libsqlite3) but is using $(CC)
-# instead of $(BCC).
+startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
+	$(TLINK) -Os -g -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(LDFLAGS_libsqlite3)
 
 KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 
