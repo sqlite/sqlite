@@ -1,5 +1,5 @@
-C Avoid\susing\sLIKE\sin\ssqlite3expert.c,\sin\scase\s"PRAGMA\scase_sensitive_like"\shas\sbeen\sused\sor\sthe\s"like"\sUDF\sreplaced\sby\ssomething\sunexpected.
-D 2024-10-21T10:47:24.220
+C Add\sa\scase\sto\stestrunner.tcl\sso\sthat\smdevtest\scan\srun\son\sopenbsd.
+D 2024-10-21T14:24:27.925
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1721,7 +1721,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 7b44f1a9b9a2de8112695b908afc21dd9a68cd2d44e84b73f1b27b53492c0d59
-F test/testrunner.tcl 3dd75b45593d2afa2e3bca76121297a9f163bebb98474b13536f326829a71db1 x
+F test/testrunner.tcl 6215e11be403a16947bbb3b31cf4905b417155df242e4c5229f85bcda1c28f50 x
 F test/testrunner_data.tcl c7b3b911e44f7e8c01cc6bc7571e16115cdc2e4db46630bd2acd7a931a46380e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7a7162293c8fdb0078fe56948d697703539dd23273b2072990d4391c761e6ae2
-R 9a25b364d37dfe1d99d32efb1c760e91
+P 9f642b3dbc8febfacad97076030f44e9b40067e27222f2bcb84813c5765d3d2a
+R a76584af8bedcd13de97df48304b6b29
 U dan
-Z 4dfdbcd58f369b4095a2bf4d76d23cc9
+Z b4a483e08cd6e73147b938d6a6273a33
 # Remove this line to create a well-formed Fossil manifest.
