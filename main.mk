@@ -1498,9 +1498,9 @@ index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.o
 	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o $(LDFLAGS_libsqlite3)
 xbin: index_usage$(TEXE)
 
+# Reminder: changeset does not build without -DSQLITE_ENABLE_SESSION
 changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.o
-	@echo "FIXME: $@"; touch $@
-#	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.o $(LDFLAGS_libsqlite3)
+	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.o $(LDFLAGS_libsqlite3)
 xbin: changeset$(TEXE)
 
 changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.o
@@ -1537,10 +1537,9 @@ kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
 	$(TLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(LDFLAGS_libsqlite3)
 xbin: kvtest$(TEXE)
 
-rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
-	@echo "FIXME: $@"; touch $@
+#rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
 #	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS_libsqlite3)
-xbin: rbu$(EXE)
+#xbin: rbu$(EXE)
 
 loadfts$(EXE): $(TOP)/tool/loadfts.c $(libsqlite3.LIB)
 	$(TLINK) $(TOP)/tool/loadfts.c $(libsqlite3.LIB) -o $@ $(LDFLAGS_libsqlite3)
