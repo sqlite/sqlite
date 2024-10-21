@@ -1852,6 +1852,7 @@ struct sqlite3 {
 
 #define sqlite3PrepareTimeSet(x,y) sqlite3CommitTimeSet(x,y)
 void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepareTime);
+void sqlite3SchemaTimeLog(Vdbe *pVdbe);
 
 #define PREPARE_TIME_TIMEOUT (2 * 1000 * 1000)    /* 2 second timeout */
 

@@ -5471,7 +5471,7 @@ void sqlite3CommitTimeLog(u64 *aCommit){
         (aCommit[ii]==0 ? 0 : (int)(aCommit[ii] - i1))
       );
     }
-    sqlite3_log(SQLITE_WARNING, "slow commit (v=2): (%s)", zStr);
+    sqlite3_log(SQLITE_WARNING, "slow commit (v=3): (%s)", zStr);
     sqlite3_free(zStr);
   }
 }
@@ -5499,10 +5499,24 @@ void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepare){
     }
     if( nByte<0 ){ nByte = sqlite3Strlen30(zSql); }
     sqlite3_log(SQLITE_WARNING, 
-        "slow prepare (v=2): (%s) [%.*s]", zStr, nByte, zSql
+        "slow prepare (v=3): (%s) [%.*s]", zStr, nByte, zSql
     );
     sqlite3_free(zStr);
   }
+}
+void sqlite3SchemaTimeLog(Vdbe *pVdbe){
+  int ii;
+  char *zStr = 0;
+  for(ii=0; ii<pVdbe->nOp; ii++){
+    VdbeOp *pOp = &pVdbe->aOp[ii];
+    zStr = sqlite3_mprintf("%z%s(%s %lld %lld)", zStr, (zStr?" ":""),
+        (char*)sqlite3OpcodeName(pOp->opcode), pOp->nExec, pOp->nCycle
+    );
+  }
+  sqlite3_log(SQLITE_WARNING, 
+      "slow schema query (v=3): (%s) [%s]", zStr, pVdbe->zSql
+  );
+  sqlite3_free(zStr);
 }
 
 
