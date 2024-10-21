@@ -324,6 +324,8 @@ set TRG(schema) {
     /* Fields updated as jobs run */
     starttime INTEGER,                  -- Start time (milliseconds since 1970)
     endtime INTEGER,                    -- End time
+    span INTEGER,                       -- Total run-time in milliseconds
+    estwork INTEGER,                    -- Estimated amount of work
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
@@ -341,6 +343,13 @@ set TRG(schema) {
   CREATE INDEX i2 ON jobs(depid);
 }
 #-------------------------------------------------------------------------
+
+# Estimated amount of work required by displaytype, relative to 'tcl'
+#
+set estwork(tcl)    1
+set estwork(fuzz)   11
+set estwork(bld)    56
+set estwork(make)   97
 
 #--------------------------------------------------------------------------
 # Check if this script is being invoked to run a single file. If so,
@@ -495,19 +504,21 @@ proc show_status {db cls} {
   }]
 
   set total 0
-  foreach s {"" ready running done failed} { set S($s) 0 }
+  foreach s {"" ready running done failed omit} { set S($s) 0; set W($s) 0; }
+  set workpending 0
   $db eval {
-    SELECT state, count(*) AS cnt FROM jobs GROUP BY 1
+    SELECT state, count(*) AS cnt, sum(estwork) AS ew FROM jobs GROUP BY 1
   } {
     incr S($state) $cnt
-    incr total $cnt
+    incr W($state) $ew
+    incr totalw $ew
   }
   set nt 0
   set ne 0
   $db eval {
     SELECT sum(ntest) AS nt, sum(nerr) AS ne FROM jobs HAVING nt>0
   } break
-  set fin [expr $S(done)+$S(failed)]
+  set fin [expr $W(done)+$W(failed)+$W(omit)]
   if {$cmdline!=""} {set cmdline " $cmdline"}
 
   if {$cls} {
@@ -522,15 +533,12 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set line "Running: $S(running) (max: $nJob)"
-  if {$S(running)>0 && $fin>100 && $fin>0.05*$total} {
-    # Only estimate the time remaining after completing at least 100
-    # jobs amounting to 10% of the total.  Never estimate less than
-    # 2% of the total time used so far.
-    set tmleft [expr {($tm/$fin)*($total-$fin)}]
+  if {$S(running)>0 && $fin>10} {
+    set tmleft [expr {($tm/$fin)*($totalw-$fin)}]
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
     }
-    append line " est time left [elapsetime $tmleft]"
+    append line " ETC [elapsetime $tmleft]"
   }
   puts [format %-79.79s $line]
   if {$S(running)>0} {
@@ -914,6 +922,7 @@ proc r_get_next_job {iJob} {
 # Returns the jobid value for the new job.
 # 
 proc add_job {args} {
+  global estwork
 
   set options {
       -displaytype -displayname -build -dirname 
@@ -938,25 +947,29 @@ proc add_job {args} {
 
   set state ""
   if {$A(-depid)==""} { set state ready }
+  set type $A(-displaytype)
+  set ew $estwork($type)
 
   trdb eval {
     INSERT INTO jobs(
-      displaytype, displayname, build, dirname, cmd, depid, priority,
+      displaytype, displayname, build, dirname, cmd, depid, priority, estwork,
       state
     ) VALUES (
-      $A(-displaytype),
+      $type,
       $A(-displayname),
       $A(-build),
       $A(-dirname),
       $A(-cmd),
       $A(-depid),
       $A(-priority),
+      $ew,
       $state
     )
   }
 
   trdb last_insert_rowid
 }
+       
 
 # Argument $build is either an empty string, or else a list of length 3 
 # describing the job to build testfixture. In the usual form:
@@ -1283,8 +1296,8 @@ proc make_new_testset {} {
     trdb eval { REPLACE INTO config VALUES('start', $tm ); }
 
     add_jobs_from_cmdline $TRG(patternlist)
-  }
 
+  }
 }
 
 proc mark_job_as_finished {jobid output state endtm} {
@@ -1309,10 +1322,12 @@ proc mark_job_as_finished {jobid output state endtm} {
     if {[info exists pltfm]} {set pltfm [string trim $pltfm]}
     trdb eval {
       UPDATE jobs 
-        SET output=$output, state=$state, endtime=$endtm,
+        SET output=$output, state=$state, endtime=$endtm, span=$endtm-starttime,
             ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
       UPDATE jobs SET state=$childstate WHERE depid=$jobid;
+      UPDATE config SET value=value+$nerr WHERE name='nfail';
+      UPDATE config SET value=value+$ntest WHERE name='ntest';
     }
   }
 }
@@ -1460,17 +1475,23 @@ proc progress_report {} {
       show_status trdb 1
     }
   } else {
-    set tm [expr [clock_milliseconds] - $TRG(starttime)]
-    set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
+    set tmms [expr [clock_milliseconds] - $TRG(starttime)]
+    set tm [format "%d" [expr int($tmms/1000.0 + 0.5)]]
   
+    set wtotal 0
+    set wdone 0
     r_write_db {
       trdb eval { 
-        SELECT displaytype, state, count(*) AS cnt 
+        SELECT displaytype, state, count(*) AS cnt, sum(estwork) AS ew
         FROM jobs 
         GROUP BY 1, 2 
       } {
         set v($state,$displaytype) $cnt
         incr t($displaytype) $cnt
+        incr wtotal $ew
+        if {$state=="done" || $state=="failed" || $state=="omit"} {
+          incr wdone $ew
+        }
       }
     }
   
@@ -1486,11 +1507,15 @@ proc progress_report {} {
         lappend text "r$v(running,$j)"
       }
     }
+    if {$wdone>0} {
+      set tmleft [expr {($tmms/$wdone)*($wtotal-$wdone)}]
+      append text " ETC [elapsetime $tmleft]"
+    }
   
     if {[info exists TRG(reportlength)]} {
       puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
     }
-    set report "${tm} [join $text { }]"
+    set report "[elapsetime $tmms] [join $text { }]"
     set TRG(reportlength) [string length $report]
     if {[string length $report]<100} {
       puts -nonewline "$report\r"
