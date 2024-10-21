@@ -15,10 +15,7 @@
 # The variables listed below must be defined before this script is
 # invoked. This file will use defaults, very possibly invalid, for any
 # which are not defined.
-#
-#XX# FIXME: the list of vars from the historical main.mk is dated and
-#XX# needs to be updated for autosetup.
-
+########################################################################
 #
 # $(RELEASE) =
 #
@@ -84,7 +81,8 @@ TCLSH_CMD ?= tclsh
 # $(BTCLSH) =
 #
 # The TCL interpreter for in-tree code generation. May be either the
-# in-tree JimTCL or the canonical TCL.
+# in-tree JimTCL or the canonical TCL. If it's JimTCL, it must be
+# compiled with -DJIM_COMPAT and -DHAVE_REALPATH.
 BTCLSH ?= $(TCLSH_CMD)
 #
 # $(LDFLAGS_{FEATURE}) and $(CFLAGS_{FEATURE}) =
@@ -194,11 +192,19 @@ all:	sqlite3.h sqlite3.c
 INSTALL_noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
-# TCOMPILE = generic target platform compiler invocation
+#
+# $(TCOMPILE) = generic target platform compiler invocation
+# $(TCOMPILE_EXTRAS) = config-specific flags for $(TCOMPILE)
+#
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
-# TLINK = compiler invocation for when the target will be an executable
+#
+# $(TLINK) = compiler invocation for when the target will be an executable
+# $(TLINK_EXTRAS) = config-specific flags for $(TLINK)
+#
 TLINK = $(TCCX) $(TLINK_EXTRAS)
-# TLINK_shared = $(TLINK) invocation specifically for shared libraries
+#
+# $(TLINK_shared) = $(TLINK) invocation specifically for shared libraries
+#
 TLINK_shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
 #
@@ -212,12 +218,11 @@ TCCX ?= $(TCC)
 # $(CFLAGS_intree_includes) = -I... flags relevant specifically to
 # this tree, including any subdirectories commonly needed for building
 # various tools.
+#
 CFLAGS_intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
     -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session \
-    -I$(TOP)/ext/userauth
-# CFLAGS_stdio3 ==> for sqlite3_stdio.h
-CFLAGS_stdio3 := -I$(TOP)/ext/misc
+    -I$(TOP)/ext/misc -I$(TOP)/ext/userauth
 TCCX += $(CFLAGS_intree_includes)
 
 #
@@ -1432,12 +1437,16 @@ sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(TEXE): has_tclconfig sqltclsh.c
-	$(TLINK) sqltclsh.c -o $@ $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
+	$(TLINK) sqltclsh.c -o $@ $(TCL_INCLUDE_SPEC) $(CFLAGS_libsqlite3) $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
+# xbin: target for generic binaries which aren't usually built. It is
+# used primarily for testing the build process.
+xbin: sqltclsh$(TEXE)
 
 sqlite3_expert$(TEXE): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
                        $(TOP)/ext/expert/expert.c sqlite3.c
 	$(TLINK)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS_libsqlite3)
+xbin: sqlite3_expert$(TEXE)
 
 CHECKER_DEPS =\
   $(TOP)/tool/mkccode.tcl \
@@ -1453,67 +1462,89 @@ sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(BTCLSH) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(TEXE):	has_tclconfig sqlite3_checker.c
-	$(TLINK) sqlite3_checker.c -o $@ $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
+	$(TLINK) sqlite3_checker.c -o $@ $(TCL_INCLUDE_SPEC) $(CFLAGS_libsqlite3) $(TCL_LIB_SPEC) $(LDFLAGS_libsqlite3)
+xbin: sqlite3_checker$(TEXE)
 
-dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.lo
+dbdump$(TEXE): $(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(TLINK) -DDBDUMP_STANDALONE -o $@ \
-           $(TOP)/ext/misc/dbdump.c sqlite3.lo $(LDFLAGS_libsqlite3)
+           $(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: dbdump$(TEXE)
 
 dbtotxt$(TEXE): $(TOP)/tool/dbtotxt.c
 	$(TLINK)-o $@ $(TOP)/tool/dbtotxt.c
+xbin: dbtotxt$(TEXE)
 
-showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(LDFLAGS_libsqlite3)
+showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: showdb$(TEXE)
 
-showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(LDFLAGS_libsqlite3)
+showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: showstat4$(TEXE)
 
-showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(LDFLAGS_libsqlite3)
+showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: showjournal$(TEXE)
 
-showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(LDFLAGS_libsqlite3)
+showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: showwal$(TEXE)
 
 showshm$(TEXE):	$(TOP)/tool/showshm.c
 	$(TLINK) -o $@ $(TOP)/tool/showshm.c
+xbin: showshm$(TEXE)
 
-index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.lo
-	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.lo $(LDFLAGS_libsqlite3)
+index_usage$(TEXE): $(TOP)/tool/index_usage.c sqlite3.o
+	$(TLINK) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: index_usage$(TEXE)
 
-changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.lo $(LDFLAGS_libsqlite3)
+changeset$(TEXE):	$(TOP)/ext/session/changeset.c sqlite3.o
+	@echo "FIXME: $@"; touch $@
+#	$(TLINK) -o $@ $(TOP)/ext/session/changeset.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: changeset$(TEXE)
 
-changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.lo $(LDFLAGS_libsqlite3)
+changesetfuzz$(TEXE):	$(TOP)/ext/session/changesetfuzz.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: changesetfuzz$(TEXE)
 
-rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(LDFLAGS_libsqlite3)
+rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: rollback-test$(TEXE)
 
-atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/test/atrc.c sqlite3.lo $(LDFLAGS_libsqlite3)
+atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/test/atrc.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: atrc$(TEXX)
 
 LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(TLINK) -I. -o $@ $(TOP)/tool/logest.c
+xbin: LogEst$(TEXE)
 
-wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
-	$(TLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.lo $(LDFLAGS_libsqlite3)
+wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.o
+	$(TLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: wordcount$(TEXE)
 
 speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 	$(TLINK) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(LDFLAGS_libsqlite3)
+xbin: speedtest1$(TEXE)
 
 startup$(TEXE):	$(TOP)/test/startup.c sqlite3.c
 	$(TLINK) -Os -g -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(LDFLAGS_libsqlite3)
+xbin: startup$(TEXE)
 
 KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 
 kvtest$(TEXE):	$(TOP)/test/kvtest.c sqlite3.c
 	$(TLINK) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(LDFLAGS_libsqlite3)
+xbin: kvtest$(TEXE)
 
 rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
-	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS_libsqlite3)
+	@echo "FIXME: $@"; touch $@
+#	$(TLINK) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: rbu$(EXE)
 
 loadfts$(EXE): $(TOP)/tool/loadfts.c $(libsqlite3.LIB)
 	$(TLINK) $(TOP)/tool/loadfts.c $(libsqlite3.LIB) -o $@ $(LDFLAGS_libsqlite3)
+xbin: loadfts$(EXE)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the
@@ -1558,14 +1589,16 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_stress.c      \
                   $(TOP)/test/tt3_lookaside1.c
 
-threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
-	$(TLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.lo -o $@ $(LDFLAGS_libsqlite3)
+threadtest3$(TEXE): sqlite3.o $(THREADTEST3_SRC)
+	$(TLINK) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.o -o $@ $(LDFLAGS_libsqlite3)
+xbin: threadtest3$(TEXE)
 
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)
 
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(TLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS_libsqlite3)
+xbin: threadtest5
 
 sqlite3$(TEXE):	shell.c sqlite3.c
 	$(TLINK) $(CFLAGS_READLINE) $(SHELL_OPT) -o $@ \
@@ -1585,7 +1618,7 @@ install-shell-1 install-shell-:
 install: install-shell-$(HAVE_WASI_SDK)
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
-	$(TLINK) $(CFLAGS_stdio3) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite3)
+	$(TLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS_libsqlite3)
 
 install-diff: sqldiff$(TEXE) $(install-dir.bin)
 	$(INSTALL) -s sqldiff$(TEXT) $(install-dir.bin)
@@ -1593,6 +1626,7 @@ install-diff: sqldiff$(TEXE) $(install-dir.bin)
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
 	$(TLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: dbhash$(TEXE)
 
 RSYNC_SRC = \
   $(TOP)/tool/sqlite3_rsync.c \
@@ -1607,6 +1641,7 @@ RSYNC_OPT = \
 
 sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
 	$(TCCX) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
+xbin: sqlite3_rsync$(TEXE)
 
 install-rsync: sqlite3_rsync$(TEXE) $(install-dir.bin)
 	$(INSTALL) sqlite3_rsync$(TEXT) $(install-dir.bin)
@@ -1625,15 +1660,18 @@ install-pc: sqlite3.pc $(install-dir.pkgconfig)
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
 		$(TOP)/ext/misc/scrub.c sqlite3.o $(LDFLAGS_libsqlite3)
+xbin: scrub$(TEXE)
 
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
+xbin: srcck1$(BEXE)
 
 sourcetest:	srcck1$(BEXE) sqlite3.c
 	./srcck1$(BEXE) sqlite3.c
 
 src-verify$(BEXE):	$(TOP)/tool/src-verify.c
 	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
+xbin: src-verify$(BEXE)
 
 verify-source:	./src-verify$(BEXE)
 	./src-verify$(BEXE) $(TOP)
@@ -1642,21 +1680,24 @@ fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TLINK) -o $@ $(FUZZERSHELL_OPT) \
 	  $(TOP)/tool/fuzzershell.c sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: fuzzershell$(TEXE)
+xbin: fuzzershell$(TEXE)
 
 fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: fuzzcheck$(TEXE)
+xbin: fuzzcheck$(TEXE)
 
 fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(TLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
 		sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: fuzzcheck-asan$(TEXE)
-
+xbin: fuzzcheck-asan$(TEXE)
 
 fuzzcheck-ubsan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(TLINK) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
 		sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: fuzzcheck-ubsan$(TEXE)
+xbin: fuzzcheck-ubsan$(TEXE)
 
 # Usage:    FUZZDB=filename make run-fuzzcheck
 #
@@ -1677,6 +1718,7 @@ ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.
 	$(TLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
              $(TOP)/test/ossfuzz.c sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: ossshell$(TEXE)
+xbin: ossshell$(TEXE)
 
 sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
 	$(TLINK) -o $@ $(TOP)/test/sessionfuzz.c $(LDFLAGS_libsqlite3)
@@ -1685,6 +1727,7 @@ fuzzy: sessionfuzz$(TEXE)
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
 	$(TLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(LDFLAGS_libsqlite3)
 fuzzy: dbfuzz$(TEXE)
+xbin: dbfuzz$(TEXE)
 
 DBFUZZ2_OPTS = \
   -USQLITE_THREADSAFE \
@@ -1704,10 +1747,12 @@ dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 fuzzy: dbfuzz2$(TEXE)
+xbin: dbfuzz2$(TEXE)
 
 mptester$(TEXE):	$(libsqlite3.LIB) $(TOP)/mptest/mptest.c
 	$(TLINK) -o $@ -I. $(TOP)/mptest/mptest.c $(libsqlite3.LIB) \
 		$(LDFLAGS_libsqlite3)
+xbin: mptester$(TEXE)
 
 MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
 MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
@@ -1758,7 +1803,7 @@ SHELL_DEP = \
 shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(BTCLSH) # has_tclsh84
 	$(BTCLSH) $(TOP)/tool/mkshellc.tcl >shell.c
 
-
+#
 # Rules to build the extension objects.
 #
 icu.o:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
