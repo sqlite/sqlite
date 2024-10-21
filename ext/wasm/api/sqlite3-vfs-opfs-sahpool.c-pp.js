@@ -57,7 +57,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = sqlite3.util.toss;
   const toss3 = sqlite3.util.toss3;
-  const initPromises = Object.create(null);
+  const initPromises = Object.create(null) /* cache of (name:result) of VFS init results */;
   const capi = sqlite3.capi;
   const util = sqlite3.util;
   const wasm = sqlite3.wasm;
@@ -843,6 +843,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(!this.#cVfs.pointer || !this.#dhOpaque) return false;
       capi.sqlite3_vfs_unregister(this.#cVfs.pointer);
       this.#cVfs.dispose();
+      delete initPromises[this.vfsName];
       try{
         this.releaseAccessHandles();
         await this.#dhVfsRoot.removeEntry(OPAQUE_DIR_NAME, {recursive: true});
