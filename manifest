@@ -1,5 +1,5 @@
-C Add\sa\scase\sto\stestrunner.tcl\sso\sthat\smdevtest\scan\srun\son\sopenbsd.
-D 2024-10-21T14:24:27.925
+C Version\s3.47.0
+D 2024-10-21T16:30:22.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2219,8 +2219,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9f642b3dbc8febfacad97076030f44e9b40067e27222f2bcb84813c5765d3d2a
+P e904b37fb2621e6bd5e761f3ecb75adb34350f2d1d7b229e655e74bc6a2f5321
 R a76584af8bedcd13de97df48304b6b29
-U dan
-Z b4a483e08cd6e73147b938d6a6273a33
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.47.0 *
+U drh
+Z 06d21548d99c4222144faa895fe216f7
 # Remove this line to create a well-formed Fossil manifest.
