@@ -6,70 +6,93 @@
 # this one.
 #
 # Maintenance reminder: this file must remain devoid of GNU Make-isms.
-# i.e. it must be POSIX Make compatible.
+# i.e. it must be POSIX Make compatible. "bmake" (BSD make) is
+# available on most Linux systems, so compatibility is relatively easy
+# to test.
 #
 #XX# Lines starting with #XX# are TODOs for the port to autosetup
 #
-# The following variables must be defined before this script is
-# invoked:
+# The variables listed below must be defined before this script is
+# invoked. This file will use defaults, very possibly invalid, for any
+# which are not defined.
 #
 #XX# FIXME: the list of vars from the historical main.mk is dated and
 #XX# needs to be updated for autosetup.
-#
-# TOP              The toplevel directory of the source tree.  This is the
-#                  directory that contains this "Makefile.in" and the
-#                  "configure.in" script.
-#
-# BCC              C Compiler and options for use in building executables that
-#                  will run on the platform that is doing the build.
-#
-# TCC              C Compiler and options for use in building executables that
-#                  will run on the target platform.  This is usually the same
-#                  as BCC, unless you are cross-compiling.
-#
-# AR               Tool used to build a static library.
-#
-# BEXE             File extension for executables on the build platform. ".exe"
-#                  for Windows and "" everywhere else.
-#
-# TEXE             File extension for executables on the target platform. ".exe"
-#                  for Windows and "" everywhere else.
-#
-# BTCLSH           The TCL interpreter for in-tree code generation. May be
-#                  either JimTCL or the canonical TCL.
-#
-# ... and many, many more ...
-#
-# Once the variables above are defined, the rest of this make script
-# will build the SQLite library and testing tools.
-################################################################################
-all:	sqlite3.h sqlite3.c
 
 #
-# Ideally these variables are all defined in the calling makefile, but
-# we can provide some sensible defaults for many of them which should
-# suffice for conventional Unix-style OSes.
+# RELEASE =
 #
-prefix ?= /usr/local
-exec_prefix ?= $(prefix)
-libdir ?= $(prefix)/lib
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir ?= $(prefix)/bin
-includedir ?= $(prefix)/include
-
-USE_AMALGAMATION ?= 1
-AMALGAMATION_LINE_MACROS ?= --linemacros=0
-INSTALL ?= install
-
+# The MAJOR.MINOR.PATCH version number of this build.
+RELEASE ?= MAJOR.MINOR.PATCH
+#
+# TOP =
+#
+# The toplevel directory of the source tree.  For canonical builds
+# this is the directory that contains this "Makefile.in" and the
+# "configure.in" script.
+TOP ?= $(PWD)
+#
+# BCC =
+#
+# C Compiler and options for use in building executables that will run
+# on the platform that is doing the build.
 BCC ?= $(CC)
+#
+# TCC =
+#
+# C Compiler and options for use in building executables that will run
+# on the target platform.  This is usually the same as BCC, unless you
+# are cross-compiling. Note that it should only contain flags which
+# are used by _all_ build targets.  Flags needed only by specific
+# targets are defined elsewhere.
 TCC ?= $(BCC)
+#
+# AR =
+# Tool used to build a static library from object files.
+#
+AR      ?= ar
+#
+# BEXE =
+#
+# File extension for executables on the build platform. ".exe" for
+# Windows and "" everywhere else.
 BEXE ?=
-TEXE ?=
+#
+# BDLL and BLIB =
+#
+# The DLL resp. static library counterparts of BEXE.
 BDLL ?= .so
-TDLL ?= .so
 BLIB ?= .lib
+#
+# TEXE =
+#
+# File extension for executables on the target platform. ".exe" for
+# Windows and "" everywhere else.
+TEXE ?=
+#
+# TDLL and TLIB    The DLL resp. static library counterparts of TEXE.
+TDLL ?= .so
 TLIB ?= .lib
-
+#
+# TCLSH_CMD =
+#
+# The canonical tclsh.
+TCLSH_CMD ?= tclsh
+#
+# BTCLSH =
+#
+# The TCL interpreter for in-tree code generation. May be either the
+# in-tree JimTCL or the canonical TCL.
+BTCLSH ?= $(TCLSH_CMD)
+#
+# LDFLAGS_(FEATURE) and CFLAGS_(FEATURE) =
+#
+# Linker resp. C/CPP flags required by a specific feature, e.g.
+# LDFLAGS_PTHREAD or CFLAGS_READLINE.
+#
+# Rather that stuffing all CFLAGS and LDFLAGS into a single set, we
+# break them down on a per-feature basis and expect the build targets
+# to use the one(s) it needs.
 LDFLAGS_ZLIB ?= -lz
 LDFLAGS_MATH ?= -lm
 LDFLAGS_RPATH ?= -Wl,-rpath -Wl,$(prefix)/lib
@@ -77,9 +100,64 @@ LDFLAGS_READLINE ?= -lreadline
 CFLAGS_READLINE ?=
 LDFLAGS_PTHREAD ?= -lpthread
 LDFLAGS_SHOBJ ?= -shared
+#
+# Various system-level directories, mostly needed for installation and
+# for finding system-level dependencies.
+prefix       ?= /usr/local
+exec_prefix  ?= $(prefix)
+libdir       ?= $(prefix)/lib
+pkgconfigdir ?= $(libdir)/pkgconfig
+bindir       ?= $(prefix)/bin
+includedir   ?= $(prefix)/include
+#
+# INSTALL =
+#
+# Tool for installing files and directories. It must be compatible
+# with conventional Unix /usr/bin/install. Note that libtool's
+# install-sh is _not_ compatible with this because it _moves_ targets
+# during installation, which may break the build of targets which are
+# built after others are installed.
+INSTALL ?= install
+#
+# ENABLE_SHARED
+#
+# 1 if libsqlite3.$(TDLL) should be built.
 ENABLE_SHARED ?= 1
+#
+# USE_AMALGAMATION 1 if the amalgamation (sqlite3.c/h) should be built/used,
+#                  otherwise the library is built from all of its original
+#                  source files.
+USE_AMALGAMATION ?= 1
+#
+# AMALGAMATION_GEN_FLAGS  Optional flags for the amalgamation generator.
+AMALGAMATION_GEN_FLAGS ?= --linemacros=0
+#
+# HAVE_WASI_SDK    1 when building with the WASI SDK. This disables certain
+#                  build targets.
 HAVE_WASI_SDK ?= 0
+#
+# OPT_FEATURE_FLAGS is intended to hold preprocessor flags for
+# enabling and disabling specific libsqlite3 features (-DSQLITE_OMIT*,
+# -DSQLITE_ENABLE*). The same set of OMIT and ENABLE flags must be
+# passed to the LEMON parser generator and the mkkeywordhash tool as
+# well.
+#
+# Add OPTIONS=... on the command line to append additional options to
+# the OPT_FEATURE_FLAGS. Note that some flags only work if the build
+# is specifically configured to account for them. Adding them later,
+# when compiling the amalgamation, may or may not work.
 OPT_FEATURE_FLAGS ?=
+#
+# ... and many, many more. Sane defaults are selected where possible.
+#
+# With the above-described defined, the rest of this make script will
+# build the project's deliverables and testing tools.
+################################################################################
+all:	sqlite3.h sqlite3.c
+
+########################################################################
+# Modifying what follows should not be necessary for most builds.
+########################################################################
 
 #
 # $(INSTALL) invocation for use with non-executable files.
@@ -92,19 +170,31 @@ TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
 # TLINK = compiler invocation for when the target will be an executable
 TLINK = $(TCCX) $(TLINK_EXTRAS)
 # TLINK_shared = $(TLINK) invocation specifically for shared libraries
-LDFLAGS_SHOBJ ?= -shared
 TLINK_shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
-# TCCX is $(TCC) plus any CFLAGS which are common to most compilations
-# for the target platform. In auto-configured builds it is defined by
-# the main makefile to include configure-time-dependent options.
+# TCCX is $(TCC) plus any flags which are desired for the library
+# as a whole, but not necessarily needed for every binary.
+#
 TCCX ?= $(TCC)
-TCCX += -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu
-TCCX += -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session
-TCCX += -I$(TOP)/ext/userauth
+CFLAGS_intree_includes = \
+    -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
+    -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session \
+    -I$(TOP)/ext/userauth
+TCCX += $(CFLAGS_intree_includes)
 # CFLAGS_stdio3 ==> for sqlite3_stdio.h
 CFLAGS_stdio3 := -I$(TOP)/ext/misc
 
+#
+# $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
+# compiling the library's own sources, including (sometimes) when
+# compiling sqlite3.c directly in to another app.  Most notably, it
+# should always contain -DSQLITE_TEMP_STORE=N for the sake of
+# historical build expecations.
+#
+# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1
+# to default to file, 2 to default to memory, and 3 to force temporary
+# tables to always be in memory.
+#
 CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
 
 #
@@ -122,7 +212,6 @@ TCLLIBDIR ?=
 #
 TCLLIB_RPATH ?=
 
-
 #
 # LDFLAGS_libsqlite3 should be used with any target which either
 # results in building libsqlite3.so, compiles sqlite3.c directly, or
@@ -131,7 +220,7 @@ TCLLIB_RPATH ?=
 # i.e. it should be used with $(TCCX) or $(TLINK) but not $(BCC).
 #
 LDFLAGS_libsqlite3 = \
-  $(LDFLAGS_RPATH) $(TLIBS) $(LDFLAGS_PTHREAD) \
+  $(LDFLAGS_RPATH) $(LDFLAGS_PTHREAD) \
   $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
 
 #
@@ -695,7 +784,7 @@ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify \
 		$(BTCLSH) # has_tclsh84
-	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
@@ -706,7 +795,7 @@ sqlite3r.c: sqlite3.c sqlite3r.h $(BTCLSH) # has_tclsh84
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
-	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_LINE_MACROS) $(EXTRA_SRC)
+	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 
 sqlite3ext.h:	.target_source
 	cp tsrc/sqlite3ext.h .
@@ -969,7 +1058,7 @@ window.o:	$(TOP)/src/window.c $(HDR)
 	$(TCOMPILE) $(CFLAGS_libsqlite3) -c $(TOP)/src/window.c
 
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(TCOMPILE) -DUSE_TCL_STUBS=1 $(TCL_INCLUDE_SPEC) \
+	$(TCOMPILE) -DUSE_TCL_STUBS=1 $(TCL_INCLUDE_SPEC) $(CFLAGS_intree_includes) \
 		-c $(TOP)/src/tclsqlite.c
 
 tclsqlite-shell.o:	$(TOP)/src/tclsqlite.c $(HDR)
@@ -1091,18 +1180,19 @@ tclsqlite3.c:	sqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
+CFLAGS_tclextension = $(CFLAGS_intree_includes) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
 # Build the SQLite TCL extension in a way that make it compatible
 # with whatever version of TCL is running as $TCLSH_CMD, possibly defined
 # by --with-tclsh=
 #
 tclextension: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS_tclextension)
 
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
 tclextension-install: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS_tclextension)
 
 # Install the SQLite TCL extension that is used by $TCLSH_CMD
 #

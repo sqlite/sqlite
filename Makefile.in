@@ -8,6 +8,11 @@
 # certain blocks are added or removed depending on configure-time
 # information.
 #
+# The docs for many of its variables are in the primary static
+# makefile, main.mk (which this one includes at runtime).
+#
+all:
+clean:
 
 ########################################################################
 #XX# Lines starting with #XX# are TODOs for the port to autosetup.
@@ -39,9 +44,6 @@
 # that, but we're limited to POSIX Make compatibility here. The
 # automatic reconfigures are not too onerous, though, because they're
 # much, much faster than Autotools configure runs.
-#
-all:
-clean:
 
 #
 # Maintenance reminder: When using the X?=Y variable assignment
@@ -57,15 +59,6 @@ clean:
 # that contains this "Makefile.in" and the "configure" script.
 #
 TOP = @abs_top_srcdir@
-
-#
-# Just testing some default dir expansions...
-# srcdir = @srcdir@
-# top_srcdir = @top_srcdir@
-# abs_top_srcdir = @abs_top_srcdir@
-# abs_top_builddir = @abs_top_builddir@
-#
-
 #
 # Some standard variables and programs
 #
@@ -75,45 +68,34 @@ libdir ?= @libdir@
 pkgconfigdir ?= $(libdir)/pkgconfig
 bindir ?= @bindir@
 includedir ?= @includedir@
+#
+# Just testing some default dir expansions...
+# srcdir = @srcdir@
+# top_srcdir = @top_srcdir@
+# abs_top_srcdir = @abs_top_srcdir@
+# abs_top_builddir = @abs_top_builddir@
+#
+
 INSTALL = @BIN_INSTALL@
 AR = @AR@
 CC = @CC@
-#LD = @LD@ # isn't actually needed, at least on modern Unixes.
-
-#
-# C Compiler and options for use in building executables that
-# will run on the platform that is doing the build.
-#
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
+TCC = $(CC) $(CFLAGS)
+CFLAGS = @CFLAGS@ @SH_CFLAGS@
 
-#
-# Rather that stuffing all CFLAGS and LDFLAGS into a single set, we
-# break them down on a per-feature basis and expect the build targets
-# to use the one(s) it needs.
-#
+LDFLAGS_SHOBJ = @SHOBJ_LDFLAGS@
 LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
 LDFLAGS_MATH = @LDFLAGS_MATH@
 LDFLAGS_RPATH = @LDFLAGS_RPATH@
-LDFLAGS_READLINE = @LDFLAGS_READLINE@
 LDFLAGS_PTHREAD = @LDFLAGS_PTHREAD@
-LDFLAGS_SHOBJ = @SHOBJ_LDFLAGS@
+LDFLAGS_READLINE = @LDFLAGS_READLINE@
+CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
-#
-# TCC is the C Compile and options for use in building executables that
-# will run on the target platform.  (BCC and TCC are usually the
-# same unless your are cross-compiling.)  Separate CC and CFLAGS macros
-# are provide so that these aspects of the build process can be changed
-# on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
-#
-CFLAGS = @CFLAGS@ @SH_CFLAGS@
-TCC = $(CC) $(CFLAGS)
-
-# Define -DNDEBUG to compile without debugging (i.e., for production usage)
-# Omitting the define will cause extra debugging code to be inserted and
-# includes extra comments when "EXPLAIN stmt" is used.
+# TCCX is $(TCC) plus any flags which are desired for the library
+# as a whole, but not necessarily needed for every binary.
 #
 TCCX = $(TCC) @TARGET_DEBUG@
 # Define this for the autoconf-based build, so that the code knows it
@@ -123,10 +105,6 @@ TCCX += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
 # main.mk will fill out TCCX with some flags common to all builds.
 
-#
-# Compiler options needed for programs that use the readline() library.
-#
-CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 #XX#CFLAGS_READLINE += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
 #XX#CFLAGS_READLINE += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
 #XX#
@@ -143,19 +121,18 @@ CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 #
 # With the autosetup build, the intended way to do this is to set
 # those in $(LDFLAGS_libsqlite3) and include those flags for both
-# $(libsqlite3.SO) and any apps which directly link in either
-# sqlite3.o or its origin sources.
+# $(libsqlite3.SO) and any apps which directly compile/link in either
+# sqlite3.c/o or its origin sources.
 LIBS += @LIBS@
-TLIBS = $(LIBS)
 
 #
 # JimTCL is part of the autosetup suite and is suitable for all
 # current in-tree code-generation TCL jobs, but it requires that we
 # build it with non-default flags. Note that the build tree will, if
-# no system-level tclsh is found, also have a ./jimsh0. That one is a
-# bare-bones build for the configure process, whereas we need to build
-# it with another option enabled for use with the various code
-# generators.
+# no system-level tclsh is found, also have a ./jimsh0 binary. That
+# one is a bare-bones build for the configure process, whereas we need
+# to build it with another option enabled for use with the various
+# code generators.
 #
 JIMSH = @srcdir@/jimsh
 CFLAGS_JIMSH ?= @CFLAGS_JIMSH@
@@ -169,43 +146,24 @@ $(JIMSH): $(TOP)/autosetup/jimsh0.c
 BTCLSH = @BTCLSH@
 $(BTCLSH):
 
-#
-# $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
-# compiling the library's own sources, including (sometimes) when
-# compiling sqlite3.c directly in to another app.  Most notably, it
-# should always contain -DSQLITE_TEMP_STORE=N for the sake of
-# historical build expecations.
-#
-# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1
-# to default to file, 2 to default to memory, and 3 to force temporary
-# tables to always be in memory.
-#
+# $(CFLAGS_libsqlite3) is documented in main.mk.
 CFLAGS_libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
-#
-# Enable/disable loadable extensions, and other optional features
-# based on configuration. (-DSQLITE_OMIT*, -DSQLITE_ENABLE*).
-# The same set of OMIT and ENABLE flags should be passed to the
-# LEMON parser generator and the mkkeywordhash tool as well.
-#
-# Add OPTIONS=... on the command line to append additional options
-# to the OPT_FEATURE_FLAGS. Note that some flags only work if
-# the build is specifically configured to account for them.
-#
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
 TCC += $(OPT_FEATURE_FLAGS)
 
-# Add in any optional parameters specified on the make commane line
-# ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+#
+# Add in any optional global compilation flags on the make commane
+# line ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+#
+#XX# FIXME: rename one or the other of $(OPTS) and $(OPTIONS), as they
+#XX# serve different purposes.
 TCC += $(OPTS)
-
-# Add in compile-time options for some libraries used by extensions
-#TCC += @CFLAGS_ZLIB@
 
 # Version numbers and release number for the SQLite being compiled.
 #
-VERSION = @VERSION@
+# VERSION = @VERSION@
 RELEASE = @RELEASE@
 
 # Filename extensions for binaries and libraries
@@ -284,7 +242,7 @@ AS_AUTO_DEF = $(TOP)/auto.def
 AS_AUTOREMAKE = @SQLITE_AUTOREMAKE@
 
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
-AMALGAMATION_LINE_MACROS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
+AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 
 #
 # CFLAGS for sqlite3$(TEXE)
