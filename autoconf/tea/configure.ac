@@ -97,7 +97,7 @@ TEA_ADD_TCL_SOURCES([])
 # Patchs from rmax.
 #--------------------------------------------------------------------
 AC_ARG_WITH([system-sqlite],
- [AC_HELP_STRING([--with-system-sqlite],
+ [AS_HELP_STRING([--with-system-sqlite],
    [use a system-supplied libsqlite3 instead of the bundled one])],
  [], [with_system_sqlite=no])
 if test x$with_system_sqlite != xno; then

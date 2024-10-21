@@ -3047,7 +3047,7 @@ static int walHandleException(Wal *pWal){
 
 /*
 ** Assert that the Wal.lockMask mask, which indicates the locks held
-** by the connenction, is consistent with the Wal.readLock, Wal.writeLock
+** by the connection, is consistent with the Wal.readLock, Wal.writeLock
 ** and Wal.ckptLock variables. To be used as:
 **
 **   assert( walAssertLockmask(pWal) );

@@ -227,7 +227,7 @@ ifeq (1,$(barebones))
 else
   wasm-bare-bones := 0
 endif
-undefine barebones
+# undefine barebones # relatively new gmake feature, not ubiquitous
 
 # Common options for building sqlite3-wasm.c and speedtest1.c.
 # Explicit ENABLEs...
@@ -1106,7 +1106,7 @@ emcc-opt-extra :=
 # doubles the build time and seems to have negligible, if any, effect
 # on higher optimization levels.
 #
-# -flto does ont shrink the size of bare-bones builds by any measurable
+# -flto does not shrink the size of bare-bones builds by any measurable
 # amount.
 #endif
 o0: clean

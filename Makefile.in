@@ -787,20 +787,6 @@ dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 
-dbfuzz2-asan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-
-dbfuzz2-msan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
-		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
-	mkdir -p dbfuzz2-dir
-	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
-
 mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
 		$(TLIBS) -rpath "$(libdir)"
@@ -1560,9 +1546,10 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync $(TOP)/tool/mktoolzip.tcl
-	strip sqlite3 sqldiff sqlite3_analyzer sqlite3_rsync
-	./testfixture $(TOP)/tool/mktoolzip.tcl
+tool-zip: testfixture$(TEXE) sqlite3$(TEXE) sqldiff$(TEXE) \
+          sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(TEXE) sqldiff$(TEXE) sqlite3_analyzer$(TEXE) sqlite3_rsync$(TEXE)
+	./testfixture$(TEXE) $(TOP)/tool/mktoolzip.tcl
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This

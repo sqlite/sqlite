@@ -10,6 +10,7 @@
 #     sqlite3                 -- the SQLite CLI
 #     sqldiff                 -- Program to diff two databases
 #     sqlite3_analyzer        -- Space analyzer
+#     sqlite3_rsync           -- Remote db sync
 #
 switch $tcl_platform(os) {
   {Windows NT} {
