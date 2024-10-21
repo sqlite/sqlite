@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sautosetup\sbranch.
-D 2024-10-21T13:11:43.662
+C Add\sdocs\sintroducing\show\sto\sdefine\sand\suse\sautosetup\sconfigure\sflags.\sUse\s-DJIM_COMPAT\swhen\sbuilding\sjimsh\sto\sforce\sits\sexpr\scommand\sto\sbe\ssyntax-compatible\swith\scanonical\sTCL.
+D 2024-10-21T16:06:49.337
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def a392650e2c34738c179f2f7d2c731f90906dcbfb78c236348930997d79281702
+F auto.def aec40855b0321857f679ff53cbb72042e5006260f72d1526db786d0bbcf254e3
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 109d441bf1bcdbc01d1f3f2aa145039539fc5aad02f91fc987a0c3702e21809d 9f642b3dbc8febfacad97076030f44e9b40067e27222f2bcb84813c5765d3d2a
-R efd09ae4017e3cac1b5cf47493ec2640
+P 347a50e66fa17bba997f6cbaa5bd693d029df488e54c24f7e4db47b65e84ce81
+R 4ae42afdfc94f9c9fa6e904f46862477
 U stephan
-Z 9f0bf45ab85b7fbd154d377a0233cf43
+Z 1d7aa6ac6fc1c8fa8cc634105d5b45fa
 # Remove this line to create a well-formed Fossil manifest.

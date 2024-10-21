@@ -1,9 +1,10 @@
+#/usr/bin/tclsh
+# ^^^ help out editors which guess this file's content type.
+#
 # This is the main autosetup-compatible configure script for the
 # SQLite project.
-global autosetup
 use cc cc-db cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE ./defines.list
-define ENABLE_SHARED 1
 
 # Are we cross-compiling?
 set cross_compiling 0
@@ -27,6 +28,83 @@ if {[get-define host] ne [get-define build]} {
 #
 #   2.1) --enable-tempstore[=no] to --with-tempstore[=no].
 #
+########################################################################
+# A gentle introduction to flags handling in autosetup
+#
+# Reference: https://msteveb.github.io/autosetup/developer/
+#
+# All configure flags must be described in an 'options' call, which
+# must appear very early on in this script. The general syntax is:
+#
+#  FLAG => {Help text}
+#
+# Where FLAG can have any of the following formats:
+#
+#   boolopt            => "a boolean option which defaults to disabled"
+#   boolopt2=1         => "a boolean option which defaults to enabled"
+#   stringopt:         => "an option which takes an argument, e.g. --stringopt=value"
+#   stringopt2:=value  => "an option where the argument is optional and defaults to 'value'"
+#   optalias booltopt3 => "a boolean with a hidden alias. --optalias is not shown in --help"
+#
+# Autosetup does no small amount of specialized handling for flags,
+# especially booleans. Each bool-type --FLAG implicitly gets
+# --enable-FLAG and --disable-FLAG forms, and explicitly adding flags
+# with those prefixes will force them to be boolean flags. e.g. we
+# define a flag "readline", which will be interpreted in one of two
+# ways, depending on how it's invoked and how its default is defined:
+#
+#   --enable-readline ==> boolean true
+#   --disable-readline ==> boolean false
+#
+# Trying to pass --readline or --readline=1 or --readline=0 will
+# result in an "unrecognized option" error, despite the the options
+# call listing the flag as "readline".
+#
+# The behavior described above can lead lead to some confusion when
+# writing help text. For example:
+#
+#   options { json=1 {Disable JSON functions} }
+#
+# The reason the help text says "disable" is because a boolean option
+# defaulting to true is, in the --help text, rendered as:
+#
+#   --disable-json          Disable JSON functions
+#
+# Whereas a bool flag which defaults to false will instead render as:
+#
+#   --enable-FLAG
+#
+# Non-boolean flags, in contrast, use the names specifically given to
+# them in the 'options' invocation. e.g. "with-tcl" is the --with-tcl
+# flag. Autosetup may, however, choose to automatically alter the help
+# text, as demonstrated here:
+#
+#   options {
+#    readline=1           => {Disable readline support}
+#    with-readline-lib:   => {Readline library}
+#    with-readline-inc:   => {Readline include paths}
+#   }
+#
+#   $ ./configure --help | grep readline
+#   --disable-readline      disable readline support
+#   --with-readline-lib     specify readline library
+#   --with-readline-inc     specify readline include paths
+#
+# Note that it prefixed and lower-case the help message. Whether
+# that's a feature or a bug can be debated.
+#
+# Fetching values for flags:
+#
+#   booleans: use one of:
+#     - [opt-bool FLAG] is autosetup's built-in command for this, but we
+#       have some convenience variants:
+#     - [hwaci-opt-truthy FLAG]
+#     - [hwaci-opt-if-truthy FLAG {THEN} {ELSE}]
+#
+#   Non-boolean (i.e. string) flags:
+#     - [opt-val FLAG]
+#
+########################################################################
 options [subst {
   with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATH      => {Full pathname of tclsh to use}
@@ -38,8 +116,8 @@ options [subst {
   editline=0           => {BSD editline support}
   readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
-  with-readline-lib    => {readline library}
-  with-readline-inc    => {readline include paths}
+  with-readline-lib:   => {Readline library}
+  with-readline-inc:   => {Readline include paths}
   with-linenoise:DIR   => {}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
@@ -60,7 +138,7 @@ options [subst {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build.}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
-  dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE}
+  dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE (for build debugging)}
 }]
 
 ########################################################################
@@ -69,20 +147,18 @@ options [subst {
 #  --releasemode: libtool-specific (which we don't have now)
 #
 #
-
-
-set srcdir $autosetup(srcdir)
+set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
 puts "srcdir = $srcdir"
 puts "top_srcdir = $top_srcdir"
-set RELEASE [readfile $autosetup(srcdir)/VERSION]
+set RELEASE [readfile $::autosetup(srcdir)/VERSION]
 regsub {([0-9]*\.*[0-9]*).*} $RELEASE {\1} VERSION
 define VERSION $VERSION
 define RELEASE $RELEASE
 puts "RELEASE = $RELEASE"
 puts "VERSION = $VERSION"
 
-define-append SQLITE_AUTOREMAKE cd $autosetup(srcdir) && $top_srcdir/configure {*}$autosetup(argv)
+define-append SQLITE_AUTOREMAKE cd $::autosetup(srcdir) && $top_srcdir/configure {*}$::autosetup(argv)
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
@@ -210,6 +286,7 @@ if {"" eq [hwaci-bin-define install]} {
 # cross-compiling.
 define BUILD_CC [get-define CC_FOR_BUILD]
 define BUILD_CFLAGS [get-env CFLAGS {-g}]
+define ENABLE_SHARED 1
 
 ########################################################################
 # Handle --with-wasi-sdk=DIR
@@ -443,9 +520,10 @@ proc hwaci-check-tcl {} {
   define TCL_CONFIG_SH $cfg
   # The historical configure.ac sources tclConfig.sh so that it can
   # use the several TCL_... env vars. We obviously cannot do that from
-  # TCL, so we apply a level of indirection. If the config is not
-  # available, this generates empty-string entries for the various
-  # options we're interested in.
+  # TCL, so we apply a level of indirection which sources that script
+  # then emits the pieces we're interested in as TCL code. If the
+  # config is not available, this emits empty-string entries for the
+  # various options we're interested in.
   eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
   #puts "hwaci-check-tcl: with_tclsh=$with_tclsh"
   #puts "hwaci-check-tcl: with_tcl=$with_tcl"
@@ -500,7 +578,6 @@ proc hwaci-check-tcl {} {
     define TCLLIB_RPATH ""
   }
 
-
   if {"" eq $with_tclsh} {
     hwaci-warn "Cannot find a usable tclsh."
   } else {
@@ -513,16 +590,23 @@ hwaci-check-tcl
 ########################################################################
 # Check which TCL to use as a code generator. Prefer jimsh simply
 # because we have it in-tree (it's part of autosetup).
-define CFLAGS_JIMSH {}
+#
+# Building jimsh0.c with -DJIM_COMPAT changes certain behavior to be
+# compatible with canonical TCL. Specifically: jim's [expr] only
+# accepts one arg unless JIM_COMPAT is defined.
+define CFLAGS_JIMSH {-DJIM_COMPAT}
+set useOwnJimsh 0
 puts "Which TCL to use for code generation... "
 set cgtcl jimtcl
 if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE_REALPATH
   define BTCLSH "\$(JIMSH)"
+  set useOwnJimsh 1
 } elseif {[cc-check-functions _fullpath]} {
   # _fullpath() is a Windows API
   define-append CFLAGS_JIMSH -DHAVE__FULLPATH
   define BTCLSH "\$(JIMSH)"
+  set useOwnJimsh 1
 } elseif {"" ne [get-define TCLSH_CMD]} {
   set cgtcl [get-define TCLSH_CMD]
   define BTCLSH "\$(TCLSH_CMD)"
@@ -850,12 +934,6 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
 }; # JimTCL
 
-if {"" eq [get-define CFLAGS_JIMSH]} {
-  define USE_OWN_JIMSH 0
-} else {
-  define USE_OWN_JIMSH 1
-}
-
 ########################################################################
 # Determine proper rpath-handling flags
 hwaci-check-rpath
@@ -877,7 +955,7 @@ if {0} {
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
     -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE
-      TARGET_* USE_GCOV USE_OWN_JIMSH TCL_*} \
+      TARGET_* USE_GCOV TCL_*} \
     -auto {HAVE_* PACKAGE_*} \
     -none *
 }
