@@ -27,7 +27,8 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       instructions on how to build using TCL version 8.6.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
-      [https://www.tcl.tk/software/tcltk/download.html](https://www.tcl.tk/software/tcltk/download.html).
+      <https://www.tcl.tk/software/tcltk/download.html>
+      or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar or unzip the source archive.  CD into the "win/" subfolder
           of the source tree.
       <li>Run: `nmake /f makefile.vc release`
@@ -50,6 +51,12 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       <ul>
       <li> `set TCLDIR=c:\Tcl`
       </ul>
+
+      If you install TCL in the "`c:\Tcl`" directory (as recommended
+      in step 3 above), then this step is optional because
+      "`c:\Tcl`" is the default value for TCLDIR.  You can also skip this
+      step by specifying "`TCLDIR=c:\Tcl`" as an argument to the nmake
+      commands in step 6 below.
 
   6.  Run the "`Makefile.msc`" makefile with an appropriate target.
       Examples:
