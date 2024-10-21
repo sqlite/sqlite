@@ -44,7 +44,12 @@ clean:
 # that, but we're limited to POSIX Make compatibility here. The
 # automatic reconfigures are not too onerous, though, because they're
 # much, much faster than Autotools configure runs.
-
+#
+# - Add target(s) to dump out specific vars, e.g. SQLITE_OPT, as
+# requested at https://sqlite.org/forum/forumpost/75cb3179216f8d86.
+# This would also be useful for the ext/wasm build, which fishes
+# SHELL_OPT out of the makefile.
+#
 #
 # Maintenance reminder: When using the X?=Y variable assignment
 # formulation, please test the build with both GNU make and a POSIX

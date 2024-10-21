@@ -1549,7 +1549,7 @@ xbin: loadfts$(EXE)
 # symbols that do not begin with "sqlite3_". It is run as part of the
 # releasetest.tcl script.
 #
-VALIDIDS=' sqlite3(changeset|changegroup|session)?_'
+VALIDIDS=' sqlite3(changeset|changegroup|session|rebaser)?_'
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o
 	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
