@@ -643,7 +643,6 @@ proc hwaci-check-emsdk {} {
   define EMSDK_HOME ""
   define EMSDK_ENV ""
   define BIN_EMCC ""
-  #  define EMCC_OPT "-Oz"
   msg-checking "Emscripten SDK? "
   if {$emsdkHome eq ""} {
     # Fall back to checking the environment. $EMSDK gets set by
@@ -660,7 +659,6 @@ proc hwaci-check-emsdk {} {
       set rc 1
       set emcc "$emsdkHome/upstream/emscripten/emcc"
       if {[file exists $emcc]} {
-        # puts "is emcc == $emcc ???"
         define BIN_EMCC $emcc
       }
     } else {

@@ -3,6 +3,15 @@
 #
 # This is the main autosetup-compatible configure script for the
 # SQLite project.
+#
+# This script should be kept compatible with JimTCL, a copy of which
+# is included in this source tree as ./autosetup/jimsh0.c. The number
+# of incompatibilities between canonical TCL and JimTCL is very low
+# and alternative formulations of incompatible constructs have, so
+# far, been easy to find.
+#
+# JimTCL: https://jim.tcl.tk
+#
 use cc cc-db cc-shared cc-lib hwaci-common
 set DUMP_DEFINES_FILE ./defines.list
 
@@ -13,6 +22,9 @@ if {[get-define host] ne [get-define build]} {
 }
 
 ########################################################################
+# Regarding flag compatibility with the historical autotool configure
+# script:
+#
 # A very long story made short, autosetup's --flag handling has
 # some behaviors which make it impossible to implement 100% identical
 # flags compared to the historical autotools build. The differences
@@ -845,7 +857,7 @@ if {![get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
   catch {exec chmod u+x $emccsh}
 } else {
   define EMCC_WRAPPER ""
-  catch {file delete -force $emccsh}
+  file delete -force $emccsh
 }
 unset emccsh
 

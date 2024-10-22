@@ -262,10 +262,13 @@ sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
 # call-compatible wrapper, e.g. $(TOP)/tool/emcc.sh. If it's empty,
 # build components requiring Emscripten will not build.
 #
+# Achtung: though _this_ makefile is POSIX-make compatible, the fiddle
+# build requires GNU make.
+#
 EMCC_WRAPPER = @EMCC_WRAPPER@
 fiddle: sqlite3.c shell.c
 	@if [ x = "x$(EMCC_WRAPPER)" ]; then \
-		echo "Emscripten's emcc not found. Cannot build fiddle." 1&>2; \
+		echo "Emscripten SDK not found by configure. Cannot build fiddle." 1&>2; \
 		exit 1; \
 	fi
 	$(MAKE) -C ext/wasm fiddle emcc_opt=-Os
