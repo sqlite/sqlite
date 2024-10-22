@@ -652,6 +652,11 @@ int sqlite3_exec(
 ** filesystem supports doing multiple write operations atomically when those
 ** write operations are bracketed by [SQLITE_FCNTL_BEGIN_ATOMIC_WRITE] and
 ** [SQLITE_FCNTL_COMMIT_ATOMIC_WRITE].
+**
+** The SQLITE_IOCAP_BYPASS property means that it is ok for the
+** B-tree layer to bypass the pager and VFS and read content directly
+** from the filesystem (the SQLITE_DIRECT_OVERFLOW_READ optimization)
+** when that is beneficial for performance.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
@@ -668,6 +673,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
 #define SQLITE_IOCAP_IMMUTABLE              0x00002000
 #define SQLITE_IOCAP_BATCH_ATOMIC           0x00004000
+#define SQLITE_IOCAP_BYPASS                 0x00008000
 
 /*
 ** CAPI3REF: File Locking Levels
@@ -814,6 +820,7 @@ struct sqlite3_file {
 ** <li> [SQLITE_IOCAP_POWERSAFE_OVERWRITE]
 ** <li> [SQLITE_IOCAP_IMMUTABLE]
 ** <li> [SQLITE_IOCAP_BATCH_ATOMIC]
+** <li> [SQLITE_IOCAP_BYPASS]
 ** </ul>
 **
 ** The SQLITE_IOCAP_ATOMIC property means that all writes of
