@@ -838,16 +838,16 @@ define cross_compiling ${cross_compiling}
 ########################################################################
 # Emscripten SDK for building the web-based wasm components.
 #
+set emccsh $srcdir/tool/emcc.sh
 if {![get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
-  set wrapper $srcdir/tool/emcc.sh
-  define EMCC_WRAPPER $wrapper
-  hwaci-make-from-dot-in $wrapper
-  catch {exec chmod u+x $wrapper}
-  unset wrapper
+  define EMCC_WRAPPER $emccsh
+  hwaci-make-from-dot-in $emccsh
+  catch {exec chmod u+x $emccsh}
 } else {
   define EMCC_WRAPPER ""
-  catch {exec rm -f $srcdir/tool/emcc.sh}
+  catch {file delete -force $emccsh}
 }
+unset emccsh
 
 ########################################################################
 # Check for log(3) in libm and die with an error if it is not
