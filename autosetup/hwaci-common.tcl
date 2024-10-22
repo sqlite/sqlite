@@ -94,24 +94,22 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 #}
 
 ########################################################################
-# Works similarly to autosetup's [find-executable-path $binName] but
-# first checks for [get-define prefix]/bin/$binName. Returns the full
-# path to the result or an empty string. If the first argument is -v
-# then it emits info about its status, otherwise it works silently.
+# Usage: hwaci-find-executable-path ?-v? binaryName
+#
+# Works similarly to autosetup's [find-executable-path $binName] but:
+#
+# - If the first arg is -v, it's verbose about searching, else it's quiet.
+#
+# Returns the full path to the result or an empty string.
 proc hwaci-find-executable-path {args} {
   set binName $args
   set verbose 0
   if {[lindex $args 0] eq "-v"} {
     set verbose 1
     set binName [lrange $args 1 end]
-  }
-  if {$verbose} {
     msg-checking "Looking for $binName ... "
   }
-  set check [get-define prefix]/bin/$binName
-  if {"" eq $check || ![file-isexec $check]} {
-    set check [find-executable-path $binName]
-  }
+  set check [find-executable-path $binName]
   if {$verbose} {
     if {"" eq $check} {
       msg-result "not found"
@@ -140,25 +138,18 @@ proc hwaci-bin-define {binName {defName {}}} {
 }
 
 ########################################################################
+# Usage: hwaci-first-bin-of bin...
+#
 # Looks for the first binary found of the names passed to this
-# function. It first looks in [get-define prefix]/bin, then falls back
-# to [cc-path-progs]. If a match is found, the full path to that
-# binary is returned, else "" is returned.
+# function.  If a match is found, the full path to that binary is
+# returned, else "" is returned.
 #
 # Despite using cc-path-progs to do the search, this function clears
 # any define'd name that function stores for the result (because the
 # caller has no sensible way of knowing which result it was unless
 # they pass only a single argument).
 proc hwaci-first-bin-of {args} {
-  set p [get-define prefix]/bin
   foreach b $args {
-    set pb $p/$b
-    msg-checking "Checking for $pb ... "
-    if {[file-isexec $pb]} {
-      msg-result yes
-      return $pb
-    }
-    msg-result no
     if {[cc-path-progs $b]} {
       set u [string toupper $b]
       set x [get-define $u]

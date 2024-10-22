@@ -454,7 +454,7 @@ proc hwaci-check-tcl {} {
       hwaci-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
-      puts "Using tclsh at \"$with_tclsh\""
+      puts "Using tclsh: $with_tclsh"
     }
     if {$use_tcl} {
       if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
@@ -510,6 +510,7 @@ proc hwaci-check-tcl {} {
         }
       }
     }
+    puts "Using tclConfig.sh: $cfg"
   } elseif {!$optTcl} {
     puts "Unable to run tests because of --disable-tcl"
   } else {
