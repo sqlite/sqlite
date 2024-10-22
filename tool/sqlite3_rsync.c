@@ -240,9 +240,9 @@ static int popen2(
                              hStdinRd, hStdoutWr, hStderr,&childPid);
   *pChildPid = childPid;
   fd = _open_osfhandle(PTR_TO_INT(hStdoutRd), 0);
-  *ppIn = fdopen(fd, "r");
+  *ppIn = fdopen(fd, "rb");
   fd = _open_osfhandle(PTR_TO_INT(hStdinWr), 0);
-  *ppOut = _fdopen(fd, "w");
+  *ppOut = _fdopen(fd, "wb");
   CloseHandle(hStdinRd);
   CloseHandle(hStdoutWr);
   return 0;
