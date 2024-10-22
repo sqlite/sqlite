@@ -1,5 +1,5 @@
-C Set\sI/O\smode\sto\sbinary\sin\sWindows\sin\ssqlite3_rsync.
-D 2024-10-22T09:43:27.018
+C Further\schanges\sto\ssqlite3_rsync.c\sto\swork\saround\sWindows\sissues.
+D 2024-10-22T10:29:13.094
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2181,7 +2181,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
 F tool/sqlite3_analyzer.c.in 348ba349bbdc93c9866439f9f935d7284866a2a4e6898bc906ae1204ade56918
-F tool/sqlite3_rsync.c 501ffba428d5150bdf7e178369e5d70af4c93e87bb943ae11f5d3889fcb17aec
+F tool/sqlite3_rsync.c 6c9cac5a9197f591985b271aeff803ec4fb4db36c8eab97e1331ff64aa1b8d94
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a2f5f4e378338951cc2030ffbacd678e6a6eab142e39ee632c61be42345b092
-R bd59add05d030d8e620303bf0a3a15a0
+P 67175287440cf363df01bed2464122c3b686a82ea82aeecd3f45fe90c359495c
+R 58b5147977291d7ab43e6696ae456e76
 U drh
-Z 9922bc02103a3015dbb6c18ac09bbbb9
+Z c3d98da9f482cd0d68ad72a19eedb45b
 # Remove this line to create a well-formed Fossil manifest.
