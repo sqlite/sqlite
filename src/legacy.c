@@ -48,12 +48,8 @@ int sqlite3_exec(
   while( rc==SQLITE_OK && zSql[0] ){
     int nCol = 0;
     char **azVals = 0;
-    i64 tmStart = sqlite3STimeNow();
-    u64 svFlags = db->flags;
-    if( db->init.busy ){
-      db->flags |= SQLITE_StmtScanStatus;
-    }
 
+    sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_BEFORE_PREPARE);
     pStmt = 0;
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     assert( rc==SQLITE_OK || pStmt==0 );
@@ -67,6 +63,7 @@ int sqlite3_exec(
     }
     callbackIsInit = 0;
 
+    sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_BEFORE_STEP);
     while( 1 ){
       int i;
       rc = sqlite3_step(pStmt);
@@ -112,10 +109,8 @@ int sqlite3_exec(
         }
       }
 
+      sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_BEFORE_FINALIZE);
       if( rc!=SQLITE_ROW ){
-        if( db->init.busy && (sqlite3STimeNow()-tmStart)>PREPARE_TIME_TIMEOUT ){
-          sqlite3SchemaTimeLog((Vdbe*)pStmt);
-        }
         rc = sqlite3VdbeFinalize((Vdbe *)pStmt);
         pStmt = 0;
         zSql = zLeftover;
@@ -124,11 +119,6 @@ int sqlite3_exec(
       }
     }
 
-    if( db->init.busy ){
-      /* Clear the SQLITE_StmtScanStatus flag if it was clear at the top
-      ** of this loop.  */
-      db->flags &= (~SQLITE_StmtScanStatus | svFlags);
-    }
     sqlite3DbFree(db, azCols);
     azCols = 0;
   }

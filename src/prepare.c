@@ -209,6 +209,11 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   int openedTransaction = 0;
   int mask = ((db->mDbFlags & DBFLAG_EncodingFixed) | ~DBFLAG_EncodingFixed);
 
+  u64 aSchemaTime[SCHEMA_TIME_N];
+  memset(aSchemaTime, 0, sizeof(aSchemaTime));
+  db->aSchemaTime = aSchemaTime;
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_START);
+
   assert( (db->mDbFlags & DBFLAG_SchemaKnownOk)==0 );
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pSchema );
@@ -243,6 +248,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     goto error_out;
   }
 
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_AFTER_CREATE_1);
+
   /* Create a cursor to hold the database open
   */
   pDb = &db->aDb[iDb];
@@ -265,6 +272,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     }
     openedTransaction = 1;
   }
+
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_AFTER_OPEN_TRANS);
 
   /* Get the database meta information.
   **
@@ -290,6 +299,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
     memset(meta, 0, sizeof(meta));
   }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
+
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_AFTER_GET_META);
 
   /* If opening a non-empty database, check the text encoding. For the
   ** main database, set sqlite3.enc to the encoding of the main database.
@@ -326,6 +337,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   }
   pDb->pSchema->enc = ENC(db);
 
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_AFTER_FIX_ENCODING);
+
   if( pDb->pSchema->cache_size==0 ){
 #ifndef SQLITE_OMIT_DEPRECATED
     size = sqlite3AbsInt32(meta[BTREE_DEFAULT_CACHE_SIZE-1]);
@@ -336,6 +349,8 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #endif
     sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
   }
+
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_AFTER_SETCACHESIZE);
 
   /*
   ** file_format==1    Version 3.0.0.
@@ -377,6 +392,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
       xAuth = db->xAuth;
       db->xAuth = 0;
 #endif
+      sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_BEGIN_EXEC);
       rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
 #ifndef SQLITE_OMIT_AUTHORIZATION
       db->xAuth = xAuth;
@@ -384,11 +400,13 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #endif
     if( rc==SQLITE_OK ) rc = initData.rc;
     sqlite3DbFree(db, zSql);
+    sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_BEGIN_ANALYZE_LOAD);
 #ifndef SQLITE_OMIT_ANALYZE
     if( rc==SQLITE_OK ){
       sqlite3AnalysisLoad(db, iDb);
     }
 #endif
+    sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_END_ANALYZE_LOAD);
   }
   assert( pDb == &(db->aDb[iDb]) );
   if( db->mallocFailed ){
@@ -422,6 +440,9 @@ initone_error_out:
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
+  db->aSchemaTime = 0;
+  sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_FINISH);
+  sqlite3SchemaTimeLog(aSchemaTime);
   if( rc ){
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       sqlite3OomFault(db);
