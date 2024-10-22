@@ -419,26 +419,39 @@ proc hwaci-check-compile-commands {{configOpt {}}} {
 }
 
 ########################################################################
-# Uses [make-template] to create makefile(-like) file $filename from
-# $filename.in but explicitly makes the output read-only, to avoid
-# inadvertent editing (who, me?).
+# Runs the 'touch' command on one or more files, ignoring any errors.
+proc hwaci-touch {filename} {
+  catch { exec touch {*}$filename }
+}
+
+########################################################################
+# Usage:
 #
-# The second argument is an optional boolean specifying whether to
-# `touch` the generated files. This can be used as a workaround for
+#   hwaci-make-from-dot-in ?-touch? filename(s)...
+#
+# Uses [make-template] to create makefile(-like) file(s) $filename
+# from $filename.in but explicitly makes the output read-only, to
+# avoid inadvertent editing (who, me?).
+#
+# If the first argument is -touch then the generated file is touched
+# to update its timestamp. This can be used as a workaround for
 # cases where (A) autosetup does not update the file because it was
 # not really modified and (B) the file *really* needs to be updated to
-# please the build process. Pass any non-0 value to enable touching.
-#
-# The argument may be a list of filenames.
+# please the build process.
 #
 # Failures when running chmod or touch are silently ignored.
-proc hwaci-make-from-dot-in {filename {touch 0}} {
+proc hwaci-make-from-dot-in {args} {
+  set filename $args
+  set touch 0
+  if {[lindex $args 0] eq "-touch"} {
+    set touch 1
+    set filename [lrange $args 1 end]
+  }
   foreach f $filename {
     catch { exec chmod u+w $f }
     make-template $f.in $f
-    if {0 != $touch} {
-      puts "Touching $f"
-      catch { exec touch $f }
+    if {$touch} {
+      hwaci-touch $f
     }
     catch { exec chmod -w $f }
   }

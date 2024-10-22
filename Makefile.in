@@ -13,7 +13,6 @@
 #
 all:
 clean:
-
 ########################################################################
 #XX# Lines starting with #XX# are TODOs for the port to autosetup.
 #

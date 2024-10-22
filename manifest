@@ -1,9 +1,9 @@
-C Rename\shwaci-error\sto\sthe\smore\sdescriptive\shwaci-fatal.\sUse\sautosetup's\sfile-isexec\sinstead\sof\s[file\sexecutable]\sfor\sportability.\sRemove\sthe\sbinary\sfile\slookup\scache\s-\sunnecessary\scomplexity.\sWhen\ssearching\sfor\stools\slike\stclsh,\scheck\sunder\s$prefix/bin\sbefore\schecking\sthe\s$PATH.\sThis\sseems\slike\sthe\sright\sthing\sto\sdo,\sbut\sthe\sfact\sthat\sautosetup's\sfile-search\sAPI's\sdo\snot\sdo\sthat\sby\sdefault\sleaves\ssome\sroom\sfor\sdoubt\sabout\sthe\swisdom\sof\sthis\schange.
-D 2024-10-22T03:12:11.011
+C Touch\sconfigure-generated\sfiles\sat\sconfigure-time\seven\sif\sautosetup\sdoes\snot\supdate\sthem\sbecause\stheir\scontents\swould\snot\sbe\schanged.\sWorks\saround\swonky\sdeps\scausing\stoo-frequent\srebuilds.
+D 2024-10-22T03:33:11.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 88f9238a6fcf4ea77c24942fa58772bd206f14b0cd604b6267e7075d609b878a
+F Makefile.in c6f6af495b8bdbc106a258efcafa15f007e00d883ce7bbc4567d88ab674b3e1b
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def b4eaca56a2ad8911a848aa0f14dfe2e60f6358edbe1dc846e7f91295613cf2f4
+F auto.def f09183abc026e18248b6ea08ff6729534c9085593e1792242b85d117e17d21a2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -48,7 +48,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl 4a11759d8cd202cba850787c0b4861fff3924404700e211b6b669b15ad448a5e
+F autosetup/hwaci-common.tcl 35741010b16e295831b9f0509eefabde296393077dcdfbacfac08664024a571b
 F autosetup/jimsh0.c 1b5fe91fffcddbc29f2b16acb80f1650632ea2edbe8336b8155ef7b4c66f6d8d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c00a03256b3f06411f93e690f875e9bc59a750aeea3ecf84bf8c8bec7c08b8ae
-R 0bfab33c3e9fc3e64d010c7b8b0822a3
+P 4d4423df8d14fb683bb89bebeac4b108a40847259a116fcb634b9e6594907026
+R 11d74630845ef40c7f6ed5b9fbaad6cc
 U stephan
-Z 6a399f67a3c0dba538ebcc158b7d53df
+Z 563969555f9e1585b74abf0a638fb9ce
 # Remove this line to create a well-formed Fossil manifest.

@@ -941,8 +941,7 @@ hwaci-check-rpath
 ########################################################################
 # Generate the output files.
 #
-hwaci-make-from-dot-in Makefile
-hwaci-make-from-dot-in sqlite3.pc
+hwaci-make-from-dot-in -touch Makefile sqlite3.pc
 # for sqlite_cfg.h
 define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION [get-define VERSION]
@@ -958,6 +957,7 @@ if {0} {
       TARGET_* USE_GCOV TCL_*} \
     -auto {HAVE_* PACKAGE_*} \
     -none *
+  hwaci-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTOREMAKE@
 }
 #TODO hwaci-make-from-dot-in ext/wasm/GNUmakefile
 
