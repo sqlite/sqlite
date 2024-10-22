@@ -16,7 +16,7 @@ EMSDK_HOME="@EMSDK_HOME@"
 EMSDK_ENV="@EMSDK_ENV@"
 emcc="@BIN_EMCC@"
 
-if [x = "x${emcc}" ]; then
+if [ x = "x${emcc}" ]; then
     emcc=`which emcc 2>/dev/null`
 fi
 

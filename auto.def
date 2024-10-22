@@ -838,7 +838,7 @@ define cross_compiling ${cross_compiling}
 ########################################################################
 # Emscripten SDK for building the web-based wasm components.
 #
-if {0 eq [get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
+if {![get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
   set wrapper $srcdir/tool/emcc.sh
   define EMCC_WRAPPER $wrapper
   hwaci-make-from-dot-in $wrapper
