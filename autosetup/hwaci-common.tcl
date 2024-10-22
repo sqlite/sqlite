@@ -41,15 +41,13 @@
 # updating global state via feature tests.
 ########################################################################
 
-array set hwaci-cache- {} ; # used for caching various results.
-
 proc hwaci-warn {msg} {
   puts "WARNING: $msg"
 }
 proc hwaci-notice {msg} {
   puts "NOTICE: $msg"
 }
-proc hwaci-error {msg} {
+proc hwaci-fatal {msg} {
   user-error "ERROR: $msg"
 }
 
@@ -88,39 +86,52 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 }
 
 ########################################################################
-# Looks for binary named $binName and `define`s $defName to that full
-# path, or an empty string if not found. Returns the value it defines.
-# This caches the result for a given $binName/$defName combination, so
-# calls after the first for a given combination will always return the
-# same result.
-#
-# If defName is empty then "BIN_X" is used, where X is the upper-case
-# form of $binName with any '-' characters replaced with '_'.
-proc hwaci-bin-define {binName {defName {}}} {
-  global hwaci-cache-
-  set cacheName "$binName:$defName"
-  set check {}
-  if {[info exists hwaci-cache-($cacheName)]} {
-    set check $hwaci-cache-($cacheName)
+# If $v is true, [puts $msg] is called, else puts is not called.
+#proc hwaci-maybe-verbose {v msg} {
+#  if {$v} {
+#    puts $msg
+#  }
+#}
+
+########################################################################
+# Works similarly to autosetup's [find-executable-path $binName] but
+# first checks for [get-define prefix]/bin/$binName. Returns the full
+# path to the result or an empty string. If the first argument is -v
+# then it emits info about its status, otherwise it works silently.
+proc hwaci-find-executable-path {args} {
+  set binName $args
+  set verbose 0
+  if {[lindex $args 0] eq "-v"} {
+    set verbose 1
+    set binName [lrange $args 1 end]
   }
-  msg-checking "Looking for $binName ... "
-  if {"" ne $check} {
-    set lbl $check
-    if {"<not found>" eq $check} {
-      set lbl "not found"
-      set check ""
+  if {$verbose} {
+    msg-checking "Looking for $binName ... "
+  }
+  set check [get-define prefix]/bin/$binName
+  if {"" eq $check || ![file-isexec $check]} {
+    set check [find-executable-path $binName]
+  }
+  if {$verbose} {
+    if {"" eq $check} {
+      msg-result "not found"
+    } else {
+      msg-result $check
     }
-    msg-result "(cached) $lbl"
-    return $check
   }
-  set check [find-executable-path $binName]
-  if {"" eq $check} {
-    msg-result "not found"
-    set hwaci-cache-($cacheName) "<not found>"
-  } else {
-    msg-result $check
-    set hwaci-cache-($cacheName) $check
-  }
+  return $check
+}
+
+########################################################################
+# Uses [hwaci-find-executable-path $binName] to (verbosely) search for
+# a binary, sets a define (see below) to the result, and returns the
+# result (an empty string if not found).
+#
+# The define'd name is: if defName is empty then "BIN_X" is used,
+# where X is the upper-case form of $binName with any '-' characters
+# replaced with '_'.
+proc hwaci-bin-define {binName {defName {}}} {
+  set check [hwaci-find-executable-path -v $binName]
   if {"" eq $defName} {
     set defName "BIN_[string toupper [string map {- _} $binName]]"
   }
@@ -129,16 +140,25 @@ proc hwaci-bin-define {binName {defName {}}} {
 }
 
 ########################################################################
-# Each argument is passed to cc-path-progs. If that function returns
-# true, the full path to that binary is returned. If no matches are
-# found, "" is returned.
+# Looks for the first binary found of the names passed to this
+# function. It first looks in [get-define prefix]/bin, then falls back
+# to [cc-path-progs]. If a match is found, the full path to that
+# binary is returned, else "" is returned.
 #
 # Despite using cc-path-progs to do the search, this function clears
 # any define'd name that function stores for the result (because the
 # caller has no sensible way of knowing which result it was unless
 # they pass only a single argument).
 proc hwaci-first-bin-of {args} {
+  set p [get-define prefix]/bin
   foreach b $args {
+    set pb $p/$b
+    msg-checking "Checking for $pb ... "
+    if {[file-isexec $pb]} {
+      msg-result yes
+      return $pb
+    }
+    msg-result no
     if {[cc-path-progs $b]} {
       set u [string toupper $b]
       set x [get-define $u]

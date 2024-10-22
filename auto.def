@@ -263,7 +263,7 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
 #########
 # Programs needed
 if {"" eq [hwaci-bin-define install]} {
-  msg-result "Cannot find install binary, so 'make install' will not work."
+  hwaci-warn "Cannot find install binary, so 'make install' will not work."
   # Reminder: we historically have ./install-sh in the source tree.
   # Can we not simply use that?
   #
@@ -449,9 +449,9 @@ proc hwaci-check-tcl {} {
 
   if {"" ne $with_tclsh} {
     if {![file isfile $with_tclsh]} {
-      hwaci-error "TCL shell $with_tclsh is not a file"
-    } elseif {![file executable $with_tclsh]} {
-      hwaci-error "TCL shell $with_tclsh is not executable"
+      hwaci-fatal "TCL shell $with_tclsh is not a file"
+    } elseif {![file-isexec $with_tclsh]} {
+      hwaci-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
       puts "Using tclsh at \"$with_tclsh\""
@@ -484,7 +484,7 @@ proc hwaci-check-tcl {} {
         }
       }
       if {"" eq $cfg} {
-        hwaci-error "No tclConfig.sh found under ${with_tcl}"
+        hwaci-fatal "No tclConfig.sh found under ${with_tcl}"
       }
     } else {
       # If we have not yet found a tclConfig.sh file, look in $libdir which is
@@ -502,7 +502,7 @@ proc hwaci-check-tcl {} {
         }
       }
       if {![file readable $cfg]} {
-        hwaci-error {
+        hwaci-fatal {
           Cannot find a usable tclConfig.sh file.
           Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
           SQLite does not use TCL internally, but TCL is required to build SQLite
@@ -532,9 +532,9 @@ proc hwaci-check-tcl {} {
 
   if {"" eq $with_tclsh} {
     set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
-    if {![file executable $with_tclsh]} {
+    if {![file-isexec $with_tclsh]} {
       set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
-      if {![file executable $with_tclsh2]} {
+      if {![file-isexec $with_tclsh2]} {
         hwaci-warn "Cannot find a usable tclsh as $with_tclsh or $with_tclsh2"
       } else {
         set with_tclsh $with_tclsh2
@@ -572,7 +572,7 @@ proc hwaci-check-tcl {} {
     }
     define TCLLIBDIR $tcllibdir
     define TCLLIB_RPATH $tclrpath
-    #hwaci-error "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
+    #hwaci-fatal "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
   } else {
     define TCLLIBDIR ""
     define TCLLIB_RPATH ""
@@ -617,16 +617,16 @@ if {[cc-check-functions realpath]} {
     set tpre [get-define TCL_EXEC_PREFIX]
     if {"" ne $tpre} {
       set tv [get-define TCL_VERSION]
-      if {[file executable "${tpre}/bin/tclsh${tv}"]} {
+      if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
         define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
-      } elseif {[file executable "${tpre}/bin/tclsh"]} {
+      } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
         define TCLSH_CMD "${tpre}/bin/tclsh"
       }
       unset tv
     }
     unset tpre
     if {"" eq [get-define TCLSH_CMD]} {
-      hwaci-error "Cannot find a tclsh to use for code generation."
+      hwaci-fatal "Cannot find a tclsh to use for code generation."
     }
   }
   set cgtcl [get-define TCLSH_CMD]
