@@ -809,7 +809,7 @@ static const unsigned char aJournalMagic[] = {
 ** by the b-tree layer. This is the case if:
 **
 **   (1)  the database file is open
-**   (2)  the VFS for the database has BYPASS capability
+**   (2)  the VFS for the database is able to do unaligned sub-page reads
 **   (3)  there are no dirty pages in the cache, and
 **   (4)  the desired page is not currently in the wal file.
 */
@@ -819,7 +819,7 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->fd->pMethods==0 ) return 0;  /* Case (1) */
   assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
   if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
-        & SQLITE_IOCAP_BYPASS)==0 ){
+        & SQLITE_IOCAP_SUBPAGE_READ)==0 ){
     return 0; /* Case (2) */
   }
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0; /* Failed (3) */
