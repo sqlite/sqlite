@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_IOCAP_SUBPAGE_READ\sbit\sto\sthe\spossible\sreturns\svalues\nfrom\sxDeviceCharacteristics\smethod\sof\sthe\ssystem-IO\sabstract\sclass.\s\sThe\ndirect-overflow-read\soptimization\sis\sdisabled\sfor\sany\sVFS\sthat\sdoes\snot\nset\sthis\sbit.\s\sThe\sbit\sis\sset\sfor\sstandard\sVFSes.
-D 2024-10-22T19:33:20.597
+C Add\sthe\s"halt"\scommand\sto\stestrunner.tcl
+D 2024-10-22T20:09:18.729
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1721,7 +1721,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 7b44f1a9b9a2de8112695b908afc21dd9a68cd2d44e84b73f1b27b53492c0d59
-F test/testrunner.tcl 1472b8c57c124c7eed934a2cbc955b0c0e0a948a4608546598195267bbd4b2fd x
+F test/testrunner.tcl bc1a8d21a1aa3a5cf7c4883cbee4b6748790fe960fad06ca5db74ec914bd6525 x
 F test/testrunner_data.tcl c7b3b911e44f7e8c01cc6bc7571e16115cdc2e4db46630bd2acd7a931a46380e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2219,9 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53491688cf622ca317b3ff56156e601c2bdfffc94e4fe471ca82d5ba1d9e875f dd446ef1816f4e95ce29de0b3841dd0a6c983646fd2dd271c2db8f3263478164
-R ca0e4d7e96f02509781264c3f3c418db
-T +closed dd446ef1816f4e95ce29de0b3841dd0a6c983646fd2dd271c2db8f3263478164
+P 6e7d498cda1d8fa76f3efac0ee0540dd8241db75e85b863097cab2ed530aabb0
+R 3f2f8232d3d7a010fd492d1d7a07579d
 U drh
-Z c62b27a13345423a196a9df8f7a1e878
+Z 0f04567a08f24373cd91fb87cc03186b
 # Remove this line to create a well-formed Fossil manifest.

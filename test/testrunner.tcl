@@ -91,6 +91,7 @@ Usage:
     $a0 njob ?NJOB?
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
+    $a0 halt
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
@@ -326,7 +327,7 @@ set TRG(schema) {
     endtime INTEGER,                    -- End time
     span INTEGER,                       -- Total run-time in milliseconds
     estwork INTEGER,                    -- Estimated amount of work
-    state TEXT CHECK( state IN ('','ready','running','done','failed','omit') ),
+    state TEXT CHECK( state IN ('','ready','running','done','failed','omit','halt') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
     svers TEXT,                         -- Reported SQLite version
@@ -420,6 +421,19 @@ if {([llength $argv]==2 || [llength $argv]==1)
   set res [mydb one { SELECT value FROM config WHERE name='njob' }]
   mydb close
   puts "$res"
+  exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "halt" command:
+#
+if {[llength $argv]==1
+ && [string compare -nocase halt [lindex $argv 0]]==0
+} {
+  sqlite3 mydb $TRG(dbname)
+  mydb eval {UPDATE jobs SET state='halt' WHERE state IN ('ready','')}
+  mydb close
   exit
 }
 #--------------------------------------------------------------------------
@@ -1325,7 +1339,7 @@ proc mark_job_as_finished {jobid output state endtm} {
         SET output=$output, state=$state, endtime=$endtm, span=$endtm-starttime,
             ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
-      UPDATE jobs SET state=$childstate WHERE depid=$jobid;
+      UPDATE jobs SET state=$childstate WHERE depid=$jobid AND state!='halt';
       UPDATE config SET value=value+$nerr WHERE name='nfail';
       UPDATE config SET value=value+$ntest WHERE name='ntest';
     }
