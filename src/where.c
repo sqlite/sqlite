@@ -7441,14 +7441,28 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
             OpcodeRewriteTrace(db, k, pOp);
-          }else{
-            /* Unable to translate the table reference into an index
-            ** reference.  Verify that this is harmless - that the
-            ** table being referenced really is open.
-            */
+          }else if( pLoop->wsFlags & (WHERE_IDX_ONLY|WHERE_EXPRIDX) ){
             if( pLoop->wsFlags & WHERE_IDX_ONLY ){
+              /* An error. pLoop is supposed to be a covering index loop,
+              ** and yet the VM code refers to a column of the table that 
+              ** is not part of the index.  */
               sqlite3ErrorMsg(pParse, "internal query planner error");
               pParse->rc = SQLITE_INTERNAL;
+            }else{
+              /* The WHERE_EXPRIDX flag is set by the planner when it is likely
+              ** that pLoop is a covering index loop, but it is not possible
+              ** to be 100% sure. In this case, any OP_Explain opcode
+              ** corresponding to this loop describes the index as a "COVERING
+              ** INDEX". But, pOp proves that pLoop is not actually a covering 
+              ** index loop. So clear the WHERE_EXPRIDX flag and rewrite the
+              ** text that accompanies the OP_Explain opcode, if any.  */
+              pLoop->wsFlags &= ~WHERE_EXPRIDX;
+              sqlite3WhereAddExplainText(pParse,
+                  pLevel->addrBody-1,
+                  pTabList,
+                  pLevel,
+                  pWInfo->wctrlFlags
+              );
             }
           }
         }else if( pOp->opcode==OP_Rowid ){
