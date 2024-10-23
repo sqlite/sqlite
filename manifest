@@ -1,5 +1,5 @@
-C Add\smissing\sexport\sof\sLDFLAGS_DLOPEN\sto\sMakefile.in.
-D 2024-10-23T15:05:08.949
+C Remove\sthe\sconfigure-script\sVERSION\scheck\sfrom\stool/srctree-check.tcl,\sas\sit's\snot\srelevant\sin\sthe\sautosetup\sbuild.
+D 2024-10-23T15:13:43.582
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2206,7 +2206,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
-F tool/srctree-check.tcl c15f860a3c97d5f7b4c14b60392d9466af29dd006c4ef18127f502641e2977a8
+F tool/srctree-check.tcl 1f1f505835a4beca64c1751a7ebec5c41a1ddf22b1e80481345b95059eef6583
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19d78fcef469a15487953ce2d227746ad83c0360fdc42cd4b6df6a2bc5ebb8ae
-R 1a61abf85307cb0889267743564ae1c2
+P d18af84bf76db16513791b43850c41dbb5a83c435b8d3e93afaa8c2920460ac7
+R fcf740736e0c66190eba26f9f4b8a254
 U stephan
-Z 857140f1e561af28f97e4baf820cd93c
+Z f4e3e16667421c51bf77ba9ddc8d742f
 # Remove this line to create a well-formed Fossil manifest.
