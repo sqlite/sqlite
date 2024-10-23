@@ -1,5 +1,5 @@
-C Remove\sthe\sconfigure-script\sVERSION\scheck\sfrom\stool/srctree-check.tcl,\sas\sit's\snot\srelevant\sin\sthe\sautosetup\sbuild.
-D 2024-10-23T15:13:43.582
+C Work\saround\sa\sminor\sJimTCL\sregexp\sincompatibility\sin\stool/vdbe-compress.tcl.\sSummary:\sit\sthinks\sthat\sbackslash-escaped\soctal\svalues\sare\sback-references,\swhich\sit\sdoes\snot\slike.
+D 2024-10-23T16:03:51.991
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2213,7 +2213,7 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
 F tool/tclConfigShToTcl.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
-F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
+F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d18af84bf76db16513791b43850c41dbb5a83c435b8d3e93afaa8c2920460ac7
-R fcf740736e0c66190eba26f9f4b8a254
+P 6c5826d7522eade0f5682367637f45b0b64a7cced3cd7d643a30fb9ab0acd2a9
+R 4b2c513ad55674fcf9024d65f21597c1
 U stephan
-Z f4e3e16667421c51bf77ba9ddc8d742f
+Z 4d628e9a2ca6d7aa1cdb129ebf537bbf
 # Remove this line to create a well-formed Fossil manifest.
