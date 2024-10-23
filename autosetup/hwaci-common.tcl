@@ -610,11 +610,11 @@ proc hwaci-affirm-files-exist {args} {
     set args [lrange $args 1 end]
   }
   foreach f $args {
-    if {$verbose} { msg-checking "looking for file... " }
+    if {$verbose} { msg-checking "Looking for $f ... " }
     if {![file exists $f]} {
       user-error "not found: $f"
     }
-    if {$verbose} { msg-result "$f" }
+    if {$verbose} { msg-result "" }
     set rc $f
   }
   return rc

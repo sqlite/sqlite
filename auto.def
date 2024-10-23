@@ -301,54 +301,53 @@ if {"" eq [hwaci-bin-define install]} {
 define BUILD_CC [get-define CC_FOR_BUILD]
 define BUILD_CFLAGS [get-env CFLAGS {-g}]
 define ENABLE_SHARED 1
+define HAVE_TCL 0
 
 ########################################################################
 # Handle --with-wasi-sdk=DIR
 #
-# This must be early because it may change the toolchain and several
-# config options.
-#
-# It's unclear whether we can actually get away with making these
-# changes to the autosetup environment.
-define HAVE_TCL 0
-define HAVE_WASI_SDK 0
-if {1} {
+# This must be early because it may change the toolchain and disable
+# several config options.
+proc hwaci-check-wasi-sdk {} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
+  define HAVE_WASI_SDK 0
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
-  if {$wasiSdkDir ne ""} {
-    msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
-    #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
-    hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
-    msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
-    define HAVE_WASI_SDK 1
-    define WASI_SDK_DIR $wasiSdkDir
-    hwaci-opt-set load-extension 0; # ==> --disable-load-extension
-    hwaci-opt-set threadsafe 0; # ==> --threadsafe=0
-    hwaci-opt-set tcl 0; # ==> --disable-tcl
-    define HAVE_TCL 0
-    set cross_compiling 1
-    # libtool is apparently hard-coded to use gcc for linking DLLs, so
-    # we disable the DLL build.
-    define ENABLE_SHARED 0
-
-    # Changing --host and --target have no effect here except to possibly
-    # cause confusion. autoconf has finished processing them by this
-    # point.
-    #
-    #  host_alias=wasm32-wasi
-    #  target=wasm32-wasi
-    #
-    # Merely changing CC and LD to the wasi-sdk's is enough to get
-    # sqlite3.o building in WASM format.
-    # XXX CC="${wasiSdkDir}/bin/clang"
-    # XXX LD="${wasiSdkDir}/bin/wasm-ld"
-    # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
-    define CC "${wasiSdkDir}/bin/clang"
-    define LD "${wasiSdkDir}/bin/wasm-ld"
-    #define STRIP "${wasiSdkDir}/bin/strip"
+  if {$wasiSdkDir eq ""} {
+    return 0
+  } elseif {$::cross_compiling} {
+    hwaci-fatal "Cannot combine --with-wasi-sdk with cross-compilation"
   }
-  unset wasiSdkDir
-}; # --wasi-sdk-dir
+  msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
+  #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
+  hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
+  msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
+  define HAVE_WASI_SDK 1
+  define WASI_SDK_DIR $wasiSdkDir
+  hwaci-opt-set load-extension 0; # ==> --disable-load-extension
+  hwaci-opt-set threadsafe 0; # ==> --threadsafe=0
+  hwaci-opt-set tcl 0; # ==> --disable-tcl
+  define HAVE_TCL 0
+  set cross_compiling 1
+  define ENABLE_SHARED 0
+
+  # Changing --host and --target have no effect here except to possibly
+  # cause confusion. autoconf has finished processing them by this
+  # point.
+  #
+  #  host_alias=wasm32-wasi
+  #  target=wasm32-wasi
+  #
+  # Merely changing CC and LD to the wasi-sdk's is enough to get
+  # sqlite3.o building in WASM format.
+  # XXX CC="${wasiSdkDir}/bin/clang"
+  # XXX LD="${wasiSdkDir}/bin/wasm-ld"
+  # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
+  define CC "${wasiSdkDir}/bin/clang"
+  define LD "${wasiSdkDir}/bin/wasm-ld"
+  #define STRIP "${wasiSdkDir}/bin/strip"
+  return 1
+}; # hwaci-check-wasi-sdk
+hwaci-check-wasi-sdk
 
 #
 # Enable large file support (if special flags are necessary)
@@ -447,6 +446,7 @@ hwaci-if-opt-truthy with-debug {
 #
 define TCLSH_CMD {exit 1}
 proc hwaci-check-tcl {} {
+  # TODO: document the steps this is taking.
   global top_srcdir
   puts "Checking for a suitable tcl... "
   set optTcl [hwaci-opt-truthy tcl]
@@ -535,7 +535,6 @@ proc hwaci-check-tcl {} {
     break
   }
 
-  define HAVE_TCL 0
   define TCL_CONFIG_SH $cfg
   # The historical configure.ac sources tclConfig.sh so that it can
   # use the several TCL_... env vars. We obviously cannot do that from
