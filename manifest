@@ -1,5 +1,5 @@
-C Changes\sto\sEXPLAIN\sQUERY\sPLAN\sto\sidentify\scovering\sindex\splan\sthat\suse\sindexes\son\sexpressions.
-D 2024-10-22T20:16:41.027
+C Add\stwo\snew\s#include\sstatements\sto\sthe\scomposite\s"fts5.c"\sfile\sthat\nis\sconstructed\sas\spart\sof\sthe\sbuild\sprocess.\s\sThese\s#includes\sare\sno-ops\nin\sthe\sSQLite\samalgamation\s(and\sare\scommented\sout\sautomatically\sby\sthe\namalgamation\sbuilder)\sbut\sare\sneeded\sif\sthe\sFTS5\sextension\sis\sbuilt\nseparately,\sit\sseems.\n[https://bugzilla.mozilla.org/show_bug.cgi?id=1926321#c3|Enhancement\srequest].
+D 2024-10-23T10:36:02.768
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -258,7 +258,7 @@ F ext/fts5/test/fts5vocab2.test bbba149c254375d00055930c1a501c9a51e80b0d20bf7b98
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
-F ext/fts5/tool/mkfts5c.tcl 3eba8e9bee4221ed165f3304b51b2a74a705f4ec5df3d044573a2be539534af8
+F ext/fts5/tool/mkfts5c.tcl 6649ed963a9135e36866f7cc9f8de5c8dcec85b5df089388274cee6381702cb7
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c 3add8197e0a86c1761771a39500ebae749438bcf1836160b407a56b4eaa8721c
@@ -2219,9 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2cc25d5dbbc729f3b6deb8c6a45b975c535b4d20ad240e4ec0c85b3733a170ed 3bb03a2891e30c58b66e3665a8877a8eab4a8bac57ee153d8d31358caeaf4b7c
-R 15f28231c08df955e5429fb2ddbc37e9
-T +closed 3bb03a2891e30c58b66e3665a8877a8eab4a8bac57ee153d8d31358caeaf4b7c
-U dan
-Z ab6831b500df3a1cef4b8dd808d1b189
+P 29fb4919b6118b3b9ae411ec2ed5b59db7fae281909501c5fa238221ba635db5
+R 462eb90cd57fbab6c1cc9ab949c5cec7
+U drh
+Z 54d605f0ae44fd417398f5aefbd89d12
 # Remove this line to create a well-formed Fossil manifest.
