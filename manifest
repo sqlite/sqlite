@@ -1,5 +1,5 @@
-C Latest\sautosetup/autosetup-find-tclsh\sfrom\s[https://github.com/msteveb/autosetup/issues/67\s|\sautosetup\sticket\s#67].
-D 2024-10-23T02:22:57.277
+C Another\sfix\sfor\sautosetup/autosetup-find-tclsh\sfor\sthe\scase\swhere\sa\stclsh\sis\sfound\son\sthe\ssystem.
+D 2024-10-23T02:36:50.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -41,7 +41,7 @@ F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a7
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
-F autosetup/autosetup-find-tclsh c069d923d2011cba166279ba64b0bde7034fbf908d3a152f30a31a5109a9788e x
+F autosetup/autosetup-find-tclsh 38dc4ac03c061d5ee53ecd1ec2fc3d5f0bbf4e84a7123d3160e01d26b5858f36 x
 F autosetup/autosetup-test-tclsh 749d20defee533a3842139df47d700fc7a334a5da7bdbd444ae5331744b06c5f
 F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034b10a7b
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 151d7dfc8da64932f624528ed55764df6408a578bddc741b3dbf2f14567a0d71
-R fe90ed312938329808e1758de666366b
+P 0e33f6cd48cb844331e66bfcfd93f83671380edef70b1e6684c09a7d4671eb17
+R 622e148ca442ba8131692c41eab1e194
 U stephan
-Z 6cca0bc2add495ade6fe85a85eaad438
+Z b8ce9feceacfd8aa8f9ced68df333f7b
 # Remove this line to create a well-formed Fossil manifest.
