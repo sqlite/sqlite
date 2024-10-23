@@ -817,11 +817,6 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   assert( pPager!=0 );
   assert( pPager->fd!=0 );
   if( pPager->fd->pMethods==0 ) return 0;  /* Case (1) */
-  assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
-  if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
-        & SQLITE_IOCAP_SUBPAGE_READ)==0 ){
-    return 0; /* Case (2) */
-  }
   if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0; /* Failed (3) */
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
@@ -830,6 +825,11 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
     return iRead==0; /* Condition (4) */
   }
 #endif
+  assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
+  if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
+        & SQLITE_IOCAP_SUBPAGE_READ)==0 ){
+    return 0; /* Case (2) */
+  }
   return 1;
 }
 #endif
