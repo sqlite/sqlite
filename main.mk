@@ -99,6 +99,7 @@ LDFLAGS_RPATH ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS_READLINE ?= -lreadline
 CFLAGS_READLINE ?=
 LDFLAGS_PTHREAD ?= -lpthread
+LDFLAGS_DLOPEN ?= -ldl
 LDFLAGS_SHOBJ ?= -shared
 #
 # Various system-level directories, mostly needed for installation and
@@ -247,7 +248,8 @@ CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
 #
 LDFLAGS_libsqlite3 = \
   $(LDFLAGS_RPATH) $(LDFLAGS_PTHREAD) \
-  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB)
+  $(LDFLAGS_MATH) $(LDFLAGS_ZLIB) \
+  $(LDFLAGS_DLOPEN)
 
 #
 # install-dir.XYZ = dirs for installation.
