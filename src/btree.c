@@ -4672,6 +4672,11 @@ static int btreeFixUnlocked(Btree *p){
             nFin--;
           }
           nFin = MAX(nFin, nHPage);
+          if( p->pBt->aCommitTime ){
+            p->pBt->aCommitTime[COMMIT_TIME_OTHERWRITERS] = (1+nHPage-pMap->iFirst);
+            p->pBt->aCommitTime[COMMIT_TIME_RELOCATE1COUNT] = (1+iLast-pMap->iFirst);
+            p->pBt->aCommitTime[COMMIT_TIME_RELOCATE2COUNT] = (nFin - nCurrent);
+          }
           sqlite3CommitTimeSet(
               p->pBt->aCommitTime, COMMIT_TIME_START_RELOCATE2
           );

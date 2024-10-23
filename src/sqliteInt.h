@@ -1868,7 +1868,7 @@ struct sqlite3 {
 #define SCHEMA_TIME_FINISH 12
 
 #define SCHEMA_TIME_N 13
-#define SCHEMA_TIME_TIMEOUT (1 * 1000 * 1000)
+#define SCHEMA_TIME_TIMEOUT (2 * 1000 * 1000)
 
 
 
