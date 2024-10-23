@@ -1,5 +1,5 @@
-C Minor\scleanups\sin\sthe\s--with-wasi-sdk\sbits.
-D 2024-10-23T02:11:52.441
+C Reorder\ssome\sauto.def\scode\sto\savoid\sbreaking\s--help.
+D 2024-10-23T02:17:46.419
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def fdb4d96df5bc2ecb26aa4490b22ce0d4734828d6505574d1b22885a6cf2c6f1d
+F auto.def f18d3ac2c10f00e2dcb216e444180c1285b74fadc462107c44c45462d68fc2f5
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 359741bc7624006014d73c4cf5cdd29fa38c33a446ed04b46032e5d3ca18d13c
-R 6664e3de4f6cbfb5c6f691e38c508252
+P d952c17981073cb0158b392edd9b0818dfba2456ab9997d360af56774c9f4216
+R bad9c6f29ee861dff55d3052a0704fc8
 U stephan
-Z 3de5c5fa6fbeeee08097471cc1684856
+Z b02a5594cbe7f4eba2097054c0a512dd
 # Remove this line to create a well-formed Fossil manifest.

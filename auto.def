@@ -13,15 +13,7 @@
 # JimTCL: https://jim.tcl.tk
 #
 use cc cc-db cc-shared cc-lib hwaci-common pkg-config
-pkg-config-init 0; # ensure that it does not fail if pkg-config is unavailable
-
 set DUMP_DEFINES_FILE ./defines.list
-
-# Are we cross-compiling?
-set cross_compiling 0
-if {[get-define host] ne [get-define build]} {
-  set cross_compiling 1
-}
 
 ########################################################################
 # Regarding flag compatibility with the historical autotool configure
@@ -154,6 +146,12 @@ options [subst {
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE (for build debugging)}
 }]
+
+# Are we cross-compiling?
+set cross_compiling 0
+if {[get-define host] ne [get-define build]} {
+  set cross_compiling 1
+}
 
 ########################################################################
 # Notes about certain historical flags:
