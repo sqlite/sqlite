@@ -651,6 +651,7 @@ if {[cc-check-functions realpath]} {
 }
 msg-result "TCL for code generation: $cgtcl"
 unset cgtcl
+#define CFLAGS_JIMSH {-DJUST_TESTING}
 
 # /TCL
 ########################################################################

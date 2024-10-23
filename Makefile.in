@@ -75,6 +75,7 @@ includedir ?= @includedir@
 #
 # Just testing some default dir expansions...
 # srcdir = @srcdir@
+# builddir = @builddir@
 # top_srcdir = @top_srcdir@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
@@ -127,10 +128,29 @@ TCCX += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # to build it with another option enabled for use with the various
 # code generators.
 #
-JIMSH = @srcdir@/jimsh
+# After jimsh is compiled, we run some sanity checks to ensure that
+# it was built in a way compatible with this project's scripts:
+#
+# 1) Ensure that it was built with realpath() or _fullpath() support.
+# Without that flag the [file normalize] command will always resolve
+# to an empty string.
+#
+# 2) Ensure that it is built with -DJIM_COMPAT (which may be
+# hard-coded into jimsh0.c). Without this, the [expr] command
+# accepts only a single argument.
+#
 CFLAGS_JIMSH ?= @CFLAGS_JIMSH@
+JIMSH = @builddir@/jimsh$(TEXE)
 $(JIMSH): $(TOP)/autosetup/jimsh0.c
-	$(BCC) -o $(JIMSH) $(CFLAGS_JIMSH) $(TOP)/autosetup/jimsh0.c
+	$(BCC) -o $@ $(CFLAGS_JIMSH) $(TOP)/autosetup/jimsh0.c
+	@if [ x = "x$$($(JIMSH) -e 'file normalize $(JIMSH)' 2>/dev/null)" ]; then \
+		echo "jimsh was built without -DHAVE_REALPATH or -DHAVE__FULLPATH." 1>&2; \
+		exit 1; \
+	fi
+	@if [ x3 != "x$$($(JIMSH) -e 'expr 1 + 2' 2>/dev/null)" ]; then \
+		echo "jimsh was built without -DJIM_COMPAT." 1>&2; \
+		exit 1; \
+	fi
 
 # BTCLSH is the tclsh-compatible app used for running various code
 # generators and other in-tree tools, as opposed to the TCL-based
