@@ -42,10 +42,10 @@
 ########################################################################
 
 proc hwaci-warn {msg} {
-  puts "WARNING: $msg"
+  puts stderr "WARNING: $msg"
 }
 proc hwaci-notice {msg} {
-  puts "NOTICE: $msg"
+  puts stderr "NOTICE: $msg"
 }
 proc hwaci-fatal {msg} {
   user-error "ERROR: $msg"
@@ -320,11 +320,11 @@ proc hwaci-check-module-loader {} {
   if {[cc-check-includes ltdl.h] && [cc-check-function-in-lib lt_dlopen ltdl]} {
     set HAVE_LIBLTDL 1
     set LDFLAGS_MODULE_LOADER "-lltdl -rdynamic"
-    puts " - Got libltdl."
+    msg-result " - Got libltdl."
     set rc 1
   } elseif {[cc-with {-includes dlfcn.h} {
     cctest -link 1 -declare "extern char* dlerror(void);" -code "dlerror();"}]} {
-    puts " - This system can use dlopen() without -ldl."
+    msg-result " - This system can use dlopen() without -ldl."
     set HAVE_LIBDL 1
     set LDFLAGS_MODULE_LOADER ""
     set rc 1
@@ -332,10 +332,10 @@ proc hwaci-check-module-loader {} {
     set HAVE_LIBDL 1
     set rc 1
     if {[cc-check-function-in-lib dlopen dl]} {
-      puts " - dlopen() needs libdl."
+      msg-result " - dlopen() needs libdl."
       set LDFLAGS_MODULE_LOADER "-ldl -rdynamic"
     } else {
-      puts " - dlopen() not found in libdl. Assuming dlopen() is built-in."
+      msg-result " - dlopen() not found in libdl. Assuming dlopen() is built-in."
       set LDFLAGS_MODULE_LOADER "-rdynamic"
     }
   }
@@ -702,7 +702,10 @@ proc hwaci-check-rpath {} {
 }
 
 ########################################################################
-# Under construction - check for libreadline functionality.
+# Under construction - check for libreadline functionality.  Linking
+# in readline varies wildly by platform and this check does not cover
+# all known options.
+#
 # Defines the following vars:
 #
 # - HAVE_READLINE: 0 or 1
@@ -720,6 +723,29 @@ proc hwaci-check-readline {} {
     msg-result "libreadline disabled via --disable-readline."
     return 0
   }
+
+  if {[pkg-config-init 0] && [pkg-config readline]} {
+    define HAVE_READLINE 1
+    define LDFLAGS_READLINE [get-define PKG_READLINE_LDFLAGS]
+    define-append LDFLAGS_READLINE [get-define PKG_READLINE_LIBS]
+    define CFLAGS_READLINE [get-define PKG_READLINE_CFLAGS]
+    return 1
+  }
+
+  # On OpenBSD on a Raspberry pi 4:
+  #
+  # $ pkg-config readline; echo $?
+  # 0
+  # $ pkg-config --cflags readline
+  # Package termcap was not found in the pkg-config search path
+  # $ echo $?
+  # 1
+  # $ pkg-config --print-requires readline; echo $?
+  # 1
+  #
+  # i.e. there's apparently no way to find out that readline
+  # requires termcap beyond parsing the error message.
+
   set h "readline/readline.h"
   if {[cc-check-includes $h]} {
     define READLINE_H $h

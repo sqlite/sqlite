@@ -12,7 +12,9 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-use cc cc-db cc-shared cc-lib hwaci-common
+use cc cc-db cc-shared cc-lib hwaci-common pkg-config
+pkg-config-init 0; # ensure that it does not fail if pkg-config is unavailable
+
 set DUMP_DEFINES_FILE ./defines.list
 
 # Are we cross-compiling?
@@ -161,20 +163,20 @@ options [subst {
 #
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
-puts "srcdir = $srcdir"
-puts "top_srcdir = $top_srcdir"
+msg-result "srcdir = $srcdir"
+msg-result "top_srcdir = $top_srcdir"
 set RELEASE [readfile $::autosetup(srcdir)/VERSION]
 regsub {([0-9]*\.*[0-9]*).*} $RELEASE {\1} VERSION
 define VERSION $VERSION
 define RELEASE $RELEASE
-puts "RELEASE = $RELEASE"
-puts "VERSION = $VERSION"
+msg-result "RELEASE = $RELEASE"
+msg-result "VERSION = $VERSION"
 
 define-append SQLITE_AUTOREMAKE cd $::autosetup(srcdir) && $top_srcdir/configure {*}$::autosetup(argv)
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
-  puts "This appears to be an out-of-tree build."
+  msg-result "This appears to be an out-of-tree build."
   set outOfTreeBuild 1
 }
 
@@ -313,7 +315,7 @@ if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
   if {$wasiSdkDir ne ""} {
-    puts "Checking WASI SDK directory \[$wasiSdkDir]... "
+    msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
     #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
     hwaci-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
     msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
@@ -466,16 +468,16 @@ proc hwaci-check-tcl {} {
       hwaci-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
-      puts "Using tclsh: $with_tclsh"
+      msg-result "Using tclsh: $with_tclsh"
     }
     if {$use_tcl} {
       if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
         set with_tcl $result
       }
       if {"" ne $with_tcl && [file isdir $with_tcl]} {
-        puts "$with_tclsh recommends the tclConfig.sh from $with_tcl"
+        msg-result "$with_tclsh recommends the tclConfig.sh from $with_tcl"
       } else {
-        puts "$with_tclsh is unable to recommand a tclConfig.sh"
+        hwaci-warn "$with_tclsh is unable to recommand a tclConfig.sh"
         set use_tcl 0
       }
     }
@@ -522,11 +524,11 @@ proc hwaci-check-tcl {} {
         }
       }
     }
-    puts "Using tclConfig.sh: $cfg"
+    msg-result "Using tclConfig.sh: $cfg"
   } elseif {!$optTcl} {
-    puts "Unable to run tests because of --disable-tcl"
+    hwaci-warn "Unable to run tests because of --disable-tcl"
   } else {
-    puts "Unable to run tests because no tclConfig.sh file could be located"
+    hwaci-warn "Unable to run tests because no tclConfig.sh file could be located"
   }
 
   define HAVE_TCL $use_tcl
@@ -594,7 +596,7 @@ proc hwaci-check-tcl {} {
   if {"" eq $with_tclsh} {
     hwaci-warn "Cannot find a usable tclsh."
   } else {
-    puts "Using tclsh: $with_tclsh"
+    msg-result "Using tclsh: $with_tclsh"
   }
 }; # hwaci-check-tcl
 
@@ -609,7 +611,7 @@ hwaci-check-tcl
 # accepts one arg unless JIM_COMPAT is defined.
 define CFLAGS_JIMSH {-DJIM_COMPAT}
 set useOwnJimsh 0
-puts "Which TCL to use for code generation... "
+msg-result "Which TCL to use for code generation... "
 set cgtcl jimtcl
 if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE_REALPATH
@@ -1004,6 +1006,4 @@ hwaci-if-opt-truthy dump-defines {
   }
 }
 
-puts {
-Done! Now run "make".
-}
+msg-result "Done! Now run make."
