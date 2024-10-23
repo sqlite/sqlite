@@ -1,5 +1,5 @@
-C Add\stwo\snew\s#include\sstatements\sto\sthe\scomposite\s"fts5.c"\sfile\sthat\nis\sconstructed\sas\spart\sof\sthe\sbuild\sprocess.\s\sThese\s#includes\sare\sno-ops\nin\sthe\sSQLite\samalgamation\s(and\sare\scommented\sout\sautomatically\sby\sthe\namalgamation\sbuilder)\sbut\sare\sneeded\sif\sthe\sFTS5\sextension\sis\sbuilt\nseparately,\sit\sseems.\n[https://bugzilla.mozilla.org/show_bug.cgi?id=1926321#c3|Enhancement\srequest].
-D 2024-10-23T10:36:02.768
+C Fix\sharmless\scompiler\swarnings\sin\swherecode.c.\s\sOne\ssuch\swarning\swas\nidentified\sby\s[forum:/forumpost/721675f007|forum\spost\s721675f007]\sand\sthe\nother\swas\sfound\sby\stool/warnings.sh.
+D 2024-10-23T11:06:56.384
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -859,7 +859,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 4de9e7ca5f49e4a21c1d733e2b2fbbc8b62b1a157a58a562c569da84cfcb005b
 F src/whereInt.h 1e36ec50392f7cc3d93d1152d4338064cd522b87156a0739388b7e273735f0ca
-F src/wherecode.c 8a260111af36d827d218118e36ccb8c359f9517f2743f5fe758e51dd9ae4acc7
+F src/wherecode.c 81b9af89f4f85c8097d0da6a31499f015eabc4d3584963d30ba7b7b782e26514
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
 F src/window.c 499d48f315a09242dc68f2fac635ed27dcf6bbb0d9ab9084857898c64489e975
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29fb4919b6118b3b9ae411ec2ed5b59db7fae281909501c5fa238221ba635db5
-R 462eb90cd57fbab6c1cc9ab949c5cec7
+P 1bf8daeb24142044e1b5d4b205317c42353004643fadb6b34f9ae6bfa4e3a6bc
+R 8b3d6cd7e3f896ed28460cc14e806ffb
 U drh
-Z 54d605f0ae44fd417398f5aefbd89d12
+Z 09e3d32bb2ddf741657be04c5623243d
 # Remove this line to create a well-formed Fossil manifest.
