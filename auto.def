@@ -123,7 +123,7 @@ options [subst {
   with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATH      => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
-  tcl=1                => {Disable building accessory programs that require TCL-dev}
+  tcl=1                => {Disable components which require TCL-dev}
   test-status          => {Enable status of tests}
   threadsafe=1         => {Disable mutexing}
   with-tempstore:=no => {Use an in-ram database for temporary tables: never,no,yes,always.}
@@ -310,6 +310,7 @@ define ENABLE_SHARED 1
 #
 # It's unclear whether we can actually get away with making these
 # changes to the autosetup environment.
+define HAVE_TCL 0
 define HAVE_WASI_SDK 0
 if {1} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
@@ -444,7 +445,6 @@ hwaci-if-opt-truthy with-debug {
 #    be empty - this tree requires TCL to generated numerous
 #    components.
 #
-define HAVE_TCL 0
 define TCLSH_CMD {exit 1}
 proc hwaci-check-tcl {} {
   global top_srcdir
@@ -485,53 +485,57 @@ proc hwaci-check-tcl {} {
 
   set cfg ""
   set tclSubdirs {tcl9.0 tcl8.6 lib}
-  if {$use_tcl} {
-    if {"" ne $with_tcl} {
-      if {[file readable "${with_tcl}/tclConfig.sh"]} {
-        set cfg "${with_tcl}/tclConfig.sh"
-      } else {
-        foreach i $tclSubdirs {
-          if {[file readable "${with_tcl}/$i/tclConfig.sh"]} {
-            set cfg "${with_tcl}/$i/tclConfig.sh"
-            break
+  while {1} {
+    if {$use_tcl} {
+      if {"" ne $with_tcl} {
+        if {[file readable "${with_tcl}/tclConfig.sh"]} {
+          set cfg "${with_tcl}/tclConfig.sh"
+        } else {
+          foreach i $tclSubdirs {
+            if {[file readable "${with_tcl}/$i/tclConfig.sh"]} {
+              set cfg "${with_tcl}/$i/tclConfig.sh"
+              break
+            }
           }
         }
+        if {"" eq $cfg} {
+          hwaci-fatal "No tclConfig.sh found under ${with_tcl}"
+        }
+      } else {
+        # If we have not yet found a tclConfig.sh file, look in $libdir which is
+        # set automatically by autosetup or by the --prefix command-line option.
+        # See https://sqlite.org/forum/forumpost/e04e693439a22457
+        set libdir [get-define libdir]
+        if {[file readable "${libdir}/tclConfig.sh"]} {
+          set cfg "${libdir}/tclConfig.sh"
+        } else {
+          foreach i $tclSubdirs {
+            if {[file readable "${libdir}/$i/tclConfig.sh"]} {
+              set cfg "${libdir}/$i/tclConfig.sh"
+              break
+            }
+          }
+        }
+        if {![file readable $cfg]} {
+          hwaci-warn {
+            Cannot find a usable tclConfig.sh file.
+            Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
+            SQLite does not use TCL internally, but TCL is required to build SQLite
+            from canonical sources and TCL is required for testing.
+          }
+          break
+        }
       }
-      if {"" eq $cfg} {
-        hwaci-fatal "No tclConfig.sh found under ${with_tcl}"
-      }
+      msg-result "Using tclConfig.sh: $cfg"
+    } elseif {!$optTcl} {
+      hwaci-warn "Unable to run tests because of --disable-tcl"
     } else {
-      # If we have not yet found a tclConfig.sh file, look in $libdir which is
-      # set automatically by autosetup or by the --prefix command-line option.
-      # See https://sqlite.org/forum/forumpost/e04e693439a22457
-      set libdir [get-define libdir]
-      if {[file readable "${libdir}/tclConfig.sh"]} {
-        set cfg "${libdir}/tclConfig.sh"
-      } else {
-        foreach i $tclSubdirs {
-          if {[file readable "${libdir}/$i/tclConfig.sh"]} {
-            set cfg "${libdir}/$i/tclConfig.sh"
-            break
-          }
-        }
-      }
-      if {![file readable $cfg]} {
-        hwaci-fatal {
-          Cannot find a usable tclConfig.sh file.
-          Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
-          SQLite does not use TCL internally, but TCL is required to build SQLite
-          from canonical sources and TCL is required for testing.
-        }
-      }
+      hwaci-warn "Unable to run tests because no tclConfig.sh file could be located"
     }
-    msg-result "Using tclConfig.sh: $cfg"
-  } elseif {!$optTcl} {
-    hwaci-warn "Unable to run tests because of --disable-tcl"
-  } else {
-    hwaci-warn "Unable to run tests because no tclConfig.sh file could be located"
+    break
   }
 
-  define HAVE_TCL $use_tcl
+  define HAVE_TCL 0
   define TCL_CONFIG_SH $cfg
   # The historical configure.ac sources tclConfig.sh so that it can
   # use the several TCL_... env vars. We obviously cannot do that from
@@ -550,7 +554,7 @@ proc hwaci-check-tcl {} {
     if {![file-isexec $with_tclsh]} {
       set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
       if {![file-isexec $with_tclsh2]} {
-        hwaci-warn "Cannot find a usable tclsh as $with_tclsh or $with_tclsh2"
+        hwaci-warn "Cannot find a usable tclsh (tried: $with_tclsh $with_tclsh2)"
       } else {
         set with_tclsh $with_tclsh2
       }
@@ -593,10 +597,11 @@ proc hwaci-check-tcl {} {
     define TCLLIB_RPATH ""
   }
 
-  if {"" eq $with_tclsh} {
-    hwaci-warn "Cannot find a usable tclsh."
-  } else {
+  if {[file exists $with_tclsh]} {
     msg-result "Using tclsh: $with_tclsh"
+    define HAVE_TCL 1
+  } else {
+    hwaci-warn "Cannot find a usable tclsh, so cannot run tests."
   }
 }; # hwaci-check-tcl
 
@@ -622,7 +627,7 @@ if {[cc-check-functions realpath]} {
   define-append CFLAGS_JIMSH -DHAVE__FULLPATH
   define BTCLSH "\$(JIMSH)"
   set useOwnJimsh 1
-} elseif {"" ne [get-define TCLSH_CMD]} {
+} elseif {[file exists [get-define TCLSH_CMD]]} {
   set cgtcl [get-define TCLSH_CMD]
   define BTCLSH "\$(TCLSH_CMD)"
 } else {
@@ -640,11 +645,11 @@ if {[cc-check-functions realpath]} {
       unset tv
     }
     unset tpre
-    if {"" eq [get-define TCLSH_CMD]} {
-      hwaci-fatal "Cannot find a tclsh to use for code generation."
-    }
   }
   set cgtcl [get-define TCLSH_CMD]
+  if {![file exists $cgtcl]} {
+    hwaci-fatal "Cannot find a tclsh to use for code generation."
+  }
   define BTCLSH "\$(TCLSH_CMD)"
 }
 msg-result "TCL for code generation: $cgtcl"
