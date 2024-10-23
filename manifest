@@ -1,5 +1,5 @@
-C Use\spkg-config\sfor\sreadline\sdetection,\sif\savailable.\sUnrelated\sminor\stcl\scleanups.
-D 2024-10-23T01:18:16.765
+C Fix\s/dev/null\sand\sstderr\sredirection\sordering\sin\sautosetup/autosetup-find-tclsh\sso\sthat\sthe\sextraneous\sstrlcpy()/snprintf()/rand()\swarning\soutput\sfrom\sld\son\sOpenBSD\sdoes\snot\sbreak\sdetection\sof\sjimsh0.
+D 2024-10-23T01:33:15.729
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -41,7 +41,7 @@ F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a7
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
-F autosetup/autosetup-find-tclsh c5053419348cdd1aba824c3701bd97392d987b948c1bd748b32f11bbca2c0d8a x
+F autosetup/autosetup-find-tclsh 25905f6c302959db80c2951aa267b4411c5645b598ce761cfc24a166141e2c4c x
 F autosetup/autosetup-test-tclsh 749d20defee533a3842139df47d700fc7a334a5da7bdbd444ae5331744b06c5f
 F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034b10a7b
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0eb96ea2d153c0f7bd9743b759849c95b3e9f1e6e4a9cdb30c26aa2ca43c1e14
-R e0fcc1f673d98e8991070c55d66d6b02
+P 3a41ac08a443f96c3f34432f5034d2d12f03913f2a1db19d9f133b365b39ad20
+R 800ba67376f69c50f3d861fe8a325e3a
 U stephan
-Z 0b0a67f959ecbfe154dceb336b7b1db7
+Z e6425f1dee29bf6933ceda8b25c5f5cd
 # Remove this line to create a well-formed Fossil manifest.
