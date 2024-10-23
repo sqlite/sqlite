@@ -659,11 +659,6 @@ unset cgtcl
 ########################################################################
 
 ########################################################################
-# Some of the fuzzer bits require clang
-define BIN_CLANG [hwaci-first-bin-of clang-18]
-
-
-########################################################################
 # Thread safety?
 msg-checking "Support threadsafe operation? "
 hwaci-if-opt-truthy threadsafe {

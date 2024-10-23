@@ -1,5 +1,5 @@
-C Remove\sthree\sautotools\sfiles\swhich\sare\snot\sneeded\sin\sthe\sautosetup\sport.
-D 2024-10-23T17:17:16.909
+C Remove\sunused\sconfigure\scheck\sfor\sclang-18.
+D 2024-10-23T17:40:07.588
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 1e8ae5762fc37fd33825879f177c78cde651946cfb0a41f274a677167cf16554
+F auto.def 8de3a05ba31af07e8b691a5fc10059ed1380e0e578fc0e177ce66c6bb07bb564
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9b105abf6fb6425d223ab9319f539b9d0cc2df488e0c23c5070853ba4778ebee
-R a4fc809c2b2c79c9ce8c978dd80c3daf
+P fc20861443ea52a058f556fdf1ddf03a41c538e3b97ff663833e422a50e38d66
+R 0c9ab7e3cdd99104e706a198b9770bd9
 U stephan
-Z e02bc7521f8e43dac7bd77ae0772d8d9
+Z 9a55931e4c5b4461e8bf3c9a7ff6ad60
 # Remove this line to create a well-formed Fossil manifest.
