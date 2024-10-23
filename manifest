@@ -1,5 +1,5 @@
-C After\scompiling\sjimsh,\srun\ssanity\stests\son\sit\sto\sensure\sthat\sit\sis\sbuilt\swith\s-DJIM_COMPAT\sand\sone\sof\s(-DHAVE_REALPATH,\s-DHAVE__FULLPATH).
-D 2024-10-23T16:46:46.669
+C Fix\sa\s#define\stypo\sin\sjimsh0.c,\seliminating\sthe\sneed\sto\sexplicitly\spass\s-DJIM_COMPAT\swhen\sbuilding\sit.\sThis\sfix\shas\ssince\smade\sits\sway\supstream.
+D 2024-10-23T16:59:12.956
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -14,7 +14,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def d29dde15497d1de443b4fb9aba96d084eeaa4ed08c18939af8bb2aabdada1328
+F auto.def 1e8ae5762fc37fd33825879f177c78cde651946cfb0a41f274a677167cf16554
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1d
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/hwaci-common.tcl 3e9ae4dbdda198e5dea56e2bdf0a073f2acf60f76e83dc3ee25a00390d3f6bc7
-F autosetup/jimsh0.c 1b5fe91fffcddbc29f2b16acb80f1650632ea2edbe8336b8155ef7b4c66f6d8d
+F autosetup/jimsh0.c 838968b1159a6061452d751a48df3646830b04b118e35790da97e998208bc5ae
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
@@ -2240,8 +2240,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aeac23359bb681c0c86c55c83ab9c16973822f6bc4e1a11959102b062333e358
-R a7bc168b9304f807692f7a48ff3b1fd1
+P ea6a14a6e64c0ed2306b9b3048132659094259b95b49a9572f7178c26b28f93a
+R e5742b36efa53d07ed73d499dfe7e484
 U stephan
-Z e22ea7d251580efff9ff3789b0efb608
+Z ea44c0d193681b774d941092dfa1a741
 # Remove this line to create a well-formed Fossil manifest.

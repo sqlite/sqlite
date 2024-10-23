@@ -1,5 +1,5 @@
 /* This is single source file, bootstrap version of Jim Tcl. See http://jim.tcl.tk/ */
-#define JIM_TCL_COMPAT
+#define JIM_COMPAT
 #define JIM_ANSIC
 #define JIM_REGEXP
 #define HAVE_NO_AUTOCONF

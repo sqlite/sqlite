@@ -610,8 +610,10 @@ hwaci-check-tcl
 #
 # Building jimsh0.c with -DJIM_COMPAT changes certain behavior to be
 # compatible with canonical TCL. Specifically: jim's [expr] only
-# accepts one arg unless JIM_COMPAT is defined.
-define CFLAGS_JIMSH {-DJIM_COMPAT}
+# accepts one arg unless JIM_COMPAT is defined. As of 2024-10-23,
+# jimsh0.c defines JIM_COMPAT automatically (prior to that it intended
+# to but a typo of JIM_TCL_COMPAT made it a no-op).
+define CFLAGS_JIMSH {}
 set useOwnJimsh 0
 msg-result "Which TCL to use for code generation... "
 set cgtcl jimtcl
