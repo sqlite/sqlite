@@ -439,6 +439,7 @@ proc hwaci-make-from-dot-in {args} {
     set filename [lrange $args 1 end]
   }
   foreach f $filename {
+    set f [string trim $f]
     catch { exec chmod u+w $f }
     make-template $f.in $f
     if {$touch} {

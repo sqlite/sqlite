@@ -100,13 +100,15 @@ CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
-TCCX = $(TCC) @TARGET_DEBUG@
-# Define this for the autoconf-based build, so that the code knows it
+TCC.sqlite = $(TCC) @TARGET_DEBUG@
+
+#
+# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
 # can include the generated sqlite_cfg.h.
 #
-TCCX += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
-# main.mk will fill out TCCX with some flags common to all builds.
+# main.mk will fill out TCC.sqlite with some flags common to all builds.
 
 #XX#CFLAGS_READLINE += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
 #XX#CFLAGS_READLINE += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@

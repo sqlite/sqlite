@@ -5,10 +5,11 @@
 # a higher-level makefile which configures any dynamic state needed by
 # this one.
 #
-# Maintenance reminder: this file must remain devoid of GNU Make-isms.
-# i.e. it must be POSIX Make compatible. "bmake" (BSD make) is
-# available on most Linux systems, so compatibility is relatively easy
-# to test.
+# Maintenance reminders:
+#
+#  - This file must remain devoid of GNU Make-isms.  i.e. it must be
+#  POSIX Make compatible. "bmake" (BSD make) is available on most
+#  Linux systems, so compatibility is relatively easy to test.
 #
 #XX# Lines starting with #XX# are TODOs for the port to autosetup
 #
@@ -198,23 +199,14 @@ INSTALL_noexec = $(INSTALL) -m 0644
 # $(TCOMPILE_EXTRAS) = config-specific flags for $(TCOMPILE)
 #
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
-#
-# $(TLINK) = compiler invocation for when the target will be an executable
-# $(TLINK_EXTRAS) = config-specific flags for $(TLINK)
-#
-TLINK = $(TCCX) $(TLINK_EXTRAS)
-#
-# $(TLINK_shared) = $(TLINK) invocation specifically for shared libraries
-#
-TLINK_shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
 #
-# $(TCCX) is $(TCC) plus any flags which are desired for the library
+# $(TCC.sqlite) is $(TCC) plus any flags which are desired for the library
 # as a whole, but not necessarily needed for every binary. It will
 # normally get initially populated by the configure-generated
 # makefile, so should not be overwritten here.
 #
-TCCX ?= $(TCC)
+TCC.sqlite ?= $(TCC)
 #
 # $(CFLAGS_intree_includes) = -I... flags relevant specifically to
 # this tree, including any subdirectories commonly needed for building
@@ -224,12 +216,24 @@ CFLAGS_intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
     -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session \
     -I$(TOP)/ext/misc -I$(TOP)/ext/userauth
-TCCX += $(CFLAGS_intree_includes)
+TCC.sqlite += $(CFLAGS_intree_includes)
 
 #
-# $(TCC_EXT) = compiler invocation for loadable extensions.
+# $(TCC.extension) = compiler invocation for loadable extensions.
 #
-TCC_EXT = $(TCOMPILE) -I. -I$(TOP)/src -DSQLITE_CORE
+TCC.extension = $(TCOMPILE) -I. -I$(TOP)/src -DSQLITE_CORE
+
+#
+# $(TLINK) = compiler invocation for when the target will be an
+# executable.
+#
+# $(TLINK_EXTRAS) = config-specific flags for $(TLINK)
+#
+TLINK = $(TCC.sqlite) $(TLINK_EXTRAS)
+#
+# $(TLINK.shared) = $(TLINK) invocation specifically for shared libraries
+#
+TLINK.shared = $(TLINK) $(LDFLAGS_SHOBJ)
 
 #
 # $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
@@ -249,7 +253,7 @@ CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
 # results in building libsqlite3.so, compiles sqlite3.c directly, or
 # links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
 # flags are for the target build platform, not necessarily localhost.
-# i.e. it should be used with $(TCCX) or $(TLINK) but not $(BCC).
+# i.e. it should be used with $(TCC.sqlite) or $(TLINK) but not $(BCC).
 #
 LDFLAGS_libsqlite3 = \
   $(LDFLAGS_RPATH) $(LDFLAGS_PTHREAD) \
@@ -840,255 +844,255 @@ sqlite3ext.h:	.target_source
 #     opcodes.o
 #
 parse.o:	parse.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c parse.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c parse.c
 
 opcodes.o:	opcodes.c
-	$(TCCX) $(CFLAGS_libsqlite3) -c opcodes.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c opcodes.c
 
 # Rules to build individual *.o files from files in the src directory.
 #
 alter.o:	$(TOP)/src/alter.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/alter.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/alter.c
 
 analyze.o:	$(TOP)/src/analyze.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/analyze.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/analyze.c
 
 attach.o:	$(TOP)/src/attach.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/attach.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/attach.c
 
 auth.o:	$(TOP)/src/auth.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/auth.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/auth.c
 
 backup.o:	$(TOP)/src/backup.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/backup.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/backup.c
 
 bitvec.o:	$(TOP)/src/bitvec.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/bitvec.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/bitvec.c
 
 btmutex.o:	$(TOP)/src/btmutex.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/btmutex.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/btmutex.c
 
 btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/btree.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/build.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/build.c
 
 callback.o:	$(TOP)/src/callback.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/callback.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/callback.c
 
 complete.o:	$(TOP)/src/complete.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/complete.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/complete.c
 
 ctime.o:	$(TOP)/src/ctime.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/ctime.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/ctime.c
 
 date.o:	$(TOP)/src/date.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/date.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/date.c
 
 dbpage.o:	$(TOP)/src/dbpage.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbpage.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbpage.c
 
 dbstat.o:	$(TOP)/src/dbstat.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbstat.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbstat.c
 
 delete.o:	$(TOP)/src/delete.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/delete.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/delete.c
 
 expr.o:	$(TOP)/src/expr.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/expr.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/expr.c
 
 fault.o:	$(TOP)/src/fault.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/fault.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/fault.c
 
 fkey.o:	$(TOP)/src/fkey.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/fkey.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/fkey.c
 
 func.o:	$(TOP)/src/func.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/func.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/func.c
 
 global.o:	$(TOP)/src/global.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/global.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/global.c
 
 hash.o:	$(TOP)/src/hash.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/hash.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/hash.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/insert.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/insert.c
 
 json.o:	$(TOP)/src/json.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/json.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/json.c
 
 legacy.o:	$(TOP)/src/legacy.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/legacy.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/legacy.c
 
 loadext.o:	$(TOP)/src/loadext.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/loadext.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/loadext.c
 
 main.o:	$(TOP)/src/main.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/main.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/main.c
 
 malloc.o:	$(TOP)/src/malloc.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/malloc.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/malloc.c
 
 mem0.o:	$(TOP)/src/mem0.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem0.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem0.c
 
 mem1.o:	$(TOP)/src/mem1.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem1.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem1.c
 
 mem2.o:	$(TOP)/src/mem2.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem2.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem2.c
 
 mem3.o:	$(TOP)/src/mem3.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem3.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem3.c
 
 mem5.o:	$(TOP)/src/mem5.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem5.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem5.c
 
 memdb.o:	$(TOP)/src/memdb.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/memdb.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/memdb.c
 
 memjournal.o:	$(TOP)/src/memjournal.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/memjournal.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/memjournal.c
 
 mutex.o:	$(TOP)/src/mutex.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex.c
 
 mutex_noop.o:	$(TOP)/src/mutex_noop.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_noop.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_noop.c
 
 mutex_unix.o:	$(TOP)/src/mutex_unix.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_unix.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_unix.c
 
 mutex_w32.o:	$(TOP)/src/mutex_w32.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_w32.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_w32.c
 
 notify.o:	$(TOP)/src/notify.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/notify.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/notify.c
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/pager.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pager.c
 
 pcache.o:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache.c
 
 pcache1.o:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache1.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache1.c
 
 os.o:	$(TOP)/src/os.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/os.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os.c
 
 os_kv.o:	$(TOP)/src/os_kv.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_kv.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_kv.c
 
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_unix.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_unix.c
 
 os_win.o:	$(TOP)/src/os_win.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_win.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_win.c
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/pragma.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pragma.c
 
 prepare.o:	$(TOP)/src/prepare.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/prepare.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/prepare.c
 
 printf.o:	$(TOP)/src/printf.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/printf.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/printf.c
 
 random.o:	$(TOP)/src/random.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/random.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/random.c
 
 resolve.o:	$(TOP)/src/resolve.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/resolve.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/resolve.c
 
 rowset.o:	$(TOP)/src/rowset.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/rowset.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/rowset.c
 
 select.o:	$(TOP)/src/select.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/select.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/select.c
 
 status.o:	$(TOP)/src/status.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/status.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/status.c
 
 sqlite3.o:	sqlite3.h sqlite3.c
-	$(TCCX) $(CFLAGS_libsqlite3) -c sqlite3.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c sqlite3.c
 
 table.o:	$(TOP)/src/table.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/table.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/table.c
 
 threads.o:	$(TOP)/src/threads.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/threads.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/threads.c
 
 tokenize.o:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/tokenize.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/tokenize.c
 
 treeview.o:	$(TOP)/src/treeview.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/treeview.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/treeview.c
 
 trigger.o:	$(TOP)/src/trigger.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/trigger.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/trigger.c
 
 update.o:	$(TOP)/src/update.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/update.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/update.c
 
 upsert.o:	$(TOP)/src/upsert.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/upsert.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/upsert.c
 
 utf.o:	$(TOP)/src/utf.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/utf.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/utf.c
 
 util.o:	$(TOP)/src/util.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/util.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/util.c
 
 vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vacuum.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vacuum.c
 
 vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbe.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbe.c
 
 vdbeapi.o:	$(TOP)/src/vdbeapi.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeapi.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeapi.c
 
 vdbeaux.o:	$(TOP)/src/vdbeaux.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeaux.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeaux.c
 
 vdbeblob.o:	$(TOP)/src/vdbeblob.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeblob.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeblob.c
 
 vdbemem.o:	$(TOP)/src/vdbemem.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbemem.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbemem.c
 
 vdbesort.o:	$(TOP)/src/vdbesort.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbesort.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbesort.c
 
 vdbetrace.o:	$(TOP)/src/vdbetrace.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbetrace.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbetrace.c
 
 vdbevtab.o:	$(TOP)/src/vdbevtab.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbevtab.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbevtab.c
 
 vtab.o:	$(TOP)/src/vtab.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/vtab.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vtab.c
 
 wal.o:	$(TOP)/src/wal.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/wal.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/wal.c
 
 walker.o:	$(TOP)/src/walker.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/walker.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/walker.c
 
 where.o:	$(TOP)/src/where.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/where.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/where.c
 
 wherecode.o:	$(TOP)/src/wherecode.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/wherecode.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/wherecode.c
 
 whereexpr.o:	$(TOP)/src/whereexpr.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/whereexpr.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/whereexpr.c
 
 window.o:	$(TOP)/src/window.c $(HDR)
-	$(TCCX) $(CFLAGS_libsqlite3) -c $(TOP)/src/window.c
+	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/window.c
 
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(TCOMPILE) -DUSE_TCL_STUBS=1 $(TCL_INCLUDE_SPEC) $(CFLAGS_intree_includes) \
@@ -1150,7 +1154,7 @@ all: lib
 # Dynamic libsqlite3
 #
 $(libsqlite3.SO):	$(LIBOBJ)
-	$(TLINK_shared) -o $@ $(LIBOBJ) $(LDFLAGS_libsqlite3)
+	$(TLINK.shared) -o $@ $(LIBOBJ) $(LDFLAGS_libsqlite3)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
@@ -1199,7 +1203,7 @@ pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(TDLL)
 $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
-	$(TLINK_shared) -o $@ tclsqlite.o \
+	$(TLINK.shared) -o $@ tclsqlite.o \
 		$(TCL_INCLUDE_SPEC) $(TCL_STUB_LIB_SPEC) $(LDFLAGS_libsqlite3) \
 		$(libsqlite3.LIB) $(TCLLIB_RPATH)
 $(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
@@ -1283,10 +1287,10 @@ fts5.c: $(FTS5_SRC) $(BTCLSH) # has_tclsh84
 	cp $(TOP)/ext/fts5/fts5.h .
 
 fts5.o:	fts5.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c fts5.c
+	$(TCC.extension) -c fts5.c
 
 sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/rbu/sqlite3rbu.c
+	$(TCC.extension) -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
 #
@@ -1646,7 +1650,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_DEPRECATED
 
 sqlite3_rsync$(TEXE):	$(RSYNC_SRC)
-	$(TCCX) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
+	$(TCC.sqlite) -o $@ $(RSYNC_OPT) $(RSYNC_SRC) $(LDFLAGS_libsqlite3)
 xbin: sqlite3_rsync$(TEXE)
 
 install-rsync: sqlite3_rsync$(TEXE) $(install-dir.bin)
@@ -1813,58 +1817,58 @@ shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(BTCLSH) # has_tclsh84
 # Rules to build the extension objects.
 #
 icu.o:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/icu/icu.c
+	$(TCC.extension) -c $(TOP)/ext/icu/icu.c
 
 fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3.c
 
 fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_aux.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_aux.c
 
 fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_expr.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_expr.c
 
 fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_hash.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_hash.c
 
 fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_icu.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_icu.c
 
 fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_porter.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_porter.c
 
 fts3_snippet.o:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_snippet.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_snippet.c
 
 fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_tokenizer.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenizer.c
 
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_tokenizer1.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenizer1.c
 
 fts3_tokenize_vtab.o:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
 
 fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_unicode.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_unicode.c
 
 fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_unicode2.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_unicode2.c
 
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/fts3/fts3_write.c
+	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_write.c
 
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/rtree/rtree.c
+	$(TCC.extension) -c $(TOP)/ext/rtree/rtree.c
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/userauth/userauth.c
+	$(TCC.extension) -c $(TOP)/ext/userauth/userauth.c
 
 sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
-	$(TCC_EXT) -c $(TOP)/ext/session/sqlite3session.c
+	$(TCC.extension) -c $(TOP)/ext/session/sqlite3session.c
 
 stmt.o:	$(TOP)/ext/misc/stmt.c
-	$(TCC_EXT) -c $(TOP)/ext/misc/stmt.c
+	$(TCC.extension) -c $(TOP)/ext/misc/stmt.c
 
 #
 # tool/version-info: a utility for emitting sqlite3 version info
@@ -1883,7 +1887,7 @@ sqlite3.def: $(LIBOBJ)
 		| sed 's/^.* _//' >>sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	$(TCCX) $(LDFLAGS_SHOBJ) -o $@ sqlite3.def \
+	$(TCC.sqlite) $(LDFLAGS_SHOBJ) -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ)
 
 
