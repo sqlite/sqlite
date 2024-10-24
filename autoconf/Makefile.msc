@@ -1039,6 +1039,11 @@ dll:	$(SQLITE3DLL)
 #
 shell:	$(SQLITE3EXE)
 
+# jimsh0 - replacement for tclsh
+#
+jimsh0.exe:	$(TOP)\autosetup\jimsh0.c
+	cl -DHAVE__FULLPATH=1 $(TOP)\autosetup\jimsh0.c
+
 
 $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
