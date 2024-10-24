@@ -35,7 +35,7 @@
 /* Compatability between Tcl8.6 and Tcl9.0 */
 #if TCL_MAJOR_VERSION==9
 # define CONST const
-#else
+#elif !defined(Tcl_Size)
   typedef int Tcl_Size;
 #endif
 

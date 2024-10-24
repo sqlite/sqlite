@@ -93,6 +93,7 @@ struct SQLiteRsync {
 ****************************************************************************/
 #ifdef _WIN32
 #include <windows.h>
+#include <io.h>
 #include <fcntl.h>
 /*
 ** Print a fatal error and quit.
@@ -240,9 +241,9 @@ static int popen2(
                              hStdinRd, hStdoutWr, hStderr,&childPid);
   *pChildPid = childPid;
   fd = _open_osfhandle(PTR_TO_INT(hStdoutRd), 0);
-  *ppIn = fdopen(fd, "r");
+  *ppIn = fdopen(fd, "rb");
   fd = _open_osfhandle(PTR_TO_INT(hStdinWr), 0);
-  *ppOut = _fdopen(fd, "w");
+  *ppOut = _fdopen(fd, "wb");
   CloseHandle(hStdinRd);
   CloseHandle(hStdoutWr);
   return 0;
@@ -1756,6 +1757,10 @@ int main(int argc, char const * const *argv){
     ctx.pIn = stdin;
     ctx.pOut = stdout;
     ctx.isRemote = 1;
+#ifdef _WIN32
+    _setmode(_fileno(ctx.pIn), _O_BINARY);
+    _setmode(_fileno(ctx.pOut), _O_BINARY);
+#endif
     originSide(&ctx);
     return 0;
   }
@@ -1763,6 +1768,10 @@ int main(int argc, char const * const *argv){
     ctx.pIn = stdin;
     ctx.pOut = stdout;
     ctx.isRemote = 1;
+#ifdef _WIN32
+    _setmode(_fileno(ctx.pIn), _O_BINARY);
+    _setmode(_fileno(ctx.pOut), _O_BINARY);
+#endif
     replicaSide(&ctx);
     return 0;
   }
