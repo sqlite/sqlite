@@ -1,11 +1,11 @@
-C Back\sout\s[bd66222721]\sbecause\sit\scauses\sconflicts\swith\stest\sruns,\sapparently\sdue\sto\s.o\sfiles\sbeing\sbuilt\swith\sdifferent\sflags.\sThis\smeans\sthat\sthe\sCLI\sshell\scurrently\sdoes\snot\shonor\s--disable-amalgamation.
-D 2024-10-24T14:33:11.835
+C Add\sthe\stool/cp.tcl\sscript\sand\suse\sit\sto\ssimplify\sMakefile.msc.
+D 2024-10-24T15:14:55.161
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in a751c1d84222c389ff83dc9c7d2f4ef2ca29bf357609032bb4af3147f6f38b70
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
-F Makefile.msc 06444a62312be0dbb838f5192e596c3674da6776ff36ec0ccb9aa7ae1f8278fc
+F Makefile.msc ce5ba06254efafbc4794028f46a08a95c7772ff5a7949b2c36b34e9c26c19e1c
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2128,6 +2128,7 @@ F tool/buildtclext.tcl b64d250517b148e644d26fcbc097851867a0df52cd4bafe9bcd94b842
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
+F tool/cp.tcl ea5b078f7558a8b28d0bc1017e95b543d671c5e1f308b5e14311b31e534f4ac4
 F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5c4
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
@@ -2236,9 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e911303b8d180897c256e5de6edaa6b99239f914b84de2d08b3410650cd52c6d
-Q -bd66222721ad06e99c1b66a3a0fbde06532507aa067165f47fa5d6c41ba630e6
-R 10a78d20a468d904200243ff7416a469
-U stephan
-Z 8d3218807f194cbdcb2529b80d3d52e0
+P b063317352e1360293787909cafe46dbfda68a75a89c6559bac69ad160d5ec43
+R f818d9469282597cf5b67d7ff1e084ba
+U drh
+Z b1df376b6545b02e2f1bb8ecd957f9fc
 # Remove this line to create a well-formed Fossil manifest.

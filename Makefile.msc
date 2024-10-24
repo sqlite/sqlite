@@ -1983,19 +1983,8 @@ mptest:	mptester.exe
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c $(SQLITE_TCL_DEP)
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
-	for %i in ($(SRC00)) do copy /Y %i tsrc
-	for %i in ($(SRC01)) do copy /Y %i tsrc
-	for %i in ($(SRC03)) do copy /Y %i tsrc
-	for %i in ($(SRC04)) do copy /Y %i tsrc
-	for %i in ($(SRC05)) do copy /Y %i tsrc
-	for %i in ($(SRC07)) do copy /Y %i tsrc
-	for %i in ($(SRC09)) do copy /Y %i tsrc
-	for %i in ($(SRC10)) do copy /Y %i tsrc
-	for %i in ($(SRC11)) do copy /Y %i tsrc
-	for %i in ($(SRC12)) do copy /Y %i tsrc
-	copy /Y fts5.c tsrc
+        $(TCLSH_CMD) $(TOP)\tool\cp.tcl $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC07) $(SRC09) $(SRC10) $(SRC11) $(SRC12) fts5.c fts5.h tsrc
 	copy /B tsrc\fts5.c +,,
-	copy /Y fts5.h tsrc
 	copy /B tsrc\fts5.h +,,
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
 	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
