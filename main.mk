@@ -1725,9 +1725,9 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-sqlite3$(T.exe):	shell.c sqlite3.c
+sqlite3$(T.exe):	shell.c sqlite3.c $(LIBOBJ)
 	$(T.link) -o $@ \
-		shell.c sqlite3.c \
+		shell.c $(LIBOBJ) \
 		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
