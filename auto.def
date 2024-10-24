@@ -381,14 +381,13 @@ if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
   # TODO: port over the more sophisticated zlib search from the fossil auto.def
   define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
   define LDFLAGS_ZLIB -lz
-# -DSQLITE_HAVE_ZLIB=1 is handled separately from the other feature
-#  flags in the autotools build
-# add-feature-flag -DSQLITE_HAVE_ZLIB=1
-  define CFLAGS_ZLIB -DSQLITE_HAVE_ZLIB=1
+  # Note that -DSQLITE_HAVE_ZLIB=1 is handled separately from the
+  # other feature flags in the autotools build. Do we need to emulate
+  # that?
+  add-shell-opt -DSQLITE_HAVE_ZLIB=1
 } else {
   define HAVE_ZLIB 0
   define LDFLAGS_ZLIB ""
-  define CFLAGS_ZLIB ""
 }
 
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \

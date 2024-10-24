@@ -1,4 +1,5 @@
 #!/usr/make
+all:
 #
 # Makefile for SQLITE
 #
@@ -17,35 +18,42 @@
 ####
 #
 # $(TOP) = The toplevel directory of the source tree.  This is the
-#    directory that contains this "Makefile.in" and "auto.def".
+# directory that contains "Makefile.in" and "auto.def".
 #
-TOP ?= .
+TOP ?= $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 #
 # $(CFLAGS) will be used when compiling the library and most
-# utilities.  Generally speaking, it must contain -fPIC on Linux
-# systems.
+# utilities.  It must normally contain -fPIC on Linux systems.
 #
-CFLAGS += -fPIC
+CFLAGS = -fPIC
 
 #
 # $(SHELL_OPT) contains CFLAGS for building the sqlite3 CLI shell.
 # See main.mk for other potentially-relevant vars which may need
 # tweaking, like $(LDFLAGS_READLINE).
 #
-SHELL_OPT ?= -DHAVE_READLINE=1
+SHELL_OPT += -DHAVE_READLINE=1
+SHELL_OPT += -DSQLITE_HAVE_ZLIB=1
+LDFLAGS.readline = -lreadline # may need -lcurses etc, depending on the system
+CFLAGS.readline = # needs -I... if readline.h is in an unusual place.
+LDFLAGS.zlib = -lz
 
 #
 # Library's version number.
 #
 VERSION.XYZ ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
-$(info VERSION.XYZ=$(VERSION.XYZ))
 
-# You should not have to change anything below this line
-###############################################################################
-include $(TOP)/main.mk
-
+# sqlite_cfg.h is typically created by the configure script. It's
+# commonly not needed but main.mk does not know that so we have to
+# create a dummy if we don't already have one.
 sqlite_cfg.h:
 	touch $@
 distclean-.:
 	rm -f sqlite_cfg.h
+
+#
+# With the above in place, we can now import the rules make use of
+# it...
+#
+include $(TOP)/main.mk

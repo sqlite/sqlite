@@ -95,7 +95,7 @@ INSTALL = @BIN_INSTALL@
 AR = @AR@
 CC = @CC@
 B.cc = @BUILD_CC@ @BUILD_CFLAGS@
-T.cc = $(CC) $(CFLAGS)
+T.cc = $(CC)
 CFLAGS = @CFLAGS@ @SH_CFLAGS@
 
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
@@ -105,7 +105,7 @@ LDFLAGS.rpath = @LDFLAGS_RPATH@
 LDFLAGS.pthread = @LDFLAGS_PTHREAD@
 LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
-CFLAGS.readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
+CFLAGS.readline = @CFLAGS_READLINE@
 
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -146,19 +146,16 @@ $(B.tclsh):
 #
 # $(CFLAGS.libsqlite3) is documented in main.mk.
 #
-CFLAGS.libsqlite3 = $(CFLAGS) -DSQLITE_TEMP_STORE=@TEMP_STORE@
+CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
+#
+# $(OPT_FEATURE_FLAGS) is documented in main.mk.
+#
+# The appending of $(OPTIONS) to $(OPT_FEATURE_FLAGS) is historical
+# and somewhat confusing because there's another var, $(OPTS), which
+# has a similar (but not identical) role.
+#
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
-
-T.cc += $(OPT_FEATURE_FLAGS)
-
-#
-# Add in any optional global compilation flags on the make commane
-# line ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
-#
-#XX# FIXME: rename one or the other of $(OPTS) and $(OPTIONS), as they
-#XX# serve different purposes.
-T.cc += $(OPTS)
 
 #
 # Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
@@ -227,12 +224,11 @@ TCLLIBDIR = @TCLLIBDIR@
 #
 # for more info.
 #
-
-CFLAGS.GCOV1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
-LDFLAGS.GCOV1 = -lgcov
+CFLAGS.gcov1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
+LDFLAGS.gcov1 = -lgcov
 USE_GCOV = @USE_GCOV@
-T.compile.extras += $(CFLAGS.GCOV$(USE_GCOV))
-T.link.extras += $(LDFLAGS.GCOV$(USE_GCOV))
+T.compile.extras = $(CFLAGS.gcov$(USE_GCOV))
+T.link.extras = $(LDFLAGS.gcov$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.

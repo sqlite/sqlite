@@ -98,7 +98,7 @@ TCLSH_CMD ?= tclsh
 # JIMSH requires a leading path component, even if it's ./, so that it
 # can be used as a shell command.
 #
-CFLAGS.JIMSH ?= -DHAVE_REALPATH
+CFLAGS.jimsh ?= -DHAVE_REALPATH
 JIMSH ?= ./jimsh$(T.exe)
 #
 # $(B.tclsh) =
@@ -175,10 +175,14 @@ AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 # and ENABLE flags must be passed to the LEMON parser generator and
 # the mkkeywordhash tool as well.
 #
-# Add OPTIONS=... on the command line to append additional options to
-# the OPT_FEATURE_FLAGS. Note that some flags only work if the build
-# is specifically configured to account for them. Adding them later,
-# when compiling the amalgamation, may or may not work.
+# Add OPTIONS=... on the make command line to append additional options
+# to the OPT_FEATURE_FLAGS. Note that some flags only work if the
+# build is specifically configured to account for them. Adding them
+# later, when compiling the amalgamation, may or may not work.
+#
+# TO CLARIFY: OPTS=... has historically been expected in some
+# contexts, and is distinctly different from OPTIONS and
+# OPT_FEATURE_FLAGS, but its name is confusingly close to $(OPTIONS).
 #
 OPT_FEATURE_FLAGS ?=
 #
@@ -214,19 +218,6 @@ TCLLIB_RPATH ?=
 #
 HAVE_WASI_SDK ?= 0
 #
-# $(CFLAGS.libsqlite3) must contain any CFLAGS which are relevant for
-# compiling the library's own sources, including (sometimes) when
-# compiling sqlite3.c directly in to another app.
-#
-CFLAGS.libsqlite3 ?= $(CFLAGS)
-#
-# $(T.cc.sqlite) is $(T.cc) plus any flags which are desired for the
-# library as a whole, but not necessarily needed for every binary. It
-# will normally get initially populated with flags by the
-# configure-generated makefile.
-#
-T.cc.sqlite ?= $(T.cc)
-#
 # ... and many, many more. Sane defaults are selected where possible.
 #
 # With the above-described defined, the rest of this make script will
@@ -242,16 +233,51 @@ all:	sqlite3.h sqlite3.c
 ########################################################################
 
 #
+# $(CFLAGS) should ideally only contain flags which are relevant for
+# all binaries built for the target platform.
+#
+T.cc += $(CFLAGS)
+
+#
+# The difference between $(OPT_FEATURE_FLAGS) and $(OPTS) is that the
+# former is historically provided by the configure script, whereas the
+# latter is intended to be provided as arguments to the make
+# invocation.
+#
+T.cc += $(OPT_FEATURE_FLAGS)
+
+#
+# Add in any optional global compilation flags on the make command
+# line ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+#
+T.cc += $(OPTS)
+
+#
 # $(INSTALL) invocation for use with non-executable files.
 #
 INSTALL.noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
 #
-# $(T.compile) = generic target platform compiler invocation
-# $(T.compile.extras) = config-specific flags for $(T.compile)
+# $(T.compile) = generic target platform compiler invocation,
+# differing only from $(T.cc) in that it appends $(T.compile.extras),
+# which are primarily intended for use with gcov-related flags.
 #
 T.compile = $(T.cc) $(T.compile.extras)
+
+#
+# $(CFLAGS.libsqlite3) must contain any CFLAGS which are relevant for
+# compiling the library's own sources, including (sometimes) when
+# compiling sqlite3.c directly in to another app.
+#
+CFLAGS.libsqlite3 ?=
+#
+# $(T.cc.sqlite) is $(T.cc) plus any flags which are desired for the
+# library as a whole, but not necessarily needed for every binary. It
+# will normally get initially populated with flags by the
+# configure-generated makefile.
+#
+T.cc.sqlite ?= $(T.cc)
 
 #
 # $(CFLAGS.intree_includes) = -I... flags relevant specifically to
@@ -273,7 +299,8 @@ T.cc.extension = $(T.compile) -I. -I$(TOP)/src -DSQLITE_CORE
 # $(T.link) = compiler invocation for when the target will be an
 # executable.
 #
-# $(T.link.extras) = optional config-specific flags for $(T.link)
+# $(T.link.extras) = optional config-specific flags for $(T.link),
+# primarily intended for use with gcov-related flags.
 #
 T.link = $(T.cc.sqlite) $(T.link.extras)
 #
@@ -328,7 +355,7 @@ $(install-dir.all):
 # accepts only a single argument.
 #
 $(JIMSH): $(TOP)/autosetup/jimsh0.c
-	$(B.cc) -o $@ $(CFLAGS.JIMSH) $(TOP)/autosetup/jimsh0.c
+	$(B.cc) -o $@ $(CFLAGS.jimsh) $(TOP)/autosetup/jimsh0.c
 	@if [ x = "x$$($(JIMSH) -e 'file normalize $(JIMSH)' 2>/dev/null)" ]; then \
 		echo "$(JIMSH) was built without -DHAVE_REALPATH or -DHAVE__FULLPATH." 1>&2; \
 		exit 1; \
@@ -358,8 +385,8 @@ $(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
 	@if [ x = "x$(VERSION.XYZ)" ]; then echo "VERSION.XYZ must be set to the library's X.Y.Z-format version number" 1>&2; exit 1; fi
 	@if [ x = "x$(B.cc)" ]; then echo "Missing B.cc var" 1>&2; exit 1; fi
 	@if [ x = "x$(T.cc)" ]; then echo "Missing T.cc var" 1>&2; exit 1; fi
-	@if [ x = "x$(VERSION.XYZ)" ]; then echo "Missing VERSION.XYZ var" 1>&2; exit 1; fi
 	@if [ x = "x$(B.tclsh)" ]; then echo "Missing B.tclsh var" 1>&2; exit 1; fi
+	@if [ x = "x$(AR)" ]; then echo "Missing AR var" 1>&2; exit 1; fi
 	touch $@
 clean-sanity-check:
 	rm -f $(MAKE_SANITY_CHECK)
@@ -1699,9 +1726,11 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 xbin: threadtest5
 
 sqlite3$(T.exe):	shell.c sqlite3.c
-	$(T.link) $(CFLAGS.readline) $(SHELL_OPT) -o $@ \
+	$(T.link) -o $@ \
 		shell.c sqlite3.c \
+		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+
 #
 # Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
 # semantics of 0 and 1 are confusingly swapped here.
@@ -1839,7 +1868,7 @@ DBFUZZ2_OPTS = \
   -DSQLITE_ENABLE_FTS5
 
 dbfuzz2$(T.exe):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
-	$(T.cc) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
+	$(T.cc) -I. -g -O0 \
 		-DSTANDALONE -o dbfuzz2 \
 		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(LDFLAGS.libsqlite3)
 	mkdir -p dbfuzz2-dir
