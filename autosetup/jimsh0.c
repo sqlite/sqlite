@@ -96,6 +96,7 @@ char *dlerror(void);
 
 #include <limits.h>
 #define jim_wide _int64
+#define HAVE_LONG_LONG 1
 #ifndef LLONG_MAX
 	#define LLONG_MAX    9223372036854775807I64
 #endif
