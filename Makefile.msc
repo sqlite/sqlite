@@ -2330,7 +2330,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0

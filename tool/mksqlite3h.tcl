@@ -53,7 +53,7 @@ if {[lsearch -regexp [lrange $argv 1 end] {^-+enable-recover}] != -1} {
 
 # Get the SQLite version number (ex: 3.6.18) from the $TOP/VERSION file.
 #
-set in [open $TOP/VERSION]
+set in [open [file normalize $TOP/VERSION]]
 set zVersion [string trim [read $in]]
 close $in
 set nVersion [eval format "%d%03d%03d" [split $zVersion .]]

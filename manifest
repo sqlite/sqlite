@@ -1,11 +1,11 @@
-C Minor\smakefile\stweaks\sto\saccount\sfor\scustomizations\svia\sa\scustom\shand-built\smakefile.
-D 2024-10-24T12:57:45.989
+C Tweaks\sto\shelp\smake\sjimsh0\susable\sto\sbuild\susing\snmake.\s\sDoes\snot\squite\swork\nyet,\sbut\sgetting\scloser.
+D 2024-10-24T13:27:25.387
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 9b356be01524cdb771e35f7664e211bcdb397ab55c8d1ff61cf9adb5f80098b8
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
-F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
+F Makefile.msc 06444a62312be0dbb838f5192e596c3674da6776ff36ec0ccb9aa7ae1f8278fc
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -273,7 +273,7 @@ F ext/fts5/test/fts5vocab2.test bbba149c254375d00055930c1a501c9a51e80b0d20bf7b98
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
-F ext/fts5/tool/mkfts5c.tcl 6649ed963a9135e36866f7cc9f8de5c8dcec85b5df089388274cee6381702cb7
+F ext/fts5/tool/mkfts5c.tcl 135b9e160f8e10211c10c5873d5e8c3eaebd3da9ec56a12ae4db157d4738ffe4
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c 3add8197e0a86c1761771a39500ebae749438bcf1836160b407a56b4eaa8721c
@@ -2166,7 +2166,7 @@ F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b0
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
 F tool/mksqlite3c.tcl c6acfdf4e4ef93478ff3ce3cd593e17abb03f446036ce710c3156bcfa18665e0
-F tool/mksqlite3h.tcl d391cff7cad0a372ee1406faee9ccc7dad9cb80a0c95cae0f73d10dd26e06762
+F tool/mksqlite3h.tcl 1432a89bc62f4e7f25e0842ffec68374317abec8af80b650dd4149ffdd44be65
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
@@ -2236,8 +2236,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f531825d4e16502ac8fa496fba51ea735232e2988aa9ddd0f232825f6ec2a9a2
-R d9e4cf4cfcffbde09a24ab1ae9a0abb6
-U stephan
-Z a8f41dea3dc5b35a3293ebbb60fab779
+P 7f92e820e675ea5d54284c534d44ec4f7f242b30920a5f84c020b93f2e7e969d
+R 2d13f98dd8c11ecd021f0f5a9e2cd77e
+U drh
+Z 24f28d9b3a4bdc2845ef3a07db70eab0
 # Remove this line to create a well-formed Fossil manifest.
