@@ -1,9 +1,9 @@
-C Remove\sunused\sconfigure\scheck\sfor\sclang-18.
-D 2024-10-23T17:40:07.588
+C Fix\sout-of-tree\sbuilds\sconfigured\swith\s--disable-amalgamation.
+D 2024-10-24T00:02:44.736
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 2543a2bc53ef627ec0cf45a41ad14f571b5a3bff0049d84a390c5183455c6a09
+F Makefile.in c26ffc3c7ddc87640e5a511bf9bc327c8752638f505ce81cd2e8de4601c4b44c
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -708,7 +708,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 25ec1fb7641de775c2ebc89f25fbb0ad9910bdadaa623d0d0273a6802e3fde39
+F main.mk 2f1961b82b66dc53ade0745967e279d7afe88024a54981b066dd906ffb18dfb9
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc20861443ea52a058f556fdf1ddf03a41c538e3b97ff663833e422a50e38d66
-R 0c9ab7e3cdd99104e706a198b9770bd9
+P d73ac7286aba8e8f9d1236dd06f6055bc3026879ff15efb151cc54175d02e315
+R bcb1899a7d5c22323efb7aa674de32c5
 U stephan
-Z 9a55931e4c5b4461e8bf3c9a7ff6ad60
+Z 732b1afd3b16514e16edefcfd886b58a
 # Remove this line to create a well-formed Fossil manifest.

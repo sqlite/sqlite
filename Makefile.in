@@ -159,7 +159,9 @@ $(JIMSH): $(TOP)/autosetup/jimsh0.c
 BTCLSH = @BTCLSH@
 $(BTCLSH):
 
+#
 # $(CFLAGS_libsqlite3) is documented in main.mk.
+#
 CFLAGS_libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
