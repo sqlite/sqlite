@@ -441,7 +441,9 @@ LIBOBJS1 = sqlite3.o
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
 LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
-
+#LIBSRC0 = $(SRC)
+#LIBSRC1 = sqlite3.c
+#LIBSRC  = $(LIBSRC$(USE_AMALGAMATION))
 $(LIBOBJ): $(MAKE_SANITY_CHECK)
 
 # All of the source code files.
@@ -1737,9 +1739,9 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-sqlite3$(T.exe):	shell.c sqlite3.c $(LIBOBJ)
+sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
-		shell.c $(LIBOBJ) \
+		shell.c sqlite3.c \
 		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline) $(LDFLAGS.icu)
 

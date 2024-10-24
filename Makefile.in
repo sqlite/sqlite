@@ -313,6 +313,7 @@ clean: clean-autosetup
 distclean-autosetup:	clean
 	rm -f sqlite_cfg.h config.log config.status Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
+	rm -f libsqlite3*.$(T.dll)
 	-gmake -C ext/wasm distclean 2>/dev/null; true
 distclean: distclean-autosetup
 

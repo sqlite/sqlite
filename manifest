@@ -1,9 +1,9 @@
-C Tweaks\sto\shelp\smake\sjimsh0\susable\sto\sbuild\susing\snmake.\s\sDoes\snot\squite\swork\nyet,\sbut\sgetting\scloser.
-D 2024-10-24T13:27:25.387
+C Back\sout\s[bd66222721]\sbecause\sit\scauses\sconflicts\swith\stest\sruns,\sapparently\sdue\sto\s.o\sfiles\sbeing\sbuilt\swith\sdifferent\sflags.\sThis\smeans\sthat\sthe\sCLI\sshell\scurrently\sdoes\snot\shonor\s--disable-amalgamation.
+D 2024-10-24T14:33:11.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 9b356be01524cdb771e35f7664e211bcdb397ab55c8d1ff61cf9adb5f80098b8
+F Makefile.in a751c1d84222c389ff83dc9c7d2f4ef2ca29bf357609032bb4af3147f6f38b70
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc 06444a62312be0dbb838f5192e596c3674da6776ff36ec0ccb9aa7ae1f8278fc
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 1b9915be842423224ace56f94ed0134ad1cfaefc28506954ad63cbcacf5ae353
+F main.mk 1cbc48b8316568be25d7d0720bcc80a0b3e4ef2701c418aaaa08e73b36b5bfc7
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2236,8 +2236,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f92e820e675ea5d54284c534d44ec4f7f242b30920a5f84c020b93f2e7e969d
-R 2d13f98dd8c11ecd021f0f5a9e2cd77e
-U drh
-Z 24f28d9b3a4bdc2845ef3a07db70eab0
+P e911303b8d180897c256e5de6edaa6b99239f914b84de2d08b3410650cd52c6d
+Q -bd66222721ad06e99c1b66a3a0fbde06532507aa067165f47fa5d6c41ba630e6
+R 10a78d20a468d904200243ff7416a469
+U stephan
+Z 8d3218807f194cbdcb2529b80d3d52e0
 # Remove this line to create a well-formed Fossil manifest.
