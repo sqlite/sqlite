@@ -1,5 +1,5 @@
-C Reorder\sconditions\sin\ssqlite3PagerDirectReadOk()\sfor\scoverage.
-D 2024-10-23T11:33:56.073
+C Fix\san\sinconsistency\sin\sthe\sway\sSQLITE_CORE\sis\sused\sin\sfts3.c.
+D 2024-10-24T12:06:04.953
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -68,7 +68,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c922380b62bd15bce953dae3350337acbd0fff07c10cdc805819409791eb480a
+F ext/fts3/fts3.c 59ae8c42ed3c39478faa6d122687e467ac34c98a63282e834f7df9cb5076c450
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 968f7d7cae541a6926146e9fd3fb2b2ccbd3845b7890a8ed03de0c06ac776682
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
@@ -2219,8 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 987b96aa636c1801f87d3e1c75d34d45c5b6f437bcc6d150298675447ed16b5d
-R 83c78bc9e17ebe61e54351f39cf78374
-U drh
-Z cf7f2e26bfd189f11890320a8c9dc42f
+P da9124fee28c155c4d1cc0d3949eb7b588a7236c12883a010af7909ad8e534ef
+R 2c588882a830faac9ec2abff1f03e469
+U dan
+Z 74338cb9c56cdad446f65085f6db6d70
 # Remove this line to create a well-formed Fossil manifest.
