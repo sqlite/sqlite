@@ -1061,8 +1061,13 @@ TCLSH_CMD = tclsh
 !ENDIF
 
 # A light-weight TCLSH replacement that can be used for code generation
-# but which is not adequate for testing.
+# but which is not adequate for testing.  This is "jimsh0" by default,
+# with source code in the repository.  To force the whole build to use
+# the full, official tclsh, add WITHOUT_JIMSH=1 to the nmake command line.
 #
+!IFDEF WITHOUT_JIMSH
+JIM_TCLSH = $(TCLSH_CMD)
+!ENDIF
 !IFNDEF JIM_TCLSH
 JIM_TCLSH = $(TOP)\jimsh0.exe
 !ENDIF
