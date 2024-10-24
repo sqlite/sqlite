@@ -1,5 +1,5 @@
-C Various\sbuild\scleanups\scentered\saround\sstraightening\sout\svarious\suses\sof\sCFLAGS\sand\sits\scousins.\sTeach\sMakefile.linux-generic\sto\sfigure\sout\sthe\sTOP\sdir\son\sits\sown\s(a\sGNU\sMake-ism,\sbut\sit's\sa\sLinux-specific\smakefile).
-D 2024-10-24T07:31:39.328
+C Update\sthe\sversion\snumber\sfor\sthe\sTEA\sextension.
+D 2024-10-24T11:11:31.638
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -24,7 +24,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac a73dff08c9aee25cb65bb5f83f511ac71760a7a288c59cfcea6504c1ac0f7ced
+F autoconf/tea/configure.ac ff2d745f88e493080810b67958d88b4f7a7d79f19e2ee8e7f72ffd6fc04eabc7
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -2236,8 +2236,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d4d1d5fefb82ec7458efc2e93c933d9dc415dfa06fa46ff4725c30fc920ca5a
-R bb709993bdd1e18592edf968cb2f2be0
-U stephan
-Z 980b41dc4221bf4da6aefdf6906d7934
+P 58a0f7e79ce913b432dfd4db018e5a92efa8a6bd8a50bd78ab705ceac0322e9c
+R c66389447c3b7b2175096c4d28a4e3c7
+U drh
+Z 8cb6d5a8498acf453471a00efb00ba92
 # Remove this line to create a well-formed Fossil manifest.
