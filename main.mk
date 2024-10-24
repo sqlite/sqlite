@@ -27,7 +27,8 @@ RELEASE ?= MAJOR.MINOR.PATCH
 #
 # The toplevel directory of the source tree.  For canonical builds
 # this is the directory that contains this "Makefile.in" and the
-# "configure.in" script.
+# "configure.in" script. For out-of-tree builds, this will differ
+# from $(PWD).
 TOP ?= $(PWD)
 #
 # $(BCC) =
@@ -46,7 +47,8 @@ BCC ?= $(CC)
 TCC ?= $(BCC)
 #
 # $(AR) =
-# Tool used to build a static library from object files.
+# Tool used to build a static library from object files, including
+# its arguments needed for doing so.
 #
 AR      ?= ar
 #
@@ -191,7 +193,7 @@ all:	sqlite3.h sqlite3.c
 #
 # $(INSTALL) invocation for use with non-executable files.
 #
-INSTALL_noexec = $(INSTALL) -m 0644
+INSTALL.noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
 #
@@ -246,7 +248,7 @@ TLINK.shared = $(TLINK) $(LDFLAGS_SHOBJ)
 # to default to file, 2 to default to memory, and 3 to force temporary
 # tables to always be in memory.
 #
-CFLAGS_libsqlite3 ?= -DSQLITE_TEMP_STORE=1
+CFLAGS_libsqlite3 ?= $(CFLAGS) -DSQLITE_TEMP_STORE=1
 
 #
 # LDFLAGS_libsqlite3 should be used with any target which either
@@ -261,7 +263,7 @@ LDFLAGS_libsqlite3 = \
   $(LDFLAGS_DLOPEN)
 
 #
-# install-dir.XYZ = dirs for installation.
+# $(install-dir.XYZ) = dirs for installation.
 #
 # Design note: these should arguably all be defined with surrounding
 # double-quotes so that targets which have spaces in their paths will
@@ -281,6 +283,28 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
 	$(INSTALL) -d $@
+
+#
+# $(MAKE_SANITY_CHECK) = a set of checks for various make vars which
+# must be provided to this file before including it. If any are
+# missing, this target fails. It does (almost) no semantic validation,
+# only checks to see that appropriate vars are not empty.
+#
+# Note that $(MAKEFILE_LIST) is a GNU-make-ism but its use is harmless
+# in other flavors of Make.
+#
+MAKE_SANITY_CHECK = .main.mk.checks
+$(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
+	@if [ x = "x$(TOP)" ]; then echo "Missing TOP var" 1>&2; exit 1; fi
+	@if [ ! -d "$(TOP)" ]; then echo "TOP is not a directory" 1>&2; exit 1; fi
+	@if [ x = "x$(BCC)" ]; then echo "Missing BCC var" 1>&2; exit 1; fi
+	@if [ x = "x$(TCC)" ]; then echo "Missing TCC var" 1>&2; exit 1; fi
+	@if [ x = "x$(RELEASE)" ]; then echo "Missing RELEASE var" 1>&2; exit 1; fi
+	@if [ x = "x$(BTCLSH)" ]; then echo "Missing BTCLSH var" 1>&2; exit 1; fi
+	touch $@
+clean-sanity-check:
+	rm -f $(MAKE_SANITY_CHECK)
+clean: clean-sanity-check
 
 #
 # Object files for the SQLite library (non-amalgamation).
@@ -319,6 +343,8 @@ LIBOBJS1 = sqlite3.o
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
 LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
+
+$(LIBOBJ): $(MAKE_SANITY_CHECK)
 
 # All of the source code files.
 #
@@ -769,7 +795,7 @@ FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
-
+$(TCLSH_CMD):
 has_tclsh84:
 	sh $(TOP)/tool/cktclsh.sh 8.4 $(TCLSH_CMD)
 	touch has_tclsh84
@@ -791,7 +817,8 @@ has_tclconfig:
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c $(BTCLSH) # has_tclsh84
+.target_source: $(MAKE_SANITY_CHECK) $(SRC) $(TOP)/tool/vdbe-compress.tcl \
+    fts5.c $(BTCLSH) # has_tclsh84
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
@@ -806,16 +833,17 @@ libsqlite3.SO = libsqlite3$(TDLL)
 
 # Rules to build the LEMON compiler generator
 #
-lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+lemon$(BEXE): $(MAKE_SANITY_CHECK) $(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
 # Rules to build the program that generates the source-id
 #
-mksourceid$(BEXE):	$(TOP)/tool/mksourceid.c
+mksourceid$(BEXE): $(MAKE_SANITY_CHECK) $(TOP)/tool/mksourceid.c
 	$(BCC) -o $@ $(TOP)/tool/mksourceid.c
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest mksourceid$(BEXE) \
+sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
+    $(TOP)/manifest mksourceid$(BEXE) \
 		$(TOP)/VERSION $(BTCLSH) # has_tclsh84
 	$(BTCLSH) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
@@ -834,7 +862,7 @@ sqlite3r.c: sqlite3.c sqlite3r.h $(BTCLSH) # has_tclsh84
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
 	$(BTCLSH) $(TOP)/tool/mksqlite3c.tcl --enable-recover $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 
-sqlite3ext.h:	.target_source
+sqlite3ext.h: .target_source
 	cp tsrc/sqlite3ext.h .
 
 # Rules to build individual *.o files from generated *.c files. This
@@ -843,7 +871,8 @@ sqlite3ext.h:	.target_source
 #     parse.o
 #     opcodes.o
 #
-parse.o:	parse.c $(HDR)
+DEPS_OBJ_COMMON = $(MAKE_SANITY_CHECK) $(HDR)
+parse.o:	parse.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c parse.c
 
 opcodes.o:	opcodes.c
@@ -851,257 +880,257 @@ opcodes.o:	opcodes.c
 
 # Rules to build individual *.o files from files in the src directory.
 #
-alter.o:	$(TOP)/src/alter.c $(HDR)
+alter.o:	$(TOP)/src/alter.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/alter.c
 
-analyze.o:	$(TOP)/src/analyze.c $(HDR)
+analyze.o:	$(TOP)/src/analyze.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/analyze.c
 
-attach.o:	$(TOP)/src/attach.c $(HDR)
+attach.o:	$(TOP)/src/attach.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/attach.c
 
-auth.o:	$(TOP)/src/auth.c $(HDR)
+auth.o:	$(TOP)/src/auth.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/auth.c
 
-backup.o:	$(TOP)/src/backup.c $(HDR)
+backup.o:	$(TOP)/src/backup.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/backup.c
 
-bitvec.o:	$(TOP)/src/bitvec.c $(HDR)
+bitvec.o:	$(TOP)/src/bitvec.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/bitvec.c
 
-btmutex.o:	$(TOP)/src/btmutex.c $(HDR)
+btmutex.o:	$(TOP)/src/btmutex.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/btmutex.c
 
-btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
+btree.o:	$(TOP)/src/btree.c $(DEPS_OBJ_COMMON) $(TOP)/src/pager.h
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/btree.c
 
-build.o:	$(TOP)/src/build.c $(HDR)
+build.o:	$(TOP)/src/build.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/build.c
 
-callback.o:	$(TOP)/src/callback.c $(HDR)
+callback.o:	$(TOP)/src/callback.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/callback.c
 
-complete.o:	$(TOP)/src/complete.c $(HDR)
+complete.o:	$(TOP)/src/complete.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/complete.c
 
-ctime.o:	$(TOP)/src/ctime.c $(HDR)
+ctime.o:	$(TOP)/src/ctime.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/ctime.c
 
-date.o:	$(TOP)/src/date.c $(HDR)
+date.o:	$(TOP)/src/date.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/date.c
 
-dbpage.o:	$(TOP)/src/dbpage.c $(HDR)
+dbpage.o:	$(TOP)/src/dbpage.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbpage.c
 
-dbstat.o:	$(TOP)/src/dbstat.c $(HDR)
+dbstat.o:	$(TOP)/src/dbstat.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/dbstat.c
 
-delete.o:	$(TOP)/src/delete.c $(HDR)
+delete.o:	$(TOP)/src/delete.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/delete.c
 
-expr.o:	$(TOP)/src/expr.c $(HDR)
+expr.o:	$(TOP)/src/expr.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/expr.c
 
-fault.o:	$(TOP)/src/fault.c $(HDR)
+fault.o:	$(TOP)/src/fault.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/fault.c
 
-fkey.o:	$(TOP)/src/fkey.c $(HDR)
+fkey.o:	$(TOP)/src/fkey.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/fkey.c
 
-func.o:	$(TOP)/src/func.c $(HDR)
+func.o:	$(TOP)/src/func.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/func.c
 
-global.o:	$(TOP)/src/global.c $(HDR)
+global.o:	$(TOP)/src/global.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/global.c
 
-hash.o:	$(TOP)/src/hash.c $(HDR)
+hash.o:	$(TOP)/src/hash.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/hash.c
 
-insert.o:	$(TOP)/src/insert.c $(HDR)
+insert.o:	$(TOP)/src/insert.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/insert.c
 
-json.o:	$(TOP)/src/json.c $(HDR)
+json.o:	$(TOP)/src/json.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/json.c
 
-legacy.o:	$(TOP)/src/legacy.c $(HDR)
+legacy.o:	$(TOP)/src/legacy.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/legacy.c
 
-loadext.o:	$(TOP)/src/loadext.c $(HDR)
+loadext.o:	$(TOP)/src/loadext.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/loadext.c
 
-main.o:	$(TOP)/src/main.c $(HDR)
+main.o:	$(TOP)/src/main.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/main.c
 
-malloc.o:	$(TOP)/src/malloc.c $(HDR)
+malloc.o:	$(TOP)/src/malloc.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/malloc.c
 
-mem0.o:	$(TOP)/src/mem0.c $(HDR)
+mem0.o:	$(TOP)/src/mem0.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem0.c
 
-mem1.o:	$(TOP)/src/mem1.c $(HDR)
+mem1.o:	$(TOP)/src/mem1.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem1.c
 
-mem2.o:	$(TOP)/src/mem2.c $(HDR)
+mem2.o:	$(TOP)/src/mem2.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem2.c
 
-mem3.o:	$(TOP)/src/mem3.c $(HDR)
+mem3.o:	$(TOP)/src/mem3.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem3.c
 
-mem5.o:	$(TOP)/src/mem5.c $(HDR)
+mem5.o:	$(TOP)/src/mem5.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mem5.c
 
-memdb.o:	$(TOP)/src/memdb.c $(HDR)
+memdb.o:	$(TOP)/src/memdb.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/memdb.c
 
-memjournal.o:	$(TOP)/src/memjournal.c $(HDR)
+memjournal.o:	$(TOP)/src/memjournal.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/memjournal.c
 
-mutex.o:	$(TOP)/src/mutex.c $(HDR)
+mutex.o:	$(TOP)/src/mutex.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex.c
 
-mutex_noop.o:	$(TOP)/src/mutex_noop.c $(HDR)
+mutex_noop.o:	$(TOP)/src/mutex_noop.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_noop.c
 
-mutex_unix.o:	$(TOP)/src/mutex_unix.c $(HDR)
+mutex_unix.o:	$(TOP)/src/mutex_unix.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_unix.c
 
-mutex_w32.o:	$(TOP)/src/mutex_w32.c $(HDR)
+mutex_w32.o:	$(TOP)/src/mutex_w32.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/mutex_w32.c
 
-notify.o:	$(TOP)/src/notify.c $(HDR)
+notify.o:	$(TOP)/src/notify.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/notify.c
 
-pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
+pager.o:	$(TOP)/src/pager.c $(DEPS_OBJ_COMMON) $(TOP)/src/pager.h
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pager.c
 
-pcache.o:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
+pcache.o:	$(TOP)/src/pcache.c $(DEPS_OBJ_COMMON) $(TOP)/src/pcache.h
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache.c
 
-pcache1.o:	$(TOP)/src/pcache1.c $(HDR) $(TOP)/src/pcache.h
+pcache1.o:	$(TOP)/src/pcache1.c $(DEPS_OBJ_COMMON) $(TOP)/src/pcache.h
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pcache1.c
 
-os.o:	$(TOP)/src/os.c $(HDR)
+os.o:	$(TOP)/src/os.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os.c
 
-os_kv.o:	$(TOP)/src/os_kv.c $(HDR)
+os_kv.o:	$(TOP)/src/os_kv.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_kv.c
 
-os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
+os_unix.o:	$(TOP)/src/os_unix.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_unix.c
 
-os_win.o:	$(TOP)/src/os_win.c $(HDR)
+os_win.o:	$(TOP)/src/os_win.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/os_win.c
 
-pragma.o:	$(TOP)/src/pragma.c $(HDR)
+pragma.o:	$(TOP)/src/pragma.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/pragma.c
 
-prepare.o:	$(TOP)/src/prepare.c $(HDR)
+prepare.o:	$(TOP)/src/prepare.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/prepare.c
 
-printf.o:	$(TOP)/src/printf.c $(HDR)
+printf.o:	$(TOP)/src/printf.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/printf.c
 
-random.o:	$(TOP)/src/random.c $(HDR)
+random.o:	$(TOP)/src/random.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/random.c
 
-resolve.o:	$(TOP)/src/resolve.c $(HDR)
+resolve.o:	$(TOP)/src/resolve.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/resolve.c
 
-rowset.o:	$(TOP)/src/rowset.c $(HDR)
+rowset.o:	$(TOP)/src/rowset.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/rowset.c
 
-select.o:	$(TOP)/src/select.c $(HDR)
+select.o:	$(TOP)/src/select.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/select.c
 
-status.o:	$(TOP)/src/status.c $(HDR)
+status.o:	$(TOP)/src/status.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/status.c
 
 sqlite3.o:	sqlite3.h sqlite3.c
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c sqlite3.c
 
-table.o:	$(TOP)/src/table.c $(HDR)
+table.o:	$(TOP)/src/table.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/table.c
 
-threads.o:	$(TOP)/src/threads.c $(HDR)
+threads.o:	$(TOP)/src/threads.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/threads.c
 
-tokenize.o:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
+tokenize.o:	$(TOP)/src/tokenize.c keywordhash.h $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/tokenize.c
 
-treeview.o:	$(TOP)/src/treeview.c $(HDR)
+treeview.o:	$(TOP)/src/treeview.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/treeview.c
 
-trigger.o:	$(TOP)/src/trigger.c $(HDR)
+trigger.o:	$(TOP)/src/trigger.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/trigger.c
 
-update.o:	$(TOP)/src/update.c $(HDR)
+update.o:	$(TOP)/src/update.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/update.c
 
-upsert.o:	$(TOP)/src/upsert.c $(HDR)
+upsert.o:	$(TOP)/src/upsert.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/upsert.c
 
-utf.o:	$(TOP)/src/utf.c $(HDR)
+utf.o:	$(TOP)/src/utf.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/utf.c
 
-util.o:	$(TOP)/src/util.c $(HDR)
+util.o:	$(TOP)/src/util.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/util.c
 
-vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
+vacuum.o:	$(TOP)/src/vacuum.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vacuum.c
 
-vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
+vdbe.o:	$(TOP)/src/vdbe.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbe.c
 
-vdbeapi.o:	$(TOP)/src/vdbeapi.c $(HDR)
+vdbeapi.o:	$(TOP)/src/vdbeapi.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeapi.c
 
-vdbeaux.o:	$(TOP)/src/vdbeaux.c $(HDR)
+vdbeaux.o:	$(TOP)/src/vdbeaux.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeaux.c
 
-vdbeblob.o:	$(TOP)/src/vdbeblob.c $(HDR)
+vdbeblob.o:	$(TOP)/src/vdbeblob.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbeblob.c
 
-vdbemem.o:	$(TOP)/src/vdbemem.c $(HDR)
+vdbemem.o:	$(TOP)/src/vdbemem.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbemem.c
 
-vdbesort.o:	$(TOP)/src/vdbesort.c $(HDR)
+vdbesort.o:	$(TOP)/src/vdbesort.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbesort.c
 
-vdbetrace.o:	$(TOP)/src/vdbetrace.c $(HDR)
+vdbetrace.o:	$(TOP)/src/vdbetrace.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbetrace.c
 
-vdbevtab.o:	$(TOP)/src/vdbevtab.c $(HDR)
+vdbevtab.o:	$(TOP)/src/vdbevtab.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vdbevtab.c
 
-vtab.o:	$(TOP)/src/vtab.c $(HDR)
+vtab.o:	$(TOP)/src/vtab.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/vtab.c
 
-wal.o:	$(TOP)/src/wal.c $(HDR)
+wal.o:	$(TOP)/src/wal.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/wal.c
 
-walker.o:	$(TOP)/src/walker.c $(HDR)
+walker.o:	$(TOP)/src/walker.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/walker.c
 
-where.o:	$(TOP)/src/where.c $(HDR)
+where.o:	$(TOP)/src/where.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/where.c
 
-wherecode.o:	$(TOP)/src/wherecode.c $(HDR)
+wherecode.o:	$(TOP)/src/wherecode.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/wherecode.c
 
-whereexpr.o:	$(TOP)/src/whereexpr.c $(HDR)
+whereexpr.o:	$(TOP)/src/whereexpr.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/whereexpr.c
 
-window.o:	$(TOP)/src/window.c $(HDR)
+window.o:	$(TOP)/src/window.c $(DEPS_OBJ_COMMON)
 	$(TCC.sqlite) $(CFLAGS_libsqlite3) -c $(TOP)/src/window.c
 
-tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
+tclsqlite.o:	$(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(TCOMPILE) -DUSE_TCL_STUBS=1 $(TCL_INCLUDE_SPEC) $(CFLAGS_intree_includes) \
 		-c $(TOP)/src/tclsqlite.c
 
-tclsqlite-shell.o:	$(TOP)/src/tclsqlite.c $(HDR)
+tclsqlite-shell.o:	$(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(TCOMPILE) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c $(TCL_INCLUDE_SPEC)
 
-tclsqlite-stubs.o:	$(TOP)/src/tclsqlite.c $(HDR)
+tclsqlite-stubs.o:	$(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(TCOMPILE) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $(TCL_INCLUDE_SPEC)
 
 tclsqlite3$(TEXE):	has_tclconfig tclsqlite-shell.o $(libsqlite3.LIB)
@@ -1186,14 +1215,14 @@ install: install-so-$(ENABLE_SHARED)
 # Install $(libsqlite3.LIB)
 #
 install-lib: $(install-dir.lib) $(libsqlite3.LIB)
-	$(INSTALL_noexec) $(libsqlite3.LIB) $(install-dir.lib)
+	$(INSTALL.noexec) $(libsqlite3.LIB) $(install-dir.lib)
 install: install-lib
 
 #
 # Install C header files
 #
 install-includes: sqlite3.h $(install-dir.include)
-	$(INSTALL_noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install-dir.include)
+	$(INSTALL.noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install-dir.include)
 install: install-includes
 
 #
@@ -1216,7 +1245,7 @@ install-tcl-1: install-lib $(libtclsqlite3.SO) pkgIndex.tcl
 	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
-	$(INSTALL_noexec) pkgIndex.tcl $(install.tcldir)
+	$(INSTALL.noexec) pkgIndex.tcl $(install.tcldir)
 install-tcl-0 install-tcl-:
 install: install-tcl-$(HAVE_TCL)
 
@@ -1286,10 +1315,10 @@ fts5.c: $(FTS5_SRC) $(BTCLSH) # has_tclsh84
 	$(BTCLSH) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
-fts5.o:	fts5.c $(HDR) $(EXTHDR)
+fts5.o:	fts5.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(TCC.extension) -c fts5.c
 
-sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(TCC.extension) -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
@@ -1658,14 +1687,14 @@ install-rsync: sqlite3_rsync$(TEXE) $(install-dir.bin)
 #install: install-rsync
 
 install-man1: $(install-dir.man1)
-	$(INSTALL_noexec) $(TOP)/sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) $(TOP)/sqlite3.1 $(install-dir.man1)
 install: install-man1
 
 #
 # sqlite3.pc is typically generated by the configure script but could
 # conceivably be generated by hand.
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
-	$(INSTALL_noexec) sqlite3.pc $(install-dir.pkgconfig)
+	$(INSTALL.noexec) sqlite3.pc $(install-dir.pkgconfig)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(TLINK) -o $@ -I. -DSCRUB_STANDALONE \
@@ -1816,66 +1845,60 @@ shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(BTCLSH) # has_tclsh84
 #
 # Rules to build the extension objects.
 #
-icu.o:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
+DEPS_EXT_COMMON = $(DEPS_OBJ_COMMON) $(EXTHDR)
+icu.o:	$(TOP)/ext/icu/icu.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/icu/icu.c
 
-fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
+fts3.o:	$(TOP)/ext/fts3/fts3.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3.c
 
-fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(HDR) $(EXTHDR)
+fts3_aux.o:	$(TOP)/ext/fts3/fts3_aux.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_aux.c
 
-fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
+fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_expr.c
 
-fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
+fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_hash.c
 
-fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
+fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_icu.c
 
-fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
+fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_porter.c
 
-fts3_snippet.o:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
+fts3_snippet.o:	$(TOP)/ext/fts3/fts3_snippet.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_snippet.c
 
-fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
+fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenizer.c
 
-fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
+fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenizer1.c
 
-fts3_tokenize_vtab.o:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(HDR) $(EXTHDR)
+fts3_tokenize_vtab.o:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
 
-fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
+fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_unicode.c
 
-fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
+fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_unicode2.c
 
-fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
+fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/fts3/fts3_write.c
 
-rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
+rtree.o:	$(TOP)/ext/rtree/rtree.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/rtree/rtree.c
 
-userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+userauth.o:	$(TOP)/ext/userauth/userauth.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/userauth/userauth.c
 
-sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/session/sqlite3session.c
 
-stmt.o:	$(TOP)/ext/misc/stmt.c
+stmt.o:	$(TOP)/ext/misc/stmt.c $(DEPS_EXT_COMMON)
 	$(TCC.extension) -c $(TOP)/ext/misc/stmt.c
-
-#
-# tool/version-info: a utility for emitting sqlite3 version info
-# in various forms.
-#
-version-info$(TEXE):	$(TOP)/tool/version-info.c Makefile sqlite3.h
-	$(TLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
 #
 # Windows section
@@ -1914,8 +1937,12 @@ tidy:
 	rm -f mptester$(TEXE) rbu$(TEXE)	srcck1$(TEXE)
 	rm -f fuzzershell$(TEXE) fuzzcheck$(TEXE) sqldiff$(TEXE) dbhash$(TEXE)
 	rm -f dbfuzz$(TEXE) dbfuzz2$(TEXE)
+	rm -fr dbfuzz2-dir
 	rm -f fuzzcheck-asan$(TEXE) fuzzcheck-ubsan$(TEXE) ossshell$(TEXE)
-	rm -f sessionfuzz$(TEXE)
+	rm -f scrub$(TEXE) showshm$(TEXE) sqlite3_checker$(TEXE) loadfts$(EXE)
+	rm -f index_usage$(TEXE) kvtest$(TEXE) startup$(TEXE) threadtest3$(TEXE)
+	rm -f sessionfuzz$(TEXE) changesetfuzz$(TEXE)
+	rm -f dbdump$(TEXE) dbtotxt$(TEXE) atrc$(TEXX)
 	rm -f threadtest5$(TEXE)
 	rm -f src-verify$(BEXE) has_tclsh* has_tclconfig
 	rm -f tclsqlite3.c

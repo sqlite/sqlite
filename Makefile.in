@@ -164,7 +164,7 @@ $(BTCLSH):
 #
 # $(CFLAGS_libsqlite3) is documented in main.mk.
 #
-CFLAGS_libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
+CFLAGS_libsqlite3 = $(CFLAGS) -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
@@ -331,5 +331,12 @@ distclean-autosetup:	clean
 	rm -f $(TOP)/tool/emcc.sh
 	-gmake -C ext/wasm distclean 2>/dev/null; true
 distclean: distclean-autosetup
+
+#
+# tool/version-info: a utility for emitting sqlite3 version info
+# in various forms.
+#
+version-info$(TEXE): $(TOP)/tool/version-info.c Makefile sqlite3.h
+	$(TLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
 include $(TOP)/main.mk
