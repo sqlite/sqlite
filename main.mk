@@ -49,9 +49,12 @@ B.cc ?= $(CC)
 T.cc ?= $(B.cc)
 #
 # $(AR) =
-# Tool used to build a static library from object files.
 #
-AR      ?= ar
+# Tool used to build a static library from object files, without its
+# arguments. $(AR.flags) are its flags for creating a lib.
+#
+AR       ?= ar
+AR.flags ?= cr
 #
 # $(B.exe) =
 #
@@ -72,14 +75,14 @@ B.lib ?= .lib
 # File extension for executables on the target platform. ".exe" for
 # Windows and "" everywhere else.
 #
-T.exe ?=
+T.exe ?= $(B.exe)
 #
 # $(T.dll) and $(T.lib) =
 #
 # The DLL resp. static library counterparts of $(T.exe).
 #
-T.dll ?= .so
-T.lib ?= .lib
+T.dll ?= $(B.dll)
+T.lib ?= $(B.lib)
 #
 # $(TCLSH_CMD) =
 #
@@ -111,6 +114,16 @@ JIMSH ?= ./jimsh$(T.exe)
 B.tclsh ?= $(JIMSH)
 
 #
+# Various system-level directories, mostly needed for installation and
+# for finding system-level dependencies.
+#
+prefix       ?= /usr/local
+exec_prefix  ?= $(prefix)
+libdir       ?= $(prefix)/lib
+pkgconfigdir ?= $(libdir)/pkgconfig
+bindir       ?= $(prefix)/bin
+includedir   ?= $(prefix)/include
+#
 # $(LDFLAGS.{feature}) and $(CFLAGS.{feature}) =
 #
 # Linker resp. C/CPP flags required by a specific feature, e.g.
@@ -123,21 +136,20 @@ B.tclsh ?= $(JIMSH)
 LDFLAGS.zlib ?= -lz
 LDFLAGS.math ?= -lm
 LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
-LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
-CFLAGS.readline ?=
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shobj ?= -shared
+LDFLAGS.icu ?= # -licui18n -licuuc -licudata
+# libreadline (or a workalike):
+# To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE
+LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
+CFLAGS.readline ?= -I$(prefix)/include/readline
+# ^^^ When using linenoise instead of readline, do something like:
+# SHELL_OPT += -DHAVE_LINENOISE
+# CFLAGS.readline = $(HOME)/linenoise $(HOME)/linenoise/linenoise.c
+# LDFLAGS.readline = # empty
+
 #
-# Various system-level directories, mostly needed for installation and
-# for finding system-level dependencies.
-#
-prefix       ?= /usr/local
-exec_prefix  ?= $(prefix)
-libdir       ?= $(prefix)/lib
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir       ?= $(prefix)/bin
-includedir   ?= $(prefix)/include
 #
 # $(INSTALL) =
 #
@@ -1261,7 +1273,7 @@ sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh) # has_tclsh84
 # Static libsqlite3
 #
 $(libsqlite3.LIB): $(LIBOBJ)
-	$(AR) crs $@ $(LIBOBJ)
+	$(AR) $(AR.flags) $@ $(LIBOBJ)
 lib: $(libsqlite3.LIB)
 all: lib
 
@@ -1729,7 +1741,7 @@ sqlite3$(T.exe):	shell.c sqlite3.c $(LIBOBJ)
 	$(T.link) -o $@ \
 		shell.c $(LIBOBJ) \
 		$(CFLAGS.readline) $(SHELL_OPT) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline) $(LDFLAGS.icu)
 
 #
 # Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
