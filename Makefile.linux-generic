@@ -38,7 +38,8 @@ SHELL_OPT ?= -DHAVE_READLINE=1
 #
 # Library's version number.
 #
-RELEASE ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
+VERSION.XYZ ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
+$(info VERSION.XYZ=$(VERSION.XYZ))
 
 # You should not have to change anything below this line
 ###############################################################################

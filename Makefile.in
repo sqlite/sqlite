@@ -50,12 +50,22 @@ clean:
 # SHELL_OPT out of the makefile.
 #
 #
-# Maintenance reminder: When using the X?=Y variable assignment
-# formulation, please test the build with both GNU make and a POSIX
-# make (e.g. BSD make, a.k.a. bmake). On at least one occassion, that
-# formulation has led to inconsistent behavior between the two major
-# make flavors when used with variable names which might sensibly be
-# in the developer's environment (namely CC).
+# Maintenance reminders:
+#
+# - When using the X?=Y variable assignment formulation, please test
+#   the build with both GNU make and a POSIX make (e.g. BSD make,
+#   a.k.a. bmake). On at least one occassion, that formulation has led
+#   to inconsistent behavior between the two major make flavors when
+#   used with variable names which might sensibly be in the
+#   developer's environment (namely CC).
+#
+# - The naming convention of some vars, using periods instead of
+#   underscores, though unconventional, was selected for a couple of
+#   reasons: 1) Personal taste (for which there is no accounting).  2)
+#   It is thought to help defend against inadvertent injection of
+#   those vars via environment variables (because X.Y is not a legal
+#   environment variable name).  "Feature or bug?" is debatable and
+#   this naming convention may be reverted if it causes any grief.
 #
 
 #
@@ -88,14 +98,14 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 TCC = $(CC) $(CFLAGS)
 CFLAGS = @CFLAGS@ @SH_CFLAGS@
 
-LDFLAGS_SHOBJ = @SHOBJ_LDFLAGS@
-LDFLAGS_ZLIB = @LDFLAGS_ZLIB@
-LDFLAGS_MATH = @LDFLAGS_MATH@
-LDFLAGS_RPATH = @LDFLAGS_RPATH@
-LDFLAGS_PTHREAD = @LDFLAGS_PTHREAD@
-LDFLAGS_DLOPEN = @LDFLAGS_DLOPEN@
-LDFLAGS_READLINE = @LDFLAGS_READLINE@
-CFLAGS_READLINE = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
+LDFLAGS.shobj = @SHOBJ_LDFLAGS@
+LDFLAGS.zlib = @LDFLAGS_ZLIB@
+LDFLAGS.math = @LDFLAGS_MATH@
+LDFLAGS.rpath = @LDFLAGS_RPATH@
+LDFLAGS.pthread = @LDFLAGS_PTHREAD@
+LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
+LDFLAGS.readline = @LDFLAGS_READLINE@
+CFLAGS.readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -110,8 +120,8 @@ TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
 # main.mk will fill out TCC.sqlite with some flags common to all builds.
 
-#XX#CFLAGS_READLINE += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#CFLAGS_READLINE += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
+#XX#CFLAGS.readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
+#XX#CFLAGS.readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
 #XX#
 #XX## The library that programs using readline() must link against.
 #XX##
@@ -122,9 +132,9 @@ TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #XX#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 #
-# $(JIMSH) and $(CFLAGS_JIMSH) are documented in main.mk.
+# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.
 #
-CFLAGS_JIMSH = @CFLAGS_JIMSH@
+CFLAGS.JIMSH = @CFLAGS_JIMSH@
 JIMSH = $(TOP)/jimsh$(TEXE)
 
 #
@@ -134,9 +144,9 @@ BTCLSH = @BTCLSH@
 $(BTCLSH):
 
 #
-# $(CFLAGS_libsqlite3) is documented in main.mk.
+# $(CFLAGS.libsqlite3) is documented in main.mk.
 #
-CFLAGS_libsqlite3 = $(CFLAGS) -DSQLITE_TEMP_STORE=@TEMP_STORE@
+CFLAGS.libsqlite3 = $(CFLAGS) -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
@@ -154,8 +164,8 @@ TCC += $(OPTS)
 # Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
 # compiled.
 #
-RELEASE = @RELEASE@
-# VERSION = @VERSION@ # we don't currently use this anywhere
+VERSION.XYZ = @RELEASE@
+# VERSION.XY = @VERSION@ # we don't currently use this anywhere
 
 #
 # Filename extensions for binaries and libraries
@@ -218,11 +228,11 @@ TCLLIBDIR = @TCLLIBDIR@
 # for more info.
 #
 
-CFLAGS_GCOV1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
-LDFLAGS_GCOV1 = -lgcov
+CFLAGS.GCOV1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
+LDFLAGS.GCOV1 = -lgcov
 USE_GCOV = @USE_GCOV@
-TCOMPILE_EXTRAS += $(CFLAGS_GCOV$(USE_GCOV))
-TLINK_EXTRAS += $(LDFLAGS_GCOV$(USE_GCOV))
+TCOMPILE.EXTRAS += $(CFLAGS.GCOV$(USE_GCOV))
+TLINK.EXTRAS += $(LDFLAGS.GCOV$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.
