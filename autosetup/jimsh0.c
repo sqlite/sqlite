@@ -109,11 +109,7 @@ char *dlerror(void);
 #define strtoull _strtoui64
 
 #include <io.h>
-
-struct timeval {
-	long tv_sec;
-	long tv_usec;
-};
+#include <winsock.h>
 
 int gettimeofday(struct timeval *tv, void *unused);
 
@@ -1243,7 +1239,7 @@ int Jim_OpenForRead(const char *filename);
     #endif
 #endif
 
-#ifndef O_TEXT
+#if !defined(O_TEXT) && !defined(_WIN32)
 #define O_TEXT 0
 #endif
 
@@ -6721,9 +6717,11 @@ int Jim_arrayInit(Jim_Interp *interp)
 }
 
 #include <sys/types.h>
+#ifndef _WIN32
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <errno.h>
 
@@ -23567,6 +23565,36 @@ void Jim_SetResultErrno(Jim_Interp *interp, const char *msg)
 {
     Jim_SetResultFormatted(interp, "%s: %s", msg, strerror(Jim_Errno()));
 }
+
+#if defined(_WIN32)
+#include <windows.h>
+int Jim_Errno(void){ return 0; }
+int Jim_MakeTempFile(Jim_Interp *interp, const char *filename_template, int unlink_file)
+{
+    char name[MAX_PATH];
+    HANDLE handle;
+
+    if (!GetTempPath(MAX_PATH, name) || !GetTempFileName(name, filename_template ? filename_template : "JIM", 0, name)) {
+        return -1;
+    }
+
+    handle = CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, NULL,
+            CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | (unlink_file ? FILE_FLAG_DELETE_ON_CLOSE : 0),
+            NULL);
+
+    if (handle == INVALID_HANDLE_VALUE) {
+        goto error;
+    }
+
+    Jim_SetResultString(interp, name, -1);
+    return _open_osfhandle((intptr_t)handle, _O_RDWR | _O_TEXT);
+
+  error:
+    Jim_SetResultErrno(interp, name);
+    DeleteFile(name);
+    return -1;
+}
+#endif
 
 #if defined(__MINGW32__)
 #include <sys/stat.h>
