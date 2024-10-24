@@ -122,37 +122,10 @@ TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #XX#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 #
-# JimTCL is part of the autosetup suite and is suitable for all
-# current in-tree code-generation TCL jobs, but it requires that we
-# build it with non-default flags. Note that the build tree will, if
-# no system-level tclsh is found, also have a ./jimsh0 binary. That
-# one is a bare-bones build for the configure process, whereas we need
-# to build it with another option enabled for use with the various
-# code generators.
+# $(JIMSH) and $(CFLAGS_JIMSH) are documented in main.mk.
 #
-# After jimsh is compiled, we run some sanity checks to ensure that
-# it was built in a way compatible with this project's scripts:
-#
-# 1) Ensure that it was built with realpath() or _fullpath() support.
-# Without that flag the [file normalize] command will always resolve
-# to an empty string.
-#
-# 2) Ensure that it is built with -DJIM_COMPAT (which may be
-# hard-coded into jimsh0.c). Without this, the [expr] command
-# accepts only a single argument.
-#
-CFLAGS_JIMSH ?= @CFLAGS_JIMSH@
-JIMSH = @builddir@/jimsh$(TEXE)
-$(JIMSH): $(TOP)/autosetup/jimsh0.c
-	$(BCC) -o $@ $(CFLAGS_JIMSH) $(TOP)/autosetup/jimsh0.c
-	@if [ x = "x$$($(JIMSH) -e 'file normalize $(JIMSH)' 2>/dev/null)" ]; then \
-		echo "jimsh was built without -DHAVE_REALPATH or -DHAVE__FULLPATH." 1>&2; \
-		exit 1; \
-	fi
-	@if [ x3 != "x$$($(JIMSH) -e 'expr 1 + 2' 2>/dev/null)" ]; then \
-		echo "jimsh was built without -DJIM_COMPAT." 1>&2; \
-		exit 1; \
-	fi
+CFLAGS_JIMSH = @CFLAGS_JIMSH@
+JIMSH = $(TOP)/jimsh$(TEXE)
 
 # BTCLSH is the tclsh-compatible app used for running various code
 # generators and other in-tree tools, as opposed to the TCL-based
@@ -327,7 +300,7 @@ clean-autosetup:
 clean: clean-autosetup
 
 distclean-autosetup:	clean
-	rm -f sqlite_cfg.h config.log config.status $(JIMSH) Makefile sqlite3.pc
+	rm -f sqlite_cfg.h config.log config.status Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	-gmake -C ext/wasm distclean 2>/dev/null; true
 distclean: distclean-autosetup

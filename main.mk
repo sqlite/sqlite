@@ -81,12 +81,26 @@ TLIB ?= .lib
 # The canonical tclsh.
 TCLSH_CMD ?= tclsh
 #
+# JimTCL is part of the autosetup suite and is suitable for all
+# current in-tree code-generation TCL jobs, but it requires that we
+# build it with non-default flags. Note that the build tree will, if
+# no system-level tclsh is found, also have a ./jimsh0 binary. That
+# one is a bare-bones build for the configure process, whereas we need
+# to build it with another option enabled for use with the various
+# code generators.
+#
+CFLAGS_JIMSH ?= -DHAVE_REALPATH
+JIMSH ?= ./jimsh$(TEXE)
+#
 # $(BTCLSH) =
 #
 # The TCL interpreter for in-tree code generation. May be either the
-# in-tree JimTCL or the canonical TCL. If it's JimTCL, it must be
-# compiled with -DJIM_COMPAT and -DHAVE_REALPATH.
-BTCLSH ?= $(TCLSH_CMD)
+# in-tree JimTCL ($(JIMSH)) or the canonical TCL ($(TCLSH_CMD). If
+# it's JimTCL, it must be compiled with -DHAVE_REALPATH or
+# -DHAVE__FULLPATH.
+#
+BTCLSH ?= $(JIMSH)
+
 #
 # $(LDFLAGS_{FEATURE}) and $(CFLAGS_{FEATURE}) =
 #
@@ -96,6 +110,7 @@ BTCLSH ?= $(TCLSH_CMD)
 # Rather that stuffing all CFLAGS and LDFLAGS into a single set, we
 # break them down on a per-feature basis and expect the build targets
 # to use the one(s) it needs.
+#
 LDFLAGS_ZLIB ?= -lz
 LDFLAGS_MATH ?= -lm
 LDFLAGS_RPATH ?= -Wl,-rpath -Wl,$(prefix)/lib
@@ -107,6 +122,7 @@ LDFLAGS_SHOBJ ?= -shared
 #
 # Various system-level directories, mostly needed for installation and
 # for finding system-level dependencies.
+#
 prefix       ?= /usr/local
 exec_prefix  ?= $(prefix)
 libdir       ?= $(prefix)/lib
@@ -121,22 +137,26 @@ includedir   ?= $(prefix)/include
 # install-sh is _not_ compatible with this because it _moves_ targets
 # during installation, which may break the build of targets which are
 # built after others are installed.
+#
 INSTALL ?= install
 #
 # $(ENABLE_SHARED) =
 #
 # 1 if libsqlite3.$(TDLL) should be built.
+#
 ENABLE_SHARED ?= 1
 #
 # $(USE_AMALGAMATION)
 #
 # 1 if the amalgamation (sqlite3.c/h) should be built/used, otherwise
 # the library is built from all of its original source files.
+#
 USE_AMALGAMATION ?= 1
 #
 # $(AMALGAMATION_GEN_FLAGS) =
 #
 # Optional flags for the amalgamation generator.
+#
 AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 #
 # $(OPT_FEATURE_FLAGS) =
@@ -150,6 +170,7 @@ AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 # the OPT_FEATURE_FLAGS. Note that some flags only work if the build
 # is specifically configured to account for them. Adding them later,
 # when compiling the amalgamation, may or may not work.
+#
 OPT_FEATURE_FLAGS ?=
 #
 # $(SHELL_OPT) =
@@ -163,6 +184,7 @@ SHELL_OPT ?=
 # Potential TODO: a shell script, similar tool/tclConfigShToTcl.sh,
 # which emits these vars in a format which we can include from this
 # makefile.
+#
 TCL_INCLUDE_SPEC ?=
 TCL_LIB_SPEC ?=
 TCL_STUB_LIB_SPEC ?=
@@ -176,7 +198,9 @@ TCLLIB_RPATH ?=
 # $(HAVE_WASI_SDK) =
 #
 # 1 when building with the WASI SDK. This disables certain build
-# targets.
+# targets. It is expected that the invoker assigns CC to the wasi-sdk
+# CC.
+#
 HAVE_WASI_SDK ?= 0
 #
 # ... and many, many more. Sane defaults are selected where possible.
@@ -285,6 +309,32 @@ $(install-dir.all):
 	$(INSTALL) -d $@
 
 #
+# After jimsh is compiled, we run some sanity checks to ensure that
+# it was built in a way compatible with this project's scripts:
+#
+# 1) Ensure that it was built with realpath() or _fullpath() support.
+# Without that flag the [file normalize] command will always resolve
+# to an empty string.
+#
+# 2) Ensure that it is built with -DJIM_COMPAT (which may be
+# hard-coded into jimsh0.c). Without this, the [expr] command
+# accepts only a single argument.
+#
+$(JIMSH): $(TOP)/autosetup/jimsh0.c
+	$(BCC) -o $@ $(CFLAGS_JIMSH) $(TOP)/autosetup/jimsh0.c
+	@if [ x = "x$$($(JIMSH) -e 'file normalize $(JIMSH)' 2>/dev/null)" ]; then \
+		echo "$(JIMSH) was built without -DHAVE_REALPATH or -DHAVE__FULLPATH." 1>&2; \
+		exit 1; \
+	fi
+	@if [ x3 != "x$$($(JIMSH) -e 'expr 1 + 2' 2>/dev/null)" ]; then \
+		echo "$(JIMSH) was built without -DJIM_COMPAT." 1>&2; \
+		exit 1; \
+	fi
+distclean-jimsh:
+	rm -f $(JIMSH)
+distclean: distclean-jimsh
+
+#
 # $(MAKE_SANITY_CHECK) = a set of checks for various make vars which
 # must be provided to this file before including it. If any are
 # missing, this target fails. It does (almost) no semantic validation,
@@ -296,7 +346,8 @@ $(install-dir.all):
 MAKE_SANITY_CHECK = .main.mk.checks
 $(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
 	@if [ x = "x$(TOP)" ]; then echo "Missing TOP var" 1>&2; exit 1; fi
-	@if [ ! -d "$(TOP)" ]; then echo "TOP is not a directory" 1>&2; exit 1; fi
+	@if [ ! -d "$(TOP)" ]; then echo "$(TOP) is not a directory" 1>&2; exit 1; fi
+	@if [ ! -f "$(TOP)/auto.def" ]; then echo "$(TOP) does not appear to be the top-most source dir" 1>&2; exit 1; fi
 	@if [ x = "x$(BCC)" ]; then echo "Missing BCC var" 1>&2; exit 1; fi
 	@if [ x = "x$(TCC)" ]; then echo "Missing TCC var" 1>&2; exit 1; fi
 	@if [ x = "x$(RELEASE)" ]; then echo "Missing RELEASE var" 1>&2; exit 1; fi
@@ -1920,7 +1971,8 @@ sqlite3.dll: $(LIBOBJ) sqlite3.def
 #   *   test results and test logs
 #   *   output from ./configure
 #
-tidy:
+tidy-.:
+tidy: tidy-.
 	rm -f *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(TEXE)
 	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
 	rm -rf .libs .deps tsrc .target_source
@@ -1951,8 +2003,10 @@ tidy:
 #
 # Removes build products and test logs.  Retains ./configure outputs.
 #
-clean:	tidy
+clean-.:
+clean:	clean-. tidy
 	rm -rf omittest* testrunner* testdir*
 
 # Clean up everything.  No exceptions.
-distclean:	clean
+distclean-.:
+distclean:	distclean-. clean

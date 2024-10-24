@@ -17,9 +17,13 @@ TOP ?= .
 
 CFLAGS += -fPIC
 
+SHELL_OPT ?= -DHAVE_READLINE=1
+
 # You should not have to change anything below this line
 ###############################################################################
 include $(TOP)/main.mk
 
 sqlite_cfg.h:
 	touch $@
+distclean-.:
+	rm -f sqlite_cfg.h

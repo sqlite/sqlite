@@ -701,7 +701,7 @@ if {1} {
   ##########
   # Figure out what C libraries are required to compile programs
   # that use "readline()" library.
-  hwaci-check-readline
+  add-shell-opt -DHAVE_READLINE=[hwaci-check-readline]
 } else {
   # Older impl solely for reference while porting...
   #

@@ -1,10 +1,10 @@
-C General\smake\scleanups.\sStart\sadding\sa\ssanity-check\smechanism\sto\smain.mk\swhich\sdoes\sbasic\svalidation\sof\sthe\svars\sit\sexpects\sto\sbe\sset\sby\sthe\sfile\swhich\sincludes\sit.\sGet\sMakefile.linux-gcc\sworking\sfor\sthe\score-most\srules.
-D 2024-10-24T03:14:40.105
+C Get\sMakefile.linux-generic\s(formerly\sMakefile.linux-gcc)\sworking\swith\sjimsh\sin\sout-of-tree\sbuilds.\sPass\son\s-DHAVE_READLINE=1\sto\sthe\ssqlite3\sshell\sif\sconfigure\sdetects\sit.
+D 2024-10-24T03:50:40.281
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in b59fc1da692960f2d4cb15fa05c5bafb5b289dda360f34562b5a97c6ddbdda7e
-F Makefile.linux-gcc db3a57a7b34ebd24e1b18fc42c84339aeef7c4eced534db1817bc3c38895165e
+F Makefile.in 57258abc6688381871956cd35dcd3017f56b7161487845597971597ff0b36d6f
+F Makefile.linux-generic c44f7d97a1289b218a41299e4e9d120599ae86d1c61dfff49f1040a111fdfb08 w Makefile.linux-gcc
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 0db40f92c04378404eb45bff93e9e42c148c7e54fd3da99469ed21e22411f5a6
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 8de3a05ba31af07e8b691a5fc10059ed1380e0e578fc0e177ce66c6bb07bb564
+F auto.def 4979dcf77888bf31ff52a22cbbd197d0ca708c3f7f4d8cc32ebc32948673d440
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 1a29e60e6fa8dfec772d5a8b80e4a975692f7dd38f5bf72eeff45d46974ef561
+F main.mk bed344fb2a0fc6f096d556db166b146582f814cdf3cb85042e7efd458acd1ec4
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2236,8 +2236,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fdb584421578cae825365d457cd533721839e3503f3744c77832c5925815b537
-R 60a889aacfbf201fc2f3a1db7c7c07ee
+P 85b2c73ccb85d7f5830a6fac692b380c5c79e7a54ee3fc6fc37343fa23816ef8
+R 294cb6b174d7e2114f1ad6f2164ffdf3
 U stephan
-Z 88aaad170bee1bcadb1054f45af7ff25
+Z 2ba08cb783ad323f3f33b67e1c19037f
 # Remove this line to create a well-formed Fossil manifest.
