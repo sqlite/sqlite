@@ -94,8 +94,8 @@ includedir ?= @includedir@
 INSTALL = @BIN_INSTALL@
 AR = @AR@
 CC = @CC@
-BCC = @BUILD_CC@ @BUILD_CFLAGS@
-TCC = $(CC) $(CFLAGS)
+B.cc = @BUILD_CC@ @BUILD_CFLAGS@
+T.cc = $(CC) $(CFLAGS)
 CFLAGS = @CFLAGS@ @SH_CFLAGS@
 
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
@@ -110,15 +110,15 @@ CFLAGS.readline = -DHAVE_READLINE=@HAVE_READLINE@ @CFLAGS_READLINE@
 ENABLE_SHARED = @ENABLE_SHARED@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
-TCC.sqlite = $(TCC) @TARGET_DEBUG@
+T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 
 #
 # Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
 # can include the generated sqlite_cfg.h.
 #
-TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
-# main.mk will fill out TCC.sqlite with some flags common to all builds.
+# main.mk will fill out T.cc.sqlite with some flags common to all builds.
 
 #XX#CFLAGS.readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
 #XX#CFLAGS.readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
@@ -129,7 +129,7 @@ TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #XX#
 #XX## Should the database engine be compiled threadsafe
 #XX##
-#XX#TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
+#XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 #
 # $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.
@@ -138,10 +138,10 @@ CFLAGS.JIMSH = @CFLAGS_JIMSH@
 JIMSH = $(TOP)/jimsh$(TEXE)
 
 #
-# $(BTCLSH) is documented in main.mk.
+# $(B.tclsh) is documented in main.mk.
 #
-BTCLSH = @BTCLSH@
-$(BTCLSH):
+B.tclsh = @BTCLSH@
+$(B.tclsh):
 
 #
 # $(CFLAGS.libsqlite3) is documented in main.mk.
@@ -150,7 +150,7 @@ CFLAGS.libsqlite3 = $(CFLAGS) -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
-TCC += $(OPT_FEATURE_FLAGS)
+T.cc += $(OPT_FEATURE_FLAGS)
 
 #
 # Add in any optional global compilation flags on the make commane
@@ -158,7 +158,7 @@ TCC += $(OPT_FEATURE_FLAGS)
 #
 #XX# FIXME: rename one or the other of $(OPTS) and $(OPTIONS), as they
 #XX# serve different purposes.
-TCC += $(OPTS)
+T.cc += $(OPTS)
 
 #
 # Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
@@ -170,12 +170,12 @@ VERSION.XYZ = @VERSION_XYZ@
 #
 # Filename extensions for binaries and libraries
 #
-BEXE = @BUILD_EXEEXT@
-TEXE = @TARGET_EXEEXT@
-BDLL = @BUILD_DLLEXT@
-TDLL = @TARGET_DLLEXT@
-BLIB = @BUILD_LIBEXT@
-TLIB = @TARGET_LIBEXT@
+B.exe = @BUILD_EXEEXT@
+T.exe = @TARGET_EXEEXT@
+B.dll = @BUILD_DLLEXT@
+T.dll = @TARGET_DLLEXT@
+B.lib = @BUILD_LIBEXT@
+T.lib = @TARGET_LIBEXT@
 
 #
 # $(HAVE_TCL) is 1 if the configure script was able to locate the
@@ -231,8 +231,8 @@ TCLLIBDIR = @TCLLIBDIR@
 CFLAGS.GCOV1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 LDFLAGS.GCOV1 = -lgcov
 USE_GCOV = @USE_GCOV@
-TCOMPILE.EXTRAS += $(CFLAGS.GCOV$(USE_GCOV))
-TLINK.EXTRAS += $(LDFLAGS.GCOV$(USE_GCOV))
+T.compile.extras += $(CFLAGS.GCOV$(USE_GCOV))
+T.link.extras += $(LDFLAGS.GCOV$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.
@@ -250,7 +250,7 @@ USE_AMALGAMATION ?= @USE_AMALGAMATION@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 
 #
-# CFLAGS for sqlite3$(TEXE)
+# CFLAGS for sqlite3$(T.exe)
 #
 SHELL_OPT ?= @OPT_SHELL@
 
@@ -323,7 +323,7 @@ distclean: distclean-autosetup
 # tool/version-info: a utility for emitting sqlite3 version info
 # in various forms.
 #
-version-info$(TEXE): $(TOP)/tool/version-info.c Makefile sqlite3.h
-	$(TLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
+version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
+	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
 include $(TOP)/main.mk
