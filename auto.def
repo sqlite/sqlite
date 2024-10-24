@@ -163,12 +163,12 @@ set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
 msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
-set RELEASE [readfile $::autosetup(srcdir)/VERSION]
-regsub {([0-9]*\.*[0-9]*).*} $RELEASE {\1} VERSION
-define VERSION $VERSION
-define RELEASE $RELEASE
-msg-result "RELEASE = $RELEASE"
-msg-result "VERSION = $VERSION"
+set VERSION_XYZ [readfile $::autosetup(srcdir)/VERSION]
+regsub {([0-9]*\.*[0-9]*).*} $VERSION_XYZ {\1} VERSION_XY
+define VERSION_XY $VERSION_XY
+define VERSION_XYZ $VERSION_XYZ
+msg-result "RELEASE = $VERSION_XYZ"
+msg-result "VERSION = $VERSION_XY"
 
 define-append SQLITE_AUTOREMAKE cd $::autosetup(srcdir) && $top_srcdir/configure {*}$::autosetup(argv)
 
@@ -959,7 +959,7 @@ hwaci-check-rpath
 hwaci-make-from-dot-in -touch Makefile sqlite3.pc
 # for sqlite_cfg.h
 define PACKAGE_URL {https://sqlite.org}
-define PACKAGE_VERSION [get-define VERSION]
+define PACKAGE_VERSION [get-define VERSION_XYZ]
 if {0} {
   # Requires a hand-written sqlite_cfg.h.in...
   hwaci-make-from-dot-in sqlite_cfg.h

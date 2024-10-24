@@ -164,8 +164,8 @@ TCC += $(OPTS)
 # Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
 # compiled.
 #
-VERSION.XYZ = @RELEASE@
-# VERSION.XY = @VERSION@ # we don't currently use this anywhere
+VERSION.XYZ = @VERSION_XYZ@
+# VERSION.XY = @VERSION_XY@ # we don't currently use this anywhere
 
 #
 # Filename extensions for binaries and libraries
