@@ -3,7 +3,7 @@
 ###############################################################################
 # This is the main makefile for sqlite. It expects to be included from
 # a higher-level makefile which configures any dynamic state needed by
-# this one.
+# this one (as documented below).
 #
 # Maintenance reminders:
 #
@@ -11,17 +11,10 @@
 #  POSIX Make compatible. "bmake" (BSD make) is available on most
 #  Linux systems, so compatibility is relatively easy to test.
 #
-#XX# Lines starting with #XX# are TODOs for the port to autosetup
-#
 # The variables listed below must be defined before this script is
 # invoked. This file will use defaults, very possibly invalid, for any
 # which are not defined.
 ########################################################################
-#
-# $(RELEASE) =
-#
-# The MAJOR.MINOR.PATCH version number of this build.
-RELEASE ?= MAJOR.MINOR.PATCH
 #
 # $(TOP) =
 #
@@ -29,12 +22,20 @@ RELEASE ?= MAJOR.MINOR.PATCH
 # this is the directory that contains this "Makefile.in" and the
 # "configure.in" script. For out-of-tree builds, this will differ
 # from $(PWD).
+#
 TOP ?= $(PWD)
+#
+# $(RELEASE) =
+#
+# The MAJOR.MINOR.PATCH version number of this build.
+#
+RELEASE ?=
 #
 # $(BCC) =
 #
 # C Compiler and options for use in building executables that will run
 # on the platform that is doing the build.
+#
 BCC ?= $(CC)
 #
 # $(TCC) =
@@ -43,12 +44,12 @@ BCC ?= $(CC)
 # on the target platform.  This is usually the same as BCC, unless you
 # are cross-compiling. Note that it should only contain flags which
 # are used by _all_ build targets.  Flags needed only by specific
-# targets are defined elsewhere.
+# targets are defined elsewhere and applied on a per-target basis.
+#
 TCC ?= $(BCC)
 #
 # $(AR) =
-# Tool used to build a static library from object files, including
-# its arguments needed for doing so.
+# Tool used to build a static library from object files.
 #
 AR      ?= ar
 #
@@ -56,11 +57,13 @@ AR      ?= ar
 #
 # File extension for executables on the build platform. ".exe" for
 # Windows and "" everywhere else.
+#
 BEXE ?=
 #
 # $(BDLL) and $(BLIB) =
 #
 # The DLL resp. static library counterparts of $(BEXE).
+#
 BDLL ?= .so
 BLIB ?= .lib
 #
@@ -68,17 +71,20 @@ BLIB ?= .lib
 #
 # File extension for executables on the target platform. ".exe" for
 # Windows and "" everywhere else.
+#
 TEXE ?=
 #
 # $(TDLL) and $(TLIB) =
 #
 # The DLL resp. static library counterparts of $(TEXE).
+#
 TDLL ?= .so
 TLIB ?= .lib
 #
 # $(TCLSH_CMD) =
 #
 # The canonical tclsh.
+#
 TCLSH_CMD ?= tclsh
 #
 # JimTCL is part of the autosetup suite and is suitable for all
@@ -88,6 +94,9 @@ TCLSH_CMD ?= tclsh
 # one is a bare-bones build for the configure process, whereas we need
 # to build it with another option enabled for use with the various
 # code generators.
+#
+# JIMSH requires a leading path component, even if it's ./, so that it
+# can be used as a shell command.
 #
 CFLAGS_JIMSH ?= -DHAVE_REALPATH
 JIMSH ?= ./jimsh$(TEXE)
@@ -114,7 +123,7 @@ BTCLSH ?= $(JIMSH)
 LDFLAGS_ZLIB ?= -lz
 LDFLAGS_MATH ?= -lm
 LDFLAGS_RPATH ?= -Wl,-rpath -Wl,$(prefix)/lib
-LDFLAGS_READLINE ?= -lreadline
+LDFLAGS_READLINE ?= -lreadline # these vary wildly across platforms
 CFLAGS_READLINE ?=
 LDFLAGS_PTHREAD ?= -lpthread
 LDFLAGS_DLOPEN ?= -ldl
@@ -191,8 +200,10 @@ TCL_STUB_LIB_SPEC ?=
 TCL_EXEC_PREFIX ?=
 TCL_VERSION ?=
 TCLLIBDIR ?=
+#
 # $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
 # libsqlite3, and will usually differ from $(LDFLAGS_RPATH).
+#
 TCLLIB_RPATH ?=
 #
 # $(HAVE_WASI_SDK) =
@@ -203,6 +214,19 @@ TCLLIB_RPATH ?=
 #
 HAVE_WASI_SDK ?= 0
 #
+# $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
+# compiling the library's own sources, including (sometimes) when
+# compiling sqlite3.c directly in to another app.
+#
+CFLAGS_libsqlite3 ?= $(CFLAGS)
+#
+# $(TCC.sqlite) is $(TCC) plus any flags which are desired for the
+# library as a whole, but not necessarily needed for every binary. It
+# will normally get initially populated with flags by the
+# configure-generated makefile.
+#
+TCC.sqlite ?= $(TCC)
+#
 # ... and many, many more. Sane defaults are selected where possible.
 #
 # With the above-described defined, the rest of this make script will
@@ -211,7 +235,10 @@ HAVE_WASI_SDK ?= 0
 all:	sqlite3.h sqlite3.c
 
 ########################################################################
-# Modifying what follows should not be necessary for most builds.
+########################################################################
+# Modifying anything after this point should not be necessary for most
+# builds.
+########################################################################
 ########################################################################
 
 #
@@ -226,13 +253,6 @@ INSTALL.noexec = $(INSTALL) -m 0644
 #
 TCOMPILE = $(TCC) $(TCOMPILE_EXTRAS)
 
-#
-# $(TCC.sqlite) is $(TCC) plus any flags which are desired for the library
-# as a whole, but not necessarily needed for every binary. It will
-# normally get initially populated by the configure-generated
-# makefile, so should not be overwritten here.
-#
-TCC.sqlite ?= $(TCC)
 #
 # $(CFLAGS_intree_includes) = -I... flags relevant specifically to
 # this tree, including any subdirectories commonly needed for building
@@ -253,26 +273,13 @@ TCC.extension = $(TCOMPILE) -I. -I$(TOP)/src -DSQLITE_CORE
 # $(TLINK) = compiler invocation for when the target will be an
 # executable.
 #
-# $(TLINK_EXTRAS) = config-specific flags for $(TLINK)
+# $(TLINK_EXTRAS) = optional config-specific flags for $(TLINK)
 #
 TLINK = $(TCC.sqlite) $(TLINK_EXTRAS)
 #
 # $(TLINK.shared) = $(TLINK) invocation specifically for shared libraries
 #
 TLINK.shared = $(TLINK) $(LDFLAGS_SHOBJ)
-
-#
-# $(CFLAGS_libsqlite3) must contain any CFLAGS which are relevant for
-# compiling the library's own sources, including (sometimes) when
-# compiling sqlite3.c directly in to another app.  Most notably, it
-# should always contain -DSQLITE_TEMP_STORE=N for the sake of
-# historical build expecations.
-#
-# SQLITE_TEMP_STORE is 0 to force temporary tables to be in a file, 1
-# to default to file, 2 to default to memory, and 3 to force temporary
-# tables to always be in memory.
-#
-CFLAGS_libsqlite3 ?= $(CFLAGS) -DSQLITE_TEMP_STORE=1
 
 #
 # LDFLAGS_libsqlite3 should be used with any target which either
@@ -348,6 +355,7 @@ $(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
 	@if [ x = "x$(TOP)" ]; then echo "Missing TOP var" 1>&2; exit 1; fi
 	@if [ ! -d "$(TOP)" ]; then echo "$(TOP) is not a directory" 1>&2; exit 1; fi
 	@if [ ! -f "$(TOP)/auto.def" ]; then echo "$(TOP) does not appear to be the top-most source dir" 1>&2; exit 1; fi
+	@if [ x = "x$(RELEASE)" ] then; then echo "RELEASE must be set to the library's X.Y.Z-format version number" 1>&2; exit 1; fi
 	@if [ x = "x$(BCC)" ]; then echo "Missing BCC var" 1>&2; exit 1; fi
 	@if [ x = "x$(TCC)" ]; then echo "Missing TCC var" 1>&2; exit 1; fi
 	@if [ x = "x$(RELEASE)" ]; then echo "Missing RELEASE var" 1>&2; exit 1; fi

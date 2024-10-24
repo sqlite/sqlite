@@ -10,14 +10,35 @@
 # alternative.  Create a copy of this file, edit the parameters
 # below and type "make".
 #
-#### The toplevel directory of the source tree.  This is the directory
-#    that contains this "Makefile.in" and the "configure.in" script.
+# Maintenance note: because this is the template for Linux systems, it
+# is assumed that the platform has GNU make and this file takes
+# advantage of that.
+#
+####
+#
+# $(TOP) = The toplevel directory of the source tree.  This is the
+#    directory that contains this "Makefile.in" and "auto.def".
 #
 TOP ?= .
 
+#
+# $(CFLAGS) will be used when compiling the library and most
+# utilities.  Generally speaking, it must contain -fPIC on Linux
+# systems.
+#
 CFLAGS += -fPIC
 
+#
+# $(SHELL_OPT) contains CFLAGS for building the sqlite3 CLI shell.
+# See main.mk for other potentially-relevant vars which may need
+# tweaking, like $(LDFLAGS_READLINE).
+#
 SHELL_OPT ?= -DHAVE_READLINE=1
+
+#
+# Library's version number.
+#
+RELEASE ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
 
 # You should not have to change anything below this line
 ###############################################################################

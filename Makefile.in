@@ -127,10 +127,9 @@ TCC.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 CFLAGS_JIMSH = @CFLAGS_JIMSH@
 JIMSH = $(TOP)/jimsh$(TEXE)
 
-# BTCLSH is the tclsh-compatible app used for running various code
-# generators and other in-tree tools, as opposed to the TCL-based
-# tests, which must be built and run using the canonical TCL
-# distribution.
+#
+# $(BTCLSH) is documented in main.mk.
+#
 BTCLSH = @BTCLSH@
 $(BTCLSH):
 
@@ -151,11 +150,14 @@ TCC += $(OPT_FEATURE_FLAGS)
 #XX# serve different purposes.
 TCC += $(OPTS)
 
-# Version numbers and release number for the SQLite being compiled.
 #
-# VERSION = @VERSION@
+# Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
+# compiled.
+#
 RELEASE = @RELEASE@
+# VERSION = @VERSION@ # we don't currently use this anywhere
 
+#
 # Filename extensions for binaries and libraries
 #
 BEXE = @BUILD_EXEEXT@
@@ -165,21 +167,25 @@ TDLL = @TARGET_DLLEXT@
 BLIB = @BUILD_LIBEXT@
 TLIB = @TARGET_LIBEXT@
 
-# The following variable is "1" if the configure script was able to locate
-# the tclConfig.sh file.  It is an empty string otherwise.  When this
-# variable is "1", the TCL extension library (libtclsqlite3.so) is built
-# and installed.
+#
+# $(HAVE_TCL) is 1 if the configure script was able to locate the
+# tclConfig.sh file, else it is 0.  When this variable is 1, the TCL
+# extension library (libtclsqlite3.so) and related testing apps are
+# built.
 #
 HAVE_TCL = @HAVE_TCL@
 
-# This is the command to use for tclsh - normally just "tclsh", but we may
-# know the specific version we want to use. This must point to the canonical
-# TCL interpreter, not JimTCL.
+#
+# $(TCLSH_CMD) is the command to use for tclsh - normally just
+# "tclsh", but we may know the specific version we want to use. This
+# must point to a canonical TCL interpreter, not JimTCL.
 #
 TCLSH_CMD = @TCLSH_CMD@
 TCL_CONFIG_SH = @TCL_CONFIG_SH@
 
+#
 # TCL config info from tclConfig.sh
+#
 TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
 TCL_LIB_SPEC = @TCL_LIB_SPEC@
 TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
@@ -188,11 +194,13 @@ TCL_VERSION = @TCL_VERSION@
 TCLLIB_RPATH = @TCLLIB_RPATH@
 TCLLIBDIR = @TCLLIBDIR@
 
+#
 # Additional options when running tests using testrunner.tcl
 # This is usually either blank, or else --status
 #
 TSTRNNR_OPTS = @TSTRNNR_OPTS@
 
+#
 # Where do we want to install the tcl plugin
 #
 TCLLIBDIR = @TCLLIBDIR@
@@ -217,10 +225,6 @@ TCOMPILE_EXTRAS += $(CFLAGS_GCOV$(USE_GCOV))
 TLINK_EXTRAS += $(LDFLAGS_GCOV$(USE_GCOV))
 
 #
-# You should not have to change anything below this line
-################################################################################
-#
-
 # Vars with the AS_ prefix are specifically related to AutoSetup.
 #
 # AS_AUTO_DEF is the main configure script.
