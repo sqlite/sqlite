@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.\s\sOne\sof\sthe\swarnings\swas\scode\sthat\ndeliberately\scommitted\smemory\serrors\sto\stest\sthe\ssystems\sability\sto\scope.\nBut\scompilers\sdon't\sallow\sthat\sany\smore,\sso\swe'll\shave\sto\sleave\sthat\ncapability\suntested.
-D 2024-10-24T15:36:29.408
+C Fix\sthe\snew\stool/cp.tcl\sso\sthat\sit\sworks\swith\solder\sTCL\sversions,\ssuch\sas\njimtcl.
+D 2024-10-24T15:57:21.801
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2128,7 +2128,7 @@ F tool/buildtclext.tcl b64d250517b148e644d26fcbc097851867a0df52cd4bafe9bcd94b842
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
-F tool/cp.tcl ea5b078f7558a8b28d0bc1017e95b543d671c5e1f308b5e14311b31e534f4ac4
+F tool/cp.tcl 9a0d663ad45828de13763ee7ca0200f31f56c6d742cf104a56ae80e027c242d8
 F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5c4
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b7db2146a89587075d268b524ffc83d147f1d9d3e428c6d72bb7f3b8717c7954
-R 4bbe74fe12db4071f3af07b47a271be6
+P 7e7b3b2edbb580c9ac14f21e5caa8f2f6b171d9a7ce6cb336dc0c8db76da7e8c
+R 25a1f3ca2528827073938adc0aff88af
 U drh
-Z 0c6b003fa73be7dc330f07814972da1f
+Z 71442e5bb903956a92a03709a3f05ed9
 # Remove this line to create a well-formed Fossil manifest.
