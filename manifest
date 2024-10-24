@@ -1,5 +1,5 @@
-C Add\smissing\sZERO_ARGUMENT_GENERATE_SERIES\schecks\sto\sext/misc/series.c.
-D 2024-10-24T16:02:25.204
+C Patch\ssqlite3_rsync.c\sto\sdisable\sundesirable\sautomatic\sline\sending\nconversions\son\sWindows.
+D 2024-10-24T19:31:17.795
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2181,7 +2181,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
 F tool/sqlite3_analyzer.c.in 348ba349bbdc93c9866439f9f935d7284866a2a4e6898bc906ae1204ade56918
-F tool/sqlite3_rsync.c d832c69265d32d3694e469d5ccb2da03360d2088d7871743a76a32f71854ad91
+F tool/sqlite3_rsync.c 6c9cac5a9197f591985b271aeff803ec4fb4db36c8eab97e1331ff64aa1b8d94
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2219,15 +2219,10 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 03a9703e27c44437c39363d0baf82db4ebc94538a0f28411c85dda156f82636e
-Q +5a8e3915eec06dbec7e32d1b87c6a6d5eb618d9d1d9bac13f6e1e7f22bbf8180
-R 9d25a04b0cd8d2294d2c5e4f713aaad8
-T *branch * branch-3.47
-T *sym-branch-3.47 *
-T -sym-major-release * Cancelled\sby\sbranch.
-T -sym-release * Cancelled\sby\sbranch.
-T -sym-trunk * Cancelled\sby\sbranch.
-T -sym-version-3.47.0 * Cancelled\sby\sbranch.
-U stephan
-Z fb1a7bc32a977ea78918f85b228f8dcd
+P 31e104cc40e335108b57afe8184782ad389b1e8ecc526e1e60417f00f94560ad
+Q +67175287440cf363df01bed2464122c3b686a82ea82aeecd3f45fe90c359495c
+Q +e2bd3219d9f7bab377ebcfa9a737ca59899c68dad1e3d1d16347bbfdd25652ee
+R 1af7c78eae9d2c496d5016419501237f
+U drh
+Z 6af0d141e0be5cf632ec2d3c59fa5293
 # Remove this line to create a well-formed Fossil manifest.
