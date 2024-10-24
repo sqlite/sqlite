@@ -1,5 +1,5 @@
-C Add\sthe\stool/cp.tcl\sscript\sand\suse\sit\sto\ssimplify\sMakefile.msc.
-D 2024-10-24T15:14:55.161
+C Fix\sharmless\scompiler\swarnings.\s\sOne\sof\sthe\swarnings\swas\scode\sthat\ndeliberately\scommitted\smemory\serrors\sto\stest\sthe\ssystems\sability\sto\scope.\nBut\scompilers\sdon't\sallow\sthat\sany\smore,\sso\swe'll\shave\sto\sleave\sthat\ncapability\suntested.
+D 2024-10-24T15:36:29.408
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -798,7 +798,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 47d4bb6eb06aab48d643eeb8c4f65b5fa9529fa5526fdcbf223ea32277ed1b56
 F src/tclsqlite.h 529047feec49e7f463374749147f64d3f17505b0ebd84b3477a364c6f46a9de1
-F src/test1.c 8bf8b74145b768f42386787f93f6d6dad7bc400a4ee2d50e4ad5a06a20a97ef1
+F src/test1.c 370668f1832dc7bc2ab0212d807d880b6cdb0d5949550489593ce0cdb4a61012
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -1428,7 +1428,7 @@ F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 2f3f7f2e9637f93ccf609df48ef5b27a50278b6b1cd752b445d52262e5841413
 F test/lookaside.test 5a828e7256f1ee4da8e1bdaa03373a3ccdb0f1ff98dfa82e9b76cb41a45b1083
-F test/main.test 6bbb3999fd461eb8fb335cbab97409a3d7f91bbb8da60635e8be3e4a04a77772
+F test/main.test 1b07447e484d3a3ca8c620c6551258fa51f9cc9fdd56648e8949ea8c836be961
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 18dd1c4188c81ca79cf123527c71b19ee0c31feb9947fdffb0dc6ceb1436816a
 F test/malloc3.test 6e88bae6312854a4adb4ecc2a6a5ea8c59b4db778b724ba718e1c43fc8c3c136
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b063317352e1360293787909cafe46dbfda68a75a89c6559bac69ad160d5ec43
-R f818d9469282597cf5b67d7ff1e084ba
+P b7db2146a89587075d268b524ffc83d147f1d9d3e428c6d72bb7f3b8717c7954
+R 4bbe74fe12db4071f3af07b47a271be6
 U drh
-Z b1df376b6545b02e2f1bb8ecd957f9fc
+Z 0c6b003fa73be7dc330f07814972da1f
 # Remove this line to create a well-formed Fossil manifest.
