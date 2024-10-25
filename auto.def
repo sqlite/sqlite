@@ -144,7 +144,7 @@ options [subst {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build.}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
-  defs-json-include-lowercase=0 => {Include lower-case defines in config-defs.json, which are primarily system paths.}
+  defines-json-include-lowercase=0 => {Include lower-case defines in config.defines.json, which are primarily system paths.}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE (for build debugging)}
 }]
 
@@ -957,7 +957,7 @@ hwaci-check-rpath
 # Generate the output files.
 #
 hwaci-make-from-dot-in -touch Makefile sqlite3.pc
-# for sqlite_cfg.h and config-defs.json
+# for sqlite_cfg.h and config.defines.json
 define PACKAGE_NAME "sqlite"
 define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION [get-define VERSION_XYZ]
@@ -991,6 +991,8 @@ if {"" ne $oFF} {
 }
 unset oFF
 
+########################################################################
+# Dump config-defines.json...
 # Demonstrate (mis?)handling of spaces in JSON-export array values:
 # define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
 define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
@@ -1001,12 +1003,12 @@ set dumpDefsOpt {
   -array {*.list}
   -auto {OPT_* PACKAGE_* HAVE_*}
 }
-if {[opt-bool defs-json-include-lowercase]} {
+if {[opt-bool defines-json-include-lowercase]} {
   lappend dumpDefsOpt -none {lib_*} ; # remnants from hwaci-check-function-in-lib and friends
   lappend dumpDefsOpt -auto {[a-z]*}
 }
 lappend dumpDefsOpt -none *
-hwaci-dump-defs-json config-defs.json {*}$dumpDefsOpt
+hwaci-dump-defs-json config.defines.json {*}$dumpDefsOpt
 undefine OPT_FEATURE_FLAGS.list
 undefine OPT_SHELL.list
 
