@@ -12,7 +12,36 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
+
+
 use cc cc-db cc-shared cc-lib hwaci-common pkg-config
+
+# Are we cross-compiling?
+set cross_compiling 0
+if {[get-define host] ne [get-define build]} {
+  set cross_compiling 1
+} elseif {1
+          && "nope" eq [get-env CC_FOR_BUILD "nope"]
+          && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+  # Arguable/debatable...
+  #
+  # When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+  # specified, force CC_FOR_BUILD to be the same as CC, so that:
+  #
+  # ./configure CC=clang
+  #
+  # will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
+  # tools. This is based off of an email discussion and is thought to
+  # be likely to cause less confusion than seeing 'cc' invocations
+  # will when the user passes CC=clang.
+  #
+  # Sidebar: if we do this before the cc package is installed, it gets
+  # reverted by that package. Ergo, the cc package init will tell the
+  # user "Build C compiler...cc" shortly before we tell them:
+  msg-result "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
+  define CC_FOR_BUILD [get-define CC]
+}
+
 # $DUMP_DEFINES_TXT is the file emitted by --dump-defines, intended
 # only for build debugging and not part of the public build interface.
 set DUMP_DEFINES_TXT ./config.defines.txt
@@ -157,12 +186,6 @@ options [subst {
                        => {Include lower-case defines (primarily system paths) in $DUMP_DEFINES_JSON}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
 }]
-
-# Are we cross-compiling?
-set cross_compiling 0
-if {[get-define host] ne [get-define build]} {
-  set cross_compiling 1
-}
 
 ########################################################################
 # Notes about certain historical flags:

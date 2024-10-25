@@ -1,5 +1,5 @@
-C Rename\sVERSION_XYZ\sto\sthe\smore\sconventional\sPACKAGE_VERSION\sand\sremove\sthe\sunused\sVERSION_XY.
-D 2024-10-25T22:44:58.901
+C Experimentally:\swhen\s./configure\sCC=foo\sis\sused\sin\sa\snon-cross-compilation\sbuild\sand\sCC_FOR_BUILD\sis\snot\sexplicitly\sprovided,\sforce\sCC_FOR_BUILD\sto\sdefault\sto\sCC.\sThis\sis\sdebatable\s-\ssee\sthe\scode\scomments\sfor\sthe\sjustification.
+D 2024-10-25T23:03:33.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def a9b6bbe2bd8433a79113253550b27e01ace2194b59412244b0c0ac7b38ccaec3
+F auto.def 1671569c94900178ab4683928ccf408992a3e512fdd582cb1e52c80b6b05fa07
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4da7fa279274e5a6fe214b5c22f17bcf9b40299aeeab5bfbdae2ba0b2de6af0
-R 5aa1eb68c22173fd339cc6da207da603
+P 2d2f6dfdebbaba181d0ac16b5b0fa63490fb4c4bdb5ee2e8bf70f06ec862a77f
+R 030d93b69f9a5aa6b2998a65b82a419a
 U stephan
-Z c513b9b62fc4b0a4b0fc3bf321e7bc3a
+Z 328d6e2939a83c73df030dc650be2125
 # Remove this line to create a well-formed Fossil manifest.
