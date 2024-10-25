@@ -133,10 +133,12 @@ T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 #
-# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.
+# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.  $(JIMSH)
+# must start with a path component so that it can be invoked as a
+# shell command.
 #
 CFLAGS.JIMSH = @CFLAGS_JIMSH@
-JIMSH = $(TOP)/jimsh$(TEXE)
+JIMSH = ./jimsh$(TEXE)
 
 #
 # $(B.tclsh) is documented in main.mk.
@@ -314,6 +316,7 @@ distclean-autosetup:	clean
 	rm -f sqlite_cfg.h config.log config.status config.defines.json Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
+	rm -f jimsh0*
 	-gmake -C ext/wasm distclean 2>/dev/null; true
 distclean: distclean-autosetup
 

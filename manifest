@@ -1,9 +1,9 @@
-C Rename\sconfig-defines.json\sto\sconfig.defines.json\sfor\sconsistent\swith\sother\sgenerated\sconfig.*\sfiles.\sRename\s--defs-json-include-lowercase\sto\sthe\seven\sless\swieldy\s--defines-json-include-lowercase.
-D 2024-10-25T04:48:40.197
+C Ensure\sthat\sjimsh\sis\sbuilt\sin\sthe\sproper\sdir\sin\san\sout-of-tree\sbuild\sand\sthat\sjimsh0\sis\scleaned\sup\sby\sdistclean.
+D 2024-10-25T05:53:50.786
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 594067da2bde9defc6ff79d15db35f6433ff972ad585461ba5f13d110a095af2
+F Makefile.in 5a95c68b70be1448a6f226c09c1df5e338cc496e70987173fcfdca9ad94cb5a4
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc 28318970f86f601ac79b5e6a514a52fb33a1526d0e0e915b4edc2f41846c1d4a
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f2555ea3c7c1950566182c8f5a4d98049461e9db305e892c8434ba3fbf3497a
-R 001a56dd108f5cc3c7d24adb5c49ea93
+P 131a2a7ef87b65527d03b3c838de9d34eaca94992a973283ad6eeb296250db92
+R 489a8b201a3bc8d75b578c157a68a0fc
 U stephan
-Z a5be42358d441efdb62f852f6106323d
+Z 2e64ff42f6eac2a825d81033399cb4f4
 # Remove this line to create a well-formed Fossil manifest.
