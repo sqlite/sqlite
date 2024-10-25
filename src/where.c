@@ -2583,7 +2583,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** and Y has additional constraints that might speed the search that X lacks
 ** but the cost of running X is not more than the cost of running Y.
 **
-** In other words, return true if the cost relationwship between X and Y
+** In other words, return true if the cost relationship between X and Y
 ** is inverted and needs to be adjusted.
 **
 ** Case 1:
@@ -6310,58 +6310,6 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 }
 
 /*
-** Expression Node callback for sqlite3ExprCanReturnSubtype().
-**
-** Only a function call is able to return a subtype.  So if the node
-** is not a function call, return WRC_Prune immediately.
-**
-** A function call is able to return a subtype if it has the
-** SQLITE_RESULT_SUBTYPE property.
-**
-** Assume that every function is able to pass-through a subtype from
-** one of its argument (using sqlite3_result_value()).  Most functions
-** are not this way, but we don't have a mechanism to distinguish those
-** that are from those that are not, so assume they all work this way.
-** That means that if one of its arguments is another function and that
-** other function is able to return a subtype, then this function is
-** able to return a subtype.
-*/
-static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
-  int n;
-  FuncDef *pDef;
-  sqlite3 *db;
-  if( pExpr->op!=TK_FUNCTION ){
-    return WRC_Prune;
-  }
-  assert( ExprUseXList(pExpr) );
-  db = pWalker->pParse->db;
-  n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
-  pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
-  if( pDef==0 || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
-    pWalker->eCode = 1;
-    return WRC_Prune;
-  }
-  return WRC_Continue;
-}
-
-/*
-** Return TRUE if expression pExpr is able to return a subtype.
-**
-** A TRUE return does not guarantee that a subtype will be returned.
-** It only indicates that a subtype return is possible.  False positives
-** are acceptable as they only disable an optimization.  False negatives,
-** on the other hand, can lead to incorrect answers.
-*/
-static int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
-  Walker w;
-  memset(&w, 0, sizeof(w));
-  w.pParse = pParse;
-  w.xExprCallback = exprNodeCanReturnSubtype;
-  sqlite3WalkExpr(&w, pExpr);
-  return w.eCode;
-}
-
-/*
 ** The index pIdx is used by a query and contains one or more expressions.
 ** In other words pIdx is an index on an expression.  iIdxCur is the cursor
 ** number for the index and iDataCur is the cursor number for the corresponding
@@ -6394,12 +6342,6 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       continue;
     }
     if( sqlite3ExprIsConstant(0,pExpr) ) continue;
-    if( pExpr->op==TK_FUNCTION && sqlite3ExprCanReturnSubtype(pParse,pExpr) ){
-      /* Functions that might set a subtype should not be replaced by the
-      ** value taken from an expression index since the index omits the
-      ** subtype.  https://sqlite.org/forum/forumpost/68d284c86b082c3e */
-      continue;
-    }
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxEpr;
@@ -7533,14 +7475,28 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;
             OpcodeRewriteTrace(db, k, pOp);
-          }else{
-            /* Unable to translate the table reference into an index
-            ** reference.  Verify that this is harmless - that the
-            ** table being referenced really is open.
-            */
+          }else if( pLoop->wsFlags & (WHERE_IDX_ONLY|WHERE_EXPRIDX) ){
             if( pLoop->wsFlags & WHERE_IDX_ONLY ){
+              /* An error. pLoop is supposed to be a covering index loop,
+              ** and yet the VM code refers to a column of the table that 
+              ** is not part of the index.  */
               sqlite3ErrorMsg(pParse, "internal query planner error");
               pParse->rc = SQLITE_INTERNAL;
+            }else{
+              /* The WHERE_EXPRIDX flag is set by the planner when it is likely
+              ** that pLoop is a covering index loop, but it is not possible
+              ** to be 100% sure. In this case, any OP_Explain opcode
+              ** corresponding to this loop describes the index as a "COVERING
+              ** INDEX". But, pOp proves that pLoop is not actually a covering 
+              ** index loop. So clear the WHERE_EXPRIDX flag and rewrite the
+              ** text that accompanies the OP_Explain opcode, if any.  */
+              pLoop->wsFlags &= ~WHERE_EXPRIDX;
+              sqlite3WhereAddExplainText(pParse,
+                  pLevel->addrBody-1,
+                  pTabList,
+                  pLevel,
+                  pWInfo->wctrlFlags
+              );
             }
           }
         }else if( pOp->opcode==OP_Rowid ){

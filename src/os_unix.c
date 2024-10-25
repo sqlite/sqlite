@@ -2464,54 +2464,33 @@ static int robust_flock(int fd, int op){
 ** is set to SQLITE_OK unless an I/O error occurs during lock checking.
 */
 static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
-  int rc = SQLITE_OK;
-  int reserved = 0;
+#ifdef SQLITE_DEBUG
   unixFile *pFile = (unixFile*)id;
+#else
+  UNUSED_PARAMETER(id);
+#endif
 
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
   assert( pFile );
+  assert( pFile->eFileLock<=SHARED_LOCK );
 
-  /* Check if a thread in this process holds such a lock */
-  if( pFile->eFileLock>SHARED_LOCK ){
-    reserved = 1;
-  }
+  /* The flock VFS only ever takes exclusive locks (see function flockLock).
+  ** Therefore, if this connection is holding any lock at all, no other
+  ** connection may be holding a RESERVED lock. So set *pResOut to 0
+  ** in this case.
+  **
+  ** Or, this connection may be holding no lock. In that case, set *pResOut to
+  ** 0 as well. The caller will then attempt to take an EXCLUSIVE lock on the
+  ** db in order to roll the hot journal back. If there is another connection
+  ** holding a lock, that attempt will fail and an SQLITE_BUSY returned to
+  ** the user. With other VFS, we try to avoid this, in order to allow a reader
+  ** to proceed while a writer is preparing its transaction. But that won't
+  ** work with the flock VFS - as it always takes EXCLUSIVE locks - so it is
+  ** not a problem in this case.  */
+  *pResOut = 0;
 
-  /* Otherwise see if some other process holds it. */
-  if( !reserved ){
-    /* attempt to get the lock */
-    int lrc = robust_flock(pFile->h, LOCK_EX | LOCK_NB);
-    if( !lrc ){
-      /* got the lock, unlock it */
-      lrc = robust_flock(pFile->h, LOCK_UN);
-      if ( lrc ) {
-        int tErrno = errno;
-        /* unlock failed with an error */
-        lrc = SQLITE_IOERR_UNLOCK;
-        storeLastErrno(pFile, tErrno);
-        rc = lrc;
-      }
-    } else {
-      int tErrno = errno;
-      reserved = 1;
-      /* someone else might have it reserved */
-      lrc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
-      if( IS_LOCK_ERROR(lrc) ){
-        storeLastErrno(pFile, tErrno);
-        rc = lrc;
-      }
-    }
-  }
-  OSTRACE(("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved));
-
-#ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
-  if( (rc & 0xff) == SQLITE_IOERR ){
-    rc = SQLITE_OK;
-    reserved=1;
-  }
-#endif /* SQLITE_IGNORE_FLOCK_LOCK_ERRORS */
-  *pResOut = reserved;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -4149,6 +4128,7 @@ static void setDeviceCharacteristics(unixFile *pFd){
     if( pFd->ctrlFlags & UNIXFILE_PSOW ){
       pFd->deviceCharacteristics |= SQLITE_IOCAP_POWERSAFE_OVERWRITE;
     }
+    pFd->deviceCharacteristics |= SQLITE_IOCAP_SUBPAGE_READ;
 
     pFd->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
   }

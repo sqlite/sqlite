@@ -658,46 +658,54 @@ static int seriesBestIndex(
       }
       continue;
     }
-    if( pConstraint->iColumn==SERIES_COLUMN_VALUE ){
-      switch( op ){
-        case SQLITE_INDEX_CONSTRAINT_EQ:
-        case SQLITE_INDEX_CONSTRAINT_IS: {
-          idxNum |=  0x0080;
-          idxNum &= ~0x3300;
-          aIdx[5] = i;
-          aIdx[6] = -1;
-          bStartSeen = 1;
-          break;
-        }
-        case SQLITE_INDEX_CONSTRAINT_GE: {
-          if( idxNum & 0x0080 ) break;
-          idxNum |=  0x0100;
-          idxNum &= ~0x0200;
-          aIdx[5] = i;
-          bStartSeen = 1;
-          break;
-        }
-        case SQLITE_INDEX_CONSTRAINT_GT: {
-          if( idxNum & 0x0080 ) break;
-          idxNum |=  0x0200;
-          idxNum &= ~0x0100;
-          aIdx[5] = i;
-          bStartSeen = 1;
-          break;
-        }
-        case SQLITE_INDEX_CONSTRAINT_LE: {
-          if( idxNum & 0x0080 ) break;
-          idxNum |=  0x1000;
-          idxNum &= ~0x2000;
-          aIdx[6] = i;
-          break;
-        }
-        case SQLITE_INDEX_CONSTRAINT_LT: {
-          if( idxNum & 0x0080 ) break;
-          idxNum |=  0x2000;
-          idxNum &= ~0x1000;
-          aIdx[6] = i;
-          break;
+    if( pConstraint->iColumn<SERIES_COLUMN_START ){
+      if( pConstraint->iColumn==SERIES_COLUMN_VALUE ){
+        switch( op ){
+          case SQLITE_INDEX_CONSTRAINT_EQ:
+          case SQLITE_INDEX_CONSTRAINT_IS: {
+            idxNum |=  0x0080;
+            idxNum &= ~0x3300;
+            aIdx[5] = i;
+            aIdx[6] = -1;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
+            bStartSeen = 1;
+#endif
+            break;
+          }
+          case SQLITE_INDEX_CONSTRAINT_GE: {
+            if( idxNum & 0x0080 ) break;
+            idxNum |=  0x0100;
+            idxNum &= ~0x0200;
+            aIdx[5] = i;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
+            bStartSeen = 1;
+#endif
+            break;
+          }
+          case SQLITE_INDEX_CONSTRAINT_GT: {
+            if( idxNum & 0x0080 ) break;
+            idxNum |=  0x0200;
+            idxNum &= ~0x0100;
+            aIdx[5] = i;
+#ifndef ZERO_ARGUMENT_GENERATE_SERIES
+            bStartSeen = 1;
+#endif
+            break;
+          }
+          case SQLITE_INDEX_CONSTRAINT_LE: {
+            if( idxNum & 0x0080 ) break;
+            idxNum |=  0x1000;
+            idxNum &= ~0x2000;
+            aIdx[6] = i;
+            break;
+          }
+          case SQLITE_INDEX_CONSTRAINT_LT: {
+            if( idxNum & 0x0080 ) break;
+            idxNum |=  0x2000;
+            idxNum &= ~0x1000;
+            aIdx[6] = i;
+            break;
+          }
         }
       }
       continue;

@@ -22,6 +22,15 @@
 #include "vdbeInt.h"
 
 /*
+** High-resolution hardware timer used for debugging and testing only.
+*/
+#if defined(VDBE_PROFILE)  \
+ || defined(SQLITE_PERFORMANCE_TRACE) \
+ || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+# include "hwtime.h"
+#endif
+
+/*
 ** Invoke this macro on memory cells just prior to changing the
 ** value of the cell.  This macro verifies that shallow copies are
 ** not misused.  A shallow copy of a string or blob just copies a
@@ -4533,7 +4542,10 @@ case OP_OpenEphemeral: {     /* ncycle */
       }
       pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
       if( rc ){
+        assert( !sqlite3BtreeClosesWithCursor(pCx->ub.pBtx, pCx->uc.pCursor) );
         sqlite3BtreeClose(pCx->ub.pBtx);
+      }else{
+        assert( sqlite3BtreeClosesWithCursor(pCx->ub.pBtx, pCx->uc.pCursor) );
       }
     }
   }
@@ -9051,7 +9063,7 @@ case OP_ReleaseReg: {
 ** As with all opcodes, the meanings of the parameters for OP_Explain
 ** are subject to change from one release to the next.  Applications
 ** should not attempt to interpret or use any of the information
-** contined in the OP_Explain opcode.  The information provided by this
+** contained in the OP_Explain opcode.  The information provided by this
 ** opcode is intended for testing and debugging use only.
 */
 default: {          /* This is really OP_Noop, OP_Explain */

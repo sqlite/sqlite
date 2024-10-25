@@ -47,7 +47,7 @@
 /* Compatability between Tcl8.6 and Tcl9.0 */
 #if TCL_MAJOR_VERSION==9
 # define CONST const
-#else
+#elif !defined(Tcl_Size)
   typedef int Tcl_Size;
 #endif
 /**** End copy of tclsqlite.h ****/
@@ -3981,7 +3981,7 @@ static int SQLITE_TCLAPI DbMain(
 ** The EXTERN macros are required by TCL in order to work on windows.
 */
 EXTERN int Sqlite3_Init(Tcl_Interp *interp){
-  int rc = Tcl_InitStubs(interp, "8.4", 0) ? TCL_OK : TCL_ERROR;
+  int rc = Tcl_InitStubs(interp, "8.5-", 0) ? TCL_OK : TCL_ERROR;
   if( rc==TCL_OK ){
     Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
 #ifndef SQLITE_3_SUFFIX_ONLY
@@ -4037,6 +4037,20 @@ EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =
     "if {[llength $argv]>=1} {\n"
+#ifdef WIN32
+      "set new [list]\n"
+      "foreach arg $argv {\n"
+        "if {[file exists $arg]} {\n"
+          "lappend new $arg\n"
+        "} else {\n"
+          "foreach match [lsort [glob -nocomplain $arg]] {\n"
+            "lappend new $match\n"
+          "}\n"
+        "}\n"
+      "}\n"
+      "set argv $new\n"
+      "unset new\n"
+#endif
       "set argv0 [lindex $argv 0]\n"
       "set argv [lrange $argv 1 end]\n"
       "source $argv0\n"
