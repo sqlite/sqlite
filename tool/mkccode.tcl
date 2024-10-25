@@ -6,7 +6,7 @@
 #
 # Usage example:
 #
-#     tclsh mktclsqliteprog.tcl demoapp.c.in >demoapp.c
+#     tclsh mkccode.tcl demoapp.c.in >demoapp.c
 #
 # The demoapp.c.in file contains a mixture of C code, TCL script, and
 # processing directives used by mktclsqliteprog.tcl to build the final C-code
@@ -56,8 +56,15 @@ while {1} {
   set line [gets $in]
   if {[eof $in]} break
   if {[regexp {^INCLUDE (.*)} $line all path]} {
-    regsub {^\$ROOT\y} $path $ROOT path
-    regsub {^\$HOME\y} $path $HOME path
+    if {0} {
+      # https://github.com/msteveb/jimtcl/issues/320
+      regsub {^\$ROOT\y} $path $ROOT path
+      regsub {^\$HOME\y} $path $HOME path
+    } else {
+      set path [string map "\$ROOT $ROOT" $path]
+      set path [string map "\$HOME $HOME" $path]
+      # or: set path [string map "\$HOME $HOME \$ROOT $ROOT" $path]
+    }
     set in2 [open $path rb]
     puts "/* INCLUDE $path */"
     if {$instr} {
