@@ -807,6 +807,16 @@ proc hwaci-defs-format- {type value} {
         set value \"[string map [list \\ \\\\ \" \\\"] $value]\"
       }
     }
+    -array {
+      set ar {}
+      foreach v $value {
+        set v [hwaci-defs-format- -auto $v]
+        if {$::hwaci(defs-skip) ne $v} {
+          lappend ar $v
+        }
+      }
+      set value "\[ [join $ar {, }] \]"
+    }
     "" {
       set value $::hwaci(defs-skip)
     }
@@ -822,6 +832,18 @@ proc hwaci-defs-format- {type value} {
 # but emits its output in JSON form. It is not a fully-functional JSON
 # emitter, and emit broken JSON for complicated outputs, but should be
 # sufficient for purposes of emitting most configure vars.
+#
+# In addition to the formatting flags supported by make-config-header,
+# it also supports:
+#
+#  -array {patterns...}
+#
+# Any defines matching the given patterns will be treated as a list of
+# values, each of which will be formatted as if it were in an -auto {...}
+# set, and the define will be emitted to JSON in the form:
+#
+#  "ITS_NAME": [ "value1", ...valueN ]
+#
 proc hwaci-dump-defs-json {file args} {
   file mkdir [file dirname $file]
   set lines {}

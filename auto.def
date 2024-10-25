@@ -989,9 +989,13 @@ if {"" ne $oFF} {
 }
 unset oFF
 
+define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
+define OPT_SHELL.list [get-define OPT_SHELL]
+
 hwaci-dump-defs-json config-defs.json \
   -bare {SIZEOF_* HAVE_DECL_*} \
   -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*} \
+  -array {*.list} \
   -auto {OPT_* PACKAGE_* HAVE_*} \
   -none *
 
