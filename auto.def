@@ -144,6 +144,7 @@ options [subst {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build.}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
+  defs-json-include-lowercase=0 => {Include lower-case defines in config-defs.json, which are primarily system paths.}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_FILE (for build debugging)}
 }]
 
@@ -957,9 +958,10 @@ hwaci-check-rpath
 #
 hwaci-make-from-dot-in -touch Makefile sqlite3.pc
 # for sqlite_cfg.h and config-defs.json
+define PACKAGE_NAME "sqlite"
 define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION [get-define VERSION_XYZ]
-define PACKAGE_STRING "sqlite [get-define VERSION_XYZ]"
+define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define VERSION_XYZ]"
 define PACKAGE_BUGREPORT [get-define PACKAGE_URL]
 if {0} {
   # Requires a hand-written sqlite_cfg.h.in...
@@ -993,12 +995,18 @@ unset oFF
 # define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
 define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
 define OPT_SHELL.list [get-define OPT_SHELL]
-hwaci-dump-defs-json config-defs.json \
-  -bare {SIZEOF_* HAVE_DECL_*} \
-  -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*} \
-  -array {*.list} \
-  -auto {OPT_* PACKAGE_* HAVE_*} \
-  -none *
+set dumpDefsOpt {
+  -bare {SIZEOF_* HAVE_DECL_*}
+  -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*}
+  -array {*.list}
+  -auto {OPT_* PACKAGE_* HAVE_*}
+}
+if {[opt-bool defs-json-include-lowercase]} {
+  lappend dumpDefsOpt -none {lib_*} ; # remnants from hwaci-check-function-in-lib and friends
+  lappend dumpDefsOpt -auto {[a-z]*}
+}
+lappend dumpDefsOpt -none *
+hwaci-dump-defs-json config-defs.json {*}$dumpDefsOpt
 undefine OPT_FEATURE_FLAGS.list
 undefine OPT_SHELL.list
 
