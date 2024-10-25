@@ -794,20 +794,28 @@ static const unsigned char aJournalMagic[] = {
 ** Return true if page pgno can be read directly from the database file
 ** by the b-tree layer. This is the case if:
 **
-**   * the database file is open,
-**   * there are no dirty pages in the cache, and
-**   * the desired page is not currently in the wal file.
+**   (1)  the database file is open
+**   (2)  the VFS for the database is able to do unaligned sub-page reads
+**   (3)  there are no dirty pages in the cache, and
+**   (4)  the desired page is not currently in the wal file.
 */
 int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
-  if( pPager->fd->pMethods==0 ) return 0;
-  if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0;
+  assert( pPager!=0 );
+  assert( pPager->fd!=0 );
+  if( pPager->fd->pMethods==0 ) return 0;  /* Case (1) */
+  if( sqlite3PCacheIsDirty(pPager->pPCache) ) return 0; /* Failed (3) */
 #ifndef SQLITE_OMIT_WAL
   if( pPager->pWal ){
     u32 iRead = 0;
     (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-    return iRead==0;
+    return iRead==0; /* Condition (4) */
   }
 #endif
+  assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
+  if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
+        & SQLITE_IOCAP_SUBPAGE_READ)==0 ){
+    return 0; /* Case (2) */
+  }
   return 1;
 }
 #endif
