@@ -2,7 +2,7 @@
 # restart with tclsh \
 exec tclsh "$0" "$@"
 
-set srcdir [file dirname [file dirname [info script]]]
+set srcdir [file dirname [file dirname [file normalize [info script]]]]
 set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5.h
   %dir%/fts5Int.h

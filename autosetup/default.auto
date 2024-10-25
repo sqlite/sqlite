@@ -1,0 +1,25 @@
+# Copyright (c) 2012 WorkWare Systems http://www.workware.net.au/
+# All rights reserved
+
+# Auto-load module for 'make' build system integration
+
+use init
+
+autosetup_add_init_type make {Simple "make" build system} {
+	autosetup_check_create auto.def \
+{# Initial auto.def created by 'autosetup --init=make'
+
+use cc
+
+# Add any user options here
+options {
+}
+
+make-config-header config.h
+make-template Makefile.in
+}
+
+	if {![file exists Makefile.in]} {
+		puts "Note: I don't see Makefile.in. You will probably need to create one."
+	}
+}
