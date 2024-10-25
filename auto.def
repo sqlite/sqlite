@@ -649,42 +649,45 @@ hwaci-check-tcl
 # jimsh0.c defines JIM_COMPAT automatically (prior to that it intended
 # to but a typo of JIM_TCL_COMPAT made it a no-op).
 define CFLAGS_JIMSH {}
-set useOwnJimsh 0
 msg-result "Which TCL to use for code generation... "
-set cgtcl jimtcl
-if {[cc-check-functions realpath]} {
-  define-append CFLAGS_JIMSH -DHAVE_REALPATH
-  define BTCLSH "\$(JIMSH)"
-  set useOwnJimsh 1
-} elseif {[cc-check-functions _fullpath]} {
-  # _fullpath() is a Windows API
-  define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-  define BTCLSH "\$(JIMSH)"
-  set useOwnJimsh 1
-} elseif {[file exists [get-define TCLSH_CMD]]} {
-  set cgtcl [get-define TCLSH_CMD]
+set cgtcl [opt-val with-tclsh jimsh]
+if {"jimsh" ne $cgtcl} {
+  # When --with-tclsh=X is used, use that for all TCL purposes,
+  # including in-tree code generation, per developer request.
   define BTCLSH "\$(TCLSH_CMD)"
 } else {
-  # One last-ditch effort to find TCLSH_CMD: use info from
-  # tclConfig.sh to try to find a tclsh
-  if {"" eq [get-define TCLSH_CMD]} {
-    set tpre [get-define TCL_EXEC_PREFIX]
-    if {"" ne $tpre} {
-      set tv [get-define TCL_VERSION]
-      if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
-        define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
-      } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
-        define TCLSH_CMD "${tpre}/bin/tclsh"
+  if {[cc-check-functions realpath]} {
+    define-append CFLAGS_JIMSH -DHAVE_REALPATH
+    define BTCLSH "\$(JIMSH)"
+  } elseif {[cc-check-functions _fullpath]} {
+    # _fullpath() is a Windows API
+    define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+    define BTCLSH "\$(JIMSH)"
+  } elseif {[file exists [get-define TCLSH_CMD]]} {
+    set cgtcl [get-define TCLSH_CMD]
+    define BTCLSH "\$(TCLSH_CMD)"
+  } else {
+    # One last-ditch effort to find TCLSH_CMD: use info from
+    # tclConfig.sh to try to find a tclsh
+    if {"" eq [get-define TCLSH_CMD]} {
+      set tpre [get-define TCL_EXEC_PREFIX]
+      if {"" ne $tpre} {
+        set tv [get-define TCL_VERSION]
+        if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
+          define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
+        } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
+          define TCLSH_CMD "${tpre}/bin/tclsh"
+        }
+        unset tv
       }
-      unset tv
+      unset tpre
     }
-    unset tpre
+    set cgtcl [get-define TCLSH_CMD]
+    if {![file exists $cgtcl]} {
+      hwaci-fatal "Cannot find a tclsh to use for code generation."
+    }
+    define BTCLSH "\$(TCLSH_CMD)"
   }
-  set cgtcl [get-define TCLSH_CMD]
-  if {![file exists $cgtcl]} {
-    hwaci-fatal "Cannot find a tclsh to use for code generation."
-  }
-  define BTCLSH "\$(TCLSH_CMD)"
 }
 msg-result "TCL for code generation: $cgtcl"
 unset cgtcl

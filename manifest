@@ -1,5 +1,5 @@
-C Fix\sBUILD_CFLAGS\s(for\sB.cc)\sto\snot\sinherent\sCFLAGS\s(which\sare\sonly\sfor\sT.cc).
-D 2024-10-25T23:04:50.934
+C When\s--with-tclsh=X\sis\sused,\suse\sX\sfor\sall\sTCL\spurposes,\sincluding\sin-tree\scode\sgeneration,\sper\sdeveloper\srequest.
+D 2024-10-25T23:13:12.897
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 91a723897b2f2230fe200e9cbda9e7b4063bc0af42768d6fe0f376b813c80b9b
+F auto.def 6f81ce2f8d9dfa59d4fa9ea423e9e3228be41e23a63f457472d28b7e267d99cd
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a49bee68418f9e8c3813a60f76de265b8e6a98a15ab9b246aa42d9e9558a03eb
-R c14c5d9afdf9f83be57f58112a477cbb
+P ffdce13deb8a1fbce717da9ca44fd34409bedad4db805722100647372c06f4f5
+R 547a5fbc8c084efef7911861f5f974f8
 U stephan
-Z fa7cc103b1950703dd62a0222c63e168
+Z ecd9048bff7dc4b2fb9935c4a4daef26
 # Remove this line to create a well-formed Fossil manifest.
