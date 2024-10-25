@@ -12,7 +12,7 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
-# Routines with a suffix of - are intended for internal use,
+# Routines with a suffix of _ are intended for internal use,
 # within this file, and are not part of the API which auto.def files
 # should rely on.
 #
@@ -41,7 +41,10 @@
 # updating global state via feature tests.
 ########################################################################
 
-array set hwaci {}
+########################################################################
+# $hwaci is an internal-use-only array for storing whatever generic
+# internal stuff we need stored.
+array set hwaci_ {}
 
 proc hwaci-warn {msg} {
   puts stderr "WARNING: $msg"
@@ -54,13 +57,13 @@ proc hwaci-fatal {msg} {
 }
 
 ########################################################################
-# hwaci-lshift- shifts $count elements from the list named $listVar and
+# hwaci-lshift_ shifts $count elements from the list named $listVar and
 # returns them.
 #
 # Modified slightly from: https://wiki.tcl-lang.org/page/lshift
 #
 # On an empty list, returns "".
-proc hwaci-lshift- {listVar {count 1}} {
+proc hwaci-lshift_ {listVar {count 1}} {
   upvar 1 $listVar l
   if {![info exists l]} {
     # make the error message show the real variable name
@@ -262,9 +265,9 @@ proc hwaci-opt-define-bool {args} {
     set invert 1
     set args [lrange $args 1 end]
   }
-  set optName [hwaci-lshift- args]
-  set defName [hwaci-lshift- args]
-  set descr [hwaci-lshift- args]
+  set optName [hwaci-lshift_ args]
+  set defName [hwaci-lshift_ args]
+  set descr [hwaci-lshift_ args]
   if {"" eq $descr} {
     set descr $defName
   }
@@ -828,10 +831,11 @@ proc hwaci-defs-format- {type value} {
 }
 
 ########################################################################
-# This function works almost identically to autosetup's make-config-header
-# but emits its output in JSON form. It is not a fully-functional JSON
-# emitter, and emit broken JSON for complicated outputs, but should be
-# sufficient for purposes of emitting most configure vars.
+# This function works almost identically to autosetup's
+# make-config-header but emits its output in JSON form. It is not a
+# fully-functional JSON emitter, and will emit broken JSON for
+# complicated outputs, but should be sufficient for purposes of
+# emitting most configure vars (numbers and simple strings).
 #
 # In addition to the formatting flags supported by make-config-header,
 # it also supports:
@@ -844,6 +848,18 @@ proc hwaci-defs-format- {type value} {
 #
 #  "ITS_NAME": [ "value1", ...valueN ]
 #
+# Achtung: if a given -array pattern contains values which themselves
+# contains spaces...
+#
+#   define-append foo {"-DFOO=bar baz" -DBAR="baz barre"}
+#
+# will lead to:
+#
+#  ["-DFOO=bar baz", "-DBAR=\"baz", "barre\""]
+#
+# Neither is especially satisfactory (and the second is useless), and
+# handling of such values is subject to change if any such values ever
+# _really_ need to be processed by our source trees.
 proc hwaci-dump-defs-json {file args} {
   file mkdir [file dirname $file]
   set lines {}

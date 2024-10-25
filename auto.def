@@ -989,16 +989,18 @@ if {"" ne $oFF} {
 }
 unset oFF
 
+# Demonstrate (mis?)handling of spaces in JSON-export array values:
+# define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
 define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
 define OPT_SHELL.list [get-define OPT_SHELL]
-
 hwaci-dump-defs-json config-defs.json \
   -bare {SIZEOF_* HAVE_DECL_*} \
   -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*} \
   -array {*.list} \
   -auto {OPT_* PACKAGE_* HAVE_*} \
   -none *
-
+undefine OPT_FEATURE_FLAGS.list
+undefine OPT_SHELL.list
 
 ########################################################################
 # Some build-dev/debug-only output
