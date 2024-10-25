@@ -776,7 +776,13 @@ proc hwaci-check-readline {} {
 }
 
 
-proc hwaci-defs-type- {name spec} {
+########################################################################
+# Internal helper for hwaci-dump-defs-json. Expects to be passed a
+# [define] name and the variadic $args which are passed to
+# hwaci-dump-defs-json. If it finds a pattern match for the given
+# $name in the various $args, it returns the type flag for that $name,
+# e.g. "-str" or "-bare", else returns an empty string.
+proc hwaci-defs-type_ {name spec} {
   foreach {type patterns} $spec {
     foreach pattern $patterns {
       if {[string match $pattern $name]} {
@@ -788,40 +794,47 @@ proc hwaci-defs-type- {name spec} {
 }
 
 ########################################################################
+# Internal helper for hwaci-defs-format_: returns a JSON-ish quoted
+# form of the given (JSON) string-type values.
+proc hwaci-quote-str_ {value} {
+  return \"[string map [list \\ \\\\ \" \\\"] $value]\"
+}
+
+########################################################################
 # An internal impl detail of hwaci-dump-defs-json. Requires a data
 # type specifier, as used by make-config-header, and a value. Returns
-# the formatted value or the value $::hwaci(defs-skip) if the
-# caller should skip emitting that value.
-set hwaci(defs-skip) "-hwaci-defs-format-skip-"
-proc hwaci-defs-format- {type value} {
+# the formatted value or the value $::hwaci_(defs-skip) if the caller
+# should skip emitting that value.
+set hwaci_(defs-skip) "-hwaci-defs-format_ sentinel"
+proc hwaci-defs-format_ {type value} {
   switch -exact -- $type {
     -bare {
       # Just output the value unchanged
     }
     -none {
-      set value $::hwaci(defs-skip)
+      set value $::hwaci_(defs-skip)
     }
     -str {
-      #set value \"[string map [list \\ \\\\ \" \\\"] $value]\"
+      set value [hwaci-quote-str_ $value]
     }
     -auto {
       # Automatically determine the type
       if {![string is integer -strict $value]} {
-        set value \"[string map [list \\ \\\\ \" \\\"] $value]\"
+        set value [hwaci-quote-str_ $value]
       }
     }
     -array {
       set ar {}
       foreach v $value {
-        set v [hwaci-defs-format- -auto $v]
-        if {$::hwaci(defs-skip) ne $v} {
+        set v [hwaci-defs-format_ -auto $v]
+        if {$::hwaci_(defs-skip) ne $v} {
           lappend ar $v
         }
       }
       set value "\[ [join $ar {, }] \]"
     }
     "" {
-      set value $::hwaci(defs-skip)
+      set value $::hwaci_(defs-skip)
     }
     default {
       hwaci-fatal "Unknown type in hwaci-dump-defs-json: $type"
@@ -865,9 +878,9 @@ proc hwaci-dump-defs-json {file args} {
   set lines {}
   lappend args -bare {SIZEOF_* HAVE_DECL_*} -auto HAVE_*
   foreach n [lsort [dict keys [all-defines]]] {
-    set type [hwaci-defs-type- $n $args]
-    set value [hwaci-defs-format- $type [get-define $n]]
-    if {$::hwaci(defs-skip) ne $value} {
+    set type [hwaci-defs-type_ $n $args]
+    set value [hwaci-defs-format_ $type [get-define $n]]
+    if {$::hwaci_(defs-skip) ne $value} {
       lappend lines "\"$n\": ${value}"
     }
   }
