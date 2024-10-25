@@ -41,6 +41,8 @@
 # updating global state via feature tests.
 ########################################################################
 
+array set hwaci {}
+
 proc hwaci-warn {msg} {
   puts stderr "WARNING: $msg"
 }
@@ -768,4 +770,72 @@ proc hwaci-check-readline {} {
   # - Add --with-readline-inc=dir -Idir
   msg-result "libreadline not found."
   return 0
+}
+
+
+proc hwaci-defs-type- {name spec} {
+  foreach {type patterns} $spec {
+    foreach pattern $patterns {
+      if {[string match $pattern $name]} {
+        return $type
+      }
+    }
+  }
+  return ""
+}
+
+########################################################################
+# An internal impl detail of hwaci-dump-defs-json. Requires a data
+# type specifier, as used by make-config-header, and a value. Returns
+# the formatted value or the value $::hwaci(defs-skip) if the
+# caller should skip emitting that value.
+set hwaci(defs-skip) "-hwaci-defs-format-skip-"
+proc hwaci-defs-format- {type value} {
+  switch -exact -- $type {
+    -bare {
+      # Just output the value unchanged
+    }
+    -none {
+      set value $::hwaci(defs-skip)
+    }
+    -str {
+      #set value \"[string map [list \\ \\\\ \" \\\"] $value]\"
+    }
+    -auto {
+      # Automatically determine the type
+      if {![string is integer -strict $value]} {
+        set value \"[string map [list \\ \\\\ \" \\\"] $value]\"
+      }
+    }
+    "" {
+      set value $::hwaci(defs-skip)
+    }
+    default {
+      hwaci-fatal "Unknown type in hwaci-dump-defs-json: $type"
+    }
+  }
+  return $value
+}
+
+########################################################################
+# This function works almost identically to autosetup's make-config-header
+# but emits its output in JSON form. It is not a fully-functional JSON
+# emitter, and emit broken JSON for complicated outputs, but should be
+# sufficient for purposes of emitting most configure vars.
+proc hwaci-dump-defs-json {file args} {
+  file mkdir [file dirname $file]
+  set lines {}
+  lappend args -bare {SIZEOF_* HAVE_DECL_*} -auto HAVE_*
+  foreach n [lsort [dict keys [all-defines]]] {
+    set type [hwaci-defs-type- $n $args]
+    set value [hwaci-defs-format- $type [get-define $n]]
+    if {$::hwaci(defs-skip) ne $value} {
+      lappend lines "\"$n\": ${value}"
+    }
+  }
+  set buf {}
+  lappend buf [join $lines ",\n"]
+  write-if-changed $file $buf {
+    msg-result "Created $file"
+  }
 }
