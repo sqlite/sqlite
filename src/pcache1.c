@@ -1110,7 +1110,13 @@ static void pcache1Unpin(
   assert( PAGE_IS_PINNED(pPage) );
 
   if( reuseUnlikely || pGroup->nPurgeable>pGroup->nMaxPage ){
+    /* If pcache1.separateCache is set, temporarily set the isBulkLocal flag 
+    ** so that pcache1RemoveFromHash() moves the page buffer to the pFree
+    ** list instead of sqlite3_free()ing it. */
+    u16 isBulkLocal = pPage->isBulkLocal;
+    pPage->isBulkLocal = (u16)pcache1.separateCache;
     pcache1RemoveFromHash(pPage, 1);
+    pPage->isBulkLocal = isBulkLocal;
   }else{
     /* Add the page to the PGroup LRU list. */
     PgHdr1 **ppFirst = &pGroup->lru.pLruNext;
