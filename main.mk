@@ -25,11 +25,11 @@
 #
 TOP ?= $(PWD)
 #
-# $(VERSION.XYZ) =
+# $(PACKAGE_VERSION) =
 #
 # The MAJOR.MINOR.PATCH version number of this build.
 #
-VERSION.XYZ ?=
+PACKAGE_VERSION ?=
 #
 # $(B.cc) =
 #
@@ -394,7 +394,7 @@ $(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
 	@if [ x = "x$(TOP)" ]; then echo "Missing TOP var" 1>&2; exit 1; fi
 	@if [ ! -d "$(TOP)" ]; then echo "$(TOP) is not a directory" 1>&2; exit 1; fi
 	@if [ ! -f "$(TOP)/auto.def" ]; then echo "$(TOP) does not appear to be the top-most source dir" 1>&2; exit 1; fi
-	@if [ x = "x$(VERSION.XYZ)" ]; then echo "VERSION.XYZ must be set to the library's X.Y.Z-format version number" 1>&2; exit 1; fi
+	@if [ x = "x$(PACKAGE_VERSION)" ]; then echo "PACKAGE_VERSION must be set to the library's X.Y.Z-format version number" 1>&2; exit 1; fi
 	@if [ x = "x$(B.cc)" ]; then echo "Missing B.cc var" 1>&2; exit 1; fi
 	@if [ x = "x$(T.cc)" ]; then echo "Missing T.cc var" 1>&2; exit 1; fi
 	@if [ x = "x$(B.tclsh)" ]; then echo "Missing B.tclsh var" 1>&2; exit 1; fi
@@ -1290,7 +1290,7 @@ so: $(libsqlite3.SO)-$(ENABLE_SHARED)
 all: so
 
 #
-# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(VERSION.XYZ) and
+# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(PACKAGE_VERSION) and
 # create symlinks which point to it. Do we really need all of this
 # hoop-jumping? Can we not simply install the .so as-is to
 # libsqlite3.so (without the versioned bits)?
@@ -1303,11 +1303,11 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) $(install-dir.lib)
 	@echo "Setting up SO symlinks..."; \
 		cd $(install-dir.lib) || exit $$?; \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(VERSION.XYZ) || exit $$?; \
-		mv $(libsqlite3.SO) $(libsqlite3.SO).$(VERSION.XYZ) || exit $$?; \
-		ln -s $(libsqlite3.SO).$(VERSION.XYZ) $(libsqlite3.SO).3 || exit $$?; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3 $(libsqlite3.SO).$(VERSION.XYZ)
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION)
 install-so-0 install-so-:
 install: install-so-$(ENABLE_SHARED)
 
@@ -1329,7 +1329,7 @@ install: install-includes
 # libtclsqlite3...
 #
 pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(VERSION.XYZ) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
+	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(T.dll)
 $(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
 	$(T.link.shared) -o $@ tclsqlite.o \
@@ -1362,14 +1362,14 @@ CFLAGS.tclextension = $(CFLAGS.intree_includes) $(CFLAGS) $(OPT_FEATURE_FLAGS) $
 # by --with-tclsh=
 #
 tclextension: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(CC)" $(CFLAGS.tclextension)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(T.cc)" $(CFLAGS.tclextension)
 
 #
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
 tclextension-install: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS.tclextension)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(T.cc)" $(CFLAGS.tclextension)
 
 #
 # Install the SQLite TCL extension that is used by $TCLSH_CMD

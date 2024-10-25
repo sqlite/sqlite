@@ -174,12 +174,14 @@ set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
 msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
-set VERSION_XYZ [readfile $::autosetup(srcdir)/VERSION]
-regsub {([0-9]*\.*[0-9]*).*} $VERSION_XYZ {\1} VERSION_XY
-define VERSION_XY $VERSION_XY
-define VERSION_XYZ $VERSION_XYZ
-msg-result "RELEASE = $VERSION_XYZ"
-msg-result "VERSION = $VERSION_XY"
+set PACKAGE_VERSION [readfile $::autosetup(srcdir)/VERSION]
+msg-result "VERSION = $PACKAGE_VERSION"
+
+define PACKAGE_NAME "sqlite"
+define PACKAGE_URL {https://sqlite.org}
+define PACKAGE_VERSION $PACKAGE_VERSION
+define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
+define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
 
 define-append SQLITE_AUTOREMAKE cd $::autosetup(srcdir) && $top_srcdir/configure {*}$::autosetup(argv)
 
@@ -967,12 +969,6 @@ hwaci-check-rpath
 # Generate the output files.
 #
 hwaci-make-from-dot-in -touch Makefile sqlite3.pc
-# for sqlite_cfg.h and $DUMP_DEFINES_JSON
-define PACKAGE_NAME "sqlite"
-define PACKAGE_URL {https://sqlite.org}
-define PACKAGE_VERSION [get-define VERSION_XYZ]
-define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define VERSION_XYZ]"
-define PACKAGE_BUGREPORT [get-define PACKAGE_URL]
 if {0} {
   # Requires a hand-written sqlite_cfg.h.in...
   hwaci-make-from-dot-in sqlite_cfg.h

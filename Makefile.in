@@ -96,7 +96,7 @@ AR = @AR@
 AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
 B.cc = @BUILD_CC@ @BUILD_CFLAGS@
-T.cc = $(CC)
+T.cc = @CC@
 CFLAGS = @CFLAGS@ @SH_CFLAGS@
 
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
@@ -161,11 +161,9 @@ CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 
 #
-# Release (X.Y.Z) and version (X.Y) numbers for the SQLite being
-# compiled.
+# Version (X.Y.Z) number for the SQLite being compiled.
 #
-VERSION.XYZ = @VERSION_XYZ@
-# VERSION.XY = @VERSION_XY@ # we don't currently use this anywhere
+PACKAGE_VERSION = @PACKAGE_VERSION@
 
 #
 # Filename extensions for binaries and libraries
