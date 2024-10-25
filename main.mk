@@ -1695,6 +1695,16 @@ checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
+# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
+# The snapshot-tarball target builds a tarball named by the SHA3 hash
+#
+amalgamation-tarball: sqlite3.c sqlite3rc.h
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
+
+snapshot-tarball: sqlite3.c sqlite3rc.h
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
+
 # Build a ZIP archive containing various command-line tools.
 #
 tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
