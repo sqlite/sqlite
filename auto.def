@@ -333,7 +333,7 @@ if {"" eq [hwaci-bin-define install]} {
 # a.k.a. TCC).  Normally they're the same, but they will differ when
 # cross-compiling.
 define BUILD_CC [get-define CC_FOR_BUILD]
-define BUILD_CFLAGS [get-env CFLAGS {-g}]
+define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
 define ENABLE_SHARED 1
 define HAVE_TCL 0
 

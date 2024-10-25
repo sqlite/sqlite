@@ -57,12 +57,10 @@ proc hwaci-fatal {msg} {
 }
 
 ########################################################################
-# hwaci-lshift_ shifts $count elements from the list named $listVar and
-# returns them.
+# hwaci-lshift_ shifts $count elements from the list named $listVar
+# and returns them as a new list. On empty input, returns "".
 #
 # Modified slightly from: https://wiki.tcl-lang.org/page/lshift
-#
-# On an empty list, returns "".
 proc hwaci-lshift_ {listVar {count 1}} {
   upvar 1 $listVar l
   if {![info exists l]} {
