@@ -389,8 +389,9 @@ cc-check-lfs
 
 #
 # Check for needed/wanted data types
-cc-check-types int8_t int16_t int32_t int64_t intptr_t \
-  uint8_t uint16_t uint32_t uint64_t uintptr_t
+cc-with {-includes stdint.h} \
+  {cc-check-types int8_t int16_t int32_t int64_t intptr_t \
+     uint8_t uint16_t uint32_t uint64_t uintptr_t}
 
 #
 # Check for needed/wanted functions
@@ -407,7 +408,7 @@ cc-check-includes \
   sys/types.h sys/stat.h dlfcn.h unistd.h \
   stdlib.h malloc.h memory.h \
   string.h strings.h \
-  stdint.h inttypes.h
+  inttypes.h
 
 # These are optional for JimTCL but necessary if we want to use it for
 # code generation:
