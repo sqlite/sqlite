@@ -116,6 +116,7 @@ namespace eval trd {
     --enable-all
   }
   set build(Stdcall) {
+    -DWITHOUT_JIMSH=1
     -DUSE_STDCALL=1
     -DSQLITE_USE_ONLY_WIN32=1
     -O2

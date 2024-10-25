@@ -4150,6 +4150,7 @@ static void setDeviceCharacteristics(unixFile *pFd){
     if( pFd->ctrlFlags & UNIXFILE_PSOW ){
       pFd->deviceCharacteristics |= SQLITE_IOCAP_POWERSAFE_OVERWRITE;
     }
+    pFd->deviceCharacteristics |= SQLITE_IOCAP_SUBPAGE_READ;
 
     pFd->sectorSize = SQLITE_DEFAULT_SECTOR_SIZE;
   }

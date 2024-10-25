@@ -16,13 +16,14 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       a 32-bit build.)  The subsequent steps will not work in a vanilla
       DOS prompt.  Nor will they work in PowerShell.
 
-  3.  Install TCL development libraries.  This note assumes that you will
+  3.  *(Optional):* Install TCL development libraries.
+      This note assumes that you will
       install the TCL development libraries in the "`c:\Tcl`" directory.
       Make adjustments
       if you want TCL installed somewhere else.  SQLite needs both the
       "tclsh90.exe" command-line tool as part of the build process, and
       the "tcl90.lib" and "tclstub.lib" libraries in order to run tests.
-      This document assumes you are working with <b>TCL version 9.0</b>.
+      This document assumes you are working with TCL version 9.0.
       See versions of this document from prior to 2024-10-10 for
       instructions on how to build using TCL version 8.6.
       <ol type="a">
@@ -43,22 +44,16 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
           making this change.
       </ol>
 
+      As of 2024-10-25, TCL is not longer required for many
+      common build targets, such as "sqlite3.c" or the "sqlite3.exe"
+      command-line tool.  So you can skip this step if that is all
+      you want to build.  TCL is still required to run "make test"
+      and similar, or to build the TCL extension, of course.
+
   4.  Download the SQLite source tree and unpack it. CD into the
       toplevel directory of the source tree.
 
-  5.  Set the TCLDIR environment variable to point to your TCL installation.
-      Like this:
-      <ul>
-      <li> `set TCLDIR=c:\Tcl`
-      </ul>
-
-      If you install TCL in the "`c:\Tcl`" directory (as recommended
-      in step 3 above), then this step is optional because
-      "`c:\Tcl`" is the default value for TCLDIR.  You can also skip this
-      step by specifying "`TCLDIR=c:\Tcl`" as an argument to the nmake
-      commands in step 6 below.
-
-  6.  Run the "`Makefile.msc`" makefile with an appropriate target.
+  5.  Run the "`Makefile.msc`" makefile with an appropriate target.
       Examples:
       <ul>
       <li>  `nmake /f makefile.msc`
@@ -66,6 +61,13 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       <li>  `nmake /f makefile.msc sqlite3.exe`
       <li>  `nmake /f makefile.msc sqldiff.exe`
       <li>  `nmake /f makefile.msc sqlite3_rsync.exe`
+      </ul>
+      <p>No TCL is required for the nmake targets above.  But for the ones
+      that follow, you will need a TCL installation, as described in step 3
+      above.  If you install TCL in some directory other than C:\\Tcl, then
+      you will also need to add the "TCLDIR=<i>&lt;dir&gt;</i>" option on the
+      nmake command line to tell nmake where your TCL is installed.
+      <ul>
       <li>  `nmake /f makefile.msc tclextension-install`
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`
