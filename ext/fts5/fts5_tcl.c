@@ -1627,6 +1627,64 @@ static int SQLITE_TCLAPI f5tDropCorruptTable(
 }
 
 /*
+** Free a buffer returned to SQLite by the str() function.
+*/
+void f5tFree(void *p){
+  char *x = (char *)p;
+  free(&x[-8]);
+}
+
+/*
+** Implementation of str().
+*/
+void f5tStrFunc(sqlite3_context *pCtx, int nArg, sqlite3_value **apArg){
+  const char *zText = 0;
+  assert( nArg==1 );
+
+  zText = sqlite3_value_text(apArg[0]);
+  if( zText ){
+    int nText = sqlite3Strlen30(zText);
+    char *zCopy = (char*)malloc(nText+8);
+    if( zCopy==0 ){
+      sqlite3_result_error_nomem(pCtx);
+    }else{
+      zCopy += 8;
+      memcpy(zCopy, zText, nText);
+      sqlite3_result_text(pCtx, zCopy, nText, f5tFree);
+    }
+  }
+}
+
+/*
+**      sqlite3_fts5_register_str DB
+**
+** Register the str() function with database handle DB. str() interprets
+** its only argument as text and returns a copy of the value in a
+** non-nul-terminated buffer.
+*/
+static int SQLITE_TCLAPI f5tRegisterStr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db = 0;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbPointer(interp, objv[1], &db) ){
+    return TCL_ERROR;
+  }
+
+  sqlite3_create_function(db, "str", 1, SQLITE_UTF8, 0, f5tStrFunc, 0, 0);
+
+  return TCL_OK;
+}
+
+/*
 ** Entry point.
 */
 int Fts5tcl_Init(Tcl_Interp *interp){
@@ -1645,7 +1703,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 },
     { "sqlite3_fts5_register_fts5tokenize", f5tRegisterTok, 0 },
     { "sqlite3_fts5_register_origintext",f5tRegisterOriginText, 0 },
-    { "sqlite3_fts5_drop_corrupt_table", f5tDropCorruptTable, 0 }
+    { "sqlite3_fts5_drop_corrupt_table", f5tDropCorruptTable, 0 },
+    { "sqlite3_fts5_register_str",       f5tRegisterStr, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;
