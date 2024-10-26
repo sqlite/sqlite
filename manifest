@@ -1,5 +1,5 @@
-C Patch\sbundle\saccumulated\svia\s/chat:\sadd\smissing\s--enable/disable-shared\sflag\sto\sconfigure\sscript\sand\supdate\stestrunner.tcl\sfor\sother\sconfigure\sscript\sflag\schanges.
-D 2024-10-26T16:03:04.641
+C Remove\sLDFLAGS_ZLIB\sfrom\ssqlite3.pc.in\sbecause\s-lsqlite3\salready\sincludes\sthat.
+D 2024-10-26T16:04:36.668
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -717,7 +717,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
-F sqlite3.pc.in b8b551878b9bdca1ff148f6e943d0e06206864c757eb07eef030343c27bb10bd
+F sqlite3.pc.in da30c8d1a41490e8e3d94c9560ae29b4388b2f7a89de08ff309beea9083a3f20
 F sqlite_cfg.h.in be1d075cf77134d53fdf5cc2c0919842e7e02a648c66a56e735af25ccdcaff91
 F src/alter.c aa93e37e4a36a0525bbb2a2aeda20d2018f0aa995542c7dc658e031375e3f532
 F src/analyze.c 9a8b67239d899ac12289db5db3f5bfe7f7a0ad1277f80f87ead1d048085876eb
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58373d523cece0b39a29edcccecf93cfdc7ac68f9f12130ee8e487675d3f6a4d
-R 9f71a31c86e4b6aa4c47725d28cb3ea3
+P 32fc9c3f62601684b4ded783a79ebf817d093588c87ece02b449c3542881b65a
+R 169d63c9faa2852f8ca36d264863190c
 U stephan
-Z 76974d6843a3a15446106276560473f0
+Z a6251b75c82e146562e50403703934b5
 # Remove this line to create a well-formed Fossil manifest.
