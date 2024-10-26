@@ -755,6 +755,14 @@ if {1} {
 #   - READLINE_H = header in the form "<.../readline.h>" IF we can
 #     figure it out. shell.c does not currently use this.
 proc hwaci-check-readline2 {} {
+  define HAVE_READLINE 0
+  define LDFLAGS_READLINE ""
+  define CFLAGS_READLINE ""
+  define READLINE_H ""
+  if {![opt-bool readline]} {
+    msg-result "Readline support explicitly disabled with --disable-readline."
+    return 0
+  }
   set check [opt-val with-readline-ldflags][opt-val with-readline-cflags][opt-val with-readline-header]
   if {"" ne $check} {
     # If any one of --with-readline-(ldflags|cflags|header) are provided,
@@ -763,7 +771,6 @@ proc hwaci-check-readline2 {} {
     set v [opt-val with-readline-header]
     if {"" eq $v} {
       set fC [join [opt-val with-readline-cflags]]
-      define READLINE_H ""
     } else {
       # Derive CFLAGS from header file name
       set v [file dirname $v]

@@ -1,5 +1,5 @@
-C Add\snew\sconfigure\s--with-readline-ldflags/cflags/header\sflags\sas\sbrute-force\smethod\sfor\sclients\sto\stell\sconfigure\show\sto\scompile\sand\slink\sagainst\sreadline.
-D 2024-10-26T18:17:17.351
+C configure\sflag\s--disable-readline\snow\strumps\s--with-readline-...
+D 2024-10-26T18:34:39.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def ea6cc574b8941830d4e649a76f0ddf44d4e638bc9d695fac3937a8cc65d160b3
+F auto.def 982231b47cf749449c2c04e85ff9583c68774000a4750db277213ccbf75c75dd
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba358d265b7ee360d62b5219faaa1010ea90dac4e20cc7adc3ebd46161a65f94
-R 8621f08affc8cf37cd58fa446ab68d39
+P eaa3a8053eb0935bc47abc1001ff101d79b3f181ac7ea51d3e567cb59ae4c7b3
+R 6e04fb56f743767a528a8a7b2784bb4a
 U stephan
-Z b40873979d7095705212ffeb9f316fba
+Z 41af4b4083539567597ff34d27c40ef9
 # Remove this line to create a well-formed Fossil manifest.
