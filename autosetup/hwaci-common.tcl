@@ -42,7 +42,7 @@
 ########################################################################
 
 ########################################################################
-# $hwaci is an internal-use-only array for storing whatever generic
+# $hwaci_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set hwaci_ {}
 

@@ -164,6 +164,7 @@ set flags {
   editline=0           => {BSD editline support}
   readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
+  shared=1             => {Disable build of shared libary}
   with-readline-lib:   => {Readline library}
   with-readline-inc:   => {Readline include paths}
   with-linenoise:DIR   => {}
@@ -343,7 +344,7 @@ if {"" eq [hwaci-bin-define install]} {
 # cross-compiling.
 define BUILD_CC [get-define CC_FOR_BUILD]
 define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
-define ENABLE_SHARED 1
+define ENABLE_SHARED [opt-bool shared]
 define HAVE_TCL 0
 
 ########################################################################

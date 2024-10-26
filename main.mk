@@ -329,8 +329,8 @@ T.link.shared = $(T.link) $(LDFLAGS.shobj)
 #
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
-  $(LDFLAGS.math) $(LDFLAGS.dlopen)
-# $(LDFLAGS.zlib)
+  $(LDFLAGS.math) $(LDFLAGS.dlopen) \
+  $(LDFLAGS.zlib)
 
 #
 # $(install-dir.XYZ) = dirs for installation.
@@ -1789,7 +1789,7 @@ sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
 		$(CFLAGS.readline) $(SHELL_OPT) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.zlib) $(LDFLAGS.readline) $(LDFLAGS.icu)
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline) $(LDFLAGS.icu)
 
 #
 # Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
