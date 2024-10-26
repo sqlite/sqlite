@@ -1,5 +1,5 @@
-C Doc\stypo\sfix.
-D 2024-10-26T03:30:18.979
+C Add\smissing\sB.exe\sextension\sto\ssrc-verify,\sas\sreported\sin\sthe\sforum.
+D 2024-10-26T04:31:04.564
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk cad572855eeff7329613154ce1a6562739db9b85abfdaa4ee8e0ca89bf5c8ef0
+F main.mk 6bf2b3be4e37d5c8ee533573d5950c26ca039daaabded9de238643ac201837a3
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d212cc36824acd490a0afd8bc393159612075438b9f3fab992deec9d78d8a366
-R 4ffe7a9aa88108e45b75beeee9d17cd2
+P da50e85d9a2020f4c59a72d6ae775fa32c275f0d5086c3caf9b13ab0a937fe1f
+R 061755f9f91986fade258a58345280b1
 U stephan
-Z 791f15b119b9e59df140430c050f6eff
+Z d2486cdcf7233fbb225e9c04aca5fb61
 # Remove this line to create a well-formed Fossil manifest.
