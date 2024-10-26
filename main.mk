@@ -216,6 +216,7 @@ TCL_STUB_LIB_SPEC ?=
 TCL_EXEC_PREFIX ?=
 TCL_VERSION ?=
 TCLLIBDIR ?=
+TCL_CONFIG_SH ?=
 #
 # $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
 # libsqlite3, and will usually differ from $(LDFLAGS.rpath).
@@ -1377,13 +1378,14 @@ libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
 all: libtcl
 
 install.tcldir = $(DESTDIR)$(TCLLIBDIR)
-install-tcl-1: install-lib $(libtclsqlite3.SO) pkgIndex.tcl
+install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
 	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
 	$(INSTALL) -d $(install.tcldir)
 	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
 	$(INSTALL.noexec) pkgIndex.tcl $(install.tcldir)
 install-tcl-0 install-tcl-:
-install: install-tcl-$(HAVE_TCL)
+install-tcl: install-tcl-$(HAVE_TCL)
+install: install-tcl
 
 tclsqlite3.c:	sqlite3.c
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c

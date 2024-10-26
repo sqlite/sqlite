@@ -1,5 +1,5 @@
-C configure\sflag\s--disable-readline\snow\strumps\s--with-readline-...
-D 2024-10-26T18:34:39.207
+C Remove\sthe\sinstall-lib\smakefile\sdep\sfrom\sinstall-tcl,\sas\sit\sbreaks\snon-root-user\sinvocations\sof\s'make\sinstall-tcl'\swhen\sthe\s--prefix\sis\sleft\sat\sits\sdefault\sand\s--with-tcl\sis\sexplicitly\sprovided.
+D 2024-10-26T19:16:18.142
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ac10e0b1ed32eac092009a69506637a06b10608ca406c2c126fdc9ad54d5d01b
+F main.mk 857da235f57919c3469efbf89b61060f8f35352c6b97a9dce275f5a35b536007
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eaa3a8053eb0935bc47abc1001ff101d79b3f181ac7ea51d3e567cb59ae4c7b3
-R 6e04fb56f743767a528a8a7b2784bb4a
+P b66076e51bc1601864973be0f3f2b702b51139ed3818f17433fbaa8351119ad6
+R bb71574ad1e7e09ae31e2176eab9b67d
 U stephan
-Z 41af4b4083539567597ff34d27c40ef9
+Z f881b225d548de8ff8557460eb6c70ce
 # Remove this line to create a well-formed Fossil manifest.
