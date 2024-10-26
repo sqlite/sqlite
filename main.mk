@@ -1303,8 +1303,9 @@ all: so
 # compatibility for systems which have libraries installed using those
 # conventions:
 #
-# 1) If libsqlite3.so.0.8.6 is found on then it is re-linked to point
-#    to the new names. libsqlite3.so.0 historically symlinks to
+# 1) If libsqlite3.so.0.8.6 is found in the target installation
+#    directory then it is re-linked to point to the new
+#    names. libsqlite3.so.0 historically symlinks to
 #    libsqlite3.so.0.8.6, and that link is left in place. We cannot
 #    retain both the old and new installation because they both share
 #    the high-level name $(libsqlite3.SO). The down-side of this is
