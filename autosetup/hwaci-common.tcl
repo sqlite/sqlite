@@ -706,9 +706,16 @@ proc hwaci-check-rpath {} {
 }
 
 ########################################################################
-# Under construction - check for libreadline functionality.  Linking
-# in readline varies wildly by platform and this check does not cover
-# all known options.
+# Check for libreadline functionality.  Linking in readline varies
+# wildly by platform and this check does not cover all known options.
+# This detection is known to fail when none of the following
+# conditions can be met:
+#
+# - (pkg-config readline) info is either unavailable for libreadline or
+#   simply misbehaves.
+#
+# - Compile-and-link-with-default-path tests fail. This will fail for
+#   platforms which store readline under, e.g., /usr/locall
 #
 # Defines the following vars:
 #
@@ -747,8 +754,10 @@ proc hwaci-check-readline {} {
   # $ pkg-config --print-requires readline; echo $?
   # 1
   #
-  # i.e. there's apparently no way to find out that readline
-  # requires termcap beyond parsing the error message.
+  # i.e. there's apparently no way to find out that readline requires
+  # termcap beyond parsing the error message.  It turns out it doesn't
+  # want termcap, it wants -lcurses, but we don't get that info from
+  # pkg-config either.
 
   set h "readline/readline.h"
   if {[cc-check-includes $h]} {
@@ -764,11 +773,11 @@ proc hwaci-check-readline {} {
     # -I...]
   }
   # Numerous TODOs:
-  # - Requires linking with ncurses or similar on some platforms.
+  # - Requires linking with [n]curses or similar on some platforms.
   # - Headers are in a weird place on some BSD systems.
   # - Add --with-readline=DIR
-  # - Add --with-readline-lib=lib file
-  # - Add --with-readline-inc=dir -Idir
+  # - Add --with-readline-lib=lib ==> pass lib file via LDFLAGS_READLINE
+  # - Add --with-readline-inc=dir ==> pass -Idir via CFLAGS_READLINE
   msg-result "libreadline not found."
   return 0
 }

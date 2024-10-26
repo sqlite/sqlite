@@ -146,7 +146,7 @@ LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
 CFLAGS.readline ?= -I$(prefix)/include/readline
 # ^^^ When using linenoise instead of readline, do something like:
 # SHELL_OPT += -DHAVE_LINENOISE
-# CFLAGS.readline = $(HOME)/linenoise $(HOME)/linenoise/linenoise.c
+# CFLAGS.readline = -I$(HOME)/linenoise $(HOME)/linenoise/linenoise.c
 # LDFLAGS.readline = # empty
 
 #
