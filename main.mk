@@ -1312,7 +1312,7 @@ all: so
 #    libsqlite3.so (from a legacy package) with a new symlink.
 #
 # 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
-#    to the older-style names are created. The primary intent of this
+#    to the legacy-style names are created. The primary intent of this
 #    is to enable chains of operations such as the hypothetical (apt
 #    remove sqlite3-3.47.0 && apt install sqlite3-3.48.0). In such
 #    cases, condition (1) would never trigger but applications might
@@ -1331,12 +1331,12 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
 		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3* || exit $$?; \
 		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
-			echo "ACHTUNG: older libtool-compatible install found. Re-linking it..."; \
+			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
 			rm -f $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0*; \
 		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
-			echo "ACHTUNG: installing older libtool-style links because INSTALL_SO_086_LINKS=1"; \
+			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINKS=1"; \
 			rm -f $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
 			ln -s $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \

@@ -1,5 +1,5 @@
-C Expand\sthe\slibtool-style\slink\ssupport\sfrom\s[0a50e33051]\ssuch\sthat\sif\sINSTALL_SO_086_LINKS=1\sis\spassed\sto\s'make\sinstall'\sthen\sthe\slibtool-style\snames\sare\salways\slinked\sin,\sregardless\sof\swhether\sthey\salready\sexisted\sor\snot.\sIn\seither\scase,\swe\sunconditionally\sremove\slibsqlite3.la\sbecause\sit\scannot\swork\swith\sthe\snewly-installed\snon-libtool\s.so\sfile.
-D 2024-10-26T03:19:29.450
+C Rephrase\s'older'\sas\s'legacy'\sin\sthe\sdocs\sfrom\s[0a50e33051]\sand\s[2b2ca7dec18d].
+D 2024-10-26T03:22:44.440
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 551a9af3801b7d801e02663ccba8f2002fd5e0309a5a6b8acacea688baba7f7c
+F main.mk 7ece71aa7e4a53622b5b81d208161b3bad16f63bbcb3bafa49d94af9736c615c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a50e33051fbdd5b7b7f0ab7eb2b2561d259098075fa8847868017041d789484
-R e48329e2a4923b776177fca5669845be
+P 2b2ca7dec18d6b53ba7810a2ecf3937d98b5b08232d4f82d16fa2ad5f9fd83b2
+R 7d10bfe43f15ccc57604c6190d35f1e5
 U stephan
-Z b7378c5e10b74962b82afd4525f8ef5f
+Z 6b4ebd6c45c2e1821bbd12a50e70f61a
 # Remove this line to create a well-formed Fossil manifest.
