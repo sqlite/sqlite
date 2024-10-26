@@ -150,7 +150,7 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #     - [hwaci-opt-if-truthy FLAG {THEN} {ELSE}]
 #
 #   Non-boolean (i.e. string) flags:
-#     - [opt-val FLAG]
+#     - [opt-val FLAG ?default?]
 #
 ########################################################################
 set flags {
@@ -165,8 +165,9 @@ set flags {
   readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
   shared=1             => {Disable build of shared libary}
-  with-readline-lib:   => {Readline library}
-  with-readline-inc:   => {Readline include paths}
+  with-readline-ldflags:  => {Readline LDFLAGS, e.g. -lreadline -lncurses}
+  with-readline-cflags:   => {Readline CFLAGS, e.g. -I/path/to/includes}
+  with-readline-header:   => {Full path to readline.h, from which --with-readline-cflags will be derived.}
   with-linenoise:DIR   => {}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
@@ -197,12 +198,6 @@ if {"" ne $DUMP_DEFINES_JSON} {
 options [subst $flags]
 unset flags
 
-########################################################################
-# Notes about certain historical flags:
-#
-#  --releasemode: libtool-specific (which we don't have now)
-#
-#
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
 msg-result "srcdir = $srcdir"
@@ -749,134 +744,178 @@ if {1} {
   unset ts tsn
 }
 
-if {1} {
-  ##########
-  # Figure out what C libraries are required to compile programs
-  # that use "readline()" library.
-  add-shell-opt -DHAVE_READLINE=[hwaci-check-readline]
-  # TODO: reimplement:
-  #  --enable-editline
-  #  --with-readline-lib     specify readline library
-  #  --with-readline-inc     specify readline include paths
-  #  --with-linenoise=DIR    source directory for linenoise library
-} else {
-  # Older impl solely for reference while porting...
-  #
-  # XXX TARGET_READLINE_LIBS=""
-  # XXX TARGET_READLINE_INC=""
-  # XXX TARGET_HAVE_READLINE=0
-  # XXX TARGET_HAVE_EDITLINE=0
-  if {[opt-bool editline]} {
-    set with_editline $enableval
+########################################################################
+# Jump through proverbial hoops to try to find a working line-editing
+# library, setting:
+#
+#   - LDFLAGS_READLINE = linker flags
+#
+#   - CFLAGS_READLINE = compilation flags for clients
+#
+#   - READLINE_H = header in the form "<.../readline.h>" IF we can
+#     figure it out. shell.c does not currently use this.
+proc hwaci-check-readline2 {} {
+  set check [opt-val with-readline-ldflags][opt-val with-readline-cflags][opt-val with-readline-header]
+  if {"" ne $check} {
+    # If any one of --with-readline-(ldflags|cflags|header) are provided,
+    # those trump any automated searching.
+    set fL [join [opt-val with-readline-ldflags]]
+    set v [opt-val with-readline-header]
+    if {"" eq $v} {
+      set fC [join [opt-val with-readline-cflags]]
+      define READLINE_H ""
+    } else {
+      # Derive CFLAGS from header file name
+      set v [file dirname $v]
+      if {[string match */*line $v]} {
+        # Special case: if the path includes .../*line/readline.h", set
+        # the -I to one dir up from that because our sources include
+        # <readline/readline.h> or <editline/readline.h>.  Reminder: if
+        # auto.def is being run by jimsh0 then [file normalize] will not
+        # work!
+        set v [file dirname $v]
+      }
+      set fC "-I$v"
+      # Set READLINE_H to an #include-compatible form of the tail of $v:
+      set x [opt-val with-readline-header]
+      set x [string replace $x 0 [string length $v]]
+      define READLINE_H <$x>
+      unset x
+      #hwaci-warn "v=$v READLINE_H=[get-define READLINE_H]"
+    }
+    define LDFLAGS_READLINE $fL
+    define CFLAGS_READLINE $fC
+    define HAVE_READLINE 1
+    add-shell-opt -DHAVE_READLINE=1
+    msg-result "Using client-provided readline flags: $fC $fL"
+  } elseif {1} {
+    # Try the project-agnostic readline detector:
+    add-shell-opt -DHAVE_READLINE=[hwaci-check-readline]
+    # TODO: reimplement:
+    #  --enable-editline
+    #  --with-readline-lib     specify readline library
+    #  --with-readline-inc     specify readline include paths
+    #  --with-linenoise=DIR    source directory for linenoise library
   } else {
-    set with_editline auto
-  }
-  if {![opt-bool readline]} {
-    set with_readline $enableval
-  } else {
-    set with_readline auto
-  }
-
-  # XXX if test x"$with_editline" != xno; then
-  # XXX sLIBS=$LIBS
-  # XXX LIBS=""
-  # XXX TARGET_HAVE_EDITLINE=1
-  if {[hwaci-check-function-in-lib readline edit]} {
-    set with_readline no
-  } else {
+    # Older impl solely for reference while porting...
+    #
+    # XXX TARGET_READLINE_LIBS=""
+    # XXX TARGET_READLINE_INC=""
+    # XXX TARGET_HAVE_READLINE=0
     # XXX TARGET_HAVE_EDITLINE=0
-  }
-  # XXX TARGET_READLINE_LIBS=$LIBS
-  # XXX LIBS=$sLIBS
-  # XXX fi
-  # XXX if test x"$with_readline" != xno; then
-  set found "yes"
+    if {[opt-bool editline]} {
+      set with_editline $enableval
+    } else {
+      set with_editline auto
+    }
+    if {![opt-bool readline]} {
+      set with_readline $enableval
+    } else {
+      set with_readline auto
+    }
 
-  if {[opt-val with-readline-lib] ne {}} {
-    set withval [lindex [opt-val with-readline-lib] end]
-    set with_readline_lib $withval
-  } else {
-    set with_readline_lib "auto"
-  }
-  # XXX if test "x$with_readline_lib" = xauto; then
-  # XXX save_LIBS="$LIBS"
-  # XXX LIBS=""
-  if {[hwaci-check-function-in-lib tgetent readline ncurses curses termcap]} {
-    # XXX term_LIBS="$LIBS"
-  } else {
-    # XXX term_LIBS=""
-  }
-  if {[hwaci-check-function-in-lib readline readline]} {
-    # XXX TARGET_READLINE_LIBS="-lreadline"
-  } else {
-    set found "no"
-  }
-  # XXX TARGET_READLINE_LIBS="$TARGET_READLINE_LIBS $term_LIBS"
-  # XXX LIBS="$save_LIBS"
-  # XXX else
-  # XXX TARGET_READLINE_LIBS="$with_readline_lib"
-  # XXX fi
-
-  if {[opt-val with-readline-inc] ne {}} {
-    set withval [lindex [opt-val with-readline-inc] end]
-    set with_readline_inc $withval
-  } else {
-    set with_readline_inc "auto"
-  }
-  # XXX if test "x$with_readline_inc" = xauto; then
-  if {[cc-check-includes readline.h]} {
+    # XXX if test x"$with_editline" != xno; then
+    # XXX sLIBS=$LIBS
+    # XXX LIBS=""
+    # XXX TARGET_HAVE_EDITLINE=1
+    if {[hwaci-check-function-in-lib readline edit]} {
+      set with_readline no
+    } else {
+      # XXX TARGET_HAVE_EDITLINE=0
+    }
+    # XXX TARGET_READLINE_LIBS=$LIBS
+    # XXX LIBS=$sLIBS
+    # XXX fi
+    # XXX if test x"$with_readline" != xno; then
     set found "yes"
-  } else {
-    set found "no"
-    # XXX if test "$cross_compiling" != yes; then
-    # XXX for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
-    # XXX for subdir in include include/readline; do
-    # XXX AC_CHECK_FILE $dir/$subdir/readline.h found=yes
-    # XXX if test "$found" = "yes"; then
-    # XXX TARGET_READLINE_INC="-I$dir/$subdir"
-    # XXX break
-    # XXX fi
-    # XXX done
-    # XXX test "$found" = "yes" && break
-    # XXX done
-    # XXX fi
-  }
-  # XXX else
-  # XXX TARGET_READLINE_INC="$with_readline_inc"
-  # XXX fi
 
-  # XXX if test x"$found" = xno; then
-  # XXX TARGET_READLINE_LIBS=""
-  # XXX TARGET_READLINE_INC=""
-  # XXX TARGET_HAVE_READLINE=0
-  # XXX else
-  # XXX TARGET_HAVE_READLINE=1
-  # XXX fi
-  # XXX fi
-  if {[opt-val with-linenoise] ne {}} {
-    set withval [lindex [opt-val with-linenoise] end]
-    set with_linenoise $withval
-  } else {
-    set with_linenoise "no"
-  }
-  # XXX if test "x$with_linenoise" != "xno"; then
-  # XXX TARGET_HAVE_READLINE=0
-  # XXX TARGET_HAVE_EDITLINE=0
-  # XXX TARGET_HAVE_LINENOISE=1
-  # XXX TARGET_READLINE_INC="-I${with_linenoise}"
-  # XXX TARGET_READLINE_LIBS="${with_linenoise}/linenoise.c"
-  # XXX echo "using linenoise source code at ${with_linenoise}"
-  # XXX else
-  # XXX TARGET_HAVE_LINENOISE=0
-  # XXX echo "not using linenoise"
-  # XXX fi
+    if {[opt-val with-readline-lib] ne {}} {
+      set withval [lindex [opt-val with-readline-lib] end]
+      set with_readline_lib $withval
+    } else {
+      set with_readline_lib "auto"
+    }
+    # XXX if test "x$with_readline_lib" = xauto; then
+    # XXX save_LIBS="$LIBS"
+    # XXX LIBS=""
+    if {[hwaci-check-function-in-lib tgetent readline ncurses curses termcap]} {
+      # XXX term_LIBS="$LIBS"
+    } else {
+      # XXX term_LIBS=""
+    }
+    if {[hwaci-check-function-in-lib readline readline]} {
+      # XXX TARGET_READLINE_LIBS="-lreadline"
+    } else {
+      set found "no"
+    }
+    # XXX TARGET_READLINE_LIBS="$TARGET_READLINE_LIBS $term_LIBS"
+    # XXX LIBS="$save_LIBS"
+    # XXX else
+    # XXX TARGET_READLINE_LIBS="$with_readline_lib"
+    # XXX fi
 
-  # XXX AC_SUBST TARGET_READLINE_LIBS
-  # XXX AC_SUBST TARGET_READLINE_INC
-  # XXX AC_SUBST TARGET_HAVE_READLINE
-  # XXX AC_SUBST TARGET_HAVE_EDITLINE
-  # XXX AC_SUBST TARGET_HAVE_LINENOISE
-}
+    if {[opt-val with-readline-inc] ne {}} {
+      set withval [lindex [opt-val with-readline-inc] end]
+      set with_readline_inc $withval
+    } else {
+      set with_readline_inc "auto"
+    }
+    # XXX if test "x$with_readline_inc" = xauto; then
+    if {[cc-check-includes readline.h]} {
+      set found "yes"
+    } else {
+      set found "no"
+      # XXX if test "$cross_compiling" != yes; then
+      # XXX for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
+      # XXX for subdir in include include/readline; do
+      # XXX AC_CHECK_FILE $dir/$subdir/readline.h found=yes
+      # XXX if test "$found" = "yes"; then
+      # XXX TARGET_READLINE_INC="-I$dir/$subdir"
+      # XXX break
+      # XXX fi
+      # XXX done
+      # XXX test "$found" = "yes" && break
+      # XXX done
+      # XXX fi
+    }
+    # XXX else
+    # XXX TARGET_READLINE_INC="$with_readline_inc"
+    # XXX fi
+
+    # XXX if test x"$found" = xno; then
+    # XXX TARGET_READLINE_LIBS=""
+    # XXX TARGET_READLINE_INC=""
+    # XXX TARGET_HAVE_READLINE=0
+    # XXX else
+    # XXX TARGET_HAVE_READLINE=1
+    # XXX fi
+    # XXX fi
+    if {[opt-val with-linenoise] ne {}} {
+      set withval [lindex [opt-val with-linenoise] end]
+      set with_linenoise $withval
+    } else {
+      set with_linenoise "no"
+    }
+    # XXX if test "x$with_linenoise" != "xno"; then
+    # XXX TARGET_HAVE_READLINE=0
+    # XXX TARGET_HAVE_EDITLINE=0
+    # XXX TARGET_HAVE_LINENOISE=1
+    # XXX TARGET_READLINE_INC="-I${with_linenoise}"
+    # XXX TARGET_READLINE_LIBS="${with_linenoise}/linenoise.c"
+    # XXX echo "using linenoise source code at ${with_linenoise}"
+    # XXX else
+    # XXX TARGET_HAVE_LINENOISE=0
+    # XXX echo "not using linenoise"
+    # XXX fi
+
+    # XXX AC_SUBST TARGET_READLINE_LIBS
+    # XXX AC_SUBST TARGET_READLINE_INC
+    # XXX AC_SUBST TARGET_HAVE_READLINE
+    # XXX AC_SUBST TARGET_HAVE_EDITLINE
+    # XXX AC_SUBST TARGET_HAVE_LINENOISE
+  }
+}; # hwaci-check-readline2
+hwaci-check-readline2
 
 hwaci-if-opt-truthy load-extension {
   if {[hwaci-check-function-in-lib dlopen dl]} {
@@ -1013,6 +1052,8 @@ hwaci-check-rpath
 ########################################################################
 # Generate the output files.
 #
+# Potential TODO (unclear): in sqlite3.pc.in, do we need to include
+# any CFLAGS_READLINE, CFLAGS_ZLIB, etc in its "Cflags:" section?
 hwaci-make-from-dot-in -touch Makefile sqlite3.pc
 if {0} {
   # Requires a hand-written sqlite_cfg.h.in...
