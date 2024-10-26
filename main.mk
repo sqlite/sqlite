@@ -329,7 +329,7 @@ T.link.shared = $(T.link) $(LDFLAGS.shobj)
 #
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
-  $(LDFLAGS.math)$(LDFLAGS.dlopen)
+  $(LDFLAGS.math) $(LDFLAGS.dlopen)
 # $(LDFLAGS.zlib)
 
 #
