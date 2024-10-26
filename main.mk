@@ -1295,34 +1295,50 @@ all: so
 # hoop-jumping? Can we not simply install the .so as-is to
 # libsqlite3.so (without the versioned bits)?
 #
+# Regarding the historcal installation name of libsqlite3.so.0.8.6:
+#
 # The historical SQLite build always used a version number of 0.8.6
 # for reasons lost to history but having something to do with libtool
 # (which is not longer used in this tree). In order to retain filename
 # compatibility for systems which have libraries installed using those
-# conventions, if libsqlite3.so.0.8.6 is found on then it is re-linked
-# to point to the new names. libsqlite3.so.0 historically symlinks to
-# libsqlite3.so.0.8.6, and that link is left in place. We cannot
-# retain both the old and new installation because they both share the
-# high-level name $(libsqlite3.SO). The down-side of this is that it
-# may well upset packaging tools when we replace libsqlite3.so (from a
-# legacy package) with a new symlink. In this case we also delete
-# libsqlite3.la because it cannot work with the non-libtool library
-# this installation replaces. Since two versions of such a package
-# cannot coexist anyway (they share identical file names), that
-# conflict is believed to be an imaginary problem.
+# conventions:
+#
+# 1) If libsqlite3.so.0.8.6 is found on then it is re-linked to point
+#    to the new names. libsqlite3.so.0 historically symlinks to
+#    libsqlite3.so.0.8.6, and that link is left in place. We cannot
+#    retain both the old and new installation because they both share
+#    the high-level name $(libsqlite3.SO). The down-side of this is
+#    that it may well upset packaging tools when we replace
+#    libsqlite3.so (from a legacy package) with a new symlink.
+#
+# 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
+#    to the older-style names are created. The primary intent of this
+#    is to enable chains of operations such as the hypothetical (apt
+#    remove sqlite3-3.47.0 && apt install sqlite3-3.48.0). In such
+#    cases, condition (1) would never trigger but applications might
+#    still expect to see the legacy file names.
+#
+# In either case we also delete libsqlite3.la because it cannot work
+# with the non-libtool library this installation installs.
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) $(install-dir.lib)
 	@echo "Setting up SO symlinks..."; \
 		cd $(install-dir.lib) || exit $$?; \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) libsqlite3.la || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3* || exit $$?; \
 		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
 			echo "ACHTUNG: older libtool-compatible install found. Re-linking it..."; \
-			rm -f $(libsqlite3.SO).0.8.6 libsqlite3.la; \
+			rm -f $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0*; \
+		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
+			echo "ACHTUNG: installing older libtool-style links because INSTALL_SO_086_LINKS=1"; \
+			rm -f $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
+			ln -s $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0*; \
 		fi
