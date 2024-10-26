@@ -51,7 +51,11 @@ set DUMP_DEFINES_TXT ./config.defines.txt
 # least one high-profile client to extract build config info for use
 # in compiling a scripting-language binding, so its name should not be
 # arbitrarily changed.
-set DUMP_DEFINES_JSON ./config.defines.json
+#
+# 2024-10-26: generation of this file is disabled (via an empty file
+# name) until/unless someone voices a specific interest in it. The
+# original motivating use case is handled fine by sqlite_cfg.h.
+set DUMP_DEFINES_JSON ""; #./config.defines.json
 
 ########################################################################
 # Regarding flag compatibility with the historical autotool configure
@@ -149,7 +153,7 @@ set DUMP_DEFINES_JSON ./config.defines.json
 #     - [opt-val FLAG]
 #
 ########################################################################
-options [subst {
+set flags {
   with-debug:=1        => {Enable debug build flags}
   with-tclsh:PATH      => {Full pathname of tclsh to use}
   with-tcl:DIR         => {Directory containing tclConfig.sh}
@@ -182,10 +186,15 @@ options [subst {
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
-  defines-json-include-lowercase=0
-                       => {Include lower-case defines (primarily system paths) in $DUMP_DEFINES_JSON}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
-}]
+}
+if {"" ne $DUMP_DEFINES_JSON} {
+  lappend flags \
+    defines-json-include-lowercase=0 \
+    => {Include lower-case defines (primarily system paths) in $DUMP_DEFINES_JSON}
+}
+options [subst $flags]
+unset flags
 
 ########################################################################
 # Notes about certain historical flags:
@@ -385,7 +394,10 @@ hwaci-check-wasi-sdk
 
 #
 # Enable large file support (if special flags are necessary)
-cc-check-lfs
+define HAVE_LFS 0
+if {[opt-bool largefile]} {
+  cc-check-lfs
+}
 
 #
 # Check for needed/wanted data types
@@ -741,6 +753,11 @@ if {1} {
   # Figure out what C libraries are required to compile programs
   # that use "readline()" library.
   add-shell-opt -DHAVE_READLINE=[hwaci-check-readline]
+  # TODO: reimplement:
+  #  --enable-editline
+  #  --with-readline-lib     specify readline library
+  #  --with-readline-inc     specify readline include paths
+  #  --with-linenoise=DIR    source directory for linenoise library
 } else {
   # Older impl solely for reference while porting...
   #
@@ -1024,26 +1041,28 @@ if {"" ne $oFF} {
 }
 unset oFF
 
-########################################################################
-# Dump config-defines.json...
-# Demonstrate (mis?)handling of spaces in JSON-export array values:
-# define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
-define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
-define OPT_SHELL.list [get-define OPT_SHELL]
-set dumpDefsOpt {
-  -bare {SIZEOF_* HAVE_DECL_*}
-  -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*}
-  -array {*.list}
-  -auto {OPT_* PACKAGE_* HAVE_*}
+if {"" ne $DUMP_DEFINES_JSON} {
+  ########################################################################
+  # Dump config-defines.json...
+  # Demonstrate (mis?)handling of spaces in JSON-export array values:
+  # define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
+  define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
+  define OPT_SHELL.list [get-define OPT_SHELL]
+  set dumpDefsOpt {
+    -bare {SIZEOF_* HAVE_DECL_*}
+    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*}
+    -array {*.list}
+    -auto {OPT_* PACKAGE_* HAVE_*}
+  }
+  if {[opt-bool defines-json-include-lowercase]} {
+    lappend dumpDefsOpt -none {lib_*} ; # remnants from hwaci-check-function-in-lib and friends
+    lappend dumpDefsOpt -auto {[a-z]*}
+  }
+  lappend dumpDefsOpt -none *
+  hwaci-dump-defs-json $DUMP_DEFINES_JSON {*}$dumpDefsOpt
+  undefine OPT_FEATURE_FLAGS.list
+  undefine OPT_SHELL.list
 }
-if {[opt-bool defines-json-include-lowercase]} {
-  lappend dumpDefsOpt -none {lib_*} ; # remnants from hwaci-check-function-in-lib and friends
-  lappend dumpDefsOpt -auto {[a-z]*}
-}
-lappend dumpDefsOpt -none *
-hwaci-dump-defs-json $DUMP_DEFINES_JSON {*}$dumpDefsOpt
-undefine OPT_FEATURE_FLAGS.list
-undefine OPT_SHELL.list
 
 ########################################################################
 # Some build-dev/debug-only output

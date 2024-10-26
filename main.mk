@@ -1297,7 +1297,19 @@ all: so
 #
 # The historical SQLite build always used a version number of 0.8.6
 # for reasons lost to history but having something to do with libtool
-# (which is not longer used in this tree).
+# (which is not longer used in this tree). In order to retain filename
+# compatibility for systems which have libraries installed using those
+# conventions, if libsqlite3.so.0.8.6 is found on then it is re-linked
+# to point to the new names. libsqlite3.so.0 historically symlinks to
+# libsqlite3.so.0.8.6, and that link is left in place. We cannot
+# retain both the old and new installation because they both share the
+# high-level name $(libsqlite3.SO). The down-side of this is that it
+# may well upset packaging tools when we replace libsqlite3.so (from a
+# legacy package) with a new symlink. In this case we also delete
+# libsqlite3.la because it cannot work with the non-libtool library
+# this installation replaces. Since two versions of such a package
+# cannot coexist anyway (they share identical file names), that
+# conflict is believed to be an imaginary problem.
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) $(install-dir.lib)
@@ -1307,9 +1319,16 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION)
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*; \
+		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
+			echo "ACHTUNG: older libtool-compatible install found. Re-linking it..."; \
+			rm -f $(libsqlite3.SO).0.8.6 libsqlite3.la; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0*; \
+		fi
 install-so-0 install-so-:
-install: install-so-$(ENABLE_SHARED)
+install-so: install-so-$(ENABLE_SHARED)
+install: install-so
 
 #
 # Install $(libsqlite3.LIB)
