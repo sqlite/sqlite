@@ -1069,7 +1069,7 @@ TCLSH_CMD = tclsh
 JIM_TCLSH = $(TCLSH_CMD)
 !ENDIF
 !IFNDEF JIM_TCLSH
-JIM_TCLSH = $(TOP)\jimsh0.exe
+JIM_TCLSH = jimsh0.exe
 !ENDIF
 # <</mark>>
 
