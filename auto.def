@@ -165,9 +165,12 @@ set flags {
   readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
   shared=1             => {Disable build of shared libary}
-  with-readline-ldflags:LDFLAGS  => {Readline LDFLAGS, e.g. -lreadline -lncurses}
-  with-readline-cflags:CFLAGS    => {Readline CFLAGS, e.g. -I/path/to/includes}
-  with-readline-header:PATH      => {Full path to readline.h, from which --with-readline-cflags will be derived.}
+  with-readline-lib:LDFLAGS
+                       => {Readline LDFLAGS, e.g. -lreadline -lncurses}
+  with-readline-inc:CFLAGS
+                       => {Readline CFLAGS, e.g. -I/path/to/includes}
+  with-readline-header:PATH
+                       => {Full path to readline.h, from which --with-readline-inc will be derived.}
   with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
@@ -793,14 +796,14 @@ proc hwaci-check-line-editing {} {
     user-notice "Readline support explicitly disabled with --disable-readline."
     return "none"
   }
-  set check [opt-val with-readline-ldflags][opt-val with-readline-cflags][opt-val with-readline-header]
+  set check [opt-val with-readline-lib][opt-val with-readline-inc]
   if {"" ne $check} {
-    # If any one of --with-readline-(ldflags|cflags|header) are provided,
+    # If any one of --with-readline-(lib|inc|header) are provided,
     # those trump any automated searching.
-    set fL [join [opt-val with-readline-ldflags]]
+    set fL [join [opt-val with-readline-lib]]
     set v [opt-val with-readline-header]
     if {"" eq $v} {
-      set fC [join [opt-val with-readline-cflags]]
+      set fC [join [opt-val with-readline-inc]]
     } else {
       # Derive CFLAGS from header file name
       set v [file dirname $v]
@@ -828,9 +831,6 @@ proc hwaci-check-line-editing {} {
   if {$v} { return "readline" }
   # TODO: reimplement:
   #  --enable-editline
-  #  --with-readline-lib     specify readline library
-  #  --with-readline-inc     specify readline include paths
-  #  --with-linenoise=DIR    source directory for linenoise library
   return "none"
 }; # hwaci-check-line-editing
 msg-checking "Line-editing support for the sqlite3 shell: "
