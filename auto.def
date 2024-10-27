@@ -345,15 +345,13 @@ if {"" eq [hwaci-bin-define install]} {
 # cross-compiling.
 define BUILD_CC [get-define CC_FOR_BUILD]
 define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
-define ENABLE_SHARED [opt-bool shared]
-define HAVE_TCL 0
 
 ########################################################################
 # Handle --with-wasi-sdk=DIR
 #
 # This must be early because it may change the toolchain and disable
 # several config options.
-proc hwaci-check-wasi-sdk {} {
+proc sqlite-check-wasi-sdk {} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   define HAVE_WASI_SDK 0
   #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
@@ -368,12 +366,11 @@ proc hwaci-check-wasi-sdk {} {
   msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
   define HAVE_WASI_SDK 1
   define WASI_SDK_DIR $wasiSdkDir
-  hwaci-opt-set load-extension 0; # ==> --disable-load-extension
-  hwaci-opt-set threadsafe 0; # ==> --threadsafe=0
-  hwaci-opt-set tcl 0; # ==> --disable-tcl
-  define HAVE_TCL 0
+  hwaci-opt-set load-extension 0 ;# ==> --disable-load-extension
+  hwaci-opt-set threadsafe 0     ;# ==> --threadsafe=0
+  hwaci-opt-set tcl 0            ;# ==> --disable-tcl
+  hwaci-opt-set shared 0         ;# ==> --disable-shared
   set cross_compiling 1
-  define ENABLE_SHARED 0
 
   # Changing --host and --target have no effect here except to possibly
   # cause confusion. autoconf has finished processing them by this
@@ -391,8 +388,8 @@ proc hwaci-check-wasi-sdk {} {
   define LD "${wasiSdkDir}/bin/wasm-ld"
   #define STRIP "${wasiSdkDir}/bin/strip"
   return 1
-}; # hwaci-check-wasi-sdk
-hwaci-check-wasi-sdk
+}; # sqlite-check-wasi-sdk
+sqlite-check-wasi-sdk
 
 #
 # Enable large file support (if special flags are necessary)
@@ -446,6 +443,9 @@ if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
 #
 hwaci-check-rpath
 
+hwaci-define-if-opt-truthy shared ENABLE_SHARED \
+  "Build shared library?"
+
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
   "Use amalgamation for builds?"
 
@@ -498,6 +498,7 @@ hwaci-if-opt-truthy with-debug {
 #    components.
 #
 define TCLSH_CMD {exit 1}
+define HAVE_TCL [opt-bool tcl]
 proc sqlite-check-tcl {} {
   # TODO: document the steps this is taking.
   if {![opt-bool tcl]} {
