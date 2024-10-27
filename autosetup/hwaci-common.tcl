@@ -94,6 +94,21 @@ proc hwaci-lshift_ {listVar {count 1}} {
 }
 
 ########################################################################
+# Expects to receive string input, which it splits on newlines, strips
+# out any lines which begin with an number of whitespace followed by a
+# '#', and returns a value containing the [append]ed results of each
+# remaining line with a \n between each.
+proc hwaci-strip-comments {val} {
+  set x {}
+  foreach line [split $val \n] {
+    if {![string match "#*" [string trimleft $line]]} {
+      append x $line \n
+    }
+  }
+  return $x
+}
+
+########################################################################
 # A proxy for cc-check-function-in-lib which "undoes" any changes that
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
@@ -977,28 +992,42 @@ proc hwaci-dump-defs-json {file args} {
 }
 
 ########################################################################
-# Expects configure flags with the given names to have been registered
-# with autosetup. If [opt-val $hidden] has a value but [opt-val
+# Expects a list of pairs of configure flags with the given names to
+# have been registered with autosetup, in this form:
+#
+#  { alias1 => canonical1
+#    aliasN => canonicalN ... }
+#
+# The names must not have their leading -- part and must be in the
+# form which autosetup will expect for passing to [opt-val NAME] and
+# friends.
+#
+# Commend lines are permitted in the input.
+#
+# If [opt-val $hidden] has a value but [opt-val
 # $canonical] does not, it copies the former over the latter. If
 # $hidden has no value set, this is a no-op. If both have explicit
 # values a fatal usage error is triggered.
 #
-# Motivation: autosetup accounts for hidden aliases in [options] lists
-# but does no further handling of them. For example, when --foo is a
-# hidden alias of the canonical flag --bar, and a user passes --foo=X,
-# [opt-val bar] returns no value. i.e. the script must check both
-# [opt-val foo] and [opt-val bar], despite them being aliases. The
-# intent is that this function be passed each such mapping immediately
-# after [options] is processed, to carry over any values from hidden
-# aliases into their canonical names, so that in the above example
-# [opt-value bar] will return X if --foo=X is passed in.
-proc hwaci-xfer-opt-alias {hidden canonical} {
-  set x [opt-val $hidden "-9-9-9-"]
-  if {"-9-9-9-" ne $x} {
-    if {"-0-0-0-" eq [opt-val $canonical "-0-0-0-"]} {
-      hwaci-opt-set $canonical $x
-    } else {
-      hwaci-fatal "both --$canonical and its hidden alias --$hidden were used. Use only one or the other."
+# Motivation: autosetup enables "hidden aliases" in [options] lists,
+# and elides the aliases from --help output but does no further
+# handling of them. For example, when --alias is a hidden alias of
+# --canonical and a user passes --alias=X, [opt-val canonical] returns
+# no value. i.e. the script must check both [opt-val alias] and
+# [opt-val canonical].  The intent here is that this function be
+# passed such mappings immediately after [options] is called,
+# to carry over any values from hidden aliases into their canonical
+# names, so that in the above example [opt-value canonical] will
+# return X if --alias=X is passed in.
+proc hwaci-xfer-options-aliases {mapping} {
+  foreach {hidden => canonical} [hwaci-strip-comments $mapping] {
+    set x [opt-val $hidden "~9~9~9~"]
+    if {"~9~9~9~" ne $x} {
+      if {"~0~0~0~" eq [opt-val $canonical "~0~0~0~"]} {
+        hwaci-opt-set $canonical $x
+      } else {
+        hwaci-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
+      }
     }
   }
 }

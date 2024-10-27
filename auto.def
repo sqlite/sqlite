@@ -163,15 +163,15 @@ set flags {
   largefile=1          => {Disable large file support}
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library}
-  # --with-readline-lib is a legacy name, now a backwards-compatible
-  # alias for --with-readline-ldflags.
+  # --with-readline-lib is a backwards-compatible alias for
+  # --with-readline-ldflags
   with-readline-lib:
-  with-readline-ldflags:LDFLAGS
+  with-readline-ldflags:=auto
                        => {Readline LDFLAGS, e.g. -lreadline -lncurses}
-  # --with-readline-inc is a legacy name, now a backwards-compatible
-  # alias for --with-readline-ldflags.
+  # --with-readline-inc is a backwards-compatible alias for
+  # --with-readline-cflags
   with-readline-inc:
-  with-readline-cflags:CFLAGS
+  with-readline-cflags:=auto
                        => {Readline CFLAGS, e.g. -I/path/to/includes}
   with-readline-header:PATH
                        => {Full path to readline.h, from which --with-readline-cflags will be derived}
@@ -211,11 +211,9 @@ unset flags
 # Carry values from hidden --flag aliases over to their canonical flag
 # forms.
 #
-foreach {hidden => canonical} {
+hwaci-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
-} {
-  hwaci-xfer-opt-alias $hidden $canonical
 }
 
 set srcdir $::autosetup(srcdir)
