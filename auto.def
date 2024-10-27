@@ -12,8 +12,6 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-
-
 use cc cc-db cc-shared cc-lib hwaci-common pkg-config
 
 # Are we cross-compiling?
@@ -171,6 +169,8 @@ set flags {
   with-readline-header:PATH
                        => {Full path to readline.h, from which --with-readline-inc will be derived}
   with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
+  with-icu-lib:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
+  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-lib=...}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
   math=1               => {Disable math functions}
@@ -202,18 +202,22 @@ unset flags
 
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
-msg-result "srcdir = $srcdir"
-msg-result "top_srcdir = $top_srcdir"
-set PACKAGE_VERSION [readfile $::autosetup(srcdir)/VERSION]
-msg-result "VERSION = $PACKAGE_VERSION"
-
+set PACKAGE_VERSION [readfile $srcdir/VERSION]
 define PACKAGE_NAME "sqlite"
 define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION $PACKAGE_VERSION
 define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
 define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
 
-define-append SQLITE_AUTOREMAKE cd $::autosetup(srcdir) && $top_srcdir/configure {*}$::autosetup(argv)
+msg-result "srcdir = $srcdir"
+msg-result "top_srcdir = $top_srcdir"
+msg-result "VERSION = $PACKAGE_VERSION"
+
+define-append SQLITE_AUTOREMAKE cd '$srcdir' && '$top_srcdir/configure'
+#{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
+foreach arg $::autosetup(argv) {
+  define-append SQLITE_AUTOREMAKE '$arg'
+}
 
 set outOfTreeBuild 0
 if {![file exists sqlite3.pc.in]} {
@@ -436,6 +440,11 @@ if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
   define HAVE_ZLIB 0
   define LDFLAGS_ZLIB ""
 }
+
+#
+# Determine proper rpath-handling flags.
+#
+hwaci-check-rpath
 
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
   "Use amalgamation for builds?"
@@ -935,6 +944,24 @@ if {![get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
 unset emccsh
 
 ########################################################################
+# ICU
+if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-lib ""]]]} {
+  # Flags sets seen in the wild for ICU:
+  # {-licui18n -licuuc -licudata} {-licui18n -licuuc}
+  add-feature-flag -DSQLITE_ENABLE_ICU
+  msg-result "Enabling ICU support with libs: [get-define LDFLAGS_ICU]"
+  if {[opt-bool icu-collations]} {
+    msg-result "Enabling ICU collations."
+    add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
+  }
+
+  # --enable-icu-collations is handled later, along with the other
+  # --simple-feature-flag options.
+} elseif {[opt-bool icu-collations]} {
+  hwaci-warn "ignoring --enable-icu-collations because --with-icu-lib was not specified"
+}
+
+########################################################################
 # Check for log(3) in libm and die with an error if it is not
 # found. $why should be the feature name which requires that function
 # (it's used only in error messages). defines LDFLAGS_MATH to the
@@ -964,19 +991,19 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   rtree        -DSQLITE_ENABLE_RTREE   {}
   session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK} {}
   update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT {}
+  memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
   memsys3      {} {
     if {[opt-bool memsys5]} {
-      msg-result "NOT enabling memsys3 because memsys5 is enabled."
+      hwaci-warn "not enabling memsys3 because memsys5 is enabled."
+      expr 0
     } else {
       add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
-  memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
 } {
   hwaci-if-opt-truthy $boolFlag {
     add-feature-flag $featureFlag
-    eval $ifSetEvalThis
-    if {"all" ne $boolFlag} {
+    if {0 != [eval $ifSetEvalThis] && "all" ne $boolFlag} {
       msg-result "Enabling $boolFlag"
     }
   } {
@@ -1000,6 +1027,20 @@ foreach {boolFlag featureFlag} {
   }
 }
 
+#########################################################################
+# Show the final feature flag sets:
+set oFF [get-define OPT_FEATURE_FLAGS]
+if {"" ne $oFF} {
+  define OPT_FEATURE_FLAGS [lsort -unique $oFF]
+  msg-result "Library feature flags: [get-define OPT_FEATURE_FLAGS]"
+}
+set oFF [get-define OPT_SHELL]
+if {"" ne $oFF} {
+  define OPT_SHELL [lsort -unique $oFF]
+  msg-result "Shell options: [get-define OPT_SHELL]"
+}
+unset oFF
+
 ########################################################################
 # Maybe extend JimTCL a bit. As of this writing (2024-09-27) it only
 # needs (-DHAVE_REALPATH or -DHAVE__FULLPATH) and -DHAVE_DIRENT_H to
@@ -1019,10 +1060,6 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   #}
   define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
 }; # JimTCL
-
-########################################################################
-# Determine proper rpath-handling flags
-hwaci-check-rpath
 
 ########################################################################
 # Generate the output files.
@@ -1045,18 +1082,6 @@ if {0} {
   hwaci-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTOREMAKE@
 }
 #TODO hwaci-make-from-dot-in ext/wasm/GNUmakefile
-
-set oFF [get-define OPT_FEATURE_FLAGS]
-if {"" ne $oFF} {
-  define OPT_FEATURE_FLAGS [lsort -unique $oFF]
-  msg-result "Library feature flags: [get-define OPT_FEATURE_FLAGS]"
-}
-set oFF [get-define OPT_SHELL]
-if {"" ne $oFF} {
-  define OPT_SHELL [lsort -unique $oFF]
-  msg-result "Shell options: [get-define OPT_SHELL]"
-}
-unset oFF
 
 if {"" ne $DUMP_DEFINES_JSON} {
   ########################################################################
