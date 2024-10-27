@@ -1,5 +1,5 @@
-C Generic\scleanups\sin\sauto.def\sand\shwaci-common.tcl.
-D 2024-10-27T20:46:09.058
+C Re-order\sthe\sauto.def\sflags\slogical\sgroups.\sAdd\ssome\sdiscrete\sbold\sformatting\sto\sselect\sconfigure\soutput.\sRemove\ssome\sdead\scode.\sAccount\sfor\sbehavior\smisunderstanding\sof\suser-notice.\sAdd\sthe\sstart\sof\sa\s'make\shelp'\starget.\sGeneral\scosmetic\scleanups.
+D 2024-10-27T22:18:33.718
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def dd9bda48dc2a4c515d1a518f342b992c1cdea46c0d4e20a25d515ab423de2d49
+F auto.def 10eac711b57bce9705555c052e8970e62aa6754b91e1ff37a51c50b040cc4897
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -47,7 +47,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl c6a68fe4ad416db70260bc0f8a85ee9f52d6976ca796aaa8ae013a1bf632b49d
+F autosetup/hwaci-common.tcl bc48c6ddfcd33a0eaf17f1709cde60622ff29c479e0356e8c6bcabe5b58a4d51
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk d943a2d0a0deb14daea10e036ef3a55e1b641cd57f5893a2fba29e65cc33acc0
+F main.mk 7533ef1b3a1338b96445a672ba6dbfa48279f05089a0555ff8822dcd1dcb000a
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 37a1da038195365cd7eb866b3aa749ad8060a656ac38063520fdb70cf0a0e5f1
-R 4a5971ae5787ab5ca5bc6c1b2940924e
+P 428e542452bac99d48950f1f62b65b4e235636540b946151747e2d5b59dbfd99
+R c11fb367c51c71ad6dcdc1b5cebfcffd
 U stephan
-Z f7c559f6f234bc23301783ef1baa5b93
+Z 989475d21f0d39382974a32645a7533c
 # Remove this line to create a well-formed Fossil manifest.

@@ -12,25 +12,28 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
-# Routines with a suffix of _ are intended for internal use,
-# within this file, and are not part of the API which auto.def files
-# should rely on.
-#
 # This file was initially derived from one used in the libfossil
-# project, authored by the same person who ported it here, noted here
-# only as an indication that there are no licensing issue despite this
-# code having at least two near-twins running around in other trees.
+# project, authored by the same person who ported it here, and this is
+# noted here only as an indication that there are no licensing issues
+# despite this code having at least two near-twins running around a
+# handful of third-party source trees.
 #
 ########################################################################
 #
-# Design notes: by and large, autosetup prefers to update global state
-# with the results of feature checks, e.g. whether the compiler
-# supports flag --X.  In this developer's opinion that (A) causes more
-# confusion than it solves[^1] and (B) adds an unnecessary layer of
-# "voodoo" between the autosetup user and its internals. This module,
-# in contrast, instead injects the results of its own tests into
-# well-defined variables and leaves the integration of those values to
-# the caller's discretion.
+# Design notes:
+#
+# - Symbols with a suffix of _ are intended for internal use within
+#   this file, and are not part of the API which auto.def files should
+#   rely on.
+#
+# - By and large, autosetup prefers to update global state with the
+#   results of feature checks, e.g. whether the compiler supports flag
+#   --X.  In this developer's opinion that (A) causes more confusion
+#   than it solves[^1] and (B) adds an unnecessary layer of "voodoo"
+#   between the autosetup user and its internals. This module, in
+#   contrast, instead injects the results of its own tests into
+#   well-defined variables and leaves the integration of those values
+#   to the caller's discretion.
 #
 # [1]: As an example: testing for the -rpath flag, using
 # cc-check-flags, can break later checks which use
@@ -45,25 +48,37 @@
 # $hwaci_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set hwaci_ {}
+set hwaci_(isatty) [isatty? stdout]
 
 proc hwaci-warn {msg} {
   puts stderr "WARNING: $msg"
 }
-#proc hwaci-notice {msg} {
-#  puts stderr "NOTICE: $msg"
-#}
 proc hwaci-fatal {msg} {
-  user-error "ERROR: $msg"
+  show-notices
+  puts stderr "ERROR: $msg"
+  exit 1
+}
+
+########################################################################
+# If this function believes that the current console might support
+# ANSI escape sequences then this returns $str wrapped in a sequence
+# to bold that text, else it returns $str as-is.
+proc hwaci-bold {str} {
+  if {$::autosetup(iswin) || !$::hwaci_(isatty)} {
+    return $str
+  }
+  return "\033\[1m${str}\033\[0m"
 }
 
 ########################################################################
 # Takes a multi-line message and emits it with consistent indentation
-# using user-notice (which means its rendering will be delayed until
-# the next time autosetup goes to output a message).
+# using [user-notice] (which means its rendering will (A) go to stderr
+# and (B) be delayed until the next time autosetup goes to output a
+# message).
 proc hwaci-indented-notice {msg} {
   set lines [split $msg \n]
   foreach line $lines {
-    user-notice "      [string trim $line]"
+    user-notice "      [string trimleft $line]"
   }
 }
 
@@ -98,7 +113,7 @@ proc hwaci-lshift_ {listVar {count 1}} {
 # out any lines which begin with an number of whitespace followed by a
 # '#', and returns a value containing the [append]ed results of each
 # remaining line with a \n between each.
-proc hwaci-strip-comments {val} {
+proc hwaci-strip-hash-comments_ {val} {
   set x {}
   foreach line [split $val \n] {
     if {![string match "#*" [string trimleft $line]]} {
@@ -1020,7 +1035,7 @@ proc hwaci-dump-defs-json {file args} {
 # names, so that in the above example [opt-value canonical] will
 # return X if --alias=X is passed in.
 proc hwaci-xfer-options-aliases {mapping} {
-  foreach {hidden => canonical} [hwaci-strip-comments $mapping] {
+  foreach {hidden => canonical} [hwaci-strip-hash-comments_ $mapping] {
     set x [opt-val $hidden "~9~9~9~"]
     if {"~9~9~9~" ne $x} {
       if {"~0~0~0~" eq [opt-val $canonical "~0~0~0~"]} {
@@ -1029,5 +1044,30 @@ proc hwaci-xfer-options-aliases {mapping} {
         hwaci-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
       }
     }
+  }
+}
+
+########################################################################
+# Arguable/debatable...
+#
+# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+# specified, force CC_FOR_BUILD to be the same as CC, so that:
+#
+# ./configure CC=clang
+#
+# will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
+# tools. This is based off of an email discussion and is thought to
+# be likely to cause less confusion than seeing 'cc' invocations
+# will when the user passes CC=clang.
+#
+# Sidebar: if we do this before the cc package is installed, it gets
+# reverted by that package. Ergo, the cc package init will tell the
+# user "Build C compiler...cc" shortly before we tell them:
+proc hwaci-redefine-cc-for-build {} {
+  if {![hwaci-is-cross-compiling]
+     && "nope" eq [get-env CC_FOR_BUILD "nope"]
+     && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+    user-notice "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
+    define CC_FOR_BUILD [get-define CC]
   }
 }

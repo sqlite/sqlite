@@ -2075,6 +2075,15 @@ sqlite3.dll: $(LIBOBJ) sqlite3.def
 	$(T.cc.sqlite) $(LDFLAGS.shobj) -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ)
 
+#
+# Emit a list of commonly-used targets
+help:
+	@echo "Frequently-used high-level make targets:"; \
+	echo " - all (default) = builds most components"; \
+	echo " - clean         = cleans up most build products"; \
+	echo " - distclean     = cleans up all build products"; \
+	echo "...and many more"
+
 
 # Remove build products sufficient so that subsequent makes will recompile
 # everything from scratch.  Do not remove:

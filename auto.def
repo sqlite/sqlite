@@ -14,31 +14,6 @@
 #
 use cc cc-db cc-shared cc-lib hwaci-common pkg-config
 
-# Are we cross-compiling?
-set cross_compiling [hwaci-is-cross-compiling]
-if {0
-    && !$cross_compiling
-    && "nope" eq [get-env CC_FOR_BUILD "nope"]
-    && [get-define CC] ne [get-define CC_FOR_BUILD]} {
-  # Arguable/debatable...
-  #
-  # When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
-  # specified, force CC_FOR_BUILD to be the same as CC, so that:
-  #
-  # ./configure CC=clang
-  #
-  # will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
-  # tools. This is based off of an email discussion and is thought to
-  # be likely to cause less confusion than seeing 'cc' invocations
-  # will when the user passes CC=clang.
-  #
-  # Sidebar: if we do this before the cc package is installed, it gets
-  # reverted by that package. Ergo, the cc package init will tell the
-  # user "Build C compiler...cc" shortly before we tell them:
-  msg-result "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
-  define CC_FOR_BUILD [get-define CC]
-}
-
 # $DUMP_DEFINES_TXT is the file emitted by --dump-defines, intended
 # only for build debugging and not part of the public build interface.
 set DUMP_DEFINES_TXT ./config.defines.txt
@@ -151,34 +126,16 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 ########################################################################
 set flags {
+  # <build-modes>
   with-debug:=1        => {Enable debug build flags}
-  with-tclsh:PATH      => {Full pathname of tclsh to use}
-  with-tcl:DIR         => {Directory containing tclConfig.sh}
-  tcl=1                => {Disable components which require TCL-dev}
-  test-status          => {Enable status of tests}
+  shared=1             => {Disable build of shared libary}
+  static=1             => {Disable build of static library (mostly)}
+  amalgamation=1       => {Disable the amalgamation and instead build all files separately.}
+  # </build-modes>
+  # <lib-feature>
   threadsafe=1         => {Disable mutexing}
   with-tempstore:=no   => {Use an in-ram database for temporary tables: never,no,yes,always}
-  editline=0           => {BSD editline support}
-  readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
-  shared=1             => {Disable build of shared libary}
-  static=1             => {Disable build of static library}
-  # --with-readline-lib is a backwards-compatible alias for
-  # --with-readline-ldflags
-  with-readline-lib:
-  with-readline-ldflags:=auto
-                       => {Readline LDFLAGS, e.g. -lreadline -lncurses}
-  # --with-readline-inc is a backwards-compatible alias for
-  # --with-readline-cflags
-  with-readline-inc:
-  with-readline-cflags:=auto
-                       => {Readline CFLAGS, e.g. -I/path/to/includes}
-  with-readline-header:PATH
-                       => {Full path to readline.h, from which --with-readline-cflags will be derived}
-  with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
-  with-icu-ldflags:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
-  amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
   math=1               => {Disable math functions}
   json=1               => {Disable JSON functions}
@@ -192,12 +149,44 @@ set flags {
   geopoly              => {Enable the GEOPOLY extension}
   rtree                => {Enable the RTREE extension}
   session              => {Enable the SESSION extension}
-  gcov=0               => {Enable coverage testing using gcov}
-  linemacros           => {Enable #line macros in the amalgamation.}
+  # </lib-feature>
+  # <tcl>
+  with-tclsh:PATH      => {Full pathname of tclsh to use}
+  with-tcl:DIR         => {Directory containing tclConfig.sh}
+  tcl=1                => {Disable components which require TCL-dev}
+  # <tcl>
+  # <line-editing>
+  readline=1           => {Disable readline support}
+  # --with-readline-lib is a backwards-compatible alias for
+  # --with-readline-ldflags
+  with-readline-lib:
+  with-readline-ldflags:=auto
+                     => {Readline LDFLAGS, e.g. -lreadline -lncurses}
+  # --with-readline-inc is a backwards-compatible alias for
+  # --with-readline-cflags
+  with-readline-inc:
+  with-readline-cflags:=auto
+                       => {Readline CFLAGS, e.g. -I/path/to/includes}
+  with-readline-header:PATH
+                       => {Full path to readline.h, from which --with-readline-cflags will be derived}
+  with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
+  editline=0           => {BSD editline support}
+  # </line-editing>
+  # <icu>
+  with-icu-ldflags:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
+  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
+  # </icu>
+  # <alternative-builds>
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build}
   with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
+  # </alternative-builds>
+  # <developer>
+  test-status          => {Enable status of tests}
+  gcov=0               => {Enable coverage testing using gcov}
+  linemacros           => {Enable #line macros in the amalgamation.}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
+  # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
   lappend flags \
@@ -227,7 +216,7 @@ define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
 
 msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
-msg-result "VERSION = $PACKAGE_VERSION"
+msg-result [hwaci-bold "Configuring SQLite version $PACKAGE_VERSION"]
 
 define-append SQLITE_AUTOREMAKE cd '$srcdir' && '$top_srcdir/configure'
 #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
@@ -235,90 +224,36 @@ foreach arg $::autosetup(argv) {
   define-append SQLITE_AUTOREMAKE '$arg'
 }
 
-set outOfTreeBuild 0
+
+# Are we cross-compiling?
+set cross_compiling [hwaci-is-cross-compiling]
 if {![file exists sqlite3.pc.in]} {
   msg-result "This appears to be an out-of-tree build."
-  set outOfTreeBuild 1
 }
 
 cc-check-tools ld ar
 
+define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
+define OPT_SHELL {}         ; # CFLAGS for the sqlite3 CLI app
 ########################################################################
-# The build process allows for using a cross-compiler.  But the default
-# action is to target the same platform that we are running on.  The
-# configure script needs to discover the following properties of the
-# build and target systems:
-#
-#    srcdir
-#
-#        The is the name of the directory that contains the
-#        "configure" shell script.  All source files are
-#        located relative to this directory.
-#
-#    bindir
-#
-#        The name of the directory where executables should be
-#        written by the "install" target of the makefile.
-#
-#    program_prefix
-#
-#        Add this prefix to the names of all executables that run
-#        on the target machine.  Default: ""
-#
-#    ENABLE_SHARED
-#
-#        True if shared libraries should be generated.
-#
-#    BUILD_CC
-#
-#        The name of a command that is used to convert C
-#        source files into executables that run on the build
-#        platform.
-#
-#    BUILD_CFLAGS
-#
-#        Switches that the build compiler needs in order to construct
-#        command-line programs.
-#
-#    BUILD_LIBS
-#
-#        Libraries that the build compiler needs in order to construct
-#        command-line programs.
-#
-#    TCL_*
-#
-#        Lots of values are read in from the tclConfig.sh script,
-#        if that script is available.  This values are used for
-#        constructing and installing the TCL extension.
-#
-#    TARGET_READLINE_LIBS
-#
-#        This is the library directives passed to the target linker
-#        that cause the executable to link against the readline library.
-#        This might be a switch like "-lreadline" or pathnames of library
-#        file like "../../src/libreadline.a".
-#
-#    TARGET_READLINE_INC
-#
-#        This variables define the directory that contain header
-#        files for the readline library.  If the compiler is able
-#        to find <readline.h> on its own, then this can be blank.
-
-#
-# OPT_FEATURE_FLAGS = -DSQLITE_OMIT/ENABLE flags.
-define OPT_FEATURE_FLAGS {}
-define OPT_SHELL {}; # CFLAGS for the sqlite3 CLI app
-
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.
-proc add-feature-flag {args} {
+# If the first arg is -shell then it strips that arg
+# and passes the remaining args th sqlite-add-shell-opt
+# before adding them to OPF_FEATURE_FLAGS.
+proc sqlite-add-feature-flag {args} {
+  set shell ""
+  if {"-shell" eq [lindex $args 0]} {
+    set args [lassign $args shell]
+  }
   if {"" ne $args} {
+    if {"" ne $shell} {
+      sqlite-add-shell-opt {*}$args
+    }
     define-append OPT_FEATURE_FLAGS {*}$args
   }
 }
-# add-feature-flag -DSQLITE_JUST_TESTING=3
-
-# Adds $args, if not empty, to OPT_SHELL.
-proc add-shell-opt {args} {
+# Appends $args, if not empty, to OPT_SHELL.
+proc sqlite-add-shell-opt {args} {
   if {"" ne $args} {
     define-append OPT_SHELL {*}$args
   }
@@ -328,11 +263,11 @@ hwaci-file-extensions
 if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_UNIX 0
   define SQLITE_OS_WIN 1
-  # todo? add -DSQLITE_OS_WIN=1 to CFLAGS?
+  # todo? add -DSQLITE_OS_WIN=1 to CFLAGS or CFLAGS_sqlite3_os?
 } else {
   define SQLITE_OS_UNIX 1
   define SQLITE_OS_WIN 0
-  # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS?
+  # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS or CFLAGS_sqlite3_os
 }
 
 #########
@@ -448,7 +383,7 @@ if {[cc-check-includes zlib.h] && [hwaci-check-function-in-lib deflate z]} {
   # Note that -DSQLITE_HAVE_ZLIB=1 is handled separately from the
   # other feature flags in the autotools build. Do we need to emulate
   # that?
-  add-shell-opt -DSQLITE_HAVE_ZLIB=1
+  sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
 } else {
   define HAVE_ZLIB 0
   define LDFLAGS_ZLIB ""
@@ -745,7 +680,7 @@ unset cgtcl
 msg-checking "Support threadsafe operation? "
 hwaci-if-opt-truthy threadsafe {
   msg-result yes
-  add-feature-flag -DSQLITE_THREADSAFE=1
+  sqlite-add-feature-flag -DSQLITE_THREADSAFE=1
   if {![hwaci-check-function-in-lib pthread_create pthread]
       || ![hwaci-check-function-in-lib pthread_mutexattr_init pthread]} {
     user-error "Missing required pthread bits"
@@ -754,7 +689,7 @@ hwaci-if-opt-truthy threadsafe {
   undefine lib_pthread_create
 } {
   msg-result no
-  add-feature-flag -DSQLITE_THREADSAFE=0
+  sqlite-add-feature-flag -DSQLITE_THREADSAFE=0
   define LDFLAGS_PTHREAD ""
 }
 
@@ -799,6 +734,7 @@ if {1} {
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
 proc sqlite-check-line-editing {} {
+  msg-result "Checking for line-editing capability..."
   define HAVE_READLINE 0
   define HAVE_LINENOISE 0
   define HAVE_EDITLINE 0
@@ -815,10 +751,10 @@ proc sqlite-check-line-editing {} {
     } elseif {![file exists $dirLn/linenoise.h] } {
       hwaci-fatal "Cannot find linenoise.h in $dirLn"
     }
-    user-notice "Using linenoise from $dirLn"
+    msg-result "Using linenoise from $dirLn"
     define CFLAGS_READLINE "-I$dirLn $dirLn/linenoise.c"
     define HAVE_LINENOISE 1
-    add-shell-opt -DHAVE_LINENOISE=1
+    sqlite-add-shell-opt -DHAVE_LINENOISE=1
     return "linenoise"
   } elseif {[opt-bool editline]} {
     # --enable-editline. The problem is finding a system which has it
@@ -848,7 +784,7 @@ proc sqlite-check-line-editing {} {
     }
     return "none"
   } elseif {![opt-bool readline]} {
-    user-notice "Readline support explicitly disabled with --disable-readline"
+    msg-result "Readline support explicitly disabled with --disable-readline"
     return "none"
   }
 
@@ -920,8 +856,8 @@ proc sqlite-check-line-editing {} {
     define LDFLAGS_READLINE $rlLib
     define CFLAGS_READLINE $rlInc
     define HAVE_READLINE 1
-    add-shell-opt -DHAVE_READLINE=1
-    user-notice "Using readline flags: $rlInc $rlLib"
+    sqlite-add-shell-opt -DHAVE_READLINE=1
+    msg-result "Using readline flags: $rlInc $rlLib"
 
     # Now check whether rl_completion_matches() has a signature we can use.
     # cctest is producing unexpected test output when using:
@@ -937,10 +873,10 @@ proc sqlite-check-line-editing {} {
                return 0;
              }
            }]} {
-      user-notice "Readline completion enabled"
+      msg-result "Readline completion enabled"
     } else {
       user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
-      add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
+      sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
     return "readline"
   }
@@ -958,7 +894,7 @@ hwaci-if-opt-truthy load-extension {
   }
 } {
   define LDFLAGS_DLOPEN ""
-  add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
+  sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
   msg-result "Disabling loadable extensions."
 }
 
@@ -968,7 +904,7 @@ hwaci-if-opt-truthy math {
   }
   define LDFLAGS_MATH [get-define lib_ceil]
   undefine lib_ceil
-  add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
+  sqlite-add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
   msg-result "Enabling math SQL functions [get-define LDFLAGS_MATH]"
 } {
   define LDFLAGS_MATH ""
@@ -992,16 +928,18 @@ if {![get-define HAVE_WASI_SDK] && [hwaci-check-emsdk]} {
 unset emccsh
 
 ########################################################################
-# ICU
+# ICU - International Components for Unicode
 if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]]} {
   # Flags sets seen in the wild for ICU:
-  # {-licui18n -licuuc -licudata} {-licui18n -licuuc}
-  add-feature-flag -DSQLITE_ENABLE_ICU
-  add-shell-opt -DSQLITE_ENABLE_ICU
+  # - -licui18n -licuuc -licudata
+  # - -licui18n -licuuc
+  # - /usr/local/bin/icu-config --ldflags
+  sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
   msg-result "Enabling ICU support with libs: [get-define LDFLAGS_ICU]"
   if {[opt-bool icu-collations]} {
     msg-result "Enabling ICU collations."
-    add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
+    sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
+    # Recall that shell.c builds with sqlite3.c
   }
 } elseif {[opt-bool icu-collations]} {
   hwaci-warn "ignoring --enable-icu-collations because --with-icu-ldflags was not specified"
@@ -1014,7 +952,7 @@ if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]]} {
 # required linker flags (which may be empty even if the math APIs are
 # found, depending on the OS).
 proc affirm-have-math {why} {
-  if {![hwaci-check-function-in-lib log m]} {
+  if {![msg-quiet hwaci-check-function-in-lib log m]} {
     user-error "Missing math APIs for $why"
   }
   define LDFLAGS_MATH [get-define lib_log ""]
@@ -1023,6 +961,7 @@ proc affirm-have-math {why} {
 
 ########################################################################
 # Handle various SQLITE_ENABLE_... feature flags.
+msg-result "Feature flags..."
 foreach {boolFlag featureFlag ifSetEvalThis} {
   all         {} {
     hwaci-opt-set fts4
@@ -1043,33 +982,33 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       hwaci-warn "not enabling memsys3 because memsys5 is enabled."
       expr 0
     } else {
-      add-feature-flag -DSQLITE_ENABLE_MEMSYS3
+      sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
 } {
   hwaci-if-opt-truthy $boolFlag {
-    add-feature-flag $featureFlag
+    sqlite-add-feature-flag $featureFlag
     if {0 != [eval $ifSetEvalThis] && "all" ne $boolFlag} {
-      msg-result "Enabling $boolFlag"
+      msg-result " - Enabling $boolFlag"
     }
   } {
-    msg-result "Not enabling $boolFlag"
+    msg-result " - Not enabling $boolFlag"
   }
 }
 
 ########################################################################
 # Invert the above loop's logic for some explicit SQLITE_OMIT_...
-# cases. If config option $boolFlag is set, [add-feature-flag
+# cases. If config option $boolFlag is set, [sqlite-add-feature-flag
 # $featureFlag], where $featureFlag is intended to be
 # -DSQLITE_OMIT_...
 foreach {boolFlag featureFlag} {
   json        -DSQLITE_OMIT_JSON
 } {
   if {[hwaci-opt-truthy $boolFlag]} {
-    msg-result "Enabling $boolFlag"
+    msg-result " - Enabling $boolFlag"
   } else {
-    add-feature-flag $featureFlag
-    msg-result "Disabling $boolFlag"
+    sqlite-add-feature-flag $featureFlag
+    msg-result " - Disabling $boolFlag"
   }
 }
 
@@ -1155,9 +1094,8 @@ if {"" ne $DUMP_DEFINES_JSON} {
 ########################################################################
 # Some build-dev/debug-only output
 hwaci-if-opt-truthy dump-defines {
-  global DUMP_DEFINES_TXT
-  msg-result "--dump-defines is creating $DUMP_DEFINES_TXT"
-  make-config-header $DUMP_DEFINES_TXT \
+  msg-result "--dump-defines is creating $::DUMP_DEFINES_TXT"
+  make-config-header $::DUMP_DEFINES_TXT \
     -bare {SQLITE_OS* SQLITE_DEBUG USE_*} \
     -str {BIN_* CC LD AR LDFLAG* OPT_*} \
     -auto {*}
@@ -1170,4 +1108,4 @@ hwaci-if-opt-truthy dump-defines {
   }
 }
 
-msg-result "Done! Now run make."
+msg-result [hwaci-bold "Source tree is configured! Run make to build it."]
