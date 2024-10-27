@@ -967,9 +967,6 @@ if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-lib ""]]]} {
     msg-result "Enabling ICU collations."
     add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
   }
-
-  # --enable-icu-collations is handled later, along with the other
-  # --simple-feature-flag options.
 } elseif {[opt-bool icu-collations]} {
   hwaci-warn "ignoring --enable-icu-collations because --with-icu-lib was not specified"
 }

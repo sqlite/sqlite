@@ -1,5 +1,5 @@
-C Re-add\sthe\s--disable-static\sflag\sto\s(mostly)\sdisable\sstatic\slib\sbuild.\sSome\scomponents\srequire\sthe\sstatic\slib\sand\swill\strump\sthis\spreference\sif\sthey\sare\sactivated.
-D 2024-10-27T08:52:20.817
+C Remove\ssome\sincorrect\scode\scomments.
+D 2024-10-27T09:28:35.309
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 7151bfb1a546622f5f24ecac6524b93e239804c5ee73231c65f2ca9f23ab2995
+F auto.def fbbacb5a62b32a5d6f831694cca4d429ea58f6f6a7e7d04bdd8918f08e372b89
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 19a5377e608e7ab8fb5733a87ab02a6a69511570c3829e2c1befecc582a6f8ee
-R c734fae877980ad0616908d05f844de0
+P e296cd11a2bd87bffc9c661baea6539c0258b5e9cf3e9bc516f07c758b3e5939
+R 5d5ad95200e7c5109af61ebfd07263d7
 U stephan
-Z 665a360661ddb1e8c7d2ec84497b82c2
+Z 95ea8249ecaf50181ff273c040483fb3
 # Remove this line to create a well-formed Fossil manifest.
