@@ -66,6 +66,14 @@ USE_STDCALL = 0
 USE_SEH = 1
 !ENDIF
 
+# Use STATICALLY_LINK_TCL=1 to statically link against TCL
+#
+!IFNDEF STATICALLY_LINK_TCL
+STATICALLY_LINK_TCL = 0
+!ELSEIF $(STATICALLY_LINK_TCL)!=0
+CCOPTS = $(CCOPTS) -DSTATIC_BUILD
+!ENDIF
+
 # Set this non-0 to have the shell executable link against the core dynamic
 # link library.
 #
@@ -929,16 +937,28 @@ TCC = $(TCC) /fsanitize=address
 # prior to running nmake in order to match the actual installed location and
 # version on this machine.
 #
-!IFNDEF TCLVERSION
-TCLVERSION = 86
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLSUFFIX = s
 !ENDIF
-
 !IFNDEF TCLSUFFIX
 TCLSUFFIX =
 !ENDIF
 
 !IFNDEF TCLDIR
 TCLDIR = C:\Tcl
+!ENDIF
+
+!IFNDEF TCLVERSION
+!IF EXISTS("$(TCLDIR)\lib\tcl90$(TCLSUFFIX).lib")
+TCLVERSION = 90
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86$(TCLSUFFIX).lib")
+TCLVERSION = 86
+!ELSEIF EXISTS("$(TCLDIR)\lib\tcl86t.lib")
+TCLSUFFIX = t
+TCLVERSION = 86
+!ELSE
+TCLVERSION = 90
+!ENDIF
 !ENDIF
 
 !IFNDEF TCLINCDIR
@@ -953,8 +973,20 @@ TCLLIBDIR = $(TCLDIR)\lib
 LIBTCL = tcl$(TCLVERSION)$(TCLSUFFIX).lib
 !ENDIF
 
+!IFNDEF TCLLIBS
+!IF $(STATICALLY_LINK_TCL)!=0
+TCLLIBS = /NODEFAULTLIB:libucrt.lib netapi32.lib user32.lib ucrt.lib
+!ELSE
+TCLLIBS =
+!ENDIF
+!ENDIF
+
 !IFNDEF LIBTCLSTUB
+!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
+LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
+!ELSE
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
+!ENDIF
 !ENDIF
 
 !IFNDEF LIBTCLPATH
@@ -1013,11 +1045,31 @@ LIBICU = icuuc.lib icuin.lib
 # specific Tcl shell to use.
 #
 !IFNDEF TCLSH_CMD
-!IF $(USE_TCLSH_IN_PATH)!=0 || !EXIST("$(TCLDIR)\bin\tclsh.exe")
-TCLSH_CMD = tclsh
-!ELSE
+!IF EXISTS("$(TCLDIR)\bin\tclsh$(TCLVERSION).exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh$(TCLVERSION).exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh90.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh90.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh86t.exe")
+TCLSH_CMD = $(TCLDIR)\bin\tclsh86t.exe
+!ELSEIF EXISTS("$(TCLDIR)\bin\tclsh.exe")
 TCLSH_CMD = $(TCLDIR)\bin\tclsh.exe
+!ELSE
+TCLSH_CMD = tclsh
 !ENDIF
+!ENDIF
+
+# A light-weight TCLSH replacement that can be used for code generation
+# but which is not adequate for testing.  This is "jimsh0" by default,
+# with source code in the repository.  To force the whole build to use
+# the full, official tclsh, add WITHOUT_JIMSH=1 to the nmake command line.
+#
+!IFDEF WITHOUT_JIMSH
+JIM_TCLSH = $(TCLSH_CMD)
+!ENDIF
+!IFNDEF JIM_TCLSH
+JIM_TCLSH = jimsh0.exe
 !ENDIF
 # <</mark>>
 
@@ -1809,6 +1861,11 @@ dll:	$(SQLITE3DLL)
 #
 shell:	$(SQLITE3EXE)
 
+# jimsh0 - replacement for tclsh
+#
+jimsh0.exe:	$(TOP)\autosetup\jimsh0.c
+	cl -DHAVE__FULLPATH=1 $(TOP)\autosetup\jimsh0.c
+
 # <<mark>>
 libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
@@ -1824,7 +1881,7 @@ tclsqlite3.def:	tclsqlite.lo
 
 pkgIndex.tcl:	$(TOP)\VERSION
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
-		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] sqlite3] \
+		echo package ifneeded sqlite3 @version@ [list load [file join $$dir $(SQLITE3TCLDLL)] Sqlite3] \
 			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact @version@ %%V > pkgIndex.tcl \
 	)
 
@@ -1849,10 +1906,10 @@ $(SQLITE3DLL):	$(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL $(CORE_LINK_OPTS) /OUT:$@ $(LIBOBJ) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 # <<block2>>
-sqlite3.def:	libsqlite3.lib
+sqlite3.def:	libsqlite3.lib $(JIM_TCLSH)
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup|rebaser|rbu)?_[^@]*)(?:@\d+)?$$" \1 \
+		| $(JIM_TCLSH) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3(?:session|changeset|changegroup|rebaser|rbu)?_[^@]*)(?:@\d+)?$$" \1 \
 		| sort >> sqlite3.def
 # <</block2>>
 
@@ -1861,14 +1918,14 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\consio $(TOP)\tool\sqldiff.c $(TOP)\ext\consio\console_io.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 RSYNC_SRC = \
-  $(TOP)\tool\sqlite3-rsync.c \
+  $(TOP)\tool\sqlite3_rsync.c \
   $(SQLITE3C)
 
 RSYNC_OPT = \
@@ -1877,7 +1934,7 @@ RSYNC_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED
 
-sqlite3-rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
+sqlite3_rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
 	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
@@ -1940,33 +1997,22 @@ mptest:	mptester.exe
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c $(SQLITE_TCL_DEP)
+.target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl fts5.c $(SQLITE_TCL_DEP) $(JIM_TCLSH)
 	-rmdir /Q/S tsrc 2>NUL
 	-mkdir tsrc
-	for %i in ($(SRC00)) do copy /Y %i tsrc
-	for %i in ($(SRC01)) do copy /Y %i tsrc
-	for %i in ($(SRC03)) do copy /Y %i tsrc
-	for %i in ($(SRC04)) do copy /Y %i tsrc
-	for %i in ($(SRC05)) do copy /Y %i tsrc
-	for %i in ($(SRC07)) do copy /Y %i tsrc
-	for %i in ($(SRC09)) do copy /Y %i tsrc
-	for %i in ($(SRC10)) do copy /Y %i tsrc
-	for %i in ($(SRC11)) do copy /Y %i tsrc
-	for %i in ($(SRC12)) do copy /Y %i tsrc
-	copy /Y fts5.c tsrc
+        $(JIM_TCLSH) $(TOP)\tool\cp.tcl $(SRC00) $(SRC01) $(SRC03) $(SRC04) $(SRC05) $(SRC07) $(SRC09) $(SRC10) $(SRC11) $(SRC12) fts5.c fts5.h tsrc
 	copy /B tsrc\fts5.c +,,
-	copy /Y fts5.h tsrc
 	copy /B tsrc\fts5.h +,,
 	del /Q tsrc\sqlite.h.in tsrc\parse.y 2>NUL
-	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
+	$(JIM_TCLSH) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
-sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe
-	$(TCLSH_CMD) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS) $(EXTRA_SRC)
+sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-verify.exe $(JIM_TCLSH)
+	$(JIM_TCLSH) $(MKSQLITE3C_TOOL) $(MKSQLITE3C_ARGS) $(EXTRA_SRC)
 
-sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
-	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
+sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\split-sqlite3c.tcl
 # <</mark>>
 
 # Rule to build the amalgamation
@@ -2008,11 +2054,11 @@ opcodes.lo:	opcodes.c
 #
 !IF $(USE_RC)!=0
 # <<block1>>
-$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H) $(TOP)\VERSION
+$(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(SQLITE3H) $(TOP)\VERSION $(JIM_TCLSH)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
-			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact . ^, >> sqlite3rc.h \
+			| $(JIM_TCLSH) $(TOP)\tool\replace.tcl exact . ^, >> sqlite3rc.h \
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
@@ -2273,11 +2319,11 @@ tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl
-	$(TCLSH_CMD) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
+opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
 
-opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl
-	type parse.h $(TOP)\src\vdbe.c | $(TCLSH_CMD) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
+opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl $(JIM_TCLSH)
+	type parse.h $(TOP)\src\vdbe.c | $(JIM_TCLSH) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -2289,8 +2335,8 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	copy /B parse.y +,,
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
-$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > $(SQLITE3H) $(MKSQLITE3H_ARGS)
+$(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" > $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
@@ -2316,8 +2362,6 @@ keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 # Source and header files that shell.c depends on
 SHELL_DEP = \
     $(TOP)\src\shell.c.in \
-    $(TOP)\ext\consio\console_io.c \
-    $(TOP)\ext\consio\console_io.h \
     $(TOP)\ext\expert\sqlite3expert.c \
     $(TOP)\ext\expert\sqlite3expert.h \
     $(TOP)\ext\intck\sqlite3intck.c \
@@ -2337,6 +2381,8 @@ SHELL_DEP = \
     $(TOP)\ext\misc\sha1.c \
     $(TOP)\ext\misc\shathree.c \
     $(TOP)\ext\misc\sqlar.c \
+    $(TOP)\ext\misc\sqlite3_stdio.c \
+    $(TOP)\ext\misc\sqlite3_stdio.h \
     $(TOP)\ext\misc\uint.c \
     $(TOP)\ext\misc\vfstrace.c \
     $(TOP)\ext\misc\zipfile.c \
@@ -2353,8 +2399,8 @@ SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\sqlar.c
 SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
-shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl
-	$(TCLSH_CMD) $(TOP)\tool\mkshellc.tcl > shell.c
+shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl > shell.c
 
 zlib:
 	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
@@ -2457,13 +2503,13 @@ fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 
 fts5parse.h:	fts5parse.c
 
-fts5.c:	$(FTS5_SRC)
-	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
+fts5.c:	$(FTS5_SRC) $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 	copy /Y $(TOP)\ext\fts5\fts5.h .
 	copy /B fts5.h +,,
 
-lsm1.c:	$(LSM1_SRC)
-	$(TCLSH_CMD) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
+lsm1.c:	$(LSM1_SRC) $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
 	copy /Y $(TOP)\ext\lsm1\lsm.h .
 	copy /B lsm.h +,,
 
@@ -2537,7 +2583,7 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
 coretestprogs:	testfixture.exe sqlite3.exe
@@ -2624,7 +2670,7 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\consio\console_io.h $(TOP)\ext\consio\console_io.c $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
@@ -2746,6 +2792,16 @@ THREADTEST3_SRC = \
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+# Display key variables that control which version of TCL is to be used.
+#
+tcl-env:
+	@echo TCLDIR = $(TCLDIR)
+	@echo TCLVERSION = $(TCLVERSION)
+	@echo TCLSUFFIX = $(TCLSUFFIX)
+	@echo LIBTCL = $(LIBTCL)
+	@echo LIBTCLSTUB = $(LIBTCLSTUB)
+	@echo TCLSH_CMD = $(TCLSH_CMD)
+
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
 
@@ -2779,7 +2835,7 @@ clean:
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL
 	del /Q shell.c sqlite3ext.h sqlite3session.h 2>NUL
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3-rsync.exe 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c sqlite3_rsync.exe 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe dbhash.exe 2>NUL
 	del /Q sqltclsh.* 2>NUL

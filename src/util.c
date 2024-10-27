@@ -539,6 +539,8 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
+  double rr[2];
+  u64 s2;
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -650,68 +652,41 @@ do_atof_calc:
     e++;
   }
 
-  if( e==0 ){
-    *pResult = s;
-  }else if( sqlite3Config.bUseLongDouble ){
-    LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
-    if( e>0 ){
-      while( e>=100  ){ e-=100; r *= 1.0e+100L; }
-      while( e>=10   ){ e-=10;  r *= 1.0e+10L;  }
-      while( e>=1    ){ e-=1;   r *= 1.0e+01L;  }
-    }else{
-      while( e<=-100 ){ e+=100; r *= 1.0e-100L; }
-      while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
-      while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
-    }
-    assert( r>=0.0 );
-    if( r>+1.7976931348623157081452742373e+308L ){
-#ifdef INFINITY
-      *pResult = +INFINITY;
-#else
-      *pResult = 1.0e308*10.0;
+  rr[0] = (double)s;
+  s2 = (u64)rr[0];
+#if defined(_MSC_VER) && _MSC_VER<1700
+  if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
 #endif
-    }else{
-      *pResult = (double)r;
+  rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  if( e>0 ){
+    while( e>=100  ){
+      e -= 100;
+      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
+    }
+    while( e>=10   ){
+      e -= 10;
+      dekkerMul2(rr, 1.0e+10, 0.0);
+    }
+    while( e>=1    ){
+      e -= 1;
+      dekkerMul2(rr, 1.0e+01, 0.0);
     }
   }else{
-    double rr[2];
-    u64 s2;
-    rr[0] = (double)s;
-    s2 = (u64)rr[0];
-#if defined(_MSC_VER) && _MSC_VER<1700
-    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
-#endif
-    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
-    if( e>0 ){
-      while( e>=100  ){
-        e -= 100;
-        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-      }
-      while( e>=10   ){
-        e -= 10;
-        dekkerMul2(rr, 1.0e+10, 0.0);
-      }
-      while( e>=1    ){
-        e -= 1;
-        dekkerMul2(rr, 1.0e+01, 0.0);
-      }
-    }else{
-      while( e<=-100 ){
-        e += 100;
-        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-      }
-      while( e<=-10  ){
-        e += 10;
-        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-      }
-      while( e<=-1   ){
-        e += 1;
-        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-      }
+    while( e<=-100 ){
+      e += 100;
+      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
     }
-    *pResult = rr[0]+rr[1];
-    if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
+    while( e<=-10  ){
+      e += 10;
+      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+    }
+    while( e<=-1   ){
+      e += 1;
+      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+    }
   }
+  *pResult = rr[0]+rr[1];
+  if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
   if( sign<0 ) *pResult = -*pResult;
   assert( !sqlite3IsNaN(*pResult) );
 
@@ -1032,9 +1007,10 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
+  double rr[2];
+
   p->isSpecial = 0;
   p->z = p->zBuf;
-
   assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
@@ -1062,62 +1038,45 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
+  **
+  ** Use Dekker-style double-double computation to increase the
+  ** precision.
+  **
+  ** The error terms on constants like 1.0e+100 computed using the
+  ** decimal extension, for example as follows:
+  **
+  **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
   */
-  if( sqlite3Config.bUseLongDouble ){
-    LONGDOUBLE_TYPE rr = r;
-    if( rr>=1.0e+19 ){
-      while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
-      while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
-      while( rr>=1.0e+19L  ){ exp++;    rr *= 1.0e-1L;   }
-    }else{
-      while( rr<1.0e-97L   ){ exp-=100; rr *= 1.0e+100L; }
-      while( rr<1.0e+07L   ){ exp-=10;  rr *= 1.0e+10L;  }
-      while( rr<1.0e+17L   ){ exp--;    rr *= 1.0e+1L;   }
+  rr[0] = r;
+  rr[1] = 0.0;
+  if( rr[0]>9.223372036854774784e+18 ){
+    while( rr[0]>9.223372036854774784e+118 ){
+      exp += 100;
+      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
     }
-    v = (u64)rr;
+    while( rr[0]>9.223372036854774784e+28 ){
+      exp += 10;
+      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
+    }
+    while( rr[0]>9.223372036854774784e+18 ){
+      exp += 1;
+      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
+    }
   }else{
-    /* If high-precision floating point is not available using "long double",
-    ** then use Dekker-style double-double computation to increase the
-    ** precision.
-    **
-    ** The error terms on constants like 1.0e+100 computed using the
-    ** decimal extension, for example as follows:
-    **
-    **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
-    */
-    double rr[2];
-    rr[0] = r;
-    rr[1] = 0.0;
-    if( rr[0]>9.223372036854774784e+18 ){
-      while( rr[0]>9.223372036854774784e+118 ){
-        exp += 100;
-        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-      }
-      while( rr[0]>9.223372036854774784e+28 ){
-        exp += 10;
-        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-      }
-      while( rr[0]>9.223372036854774784e+18 ){
-        exp += 1;
-        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-      }
-    }else{
-      while( rr[0]<9.223372036854774784e-83  ){
-        exp -= 100;
-        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-      }
-      while( rr[0]<9.223372036854774784e+07  ){
-        exp -= 10;
-        dekkerMul2(rr, 1.0e+10, 0.0);
-      }
-      while( rr[0]<9.22337203685477478e+17  ){
-        exp -= 1;
-        dekkerMul2(rr, 1.0e+01, 0.0);
-      }
+    while( rr[0]<9.223372036854774784e-83  ){
+      exp -= 100;
+      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
     }
-    v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
+    while( rr[0]<9.223372036854774784e+07  ){
+      exp -= 10;
+      dekkerMul2(rr, 1.0e+10, 0.0);
+    }
+    while( rr[0]<9.22337203685477478e+17  ){
+      exp -= 1;
+      dekkerMul2(rr, 1.0e+01, 0.0);
+    }
   }
-
+  v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
@@ -1887,12 +1846,3 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
   }while( i<mx );
   return 0;
 }
-
-/*
-** High-resolution hardware timer used for debugging and testing only.
-*/
-#if defined(VDBE_PROFILE)  \
- || defined(SQLITE_PERFORMANCE_TRACE) \
- || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-# include "hwtime.h"
-#endif

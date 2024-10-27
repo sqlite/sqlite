@@ -21,7 +21,7 @@
 #include "sqlite3.h"
 
 static const char zUsage[] = 
-  "sqlite3-rsync ORIGIN REPLICA ?OPTIONS?\n"
+  "sqlite3_rsync ORIGIN REPLICA ?OPTIONS?\n"
   "\n"
   "One of ORIGIN or REPLICA is a pathname to a database on the local\n"
   "machine and the other is of the form \"USER@HOST:PATH\" describing\n"
@@ -30,7 +30,7 @@ static const char zUsage[] =
   "\n"
   "OPTIONS:\n"
   "\n"
-  "   --exe PATH    Name of the sqlite3-rsync program on the remote side\n"
+  "   --exe PATH    Name of the sqlite3_rsync program on the remote side\n"
   "   --help        Show this help screen\n"
   "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
   "   -v            Verbose.  Multiple v's for increasing output\n"
@@ -56,6 +56,7 @@ struct SQLiteRsync {
   u8 isRemote;             /* On the remote side of a connection */
   u8 isReplica;            /* True if running on the replica side */
   u8 iProtocol;            /* Protocol version number */
+  u8 wrongEncoding;        /* ATTACH failed due to wrong encoding */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
   unsigned int nPage;      /* Total number of pages in the database */
@@ -92,6 +93,7 @@ struct SQLiteRsync {
 ****************************************************************************/
 #ifdef _WIN32
 #include <windows.h>
+#include <io.h>
 #include <fcntl.h>
 /*
 ** Print a fatal error and quit.
@@ -239,9 +241,9 @@ static int popen2(
                              hStdinRd, hStdoutWr, hStderr,&childPid);
   *pChildPid = childPid;
   fd = _open_osfhandle(PTR_TO_INT(hStdoutRd), 0);
-  *ppIn = fdopen(fd, "r");
+  *ppIn = fdopen(fd, "rb");
   fd = _open_osfhandle(PTR_TO_INT(hStdinWr), 0);
-  *ppOut = _fdopen(fd, "w");
+  *ppOut = _fdopen(fd, "wb");
   CloseHandle(hStdinRd);
   CloseHandle(hStdoutWr);
   return 0;
@@ -1064,7 +1066,15 @@ static sqlite3_stmt *prepareStmt(
   return pStmt;
 }
 
-/* Run a single SQL statement
+/* Run a single SQL statement.  Report an error if something goes
+** wrong.
+**
+** As a special case, if the statement starts with "ATTACH" (but not
+** "Attach") and if the error message is about an incorrect encoding,
+** then do not report the error, but instead set the wrongEncoding flag.
+** This is a kludgy work-around to the problem of attaching a database
+** with a non-UTF8 encoding to the empty :memory: database that is
+** opened on the replica.
 */
 static void runSql(SQLiteRsync *p, char *zSql, ...){
   sqlite3_stmt *pStmt;
@@ -1077,8 +1087,15 @@ static void runSql(SQLiteRsync *p, char *zSql, ...){
     int rc = sqlite3_step(pStmt);
     if( rc==SQLITE_ROW ) rc = sqlite3_step(pStmt);
     if( rc!=SQLITE_OK && rc!=SQLITE_DONE ){
-      reportError(p, "SQL statement [%s] failed: %s", zSql,
-                  sqlite3_errmsg(p->db));
+      const char *zErr = sqlite3_errmsg(p->db);
+      if( strncmp(zSql,"ATTACH ", 7)==0
+       && strstr(zErr,"must use the same text encoding")!=0
+      ){
+        p->wrongEncoding = 1;
+      }else{
+        reportError(p, "SQL statement [%s] failed: %s", zSql,
+                    sqlite3_errmsg(p->db));
+      }
     }
     sqlite3_finalize(pStmt);
   }
@@ -1197,6 +1214,7 @@ static void originSide(SQLiteRsync *p){
   int c = 0;
   unsigned int nPage = 0;
   unsigned int iPage = 0;
+  unsigned int lockBytePage = 0;
   unsigned int szPg = 0;
   sqlite3_stmt *pCkHash = 0;
   char buf[200];
@@ -1235,6 +1253,7 @@ static void originSide(SQLiteRsync *p){
       p->nPage = nPage;
       p->szPage = szPg;
       p->iProtocol = PROTOCOL_VERSION;
+      lockBytePage = (1<<30)/szPg + 1;
     }
   }
   
@@ -1290,6 +1309,7 @@ static void originSide(SQLiteRsync *p){
                     " INSERT INTO badHash SELECT n FROM c",
                     iPage+1, p->nPage);
         }
+        runSql(p, "DELETE FROM badHash WHERE pgno=%d", lockBytePage);
         pStmt = prepareStmt(p,
                "SELECT pgno, data"
                "  FROM badHash JOIN sqlite_dbpage('main') USING(pgno)");
@@ -1404,6 +1424,16 @@ static void replicaSide(SQLiteRsync *p){
           break;
         }
         runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+        if( p->wrongEncoding ){
+          p->wrongEncoding = 0;
+          runSql(p, "PRAGMA encoding=utf16le");
+          runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
+          if( p->wrongEncoding ){
+            p->wrongEncoding = 0;
+            runSql(p, "PRAGMA encoding=utf16be");
+            runSql(p, "Attach %Q AS 'replica'", p->zReplica);
+          }
+        }
         if( p->nErr ){
           closeDb(p);
           break;
@@ -1456,15 +1486,18 @@ static void replicaSide(SQLiteRsync *p){
         }else if( p->nErr ){
           runSql(p, "ROLLBACK");
         }else{
-          int rc;
-          sqlite3_bind_int64(pIns, 1, nOPage);
-          sqlite3_bind_null(pIns, 2);
-          rc = sqlite3_step(pIns);
-          if( rc!=SQLITE_DONE ){
-            reportError(p, "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
-                   sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
+          if( nOPage<0xffffffff ){
+            int rc;
+            sqlite3_bind_int64(pIns, 1, nOPage+1);
+            sqlite3_bind_null(pIns, 2);
+            rc = sqlite3_step(pIns);
+            if( rc!=SQLITE_DONE ){
+              reportError(p,
+                  "SQL statement [%s] failed (pgno=%u, data=NULL): %s",
+                  sqlite3_sql(pIns), nOPage, sqlite3_errmsg(p->db));
+            }
+            sqlite3_reset(pIns);
           }
-          sqlite3_reset(pIns);
           p->nPage = nOPage;
           runSql(p, "COMMIT");
         }
@@ -1580,13 +1613,13 @@ static char *hostSeparator(const char *zIn){
 **
 ** Input formats:
 **
-**  (1)    sqlite3-rsync  FILENAME1  USER@HOST:FILENAME2
+**  (1)    sqlite3_rsync  FILENAME1  USER@HOST:FILENAME2
 **
-**  (2)    sqlite3-rsync  USER@HOST:FILENAME1  FILENAME2
+**  (2)    sqlite3_rsync  USER@HOST:FILENAME1  FILENAME2
 **
-**  (3)    sqlite3-rsync --origin FILENAME1
+**  (3)    sqlite3_rsync --origin FILENAME1
 **
-**  (4)    sqlite3-rsync --replica FILENAME2
+**  (4)    sqlite3_rsync --replica FILENAME2
 **
 ** The user types (1) or (2).  SSH launches (3) or (4).
 **
@@ -1610,7 +1643,7 @@ int main(int argc, char const * const *argv){
   FILE *pOut = 0;
   int childPid = 0;
   const char *zSsh = "ssh";
-  const char *zExe = "sqlite3-rsync";
+  const char *zExe = "sqlite3_rsync";
   char *zCmd = 0;
   sqlite3_int64 tmStart;
   sqlite3_int64 tmEnd;
@@ -1724,6 +1757,10 @@ int main(int argc, char const * const *argv){
     ctx.pIn = stdin;
     ctx.pOut = stdout;
     ctx.isRemote = 1;
+#ifdef _WIN32
+    _setmode(_fileno(ctx.pIn), _O_BINARY);
+    _setmode(_fileno(ctx.pOut), _O_BINARY);
+#endif
     originSide(&ctx);
     return 0;
   }
@@ -1731,6 +1768,10 @@ int main(int argc, char const * const *argv){
     ctx.pIn = stdin;
     ctx.pOut = stdout;
     ctx.isRemote = 1;
+#ifdef _WIN32
+    _setmode(_fileno(ctx.pIn), _O_BINARY);
+    _setmode(_fileno(ctx.pOut), _O_BINARY);
+#endif
     replicaSide(&ctx);
     return 0;
   }

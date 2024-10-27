@@ -53,7 +53,7 @@ if {[lsearch -regexp [lrange $argv 1 end] {^-+enable-recover}] != -1} {
 
 # Get the SQLite version number (ex: 3.6.18) from the $TOP/VERSION file.
 #
-set in [open $TOP/VERSION]
+set in [open [file normalize $TOP/VERSION] rb]
 set zVersion [string trim [read $in]]
 close $in
 set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
@@ -62,7 +62,12 @@ set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
 #
 set PWD [pwd]
 cd $TOP
-set zSourceId [exec $PWD/mksourceid manifest]
+set tmpfile tmp-[clock millisec]-[expr {int(rand()*100000000000)}].txt
+exec $PWD/mksourceid manifest > $tmpfile
+set fd [open $tmpfile rb]
+set zSourceId [string trim [read $fd]]
+close $fd
+file delete -force $tmpfile
 cd $PWD
 
 # Set up patterns for recognizing API declarations.
@@ -111,7 +116,7 @@ set cdecllist {
 # Process the source files.
 #
 foreach file $filelist {
-  set in [open $file]
+  set in [open $file rb]
   if {![regexp {sqlite\.h\.in} $file]} {
     puts "/******** Begin file [file tail $file] *********/"
   }
