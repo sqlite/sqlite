@@ -162,6 +162,7 @@ set flags {
   readline=1           => {Disable readline support}
   largefile=1          => {Disable large file support}
   shared=1             => {Disable build of shared libary}
+  static=1             => {Disable build of static library}
   with-readline-lib:LDFLAGS
                        => {Readline LDFLAGS, e.g. -lreadline -lncurses}
   with-readline-inc:CFLAGS
@@ -445,6 +446,11 @@ hwaci-check-rpath
 
 hwaci-define-if-opt-truthy shared ENABLE_SHARED \
   "Build shared library?"
+
+if {![hwaci-define-if-opt-truthy static ENABLE_STATIC \
+        "Build static library?"]} {
+  hwaci-warn "static lib build may be implicitly re-activated by other components, e.g. libtclsqlite3."
+}
 
 hwaci-define-if-opt-truthy amalgamation USE_AMALGAMATION \
   "Use amalgamation for builds?"

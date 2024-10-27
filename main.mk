@@ -167,6 +167,14 @@ INSTALL ?= install
 #
 ENABLE_SHARED ?= 1
 #
+# $(ENABLE_STATIC) =
+#
+# 1 if libsqlite3.$(T.lib) should be built. Some components,
+# e.g. libtclsqlite3 and some test apps, implicitly require the static
+# library and will ignore this preference.
+#
+ENABLE_STATIC ?= 1
+#
 # $(USE_AMALGAMATION)
 #
 # 1 if the amalgamation (sqlite3.c/h) should be built/used, otherwise
@@ -1277,7 +1285,9 @@ sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh) # has_tclsh84
 #
 $(libsqlite3.LIB): $(LIBOBJ)
 	$(AR) $(AR.flags) $@ $(LIBOBJ)
-lib: $(libsqlite3.LIB)
+$(libsqlite3.LIB)-1: $(libsqlite3.LIB)
+$(libsqlite3.LIB)-0 $(libsqlite3.LIB)-:
+lib: $(libsqlite3.LIB)-$(ENABLE_STATIC)
 all: lib
 
 #
@@ -1351,8 +1361,10 @@ install: install-so
 #
 # Install $(libsqlite3.LIB)
 #
-install-lib: $(install-dir.lib) $(libsqlite3.LIB)
+install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
 	$(INSTALL.noexec) $(libsqlite3.LIB) $(install-dir.lib)
+install-lib-0 install-lib-:
+install-lib: install-lib-$(ENABLE_STATIC)
 install: install-lib
 
 #

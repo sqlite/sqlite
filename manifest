@@ -1,9 +1,9 @@
-C Generic\sauto.def\scleanups.
-D 2024-10-27T08:29:18.130
+C Re-add\sthe\s--disable-static\sflag\sto\s(mostly)\sdisable\sstatic\slib\sbuild.\sSome\scomponents\srequire\sthe\sstatic\slib\sand\swill\strump\sthis\spreference\sif\sthey\sare\sactivated.
+D 2024-10-27T08:52:20.817
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in c9fb22b54d1b9aafba00cc22306286a479e97e498f426414fcc1861486ed2260
+F Makefile.in 957cbf0d25ced08f6703b82f2070cbea791aeeb2d6059c4426c30cd87c80250f
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc d2d927177660945599ba88ea32f1ab5c261a96a8797380b99766e27f3aea7e4f
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 609cdc6d06e1e51ac56477d524e27f741cb88a0bc60d59cda2fbc503f29039a1
+F auto.def 7151bfb1a546622f5f24ecac6524b93e239804c5ee73231c65f2ca9f23ab2995
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 3848740b1005402b9edc0a75b00dc11f97d1ef5ed545e2eaf4a2e7e38544e596
+F main.mk d943a2d0a0deb14daea10e036ef3a55e1b641cd57f5893a2fba29e65cc33acc0
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2167,7 +2167,7 @@ F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b0
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
 F tool/mksqlite3c.tcl 98a250d6f2ea60343268e32e2997790e678205ce128aa0d0a67a3f70811615af
-F tool/mksqlite3h.tcl 1d996a99cda519e8519e9e514b564fa29b37a49d20263d57494903d685caf067
+F tool/mksqlite3h.tcl 2a6ba8955adf9cfabd0617ee5949760e531e0b75b703b5faf8d1150657b5628f
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39ce3f6350d811f27e5104e3dd01de2b04ce2a36edcbefd08596b8ca6c6226ff
-R 20239e0cf9be7057ef4c04014869eaaa
+P 19a5377e608e7ab8fb5733a87ab02a6a69511570c3829e2c1befecc582a6f8ee
+R c734fae877980ad0616908d05f844de0
 U stephan
-Z dcb9b16969f6593d9a8aab48eccda49c
+Z 665a360661ddb1e8c7d2ec84497b82c2
 # Remove this line to create a well-formed Fossil manifest.
