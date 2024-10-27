@@ -97,7 +97,7 @@ AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
 B.cc = @BUILD_CC@ @BUILD_CFLAGS@
 T.cc = @CC@
-CFLAGS = @CFLAGS@ @SH_CFLAGS@
+CFLAGS = @CPPFLAGS@ @CFLAGS@ @SH_CFLAGS@
 
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
@@ -200,6 +200,9 @@ TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 TCL_VERSION = @TCL_VERSION@
 TCLLIB_RPATH = @TCLLIB_RPATH@
+#
+# Where do we want to install the tcl plugin
+#
 TCLLIBDIR = @TCLLIBDIR@
 
 #
@@ -207,11 +210,6 @@ TCLLIBDIR = @TCLLIBDIR@
 # This is usually either blank, or else --status
 #
 TSTRNNR_OPTS = @TSTRNNR_OPTS@
-
-#
-# Where do we want to install the tcl plugin
-#
-TCLLIBDIR = @TCLLIBDIR@
 
 #
 # If gcov support was enabled by the configure script, add the appropriate

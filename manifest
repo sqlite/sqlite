@@ -1,9 +1,9 @@
-C configure:\sdocument\swhy\s--enable-editline\sdoes\snot\swork\sand\semit\sa\swarning\swith\sa\spotential\salternative/workaround\sif\sit's\sused.\sVarious\scosmetic\scleanups.
-D 2024-10-27T05:28:52.488
+C Makefile.in:\sinclude\sCPPFLAGS\sin\sthe\sCFLAGS,\sas\sthe\slegacy\sMakefile.in\sdid,\sbecause\ssome\sdownstream\sscripts\srely\son\sthat.\sRemove\sa\sduplicated\sTCLLIBDIR\sassignment.
+D 2024-10-27T06:03:27.496
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in e880d287a3233a5352b3e260ff9b44baa9388070ba033ec842bc46e2cebdd11e
+F Makefile.in b0f2b40be5273a8a369af03d4d9a56c5027cd4fc2ee41feddced218dfb6c1e1b
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc d2d927177660945599ba88ea32f1ab5c261a96a8797380b99766e27f3aea7e4f
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ddeb7a8f55735cc7f2cf95cbbb0b20c563ced87db1429816fcfb0ee89e751f0
-R 4970824a6410e0a6a11b4742e70c246f
+P ccb8f16f8a5c500b683800672aa4bc87d2f109e87ebdabf6c54d5b6dc69718f7
+R ea34d3fe32036f9e4036fc2d28aa1616
 U stephan
-Z bb06d38a89ea42c462deaf8c72e8eb99
+Z d899eb4b8c2da605c59f9ecc775c852d
 # Remove this line to create a well-formed Fossil manifest.
