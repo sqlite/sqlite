@@ -982,6 +982,7 @@ if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-lib ""]]]} {
   # Flags sets seen in the wild for ICU:
   # {-licui18n -licuuc -licudata} {-licui18n -licuuc}
   add-feature-flag -DSQLITE_ENABLE_ICU
+  add-shell-opt -DSQLITE_ENABLE_ICU
   msg-result "Enabling ICU support with libs: [get-define LDFLAGS_ICU]"
   if {[opt-bool icu-collations]} {
     msg-result "Enabling ICU collations."
