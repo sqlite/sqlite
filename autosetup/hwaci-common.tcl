@@ -708,28 +708,25 @@ proc hwaci-check-rpath {} {
 ########################################################################
 # Check for libreadline functionality.  Linking in readline varies
 # wildly by platform and this check does not cover all known options.
-# This detection is known to fail when none of the following
-# conditions can be met:
+# This detection is known to fail under the following conditions:
 #
 # - (pkg-config readline) info is either unavailable for libreadline or
 #   simply misbehaves.
 #
 # - Compile-and-link-with-default-path tests fail. This will fail for
-#   platforms which store readline under, e.g., /usr/locall
+#   platforms which store readline under, e.g., /usr/local.
 #
 # Defines the following vars:
 #
 # - HAVE_READLINE: 0 or 1
 # - LDFLAGS_READLINE: "" or linker flags
 # - CFLAGS_READLINE: "" or c-flags
-# - READLINE_H: "" or "readline/readlin.h" (or similar)
 #
 # Returns the value of HAVE_READLINE.
 proc hwaci-check-readline {} {
   define HAVE_READLINE 0
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
-  define READLINE_H ""
   if {![opt-bool readline]} {
     msg-result "libreadline disabled via --disable-readline."
     return 0
@@ -761,7 +758,6 @@ proc hwaci-check-readline {} {
 
   set h "readline/readline.h"
   if {[cc-check-includes $h]} {
-    define READLINE_H $h
     if {[hwaci-check-function-in-lib readline readline]} {
       msg-result "Enabling libreadline."
       define HAVE_READLINE 1

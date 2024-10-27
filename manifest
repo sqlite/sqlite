@@ -1,5 +1,5 @@
-C Get\s--with-linenoise=DIR\sconfigure\sflag\sworking.
-D 2024-10-26T21:51:04.154
+C Correct\ssqlite3.pc\sto\srepresent\sthe\slibrary,\snot\sthe\sCLI\sshell.\sRemove\sthe\shalf-baked\san\sunused\sREADLINE_H\sconfig\sdefine.\sInternal\stcl\sdoc\sfixes.
+D 2024-10-27T02:08:38.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 0ed89d2ad8e199017e5a2e14163737b38f0c9f3351a5d94aadeae4e257b38b11
+F auto.def a19e0ba4bfdbbf81dbe1fce66929cbc8e9e7d5da6267a7d8e6e4b3ad3c39c160
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -47,7 +47,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl 656984306293035db370c8a34030253a860ef42bd168952db8be7e5f8a2f6008
+F autosetup/hwaci-common.tcl dd33af5ee7279956a58254accfb8f86e84d64b153afd69efb8c5dd8937845649
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -717,7 +717,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
-F sqlite3.pc.in da30c8d1a41490e8e3d94c9560ae29b4388b2f7a89de08ff309beea9083a3f20
+F sqlite3.pc.in 02db2fa13bcfb301bf8af5ab06984bed583e78a678a557902726eada3bbb7ff1
 F sqlite_cfg.h.in be1d075cf77134d53fdf5cc2c0919842e7e02a648c66a56e735af25ccdcaff91
 F src/alter.c aa93e37e4a36a0525bbb2a2aeda20d2018f0aa995542c7dc658e031375e3f532
 F src/analyze.c 9a8b67239d899ac12289db5db3f5bfe7f7a0ad1277f80f87ead1d048085876eb
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7eabfb61f72dc396fab9d0671642f8150cde23aea965c5e77ac3d9ad11c749f
-R d65825cd715a121a343a3b84bfbe0e81
+P 66ce47e5de21c607d2ef1f1e6e639f3c6da132ff3db582e12bd174f7d89d8150
+R 0e289bbefd4920bbc9b70aa875271ce3
 U stephan
-Z 221650a38f381ac274ed56145cfdfb80
+Z 899f1a2fde401493358ac6e1ddbf0e16
 # Remove this line to create a well-formed Fossil manifest.

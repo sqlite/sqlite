@@ -756,9 +756,6 @@ if {1} {
 #
 #   - CFLAGS_READLINE = compilation flags for clients or empty string
 #
-#   - READLINE_H = header in the form "<.../readline.h>" IF we can
-#     figure it out. shell.c does not currently use this.
-#
 # Note that LDFLAGS_READLINE and CFLAGS_READLINE may refer to
 # linenoise or editline, not necessarily libreadline.
 #
@@ -770,7 +767,6 @@ proc hwaci-check-line-editing {} {
   define HAVE_EDITLINE 0
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
-  define READLINE_H ""
   set check [opt-val with-linenoise]
   if {"" ne $check} {
     # Use linenoise...
@@ -817,12 +813,6 @@ proc hwaci-check-line-editing {} {
         set v [file dirname $v]
       }
       set fC "-I$v"
-      # Set READLINE_H to an #include-compatible form of the tail of $v:
-      set x [opt-val with-readline-header]
-      set x [string replace $x 0 [string length $v]]
-      define READLINE_H <$x>
-      unset x
-      #hwaci-warn "v=$v READLINE_H=[get-define READLINE_H]"
     }
     define LDFLAGS_READLINE $fL
     define CFLAGS_READLINE $fC
