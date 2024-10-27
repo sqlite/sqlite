@@ -108,6 +108,7 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
+CFLAGS.icu = @CFLAGS_ICU@
 
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
@@ -151,7 +152,7 @@ $(B.tclsh):
 #
 # $(CFLAGS.libsqlite3) is documented in main.mk.
 #
-CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
+CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@ $(CFLAGS.icu)
 
 #
 # $(OPT_FEATURE_FLAGS) is documented in main.mk.

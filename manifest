@@ -1,9 +1,9 @@
-C When\sreadline\sis\senabled,\sattempt\sto\sdetermine\swhether\sthe\scompletion\sAPI\sis\scompatible\sand,\sif\sit's\snot,\sdisable\sit\sin\sthe\sshell\sapp.
-D 2024-10-27T18:46:11.275
+C Add\s--with-icu-inc=CFLAGS,\sbut\sits\sjustification\s(based\son\sexamination\sof\sa\sdownstream\sbuild\sscript)\sas\siffy,\sso\sthis\sneeds\sto\sbe\sconsidered\smore\sclosely\sbefore\scommitting\sto\sit.
+D 2024-10-27T19:22:58.301
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in 957cbf0d25ced08f6703b82f2070cbea791aeeb2d6059c4426c30cd87c80250f
+F Makefile.in eb3171e014222535afd0ef8524734fd9a56eb44d99eb4ceccef68b4bed898e67
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc d2d927177660945599ba88ea32f1ab5c261a96a8797380b99766e27f3aea7e4f
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def ec6ba41a7e40137dc0fbff5a9898886a76bba6c3fe88f4b2ffba7ec02ca9cb46
+F auto.def 93f48a4269ffd414b72fd25ca8c4ec7134a014f53192ef3da0903fde78993353
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk d943a2d0a0deb14daea10e036ef3a55e1b641cd57f5893a2fba29e65cc33acc0
+F main.mk 26ca9ab3a634066a85d651ba59ae0bf839531eb2f6dd73500d8719a72e8ad951
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -717,7 +717,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
-F sqlite3.pc.in 02db2fa13bcfb301bf8af5ab06984bed583e78a678a557902726eada3bbb7ff1
+F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
 F sqlite_cfg.h.in be1d075cf77134d53fdf5cc2c0919842e7e02a648c66a56e735af25ccdcaff91
 F src/alter.c aa93e37e4a36a0525bbb2a2aeda20d2018f0aa995542c7dc658e031375e3f532
 F src/analyze.c 9a8b67239d899ac12289db5db3f5bfe7f7a0ad1277f80f87ead1d048085876eb
@@ -2237,8 +2237,11 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 133fff8bd79d46f74eeeee677a929b611f3af79cbc492864211e61e2a35846e9
-R 0ec65f180d97227b7302a157e1743b13
+P 4564dbe4ac0040803b5d139c9fff22a60a45b4769d80ad7c824456cc6b9f1722
+R 03937186491726e7f22c685711bb3b78
+T *branch * configure-with-icu-inc
+T *sym-configure-with-icu-inc *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z fda94993ae5f9ecaf502d7e40734c943
+Z 96dfc9004f10c6b1e80968f0b44e1d5e
 # Remove this line to create a well-formed Fossil manifest.

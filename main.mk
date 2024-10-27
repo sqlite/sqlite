@@ -1803,6 +1803,7 @@ sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
 		$(CFLAGS.readline) $(SHELL_OPT) \
+		$(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
 #
