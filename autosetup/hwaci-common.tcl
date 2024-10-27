@@ -49,11 +49,22 @@ array set hwaci_ {}
 proc hwaci-warn {msg} {
   puts stderr "WARNING: $msg"
 }
-proc hwaci-notice {msg} {
-  puts stderr "NOTICE: $msg"
-}
+#proc hwaci-notice {msg} {
+#  puts stderr "NOTICE: $msg"
+#}
 proc hwaci-fatal {msg} {
   user-error "ERROR: $msg"
+}
+
+########################################################################
+# Takes a multi-line message and emits it with consistent indentation
+# using user-notice (which means its rendering will be delayed until
+# the next time autosetup goes to output a message).
+proc hwaci-indented-notice {msg} {
+  set lines [split $msg \n]
+  foreach line $lines {
+    user-notice "      [string trim $line]"
+  }
 }
 
 ########################################################################

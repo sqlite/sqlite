@@ -462,7 +462,7 @@ hwaci-if-opt-truthy with-debug {
 ########################################################################
 # TCL...
 #
-# hwaci-check-tcl performs most of the --with-tcl and --with-tclsh
+# sqlite-check-tcl performs most of the --with-tcl and --with-tclsh
 # handling. Some related bits and pieces are performed before and
 # after that function is called.
 #
@@ -489,7 +489,7 @@ hwaci-if-opt-truthy with-debug {
 #    components.
 #
 define TCLSH_CMD {exit 1}
-proc hwaci-check-tcl {} {
+proc sqlite-check-tcl {} {
   # TODO: document the steps this is taking.
   global top_srcdir
   puts "Checking for a suitable tcl... "
@@ -497,13 +497,13 @@ proc hwaci-check-tcl {} {
   set use_tcl $optTcl
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
-  #puts "hwaci-check-tcl: use_tcl ${use_tcl}"
-  #puts "hwaci-check-tcl: with_tclsh=${with_tclsh}"
-  #puts "hwaci-check-tcl: with_tcl=$with_tcl"
+  #puts "sqlite-check-tcl: use_tcl ${use_tcl}"
+  #puts "sqlite-check-tcl: with_tclsh=${with_tclsh}"
+  #puts "sqlite-check-tcl: with_tcl=$with_tcl"
   if {"" eq $with_tclsh && "" eq $with_tcl} {
     set with_tclsh [hwaci-first-bin-of tclsh9.0 tclsh8.6 tclsh]
   }
-  #puts "hwaci-check-tcl: with_tclsh=${with_tclsh}"
+  #puts "sqlite-check-tcl: with_tclsh=${with_tclsh}"
 
   if {"" ne $with_tclsh} {
     if {![file isfile $with_tclsh]} {
@@ -561,11 +561,11 @@ proc hwaci-check-tcl {} {
           }
         }
         if {![file readable $cfg]} {
-          hwaci-warn {
-            Cannot find a usable tclConfig.sh file.
-            Use --with-tcl=DIR to specify a directory where tclConfig.sh can be found.
-            SQLite does not use TCL internally, but TCL is required to build SQLite
-            from canonical sources and TCL is required for testing.
+          hwaci-indented-notice {
+            WARNING: Cannot find a usable tclConfig.sh file.  Use
+            --with-tcl=DIR to specify a directory where tclConfig.sh
+            can be found.  SQLite does not use TCL internally, but TCL
+            is required for testing.
           }
           break
         }
@@ -587,10 +587,6 @@ proc hwaci-check-tcl {} {
   # config is not available, this emits empty-string entries for the
   # various options we're interested in.
   eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
-  #puts "hwaci-check-tcl: with_tclsh=$with_tclsh"
-  #puts "hwaci-check-tcl: with_tcl=$with_tcl"
-  #puts "hwaci-check-tcl: cfg=$cfg"
-  #puts "hwaci-check-tcl: use_tcl ${use_tcl}"
 
   if {"" eq $with_tclsh} {
     set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
@@ -646,9 +642,9 @@ proc hwaci-check-tcl {} {
   } else {
     hwaci-warn "Cannot find a usable tclsh, so cannot run tests."
   }
-}; # hwaci-check-tcl
+}; # sqlite-check-tcl
 
-hwaci-check-tcl
+sqlite-check-tcl
 
 ########################################################################
 # Check which TCL to use as a code generator. Prefer jimsh simply
@@ -754,6 +750,8 @@ if {1} {
 #   - HAVE_LINENOISE to 0 or 1
 #   - HAVE_EDITLINE to 0 or 1
 #
+# Only one of ^^^ those will be set to 1.
+#
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
 #   - CFLAGS_READLINE = compilation flags for clients or empty string
@@ -786,8 +784,31 @@ proc sqlite-check-line-editing {} {
     add-shell-opt -DHAVE_LINENOISE=1
     return "linenoise"
   } elseif {[opt-bool editline]} {
-    # TODO: reimplement --enable-editline
-    user-notice "WARNING: the --enable-editline flag is not yet supported"
+    # --enable-editline. The problem is finding a system which has it
+    # available to test on. The man pages for it on OpenBSD do not
+    # match how shell.c uses it. OpenBSD has a lib named libedit but
+    # no headers to go with it. The legacy configure script looked for
+    # readline() in libedit (and libedit.a indeed has the
+    # readline/history functions used by shell.c) but shell.c expects
+    # to find <editline/readline.h> when HAVE_EDITLINE=1, and that
+    # file is nowhere to be found.
+    #
+    # However, a workaround which works on the available systems is:
+    #
+    # --with-readline-lib=-ledit
+    #
+    # And then let it detect readline.h. We "could" re-map
+    # --enable-editline to do exactly that but it seems likely to
+    # break on systems for which which HAVE_EDITLINE=1 previously
+    # worked.
+    hwaci-indented-notice {
+      WARNING: the --enable-editline flag is not supported due to
+      non-availability of systems which have it in a form which the
+      sqlite3 CLI shell expects to see. On some systems this can be
+      worked around by passing --with-readline-lib=-ledit instead of
+      --enable-editline, which will attempt to use the readline.h
+      supplied by libreadline but link against -ledit.
+    }
     return "none"
   } elseif {![opt-bool readline]} {
     user-notice "Readline support explicitly disabled with --disable-readline"
