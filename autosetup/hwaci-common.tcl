@@ -979,17 +979,23 @@ proc hwaci-dump-defs-json {file args} {
 ########################################################################
 # Expects configure flags with the given names to have been registered
 # with autosetup. If [opt-val $hidden] has a value but [opt-val
-# $canonical] does not, it copies the former over the latter.  If both
-# have explicit values a fatal usage error is triggered.
+# $canonical] does not, it copies the former over the latter. If
+# $hidden has no value set, this is a no-op. If both have explicit
+# values a fatal usage error is triggered.
 #
-# Autosetup accounts for hidden aliases in [options] lists but does no
-# further handling of them, e.g. fetching [opt-val foo] will not, even
-# if foo is an alias for bar, see a value passed in as --bar=baz.
+# Motivation: autosetup accounts for hidden aliases in [options] lists
+# but does no further handling of them. For example, when --foo is a
+# hidden alias of the canonical flag --bar, and a user passes --foo=X,
+# [opt-val bar] returns no value. i.e. the script must check both
+# [opt-val foo] and [opt-val bar], despite them being aliases. The
+# intent is that this function be passed each such mapping immediately
+# after [options] is processed, to carry over any values from hidden
+# aliases into their canonical names, so that in the above example
+# [opt-value bar] will return X if --foo=X is passed in.
 proc hwaci-xfer-opt-alias {hidden canonical} {
   set x [opt-val $hidden "-9-9-9-"]
   if {"-9-9-9-" ne $x} {
-    set y [opt-val $canonical "-0-0-0-"]
-    if {"-0-0-0-" eq $y} {
+    if {"-0-0-0-" eq [opt-val $canonical "-0-0-0-"]} {
       hwaci-opt-set $canonical $x
     } else {
       hwaci-fatal "both --$canonical and its hidden alias --$hidden were used. Use only one or the other."

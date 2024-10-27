@@ -207,9 +207,11 @@ if {"" ne $DUMP_DEFINES_JSON} {
 options [subst $flags]
 unset flags
 
-# Apply values from hidden --flag aliases over to their canonical
+#
+# Carry values from hidden --flag aliases over to their canonical flag
 # forms.
-foreach {hidden flag canonical} {
+#
+foreach {hidden => canonical} {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
 } {
