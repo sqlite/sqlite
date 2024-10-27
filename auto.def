@@ -873,9 +873,9 @@ proc sqlite-check-line-editing {} {
                return 0;
              }
            }]} {
-      msg-result "Readline completion enabled"
     } else {
       user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
+      show-notices
       sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
     return "readline"
@@ -989,10 +989,12 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   hwaci-if-opt-truthy $boolFlag {
     sqlite-add-feature-flag $featureFlag
     if {0 != [eval $ifSetEvalThis] && "all" ne $boolFlag} {
-      msg-result " - Enabling $boolFlag"
+      msg-result "  + $boolFlag"
     }
   } {
-    msg-result " - Not enabling $boolFlag"
+    if {"all" ne $boolFlag} {
+      msg-result "  - $boolFlag"
+    }
   }
 }
 
@@ -1005,10 +1007,10 @@ foreach {boolFlag featureFlag} {
   json        -DSQLITE_OMIT_JSON
 } {
   if {[hwaci-opt-truthy $boolFlag]} {
-    msg-result " - Enabling $boolFlag"
+    msg-result "  + $boolFlag"
   } else {
     sqlite-add-feature-flag $featureFlag
-    msg-result " - Disabling $boolFlag"
+    msg-result "  - $boolFlag"
   }
 }
 

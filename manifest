@@ -1,5 +1,5 @@
-C Re-order\sthe\sauto.def\sflags\slogical\sgroups.\sAdd\ssome\sdiscrete\sbold\sformatting\sto\sselect\sconfigure\soutput.\sRemove\ssome\sdead\scode.\sAccount\sfor\sbehavior\smisunderstanding\sof\suser-notice.\sAdd\sthe\sstart\sof\sa\s'make\shelp'\starget.\sGeneral\scosmetic\scleanups.
-D 2024-10-27T22:18:33.718
+C Expand\sthe\s'make\shelp'\starget\sand\sclean\sup\ssome\soverly-noisy\sconfigure\soutput.
+D 2024-10-27T22:34:07.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 10eac711b57bce9705555c052e8970e62aa6754b91e1ff37a51c50b040cc4897
+F auto.def ccbcecdf3a348fb463cd11e5fbcc1b2954059103e99531bf84d18a5f56c1351f
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 7533ef1b3a1338b96445a672ba6dbfa48279f05089a0555ff8822dcd1dcb000a
+F main.mk 4b0bcec36d5cc83fd60d9c10666f1493c8835cec11b67b3c980ae021e225db03
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 428e542452bac99d48950f1f62b65b4e235636540b946151747e2d5b59dbfd99
-R c11fb367c51c71ad6dcdc1b5cebfcffd
+P ab95ee33dfe56bd3b223f978626e6014414881c30443a2b88c782de724c39ae1
+R 4f2f3f9048608d15144b74fa8694e059
 U stephan
-Z 989475d21f0d39382974a32645a7533c
+Z f0d4b898dbccc821754c02bc4f1ee2af
 # Remove this line to create a well-formed Fossil manifest.
