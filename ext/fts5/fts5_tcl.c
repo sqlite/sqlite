@@ -1631,7 +1631,7 @@ static int SQLITE_TCLAPI f5tDropCorruptTable(
 */
 void f5tFree(void *p){
   char *x = (char *)p;
-  free(&x[-8]);
+  ckfree(&x[-8]);
 }
 
 /*
@@ -1644,7 +1644,7 @@ void f5tStrFunc(sqlite3_context *pCtx, int nArg, sqlite3_value **apArg){
   zText = sqlite3_value_text(apArg[0]);
   if( zText ){
     int nText = sqlite3Strlen30(zText);
-    char *zCopy = (char*)malloc(nText+8);
+    char *zCopy = (char*)ckalloc(nText+8);
     if( zCopy==0 ){
       sqlite3_result_error_nomem(pCtx);
     }else{
