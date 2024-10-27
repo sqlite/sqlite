@@ -57,6 +57,12 @@ proc hwaci-fatal {msg} {
 }
 
 ########################################################################
+# Returns 1 if cross-compiling, else 0.
+proc hwaci-is-cross-compiling {} {
+  return [expr {[get-define host] ne [get-define build]}]
+}
+
+########################################################################
 # hwaci-lshift_ shifts $count elements from the list named $listVar
 # and returns them as a new list. On empty input, returns "".
 #
@@ -86,6 +92,37 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
     set found [cc-check-function-in-lib $function $libs $otherlibs]
   }
   return $found
+}
+
+########################################################################
+# Searches for $header in a combination of dirs and subdirs, specified
+# by the -dirs {LIST} and -subdirs {LIST} flags (each of which have
+# sane defaults). Returns either the first matching dir or an empty
+# string.  The return value does not contain the filename part.
+proc hwaci-search-for-header-dir {header args} {
+  set subdirs {include}
+  set dirs {/usr /usr/local /mingw}
+# Debatable:
+#  if {![hwaci-is-cross-compiling]} {
+#    lappend dirs [get-define prefix]
+#  }
+  while {[llength $args]} {
+    switch -exact -- [lindex $args 0] {
+      -dirs     { set args [lassign $args - dirs] }
+      -subdirs  { set args [lassign $args - subdirs] }
+      default   {
+        hwaci-fatal "Unhandled argument: $args"
+      }
+    }
+  }
+  foreach dir $dirs {
+    foreach sub $subdirs {
+      if {[file exists $dir/$sub/$header]} {
+        return "$dir/$sub"
+      }
+    }
+  }
+  return ""
 }
 
 ########################################################################
@@ -706,21 +743,27 @@ proc hwaci-check-rpath {} {
 }
 
 ########################################################################
-# Check for libreadline functionality.  Linking in readline varies
+# Check for availability of libreadline.  Linking in readline varies
 # wildly by platform and this check does not cover all known options.
 # This detection is known to fail under the following conditions:
 #
 # - (pkg-config readline) info is either unavailable for libreadline or
 #   simply misbehaves.
 #
-# - Compile-and-link-with-default-path tests fail. This will fail for
-#   platforms which store readline under, e.g., /usr/local.
+# - Either of readline.h or libreadline are in an exotic place.
 #
 # Defines the following vars:
 #
 # - HAVE_READLINE: 0 or 1
 # - LDFLAGS_READLINE: "" or linker flags
 # - CFLAGS_READLINE: "" or c-flags
+#
+# Quirks:
+#
+# - If readline.h is found in a directory name matching *line then the
+#   resulting -I... flag points one directory _up_ from that, under
+#   the assumption that client-side code will #include
+#   <readline/readline.h>.
 #
 # Returns the value of HAVE_READLINE.
 proc hwaci-check-readline {} {
@@ -756,24 +799,52 @@ proc hwaci-check-readline {} {
   # want termcap, it wants -lcurses, but we don't get that info from
   # pkg-config either.
 
-  set h "readline/readline.h"
-  if {[cc-check-includes $h]} {
-    if {[hwaci-check-function-in-lib readline readline]} {
-      msg-result "Enabling libreadline."
-      define HAVE_READLINE 1
-      define LDFLAGS_READLINE [get-define lib_readline]
-      undefine lib_readline
-      return 1
+  # Look for readline.h
+  set rlInc ""
+  if {![hwaci-is-cross-compiling]} {
+    # ^^^ this check is derived from SQLite's legacy configure script
+    set rlInc [hwaci-search-for-header-dir readline.h \
+                 -subdirs {include/readline include}]
+    if {"" ne $rlInc} {
+      if {[string match */*line $rlInc]} {
+        # Special case: if the path includes .../*line/readline.h", set
+        # the -I to one dir up from that because our sources include
+        # <readline/readline.h> or <editline/readline.h>. Reminder: if
+        # auto.def is being run by jimsh0 then [file normalize] will not
+        # work!
+        set rlInc [file dirname $v]
+      }
+      set rlInc "-I${rlInc}"
     }
-    # else TODO: look in various places and [define CFLAGS_READLINE
-    # -I...]
   }
-  # Numerous TODOs:
-  # - Requires linking with [n]curses or similar on some platforms.
-  # - Headers are in a weird place on some BSD systems.
-  # - Add --with-readline=DIR
-  # - Add --with-readline-lib=lib ==> pass lib file via LDFLAGS_READLINE
-  # - Add --with-readline-inc=dir ==> pass -Idir via CFLAGS_READLINE
+
+  # If readline.h was found/specified, look for libreadline...
+  set rlLib ""
+  if {"" ne $rlInc} {
+    set libTerm ""
+    if {[hwaci-check-function-in-lib tgetent {readline ncurses curses termcap}]} {
+      # ^^^ check extracted from an ancient autotools configure script.
+      set libTerm [get-define lib_tgetent]
+      undefine lib_tgetent
+    }
+    if {"readline" eq $libTerm} {
+      set rlLib $libTerm
+    } elseif {[hwaci-check-function-in-lib readline readline $libTerm]} {
+      set rlLib [get-define lib_readline]
+      lappend rlLib $libTerm
+      undefine lib_readline
+    }
+  }
+
+  if {"" ne $rlLib} {
+    set rlLib [join $rlLib]
+    define LDFLAGS_READLINE $rlLib
+    define CFLAGS_READLINE $rlInc
+    define HAVE_READLINE 1
+    msg-result "Using readline with flags: $rlInc $rlLib"
+    return 1
+  }
+
   msg-result "libreadline not found."
   return 0
 }

@@ -17,12 +17,11 @@
 use cc cc-db cc-shared cc-lib hwaci-common pkg-config
 
 # Are we cross-compiling?
-set cross_compiling 0
-if {[get-define host] ne [get-define build]} {
-  set cross_compiling 1
-} elseif {1
-          && "nope" eq [get-env CC_FOR_BUILD "nope"]
-          && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+set cross_compiling [hwaci-is-cross-compiling]
+if {0
+    && !$cross_compiling
+    && "nope" eq [get-env CC_FOR_BUILD "nope"]
+    && [get-define CC] ne [get-define CC_FOR_BUILD]} {
   # Arguable/debatable...
   #
   # When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
@@ -170,7 +169,7 @@ set flags {
   with-readline-inc:CFLAGS
                        => {Readline CFLAGS, e.g. -I/path/to/includes}
   with-readline-header:PATH
-                       => {Full path to readline.h, from which --with-readline-inc will be derived.}
+                       => {Full path to readline.h, from which --with-readline-inc will be derived}
   with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
@@ -748,7 +747,7 @@ if {1} {
 }
 
 ########################################################################
-# hwaci-check-line-editing jumps through proverbial hoops to try to
+# sqlite-check-line-editing jumps through proverbial hoops to try to
 # find a working line-editing library, setting:
 #
 #   - HAVE_READLINE to 0 or 1
@@ -764,7 +763,7 @@ if {1} {
 #
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
-proc hwaci-check-line-editing {} {
+proc sqlite-check-line-editing {} {
   define HAVE_READLINE 0
   define HAVE_LINENOISE 0
   define HAVE_EDITLINE 0
@@ -776,11 +775,9 @@ proc hwaci-check-line-editing {} {
     set dirLn $check
     if {![file isdir $dirLn]} {
       hwaci-fatal "--with-linenoise value is not a directory"
-    }
-    if {![file exists $dirLn/linenoise.c] } {
+    } elseif {![file exists $dirLn/linenoise.c] } {
       hwaci-fatal "Cannot find linenoise.c in $dirLn"
-    }
-    if {![file exists $dirLn/linenoise.h] } {
+    } elseif {![file exists $dirLn/linenoise.h] } {
       hwaci-fatal "Cannot find linenoise.h in $dirLn"
     }
     user-notice "Using linenoise from $dirLn"
@@ -789,23 +786,21 @@ proc hwaci-check-line-editing {} {
     add-shell-opt -DHAVE_LINENOISE=1
     return "linenoise"
   } elseif {[opt-bool editline]} {
-    # Use editline...
+    # TODO: reimplement --enable-editline
     user-notice "WARNING: the --enable-editline flag is not yet supported"
     return "none"
   } elseif {![opt-bool readline]} {
-    user-notice "Readline support explicitly disabled with --disable-readline."
+    user-notice "Readline support explicitly disabled with --disable-readline"
     return "none"
   }
-  set check [opt-val with-readline-lib][opt-val with-readline-inc]
-  if {"" ne $check} {
-    # If any one of --with-readline-(lib|inc|header) are provided,
-    # those trump any automated searching.
-    set fL [join [opt-val with-readline-lib]]
-    set v [opt-val with-readline-header]
-    if {"" eq $v} {
-      set fC [join [opt-val with-readline-inc]]
+
+  # Transform with-readline-header=X to with-readline-inc=-I...
+  set v [opt-val with-readline-header]
+  hwaci-opt-set with-readline-header ""
+  if {"" ne $v} {
+    if {"auto" eq $v} {
+      hwaci-opt-set with-readline-inc auto
     } else {
-      # Derive CFLAGS from header file name
       set v [file dirname $v]
       if {[string match */*line $v]} {
         # Special case: if the path includes .../*line/readline.h", set
@@ -815,26 +810,66 @@ proc hwaci-check-line-editing {} {
         # work!
         set v [file dirname $v]
       }
-      set fC "-I$v"
+      hwaci-opt-set with-readline-inc "-I$v"
     }
-    define LDFLAGS_READLINE $fL
-    define CFLAGS_READLINE $fC
+  }
+
+  # Look for readline.h
+  set rlInc [opt-val with-readline-inc auto]
+  if {"auto" eq $rlInc} {
+    set rlInc ""
+    if {!$::cross_compiling} {
+      # ^^^ this check is derived from the legacy configure script
+      set rlInc [hwaci-search-for-header-dir readline.h \
+                 -dirs {/usr /usr/local /usr/local/readline /usr/contrib /mingw} \
+                 -subdirs {include/readline include}]
+      # ^^^ The -dirs and -subdirs lists are from the legacy configure script
+      if {"" ne $rlInc} {
+        if {[string match */*line $rlInc]} {
+          # See notes above for --with-readline-header
+          set rlInc [file dirname $rlInc]
+        }
+        set rlInc "-I${rlInc}"
+      }
+    }
+  }
+
+  # If readline.h was found/specified, look for libreadline...
+  set rlLib ""
+  if {"" ne $rlInc} {
+    set rlLib [opt-val with-readline-lib]
+    if {"" eq $rlLib || "auto" eq $rlLib} {
+      set rlLib ""
+      set libTerm ""
+      if {[hwaci-check-function-in-lib tgetent {readline ncurses curses termcap}]} {
+        # ^^^ that libs list comes from the legacy configure script ^^^
+        set libTerm [get-define lib_tgetent]
+        undefine lib_tgetent
+      }
+      if {"readline" eq $libTerm} {
+        set rlLib $libTerm
+      } elseif {[hwaci-check-function-in-lib readline readline $libTerm]} {
+        set rlLib [get-define lib_readline]
+        lappend rlLib $libTerm
+        undefine lib_readline
+      }
+    }
+  }
+
+  if {"" ne $rlLib} {
+    set rlLib [join $rlLib]
+    set rlInc [join $rlInc]
+    define LDFLAGS_READLINE $rlLib
+    define CFLAGS_READLINE $rlInc
     define HAVE_READLINE 1
     add-shell-opt -DHAVE_READLINE=1
-    user-notice "Using client-provided readline flags: $fC $fL"
+    user-notice "Using readline flags: $rlInc $rlLib"
     return "readline"
   }
 
-  # Try the project-agnostic readline detector:
-  set v [hwaci-check-readline]
-  add-shell-opt -DHAVE_READLINE=$v
-  if {$v} { return "readline" }
-  # TODO: reimplement:
-  #  --enable-editline
   return "none"
-}; # hwaci-check-line-editing
-msg-checking "Line-editing support for the sqlite3 shell: "
-msg-result [hwaci-check-line-editing]
+}; # sqlite-check-line-editing
+msg-result "Line-editing support for the sqlite3 shell: [sqlite-check-line-editing]"
 
 hwaci-if-opt-truthy load-extension {
   if {[hwaci-check-function-in-lib dlopen dl]} {
