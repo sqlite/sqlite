@@ -1,5 +1,5 @@
-C configure:\sadd\s--with-icu-lib=LDFLAGS\sand\s--enable-icu-collations.\sFix\sauto-reconfigure\swhen\sflags\scontain\sspaces.
-D 2024-10-27T07:06:03.774
+C Ensure\sthat\s--disable-tcl\sis\shonored.\sMove\sLDFLAGS.icu\sfrom\sthe\sCLI\sshell\starget\sto\sLDFLAGS.libsqlite3.
+D 2024-10-27T08:10:56.809
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 376f5bd1f1d88602ce9d964e69ce4df6ec9bfeafcb7988c0cabe8fc06036b450
+F auto.def 18ca9a2671add80c3b2b4c9731cf07b117aa548fc3256f1a456675358f2a0212
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 39877d7141386ccdbd6fb27968f133cdc6937c38dd8145359faff922d3a1f2e9
+F main.mk 3848740b1005402b9edc0a75b00dc11f97d1ef5ed545e2eaf4a2e7e38544e596
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8e352f4199e048030113e0cc359eaadb6d29bc4b3dd7a0442d7500f7c3847e50
-R f3abdd771eb17cd501d5fa951125d236
+P 2a881a2e1b7355c7733c3a41a82290ba6f3983232a9ec378d9a1b62ee4109f54
+R 2a289c2467c69f1c5ce59b8bade64652
 U stephan
-Z f4577442737993b89d90f014d56548e1
+Z c7b47ea7fee87be569801383233f37ef
 # Remove this line to create a well-formed Fossil manifest.

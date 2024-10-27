@@ -500,8 +500,14 @@ hwaci-if-opt-truthy with-debug {
 define TCLSH_CMD {exit 1}
 proc sqlite-check-tcl {} {
   # TODO: document the steps this is taking.
+  if {![opt-bool tcl]} {
+    msg-result "TCL disabled via --disable-tcl"
+    define HAVE_TCL 0
+    return
+  }
+
   global top_srcdir
-  puts "Checking for a suitable tcl... "
+  msg-result "Checking for a suitable tcl... "
   set optTcl [hwaci-opt-truthy tcl]
   set use_tcl $optTcl
   set with_tclsh [opt-val with-tclsh]

@@ -141,11 +141,11 @@ LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shobj ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 # libreadline (or a workalike):
-# To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE
+# To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
 CFLAGS.readline ?= -I$(prefix)/include/readline
 # ^^^ When using linenoise instead of readline, do something like:
-# SHELL_OPT += -DHAVE_LINENOISE
+# SHELL_OPT += -DHAVE_LINENOISE=1
 # CFLAGS.readline = -I$(HOME)/linenoise $(HOME)/linenoise/linenoise.c
 # LDFLAGS.readline = # empty
 
@@ -331,7 +331,7 @@ T.link.shared = $(T.link) $(LDFLAGS.shobj)
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
-  $(LDFLAGS.zlib)
+  $(LDFLAGS.zlib) $(LDFLAGS.icu)
 
 #
 # $(install-dir.XYZ) = dirs for installation.
@@ -1791,7 +1791,7 @@ sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
 		$(CFLAGS.readline) $(SHELL_OPT) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline) $(LDFLAGS.icu)
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
 #
 # Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
