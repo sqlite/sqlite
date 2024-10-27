@@ -5759,7 +5759,8 @@ void close_db(sqlite3 *db){
   }
 }
 
-#if HAVE_READLINE || HAVE_EDITLINE
+#if (HAVE_READLINE || HAVE_EDITLINE) \
+  && !defined(SQLITE_OMIT_READLINE_COMPLETION)
 /*
 ** Readline completion callbacks
 */
@@ -13259,7 +13260,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
       if( zHistory ){ shell_read_history(zHistory); }
-#if HAVE_READLINE || HAVE_EDITLINE
+#if (HAVE_READLINE || HAVE_EDITLINE) && !defined(SQLITE_OMIT_READLINE_COMPLETION)
       rl_attempted_completion_function = readline_completion;
 #elif HAVE_LINENOISE
       linenoiseSetCompletionCallback(linenoise_completion, NULL);

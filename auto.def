@@ -907,6 +907,26 @@ proc sqlite-check-line-editing {} {
     define HAVE_READLINE 1
     add-shell-opt -DHAVE_READLINE=1
     user-notice "Using readline flags: $rlInc $rlLib"
+
+    # Now check whether rl_completion_matches() has a signature we can use.
+    # cctest is producing unexpected test output when using:
+    #   -includes {stdio.h readline/readline.h}
+    # so we have to use -source instead and write the whole test app inline
+    if {[cctest \
+           -cflags $rlInc -libs $rlLib -nooutput 1 -source {
+             #include <stdio.h>
+             #include <readline/readline.h>
+             static char * rcg(const char *z, int i){return 0;}
+             int main(void) {
+               char ** x = rl_completion_matches("one", rcg);
+               return 0;
+             }
+           }]} {
+      user-notice "Readline completion enabled"
+    } else {
+      user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
+      add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
+    }
     return "readline"
   }
 
