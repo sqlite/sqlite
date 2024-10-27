@@ -163,15 +163,21 @@ set flags {
   largefile=1          => {Disable large file support}
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library}
-  with-readline-lib:LDFLAGS
+  # --with-readline-lib is a legacy name, now a backwards-compatible
+  # alias for --with-readline-ldflags.
+  with-readline-lib:
+  with-readline-ldflags:LDFLAGS
                        => {Readline LDFLAGS, e.g. -lreadline -lncurses}
-  with-readline-inc:CFLAGS
+  # --with-readline-inc is a legacy name, now a backwards-compatible
+  # alias for --with-readline-ldflags.
+  with-readline-inc:
+  with-readline-cflags:CFLAGS
                        => {Readline CFLAGS, e.g. -I/path/to/includes}
   with-readline-header:PATH
-                       => {Full path to readline.h, from which --with-readline-inc will be derived}
+                       => {Full path to readline.h, from which --with-readline-cflags will be derived}
   with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
-  with-icu-lib:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-lib=...}
+  with-icu-ldflags:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
+  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately}
   load-extension=1     => {Disable loading of external extensions}
   math=1               => {Disable math functions}
@@ -200,6 +206,15 @@ if {"" ne $DUMP_DEFINES_JSON} {
 }
 options [subst $flags]
 unset flags
+
+# Apply values from hidden --flag aliases over to their canonical
+# forms.
+foreach {hidden flag canonical} {
+  with-readline-inc => with-readline-cflags
+  with-readline-lib => with-readline-ldflags
+} {
+  hwaci-xfer-opt-alias $hidden $canonical
+}
 
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
@@ -817,7 +832,7 @@ proc sqlite-check-line-editing {} {
     #
     # However, a workaround which works on the available systems is:
     #
-    # --with-readline-lib=-ledit
+    # --with-readline-ldflags=-ledit
     #
     # And then let it detect readline.h. We "could" re-map
     # --enable-editline to do exactly that but it seems likely to
@@ -827,7 +842,7 @@ proc sqlite-check-line-editing {} {
       WARNING: the --enable-editline flag is not supported due to
       non-availability of systems which have it in a form which the
       sqlite3 CLI shell expects to see. On some systems this can be
-      worked around by passing --with-readline-lib=-ledit instead of
+      worked around by passing --with-readline-ldflags=-ledit instead of
       --enable-editline, which will attempt to use the readline.h
       supplied by libreadline but link against -ledit.
     }
@@ -837,12 +852,12 @@ proc sqlite-check-line-editing {} {
     return "none"
   }
 
-  # Transform with-readline-header=X to with-readline-inc=-I...
+  # Transform with-readline-header=X to with-readline-cflags=-I...
   set v [opt-val with-readline-header]
   hwaci-opt-set with-readline-header ""
   if {"" ne $v} {
     if {"auto" eq $v} {
-      hwaci-opt-set with-readline-inc auto
+      hwaci-opt-set with-readline-cflags auto
     } else {
       set v [file dirname $v]
       if {[string match */*line $v]} {
@@ -853,12 +868,12 @@ proc sqlite-check-line-editing {} {
         # work!
         set v [file dirname $v]
       }
-      hwaci-opt-set with-readline-inc "-I$v"
+      hwaci-opt-set with-readline-cflags "-I$v"
     }
   }
 
   # Look for readline.h
-  set rlInc [opt-val with-readline-inc auto]
+  set rlInc [opt-val with-readline-cflags auto]
   if {"auto" eq $rlInc} {
     set rlInc ""
     if {!$::cross_compiling} {
@@ -880,7 +895,7 @@ proc sqlite-check-line-editing {} {
   # If readline.h was found/specified, look for libreadline...
   set rlLib ""
   if {"" ne $rlInc} {
-    set rlLib [opt-val with-readline-lib]
+    set rlLib [opt-val with-readline-ldflags]
     if {"" eq $rlLib || "auto" eq $rlLib} {
       set rlLib ""
       set libTerm ""
@@ -978,7 +993,7 @@ unset emccsh
 
 ########################################################################
 # ICU
-if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-lib ""]]]} {
+if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]]} {
   # Flags sets seen in the wild for ICU:
   # {-licui18n -licuuc -licudata} {-licui18n -licuuc}
   add-feature-flag -DSQLITE_ENABLE_ICU
@@ -989,7 +1004,7 @@ if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-lib ""]]]} {
     add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
   }
 } elseif {[opt-bool icu-collations]} {
-  hwaci-warn "ignoring --enable-icu-collations because --with-icu-lib was not specified"
+  hwaci-warn "ignoring --enable-icu-collations because --with-icu-ldflags was not specified"
 }
 
 ########################################################################

@@ -975,3 +975,24 @@ proc hwaci-dump-defs-json {file args} {
     msg-result "Created $file"
   }
 }
+
+########################################################################
+# Expects configure flags with the given names to have been registered
+# with autosetup. If [opt-val $hidden] has a value but [opt-val
+# $canonical] does not, it copies the former over the latter.  If both
+# have explicit values a fatal usage error is triggered.
+#
+# Autosetup accounts for hidden aliases in [options] lists but does no
+# further handling of them, e.g. fetching [opt-val foo] will not, even
+# if foo is an alias for bar, see a value passed in as --bar=baz.
+proc hwaci-xfer-opt-alias {hidden canonical} {
+  set x [opt-val $hidden "-9-9-9-"]
+  if {"-9-9-9-" ne $x} {
+    set y [opt-val $canonical "-0-0-0-"]
+    if {"-0-0-0-" eq $y} {
+      hwaci-opt-set $canonical $x
+    } else {
+      hwaci-fatal "both --$canonical and its hidden alias --$hidden were used. Use only one or the other."
+    }
+  }
+}
