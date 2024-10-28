@@ -1,9 +1,9 @@
-C Have\s--enable-editline\sfail\srather\sthan\semit\sa\swarning\swhich\swould\seasily\sbe\soverlooked\sby\sautomated\sbuilds.\sThe\serror\smessage\sexplains\sa\spotential\sworkaround\sfor\sactivating\slibedit.
-D 2024-10-28T02:11:51.336
+C Correct\sthe\sdefault\sconfig\svalue\sfor\sHAVE_TCL\s(0\suntil\sproven\sotherwise)\sand\sfix\sthe\sstarting\sdir\sfor\sSQLITE_AUTORECONFIG\s(formerly\sSQLITE_AUTOREMAKE),\sas\sreported\sin\s[forum:8ab69387008f2f6c\s|\sforum\spost\s8ab69387008f2f6c].
+D 2024-10-28T02:46:57.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in 957cbf0d25ced08f6703b82f2070cbea791aeeb2d6059c4426c30cd87c80250f
+F Makefile.in 783a6819b11669d374d867e68cffb018cc5fd78b1113dd10be1d04f14c62a3b3
 F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
 F Makefile.msc d2d927177660945599ba88ea32f1ab5c261a96a8797380b99766e27f3aea7e4f
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 33b45a5d8a51f0f8a211c8983c1c7306120a672f4c37dccf8b3e4c343c8d4569
+F auto.def 57635a8f8c2e5e91e4c21094a70bbb56473811366e75679ceec9b6626e49a826
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1353d4b600ae2849d2591b3fba0cad71289ee996334222a6886dc01cd4be5c07
-R c5d541f8ce498a3c24d538d7cf4698ef
+P 2bd1b9557a1619adcaf5aa6dc5d5d0972e8416dafc9f36621b409192be95223d
+R e1aee29c1c29ac7235c75bc587493265
 U stephan
-Z 8668cf4e3948e2d9e4ce3d2e5557772d
+Z 50271136afde4fe48404bfa37e74b2eb
 # Remove this line to create a well-formed Fossil manifest.

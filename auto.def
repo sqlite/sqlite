@@ -220,10 +220,15 @@ msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
 msg-result [hwaci-bold "Configuring SQLite version $PACKAGE_VERSION"]
 
-define-append SQLITE_AUTOREMAKE cd '$srcdir' && '$top_srcdir/configure'
+#
+# SQLITE_AUTORECONFIG contains make target rules for re-running the
+# configure script with the same arguments it was initially invoked
+# with. This can be used to automatically reconfigure
+#
+define-append SQLITE_AUTORECONFIG cd '$::autosetup(builddir)' && '$top_srcdir/configure'
 #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
 foreach arg $::autosetup(argv) {
-  define-append SQLITE_AUTOREMAKE '$arg'
+  define-append SQLITE_AUTORECONFIG '$arg'
 }
 
 
@@ -456,7 +461,7 @@ hwaci-if-opt-truthy with-debug {
 #    components.
 #
 define TCLSH_CMD {exit 1}
-define HAVE_TCL [opt-bool tcl]
+define HAVE_TCL 0
 proc sqlite-check-tcl {} {
   # TODO: document the steps this is taking.
   if {![opt-bool tcl]} {
@@ -1127,11 +1132,11 @@ if {0} {
   # Requires no input template...
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
-    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE
+    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
       TARGET_* USE_GCOV TCL_*} \
     -auto {HAVE_* PACKAGE_*} \
     -none *
-  hwaci-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTOREMAKE@
+  hwaci-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
 }
 #TODO hwaci-make-from-dot-in ext/wasm/GNUmakefile
 
@@ -1144,7 +1149,7 @@ if {"" ne $DUMP_DEFINES_JSON} {
   define OPT_SHELL.list [get-define OPT_SHELL]
   set dumpDefsOpt {
     -bare {SIZEOF_* HAVE_DECL_*}
-    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTOREMAKE TARGET_* USE_GCOV TCL_*}
+    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG TARGET_* USE_GCOV TCL_*}
     -array {*.list}
     -auto {OPT_* PACKAGE_* HAVE_*}
   }

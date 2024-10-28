@@ -120,6 +120,8 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # can include the generated sqlite_cfg.h.
 #
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+T.cc.sqlite += -I$(prefix)/include
+
 #
 # main.mk will fill out T.cc.sqlite with some flags common to all builds.
 
@@ -241,7 +243,7 @@ AS_AUTO_DEF = $(TOP)/auto.def
 # Shell commands to re-run $(TOP)/configure with the same args it was
 # invoked with to produce this makefile.
 #
-AS_AUTOREMAKE = @SQLITE_AUTOREMAKE@
+AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
 
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
@@ -252,16 +254,16 @@ AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 SHELL_OPT ?= @OPT_SHELL@
 
 Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
-	$(AS_AUTOREMAKE)
+	$(AS_AUTORECONFIG)
 	@touch $@
 
 sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
-	$(AS_AUTOREMAKE)
+	$(AS_AUTORECONFIG)
 	@touch $@
 install: install-pc # defined in main.mk
 
 sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
-	$(AS_AUTOREMAKE)
+	$(AS_AUTORECONFIG)
 	@touch $@
 
 #
@@ -311,7 +313,7 @@ clean-autosetup:
 clean: clean-autosetup
 
 distclean-autosetup:	clean
-	rm -f sqlite_cfg.h config.log config.status config.defines.json Makefile sqlite3.pc
+	rm -f sqlite_cfg.h config.log config.status config.defines.* Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
