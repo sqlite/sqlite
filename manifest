@@ -1,9 +1,9 @@
-C Remove\sthe\sltmain.sh\sautotools\sremnant.
-D 2024-10-28T17:30:11.295
+C Calculate\sTCLLIBDIR\sin\sthe\smakefile\stargets\swhich\suse\sit,\srather\sthan\svia\sthe\sconfigure\sscript.\sThis\senables\sits\suse\sin\sstatic\smakefiles.
+D 2024-10-28T18:30:46.768
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in e4a6a12767fd297b5359ca4190141ec6f925e64dd8d5a1067a220e41b7dbf7a8
+F Makefile.in cdf1c8db0b33fa83f400bcd63742113a727517adc55b322d2e004339c012cac2
 F Makefile.linux-generic 69b54c58ab2424a0d30f340d9defd7e87c25690a55b77acb9bdc657bd9a223f1
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 537d9e3cd85ed5a454ee6055585a4eadedde921fbb686fcb40c8446933be2b5a
+F auto.def cf550c649ffa1d6ed383e627b3f5cdbd98e04708cf3b27632483caccd6b55cab
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -698,7 +698,7 @@ F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 79392fb2e964f1359518d71df364182d7e53cc26a8fc4b25362ded9aeb4a17f7
+F main.mk aba8a5877a848898c309862d6d19d80a0ccad4459641017dc377ca23c640aaad
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a3f7bf4307c27e56546e51da06ecc9a262cdf155fda2dd359aa2326d207a147
-R cd9b1bec596be837269b2e695c7b5245
+P dad5eb9393e87403b932ddfb9da6db0ce1d6ed75c4771f22e87fbce1b0c206c2
+R 20ebbf6e3d71220bc2b3e267520cf726
 U stephan
-Z 92ad112c447ec4600daf66fcdd05b35c
+Z 3602e361ae1b37fbb57c835a7dbf6ec8
 # Remove this line to create a well-formed Fossil manifest.

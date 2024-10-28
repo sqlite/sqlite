@@ -214,13 +214,8 @@ SHELL_OPT ?=
 #
 # TCL_CONFIG_SH must, for some of the build targets, refer to a valid
 # tclConfig.sh. That script will be used to populate most of the other
-# TCL-related vars the build needs, the one exception being:
+# TCL-related vars the build needs.
 #
-# TCLLIBDIR is required for installing (but not building) the TCL
-# deliverables. It must currently be set by the makefile which
-# imports this one or as an argument to it from the user.
-#
-TCLLIBDIR ?=
 TCL_CONFIG_SH ?=
 #
 # $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
@@ -929,6 +924,24 @@ has_tclsh85:
 # which use this should also have a dependency on has_tclconfig.
 #
 SOURCE_TCLCONFIG = . $(TCL_CONFIG_SH) || exit $$?
+#
+# T.tcllibdir = shell code to extract the TCLLIBDIR to the tcllibdir
+# shell var and exit with !0 if it cannot be determined. It must be
+# part of a chained series of commands so that the var survives for
+# the following rules in the same recipe.
+#
+# Algo: tcllibdir = the first entry from TCL's $auto_path which refers
+# to an existing dir, then append /sqlite3 to it.
+#
+T.tcllibdir = \
+    for tcllibdir in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
+      [ -d "$$tcllibdir" ] && break; done; \
+      if [ x = "x$$tcllibdir" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
+	tcllibdir="$$tcllibdir/sqlite3"; echo "TCLLIBDIR=$$tcllibdir"
+#
+# $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for $(T.compile)
+# and $(T.link) which first invoke $(SOURCE_TCLCONFIG).
+#
 T.compile.tcl = $(SOURCE_TCLCONFIG); $(T.compile)
 T.link.tcl = $(SOURCE_TCLCONFIG); $(T.link)
 
@@ -1400,11 +1413,11 @@ pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(T.dll)
 $(libtclsqlite3.SO): has_tclconfig tclsqlite.o $(libsqlite3.SO)
-	libdir=`echo "puts stdout [lindex \\$$auto_path 0]" | $(TCLSH_CMD)` || exit $$?; \
-	$(SOURCE_TCLCONFIG); \
+	@$(T.tcllibdir); \
+	$(SOURCE_TCLCONFIG); set -x; \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
-		$(libsqlite3.SO) -Wl,-rpath,$$libdir/sqlite3
+		$(libsqlite3.SO) -Wl,-rpath,$$tcllibdir
 # ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
 # tclConfig.sh, but it's defined in such a way as to be useless for a
 # _static_ makefile.
@@ -1413,12 +1426,11 @@ $(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
 libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
 all: libtcl
 
-install.tcldir = $(DESTDIR)$(TCLLIBDIR)
 install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
-	@if [ "x$(DESTDIR)" = "x$(install.tcldir)" ]; then echo "TCLLIBDIR is not set." 1>&2; exit 1; fi
-	$(INSTALL) -d $(install.tcldir)
-	$(INSTALL) $(libtclsqlite3.SO) $(install.tcldir)
-	$(INSTALL.noexec) pkgIndex.tcl $(install.tcldir)
+	@$(T.tcllibdir); set -x; dest="$(DESTDIR)$$tcllibdir"; \
+	$(INSTALL) -d $$dest; \
+	$(INSTALL) $(libtclsqlite3.SO) $$dest; \
+	$(INSTALL.noexec) pkgIndex.tcl $$dest
 install-tcl-0 install-tcl-:
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl

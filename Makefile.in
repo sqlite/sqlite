@@ -214,7 +214,7 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #
 # Where do we want to install the tcl plugin
 #
-TCLLIBDIR = @TCLLIBDIR@
+#TCLLIBDIR = @TCLLIBDIR@
 
 #
 # Additional options when running tests using testrunner.tcl
