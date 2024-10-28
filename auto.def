@@ -173,8 +173,10 @@ set flags {
   editline=0           => {BSD editline support}
   # </line-editing>
   # <icu>
-  with-icu-ldflags:LDFLAGS => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  icu-collations=0     => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
+  with-icu-ldflags:LDFLAGS
+                        => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
+  icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
+  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch linker flags from the given icu-config binary}
   # </icu>
   # <alternative-builds>
   with-wasi-sdk:=/opt/wasi-sdk
@@ -878,6 +880,26 @@ proc sqlite-check-line-editing {} {
       show-notices
       sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
+
+    # Now check whether rl_completion_matches() has a signature we can use.
+    # cctest is producing unexpected test output when using:
+    #   -includes {stdio.h readline/readline.h}
+    # so we have to use -source instead and write the whole test app inline
+    if {[cctest \
+           -cflags $rlInc -libs $rlLib -nooutput 1 -source {
+             #include <stdio.h>
+             #include <readline/readline.h>
+             static char * rcg(const char *z, int i){return 0;}
+             int main(void) {
+               char ** x = rl_completion_matches("one", rcg);
+               return 0;
+             }
+           }]} {
+      user-notice "Readline completion enabled"
+    } else {
+      user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
+      add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
+    }
     return "readline"
   }
 
@@ -929,21 +951,63 @@ unset emccsh
 
 ########################################################################
 # ICU - International Components for Unicode
-if {"" ne [define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]]} {
+#
+# Handles these flags:
+#
+#  --with-icu-ldflags=LDFLAGS
+#  --with-icu-config[=/path/to/icu-config]
+#  --enable-icu-collations
+#
+# If both icu-ldflags and icu-config are provided, they are
+# cumulative. If neither are provided, icu-collations is not honored
+# and a warning is emitted if it is provided.
+#
+# Design note: though we can automatically enable ICU if the
+# icu-config binary is found, we specifically do not. ICU is always an
+# opt-in feature.
+proc sqlite-check-icu {} {
+  define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   # Flags sets seen in the wild for ICU:
   # - -licui18n -licuuc -licudata
   # - -licui18n -licuuc
   # - /usr/local/bin/icu-config --ldflags
-  sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
-  msg-result "Enabling ICU support with libs: [get-define LDFLAGS_ICU]"
-  if {[opt-bool icu-collations]} {
-    msg-result "Enabling ICU collations."
-    sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
-    # Recall that shell.c builds with sqlite3.c
+  if {[hwaci-opt-was-provided with-icu-config]} {
+    set bin [opt-val with-icu-config]
+    if {"auto" eq $bin} {
+      set bin [hwaci-first-bin-of \
+                 [get-define prefix]/bin/icu-config \
+                 /usr/local/bin/icu-config \
+                 /usr/bin/icu-config]
+      if {"" eq $bin} {
+        hwaci-fatal "--with-icu-config=auto cannot find icu-config binary"
+      }
+    }
+    if {[file-isexec $bin]} {
+      set x [exec $bin --ldflags]
+      if {"" eq $x} {
+        hwaci-fatal "$bin --ldflags returned no data"
+      }
+      define-append LDFLAGS_ICU $x
+    } else {
+      hwaci-fatal "--with-icu-config=$bin does not refer to an executable"
+    }
   }
-} elseif {[opt-bool icu-collations]} {
-  hwaci-warn "ignoring --enable-icu-collations because --with-icu-ldflags was not specified"
-}
+  set flags [define LDFLAGS_ICU [string trim [get-define LDFLAGS_ICU]]]
+  if {"" ne $flags} {
+    sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
+    msg-result "Enabling ICU support with libs: $flags"
+    if {[opt-bool icu-collations]} {
+      msg-result "Enabling ICU collations."
+      sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
+      # Recall that shell.c builds with sqlite3.c
+    }
+  } elseif {[opt-bool icu-collations]} {
+    hwaci-warn "ignoring --enable-icu-collations because neither --with-icu-ldflags nor --with-icu-config provided any linker flags"
+  } else {
+    msg-result "ICU support is disabled."
+  }
+}; # sqlite-check-icu
+sqlite-check-icu
 
 ########################################################################
 # Check for log(3) in libm and die with an error if it is not

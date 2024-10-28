@@ -187,7 +187,7 @@ proc hwaci-find-executable-path {args} {
   set verbose 0
   if {[lindex $args 0] eq "-v"} {
     set verbose 1
-    set binName [lrange $args 1 end]
+    set args [lassign $args - binName]
     msg-checking "Looking for $binName ... "
   }
   set check [find-executable-path $binName]
@@ -253,6 +253,15 @@ proc hwaci-require-bash {} {
     user-error "Cannot find required bash shell"
   }
   return $bash
+}
+
+########################################################################
+# Returns 1 if the user specifically provided the given configure
+# flag, else 0. This can be used to distinguish between options which
+# have a default value and those which were specifically provided by
+# the user.
+proc hwaci-opt-was-provided {key} {
+  return [dict exists $::autosetup(optset) $key]
 }
 
 ########################################################################
