@@ -168,3 +168,4 @@ foreach file $filelist {
     puts "/******** End of [file tail $file] *********/"
   }
 }
+puts "#endif /* SQLITE3_H */"
