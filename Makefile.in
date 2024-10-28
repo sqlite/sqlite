@@ -202,12 +202,15 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #
 # TCL config info from tclConfig.sh
 #
-TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
-TCL_LIB_SPEC = @TCL_LIB_SPEC@
-TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
-TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
-TCL_VERSION = @TCL_VERSION@
-TCLLIB_RPATH = @TCLLIB_RPATH@
+# We have to inject this differently in main.mk to accommodate static
+# makefiles:
+#
+#TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
+#TCL_LIB_SPEC = @TCL_LIB_SPEC@
+#TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
+#TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
+#TCL_VERSION = @TCL_VERSION@
+#TCLLIB_RPATH = @TCLLIB_RPATH@
 #
 # Where do we want to install the tcl plugin
 #

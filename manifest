@@ -1,9 +1,9 @@
-C The\sasync\sextension\swas\ssuperseded\sby\sWAL\smode\sabout\s11\syears\sago,\sand\shas\nlong\sbeen\sdeprecated.\s\sRemove\sit\sfrom\sthe\ssource\stree.\s\s(Anybody\swho\sreally\nneeds\sit\scan\sstill\sdig\sit\sout\sof\sthe\shistorical\srecords.)
-D 2024-10-28T16:31:20.697
+C Perform\ssome\smakefile\sacrobatics\sto\sget\sthe\stclConfig.sh\sstate\sapplied\sfor\sstatic\smakefiles.
+D 2024-10-28T17:20:18.788
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
-F Makefile.in 02ea00ff433902dba369d4a55b3aeb6bb1ffe2d82f777194984b8cdd7ed7c3ad
+F Makefile.in e4a6a12767fd297b5359ca4190141ec6f925e64dd8d5a1067a220e41b7dbf7a8
 F Makefile.linux-generic 69b54c58ab2424a0d30f340d9defd7e87c25690a55b77acb9bdc657bd9a223f1
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl b01940e6b2e9c24f2c50f0e180d308a0a4f88d2e2b00c6902edd5980d221becf
+F autosetup/proj.tcl 8167786ff3c20d6a14e9b0b747996e91cabfe85ac49dcc5d0a0aa35d4167dd91
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -702,7 +702,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c5e17513c0f68b514d0f1b5afabcc0aabfedf8ebba0e6314435df1edcb7e8fd4
+F main.mk e9ff755b0d6f2ab6a95fab7bb11f742485de6ad1606822932d24bbfa14a9884a
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2196,6 +2196,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
+F tool/tclConfigShToMake.sh 7c065d81c2d178e15e45a77372c6e5a38b5a1b08755301cd6f20a3a862db7312 x
 F tool/tclConfigShToTcl.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
@@ -2204,9 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b7eb6530505bf774cf3fa5de6ec4bc40f217796d4fa9a149372bd47488ed470f 10b1b86821bfc21377e7ccceb31146ab01aa6eaf418b85a204abcab5b793958e
-R c0dab2d05721f7a4961535e333dd9173
-T +closed 10b1b86821bfc21377e7ccceb31146ab01aa6eaf418b85a204abcab5b793958e
-U drh
-Z 5e2ff8c2159e64c6bedc8f4dcf3a85b5
+P f98da150a9c18dfaf9d5178ceee227caf7fce9c9c9194a7a4291abb40de832fa
+R e203eb86dfdd2daea7dd35f993a3ed58
+U stephan
+Z ba3f561a89835f0184bfa691acd0be76
 # Remove this line to create a well-formed Fossil manifest.

@@ -804,6 +804,8 @@ proc proj-check-rpath {} {
   cc-with {} {
     if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
+    } elseif {[cc-check-flags "-Wl,-rpath,$lp"]} {
+      define LDFLAGS_RPATH "-Wl,-rpath,$lp"
     } elseif {[cc-check-flags "-Wl,-rpath -Wl,$lp"]} {
       define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
     } elseif {[cc-check-flags -Wl,-R$lp]} {
