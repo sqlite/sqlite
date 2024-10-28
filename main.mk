@@ -307,7 +307,7 @@ T.cc.sqlite ?= $(T.cc)
 #
 CFLAGS.intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
-    -I$(TOP)/ext/fts3 -I$(TOP)/ext/async -I$(TOP)/ext/session \
+    -I$(TOP)/ext/fts3 -I$(TOP)/ext/session \
     -I$(TOP)/ext/misc -I$(TOP)/ext/userauth
 T.cc.sqlite += $(CFLAGS.intree_includes)
 
@@ -627,7 +627,6 @@ TESTSRC = \
   $(TOP)/src/test8.c \
   $(TOP)/src/test9.c \
   $(TOP)/src/test_autoext.c \
-  $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
   $(TOP)/src/test_bestindex.c \
   $(TOP)/src/test_blob.c \
@@ -764,7 +763,6 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/misc/stmt.c \
   fts5.c
