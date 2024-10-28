@@ -75,10 +75,21 @@ proc hwaci-bold {str} {
 # using [user-notice] (which means its rendering will (A) go to stderr
 # and (B) be delayed until the next time autosetup goes to output a
 # message).
-proc hwaci-indented-notice {msg} {
-  set lines [split $msg \n]
+#
+# If its first argument is -error then it renders the message
+# immediately and then exits.
+proc hwaci-indented-notice {args} {
+  set fErr ""
+  switch -exact -- [lindex $args 0] {
+    -error     { set args [lassign $args fErr] }
+  }
+  set lines [split [join $args] \n]
   foreach line $lines {
     user-notice "      [string trimleft $line]"
+  }
+  if {"" ne $fErr} {
+    show-notices
+    exit 1
   }
 }
 

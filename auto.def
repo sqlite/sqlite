@@ -776,13 +776,14 @@ proc sqlite-check-line-editing {} {
     # --enable-editline to do exactly that but it seems likely to
     # break on systems for which which HAVE_EDITLINE=1 previously
     # worked.
-    hwaci-indented-notice {
-      WARNING: the --enable-editline flag is not supported due to
+    hwaci-indented-notice -error {
+      ERROR: the --enable-editline flag is not supported due to
       non-availability of systems which have it in a form which the
       sqlite3 CLI shell expects to see. On some systems this can be
-      worked around by passing --with-readline-ldflags=-ledit instead of
-      --enable-editline, which will attempt to use the readline.h
-      supplied by libreadline but link against -ledit.
+      worked around by passing --with-readline-ldflags=-ledit instead
+      of --enable-editline, which will attempt to use the readline.h
+      supplied by libreadline but link against -ledit. On systems
+      tested so far, that works.
     }
     return "none"
   } elseif {![opt-bool readline]} {
