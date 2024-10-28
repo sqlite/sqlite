@@ -372,6 +372,14 @@ static void applyPointAffinity(Mem *pRec) {
   Point pValue;
   u8 enc = pRec->enc;
   int rc;
+
+  if (!(pRec->flags & MEM_Str)) return;
+
+  rc = sqlite3AtoPoint(pRec->z, &pValue, pRec->n, enc);
+  if (rc >= 0) return;
+
+  pRec->flags |= MEM_Point;
+  pRec->flags &= ~MEM_Str;
 }
 
 /*
