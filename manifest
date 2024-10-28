@@ -1,5 +1,5 @@
-C Minor\smakefile\sformatting\scleanups.\sNo\sfunctional\schanges.
-D 2024-10-28T18:41:42.261
+C Remove\sunnecessary\sinstall-sh\sand\sspec.template\sfiles.
+D 2024-10-28T19:19:58.197
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -696,7 +696,6 @@ F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk 380707675b0912eecfc3961af468be8d9f4410c889e55bc12711f43f1fa88141
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
@@ -705,7 +704,6 @@ F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
 F mptest/mptest.c aa41ace6dbc5050d76b02548d3521e6bbccae4f0
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
-F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
@@ -2200,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6b1494cecb48535b909f8a48ccb56e147221601380a1457ff85ab861fa576ea1
-R bcd550df0bf0a415ddd053fc701fba21
-U stephan
-Z d7a68d90ac7d9032db43fb1f51be9bce
+P 10b2cfdccd06553752baf684ccd7f4f85a697e3f0f6dfc5e5dda6b231fa4352d
+R 7b6b0ba3ac02267225ed992d43293488
+U drh
+Z f4dc6a11590d68ff496d681b045d1315
 # Remove this line to create a well-formed Fossil manifest.
