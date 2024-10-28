@@ -2074,6 +2074,29 @@ sqlite3.dll: $(LIBOBJ) sqlite3.def
 	$(T.cc.sqlite) $(LDFLAGS.shobj) -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ)
 
+#
+# Emit a list of commonly-used targets
+help:
+	@echo; echo "Frequently-used high-level make targets:"; echo; \
+	echo " - all [default] = builds most components"; \
+	echo " - clean         = cleans up most build products"; \
+	echo " - distclean     = cleans up all build products"; \
+	echo " - install       = installs activated components"; \
+	echo; echo "Testing-related targets:"; echo; \
+	echo " - test          = a number of sanity checks"; \
+	echo " - quicktest     = minimal tests"; \
+	echo " - releasetest   = pre-release tests"; \
+	echo " - devtest       = Minimum tests required before code check-ins"; \
+	echo " - mdevtest      = A variant of devtest"; \
+	echo " - sdevtest      = A variant of devtest"; \
+	echo " - tcltest       = Runs test/veryquick.test"; \
+	echo " - testrunner    = Like tcltest but spread across multiple cores"; \
+	echo " - fuzztest      = The core fuzz tester (see target docs for important info)"; \
+	echo " - valgrindfuzz  = Runs fuzztest under valgrind"; \
+	echo " - soaktest      = Really, really long tests"; \
+	echo " - alltest       = Runs most or all TCL tests"; \
+	echo
+
 
 # Remove build products sufficient so that subsequent makes will recompile
 # everything from scratch.  Do not remove:

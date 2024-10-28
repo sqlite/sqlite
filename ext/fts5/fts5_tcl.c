@@ -21,6 +21,7 @@
 #include "fts5.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
@@ -1631,7 +1632,7 @@ static int SQLITE_TCLAPI f5tDropCorruptTable(
 */
 void f5tFree(void *p){
   char *x = (char *)p;
-  free(&x[-8]);
+  ckfree(&x[-8]);
 }
 
 /*
@@ -1643,14 +1644,14 @@ void f5tStrFunc(sqlite3_context *pCtx, int nArg, sqlite3_value **apArg){
 
   zText = sqlite3_value_text(apArg[0]);
   if( zText ){
-    int nText = sqlite3Strlen30(zText);
-    char *zCopy = (char*)malloc(nText+8);
+    sqlite3_int64 nText = strlen(zText);
+    char *zCopy = (char*)ckalloc(nText+8);
     if( zCopy==0 ){
       sqlite3_result_error_nomem(pCtx);
     }else{
       zCopy += 8;
       memcpy(zCopy, zText, nText);
-      sqlite3_result_text(pCtx, zCopy, nText, f5tFree);
+      sqlite3_result_text64(pCtx, zCopy, nText, f5tFree, SQLITE_UTF8);
     }
   }
 }

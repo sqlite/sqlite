@@ -12,25 +12,28 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
-# Routines with a suffix of _ are intended for internal use,
-# within this file, and are not part of the API which auto.def files
-# should rely on.
-#
 # This file was initially derived from one used in the libfossil
-# project, authored by the same person who ported it here, noted here
-# only as an indication that there are no licensing issue despite this
-# code having at least two near-twins running around in other trees.
+# project, authored by the same person who ported it here, and this is
+# noted here only as an indication that there are no licensing issues
+# despite this code having at least two near-twins running around a
+# handful of third-party source trees.
 #
 ########################################################################
 #
-# Design notes: by and large, autosetup prefers to update global state
-# with the results of feature checks, e.g. whether the compiler
-# supports flag --X.  In this developer's opinion that (A) causes more
-# confusion than it solves[^1] and (B) adds an unnecessary layer of
-# "voodoo" between the autosetup user and its internals. This module,
-# in contrast, instead injects the results of its own tests into
-# well-defined variables and leaves the integration of those values to
-# the caller's discretion.
+# Design notes:
+#
+# - Symbols with a suffix of _ are intended for internal use within
+#   this file, and are not part of the API which auto.def files should
+#   rely on.
+#
+# - By and large, autosetup prefers to update global state with the
+#   results of feature checks, e.g. whether the compiler supports flag
+#   --X.  In this developer's opinion that (A) causes more confusion
+#   than it solves[^1] and (B) adds an unnecessary layer of "voodoo"
+#   between the autosetup user and its internals. This module, in
+#   contrast, instead injects the results of its own tests into
+#   well-defined variables and leaves the integration of those values
+#   to the caller's discretion.
 #
 # [1]: As an example: testing for the -rpath flag, using
 # cc-check-flags, can break later checks which use
@@ -45,25 +48,48 @@
 # $hwaci_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set hwaci_ {}
+set hwaci_(isatty) [isatty? stdout]
 
 proc hwaci-warn {msg} {
   puts stderr "WARNING: $msg"
 }
-#proc hwaci-notice {msg} {
-#  puts stderr "NOTICE: $msg"
-#}
 proc hwaci-fatal {msg} {
-  user-error "ERROR: $msg"
+  show-notices
+  puts stderr "ERROR: $msg"
+  exit 1
+}
+
+########################################################################
+# If this function believes that the current console might support
+# ANSI escape sequences then this returns $str wrapped in a sequence
+# to bold that text, else it returns $str as-is.
+proc hwaci-bold {str} {
+  if {$::autosetup(iswin) || !$::hwaci_(isatty)} {
+    return $str
+  }
+  return "\033\[1m${str}\033\[0m"
 }
 
 ########################################################################
 # Takes a multi-line message and emits it with consistent indentation
-# using user-notice (which means its rendering will be delayed until
-# the next time autosetup goes to output a message).
-proc hwaci-indented-notice {msg} {
-  set lines [split $msg \n]
+# using [user-notice] (which means its rendering will (A) go to stderr
+# and (B) be delayed until the next time autosetup goes to output a
+# message).
+#
+# If its first argument is -error then it renders the message
+# immediately and then exits.
+proc hwaci-indented-notice {args} {
+  set fErr ""
+  switch -exact -- [lindex $args 0] {
+    -error     { set args [lassign $args fErr] }
+  }
+  set lines [split [join $args] \n]
   foreach line $lines {
-    user-notice "      [string trim $line]"
+    user-notice "      [string trimleft $line]"
+  }
+  if {"" ne $fErr} {
+    show-notices
+    exit 1
   }
 }
 
@@ -91,6 +117,21 @@ proc hwaci-lshift_ {listVar {count 1}} {
   set r [lrange $l 0 [incr count -1]]
   set l [lreplace $l [set l 0] $count]
   return $r
+}
+
+########################################################################
+# Expects to receive string input, which it splits on newlines, strips
+# out any lines which begin with an number of whitespace followed by a
+# '#', and returns a value containing the [append]ed results of each
+# remaining line with a \n between each.
+proc hwaci-strip-hash-comments_ {val} {
+  set x {}
+  foreach line [split $val \n] {
+    if {![string match "#*" [string trimleft $line]]} {
+      append x $line \n
+    }
+  }
+  return $x
 }
 
 ########################################################################
@@ -157,7 +198,7 @@ proc hwaci-find-executable-path {args} {
   set verbose 0
   if {[lindex $args 0] eq "-v"} {
     set verbose 1
-    set binName [lrange $args 1 end]
+    set args [lassign $args - binName]
     msg-checking "Looking for $binName ... "
   }
   set check [find-executable-path $binName]
@@ -226,8 +267,29 @@ proc hwaci-require-bash {} {
 }
 
 ########################################################################
+# Returns 1 if the user specifically provided the given configure
+# flag, else 0. This can be used to distinguish between options which
+# have a default value and those which were explicitly provided by the
+# user, even if the latter is done in a way which uses the default
+# value.
+#
+# For example, with a configure flag defined like:
+#
+#   { foo-bar:=baz => {its help text} }
+#
+# This function will, when passed foo-bar, return 1 only if the user
+# passes --foo-bar to configure, even if that invocation would resolve
+# to the default value of baz. If the user does not explicitly pass in
+# --foo-bar (with or without a value) then this returns 0.
+proc hwaci-opt-was-provided {key} {
+  dict exists $::autosetup(optset) $key
+}
+
+########################################################################
 # Force-set autosetup option $flag to $val. The value can be fetched
 # later with [opt-val], [opt-bool], and friends.
+#
+# Returns $val.
 proc hwaci-opt-set {flag {val 1}} {
   global autosetup
   if {$flag ni $::autosetup(options)} {
@@ -236,6 +298,7 @@ proc hwaci-opt-set {flag {val 1}} {
     lappend ::autosetup(options) $flag
   }
   dict set ::autosetup(optset) $flag $val
+  return $val
 }
 
 ########################################################################
@@ -548,7 +611,7 @@ proc hwaci-looks-like-windows {{key host}} {
   }
   if {$key eq "build"} {
     # These apply only to the local OS, not a cross-compilation target,
-    # as the above check can potentially.
+    # as the above check potentially can.
     if {$::autosetup(iswin)} { return 1 }
     if {[find-an-executable cygpath] ne "" || $::tcl_platform(os)=="Windows NT"} {
       return 1
@@ -973,5 +1036,71 @@ proc hwaci-dump-defs-json {file args} {
   lappend buf [join $lines ",\n"]
   write-if-changed $file $buf {
     msg-result "Created $file"
+  }
+}
+
+########################################################################
+# Expects a list of pairs of configure flags with the given names to
+# have been registered with autosetup, in this form:
+#
+#  { alias1 => canonical1
+#    aliasN => canonicalN ... }
+#
+# The names must not have their leading -- part and must be in the
+# form which autosetup will expect for passing to [opt-val NAME] and
+# friends.
+#
+# Commend lines are permitted in the input.
+#
+# If [opt-val $hidden] has a value but [opt-val
+# $canonical] does not, it copies the former over the latter. If
+# $hidden has no value set, this is a no-op. If both have explicit
+# values a fatal usage error is triggered.
+#
+# Motivation: autosetup enables "hidden aliases" in [options] lists,
+# and elides the aliases from --help output but does no further
+# handling of them. For example, when --alias is a hidden alias of
+# --canonical and a user passes --alias=X, [opt-val canonical] returns
+# no value. i.e. the script must check both [opt-val alias] and
+# [opt-val canonical].  The intent here is that this function be
+# passed such mappings immediately after [options] is called,
+# to carry over any values from hidden aliases into their canonical
+# names, so that in the above example [opt-value canonical] will
+# return X if --alias=X is passed in.
+proc hwaci-xfer-options-aliases {mapping} {
+  foreach {hidden => canonical} [hwaci-strip-hash-comments_ $mapping] {
+    set x [opt-val $hidden "~9~9~9~"]
+    if {"~9~9~9~" ne $x} {
+      if {"~0~0~0~" eq [opt-val $canonical "~0~0~0~"]} {
+        hwaci-opt-set $canonical $x
+      } else {
+        hwaci-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
+      }
+    }
+  }
+}
+
+########################################################################
+# Arguable/debatable...
+#
+# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+# specified, force CC_FOR_BUILD to be the same as CC, so that:
+#
+# ./configure CC=clang
+#
+# will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
+# tools. This is based off of an email discussion and is thought to
+# be likely to cause less confusion than seeing 'cc' invocations
+# will when the user passes CC=clang.
+#
+# Sidebar: if we do this before the cc package is installed, it gets
+# reverted by that package. Ergo, the cc package init will tell the
+# user "Build C compiler...cc" shortly before we tell them:
+proc hwaci-redefine-cc-for-build {} {
+  if {![hwaci-is-cross-compiling]
+     && "nope" eq [get-env CC_FOR_BUILD "nope"]
+     && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+    user-notice "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
+    define CC_FOR_BUILD [get-define CC]
   }
 }
