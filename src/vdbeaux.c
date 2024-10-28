@@ -4569,8 +4569,8 @@ int sqlite3IntFloatCompare(i64 i, double r){
 ** Two NULL values are considered equal by this function.
 */
 int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
-  int f1, f2;
-  int combined_flags;
+  u32 f1, f2;
+  u32 combined_flags;
 
   f1 = pMem1->flags;
   f2 = pMem2->flags;
@@ -4582,6 +4582,26 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   */
   if( combined_flags&MEM_Null ){
     return (f2&MEM_Null) - (f1&MEM_Null);
+  }
+
+  if (combined_flags & MEM_Point) {
+    if ((f1 & MEM_Point) && ((f2 & MEM_Point))) {
+      Point p1 = pMem1->u.p;
+      Point p2 = pMem2->u.p;
+
+      if ((p1.x == p2.x) && (p1.y == p2.y)) return 0;
+      if ((p1.x > p2.x) && (p1.y > p2.y)) return 1;
+      return -1;
+    }
+
+    /* Will arbitrarily have points compare as greater when compared with
+    ** other type (string should have already been converted).
+    */
+    if (f1 & MEM_Point) {
+      return 1;
+    }
+
+    return -1;
   }
 
   /* At least one of the two values is a number
