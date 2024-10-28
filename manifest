@@ -1,5 +1,5 @@
-C Add\s--with-icu-config\sflag\sto\suse\sthe\sicu-config\sbinary\sto\sfind\sthe\srequired\sldflags\sfor\slinking\sthe\sICU\slibraries.
-D 2024-10-28T00:56:31.767
+C Docs\sand\ssmall\scode\scleanups\sin\shwaci-common.tcl.
+D 2024-10-28T01:13:00.918
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -47,7 +47,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl e3913fd13debb4e0382c9e68ae46c61f9bc1afcfd2e9996a9b43557deefefb03
+F autosetup/hwaci-common.tcl 0cf12e082cc5045eba20aa323d5139bd3893a2cedcecdccbc8331b069c783d43
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c895766ed31f55c02f05d357333e9cf45e82ec5af4d8b0491270e4fda7a57d42
-R 0c3cc11e229eb9f60e9d6e1a23d1a429
+P 64f33bb125102b3fec3901f4b56098429509ec0b6ce6e6b88af2393c344ac864
+R b9a4b55e0b90ed0b1b286d5c8ffe18f5
 U stephan
-Z cf4b95e7dea0c78a9db6ff8b45d5a758
+Z 103ccefab8e9ee7baf6989214f50afc6
 # Remove this line to create a well-formed Fossil manifest.

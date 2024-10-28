@@ -258,15 +258,27 @@ proc hwaci-require-bash {} {
 ########################################################################
 # Returns 1 if the user specifically provided the given configure
 # flag, else 0. This can be used to distinguish between options which
-# have a default value and those which were specifically provided by
-# the user.
+# have a default value and those which were explicitly provided by the
+# user, even if the latter is done in a way which uses the default
+# value.
+#
+# For example, with a configure flag defined like:
+#
+#   { foo-bar:=baz => {its help text} }
+#
+# This function will, when passed foo-bar, return 1 only if the user
+# passes --foo-bar to configure, even if that invocation would resolve
+# to the default value of baz. If the user does not explicitly pass in
+# --foo-bar (with or without a value) then this returns 0.
 proc hwaci-opt-was-provided {key} {
-  return [dict exists $::autosetup(optset) $key]
+  dict exists $::autosetup(optset) $key
 }
 
 ########################################################################
 # Force-set autosetup option $flag to $val. The value can be fetched
 # later with [opt-val], [opt-bool], and friends.
+#
+# Returns $val.
 proc hwaci-opt-set {flag {val 1}} {
   global autosetup
   if {$flag ni $::autosetup(options)} {
@@ -275,6 +287,7 @@ proc hwaci-opt-set {flag {val 1}} {
     lappend ::autosetup(options) $flag
   }
   dict set ::autosetup(optset) $flag $val
+  return $val
 }
 
 ########################################################################
