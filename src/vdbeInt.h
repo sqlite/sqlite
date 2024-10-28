@@ -334,7 +334,7 @@ struct sqlite3_value {
 #define MEM_Term      0x0200   /* String in Mem.z is zero terminated */
 #define MEM_Zero      0x0400   /* Mem.i contains count of 0s appended to blob */
 #define MEM_Subtype   0x0800   /* Mem.eSubtype is valid */
-#define MEM_TypeMask  0x0dbf   /* Mask of type bits */
+#define MEM_TypeMask 0x10dbf   /* Mask of type bits */
 
 /* Bits that determine the storage for Mem.z for a string or blob or
 ** aggregate accumulator.

@@ -311,6 +311,44 @@ static VdbeCursor *allocateCursor(
   return pCx;
 }
 
+/* CS541 - ADDING POINT FUNCTIONALITY HERE */
+
+static Point plusPoint(Point arg1) {
+  return arg1;
+}
+
+static Point addPoint(Point arg1, Point arg2) {
+  arg1.x += arg2.x;
+  arg1.y += arg2.y;
+  return arg1;
+}
+
+static Point negPoint(Point arg1) {
+  arg1.x = -arg1.x;
+  arg1.y = -arg1.y;
+  return arg1;
+}
+
+static Point subPoint(Point arg1, Point arg2) {
+  return addPoint(arg1, negPoint(arg2));
+}
+
+static float dotProdPoint(Point arg1, Point arg2) {
+  return arg1.x * arg2.x + arg1.y * arg2.y;
+}
+
+static Point multPoint(float arg1, Point arg2) {
+  arg2.x *= arg1;
+  arg2.y *= arg1;
+  return arg2;
+}
+
+static Point divPoint(Point arg1, float arg2) {
+  arg1.x /= arg2;
+  arg1.y /= arg2;
+  return arg1;
+}
+
 /*
 ** The string in pRec is known to look like an integer and to have a
 ** floating point value of rValue.  Return true and set *piValue to the
@@ -1872,8 +1910,8 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
-  u16 type1;      /* Numeric type of left operand */
-  u16 type2;      /* Numeric type of right operand */
+  u32 type1;      /* Numeric type of left operand */
+  u32 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
   i64 iB;         /* Integer value of right operand */
   double rA;      /* Real value of left operand */
@@ -1884,6 +1922,70 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   pIn2 = &aMem[pOp->p2];
   type2 = pIn2->flags;
   pOut = &aMem[pOp->p3];
+
+  /* CS541 - adding code here to handle point arithmetic */
+  if ((type1 & MEM_Point) || (type2 & MEM_Point)) {
+    if (!(type1 & MEM_Point)) applyPointAffinity(type1);
+    if (!(type2 & MEM_Point)) applyPointAffinity(type1);
+
+    if (type1 & type2 & MEM_Point) {
+      Point p1 = pIn1->u.p;
+      Point p2 = pIn2->u.p;
+
+      switch ( pOp->opcode ) {
+        case OP_Add:      pOut->u.p = addPoint(p1, p2);              break;
+        case OP_Subtract: pOut->u.p = subPoint(p1, p2);              break;
+        case OP_Multiply: pOut->u.r = (double) dotProdPoint(p1, p2); break;
+        default:
+      }
+
+      if ((pOp->opcode == OP_Add) || (pOp->opcode == OP_Subtract)) {
+        MemSetTypeFlag(pOut, MEM_Point);
+        break; /* done */
+      }
+      else if (pOp->opcode == OP_Multiply) {
+        MemSetTypeFlag(pOut, MEM_Real);
+        break; /* done */
+      }
+    }
+
+    if (pOp->opcode == OP_Multiply) {
+      if ((type2 & MEM_Real) || (type2 & MEM_Int)) {
+        Mem *tmp = pIn1;
+        pIn1 = pIn2;
+        pIn2 = tmp;
+        goto point_scalar_mult;
+      }
+
+      if ((type1 & MEM_Real) || (type1 & MEM_Int)) {
+point_scalar_mult:
+        if (type1 & MEM_Real) {
+          rA = pIn1->u.r;
+        }
+        else {
+          rA = (double) pIn1->u.i;
+        }
+
+        pOut->u.p = multPoint((float) rA, pIn2->u.p);
+        MemSetTypeFlag(pOut, MEM_Point);
+        break;
+      }
+    }
+    else if ((pOp->opcode == OP_Divide) &&
+             ((type2 & MEM_Real) || (type2 & MEM_Int))) {
+      if (type2 & MEM_Real) {
+        rB = pIn2->u.r;
+      }
+      else {
+        rB = (double) pIn2->u.i;
+      }
+      
+      pOut->u.p = divPoint(pIn1->u.p, rB);
+      MemSetTypeFlag(pOut, MEM_Point);
+      break; /* done */
+    }
+  }
+
   if( (type1 & type2 & MEM_Int)!=0 ){
 int_math:
     iA = pIn1->u.i;
