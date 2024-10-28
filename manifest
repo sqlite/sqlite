@@ -1,5 +1,5 @@
-C Calculate\sTCLLIBDIR\sin\sthe\smakefile\stargets\swhich\suse\sit,\srather\sthan\svia\sthe\sconfigure\sscript.\sThis\senables\sits\suse\sin\sstatic\smakefiles.
-D 2024-10-28T18:30:46.768
+C Minor\smakefile\sformatting\scleanups.\sNo\sfunctional\schanges.
+D 2024-10-28T18:41:42.261
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -698,7 +698,7 @@ F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk aba8a5877a848898c309862d6d19d80a0ccad4459641017dc377ca23c640aaad
+F main.mk 380707675b0912eecfc3961af468be8d9f4410c889e55bc12711f43f1fa88141
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dad5eb9393e87403b932ddfb9da6db0ce1d6ed75c4771f22e87fbce1b0c206c2
-R 20ebbf6e3d71220bc2b3e267520cf726
+P 6b1494cecb48535b909f8a48ccb56e147221601380a1457ff85ab861fa576ea1
+R bcd550df0bf0a415ddd053fc701fba21
 U stephan
-Z 3602e361ae1b37fbb57c835a7dbf6ec8
+Z d7a68d90ac7d9032db43fb1f51be9bce
 # Remove this line to create a well-formed Fossil manifest.
