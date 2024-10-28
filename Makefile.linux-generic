@@ -42,7 +42,7 @@ LDFLAGS.zlib = -lz
 #
 # Library's version number.
 #
-VERSION.XYZ ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
+PACKAGE_VERSION ?= $(shell cat $(TOP)/VERSION 2>/dev/null)
 
 # sqlite_cfg.h is typically created by the configure script. It's
 # commonly not needed but main.mk does not know that so we have to

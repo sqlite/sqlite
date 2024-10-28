@@ -1,10 +1,10 @@
-C Link\slibtclsqlite3.so\sto\slibsqlite3.so,\snot\slibsqlite3.a.
-D 2024-10-28T14:24:36.077
+C Update\sMakefile.linux-generic\sto\saccount\sfor\srecent\svar\srenaming.
+D 2024-10-28T14:46:33.572
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
 F Makefile.in 02ea00ff433902dba369d4a55b3aeb6bb1ffe2d82f777194984b8cdd7ed7c3ad
-F Makefile.linux-generic 8df0e6ee5e4671f844caf27f88d2be7421e904639f7a0ffdce0e2cd4ea11e8c0
+F Makefile.linux-generic 69b54c58ab2424a0d30f340d9defd7e87c25690a55b77acb9bdc657bd9a223f1
 F Makefile.msc d2d927177660945599ba88ea32f1ab5c261a96a8797380b99766e27f3aea7e4f
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e20610f06bfc6f4ebc5806da05c307d91e1f0a8c7a7501a7953273dbf1816fee
-R 2c01085fc26bf300ec3c7e7f45bf74e3
+P 45315f8f275db6059bdff7a8269014f06a793debd90675ac877f3a6f5c6ba4a4
+R c80a48e5113a14e0ef09fa948ac8efb3
 U stephan
-Z 59570355b6239d7861477e5d0bb0a15c
+Z 4fcc77ebd91e5407126b8031e682ac52
 # Remove this line to create a well-formed Fossil manifest.
