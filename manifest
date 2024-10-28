@@ -1,5 +1,5 @@
-C Omit\sext/consio\sfrom\sthe\stree.\s\sNo\slonger\sneeded\sor\ssupported.
-D 2024-10-28T14:53:45.379
+C Have\ssqlite3_rsync\savoid\swrite-locking\sthe\sorigin\sdatabase.
+D 2024-10-28T16:28:43.849
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -2196,7 +2196,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
 F tool/sqlite3_analyzer.c.in 348ba349bbdc93c9866439f9f935d7284866a2a4e6898bc906ae1204ade56918
-F tool/sqlite3_rsync.c 6c9cac5a9197f591985b271aeff803ec4fb4db36c8eab97e1331ff64aa1b8d94
+F tool/sqlite3_rsync.c 9a1cca2ab1271c59b37a6493c15dc1bcd0ab9149197a9125926bc08dd26b83fb
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2214,8 +2214,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6cb7cb7e33835d42cbab2e5468d73de7bb3b01971da078ce1c1344edc11ab1b3
-R 00f0377d2b4f46d55243305df3135edf
-U drh
-Z 05dc840cebf23762b49de298db68f9dc
+P 1ce8507f732a26508a9b336cb27756a0a8638e14395efdd59b5faef40526ede5
+R 49f8f2fbecb9d9f2f7002e9a5c677568
+U dan
+Z a23c9b99fd9fb556a69898d6ec82974f
 # Remove this line to create a well-formed Fossil manifest.
