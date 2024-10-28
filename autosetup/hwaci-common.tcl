@@ -1068,13 +1068,12 @@ proc hwaci-dump-defs-json {file args} {
 # names, so that in the above example [opt-value canonical] will
 # return X if --alias=X is passed in.
 proc hwaci-xfer-options-aliases {mapping} {
-  foreach {hidden => canonical} [hwaci-strip-hash-comments_ $mapping] {
-    set x [opt-val $hidden "~9~9~9~"]
-    if {"~9~9~9~" ne $x} {
-      if {"~0~0~0~" eq [opt-val $canonical "~0~0~0~"]} {
-        hwaci-opt-set $canonical $x
-      } else {
+  foreach {hidden - canonical} [hwaci-strip-hash-comments_ $mapping] {
+    if {[hwaci-opt-was-provided $hidden]} {
+      if {[hwaci-opt-was-provided $canonical]} {
         hwaci-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
+      } else {
+        hwaci-opt-set $canonical [opt-val $hidden]
       }
     }
   }

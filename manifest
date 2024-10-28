@@ -1,5 +1,5 @@
-C Document\swhy\s-IPREFIX/include\sis\snow\spart\sof\sT.cc.sqlite.
-D 2024-10-28T02:49:45.984
+C Simplify\show\shwaci-xfer-options-aliases\sfigures\sout\swhether\sflags\sare\sprovided.
+D 2024-10-28T11:13:00.630
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -47,7 +47,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/hwaci-common.tcl 064900a2e7512e6e1ce9f25bb74d6850574d294b026885f0329dbe69585407dd
+F autosetup/hwaci-common.tcl 48c221838bca6e362b34c85c3dff2ba7f69efcec9558d3807c9b33b1d8c13c28
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2237,8 +2237,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 55f78b639624ad360d04c102339ef7147d6d24dd9bd0d17b346df0c03ee443b6
-R 682368e231656f5796597ceeb6bfca0b
+P d64dcb1a897f6cc690c680cdaf85272e2dd249f36798219834116b1375f74d34
+R 2d6ac9d6e14c6a624c64205aaf80d12a
 U stephan
-Z 165d962fa0afbbbe6a9fa8d04b79266b
+Z 8a53b827d8fcdc17c9d21906a45eb0d2
 # Remove this line to create a well-formed Fossil manifest.
