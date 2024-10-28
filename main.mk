@@ -305,7 +305,7 @@ T.cc.sqlite ?= $(T.cc)
 CFLAGS.intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
     -I$(TOP)/ext/fts3 -I$(TOP)/ext/session \
-    -I$(TOP)/ext/misc -I$(TOP)/ext/userauth
+    -I$(TOP)/ext/misc
 T.cc.sqlite += $(CFLAGS.intree_includes)
 
 #
@@ -433,7 +433,7 @@ LIBOBJS0 = alter.o analyze.o attach.o auth.o \
          random.o resolve.o rowset.o rtree.o \
          sqlite3session.o select.o sqlite3rbu.o status.o stmt.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
-         update.o upsert.o userauth.o utf.o util.o vacuum.o \
+         update.o upsert.o utf.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
          vdbetrace.o vdbevtab.o vtab.o \
          wal.o walker.o where.o wherecode.o whereexpr.o \
@@ -592,9 +592,6 @@ SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
 SRC += \
-  $(TOP)/ext/userauth/userauth.c \
-  $(TOP)/ext/userauth/sqlite3userauth.h
-SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
@@ -705,7 +702,6 @@ TESTSRC += \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/zipfile.c \
-  $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/rtree/test_rtreedoc.c
 
 # Source code to the library files needed by the test fixture
@@ -808,8 +804,6 @@ EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
-EXTHDR += \
-  $(TOP)/ext/userauth/sqlite3userauth.h
 
 #
 # Executables needed for testing
@@ -2080,9 +2074,6 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(DEPS_EXT_COMMON)
 
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(DEPS_EXT_COMMON)
 	$(T.cc.extension) -c $(TOP)/ext/rtree/rtree.c
-
-userauth.o:	$(TOP)/ext/userauth/userauth.c $(DEPS_EXT_COMMON)
-	$(T.cc.extension) -c $(TOP)/ext/userauth/userauth.c
 
 sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(DEPS_EXT_COMMON)
 	$(T.cc.extension) -c $(TOP)/ext/session/sqlite3session.c
