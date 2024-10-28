@@ -163,6 +163,9 @@ char *sqlite3TableAffinityStr(sqlite3 *db, const Table *pTab){
 **    'C'            NUMERIC
 **    'D'            INTEGER
 **    'E'            REAL
+**    'G'            POINT
+**
+** Above POINT entry added for the purposes of our CS541 project.
 **
 ** For STRICT tables:
 ** ------------------

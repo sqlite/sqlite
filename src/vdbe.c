@@ -364,6 +364,17 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
 }
 
 /*
+**  Similar to above except will try for conversion of a string to our Point
+**  struct (e.g. we will want to convert something like '100.0, 100.0' to a
+**  point).
+*/
+static void applyPointAffinity(Mem *pRec) {
+  Point pValue;
+  u8 enc = pRec->enc;
+  int rc;
+}
+
+/*
 ** Processing is determine by the affinity parameter:
 **
 ** SQLITE_AFF_INTEGER:
@@ -393,7 +404,12 @@ static void applyAffinity(
 ){
   if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
-             || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM );
+             || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM ||
+                affinity==SQLITE_AFF_POINT);
+    // Adding this case for CS541 proj: will do conversion to point if possible (on string)
+    if(affinity == SQLITE_AFF_POINT) {
+      applyPointAffinity(pRec);
+    }
     if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & (MEM_Real|MEM_IntReal))==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);

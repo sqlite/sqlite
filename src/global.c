@@ -383,14 +383,15 @@ const char sqlite3StrBINARY[] = "BINARY";
 **    sqlite3StdTypeAffinity[]    The affinity associated with each entry
 **                                in sqlite3StdType[].
 */
-const unsigned char sqlite3StdTypeLen[] = { 3, 4, 3, 7, 4, 4 };
+const unsigned char sqlite3StdTypeLen[] = { 3, 4, 3, 7, 4, 4, 5 };
 const char sqlite3StdTypeAffinity[] = {
   SQLITE_AFF_NUMERIC,
   SQLITE_AFF_BLOB,
   SQLITE_AFF_INTEGER,
   SQLITE_AFF_INTEGER,
   SQLITE_AFF_REAL,
-  SQLITE_AFF_TEXT
+  SQLITE_AFF_TEXT,
+  SQLITE_AFF_POINT
 };
 const char *sqlite3StdType[] = {
   "ANY",
@@ -398,5 +399,6 @@ const char *sqlite3StdType[] = {
   "INT",
   "INTEGER",
   "REAL",
-  "TEXT"
+  "TEXT",
+  "POINT"
 };
