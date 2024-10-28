@@ -729,13 +729,14 @@ atof_return:
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 
-
 int sqlite3AtoPoint(const char*z, Point *pResult, int length, u8 enc) {
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   float pArr[2] = { 0.0f, 0.0f }; /* Will be used to hold values for point */
   double temp; /* Hold intermediate values received from sqlite3AtoF*/
   int incr;
   const char *zEnd;
+  const char *commaPos;
+  int rc;
   int eType;
   memcpy(pResult, pArr, sizeof(pArr)); /* Default return value, in case of an error */
   if( length==0 ) return 0;
@@ -760,27 +761,23 @@ int sqlite3AtoPoint(const char*z, Point *pResult, int length, u8 enc) {
   while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
   if( z>=zEnd ) return 0;
 
+  commaPos = z;
+
   /* Find comma position */
-  while ((z < zEnd) && (*z != ',')) z += incr;
-  if (z >= zEnd) return 0;
+  while ((commaPos < zEnd) && (*commaPos != ',')) commaPos += incr;
+  if (commaPos >= zEnd) return 0;
 
-  char *commaPos = z;
-
-  int rc = sqlite3AtoF(z, &temp, commaPos - z, enc);
+  rc = sqlite3AtoF(z, &temp, commaPos - z, enc);
 
   if (rc <= 0) return 0;
 
   pArr[0] = (float) temp;
 
-  int rc = sqlite3AtoF(commaPos + incr, &temp, zEnd - commaPos - incr, enc);
+  rc = sqlite3AtoF(commaPos + incr, &temp, zEnd - commaPos - incr, enc);
 
   if (rc <= 0) return 0;
 
   pArr[1] = (float) temp;
-
-  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-
-  if (z != zEnd) return 0;
 
   // Copy pArr to result
   memcpy(pResult, pArr, sizeof(pArr));

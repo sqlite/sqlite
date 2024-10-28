@@ -376,7 +376,7 @@ static void applyPointAffinity(Mem *pRec) {
   if (!(pRec->flags & MEM_Str)) return;
 
   rc = sqlite3AtoPoint(pRec->z, &pValue, pRec->n, enc);
-  if (rc >= 0) return;
+  if (rc <= 0) return;
 
   pRec->flags |= MEM_Point;
   pRec->flags &= ~MEM_Str;
@@ -418,7 +418,7 @@ static void applyAffinity(
     if(affinity == SQLITE_AFF_POINT) {
       applyPointAffinity(pRec);
     }
-    if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
+    else if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & (MEM_Real|MEM_IntReal))==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else if( affinity<=SQLITE_AFF_REAL ){
@@ -3510,7 +3510,8 @@ case OP_MakeRecord: {
   **      7               IEEE float
   **      8               Integer constant 0
   **      9               Integer constant 1
-  **     10,11            reserved for expansion
+  **     10               reserved for expansion
+  **     11               reserved for expansion -> point (CS541)
   **    N>=12 and even    BLOB
   **    N>=13 and odd     text
   **
@@ -3538,6 +3539,11 @@ case OP_MakeRecord: {
         pRec->uTemp = 0;
       }
       nHdr++;
+    }else if (pRec->flags & MEM_Point) {
+      /* New case for POINT */
+      nHdr++;
+      nData += 8;
+      pRec->uTemp = 11;
     }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
       /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
       i64 i = pRec->u.i;
@@ -3674,7 +3680,17 @@ case OP_MakeRecord: {
     ** additional varints, one per column.
     ** EVIDENCE-OF: R-64536-51728 The values for each column in the record
     ** immediately follow the header. */
-    if( serial_type<=7 ){
+    if (serial_type == 11) {
+      /*
+      ** CS541 NEW CASE - POINT
+      ** (1) Put serial_type first
+      ** (2) Copy in data/memory corresponding to the POINT
+      ** (3) Advance zPayload pointer by 8 bytes (size of point)
+      */
+      *(zHdr++) = serial_type;
+      *((Point*) zPayload) = pRec->u.p;
+      zPayload += 8;
+    }else if( serial_type<=7 ){
       *(zHdr++) = serial_type;
       if( serial_type==0 ){
         /* NULL value.  No change in zPayload */
