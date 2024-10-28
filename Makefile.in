@@ -120,6 +120,10 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # can include the generated sqlite_cfg.h.
 #
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+#
+# -I$(prefix)/include is primarily so that the ICU
+# headers can be found.
+#
 T.cc.sqlite += -I$(prefix)/include
 
 #
