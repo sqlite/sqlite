@@ -1925,18 +1925,24 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
 
   /* CS541 - adding code here to handle point arithmetic */
   if ((type1 & MEM_Point) || (type2 & MEM_Point)) {
-    if (!(type1 & MEM_Point)) applyPointAffinity(type1);
-    if (!(type2 & MEM_Point)) applyPointAffinity(type1);
+    if (!(type1 & MEM_Point)) {
+      applyPointAffinity(pIn1);
+      type1 = pIn1->flags;
+    }
+    if (!(type2 & MEM_Point)) {
+      applyPointAffinity(pIn2);
+      type2 = pIn2->flags;
+    }
 
     if (type1 & type2 & MEM_Point) {
       Point p1 = pIn1->u.p;
       Point p2 = pIn2->u.p;
 
       switch ( pOp->opcode ) {
-        case OP_Add:      pOut->u.p = addPoint(p1, p2);              break;
-        case OP_Subtract: pOut->u.p = subPoint(p1, p2);              break;
-        case OP_Multiply: pOut->u.r = (double) dotProdPoint(p1, p2); break;
-        default:
+        case OP_Add:      pOut->u.p = addPoint(p2, p1);              break;
+        case OP_Subtract: pOut->u.p = subPoint(p2, p1);              break;
+        case OP_Multiply: pOut->u.r = (double) dotProdPoint(p2, p1); break;
+        default:                                                     break;
       }
 
       if ((pOp->opcode == OP_Add) || (pOp->opcode == OP_Subtract)) {
@@ -1950,37 +1956,38 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     }
 
     if (pOp->opcode == OP_Multiply) {
-      if ((type2 & MEM_Real) || (type2 & MEM_Int)) {
+      if ((type1 & MEM_Real) || (type1 & MEM_Int)) {
+        u32 tmp_type;
         Mem *tmp = pIn1;
         pIn1 = pIn2;
         pIn2 = tmp;
-        goto point_scalar_mult;
+        tmp_type = type1;
+        type1 = type2;
+        type2 = tmp_type;
       }
-
-      if ((type1 & MEM_Real) || (type1 & MEM_Int)) {
-point_scalar_mult:
-        if (type1 & MEM_Real) {
-          rA = pIn1->u.r;
+      if ((type2 & MEM_Real) || (type2 & MEM_Int)) {
+        if (type2 & MEM_Real) {
+          rB = pIn2->u.r;
         }
         else {
-          rA = (double) pIn1->u.i;
+          rB = (double) pIn2->u.i;
         }
 
-        pOut->u.p = multPoint((float) rA, pIn2->u.p);
+        pOut->u.p = multPoint((float) rB, pIn1->u.p);
         MemSetTypeFlag(pOut, MEM_Point);
-        break;
+        break; /* done */
       }
     }
     else if ((pOp->opcode == OP_Divide) &&
-             ((type2 & MEM_Real) || (type2 & MEM_Int))) {
-      if (type2 & MEM_Real) {
-        rB = pIn2->u.r;
+             ((type1 & MEM_Real) || (type1 & MEM_Int))) {
+      if (type1 & MEM_Real) {
+        rA = pIn1->u.r;
       }
       else {
-        rB = (double) pIn2->u.i;
+        rA = (double) pIn1->u.i;
       }
       
-      pOut->u.p = divPoint(pIn1->u.p, rB);
+      pOut->u.p = divPoint(pIn2->u.p, (float) rA);
       MemSetTypeFlag(pOut, MEM_Point);
       break; /* done */
     }
