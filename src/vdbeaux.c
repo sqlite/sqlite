@@ -3941,11 +3941,12 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
 
 /*
 ** The sizes for serial types less than 128
+** CS541 - modify index 11 (corresponding to our added POINT) to be 8
 */
 const u8 sqlite3SmallTypeSizes[128] = {
         /*  0   1   2   3   4   5   6   7   8   9 */  
 /*   0 */   0,  1,  2,  3,  4,  6,  8,  8,  0,  0,
-/*  10 */   0,  0,  0,  0,  1,  1,  2,  2,  3,  3,
+/*  10 */   0,  8,  0,  0,  1,  1,  2,  2,  3,  3,
 /*  20 */   4,  4,  5,  5,  6,  6,  7,  7,  8,  8,
 /*  30 */   9,  9, 10, 10, 11, 11, 12, 12, 13, 13,
 /*  40 */  14, 14, 15, 15, 16, 16, 17, 17, 18, 18,
@@ -4044,6 +4045,8 @@ u64 sqlite3FloatSwap(u64 in){
 ** The few cases that require local variables are broken out into a separate
 ** routine so that in most cases the overhead of moving the stack pointer
 ** is avoided.
+**
+** CS541 - works with point as well
 */
 static void serialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
@@ -4053,7 +4056,12 @@ static void serialGet(
   u64 x = FOUR_BYTE_UINT(buf);
   u32 y = FOUR_BYTE_UINT(buf+4);
   x = (x<<32) + y;
-  if( serial_type==6 ){
+
+  if (serial_type == 11) {
+    /* CS541 - new case for reading in point */
+    pMem->u.p = *((Point*)buf);
+    pMem->flags = MEM_Point;
+  }else if( serial_type==6 ){
     /* EVIDENCE-OF: R-29851-52272 Value is a big-endian 64-bit
     ** twos-complement integer. */
     pMem->u.i = *(i64*)&x;
@@ -4110,7 +4118,10 @@ void sqlite3VdbeSerialGet(
       pMem->u.nZero = 0;
       return;
     }
-    case 11:   /* Reserved for future use */
+    case 11: { /* Reserved for future use -> CS541: case for POINT */
+      serialGet(buf, serial_type, pMem);
+      return;
+    }
     case 0: {  /* Null */
       /* EVIDENCE-OF: R-24078-09375 Value is a NULL. */
       pMem->flags = MEM_Null;
@@ -4558,8 +4569,8 @@ int sqlite3IntFloatCompare(i64 i, double r){
 ** Two NULL values are considered equal by this function.
 */
 int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
-  int f1, f2;
-  int combined_flags;
+  u32 f1, f2;
+  u32 combined_flags;
 
   f1 = pMem1->flags;
   f2 = pMem2->flags;
@@ -4571,6 +4582,26 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   */
   if( combined_flags&MEM_Null ){
     return (f2&MEM_Null) - (f1&MEM_Null);
+  }
+
+  if (combined_flags & MEM_Point) {
+    if ((f1 & MEM_Point) && ((f2 & MEM_Point))) {
+      Point p1 = pMem1->u.p;
+      Point p2 = pMem2->u.p;
+
+      if ((p1.x == p2.x) && (p1.y == p2.y)) return 0;
+      if ((p1.x > p2.x) && (p1.y > p2.y)) return 1;
+      return -1;
+    }
+
+    /* Will arbitrarily have points compare as greater when compared with
+    ** other type (string should have already been converted).
+    */
+    if (f1 & MEM_Point) {
+      return 1;
+    }
+
+    return -1;
   }
 
   /* At least one of the two values is a number

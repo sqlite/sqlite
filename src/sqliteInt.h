@@ -1327,6 +1327,7 @@ typedef struct NameContext NameContext;
 typedef struct OnOrUsing OnOrUsing;
 typedef struct Parse Parse;
 typedef struct ParseCleanup ParseCleanup;
+typedef struct Point Point;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
 typedef struct RCStr RCStr;
@@ -2268,7 +2269,10 @@ struct Column {
 #define COLTYPE_INTEGER     4
 #define COLTYPE_REAL        5
 #define COLTYPE_TEXT        6
-#define SQLITE_N_STDTYPE    6  /* Number of standard types */
+
+// Adding entry for point here and incrementing SQLITE_N_STDTYPE
+#define COLTYPE_POINT       7
+#define SQLITE_N_STDTYPE    7  /* Number of standard types */
 
 /* Allowed values for Column.colFlags.
 **
@@ -2336,6 +2340,9 @@ struct CollSeq {
 #define SQLITE_AFF_INTEGER  0x44  /* 'D' */
 #define SQLITE_AFF_REAL     0x45  /* 'E' */
 #define SQLITE_AFF_FLEXNUM  0x46  /* 'F' */
+
+// Adding point affinity def here
+#define SQLITE_AFF_POINT    0x47  /* 'G' */
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -5263,6 +5270,7 @@ int sqlite3RealSameAsInt(double,sqlite3_int64);
 i64 sqlite3RealToI64(double);
 int sqlite3Int64ToText(i64,char*);
 int sqlite3AtoF(const char *z, double*, int, u8);
+int sqlite3AtoPoint(const char *z, Point*, int, u8);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3GetUInt32(const char*, u32*);
 int sqlite3Atoi(const char*);

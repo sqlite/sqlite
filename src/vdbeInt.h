@@ -218,6 +218,17 @@ struct VdbeFrame {
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
 
 /*
+** CS541 project - here is the actual definition of our point struct. Given
+** that existing values that are not strings/blobs tend to cap out at 8 bytes,
+** it seems preferable to use two 32-bit floating point numbers (makes the
+** struct 8 bytes.)
+*/
+struct Point {
+  float x;
+  float y;
+};
+
+/*
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
 ** structures. Each Mem struct may cache multiple representations (string,
 ** integer etc.) of the same value.
@@ -229,10 +240,13 @@ struct sqlite3_value {
     int nZero;          /* Extra zero bytes when MEM_Zero and MEM_Blob set */
     const char *zPType; /* Pointer type when MEM_Term|MEM_Subtype|MEM_Null */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
+    Point p;            /* Mem_Point (added for CS541 proj) */
   } u;
   char *z;            /* String or BLOB value */
   int n;              /* Number of characters in string value, excluding '\0' */
-  u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
+
+  // Moving flags from u16 -> u32 to accomodate MEM_Point
+  u32 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
   u8  eSubtype;       /* Subtype for this value */
   /* ShallowCopy only needs to copy the information above */
@@ -305,7 +319,12 @@ struct sqlite3_value {
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_IntReal   0x0020   /* MEM_Int that stringifies like MEM_Real */
-#define MEM_AffMask   0x003f   /* Mask of affinity bits */
+
+// Adding this after expanding flags to be u32
+#define MEM_Point    0x10000   /* Value is a POINT */
+
+// Modified this to accomodate MEM_Point
+#define MEM_AffMask  0x1003f   /* Mask of affinity bits */
 
 /* Extra bits that modify the meanings of the core datatypes above
 */
@@ -315,7 +334,7 @@ struct sqlite3_value {
 #define MEM_Term      0x0200   /* String in Mem.z is zero terminated */
 #define MEM_Zero      0x0400   /* Mem.i contains count of 0s appended to blob */
 #define MEM_Subtype   0x0800   /* Mem.eSubtype is valid */
-#define MEM_TypeMask  0x0dbf   /* Mask of type bits */
+#define MEM_TypeMask 0x10dbf   /* Mask of type bits */
 
 /* Bits that determine the storage for Mem.z for a string or blob or
 ** aggregate accumulator.

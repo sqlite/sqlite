@@ -100,11 +100,40 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
 #endif
 
 /*
+** ADDED FOR CS541
+**
+** Render a Mem object which is MEM_Point.
+*/
+
+static void vdbeMemRenderPoint(int sz, char *zBuf, Mem *p) {
+  StrAccum acc;
+  assert( p->flags & MEM_Point );
+  assert( sz>22 );
+
+  sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
+  sqlite3_str_appendf(&acc, "%!.6g,%!.6g", p->u.p.x, p->u.p.y);
+  assert( acc.zText==zBuf && acc.mxAlloc<=0 );
+  zBuf[acc.nChar] = 0;
+  p->n = acc.nChar;
+}
+
+/*
 ** Render a Mem object which is one of MEM_Int, MEM_Real, or MEM_IntReal
 ** into a buffer.
 */
 static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
   StrAccum acc;
+
+  /*
+  ** Adding this case, will do point rendering inside this function and
+  ** then return.
+  */
+
+  if (p->flags & MEM_Point) {
+    vdbeMemRenderPoint(sz, zBuf, p);
+    return;
+  }
+
   assert( p->flags & (MEM_Int|MEM_Real|MEM_IntReal) );
   assert( sz>22 );
   if( p->flags & MEM_Int ){

@@ -311,6 +311,44 @@ static VdbeCursor *allocateCursor(
   return pCx;
 }
 
+/* CS541 - ADDING POINT FUNCTIONALITY HERE */
+
+static Point plusPoint(Point arg1) {
+  return arg1;
+}
+
+static Point addPoint(Point arg1, Point arg2) {
+  arg1.x += arg2.x;
+  arg1.y += arg2.y;
+  return arg1;
+}
+
+static Point negPoint(Point arg1) {
+  arg1.x = -arg1.x;
+  arg1.y = -arg1.y;
+  return arg1;
+}
+
+static Point subPoint(Point arg1, Point arg2) {
+  return addPoint(arg1, negPoint(arg2));
+}
+
+static float dotProdPoint(Point arg1, Point arg2) {
+  return arg1.x * arg2.x + arg1.y * arg2.y;
+}
+
+static Point multPoint(float arg1, Point arg2) {
+  arg2.x *= arg1;
+  arg2.y *= arg1;
+  return arg2;
+}
+
+static Point divPoint(Point arg1, float arg2) {
+  arg1.x /= arg2;
+  arg1.y /= arg2;
+  return arg1;
+}
+
 /*
 ** The string in pRec is known to look like an integer and to have a
 ** floating point value of rValue.  Return true and set *piValue to the
@@ -364,6 +402,27 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
 }
 
 /*
+**  Similar to above except will try for conversion of a string to our Point
+**  struct (e.g. we will want to convert something like '100.0, 100.0' to a
+**  point).
+*/
+static void applyPointAffinity(Mem *pRec) {
+  Point pValue;
+  u8 enc = pRec->enc;
+  int rc;
+
+  if (!(pRec->flags & MEM_Str)) return;
+
+  rc = sqlite3AtoPoint(pRec->z, &pValue, pRec->n, enc);
+  if (rc <= 0) return;
+
+  pRec->u.p = pValue;
+
+  pRec->flags |= MEM_Point;
+  pRec->flags &= ~MEM_Str;
+}
+
+/*
 ** Processing is determine by the affinity parameter:
 **
 ** SQLITE_AFF_INTEGER:
@@ -393,8 +452,13 @@ static void applyAffinity(
 ){
   if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
-             || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM );
-    if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
+             || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM ||
+                affinity==SQLITE_AFF_POINT);
+    // Adding this case for CS541 proj: will do conversion to point if possible (on string)
+    if(affinity == SQLITE_AFF_POINT) {
+      applyPointAffinity(pRec);
+    }
+    else if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & (MEM_Real|MEM_IntReal))==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else if( affinity<=SQLITE_AFF_REAL ){
@@ -1846,8 +1910,8 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
-  u16 type1;      /* Numeric type of left operand */
-  u16 type2;      /* Numeric type of right operand */
+  u32 type1;      /* Numeric type of left operand */
+  u32 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
   i64 iB;         /* Integer value of right operand */
   double rA;      /* Real value of left operand */
@@ -1858,6 +1922,77 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   pIn2 = &aMem[pOp->p2];
   type2 = pIn2->flags;
   pOut = &aMem[pOp->p3];
+
+  /* CS541 - adding code here to handle point arithmetic */
+  if ((type1 & MEM_Point) || (type2 & MEM_Point)) {
+    if (!(type1 & MEM_Point)) {
+      applyPointAffinity(pIn1);
+      type1 = pIn1->flags;
+    }
+    if (!(type2 & MEM_Point)) {
+      applyPointAffinity(pIn2);
+      type2 = pIn2->flags;
+    }
+
+    if (type1 & type2 & MEM_Point) {
+      Point p1 = pIn1->u.p;
+      Point p2 = pIn2->u.p;
+
+      switch ( pOp->opcode ) {
+        case OP_Add:      pOut->u.p = addPoint(p2, p1);              break;
+        case OP_Subtract: pOut->u.p = subPoint(p2, p1);              break;
+        case OP_Multiply: pOut->u.r = (double) dotProdPoint(p2, p1); break;
+        default:                                                     break;
+      }
+
+      if ((pOp->opcode == OP_Add) || (pOp->opcode == OP_Subtract)) {
+        MemSetTypeFlag(pOut, MEM_Point);
+        break; /* done */
+      }
+      else if (pOp->opcode == OP_Multiply) {
+        MemSetTypeFlag(pOut, MEM_Real);
+        break; /* done */
+      }
+    }
+
+    if (pOp->opcode == OP_Multiply) {
+      if ((type1 & MEM_Real) || (type1 & MEM_Int)) {
+        u32 tmp_type;
+        Mem *tmp = pIn1;
+        pIn1 = pIn2;
+        pIn2 = tmp;
+        tmp_type = type1;
+        type1 = type2;
+        type2 = tmp_type;
+      }
+      if ((type2 & MEM_Real) || (type2 & MEM_Int)) {
+        if (type2 & MEM_Real) {
+          rB = pIn2->u.r;
+        }
+        else {
+          rB = (double) pIn2->u.i;
+        }
+
+        pOut->u.p = multPoint((float) rB, pIn1->u.p);
+        MemSetTypeFlag(pOut, MEM_Point);
+        break; /* done */
+      }
+    }
+    else if ((pOp->opcode == OP_Divide) &&
+             ((type1 & MEM_Real) || (type1 & MEM_Int))) {
+      if (type1 & MEM_Real) {
+        rA = pIn1->u.r;
+      }
+      else {
+        rA = (double) pIn1->u.i;
+      }
+      
+      pOut->u.p = divPoint(pIn2->u.p, (float) rA);
+      MemSetTypeFlag(pOut, MEM_Point);
+      break; /* done */
+    }
+  }
+
   if( (type1 & type2 & MEM_Int)!=0 ){
 int_math:
     iA = pIn1->u.i;
@@ -2299,7 +2434,17 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     /* Neither operand is NULL and we couldn't do the special high-speed
     ** integer comparison case.  So do a general-case comparison. */
     affinity = pOp->p5 & SQLITE_AFF_MASK;
-    if( affinity>=SQLITE_AFF_NUMERIC ){
+    if (affinity == SQLITE_AFF_POINT) {
+      if((flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
+        applyPointAffinity(pIn1);
+        flags1 = pIn1->flags;
+      }
+      if((flags3 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
+        applyPointAffinity(pIn3);
+        flags3 = pIn3->flags;
+      }
+    }
+    else if( affinity>=SQLITE_AFF_NUMERIC ){
       if( (flags1 | flags3)&MEM_Str ){
         if( (flags1 & (MEM_Int|MEM_IntReal|MEM_Real|MEM_Str))==MEM_Str ){
           applyNumericAffinity(pIn1,0);
@@ -3486,7 +3631,8 @@ case OP_MakeRecord: {
   **      7               IEEE float
   **      8               Integer constant 0
   **      9               Integer constant 1
-  **     10,11            reserved for expansion
+  **     10               reserved for expansion
+  **     11               reserved for expansion -> point (CS541)
   **    N>=12 and even    BLOB
   **    N>=13 and odd     text
   **
@@ -3514,6 +3660,11 @@ case OP_MakeRecord: {
         pRec->uTemp = 0;
       }
       nHdr++;
+    }else if (pRec->flags & MEM_Point) {
+      /* New case for POINT */
+      nHdr++;
+      nData += 8;
+      pRec->uTemp = 11;
     }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
       /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
       i64 i = pRec->u.i;
@@ -3650,7 +3801,17 @@ case OP_MakeRecord: {
     ** additional varints, one per column.
     ** EVIDENCE-OF: R-64536-51728 The values for each column in the record
     ** immediately follow the header. */
-    if( serial_type<=7 ){
+    if (serial_type == 11) {
+      /*
+      ** CS541 NEW CASE - POINT
+      ** (1) Put serial_type first
+      ** (2) Copy in data/memory corresponding to the POINT
+      ** (3) Advance zPayload pointer by 8 bytes (size of point)
+      */
+      *(zHdr++) = serial_type;
+      *((Point*) zPayload) = pRec->u.p;
+      zPayload += 8;
+    }else if( serial_type<=7 ){
       *(zHdr++) = serial_type;
       if( serial_type==0 ){
         /* NULL value.  No change in zPayload */

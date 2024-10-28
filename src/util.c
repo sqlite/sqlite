@@ -728,6 +728,62 @@ atof_return:
   return !sqlite3Atoi64(z, pResult, length, enc);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
+
+int sqlite3AtoPoint(const char*z, Point *pResult, int length, u8 enc) {
+  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
+  float pArr[2] = { 0.0f, 0.0f }; /* Will be used to hold values for point */
+  double temp; /* Hold intermediate values received from sqlite3AtoF*/
+  int incr;
+  const char *zEnd;
+  const char *commaPos;
+  int rc;
+  int eType;
+  memcpy(pResult, pArr, sizeof(pArr)); /* Default return value, in case of an error */
+  if( length==0 ) return 0;
+
+  if( enc==SQLITE_UTF8 ){
+    incr = 1;
+    zEnd = z + length;
+  }else{
+    int i;
+    incr = 2;
+    length &= ~1;
+    assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
+    testcase( enc==SQLITE_UTF16LE );
+    testcase( enc==SQLITE_UTF16BE );
+    for(i=3-enc; i<length && z[i]==0; i+=2){}
+    if( i<length ) eType = -100;
+    zEnd = &z[i^1];
+    z += (enc&1);
+  }
+
+  /* skip leading spaces */
+  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
+  if( z>=zEnd ) return 0;
+
+  commaPos = z;
+
+  /* Find comma position */
+  while ((commaPos < zEnd) && (*commaPos != ',')) commaPos += incr;
+  if (commaPos >= zEnd) return 0;
+
+  rc = sqlite3AtoF(z, &temp, commaPos - z, enc);
+
+  if (rc <= 0) return 0;
+
+  pArr[0] = (float) temp;
+
+  rc = sqlite3AtoF(commaPos + incr, &temp, zEnd - commaPos - incr, enc);
+
+  if (rc <= 0) return 0;
+
+  pArr[1] = (float) temp;
+
+  // Copy pArr to result
+  memcpy(pResult, pArr, sizeof(pArr));
+  return 1;
+}
+
 #if defined(_MSC_VER)
 #pragma warning(default : 4756)
 #endif
