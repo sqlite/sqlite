@@ -1380,10 +1380,10 @@ install: install-includes
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(T.dll)
-$(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.LIB)
+$(libtclsqlite3.SO): tclsqlite.o $(libsqlite3.SO)
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$(TCL_INCLUDE_SPEC) $(TCL_STUB_LIB_SPEC) $(LDFLAGS.libsqlite3) \
-		$(libsqlite3.LIB) $(TCLLIB_RPATH)
+		$(libsqlite3.SO) $(TCLLIB_RPATH)
 $(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
 $(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
 libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)

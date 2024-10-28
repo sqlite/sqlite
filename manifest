@@ -1,5 +1,5 @@
-C Rename\sthe\s'hwaci'\sauto.def\sutility\sAPI\sto\sthe\smore\sgeneric\s'proj'\sAPI,\sper\s/chat\sdiscussion.\sFix\sa\sfunction\sname\stypo\swhich\scaused\sreadline\sdetection\sto\skill\sthe\sconfigure\sin\sone\scode\spath.
-D 2024-10-28T14:16:50.100
+C Link\slibtclsqlite3.so\sto\slibsqlite3.so,\snot\slibsqlite3.a.
+D 2024-10-28T14:24:36.077
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl b01940e6b2e9c24f2c50f0e180d308a0a4f88d2e2b00c6902edd5980d221becf w autosetup/hwaci-common.tcl
+F autosetup/proj.tcl b01940e6b2e9c24f2c50f0e180d308a0a4f88d2e2b00c6902edd5980d221becf
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -707,7 +707,7 @@ F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b5
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 4b0bcec36d5cc83fd60d9c10666f1493c8835cec11b67b3c980ae021e225db03
+F main.mk 0fe71859e14e362e01687f75cbd19f8031ca3be07a364dcd17fde6822d101edc
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 45ec9415b2b76a757e8bd25eed520dcc012ba67cbb3530ee8dcc42ac6125464a
-R 958d2a4928946501ff168cf6ab041f76
+P e20610f06bfc6f4ebc5806da05c307d91e1f0a8c7a7501a7953273dbf1816fee
+R 2c01085fc26bf300ec3c7e7f45bf74e3
 U stephan
-Z a0759550cfa13ca8b9d7c93a198730e1
+Z 59570355b6239d7861477e5d0bb0a15c
 # Remove this line to create a well-formed Fossil manifest.
