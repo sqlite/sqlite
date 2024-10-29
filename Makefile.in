@@ -95,7 +95,7 @@ INSTALL = @BIN_INSTALL@
 AR = @AR@
 AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
-B.cc = @BUILD_CC@ @BUILD_CFLAGS@
+B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = @CC@
 CFLAGS = @CPPFLAGS@ @CFLAGS@ @SH_CFLAGS@
 
