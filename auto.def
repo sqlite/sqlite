@@ -734,6 +734,20 @@ if {1} {
 #
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
+#
+# Order of checks:
+#
+#  1) --with-linenoise trumps all others
+#
+#  2) --editline trumps --readline
+#
+#  3) --disable-readline trumps --readline
+#
+#  4) Default to automatic search for optional readline
+#
+#  5) Try to find readline resp. editline. If it's not found AND the
+#     corresponding --FEATURE flag was explicitly given, fail fatally,
+#     else fail silently.
 proc sqlite-check-line-editing {} {
   msg-result "Checking for line-editing capability..."
   define HAVE_READLINE 0
@@ -741,6 +755,7 @@ proc sqlite-check-line-editing {} {
   define HAVE_EDITLINE 0
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
+  set failIfNotFound 0 ; # Set to 1 for explicit --FEATURE requests when FEATURE is not found
   set libsForReadline {readline edit} ; # -l names to check for readline()
   set editLibName "readline" ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
@@ -773,11 +788,16 @@ proc sqlite-check-line-editing {} {
     # end up finding <editline/readline.h> below, we will use
     # -DHAVE_EDITLINE=1, else we will use -DHAVE_READLINE=1. In either
     # case, we will link against libedit.
+    set failIfNotFound 1
     set libsForReadline {edit}
     set editLibName editline
   } elseif {![opt-bool readline]} {
     msg-result "Readline support explicitly disabled with --disable-readline"
     return "none"
+  } elseif {[proj-opt-was-provided readline]} {
+    # If an explicit --enable-readline was used, fail if it's not found,
+    # else treat the feature as optional.
+    set failIfNotFound 1
   }
 
   # Transform with-readline-header=X to with-readline-cflags=-I...
@@ -894,6 +914,10 @@ proc sqlite-check-line-editing {} {
       sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
     return $editLibName
+  }
+
+  if {$failIfNotFound} {
+    proj-fatal "Explicit --$editLibName failed to find a matching library."
   }
 
   return "none"
