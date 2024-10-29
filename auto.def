@@ -175,8 +175,8 @@ set flags {
   # <icu>
   with-icu-ldflags:LDFLAGS
                         => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...}
   with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch linker flags from the given icu-config binary}
+  icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
   # </icu>
   # <alternative-builds>
   with-wasi-sdk:=/opt/wasi-sdk
