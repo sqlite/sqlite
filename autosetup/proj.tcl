@@ -60,6 +60,15 @@ proc proj-fatal {msg} {
 }
 
 ########################################################################
+# Kind of like a C assert if uplevel (eval) of $script is false,
+# triggers a fatal error.
+proc proj-assert {script} {
+  if {![uplevel 1 $script]} {
+    proj-fatal "Affirmation failed: $script"
+  }
+}
+
+########################################################################
 # If this function believes that the current console might support
 # ANSI escape sequences then this returns $str wrapped in a sequence
 # to bold that text, else it returns $str as-is.

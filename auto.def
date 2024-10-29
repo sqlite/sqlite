@@ -742,9 +742,9 @@ proc sqlite-check-line-editing {} {
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
   set libsForReadline {readline edit} ; # -l names to check for readline()
-  set check [opt-val with-linenoise]
   set editLibName "readline" ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
+  set check [opt-val with-linenoise]
   if {"" ne $check} {
     # Use linenoise...
     set dirLn $check
@@ -769,8 +769,10 @@ proc sqlite-check-line-editing {} {
     #
     # shell.c historically expects HAVE_EDITLINE to be set for
     # libedit, but it then expects to see <editline/readline.h>, which
-    # some system's don't actually have, despite having libedit. Thus
-    # we trick shell.c into using editline by posing as readline.
+    # some system's don't actually have, despite having libedit. If we
+    # end up finding <editline/readline.h> below, we will use
+    # -DHAVE_EDITLINE=1, else we will use -DHAVE_READLINE=1. In either
+    # case, we will link against libedit.
     set libsForReadline {edit}
     set editLibName editline
   } elseif {![opt-bool readline]} {
@@ -864,6 +866,8 @@ proc sqlite-check-line-editing {} {
     set rlInc [join $rlInc]
     define LDFLAGS_READLINE $rlLib
     define CFLAGS_READLINE $rlInc
+    proj-assert {expr {$editLibDef in {HAVE_READLINE HAVE_EDITLINE}}}
+    proj-assert {expr {$editLibName in {readline editline}}}
     define $editLibDef 1
     sqlite-add-shell-opt -D${editLibDef}=1
     msg-result "Using $editLibName flags: $rlInc $rlLib"
