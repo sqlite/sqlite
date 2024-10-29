@@ -189,12 +189,14 @@ set flags {
   linemacros           => {Enable #line macros in the amalgamation.}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   # </developer>
+
 }
 if {"" ne $DUMP_DEFINES_JSON} {
   lappend flags \
     defines-json-include-lowercase=0 \
     => {Include lower-case defines (primarily system paths) in $DUMP_DEFINES_JSON}
 }
+
 options [subst $flags]
 unset flags
 
@@ -262,6 +264,15 @@ proc sqlite-add-feature-flag {args} {
 proc sqlite-add-shell-opt {args} {
   if {"" ne $args} {
     define-append OPT_SHELL {*}$args
+  }
+}
+
+# Pass msg-debug=1 to configure to enable obnoxiously loud output from
+# msg-debug.
+set msgDebugEnabled [proj-val-truthy [get-env msg-debug 0]]
+proc msg-debug {msg} {
+  if {$::msgDebugEnabled} {
+    puts stderr [proj-bold "** DEBUG: $msg"]
   }
 }
 
@@ -462,13 +473,13 @@ proc sqlite-check-tcl {} {
   set use_tcl $optTcl
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
-  #puts "sqlite-check-tcl: use_tcl ${use_tcl}"
-  #puts "sqlite-check-tcl: with_tclsh=${with_tclsh}"
-  #puts "sqlite-check-tcl: with_tcl=$with_tcl"
+  msg-debug "sqlite-check-tcl: use_tcl ${use_tcl}"
+  msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
+  msg-debug "sqlite-check-tcl: with_tcl=$with_tcl"
   if {"" eq $with_tclsh && "" eq $with_tcl} {
     set with_tclsh [proj-first-bin-of tclsh9.0 tclsh8.6 tclsh]
+    msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
   }
-  #puts "sqlite-check-tcl: with_tclsh=${with_tclsh}"
 
   if {"" ne $with_tclsh} {
     if {![file isfile $with_tclsh]} {
@@ -624,7 +635,7 @@ sqlite-check-tcl
 #
 # Returns the name of the TCL it selects. Fails fatally if it cannot
 # detect a TCL appropriate for code generation.
-proc sqlite-check-which-tcl {} {
+proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH {}
   set cgtcl [opt-val with-tclsh jimsh]
@@ -670,8 +681,8 @@ proc sqlite-check-which-tcl {} {
     }
   }
   return $cgtcl
-}; # sqlite-check-which-tcl
-msg-result "TCL for code generation: [sqlite-check-which-tcl]"
+}; # sqlite-determine-codegen-tcl
+msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
 
 # /TCL
 ########################################################################

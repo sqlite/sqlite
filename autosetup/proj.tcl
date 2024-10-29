@@ -252,7 +252,7 @@ proc proj-first-bin-of {args} {
     undefine $u
     if {"" ne $rc} break
   }
-  return ""
+  return $rc
 }
 
 ########################################################################
