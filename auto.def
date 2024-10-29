@@ -231,7 +231,6 @@ foreach arg $::autosetup(argv) {
   define-append SQLITE_AUTORECONFIG '$arg'
 }
 
-
 # Are we cross-compiling?
 set cross_compiling [proj-is-cross-compiling]
 if {![file exists sqlite3.pc.in]} {
@@ -246,7 +245,7 @@ define OPT_SHELL {}         ; # CFLAGS for the sqlite3 CLI app
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.
 # If the first arg is -shell then it strips that arg
 # and passes the remaining args th sqlite-add-shell-opt
-# before adding them to OPF_FEATURE_FLAGS.
+# in addition to adding them to OPT_FEATURE_FLAGS.
 proc sqlite-add-feature-flag {args} {
   set shell ""
   if {"-shell" eq [lindex $args 0]} {
@@ -379,38 +378,23 @@ cc-check-includes \
   string.h strings.h \
   inttypes.h
 
-# These are optional for JimTCL but necessary if we want to use it for
-# code generation:
-cc-check-includes dirent.h sys/time.h
-
 if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
   # TODO: port over the more sophisticated zlib search from the fossil auto.def
-  define HAVE_ZLIB 1; # "-DSQLITE_HAVE_ZLIB=1"
+  define HAVE_ZLIB 1
   define LDFLAGS_ZLIB -lz
-  # Note that -DSQLITE_HAVE_ZLIB=1 is handled separately from the
-  # other feature flags in the autotools build. Do we need to emulate
-  # that?
   sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
 } else {
   define HAVE_ZLIB 0
   define LDFLAGS_ZLIB ""
 }
 
-#
-# Determine proper rpath-handling flags.
-#
-proj-check-rpath
+proj-check-rpath; # Determine proper rpath-handling flags.
 
-proj-define-if-opt-truthy shared ENABLE_SHARED \
-  "Build shared library?"
+proj-define-if-opt-truthy shared ENABLE_SHARED "Build shared library?"
 
-if {![proj-define-if-opt-truthy static ENABLE_STATIC \
-        "Build static library?"]} {
-  proj-warn "static lib build may be implicitly re-activated by other components, e.g. libtclsqlite3."
-}
+proj-define-if-opt-truthy static ENABLE_STATIC "Build static library?"
 
-proj-define-if-opt-truthy amalgamation USE_AMALGAMATION \
-  "Use amalgamation for builds?"
+proj-define-if-opt-truthy amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
 
 proj-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
 
@@ -420,8 +404,7 @@ proj-define-if-opt-truthy test-status TSTRNNR_OPTS \
 proj-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
 
-msg-checking "Debug build? "
-
+msg-checking "SQLITE_DEBUG build? "
 proj-if-opt-truthy with-debug {
   define SQLITE_DEBUG 1
   define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
@@ -633,57 +616,59 @@ sqlite-check-tcl
 
 ########################################################################
 # Check which TCL to use as a code generator. Prefer jimsh simply
-# because we have it in-tree (it's part of autosetup).
+# because we have it in-tree (it's part of autosetup), unless
+# --with-tclsh=X is used, in which case prefix X.
 #
-# Building jimsh0.c with -DJIM_COMPAT changes certain behavior to be
-# compatible with canonical TCL. Specifically: jim's [expr] only
-# accepts one arg unless JIM_COMPAT is defined. As of 2024-10-23,
-# jimsh0.c defines JIM_COMPAT automatically (prior to that it intended
-# to but a typo of JIM_TCL_COMPAT made it a no-op).
-define CFLAGS_JIMSH {}
-msg-result "Which TCL to use for code generation... "
-set cgtcl [opt-val with-tclsh jimsh]
-if {"jimsh" ne $cgtcl} {
-  # When --with-tclsh=X is used, use that for all TCL purposes,
-  # including in-tree code generation, per developer request.
-  define BTCLSH "\$(TCLSH_CMD)"
-} else {
-  if {[cc-check-functions realpath]} {
-    define-append CFLAGS_JIMSH -DHAVE_REALPATH
-    define BTCLSH "\$(JIMSH)"
-  } elseif {[cc-check-functions _fullpath]} {
-    # _fullpath() is a Windows API
-    define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-    define BTCLSH "\$(JIMSH)"
-  } elseif {[file exists [get-define TCLSH_CMD]]} {
-    set cgtcl [get-define TCLSH_CMD]
+# Returns the name of the TCL it selects. Fails fatally if it cannot
+# detect a TCL appropriate for code generation.
+proc sqlite-check-which-tcl {} {
+  msg-result "Checking for TCL to use for code generation... "
+  define CFLAGS_JIMSH {}
+  set cgtcl [opt-val with-tclsh jimsh]
+  if {"jimsh" ne $cgtcl} {
+    # When --with-tclsh=X is used, use that for all TCL purposes,
+    # including in-tree code generation, per developer request.
     define BTCLSH "\$(TCLSH_CMD)"
   } else {
-    # One last-ditch effort to find TCLSH_CMD: use info from
-    # tclConfig.sh to try to find a tclsh
-    if {"" eq [get-define TCLSH_CMD]} {
-      set tpre [get-define TCL_EXEC_PREFIX]
-      if {"" ne $tpre} {
-        set tv [get-define TCL_VERSION]
-        if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
-          define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
-        } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
-          define TCLSH_CMD "${tpre}/bin/tclsh"
+    # These headers are technically optional for JimTCL but necessary if
+    # we want to use it for code generation:
+    set sysh [cc-check-includes dirent.h sys/time.h]
+    if {$sysh && [cc-check-functions realpath]} {
+      define-append CFLAGS_JIMSH -DHAVE_REALPATH
+      define BTCLSH "\$(JIMSH)"
+    } elseif {$sysh && [cc-check-functions _fullpath]} {
+      # _fullpath() is a Windows API
+      define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+      define BTCLSH "\$(JIMSH)"
+    } elseif {[file exists [get-define TCLSH_CMD]]} {
+      set cgtcl [get-define TCLSH_CMD]
+      define BTCLSH "\$(TCLSH_CMD)"
+    } else {
+      # One last-ditch effort to find TCLSH_CMD: use info from
+      # tclConfig.sh to try to find a tclsh
+      if {"" eq [get-define TCLSH_CMD]} {
+        set tpre [get-define TCL_EXEC_PREFIX]
+        if {"" ne $tpre} {
+          set tv [get-define TCL_VERSION]
+          if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
+            define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
+          } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
+            define TCLSH_CMD "${tpre}/bin/tclsh"
+          }
+          unset tv
         }
-        unset tv
+        unset tpre
       }
-      unset tpre
+      set cgtcl [get-define TCLSH_CMD]
+      if {![file exists $cgtcl]} {
+        proj-fatal "Cannot find a tclsh to use for code generation."
+      }
+      define BTCLSH "\$(TCLSH_CMD)"
     }
-    set cgtcl [get-define TCLSH_CMD]
-    if {![file exists $cgtcl]} {
-      proj-fatal "Cannot find a tclsh to use for code generation."
-    }
-    define BTCLSH "\$(TCLSH_CMD)"
   }
-}
-msg-result "TCL for code generation: $cgtcl"
-unset cgtcl
-#define CFLAGS_JIMSH {-DJUST_TESTING}
+  return $cgtcl
+}; # sqlite-check-which-tcl
+msg-result "TCL for code generation: [sqlite-check-which-tcl]"
 
 # /TCL
 ########################################################################
@@ -739,7 +724,7 @@ if {1} {
 #
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
-#   - CFLAGS_READLINE = compilation flags for clients or empty string
+#   - CFLAGS_READLINE = compilation flags for clients or empty string.
 #
 # Note that LDFLAGS_READLINE and CFLAGS_READLINE may refer to
 # linenoise or editline, not necessarily libreadline.

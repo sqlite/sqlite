@@ -15,7 +15,7 @@
 # This file was initially derived from one used in the libfossil
 # project, authored by the same person who ported it here, and this is
 # noted here only as an indication that there are no licensing issues
-# despite this code having at least two near-twins running around a
+# despite this code having a handful of near-twins running around a
 # handful of third-party source trees.
 #
 ########################################################################
@@ -80,8 +80,8 @@ proc proj-bold {str} {
 # immediately and then exits.
 proc proj-indented-notice {args} {
   set fErr ""
-  switch -exact -- [lindex $args 0] {
-    -error     { set args [lassign $args fErr] }
+  if {"-error" eq [lindex $args 0]} {
+    set args [lassign $args fErr]
   }
   set lines [split [join $args] \n]
   foreach line $lines {
@@ -178,14 +178,6 @@ proc proj-search-for-header-dir {header args} {
 }
 
 ########################################################################
-# If $v is true, [puts $msg] is called, else puts is not called.
-#proc proj-maybe-verbose {v msg} {
-#  if {$v} {
-#    puts $msg
-#  }
-#}
-
-########################################################################
 # Usage: proj-find-executable-path ?-v? binaryName
 #
 # Works similarly to autosetup's [find-executable-path $binName] but:
@@ -241,29 +233,17 @@ proc proj-bin-define {binName {defName {}}} {
 # caller has no sensible way of knowing which result it was unless
 # they pass only a single argument).
 proc proj-first-bin-of {args} {
+  set rc ""
   foreach b $args {
+    set u [string toupper $b]
+    # Note that cc-path-progs defines $u to false if it finds no match.
     if {[cc-path-progs $b]} {
-      set u [string toupper $b]
-      set x [get-define $u]
-      undefine $u
-      return $x
+      set rc [get-define $u]
     }
+    undefine $u
+    if {"" ne $rc} break
   }
   return ""
-}
-
-########################################################################
-# Looks for `bash` binary and dies if not found. On success, defines
-# BIN_BASH to the full path to bash and returns that value.
-#
-# TODO: move this out of this file and back into the 1 or 2 downstream
-# trees which use it.
-proc proj-require-bash {} {
-  set bash [proj-bin-define bash]
-  if {"" eq $bash} {
-    user-error "Cannot find required bash shell"
-  }
-  return $bash
 }
 
 ########################################################################
@@ -817,114 +797,6 @@ proc proj-check-rpath {} {
   }
   return $rc
 }
-
-########################################################################
-# Check for availability of libreadline.  Linking in readline varies
-# wildly by platform and this check does not cover all known options.
-# This detection is known to fail under the following conditions:
-#
-# - (pkg-config readline) info is either unavailable for libreadline or
-#   simply misbehaves.
-#
-# - Either of readline.h or libreadline are in an exotic place.
-#
-# Defines the following vars:
-#
-# - HAVE_READLINE: 0 or 1
-# - LDFLAGS_READLINE: "" or linker flags
-# - CFLAGS_READLINE: "" or c-flags
-#
-# Quirks:
-#
-# - If readline.h is found in a directory name matching *line then the
-#   resulting -I... flag points one directory _up_ from that, under
-#   the assumption that client-side code will #include
-#   <readline/readline.h>.
-#
-# Returns the value of HAVE_READLINE.
-proc proj-check-readline {} {
-  define HAVE_READLINE 0
-  define LDFLAGS_READLINE ""
-  define CFLAGS_READLINE ""
-  if {![opt-bool readline]} {
-    msg-result "libreadline disabled via --disable-readline."
-    return 0
-  }
-
-  if {[pkg-config-init 0] && [pkg-config readline]} {
-    define HAVE_READLINE 1
-    define LDFLAGS_READLINE [get-define PKG_READLINE_LDFLAGS]
-    define-append LDFLAGS_READLINE [get-define PKG_READLINE_LIBS]
-    define CFLAGS_READLINE [get-define PKG_READLINE_CFLAGS]
-    return 1
-  }
-
-  # On OpenBSD on a Raspberry pi 4:
-  #
-  # $ pkg-config readline; echo $?
-  # 0
-  # $ pkg-config --cflags readline
-  # Package termcap was not found in the pkg-config search path
-  # $ echo $?
-  # 1
-  # $ pkg-config --print-requires readline; echo $?
-  # 1
-  #
-  # i.e. there's apparently no way to find out that readline requires
-  # termcap beyond parsing the error message.  It turns out it doesn't
-  # want termcap, it wants -lcurses, but we don't get that info from
-  # pkg-config either.
-
-  # Look for readline.h
-  set rlInc ""
-  if {![proj-is-cross-compiling]} {
-    # ^^^ this check is derived from SQLite's legacy configure script
-    set rlInc [proj-search-for-header-dir readline.h \
-                 -subdirs {include/readline include}]
-    if {"" ne $rlInc} {
-      if {[string match */*line $rlInc]} {
-        # Special case: if the path includes .../*line/readline.h", set
-        # the -I to one dir up from that because our sources include
-        # <readline/readline.h> or <editline/readline.h>. Reminder: if
-        # auto.def is being run by jimsh0 then [file normalize] will not
-        # work!
-        set rlInc [file dirname $v]
-      }
-      set rlInc "-I${rlInc}"
-    }
-  }
-
-  # If readline.h was found/specified, look for libreadline...
-  set rlLib ""
-  if {"" ne $rlInc} {
-    set libTerm ""
-    if {[proj-check-function-in-lib tgetent {readline ncurses curses termcap}]} {
-      # ^^^ check extracted from an ancient autotools configure script.
-      set libTerm [get-define lib_tgetent]
-      undefine lib_tgetent
-    }
-    if {"readline" eq $libTerm} {
-      set rlLib $libTerm
-    } elseif {[proj-check-function-in-lib readline readline $libTerm]} {
-      set rlLib [get-define lib_readline]
-      lappend rlLib $libTerm
-      undefine lib_readline
-    }
-  }
-
-  if {"" ne $rlLib} {
-    set rlLib [join $rlLib]
-    define LDFLAGS_READLINE $rlLib
-    define CFLAGS_READLINE $rlInc
-    define HAVE_READLINE 1
-    msg-result "Using readline with flags: $rlInc $rlLib"
-    return 1
-  }
-
-  msg-result "libreadline not found."
-  return 0
-}
-
 
 ########################################################################
 # Internal helper for proj-dump-defs-json. Expects to be passed a

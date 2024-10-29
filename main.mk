@@ -1274,9 +1274,9 @@ tclsqlite-shell.o:	has_tclconfig $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 tclsqlite-stubs.o:	has_tclconfig $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite3$(T.exe):	has_tclconfig tclsqlite-shell.o $(libsqlite3.LIB)
+tclsqlite3$(T.exe):	has_tclconfig tclsqlite-shell.o $(libsqlite3.SO)
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
-		 $(libsqlite3.LIB) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+		 $(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 
 # Rules to build opcodes.c and opcodes.h
 #
