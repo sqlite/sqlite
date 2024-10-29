@@ -1,8 +1,8 @@
-C When\seither\s--readline\sor\s--editline\sare\sexplicitly\sprovided\sbut\sthe\scorresponding\sfeature\sis\snot\sfound,\sfail\sfatally.\sIf\snot\sexplicitly\srequested,\ssimply\sdisable\sthat\sfeature\sif\sthe\slib\sis\snot\sfound.
-D 2024-10-29T08:42:06.048
+C Fix\sa\stypo\sin\sLICENSE.md
+D 2024-10-29T14:22:12.268
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
+F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
 F Makefile.in cdf1c8db0b33fa83f400bcd63742113a727517adc55b322d2e004339c012cac2
 F Makefile.linux-generic 69b54c58ab2424a0d30f340d9defd7e87c25690a55b77acb9bdc657bd9a223f1
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80ac10ed8d0ee9eaf83a6c43608098c631f5f9535c8b125da5bfe2d6a4d23bec
-R db8a68fd2e53d23ef8f48e7caeaffa7c
-U stephan
-Z 7e16d1fa4c3f0d8fad8a4fd41d97e038
+P 1d24a29c6ef05185950ba5c45f2a60a92f12a8e5c57026b599f716c9f2f6cf84
+R 39666de7648cff00f94d62d8ecd9d6d5
+U drh
+Z 98e5f326f4e37c32b0833374f38b52df
 # Remove this line to create a well-formed Fossil manifest.
