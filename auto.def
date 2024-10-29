@@ -139,7 +139,6 @@ set flags {
   load-extension=1     => {Disable loading of external extensions}
   math=1               => {Disable math functions}
   json=1               => {Disable JSON functions}
-  all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   memsys5              => {Enable MEMSYS5}
   memsys3              => {Enable MEMSYS3}
   fts3                 => {Enable the FTS3 extension}
@@ -149,6 +148,7 @@ set flags {
   geopoly              => {Enable the GEOPOLY extension}
   rtree                => {Enable the RTREE extension}
   session              => {Enable the SESSION extension}
+  all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
   with-tclsh:PATH      => {Full pathname of tclsh to use}
@@ -392,7 +392,10 @@ proj-check-rpath; # Determine proper rpath-handling flags.
 
 proj-define-if-opt-truthy shared ENABLE_SHARED "Build shared library?"
 
-proj-define-if-opt-truthy static ENABLE_STATIC "Build static library?"
+if {![proj-define-if-opt-truthy static ENABLE_STATIC \
+        "Build static library?"]} {
+  proj-warn "Static lib build may be implicitly re-activated by other components, e.g. some test apps."
+}
 
 proj-define-if-opt-truthy amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
 
@@ -474,7 +477,7 @@ proc sqlite-check-tcl {} {
       proj-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
-      msg-result "Using tclsh: $with_tclsh"
+      #msg-result "Using tclsh: $with_tclsh"
     }
     if {$use_tcl} {
       if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
