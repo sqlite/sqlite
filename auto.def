@@ -1190,5 +1190,3 @@ proj-if-opt-truthy dump-defines {
     }
   }
 }
-
-msg-result [proj-bold "Source tree is configured! Run make to build it."]
