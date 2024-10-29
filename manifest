@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sLICENSE.md
-D 2024-10-29T14:22:12.268
+C Allow\sread-only\sconnections\sto\signore\shot\sjournals\screated\sby\s"PRAGMA\sjournal_mode\s=\swal".
+D 2024-10-29T19:34:58.292
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -763,7 +763,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 0ad4e0885294b3a0e135a18533590ec9ad91ffe82f6a08e55b40babd51772928
 F src/os_win.c 69fa1aaff68270423c85cff4327ba17ef99a1eb017e1a2bfb97416d9b8398b05
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
+F src/pager.c 170558eb359dd374159141c1f8325480d2d3181439738e7fbb938462c5c9c2c4
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y a7a8d42eeff01d267444ddb476029b0b1726fb70ae3d77984140f17ad02e2d61
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1477,7 +1477,7 @@ F test/mutex1.test 42cb5e244c3a77bb0ef2b967e06fa5e7ba7d32d90a9b20bed98f6f5ede185
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 73ea63ab43668313e2f8cc9ef9e9a966672c7934f3ce76926fbe991235d07d91
 F test/nockpt.test 8c43b25af63b0bd620cf1b003529e37b6f1dc53bd22690e96a1bd73f78dde53a
-F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
+F test/nolock.test 284c72c2b752cf3ffbfd224dfa868bd524e624d3ab5c5ef181fc49ad9df0b444
 F test/normalize.test f23b6c5926c59548635fcf39678ac613e726121e073dd902a3062fbb83903b72
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -1550,6 +1550,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/readonly.test 69a7ccec846cad2e000b3539d56360d02f327061dc5e41f7f9a3e01f19719952
+F test/readonly2.test df7b572df01a0f773bb7b6e64bd8c98a55cb3099b4ffd054a44319c5f7e87f14
 F test/recover.test a163a156ea9f2beea63fa83c4dcd8dea6e57b8a569fc647155e3d2754eaac1b5
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
@@ -2198,8 +2199,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d24a29c6ef05185950ba5c45f2a60a92f12a8e5c57026b599f716c9f2f6cf84
-R 39666de7648cff00f94d62d8ecd9d6d5
-U drh
-Z 98e5f326f4e37c32b0833374f38b52df
+P decc60034849c232a05c8eb93ff0c6a5d6a48336d960771ed096d89633a9d0e2
+R b458c57cdc073a8cbc08997978169801
+T *branch * readonly-ignore-wal-jrnl
+T *sym-readonly-ignore-wal-jrnl *
+T -sym-trunk *
+U dan
+Z 5e2548d07e7a74989e8031dcc6402807
 # Remove this line to create a well-formed Fossil manifest.
