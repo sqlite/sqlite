@@ -24,9 +24,14 @@ TOP ?= $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 #
 # $(CFLAGS) will be used when compiling the library and most
-# utilities.  It must normally contain -fPIC on Linux systems.
+# utilities.  It must normally contain -fPIC on Linux systems,
+# but overriding CFLAGS is an easy way for users to inadvertently
+# remove -fPIC from their builds, so we generally expect to see
+# -fPIC in $(CFLAGS.core), which main.mk will integrate with
+# the CFLAGS where needed.
 #
-CFLAGS = -fPIC
+CFLAGS =
+CFLAGS.core = -fPIC
 
 #
 # $(SHELL_OPT) contains CFLAGS for building the sqlite3 CLI shell.

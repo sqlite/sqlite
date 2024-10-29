@@ -97,8 +97,18 @@ AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = @CC@
-CFLAGS = @CPPFLAGS@ @CFLAGS@ @SH_CFLAGS@
-
+#
+# CFLAGS is problematic because it is frequently overridden when
+# invoking make, which loses things like -fPIC. So... let's avoid
+# using it directly and instead add a level of indirection.  We
+# combine CFLAGS and CPPFLAGS here because that's the way the legacy
+# build did it.
+#
+CFLAGS = @CFLAGS@ @CPPFLAGS@
+#
+# CFLAGS.core is documented in main.mk.
+#
+CFLAGS.core = @SH_CFLAGS@
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@

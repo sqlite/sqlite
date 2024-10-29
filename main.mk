@@ -221,7 +221,7 @@ TCL_CONFIG_SH ?=
 # $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
 # libsqlite3, and will usually differ from $(LDFLAGS.rpath).
 #
-TCLLIB_RPATH ?=
+#TCLLIB_RPATH ?=
 #
 # $(HAVE_WASI_SDK) =
 #
@@ -247,9 +247,15 @@ all:	sqlite3.h sqlite3.c
 
 #
 # $(CFLAGS) should ideally only contain flags which are relevant for
-# all binaries built for the target platform.
+# all binaries built for the target platform. However, many people
+# like to pass it to "make" without realizing that it applies to
+# dozens of apps, and they override core flags when doing so. To help
+# work around that, we expect core-most CFLAGS (only), e.g. -fPIC, to
+# be set in $(CFLAGS.core). That enables people to pass their other
+# CFLAGS without triggering, e.g., "recompile with -fPIC" errors.
 #
-T.cc += $(CFLAGS)
+CFLAGS.core ?=
+T.cc += $(CFLAGS.core) $(CFLAGS)
 
 #
 # The difference between $(OPT_FEATURE_FLAGS) and $(OPTS) is that the
