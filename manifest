@@ -1,5 +1,5 @@
-C Remove\sLDFLAGS_LIBZ\sfrom\ssqlite3.pc.in\s(pkg-config)\sbecause\sit's\snot\sneeded\sby\sthe\slibrary,\sonly\sthe\sshell.\sRe-enable\sthe\snotice\sabout\s--disable-static\sonly\sbeing\spartially\strue.
-D 2024-10-29T04:21:11.440
+C Teach\sconfigure\s--editline\sto\sreport\sitself\sto\sshell.c\sas\seither\sHAVE_EDITLINE\sor\sHAVE_READLINE,\sdepending\son\swhich\sheaders\sare\savailable\s(editline/readline.h\sor\sreadline/readline.h,\sboth\sof\swhich\swork\sand\ssome\ssystems\sonly\shave\sthe\slatter),\sbut\sthen\slink\sagainst\slibedit\sregardless\sof\swhich\sone\sshell.c\sthinks\sit\sis\susing.
+D 2024-10-29T08:01:56.226
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md b6e6c1baf38e4339bd3f1e0e5e5bfd0a9a93d133360691b2785c2d4b2f2dcec2
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 7f3da911883d21c53462b9a79259c9551d971a8cdc9bbbd11a7e79efaa7b758b
+F auto.def 446169b97de3492b54e2282f22cd0364a5579ec620617273c3b6e371650700ff
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -697,7 +697,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 35c8565133e6afc4219654a8339cf617f8d9f40b3e9b6a598a2e9782b8a4eee5
+F main.mk 46f98320780c72a025bed1a5f8af3355fb2186691617f2b8d41221f9aa564494
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a259026ae2dce5d60b80bd7d662a6e73734e51056f4a4226c3fa5ac636b5e3a
-R faa87ee569d92cfc3e69ecb8ae88e292
+P e03c564aff6e3ac558f17670bfdd5fc129a8d33ec50975af843973152483e3fa
+R d3a68de2e78347c35dd06cc7c4f435ff
 U stephan
-Z 1c510488e46aaa36e3e65a77adda5034
+Z 03d95568b8712aa0747a4210f93cda01
 # Remove this line to create a well-formed Fossil manifest.

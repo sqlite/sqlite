@@ -741,7 +741,10 @@ proc sqlite-check-line-editing {} {
   define HAVE_EDITLINE 0
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
+  set libsForReadline {readline edit} ; # -l names to check for readline()
   set check [opt-val with-linenoise]
+  set editLibName "readline" ; # "readline" or "editline"
+  set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
   if {"" ne $check} {
     # Use linenoise...
     set dirLn $check
@@ -758,33 +761,18 @@ proc sqlite-check-line-editing {} {
     sqlite-add-shell-opt -DHAVE_LINENOISE=1
     return "linenoise"
   } elseif {[opt-bool editline]} {
-    # --enable-editline. The problem is finding a system which has it
-    # available to test on. The man pages for it on OpenBSD do not
-    # match how shell.c uses it. OpenBSD has a lib named libedit but
-    # no headers to go with it. The legacy configure script looked for
-    # readline() in libedit (and libedit.a indeed has the
-    # readline/history functions used by shell.c) but shell.c expects
-    # to find <editline/readline.h> when HAVE_EDITLINE=1, and that
-    # file is nowhere to be found.
+    # libedit mimics of libreadline and on some systems does not
+    # have its own header installed (instead, that of libreadline is used).
+    # We treat --editline as, for purposes of this tree, readline except
+    # that we'll link against libedit if it's available (and fail if
+    # it's not). We will use either API's header file
     #
-    # However, a workaround which works on the available systems is:
-    #
-    # --with-readline-ldflags=-ledit
-    #
-    # And then let it detect readline.h. We "could" re-map
-    # --enable-editline to do exactly that but it seems likely to
-    # break on systems for which which HAVE_EDITLINE=1 previously
-    # worked.
-    proj-indented-notice -error {
-      ERROR: the --enable-editline flag is not supported due to
-      non-availability of systems which have it in a form which the
-      sqlite3 CLI shell expects to see. On some systems this can be
-      worked around by passing --with-readline-ldflags=-ledit instead
-      of --enable-editline, which will attempt to use the readline.h
-      supplied by libreadline but link against -ledit. On systems
-      tested so far, that works.
-    }
-    return "none"
+    # shell.c historically expects HAVE_EDITLINE to be set for
+    # libedit, but it then expects to see <editline/readline.h>, which
+    # some system's don't actually have, despite having libedit. Thus
+    # we trick shell.c into using editline by posing as readline.
+    set libsForReadline {edit}
+    set editLibName editline
   } elseif {![opt-bool readline]} {
     msg-result "Readline support explicitly disabled with --disable-readline"
     return "none"
@@ -798,8 +786,8 @@ proc sqlite-check-line-editing {} {
       proj-opt-set with-readline-cflags auto
     } else {
       set v [file dirname $v]
-      if {[string match */*line $v]} {
-        # Special case: if the path includes .../*line/readline.h", set
+      if {[string match */readline $v]} {
+        # Special case: if the path includes .../readline/readline.h, set
         # the -I to one dir up from that because our sources include
         # <readline/readline.h> or <editline/readline.h>.  Reminder: if
         # auto.def is being run by jimsh0 then [file normalize] will not
@@ -814,16 +802,28 @@ proc sqlite-check-line-editing {} {
   set rlInc [opt-val with-readline-cflags auto]
   if {"auto" eq $rlInc} {
     set rlInc ""
-    if {!$::cross_compiling} {
+    if {$::cross_compiling} {
       # ^^^ this check is derived from the legacy configure script
+      proj-warn "Skipping check for readline.h because we're cross-compiling."
+    } else {
+      set dirs "[get-define prefix] /usr /usr/local /usr/local/readline /usr/contrib /mingw"
+      set subdirs "include/$editLibName"
+      if {"readline" ne $editLibName} {
+        lappend subdirs include/readline
+        # ^^^ editline, on some systems, does not have its own header,
+        # and uses libreadline's header.
+      }
+      lappend subdirs include
+      # ^^^ The dirs and subdirs lists are, except for the inclusion
+      # of $prefix and editline, from the legacy configure script
       set rlInc [proj-search-for-header-dir readline.h \
-                 -dirs {/usr /usr/local /usr/local/readline /usr/contrib /mingw} \
-                 -subdirs {include/readline include}]
-      # ^^^ The -dirs and -subdirs lists are from the legacy configure script
+                 -dirs $dirs -subdirs $subdirs]
       if {"" ne $rlInc} {
-        if {[string match */*line $rlInc]} {
-          # See notes above for --with-readline-header
-          set rlInc [file dirname $rlInc]
+        if {[string match */readline $rlInc]} {
+          set rlInc [file dirname $rlInc]; # shell #include's <readline/readline.h>
+        } elseif {[string match */editline $rlInc]} {
+          set editLibDef HAVE_EDITLINE
+          set rlInc [file dirname $rlInc]; # shell #include's <editline/readline.h>
         }
         set rlInc "-I${rlInc}"
       }
@@ -837,14 +837,14 @@ proc sqlite-check-line-editing {} {
     if {"" eq $rlLib || "auto" eq $rlLib} {
       set rlLib ""
       set libTerm ""
-      if {[proj-check-function-in-lib tgetent {readline ncurses curses termcap}]} {
+      if {[proj-check-function-in-lib tgetent "$editLibName ncurses curses termcap"]} {
         # ^^^ that libs list comes from the legacy configure script ^^^
         set libTerm [get-define lib_tgetent]
         undefine lib_tgetent
       }
-      if {"readline" eq $libTerm} {
+      if {$editLibName eq $libTerm} {
         set rlLib $libTerm
-      } elseif {[proj-check-function-in-lib readline readline $libTerm]} {
+      } elseif {[proj-check-function-in-lib readline $libsForReadline $libTerm]} {
         set rlLib [get-define lib_readline]
         lappend rlLib $libTerm
         undefine lib_readline
@@ -853,54 +853,43 @@ proc sqlite-check-line-editing {} {
   }
 
   if {"" ne $rlLib} {
+    if {"editline" eq $editLibName && "HAVE_READLINE" eq $editLibDef} {
+      proj-indented-notice {
+        NOTE: this is libedit but using <readline/readline.h>,
+        so will be compiled using -DHAVE_READLINE=1 but linked with
+        libedit.
+      }
+    }
     set rlLib [join $rlLib]
     set rlInc [join $rlInc]
     define LDFLAGS_READLINE $rlLib
     define CFLAGS_READLINE $rlInc
-    define HAVE_READLINE 1
-    sqlite-add-shell-opt -DHAVE_READLINE=1
-    msg-result "Using readline flags: $rlInc $rlLib"
-
+    define $editLibDef 1
+    sqlite-add-shell-opt -D${editLibDef}=1
+    msg-result "Using $editLibName flags: $rlInc $rlLib"
     # Now check whether rl_completion_matches() has a signature we can use.
     # cctest is producing unexpected test output when using:
     #   -includes {stdio.h readline/readline.h}
     # so we have to use -source instead and write the whole test app inline
-    if {[cctest \
-           -cflags $rlInc -libs $rlLib -nooutput 1 -source {
+    if {![cctest \
+            -cflags "$rlInc -D${editLibDef}" -libs $rlLib -nooutput 1 -source {
              #include <stdio.h>
+             #ifdef HAVE_EDITLINE
+             #include <editline/readline.h>
+             #else
              #include <readline/readline.h>
+             #endif
              static char * rcg(const char *z, int i){return 0;}
              int main(void) {
                char ** x = rl_completion_matches("one", rcg);
                return 0;
              }
            }]} {
-    } else {
-      user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
+      user-notice "WARNING: readline-style completion disabled due to rl_completion_matches() signature mismatch"
       show-notices
       sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
-
-    # Now check whether rl_completion_matches() has a signature we can use.
-    # cctest is producing unexpected test output when using:
-    #   -includes {stdio.h readline/readline.h}
-    # so we have to use -source instead and write the whole test app inline
-    if {[cctest \
-           -cflags $rlInc -libs $rlLib -nooutput 1 -source {
-             #include <stdio.h>
-             #include <readline/readline.h>
-             static char * rcg(const char *z, int i){return 0;}
-             int main(void) {
-               char ** x = rl_completion_matches("one", rcg);
-               return 0;
-             }
-           }]} {
-      user-notice "Readline completion enabled"
-    } else {
-      user-notice "WARNING: readline completion disabled due to rl_completion_matches() signature mismatch"
-      sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
-    }
-    return "readline"
+    return $editLibName
   }
 
   return "none"

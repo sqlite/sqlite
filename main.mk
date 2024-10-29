@@ -322,12 +322,17 @@ T.link = $(T.cc.sqlite) $(T.link.extras)
 T.link.shared = $(T.link) $(LDFLAGS.shobj)
 
 #
-# LDFLAGS.libsqlite3 should be used with any target which either
-# results in building libsqlite3.so, compiles sqlite3.c directly, or
-# links in either of $(LIBOBJSO) or $(LIBOBJS1).  Note that these
-# flags are for the target build platform, not necessarily localhost.
-# i.e. it should be used with $(T.cc.sqlite) or $(T.link) but not
-# $(B.cc).
+# LDFLAGS.libsqlite3 should be used with any deliverable for which any
+# of the following apply:
+#
+#  - Results in building libsqlite3.so
+#  - Compiles sqlite3.c in to an application
+#  - Links with libsqlite3.a
+#  - Links in either of $(LIBOBJSO) or $(LIBOBJS1)
+#
+# Note that these flags are for the target build platform, not
+# necessarily localhost.  i.e. it should be used with $(T.cc.sqlite)
+# or $(T.link) but not $(B.cc).
 #
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
