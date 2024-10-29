@@ -850,6 +850,8 @@ proc sqlite-check-line-editing {} {
         set rlInc "-I${rlInc}"
       }
     }
+  } elseif {"" ne $rlInc && ![string match *-I* $rlInc]} {
+    proj-fatal "Argument to --with-readline-cflag is intended to be CFLAGS and contain -I..."
   }
 
   # If readline.h was found/specified, look for lib(readline|edit)...
