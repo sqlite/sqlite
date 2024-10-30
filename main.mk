@@ -946,10 +946,12 @@ SOURCE_TCLCONFIG = . $(TCL_CONFIG_SH) || exit $$?
 # to an existing dir, then append /sqlite3 to it.
 #
 T.tcllibdir = \
+  if [ x != "x$(TCLLIBDIR)" ]; then tcllibdir="$(TCLLIBDIR)"; else \
     for tcllibdir in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
     [ -d "$$tcllibdir" ] && break; done; \
     if [ x = "x$$tcllibdir" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
-    tcllibdir="$$tcllibdir/sqlite3"; echo "TCLLIBDIR=$$tcllibdir"
+    tcllibdir="$$tcllibdir/sqlite3"; \
+  fi; echo "TCLLIBDIR=$$tcllibdir"
 #
 # $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for $(T.compile)
 # and $(T.link) which first invoke $(SOURCE_TCLCONFIG).
