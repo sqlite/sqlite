@@ -12,25 +12,28 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
-# Routines with a suffix of _ are intended for internal use,
-# within this file, and are not part of the API which auto.def files
-# should rely on.
-#
 # This file was initially derived from one used in the libfossil
-# project, authored by the same person who ported it here, noted here
-# only as an indication that there are no licensing issue despite this
-# code having at least two near-twins running around in other trees.
+# project, authored by the same person who ported it here, and this is
+# noted here only as an indication that there are no licensing issues
+# despite this code having a handful of near-twins running around a
+# handful of third-party source trees.
 #
 ########################################################################
 #
-# Design notes: by and large, autosetup prefers to update global state
-# with the results of feature checks, e.g. whether the compiler
-# supports flag --X.  In this developer's opinion that (A) causes more
-# confusion than it solves[^1] and (B) adds an unnecessary layer of
-# "voodoo" between the autosetup user and its internals. This module,
-# in contrast, instead injects the results of its own tests into
-# well-defined variables and leaves the integration of those values to
-# the caller's discretion.
+# Design notes:
+#
+# - Symbols with a suffix of _ are intended for internal use within
+#   this file, and are not part of the API which auto.def files should
+#   rely on.
+#
+# - By and large, autosetup prefers to update global state with the
+#   results of feature checks, e.g. whether the compiler supports flag
+#   --X.  In this developer's opinion that (A) causes more confusion
+#   than it solves[^1] and (B) adds an unnecessary layer of "voodoo"
+#   between the autosetup user and its internals. This module, in
+#   contrast, instead injects the results of its own tests into
+#   well-defined variables and leaves the integration of those values
+#   to the caller's discretion.
 #
 # [1]: As an example: testing for the -rpath flag, using
 # cc-check-flags, can break later checks which use
@@ -42,28 +45,78 @@
 ########################################################################
 
 ########################################################################
-# $hwaci is an internal-use-only array for storing whatever generic
+# $proj_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
-array set hwaci_ {}
+array set proj_ {}
+set proj_(isatty) [isatty? stdout]
 
-proc hwaci-warn {msg} {
-  puts stderr "WARNING: $msg"
+proc proj-warn {msg} {
+  puts stderr [proj-bold "WARNING: $msg"]
 }
-proc hwaci-notice {msg} {
-  puts stderr "NOTICE: $msg"
-}
-proc hwaci-fatal {msg} {
-  user-error "ERROR: $msg"
+proc proj-fatal {msg} {
+  show-notices
+  puts stderr [proj-bold "ERROR: $msg"]
+  exit 1
 }
 
 ########################################################################
-# hwaci-lshift_ shifts $count elements from the list named $listVar and
-# returns them.
+# Kind of like a C assert if uplevel (eval) of $script is false,
+# triggers a fatal error.
+proc proj-assert {script} {
+  if {1 == [get-env proj-assert 0]} {
+    msg-result [proj-bold "asserting: [string trim $script]"]
+  }
+  if {![uplevel 1 $script]} {
+    proj-fatal "Assertion failed: $script"
+  }
+}
+
+########################################################################
+# If this function believes that the current console might support
+# ANSI escape sequences then this returns $str wrapped in a sequence
+# to bold that text, else it returns $str as-is.
+proc proj-bold {str} {
+  if {$::autosetup(iswin) || !$::proj_(isatty)} {
+    return $str
+  }
+  return "\033\[1m${str}\033\[0m"
+}
+
+########################################################################
+# Takes a multi-line message and emits it with consistent indentation
+# using [user-notice] (which means its rendering will (A) go to stderr
+# and (B) be delayed until the next time autosetup goes to output a
+# message).
+#
+# If its first argument is -error then it renders the message
+# immediately and then exits.
+proc proj-indented-notice {args} {
+  set fErr ""
+  if {"-error" eq [lindex $args 0]} {
+    set args [lassign $args fErr]
+  }
+  set lines [split [join $args] \n]
+  foreach line $lines {
+    user-notice "      [string trimleft $line]"
+  }
+  if {"" ne $fErr} {
+    show-notices
+    exit 1
+  }
+}
+
+########################################################################
+# Returns 1 if cross-compiling, else 0.
+proc proj-is-cross-compiling {} {
+  return [expr {[get-define host] ne [get-define build]}]
+}
+
+########################################################################
+# proj-lshift_ shifts $count elements from the list named $listVar
+# and returns them as a new list. On empty input, returns "".
 #
 # Modified slightly from: https://wiki.tcl-lang.org/page/lshift
-#
-# On an empty list, returns "".
-proc hwaci-lshift_ {listVar {count 1}} {
+proc proj-lshift_ {listVar {count 1}} {
   upvar 1 $listVar l
   if {![info exists l]} {
     # make the error message show the real variable name
@@ -79,10 +132,25 @@ proc hwaci-lshift_ {listVar {count 1}} {
 }
 
 ########################################################################
+# Expects to receive string input, which it splits on newlines, strips
+# out any lines which begin with an number of whitespace followed by a
+# '#', and returns a value containing the [append]ed results of each
+# remaining line with a \n between each.
+proc proj-strip-hash-comments_ {val} {
+  set x {}
+  foreach line [split $val \n] {
+    if {![string match "#*" [string trimleft $line]]} {
+      append x $line \n
+    }
+  }
+  return $x
+}
+
+########################################################################
 # A proxy for cc-check-function-in-lib which "undoes" any changes that
 # routine makes to the LIBS define. Returns the result of
 # cc-check-function-in-lib.
-proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
+proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
   define-push {LIBS} {
     set found [cc-check-function-in-lib $function $libs $otherlibs]
@@ -91,27 +159,50 @@ proc hwaci-check-function-in-lib {function libs {otherlibs {}}} {
 }
 
 ########################################################################
-# If $v is true, [puts $msg] is called, else puts is not called.
-#proc hwaci-maybe-verbose {v msg} {
-#  if {$v} {
-#    puts $msg
+# Searches for $header in a combination of dirs and subdirs, specified
+# by the -dirs {LIST} and -subdirs {LIST} flags (each of which have
+# sane defaults). Returns either the first matching dir or an empty
+# string.  The return value does not contain the filename part.
+proc proj-search-for-header-dir {header args} {
+  set subdirs {include}
+  set dirs {/usr /usr/local /mingw}
+# Debatable:
+#  if {![proj-is-cross-compiling]} {
+#    lappend dirs [get-define prefix]
 #  }
-#}
+  while {[llength $args]} {
+    switch -exact -- [lindex $args 0] {
+      -dirs     { set args [lassign $args - dirs] }
+      -subdirs  { set args [lassign $args - subdirs] }
+      default   {
+        proj-fatal "Unhandled argument: $args"
+      }
+    }
+  }
+  foreach dir $dirs {
+    foreach sub $subdirs {
+      if {[file exists $dir/$sub/$header]} {
+        return "$dir/$sub"
+      }
+    }
+  }
+  return ""
+}
 
 ########################################################################
-# Usage: hwaci-find-executable-path ?-v? binaryName
+# Usage: proj-find-executable-path ?-v? binaryName
 #
 # Works similarly to autosetup's [find-executable-path $binName] but:
 #
 # - If the first arg is -v, it's verbose about searching, else it's quiet.
 #
 # Returns the full path to the result or an empty string.
-proc hwaci-find-executable-path {args} {
+proc proj-find-executable-path {args} {
   set binName $args
   set verbose 0
   if {[lindex $args 0] eq "-v"} {
     set verbose 1
-    set binName [lrange $args 1 end]
+    set args [lassign $args - binName]
     msg-checking "Looking for $binName ... "
   }
   set check [find-executable-path $binName]
@@ -126,15 +217,15 @@ proc hwaci-find-executable-path {args} {
 }
 
 ########################################################################
-# Uses [hwaci-find-executable-path $binName] to (verbosely) search for
+# Uses [proj-find-executable-path $binName] to (verbosely) search for
 # a binary, sets a define (see below) to the result, and returns the
 # result (an empty string if not found).
 #
 # The define'd name is: if defName is empty then "BIN_X" is used,
 # where X is the upper-case form of $binName with any '-' characters
 # replaced with '_'.
-proc hwaci-bin-define {binName {defName {}}} {
-  set check [hwaci-find-executable-path -v $binName]
+proc proj-bin-define {binName {defName {}}} {
+  set check [proj-find-executable-path -v $binName]
   if {"" eq $defName} {
     set defName "BIN_[string toupper [string map {- _} $binName]]"
   }
@@ -143,7 +234,7 @@ proc hwaci-bin-define {binName {defName {}}} {
 }
 
 ########################################################################
-# Usage: hwaci-first-bin-of bin...
+# Usage: proj-first-bin-of bin...
 #
 # Looks for the first binary found of the names passed to this
 # function.  If a match is found, the full path to that binary is
@@ -153,36 +244,45 @@ proc hwaci-bin-define {binName {defName {}}} {
 # any define'd name that function stores for the result (because the
 # caller has no sensible way of knowing which result it was unless
 # they pass only a single argument).
-proc hwaci-first-bin-of {args} {
+proc proj-first-bin-of {args} {
+  set rc ""
   foreach b $args {
+    set u [string toupper $b]
+    # Note that cc-path-progs defines $u to false if it finds no match.
     if {[cc-path-progs $b]} {
-      set u [string toupper $b]
-      set x [get-define $u]
-      undefine $u
-      return $x
+      set rc [get-define $u]
     }
+    undefine $u
+    if {"" ne $rc} break
   }
-  return ""
+  return $rc
 }
 
 ########################################################################
-# Looks for `bash` binary and dies if not found. On success, defines
-# BIN_BASH to the full path to bash and returns that value.
+# Returns 1 if the user specifically provided the given configure
+# flag, else 0. This can be used to distinguish between options which
+# have a default value and those which were explicitly provided by the
+# user, even if the latter is done in a way which uses the default
+# value.
 #
-# TODO: move this out of this file and back into the 1 or 2 downstream
-# trees which use it.
-proc hwaci-require-bash {} {
-  set bash [hwaci-bin-define bash]
-  if {"" eq $bash} {
-    user-error "Cannot find required bash shell"
-  }
-  return $bash
+# For example, with a configure flag defined like:
+#
+#   { foo-bar:=baz => {its help text} }
+#
+# This function will, when passed foo-bar, return 1 only if the user
+# passes --foo-bar to configure, even if that invocation would resolve
+# to the default value of baz. If the user does not explicitly pass in
+# --foo-bar (with or without a value) then this returns 0.
+proc proj-opt-was-provided {key} {
+  dict exists $::autosetup(optset) $key
 }
 
 ########################################################################
 # Force-set autosetup option $flag to $val. The value can be fetched
 # later with [opt-val], [opt-bool], and friends.
-proc hwaci-opt-set {flag {val 1}} {
+#
+# Returns $val.
+proc proj-opt-set {flag {val 1}} {
   global autosetup
   if {$flag ni $::autosetup(options)} {
     # We have to add this to autosetup(options) or else future calls
@@ -190,20 +290,21 @@ proc hwaci-opt-set {flag {val 1}} {
     lappend ::autosetup(options) $flag
   }
   dict set ::autosetup(optset) $flag $val
+  return $val
 }
 
 ########################################################################
 # Returns 1 if $val appears to be a truthy value, else returns
 # 0. Truthy values are any of {1 on enabled yes}
-proc hwaci-val-truthy {val} {
+proc proj-val-truthy {val} {
   expr {$val in {1 on enabled yes}}
 }
 
 ########################################################################
 # Returns 1 if [opt-val $flag] appears to be a truthy value or
-# [opt-bool $flag] is true. See hwaci-val-truthy.
-proc hwaci-opt-truthy {flag} {
-  if {[hwaci-val-truthy [opt-val $flag]]} { return 1 }
+# [opt-bool $flag] is true. See proj-val-truthy.
+proc proj-opt-truthy {flag} {
+  if {[proj-val-truthy [opt-val $flag]]} { return 1 }
   set rc 0
   catch {
     # opt-bool will throw if $flag is not a known boolean flag
@@ -213,9 +314,9 @@ proc hwaci-opt-truthy {flag} {
 }
 
 ########################################################################
-# If [hwaci-opt-truthy $flag] is true, eval $then, else eval $else.
-proc hwaci-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
-  if {[hwaci-opt-truthy $boolFlag]} {
+# If [proj-opt-truthy $flag] is true, eval $then, else eval $else.
+proc proj-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
+  if {[proj-opt-truthy $boolFlag]} {
     uplevel 1 $thenScript
   } else {
     uplevel 1 $elseScript
@@ -223,23 +324,23 @@ proc hwaci-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
 }
 
 ########################################################################
-# If [hwaci-opt-truthy $flag] then [define $def $iftrue] else [define
+# If [proj-opt-truthy $flag] then [define $def $iftrue] else [define
 # $def $iffalse]. If $msg is not empty, output [msg-checking $msg] and
 # a [msg-results ...] which corresponds to the result. Returns 1 if
 # the opt-truthy check passes, else 0.
-proc hwaci-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
+proc proj-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
   if {"" ne $msg} {
     msg-checking "$msg "
   }
   set rcMsg ""
   set rc 0
-  if {[hwaci-opt-truthy $flag]} {
+  if {[proj-opt-truthy $flag]} {
     define $def $iftrue
     set rc 1
   } else {
     define $def $iffalse
   }
-  switch -- [hwaci-val-truthy [get-define $def]] {
+  switch -- [proj-val-truthy [get-define $def]] {
     0 { set rcMsg no }
     1 { set rcMsg yes }
   }
@@ -252,28 +353,28 @@ proc hwaci-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 ########################################################################
 # Args: [-v] optName defName {descr {}}
 #
-# Checks [hwaci-opt-truthy $optName] and calls [define $defName X]
+# Checks [proj-opt-truthy $optName] and calls [define $defName X]
 # where X is 0 for false and 1 for true. descr is an optional
 # [msg-checking] argument which defaults to $defName. Returns X.
 #
 # If args[0] is -v then the boolean semantics are inverted: if
 # the option is set, it gets define'd to 0, else 1. Returns the
 # define'd value.
-proc hwaci-opt-define-bool {args} {
+proc proj-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
     set invert 1
     set args [lrange $args 1 end]
   }
-  set optName [hwaci-lshift_ args]
-  set defName [hwaci-lshift_ args]
-  set descr [hwaci-lshift_ args]
+  set optName [proj-lshift_ args]
+  set defName [proj-lshift_ args]
+  set descr [proj-lshift_ args]
   if {"" eq $descr} {
     set descr $defName
   }
   set rc 0
   msg-checking "$descr ... "
-  if {[hwaci-opt-truthy $optName]} {
+  if {[proj-opt-truthy $optName]} {
     if {0 eq $invert} {
       set rc 1
     } else {
@@ -305,7 +406,7 @@ proc hwaci-opt-define-bool {args} {
 #
 # Note that if it finds LIBLTDL it does not look for LIBDL, so will
 # report only that is has LIBLTDL.
-proc hwaci-check-module-loader {} {
+proc proj-check-module-loader {} {
   msg-checking "Looking for module-loader APIs... "
   if {99 ne [get-define LDFLAGS_MODULE_LOADER 99]} {
     if {1 eq [get-define HAVE_LIBLTDL 0]} {
@@ -351,11 +452,11 @@ proc hwaci-check-module-loader {} {
 }
 
 ########################################################################
-# Sets all flags which would be set by hwaci-check-module-loader to
+# Sets all flags which would be set by proj-check-module-loader to
 # empty/falsy values, as if those checks had failed to find a module
 # loader. Intended to be called in place of that function when
 # a module loader is explicitly not desired.
-proc hwaci-no-check-module-loader {} {
+proc proj-no-check-module-loader {} {
   define HAVE_LIBDL 0
   define HAVE_LIBLTDL 0
   define LDFLAGS_MODULE_LOADER ""
@@ -363,7 +464,7 @@ proc hwaci-no-check-module-loader {} {
 
 ########################################################################
 # Opens the given file, reads all of its content, and returns it.
-proc hwaci-file-content {fname} {
+proc proj-file-content {fname} {
   set fp [open $fname r]
   set rc [read $fp]
   close $fp
@@ -373,7 +474,7 @@ proc hwaci-file-content {fname} {
 ########################################################################
 # Returns the contents of the given file as an array of lines, with
 # the EOL stripped from each input line.
-proc hwaci-file-content-list {fname} {
+proc proj-file-content-list {fname} {
   set fp [open $fname r]
   set rc {}
   while { [gets $fp line] >= 0 } {
@@ -392,9 +493,9 @@ proc hwaci-file-content-list {fname} {
 #
 # This test has a long history of false positive results because of
 # compilers reacting differently to the -MJ flag.
-proc hwaci-check-compile-commands {{configOpt {}}} {
+proc proj-check-compile-commands {{configOpt {}}} {
   msg-checking "compile_commands.json support... "
-  if {"" ne $configOpt && ![hwaci-opt-truthy $configOpt]} {
+  if {"" ne $configOpt && ![proj-opt-truthy $configOpt]} {
     msg-result "explicitly disabled"
     define MAKE_COMPILATION_DB no
     return 0
@@ -416,14 +517,14 @@ proc hwaci-check-compile-commands {{configOpt {}}} {
 
 ########################################################################
 # Runs the 'touch' command on one or more files, ignoring any errors.
-proc hwaci-touch {filename} {
+proc proj-touch {filename} {
   catch { exec touch {*}$filename }
 }
 
 ########################################################################
 # Usage:
 #
-#   hwaci-make-from-dot-in ?-touch? filename(s)...
+#   proj-make-from-dot-in ?-touch? filename(s)...
 #
 # Uses [make-template] to create makefile(-like) file(s) $filename
 # from $filename.in but explicitly makes the output read-only, to
@@ -436,7 +537,7 @@ proc hwaci-touch {filename} {
 # please the build process.
 #
 # Failures when running chmod or touch are silently ignored.
-proc hwaci-make-from-dot-in {args} {
+proc proj-make-from-dot-in {args} {
   set filename $args
   set touch 0
   if {[lindex $args 0] eq "-touch"} {
@@ -448,7 +549,7 @@ proc hwaci-make-from-dot-in {args} {
     catch { exec chmod u+w $f }
     make-template $f.in $f
     if {$touch} {
-      hwaci-touch $f
+      proj-touch $f
     }
     catch { exec chmod -w $f }
   }
@@ -465,9 +566,9 @@ proc hwaci-make-from-dot-in {args} {
 # order to avoid potential problems with escaping, space-containing
 # tokens, and interfering with autosetup's use of these vars, this
 # routine does not directly modify CFLAGS or LDFLAGS.
-proc hwaci-check-profile-flag {{flagname profile}} {
-  #puts "flagname=$flagname ?[hwaci-opt-truthy $flagname]?"
-  if {[hwaci-opt-truthy $flagname]} {
+proc proj-check-profile-flag {{flagname profile}} {
+  #puts "flagname=$flagname ?[proj-opt-truthy $flagname]?"
+  if {[proj-opt-truthy $flagname]} {
     set CC [get-define CC]
     regsub {.*ccache *} $CC "" CC
     # ^^^ if CC="ccache gcc" then [exec] treats "ccache gcc" as a
@@ -493,7 +594,7 @@ proc hwaci-check-profile-flag {{flagname profile}} {
 # machine, i.e. the local host). If $key == "build" then some
 # additional checks may be performed which are not applicable when
 # $key == "host".
-proc hwaci-looks-like-windows {{key host}} {
+proc proj-looks-like-windows {{key host}} {
   global autosetup
   switch -glob -- [get-define $key] {
     *-*-ming* - *-*-cygwin - *-*-msys {
@@ -502,7 +603,7 @@ proc hwaci-looks-like-windows {{key host}} {
   }
   if {$key eq "build"} {
     # These apply only to the local OS, not a cross-compilation target,
-    # as the above check can potentially.
+    # as the above check potentially can.
     if {$::autosetup(iswin)} { return 1 }
     if {[find-an-executable cygpath] ne "" || $::tcl_platform(os)=="Windows NT"} {
       return 1
@@ -519,7 +620,7 @@ proc hwaci-looks-like-windows {{key host}} {
 #
 # TODO: have someone verify whether this is correct for the
 # non-Linux/BSD platforms.
-proc hwaci-looks-like-mac {{key host}} {
+proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
     *apple* {
       return 1
@@ -536,13 +637,13 @@ proc hwaci-looks-like-mac {{key host}} {
 # build environment is then BUILD_EXEEXT is [define]'d to ".exe", else
 # "". If the target, a.k.a. "host", is then TARGET_EXEEXT is
 # [define]'d to ".exe", else "".
-proc hwaci-exe-extension {} {
+proc proj-exe-extension {} {
   set rH ""
   set rB ""
-  if {[hwaci-looks-like-windows host]} {
+  if {[proj-looks-like-windows host]} {
     set rH ".exe"
   }
-  if {[hwaci-looks-like-windows build]} {
+  if {[proj-looks-like-windows build]} {
     set rB ".exe"
   }
   define BUILD_EXEEXT $rB
@@ -550,7 +651,7 @@ proc hwaci-exe-extension {} {
 }
 
 ########################################################################
-# Works like hwaci-exe-extension except that it defines BUILD_DLLEXT
+# Works like proj-exe-extension except that it defines BUILD_DLLEXT
 # and TARGET_DLLEXT to one of (.so, ,dll, .dylib).
 #
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
@@ -558,7 +659,7 @@ proc hwaci-exe-extension {} {
 #
 # TODO: have someone verify whether this is correct for the
 # non-Linux/BSD platforms.
-proc hwaci-dll-extension {} {
+proc proj-dll-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
       *apple* {
@@ -577,10 +678,10 @@ proc hwaci-dll-extension {} {
 }
 
 ########################################################################
-# Static-library counterpart of hwaci-dll-extension. Defines
+# Static-library counterpart of proj-dll-extension. Defines
 # BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
 # extension for the being-built-on resp. the target platform.
-proc hwaci-lib-extension {} {
+proc proj-lib-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
       *-*-ming* - *-*-cygwin - *-*-msys {
@@ -596,11 +697,11 @@ proc hwaci-lib-extension {} {
 }
 
 ########################################################################
-# Calls all of the hwaci-*-extension functions.
-proc hwaci-file-extensions {} {
-  hwaci-exe-extension
-  hwaci-dll-extension
-  hwaci-lib-extension
+# Calls all of the proj-*-extension functions.
+proc proj-file-extensions {} {
+  proj-exe-extension
+  proj-dll-extension
+  proj-lib-extension
 }
 
 ########################################################################
@@ -608,7 +709,7 @@ proc hwaci-file-extensions {} {
 # the filesystem, it fails fatally with an informative message.
 # Returns the last file name it checks. If the first argument is -v
 # then it emits msg-checking/msg-result messages for each file.
-proc hwaci-affirm-files-exist {args} {
+proc proj-affirm-files-exist {args} {
   set rc ""
   set verbose 0
   if {[lindex $args 0] eq "-v"} {
@@ -644,7 +745,7 @@ proc hwaci-affirm-files-exist {args} {
 # but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
 # case we have to rely on the fact that sourcing $EMSDK_ENV from a
 # shell will add emcc to the $PATH.
-proc hwaci-check-emsdk {} {
+proc proj-check-emsdk {} {
   set emsdkHome [opt-val with-emsdk]
   define EMSDK_HOME ""
   define EMSDK_ENV ""
@@ -685,7 +786,7 @@ proc hwaci-check-emsdk {} {
 # Achtung: we have seen platforms which report that a given option
 # checked here will work but then fails at build-time, and the current
 # order of checks reflects that.
-proc hwaci-check-rpath {} {
+proc proj-check-rpath {} {
   set rc 1
   set lp "[get-define prefix]/lib"
   # If we _don't_ use cc-with {} here (to avoid updating the global
@@ -695,6 +796,8 @@ proc hwaci-check-rpath {} {
   cc-with {} {
     if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
+    } elseif {[cc-check-flags "-Wl,-rpath,$lp"]} {
+      define LDFLAGS_RPATH "-Wl,-rpath,$lp"
     } elseif {[cc-check-flags "-Wl,-rpath -Wl,$lp"]} {
       define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
     } elseif {[cc-check-flags -Wl,-R$lp]} {
@@ -708,81 +811,12 @@ proc hwaci-check-rpath {} {
 }
 
 ########################################################################
-# Under construction - check for libreadline functionality.  Linking
-# in readline varies wildly by platform and this check does not cover
-# all known options.
-#
-# Defines the following vars:
-#
-# - HAVE_READLINE: 0 or 1
-# - LDFLAGS_READLINE: "" or linker flags
-# - CFLAGS_READLINE: "" or c-flags
-# - READLINE_H: "" or "readline/readlin.h" (or similar)
-#
-# Returns the value of HAVE_READLINE.
-proc hwaci-check-readline {} {
-  define HAVE_READLINE 0
-  define LDFLAGS_READLINE ""
-  define CFLAGS_READLINE ""
-  define READLINE_H ""
-  if {![opt-bool readline]} {
-    msg-result "libreadline disabled via --disable-readline."
-    return 0
-  }
-
-  if {[pkg-config-init 0] && [pkg-config readline]} {
-    define HAVE_READLINE 1
-    define LDFLAGS_READLINE [get-define PKG_READLINE_LDFLAGS]
-    define-append LDFLAGS_READLINE [get-define PKG_READLINE_LIBS]
-    define CFLAGS_READLINE [get-define PKG_READLINE_CFLAGS]
-    return 1
-  }
-
-  # On OpenBSD on a Raspberry pi 4:
-  #
-  # $ pkg-config readline; echo $?
-  # 0
-  # $ pkg-config --cflags readline
-  # Package termcap was not found in the pkg-config search path
-  # $ echo $?
-  # 1
-  # $ pkg-config --print-requires readline; echo $?
-  # 1
-  #
-  # i.e. there's apparently no way to find out that readline
-  # requires termcap beyond parsing the error message.
-
-  set h "readline/readline.h"
-  if {[cc-check-includes $h]} {
-    define READLINE_H $h
-    if {[hwaci-check-function-in-lib readline readline]} {
-      msg-result "Enabling libreadline."
-      define HAVE_READLINE 1
-      define LDFLAGS_READLINE [get-define lib_readline]
-      undefine lib_readline
-      return 1
-    }
-    # else TODO: look in various places and [define CFLAGS_READLINE
-    # -I...]
-  }
-  # Numerous TODOs:
-  # - Requires linking with ncurses or similar on some platforms.
-  # - Headers are in a weird place on some BSD systems.
-  # - Add --with-readline=DIR
-  # - Add --with-readline-lib=lib file
-  # - Add --with-readline-inc=dir -Idir
-  msg-result "libreadline not found."
-  return 0
-}
-
-
-########################################################################
-# Internal helper for hwaci-dump-defs-json. Expects to be passed a
+# Internal helper for proj-dump-defs-json. Expects to be passed a
 # [define] name and the variadic $args which are passed to
-# hwaci-dump-defs-json. If it finds a pattern match for the given
+# proj-dump-defs-json. If it finds a pattern match for the given
 # $name in the various $args, it returns the type flag for that $name,
 # e.g. "-str" or "-bare", else returns an empty string.
-proc hwaci-defs-type_ {name spec} {
+proc proj-defs-type_ {name spec} {
   foreach {type patterns} $spec {
     foreach pattern $patterns {
       if {[string match $pattern $name]} {
@@ -794,50 +828,50 @@ proc hwaci-defs-type_ {name spec} {
 }
 
 ########################################################################
-# Internal helper for hwaci-defs-format_: returns a JSON-ish quoted
+# Internal helper for proj-defs-format_: returns a JSON-ish quoted
 # form of the given (JSON) string-type values.
-proc hwaci-quote-str_ {value} {
+proc proj-quote-str_ {value} {
   return \"[string map [list \\ \\\\ \" \\\"] $value]\"
 }
 
 ########################################################################
-# An internal impl detail of hwaci-dump-defs-json. Requires a data
+# An internal impl detail of proj-dump-defs-json. Requires a data
 # type specifier, as used by make-config-header, and a value. Returns
-# the formatted value or the value $::hwaci_(defs-skip) if the caller
+# the formatted value or the value $::proj_(defs-skip) if the caller
 # should skip emitting that value.
-set hwaci_(defs-skip) "-hwaci-defs-format_ sentinel"
-proc hwaci-defs-format_ {type value} {
+set proj_(defs-skip) "-proj-defs-format_ sentinel"
+proc proj-defs-format_ {type value} {
   switch -exact -- $type {
     -bare {
       # Just output the value unchanged
     }
     -none {
-      set value $::hwaci_(defs-skip)
+      set value $::proj_(defs-skip)
     }
     -str {
-      set value [hwaci-quote-str_ $value]
+      set value [proj-quote-str_ $value]
     }
     -auto {
       # Automatically determine the type
       if {![string is integer -strict $value]} {
-        set value [hwaci-quote-str_ $value]
+        set value [proj-quote-str_ $value]
       }
     }
     -array {
       set ar {}
       foreach v $value {
-        set v [hwaci-defs-format_ -auto $v]
-        if {$::hwaci_(defs-skip) ne $v} {
+        set v [proj-defs-format_ -auto $v]
+        if {$::proj_(defs-skip) ne $v} {
           lappend ar $v
         }
       }
       set value "\[ [join $ar {, }] \]"
     }
     "" {
-      set value $::hwaci_(defs-skip)
+      set value $::proj_(defs-skip)
     }
     default {
-      hwaci-fatal "Unknown type in hwaci-dump-defs-json: $type"
+      proj-fatal "Unknown type in proj-dump-defs-json: $type"
     }
   }
   return $value
@@ -873,14 +907,14 @@ proc hwaci-defs-format_ {type value} {
 # Neither is especially satisfactory (and the second is useless), and
 # handling of such values is subject to change if any such values ever
 # _really_ need to be processed by our source trees.
-proc hwaci-dump-defs-json {file args} {
+proc proj-dump-defs-json {file args} {
   file mkdir [file dirname $file]
   set lines {}
   lappend args -bare {SIZEOF_* HAVE_DECL_*} -auto HAVE_*
   foreach n [lsort [dict keys [all-defines]]] {
-    set type [hwaci-defs-type_ $n $args]
-    set value [hwaci-defs-format_ $type [get-define $n]]
-    if {$::hwaci_(defs-skip) ne $value} {
+    set type [proj-defs-type_ $n $args]
+    set value [proj-defs-format_ $type [get-define $n]]
+    if {$::proj_(defs-skip) ne $value} {
       lappend lines "\"$n\": ${value}"
     }
   }
@@ -888,5 +922,70 @@ proc hwaci-dump-defs-json {file args} {
   lappend buf [join $lines ",\n"]
   write-if-changed $file $buf {
     msg-result "Created $file"
+  }
+}
+
+########################################################################
+# Expects a list of pairs of configure flags with the given names to
+# have been registered with autosetup, in this form:
+#
+#  { alias1 => canonical1
+#    aliasN => canonicalN ... }
+#
+# The names must not have their leading -- part and must be in the
+# form which autosetup will expect for passing to [opt-val NAME] and
+# friends.
+#
+# Commend lines are permitted in the input.
+#
+# If [opt-val $hidden] has a value but [opt-val
+# $canonical] does not, it copies the former over the latter. If
+# $hidden has no value set, this is a no-op. If both have explicit
+# values a fatal usage error is triggered.
+#
+# Motivation: autosetup enables "hidden aliases" in [options] lists,
+# and elides the aliases from --help output but does no further
+# handling of them. For example, when --alias is a hidden alias of
+# --canonical and a user passes --alias=X, [opt-val canonical] returns
+# no value. i.e. the script must check both [opt-val alias] and
+# [opt-val canonical].  The intent here is that this function be
+# passed such mappings immediately after [options] is called,
+# to carry over any values from hidden aliases into their canonical
+# names, so that in the above example [opt-value canonical] will
+# return X if --alias=X is passed in.
+proc proj-xfer-options-aliases {mapping} {
+  foreach {hidden - canonical} [proj-strip-hash-comments_ $mapping] {
+    if {[proj-opt-was-provided $hidden]} {
+      if {[proj-opt-was-provided $canonical]} {
+        proj-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
+      } else {
+        proj-opt-set $canonical [opt-val $hidden]
+      }
+    }
+  }
+}
+
+########################################################################
+# Arguable/debatable...
+#
+# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+# specified, force CC_FOR_BUILD to be the same as CC, so that:
+#
+# ./configure CC=clang
+#
+# will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
+# tools. This is based off of an email discussion and is thought to
+# be likely to cause less confusion than seeing 'cc' invocations
+# will when the user passes CC=clang.
+#
+# Sidebar: if we do this before the cc package is installed, it gets
+# reverted by that package. Ergo, the cc package init will tell the
+# user "Build C compiler...cc" shortly before we tell them:
+proc proj-redefine-cc-for-build {} {
+  if {![proj-is-cross-compiling]
+     && "nope" eq [get-env CC_FOR_BUILD "nope"]
+     && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+    user-notice "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
+    define CC_FOR_BUILD [get-define CC]
   }
 }

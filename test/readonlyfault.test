@@ -1,0 +1,70 @@
+# 2024 October 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !readonly_waljournal {
+  finish_test
+  return
+}
+
+set ::testprefix readonlyfault
+
+testvfs tvfs -default 1
+tvfs script at_vfs_callback
+tvfs filter {xDelete}
+
+set ::delete_shall_fail 0
+proc at_vfs_callback {method file z args} {
+  if {$::delete_shall_fail} {
+    return "SQLITE_IOERR"
+  }
+  return "SQLITE_OK"
+}
+
+reset_db
+do_execsql_test 1.0 {
+  BEGIN;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2), (3, 4), (5, 6);
+  COMMIT;
+}
+
+set ::delete_shall_fail 1
+do_catchsql_test 1.1 {
+  PRAGMA journal_mode = wal;
+} {1 {disk I/O error}}
+
+do_test 1.2 {
+  file exists test.db-journal
+} 1
+
+db_save_and_close
+
+# Injecting CANTOPEN errors doesn't work here. If such an error occurs
+# while trying to open a potentially hot journal to inspect its contents,
+# the error is ignored and the journal assumed to be hot. Leading to an
+# SQLITE_READONLY error. So only the other types of fault-injection are
+# tested here.
+#
+do_faultsim_test readonlyfault-1 -faults {oom* ioerr* inter* full*} -prep {
+  catch { db close }
+  db_restore
+  sqlite3 db test.db -readonly 1
+} -body {
+  execsql { SELECT count(*), sum(a), sum(b) FROM t1 }
+} -test {
+  faultsim_test_result {0 {3 9 12}} 
+}
+
+
+finish_test

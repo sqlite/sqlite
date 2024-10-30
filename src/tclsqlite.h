@@ -36,7 +36,7 @@
 #if TCL_MAJOR_VERSION==9
 # define CONST const
 #elif !defined(Tcl_Size)
-  typedef int Tcl_Size;
+# define Tcl_Size int
 #endif
 
 /******  Any edits to this file must mirrored in tclsqlite.c ***********/

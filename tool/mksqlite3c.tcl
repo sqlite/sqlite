@@ -138,6 +138,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   puts $out "** is unknown."
 }
 puts $out [subst {*/
+#ifndef SQLITE_AMALGAMATION
 #define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1}]
 if {$addstatic} {
@@ -509,6 +510,7 @@ puts $out \
 SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }"
 
 puts $out \
-"/************************** End of sqlite3.c ******************************/"
+"#endif /* SQLITE_AMALGAMATION */
+/************************** End of sqlite3.c ******************************/"
 
 close $out
