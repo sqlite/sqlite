@@ -85,5 +85,33 @@ do_execsql_test 1.10 {
   SELECT * FROM t1
 } {1 2 3 4 5 6}
 
+#---------------------------------------------------------
+reset_db
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES('abc', 'def');
+}
+
+set ::delete_shall_fail 1
+do_catchsql_test 2.2 {
+  PRAGMA journal_mode = wal;
+} {1 {disk I/O error}}
+
+do_test 2.3 {
+  sqlite3 db2 test.db -readonly 1
+  breakpoint
+  db2 eval {
+    PRAGMA journal_mode = persist;
+    PRAGMA journal_mode = off;
+  }
+} {persist off}
+
+do_test 2.4 {
+  db2 eval {
+    SELECT * FROM t1
+  }
+} {abc def}
 
 finish_test
+

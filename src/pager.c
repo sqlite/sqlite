@@ -7488,6 +7488,12 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         assert( state==PAGER_OPEN || state==PAGER_READER );
         if( state==PAGER_OPEN ){
           rc = sqlite3PagerSharedLock(pPager);
+
+          /* If this is a read-only connection, and there is a hot-journal
+          ** created by "PRAGMA journal_mode = wal" in the file-system, then
+          ** the Pager.xGet method may have been set to getPageOneNoWal. Call
+          ** setGetterMethod() here to ensure it is set properly.  */
+          setGetterMethod(pPager);
         }
         if( pPager->eState==PAGER_READER ){
           assert( rc==SQLITE_OK );

@@ -1,5 +1,5 @@
-C Add\sfault-injection\stests\sfor\sthe\snew\scode\son\sthis\sbranch.
-D 2024-10-29T20:27:12.839
+C Fix\sa\sproblem\sthat\scould\soccur\sif\sa\sread-only\sconnection\sswitches\sits\sjournal\smode\sfrom\s"persist"\sto\s"off"\sor\s"memory"\swhen\sthe\sfile-system\scontains\sa\shot-journal\screated\sby\sa\s"PRAGMA\sjournal_mode\s=\swal"\scommand.
+D 2024-10-30T11:21:15.367
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -763,7 +763,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 0ad4e0885294b3a0e135a18533590ec9ad91ffe82f6a08e55b40babd51772928
 F src/os_win.c 69fa1aaff68270423c85cff4327ba17ef99a1eb017e1a2bfb97416d9b8398b05
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 170558eb359dd374159141c1f8325480d2d3181439738e7fbb938462c5c9c2c4
+F src/pager.c c814c0b46740f660f5c6a0b3c06189528821ca829da9040af56111272673cf7f
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y a7a8d42eeff01d267444ddb476029b0b1726fb70ae3d77984140f17ad02e2d61
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1550,7 +1550,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/readonly.test 69a7ccec846cad2e000b3539d56360d02f327061dc5e41f7f9a3e01f19719952
-F test/readonly2.test df7b572df01a0f773bb7b6e64bd8c98a55cb3099b4ffd054a44319c5f7e87f14
+F test/readonly2.test 45040ad5d1c84b2b6e36c972721b3b5f51289867baae8516178c77c647bc0d13
 F test/readonlyfault.test a96653369f6c2912ccf9d18a43fe82dcb8b19bdbb3e9871ed76325ebea755fd1
 F test/recover.test a163a156ea9f2beea63fa83c4dcd8dea6e57b8a569fc647155e3d2754eaac1b5
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d003480db7443025cfd2227096fd929454e9243d5f393f296b74f9bdad15d396
-R 90a9a0e8b17e5b79825f8d5c457cd6a8
+P 349b2d895752c087dae7b7019bc10ac21852309e96dbc5f29cd902d080421f83
+R 142e08af85c4632b2c9de45ebce0cdba
 U dan
-Z e756bc3964111f499ec65a7f126bb3a0
+Z aae4ab573ece66625e6797d5301520ab
 # Remove this line to create a well-formed Fossil manifest.
