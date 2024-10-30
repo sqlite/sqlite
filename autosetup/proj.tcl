@@ -989,3 +989,36 @@ proc proj-redefine-cc-for-build {} {
     define CC_FOR_BUILD [get-define CC]
   }
 }
+
+########################################################################
+# Attempts to determine whether the given linenoise header file is of
+# the "antirez" or "msteveb" flavor. It returns 1 for antirez, 2 for
+# msteveb, and 0 if it's neither.
+proc proj-which-linenoise {dotH} {
+  set sourceOrig {
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stddef.h>
+    /* size_t has to be be in there _somewhere_ */
+  }
+  append sourceOrig [proj-file-content $dotH]
+  set sourceTail {
+    int main(void) {
+      linenoiseSetCompletionCallback(0 $arg);
+      return 0;
+    }
+  }
+  set arg ""
+  set source $sourceOrig
+  append source [subst $sourceTail]
+  if {[cctest -nooutput 1 -source $source]} {
+    return 1
+  }
+  set arg ", 0"
+  set source $sourceOrig
+  append source [subst $sourceTail]
+  if {[cctest -nooutput 1 -source $source]} {
+    return 2
+  }
+  return 0
+}

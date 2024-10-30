@@ -732,39 +732,6 @@ if {1} {
 }
 
 ########################################################################
-# Attempts to determine whether the given linenoise header file is of
-# the "antirez" or "msteveb" flavor. It returns 1 for antirez, 2 for
-# msteveb, and 0 if it's neither.
-proc sqlite-which-linenoise {dotH} {
-  set sourceOrig {
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <stddef.h>
-    /* size_t has to be be in there _somewhere_ */
-  }
-  append sourceOrig [proj-file-content $dotH]
-  set sourceTail {
-    int main(void) {
-      linenoiseSetCompletionCallback(0 $arg);
-      return 0;
-    }
-  }
-  set arg ""
-  set source $sourceOrig
-  append source [subst $sourceTail]
-  if {[cctest -nooutput 1 -source $source]} {
-    return 1
-  }
-  set arg ", 0"
-  set source $sourceOrig
-  append source [subst $sourceTail]
-  if {[cctest -nooutput 1 -source $source]} {
-    return 2
-  }
-  return 0
-}
-
-########################################################################
 # sqlite-check-line-editing jumps through proverbial hoops to try to
 # find a working line-editing library, setting:
 #
@@ -821,20 +788,6 @@ proc sqlite-check-line-editing {} {
     if {![file exists $lnH] } {
       proj-fatal "Cannot find linenoise.h in $dirLn"
     }
-    set flavor ""
-    switch -- [sqlite-which-linenoise $lnH] {
-      1 {
-        set flavor "antirez"
-        define HAVE_LINENOISE 1
-      }
-      2 {
-        set flavor "msteveb"
-        define HAVE_LINENOISE 2
-      }
-      default {
-        user-error "Cannot determine the flavor of linenoise from $lnH"
-      }
-    }
     set lnC ""
     set lnCOpts {linenoise-ship.c linenoise.c}
     foreach f $lnCOpts {
@@ -846,9 +799,18 @@ proc sqlite-check-line-editing {} {
     if {"" eq $lnC} {
       proj-fatal "Cannot find any of $lnCOpts in $dirLn"
     }
-    msg-result "Using $flavor linenoise from $dirLn"
+    set flavor ""
+    set lnVal [proj-which-linenoise $lnH]
+    switch -- $lnVal {
+      1 { set flavor "antirez" }
+      2 { set flavor "msteveb" }
+      default {
+        proj-fatal "Cannot determine the flavor of linenoise from $lnH"
+      }
+    }
     define CFLAGS_READLINE "-I$dirLn $lnC"
-    sqlite-add-shell-opt -DHAVE_LINENOISE=[get-define HAVE_LINENOISE]
+    define HAVE_LINENOISE $lnVal
+    sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {
     # libedit mimics libreadline and on some systems does not have its
