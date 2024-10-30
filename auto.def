@@ -147,8 +147,20 @@ set flags {
   all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
+  # --with-tcl=DIR may be either a dir containing tclConfig.sh or a
+  # dir one level up from that from which we can derive a dir
+  # containing tclConfig.sh.
+  with-tcl:DIR         => {Root of path containing tclConfig.sh}
+  # If --with-tclsh=X given, it is used for (A) trying to find
+  # tclConfig.sh and (B) all TCL-based code generation.  Warning: if
+  # its containing dir has multiple tclsh versions, it may select the
+  # wrong tclConfig.sh!
   with-tclsh:PATH      => {Full pathname of tclsh to use}
-  with-tcl:DIR         => {Directory containing tclConfig.sh}
+  # --disable-tcl only disables building of the SQLite TCL extension,
+  # not the requirement for TCL.  This tree requires TCL for code
+  # generation but can use the in-tree copy of autosetup/jimsh0.c for
+  # that. The SQLite TCL extension and, by extension, the test code
+  # require a canonical tclsh.
   tcl=1                => {Disable components which require TCL-dev}
   # <tcl>
   # <line-editing>
@@ -159,7 +171,7 @@ set flags {
   with-readline-ldflags:=auto
                      => {Readline LDFLAGS, e.g. -lreadline -lncurses}
   # --with-readline-inc is a backwards-compatible alias for
-  # --with-readline-cflags
+  # --with-readline-cflags.
   with-readline-inc:
   with-readline-cflags:=auto
                        => {Readline CFLAGS, e.g. -I/path/to/includes}
@@ -441,31 +453,36 @@ proj-if-opt-truthy with-debug {
 #    be empty - this tree requires TCL to generated numerous
 #    components.
 #
-define TCLSH_CMD false ; # Significant is that it exits with non-0
-define HAVE_TCL 0      ; # Will be enabled via --tcl or a successful search
 proc sqlite-check-tcl {} {
-  # TODO: document the steps this is taking.
+  define TCLSH_CMD false ; # Significant is that it exits with non-0
+  define HAVE_TCL 0      ; # Will be enabled via --tcl or a successful search
+  define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
+  define TCLLIB_RPATH "" ; # rpath for TCL extension lib
+  define TCL_CONFIG_SH ""; # full path to tclConfig.sh
   if {![opt-bool tcl]} {
-    msg-result "TCL disabled via --disable-tcl"
-    define HAVE_TCL 0
+    msg-result "TCL disabled via --disable-tcl. Will not be able to run tests."
     return
   }
-
+  # TODO: document the steps this is taking.
   global top_srcdir
   msg-result "Checking for a suitable tcl... "
-  set optTcl [proj-opt-truthy tcl]
-  set use_tcl $optTcl
+  proj-assert {proj-opt-truthy tcl}
+  set use_tcl 1
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
   msg-debug "sqlite-check-tcl: use_tcl ${use_tcl}"
   msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
   msg-debug "sqlite-check-tcl: with_tcl=$with_tcl"
   if {"" eq $with_tclsh && "" eq $with_tcl} {
+    # If neither --with-tclsh nor --with-tcl are provided, try to find
+    # a workable tclsh.
     set with_tclsh [proj-first-bin-of tclsh9.0 tclsh8.6 tclsh]
     msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
   }
 
   if {"" ne $with_tclsh} {
+    # --with-tclsh was provided. Validate it and use it to trump any
+    # value passed via --with-tcl=DIR.
     if {![file isfile $with_tclsh]} {
       proj-fatal "TCL shell $with_tclsh is not a file"
     } elseif {![file-isexec $with_tclsh]} {
@@ -474,16 +491,14 @@ proc sqlite-check-tcl {} {
       define TCLSH_CMD $with_tclsh
       #msg-result "Using tclsh: $with_tclsh"
     }
-    if {$use_tcl} {
-      if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
-        set with_tcl $result
-      }
-      if {"" ne $with_tcl && [file isdir $with_tcl]} {
-        msg-result "$with_tclsh recommends the tclConfig.sh from $with_tcl"
-      } else {
-        proj-warn "$with_tclsh is unable to recommand a tclConfig.sh"
-        set use_tcl 0
-      }
+    if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
+      set with_tcl $result
+    }
+    if {"" ne $with_tcl && [file isdir $with_tcl]} {
+      msg-result "$with_tclsh recommends the tclConfig.sh from $with_tcl"
+    } else {
+      proj-warn "$with_tclsh is unable to recommand a tclConfig.sh"
+      set use_tcl 0
     }
   }
 
@@ -492,6 +507,7 @@ proc sqlite-check-tcl {} {
   while {1} {
     if {$use_tcl} {
       if {"" ne $with_tcl} {
+        # Ensure that we can find tclConfig.sh under ${with_tcl}/...
         if {[file readable "${with_tcl}/tclConfig.sh"]} {
           set cfg "${with_tcl}/tclConfig.sh"
         } else {
@@ -506,9 +522,10 @@ proc sqlite-check-tcl {} {
           proj-fatal "No tclConfig.sh found under ${with_tcl}"
         }
       } else {
-        # If we have not yet found a tclConfig.sh file, look in $libdir which is
-        # set automatically by autosetup or by the --prefix command-line option.
-        # See https://sqlite.org/forum/forumpost/e04e693439a22457
+        # If we have not yet found a tclConfig.sh file, look in
+        # $libdir which is set automatically by autosetup or by the
+        # --prefix command-line option.  See
+        # https://sqlite.org/forum/forumpost/e04e693439a22457
         set libdir [get-define libdir]
         if {[file readable "${libdir}/tclConfig.sh"]} {
           set cfg "${libdir}/tclConfig.sh"
@@ -531,8 +548,6 @@ proc sqlite-check-tcl {} {
         }
       }
       msg-result "Using tclConfig.sh: $cfg"
-    } elseif {!$optTcl} {
-      proj-warn "Unable to run tests because of --disable-tcl"
     } else {
       proj-warn "Unable to run tests because no tclConfig.sh file could be located"
     }
@@ -540,15 +555,14 @@ proc sqlite-check-tcl {} {
   }
 
   define TCL_CONFIG_SH $cfg
-  # The historical configure.ac sources tclConfig.sh so that it can
-  # use the several TCL_... env vars. We obviously cannot do that from
-  # TCL, so we apply a level of indirection which sources that script
-  # then emits the pieces we're interested in as TCL code. If the
+  # Export a subset of tclConfig.sh to the current TCL-space.  If the
   # config is not available, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "[get-define TCL_CONFIG_SH]"]
+  eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "$cfg"]
 
   if {"" eq $with_tclsh} {
+    proj-assert {expr {$cfg ne ""}}
+    proj-assert {expr {"" ne [get-define TCL_EXEC_PREFIX]}}
     set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
     if {![file-isexec $with_tclsh]} {
       set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
@@ -560,49 +574,47 @@ proc sqlite-check-tcl {} {
     }
   }
   define TCLSH_CMD $with_tclsh
-
-  if {1} {
+  proj-assert {expr {( $cfg eq "" && 0 == $use_tcl ) \
+                       || ( $cfg ne "" && 1 == $use_tcl )}}
+  if {$use_tcl} {
+    # Set up the TCLLIBDIR and TCLLIB_RPATH
+    #
     # 2024-10-28: calculation of TCLLIBDIR is now done via the shell
     # in the main.mk (search it for T.tcllibdir) so that
     # static/hand-written makefiles which import main.mk do not have
     # to define that before importing main.mk. Even so, we export
-    # TCLLIBDIR from here for the benefit of users who want to provide
+    # TCLLIBDIR from here for the benefit of those who want to provide
     # it at configure-time and have it "stick", without having to
     # provide it on each make invocation or set it in their
     # environment.
-    if {$use_tcl} {
-      # Set up the TCLLIBDIR and TCLLIB_RPATH
-      set tcllibdir [get-env TCLLIBDIR ""]
-      if {"" eq $tcllibdir} {
-        if {[catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
-          foreach i $result {
-            if {[file isdir $i]} {
-              set tcllibdir $i/sqlite3
-              break
-            }
+    set tcllibdir [get-env TCLLIBDIR ""]
+    if {"" eq $tcllibdir} {
+      # Attempt to extract TCLLIBDIR from TCL's $auto_path
+      if {[catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
+        foreach i $result {
+          if {[file isdir $i]} {
+            set tcllibdir $i/sqlite3
+            break
           }
-        } else {
-          proj-warn "Cannot determine TCLLIBDIR"
         }
+      } else {
+        proj-warn "Cannot determine TCLLIBDIR"
       }
-      set tclrpath ""
-      if {"" ne $tcllibdir} {
-        set rp [get-define SH_LINKRPATH]
-        set tclrpath [string map [list "%s" $tcllibdir] $rp]
-        # Reminder: tclConfig.sh has TCL_LD_SEARCH_FLAGS to set the
-        # rpath but (A) it includes an unexpand var ref to
-        # ${LIB_RUNTIME_DIR}, which must be set in the makefile and (B)
-        # that flag is inherently compiler-dependent so it's not as
-        # portable as tclConfig.sh assumes. We'll instead use the rpath
-        # flag which autosetup determines for the current compiler.
-      }
-      define TCLLIBDIR $tcllibdir
-      define TCLLIB_RPATH $tclrpath
-      #msg-debug "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
-    } else {
-      define TCLLIBDIR ""
-      define TCLLIB_RPATH ""
     }
+    set tclrpath ""
+    if {"" ne $tcllibdir} {
+      set rp [get-define SH_LINKRPATH]
+      set tclrpath [string map [list "%s" $tcllibdir] $rp]
+      # Reminder: tclConfig.sh has TCL_LD_SEARCH_FLAGS to set the
+      # rpath but (A) it includes an unexpand var ref to
+      # ${LIB_RUNTIME_DIR}, which must be set in the makefile and (B)
+      # that flag is inherently compiler-dependent so it's not as
+      # portable as tclConfig.sh assumes. We'll instead use the rpath
+      # flag which autosetup determines for the current compiler.
+    }
+    define TCLLIBDIR $tcllibdir
+    define TCLLIB_RPATH $tclrpath
+    #msg-debug "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
   }; # find TCLLIBDIR
 
   if {[file exists $with_tclsh]} {
