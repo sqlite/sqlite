@@ -95,10 +95,20 @@ INSTALL = @BIN_INSTALL@
 AR = @AR@
 AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
-B.cc = @BUILD_CC@ @BUILD_CFLAGS@
+B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = @CC@
-CFLAGS = @CPPFLAGS@ @CFLAGS@ @SH_CFLAGS@
-
+#
+# CFLAGS is problematic because it is frequently overridden when
+# invoking make, which loses things like -fPIC. So... let's avoid
+# using it directly and instead add a level of indirection.  We
+# combine CFLAGS and CPPFLAGS here because that's the way the legacy
+# build did it.
+#
+CFLAGS = @CFLAGS@ @CPPFLAGS@
+#
+# CFLAGS.core is documented in main.mk.
+#
+CFLAGS.core = @SH_CFLAGS@
 LDFLAGS.shobj = @SHOBJ_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@
@@ -203,18 +213,29 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 # TCL config info from tclConfig.sh
 #
 # We have to inject this differently in main.mk to accommodate static
-# makefiles:
+# makefiles, so we don't currently bother to export it here. This
+# block is retained in case we decide that we do indeed need to export
+# it at configure-time instead of calculate it at make-time.
 #
 #TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
 #TCL_LIB_SPEC = @TCL_LIB_SPEC@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
+#
+# $(TCLLIB_RPATH) is calculated by the configure script. Its counterpart
+# in tclConfig.sh (TCL_LD_SEARCH_FLAGS) is defined in such a way as to
+# make it incompatible with static makefiles.
+#
 #TCLLIB_RPATH = @TCLLIB_RPATH@
 #
-# Where do we want to install the tcl plugin
+# $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
+# is calculated at make-time by the targets which need it but we
+# export it here so that it can be set at configure-time, so that
+# clients are not required to pass it at make-time, or set it in their
+# environment, to override it.
 #
-#TCLLIBDIR = @TCLLIBDIR@
+TCLLIBDIR = @TCLLIBDIR@
 
 #
 # Additional options when running tests using testrunner.tcl

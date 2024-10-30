@@ -51,11 +51,11 @@ array set proj_ {}
 set proj_(isatty) [isatty? stdout]
 
 proc proj-warn {msg} {
-  puts stderr "WARNING: $msg"
+  puts stderr [proj-bold "WARNING: $msg"]
 }
 proc proj-fatal {msg} {
   show-notices
-  puts stderr "ERROR: $msg"
+  puts stderr [proj-bold "ERROR: $msg"]
   exit 1
 }
 
@@ -63,8 +63,11 @@ proc proj-fatal {msg} {
 # Kind of like a C assert if uplevel (eval) of $script is false,
 # triggers a fatal error.
 proc proj-assert {script} {
+  if {1 == [get-env proj-assert 0]} {
+    msg-result [proj-bold "asserting: [string trim $script]"]
+  }
   if {![uplevel 1 $script]} {
-    proj-fatal "Affirmation failed: $script"
+    proj-fatal "Assertion failed: $script"
   }
 }
 
@@ -252,7 +255,7 @@ proc proj-first-bin-of {args} {
     undefine $u
     if {"" ne $rc} break
   }
-  return ""
+  return $rc
 }
 
 ########################################################################
