@@ -936,12 +936,12 @@ proc proj-dump-defs-json {file args} {
 # form which autosetup will expect for passing to [opt-val NAME] and
 # friends.
 #
-# Commend lines are permitted in the input.
+# Comment lines are permitted in the input.
 #
-# If [opt-val $hidden] has a value but [opt-val
-# $canonical] does not, it copies the former over the latter. If
-# $hidden has no value set, this is a no-op. If both have explicit
-# values a fatal usage error is triggered.
+# For each pair ALIAS and CANONICAL, if --ALIAS is provided but
+# --CANONICAL is not, the value of the former is copied to the
+# latter. If --ALIAS is not provided, this is a no-op. If both have
+# explicitly been provided a fatal usage error is triggered.
 #
 # Motivation: autosetup enables "hidden aliases" in [options] lists,
 # and elides the aliases from --help output but does no further

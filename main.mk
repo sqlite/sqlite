@@ -1431,14 +1431,14 @@ tclextension-install: tclsqlite3.c
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(T.cc)" $(CFLAGS.tclextension)
 
 #
-# Install the SQLite TCL extension that is used by $TCLSH_CMD
+# Uninstall the SQLite TCL extension that is used by $TCLSH_CMD.
 #
 tclextension-uninstall:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
 
 #
-# List all installed the SQLite TCL extension that is are accessible
-# by $TCLSH_CMD, included prior versions.
+# List all installed the SQLite TCL extensions that is are accessible
+# by $TCLSH_CMD, including prior versions.
 #
 tclextension-list:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
