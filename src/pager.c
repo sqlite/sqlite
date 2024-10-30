@@ -5081,6 +5081,7 @@ sqlite3_file *sqlite3_database_file_object(const char *zName){
 }
 
 
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
 /*
 ** This is used by a read-only database connection in cases where there
 ** is a hot journal which cannot be rolled back, but the hot journal was
@@ -5106,6 +5107,7 @@ static int getPageOneNoWal(
   setGetterMethod(pPager);
   return rc;
 }
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
 
 /*
 ** This function is called after a potentially hot journal has been opened
@@ -5131,7 +5133,9 @@ static int checkHotJournal(Pager *pPager, int *pbHot){
   if( rc==SQLITE_OK ){
     if( aHdr[0]==0 ){
       *pbHot = 0;
-    }else if( pPager->readOnly ){
+    }
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+    else if( pPager->readOnly ){
       u32 nPg = sqlite3Get4byte(&aHdr[8]);
       u32 off = sqlite3Get4byte(&aHdr[20]);
       u32 pgsz = sqlite3Get4byte(&aHdr[24]);
@@ -5163,6 +5167,7 @@ static int checkHotJournal(Pager *pPager, int *pbHot){
         }
       }
     }
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
   }
   if( rc==SQLITE_IOERR_SHORT_READ ){
     rc = SQLITE_OK;
@@ -5333,7 +5338,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
 
     assert( !MEMDB );
     assert( pPager->tempFile==0 || pPager->eLock==EXCLUSIVE_LOCK );
-    assert( pPager->xGet!=getPageOneNoWal );
 
     rc = pager_wait_on_lock(pPager, SHARED_LOCK);
     if( rc!=SQLITE_OK ){
@@ -5519,8 +5523,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
     assert( !MEMDB );
     pager_unlock(pPager);
     assert( pPager->eState==PAGER_OPEN );
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
     testcase( pPager->xGet==getPageOneNoWal );
     setGetterMethod(pPager);
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
   }else{
     pPager->eState = PAGER_READER;
     pPager->hasHeldSharedLock = 1;
@@ -7489,11 +7495,14 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         if( state==PAGER_OPEN ){
           rc = sqlite3PagerSharedLock(pPager);
 
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
           /* If this is a read-only connection, and there is a hot-journal
           ** created by "PRAGMA journal_mode = wal" in the file-system, then
           ** the Pager.xGet method may have been set to getPageOneNoWal. Call
           ** setGetterMethod() here to ensure it is set properly.  */
+          testcase( pPager->xGet==getPageOneNoWal );
           setGetterMethod(pPager);
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
         }
         if( pPager->eState==PAGER_READER ){
           assert( rc==SQLITE_OK );

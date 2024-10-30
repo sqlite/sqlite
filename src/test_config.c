@@ -563,6 +563,14 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "progress", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+  Tcl_SetVar2(
+      interp, "sqlite_options", "readonly_waljournal", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(
+      interp, "sqlite_options", "readonly_waljournal", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_REINDEX
   Tcl_SetVar2(interp, "sqlite_options", "reindex", "0", TCL_GLOBAL_ONLY);
 #else

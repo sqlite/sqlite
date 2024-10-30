@@ -15,6 +15,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !readonly_waljournal {
+  finish_test
+  return
+}
 
 set ::testprefix readonly2
 
