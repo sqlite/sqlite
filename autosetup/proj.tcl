@@ -12,6 +12,9 @@
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
+# The intent is that these routines be relatively generic, independent
+# of a given project.
+#
 # This file was initially derived from one used in the libfossil
 # project, authored by the same person who ported it here, and this is
 # noted here only as an indication that there are no licensing issues
@@ -995,28 +998,24 @@ proc proj-redefine-cc-for-build {} {
 # the "antirez" or "msteveb" flavor. It returns 1 for antirez, 2 for
 # msteveb, and 0 if it's neither.
 proc proj-which-linenoise {dotH} {
-  set sourceOrig {
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <stddef.h>
-    /* size_t has to be be in there _somewhere_ */
-  }
-  append sourceOrig [proj-file-content $dotH]
-  set sourceTail {
+  set srcHeader [proj-file-content $dotH]
+  set srcMain {
     int main(void) {
-      linenoiseSetCompletionCallback(0 $arg);
+      linenoiseSetCompletionCallback(0$arg)
+      /* antirez has only 1 arg, msteveb has 2 */;
       return 0;
     }
   }
   set arg ""
-  set source $sourceOrig
-  append source [subst $sourceTail]
+  append source $srcHeader [subst $srcMain]
   if {[cctest -nooutput 1 -source $source]} {
     return 1
   }
+  set source {
+    #include <stddef.h> /* size_t */
+  }
   set arg ", 0"
-  set source $sourceOrig
-  append source [subst $sourceTail]
+  append source $srcHeader [subst $srcMain]
   if {[cctest -nooutput 1 -source $source]} {
     return 2
   }
