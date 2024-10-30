@@ -789,9 +789,18 @@ proc sqlite-check-line-editing {} {
       proj-fatal "Cannot find linenoise.h in $dirLn"
     }
     msg-result "Using linenoise from $dirLn"
-    define CFLAGS_READLINE "-I$dirLn $dirLn/linenoise.c"
-    define HAVE_LINENOISE 1
-    sqlite-add-shell-opt -DHAVE_LINENOISE=1
+    if {[file exists $dirLn/linenoise-ship.c]} {
+      # HAVE_LINENOISE==2 means that the linenoise completion callback has an
+      # extra userdata argument.
+      define CFLAGS_READLINE "-I$dirLn $dirLn/linenoise-ship.c"
+      define HAVE_LINENOISE 2
+      sqlite-add-shell-opt -DHAVE_LINENOISE=2
+    } else {
+      # HAVE_LINENOISE==1 is the original Antirez linenoise
+      define CFLAGS_READLINE "-I$dirLn $dirLn/linenoise.c"
+      define HAVE_LINENOISE 1
+      sqlite-add-shell-opt -DHAVE_LINENOISE=1
+    }
     return "linenoise"
   } elseif {[opt-bool editline]} {
     # libedit mimics libreadline and on some systems does not have its
