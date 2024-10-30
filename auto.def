@@ -561,11 +561,15 @@ proc sqlite-check-tcl {} {
   }
   define TCLSH_CMD $with_tclsh
 
-  if {0} {
+  if {1} {
     # 2024-10-28: calculation of TCLLIBDIR is now done via the shell
-    # in the makefile rules which need it (search main.mk for
-    # T.tcllibdir).  This code block is kept around as a basis for
-    # comparison while the new makefile-side rules get battle-tested.
+    # in the main.mk (search it for T.tcllibdir) so that
+    # static/hand-written makefiles which import main.mk do not have
+    # to define that before importing main.mk. Even so, we export
+    # TCLLIBDIR from here for the benefit of users who want to provide
+    # it at configure-time and have it "stick", without having to
+    # provide it on each make invocation or set it in their
+    # environment.
     if {$use_tcl} {
       # Set up the TCLLIBDIR and TCLLIB_RPATH
       set tcllibdir [get-env TCLLIBDIR ""]
@@ -573,7 +577,7 @@ proc sqlite-check-tcl {} {
         if {[catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
           foreach i $result {
             if {[file isdir $i]} {
-              set tcllibdir $i
+              set tcllibdir $i/sqlite3
               break
             }
           }
@@ -583,7 +587,6 @@ proc sqlite-check-tcl {} {
       }
       set tclrpath ""
       if {"" ne $tcllibdir} {
-        set tcllibdir "${tcllibdir}/sqlite3"
         set rp [get-define SH_LINKRPATH]
         set tclrpath [string map [list "%s" $tcllibdir] $rp]
         # Reminder: tclConfig.sh has TCL_LD_SEARCH_FLAGS to set the
@@ -595,7 +598,7 @@ proc sqlite-check-tcl {} {
       }
       define TCLLIBDIR $tcllibdir
       define TCLLIB_RPATH $tclrpath
-      #proj-fatal "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
+      #msg-debug "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
     } else {
       define TCLLIBDIR ""
       define TCLLIB_RPATH ""

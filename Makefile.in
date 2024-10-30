@@ -213,18 +213,29 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 # TCL config info from tclConfig.sh
 #
 # We have to inject this differently in main.mk to accommodate static
-# makefiles:
+# makefiles, so we don't currently bother to export it here. This
+# block is retained in case we decide that we do indeed need to export
+# it at configure-time instead of calculate it at make-time.
 #
 #TCL_INCLUDE_SPEC = @TCL_INCLUDE_SPEC@
 #TCL_LIB_SPEC = @TCL_LIB_SPEC@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
+#
+# $(TCLLIB_RPATH) is calculated by the configure script. Its counterpart
+# in tclConfig.sh (TCL_LD_SEARCH_FLAGS) is defined in such a way as to
+# make it incompatible with static makefiles.
+#
 #TCLLIB_RPATH = @TCLLIB_RPATH@
 #
-# Where do we want to install the tcl plugin
+# $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
+# is calculated at make-time by the targets which need it but we
+# export it here so that it can be set at configure-time, so that
+# clients are not required to pass it at make-time, or set it in their
+# environment, to override it.
 #
-#TCLLIBDIR = @TCLLIBDIR@
+TCLLIBDIR = @TCLLIBDIR@
 
 #
 # Additional options when running tests using testrunner.tcl

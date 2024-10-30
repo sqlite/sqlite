@@ -218,11 +218,6 @@ SHELL_OPT ?=
 #
 TCL_CONFIG_SH ?=
 #
-# $(TCLLIB_RPATH) is the -rpath flag for libtclsqlite3, not
-# libsqlite3, and will usually differ from $(LDFLAGS.rpath).
-#
-#TCLLIB_RPATH ?=
-#
 # $(HAVE_WASI_SDK) =
 #
 # 1 when building with the WASI SDK. This disables certain build
