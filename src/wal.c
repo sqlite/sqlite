@@ -5048,6 +5048,7 @@ static int walWriteToLog(
   sqlite3_int64 iOffset      /* Start writing at this offset */
 ){
   int rc;
+  u64 t;
   if( iOffset<p->iSyncPoint && iOffset+iAmt>=p->iSyncPoint ){
     int iFirstAmt = (int)(p->iSyncPoint - iOffset);
     rc = sqlite3OsWrite(p->pFd, pContent, iFirstAmt, iOffset);
@@ -5059,7 +5060,13 @@ static int walWriteToLog(
     rc = sqlite3OsSync(p->pFd, WAL_SYNC_FLAGS(p->syncFlags));
     if( iAmt==0 || rc ) return rc;
   }
+  if( p->pWal->aCommitTime ){
+    t = sqlite3STimeNow();
+  }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);
+  if( p->pWal->aCommitTime ){
+    p->pWal->aCommitTime[COMMIT_TIME_OSWRITE] += (sqlite3STimeNow() - t);
+  }
   return rc;
 }
 
