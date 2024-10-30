@@ -1,5 +1,5 @@
-C proj.tcl/main.mk\sdoc\supdates.\sNo\sfunctional\schanges.
-D 2024-10-30T22:09:49.845
+C Expand\s[c0048e4482e9]\sto\sdetermine\sthe\slinenoise\sAPI\sflavor\svia\sa\scompile\stest\srather\sthan\sguessing\sbased\son\sthe\sfilename.
+D 2024-10-30T22:41:12.401
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 2e458b180c7d6f765acd4c9f604d2087fb30114ae7343481e1ecfe7b6ddb16b5
+F auto.def 9a03b31df3ceaf4fbf62e3467502caac5dda856ba73d4a47b63b4c379805313c
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e5f1a01f9f574a64e464c66c1b88f76aeea83f0bbe697c53bb63d3592d93e55e
-R eda87ae0aaa5ae05af6dcdd7368f1637
+P e06574c6b4b666ef26f0fa06e6d60e5d896caaf1b1ca27f5369f5b7650d12b9b
+R d52ea075c2a44b2ded7d1c0f8762d401
 U stephan
-Z 69321f0b758a6072a7c355e769ce2507
+Z 35f287fa088fe3c09becc3325399abda
 # Remove this line to create a well-formed Fossil manifest.
