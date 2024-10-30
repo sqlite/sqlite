@@ -360,7 +360,7 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	$(INSTALL) -d $@
+	$(INSTALL) -d "$@"
 
 #
 # After jimsh is compiled, we run some sanity checks to ensure that
@@ -1343,59 +1343,22 @@ so: $(libsqlite3.SO)-$(ENABLE_SHARED)
 all: so
 
 #
-# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(PACKAGE_VERSION) and
-# create symlinks which point to it. Do we really need all of this
-# hoop-jumping? Can we not simply install the .so as-is to
-# libsqlite3.so (without the versioned bits)?
+# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(PACKAGE_VERSION)
+# and create symlinks which point to it:
 #
-# Regarding the historcal installation name of libsqlite3.so.0.8.6:
-#
-# The historical SQLite build always used a version number of 0.8.6
-# for reasons lost to history but having something to do with libtool
-# (which is not longer used in this tree). In order to retain filename
-# compatibility for systems which have libraries installed using those
-# conventions:
-#
-# 1) If libsqlite3.so.0.8.6 is found in the target installation
-#    directory then it is re-linked to point to the new
-#    names. libsqlite3.so.0 historically symlinks to
-#    libsqlite3.so.0.8.6, and that link is left in place. We cannot
-#    retain both the old and new installation because they both share
-#    the high-level name $(libsqlite3.SO). The down-side of this is
-#    that it may well upset packaging tools when we replace
-#    libsqlite3.so (from a legacy package) with a new symlink.
-#
-# 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
-#    to the legacy-style names are created. The primary intent of this
-#    is to enable chains of operations such as the hypothetical (apt
-#    remove sqlite3-3.47.0 && apt install sqlite3-3.48.0). In such
-#    cases, condition (1) would never trigger but applications might
-#    still expect to see the legacy file names.
-#
-# In either case we also delete libsqlite3.la because it cannot work
-# with the non-libtool library this installation installs.
+# - libsqlite3.so.$(PACKAGE_VERSION)
+# - libsqlite3.so.3 =symlink-> libsqlite3.so.$(PACKAGE_VERSION)
+# - libsqlite3.so   =symlink-> libsqlite3.so.3
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
-	$(INSTALL) $(libsqlite3.SO) $(install-dir.lib)
+	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
 	@echo "Setting up SO symlinks..."; \
-		cd $(install-dir.lib) || exit $$?; \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) libsqlite3.la || exit $$?; \
+		cd "$(install-dir.lib)" || exit $$?; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3* || exit $$?; \
-		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
-			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
-			rm -f $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0*; \
-		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
-			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINKS=1"; \
-			rm -f $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
-			ln -s $(libsqlite3.SO).0.8.6 $(libsqlite3.SO).0 || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0*; \
-		fi
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so
@@ -1404,7 +1367,7 @@ install: install-so
 # Install $(libsqlite3.LIB)
 #
 install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
-	$(INSTALL.noexec) $(libsqlite3.LIB) $(install-dir.lib)
+	$(INSTALL.noexec) $(libsqlite3.LIB) "$(install-dir.lib)"
 install-lib-0 install-lib-:
 install-lib: install-lib-$(ENABLE_STATIC)
 install: install-lib
@@ -1412,9 +1375,9 @@ install: install-lib
 #
 # Install C header files
 #
-install-includes: sqlite3.h $(install-dir.include)
-	$(INSTALL.noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" $(install-dir.include)
-install: install-includes
+install-headers: sqlite3.h $(install-dir.include)
+	$(INSTALL.noexec) sqlite3.h "$(TOP)/src/sqlite3ext.h" "$(install-dir.include)"
+install: install-headers
 
 #
 # libtclsqlite3...
@@ -1437,10 +1400,10 @@ libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
 all: libtcl
 
 install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
-	@$(T.tcllibdir); set -x; dest="$(DESTDIR)$$tcllibdir"; \
-	$(INSTALL) -d $$dest; \
-	$(INSTALL) $(libtclsqlite3.SO) $$dest; \
-	$(INSTALL.noexec) pkgIndex.tcl $$dest
+	@$(T.tcllibdir); set -x; \
+	$(INSTALL) -d "$(DESTDIR)$$tcllibdir"; \
+	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$tcllibdir"; \
+	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$tcllibdir"
 install-tcl-0 install-tcl-:
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
@@ -1860,7 +1823,7 @@ sqlite3$(T.exe)-0 sqlite3$(T.exe)-: sqlite3$(T.exe)
 all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
 
 install-shell-0: sqlite3$(TEXT) $(install-dir.bin)
-	$(INSTALL) -s sqlite3$(TEXT) $(install-dir.bin)
+	$(INSTALL) -s sqlite3$(TEXT) "$(install-dir.bin)"
 install-shell-1 install-shell-:
 install: install-shell-$(HAVE_WASI_SDK)
 
@@ -1868,7 +1831,7 @@ sqldiff$(T.exe):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o
 	$(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
-	$(INSTALL) -s sqldiff$(TEXT) $(install-dir.bin)
+	$(INSTALL) -s sqldiff$(TEXT) "$(install-dir.bin)"
 #install: install-diff
 
 dbhash$(T.exe):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
@@ -1891,18 +1854,18 @@ sqlite3_rsync$(T.exe):	$(RSYNC_SRC)
 xbin: sqlite3_rsync$(T.exe)
 
 install-rsync: sqlite3_rsync$(T.exe) $(install-dir.bin)
-	$(INSTALL) sqlite3_rsync$(TEXT) $(install-dir.bin)
+	$(INSTALL) sqlite3_rsync$(TEXT) "$(install-dir.bin)"
 #install: install-rsync
 
 install-man1: $(install-dir.man1)
-	$(INSTALL.noexec) $(TOP)/sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) $(TOP)/sqlite3.1 "$(install-dir.man1)"
 install: install-man1
 
 #
 # sqlite3.pc is typically generated by the configure script but could
 # conceivably be generated by hand.
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
-	$(INSTALL.noexec) sqlite3.pc $(install-dir.pkgconfig)
+	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 
 scrub$(T.exe):	$(TOP)/ext/misc/scrub.c sqlite3.o
 	$(T.link) -o $@ -I. -DSCRUB_STANDALONE \
