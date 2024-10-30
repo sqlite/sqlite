@@ -398,7 +398,7 @@ distclean: distclean-jimsh
 # in other flavors of Make.
 #
 MAKE_SANITY_CHECK = .main.mk.checks
-$(MAKE_SANITY_CHECK): $(MAKEFILE_LIST)
+$(MAKE_SANITY_CHECK): $(MAKEFILE_LIST) $(TOP)/auto.def
 	@if [ x = "x$(TOP)" ]; then echo "Missing TOP var" 1>&2; exit 1; fi
 	@if [ ! -d "$(TOP)" ]; then echo "$(TOP) is not a directory" 1>&2; exit 1; fi
 	@if [ ! -f "$(TOP)/auto.def" ]; then echo "$(TOP) does not appear to be the top-most source dir" 1>&2; exit 1; fi
@@ -442,18 +442,19 @@ LIBOBJS0 = alter.o analyze.o attach.o auth.o \
          window.o
 LIBOBJS = $(LIBOBJS0)
 
+#
 # Object files for the amalgamation.
 #
 LIBOBJS1 = sqlite3.o
 
-# Determine the real value of LIBOBJ based on the 'configure' script
+#
+# Determine the real value of LIBOBJ based on whether the amalgamation
+# is enabled or not.
 #
 LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
-#LIBSRC0 = $(SRC)
-#LIBSRC1 = sqlite3.c
-#LIBSRC  = $(LIBSRC$(USE_AMALGAMATION))
 $(LIBOBJ): $(MAKE_SANITY_CHECK)
 
+#
 # All of the source code files.
 #
 SRC = \

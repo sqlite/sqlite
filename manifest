@@ -1,5 +1,5 @@
-C Re-enable\sexporting\sof\sTCLLIBDIR\sat\sconfigure-time\sso\sthat\sclients\scan\soverride\sit\sonce\sthere\srather\sthan\shaving\sto\soverride\sit\son\san\sarbitrary\snumber\sof\smake\sinvocations\s(which\sthey\scan\sstill\sdo,\sbut\snow\sneed\snot).\sBased\son\sfeedback\sin\s[forum:38f6988e57b738e5|forum\spost\s38f6988e57b].
-D 2024-10-30T02:06:41.420
+C Generic\smakefile\scleanups.
+D 2024-10-30T03:51:21.497
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -697,7 +697,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 047c1192d515466bc586c1e882cf169210515b259b9b9c898171a9fc8f59c31c
+F main.mk 824f35f64c3d4b49f04979059a147c9207acef3354cb3425a6ea0c56b5671cff
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 838633182c3f9f9c4c1a23384ed025777c25427d9c4c1f1a47f1630cf4038ca5
-R 5f23d099a56104ea99d6a3e5077a6f43
+P ee6e15f12ee55fd13cf31317d876e6ba03a7ae1fb9056f0013106948d81b31d9
+R b96df9919f9f382400249a198137582b
 U stephan
-Z 7257af8ebb5afd828f6703c7a9a784cb
+Z 7519d85a792eaa797087b3d9e5d4717f
 # Remove this line to create a well-formed Fossil manifest.
