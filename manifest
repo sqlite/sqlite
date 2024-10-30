@@ -1,5 +1,5 @@
-C Patch\ssqlite3_rsync.c\sto\sdisable\sundesirable\sautomatic\sline\sending\nconversions\son\sWindows.
-D 2024-10-24T19:31:17.795
+C Replace\s3\sinstances\sof\sthe\s==\s'test'\sshell\scommand\soperator\swith\s=,\sas\s==\sis\sapparently\snot\sas\sportable\sacross\sshells.\sProblem\sreported\sin\s[forum:14274389fb2|forum\spost\s14274389fb2].
+D 2024-10-30T00:35:08.612
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -37,8 +37,8 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 135e050689ea244477582e6d77cc7867dfcfe6e0f82e3eab3e47655a67035f8f x
-F configure.ac aca8ebf47b7644c473e11e599ea986eeb23860a8732a8812039ad961ef52a713
+F configure b4eaa306922520c2034bb2600a08f5491e25602606b9e499bd5ae65cfb66d232 x
+F configure.ac 45dbc4aaccc943ef51826e3226671b021158434d1b17cbc6819aff63e10171bf
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-unix.md 343fe9334260d8695c36b465f55221f0187c8e7abaaa4d5afb4d564ed1d22dc1
@@ -2219,10 +2219,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31e104cc40e335108b57afe8184782ad389b1e8ecc526e1e60417f00f94560ad
-Q +67175287440cf363df01bed2464122c3b686a82ea82aeecd3f45fe90c359495c
-Q +e2bd3219d9f7bab377ebcfa9a737ca59899c68dad1e3d1d16347bbfdd25652ee
-R 1af7c78eae9d2c496d5016419501237f
-U drh
-Z 6af0d141e0be5cf632ec2d3c59fa5293
+P e3c27c6d8a8610ac4ad8ad95e0958ffad05fd58a086c67709f6ac132acff9b35
+R b4d7065d4f9d6f2d72a9bb2115091758
+U stephan
+Z f1125ca1638ff59e46aa92ac0cc2c6ba
 # Remove this line to create a well-formed Fossil manifest.
