@@ -2148,3 +2148,11 @@ clean:	clean-. tidy
 # Clean up everything.  No exceptions.
 distclean-.:
 distclean:	distclean-. clean
+
+
+# Show important variable settings.
+show-variables:	
+	@echo "CC          = $(CC)"
+	@echo "B.cc        = $(B.cc)"
+	@echo "T.cc        = $(T.cc)"
+	@echo "T.cc.sqlite = $(T.cc.sqlite)"

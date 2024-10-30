@@ -96,7 +96,7 @@ AR = @AR@
 AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
-T.cc = @CC@
+T.cc = $(CC)
 #
 # CFLAGS is problematic because it is frequently overridden when
 # invoking make, which loses things like -fPIC. So... let's avoid
