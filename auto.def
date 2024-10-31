@@ -308,6 +308,7 @@ if {"" eq [proj-bin-define install]} {
 # compiling binaries for the target system (CC a.k.a. $(T.cc)).
 # Normally they're the same, but they will differ when
 # cross-compiling.
+define CFLAGS [get-env CFLAGS {-g -O2}]
 define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
 
 ########################################################################

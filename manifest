@@ -1,5 +1,5 @@
-C Fix\sa\scorner\scase\sin\sautomatic\sTCLLIBDIR\sdetection:\sif\sthe\s$auto_path\slist\sis\snot\sempty\sbut\snone\sof\sthem\srefer\sto\san\sexisting\sdir,\sthe\slast\sdir\sin\sthat\slist\swould\shave\sbeen\saccepted\sas\sthe\sTCLLIBDIR.\sIt\swill\snow\serror\sout\sinstead.
-D 2024-10-31T01:51:00.715
+C Change\sdefault\sCFLAGS\sto\s{-g\s-O2}\sto\smatch\sthe\slegacy\sbuild.
+D 2024-10-31T05:47:56.652
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 690effe8c5d7bb046120bd30400896b1a7fdd649912c01114df1c0df400bb62b
+F auto.def b4d03e1a29472666304c17e4cad8957bf9608fdb69ba604fae42280cfe6d76b1
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0cdfd142e11824d41ebb6c6e508933e04ac6f6dc0dc375cc5b0032f56eb7f423
-R fc35c15ebb3d82bb0506da0227aa9928
+P 1d2ecae1304d9f677bd50eaae6bd9cb25cb75c611d88a30839f5287a7a97d7d5
+R 7bbd44495a31d853a8cdadac4c7a9a6c
 U stephan
-Z 341fe632ebb3723ef897619681058c98
+Z d036e10613b3c2839c9ebbb2201382e3
 # Remove this line to create a well-formed Fossil manifest.
