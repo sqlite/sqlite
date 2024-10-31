@@ -18,6 +18,8 @@
 # invoked. This file will use defaults, very possibly invalid, for any
 # which are not defined.
 ########################################################################
+.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
+all:
 #
 # $(TOP) =
 #
@@ -71,7 +73,7 @@ B.exe ?=
 # The DLL resp. static library counterparts of $(B.exe).
 #
 B.dll ?= .so
-B.lib ?= .lib
+B.lib ?= .a
 #
 # $(T.exe) =
 #

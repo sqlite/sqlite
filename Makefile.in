@@ -11,10 +11,9 @@
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
 #
+.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
 all:
-clean:
 ########################################################################
-#XX# Lines starting with #XX# are TODOs for the port to autosetup.
 #
 # Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
 # particular order...
@@ -27,30 +26,13 @@ clean:
 #
 # - Replace the autotools-specific distribution deliverable(s).
 #
-# - Provide Makefile.msc, Makefile.linux-gcc, and any required similar
-# makefile stubs for environments where the configure script will not
-# run. The core makefile rules in main.mk "should" apply as-is for
-# most platforms.  We can potentially generate those makefiles, along
-# with main.mk, like we do in the Fossil project.
-#
 # - Confirm whether cross-compilation works and patch it
 # appropriately.
 #
-# - There are some lingering dependencies issues which cause a
-# re-configure to trigger more often than it should.  This is
-# especially a problem in parallel builds, which may launch multiple
-# re-configures in parallel.  GNU Make offers ways of controlling
-# that, but we're limited to POSIX Make compatibility here. The
-# automatic reconfigures are not too onerous, though, because they're
-# much, much faster than Autotools configure runs.
-#
-# - Add target(s) to dump out specific vars, e.g. SQLITE_OPT, as
-# requested at https://sqlite.org/forum/forumpost/75cb3179216f8d86.
-# This would also be useful for the ext/wasm build, which fishes
-# SHELL_OPT out of the makefile.
-#
-#
 # Maintenance reminders:
+#
+# - This makefile should remain as POSIX-make-compatible as possible:
+#   https://pubs.opengroup.org/onlinepubs/9799919799/utilities/make.html
 #
 # - When using the X?=Y variable assignment formulation, please test
 #   the build with both GNU make and a POSIX make (e.g. BSD make,
