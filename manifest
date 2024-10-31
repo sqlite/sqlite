@@ -1,5 +1,5 @@
-C Fix\sthe\sclean-autosetup\starget\sin\sMakefile.in\sso\sthat\sit\sdoes\snot\sfail\seven\nin\scases\swhere\sgmake\sis\sunavailable.
-D 2024-10-31T17:38:30.682
+C In\stestrunner.tcl,\sonly\sshow\sthe\sETC\son\sthe\sstatus\sline\sif\sit\swill\sfit\swithin\nthe\s80-character\sline\slimit.
+D 2024-10-31T18:29:55.322
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -1719,7 +1719,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 7b44f1a9b9a2de8112695b908afc21dd9a68cd2d44e84b73f1b27b53492c0d59
-F test/testrunner.tcl 4e764b0da245add9670d1010a69a3ac5474a5dfe15e1d3183294c23cca43ef13 x
+F test/testrunner.tcl 3c6acf0eecd2b5459082639183f2b4f667aa0b74ddab24e4d37295112c7a5325 x
 F test/testrunner_data.tcl ba4aeea28aa03cfa6fe7e57782ddecb7a7b91c3a0b3251583cb4f0ee002de6a6
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bae05811116dae0d05bcc001655416d0316ca1c16cbde2bd49f691c832261b89
-R 957ccd48fa7bc0c62d7e67c32bc0fbd2
+P 207ca21bd7060a163da60b432f61ffaad8bedb6c0d59f090f9c5addb5b56d82d
+R 65cc2e74cca41252a2309f0b7a90695b
 U drh
-Z cb32b7812ceb5a71ca7b422751807af3
+Z 2c689aa6cac5108020ff6901e85b9ecd
 # Remove this line to create a well-formed Fossil manifest.
