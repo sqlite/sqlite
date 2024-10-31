@@ -1,5 +1,5 @@
-C Add\sthe\s.POSIX\sspecial\starget\sto\sthe\smain\smakefiles\sto\shint\sto\sthe\smake\simpl\sthat\sit\sshould\sbehave\sPOSIXly-correct.\sFix\sthe\sdefault\sfile\sextension\sfor\sstatic\slibs\sin\smain.mk.
-D 2024-10-31T07:20:22.577
+C When\sreading\sin\s.default-CFLAGS,\strim\sit.
+D 2024-10-31T07:30:53.399
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 343bcb3fff35742e9916bda3e0d5e786ef26610adb00e4039a1763a81330b6a6
+F auto.def 9b43af60e0ac708da9a84d489820eca5899a894d53420b339d12cfcc411620c1
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 831665101e9c62cf49c173cb11705033eb9135a6a6965718285d81113ee5ba4c
-R 4a69f33cb347363bc3407201453ac489
+P 2c615d3a3206536f12c0723b8997bda9ab61f95a468f77697856213b46c0135e
+R 21c04bd2c5dfb28bd50b344cb95ee239
 U stephan
-Z 4eb25a548225e7e13c3bd2c622a6f4b0
+Z 48bef13d8f51175654cd176b9ca6952d
 # Remove this line to create a well-formed Fossil manifest.
