@@ -1,5 +1,5 @@
-C Improved\sdifferentiation\sbetween\santirez\sand\smsteveb\slinenoise.
-D 2024-10-31T11:19:22.925
+C Omit\sunnecessary\sbold\stext\sin\s./configure\soutput.
+D 2024-10-31T11:21:35.065
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def cf1acfbbe13d6d041f5a50c8f0db43eb598754081f8f93a7724abfa4a065bf7d
+F auto.def 5e5bac1b983628125722a64ab8fce9ea1755c5483a078704ac27de7f99f32f2b
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 005702f334e7c51d83fc1b142ab90fa6867c4c2e75c8a3d2a17e07669b47fb23
-R 18dc2f778b8898bf0fa14c0afd13b18b
+P cfb4bfcf1498b3740d210c24a71be343e8e0f262f3d9bddd45a673011307068c
+R deeda53f6d9982318710f230fa82388b
 U drh
-Z 75daa62785acb8fad58113e17b1479b5
+Z 8e7ce6a7f971554c634e2af4fa35d784
 # Remove this line to create a well-formed Fossil manifest.

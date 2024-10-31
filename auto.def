@@ -227,7 +227,7 @@ define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
 define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
 msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
-msg-result [proj-bold "Configuring SQLite version $PACKAGE_VERSION"]
+msg-result "Configuring SQLite version $PACKAGE_VERSION"
 
 #
 # SQLITE_AUTORECONFIG contains make target rules for re-running the
@@ -335,7 +335,7 @@ proc sqlite-check-wasi-sdk {} {
   define WASI_SDK_DIR $wasiSdkDir
   # Disable numerous options which we know either can't work or are
   # not useful in this build...
-  msg-result [proj-bold "Using wasi-sdk clang. Disabling CLI shell and forcing:"]
+  msg-result "Using wasi-sdk clang. Disabling CLI shell and forcing:"
   foreach opt {
     editline
     gcov
