@@ -225,7 +225,6 @@ define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION $PACKAGE_VERSION
 define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
 define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
-
 msg-result "srcdir = $srcdir"
 msg-result "top_srcdir = $top_srcdir"
 msg-result [proj-bold "Configuring SQLite version $PACKAGE_VERSION"]
@@ -242,7 +241,7 @@ foreach arg $::autosetup(argv) {
 }
 
 # Are we cross-compiling?
-set cross_compiling [proj-is-cross-compiling]
+set isCrossCompiling [proj-is-cross-compiling]
 if {![file exists sqlite3.pc.in]} {
   msg-result "This appears to be an out-of-tree build."
 }
@@ -314,41 +313,51 @@ define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
 ########################################################################
 # Handle --with-wasi-sdk=DIR
 #
-# This must be early because it may change the toolchain and disable
-# several config options.
+# This MUST be run early on because it may change the toolchain and
+# disable a number of config options.
 proc sqlite-check-wasi-sdk {} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   define HAVE_WASI_SDK 0
-  #puts "x wasiSdkDir=$wasiSdkDir foo=[lindex [opt-val with-wasi-sdk] end]"
   if {$wasiSdkDir eq ""} {
     return 0
-  } elseif {$::cross_compiling} {
+  } elseif {$::isCrossCompiling} {
     proj-fatal "Cannot combine --with-wasi-sdk with cross-compilation"
   }
   msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
   #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
   proj-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
-  msg-result "Using wasi-sdk clang, disabling: tcl, CLI shell, DLL, loadable extensions, threading"
   define HAVE_WASI_SDK 1
   define WASI_SDK_DIR $wasiSdkDir
-  proj-opt-set load-extension 0 ;# ==> --disable-load-extension
-  proj-opt-set threadsafe 0     ;# ==> --threadsafe=0
-  proj-opt-set tcl 0            ;# ==> --disable-tcl
-  proj-opt-set shared 0         ;# ==> --disable-shared
-  set cross_compiling 1
+  # Disable numerous options which we know either can't work or are
+  # not useful in this build...
+  msg-result [proj-bold "Using wasi-sdk clang. Disabling CLI shell and forcing:"]
+  foreach opt {
+    editline
+    gcov
+    load-extension
+    readline
+    shared
+    tcl
+    threadsafe
+  } {
+    msg-result "  --disable-$opt"
+    proj-opt-set $opt 0
+  }
+  # Remember that we now have a discrepancy beteween
+  # $::isCrossCompiling and [proj-is-cross-compiling].
+  set ::isCrossCompiling 1
 
-  # Changing --host and --target have no effect here except to possibly
-  # cause confusion. autoconf has finished processing them by this
-  # point.
+  #
+  # Changing --host and --target have no effect here except to
+  # possibly cause confusion. Autosetup has finished processing them
+  # by this point.
   #
   #  host_alias=wasm32-wasi
   #  target=wasm32-wasi
   #
   # Merely changing CC and LD to the wasi-sdk's is enough to get
   # sqlite3.o building in WASM format.
-  # XXX CC="${wasiSdkDir}/bin/clang"
-  # XXX LD="${wasiSdkDir}/bin/wasm-ld"
-  # XXX RANLIB="${wasiSdkDir}/bin/llvm-ranlib"
+  #
   define CC "${wasiSdkDir}/bin/clang"
   define LD "${wasiSdkDir}/bin/wasm-ld"
   #define STRIP "${wasiSdkDir}/bin/strip"
@@ -387,7 +396,7 @@ cc-check-includes \
   inttypes.h
 
 if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
-  # TODO: port over the more sophisticated zlib search from the fossil auto.def
+  # TODO? port over the more sophisticated zlib search from the fossil auto.def
   define HAVE_ZLIB 1
   define LDFLAGS_ZLIB -lz
   sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
@@ -648,45 +657,51 @@ proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH {}
   set cgtcl [opt-val with-tclsh jimsh]
-  if {"jimsh" ne $cgtcl} {
-    # When --with-tclsh=X is used, use that for all TCL purposes,
-    # including in-tree code generation, per developer request.
-    define BTCLSH "\$(TCLSH_CMD)"
-  } else {
-    # These headers are technically optional for JimTCL but necessary if
-    # we want to use it for code generation:
-    set sysh [cc-check-includes dirent.h sys/time.h]
-    if {$sysh && [cc-check-functions realpath]} {
-      define-append CFLAGS_JIMSH -DHAVE_REALPATH
-      define BTCLSH "\$(JIMSH)"
-    } elseif {$sysh && [cc-check-functions _fullpath]} {
-      # _fullpath() is a Windows API
-      define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-      define BTCLSH "\$(JIMSH)"
-    } elseif {[file exists [get-define TCLSH_CMD]]} {
-      set cgtcl [get-define TCLSH_CMD]
+  define-push {CC} {
+    # We have to swap CC to CC_FOR_BUILD for purposes of the various
+    # [cc-...] tests below. Recall that --with-wasi-sdk may have
+    # swapped out CC with one which is not appropriate for this block.
+    define CC [get-define CC_FOR_BUILD]
+    if {"jimsh" ne $cgtcl} {
+      # When --with-tclsh=X is used, use that for all TCL purposes,
+      # including in-tree code generation, per developer request.
       define BTCLSH "\$(TCLSH_CMD)"
     } else {
-      # One last-ditch effort to find TCLSH_CMD: use info from
-      # tclConfig.sh to try to find a tclsh
-      if {"" eq [get-define TCLSH_CMD]} {
-        set tpre [get-define TCL_EXEC_PREFIX]
-        if {"" ne $tpre} {
-          set tv [get-define TCL_VERSION]
-          if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
-            define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
-          } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
-            define TCLSH_CMD "${tpre}/bin/tclsh"
+      # These headers are technically optional for JimTCL but necessary if
+      # we want to use it for code generation:
+      set sysh [cc-check-includes dirent.h sys/time.h]
+      if {$sysh && [cc-check-functions realpath]} {
+        define-append CFLAGS_JIMSH -DHAVE_REALPATH
+        define BTCLSH "\$(JIMSH)"
+      } elseif {$sysh && [cc-check-functions _fullpath]} {
+        # _fullpath() is a Windows API
+        define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+        define BTCLSH "\$(JIMSH)"
+      } elseif {[file exists [get-define TCLSH_CMD]]} {
+        set cgtcl [get-define TCLSH_CMD]
+        define BTCLSH "\$(TCLSH_CMD)"
+      } else {
+        # One last-ditch effort to find TCLSH_CMD: use info from
+        # tclConfig.sh to try to find a tclsh
+        if {"" eq [get-define TCLSH_CMD]} {
+          set tpre [get-define TCL_EXEC_PREFIX]
+          if {"" ne $tpre} {
+            set tv [get-define TCL_VERSION]
+            if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
+              define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
+            } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
+              define TCLSH_CMD "${tpre}/bin/tclsh"
+            }
           }
         }
+        set cgtcl [get-define TCLSH_CMD]
+        if {![file exists $cgtcl]} {
+          proj-fatal "Cannot find a tclsh to use for code generation."
+        }
+        define BTCLSH "\$(TCLSH_CMD)"
       }
-      set cgtcl [get-define TCLSH_CMD]
-      if {![file exists $cgtcl]} {
-        proj-fatal "Cannot find a tclsh to use for code generation."
-      }
-      define BTCLSH "\$(TCLSH_CMD)"
     }
-  }
+  }; # CC swap-out
   return $cgtcl
 }; # sqlite-determine-codegen-tcl
 msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
@@ -859,7 +874,7 @@ proc sqlite-check-line-editing {} {
   set rlInc [opt-val with-readline-cflags auto]
   if {"auto" eq $rlInc} {
     set rlInc ""
-    if {$::cross_compiling} {
+    if {$::isCrossCompiling} {
       # ^^^ this check is derived from the legacy configure script.
       proj-warn "Skipping check for readline.h because we're cross-compiling."
     } else {
