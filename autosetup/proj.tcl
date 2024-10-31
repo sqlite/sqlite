@@ -492,6 +492,7 @@ proc proj-file-content-list {fname} {
   while { [gets $fp line] >= 0 } {
     lappend rc $line
   }
+  close $fp
   return $rc
 }
 
