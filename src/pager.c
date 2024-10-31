@@ -5098,11 +5098,23 @@ static int getPageOneNoWal(
   int rc = SQLITE_OK;
 
   assert( pgno==1 );
+  assert( pPager->readOnly );
+  assert( !isOpen(pPager->jfd) );
+
   rc = getPageNormal(pPager, pgno, ppPage, flags);
   if( rc==SQLITE_OK ){
+    int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
     u8 *aPg = (u8*)(*ppPage)->pData;
-    aPg[18] = 1;
-    aPg[19] = 1;
+    u8 aHdr[28];
+    rc = sqlite3OsOpen(pPager->pVfs, pPager->zJournal, pPager->jfd, f, &f);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3OsRead(pPager->jfd, (void*)aHdr, sizeof(aHdr), 0);
+    }
+    if( rc==SQLITE_OK ){
+      u32 off = sqlite3Get4byte(&aHdr[20]);
+      rc = sqlite3OsRead(pPager->jfd, (void*)aPg, pPager->pageSize, off+4);
+    }
+    sqlite3OsClose(pPager->jfd);
   }
   setGetterMethod(pPager);
   return rc;
@@ -5158,6 +5170,9 @@ static int checkHotJournal(Pager *pPager, int *pbHot){
             memcpy(&a2[18], &a1[18], 2);
             memcpy(&a2[24], &a1[24], 4);
             memcpy(&a2[92], &a1[92], 8);
+#ifdef SQLITE_ENABLE_ZIPVFS
+            memcpy(&a2[176], &a1[176], 4);
+#endif
           }
           if( rc==SQLITE_OK && memcmp(a1, a2, pgsz)==0 ){
             *pbHot = 0;

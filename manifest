@@ -1,5 +1,5 @@
-C Merge\sthe\sreadonly-ignore-wal-jrnl\sfeature\sinto\sa\ssub-branch\sof\sreuse-schema.
-D 2024-10-30T14:24:15.852
+C Update\sthis\sbranch\sso\sthat\sit\sworks\swith\sZipVFS.
+D 2024-10-31T15:59:29.175
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl fa96b17f000042f467239f2ef3e7a33d4787bc0fb5db4e69bd5bf1e55bb380f4 w autosetup/hwaci-common.tcl
+F autosetup/proj.tcl fa96b17f000042f467239f2ef3e7a33d4787bc0fb5db4e69bd5bf1e55bb380f4
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -764,7 +764,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 0ad4e0885294b3a0e135a18533590ec9ad91ffe82f6a08e55b40babd51772928
 F src/os_win.c 970c80992fda8bc026154fc87879609f00c37472004f3a06626521b3868d694e
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9aae5bb8a2bcd5a6347cc2548e7df428a0108b6c52834876ebe12900e5158c47
+F src/pager.c ab7704b78c764cc89f477a0c10e53eb3fee8acc1d1306807354c626513c71a4a
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y a7a8d42eeff01d267444ddb476029b0b1726fb70ae3d77984140f17ad02e2d61
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2210,11 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 12fc5fd5e0ec539faf6d0965096e20c2eea1c0cf5fe9704f8f1479a37b10a333 21ed4e78863f2622d756d2f5e0e951f3c4a992913cd1e459b2366cb5bab0153c
-R 395a6787fc56e8a5aa03c2e2f8cded7d
-T *branch * reuse-schema-ro-waljrnl
-T *sym-reuse-schema-ro-waljrnl *
-T -sym-reuse-schema *
+P 67087fe433ff1d1bdae913becd908658cc03d61556c408091b640d0161a5edca bc71b0a0b3ca7506efa5e700bb23968d4ed2d82b8f1ce04a6bdcad7b7edc56b0
+R eb2d93f65f416bf50bf51013f79b5896
 U drh
-Z 316b4c41033ad0d30b2658f1bc4c53b1
+Z 287b8108032d5839a92369107bec4370
 # Remove this line to create a well-formed Fossil manifest.
