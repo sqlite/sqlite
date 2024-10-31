@@ -194,7 +194,7 @@ set flags {
   # <developer>
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
-  linemacros           => {Enable #line macros in the amalgamation.}
+  linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   # </developer>
 
@@ -307,7 +307,12 @@ if {"" eq [proj-bin-define install]} {
 # compiling binaries for the target system (CC a.k.a. $(T.cc)).
 # Normally they're the same, but they will differ when
 # cross-compiling.
-define CFLAGS [get-env CFLAGS {-g -O2}]
+set defaultCFlags {-g -O2}
+if {[file exists .default-CFLAGS]} {
+  set defaultCFlags [proj-file-content .default-CFLAGS]
+}
+define CFLAGS [get-env CFLAGS $defaultCFlags]
+unset defaultCFlags
 define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
 
 ########################################################################
