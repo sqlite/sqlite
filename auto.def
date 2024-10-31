@@ -568,15 +568,13 @@ proc sqlite-check-tcl {} {
     }
     break
   }
-
   define TCL_CONFIG_SH $cfg
   # Export a subset of tclConfig.sh to the current TCL-space.  If the
   # config is not available, this emits empty-string entries for the
   # various options we're interested in.
   eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "$cfg"]
 
-  if {"" eq $with_tclsh} {
-    proj-assert {expr {$cfg ne ""}}
+  if {"" eq $with_tclsh && $cfg ne ""} {
     proj-assert {expr {"" ne [get-define TCL_EXEC_PREFIX]}}
     set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
     if {![file-isexec $with_tclsh]} {
@@ -589,8 +587,6 @@ proc sqlite-check-tcl {} {
     }
   }
   define TCLSH_CMD $with_tclsh
-  proj-assert {expr {( $cfg eq "" && 0 == $use_tcl ) \
-                       || ( $cfg ne "" && 1 == $use_tcl )}}
   if {$use_tcl} {
     # Set up the TCLLIBDIR and TCLLIB_RPATH
     #
@@ -638,6 +634,7 @@ proc sqlite-check-tcl {} {
   } else {
     proj-warn "Cannot find a usable tclsh, so cannot run tests."
   }
+  show-notices
 }; # sqlite-check-tcl
 
 sqlite-check-tcl
