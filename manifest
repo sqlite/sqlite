@@ -1,5 +1,5 @@
-C Reimplement\show\sthe\sTCL-related\senvironment\svars\sare\smade\savailable\sto\smake\srecipes\swhich\sneed\sthem,\sreducing\sthe\sconsole\snoise\sand\sconsolidating\sit\swith\sthe\shas_tclconfig\sflag\sfile.\sIt\snow\suses\sa\sgenerated\sshell\ssnippet\swhich\sit\ssources,\srather\sthan\sinlining\sall\sof\sthat\sshell\scode.
-D 2024-10-31T00:56:05.498
+C Fix\sa\scorner\scase\sin\sautomatic\sTCLLIBDIR\sdetection:\sif\sthe\s$auto_path\slist\sis\snot\sempty\sbut\snone\sof\sthem\srefer\sto\san\sexisting\sdir,\sthe\slast\sdir\sin\sthat\slist\swould\shave\sbeen\saccepted\sas\sthe\sTCLLIBDIR.\sIt\swill\snow\serror\sout\sinstead.
+D 2024-10-31T01:51:00.715
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -697,7 +697,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 79a3a4bae01816303a6f027a2bed45afceb6bf0929bd4f5b7141cfb0a8b9c950
+F main.mk 89d5f9a552f4933d8d4d8fafc0d5899c5622863173fbadfb3dd404440aeb38e7
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3be32de1626f940e256076df76388e7633de57f340aac937f6a48d3585b96ca4
-R 9216ca2734a13c3e7fb0657b81bdb07d
+P 0cdfd142e11824d41ebb6c6e508933e04ac6f6dc0dc375cc5b0032f56eb7f423
+R fc35c15ebb3d82bb0506da0227aa9928
 U stephan
-Z 59155e9ae3f05d19e5817b0f4a32cdcf
+Z 341fe632ebb3723ef897619681058c98
 # Remove this line to create a well-formed Fossil manifest.

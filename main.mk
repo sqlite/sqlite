@@ -929,12 +929,14 @@ $(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH)
 		echo 'TCL_CONFIG_SH must be set to point to a "tclConfig.sh"' 1>&2; exit 1; \
 	fi
 	@if [ x != "x$(TCLLIBDIR)" ]; then echo TCLLIBDIR="$(TCLLIBDIR)"; else \
-		for TCLLIBDIR in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
-		[ -d "$$TCLLIBDIR" ] && break; done; \
-		if [ x = "x$$TCLLIBDIR" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
-		echo TCLLIBDIR="$$TCLLIBDIR/sqlite3"; \
+		ld= ; \
+		for d in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
+			if [ -d "$$d" ]; then ld=$$d; break; fi; \
+		done; \
+		if [ x = "x$$ld" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
+		echo "TCLLIBDIR=$$ld/sqlite3"; \
 	fi > $@; \
-	echo ". $(TCL_CONFIG_SH) || exit \$$?" >> $@
+	echo ". \"$(TCL_CONFIG_SH)\" || exit \$$?" >> $@
 
 #
 # $(T.tcl.env.source) is shell code to be run as part of any
