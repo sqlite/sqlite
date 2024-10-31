@@ -817,19 +817,11 @@ proc sqlite-check-line-editing {} {
     if {"" eq $lnC} {
       proj-fatal "Cannot find any of $lnCOpts in $dirLn"
     }
-    set flavor ""
-    set lnVal [proj-which-linenoise $lnH]
-    switch -- $lnVal {
-      1 { set flavor "antirez" }
-      2 { set flavor "msteveb" }
-      default {
-        proj-fatal "Cannot determine the flavor of linenoise from $lnH"
-      }
-    }
+    if {[string match *-ship* $lnC]} {set lnVal 2} {set lnVal 1}
     define CFLAGS_READLINE "-I$dirLn $lnC"
     define HAVE_LINENOISE $lnVal
     sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
-    return "linenoise ($flavor)"
+    return "linenoise"
   } elseif {[opt-bool editline]} {
     # libedit mimics libreadline and on some systems does not have its
     # own header installed (instead, that of libreadline is used).
