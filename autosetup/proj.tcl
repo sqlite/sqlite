@@ -1009,25 +1009,9 @@ proc proj-redefine-cc-for-build {} {
 # msteveb, and 0 if it's neither.
 proc proj-which-linenoise {dotH} {
   set srcHeader [proj-file-content $dotH]
-  set srcMain {
-    int main(void) {
-      linenoiseSetCompletionCallback(0$arg)
-      /* antirez has only 1 arg, msteveb has 2 */;
-      return 0;
-    }
-  }
-  set arg ""
-  append source $srcHeader [subst $srcMain]
-  if {[cctest -nooutput 1 -source $source]} {
+  if {[string match *userdata* $srcHeader]} {
+    return 2
+  } else {
     return 1
   }
-  set source {
-    #include <stddef.h> /* size_t */
-  }
-  set arg ", 0"
-  append source $srcHeader [subst $srcMain]
-  if {[cctest -nooutput 1 -source $source]} {
-    return 2
-  }
-  return 0
 }
