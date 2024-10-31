@@ -1,9 +1,9 @@
-C Extra\sdefenses\sagainst\sUAF\swhen\sfailing\sto\sallocate\sa\stransient\scursor.\s\sNo\nknown\spath\sto\sa\sUAF\scurrently\sexists.\s\sThis\schange\sjust\shelps\swith\sthe\sstatic\nanalysis\sto\sprove\sit.
-D 2024-10-31T17:23:40.795
+C Fix\sthe\sclean-autosetup\starget\sin\sMakefile.in\sso\sthat\sit\sdoes\snot\sfail\seven\nin\scases\swhere\sgmake\sis\sunavailable.
+D 2024-10-31T17:38:30.682
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in caeee287b060f652a9b69ccaad783729e2d6b28c7dfa82881837dc3fad1ed78f
+F Makefile.in 3a98abc984222a31c8597a0cd516c8dd9b72554d784a87c915d2e586db4ddb18
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5adc7d5dabbd9e2b18b3e13ab4e6463bfa8b5c1d604c94c8e67e6b812873ed30
-R 3055b723c94c4b7dc7038e85a5c66af4
+P bae05811116dae0d05bcc001655416d0316ca1c16cbde2bd49f691c832261b89
+R 957ccd48fa7bc0c62d7e67c32bc0fbd2
 U drh
-Z 44ba66da1a0b584652919774e84edda3
+Z cb32b7812ceb5a71ca7b422751807af3
 # Remove this line to create a well-formed Fossil manifest.

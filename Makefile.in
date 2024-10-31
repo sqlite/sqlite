@@ -313,7 +313,7 @@ misspell: ./custom.rws has_tclsh84
 # build.
 #
 clean-autosetup:
-	-gmake -C ext/wasm distclean 2>/dev/null; true
+	-gmake -C ext/wasm distclean 2>/dev/null || true
 clean: clean-autosetup
 
 distclean-autosetup:	clean
