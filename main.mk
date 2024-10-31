@@ -906,60 +906,51 @@ has_tclsh85:
 	touch has_tclsh85
 
 #
-# .tclconfig.make has the config info from tclConfig.sh, but in
-# makefile form. If TCL_CONFIG_SH is empty then it will emit
-# empty config state (which is harmless).
+# $(T.tcl.env.sh) is a shell script intended for source'ing to set
+# various TCL config info in the current shell context:
 #
-# Alas, it turns out that POSIX make cannot both generate a makefile
-# and import it in the same make invocation (GNU make can), so this
-# approach, while simple to implement and non-intrusive on the targets
-# which require the config state, is not portable.
+# - All info exported by tclConfig.sh
 #
-# An alternative is $(SOURCE_TCLCONFIG), defined below, but this impl
-# is retained as a reminder of why we cannot portably use this
-# otherwise trivial approach.
+# - TCLLIBDIR = the first entry from TCL's $auto_path which refers to
+#   an existing dir, then append /sqlite3 to it. If TCLLIBDIR is
+#   provided via the environment, that value is used instead.
 #
-#.tclconfig.make:
-#	sh $(TOP)/tool/tclConfigShToMake.sh $(TCL_CONFIG_SH) > .tclconfig.make
-#distclean-tclconfig:
-#	rm -f .tclconfig.make
-#distclean: distclean-tclconfig
-#-include .tclconfig.make
-
+# Maintenance reminder: the ./ at the start of the name is required or /bin/sh
+# refuses to source it:
 #
-# SOURCE_TCLCONFIG is shell code to be run as part of any compilation
-# or link step which requires vars from $(TCL_CONFIG_SH). All targets
-# which use this should also have a dependency on has_tclconfig.
+#   . .tclenv.sh    ==> .tclenv.sh: not found
+#   . ./.tclenv.sh  ==> fine
 #
-SOURCE_TCLCONFIG = . $(TCL_CONFIG_SH) || exit $$?
+# It took half an hour to figure that out.
 #
-# T.tcllibdir = shell code to extract the TCLLIBDIR to the tcllibdir
-# shell var and exit with !0 if it cannot be determined. It must be
-# part of a chained series of commands so that the var survives for
-# the following rules in the same recipe.
-#
-# Algo: tcllibdir = the first entry from TCL's $auto_path which refers
-# to an existing dir, then append /sqlite3 to it.
-#
-T.tcllibdir = \
-  if [ x != "x$(TCLLIBDIR)" ]; then tcllibdir="$(TCLLIBDIR)"; else \
-    for tcllibdir in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
-    [ -d "$$tcllibdir" ] && break; done; \
-    if [ x = "x$$tcllibdir" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
-    tcllibdir="$$tcllibdir/sqlite3"; \
-  fi; echo "TCLLIBDIR=$$tcllibdir"
-#
-# $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for $(T.compile)
-# and $(T.link) which first invoke $(SOURCE_TCLCONFIG).
-#
-T.compile.tcl = $(SOURCE_TCLCONFIG); $(T.compile)
-T.link.tcl = $(SOURCE_TCLCONFIG); $(T.link)
-
-has_tclconfig:
+T.tcl.env.sh = ./.tclenv.sh
+$(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH)
 	@if [ x = "x$(TCL_CONFIG_SH)" ]; then \
 		echo 'TCL_CONFIG_SH must be set to point to a "tclConfig.sh"' 1>&2; exit 1; \
 	fi
-	touch has_tclconfig
+	@if [ x != "x$(TCLLIBDIR)" ]; then echo TCLLIBDIR="$(TCLLIBDIR)"; else \
+		for TCLLIBDIR in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
+		[ -d "$$TCLLIBDIR" ] && break; done; \
+		if [ x = "x$$TCLLIBDIR" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
+		echo TCLLIBDIR="$$TCLLIBDIR/sqlite3"; \
+	fi > $@; \
+	echo ". $(TCL_CONFIG_SH) || exit \$$?" >> $@
+
+#
+# $(T.tcl.env.source) is shell code to be run as part of any
+# compilation or link step which requires vars from
+# $(TCL_CONFIG_SH). All targets which use this should also have a
+# dependency on $(T.tcl.env.sh).
+#
+T.tcl.env.source = . $(T.tcl.env.sh) || exit $$?
+
+#
+# $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for $(T.compile)
+# and $(T.link) which first invoke $(T.tcl.env.source). Any targets which used them
+# must have a dependency on $(T.tcl.env.sh)
+#
+T.compile.tcl = $(T.tcl.env.source); $(T.compile)
+T.link.tcl = $(T.tcl.env.source); $(T.link)
 
 #
 # This target creates a directory named "tsrc" and fills it with
@@ -1274,17 +1265,17 @@ whereexpr.o:	$(TOP)/src/whereexpr.c $(DEPS_OBJ_COMMON)
 window.o:	$(TOP)/src/window.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) $(CFLAGS.libsqlite3) -c $(TOP)/src/window.c
 
-tclsqlite.o:	has_tclconfig $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
+tclsqlite.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 $$TCL_INCLUDE_SPEC $(CFLAGS.intree_includes) \
 		-c $(TOP)/src/tclsqlite.c
 
-tclsqlite-shell.o:	has_tclconfig $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
+tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite-stubs.o:	has_tclconfig $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
+tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite3$(T.exe):	has_tclconfig tclsqlite-shell.o $(libsqlite3.SO)
+tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.SO)
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
 		 $(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 
@@ -1385,12 +1376,11 @@ install: install-headers
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
 libtclsqlite3.SO = libtclsqlite3$(T.dll)
-$(libtclsqlite3.SO): has_tclconfig tclsqlite.o $(libsqlite3.SO)
-	@$(T.tcllibdir); \
-	$(SOURCE_TCLCONFIG); set -x; \
+$(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(libsqlite3.SO)
+	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
-		$(libsqlite3.SO) -Wl,-rpath,$$tcllibdir
+		$(libsqlite3.SO) -Wl,-rpath,$$TCLLIBDIR
 # ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
 # tclConfig.sh, but it's defined in such a way as to be useless for a
 # _static_ makefile.
@@ -1400,10 +1390,10 @@ libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
 all: libtcl
 
 install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
-	@$(T.tcllibdir); set -x; \
-	$(INSTALL) -d "$(DESTDIR)$$tcllibdir"; \
-	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$tcllibdir"; \
-	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$tcllibdir"
+	$(T.tcl.env.source); \
+	$(INSTALL) -d "$(DESTDIR)$$TCLLIBDIR"; \
+	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$TCLLIBDIR"; \
+	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$TCLLIBDIR"
 install-tcl-0 install-tcl-:
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
@@ -1507,7 +1497,7 @@ TESTFIXTURE_SRC1 = sqlite3.c
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
-testfixture$(T.exe):	has_tclconfig has_tclsh85 $(TESTFIXTURE_SRC)
+testfixture$(T.exe):	$(T.tcl.env.sh) has_tclsh85 $(TESTFIXTURE_SRC)
 	$(T.link.tcl) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) \
 		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
@@ -1627,7 +1617,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
                     $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
-sqlite3_analyzer$(T.exe): has_tclconfig sqlite3_analyzer.c
+sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c
 	$(T.link.tcl) sqlite3_analyzer.c -o $@ $$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $(LDFLAGS.libsqlite3)
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
@@ -1635,7 +1625,7 @@ sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/tool/sqltclsh.c.in has_tclsh85
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
-sqltclsh$(T.exe): has_tclconfig sqltclsh.c
+sqltclsh$(T.exe): $(T.tcl.env.sh) sqltclsh.c
 	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 # xbin: target for generic binaries which aren't usually built. It is
 # used primarily for testing the build process.
@@ -1660,7 +1650,7 @@ CHECKER_DEPS =\
 sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
-sqlite3_checker$(T.exe):	has_tclconfig sqlite3_checker.c
+sqlite3_checker$(T.exe):	$(T.tcl.env.sh) sqlite3_checker.c
 	$(T.link.tcl) sqlite3_checker.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 xbin: sqlite3_checker$(T.exe)
 
@@ -2134,8 +2124,8 @@ tidy: tidy-.
 	rm -f sessionfuzz$(T.exe) changesetfuzz$(T.exe)
 	rm -f dbdump$(T.exe) dbtotxt$(T.exe) atrc$(T.exe)
 	rm -f threadtest5$(T.exe)
-	rm -f src-verify$(B.exe) has_tclsh* has_tclconfig
-	rm -f tclsqlite3.c
+	rm -f src-verify$(B.exe)
+	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)
 	rm -f sqlite3rc.h sqlite3.def
 
 #
