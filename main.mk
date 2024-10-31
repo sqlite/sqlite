@@ -9,7 +9,10 @@
 #
 #  - This file must remain devoid of GNU Make-isms.  i.e. it must be
 #  POSIX Make compatible. "bmake" (BSD make) is available on most
-#  Linux systems, so compatibility is relatively easy to test.
+#  Linux systems, so compatibility is relatively easy to test.  As a
+#  harmless exception, this file sometimes uses $(MAKEFILE_LIST) as a
+#  dependency. That var, in GNU Make, lists all of the makefile
+#  currently loaded.
 #
 # The variables listed below must be defined before this script is
 # invoked. This file will use defaults, very possibly invalid, for any
@@ -117,12 +120,11 @@ B.tclsh ?= $(JIMSH)
 # Various system-level directories, mostly needed for installation and
 # for finding system-level dependencies.
 #
+# Aside from ${prefix}, we do not need to (and intentionally do not)
+# export any of the dozen-ish shorthand ${XYZdir} vars the autotools
+# conventionally defines.
+#
 prefix       ?= /usr/local
-exec_prefix  ?= $(prefix)
-libdir       ?= $(prefix)/lib
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir       ?= $(prefix)/bin
-includedir   ?= $(prefix)/include
 #
 # $(LDFLAGS.{feature}) and $(CFLAGS.{feature}) =
 #
@@ -351,10 +353,10 @@ LDFLAGS.libsqlite3 = \
 # moral of this story is that spaces in installation paths will break
 # the install process.
 #
-install-dir.bin = $(DESTDIR)$(bindir)
-install-dir.lib = $(DESTDIR)$(libdir)
+install-dir.bin = $(DESTDIR)$(prefix)/bin
+install-dir.lib = $(DESTDIR)$(prefix)/lib
 install-dir.include = $(DESTDIR)$(prefix)/include
-install-dir.pkgconfig = $(DESTDIR)$(pkgconfigdir)
+install-dir.pkgconfig = $(DESTDIR)$(prefix)/lib/pkgconfig
 install-dir.man1 = $(DESTDIR)$(prefix)/share/man/man1
 install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
@@ -924,7 +926,7 @@ has_tclsh85:
 # It took half an hour to figure that out.
 #
 T.tcl.env.sh = ./.tclenv.sh
-$(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH)
+$(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH) $(MAKEFILE_LIST)
 	@if [ x = "x$(TCL_CONFIG_SH)" ]; then \
 		echo 'TCL_CONFIG_SH must be set to point to a "tclConfig.sh"' 1>&2; exit 1; \
 	fi

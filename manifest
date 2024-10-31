@@ -1,9 +1,9 @@
-C If\sa\sfile\snamed\s.default-CFLAGS\sexists\sin\sthe\sbuild\sdir,\suse\sits\scontents\sas\sthe\sdefault\svalue\sof\sthe\sCFLAGS\sunless\sit's\soverridden\sby\sbeing\spassed\sin\sor\sin\sthe\senvironment.
-D 2024-10-31T06:52:09.938
+C Add\smore\sdeps\sto\sT.tcl.env.sh\sso\sthat\sit\sgets\srebuilt\sif\sconfigure\sis\srun\swith\sa\sdifferent\s--with-tcl\svalue.\sRemove\sall\sreferences\sto\sthe\ssuperfluous\sXYZdir\smakefile\svars\sconventionally\sset\sby\sthe\sautotools\s(they're\sjust\snoise\sin\sthis\sbuild).
+D 2024-10-31T07:01:31.541
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 77b49b5a1acb2d5f026dea3f974306fa1be7d99fe0a1917cab313844716461f0
+F Makefile.in ec65af679ae42b4ddf521a1b0221240b4546d6c479115785001af5774dc0b709
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -697,7 +697,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 89d5f9a552f4933d8d4d8fafc0d5899c5622863173fbadfb3dd404440aeb38e7
+F main.mk 3877df8c031fbb957cab9a07656d49757a6f2dba58c00519fd63ba34510de541
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 435f2ee818d7181551c6860b6bc4db97f82d76b58fd82765a6cf49e2d02ff18c
-R 2b5ed1184d3543a78b203dd5ec51e348
+P 731d333c224e70190dadd214de1970ea541a3d716d1d7ff2c0ef6c63b8be9b13
+R e25e71c570d0b383f2dd1972c79d58ed
 U stephan
-Z 9c24c680b13f0a8ab7e6d4fbe6464cec
+Z a1888b91dcad0995a429adcb5d8c79e4
 # Remove this line to create a well-formed Fossil manifest.

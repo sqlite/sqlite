@@ -75,13 +75,7 @@ clean:
 TOP = @abs_top_srcdir@
 #
 # Some standard variables and programs
-#
 prefix ?= @prefix@
-exec_prefix ?= @exec_prefix@
-libdir ?= @libdir@
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir ?= @bindir@
-includedir ?= @includedir@
 #
 # Just testing some default dir expansions...
 # srcdir = @srcdir@
