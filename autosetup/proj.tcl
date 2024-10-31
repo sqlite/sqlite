@@ -466,11 +466,20 @@ proc proj-no-check-module-loader {} {
 }
 
 ########################################################################
-# Opens the given file, reads all of its content, and returns it.
-proc proj-file-content {fname} {
+# Opens the given file, reads all of its content, and returns it.  If
+# the first arg is -trim, the contents of the file named by the second
+# argument are trimmed before returning them.
+proc proj-file-content {args} {
+  set trim 0
+  set fname $args
+  if {"-trim" eq [lindex $args 0]} {
+    set trim 1
+    lassign $args - fname
+  }
   set fp [open $fname r]
   set rc [read $fp]
   close $fp
+  if {$trim} { return [string trim $rc] }
   return $rc
 }
 

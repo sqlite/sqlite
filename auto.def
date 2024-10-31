@@ -309,7 +309,7 @@ if {"" eq [proj-bin-define install]} {
 # cross-compiling.
 set defaultCFlags {-g -O2}
 if {[file exists .default-CFLAGS]} {
-  set defaultCFlags [string trim [proj-file-content .default-CFLAGS]]
+  set defaultCFlags [proj-file-content -trim .default-CFLAGS]
 }
 define CFLAGS [get-env CFLAGS $defaultCFlags]
 unset defaultCFlags
