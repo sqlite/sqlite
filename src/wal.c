@@ -5182,6 +5182,8 @@ static int walFrames(
   int iApp;
   int bWal2 = isWalMode2(pWal);
 
+  int logFlags = 0;
+
   assert( pList );
   assert( pWal->writeLock );
 
@@ -5202,6 +5204,8 @@ static int walFrames(
     return rc;
   }
 
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_RESTARTLOG);
+
   /* If this is the first frame written into the log, write the WAL
   ** header to the start of the WAL file. See comments at the top of
   ** this source file for a description of the WAL header format.
@@ -5217,6 +5221,7 @@ static int walFrames(
   }
 #endif
 
+  logFlags |= (iFrame==0 ? 0x01 : 0x00);
   if( iFrame==0 ){
     u32 iCkpt = 0;
     u8 aWalHdr[WAL_HDRSIZE];      /* Buffer to assemble wal-header in */
@@ -5270,6 +5275,7 @@ static int walFrames(
   if( (int)pWal->szPage!=szPage ){
     return SQLITE_CORRUPT_BKPT;  /* TH3 test case: cov1/corrupt155.test */
   }
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_WRITEHDR);
 
   /* Setup information needed to write frames into the WAL */
   w.pWal = pWal;
@@ -5281,6 +5287,7 @@ static int walFrames(
   szFrame = szPage + WAL_FRAME_HDRSIZE;
 
   /* Write all frames into the log file exactly once */
+  logFlags |= (iFirst==0 ? 0x00 : 0x02);
   for(p=pList; p; p=p->pDirty){
     int nDbSize;   /* 0 normally.  Positive == commit flag */
 
@@ -5319,8 +5326,10 @@ static int walFrames(
     p->flags |= PGHDR_WAL_APPEND;
   }
 
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_WRITEFRAMES);
 
   /* Recalculate checksums within the wal file if required. */
+  logFlags |= (pWal->iReCksum==0 ? 0x00 : 0x04);
   if( isCommit && pWal->iReCksum ){
     rc = walRewriteChecksums(pWal, iFrame);
     if( rc ) return rc;
@@ -5340,6 +5349,7 @@ static int walFrames(
   ** sector boundary is synced; the part of the last frame that extends
   ** past the sector boundary is written after the sync.
   */
+  logFlags |= (WAL_SYNC_FLAGS(sync_flags)==0 ? 0x00 : 0x08);
   if( isCommit && WAL_SYNC_FLAGS(sync_flags)!=0 ){
     int bSync = 1;
     if( pWal->padToSectorBoundary ){
@@ -5374,6 +5384,8 @@ static int walFrames(
     pWal->truncateOnCommit = 0;
   }
 
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_BEFORE_WALINDEX);
+
   /* Append data to the wal-index. It is not necessary to lock the
   ** wal-index to do this as the SQLITE_SHM_WRITE lock held on the wal-index
   ** guarantees that there are no other writers, and no data that may
@@ -5391,6 +5403,8 @@ static int walFrames(
     nExtra--;
     rc = walIndexAppend(pWal, iApp, iFrame, pLast->pgno);
   }
+
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_WALINDEX);
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
@@ -5417,6 +5431,11 @@ static int walFrames(
         pWal->iCallback = iFrame;
       }
     }
+  }
+
+  sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_WALINDEXHDR);
+  if( pWal->aCommitTime ){
+    pWal->aCommitTime[COMMIT_TIME_WALFRAMESFLAGS] = logFlags;
   }
 
   WALTRACE(("WAL%p: frame write %s\n", pWal, rc ? "failed" : "ok"));

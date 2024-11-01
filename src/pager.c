@@ -3264,6 +3264,7 @@ static int pagerWalFrames(
   pPager->aStat[PAGER_STAT_WRITE] += nList;
 
   if( pList->pgno==1 ) pager_write_changecounter(pList);
+  sqlite3CommitTimeSet(pPager->aCommitTime, COMMIT_TIME_AFTER_CHANGECOUNTER);
   rc = sqlite3WalFrames(pPager->pWal,
       pPager->pageSize, pList, nTruncate, isCommit, pPager->walSyncFlags
   );
@@ -6654,6 +6655,7 @@ int sqlite3PagerCommitPhaseOne(
       }
       assert( rc==SQLITE_OK );
       if( ALWAYS(pList) ){
+        sqlite3CommitTimeSet(pPager->aCommitTime, COMMIT_TIME_BEFORE_WALFRAMES);
         rc = pagerWalFrames(pPager, pList, pPager->dbSize, 1);
         sqlite3CommitTimeSet(pPager->aCommitTime, COMMIT_TIME_AFTER_WALFRAMES);
       }

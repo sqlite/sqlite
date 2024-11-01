@@ -5479,6 +5479,9 @@ void sqlite3CommitTimeLog(u64 *aCommit){
       }else if( ii==COMMIT_TIME_OSWRITE ){
         iVal = (int)aCommit[ii];
         zU = "us";
+      }else if( ii==COMMIT_TIME_WALFRAMESFLAGS ){
+        iVal = (int)aCommit[ii];
+        zHash = "flags=";
       }else{
         iVal = (aCommit[ii]==0 ? 0 : (int)(aCommit[ii] - i1));
       }
