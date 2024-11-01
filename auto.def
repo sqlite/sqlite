@@ -360,11 +360,12 @@ proc sqlite-check-wasi-sdk {} {
   #  host_alias=wasm32-wasi
   #  target=wasm32-wasi
   #
-  # Merely changing CC and LD to the wasi-sdk's is enough to get
+  # Merely changing CC, LD, and AR to the wasi-sdk's is enough to get
   # sqlite3.o building in WASM format.
   #
   define CC "${wasiSdkDir}/bin/clang"
   define LD "${wasiSdkDir}/bin/wasm-ld"
+  define AR "${wasiSdkDir}/bin/ar"
   #define STRIP "${wasiSdkDir}/bin/strip"
   return 1
 }; # sqlite-check-wasi-sdk
@@ -659,10 +660,15 @@ proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH {}
   set cgtcl [opt-val with-tclsh jimsh]
-  define-push {CC} {
+  set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
+  define-push $flagsToRestore {
     # We have to swap CC to CC_FOR_BUILD for purposes of the various
     # [cc-...] tests below. Recall that --with-wasi-sdk may have
     # swapped out CC with one which is not appropriate for this block.
+    # Per consulation with autosetup's creator, doing this properly
+    # requires us to [define-push] the whole $flagsToRestore list
+    # (plus a few others which are not relevant in this tree).
+    foreach flag $flagsToRestore {define $flag ""}
     define CC [get-define CC_FOR_BUILD]
     if {"jimsh" ne $cgtcl} {
       # When --with-tclsh=X is used, use that for all TCL purposes,

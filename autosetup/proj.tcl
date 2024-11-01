@@ -1005,8 +1005,9 @@ proc proj-redefine-cc-for-build {} {
 
 ########################################################################
 # Attempts to determine whether the given linenoise header file is of
-# the "antirez" or "msteveb" flavor. It returns 1 for antirez, 2 for
-# msteveb, and 0 if it's neither.
+# the "antirez" or "msteveb" flavor. It returns 2 for msteveb, else 1
+# (it does not validate that the header otherwise contains the
+# linenoise API).
 proc proj-which-linenoise {dotH} {
   set srcHeader [proj-file-content $dotH]
   if {[string match *userdata* $srcHeader]} {
