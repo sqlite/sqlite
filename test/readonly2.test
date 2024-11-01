@@ -1,0 +1,121 @@
+# 2024 October 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test that readonly database connections may ignore a hot journal 
+# created by an aborted "PRAGMA journal_mode = wal" statement.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable !readonly_waljournal {
+  finish_test
+  return
+}
+
+set ::testprefix readonly2
+
+testvfs tvfs -default 1
+tvfs script at_vfs_callback
+tvfs filter {xDelete}
+
+set ::delete_shall_fail 0
+proc at_vfs_callback {method file z args} {
+  if {$::delete_shall_fail} {
+    return "SQLITE_IOERR"
+  }
+  return "SQLITE_OK"
+}
+
+reset_db
+do_execsql_test 1.0 {
+  BEGIN;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2), (3, 4), (5, 6);
+  COMMIT;
+}
+
+set ::delete_shall_fail 1
+do_catchsql_test 1.1 {
+  PRAGMA journal_mode = wal;
+} {1 {disk I/O error}}
+
+do_test 1.2 {
+  file exists test.db-journal
+} 1
+
+do_test 1.3 {
+  sqlite3 db2 test.db -readonly 1
+  db2 eval {
+    SELECT * FROM t1
+  }
+} {1 2 3 4 5 6}
+
+do_test 1.4 {
+  file exists test.db-journal
+} 1
+
+set ::delete_shall_fail 0
+do_execsql_test 1.5 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6}
+
+set ::delete_shall_fail 1
+do_catchsql_test 1.6 {
+  PRAGMA user_version = 444;
+} {1 {disk I/O error}}
+ 
+do_test 1.7 {
+  file exists test.db-journal
+} 1
+
+do_test 1.8 {
+  list [catch { db2 eval { SELECT * FROM t1 } } msg] $msg
+} {1 {attempt to write a readonly database}}
+
+do_test 1.9 {
+  file exists test.db-journal
+} 1
+
+set ::delete_shall_fail 0
+do_execsql_test 1.10 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6}
+
+#---------------------------------------------------------
+reset_db
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES('abc', 'def');
+}
+
+set ::delete_shall_fail 1
+do_catchsql_test 2.2 {
+  PRAGMA journal_mode = wal;
+} {1 {disk I/O error}}
+
+do_test 2.3 {
+  sqlite3 db2 test.db -readonly 1
+  breakpoint
+  db2 eval {
+    PRAGMA journal_mode = persist;
+    PRAGMA journal_mode = off;
+  }
+} {persist off}
+
+do_test 2.4 {
+  db2 eval {
+    SELECT * FROM t1
+  }
+} {abc def}
+
+finish_test
+

@@ -1069,7 +1069,7 @@ TCLSH_CMD = tclsh
 JIM_TCLSH = $(TCLSH_CMD)
 !ENDIF
 !IFNDEF JIM_TCLSH
-JIM_TCLSH = $(TOP)\jimsh0.exe
+JIM_TCLSH = jimsh0.exe
 !ENDIF
 # <</mark>>
 
@@ -1585,7 +1585,6 @@ TESTSRC = \
   $(TOP)\src\test8.c \
   $(TOP)\src\test9.c \
   $(TOP)\src\test_autoext.c \
-  $(TOP)\src\test_async.c \
   $(TOP)\src\test_backup.c \
   $(TOP)\src\test_bestindex.c \
   $(TOP)\src\test_blob.c \
@@ -1683,7 +1682,6 @@ TESTSRC2 = \
   $(SRC01) \
   $(SRC07) \
   $(SRC10) \
-  $(TOP)\ext\async\sqlite3async.c \
   fts5.c
 
 # Header files used by all library source files.

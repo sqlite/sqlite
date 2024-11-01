@@ -56,7 +56,7 @@ words, there are some non-public-domain files used to implement:
 In all cases, the non-public-domain files included with this
 repository have generous BSD-style licenses.  So anyone is free to
 use any of the code in this source repository for any purpose, though
-attribution my be required to reuse or republish the configure and
+attribution may be required to reuse or republish the configure and
 build scripts.  None of the non-public-domain code ever actually reaches
 the build products, such as "sqlite3.c", however, so no attribution is
 required to use SQLite itself.  The non-public-domain code consists of

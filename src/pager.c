@@ -5081,6 +5081,115 @@ sqlite3_file *sqlite3_database_file_object(const char *zName){
 }
 
 
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+/*
+** This is used by a read-only database connection in cases where there
+** is a hot journal which cannot be rolled back, but the hot journal was
+** created by an aborted "PRAGMA journal_mode = wal" statement. In this
+** case we can proceed, but must set bytes 18 and 19 of page 1 of the
+** db file to indicate that this is not a wal mode database.
+*/
+static int getPageOneNoWal(
+  Pager *pPager,      /* The pager open on the database file */
+  Pgno pgno,          /* Page number to fetch */
+  DbPage **ppPage,    /* Write a pointer to the page here */
+  int flags           /* PAGER_GET_XXX flags */
+){
+  int rc = SQLITE_OK;
+
+  assert( pgno==1 );
+  assert( pPager->readOnly );
+  assert( !isOpen(pPager->jfd) );
+
+  rc = getPageNormal(pPager, pgno, ppPage, flags);
+  if( rc==SQLITE_OK ){
+    int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
+    u8 *aPg = (u8*)(*ppPage)->pData;
+    u8 aHdr[28];
+    rc = sqlite3OsOpen(pPager->pVfs, pPager->zJournal, pPager->jfd, f, &f);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3OsRead(pPager->jfd, (void*)aHdr, sizeof(aHdr), 0);
+    }
+    if( rc==SQLITE_OK ){
+      u32 off = sqlite3Get4byte(&aHdr[20]);
+      rc = sqlite3OsRead(pPager->jfd, (void*)aPg, pPager->pageSize, off+4);
+    }
+    sqlite3OsClose(pPager->jfd);
+  }
+  setGetterMethod(pPager);
+  return rc;
+}
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
+
+/*
+** This function is called after a potentially hot journal has been opened
+** to inspect its contents and determine whether or not it really is a
+** hot journal. The journal is not a hot journal in two cases:
+**
+**   * The first byte of the journal is 0x00, or, 
+**
+**   * The connection is opened read-only, the journal consist of page 1
+**     of the db only, and the contents of page 1 differs from the contents
+**     of the db only in bytes 18 and 19 (the wal mode setting).
+**
+** If the journal is not hot, then output variable (*pbHot) is set to 0
+** before this function returns. Otherwise, if the journal is hot, (*pbHot)
+** is set to 1.
+*/
+static int checkHotJournal(Pager *pPager, int *pbHot){
+  char aHdr[28];
+  int rc = SQLITE_OK;
+
+  *pbHot = 1;
+  rc = sqlite3OsRead(pPager->jfd, (void *)aHdr, sizeof(aHdr), 0);
+  if( rc==SQLITE_OK ){
+    if( aHdr[0]==0 ){
+      *pbHot = 0;
+    }
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+    else if( pPager->readOnly ){
+      u32 nPg = sqlite3Get4byte(&aHdr[8]);
+      u32 off = sqlite3Get4byte(&aHdr[20]);
+      u32 pgsz = sqlite3Get4byte(&aHdr[24]);
+
+      if( nPg==0xFFFFFFFF ){
+        i64 sz = 0;
+        rc = sqlite3OsFileSize(pPager->jfd, &sz);
+        nPg = ((sz-off) / pgsz);
+      }
+      if( nPg==1 ){
+        u8 *a1 = 0;
+        a1 = sqlite3_malloc(pgsz*2);
+        if( a1==0 ){
+          rc = SQLITE_NOMEM_BKPT;
+        }else{
+          u8 *a2 = &a1[pgsz];
+          rc = sqlite3OsRead(pPager->jfd, a1, pgsz, off+4);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsRead(pPager->fd, a2, pgsz, 0);
+            memcpy(&a2[18], &a1[18], 2);
+            memcpy(&a2[24], &a1[24], 4);
+            memcpy(&a2[92], &a1[92], 8);
+#ifdef SQLITE_ENABLE_ZIPVFS
+            memcpy(&a2[176], &a1[176], 4);
+#endif
+          }
+          if( rc==SQLITE_OK && memcmp(a1, a2, pgsz)==0 ){
+            *pbHot = 0;
+            pPager->xGet = getPageOneNoWal;
+          }
+          sqlite3_free(a1);
+        }
+      }
+    }
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
+  }
+  if( rc==SQLITE_IOERR_SHORT_READ ){
+    rc = SQLITE_OK;
+  }
+  return rc;
+}
+
 /*
 ** This function is called after transitioning from PAGER_UNLOCK to
 ** PAGER_SHARED state. It tests if there is a hot journal present in
@@ -5175,15 +5284,10 @@ static int hasHotJournal(Pager *pPager, int *pExists){
             rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &f);
           }
           if( rc==SQLITE_OK ){
-            u8 first = 0;
-            rc = sqlite3OsRead(pPager->jfd, (void *)&first, 1, 0);
-            if( rc==SQLITE_IOERR_SHORT_READ ){
-              rc = SQLITE_OK;
-            }
+            rc = checkHotJournal(pPager, pExists);
             if( !jrnlOpen ){
               sqlite3OsClose(pPager->jfd);
             }
-            *pExists = (first!=0);
           }else if( rc==SQLITE_CANTOPEN ){
             /* If we cannot open the rollback journal file in order to see if
             ** it has a zero header, that might be due to an I/O error, or
@@ -5434,6 +5538,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
     assert( !MEMDB );
     pager_unlock(pPager);
     assert( pPager->eState==PAGER_OPEN );
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+    testcase( pPager->xGet==getPageOneNoWal );
+    setGetterMethod(pPager);
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
   }else{
     pPager->eState = PAGER_READER;
     pPager->hasHeldSharedLock = 1;
@@ -5700,7 +5808,6 @@ static int getPageError(
   *ppPage = 0;
   return pPager->errCode;
 }
-
 
 /* Dispatch all page fetch requests to the appropriate getter method.
 */
@@ -7402,6 +7509,15 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
         assert( state==PAGER_OPEN || state==PAGER_READER );
         if( state==PAGER_OPEN ){
           rc = sqlite3PagerSharedLock(pPager);
+
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+          /* If this is a read-only connection, and there is a hot-journal
+          ** created by "PRAGMA journal_mode = wal" in the file-system, then
+          ** the Pager.xGet method may have been set to getPageOneNoWal. Call
+          ** setGetterMethod() here to ensure it is set properly.  */
+          testcase( pPager->xGet==getPageOneNoWal );
+          setGetterMethod(pPager);
+#endif /* SQLITE_ENABLE_READONLY_WALJOURNAL */
         }
         if( pPager->eState==PAGER_READER ){
           assert( rc==SQLITE_OK );

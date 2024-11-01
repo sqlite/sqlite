@@ -563,6 +563,14 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "progress", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_READONLY_WALJOURNAL
+  Tcl_SetVar2(
+      interp, "sqlite_options", "readonly_waljournal", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(
+      interp, "sqlite_options", "readonly_waljournal", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_REINDEX
   Tcl_SetVar2(interp, "sqlite_options", "reindex", "0", TCL_GLOBAL_ONLY);
 #else
@@ -743,12 +751,6 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "secure_delete", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "secure_delete", "0", TCL_GLOBAL_ONLY);
-#endif
-
-#ifdef SQLITE_USER_AUTHENTICATION
-  Tcl_SetVar2(interp, "sqlite_options", "userauth", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "userauth", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_MULTIPLEX_EXT_OVWR

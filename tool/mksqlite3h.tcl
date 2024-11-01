@@ -67,7 +67,7 @@ exec $PWD/mksourceid manifest > $tmpfile
 set fd [open $tmpfile rb]
 set zSourceId [string trim [read $fd]]
 close $fd
-#file delete -force $tmpfile
+file delete -force $tmpfile
 cd $PWD
 
 # Set up patterns for recognizing API declarations.
@@ -168,3 +168,4 @@ foreach file $filelist {
     puts "/******** End of [file tail $file] *********/"
   }
 }
+puts "#endif /* SQLITE3_H */"

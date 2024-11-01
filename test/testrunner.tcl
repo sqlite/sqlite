@@ -663,7 +663,9 @@ if {[llength $argv]>=1
   set SQL {SELECT displaytype, displayname, state FROM jobs}
   if {$pattern!=""} {
     regsub -all {[^a-zA-Z0-9*.-/]} $pattern ? pattern
-    append SQL " WHERE displayname GLOB '*$pattern*'"
+    set pattern [string tolower $pattern]
+    append SQL \
+       " WHERE lower(concat(state,' ',displaytype,' ',displayname)) GLOB '*$pattern*'"
   }
   append SQL " ORDER BY starttime"
 

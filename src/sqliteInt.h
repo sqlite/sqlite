@@ -1610,47 +1610,11 @@ struct FuncDefHash {
 };
 #define SQLITE_FUNC_HASH(C,L) (((C)+(L))%SQLITE_FUNC_HASH_SZ)
 
-#if defined(SQLITE_USER_AUTHENTICATION)
-# warning  "The SQLITE_USER_AUTHENTICATION extension is deprecated. \
- See ext/userauth/user-auth.txt for details."
-#endif
-#ifdef SQLITE_USER_AUTHENTICATION
-/*
-** Information held in the "sqlite3" database connection object and used
-** to manage user authentication.
-*/
-typedef struct sqlite3_userauth sqlite3_userauth;
-struct sqlite3_userauth {
-  u8 authLevel;                 /* Current authentication level */
-  int nAuthPW;                  /* Size of the zAuthPW in bytes */
-  char *zAuthPW;                /* Password used to authenticate */
-  char *zAuthUser;              /* User name used to authenticate */
-};
-
-/* Allowed values for sqlite3_userauth.authLevel */
-#define UAUTH_Unknown     0     /* Authentication not yet checked */
-#define UAUTH_Fail        1     /* User authentication failed */
-#define UAUTH_User        2     /* Authenticated as a normal user */
-#define UAUTH_Admin       3     /* Authenticated as an administrator */
-
-/* Functions used only by user authorization logic */
-int sqlite3UserAuthTable(const char*);
-int sqlite3UserAuthCheckLogin(sqlite3*,const char*,u8*);
-void sqlite3UserAuthInit(sqlite3*);
-void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
-
-#endif /* SQLITE_USER_AUTHENTICATION */
-
 /*
 ** typedef for the authorization callback function.
 */
-#ifdef SQLITE_USER_AUTHENTICATION
-  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
-                               const char*, const char*);
-#else
-  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
-                               const char*);
-#endif
+typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
+                             const char*);
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /* This is an extra SQLITE_TRACE macro that indicates "legacy" tracing
@@ -1810,9 +1774,6 @@ struct sqlite3 {
   void *pUnlockArg;                     /* Argument to xUnlockNotify */
   void (*xUnlockNotify)(void **, int);  /* Unlock notify callback */
   sqlite3 *pNextBlocked;        /* Next in list of all blocked connections */
-#endif
-#ifdef SQLITE_USER_AUTHENTICATION
-  sqlite3_userauth auth;        /* User authentication information */
 #endif
 };
 
