@@ -547,7 +547,7 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set line "Running: $S(running) (max: $nJob)"
-  if {$S(running)>0 && $fin>10} {
+  if {$S(running)>0 && $fin>10 && [string length $line]<69} {
     set tmleft [expr {($tm/$fin)*($totalw-$fin)}]
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
