@@ -6260,6 +6260,7 @@ static int fts5VisitEntries(
     const u8 *pNew = 0;
 
     p1->xSetOutputs(p1, pSeg);
+    if( p->rc ) break;
 
     if( bNewTerm ){
       nNew = pSeg->term.n;
@@ -6275,6 +6276,247 @@ static int fts5VisitEntries(
   return p->rc;
 }
 
+
+/*
+** Usually, a tokendata=1 iterator (struct Fts5TokenDataIter) accumulates an
+** array of these for each row it visits (so all iRowid fields are the same).
+** Or, for an iterator used by an "ORDER BY rank" query, it accumulates an
+** array of these for the entire query (in which case iRowid fields may take
+** a variety of values).
+**
+** Each instance in the array indicates the iterator (and therefore term)
+** associated with position iPos of rowid iRowid. This is used by the
+** xInstToken() API.
+**
+** iRowid:
+**   Rowid for the current entry.
+**
+** iPos:
+**   Position of current entry within row. In the usual ((iCol<<32)+iOff)
+**   format (e.g. see macros FTS5_POS2COLUMN() and FTS5_POS2OFFSET()).
+**
+** iIter:
+**   If the Fts5TokenDataIter iterator that the entry is part of is
+**   actually an iterator (i.e. with nIter>0, not just a container for
+**   Fts5TokenDataMap structures), then this variable is an index into
+**   the apIter[] array. The corresponding term is that which the iterator
+**   at apIter[iIter] currently points to.
+**
+**   Or, if the Fts5TokenDataIter iterator is just a container object
+**   (nIter==0), then iIter is an index into the term.p[] buffer where
+**   the term is stored.
+**
+** nByte:
+**   In the case where iIter is an index into term.p[], this variable
+**   is the size of the term in bytes. If iIter is an index into apIter[],
+**   this variable is unused.
+*/
+struct Fts5TokenDataMap {
+  i64 iRowid;                     /* Row this token is located in */
+  i64 iPos;                       /* Position of token */
+  int iIter;                      /* Iterator token was read from */
+  int nByte;                      /* Length of token in bytes (or 0) */
+};
+
+/*
+** An object used to supplement Fts5Iter for tokendata=1 iterators.
+**
+** This object serves two purposes. The first is as a container for an array
+** of Fts5TokenDataMap structures, which are used to find the token required
+** when the xInstToken() API is used. This is done by the nMapAlloc, nMap and
+** aMap[] variables.
+*/
+struct Fts5TokenDataIter {
+  int nMapAlloc;                  /* Allocated size of aMap[] in entries */
+  int nMap;                       /* Number of valid entries in aMap[] */
+  Fts5TokenDataMap *aMap;         /* Array of (rowid+pos -> token) mappings */
+
+  /* The following are used for prefix-queries only. */
+  Fts5Buffer terms;
+
+  /* The following are used for other full-token tokendata queries only. */
+  int nIter;
+  int nIterAlloc;
+  Fts5PoslistReader *aPoslistReader;
+  int *aPoslistToIter;
+  Fts5Iter *apIter[1];
+};
+
+/*
+** The two input arrays - a1[] and a2[] - are in sorted order. This function
+** merges the two arrays together and writes the result to output array 
+** aOut[]. aOut[] is guaranteed to be large enough to hold the result.
+**
+** Duplicate entries are copied into the output. So the size of the output
+** array is always (n1+n2) entries.
+*/
+static void fts5TokendataMerge(
+  Fts5TokenDataMap *a1, int n1,   /* Input array 1 */
+  Fts5TokenDataMap *a2, int n2,   /* Input array 2 */
+  Fts5TokenDataMap *aOut          /* Output array */
+){
+  int i1 = 0;
+  int i2 = 0;
+
+  assert( n1>=0 && n2>=0 );
+  while( i1<n1 || i2<n2 ){
+    Fts5TokenDataMap *pOut = &aOut[i1+i2];
+    if( i2>=n2 || (i1<n1 && (
+        a1[i1].iRowid<a2[i2].iRowid
+     || (a1[i1].iRowid==a2[i2].iRowid && a1[i1].iPos<=a2[i2].iPos)
+    ))){
+      memcpy(pOut, &a1[i1], sizeof(Fts5TokenDataMap));
+      i1++;
+    }else{
+      memcpy(pOut, &a2[i2], sizeof(Fts5TokenDataMap));
+      i2++;
+    }
+  }
+}
+
+
+/*
+** Append a mapping to the token-map belonging to object pT.
+*/
+static void fts5TokendataIterAppendMap(
+  Fts5Index *p, 
+  Fts5TokenDataIter *pT, 
+  int iIter,
+  int nByte,
+  i64 iRowid, 
+  i64 iPos
+){
+  if( p->rc==SQLITE_OK ){
+    if( pT->nMap==pT->nMapAlloc ){
+      int nNew = pT->nMapAlloc ? pT->nMapAlloc*2 : 64;
+      int nByte = nNew * sizeof(Fts5TokenDataMap);
+      Fts5TokenDataMap *aNew;
+
+      aNew = (Fts5TokenDataMap*)sqlite3_realloc(pT->aMap, nByte);
+      if( aNew==0 ){
+        p->rc = SQLITE_NOMEM;
+        return;
+      }
+
+      pT->aMap = aNew;
+      pT->nMapAlloc = nNew;
+    }
+
+    pT->aMap[pT->nMap].iRowid = iRowid;
+    pT->aMap[pT->nMap].iPos = iPos;
+    pT->aMap[pT->nMap].iIter = iIter;
+    pT->aMap[pT->nMap].nByte = nByte;
+    pT->nMap++;
+  }
+}
+
+/*
+** Sort the contents of the pT->aMap[] array.
+**
+** The sorting algorithm requries a malloc(). If this fails, an error code
+** is left in Fts5Index.rc before returning.
+*/
+static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
+  Fts5TokenDataMap *aTmp = 0;
+  int nByte = pT->nMap * sizeof(Fts5TokenDataMap);
+
+  aTmp = (Fts5TokenDataMap*)sqlite3Fts5MallocZero(&p->rc, nByte);
+  if( aTmp ){
+    Fts5TokenDataMap *a1 = pT->aMap;
+    Fts5TokenDataMap *a2 = aTmp;
+    i64 nHalf;
+
+    for(nHalf=1; nHalf<pT->nMap; nHalf=nHalf*2){
+      int i1;
+      for(i1=0; i1<pT->nMap; i1+=(nHalf*2)){
+        int n1 = MIN(nHalf, pT->nMap-i1);
+        int n2 = MIN(nHalf, pT->nMap-i1-n1);
+        fts5TokendataMerge(&a1[i1], n1, &a1[i1+n1], n2, &a2[i1]);
+      }
+      SWAPVAL(Fts5TokenDataMap*, a1, a2);
+    }
+
+    if( a1!=pT->aMap ){
+      memcpy(pT->aMap, a1, pT->nMap*sizeof(Fts5TokenDataMap));
+    }
+    sqlite3_free(aTmp);
+
+#ifdef SQLITE_DEBUG
+    {
+      int ii;
+      for(ii=1; ii<pT->nMap; ii++){
+        Fts5TokenDataMap *p1 = &pT->aMap[ii-1];
+        Fts5TokenDataMap *p2 = &pT->aMap[ii];
+        assert( p1->iRowid<p2->iRowid 
+             || (p1->iRowid==p2->iRowid && p1->iPos<=p2->iPos)
+        );
+      }
+    }
+#endif
+  }
+}
+
+/*
+** Delete an Fts5TokenDataIter structure and its contents.
+*/
+static void fts5TokendataIterDelete(Fts5TokenDataIter *pSet){
+  if( pSet ){
+    int ii;
+    for(ii=0; ii<pSet->nIter; ii++){
+      fts5MultiIterFree(pSet->apIter[ii]);
+    }
+    fts5BufferFree(&pSet->terms);
+    sqlite3_free(pSet->aPoslistReader);
+    sqlite3_free(pSet->aMap);
+    sqlite3_free(pSet);
+  }
+}
+
+
+/*
+** fts5VisitEntries() context object used by fts5SetupPrefixIterTokendata()
+** to pass data to prefixIterSetupTokendataCb().
+*/
+typedef struct TokendataSetupCtx TokendataSetupCtx;
+struct TokendataSetupCtx {
+  Fts5TokenDataIter *pT;          /* Object being populated with mappings */
+  int iTermOff;                   /* Offset of current term in terms.p[] */
+  int nTermByte;                  /* Size of current term in bytes */
+};
+
+/*
+** fts5VisitEntries() callback used by fts5SetupPrefixIterTokendata(). This
+** callback adds an entry to the Fts5TokenDataIter.aMap[] array for each
+** position in the current position-list. It doesn't matter that some of
+** these may be out of order - they will be sorted later.
+*/
+static void prefixIterSetupTokendataCb(
+  Fts5Index *p, 
+  void *pCtx, 
+  Fts5Iter *p1, 
+  const u8 *pNew,
+  int nNew
+){
+  TokendataSetupCtx *pSetup = (TokendataSetupCtx*)pCtx;
+  int iPosOff = 0;
+  i64 iPos = 0;
+
+  if( pNew ){
+    pSetup->nTermByte = nNew-1;
+    pSetup->iTermOff = pSetup->pT->terms.n;
+    fts5BufferAppendBlob(&p->rc, &pSetup->pT->terms, nNew-1, pNew+1);
+  }
+
+  while( 0==sqlite3Fts5PoslistNext64(
+     p1->base.pData, p1->base.nData, &iPosOff, &iPos
+  ) ){
+    fts5TokendataIterAppendMap(p, 
+        pSetup->pT, pSetup->iTermOff, pSetup->nTermByte, p1->base.iRowid, iPos
+    );
+  }
+}
+
+
 /*
 ** Context object passed by fts5SetupPrefixIter() to fts5VisitEntries().
 */
@@ -6287,6 +6529,7 @@ struct PrefixSetupCtx {
   Fts5Buffer *aBuf;
   int nBuf;
   Fts5Buffer doclist;
+  TokendataSetupCtx *pTokendata;
 };
 
 /*
@@ -6331,6 +6574,10 @@ static void prefixIterSetupCb(
     );
     pSetup->iLastRowid = p1->base.iRowid;
   }
+
+  if( pSetup->pTokendata ){
+    prefixIterSetupTokendataCb(p, (void*)pSetup->pTokendata, p1, pNew, nNew);
+  }
 }
 
 static void fts5SetupPrefixIter(
@@ -6344,11 +6591,21 @@ static void fts5SetupPrefixIter(
 ){
   Fts5Structure *pStruct;
   PrefixSetupCtx s;
+  TokendataSetupCtx s2;
 
   memset(&s, 0, sizeof(s));
+  memset(&s2, 0, sizeof(s2));
+
   s.nMerge = 1;
   s.iLastRowid = 0;
   s.nBuf = 32;
+  if( iIdx==0 
+   && p->pConfig->eDetail==FTS5_DETAIL_FULL 
+   && p->pConfig->bPrefixInsttoken 
+  ){
+    s.pTokendata = &s2;
+    s2.pT = (Fts5TokenDataIter*)fts5IdxMalloc(p, sizeof(*s2.pT));
+  }
 
   if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
     s.xMerge = fts5MergeRowidLists;
@@ -6400,8 +6657,15 @@ static void fts5SetupPrefixIter(
       if( s.doclist.n ) memcpy(pData->p, s.doclist.p, s.doclist.n);
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
+
+    if( p->rc==SQLITE_OK && s.pTokendata ){
+      fts5TokendataIterSortMap(p, s2.pT);
+      (*ppIter)->pTokenDataIter = s2.pT;
+      s2.pT = 0;
+    }
   }
 
+  fts5TokendataIterDelete(s2.pT);
   fts5BufferFree(&s.doclist);
   fts5StructureRelease(pStruct);
   sqlite3_free(s.aBuf);
@@ -6659,71 +6923,6 @@ static void fts5SegIterSetEOF(Fts5SegIter *pSeg){
 }
 
 /*
-** Usually, a tokendata=1 iterator (struct Fts5TokenDataIter) accumulates an
-** array of these for each row it visits (so all iRowid fields are the same).
-** Or, for an iterator used by an "ORDER BY rank" query, it accumulates an
-** array of these for the entire query (in which case iRowid fields may take
-** a variety of values).
-**
-** Each instance in the array indicates the iterator (and therefore term)
-** associated with position iPos of rowid iRowid. This is used by the
-** xInstToken() API.
-**
-** iRowid:
-**   Rowid for the current entry.
-**
-** iPos:
-**   Position of current entry within row. In the usual ((iCol<<32)+iOff)
-**   format (e.g. see macros FTS5_POS2COLUMN() and FTS5_POS2OFFSET()).
-**
-** iIter:
-**   If the Fts5TokenDataIter iterator that the entry is part of is
-**   actually an iterator (i.e. with nIter>0, not just a container for
-**   Fts5TokenDataMap structures), then this variable is an index into
-**   the apIter[] array. The corresponding term is that which the iterator
-**   at apIter[iIter] currently points to.
-**
-**   Or, if the Fts5TokenDataIter iterator is just a container object
-**   (nIter==0), then iIter is an index into the term.p[] buffer where
-**   the term is stored.
-**
-** nByte:
-**   In the case where iIter is an index into term.p[], this variable
-**   is the size of the term in bytes. If iIter is an index into apIter[],
-**   this variable is unused.
-*/
-struct Fts5TokenDataMap {
-  i64 iRowid;                     /* Row this token is located in */
-  i64 iPos;                       /* Position of token */
-  int iIter;                      /* Iterator token was read from */
-  int nByte;                      /* Length of token in bytes (or 0) */
-};
-
-/*
-** An object used to supplement Fts5Iter for tokendata=1 iterators.
-**
-** This object serves two purposes. The first is as a container for an array
-** of Fts5TokenDataMap structures, which are used to find the token required
-** when the xInstToken() API is used. This is done by the nMapAlloc, nMap and
-** aMap[] variables.
-*/
-struct Fts5TokenDataIter {
-  int nMapAlloc;                  /* Allocated size of aMap[] in entries */
-  int nMap;                       /* Number of valid entries in aMap[] */
-  Fts5TokenDataMap *aMap;         /* Array of (rowid+pos -> token) mappings */
-
-  /* The following are used for prefix-queries only. */
-  Fts5Buffer terms;
-
-  /* The following are used for other full-token tokendata queries only. */
-  int nIter;
-  int nIterAlloc;
-  Fts5PoslistReader *aPoslistReader;
-  int *aPoslistToIter;
-  Fts5Iter *apIter[1];
-};
-
-/*
 ** This function appends iterator pAppend to Fts5TokenDataIter pIn and 
 ** returns the result.
 */
@@ -6757,57 +6956,6 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
   assert( pRet==0 || pRet->nIter<=pRet->nIterAlloc );
 
   return pRet;
-}
-
-/*
-** Delete an Fts5TokenDataIter structure and its contents.
-*/
-static void fts5TokendataIterDelete(Fts5TokenDataIter *pSet){
-  if( pSet ){
-    int ii;
-    for(ii=0; ii<pSet->nIter; ii++){
-      fts5MultiIterFree(pSet->apIter[ii]);
-    }
-    fts5BufferFree(&pSet->terms);
-    sqlite3_free(pSet->aPoslistReader);
-    sqlite3_free(pSet->aMap);
-    sqlite3_free(pSet);
-  }
-}
-
-/*
-** Append a mapping to the token-map belonging to object pT.
-*/
-static void fts5TokendataIterAppendMap(
-  Fts5Index *p, 
-  Fts5TokenDataIter *pT, 
-  int iIter,
-  int nByte,
-  i64 iRowid, 
-  i64 iPos
-){
-  if( p->rc==SQLITE_OK ){
-    if( pT->nMap==pT->nMapAlloc ){
-      int nNew = pT->nMapAlloc ? pT->nMapAlloc*2 : 64;
-      int nByte = nNew * sizeof(Fts5TokenDataMap);
-      Fts5TokenDataMap *aNew;
-
-      aNew = (Fts5TokenDataMap*)sqlite3_realloc(pT->aMap, nByte);
-      if( aNew==0 ){
-        p->rc = SQLITE_NOMEM;
-        return;
-      }
-
-      pT->aMap = aNew;
-      pT->nMapAlloc = nNew;
-    }
-
-    pT->aMap[pT->nMap].iRowid = iRowid;
-    pT->aMap[pT->nMap].iPos = iPos;
-    pT->aMap[pT->nMap].iIter = iIter;
-    pT->aMap[pT->nMap].nByte = nByte;
-    pT->nMap++;
-  }
 }
 
 /*
@@ -7283,127 +7431,6 @@ const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIndexIter, int *pn){
   assert_nc( z || n<=1 );
   *pn = n-1;
   return (z ? &z[1] : 0);
-}
-
-/*
-** The two input arrays - a1[] and a2[] - are in sorted order. This function
-** merges the two arrays together and writes the result to output array 
-** aOut[]. aOut[] is guaranteed to be large enough to hold the result.
-**
-** Duplicate entries are copied into the output. So the size of the output
-** array is always (n1+n2) entries.
-*/
-static void fts5TokendataMerge(
-  Fts5TokenDataMap *a1, int n1,   /* Input array 1 */
-  Fts5TokenDataMap *a2, int n2,   /* Input array 2 */
-  Fts5TokenDataMap *aOut          /* Output array */
-){
-  int i1 = 0;
-  int i2 = 0;
-
-  assert( n1>=0 && n2>=0 );
-  while( i1<n1 || i2<n2 ){
-    Fts5TokenDataMap *pOut = &aOut[i1+i2];
-    if( i2>=n2 || (i1<n1 && (
-        a1[i1].iRowid<a2[i2].iRowid
-     || (a1[i1].iRowid==a2[i2].iRowid && a1[i1].iPos<=a2[i2].iPos)
-    ))){
-      memcpy(pOut, &a1[i1], sizeof(Fts5TokenDataMap));
-      i1++;
-    }else{
-      memcpy(pOut, &a2[i2], sizeof(Fts5TokenDataMap));
-      i2++;
-    }
-  }
-}
-
-/*
-** Sort the contents of the pT->aMap[] array.
-**
-** The sorting algorithm requries a malloc(). If this fails, an error code
-** is left in Fts5Index.rc before returning.
-*/
-static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
-  Fts5TokenDataMap *aTmp = 0;
-  int nByte = pT->nMap * sizeof(Fts5TokenDataMap);
-
-  aTmp = (Fts5TokenDataMap*)sqlite3Fts5MallocZero(&p->rc, nByte);
-  if( aTmp ){
-    Fts5TokenDataMap *a1 = pT->aMap;
-    Fts5TokenDataMap *a2 = aTmp;
-    i64 nHalf;
-
-    for(nHalf=1; nHalf<pT->nMap; nHalf=nHalf*2){
-      int i1;
-      for(i1=0; i1<pT->nMap; i1+=(nHalf*2)){
-        int n1 = MIN(nHalf, pT->nMap-i1);
-        int n2 = MIN(nHalf, pT->nMap-i1-n1);
-        fts5TokendataMerge(&a1[i1], n1, &a1[i1+n1], n2, &a2[i1]);
-      }
-      SWAPVAL(Fts5TokenDataMap*, a1, a2);
-    }
-
-    if( a1!=pT->aMap ){
-      memcpy(pT->aMap, a1, pT->nMap*sizeof(Fts5TokenDataMap));
-    }
-    sqlite3_free(aTmp);
-
-#ifdef SQLITE_DEBUG
-    {
-      int ii;
-      for(ii=1; ii<pT->nMap; ii++){
-        Fts5TokenDataMap *p1 = &pT->aMap[ii-1];
-        Fts5TokenDataMap *p2 = &pT->aMap[ii];
-        assert( p1->iRowid<p2->iRowid 
-             || (p1->iRowid==p2->iRowid && p1->iPos<=p2->iPos)
-        );
-      }
-    }
-#endif
-  }
-}
-
-/*
-** fts5VisitEntries() context object used by fts5SetupPrefixIterTokendata()
-** to pass data to prefixIterSetupTokendataCb().
-*/
-typedef struct TokendataSetupCtx TokendataSetupCtx;
-struct TokendataSetupCtx {
-  Fts5TokenDataIter *pT;          /* Object being populated with mappings */
-  int iTermOff;                   /* Offset of current term in terms.p[] */
-  int nTermByte;                  /* Size of current term in bytes */
-};
-
-/*
-** fts5VisitEntries() callback used by fts5SetupPrefixIterTokendata(). This
-** callback adds an entry to the Fts5TokenDataIter.aMap[] array for each
-** position in the current position-list. It doesn't matter that some of
-** these may be out of order - they will be sorted later.
-*/
-static void prefixIterSetupTokendataCb(
-  Fts5Index *p, 
-  void *pCtx, 
-  Fts5Iter *p1, 
-  const u8 *pNew,
-  int nNew
-){
-  TokendataSetupCtx *pSetup = (TokendataSetupCtx*)pCtx;
-  int iPosOff = 0;
-  i64 iPos = 0;
-
-  if( pNew ){
-    pSetup->nTermByte = nNew-1;
-    pSetup->iTermOff = pSetup->pT->terms.n;
-    fts5BufferAppendBlob(&p->rc, &pSetup->pT->terms, nNew-1, pNew+1);
-  }
-
-  while( 0==sqlite3Fts5PoslistNext64(
-     p1->base.pData, p1->base.nData, &iPosOff, &iPos
-  ) ){
-    fts5TokendataIterAppendMap(p, 
-        pSetup->pT, pSetup->iTermOff, pSetup->nTermByte, p1->base.iRowid, iPos
-    );
-  }
 }
 
 /*
