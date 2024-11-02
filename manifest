@@ -1,9 +1,9 @@
-C Add\sautotools-compatible\soverridable\sdir\sname\svars\sfor\sthe\svarious\sinstallation\stargets,\scalculated\sat\smake-time\sinstead\sof\sexported\sat\sconfigure-time\sfor\sreasons\sexplained\sat\slength\sin\sthe\saccompanying\scomments.
-D 2024-11-02T03:34:04.784
+C An\sexperiment\sin\shybridizing\soverriding\sof\sautotools-conventional\sXYZdir\svars,\sthe\sgoal\sbeing\sto\sbe\sable\sto\sprovide\sboth\soverrriding\sof\sthem\sat\sconfigure-time\sand\smake-time\swith\ssensible\ssemantics.\sBased\son\snotes\sfrom\s[forum:00d12a41f7|forum\spost\s00d12a41f7].
+D 2024-11-02T05:50:22.194
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 55cd298aa41436c426351d7a4f387d5502431f07c96b52f2b4154f0193379150
+F Makefile.in 6c595d1a09516770375dd466a91ba2f88ff8d6c1b12c2e0eb2b0ef645b6ed94f
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 9cf971c8877aa7b999c3b3b41fe802feea49a50ea98afc0f9964cfc5cc69057b
+F auto.def 9a0c7a3165be8abf0e6c67cf02af7d7c5669def7416e40fd3d54fd8cae9b6d14
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 68362ca12e1a32fe73ece32b59a8e8e02a3983295f2dd82c9c4700507bade02c
+F autosetup/proj.tcl 952eb7d6a9d0f1f50c85c823089665eadd718e0f85372198a4e743b67e41481d
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -2198,8 +2198,12 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dcc465a7090811ddbc210673f37b4c3a4439c501874abefd403efe1e98f5b17
-R 565488b6d72da8ea787b0c37e1464eb8
+P 24aba7ee58f3048d70ff0c2b2cda26bc04bfb46b3055d25d62ab5ff97b106be2
+R 6f6eddd40305846c7e8dc49e81bcb71c
+T *branch * autosetup-dir-overrides
+T *sym-autosetup-dir-overrides *
+T +closed *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 2d29757f9585ee6ad461db23d83778f6
+Z 7916dea993020a5fa99a26daa68b6c79
 # Remove this line to create a well-formed Fossil manifest.
