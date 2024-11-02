@@ -339,7 +339,7 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
   }
   assert( (pMem->flags & MEM_Dyn)==0 );
   pMem->z = pMem->zMalloc;
-  pMem->flags &= (MEM_Null|MEM_Int|MEM_Real|MEM_IntReal);
+  pMem->flags &= (MEM_Null|MEM_Int|MEM_Real|MEM_IntReal|MEM_Point);
   return SQLITE_OK;
 }
 
