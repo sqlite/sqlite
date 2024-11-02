@@ -56,9 +56,6 @@ all:
 #
 TOP = @abs_top_srcdir@
 #
-# Some standard variables and programs
-prefix ?= @prefix@
-#
 # Just testing some default dir expansions...
 # srcdir = @srcdir@
 # builddir = @builddir@
@@ -66,6 +63,59 @@ prefix ?= @prefix@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
 #
+
+#
+# Autotools-conventional vars which are used by package installation
+# rules in main.mk.
+#
+# Autosetup allows the various XYZdir vars to be overridden at
+# configure-time with, e.g. --libdir=X and --mandir=Y. However,
+# defining them at configure-time, instead of at make-time, leads to
+# later awkwardness:
+#
+# $ ./configure --prefix=/usr
+# $ make prefix=/bar
+#
+# In that invocation, libdir will be /usr/foo, not /bar/foo as it
+# normally should, unless the user _also_ passes libdir=... to make.
+#
+# In 99%+ of use cases, setting prefix=X has the desired effect of
+# calculating conventional defaults for various other dirs, like
+# $prefix/lib, $prefix/include, etc. If, however, we export those at
+# configure-time, the passing prefix=... to make will update only
+# $prefix and none of its derived dirs.
+#
+# Because it is more important (for our use cases) that these vars be
+# overridable via a make invocation than a configure invocation, and
+# they conventionally derive from $(prefix) in all but the most exotic
+# of use cases, we do not export the configure-defined overrides of
+# those vars to this makefile.  Instead, we export only $prefix and
+# its derived vars are set to their conventional default values in
+# main.mk, which users can then override at make-time as needed.
+# Overriding $prefix via make will also calculate any derived vars, as
+# one would expect, unless each is specifically overridden.
+#
+# For completeness's sake, the aforementioned conventional vars which
+# are relevant to our installation rules are:
+#
+# datadir     = $(prefix)/share
+# mandir      = $(datadir)/man
+# includedir  = $(prefix)/include
+# exec_prefix = $(prefix)
+# bindir      = $(exec_prefix)/bin
+# libdir      = $(exec_prefix)/lib
+#
+# Our builds do not require any of their relatives:
+#
+# sbindir        = $(exec_prefix)/sbin
+# sysconfdir     = /etc
+# sharedstatedir = $(prefix)/com
+# localstatedir  = /var
+# runstatedir    = /run
+# infodir        = $(datadir)/info
+# libexec        = $(exec_prefix)/libexec
+#
+prefix      = @prefix@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@

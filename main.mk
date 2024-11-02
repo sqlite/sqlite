@@ -119,14 +119,31 @@ JIMSH ?= ./jimsh$(T.exe)
 B.tclsh ?= $(JIMSH)
 
 #
-# Various system-level directories, mostly needed for installation and
-# for finding system-level dependencies.
+# Autotools-conventional vars which are (in this tree) used only by
+# package installation rules.
 #
-# Aside from ${prefix}, we do not need to (and intentionally do not)
-# export any of the dozen-ish shorthand ${XYZdir} vars the autotools
-# conventionally defines.
+# The following ${XYZdir} vars are provided for the sake of clients
+# who expect to be able to override these using autotools-conventional
+# dir name vars. In this build they apply only to installation-related
+# rules.
 #
-prefix       ?= /usr/local
+prefix      ?= /usr/local
+datadir     ?= $(prefix)/share
+mandir      ?= $(datadir)/man
+includedir  ?= $(prefix)/include
+exec_prefix ?= $(prefix)
+bindir      ?= $(exec_prefix)/bin
+libdir      ?= $(exec_prefix)/lib
+# This makefile does not use any of:
+# sbindir        ?= $(exec_prefix)/sbin
+# sysconfdir     ?= /etc
+# sharedstatedir ?= $(prefix)/com
+# localstatedir  ?= /var
+# runstatedir    ?= /run
+# infodir        ?= $(datadir)/info
+# libexec        ?= $(exec_prefix)/libexec
+
+
 #
 # $(LDFLAGS.{feature}) and $(CFLAGS.{feature}) =
 #
@@ -355,11 +372,11 @@ LDFLAGS.libsqlite3 = \
 # moral of this story is that spaces in installation paths will break
 # the install process.
 #
-install-dir.bin = $(DESTDIR)$(prefix)/bin
-install-dir.lib = $(DESTDIR)$(prefix)/lib
-install-dir.include = $(DESTDIR)$(prefix)/include
-install-dir.pkgconfig = $(DESTDIR)$(prefix)/lib/pkgconfig
-install-dir.man1 = $(DESTDIR)$(prefix)/share/man/man1
+install-dir.bin = $(DESTDIR)$(bindir)
+install-dir.lib = $(DESTDIR)$(libdir)
+install-dir.include = $(DESTDIR)$(includedir)
+install-dir.pkgconfig = $(DESTDIR)$(libdir)/pkgconfig
+install-dir.man1 = $(DESTDIR)$(mandir)/man1
 install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
