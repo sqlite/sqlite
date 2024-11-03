@@ -1724,9 +1724,9 @@ rollback-test$(T.exe):	$(TOP)/tool/rollback-test.c sqlite3.o
 	$(T.link) -o $@ $(TOP)/tool/rollback-test.c sqlite3.o $(LDFLAGS.libsqlite3)
 xbin: rollback-test$(T.exe)
 
-atrc$(TEXX): $(TOP)/test/atrc.c sqlite3.o
+atrc$(T.exe): $(TOP)/test/atrc.c sqlite3.o
 	$(T.link) -o $@ $(TOP)/test/atrc.c sqlite3.o $(LDFLAGS.libsqlite3)
-xbin: atrc$(TEXX)
+xbin: atrc$(T.exe)
 
 LogEst$(T.exe):	$(TOP)/tool/logest.c sqlite3.h
 	$(T.link) -I. -o $@ $(TOP)/tool/logest.c
@@ -1787,20 +1787,9 @@ tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
 clean-tool-zip:
 	rm -f sqlite-tools-*.zip
 clean: clean-tool-zip
-#XX# TODO: adapt the autoconf amalgamation for autosetup
-#XX#
-#XX## Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
-#XX## a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
-#XX## The snapshot-tarball target builds a tarball named by the SHA1 hash
-#XX##
-#XX#amalgamation-tarball: sqlite3.c sqlite3rc.h
-#XX#	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --normal
-#XX#
-#XX#snapshot-tarball: sqlite3.c sqlite3rc.h
-#XX#	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
-#XX#
 
-# The next two rules are used to support the "threadtest" target. Building
+#
+# The next few rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
 #
