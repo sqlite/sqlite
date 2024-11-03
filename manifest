@@ -1,9 +1,9 @@
-C Workaround\sfor\sa\scompiler-specific\sjimsh\scompilation\serror\sreported\sin\s[forum:18e420d0b1404d63|forum\spost\s18e420d0].\sReported\supstream\sas\s[https://github.com/msteveb/jimtcl/issues/322|ticket\s#322].
-D 2024-11-03T18:30:45.368
+C If\sany\sautotools-conventional\sdir\snames\sare\sexplicitly\soverridden\svia\s./configure\s--dirname=X\sthen\sexport\sthose\snames\sas-is\sto\sthe\smakefile,\sotherwise\sderive\sthem\sfrom\s$prefix.\sThis\sis,\sat\sleast\sin\spart,\sa\scompromise\sto\sprovide\spackage\smaintainers\sa\sway\sto\sspecify\sa\slibdir\swhich\swill\sbe\sincorporated\sinto\sthe\s-rpath\slink\sflag\s(which\swe\scan\sonly\sdetermine\sat\sconfigure-time).
+D 2024-11-03T19:42:41.677
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 55cd298aa41436c426351d7a4f387d5502431f07c96b52f2b4154f0193379150
+F Makefile.in 6c595d1a09516770375dd466a91ba2f88ff8d6c1b12c2e0eb2b0ef645b6ed94f
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 9cf971c8877aa7b999c3b3b41fe802feea49a50ea98afc0f9964cfc5cc69057b
+F auto.def d47bb3030f1b77a3131a4192fe17fb50da13bb6d9405306368ae9c06bca9455c
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 9860c2bd7825cb9d21616237e59a2dfa29acbd98c00da5f842e5abe222e69288
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl cb7983c8eb47c9518c3039556e655e5237952d9c068fe36c624e9f6a73cd1098
+F autosetup/proj.tcl d0008015b481ed5a4e952b72e703a905ba232f979a3740614d2ea716a19f6718
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad19237845b7791dd90fa4b3586f39f6ab700462e826baf53d4cde7f7fa06449
-R fbc9af98c69bf3f4eab9e4f1eaa6856c
+P 29b94495956802d0eedcd669e45308c56278e43aab62bd7c3bb7153b47c9d4c0 cc259bf5f176bf89b6effedfc716d19d2437fc761c20870d1c69205d4bcee12b
+R 79d48715ac1148c0c1fcdae652e09505
 U stephan
-Z cd366cd0592f2836fdc5215675eb9eb6
+Z 9bbd3b23f124df01ef5b1e7cf0c3306e
 # Remove this line to create a well-formed Fossil manifest.

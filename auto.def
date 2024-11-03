@@ -216,6 +216,12 @@ proj-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
 }
+#
+# "Re-export" the autoconf-conventional --XYZdir flags into something
+# which is more easily overridable from a make invocation. See the docs
+# for [proj-redirect-autoconf-dir-vars] for the explanation of why.
+#
+proj-redirect-autoconf-dir-vars
 
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]

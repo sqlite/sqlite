@@ -790,12 +790,20 @@ proc proj-check-emsdk {} {
 # flag. Defines LDFLAGS_RPATH to that/those flag(s) or an empty
 # string. Returns 1 if it finds an option, else 0.
 #
+# By default, the rpath is set to $prefix/lib. However, if
+# --libdir=...  is explicitly passed to configure then that value is
+# used.
+#
 # Achtung: we have seen platforms which report that a given option
 # checked here will work but then fails at build-time, and the current
 # order of checks reflects that.
 proc proj-check-rpath {} {
   set rc 1
-  set lp "[get-define prefix]/lib"
+  if {[proj-opt-was-provided libdir]} {
+    set lp "[get-define libdir]"
+  } else {
+    set lp "[get-define prefix]/lib"
+  }
   # If we _don't_ use cc-with {} here (to avoid updating the global
   # CFLAGS or LIBS or whatever it is that cc-check-flags updates) then
   # downstream tests may fail because the resulting rpath gets
@@ -1010,5 +1018,75 @@ proc proj-which-linenoise {dotH} {
     return 2
   } else {
     return 1
+  }
+}
+
+########################################################################
+#
+# "Re-export" the autoconf-conventional --XYZdir flags into something
+# which is more easily overridable from a make invocation.
+#
+# Based off of notes in <https://sqlite.org/forum/forumpost/00d12a41f7>.
+#
+# Consider:
+#
+# $ ./configure --prefix=/foo
+# $ make install prefix=/blah
+#
+# In that make invocation, $(libdir) would, at make-time, normally be
+# hard-coded to /foo/lib, rather than /blah/lib. That happens because
+# the autosetup exports conventional $prefix-based values for the
+# numerious autoconfig-compatible XYZdir vars at configure-time.  What
+# we would normally want, however, is that --libdir derives from the
+# make-time $(prefix).  The distinction between configure-time and
+# make-time is the significant factor there.
+#
+# This function attempts to reconcile those vars in such a way that
+# they will derive, at make-time, from $(prefix) in a conventional
+# manner unless they are explicitly overridden at configure-time, in
+# which case those overrides takes precedence.
+#
+# Each --XYZdir flag which is explicitly passed to configure is
+# exported as-is, as are those which default to some top-level system
+# directory, e.g. /etc or /var.  All which derive from either $prefix
+# or $exec_prefix are exported in the form of a Makefile var
+# reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
+# --exec-prefix=FOO is passed to configure, libdir will still derive,
+# at make-time, from whatever exec_prefix is passed to make, and will
+# use FOO if exec_prefix is not overridden.  Without this
+# post-processing, libdir would be cemented in as FOO/lib at
+# configure-time, so would be tedious to override properly via a make
+# invocation.
+#
+proc proj-redirect-autoconf-dir-vars {} {
+  set prefix [get-define prefix]
+  set exec_prefix [get-define exec_prefix $prefix]
+  # Note that the ${...} here refers to make-side var derefs, not
+  # TCL-side vars.
+  foreach {flag makeVar makeDeref} {
+    exec-prefix     exec_prefix    ${prefix}
+    libdir          libdir         ${exec_prefix}/lib
+    datadir         datadir        ${prefix}/share
+    mandir          mandir         ${datadir}/man
+    includedir      includedir     ${prefix}/include
+    bindir          bindir         ${exec_prefix}/bin
+    libdir          libdir         ${exec_prefix}/lib
+    sbindir         sbindir        ${exec_prefix}/sbin
+    sysconfdir      sysconfdir     /etc
+    sharedstatedir  sharedstatedir ${prefix}/com
+    localstatedir   localstatedir  /var
+    runstatedir     runstatedir    /run
+    infodir         infodir        ${datadir}/info
+    libexec         libexec        ${exec_prefix}/libexec
+  } {
+    # puts "flag=$flag var=$makeVar makeDeref=$makeDeref"
+    if {[proj-opt-was-provided $flag]} {
+      #set x "+"
+      define $makeVar [opt-val $flag]
+    } else {
+      #set x "~"
+      define $makeVar $makeDeref
+    }
+    #puts "$x $makeVar = [get-define $makeVar]"
   }
 }

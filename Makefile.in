@@ -116,6 +116,12 @@ TOP = @abs_top_srcdir@
 # libexec        = $(exec_prefix)/libexec
 #
 prefix      = @prefix@
+datadir     = @datadir@
+mandir      = @mandir@
+includedir  = @includedir@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@
