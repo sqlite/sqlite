@@ -951,7 +951,7 @@ proc proj-dump-defs-json {file args} {
 #
 # Comment lines are permitted in the input.
 #
-# For each pair ALIAS and CANONICAL, if --ALIAS is provided but
+# For each pair of ALIAS and CANONICAL, if --ALIAS is provided but
 # --CANONICAL is not, the value of the former is copied to the
 # latter. If --ALIAS is not provided, this is a no-op. If both have
 # explicitly been provided a fatal usage error is triggered.
@@ -962,10 +962,10 @@ proc proj-dump-defs-json {file args} {
 # --canonical and a user passes --alias=X, [opt-val canonical] returns
 # no value. i.e. the script must check both [opt-val alias] and
 # [opt-val canonical].  The intent here is that this function be
-# passed such mappings immediately after [options] is called,
-# to carry over any values from hidden aliases into their canonical
-# names, so that in the above example [opt-value canonical] will
-# return X if --alias=X is passed in.
+# passed such mappings immediately after [options] is called, to carry
+# over any values from hidden aliases into their canonical names, such
+# that [opt-value canonical] will return X if --alias=X is passed to
+# configure.
 proc proj-xfer-options-aliases {mapping} {
   foreach {hidden - canonical} [proj-strip-hash-comments_ $mapping] {
     if {[proj-opt-was-provided $hidden]} {

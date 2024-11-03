@@ -1,5 +1,5 @@
-C Add\sautotools-compatible\soverridable\sdir\sname\svars\sfor\sthe\svarious\sinstallation\stargets,\scalculated\sat\smake-time\sinstead\sof\sexported\sat\sconfigure-time\sfor\sreasons\sexplained\sat\slength\sin\sthe\saccompanying\scomments.
-D 2024-11-02T03:34:04.784
+C Fix\sT.exe\stypos\sin\smain.mk\swhich\sbreak\sinstallation\son\splatforms\swhere\sthat\svalue\sis\snot\sempty.\sAlso\ssome\sunrelated\sdoc\stweaks.
+D 2024-11-03T01:31:34.901
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 27ea5f221359ef6c58780fc6c185aadbf8d3bee9a021331a3e5de0eba0dc6de6
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 68362ca12e1a32fe73ece32b59a8e8e02a3983295f2dd82c9c4700507bade02c
+F autosetup/proj.tcl d17e06959b233466dc4b02f811ec8b8d3689017287e1cc2f10fe6c2c87f79f86
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -697,7 +697,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 01f83a096392922826bca5dda938235f2c2f94988c1f467fe90a8e31aaeed912
+F main.mk eaa1afc4e306e409b95edf9c357a56f066c40605fc1d6bcaa293a2ed5b928384
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dcc465a7090811ddbc210673f37b4c3a4439c501874abefd403efe1e98f5b17
-R 565488b6d72da8ea787b0c37e1464eb8
+P 24aba7ee58f3048d70ff0c2b2cda26bc04bfb46b3055d25d62ab5ff97b106be2
+R 13337065c17d9699dc617729b132177a
 U stephan
-Z 2d29757f9585ee6ad461db23d83778f6
+Z b1339e6cde9ae41997d61a7143086b2c
 # Remove this line to create a well-formed Fossil manifest.

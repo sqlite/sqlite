@@ -142,6 +142,7 @@ libdir      ?= $(exec_prefix)/lib
 # runstatedir    ?= /run
 # infodir        ?= $(datadir)/info
 # libexec        ?= $(exec_prefix)/libexec
+### end of autotools-compatible install dir vars
 
 
 #
@@ -1835,8 +1836,8 @@ sqlite3$(T.exe)-1:
 sqlite3$(T.exe)-0 sqlite3$(T.exe)-: sqlite3$(T.exe)
 all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
 
-install-shell-0: sqlite3$(TEXT) $(install-dir.bin)
-	$(INSTALL) -s sqlite3$(TEXT) "$(install-dir.bin)"
+install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
+	$(INSTALL) -s sqlite3$(T.exe) "$(install-dir.bin)"
 install-shell-1 install-shell-:
 install: install-shell-$(HAVE_WASI_SDK)
 
@@ -1844,7 +1845,7 @@ sqldiff$(T.exe):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o
 	$(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
-	$(INSTALL) -s sqldiff$(TEXT) "$(install-dir.bin)"
+	$(INSTALL) -s sqldiff$(T.exe) "$(install-dir.bin)"
 #install: install-diff
 
 dbhash$(T.exe):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
@@ -1867,7 +1868,7 @@ sqlite3_rsync$(T.exe):	$(RSYNC_SRC)
 xbin: sqlite3_rsync$(T.exe)
 
 install-rsync: sqlite3_rsync$(T.exe) $(install-dir.bin)
-	$(INSTALL) sqlite3_rsync$(TEXT) "$(install-dir.bin)"
+	$(INSTALL) sqlite3_rsync$(T.exe) "$(install-dir.bin)"
 #install: install-rsync
 
 install-man1: $(install-dir.man1)
