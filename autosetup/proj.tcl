@@ -630,9 +630,6 @@ proc proj-looks-like-windows {{key host}} {
 # 'build' (==the being-built-on platform) define value and returns if
 # if that value seems to indicate that it represents a Mac platform,
 # else returns 0.
-#
-# TODO: have someone verify whether this is correct for the
-# non-Linux/BSD platforms.
 proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
     *apple* {
@@ -669,9 +666,6 @@ proc proj-exe-extension {} {
 #
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
 # instead of -shared.
-#
-# TODO: have someone verify whether this is correct for the
-# non-Linux/BSD platforms.
 proc proj-dll-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
@@ -842,7 +836,9 @@ proc proj-defs-type_ {name spec} {
 
 ########################################################################
 # Internal helper for proj-defs-format_: returns a JSON-ish quoted
-# form of the given (JSON) string-type values.
+# form of the given string-type values. It only performs the most
+# basic of escaping. The input must not contain any control
+# characters.
 proc proj-quote-str_ {value} {
   return \"[string map [list \\ \\\\ \" \\\"] $value]\"
 }
@@ -939,8 +935,8 @@ proc proj-dump-defs-json {file args} {
 }
 
 ########################################################################
-# Expects a list of pairs of configure flags with the given names to
-# have been registered with autosetup, in this form:
+# Expects a list of pairs of configure flags which have been
+# registered with autosetup, in this form:
 #
 #  { alias1 => canonical1
 #    aliasN => canonicalN ... }
@@ -993,11 +989,11 @@ proc proj-xfer-options-aliases {mapping} {
 #
 # Sidebar: if we do this before the cc package is installed, it gets
 # reverted by that package. Ergo, the cc package init will tell the
-# user "Build C compiler...cc" shortly before we tell them:
+# user "Build C compiler...cc" shortly before we tell them otherwise.
 proc proj-redefine-cc-for-build {} {
   if {![proj-is-cross-compiling]
-     && "nope" eq [get-env CC_FOR_BUILD "nope"]
-     && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+      && [get-define CC] ne [get-define CC_FOR_BUILD]
+      && "nope" eq [get-env CC_FOR_BUILD "nope"]} {
     user-notice "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
     define CC_FOR_BUILD [get-define CC]
   }
