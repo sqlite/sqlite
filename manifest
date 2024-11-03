@@ -1,5 +1,5 @@
-C Fix\sa\sCFLAGS.jimsh\stypo\sin\sMakefile.in.\sChange\sdefault\sjimsh\sflags\sto\sinclude\s-O1,\swhich\sslows\sdown\sits\sbuild\sbut\sspeeds\sup\sits\sruntime\sconsiderably.
-D 2024-11-03T20:15:38.645
+C Move\sthe\s.default-CFLAGS\shandling\sinto\sa\sutility\sfunction,\srename\sthe\scorresponding\sfile\sto\s.env-VAR,\sand\sapply\sthat\slookup\sto\sa\scouple\smore\splaces.
+D 2024-11-03T21:32:24.526
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def b69dd467437cf572cb084cd9e515b30e35cfc866f80d5dd778cbed409aaf71e5
+F auto.def 19b5df445fab703133f430b1169968d702cf421d752199ee77d11626062f7755
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bd
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c 9860c2bd7825cb9d21616237e59a2dfa29acbd98c00da5f842e5abe222e69288
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl d0008015b481ed5a4e952b72e703a905ba232f979a3740614d2ea716a19f6718
+F autosetup/proj.tcl 8f81f61b427b91b30983f0b2a9c169b453099ed4a209f526d0843df5ad1610e9
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 832abe8a8a347718e47f73a1f9be1fb084a1c28cac6b1c70f6c9a9cabeb0fb53
-R 5e0f5bfa6d8e8c09888bb4531f17a3c6
+P a912c169152623f261fb5469a49f00aca1d8a273d8f7187744de12a26aede7cf
+R a550a6f064acac325701eee77b42038f
 U stephan
-Z 192b376f24b23f1b797dc7a2c01813b1
+Z 180f9d1639b03db412606e42d092a67a
 # Remove this line to create a well-formed Fossil manifest.

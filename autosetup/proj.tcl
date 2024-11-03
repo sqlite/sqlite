@@ -1090,3 +1090,29 @@ proc proj-redirect-autoconf-dir-vars {} {
     #puts "$x $makeVar = [get-define $makeVar]"
   }
 }
+
+########################################################################
+# If a file named .env-$flag exists, this function returns a
+# trimmed copy of its contents, else it returns $dflt. The intended
+# usage is that things like developer-specific CFLAGS preferences can
+# be stored in .env-CFLAGS.
+proc proj-default-flags {flag {dflt ""}} {
+  set fn ".env-${flag}"
+  if {[file readable $fn]} {
+    return [proj-file-content -trim $fn]
+  }
+  return $dflt
+}
+
+########################################################################
+# Extracts the value of "environment" variable $var from the first of
+# the following places where it's defined:
+#
+# - Passed to configure as $var=...
+# - A file named .env-$var (see [proj-default-flags])
+# - Exists as an environment variable
+#
+# If none of those are set, $dflt is returned.
+proc proj-get-env {var {dflt ""}} {
+  return [get-env $var [proj-default-flags $var $dflt]]
+}

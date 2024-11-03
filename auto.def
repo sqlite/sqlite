@@ -313,13 +313,8 @@ if {"" eq [proj-bin-define install]} {
 # compiling binaries for the target system (CC a.k.a. $(T.cc)).
 # Normally they're the same, but they will differ when
 # cross-compiling.
-set defaultCFlags {-g -O2}
-if {[file exists .default-CFLAGS]} {
-  set defaultCFlags [proj-file-content -trim .default-CFLAGS]
-}
-define CFLAGS [get-env CFLAGS $defaultCFlags]
-unset defaultCFlags
-define BUILD_CFLAGS [get-env BUILD_CFLAGS {-g}]
+define CFLAGS [proj-get-env CFLAGS {-g -O2}]
+define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
 
 ########################################################################
 # Handle --with-wasi-sdk=DIR
@@ -652,8 +647,8 @@ sqlite-check-tcl
 # in-tree (it's part of autosetup) unless --with-tclsh=X is used, in
 # which case prefix X.
 #
-# Returns the name of the TCL it selects. Fails fatally if it cannot
-# detect a TCL appropriate for code generation.
+# Returns the human-readable name of the TCL it selects. Fails fatally
+# if it cannot detect a TCL appropriate for code generation.
 #
 # Defines:
 #
@@ -661,13 +656,11 @@ sqlite-check-tcl
 #     to an unexpanded makefile var name.
 #
 #   - CFLAGS_JIMSH = any flags needed for buildng a BTCLSH-compatible
-#     jimsh.
+#     jimsh. The defaults may be pass on to configure as
+#     CFLAGS_JIMSH=...
 proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
-  define CFLAGS_JIMSH {-O1} ; # Re. -O# flag: jimsh runs much faster when built
-                              # with with -O2 but it takes ages to compile. -O1
-                              # provides a fair compromise between build and run
-                              # speeds.
+  define CFLAGS_JIMSH [proj-get-env CFLAGS_JIMSH {-O1}]
   set cgtcl [opt-val with-tclsh jimsh]
   set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
   define-push $flagsToRestore {
