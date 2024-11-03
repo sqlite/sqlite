@@ -402,7 +402,8 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
 }
 
 /*
-**  Similar to above except will try for conversion of a string to our Point
+** CS541 
+** Similar to above except will try for conversion of a string to our Point
 **  struct (e.g. we will want to convert something like '100.0, 100.0' to a
 **  point).
 */
@@ -1917,11 +1918,33 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   double rA;      /* Real value of left operand */
   double rB;      /* Real value of right operand */
 
+  // we will use this mask to identify string operands, to apply point affinity
+  // to them before checking if either of the arguments are points.
+  // If we don't apply point affinity before checking if either of the args are points,
+  // we won't get expected behavior.
+  // e.g. column values are [345, (1.0,2.0)] and the query is a select <column> + "1.0, 2.0" from <table>;
+  // then, for the first row, the affinity of 345 is int (calculated at insert into table time i think)
+  // and the affinity for "1.0, 2.0" is a static, null terminated string, not a point!
+  // so what would end up happening is that we don't 
+  // treat it as an addition of 2 points, (which we should have done)
+  // so, we use this mask to see that "1.0, 2.0" is a string -> try to make it a point
+  // and doing this before checking if either of the operands are points to do point stuff
+  u32 stringMask = MEM_Term | MEM_Static;
+
   pIn1 = &aMem[pOp->p1];
-  type1 = pIn1->flags;
   pIn2 = &aMem[pOp->p2];
+  type1 = pIn1->flags;
   type2 = pIn2->flags;
   pOut = &aMem[pOp->p3];
+
+  if (stringMask & type1) {
+    applyPointAffinity(pIn1);
+    type1 = pIn1->flags;
+  }
+  if (stringMask & type2) {
+    applyPointAffinity(pIn2);
+    type2 = pIn2->flags;
+  }
 
   /* CS541 - adding code here to handle point arithmetic */
   if ((type1 & MEM_Point) || (type2 & MEM_Point)) {
@@ -1991,6 +2014,11 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
       MemSetTypeFlag(pOut, MEM_Point);
       break; /* done */
     }
+    // I think that control flow should never reach here
+    // if it does, it is an edge case or 
+    // some operation that involves at least one point and isn't defined
+    rc = SQLITE_MISMATCH;
+    goto abort_due_to_error;
   }
 
   if( (type1 & type2 & MEM_Int)!=0 ){
