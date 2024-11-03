@@ -19286,7 +19286,7 @@ static int Jim_StringCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
         JIM_DEF_SUBCMD("trim", "string ?trimchars?", 1, 2),
         JIM_DEF_SUBCMD("trimleft", "string ?trimchars?", 1, 2),
         JIM_DEF_SUBCMD("trimright", "string ?trimchars?", 1, 2),
-        { }
+        JIM_DEF_SUBCMD(0,0,0,0)
     };
     const jim_subcmd_type *ct = Jim_ParseSubCmd(interp, cmds, argc, argv);
     if (!ct) {
@@ -20179,7 +20179,7 @@ static int Jim_DictCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         JIM_DEF_SUBCMD("for", "vars dictionary script", 3, 3),
         JIM_DEF_SUBCMD("replace", "dictionary ?key value ...?", 1, -1),
         JIM_DEF_SUBCMD("update", "varName ?arg ...? script", 2, -1),
-        { }
+        JIM_DEF_SUBCMD(0,0,0,0)
     };
     const jim_subcmd_type *ct = Jim_ParseSubCmd(interp, cmds, argc, argv);
     if (!ct) {
@@ -20388,7 +20388,7 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         JIM_DEF_SUBCMD("statics", "procname", 1, 1),
         JIM_DEF_SUBCMD("vars", "?pattern?", 0, 1),
         JIM_DEF_SUBCMD("version", NULL, 0, 0),
-        { }
+        JIM_DEF_SUBCMD(0,0,0,0)
     };
     const jim_subcmd_type *ct;
 #ifdef jim_ext_namespace
