@@ -664,7 +664,10 @@ sqlite-check-tcl
 #     jimsh.
 proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
-  define CFLAGS_JIMSH {}
+  define CFLAGS_JIMSH {-O1} ; # Re. -O# flag: jimsh runs much faster when built
+                              # with with -O2 but it takes ages to compile. -O1
+                              # provides a fair compromise between build and run
+                              # speeds.
   set cgtcl [opt-val with-tclsh jimsh]
   set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
   define-push $flagsToRestore {

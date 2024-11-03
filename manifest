@@ -1,9 +1,9 @@
-C If\sany\sautotools-conventional\sdir\snames\sare\sexplicitly\soverridden\svia\s./configure\s--dirname=X\sthen\sexport\sthose\snames\sas-is\sto\sthe\smakefile,\sotherwise\sderive\sthem\sfrom\s$prefix.\sThis\sis,\sat\sleast\sin\spart,\sa\scompromise\sto\sprovide\spackage\smaintainers\sa\sway\sto\sspecify\sa\slibdir\swhich\swill\sbe\sincorporated\sinto\sthe\s-rpath\slink\sflag\s(which\swe\scan\sonly\sdetermine\sat\sconfigure-time).
-D 2024-11-03T19:42:41.677
+C Fix\sa\sCFLAGS.jimsh\stypo\sin\sMakefile.in.\sChange\sdefault\sjimsh\sflags\sto\sinclude\s-O1,\swhich\sslows\sdown\sits\sbuild\sbut\sspeeds\sup\sits\sruntime\sconsiderably.
+D 2024-11-03T20:15:38.645
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 6c595d1a09516770375dd466a91ba2f88ff8d6c1b12c2e0eb2b0ef645b6ed94f
+F Makefile.in b490c1230b030da8d597688c09ec395340eb834cc858437d5c3a3ce45e8aaf3e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def d47bb3030f1b77a3131a4192fe17fb50da13bb6d9405306368ae9c06bca9455c
+F auto.def b69dd467437cf572cb084cd9e515b30e35cfc866f80d5dd778cbed409aaf71e5
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 29b94495956802d0eedcd669e45308c56278e43aab62bd7c3bb7153b47c9d4c0 cc259bf5f176bf89b6effedfc716d19d2437fc761c20870d1c69205d4bcee12b
-R 79d48715ac1148c0c1fcdae652e09505
+P 832abe8a8a347718e47f73a1f9be1fb084a1c28cac6b1c70f6c9a9cabeb0fb53
+R 5e0f5bfa6d8e8c09888bb4531f17a3c6
 U stephan
-Z 9bbd3b23f124df01ef5b1e7cf0c3306e
+Z 192b376f24b23f1b797dc7a2c01813b1
 # Remove this line to create a well-formed Fossil manifest.

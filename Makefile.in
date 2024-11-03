@@ -183,11 +183,11 @@ T.cc.sqlite += -I$(prefix)/include
 #XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 #
-# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.  $(JIMSH)
+# $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
 # must start with a path component so that it can be invoked as a
 # shell command.
 #
-CFLAGS.JIMSH = @CFLAGS_JIMSH@
+CFLAGS.jimsh = @CFLAGS_JIMSH@
 JIMSH = ./jimsh$(TEXE)
 
 #
