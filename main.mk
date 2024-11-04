@@ -162,6 +162,7 @@ LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shobj ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
+LDFLAGS.soname.libsqlite3 ?=
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
@@ -1351,7 +1352,7 @@ all: lib
 # Dynamic libsqlite3
 #
 $(libsqlite3.SO):	$(LIBOBJ)
-	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3)
+	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.soname.libsqlite3) $(LDFLAGS.libsqlite3)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
@@ -1365,6 +1366,37 @@ all: so
 # - libsqlite3.so.3 =symlink-> libsqlite3.so.$(PACKAGE_VERSION)
 # - libsqlite3.so   =symlink-> libsqlite3.so.3
 #
+# Regarding the historcal installation name of libsqlite3.so.0.8.6:
+#
+# Historically libtool installed the library like so:
+#
+#  libsqlite3.so     -> libsqlite3.so.0.8.6
+#  libsqlite3.so.0   -> libsqlite3.so.0.8.6
+#  libsqlite3.so.0.8.6
+#
+# The historical SQLite build always used a version number of 0.8.6
+# for reasons lost to history but having something to do with libtool
+# (which is no longer used in this tree). In order to retain filename
+# compatibility for systems which have libraries installed using those
+# conventions:
+#
+# 1) If libsqlite3.so.0 is found in the target installation directory
+#    then it is re-linked to point to the newer-style names. We cannot
+#    retain both the old and new installation because they both share
+#    the high-level name $(libsqlite3.SO). The down-side of this is
+#    that it may well upset packaging tools when we replace
+#    libsqlite3.so (from a legacy package) with a new symlink.
+#
+# 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
+#    to the legacy-style names are created. The primary intent of this
+#    is to enable chains of operations such as the hypothetical (apt
+#    remove sqlite3-3.47.0 && apt install sqlite3-3.48.0). In such
+#    cases, condition (1) would never trigger but applications might
+#    still expect to see the legacy file names.
+#
+# In either case, libsqlite3.la, if found, is deleted because it would
+# contain stale state, refering to non-libtool-generated libraries.
+#
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
 	@echo "Setting up SO symlinks..."; \
@@ -1373,7 +1405,20 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*; \
+		if [ -e $(libsqlite3.SO).0 ]; then \
+			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0* || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0*; \
+		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
+			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINKS=1"; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0* || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0*; \
+		fi
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so

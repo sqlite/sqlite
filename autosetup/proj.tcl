@@ -826,6 +826,23 @@ proc proj-check-rpath {} {
 }
 
 ########################################################################
+# Checks whether CC supports the -Wl,soname,lib... flag. If so, it
+# returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix,
+# which the client would need to append "libwhatever.N" to. If not, it
+# returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
+proc proj-check-soname {} {
+  cc-with {} {
+    if {[cc-check-flags "-Wl,-soname,libfoo.so.0"]} {
+      define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
+      return 1
+    } else {
+      define LDFLAGS_SONAME_PREFIX ""
+      return 0
+    }
+  }
+}
+
+########################################################################
 # Internal helper for proj-dump-defs-json. Expects to be passed a
 # [define] name and the variadic $args which are passed to
 # proj-dump-defs-json. If it finds a pattern match for the given
