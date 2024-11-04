@@ -1642,7 +1642,7 @@ void f5tStrFunc(sqlite3_context *pCtx, int nArg, sqlite3_value **apArg){
   const char *zText = 0;
   assert( nArg==1 );
 
-  zText = sqlite3_value_text(apArg[0]);
+  zText = (const char*)sqlite3_value_text(apArg[0]);
   if( zText ){
     sqlite3_int64 nText = strlen(zText);
     char *zCopy = (char*)ckalloc(nText+8);
@@ -1670,7 +1670,6 @@ static int SQLITE_TCLAPI f5tRegisterStr(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3 *db = 0;
-  int rc;
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");

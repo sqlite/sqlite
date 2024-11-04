@@ -8796,7 +8796,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_max_blobsize;
   extern int SQLITE_TCLAPI sqlite3BtreeSharedCacheReport(void*,
                                           Tcl_Interp*,int,Tcl_Obj*CONST*);
-  static int iZero = 0;
   static struct {
      char *zName;
      Tcl_CmdProc *xProc;
