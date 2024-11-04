@@ -6,9 +6,24 @@ This is our fork of SQLite for our CS541 project. In our project, we will be
 adding a POINT data type to SQLite, including related functionality such as
 computing the distance between two points.
 
+## Milestone 2
+
 See the Milestone 2 slide deck for our current progress. The build process for
 the project is not different from the original SQLite build process, and the
 instructions already provided by SQLite can be followed.
+
+See the testing section in the original SQLite README (which is below our
+additions here at the top) for how to run tests. We have added a test file
+``milestone2.test`` to the test directory
+which tests the simple POINT functionality implemented for
+milestone 2. It can be run individually in the same manner as other individual
+tests. Namely, make the ``textfixture`` executable and then run it with our
+file as the argument.
+
+We also ran the ``quicktest`` test suite provided by SQLite to help confirm
+that our modifications for milestone 2 have not broken any existing
+functionality. All roughly 395,000 test cases in that test suite still pass so
+it seems like we did not break any of the existing functionality.
 
 Below this is the unmodified text from SQLite's full README.
 
