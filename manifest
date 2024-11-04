@@ -1,5 +1,5 @@
-C Minor\sdoc\scorrection\sand\sproj.tcl-internal\sAPI\srenaming.
-D 2024-11-04T03:43:07.489
+C Latest\supstream\sjimsh0.c,\swhich\saccounts\sfor\sthe\sproblem\spatched\slocally\sby\s[29b944959568].
+D 2024-11-04T04:12:02.279
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -47,7 +47,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl 7e2fe943ae9d45cf39e9f5b05b6230df8e719415edea5af06c30eb68680bde14
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
-F autosetup/jimsh0.c 9860c2bd7825cb9d21616237e59a2dfa29acbd98c00da5f842e5abe222e69288
+F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl ece0c56651493b63770f3553c04897e793eea0a63c6204563281796ed1204fb5
 F autosetup/system.tcl 3a39d6e0b3bfba526fd39afe07c1d0d325e5a31925013a1ba7c671e1128e31bb
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f01b61f21d105706e78eb1e3e7971e9ccb7a68250f8cda96ce285f0fd6b2f7f2
-R 74b038e8c09c34a894181c49cfb9529f
+P c8b24c590ef318e687ab76cd1a5d6c8fed84389e3ebbe544aa8b15759324958a
+R fca10953222d79165bdf7ba3f1399e32
 U stephan
-Z 17f517ee0d6e61152da25eb3ad04eb37
+Z 8016e4a01b178558212e609b0d7b0b87
 # Remove this line to create a well-formed Fossil manifest.
