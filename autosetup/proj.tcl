@@ -1062,7 +1062,9 @@ proc proj-redirect-autoconf-dir-vars {} {
   set prefix [get-define prefix]
   set exec_prefix [get-define exec_prefix $prefix]
   # Note that the ${...} here refers to make-side var derefs, not
-  # TCL-side vars.
+  # TCL-side vars. They must be formulated such that they are legal
+  # for use in (A) makefiles, (B) pkgconfig files, and (C) TCL's
+  # [subst] command. i.e. they must use the form ${X}.
   foreach {flag makeVar makeDeref} {
     exec-prefix     exec_prefix    ${prefix}
     libdir          libdir         ${exec_prefix}/lib
