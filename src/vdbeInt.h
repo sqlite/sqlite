@@ -540,6 +540,7 @@ struct PreUpdate {
   int iBlobWrite;                 /* Value returned by preupdate_blobwrite() */
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
+  Mem oldipk;                     /* Memory cell holding "old" IPK value */
   Mem *aNew;                      /* Array of new.* values */
   Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */

@@ -1,5 +1,5 @@
-C Fix\sthe\sOPFS\sVFS's\sxOpen()\sto\shonor\sthe\sread-only\sflag.\sFix\sthe\sOPFS\sSAHPool\sVFS\sto\senable\sre-installation\sof\sthe\sVFS\safter\scalling\sOpfsSAHPoolUtil.removeVfs().
-D 2024-10-17T12:17:18.240
+C Avoid\sloading\sthe\sentire\srecord\sinto\smemory\sfor\san\ssqlite3_preupdate_old()\scall\sthat\sretrieves\san\sIPK\svalue.
+D 2024-11-04T17:33:26.757
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,6 +568,7 @@ F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8
 F ext/session/sessionalter.test 460bdac2832a550519f6bc32e5db2c0cee94f335870aaf25a3a403a81ab20e17
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
 F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa2053852182ca7adf
+F ext/session/sessionblob.test 87faf667870b72f08e91969abd9f52a383ab7b514506ee194d64a39d8faff00a
 F ext/session/sessionchange.test 77c4702050f24270b58070e2cf01c95c3d232a3ef164b70f31974b386ce69903
 F ext/session/sessionconflict.test 8b8cbd98548e2e636ddc17d0986276f60e833fb865617dd4f88ea5bbe3a16b96
 F ext/session/sessiondiff.test ad13dd65664bae26744e1f18eb3cbd5588349b7e9118851d8f9364248d67bcec
@@ -826,9 +827,9 @@ F src/util.c 4d6d7ebfe6772a1b950c97bbb1d1a72ad4874617ec498ab8aa73b7f5a43e44bb
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 3b1793c5d2235ae89b01ef051a33d7d2ad3704c71799653b112686735ad401ff
 F src/vdbe.h c2d78d15112c3fc5ab87f5e8e0b75d2db1c624409de2e858c3d1aafb1650bb4f
-F src/vdbeInt.h 949669dfd8a41550d27dcb905b494f2ccde9a2e6c1b0b04daa1227e2e74c2b2c
-F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
-F src/vdbeaux.c 6e37cb918506c28fe7657454fcbc2e01e66bfba4164f306c2f075fd5c5fef609
+F src/vdbeInt.h dc5a717607385857dd65e8661fc967aeee77b3c0bcbfb7c7acb1ea99e9007578
+F src/vdbeapi.c 1e6880bbc1b5930752ed1b67fbfcc751d4782e59763859249db699fb3e75a986
+F src/vdbeaux.c dd58f3dd2c0fee9b1a497201269511af633b67ce9ddfc0719c9b5b2b48a15d1e
 F src/vdbeblob.c 13f9287b55b6356b4b1845410382d6bede203ceb29ef69388a4a3d007ffacbe5
 F src/vdbemem.c 831a244831eaa45335f9ae276b50a7a82ee10d8c46c2c72492d4eb8c98d94d89
 F src/vdbesort.c 237840ca1947511fa59bd4e18b9eeae93f2af2468c34d2427b059f896230a547
@@ -2192,10 +2193,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 242cb4bbee0707f470833d9f47efcfb5631f2302b9d48cffdbba63e64984827c
-Q +0a32624015f16fd881a4ecbb56b7833391028d327a95f4c899eee864ed7fe00d
-Q +b7f7a5deeae61920dbfec7606cf9014de711f959a285b29e12673abfd2f88646
-R 35167de4f82ff4a760245cc11df277ba
-U stephan
-Z 23bdd4bd7373bf8ed99c8093853b8c62
+P 63ee3584201fe3a126991e278bd4d7bf2d4ae5c4937d97e311686a69fd1cf69b
+Q +7f4de43733200beeb3ff0a70d51bbc68f5331895698ea95a82741cfd7bb66834
+R 1925f50d4d915494bbec6d09eb751f2d
+U dan
+Z bfb0012b12d420c95f9f9c70ce345eb0
 # Remove this line to create a well-formed Fossil manifest.
