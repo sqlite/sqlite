@@ -10,7 +10,13 @@ computing the distance between two points.
 
 See the Milestone 2 slide deck for our current progress. The build process for
 the project is not different from the original SQLite build process, and the
-instructions already provided by SQLite can be followed.
+instructions already provided by SQLite can be followed. However, note that
+we are still ironing out some issues with a debug build and the additional
+``assert()`` calls SQLite adds in that case so at this point we have only
+guaranteed
+that a release build will work with our new features (the build instructions
+in this README describe how to run configure to do a debug vs. release
+build). We will be working to rectify this as soon as we can.
 
 See the testing section in the original SQLite README (which is below our
 additions here at the top) for how to run tests. We have added a test file
