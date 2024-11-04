@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2024-11-04T19:18:19.862
+C Fix\sthe\spercentile\sextension\sso\sthat\sworks\sas\san\sindependent\sextension.\n[forum:/forumpost/ab25469a350e0488|Forum\spost\sab25469a350e0488]
+D 2024-11-04T20:16:30.101
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -426,7 +426,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c 42eb041edab407e512aaa087f99ed9287fe0b3224f7a6d194456c00fc1454312
+F ext/misc/percentile.c 82531c62cd015b9cdca95ad6bb10c3a907ceb570d21ebd4fb7d634c809cfb089
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af7173a10ec6a4ab465207c1ee20393e8b5f06604c0f3b2fdc19e52c2fc013d5
-R eb678ffcb571020f94837f100e38114b
+P bc93e17924f732468282c5e7a483811d27af573a47aec8ba806f4fe3c5919893
+R a9dbcc35f79b1cb838cea81e173f644f
 U drh
-Z 8b654757f27b76942598a454f31000c3
+Z 2637c45b38cbe31368fbadc90c8592da
 # Remove this line to create a well-formed Fossil manifest.
