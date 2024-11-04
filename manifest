@@ -1,5 +1,5 @@
-C Fix\stypo\sof\s--libexec\s==>\s--libexecdir,\sdiscovered\svia\saudit\sof\sa\sdownstream\sbuild\sscript.\sUnrelated\sdoc\stouchups.
-D 2024-11-04T12:11:20.215
+C Fix\stwo\smismatched\suses\sof\smalloc()\sand\ssqlite3_free()\sin\ssqlite3_stdio.c,\sas\sreported\sin\s[forum:7dd7c70038\s|\sforum\spost\s7dd7c70038].
+D 2024-11-04T13:57:20.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -440,7 +440,7 @@ F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 73192f75e1e89722fbdf209056a562ca2a35df3c9e998f9270331e03cb621e7a
+F ext/misc/sqlite3_stdio.c d3359cb499ddf2fcf50c630166821b329d35c1f8ddcf78b333c894845d9e3d6c
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 99bb5d9b68edc3c5439f0776bce74532dd0131894c31dc8227d084e926c4638c
-R 4f2c4e757a85bb00a8c970e35c0cdef2
+P a60e5d76d06ae0568fbc6e068a7012c77778607cd60da92a1b84ff8f33049a93
+R 1e21ba8321e5a6b22692a09525e9bc1b
 U stephan
-Z 236eab552ea1842cd9bb8ad82e3ed96f
+Z 743a8b18a247cccbb6a7ea690e8b0e07
 # Remove this line to create a well-formed Fossil manifest.
