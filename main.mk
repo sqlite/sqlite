@@ -141,7 +141,7 @@ libdir      ?= $(exec_prefix)/lib
 # localstatedir  ?= /var
 # runstatedir    ?= /run
 # infodir        ?= $(datadir)/info
-# libexec        ?= $(exec_prefix)/libexec
+# libexecdir     ?= $(exec_prefix)/libexec
 ### end of autotools-compatible install dir vars
 
 
@@ -1381,11 +1381,12 @@ all: so
 # conventions:
 #
 # 1) If libsqlite3.so.0 is found in the target installation directory
-#    then it is re-linked to point to the newer-style names. We cannot
-#    retain both the old and new installation because they both share
-#    the high-level name $(libsqlite3.SO). The down-side of this is
-#    that it may well upset packaging tools when we replace
-#    libsqlite3.so (from a legacy package) with a new symlink.
+#    then it and libsqlite3.so.0.8.6 are re-linked to point to the
+#    newer-style names. We cannot retain both the old and new
+#    installation because they both share the high-level name
+#    $(libsqlite3.SO). The down-side of this is that it may well upset
+#    packaging tools when we replace libsqlite3.so (from a legacy
+#    package) with a new symlink.
 #
 # 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
 #    to the legacy-style names are created. The primary intent of this

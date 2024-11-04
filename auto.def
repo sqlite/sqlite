@@ -413,7 +413,7 @@ if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
 }
 
 proj-check-rpath  ; # Determine proper rpath-handling flag
-if {0 && [proj-check-soname]} {
+if {0 && [proj-check-soname libsqlite3.so.3]} {
   # It's not yet clear whether we gain anything from setting -soname
   define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]libsqlite3.so.3
 } else {

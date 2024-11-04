@@ -827,12 +827,18 @@ proc proj-check-rpath {} {
 
 ########################################################################
 # Checks whether CC supports the -Wl,soname,lib... flag. If so, it
-# returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix,
-# which the client would need to append "libwhatever.N" to. If not, it
+# returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
+# which the client would need to append "libwhatever.N". If not, it
 # returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
-proc proj-check-soname {} {
+#
+# The libname argument is only for purposes of running the flag
+# compatibility test, and is not included in the resulting
+# LDFLAGS_SONAME_PREFIX. It is provided so that clients may
+# potentially avoid some end-user confusion by using their own lib's
+# name here (which shows up in the "checking..." output).
+proc proj-check-soname {{libname "libfoo.so.0"}} {
   cc-with {} {
-    if {[cc-check-flags "-Wl,-soname,libfoo.so.0"]} {
+    if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
       return 1
     } else {
@@ -1096,7 +1102,7 @@ proc proj-redirect-autoconf-dir-vars {} {
     localstatedir   localstatedir  /var
     runstatedir     runstatedir    /run
     infodir         infodir        ${datadir}/info
-    libexec         libexec        ${exec_prefix}/libexec
+    libexecdir      libexecdir     ${exec_prefix}/libexec
   } {
     # puts "flag=$flag var=$makeVar makeDeref=$makeDeref"
     if {[proj-opt-was-provided $flag]} {
