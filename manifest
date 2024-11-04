@@ -1,5 +1,5 @@
-C Replace\s3\sinstances\sof\sthe\s==\s'test'\sshell\scommand\soperator\swith\s=,\sas\s==\sis\sapparently\snot\sas\sportable\sacross\sshells.\sProblem\sreported\sin\s[forum:14274389fb2|forum\spost\s14274389fb2].
-D 2024-10-30T00:35:08.612
+C Fix\stwo\smismatched\suses\sof\smalloc()\sand\ssqlite3_free()\sin\ssqlite3_stdio.c,\sas\sreported\sin\s[forum:7dd7c70038\s|\sforum\spost\s7dd7c70038].
+D 2024-11-04T13:59:58.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -430,7 +430,7 @@ F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 73192f75e1e89722fbdf209056a562ca2a35df3c9e998f9270331e03cb621e7a
+F ext/misc/sqlite3_stdio.c d3359cb499ddf2fcf50c630166821b329d35c1f8ddcf78b333c894845d9e3d6c
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2219,8 +2219,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3c27c6d8a8610ac4ad8ad95e0958ffad05fd58a086c67709f6ac132acff9b35
-R b4d7065d4f9d6f2d72a9bb2115091758
+P 68199c40fedeb07a3f9c5024fac6376a0579a13b0e5690aef6238e3e22b9c1b7
+Q +af0a345b3b287f82b54249cfa574ef3ce52305a6452058aac98cd473c361919e
+R 2241a8bf398073bd9d111cfbf86d60b4
 U stephan
-Z f1125ca1638ff59e46aa92ac0cc2c6ba
+Z f09d49d48e89e36326341eb63e3e06a8
 # Remove this line to create a well-formed Fossil manifest.
