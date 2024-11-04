@@ -1,3 +1,17 @@
+# CS541 SQLite-L Project
+
+Alex Frey, Jaison George, George O'Carroll
+
+This is our fork of SQLite for our CS541 project. In our project, we will be
+adding a POINT data type to SQLite, including related functionality such as
+computing the distance between two points.
+
+See the Milestone 2 slide deck for our current progress. The build process for
+the project is not different from the original SQLite build process, and the
+instructions already provided by SQLite can be followed.
+
+Below this is the unmodified text from SQLite's full README.
+
 <h1 align="center">SQLite Source Repository</h1>
 
 This repository contains the complete source code for the
