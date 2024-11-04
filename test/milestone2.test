@@ -33,4 +33,11 @@ do_execsql_test milestone2-160 {
   SELECT p / 2 FROM points;
 } {0.5,1.0 1.5,2.0 2.5,3.0}
 
+# Below test confirms that when unsupported operation (e.g. addition with
+# integer) is attempted with a point a runtime error occurs
+
+do_test milestone2-170 {
+  catchsql { SELECT p + 2 FROM points }
+} {1 {datatype mismatch}}
+
 finish_test
