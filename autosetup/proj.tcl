@@ -1096,7 +1096,7 @@ proc proj-redirect-autoconf-dir-vars {} {
 # trimmed copy of its contents, else it returns $dflt. The intended
 # usage is that things like developer-specific CFLAGS preferences can
 # be stored in .env-CFLAGS.
-proc proj-default-flags {flag {dflt ""}} {
+proc proj-env-file {flag {dflt ""}} {
   set fn ".env-${flag}"
   if {[file readable $fn]} {
     return [proj-file-content -trim $fn]
@@ -1109,10 +1109,10 @@ proc proj-default-flags {flag {dflt ""}} {
 # the following places where it's defined:
 #
 # - Passed to configure as $var=...
-# - A file named .env-$var (see [proj-default-flags])
 # - Exists as an environment variable
+# - A file named .env-$var (see [proj-env-file])
 #
 # If none of those are set, $dflt is returned.
 proc proj-get-env {var {dflt ""}} {
-  return [get-env $var [proj-default-flags $var $dflt]]
+  return [get-env $var [proj-env-file $var $dflt]]
 }
