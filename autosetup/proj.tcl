@@ -1106,10 +1106,14 @@ proc proj-remap-autoconf-dir-vars {} {
     libexecdir      libexecdir     ${exec_prefix}/libexec
   } {
     if {[proj-opt-was-provided $flag]} {
-      define $makeVar [opt-val $flag]
+      define $makeVar [join [opt-val $flag]]
     } else {
-      define $makeVar $makeDeref
+      define $makeVar [join $makeDeref]
     }
+    # Maintenance reminder: the [join] call is to avoid {braces}
+    # around the output when someone passes in,
+    # e.g. --libdir=\${prefix}/foo/bar. The Debian package build
+    # script does that.
   }
 }
 
