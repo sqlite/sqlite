@@ -1,5 +1,5 @@
-C Fix\sthe\spercentile\sextension\sso\sthat\sworks\sas\san\sindependent\sextension.\n[forum:/forumpost/ab25469a350e0488|Forum\spost\sab25469a350e0488]
-D 2024-11-04T20:16:30.101
+C sqlite3_stdio.c\snow\suses\ssqlite3_malloc()/sqlite3_free()\sinstead\sof\smalloc()/free().\sReported\sin\s[forum:6b6cb3ddc8a89b55|forum\spost\s6b6cb3dd].
+D 2024-11-05T02:14:23.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -440,7 +440,7 @@ F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c d3359cb499ddf2fcf50c630166821b329d35c1f8ddcf78b333c894845d9e3d6c
+F ext/misc/sqlite3_stdio.c c34b4aba8aec6c1ca7058a7a6319a37ab629135091600aee202390a8cd20e842
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc93e17924f732468282c5e7a483811d27af573a47aec8ba806f4fe3c5919893
-R a9dbcc35f79b1cb838cea81e173f644f
-U drh
-Z 2637c45b38cbe31368fbadc90c8592da
+P 27b829c34463d141125d31b59dd65275b88200e3edb1f8238979e02d0fc3614e
+R 130c58b511ddf8bb4bdfb89f08a40529
+U stephan
+Z 632b31ac5524b42c189c4a8bf8a02ef6
 # Remove this line to create a well-formed Fossil manifest.
