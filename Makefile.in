@@ -171,17 +171,6 @@ T.cc.sqlite += -I$(prefix)/include
 #
 # main.mk will fill out T.cc.sqlite with some flags common to all builds.
 
-#XX#CFLAGS.readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#CFLAGS.readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
-#XX#
-#XX## The library that programs using readline() must link against.
-#XX##
-#XX#LIBREADLINE = @TARGET_READLINE_LIBS@
-#XX#
-#XX## Should the database engine be compiled threadsafe
-#XX##
-#XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
-
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
 # must start with a path component so that it can be invoked as a

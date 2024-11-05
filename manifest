@@ -1,9 +1,9 @@
-C Change\sa\s(#define\sHAVE_FCHMOD)\sto\s(#define\sHAVE_FCHMOD\s1)\sper\suser\srequest\sin\s[forum:24cf6020c6|forum\spost\s24cf6020c6].\sThere's\sno\ssemantic\schange\sfor\sthis\stree,\sbut\sthis\sis\sconsistent\swith\show\sauto-config\stools\swould\sdefine\sit\sand\sthe\sempty\s#define\sinterferes\swith\ssome\sdownstream\scode.
-D 2024-11-05T02:38:32.936
+C Remove\ssome\sdead\smakefile\scode.
+D 2024-11-05T07:29:25.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 3cb3754680dc2f06f6858ef8068ad1c947709dfae705466d383f25d7f222f4ab
+F Makefile.in 66cd5f5b89e6f21f7475fd6cd34008c8cd1ec773f22c4aa7f7eafd3ca3634fe9
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1982471da14648594d616233be947e343611e7e3d6be7ae6b20d739e544675ea
-R 0c8d1f7a9b5a779ada3248a71bc6c2aa
+P 9c46d84f3bf2f5876211b498104067d32a4000979fad1345deb1000c23716d75
+R 94be190eadef1e7adb6950cdb6c35260
 U stephan
-Z 8d82b36b75e38596c6f943e0301a7565
+Z 0835ffe7367ea13f057f80bd1a7d7fa5
 # Remove this line to create a well-formed Fossil manifest.
