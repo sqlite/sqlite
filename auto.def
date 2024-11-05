@@ -217,12 +217,6 @@ proj-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
 }
-#
-# "Re-export" the autoconf-conventional --XYZdir flags into something
-# which is more easily overridable from a make invocation. See the docs
-# for [proj-redirect-autoconf-dir-vars] for the explanation of why.
-#
-proj-redirect-autoconf-dir-vars
 
 set srcdir $::autosetup(srcdir)
 set top_srcdir [get-define abs_top_srcdir]
@@ -1204,6 +1198,18 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
   define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
 }; # JimTCL
 
+
+########################################################################
+# "Re-export" the autoconf-conventional --XYZdir flags into something
+# which is more easily overridable from a make invocation. See the docs
+# for [proj-redirect-autoconf-dir-vars] for the explanation of why.
+#
+# We do this late in the config process, immediately before we export
+# the Makefile and other generated files, so that configure tests
+# which may make use of the autotools-conventional flags
+# (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
+proj-redirect-autoconf-dir-vars
+
 ########################################################################
 # Generate the output files.
 #
@@ -1224,30 +1230,6 @@ if {0} {
     -none *
   proj-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
 }
-#TODO proj-make-from-dot-in ext/wasm/GNUmakefile
-
-if {"" ne $DUMP_DEFINES_JSON} {
-  ########################################################################
-  # Dump config-defines.json...
-  # Demonstrate (mis?)handling of spaces in JSON-export array values:
-  # define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
-  define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
-  define OPT_SHELL.list [get-define OPT_SHELL]
-  set dumpDefsOpt {
-    -bare {SIZEOF_* HAVE_DECL_*}
-    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG TARGET_* USE_GCOV TCL_*}
-    -array {*.list}
-    -auto {OPT_* PACKAGE_* HAVE_*}
-  }
-  if {[opt-bool defines-json-include-lowercase]} {
-    lappend dumpDefsOpt -none {lib_*} ; # remnants from proj-check-function-in-lib and friends
-    lappend dumpDefsOpt -auto {[a-z]*}
-  }
-  lappend dumpDefsOpt -none *
-  proj-dump-defs-json $DUMP_DEFINES_JSON {*}$dumpDefsOpt
-  undefine OPT_FEATURE_FLAGS.list
-  undefine OPT_SHELL.list
-}
 
 ########################################################################
 # Some build-dev/debug-only output
@@ -1263,5 +1245,28 @@ proj-if-opt-truthy dump-defines {
     foreach x [all-defines] {
       puts "\t$x"
     }
+  }
+  if {"" ne $DUMP_DEFINES_JSON} {
+    msg-result "--dump-defines is creating $::DUMP_DEFINES_JSON"
+    ########################################################################
+    # Dump config-defines.json...
+    # Demonstrate (mis?)handling of spaces in JSON-export array values:
+    # define-append OPT_FOO.list {"-DFOO=bar baz" -DBAR="baz barre"}
+    define OPT_FEATURE_FLAGS.list [get-define OPT_FEATURE_FLAGS]
+    define OPT_SHELL.list [get-define OPT_SHELL]
+    set dumpDefsOpt {
+      -bare {SIZEOF_* HAVE_DECL_*}
+      -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG TARGET_* USE_GCOV TCL_*}
+      -array {*.list}
+      -auto {OPT_* PACKAGE_* HAVE_*}
+    }
+    if {[opt-bool defines-json-include-lowercase]} {
+      lappend dumpDefsOpt -none {lib_*} ; # remnants from proj-check-function-in-lib and friends
+      lappend dumpDefsOpt -auto {[a-z]*}
+    }
+    lappend dumpDefsOpt -none *
+    proj-dump-defs-json $DUMP_DEFINES_JSON {*}$dumpDefsOpt
+    undefine OPT_FEATURE_FLAGS.list
+    undefine OPT_SHELL.list
   }
 }

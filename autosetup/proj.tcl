@@ -790,16 +790,18 @@ proc proj-check-emsdk {} {
 # flag. Defines LDFLAGS_RPATH to that/those flag(s) or an empty
 # string. Returns 1 if it finds an option, else 0.
 #
-# By default, the rpath is set to $prefix/lib. However, if
-# --libdir=...  is explicitly passed to configure then that value is
-# used.
+# By default, the rpath is set to $prefix/lib. However, if either of
+# --exec-prefix=... or --libdir=...  are explicitly passed to
+# configure then [get-define libdir] is used (noting that it derives
+# from exec-prefix by default).
 #
 # Achtung: we have seen platforms which report that a given option
 # checked here will work but then fails at build-time, and the current
 # order of checks reflects that.
 proc proj-check-rpath {} {
   set rc 1
-  if {[proj-opt-was-provided libdir]} {
+  if {[proj-opt-was-provided libdir]
+      || [proj-opt-was-provided exec-prefix]} {
     set lp "[get-define libdir]"
   } else {
     set lp "[get-define prefix]/lib"
@@ -1090,7 +1092,6 @@ proc proj-redirect-autoconf-dir-vars {} {
   # [subst] command. i.e. they must use the form ${X}.
   foreach {flag makeVar makeDeref} {
     exec-prefix     exec_prefix    ${prefix}
-    libdir          libdir         ${exec_prefix}/lib
     datadir         datadir        ${prefix}/share
     mandir          mandir         ${datadir}/man
     includedir      includedir     ${prefix}/include
@@ -1104,15 +1105,11 @@ proc proj-redirect-autoconf-dir-vars {} {
     infodir         infodir        ${datadir}/info
     libexecdir      libexecdir     ${exec_prefix}/libexec
   } {
-    # puts "flag=$flag var=$makeVar makeDeref=$makeDeref"
     if {[proj-opt-was-provided $flag]} {
-      #set x "+"
       define $makeVar [opt-val $flag]
     } else {
-      #set x "~"
       define $makeVar $makeDeref
     }
-    #puts "$x $makeVar = [get-define $makeVar]"
   }
 }
 
