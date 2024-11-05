@@ -1,5 +1,5 @@
-C Remove\ssome\sdead\smakefile\scode.
-D 2024-11-05T07:29:25.010
+C Add\sthe\s--enable-rbu\sconfigure\sflag\sand\sbuilding\sof\sthe\scommented-out\srbu\sbinary.
+D 2024-11-05T07:55:33.088
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def dc62d3c918d2750248e6811b24c2cbbd51d1457d7f6ffd11e0bf61dd5770cb3e
+F auto.def dd8555a00b22645f0ec06bde38f36fb4a9625fb2ce0950d79dc13c3051f242d1
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -698,7 +698,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk a066ab09a00cfc641359db6fde6d466201c2bf51d95bf48086e5bc3ea401640d
+F main.mk 342578d173fd10ab1128d29b0fb61722b8ac08d73e1dd2cf66ea1f27c3bea0f2
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c46d84f3bf2f5876211b498104067d32a4000979fad1345deb1000c23716d75
-R 94be190eadef1e7adb6950cdb6c35260
+P b69ce89d22c4f3a2ba176f2b4b39fd430da4e253a484a1e61ec7beff3c7522a1
+R 7ed0947f08dede3e232e5b0d2dca4087
 U stephan
-Z 0835ffe7367ea13f057f80bd1a7d7fa5
+Z ca576f54e59ca5482db96e0d783912c6
 # Remove this line to create a well-formed Fossil manifest.

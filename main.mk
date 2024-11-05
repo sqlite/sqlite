@@ -1796,9 +1796,9 @@ kvtest$(T.exe):	$(TOP)/test/kvtest.c sqlite3.c
 	$(T.link) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(LDFLAGS.libsqlite3)
 xbin: kvtest$(T.exe)
 
-#rbu$(T.exe): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
-#	$(T.link) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS.libsqlite3)
-#xbin: rbu$(T.exe)
+rbu$(T.exe): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
+	$(T.link) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS.libsqlite3)
+xbin: rbu$(T.exe)
 
 loadfts$(T.exe): $(TOP)/tool/loadfts.c $(libsqlite3.LIB)
 	$(T.link) $(TOP)/tool/loadfts.c $(libsqlite3.LIB) -o $@ $(LDFLAGS.libsqlite3)
