@@ -219,15 +219,14 @@ proj-xfer-options-aliases {
 }
 
 set srcdir $::autosetup(srcdir)
-set top_srcdir [get-define abs_top_srcdir]
-set PACKAGE_VERSION [readfile $srcdir/VERSION]
+set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
 define PACKAGE_NAME "sqlite"
 define PACKAGE_URL {https://sqlite.org}
 define PACKAGE_VERSION $PACKAGE_VERSION
 define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
 define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
-msg-result "srcdir = $srcdir"
-msg-result "top_srcdir = $top_srcdir"
+msg-result "Source dir = $srcdir"
+msg-result "Build dir  = $::autosetup(builddir)"
 msg-result "Configuring SQLite version $PACKAGE_VERSION"
 
 #
@@ -235,7 +234,7 @@ msg-result "Configuring SQLite version $PACKAGE_VERSION"
 # configure script with the same arguments it was initially invoked
 # with. This can be used to automatically reconfigure
 #
-define-append SQLITE_AUTORECONFIG cd '$::autosetup(builddir)' && '$top_srcdir/configure'
+define-append SQLITE_AUTORECONFIG cd '$::autosetup(builddir)' && '$srcdir/configure'
 #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
 foreach arg $::autosetup(argv) {
   define-append SQLITE_AUTORECONFIG '$arg'
@@ -243,11 +242,6 @@ foreach arg $::autosetup(argv) {
 
 # Are we cross-compiling?
 set isCrossCompiling [proj-is-cross-compiling]
-if {![file exists sqlite3.pc.in]} {
-  msg-result "This appears to be an out-of-tree build."
-}
-
-cc-check-tools ld ar
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
 define OPT_SHELL {}         ; # CFLAGS for the sqlite3 CLI app
@@ -297,6 +291,7 @@ if {".exe" eq [get-define TARGET_EXEEXT]} {
 
 #########
 # Programs needed
+cc-check-tools ld ar ; # must come before sqlite-check-wasi-sdk
 if {"" eq [proj-bin-define install]} {
   proj-warn "Cannot find install binary, so 'make install' will not work."
 }
@@ -482,7 +477,7 @@ proc sqlite-check-tcl {} {
     return
   }
   # TODO: document the steps this is taking.
-  global top_srcdir
+  global srcdir
   msg-result "Checking for a suitable tcl... "
   proj-assert {proj-opt-truthy tcl}
   set use_tcl 1
@@ -509,7 +504,7 @@ proc sqlite-check-tcl {} {
       define TCLSH_CMD $with_tclsh
       #msg-result "Using tclsh: $with_tclsh"
     }
-    if {[catch {exec $with_tclsh $top_srcdir/tool/find_tclconfig.tcl} result] == 0} {
+    if {[catch {exec $with_tclsh $srcdir/tool/find_tclconfig.tcl} result] == 0} {
       set with_tcl $result
     }
     if {"" ne $with_tcl && [file isdir $with_tcl]} {
@@ -575,7 +570,7 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If the
   # config is not available, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec "${top_srcdir}/tool/tclConfigShToTcl.sh" "$cfg"]
+  eval [exec "${srcdir}/tool/tclConfigShToTcl.sh" "$cfg"]
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     proj-assert {expr {"" ne [get-define TCL_EXEC_PREFIX]}}
@@ -1202,13 +1197,13 @@ if {0 && "" ne [get-define CFLAGS_JIMSH]} {
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something
 # which is more easily overridable from a make invocation. See the docs
-# for [proj-redirect-autoconf-dir-vars] for the explanation of why.
+# for [proj-remap-autoconf-dir-vars] for the explanation of why.
 #
 # We do this late in the config process, immediately before we export
 # the Makefile and other generated files, so that configure tests
 # which may make use of the autotools-conventional flags
 # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
-proj-redirect-autoconf-dir-vars
+proj-remap-autoconf-dir-vars
 
 ########################################################################
 # Generate the output files.
@@ -1234,18 +1229,12 @@ if {0} {
 ########################################################################
 # Some build-dev/debug-only output
 proj-if-opt-truthy dump-defines {
-  msg-result "--dump-defines is creating $::DUMP_DEFINES_TXT"
   make-config-header $::DUMP_DEFINES_TXT \
     -bare {SQLITE_OS* SQLITE_DEBUG USE_*} \
     -str {BIN_* CC LD AR LDFLAG* OPT_*} \
     -auto {*}
   # achtung: ^^^^ whichever SQLITE_OS_foo flag which is set to 0 will
   # get _undefined_ here unless it's part of the -bare set.
-  if {0} {
-    foreach x [all-defines] {
-      puts "\t$x"
-    }
-  }
   if {"" ne $DUMP_DEFINES_JSON} {
     msg-result "--dump-defines is creating $::DUMP_DEFINES_JSON"
     ########################################################################

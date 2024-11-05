@@ -1,9 +1,9 @@
-C Enhance\sthe\srpath\sconfigure\scheck\sto\shonor\s--exec-prefix=...\sRemove\ssome\sdebugging\scode\sand\smove\sother\sdebugging\scode\saround.
-D 2024-11-05T08:21:47.035
+C auto.def:\sremove\san\sextraneous\sglobal\svar,\ssome\sdead\stcl/makefile\scode/comments,\sand\ssome\sextraneous\soutput.\sRename\san\sinternal-use\sproc.\sDisable\sthe\sext/wasm\scleanup\sin\sthe\stop-level\s(dist)clean\sbecause\sthe\snoise\sfrom\sgmake\sis\sirritating.
+D 2024-11-05T09:49:53.043
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
-F Makefile.in 66cd5f5b89e6f21f7475fd6cd34008c8cd1ec773f22c4aa7f7eafd3ca3634fe9
+F Makefile.in 3a54957d16c3f4666922f170a19b4b51dc13be039c29394dd38caa95ade5d731
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 3f6aec871699bc3e54f7dc6f4496daf4b435d4b8326bfed51ccabd12b633988c
+F auto.def ac7dfc51216c6aa7d34e82d73c945cb71758a3fb79612ef2c5ed38f468d980e8
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 16138ac9c8bc071613b260a18f46ada9a31ed3b496a7ae6f403fd9d49d588aea
+F autosetup/proj.tcl f4762bc4826f3b378bef71236643413c501d537be7320cbc3a163752b1f90964
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af79d11e389b4772a401f6c2cbde42de95287addf7077ad4db55d39cc504f9fe
-R 8f4205f94f3bfdb54022edc4daed40c7
+P a8c1a82b56412a4277a3c9bf2b256d3bd22bd8aca9096b8d08fcc0bf7d9364cb
+R 486858acf83a0ad9398b7511ee6bf899
 U stephan
-Z 23df65f4992f1d4489c83b5031514bec
+Z 17b7f42f98ea7458ea07b6ef75ca0d94
 # Remove this line to create a well-formed Fossil manifest.

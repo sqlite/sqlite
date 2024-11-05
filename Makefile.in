@@ -4,9 +4,7 @@
 # Makefile for SQLITE
 #
 # This makefile is intended to be configured automatically using the
-# configure script. Hand editing may not work as expected because
-# certain blocks are added or removed depending on configure-time
-# information.
+# configure script.
 #
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
@@ -17,10 +15,6 @@ all:
 #
 # Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
 # particular order...
-#
-# - libreadline detection and handling of its -I, -L, and -l flags.
-# These can vary considerably across systems. e.g. some need -lncurses,
-# and some don't know what an -lncurses is.
 #
 # - TEA pieces.
 #
@@ -33,13 +27,6 @@ all:
 #
 # - This makefile should remain as POSIX-make-compatible as possible:
 #   https://pubs.opengroup.org/onlinepubs/9799919799/utilities/make.html
-#
-# - When using the X?=Y variable assignment formulation, please test
-#   the build with both GNU make and a POSIX make (e.g. BSD make,
-#   a.k.a. bmake). On at least one occassion, that formulation has led
-#   to inconsistent behavior between the two major make flavors when
-#   used with variable names which might sensibly be in the
-#   developer's environment (namely CC).
 #
 # - The naming convention of some vars, using periods instead of
 #   underscores, though unconventional, was selected for a couple of
@@ -357,16 +344,20 @@ misspell: ./custom.rws has_tclsh84
 # perform cleanup known to be relevant to (only) the autosetup-driven
 # build.
 #
-clean-autosetup:
-	-gmake -C ext/wasm distclean 2>/dev/null || true
-clean: clean-autosetup
+#clean-autosetup:
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory --ignore-errors -C ext/wasm clean; \
+#	fi >/dev/null 2>&1; true
+#clean: clean-autosetup
 
 distclean-autosetup:	clean
 	rm -f sqlite_cfg.h config.log config.status config.defines.* Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
-	-gmake -C ext/wasm distclean 2>/dev/null; true
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory  --ignore-errors -C ext/wasm distclean; \
+#	fi >/dev/null 2>&1; true
 distclean: distclean-autosetup
 
 #

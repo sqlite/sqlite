@@ -1083,7 +1083,7 @@ proc proj-which-linenoise {dotH} {
 # configure-time, so would be tedious to override properly via a make
 # invocation.
 #
-proc proj-redirect-autoconf-dir-vars {} {
+proc proj-remap-autoconf-dir-vars {} {
   set prefix [get-define prefix]
   set exec_prefix [get-define exec_prefix $prefix]
   # Note that the ${...} here refers to make-side var derefs, not
