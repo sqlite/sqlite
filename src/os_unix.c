@@ -213,7 +213,7 @@
 # endif
 #else /* !SQLITE_WASI */
 # ifndef HAVE_FCHMOD
-#  define HAVE_FCHMOD
+#  define HAVE_FCHMOD 1
 # endif
 #endif /* SQLITE_WASI */
 
