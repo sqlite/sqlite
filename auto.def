@@ -144,7 +144,6 @@ set flags {
   geopoly              => {Enable the GEOPOLY extension}
   rtree                => {Enable the RTREE extension}
   session              => {Enable the SESSION extension}
-  rbu                  => {Enable the RBU extension}
   all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
@@ -1118,7 +1117,6 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
   fts5         -DSQLITE_ENABLE_FTS5    {affirm-have-math fts5}
   geopoly      -DSQLITE_ENABLE_GEOPOLY {proj-opt-set rtree}
   rtree        -DSQLITE_ENABLE_RTREE   {}
-  rbu          -DSQLITE_ENABLE_RBU     {}
   session      {-DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK} {}
   update-limit -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT {}
   memsys5      -DSQLITE_ENABLE_MEMSYS5 {}
