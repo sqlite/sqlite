@@ -738,29 +738,41 @@ proc proj-affirm-files-exist {args} {
 # Emscripten is used for doing in-tree builds of web-based WASM stuff,
 # as opposed to WASI-based WASM or WASM binaries we import from other
 # places. This is only set up for Unix-style OSes and is untested
-# anywhere but Linux.
+# anywhere but Linux. Requires that the --with-emsdk flag be
+# registered with autosetup.
+#
+# It looks for the SDK in the location specified by --with-emsdk.
+# Values of "" or "auto" mean to check for the environment var EMSDK
+# (which gets set by the emsdk_env.sh script from the SDK) or that
+# same var passed to configure.
+#
+# If the given directory is found, it expects to find emsdk_env.sh in
+# that directory, as well as the emcc compiler somewhere under there.
+#
+# If the --with-emsdk flag is explicitly provided and the SDK is not
+# found then a fatal error is generated, otherwise failure to find the
+# SDK is not fatal.
 #
 # Defines the following:
 #
-# - EMSDK_HOME = top dir of the emsdk or "". It looks for
-#   --with-emsdk=DIR or the $EMSDK environment variable.
-# - EMSDK_ENV = path to EMSDK_HOME/emsdk_env.sh or ""
+# - EMSDK_HOME = top dir of the emsdk or "".
+# - EMSDK_ENV_SH = path to EMSDK_HOME/emsdk_env.sh or ""
 # - BIN_EMCC = $EMSDK_HOME/upstream/emscripten/emcc or ""
 # - HAVE_EMSDK = 0 or 1 (this function's return value)
 #
-# Returns 1 if EMSDK_ENV is found, else 0.  If EMSDK_HOME is not empty
+# Returns 1 if EMSDK_ENV_SH is found, else 0.  If EMSDK_HOME is not empty
 # but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
-# case we have to rely on the fact that sourcing $EMSDK_ENV from a
+# case we have to rely on the fact that sourcing $EMSDK_ENV_SH from a
 # shell will add emcc to the $PATH.
 proc proj-check-emsdk {} {
   set emsdkHome [opt-val with-emsdk]
   define EMSDK_HOME ""
-  define EMSDK_ENV ""
+  define EMSDK_ENV_SH ""
   define BIN_EMCC ""
+  set hadValue [llength $emsdkHome]
   msg-checking "Emscripten SDK? "
-  if {$emsdkHome eq ""} {
-    # Fall back to checking the environment. $EMSDK gets set by
-    # sourcing emsdk_env.sh.
+  if {$emsdkHome in {"" "auto"}} {
+    # Check the environment. $EMSDK gets set by sourcing emsdk_env.sh.
     set emsdkHome [get-env EMSDK ""]
   }
   set rc 0
@@ -769,7 +781,7 @@ proc proj-check-emsdk {} {
     set emsdkEnv "$emsdkHome/emsdk_env.sh"
     if {[file exists $emsdkEnv]} {
       msg-result "$emsdkHome"
-      define EMSDK_ENV $emsdkEnv
+      define EMSDK_ENV_SH $emsdkEnv
       set rc 1
       set emcc "$emsdkHome/upstream/emscripten/emcc"
       if {[file exists $emcc]} {
@@ -780,6 +792,10 @@ proc proj-check-emsdk {} {
     }
   } else {
     msg-result "not found"
+  }
+  if {$hadValue && 0 == $rc} {
+    # Fail if it was explicitly requested but not found
+    proj-fatal "Cannot find the Emscripten SDK"
   }
   define HAVE_EMSDK $rc
   return $rc

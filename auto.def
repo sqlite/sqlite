@@ -189,7 +189,7 @@ set flags {
   # <alternative-builds>
   with-wasi-sdk:=/opt/wasi-sdk
                        => {Top-most dir of the wasi-sdk for a WASI build}
-  with-emsdk:DIR       => {Top-most dir of the Emscripten SDK installation}
+  with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
   test-status          => {Enable status of tests}
@@ -197,7 +197,6 @@ set flags {
   linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   # </developer>
-
 }
 if {"" ne $DUMP_DEFINES_JSON} {
   lappend flags \
@@ -205,7 +204,7 @@ if {"" ne $DUMP_DEFINES_JSON} {
     => {Include lower-case defines (primarily system paths) in $DUMP_DEFINES_JSON}
 }
 
-options [subst $flags]
+options [subst -nobackslashes -nocommands $flags]
 unset flags
 
 #

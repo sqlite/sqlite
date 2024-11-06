@@ -1,5 +1,5 @@
-C Improve\sthe\s".mode\sjson"\soutput\sof\sthe\sCLI\sso\sthat\sit\sencodes\sU+007f\susing\nan\sescape\ssequence.
-D 2024-11-05T23:26:31.239
+C Enhance\sthe\s--with-emsdk\sflag\sto\suse\sa\sdefault\svalue\sof\s'auto',\smeaning\sto\ssearch\sthe\senvironment\sfor\sit,\sand\sto\sfail\sfatally\sif\s--with-emsdk\sis\sexplicitly\sprovided\sbut\sthe\sSDK\sis\snot\sfound.
+D 2024-11-06T02:59:59.807
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 348be257a61090f739287d54046f63801c99705f42fae0dffa2ba415dd9afcfb
+F auto.def 4a5115da298b51f0332fda72933976bded86700c94e30d75066e665795d638d7
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl a3f180a97db6cf398f12d8e688651d10b8707c4869eb0096bfbf0b2952b31131
+F autosetup/proj.tcl 57b9c794d01124c91af840b3ba0ef1e991e815c9a872fa451baff0dc03e9f84a
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -2115,7 +2115,7 @@ F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
-F tool/emcc.sh.in 5a3534af8d437747cf4141abaab3db558756f4a1ac8f3ebf28a16ffa26209921
+F tool/emcc.sh.in 1f3226166bad1765c0bf42fac3d29037704c2078eb22562f9ddfbe73bff023b0
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5113a2ef84831ad2da723fa7e29e0d575e74e10585741ff51db8c2e37332cd2
-R bbfc36e2090df7d25792a8d2c806a189
-U drh
-Z cf46ecae3bdcb7001fed6ddb7dbd656a
+P 8b58cf9bbd3090c60f1ee7468cdeeb0b0fa4560d1e51a5fd0bef43692d10fe04
+R caf12b590890f202527bfa9f99549a98
+U stephan
+Z 9566a0d488cad676e06a60ec48a87114
 # Remove this line to create a well-formed Fossil manifest.
