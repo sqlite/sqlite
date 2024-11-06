@@ -126,6 +126,8 @@ proc proj-indented-notice {args} {
 }
 
 ########################################################################
+# @proj-is-cross-compiling
+#
 # Returns 1 if cross-compiling, else 0.
 proc proj-is-cross-compiling {} {
   return [expr {[get-define host] ne [get-define build]}]
@@ -167,9 +169,12 @@ proc proj-strip-hash-comments_ {val} {
 }
 
 ########################################################################
-# A proxy for cc-check-function-in-lib which "undoes" any changes that
-# routine makes to the LIBS define. Returns the result of
-# cc-check-function-in-lib.
+# @proj-check-function-in-lib
+#
+# A proxy for cc-check-function-in-lib which does not make any global
+# changes to the LIBS define. Returns the result of
+# cc-check-function-in-lib (i.e. true or false).  The resulting linker
+# flags are stored in ${lib_${function}}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
   define-push {LIBS} {

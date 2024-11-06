@@ -199,8 +199,8 @@ so that the resulting flags get applied at the correct time.
 
 > A real-life example of the latter point: before the approach
   described below was taken to collecting build-time flags, the test
-  for `-rflag` had to come _after_ the test for zlib because the
-  results of the `-rflag` test implicitly modified the `CFLAGS`,
+  for `-rpath` had to come _after_ the test for zlib because the
+  results of the `-rpath` test implicitly modified the `CFLAGS`,
   breaking the zlib feature test. Because the feature tests no longer
   (intentionally) modify global state, that is not an issue.
 
