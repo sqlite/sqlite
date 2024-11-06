@@ -114,33 +114,41 @@ script runs in JimTCL without using any JimTCL-specific features, then
 it's a certainty that it will run in canonical TCL as well. The
 opposite, however, is not _always_ the case.
 
-By default, the configure script will search for an available `tclsh`
-(under several common names, e.g. `tclsh8.6`) before falling back to
-compiling the copy of `jimsh0.c` included in the source tree.
+When [`./configure`](/file/configure) is run, it goes through a
+bootstrapping process to find a suitable TCL with which to run the
+autosetup framework. The first step involves [finding or building a
+TCL shell](/file/autosetup/autosetup-find-tclsh).  That will first
+search for an available `tclsh` (under several common names,
+e.g. `tclsh8.6`) before falling back to compiling the copy of
+`jimsh0.c` included in the source tree. i.e. it will prefer to use a
+system-installed TCL for running the configure script. Once it finds
+(or builds) a TCL shell, it then runs [a sanity test to ensure that
+the shell is suitable](/file/autosetup/autosetup-test-tclsh) before
+using it to run the main autosetup app.
 
-There are two simple ways to ensure that the configure process uses
-JimTCL instead of the canonical `tclsh`, and either approach provides
-equally high assurances about configure script compatibility across
-TCL implementations:
+There are two simple ways to ensure that running of the configure
+process uses JimTCL instead of the canonical `tclsh`, and either
+approach provides equally high assurances about configure script
+compatibility across TCL implementations:
 
-1. Build on a system with no `tclsh` installed. In that case, the
-   configure process will fall back to building the in-tree copy of
-   JimTCL.
+1. Build on a system with no `tclsh` installed in the `$PATH`. In that
+   case, the configure process will fall back to building the in-tree
+   copy of JimTCL.
 
 2. Manually build `./jimsh0` in the top of the checkout with:\  
    `cc -o jimsh0 autosetup/jimsh0.c`\  
    With that in place, the configure script will prefer to use that
-   before looking for a system-level `tclsh`. Note that `make distclean`
-   will remove that file.
+   before looking for a system-level `tclsh`. Be aware, though, that
+   `make distclean` will remove that file.
 
 **Note that `jimsh0` is distinctly different** from the `jimsh` which
 gets built for code-generation purposes. The latter requires
 non-default build flags to enable features which are
-platform-dependent, most notably to make its `[file normalize]`
-work. This means, for example, that the configure script and its
-utility APIs must not use `[file normalize]`, but autosetup provides a
-TCL implementation of `[file-normalize]` (note the dash) for portable
-use in the configure script.
+platform-dependent, most notably to make its `[file normalize]` work.
+This means, for example, that the configure script and its utility
+APIs must not use `[file normalize]`, but autosetup provides a TCL
+implementation of `[file-normalize]` (note the dash) for portable use
+in the configure script.
 
 
 <a name="conventions"></a>
@@ -189,7 +197,7 @@ Do Not Update Global Shared State
 
 In both the legacy Autotools-driven build and in common Autosetup
 usage, feature tests performed by the configure script may amend
-global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`[^as-cflags].  That's
+global flags such as `LIBS`, `LDFLAGS`, and `CFLAGS`[^as-cflags].  That's
 appropriate for a makefile which builds a single deliverable, but less
 so for makefiles which produce multiple deliverables. Drawbacks of
 that approach include:
@@ -212,7 +220,7 @@ that approach include:
 
 In this build, cases where feature tests modify global state in such a
 way that it may impact later feature tests are either (A) very
-intentionally defined to do so (e.g. the `--with-wasi-sdk` has
+intentionally defined to do so (e.g. the `--with-wasi-sdk` flag has
 invasive side-effects) or (B) are oversights (i.e. bugs).
 
 This tree's [configure script][auto.def], [utility APIs][proj.tcl],
@@ -241,8 +249,8 @@ arbitrary makefile targets with those. _C'est la vie._
 
 
 [^as-cflags]: But see this article for a detailed discussion of how
-  autosetup currently deals specifically with CFLAGS:
-  <https://msteveb.github.io/autosetup/articles/handling-cflags/>
+    autosetup currently deals specifically with CFLAGS:
+    <https://msteveb.github.io/autosetup/articles/handling-cflags/>
 
 
 <a name="updating"></a>
