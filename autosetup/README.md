@@ -10,6 +10,7 @@ build infrastructure. It is not an [Autosetup][] reference.
 - [Autosetup API Reference](#apiref)
 - [API Tips](#apitips)
 - [Ensuring TCL Compatibility](#tclcompat)
+- [Design Conventions](#conventions)
 - [Updating Autosetup](#updating)
 
 ------------------------------------------------------------------------
@@ -35,6 +36,7 @@ less, portable across projects (that file is re-used as-is in other
 projects) and all have a `proj-` name prefix. The latter is the main
 configure script driver and contains related functions which are
 specific to this tree.
+
 
 <a name="apitips"></a>
 Autosetup API Tips
@@ -69,7 +71,7 @@ In (mostly) alphabetical order:
 
 - **`proj-indented-notice ?-error? msg`**\  
   Breaks its `msg` argument into lines, trims them, and emits them
-  with consistent indentation. If the `-error` flag is used, it them
+  with consistent indentation. If the `-error` flag is used, it then
   exits with non-0. This will stick out starkly from normal output
   and is intended to be used only for important notices.
 
@@ -88,6 +90,15 @@ In (mostly) alphabetical order:
   Returns 1 if `$value` is "truthy," i.e. one of (1, on, enabled,
   yes).
 
+- **`sqlite-add-feature-flag ?-shell? FLAG...`**\  
+  Adds the given feature flag to the CFLAGS which are specific to building
+  the library. It's intended to be passed one or more `-DSQLITE_ENABLE_...`,
+  or similar, flags. If the `-shell` flag is used then it also passes
+  its arguments to `sqlite-add-shell-opt`. This is a no-op if `FLAG`
+  is not provided or is empty.
+
+- **`sqlite-add-shell-opt FLAG...`**\  
+  The shell-specific counterpart of `sqlite-add-feature-flag`.
 
 <a name="tclcompat"></a>
 Ensuring TCL Compatibility
@@ -106,8 +117,9 @@ By default, the configure script will search for an available `tclsh`
 compiling the copy of `jimsh0.c` included in the source tree.
 
 There are two simple ways to ensure that the configure process uses
-JimTCL instead of the canonical `tclsh`, and either approach ensures
-configure script compatibility:
+JimTCL instead of the canonical `tclsh`, and either approach provides
+equally high assurances about configure script compatibility across
+TCL implementations:
 
 1. Build on a system with no `tclsh` installed. In that case, the
    configure process will fall back to building the in-tree copy of
@@ -127,6 +139,74 @@ work. This means, for example, that the configure script and its
 utility APIs must not use `[file normalize]`, but autosetup provides a
 TCL implementation of `[file-normalize]` (note the dash) for portable
 use in the configure script.
+
+
+<a name="conventions"></a>
+Design Conventions
+========================================================================
+
+This section describes the motivations for the most glaring of the
+build's design decisions, in particular how they deviate from
+historical, or even widely-conventional, practices.
+
+Do Not Update Global Shared State
+------------------------------------------------------------------------
+
+In both the legacy Autotools-driven build and in common Autosetup
+usage, feature tests performed by the configure script may ammend
+values to global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`.
+That's appropriate for a makefile which builds a single deliverable,
+but less so for makefiles which produce multiple deliverables, as it's
+unlikely that every single deliverable will require the same core set
+of those flags.  In addition, that approach can make it difficult to
+determine the origin of any given change to those flags because those
+changes are hidden behind voodoo performed outside the immediate
+visibility of the configure script's maintainer. It can also force the
+maintainers of the configure script to place tests in a specific order
+so that the resulting flags get applied at the correct time.
+
+> A real-life example of the latter point: before the approach
+  described below was taken to collecting build-time flags, the test
+  for `-rflag` had to come _after_ the test for zlib because the
+  results of the `-rflag` test implicitly modified the `CFLAGS`,
+  breaking the zlib feature test. Because the feature tests no longer
+  (intentionally) modify global state, that is not an issue.
+
+Cases where feature tests modify global state in such a way that it
+may impact later feature tests are either (A) very intentionally
+defined to do so (e.g. the `--with-wasi-sdk` flag needs to modify the
+build tool chain) or (B) are oversights (i.e. bugs).
+
+This tree's configure script, utility APIs,
+[`Makefile.in`](/file/Makefile.in), and [`main.mk`](/file/main.mk)
+therefore strive to separate the results of any given feature test
+into its own well-defined variables. For example:
+
+- The linker flags for zlib are exported from the configure script as
+  `LDFLAGS_ZLIB`, which `Makefile.in` and `main.mk` then expose as
+  `LDFLAGS.zlib`.
+- `CFLAGS_READLINE` (a.k.a. `CFLAGS.readline`) contains the `CFLAGS`
+  needed for including `libreadline`, `libedit`, or `linenoise`, and
+  `LDFLAGS_READLINE` (a.k.a. `LDFLAGS.readline`) is its link-time
+  counterpart.
+
+It is then up to the Makefile to apply and order the flags however is
+appropriate.
+
+> Sidebar: the `X_Y` convention is used used on the configure-script
+  side because that process exports those flags as C `#define`s to
+  `sqlite_cfg.h`, where dots are not permitted.  The `X.y` convention
+  is used in the Makefile side primarily because the person who did
+  the initial port finds that easier on the eyes and fingers.
+
+At the end of the configure script, the global `CFLAGS` _ideally_
+holds only flags which are either relevant to all targets or, failing
+that, will have no unintended side-effects on any targets. That said:
+clients frequently pass custom `CFLAGS` to `./configure` or `make` to
+set library-level feature toggles, e.g. `-DSQLITE_OMIT_FOO`, in which
+case there is no practical way to avoid "polluting" the builds of
+arbitrary makefile targets with those. _C'est la vie._
+
 
 <a name="updating"></a>
 Updating Autosetup
@@ -158,7 +238,7 @@ configure process, and check it in.
 
 
 [Autosetup]: https://msteveb.github.io/autosetup/
-[auto.def]: ../auto.def?mimetype=text/plain
+[auto.def]: /file/auto.def
 [autosetup-git]: https://github.com/msteveb/autosetup
-[proj.tcl]: ./proj.tcl?mimetype=text/plain
+[proj.tcl]: /file/autosetup/proj.tcl
 [JimTCL]: https://jim.tcl.tk

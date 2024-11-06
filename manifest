@@ -1,5 +1,5 @@
-C Add\sautosetup/README.md\s-\smaintenance-related\sdocs\sfor\sSQLite\sdevelopers\s(e.g.\show\sto\supdate\sautosetup).\sStart\smarking\sup\sthe\sproj.tcl\sAPIs\swith\sautosetup's\sdoc\smarkup\sso\sthat\sthey\sappear\sin\sthe\s./configure\s--reference\soutput.
-D 2024-11-06T04:38:05.379
+C Add\sa\ssection\sto\sautosetup/README.md\sdescribing\sthe\smotivations\sfor\sthe\smore\sglaring\sdesign\sdecisions.
+D 2024-11-06T05:54:27.295
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md 94a117db60b2a8efbfed58e548809631f1941a8df9c3c6a356080771b772e31c
+F autosetup/README.md 1dfdbe705c95400a722f0a012b6780ad2c7f12948d15cbdcbf95e030b46c4824
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -699,7 +699,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ef087df40894cf2c024ec5f4d763853616c9616b073fb86b71146f11fa003af3
+F main.mk 949721d1f7400fd9f2c9a8818d66eed7b4c5937c9fd2635f8364755858ddcc78
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9724b747caa926bca09653ea6ac3c0f7869824c9a476eb81f03e1a6763552da1
-R 22b44d94fb3a53e904cadda0982c176f
+P aa6213767f0d7e63c753e33aadb95cbeb8e522c22f2fe1bbfa4df66bea6e3380
+R 31c89bc32b0e171b0e74463a095b8565
 U stephan
-Z e3f63aefb44fb343dd26a948d9892eb7
+Z 316096fa02be870ff4dfd5f1350db8c8
 # Remove this line to create a well-formed Fossil manifest.

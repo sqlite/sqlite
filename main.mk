@@ -165,8 +165,8 @@ LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 LDFLAGS.soname.libsqlite3 ?=
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
-LDFLAGS.readline ?= -lreadline # these vary wildly across platforms
-CFLAGS.readline ?= -I$(prefix)/include/readline
+LDFLAGS.readline ?= -lreadline # these vary across platforms
+CFLAGS.readline ?= -I$(prefix)/include
 # ^^^ When using linenoise instead of readline, do something like:
 # SHELL_OPT += -DHAVE_LINENOISE=1
 # CFLAGS.readline = -I$(HOME)/linenoise $(HOME)/linenoise/linenoise.c
