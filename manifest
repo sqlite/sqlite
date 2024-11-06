@@ -1,5 +1,5 @@
-C Minor\sdoc\stweaks\sand\stypo\sfixes.
-D 2024-11-06T06:44:35.358
+C When\sconstructing\sthe\sauto-reconfigure\scommands,\sonly\squote\sargs\swhich\slook\slike\sthey\sneed\sit.\sMinor\sdoc\supdates.
+D 2024-11-06T07:20:20.567
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 062b05538bc09779962a5265125aa289152f6abbb1ebaded9b22e8969b151d75
+F auto.def 05eedbf203a070fc84d9d26071f7ddf2a30f2118ab0204db46e91dbfec8a50b8
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md bec9faf93df0451c7fc98f2af21770886841640565d027dd07f2f96c60651a7b
+F autosetup/README.md e6a686c3959fc565f9310f10f0d038440b1715591b6a90fc594160e8c361a5b6
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bf42b93cc7a4f8de2308fa4e5a798a62797bc95d95e4b0bd06035c74413fa828
-R 17278f4a0cd6af5e62ab09d724fcee60
+P 406d9122b75990722ab79fdf42d4528d670645d8f778ca0b5a2a35fa1dc106c4
+R d119d74839c372da88adc458ca3c56bf
 U stephan
-Z de533e530a0ec603057ff86b4723ff1a
+Z 3e647edf4dd8fa5473ff129830ab4868
 # Remove this line to create a well-formed Fossil manifest.

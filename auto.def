@@ -1,4 +1,4 @@
-#/usr/bin/tclsh
+#/do/not/tclsh
 # ^^^ help out editors which guess this file's content type.
 #
 # This is the main autosetup-compatible configure script for the
@@ -227,15 +227,25 @@ msg-result "Source dir = $srcdir"
 msg-result "Build dir  = $::autosetup(builddir)"
 msg-result "Configuring SQLite version $PACKAGE_VERSION"
 
-#
-# SQLITE_AUTORECONFIG contains make target rules for re-running the
-# configure script with the same arguments it was initially invoked
-# with. This can be used to automatically reconfigure
-#
-define-append SQLITE_AUTORECONFIG cd '$::autosetup(builddir)' && '$srcdir/configure'
-#{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
-foreach arg $::autosetup(argv) {
-  define-append SQLITE_AUTORECONFIG '$arg'
+if {1} {
+  #
+  # SQLITE_AUTORECONFIG contains make target rules for re-running the
+  # configure script with the same arguments it was initially invoked
+  # with. This can be used to automatically reconfigure
+  #
+  proc squote {arg} {
+    # Wrap $arg in single-quotes if it looks like it might need that
+    # to avoid mis-handling as a shell argument. We assume that $arg
+    # will never contain any single-quote characters.
+    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
+    return $arg
+  }
+  define-append SQLITE_AUTORECONFIG cd [squote $::autosetup(builddir)] && [squote $srcdir/configure]
+  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
+  foreach arg $::autosetup(argv) {
+    define-append SQLITE_AUTORECONFIG [squote $arg]
+  }
+  rename squote ""
 }
 
 # Are we cross-compiling?

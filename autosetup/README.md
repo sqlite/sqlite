@@ -161,7 +161,7 @@ e.g. `CFLAGS` and `y` is the specific instance of that category,
 e.g. `CFLAGS.readline`.
 
 When the configure script exports flags for consumption by filtered
-files, e.g. [`Makefile.in`](/file/Makefile.in) and the generated
+files, e.g. [Makefile.in][] and the generated
 `sqlite_cfg.h`, it does so in the more conventional `X_Y` form because
 those flags get exported as as C `#define`s to `sqlite_cfg.h`, where
 dots are not permitted.
@@ -169,9 +169,8 @@ dots are not permitted.
 The `X.y` convention is used in the makefiles primarily because the
 person who did the initial port finds that considerably easier on the
 eyes and fingers. In practice, the `X_Y` form of such exports is used
-exactly once in `Makefile.in`, where it's translated into into `X.y`
-form for consumption by `Makefile.in` and
-[`main.mk`](/file/main.mk). For example:
+exactly once in [Makefile.in][], where it's translated into into `X.y`
+form for consumption by [Makefile.in][] and [main.mk][]. For example:
 
 >
 ```
@@ -185,37 +184,40 @@ Do Not Update Global Shared State
 ------------------------------------------------------------------------
 
 In both the legacy Autotools-driven build and in common Autosetup
-usage, feature tests performed by the configure script may ammend
-values to global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`.
-That's appropriate for a makefile which builds a single deliverable,
-but less so for makefiles which produce multiple deliverables, as it's
-unlikely that every single deliverable will require the same core set
-of those flags.  In addition, that approach can make it difficult to
-determine the origin of any given change to those flags because those
-changes are hidden behind voodoo performed outside the immediate
-visibility of the configure script's maintainer. It can also force the
-maintainers of the configure script to place tests in a specific order
-so that the resulting flags get applied at the correct time.
+usage, feature tests performed by the configure script may amend
+global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`.  That's
+appropriate for a makefile which builds a single deliverable, less
+so for makefiles which produce multiple deliverables. Drawbacks
+of that approach include:
 
-> A real-life example of the latter point: before the approach
-  described below was taken to collecting build-time flags, the test
-  for `-rpath` had to come _after_ the test for zlib because the
-  results of the `-rpath` test implicitly modified the `CFLAGS`,
-  breaking the zlib feature test. Because the feature tests no longer
-  (intentionally) modify global state, that is not an issue.
+- It's unlikely that every single deliverable will require the same
+  core set of those flags.
+- It can be difficult to determine the origin of any given change to
+  that global state because those changes are hidden behind voodoo performed
+  outside the immediate visibility of the configure script's
+  maintainer.
+- It can force the maintainers of the configure script to place tests
+  in a specific order so that the resulting flags get applied at
+  the correct time.\  
+  (A real-life example: before the approach described below was taken
+  to collecting build-time flags, the test for `-rpath` had to come
+  _after_ the test for zlib because the results of the `-rpath` test
+  implicitly modified the `CFLAGS`, breaking the zlib feature
+  test. Because the feature tests no longer (intentionally) modify
+  global state, that is not an issue.)
 
-Cases where feature tests modify global state in such a way that it
-may impact later feature tests are either (A) very intentionally
-defined to do so (e.g. the `--with-wasi-sdk` flag needs to modify the
-build tool chain) or (B) are oversights (i.e. bugs).
+In this build, cases where feature tests modify global state in such a
+way that it may impact later feature tests are either (A) very
+intentionally defined to do so (e.g. the `--with-wasi-sdk` has
+invasive side-effects) or (B) are oversights (i.e. bugs).
 
-This tree's configure script, utility APIs,
-[`Makefile.in`](/file/Makefile.in), and [`main.mk`](/file/main.mk)
-therefore strive to separate the results of any given feature test
-into its own well-defined variables. For example:
+This tree's [configure script][auto.def], [utility APIs][proj.tcl],
+[Makefile.in][], and [main.mk][] therefore strive to separate the
+results of any given feature test into its own well-defined
+variables. For example:
 
 - The linker flags for zlib are exported from the configure script as
-  `LDFLAGS_ZLIB`, which `Makefile.in` and `main.mk` then expose as
+  `LDFLAGS_ZLIB`, which [Makefile.in][] and [main.mk][] then expose as
   `LDFLAGS.zlib`.
 - `CFLAGS_READLINE` (a.k.a. `CFLAGS.readline`) contains the `CFLAGS`
   needed for including `libreadline`, `libedit`, or `linenoise`, and
@@ -267,4 +269,6 @@ configure process, and check it in.
 [auto.def]: /file/auto.def
 [autosetup-git]: https://github.com/msteveb/autosetup
 [proj.tcl]: /file/autosetup/proj.tcl
+[Makefile.in]: /file/Makefile.in
+[main.mk]: /file/main.mk
 [JimTCL]: https://jim.tcl.tk
