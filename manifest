@@ -1,5 +1,5 @@
-C Add\sa\ssection\sto\sautosetup/README.md\sdescribing\sthe\smotivations\sfor\sthe\smore\sglaring\sdesign\sdecisions.
-D 2024-11-06T05:54:27.295
+C Split\sthe\smotivation\sof\sthe\smakefile\svar\snaming\sconvention\sinto\sits\sdoc\sown\ssection.
+D 2024-11-06T06:06:43.692
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md 1dfdbe705c95400a722f0a012b6780ad2c7f12948d15cbdcbf95e030b46c4824
+F autosetup/README.md 3e2d2e0897a77891586d58b09a5d6a195531d276ebcb015d0a282445ce657a8d
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa6213767f0d7e63c753e33aadb95cbeb8e522c22f2fe1bbfa4df66bea6e3380
-R 31c89bc32b0e171b0e74463a095b8565
+P c0940a822a63bff74585bd37401eca92f74ddf9fe95748d2474039ee9b2bd9b6
+R cacb6cd838f2b39823094500120f81fe
 U stephan
-Z 316096fa02be870ff4dfd5f1350db8c8
+Z 0c92d49380ea6a167e75c10d69c8359c
 # Remove this line to create a well-formed Fossil manifest.

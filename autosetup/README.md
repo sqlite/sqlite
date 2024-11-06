@@ -11,6 +11,8 @@ build infrastructure. It is not an [Autosetup][] reference.
 - [API Tips](#apitips)
 - [Ensuring TCL Compatibility](#tclcompat)
 - [Design Conventions](#conventions)
+  - Symbolic Names of Feature Flags
+  - Do Not Update Global Shared State
 - [Updating Autosetup](#updating)
 
 ------------------------------------------------------------------------
@@ -149,6 +151,36 @@ This section describes the motivations for the most glaring of the
 build's design decisions, in particular how they deviate from
 historical, or even widely-conventional, practices.
 
+Symbolic Names of Feature Flags
+------------------------------------------------------------------------
+
+Historically, the project's makefile has exclusively used
+`UPPER_UNDERSCORE` form for makefile variables. This build, however,
+primarily uses `X.y` format, where `X` is often a category label,
+e.g. `CFLAGS` and `y` is the specific instance of that category,
+e.g. `CFLAGS.readline`.
+
+When the configure script exports flags for consumption by filtered
+files, e.g. [`Makefile.in`](/file/Makefile.in) and the generated
+`sqlite_cfg.h`, it does so in the more conventional `X_Y` form because
+those flags get exported as as C `#define`s to `sqlite_cfg.h`, where
+dots are not permitted.
+
+The `X.y` convention is used in the makefiles primarily because the
+person who did the initial port finds that considerably easier on the
+eyes and fingers. In practice, the `X_Y` form of such exports is used
+exactly once in `Makefile.in`, where it's translated into into `X.y`
+form for consumption by `Makefile.in` and
+[`main.mk`](/file/main.mk). For example:
+
+>
+```
+LDFLAGS.shobj = @SHOBJ_LDFLAGS@
+LDFLAGS.zlib = @LDFLAGS_ZLIB@
+LDFLAGS.math = @LDFLAGS_MATH@
+```
+
+
 Do Not Update Global Shared State
 ------------------------------------------------------------------------
 
@@ -192,12 +224,6 @@ into its own well-defined variables. For example:
 
 It is then up to the Makefile to apply and order the flags however is
 appropriate.
-
-> Sidebar: the `X_Y` convention is used used on the configure-script
-  side because that process exports those flags as C `#define`s to
-  `sqlite_cfg.h`, where dots are not permitted.  The `X.y` convention
-  is used in the Makefile side primarily because the person who did
-  the initial port finds that easier on the eyes and fingers.
 
 At the end of the configure script, the global `CFLAGS` _ideally_
 holds only flags which are either relevant to all targets or, failing
