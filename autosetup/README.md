@@ -74,8 +74,8 @@ In (mostly) alphabetical order:
 - **`proj-indented-notice ?-error? msg`**\  
   Breaks its `msg` argument into lines, trims them, and emits them
   with consistent indentation. If the `-error` flag is used, it then
-  exits with non-0. This will stick out starkly from normal output
-  and is intended to be used only for important notices.
+  exits with a non-0 result code. This will stick out starkly from
+  normal output and is intended to be used only for important notices.
 
 - **`proj-opt-truthy flag`**\  
   Returns 1 if `--flag`'s value is "truthy," i.e. one of (1, on,
@@ -179,16 +179,20 @@ LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@
 ```
 
+(That first one is defined by autosetup, and thus applies "LDFLAGS" as
+the suffix rather than the prefix. Which is more legible is a matter
+of taste, for which there is no accounting.)
+
 
 Do Not Update Global Shared State
 ------------------------------------------------------------------------
 
 In both the legacy Autotools-driven build and in common Autosetup
 usage, feature tests performed by the configure script may amend
-global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`.  That's
-appropriate for a makefile which builds a single deliverable, less
-so for makefiles which produce multiple deliverables. Drawbacks
-of that approach include:
+global flags such as `CFLAGS`, `LDFLAGS`, and `LIBS`[^as-cflags].  That's
+appropriate for a makefile which builds a single deliverable, but less
+so for makefiles which produce multiple deliverables. Drawbacks of
+that approach include:
 
 - It's unlikely that every single deliverable will require the same
   core set of those flags.
@@ -198,11 +202,11 @@ of that approach include:
   maintainer.
 - It can force the maintainers of the configure script to place tests
   in a specific order so that the resulting flags get applied at
-  the correct time.\  
+  the correct time and/or in the correct order.\  
   (A real-life example: before the approach described below was taken
   to collecting build-time flags, the test for `-rpath` had to come
   _after_ the test for zlib because the results of the `-rpath` test
-  implicitly modified the `CFLAGS`, breaking the zlib feature
+  implicitly modified global state which broke the zlib feature
   test. Because the feature tests no longer (intentionally) modify
   global state, that is not an issue.)
 
@@ -234,6 +238,11 @@ clients frequently pass custom `CFLAGS` to `./configure` or `make` to
 set library-level feature toggles, e.g. `-DSQLITE_OMIT_FOO`, in which
 case there is no practical way to avoid "polluting" the builds of
 arbitrary makefile targets with those. _C'est la vie._
+
+
+[^as-cflags]: But see this article for a detailed discussion of how
+  autosetup currently deals specifically with CFLAGS:
+  <https://msteveb.github.io/autosetup/articles/handling-cflags/>
 
 
 <a name="updating"></a>
