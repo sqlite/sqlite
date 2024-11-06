@@ -1,5 +1,5 @@
-C Elaborate\son\show\sautosetup\sselects\sa\stclsh\sto\suse.
-D 2024-11-06T12:13:04.398
+C Re-phrase\ssome\s(#if\s!SQLITE_CORE)\sto\s(#ifndef\sSQLITE_CORE),\sas\sdiscussed\sin\sforum:cea40371c5e34b09\s|\sfor\spost\scea40371c5e34b09].
+D 2024-11-06T12:58:31.469
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -272,7 +272,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 135b9e160f8e10211c10c5873d5e8c3eaebd3da9ec56a12ae4db157d4738ffe4
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
-F ext/icu/icu.c 3add8197e0a86c1761771a39500ebae749438bcf1836160b407a56b4eaa8721c
+F ext/icu/icu.c 9837f4611915baad1edbe38222f3ee7d1b5e118ab16fec9ba603720f72c78b2a
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test f3a3cba14b6aeff145ffa5515546dd22f7510dad91512e519f43b92b56514012
 F ext/intck/intck2.test d2457c7e5e5b688046d15ebe08a1e1427cc5e7a6dc8d6af215f42e8bcaf67304
@@ -536,7 +536,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c b6133dba5ae331fa6c1fc34df6aa623eba951b05ac35116f954a0bf7ab550436
+F ext/rtree/rtree.c e002d8c58bf128d812db662ecc72b61c00ff14408ec807e103d5312a6d29817a
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2200,8 +2200,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0588cc5c2fad980aa67402f4fe959a499d711ff23903a521af1b1abc4586c802
-R 38a47456c93afcec3fbbb28bb999fc81
+P d3887895a33742fb1fc97235cf897d295b237a9fb5a84031826f9c1018106f18 cd82e4c0f5f8ff16468b909d84dd5545c0456f624db61a4d112467a7cafed2fc
+R 2ce6f48a525cff0a5e55030616b254d4
+T +closed cd82e4c0f5f8ff16468b909d84dd5545c0456f624db61a4d112467a7cafed2fc Closed\sby\sintegrate-merge.
 U stephan
-Z 0201db4089d5c5c84f67e4e19c93d1c5
+Z 49b3cdd634f6b6d641022069d2594f18
 # Remove this line to create a well-formed Fossil manifest.
