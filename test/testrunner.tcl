@@ -547,12 +547,15 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set line "Running: $S(running) (max: $nJob)"
-  if {$S(running)>0 && $fin>10 && [string length $line]<69} {
+  if {$S(running)>0 && $fin>10} {
     set tmleft [expr {($tm/$fin)*($totalw-$fin)}]
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
     }
-    append line " ETC [elapsetime $tmleft]"
+    set etc " ETC [elapsetime $tmleft]"
+    if {[string length $line]+[string length $etc]<80} {
+      append line $etc
+    }
   }
   puts [format %-79.79s $line]
   if {$S(running)>0} {
@@ -1369,10 +1372,7 @@ proc script_input_ready {fd iJob jobid} {
     set state "done"
     set rc [catch { close $fd } msg]
     if {$rc} { 
-      if {[info exists TRG(reportlength)]} {
-        puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-      }
-      puts "FAILED: $job(displayname) ($iJob)"
+      puts [format %-79.79s "FAILED: $job(displayname) ($iJob)"]
       set state "failed" 
       if {$TRG(stopOnError)} {
         puts "OUTPUT: $O($iJob)"
@@ -1523,22 +1523,16 @@ proc progress_report {} {
         lappend text "r$v(running,$j)"
       }
     }
+    set report "[elapsetime $tmms] [join $text { }]"
     if {$wdone>0} {
       set tmleft [expr {($tmms/$wdone)*($wtotal-$wdone)}]
-      append text " ETC [elapsetime $tmleft]"
+      set etc " ETC [elapsetime $tmleft]"
+      if {[string length $report]+[string length $etc]<80} {
+        append report $etc
+      }
     }
-  
-    if {[info exists TRG(reportlength)]} {
-      puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-    }
-    set report "[elapsetime $tmms] [join $text { }]"
-    set TRG(reportlength) [string length $report]
-    if {[string length $report]<100} {
-      puts -nonewline "$report\r"
-      flush stdout
-    } else {
-      puts $report
-    }
+    puts -nonewline [format %-79.79s $report]\r
+    flush stdout
   }
   after $TRG(reporttime) progress_report
 }

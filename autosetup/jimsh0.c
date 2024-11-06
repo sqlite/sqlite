@@ -1293,8 +1293,14 @@ int Jim_initjimshInit(Jim_Interp *interp)
 "		if {[string match \"*/*\" $jim::argv0]} {\n"
 "			set jim::exe [file join [pwd] $jim::argv0]\n"
 "		} else {\n"
-"			foreach path [split [env PATH \"\"] $tcl_platform(pathSeparator)] {\n"
-"				set exec [file join [pwd] [string map {\\\\ /} $path] $jim::argv0]\n"
+"			set jim::argv0 [file tail $jim::argv0]\n"
+"			set path [split [env PATH \"\"] $tcl_platform(pathSeparator)]\n"
+"			if {$tcl_platform(platform) eq \"windows\"} {\n"
+"\n"
+"				set path [lmap p [list \"\" {*}$path] { string map {\\\\ /} $p }]\n"
+"			}\n"
+"			foreach p $path {\n"
+"				set exec [file join [pwd] $p $jim::argv0]\n"
 "				if {[file executable $exec]} {\n"
 "					set jim::exe $exec\n"
 "					break\n"
@@ -19286,7 +19292,7 @@ static int Jim_StringCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
         JIM_DEF_SUBCMD("trim", "string ?trimchars?", 1, 2),
         JIM_DEF_SUBCMD("trimleft", "string ?trimchars?", 1, 2),
         JIM_DEF_SUBCMD("trimright", "string ?trimchars?", 1, 2),
-        { }
+        { NULL }
     };
     const jim_subcmd_type *ct = Jim_ParseSubCmd(interp, cmds, argc, argv);
     if (!ct) {
@@ -20179,7 +20185,7 @@ static int Jim_DictCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         JIM_DEF_SUBCMD("for", "vars dictionary script", 3, 3),
         JIM_DEF_SUBCMD("replace", "dictionary ?key value ...?", 1, -1),
         JIM_DEF_SUBCMD("update", "varName ?arg ...? script", 2, -1),
-        { }
+        { NULL }
     };
     const jim_subcmd_type *ct = Jim_ParseSubCmd(interp, cmds, argc, argv);
     if (!ct) {
@@ -20388,7 +20394,7 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         JIM_DEF_SUBCMD("statics", "procname", 1, 1),
         JIM_DEF_SUBCMD("vars", "?pattern?", 0, 1),
         JIM_DEF_SUBCMD("version", NULL, 0, 0),
-        { }
+        { NULL }
     };
     const jim_subcmd_type *ct;
 #ifdef jim_ext_namespace

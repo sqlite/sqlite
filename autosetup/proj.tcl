@@ -47,15 +47,26 @@
 # updating global state via feature tests.
 ########################################################################
 
+# ----- @module proj.tcl -----
+# @section Project Helper APIs
+
 ########################################################################
 # $proj_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set proj_ {}
 set proj_(isatty) [isatty? stdout]
 
+########################################################################
+# @proj-warn msg
+#
+# Emits a warning message to stderr.
 proc proj-warn {msg} {
   puts stderr [proj-bold "WARNING: $msg"]
 }
+########################################################################
+# @proj-error msg
+#
+# Emits an error message to stderr and exits with non-0.
 proc proj-fatal {msg} {
   show-notices
   puts stderr [proj-bold "ERROR: $msg"]
@@ -63,6 +74,8 @@ proc proj-fatal {msg} {
 }
 
 ########################################################################
+# @proj-assert script
+#
 # Kind of like a C assert if uplevel (eval) of $script is false,
 # triggers a fatal error.
 proc proj-assert {script} {
@@ -75,6 +88,8 @@ proc proj-assert {script} {
 }
 
 ########################################################################
+# @proj-bold str
+#
 # If this function believes that the current console might support
 # ANSI escape sequences then this returns $str wrapped in a sequence
 # to bold that text, else it returns $str as-is.
@@ -86,6 +101,8 @@ proc proj-bold {str} {
 }
 
 ########################################################################
+# @proj-indented-notice ?-error? msg
+#
 # Takes a multi-line message and emits it with consistent indentation
 # using [user-notice] (which means its rendering will (A) go to stderr
 # and (B) be delayed until the next time autosetup goes to output a
@@ -109,6 +126,8 @@ proc proj-indented-notice {args} {
 }
 
 ########################################################################
+# @proj-is-cross-compiling
+#
 # Returns 1 if cross-compiling, else 0.
 proc proj-is-cross-compiling {} {
   return [expr {[get-define host] ne [get-define build]}]
@@ -150,9 +169,12 @@ proc proj-strip-hash-comments_ {val} {
 }
 
 ########################################################################
-# A proxy for cc-check-function-in-lib which "undoes" any changes that
-# routine makes to the LIBS define. Returns the result of
-# cc-check-function-in-lib.
+# @proj-check-function-in-lib
+#
+# A proxy for cc-check-function-in-lib which does not make any global
+# changes to the LIBS define. Returns the result of
+# cc-check-function-in-lib (i.e. true or false).  The resulting linker
+# flags are stored in ${lib_${function}}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
   define-push {LIBS} {
@@ -162,6 +184,8 @@ proc proj-check-function-in-lib {function libs {otherlibs {}}} {
 }
 
 ########################################################################
+# @proj-search-for-header-dir ?-dirs LIST? ?-subdirs LIST? header
+#
 # Searches for $header in a combination of dirs and subdirs, specified
 # by the -dirs {LIST} and -subdirs {LIST} flags (each of which have
 # sane defaults). Returns either the first matching dir or an empty
@@ -193,7 +217,7 @@ proc proj-search-for-header-dir {header args} {
 }
 
 ########################################################################
-# Usage: proj-find-executable-path ?-v? binaryName
+# @proj-find-executable-path ?-v? binaryName
 #
 # Works similarly to autosetup's [find-executable-path $binName] but:
 #
@@ -220,6 +244,8 @@ proc proj-find-executable-path {args} {
 }
 
 ########################################################################
+# @proj-bin-define binName ?defName?
+#
 # Uses [proj-find-executable-path $binName] to (verbosely) search for
 # a binary, sets a define (see below) to the result, and returns the
 # result (an empty string if not found).
@@ -237,7 +263,7 @@ proc proj-bin-define {binName {defName {}}} {
 }
 
 ########################################################################
-# Usage: proj-first-bin-of bin...
+# @proj-first-bin-of bin...
 #
 # Looks for the first binary found of the names passed to this
 # function.  If a match is found, the full path to that binary is
@@ -262,6 +288,8 @@ proc proj-first-bin-of {args} {
 }
 
 ########################################################################
+# @proj-opt-was-provided key
+#
 # Returns 1 if the user specifically provided the given configure
 # flag, else 0. This can be used to distinguish between options which
 # have a default value and those which were explicitly provided by the
@@ -281,6 +309,8 @@ proc proj-opt-was-provided {key} {
 }
 
 ########################################################################
+# @proj-opt-set flag ?val?
+#
 # Force-set autosetup option $flag to $val. The value can be fetched
 # later with [opt-val], [opt-bool], and friends.
 #
@@ -297,6 +327,8 @@ proc proj-opt-set {flag {val 1}} {
 }
 
 ########################################################################
+# @proj-val-truthy val
+#
 # Returns 1 if $val appears to be a truthy value, else returns
 # 0. Truthy values are any of {1 on enabled yes}
 proc proj-val-truthy {val} {
@@ -304,6 +336,8 @@ proc proj-val-truthy {val} {
 }
 
 ########################################################################
+# @proj-opt-truthy flag
+#
 # Returns 1 if [opt-val $flag] appears to be a truthy value or
 # [opt-bool $flag] is true. See proj-val-truthy.
 proc proj-opt-truthy {flag} {
@@ -317,6 +351,8 @@ proc proj-opt-truthy {flag} {
 }
 
 ########################################################################
+# @proj-if-opt-truthy boolFlag thenScript ?elseScript?
+#
 # If [proj-opt-truthy $flag] is true, eval $then, else eval $else.
 proc proj-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
   if {[proj-opt-truthy $boolFlag]} {
@@ -327,6 +363,8 @@ proc proj-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
 }
 
 ########################################################################
+# @proj-define-if-opt-truthy flag def ?msg? ?iftrue? ?iffalse?
+#
 # If [proj-opt-truthy $flag] then [define $def $iftrue] else [define
 # $def $iffalse]. If $msg is not empty, output [msg-checking $msg] and
 # a [msg-results ...] which corresponds to the result. Returns 1 if
@@ -354,7 +392,7 @@ proc proj-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 }
 
 ########################################################################
-# Args: [-v] optName defName {descr {}}
+# @proj-opt-define-bool ?-v? optName defName ?descr?
 #
 # Checks [proj-opt-truthy $optName] and calls [define $defName X]
 # where X is 0 for false and 1 for true. descr is an optional
@@ -392,6 +430,8 @@ proc proj-opt-define-bool {args} {
 }
 
 ########################################################################
+# @proj-check-module-loader
+#
 # Check for module-loading APIs (libdl/libltdl)...
 #
 # Looks for libltdl or dlopen(), the latter either in -ldl or built in
@@ -455,6 +495,8 @@ proc proj-check-module-loader {} {
 }
 
 ########################################################################
+# @proj-no-check-module-loader
+#
 # Sets all flags which would be set by proj-check-module-loader to
 # empty/falsy values, as if those checks had failed to find a module
 # loader. Intended to be called in place of that function when
@@ -466,6 +508,8 @@ proc proj-no-check-module-loader {} {
 }
 
 ########################################################################
+# @proj-file-conent ?-trim? filename
+#
 # Opens the given file, reads all of its content, and returns it.  If
 # the first arg is -trim, the contents of the file named by the second
 # argument are trimmed before returning them.
@@ -484,6 +528,8 @@ proc proj-file-content {args} {
 }
 
 ########################################################################
+# @proj-file-conent filename
+#
 # Returns the contents of the given file as an array of lines, with
 # the EOL stripped from each input line.
 proc proj-file-content-list {fname} {
@@ -497,6 +543,8 @@ proc proj-file-content-list {fname} {
 }
 
 ########################################################################
+# @proj-check-compile-commands ?configFlag?
+#
 # Checks the compiler for compile_commands.json support. If passed an
 # argument it is assumed to be the name of an autosetup boolean config
 # which controls whether to run/skip this check.
@@ -506,9 +554,9 @@ proc proj-file-content-list {fname} {
 #
 # This test has a long history of false positive results because of
 # compilers reacting differently to the -MJ flag.
-proc proj-check-compile-commands {{configOpt {}}} {
+proc proj-check-compile-commands {{configFlag {}}} {
   msg-checking "compile_commands.json support... "
-  if {"" ne $configOpt && ![proj-opt-truthy $configOpt]} {
+  if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
     msg-result "explicitly disabled"
     define MAKE_COMPILATION_DB no
     return 0
@@ -529,15 +577,15 @@ proc proj-check-compile-commands {{configOpt {}}} {
 }
 
 ########################################################################
+# @proj-touch filename
+#
 # Runs the 'touch' command on one or more files, ignoring any errors.
 proc proj-touch {filename} {
   catch { exec touch {*}$filename }
 }
 
 ########################################################################
-# Usage:
-#
-#   proj-make-from-dot-in ?-touch? filename(s)...
+# @proj-make-from-dot-in ?-touch? filename...
 #
 # Uses [make-template] to create makefile(-like) file(s) $filename
 # from $filename.in but explicitly makes the output read-only, to
@@ -569,6 +617,8 @@ proc proj-make-from-dot-in {args} {
 }
 
 ########################################################################
+# @proj-check-profile-flag ?flagname?
+#
 # Checks for the boolean configure option named by $flagname. If set,
 # it checks if $CC seems to refer to gcc. If it does (or appears to)
 # then it defines CC_PROFILE_FLAG to "-pg" and returns 1, else it
@@ -599,6 +649,8 @@ proc proj-check-profile-flag {{flagname profile}} {
 }
 
 ########################################################################
+# @proj-looks-like-windows ?key?
+#
 # Returns 1 if this appears to be a Windows environment (MinGw,
 # Cygwin, MSys), else returns 0. The optional argument is the name of
 # an autosetup define which contains platform name info, defaulting to
@@ -610,7 +662,7 @@ proc proj-check-profile-flag {{flagname profile}} {
 proc proj-looks-like-windows {{key host}} {
   global autosetup
   switch -glob -- [get-define $key] {
-    *-*-ming* - *-*-cygwin - *-*-msys {
+    *-*-ming* - *-*-cygwin - *-*-msys - *windows* {
       return 1
     }
   }
@@ -626,13 +678,12 @@ proc proj-looks-like-windows {{key host}} {
 }
 
 ########################################################################
+# @proj-looks-like-mac ?key?
+#
 # Looks at either the 'host' (==compilation target platform) or
 # 'build' (==the being-built-on platform) define value and returns if
 # if that value seems to indicate that it represents a Mac platform,
 # else returns 0.
-#
-# TODO: have someone verify whether this is correct for the
-# non-Linux/BSD platforms.
 proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
     *apple* {
@@ -645,6 +696,8 @@ proc proj-looks-like-mac {{key host}} {
 }
 
 ########################################################################
+# @proj-exe-extension
+#
 # Checks autosetup's "host" and "build" defines to see if the build
 # host and target are Windows-esque (Cygwin, MinGW, MSys). If the
 # build environment is then BUILD_EXEEXT is [define]'d to ".exe", else
@@ -664,14 +717,13 @@ proc proj-exe-extension {} {
 }
 
 ########################################################################
+# @proj-dll-extension
+#
 # Works like proj-exe-extension except that it defines BUILD_DLLEXT
 # and TARGET_DLLEXT to one of (.so, ,dll, .dylib).
 #
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
 # instead of -shared.
-#
-# TODO: have someone verify whether this is correct for the
-# non-Linux/BSD platforms.
 proc proj-dll-extension {} {
   proc inner {key} {
     switch -glob -- [get-define $key] {
@@ -691,6 +743,8 @@ proc proj-dll-extension {} {
 }
 
 ########################################################################
+# @proj-lib-extension
+#
 # Static-library counterpart of proj-dll-extension. Defines
 # BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
 # extension for the being-built-on resp. the target platform.
@@ -710,6 +764,8 @@ proc proj-lib-extension {} {
 }
 
 ########################################################################
+# @proj-file-extensions
+#
 # Calls all of the proj-*-extension functions.
 proc proj-file-extensions {} {
   proj-exe-extension
@@ -718,6 +774,8 @@ proc proj-file-extensions {} {
 }
 
 ########################################################################
+# @proj-affirm-files-exist ?-v? filename...
+#
 # Expects a list of file names. If any one of them does not exist in
 # the filesystem, it fails fatally with an informative message.
 # Returns the last file name it checks. If the first argument is -v
@@ -741,32 +799,46 @@ proc proj-affirm-files-exist {args} {
 }
 
 ########################################################################
+# @proj-check-emsdk
+#
 # Emscripten is used for doing in-tree builds of web-based WASM stuff,
 # as opposed to WASI-based WASM or WASM binaries we import from other
 # places. This is only set up for Unix-style OSes and is untested
-# anywhere but Linux.
+# anywhere but Linux. Requires that the --with-emsdk flag be
+# registered with autosetup.
+#
+# It looks for the SDK in the location specified by --with-emsdk.
+# Values of "" or "auto" mean to check for the environment var EMSDK
+# (which gets set by the emsdk_env.sh script from the SDK) or that
+# same var passed to configure.
+#
+# If the given directory is found, it expects to find emsdk_env.sh in
+# that directory, as well as the emcc compiler somewhere under there.
+#
+# If the --with-emsdk flag is explicitly provided and the SDK is not
+# found then a fatal error is generated, otherwise failure to find the
+# SDK is not fatal.
 #
 # Defines the following:
 #
-# - EMSDK_HOME = top dir of the emsdk or "". It looks for
-#   --with-emsdk=DIR or the $EMSDK environment variable.
-# - EMSDK_ENV = path to EMSDK_HOME/emsdk_env.sh or ""
+# - EMSDK_HOME = top dir of the emsdk or "".
+# - EMSDK_ENV_SH = path to EMSDK_HOME/emsdk_env.sh or ""
 # - BIN_EMCC = $EMSDK_HOME/upstream/emscripten/emcc or ""
 # - HAVE_EMSDK = 0 or 1 (this function's return value)
 #
-# Returns 1 if EMSDK_ENV is found, else 0.  If EMSDK_HOME is not empty
+# Returns 1 if EMSDK_ENV_SH is found, else 0.  If EMSDK_HOME is not empty
 # but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
-# case we have to rely on the fact that sourcing $EMSDK_ENV from a
+# case we have to rely on the fact that sourcing $EMSDK_ENV_SH from a
 # shell will add emcc to the $PATH.
 proc proj-check-emsdk {} {
   set emsdkHome [opt-val with-emsdk]
   define EMSDK_HOME ""
-  define EMSDK_ENV ""
+  define EMSDK_ENV_SH ""
   define BIN_EMCC ""
+  set hadValue [llength $emsdkHome]
   msg-checking "Emscripten SDK? "
-  if {$emsdkHome eq ""} {
-    # Fall back to checking the environment. $EMSDK gets set by
-    # sourcing emsdk_env.sh.
+  if {$emsdkHome in {"" "auto"}} {
+    # Check the environment. $EMSDK gets set by sourcing emsdk_env.sh.
     set emsdkHome [get-env EMSDK ""]
   }
   set rc 0
@@ -775,7 +847,7 @@ proc proj-check-emsdk {} {
     set emsdkEnv "$emsdkHome/emsdk_env.sh"
     if {[file exists $emsdkEnv]} {
       msg-result "$emsdkHome"
-      define EMSDK_ENV $emsdkEnv
+      define EMSDK_ENV_SH $emsdkEnv
       set rc 1
       set emcc "$emsdkHome/upstream/emscripten/emcc"
       if {[file exists $emcc]} {
@@ -787,21 +859,37 @@ proc proj-check-emsdk {} {
   } else {
     msg-result "not found"
   }
+  if {$hadValue && 0 == $rc} {
+    # Fail if it was explicitly requested but not found
+    proj-fatal "Cannot find the Emscripten SDK"
+  }
   define HAVE_EMSDK $rc
   return $rc
 }
 
 ########################################################################
+# @proj-check-rpath
+#
 # Tries various approaches to handling the -rpath link-time
 # flag. Defines LDFLAGS_RPATH to that/those flag(s) or an empty
 # string. Returns 1 if it finds an option, else 0.
+#
+# By default, the rpath is set to $prefix/lib. However, if either of
+# --exec-prefix=... or --libdir=...  are explicitly passed to
+# configure then [get-define libdir] is used (noting that it derives
+# from exec-prefix by default).
 #
 # Achtung: we have seen platforms which report that a given option
 # checked here will work but then fails at build-time, and the current
 # order of checks reflects that.
 proc proj-check-rpath {} {
   set rc 1
-  set lp "[get-define prefix]/lib"
+  if {[proj-opt-was-provided libdir]
+      || [proj-opt-was-provided exec-prefix]} {
+    set lp "[get-define libdir]"
+  } else {
+    set lp "[get-define prefix]/lib"
+  }
   # If we _don't_ use cc-with {} here (to avoid updating the global
   # CFLAGS or LIBS or whatever it is that cc-check-flags updates) then
   # downstream tests may fail because the resulting rpath gets
@@ -824,6 +912,31 @@ proc proj-check-rpath {} {
 }
 
 ########################################################################
+# @proj-check-soname ?libname?
+#
+# Checks whether CC supports the -Wl,soname,lib... flag. If so, it
+# returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
+# which the client would need to append "libwhatever.N". If not, it
+# returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
+#
+# The libname argument is only for purposes of running the flag
+# compatibility test, and is not included in the resulting
+# LDFLAGS_SONAME_PREFIX. It is provided so that clients may
+# potentially avoid some end-user confusion by using their own lib's
+# name here (which shows up in the "checking..." output).
+proc proj-check-soname {{libname "libfoo.so.0"}} {
+  cc-with {} {
+    if {[cc-check-flags "-Wl,-soname,${libname}"]} {
+      define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
+      return 1
+    } else {
+      define LDFLAGS_SONAME_PREFIX ""
+      return 0
+    }
+  }
+}
+
+########################################################################
 # Internal helper for proj-dump-defs-json. Expects to be passed a
 # [define] name and the variadic $args which are passed to
 # proj-dump-defs-json. If it finds a pattern match for the given
@@ -842,7 +955,9 @@ proc proj-defs-type_ {name spec} {
 
 ########################################################################
 # Internal helper for proj-defs-format_: returns a JSON-ish quoted
-# form of the given (JSON) string-type values.
+# form of the given string-type values. It only performs the most
+# basic of escaping. The input must not contain any control
+# characters.
 proc proj-quote-str_ {value} {
   return \"[string map [list \\ \\\\ \" \\\"] $value]\"
 }
@@ -939,8 +1054,10 @@ proc proj-dump-defs-json {file args} {
 }
 
 ########################################################################
-# Expects a list of pairs of configure flags with the given names to
-# have been registered with autosetup, in this form:
+# @proj-xfer-option-aliases map
+#
+# Expects a list of pairs of configure flags which have been
+# registered with autosetup, in this form:
 #
 #  { alias1 => canonical1
 #    aliasN => canonicalN ... }
@@ -951,7 +1068,7 @@ proc proj-dump-defs-json {file args} {
 #
 # Comment lines are permitted in the input.
 #
-# For each pair ALIAS and CANONICAL, if --ALIAS is provided but
+# For each pair of ALIAS and CANONICAL, if --ALIAS is provided but
 # --CANONICAL is not, the value of the former is copied to the
 # latter. If --ALIAS is not provided, this is a no-op. If both have
 # explicitly been provided a fatal usage error is triggered.
@@ -962,10 +1079,10 @@ proc proj-dump-defs-json {file args} {
 # --canonical and a user passes --alias=X, [opt-val canonical] returns
 # no value. i.e. the script must check both [opt-val alias] and
 # [opt-val canonical].  The intent here is that this function be
-# passed such mappings immediately after [options] is called,
-# to carry over any values from hidden aliases into their canonical
-# names, so that in the above example [opt-value canonical] will
-# return X if --alias=X is passed in.
+# passed such mappings immediately after [options] is called, to carry
+# over any values from hidden aliases into their canonical names, such
+# that [opt-value canonical] will return X if --alias=X is passed to
+# configure.
 proc proj-xfer-options-aliases {mapping} {
   foreach {hidden - canonical} [proj-strip-hash-comments_ $mapping] {
     if {[proj-opt-was-provided $hidden]} {
@@ -993,17 +1110,19 @@ proc proj-xfer-options-aliases {mapping} {
 #
 # Sidebar: if we do this before the cc package is installed, it gets
 # reverted by that package. Ergo, the cc package init will tell the
-# user "Build C compiler...cc" shortly before we tell them:
+# user "Build C compiler...cc" shortly before we tell them otherwise.
 proc proj-redefine-cc-for-build {} {
   if {![proj-is-cross-compiling]
-     && "nope" eq [get-env CC_FOR_BUILD "nope"]
-     && [get-define CC] ne [get-define CC_FOR_BUILD]} {
+      && [get-define CC] ne [get-define CC_FOR_BUILD]
+      && "nope" eq [get-env CC_FOR_BUILD "nope"]} {
     user-notice "Re-defining CC_FOR_BUILD to CC=[get-define CC]. To avoid this, explicitly pass CC_FOR_BUILD=..."
     define CC_FOR_BUILD [get-define CC]
   }
 }
 
 ########################################################################
+# @proj-which-linenoise headerFile
+#
 # Attempts to determine whether the given linenoise header file is of
 # the "antirez" or "msteveb" flavor. It returns 2 for msteveb, else 1
 # (it does not validate that the header otherwise contains the
@@ -1015,4 +1134,106 @@ proc proj-which-linenoise {dotH} {
   } else {
     return 1
   }
+}
+
+########################################################################
+# @proj-remap-autoconf-dir-vars
+#
+# "Re-map" the autoconf-conventional --XYZdir flags into something
+# which is more easily overridable from a make invocation.
+#
+# Based off of notes in <https://sqlite.org/forum/forumpost/00d12a41f7>.
+#
+# Consider:
+#
+# $ ./configure --prefix=/foo
+# $ make install prefix=/blah
+#
+# In that make invocation, $(libdir) would, at make-time, normally be
+# hard-coded to /foo/lib, rather than /blah/lib. That happens because
+# the autosetup exports conventional $prefix-based values for the
+# numerious autoconfig-compatible XYZdir vars at configure-time.  What
+# we would normally want, however, is that --libdir derives from the
+# make-time $(prefix).  The distinction between configure-time and
+# make-time is the significant factor there.
+#
+# This function attempts to reconcile those vars in such a way that
+# they will derive, at make-time, from $(prefix) in a conventional
+# manner unless they are explicitly overridden at configure-time, in
+# which case those overrides takes precedence.
+#
+# Each --XYZdir flag which is explicitly passed to configure is
+# exported as-is, as are those which default to some top-level system
+# directory, e.g. /etc or /var.  All which derive from either $prefix
+# or $exec_prefix are exported in the form of a Makefile var
+# reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
+# --exec-prefix=FOO is passed to configure, libdir will still derive,
+# at make-time, from whatever exec_prefix is passed to make, and will
+# use FOO if exec_prefix is not overridden.  Without this
+# post-processing, libdir would be cemented in as FOO/lib at
+# configure-time, so would be tedious to override properly via a make
+# invocation.
+#
+proc proj-remap-autoconf-dir-vars {} {
+  set prefix [get-define prefix]
+  set exec_prefix [get-define exec_prefix $prefix]
+  # Note that the ${...} here refers to make-side var derefs, not
+  # TCL-side vars. They must be formulated such that they are legal
+  # for use in (A) makefiles, (B) pkgconfig files, and (C) TCL's
+  # [subst] command. i.e. they must use the form ${X}.
+  foreach {flag makeVar makeDeref} {
+    exec-prefix     exec_prefix    ${prefix}
+    datadir         datadir        ${prefix}/share
+    mandir          mandir         ${datadir}/man
+    includedir      includedir     ${prefix}/include
+    bindir          bindir         ${exec_prefix}/bin
+    libdir          libdir         ${exec_prefix}/lib
+    sbindir         sbindir        ${exec_prefix}/sbin
+    sysconfdir      sysconfdir     /etc
+    sharedstatedir  sharedstatedir ${prefix}/com
+    localstatedir   localstatedir  /var
+    runstatedir     runstatedir    /run
+    infodir         infodir        ${datadir}/info
+    libexecdir      libexecdir     ${exec_prefix}/libexec
+  } {
+    if {[proj-opt-was-provided $flag]} {
+      define $makeVar [join [opt-val $flag]]
+    } else {
+      define $makeVar [join $makeDeref]
+    }
+    # Maintenance reminder: the [join] call is to avoid {braces}
+    # around the output when someone passes in,
+    # e.g. --libdir=\${prefix}/foo/bar. The Debian package build
+    # script does that.
+  }
+}
+
+########################################################################
+# @proj-env-file flag ?default?
+#
+# If a file named .env-$flag exists, this function returns a
+# trimmed copy of its contents, else it returns $dflt. The intended
+# usage is that things like developer-specific CFLAGS preferences can
+# be stored in .env-CFLAGS.
+proc proj-env-file {flag {dflt ""}} {
+  set fn ".env-${flag}"
+  if {[file readable $fn]} {
+    return [proj-file-content -trim $fn]
+  }
+  return $dflt
+}
+
+########################################################################
+# @proj-get-env var ?default?
+#
+# Extracts the value of "environment" variable $var from the first of
+# the following places where it's defined:
+#
+# - Passed to configure as $var=...
+# - Exists as an environment variable
+# - A file named .env-$var (see [proj-env-file])
+#
+# If none of those are set, $dflt is returned.
+proc proj-get-env {var {dflt ""}} {
+  return [get-env $var [proj-env-file $var $dflt]]
 }

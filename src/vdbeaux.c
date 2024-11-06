@@ -5529,6 +5529,7 @@ void sqlite3VdbePreUpdateHook(
   sqlite3DbFree(db, preupdate.aRecord);
   vdbeFreeUnpacked(db, preupdate.keyinfo.nKeyField+1, preupdate.pUnpacked);
   vdbeFreeUnpacked(db, preupdate.keyinfo.nKeyField+1, preupdate.pNewUnpacked);
+  sqlite3VdbeMemRelease(&preupdate.oldipk);
   if( preupdate.aNew ){
     int i;
     for(i=0; i<pCsr->nField; i++){

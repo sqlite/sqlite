@@ -2037,8 +2037,8 @@ const char *zSkipValidUtf8(const char *z, int nAccept, long ccm){
   const char *pcLimit = (nAccept>=0)? z+nAccept : 0;
   assert(z!=0);
   while( (pcLimit)? (z<pcLimit) : (ng-- != 0) ){
-    char c = *z;
-    if( (c & 0x80) == 0 ){
+    unsigned char c = *(u8*)z;
+    if( c<0x7f ){
       if( ccm != 0L && c < 0x20 && ((1L<<c) & ccm) != 0 ) return z;
       ++z; /* ASCII */
     }else if( (c & 0xC0) != 0xC0 ) return z; /* not a lead byte */
@@ -2106,7 +2106,7 @@ static void output_c_string(FILE *out, const char *z){
 }
 
 /*
-** Output the given string as a quoted according to JSON quoting rules.
+** Output the given string as quoted according to JSON quoting rules.
 */
 static void output_json_string(FILE *out, const char *z, i64 n){
   char c;
@@ -2144,8 +2144,8 @@ static void output_json_string(FILE *out, const char *z, i64 n){
     if( cbsSay ){
       ace[1] = cbsSay;
       sqlite3_fputs(ace, out);
-    }else if( c<=0x1f ){
-      sqlite3_fprintf(out, "u%04x", c);
+    }else if( c<=0x1f || c==0x7f ){
+      sqlite3_fprintf(out, "\\u%04x", c);
     }else{
       ace[1] = (char)c;
       sqlite3_fputs(ace+1, out);

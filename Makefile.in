@@ -4,9 +4,7 @@
 # Makefile for SQLITE
 #
 # This makefile is intended to be configured automatically using the
-# configure script. Hand editing may not work as expected because
-# certain blocks are added or removed depending on configure-time
-# information.
+# configure script.
 #
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
@@ -17,10 +15,6 @@ all:
 #
 # Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
 # particular order...
-#
-# - libreadline detection and handling of its -I, -L, and -l flags.
-# These can vary considerably across systems. e.g. some need -lncurses,
-# and some don't know what an -lncurses is.
 #
 # - TEA pieces.
 #
@@ -33,13 +27,6 @@ all:
 #
 # - This makefile should remain as POSIX-make-compatible as possible:
 #   https://pubs.opengroup.org/onlinepubs/9799919799/utilities/make.html
-#
-# - When using the X?=Y variable assignment formulation, please test
-#   the build with both GNU make and a POSIX make (e.g. BSD make,
-#   a.k.a. bmake). On at least one occassion, that formulation has led
-#   to inconsistent behavior between the two major make flavors when
-#   used with variable names which might sensibly be in the
-#   developer's environment (namely CC).
 #
 # - The naming convention of some vars, using periods instead of
 #   underscores, though unconventional, was selected for a couple of
@@ -56,9 +43,6 @@ all:
 #
 TOP = @abs_top_srcdir@
 #
-# Some standard variables and programs
-prefix ?= @prefix@
-#
 # Just testing some default dir expansions...
 # srcdir = @srcdir@
 # builddir = @builddir@
@@ -66,6 +50,65 @@ prefix ?= @prefix@
 # abs_top_srcdir = @abs_top_srcdir@
 # abs_top_builddir = @abs_top_builddir@
 #
+
+#
+# Autotools-conventional vars which are used by package installation
+# rules in main.mk.
+#
+# Autosetup allows the various XYZdir vars to be overridden at
+# configure-time with, e.g. --libdir=X and --mandir=Y. However,
+# defining them at configure-time, instead of at make-time, leads to
+# later awkwardness:
+#
+# $ ./configure --prefix=/usr
+# $ make prefix=/bar
+#
+# In that invocation, libdir will be /usr/foo, not /bar/foo as it
+# normally should, unless the user _also_ passes libdir=... to make.
+#
+# In 99%+ of use cases, setting prefix=X has the desired effect of
+# calculating conventional defaults for various other dirs, like
+# $prefix/lib, $prefix/include, etc. If, however, we export those at
+# configure-time, the passing prefix=... to make will update only
+# $prefix and none of its derived dirs.
+#
+# Because it is more important (for our use cases) that these vars be
+# overridable via a make invocation than a configure invocation, and
+# they conventionally derive from $(prefix) in all but the most exotic
+# of use cases, we do not export the configure-defined overrides of
+# those vars to this makefile.  Instead, we export only $prefix and
+# its derived vars are set to their conventional default values in
+# main.mk, which users can then override at make-time as needed.
+# Overriding $prefix via make will also calculate any derived vars, as
+# one would expect, unless each is specifically overridden.
+#
+# For completeness's sake, the aforementioned conventional vars which
+# are relevant to our installation rules are:
+#
+# datadir     = $(prefix)/share
+# mandir      = $(datadir)/man
+# includedir  = $(prefix)/include
+# exec_prefix = $(prefix)
+# bindir      = $(exec_prefix)/bin
+# libdir      = $(exec_prefix)/lib
+#
+# Our builds do not require any of their relatives:
+#
+# sbindir        = $(exec_prefix)/sbin
+# sysconfdir     = /etc
+# sharedstatedir = $(prefix)/com
+# localstatedir  = /var
+# runstatedir    = /run
+# infodir        = $(datadir)/info
+# libexecdir     = $(exec_prefix)/libexec
+#
+prefix      = @prefix@
+datadir     = @datadir@
+mandir      = @mandir@
+includedir  = @includedir@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@
@@ -94,7 +137,7 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
-
+LDFLAGS.soname.libsqlite3 = @LDFLAGS_SONAME_LIBSQLITE3@
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -115,23 +158,12 @@ T.cc.sqlite += -I$(prefix)/include
 #
 # main.mk will fill out T.cc.sqlite with some flags common to all builds.
 
-#XX#CFLAGS.readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#CFLAGS.readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
-#XX#
-#XX## The library that programs using readline() must link against.
-#XX##
-#XX#LIBREADLINE = @TARGET_READLINE_LIBS@
-#XX#
-#XX## Should the database engine be compiled threadsafe
-#XX##
-#XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
-
 #
-# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.  $(JIMSH)
+# $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
 # must start with a path component so that it can be invoked as a
 # shell command.
 #
-CFLAGS.JIMSH = @CFLAGS_JIMSH@
+CFLAGS.jimsh = @CFLAGS_JIMSH@
 JIMSH = ./jimsh$(TEXE)
 
 #
@@ -312,16 +344,20 @@ misspell: ./custom.rws has_tclsh84
 # perform cleanup known to be relevant to (only) the autosetup-driven
 # build.
 #
-clean-autosetup:
-	-gmake -C ext/wasm distclean 2>/dev/null || true
-clean: clean-autosetup
+#clean-autosetup:
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory --ignore-errors -C ext/wasm clean; \
+#	fi >/dev/null 2>&1; true
+#clean: clean-autosetup
 
 distclean-autosetup:	clean
 	rm -f sqlite_cfg.h config.log config.status config.defines.* Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
-	-gmake -C ext/wasm distclean 2>/dev/null; true
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory  --ignore-errors -C ext/wasm distclean; \
+#	fi >/dev/null 2>&1; true
 distclean: distclean-autosetup
 
 #

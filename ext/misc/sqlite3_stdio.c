@@ -96,8 +96,8 @@ FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
 
   sz1 = (int)strlen(zFilename);
   sz2 = (int)strlen(zMode);
-  b1 = malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
+  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zFilename, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -105,8 +105,8 @@ FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
     b2[sz2] = 0;
     fp = _wfopen(b1, b2);
   }
-  free(b1);
-  free(b2);
+  sqlite3_free(b1);
+  sqlite3_free(b2);
   simBinaryOther = 0;
   return fp;
 }
@@ -122,8 +122,8 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
 
   sz1 = (int)strlen(zCommand);
   sz2 = (int)strlen(zMode);
-  b1 = malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
+  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zCommand, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -131,8 +131,8 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
     b2[sz2] = 0;
     fp = _wpopen(b1, b2);
   }
-  free(b1);
-  free(b2);
+  sqlite3_free(b1);
+  sqlite3_free(b2);
   return fp;
 }
 
@@ -146,7 +146,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
     ** into '?'.
     */
-    wchar_t *b1 = malloc( sz*sizeof(wchar_t) );
+    wchar_t *b1 = sqlite3_malloc( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
     _setmode(_fileno(in), IsConsole(in) ? _O_WTEXT : _O_U8TEXT);
     if( fgetws(b1, sz/4, in)==0 ){
@@ -212,7 +212,7 @@ int sqlite3_fputs(const char *z, FILE *out){
     ** use O_U8TEXT for everything in text mode.
     */
     int sz = (int)strlen(z);
-    wchar_t *b1 = malloc( (sz+1)*sizeof(wchar_t) );
+    wchar_t *b1 = sqlite3_malloc( (sz+1)*sizeof(wchar_t) );
     if( b1==0 ) return 0;
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;
