@@ -1,5 +1,5 @@
-C Allow\san\sfts5\stable\sor\squery\sto\sbe\sconfigured\sto\scollect\sxInstToken\sdata\sfor\sany\sprefix\sterms\sas\spart\sof\sthe\sfirst\sparse\sof\sthe\smain\sindex,\sif\sany.
-D 2024-11-02T19:10:50.264
+C Add\stests\sfor\sxInstToken()\sand\sprefix\squeries\swith\svarious\sfts5\sconfigurations.
+D 2024-11-06T16:20:16.715
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
@@ -219,6 +219,7 @@ F ext/fts5/test/fts5origintext2.test f4505ff79bf7369f2b8b10b9cef7476049d844e20b3
 F ext/fts5/test/fts5origintext3.test 4988b6375acc3bbb0515667765f57e389caf449814af9c1095c053f7de2b4223
 F ext/fts5/test/fts5origintext4.test 0d3ef0a8038f471dbc83001c34fe5f7ae39b571bfc209670771eb28bc0fc50e8
 F ext/fts5/test/fts5origintext5.test ee12b440ec335e5b422d1668aca0051b52ff28b6ee67073e8bbc29f509fd562b
+F ext/fts5/test/fts5origintext6.test 09eb1347cb0dceaebbebf3d3e6bd5d24c7c1006efddc2984540450324bbdafa4
 F ext/fts5/test/fts5phrase.test bb2554bb61d15f859678c96dc89a7de415cd5fc3b7b54c29b82a0d0ad138091c
 F ext/fts5/test/fts5plan.test f8b0d752a818059a934cdc96c0f77de058a67a0a57bb3a8181d28307ab5b1626
 F ext/fts5/test/fts5porter.test 15b514fac8690b58e99c330efe5bf5615bc43f2fae4a3cca3f923dbaff55a0c0
@@ -2199,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 790c56d493c66a2136e24d349d169639809d70bfab6996975a403be568a267a5
-R 71ba4975c4c76073cda6dd2f314d94d1
+P 46929ae92b26f02bc70de9931b21a8a7cf9a2453d5fb07f68b712f62e28e9152
+R a22fb948708e266e2094d3645362e84e
 U dan
-Z 95da39a03d7bb4b9bc58c6dbf7b809e5
+Z 3041da3c7f9ea1d87e0998786f60280f
 # Remove this line to create a well-formed Fossil manifest.
