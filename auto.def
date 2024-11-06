@@ -939,6 +939,9 @@ proc sqlite-check-line-editing {} {
   # If we found a library, configure the build to use it...
   if {"" ne $rlLib} {
     if {"editline" eq $editLibName && "HAVE_READLINE" eq $editLibDef} {
+      # Alert the user that, despite outward appearances, we won't be
+      # linking to the GPL'd libreadline. Presumably that distinction is
+      # significant for those using --editline.
       proj-indented-notice {
         NOTE: the local libedit but uses <readline/readline.h> so we
         will compile with -DHAVE_READLINE=1 but will link with
