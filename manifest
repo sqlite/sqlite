@@ -1,5 +1,5 @@
-C Re-phrase\ssome\s(#if\s!SQLITE_CORE)\sto\s(#ifndef\sSQLITE_CORE),\sas\sdiscussed\sin\sforum:cea40371c5e34b09\s|\sfor\spost\scea40371c5e34b09].
-D 2024-11-06T12:58:31.469
+C Fix\san\sFTS3\scorruption\stest\scase\sthat\sdepends\son\sthe\sspecific\spseudo-random\nbyte\ssequence\sgenerated\sby\ssqlite3_randomness(),\swhich\sis\sdifferent\son\nbig-endian\splatforms\sthan\sit\sis\son\slittle-endian\splatforms.
+D 2024-11-06T19:19:49.300
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1189,7 +1189,7 @@ F test/fts3conf.test c9cd45433b6787d48a43e84949aa2eb8b3b3d242bac7276731c1476290d
 F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test a451033ae31db9c5979a7612dee80fb4f221db104a2eeeabd1c9adcc8e8fe95a
+F test/fts3corrupt4.test c7f414fe29b97a478d15c90382c4ae077a2bbd2283bf8c63bf66dadaaed3edb8
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
@@ -2200,9 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d3887895a33742fb1fc97235cf897d295b237a9fb5a84031826f9c1018106f18 cd82e4c0f5f8ff16468b909d84dd5545c0456f624db61a4d112467a7cafed2fc
-R 2ce6f48a525cff0a5e55030616b254d4
-T +closed cd82e4c0f5f8ff16468b909d84dd5545c0456f624db61a4d112467a7cafed2fc Closed\sby\sintegrate-merge.
-U stephan
-Z 49b3cdd634f6b6d641022069d2594f18
+P 5495b12569c318d5020b4b5a625a392ef8e777b81c0200624fbbc2a6b5eddef9
+R fca9e17da314094528f1ce35ee0eadb3
+U drh
+Z d5ae46fbd1e85e01ddb44833f789fc17
 # Remove this line to create a well-formed Fossil manifest.
