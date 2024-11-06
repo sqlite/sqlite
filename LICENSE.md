@@ -19,7 +19,7 @@ that are public domain include the following:
   *  All of the SQLite extension source code and test cases in the
      [ext/ directory](https://sqlite.org/src/tree/ext?type=tree&expand)
   *  All code that ends up in the "sqlite3.c" and "sqlite3.h" build products
-     that actually implements the SQLite RDBMS.
+     that actually implement the SQLite RDBMS.
   *  All of the code used to compile the
      [command-line interface](https://sqlite.org/cli.html)
   *  All of the code used to build various utility programs such as

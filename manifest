@@ -1,8 +1,8 @@
-C Minor\sdoc\stweaks.
-D 2024-11-06T08:29:47.976
+C Fix\stypo\sin\sthe\sLICENSE.md\sfile.
+D 2024-11-06T10:09:21.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F LICENSE.md c5b4009dca54d127d2d6033c22fd9cc34f53bedb6ef12c7cbaa468381c74ab28
+F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in 3a54957d16c3f4666922f170a19b4b51dc13be039c29394dd38caa95ade5d731
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d4fbd34f7a4b0e6179cb06114d148fbc5d30b8dc8db0b764f4347dd50ff591ba
-R 0b25478245094cdc9d825ea4c9f1d6d5
-U stephan
-Z 3fe0453285c895a787d757f74d8262d1
+P 2919a61bd4f8cb4f53462d4807cbc04ac5f71dd437cd693538754cf3f17d00cc
+R e657929838382908e594a0464cd69699
+U drh
+Z 5889a5c1931f6955993ec7647ef0ded1
 # Remove this line to create a well-formed Fossil manifest.
