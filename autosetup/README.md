@@ -46,8 +46,9 @@ Autosetup API Tips
 
 This section briefly covers only APIs which are frequently useful in
 day-to-day maintenance and might not be immediately recognized as such
-obvious from a casual perusal of `auto.def`. Their complete docs can be
-found in [proj.tcl][].
+obvious from a casual perusal of [auto.def][]. The complete docs of
+those with `proj-` prefix can be found in [proj.tcl][]. The others are
+scattered around [the TCL files in ./autosetup](/dir/autosetup).
 
 In (mostly) alphabetical order:
 
@@ -58,8 +59,8 @@ In (mostly) alphabetical order:
 
 - **`get-env VAR ?default?`**\  
   Will fetch an "environment variable"
-  from the first of either: (A) a KEY=VALUE passed to the configure
-  script or (B) the system's environment variables. Not to be confused
+  from the first of either: (1) a KEY=VALUE passed to the configure
+  script or (2) the system's environment variables. Not to be confused
   with `getenv`, which only does the latter and is rarely, if ever,
   useful in this tree.
   - **`proj-get-env VAR ?default?`**\  
