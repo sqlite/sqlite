@@ -1,5 +1,5 @@
-C Further\simprovements\sto\sthe\s".mode\sjson"\soutput\sin\sthe\sCLI.
-D 2024-11-07T12:03:53.321
+C tcl\sconfiguration:\s--with-tcl=prefix\sis\sequivalent\sto\spassing\sthe\s--prefix\sdir\sto\sit.\sIf\s--with-tcl\sor\s--enable-tcl\sare\sexplicitly\spassed\sin\sand\stclConfig.sh\sis\snot\sfound,\sfail\sfatally.\sWhen\sTCL\sis\seither\sexplicitly\sdisabled\sor\sdefault\ssearch\sfor\sit\sfails\snon-fatally,\sbe\smore\sexplicit\sabout\swhich\scomponents\sare\snot\savailable.
+D 2024-11-07T15:04:15.370
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 8d10658f2d06b0a8ddd558dfff3c111fc2b01b81d88a1bd059544abcf6e3f453
+F auto.def 994745e992211047879521fa05742b9eaedafe8f2600a7b8d784c32e6afa41fa
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md 6357282be27622b8ce37b46717a5088dc2148a8f3e2ef48bbe465a333f0c70ac
+F autosetup/README.md 0fd0e5f83122a5ba12896540f2804921c90165dd475323adf57369b5baad91be
 F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/default.auto 5cdf016de2140e50f1db190a02039dc42fb390af1dda4cc4853e3042a9ef0e82
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl d4795a130eedb21d7f2acea0e28cf647e477b6e555817ac4497d62bbaf7b6c23
+F autosetup/proj.tcl f125ba46b08b2ae0aa4afc4c3547fdd6c9487a609e0147217e62b2e4ec5d5e0e
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/tmake.auto eaebc74ad538dfdd3c817c27eefc31930c20510c4f3a3704071f6cb0629ed71f
 F autosetup/tmake.tcl a275793ec1b6f8708179af0acef1f6f10d46c2920739743f7a8720c6d700c7a9
@@ -699,7 +699,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 949721d1f7400fd9f2c9a8818d66eed7b4c5937c9fd2635f8364755858ddcc78
+F main.mk beaeb83b8239bf4f9747e1dbd5316536feb9a961c689c9917cf5afb4859feafb
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2200,8 +2200,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 574515290058ddfaf39a4221fa0f7a99222c4b040dd455348550816b18492c20
-R d6d415bcc0f47f8fdfd469ff669d9a21
-U drh
-Z 19d583f7d9e9d1ca3ecd4ff7c1dcf90f
+P 6201b5707f8c895028f9c08cb4f83d33a16a91bf04ed3830ac51aa763d6b7205
+R 159b8b906d14c083582767b8ea344e43
+U stephan
+Z a561785360eeb191a2906420651521c2
 # Remove this line to create a well-formed Fossil manifest.

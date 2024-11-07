@@ -61,7 +61,7 @@ set proj_(isatty) [isatty? stdout]
 #
 # Emits a warning message to stderr.
 proc proj-warn {msg} {
-  puts stderr [proj-bold "WARNING: $msg"]
+  puts stderr "WARNING: $msg"
 }
 ########################################################################
 # @proj-error msg
@@ -69,7 +69,7 @@ proc proj-warn {msg} {
 # Emits an error message to stderr and exits with non-0.
 proc proj-fatal {msg} {
   show-notices
-  puts stderr [proj-bold "ERROR: $msg"]
+  puts stderr "ERROR: $msg"
   exit 1
 }
 
@@ -101,23 +101,37 @@ proc proj-bold {str} {
 }
 
 ########################################################################
-# @proj-indented-notice ?-error? msg
+# @proj-indented-notice ?-error? ?-notice? msg
 #
-# Takes a multi-line message and emits it with consistent indentation
-# using [user-notice] (which means its rendering will (A) go to stderr
-# and (B) be delayed until the next time autosetup goes to output a
-# message).
+# Takes a multi-line message and emits it with consistent indentation.
 #
-# If its first argument is -error then it renders the message
-# immediately and then exits.
+# If the -notice flag it used then it emits using [user-notice], which
+# means its rendering will (A) go to stderr and (B) be delayed until
+# the next time autosetup goes to output a message. If -notice
+# is not used, it will send the message to stdout without delay.
+#
+# If the -error flag is provided then it renders the message
+# immediately to stderr and then exits.
 proc proj-indented-notice {args} {
   set fErr ""
-  if {"-error" eq [lindex $args 0]} {
-    set args [lassign $args fErr]
+  set outFunc "puts"
+  while {[llength $args] > 1} {
+    switch -exact -- [lindex $args 0] {
+      -error  {
+        set args [lassign $args fErr]
+      }
+      -notice {
+        set args [lassign $args -]
+        set outFunc "user-notice"
+      }
+      default {
+        break
+      }
+    }
   }
   set lines [split [join $args] \n]
   foreach line $lines {
-    user-notice "      [string trimleft $line]"
+    $outFunc "      [string trimleft $line]"
   }
   if {"" ne $fErr} {
     show-notices

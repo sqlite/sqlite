@@ -78,15 +78,19 @@ In (mostly) alphabetical order:
   flags. They're rarely needed, though: search [auto.def][] for
   `TSTRNNR_OPTS` for an example of where they are used.
 
+- **`proj-fatal msg`**\  
+  Emits `$msg` to stderr and exits with non-zero.
+
 - **`proj-if-opt-truthy flag thenScript ?elseScript?`**\  
   Evals `thenScript` if the given `--flag` is truthy, else it
   evals the optional `elseScript`.
 
-- **`proj-indented-notice ?-error? msg`**\  
+- **`proj-indented-notice ?-error? ?-notice? msg`**\  
   Breaks its `msg` argument into lines, trims them, and emits them
-  with consistent indentation. If the `-error` flag is used, it then
-  exits with a non-0 result code. This will stick out starkly from
-  normal output and is intended to be used only for important notices.
+  with consistent indentation. Exactly how it emits depends on the
+  flags passed to it (or not), as covered in its docs. This will stick
+  out starkly from normal output and is intended to be used only for
+  important notices.
 
 - **`proj-opt-truthy flag`**\  
   Returns 1 if `--flag`'s value is "truthy," i.e. one of (1, on,
@@ -103,6 +107,10 @@ In (mostly) alphabetical order:
   Returns 1 if `$value` is "truthy," See `proj-opt-truthy` for the definition
   of "truthy."
 
+- **`proj-warn msg`**\  
+  Emits `$msg` to stderr. Closely-related is autosetup's `user-notice`
+  (described below).
+
 - **`sqlite-add-feature-flag ?-shell? FLAG...`**\  
   Adds the given feature flag to the CFLAGS which are specific to building
   the library. It's intended to be passed one or more `-DSQLITE_ENABLE_...`,
@@ -112,6 +120,13 @@ In (mostly) alphabetical order:
 
 - **`sqlite-add-shell-opt FLAG...`**\  
   The shell-specific counterpart of `sqlite-add-feature-flag`.
+
+- **`user-notice msg`**\  
+  Queues `$msg` to be sent to stderr, but not until either
+  `show-notices` is called or the next time autosetup would output
+  something. This can be used to generate warnings between a "checking
+  for..." message and its resulting "yes/no/whatever" message in such
+  a way as to not spoil layout of such messages.
 
 <a name="tclcompat"></a>
 Ensuring TCL Compatibility

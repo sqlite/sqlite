@@ -1465,6 +1465,7 @@ install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
 	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$TCLLIBDIR"; \
 	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$TCLLIBDIR"
 install-tcl-0 install-tcl-:
+	@echo "TCL support disabled, so not installing $(libtclsqlite3.SO)"
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
 
@@ -1699,7 +1700,7 @@ sqltclsh$(T.exe): $(T.tcl.env.sh) sqltclsh.c
 	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 # xbin: target for generic binaries which aren't usually built. It is
 # used primarily for testing the build process.
-xbin: sqltclsh$(T.exe)
+xbin: sqltclsh$(T.exe) sqlite3_analyzer$(T.exe)
 
 sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
                        $(TOP)/ext/expert/expert.c sqlite3.c
@@ -1910,7 +1911,7 @@ install-rsync: sqlite3_rsync$(T.exe) $(install-dir.bin)
 #install: install-rsync
 
 install-man1: $(install-dir.man1)
-	$(INSTALL.noexec) $(TOP)/sqlite3.1 "$(install-dir.man1)"
+	$(INSTALL.noexec) "$(TOP)/sqlite3.1" "$(install-dir.man1)"
 install: install-man1
 
 #
