@@ -666,13 +666,14 @@ sqlite-check-tcl
 #   - CFLAGS_JIMSH = any flags needed for buildng a BTCLSH-compatible
 #     jimsh. The defaults may be pass on to configure as
 #     CFLAGS_JIMSH=...
-set useJimForCodeGen 0
+set useJimForCodeGen 0 ; # Set to 1 when using jimsh for code generation.
+                         # May affect later decisions.
 proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH [proj-get-env CFLAGS_JIMSH {-O1}]
   set cgtcl [opt-val with-tclsh jimsh]
   set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
- define-push $flagsToRestore {
+  define-push $flagsToRestore {
     # We have to swap CC to CC_FOR_BUILD for purposes of the various
     # [cc-...] tests below. Recall that --with-wasi-sdk may have
     # swapped out CC with one which is not appropriate for this block.
