@@ -594,7 +594,8 @@ proc proj-check-compile-commands {{configFlag {}}} {
 ########################################################################
 # @proj-touch filename
 #
-# Runs the 'touch' command on one or more files, ignoring any errors.
+# Runs the 'touch' external command on one or more files, ignoring any
+# errors.
 proc proj-touch {filename} {
   catch { exec touch {*}$filename }
 }

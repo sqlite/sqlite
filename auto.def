@@ -73,7 +73,7 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #   --disable-readline ==> boolean false
 #
 # Trying to pass --readline or --readline=1 or --readline=0 will
-# result in an "unrecognized option" error, despite the the options
+# result in an "unrecognized option" error, despite the the [options]
 # call listing the flag as "readline".
 #
 # The behavior described above can lead lead to some confusion when
@@ -91,7 +91,7 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #   --enable-FLAG
 #
 # Non-boolean flags, in contrast, use the names specifically given to
-# them in the 'options' invocation. e.g. "with-tcl" is the --with-tcl
+# them in the [options] invocation. e.g. "with-tcl" is the --with-tcl
 # flag. Autosetup may, however, choose to automatically alter the help
 # text, as demonstrated here:
 #
@@ -130,7 +130,7 @@ set flags {
   # </build-modes>
   # <lib-feature>
   threadsafe=1         => {Disable mutexing}
-  with-tempstore:=no   => {Use an in-ram database for temporary tables: never,no,yes,always}
+  with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
   largefile=1          => {Disable large file support}
   load-extension=1     => {Disable loading of external extensions}
   math=1               => {Disable math functions}
@@ -251,12 +251,12 @@ if {1} {
 set isCrossCompiling [proj-is-cross-compiling]
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-define OPT_SHELL {}         ; # CFLAGS for the sqlite3 CLI app
+define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
 ########################################################################
-# Adds $args, if not empty, to OPT_FEATURE_FLAGS.
-# If the first arg is -shell then it strips that arg
-# and passes the remaining args th sqlite-add-shell-opt
-# in addition to adding them to OPT_FEATURE_FLAGS.
+# Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
+# -shell then it strips that arg and passes the remaining args the
+# sqlite-add-shell-opt in addition to adding them to
+# OPT_FEATURE_FLAGS.
 proc sqlite-add-feature-flag {args} {
   set shell ""
   if {"-shell" eq [lindex $args 0]} {
@@ -328,23 +328,40 @@ proc sqlite-check-wasi-sdk {} {
   }
   msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
   #puts "prefix = [prefix $wasiSdkDir/bin {clang ld}]"
-  proj-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld}]
+  proj-affirm-files-exist -v {*}[prefix "$wasiSdkDir/bin/" {clang wasm-ld ar}]
   define HAVE_WASI_SDK 1
   define WASI_SDK_DIR $wasiSdkDir
   # Disable numerous options which we know either can't work or are
   # not useful in this build...
-  msg-result "Using wasi-sdk clang. Disabling CLI shell and forcing:"
+  msg-result "Using wasi-sdk clang. Disabling CLI shell modifying config flags:"
+  # Boolean flags which must be switched off:
   foreach opt {
     editline
     gcov
+    icu-collations
     load-extension
     readline
     shared
     tcl
     threadsafe
   } {
-    msg-result "  --disable-$opt"
-    proj-opt-set $opt 0
+    if {[opt-bool $opt]} {
+      msg-result "  --disable-$opt"
+      proj-opt-set $opt 0
+    }
+  }
+  # Non-boolean flags which need to be cleared:
+  foreach opt {
+    with-emsdk
+    with-icu-config
+    with-icu-ldflags
+    with-linenoise
+    with-tcl
+  } {
+    if {[proj-opt-was-provided $opt]} {
+      msg-result "  removing --$opt"
+      proj-opt-set $opt ""
+    }
   }
   # Remember that we now have a discrepancy beteween
   # $::isCrossCompiling and [proj-is-cross-compiling].
@@ -410,8 +427,9 @@ if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
 }
 
 proj-check-rpath  ; # Determine proper rpath-handling flag
-if {0 && [proj-check-soname libsqlite3.so.3]} {
-  # It's not yet clear whether we gain anything from setting -soname
+if {[proj-check-soname libsqlite3.so.3]} {
+  # It's not yet clear whether we gain anything from setting -soname,
+  # but not having it has been a source of anxiety for some users.
   define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]libsqlite3.so.3
 } else {
   define LDFLAGS_SONAME_LIBSQLITE3 ""
@@ -768,14 +786,14 @@ proj-if-opt-truthy threadsafe {
 if {1} {
   set ts [opt-val with-tempstore no]
   set tsn 1
-  msg-checking "Use an in-ram database for temporary tables? "
+  msg-checking "Use an in-RAM database for temporary tables? "
   switch -- $ts {
     never  { set tsn 0 }
     no     { set tsn 1 }
     yes    { set tsn 2 }
     always { set tsn 3 }
     default {
-      user-error "Invalid with-tempstore value \[$ts]. Use one of: never, no, yes, always"
+      user-error "Invalid --with-tempstore value '$ts'. Use one of: never, no, yes, always"
     }
   }
   msg-result $ts
@@ -1179,8 +1197,8 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
 }
 
 ########################################################################
-# Invert the above loop's logic for some explicit SQLITE_OMIT_...
-# cases. If config option $boolFlag is set, [sqlite-add-feature-flag
+# Invert the above loop's logic for some SQLITE_OMIT_...  cases. If
+# config option $boolFlag is false, [sqlite-add-feature-flag
 # $featureFlag], where $featureFlag is intended to be
 # -DSQLITE_OMIT_...
 foreach {boolFlag featureFlag} {
@@ -1196,17 +1214,19 @@ foreach {boolFlag featureFlag} {
 
 #########################################################################
 # Show the final feature flag sets:
-set oFF [get-define OPT_FEATURE_FLAGS]
-if {"" ne $oFF} {
-  define OPT_FEATURE_FLAGS [lsort -unique $oFF]
-  msg-result "Library feature flags: [get-define OPT_FEATURE_FLAGS]"
+if {1} {
+  set oFF [get-define OPT_FEATURE_FLAGS]
+  if {"" ne $oFF} {
+    define OPT_FEATURE_FLAGS [lsort -unique $oFF]
+    msg-result "Library feature flags: [get-define OPT_FEATURE_FLAGS]"
+  }
+  set oFF [get-define OPT_SHELL]
+  if {"" ne $oFF} {
+    define OPT_SHELL [lsort -unique $oFF]
+    msg-result "Shell options: [get-define OPT_SHELL]"
+  }
+  unset oFF
 }
-set oFF [get-define OPT_SHELL]
-if {"" ne $oFF} {
-  define OPT_SHELL [lsort -unique $oFF]
-  msg-result "Shell options: [get-define OPT_SHELL]"
-}
-unset oFF
 
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something

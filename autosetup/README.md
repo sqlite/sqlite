@@ -122,11 +122,12 @@ In (mostly) alphabetical order:
   The shell-specific counterpart of `sqlite-add-feature-flag`.
 
 - **`user-notice msg`**\  
-  Queues `$msg` to be sent to stderr, but not until either
-  `show-notices` is called or the next time autosetup would output
-  something. This can be used to generate warnings between a "checking
-  for..." message and its resulting "yes/no/whatever" message in such
-  a way as to not spoil the layout of such messages.
+  Queues `$msg` to be sent to stderr, but does not emit it until
+  either `show-notices` is called or the next time autosetup would
+  output something (it internally calls `show-notices`). This can be
+  used to generate warnings between a "checking for..." message and
+  its resulting "yes/no/whatever" message in such a way as to not
+  spoil the layout of such messages.
 
 <a name="tclcompat"></a>
 Ensuring TCL Compatibility
