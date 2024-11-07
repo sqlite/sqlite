@@ -791,7 +791,7 @@ if {1} {
 #   - HAVE_LINENOISE to 0, 1, or 2
 #   - HAVE_EDITLINE to 0 or 1
 #
-# Only one of ^^^ those will be set to 1.
+# Only one of ^^^ those will be set to non-0.
 #
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
@@ -807,7 +807,8 @@ if {1} {
 #
 # Order of checks:
 #
-#  1) --with-linenoise trumps all others
+#  1) --with-linenoise trumps all others and skips all of the
+#     complexities involved with the remaining options.
 #
 #  2) --editline trumps --readline
 #
@@ -815,7 +816,7 @@ if {1} {
 #
 #  4) Default to automatic search for optional readline
 #
-#  5) Try to find readline resp. editline. If it's not found AND the
+#  5) Try to find readline or editline. If it's not found AND the
 #     corresponding --FEATURE flag was explicitly given, fail fatally,
 #     else fail silently.
 proc sqlite-check-line-editing {} {
@@ -825,7 +826,9 @@ proc sqlite-check-line-editing {} {
   define HAVE_EDITLINE 0
   define LDFLAGS_READLINE ""
   define CFLAGS_READLINE ""
-  set failIfNotFound 0 ; # Set to 1 for explicit --FEATURE requests
+  set failIfNotFound 0 ; # Gets set to 1 for explicit --FEATURE requests
+                         # so that we know whether to fail fatally or not
+                         # if the library is not found.
   set libsForReadline {readline edit} ; # -l<LIB> names to check for readline().
                                         # The libedit check changes this.
   set editLibName "readline" ; # "readline" or "editline"
@@ -874,8 +877,8 @@ proc sqlite-check-line-editing {} {
     #
     # shell.c historically expects HAVE_EDITLINE to be set for
     # libedit, but it then expects to see <editline/readline.h>, which
-    # some system's don't actually have, despite having libedit.  If
-    # we end up finding <editline/readline.h> below, we will use
+    # some system's don't actually have despite having libedit.  If we
+    # end up finding <editline/readline.h> below, we will use
     # -DHAVE_EDITLINE=1, else we will use -DHAVE_READLINE=1. In either
     # case, we will link against libedit.
     set failIfNotFound 1
@@ -899,11 +902,9 @@ proc sqlite-check-line-editing {} {
     } else {
       set v [file dirname $v]
       if {[string match */readline $v]} {
-        # Special case: if the path includes .../readline/readline.h, set
-        # the -I to one dir up from that because our sources include
-        # <readline/readline.h> or <editline/readline.h>.  Reminder: if
-        # auto.def is being run by jimsh0 then [file normalize] will not
-        # work!
+        # Special case: if the path includes .../readline/readline.h,
+        # set the -I to one dir up from that because our sources
+        # #include <readline/readline.h> or <editline/readline.h>.
         set v [file dirname $v]
       }
       proj-opt-set with-readline-cflags "-I$v"
@@ -978,7 +979,7 @@ proc sqlite-check-line-editing {} {
       # Alert the user that, despite outward appearances, we won't be
       # linking to the GPL'd libreadline. Presumably that distinction is
       # significant for those using --editline.
-      proj-indented-notice -notice {
+      proj-indented-notice {
         NOTE: the local libedit but uses <readline/readline.h> so we
         will compile with -DHAVE_READLINE=1 but will link with
         libedit.
@@ -1009,8 +1010,7 @@ proc sqlite-check-line-editing {} {
                return 0;
              }
            }]} {
-      user-notice "WARNING: readline-style completion disabled due to rl_completion_matches() signature mismatch"
-      show-notices
+      proj-warn "readline-style completion disabled due to rl_completion_matches() signature mismatch"
       sqlite-add-shell-opt -DSQLITE_OMIT_READLINE_COMPLETION
     }
     return $editLibName

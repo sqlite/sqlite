@@ -126,7 +126,7 @@ In (mostly) alphabetical order:
   `show-notices` is called or the next time autosetup would output
   something. This can be used to generate warnings between a "checking
   for..." message and its resulting "yes/no/whatever" message in such
-  a way as to not spoil layout of such messages.
+  a way as to not spoil the layout of such messages.
 
 <a name="tclcompat"></a>
 Ensuring TCL Compatibility
