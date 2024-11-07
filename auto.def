@@ -634,7 +634,7 @@ proc sqlite-check-tcl {} {
     #msg-debug "TCLLIB_RPATH = [get-define TCLLIB_RPATH]"
   }; # find TCLLIBDIR
 
-  if {[file exists $with_tclsh]} {
+  if {[file-isexec $with_tclsh]} {
     if {$cfg ne ""} {
       msg-result "Using tclsh: $with_tclsh"
       define HAVE_TCL 1
@@ -695,7 +695,7 @@ proc sqlite-determine-codegen-tcl {} {
         # _fullpath() is a Windows API
         define-append CFLAGS_JIMSH -DHAVE__FULLPATH
         define BTCLSH "\$(JIMSH)"
-      } elseif {[file exists [get-define TCLSH_CMD]]} {
+      } elseif {[file-isexec [get-define TCLSH_CMD]]} {
         set cgtcl [get-define TCLSH_CMD]
         define BTCLSH "\$(TCLSH_CMD)"
       } else {
@@ -713,7 +713,7 @@ proc sqlite-determine-codegen-tcl {} {
           }
         }
         set cgtcl [get-define TCLSH_CMD]
-        if {![file exists $cgtcl]} {
+        if {![file-isexec $cgtcl]} {
           proj-fatal "Cannot find a tclsh to use for code generation."
         }
         define BTCLSH "\$(TCLSH_CMD)"
