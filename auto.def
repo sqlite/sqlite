@@ -635,10 +635,14 @@ proc sqlite-check-tcl {} {
   }; # find TCLLIBDIR
 
   if {[file exists $with_tclsh]} {
-    msg-result "Using tclsh: $with_tclsh"
-    define HAVE_TCL 1
+    if {$cfg ne ""} {
+      msg-result "Using tclsh: $with_tclsh"
+      define HAVE_TCL 1
+    } else {
+      proj-warn "Found tclsh but no tclConfig.sh, so cannot build TCL components."
+    }
   } else {
-    proj-warn "Cannot find a usable tclsh, so cannot run tests."
+    proj-warn "Cannot find a usable tclsh, so cannot build TCL components."
   }
   show-notices
 }; # sqlite-check-tcl

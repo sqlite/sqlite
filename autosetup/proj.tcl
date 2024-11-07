@@ -1152,7 +1152,7 @@ proc proj-which-linenoise {dotH} {
 # In that make invocation, $(libdir) would, at make-time, normally be
 # hard-coded to /foo/lib, rather than /blah/lib. That happens because
 # the autosetup exports conventional $prefix-based values for the
-# numerious autoconfig-compatible XYZdir vars at configure-time.  What
+# numerous autoconfig-compatible XYZdir vars at configure-time.  What
 # we would normally want, however, is that --libdir derives from the
 # make-time $(prefix).  The distinction between configure-time and
 # make-time is the significant factor there.
@@ -1169,11 +1169,10 @@ proc proj-which-linenoise {dotH} {
 # reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
 # --exec-prefix=FOO is passed to configure, libdir will still derive,
 # at make-time, from whatever exec_prefix is passed to make, and will
-# use FOO if exec_prefix is not overridden.  Without this
+# use FOO if exec_prefix is not overridden at make-time.  Without this
 # post-processing, libdir would be cemented in as FOO/lib at
-# configure-time, so would be tedious to override properly via a make
+# configure-time, so could be tedious to override properly via a make
 # invocation.
-#
 proc proj-remap-autoconf-dir-vars {} {
   set prefix [get-define prefix]
   set exec_prefix [get-define exec_prefix $prefix]
