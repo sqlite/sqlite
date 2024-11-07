@@ -51,6 +51,11 @@ found in [proj.tcl][].
 
 In (mostly) alphabetical order:
 
+- **`file-isexec filename`**\  
+  Should be used in place of `[file executable]`, as it will also
+  check for `${filename}.exe` on Windows platforms. However, on such
+  platforms is also assumes that _any_ existing file is executable.
+
 - **`get-env VAR ?default?`**\  
   Will fetch an "environment variable"
   from the first of either: (A) a KEY=VALUE passed to the configure
