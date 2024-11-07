@@ -5518,7 +5518,7 @@ static int fts3EvalNearTest(Fts3Expr *pExpr, int *pRc){
       nTmp += p->pRight->pPhrase->doclist.nList;
     }
     nTmp += p->pPhrase->doclist.nList;
-    aTmp = sqlite3_malloc64(nTmp*2);
+    aTmp = sqlite3_malloc64(nTmp*2 + FTS3_VARINT_MAX);
     if( !aTmp ){
       *pRc = SQLITE_NOMEM;
       res = 0;

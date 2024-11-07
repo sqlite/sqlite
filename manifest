@@ -1,5 +1,5 @@
-C Extend\sthe\sset\sof\s--flags\swhich\sget\scleared/unset\swhen\susing\s--with-wasi-sdk.
-D 2024-11-07T16:59:15.970
+C Fix\san\sOOB\swrite\sthat\scould\soccur\sin\sfts3\swhen\sdealing\swith\scorrupt\sdatabase\srecords.
+D 2024-11-07T17:34:53.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -79,7 +79,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 59ae8c42ed3c39478faa6d122687e467ac34c98a63282e834f7df9cb5076c450
+F ext/fts3/fts3.c 070d6fec098d49d9b9572c6cd07fd7b82b8b33bf301514638f72dac8ad5a71ce
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 968f7d7cae541a6926146e9fd3fb2b2ccbd3845b7890a8ed03de0c06ac776682
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
@@ -699,7 +699,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk beaeb83b8239bf4f9747e1dbd5316536feb9a961c689c9917cf5afb4859feafb
+F main.mk e9cdc9dd617abea4e60cb823bb18737753f8a4f31c03900c0d63bd569e1ef88b
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -1192,6 +1192,7 @@ F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cd
 F test/fts3corrupt4.test c7f414fe29b97a478d15c90382c4ae077a2bbd2283bf8c63bf66dadaaed3edb8
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
+F test/fts3corrupt7.test ad11123257c9ee70b704c4534095e7c3032dd25ad78d5324f54b0b05970cdbec
 F test/fts3cov.test 7eacdbefd756cfa4dc2241974e3db2834e9b372ca215880e00032222f32194cf
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -2200,8 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb5656bdc905947df205432e108ca6724393061a27028e23bf35b4bf48505d4f
-R 8db0443b3cc341b10691e841478e8610
-U stephan
-Z c32c37eb256587dabe07c86fffbf93af
+P 2a2419ef742c9f37c32be04d417337c1fa22503305d2df154fa38b2b69eae943
+R 580b9efafd7ec3d49d176dafa65089bc
+U dan
+Z f282e2ce9844d566093a01c30fea97c9
 # Remove this line to create a well-formed Fossil manifest.
