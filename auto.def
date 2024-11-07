@@ -635,8 +635,8 @@ proc sqlite-check-tcl {} {
   }; # find TCLLIBDIR
 
   if {[file-isexec $with_tclsh]} {
+    msg-result "Using tclsh: $with_tclsh"
     if {$cfg ne ""} {
-      msg-result "Using tclsh: $with_tclsh"
       define HAVE_TCL 1
     } else {
       proj-warn "Found tclsh but no tclConfig.sh, so cannot build TCL components."
@@ -672,7 +672,7 @@ proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH [proj-get-env CFLAGS_JIMSH {-O1}]
   set cgtcl [opt-val with-tclsh jimsh]
-  set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
+  set flagsToRestore {CC CFLAGS AS_CFLAGS CPPFLAGS AS_CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
   define-push $flagsToRestore {
     # We have to swap CC to CC_FOR_BUILD for purposes of the various
     # [cc-...] tests below. Recall that --with-wasi-sdk may have
@@ -680,6 +680,9 @@ proc sqlite-determine-codegen-tcl {} {
     # Per consulation with autosetup's creator, doing this properly
     # requires us to [define-push] the whole $flagsToRestore list
     # (plus a few others which are not relevant in this tree).
+    #
+    # These will get set to their previous values at the end of this
+    # block.
     foreach flag $flagsToRestore {define $flag ""}
     define CC [get-define CC_FOR_BUILD]
     if {"jimsh" ne $cgtcl} {
@@ -690,12 +693,22 @@ proc sqlite-determine-codegen-tcl {} {
       # These headers are technically optional for JimTCL but necessary if
       # we want to use it for code generation:
       set sysh [cc-check-includes dirent.h sys/time.h]
+      # jimsh0.c hard-codes #define's for HAVE_DIRENT_H and
+      # HAVE_SYS_TIME_H on the platforms it supports, so we do not
+      # need to add -D... flags for those. We check for them here only
+      # so that we can avoid the situation that we later, at
+      # make-time, try to compile jimsh but it then fails due to
+      # missing headers (i.e. fail earlier rather than later).
       if {$sysh && [cc-check-functions realpath]} {
         define-append CFLAGS_JIMSH -DHAVE_REALPATH
         define BTCLSH "\$(JIMSH)"
         set ::useJimForCodeGen 1
       } elseif {$sysh && [cc-check-functions _fullpath]} {
-        # _fullpath() is a Windows API
+        # _fullpath() is a Windows API. It's not entirely clear
+        # whether we need to add {-DHAVE_SYS_TIME_H -DHAVE_DIRENT_H}
+        # to CFLAGS_JIMSH in this case. On MinGW32 we definitely do
+        # not want to because it already hard-codes them. On _MSC_VER
+        # builds it does not.
         define-append CFLAGS_JIMSH -DHAVE__FULLPATH
         define BTCLSH "\$(JIMSH)"
         set ::useJimForCodeGen 1
