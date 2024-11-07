@@ -666,12 +666,13 @@ sqlite-check-tcl
 #   - CFLAGS_JIMSH = any flags needed for buildng a BTCLSH-compatible
 #     jimsh. The defaults may be pass on to configure as
 #     CFLAGS_JIMSH=...
+set useJimForCodeGen 0
 proc sqlite-determine-codegen-tcl {} {
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH [proj-get-env CFLAGS_JIMSH {-O1}]
   set cgtcl [opt-val with-tclsh jimsh]
   set flagsToRestore {CC CFLAGS CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
-  define-push $flagsToRestore {
+ define-push $flagsToRestore {
     # We have to swap CC to CC_FOR_BUILD for purposes of the various
     # [cc-...] tests below. Recall that --with-wasi-sdk may have
     # swapped out CC with one which is not appropriate for this block.
@@ -691,10 +692,12 @@ proc sqlite-determine-codegen-tcl {} {
       if {$sysh && [cc-check-functions realpath]} {
         define-append CFLAGS_JIMSH -DHAVE_REALPATH
         define BTCLSH "\$(JIMSH)"
+        set ::useJimForCodeGen 1
       } elseif {$sysh && [cc-check-functions _fullpath]} {
         # _fullpath() is a Windows API
         define-append CFLAGS_JIMSH -DHAVE__FULLPATH
         define BTCLSH "\$(JIMSH)"
+        set ::useJimForCodeGen 1
       } elseif {[file-isexec [get-define TCLSH_CMD]]} {
         set cgtcl [get-define TCLSH_CMD]
         define BTCLSH "\$(TCLSH_CMD)"
@@ -845,6 +848,10 @@ proc sqlite-check-line-editing {} {
     define CFLAGS_READLINE "-I$dirLn $lnC"
     define HAVE_LINENOISE $lnVal
     sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
+    if {$::useJimForCodeGen && 2 == $lnVal} {
+      define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
+      user-notice "Adding linenoise support to jimsh."
+    }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {
     # libedit mimics libreadline and on some systems does not have its
@@ -997,7 +1004,6 @@ proc sqlite-check-line-editing {} {
   if {$failIfNotFound} {
     proj-fatal "Explicit --$editLibName failed to find a matching library."
   }
-
   return "none"
 }; # sqlite-check-line-editing
 msg-result "Line-editing support for the sqlite3 shell: [sqlite-check-line-editing]"
@@ -1186,27 +1192,6 @@ if {"" ne $oFF} {
   msg-result "Shell options: [get-define OPT_SHELL]"
 }
 unset oFF
-
-########################################################################
-# Maybe extend JimTCL a bit. As of this writing (2024-09-27) it only
-# needs (-DHAVE_REALPATH or -DHAVE__FULLPATH) and -DHAVE_DIRENT_H to
-# be compatible with our code generators. It can, however, be slightly
-# extended via easy-to-detect features, should we need them.
-if {0 && "" ne [get-define CFLAGS_JIMSH]} {
-  foreach jimFunc {opendir fsync isascii} {
-    if {[cc-check-functions $jimFunc]} {
-      define-append CFLAGS_JIMSH -DHAVE_[string toupper $jimFunc]
-    }
-  }
-  #These are hard-coded into jimsh0.c, so we must not -D them:
-  #foreach jimDef {HAVE_UNISTD_H HAVE_DIRENT_H} {
-  #  if {[is-defined $jimDef]} {
-  #    define-append CFLAGS_JIMSH -D$jimDef
-  #  }
-  #}
-  define-append CFLAGS_JIMSH -DHAVE_LONG_LONG; # SQLite relies on long long, so we know it's available
-}; # JimTCL
-
 
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something
