@@ -330,9 +330,9 @@ proc proj-opt-set {flag {val 1}} {
 # @proj-val-truthy val
 #
 # Returns 1 if $val appears to be a truthy value, else returns
-# 0. Truthy values are any of {1 on enabled yes}
+# 0. Truthy values are any of {1 on true yes enabled}
 proc proj-val-truthy {val} {
-  expr {$val in {1 on enabled yes}}
+  expr {$val in {1 on true yes enabled}}
 }
 
 ########################################################################

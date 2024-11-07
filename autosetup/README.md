@@ -68,9 +68,14 @@ In (mostly) alphabetical order:
     trimmed contents. This can be used, e.g., to set a developer's
     local preferences for the default `CFLAGS`.
 
-- **`proj-define-if-opt-truthy flag defineName checkingMsg ?yesVal=1? ?noVal=0?`**\  
-  Defines `defineName` to either `yesVal` or `noVal`, depending on
-  whether `--flag` is truthy or not.
+- **`proj-define-if-opt-truthy flag defineName ?checkingMsg? ?yesVal=1? ?noVal=0?`**\  
+  `[define $defineName]` to either `$yesVal` or `$noVal`, depending on
+  whether `--$flag` is truthy or not. `$checkingMsg` is a
+  human-readable description of the check being made, e.g. "enable foo
+  bar baz?" If no `checkingMsg` is provided, the operation is silent.\  
+  Potential TODO: change the final two args to `-yes` and `-no`
+  flags. They're rarely needed, though: search [auto.def][] for
+  `TSTRNNR_OPTS` for an example of where they are used.
 
 - **`proj-if-opt-truthy flag thenScript ?elseScript?`**\  
   Evals `thenScript` if the given `--flag` is truthy, else it
@@ -84,18 +89,18 @@ In (mostly) alphabetical order:
 
 - **`proj-opt-truthy flag`**\  
   Returns 1 if `--flag`'s value is "truthy," i.e. one of (1, on,
-  enabled, yes).
+  enabled, yes, true).
 
 - **`proj-opt-was-provided FLAG`**\  
   Returns 1 if `--FLAG` was explicitly provided to configure,
   else 0. This distinction can be used to determine, e.g., whether
   `--with-readline` was provided or whether we're searching for
   readline by default. In the former case, failure to find it should
-  be treated as fatal.
+  be treated as fatal, where in the latter case it's not.
 
 - **`proj-val-truthy value`**\  
-  Returns 1 if `$value` is "truthy," i.e. one of (1, on, enabled,
-  yes).
+  Returns 1 if `$value` is "truthy," See `proj-opt-truthy` for the definition
+  of "truthy."
 
 - **`sqlite-add-feature-flag ?-shell? FLAG...`**\  
   Adds the given feature flag to the CFLAGS which are specific to building
