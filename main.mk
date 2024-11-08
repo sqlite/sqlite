@@ -1005,7 +1005,7 @@ T.tcl.env.source = . $(T.tcl.env.sh) || exit $$?
 # and $(T.link) which first invoke $(T.tcl.env.source). Any targets which used them
 # must have a dependency on $(T.tcl.env.sh)
 #
-T.compile.tcl = $(T.tcl.env.source); $(T.compile)
+T.compile.tcl = $(T.tcl.env.source); $(T.compile) $(CFLAGS.intree_includes)
 T.link.tcl = $(T.tcl.env.source); $(T.link)
 
 #
@@ -1322,7 +1322,7 @@ window.o:	$(TOP)/src/window.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) $(CFLAGS.libsqlite3) -c $(TOP)/src/window.c
 
 tclsqlite.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
-	$(T.compile.tcl) -DUSE_TCL_STUBS=1 $$TCL_INCLUDE_SPEC $(CFLAGS.intree_includes) \
+	$(T.compile.tcl) -DUSE_TCL_STUBS=1 $$TCL_INCLUDE_SPEC \
 		-c $(TOP)/src/tclsqlite.c
 
 tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
