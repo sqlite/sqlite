@@ -264,7 +264,8 @@ all:	sqlite3.h sqlite3.c
 ########################################################################
 
 #
-# $(CFLAGS.env) holds the environment-provided $(CFLAGS).
+# $(CFLAGS.env) holds the any $(CFLAGS) provided at configure- or
+# make-time (the latter overriding the former).
 #
 # $(CFLAGS) should ideally only contain flags which are relevant for
 # all binaries built for the target platform. However, many people
@@ -277,27 +278,33 @@ all:	sqlite3.h sqlite3.c
 #
 # Historical note: the pre-3.48 build does not honor CPPFLAGS passed
 # to make, so we do not do so here. Both the legacy and 3.48+ builds
-# support CPPFLAGS passed at configure-time.
+# support CPPFLAGS passed at configure-time, and combines them with
+# the configure-time CFLAGS.
 #
 CFLAGS.core ?=
 CFLAGS.env  = $(CFLAGS)
 T.cc += $(CFLAGS.core) $(CFLAGS.env)
 
 #
-# $(LDFLAGS.env) represents any LDFLAGS=... the client passes to
-# make or configure. The historical build enabled passing-on of
-# user-provided LDFLAGS, and some folks rely on that for obscure uses,
-# so we do the same here, with the caveats that:
+# $(LDFLAGS.configure) represents any LDFLAGS=... the client passes to
+# the configure process.  The historical build enabled passing-on of
+# user-provided LDFLAGS at configure-time but not make-time. That
+# behavior is not possible to fully emulate here because this makefile
+# is not filtered by the configure script, so we instead
+# "soft-enforce" it by using a level of indirection, which clients who
+# read this can (but are not advised to!) bypass by passing
+# LDFLAGS.configure=... to this makefile. (We do not guaranty this
+# variable name to be stable, so do not rely on that capability!)
 #
-# 1) The legacy build applied such LDFLAGS to all link operations for
-#    all deliverables.
+# A significant difference from the legacy build:
 #
-# 2) The 3.48+ build applies them (as of this writing) more
-#    selectively: search this file LDFLAGS.env to see where they're
-#    set. As of this writing, they only affect targets which use
-#    $(LDFLAGS.libsqlite3) - see that var's docs for details.
+# The legacy build applied such LDFLAGS to all link operations for all
+# deliverables. The 3.48+ build applies them (as of this writing) more
+# selectively: search this file LDFLAGS.configure to see where they're
+# set. As of this writing, they only affect targets which use
+# $(LDFLAGS.libsqlite3) - see that var's docs for details.
 #
-LDFLAGS.env = $(LDFLAGS)
+LDFLAGS.configure ?=
 
 #
 # The difference between $(OPT_FEATURE_FLAGS) and $(OPTS) is that the
@@ -386,7 +393,7 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.env)
+  $(LDFLAGS.configure)
 
 #
 # $(install-dir.XYZ) = dirs for installation.

@@ -135,9 +135,10 @@ T.cc = $(CC)
 #
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 #
-# $(LDFLAGS) is documented in main.mk.
+# $(LDFLAGS.configure) represents any LDFLAGS=... the client passes to
+# configure. See main.mk.
 #
-LDFLAGS = @LDFLAGS@
+LDFLAGS.configure = @LDFLAGS@
 
 #
 # CFLAGS.core is documented in main.mk.
