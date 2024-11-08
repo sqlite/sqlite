@@ -1065,7 +1065,13 @@ static int walIndexPage(
 ){
   SEH_INJECT_FAULT;
   if( pWal->nWiData<=iPage || (*ppPage = pWal->apWiData[iPage])==0 ){
-    return walIndexPageRealloc(pWal, iPage, ppPage);
+    int rc;
+    u64 t1;
+    if( pWal->aCommitTime ) t1 = sqlite3STimeNow();
+    rc = walIndexPageRealloc(pWal, iPage, ppPage);
+    if( pWal->aCommitTime ){
+      pWal->aCommitTime[COMMIT_TIME_HASHMAPUS] += sqlite3STimeNow() - t1;
+    }
   }
   return SQLITE_OK;
 }
@@ -5181,6 +5187,7 @@ static int walFrames(
   WalIndexHdr *pLive;             /* Pointer to shared header */
   int iApp;
   int bWal2 = isWalMode2(pWal);
+  int nFrame = 0;
 
   int logFlags = 0;
 
@@ -5396,6 +5403,7 @@ static int walFrames(
     if( (p->flags & PGHDR_WAL_APPEND)==0 ) continue;
     iFrame++;
     rc = walIndexAppend(pWal, iApp, iFrame, p->pgno);
+    nFrame++;
   }
   assert( pLast!=0 || nExtra==0 );
   while( rc==SQLITE_OK && nExtra>0 ){
@@ -5403,6 +5411,7 @@ static int walFrames(
     nExtra--;
     rc = walIndexAppend(pWal, iApp, iFrame, pLast->pgno);
   }
+  if( pWal->aCommitTime ) pWal->aCommitTime[COMMIT_TIME_NFRAME] = nFrame;
 
   sqlite3CommitTimeSet(pWal->aCommitTime, COMMIT_TIME_AFTER_WALINDEX);
 

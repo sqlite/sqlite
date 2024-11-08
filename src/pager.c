@@ -3051,6 +3051,7 @@ end_playback:
 static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   int rc = SQLITE_OK;          /* Return code */
+  u64 t1 = 0;
 
 #ifndef SQLITE_OMIT_WAL
   u32 iFrame = 0;              /* Frame of WAL containing pgno */
@@ -3062,6 +3063,9 @@ static int readDbPage(PgHdr *pPg){
     rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
     if( rc ) return rc;
   }
+  if( pPager->aCommitTime ){
+    t1 = sqlite3STimeNow();
+  }
   if( iFrame ){
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame,pPager->pageSize,pPg->pData);
   }else
@@ -3072,6 +3076,10 @@ static int readDbPage(PgHdr *pPg){
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
     }
+  }
+  if( pPager->aCommitTime ){
+    pPager->aCommitTime[COMMIT_TIME_RELOCATE2_READUS] += (sqlite3STimeNow() - t1);
+    pPager->aCommitTime[COMMIT_TIME_RELOCATE2_READCOUNT]++;
   }
 
   if( pPg->pgno==1 ){

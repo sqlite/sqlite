@@ -4557,27 +4557,46 @@ static int btreeRelocateRange(
 
     if( pEntry->eType==PTRMAP_FREEPAGE ){
       Pgno dummy;
+      u64 t1;
+      if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
       rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
+      if( pBt->aCommitTime ){
+        pBt->aCommitTime[COMMIT_TIME_RELOCATE2_ALLOCATEUS] += (sqlite3STimeNow() - t1);
+      }
       if( pFree ){
         assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
         sqlite3PcacheDrop(pFree->pDbPage);
       }
       assert( rc!=SQLITE_OK || dummy==iPg );
     }else if( pnCurrent ){
+      u64 t1;
       btreeGetPage(pBt, iPg, &pPg, 0);
       assert( sqlite3PagerIswriteable(pPg->pDbPage) );
       assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
       iNew = ++(*pnCurrent);
       if( iNew==PENDING_BYTE_PAGE(pBt) ) iNew = ++(*pnCurrent);
+      if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
       rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
+      if( pBt->aCommitTime ){
+        pBt->aCommitTime[COMMIT_TIME_RELOCATE2_RELOCATEUS] += (sqlite3STimeNow() - t1);
+      }
       releasePageNotNull(pPg);
     }else{
+      u64 t1;
+      if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
       rc = allocateBtreePage(pBt, &pFree, &iNew, iFirst-1, BTALLOC_LE);
+      if( pBt->aCommitTime ){
+        pBt->aCommitTime[COMMIT_TIME_RELOCATE2_ALLOCATEUS] += (sqlite3STimeNow() - t1);
+      }
       assert( rc!=SQLITE_OK || iNew<iFirst );
       if( rc==SQLITE_OK ){
         releasePage(pFree);
         btreeGetPage(pBt, iPg, &pPg, 0);
+        if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
         rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent,iNew,1);
+        if( pBt->aCommitTime ){
+          pBt->aCommitTime[COMMIT_TIME_RELOCATE2_RELOCATEUS] += (sqlite3STimeNow() - t1);
+        }
         releasePage(pPg);
       }
     }
@@ -4680,7 +4699,9 @@ static int btreeFixUnlocked(Btree *p){
           sqlite3CommitTimeSet(
               p->pBt->aCommitTime, COMMIT_TIME_START_RELOCATE2
           );
+          sqlite3PagerSetCommitTime(pBt->pPager, pBt->aCommitTime);
           rc = btreeRelocateRange(pBt, nFin+1, nCurrent, 0);
+          sqlite3PagerSetCommitTime(pBt->pPager, 0);
         }
 
         put4byte(&p1[28], nFin);
