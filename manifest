@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sin\ssqlite3recover.c.
-D 2024-11-08T20:44:16.924
+C Increase\sthe\sminimum\sSQLITE_LENGTH_LIMIT\sfrom\s1\sto\s30\sto\savoid\sproblems\sdoing\nsimple\sthings\slike\sconverting\sstrings\sinto\sintegers.\s\sSee\salso\n[8fd5b8ec4ab9b555].
+D 2024-11-08T20:57:45.905
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -741,7 +741,7 @@ F src/insert.c f8d1a0f8ee258411009c6b7f2d93170e351bd19f5ad89d57e1180644297cbe70
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c f6daba376adac080fe9287c6746fb15e12c7e47d022f2e9f2986ed364b7e0329
+F src/main.c 9f4286302727f58fddc03a820d24cb7618a1e27473501792fbe979726f846d1f
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -784,7 +784,7 @@ F src/sqlite.h.in 599203aa6cf3a662f879e7581f4b7f2678738c0b7c71ddda3c0cb5c59867c3
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 77be043f8694f4a8702d0ee882022b2e5a6489a0493e77c5d9a73f1efc5a2cc1
-F src/sqliteLimit.h 6878ab64bdeb8c24a1d762d45635e34b96da21132179023338c93f820eee6728
+F src/sqliteLimit.h 6993c9cfe3af5b8169ae0e5f15627fc15596726d4f1dc90a221309f79715ce88
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ff2dc3ec1bd318ee7a45d6b246a367703d5fb2a4c8da99d675ee7eb987b3a153
@@ -1681,7 +1681,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 1b7ab4f312442c5cc6b3a5f299fa8ca051416d1dd173cb1126fd51bf64f2c3fb
-F test/sqllimits1.test dee96a51b83ef866d06ec3c687d4c951d97b02549facc5be88c9dfcb215b98bf
+F test/sqllimits1.test 7fa5027c2686e0a752f9a35616966eabfb9959ce041701b091932692c4bb6448
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/starschema1.test a84205f97fe278a015ac39546c86b97228d22043af28f3a2ef809e8d5637ce1d
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
@@ -2201,8 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 22986767da8f086daaa6dc760c15e6aedcc5d2d6033937ac2f112ee5750d7fdb
-R 6e0cc6db960e922136e512712813d155
-U dan
-Z fa49496fb1b74fa0bc26b3e4367b5508
+P f52bb19281b189508f5c31305cbd4a5651f3e036a4ee753c64488b0c7e5d2e4d
+R fbe7cd1f1cb69bd427dfee96434016cb
+U drh
+Z 0e7a084b0ad14438b0af8216e7c6c0bb
 # Remove this line to create a well-formed Fossil manifest.
