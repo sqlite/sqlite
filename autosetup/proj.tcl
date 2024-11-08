@@ -319,6 +319,14 @@ proc proj-first-bin-of {args} {
 # passes --foo-bar to configure, even if that invocation would resolve
 # to the default value of baz. If the user does not explicitly pass in
 # --foo-bar (with or without a value) then this returns 0.
+#
+# Note: unlike most functions which deal with configure --flags, this
+# one does not validate that $key refers to a pre-defined flag. i.e.
+# it accepts arbitrary keys, even those not defined via an [options]
+# call. [proj-opt-set] manipulates the internal list of flags, such
+# that new options set via that function will cause this function to
+# return true. (That's an unintended and unavoidable side-effect, not
+# specifically a feature which should be made use of.)
 proc proj-opt-was-provided {key} {
   dict exists $::autosetup(optset) $key
 }

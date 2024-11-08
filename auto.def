@@ -195,6 +195,12 @@ set flags {
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
+  #soname:=none         => {SONAME for libsqlite3.so}
+  #^^^ we "could", but arguably shouldn't, support clients passing a
+  # value of libsqlite3.so.0 for compatibility with clients which
+  # linked against a pre-3.48 build.
+  # Maybe we should support values of --soname=(none,auto,legacy), where auto means
+  # to use the 3.48+ value of libsqlite3.so.3..
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
@@ -427,13 +433,41 @@ if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
 }
 
 proj-check-rpath  ; # Determine proper rpath-handling flag
-if {[proj-check-soname libsqlite3.so.3]} {
-  # It's not yet clear whether we gain anything from setting -soname,
-  # but not having it has been a source of anxiety for some users.
-  define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]libsqlite3.so.3
-} else {
+
+########################################################################
+# It's not yet clear whether we gain anything from setting -soname,
+# but not having it has been a source of anxiety for some users.
+# Setting it to any value other than its historical value of
+# libsqlite3.so.0 may (this is not certain) break dynamic linking of
+# clients which initially linked against a legacy build.
+#
+# See discussion in/around:
+# https://sqlite.org/forum/forumpost/0c6fc6f46b2cb3
+proc sqlite-check-soname {} {
   define LDFLAGS_SONAME_LIBSQLITE3 ""
+  if {[proj-opt-was-provided soname]} {
+    set soname [opt-val soname]
+  } else {
+    return 0
+  }
+  switch -exact -- $soname {
+    none       { return 0 }
+    auto   - 3 { set soname libsqlite3.so.3 }
+    legacy - 0 { set soname libsqlite3.so.0 }
+    default {
+      proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
+    }
+  }
+  msg-debug "soname=$soname"
+  if {[proj-check-soname $soname]} {
+    define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]$soname
+    msg-result "Setting SONAME: [get-define LDFLAGS_SONAME_LIBSQLITE3]"
+  } else {
+    proj-fatal "This environment does not support SONAME."
+  }
+  return sqlite-check-soname ""
 }
+sqlite-check-soname
 
 proj-define-if-opt-truthy shared ENABLE_SHARED "Build shared library?"
 
