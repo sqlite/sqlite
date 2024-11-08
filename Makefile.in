@@ -117,13 +117,28 @@ CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = $(CC)
 #
-# CFLAGS is problematic because it is frequently overridden when
-# invoking make, which loses things like -fPIC. So... let's avoid
-# using it directly and instead add a level of indirection.  We
-# combine CFLAGS and CPPFLAGS here because that's the way the legacy
-# build did it.
+# $(CFLAGS) is problematic because it is frequently overridden when
+# invoking make, which loses things like -fPIC. So... we avoid using
+# it directly and instead add a level of indirection.  We combine
+# $(CFLAGS) and $(CPPFLAGS) here because that's the way the legacy
+# build did it and many builds rely on that. See main.mk for more
+# details.
+#
+# Historical note: the pre-3.48 build only honored CPPFLAGS at
+# configure-time, and expanded them into the generated Makefile. There
+# are, in that build, no uses of CPPFLAGS in the configure-expanded
+# Makefile. Ergo: if a client configures with CPPFLAGS=... and then
+# explicitly passes CFLAGS=... to make, the CPPFLAGS will be
+# lost. That behavior is retained in 3.48+ because also honoring
+# CPPFLAGS at make-time may have undesired side effects on any number
+# of builds.
 #
 CFLAGS = @CFLAGS@ @CPPFLAGS@
+#
+# $(LDFLAGS) is documented in main.mk.
+#
+LDFLAGS = @LDFLAGS@
+
 #
 # CFLAGS.core is documented in main.mk.
 #
@@ -148,15 +163,15 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
 # can include the generated sqlite_cfg.h.
 #
+# main.mk will fill out T.cc.sqlite with additional flags common to
+# all builds.
+#
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 #
 # -I$(prefix)/include is primarily so that the ICU
 # headers can be found.
 #
 T.cc.sqlite += -I$(prefix)/include
-
-#
-# main.mk will fill out T.cc.sqlite with some flags common to all builds.
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -230,12 +245,6 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
-#
-# $(TCLLIB_RPATH) is calculated by the configure script. Its counterpart
-# in tclConfig.sh (TCL_LD_SEARCH_FLAGS) is defined in such a way as to
-# make it incompatible with static makefiles.
-#
-#TCLLIB_RPATH = @TCLLIB_RPATH@
 #
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we

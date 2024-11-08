@@ -264,16 +264,40 @@ all:	sqlite3.h sqlite3.c
 ########################################################################
 
 #
+# $(CFLAGS.env) holds the environment-provided $(CFLAGS).
+#
 # $(CFLAGS) should ideally only contain flags which are relevant for
 # all binaries built for the target platform. However, many people
 # like to pass it to "make" without realizing that it applies to
-# dozens of apps, and they override core flags when doing so. To help
-# work around that, we expect core-most CFLAGS (only), e.g. -fPIC, to
-# be set in $(CFLAGS.core). That enables people to pass their other
-# CFLAGS without triggering, e.g., "recompile with -fPIC" errors.
+# dozens of deliverables, and they override core flags (like -fPIC)
+# when doing so. To help work around that, we expect all core-most
+# CFLAGS, e.g. -fPIC, to be set in $(CFLAGS.core). That enables people
+# to pass their other CFLAGS without triggering, e.g., "recompile with
+# -fPIC" errors.
+#
+# Historical note: the pre-3.48 build does not honor CPPFLAGS passed
+# to make, so we do not do so here. Both the legacy and 3.48+ builds
+# support CPPFLAGS passed at configure-time.
 #
 CFLAGS.core ?=
-T.cc += $(CFLAGS.core) $(CFLAGS)
+CFLAGS.env  = $(CFLAGS)
+T.cc += $(CFLAGS.core) $(CFLAGS.env)
+
+#
+# $(LDFLAGS.env) represents any LDFLAGS=... the client passes to
+# make or configure. The historical build enabled passing-on of
+# user-provided LDFLAGS, and some folks rely on that for obscure uses,
+# so we do the same here, with the caveats that:
+#
+# 1) The legacy build applied such LDFLAGS to all link operations for
+#    all deliverables.
+#
+# 2) The 3.48+ build applies them (as of this writing) more
+#    selectively: search this file LDFLAGS.env to see where they're
+#    set. As of this writing, they only affect targets which use
+#    $(LDFLAGS.libsqlite3) - see that var's docs for details.
+#
+LDFLAGS.env = $(LDFLAGS)
 
 #
 # The difference between $(OPT_FEATURE_FLAGS) and $(OPTS) is that the
@@ -346,8 +370,8 @@ T.link = $(T.cc.sqlite) $(T.link.extras)
 T.link.shared = $(T.link) $(LDFLAGS.shobj)
 
 #
-# LDFLAGS.libsqlite3 should be used with any deliverable for which any
-# of the following apply:
+# $(LDFLAGS.libsqlite3) should be used with any deliverable for which
+# any of the following apply:
 #
 #  - Results in building libsqlite3.so
 #  - Compiles sqlite3.c in to an application
@@ -361,7 +385,8 @@ T.link.shared = $(T.link) $(LDFLAGS.shobj)
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
-  $(LDFLAGS.zlib) $(LDFLAGS.icu)
+  $(LDFLAGS.zlib) $(LDFLAGS.icu) \
+  $(LDFLAGS.env)
 
 #
 # $(install-dir.XYZ) = dirs for installation.
@@ -1474,7 +1499,10 @@ tclsqlite3.c:	sqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 
-CFLAGS.tclextension = $(CFLAGS.intree_includes) $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+#
+# $(CFLAGS.tclextension) = CFLAGS for the tclextension* targets.
+#
+CFLAGS.tclextension = $(CFLAGS.intree_includes) $(CFLAGS.env) $(OPT_FEATURE_FLAGS) $(OPTS)
 #
 # Build the SQLite TCL extension in a way that make it compatible
 # with whatever version of TCL is running as $TCLSH_CMD, possibly defined
