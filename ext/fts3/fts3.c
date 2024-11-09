@@ -2344,10 +2344,15 @@ static int fts3PoslistPhraseMerge(
   if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += fts3GetVarint32(p1, &iCol1);
+    /* iCol1==0 indicates corruption. Column 0 does not have a POS_COLUMN
+    ** entry, so this is actually end-of-doclist. */
+    if( iCol1==0 ) return 0;
   }
   if( *p2==POS_COLUMN ){ 
     p2++;
     p2 += fts3GetVarint32(p2, &iCol2);
+    /* As above, iCol2==0 indicates corruption. */
+    if( iCol2==0 ) return 0;
   }
 
   while( 1 ){
