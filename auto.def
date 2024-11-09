@@ -543,7 +543,7 @@ proc sqlite-check-tcl {} {
   # TODO: document the steps this is taking.
   global srcdir
   msg-result "Checking for a suitable tcl... "
-  proj-assert {proj-opt-truthy tcl}
+  proj-assert [proj-opt-truthy tcl]
   set use_tcl 1
   set with_tclsh [opt-val with-tclsh]
   set with_tcl [opt-val with-tcl]
@@ -635,7 +635,7 @@ proc sqlite-check-tcl {} {
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
     # based on info from tclConfig.sh.
-    proj-assert {expr {"" ne [get-define TCL_EXEC_PREFIX]}}
+    proj-assert {"" ne [get-define TCL_EXEC_PREFIX]}
     set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
     if {![file-isexec $with_tclsh]} {
       set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
@@ -691,7 +691,7 @@ proc sqlite-check-tcl {} {
     proj-fatal "TCL support was requested but no tclConfig.sh could be found."
   }
   if {"" eq $cfg} {
-    proj-assert {expr {0 == [get-define HAVE_TCL]}}
+    proj-assert {0 == [get-define HAVE_TCL]}
     proj-indented-notice {
       WARNING: Cannot find a usable tclConfig.sh file.  Use
       --with-tcl=DIR to specify a directory where tclConfig.sh can be
@@ -1042,8 +1042,8 @@ proc sqlite-check-line-editing {} {
     set rlInc [join $rlInc]
     define LDFLAGS_READLINE $rlLib
     define CFLAGS_READLINE $rlInc
-    proj-assert {expr {$editLibDef in {HAVE_READLINE HAVE_EDITLINE}}}
-    proj-assert {expr {$editLibName in {readline editline}}}
+    proj-assert {$editLibDef in {HAVE_READLINE HAVE_EDITLINE}}
+    proj-assert {$editLibName in {readline editline}}
     sqlite-add-shell-opt -D${editLibDef}=1
     msg-result "Using $editLibName flags: $rlInc $rlLib"
     # Check whether rl_completion_matches() has a signature we can use

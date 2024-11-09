@@ -77,14 +77,21 @@ proc proj-fatal {msg} {
 ########################################################################
 # @proj-assert script
 #
-# Kind of like a C assert if uplevel (eval) of $script is false,
-# triggers a fatal error.
-proc proj-assert {script} {
+# Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
+# false, a fatal error is triggered. The error message, by default,
+# includes the body of the failed assertion, but if $descr is set then
+# that is used instead.
+proc proj-assert {script {descr ""}} {
   if {1 == [get-env proj-assert 0]} {
-    msg-result [proj-bold "asserting: [string trim $script]"]
+    msg-result [proj-bold "asserting: $script"]
   }
-  if {![uplevel 1 $script]} {
-    proj-fatal "Assertion failed: $script"
+  set x {expr }
+  append x \{ $script \}
+  if {![uplevel 1 $x]} {
+    if {"" eq $descr} {
+      set descr $script
+    }
+    proj-fatal "Assertion failed: $descr"
   }
 }
 
