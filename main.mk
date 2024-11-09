@@ -981,8 +981,8 @@ T.tcl.env.sh = ./.tclenv.sh
 $(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH) $(MAKEFILE_LIST)
 	@if [ x = "x$(TCL_CONFIG_SH)" ]; then \
 		echo 'TCL_CONFIG_SH must be set to point to a "tclConfig.sh"' 1>&2; exit 1; \
-	fi
-	@if [ x != "x$(TCLLIBDIR)" ]; then echo TCLLIBDIR="$(TCLLIBDIR)"; else \
+	fi; \
+	if [ x != "x$(TCLLIBDIR)" ]; then echo TCLLIBDIR="$(TCLLIBDIR)"; else \
 		ld= ; \
 		for d in `echo "puts stdout \\$$auto_path" | $(TCLSH_CMD)`; do \
 			if [ -d "$$d" ]; then ld=$$d; break; fi; \
@@ -990,8 +990,8 @@ $(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH) $(MAKEFILE_LIST)
 		if [ x = "x$$ld" ]; then echo "Cannot determine TCLLIBDIR" 1>&2; exit 1; fi; \
 		echo "TCLLIBDIR=$$ld/sqlite3"; \
 	fi > $@; \
-	echo ". \"$(TCL_CONFIG_SH)\" || exit \$$?" >> $@
-	@echo "Created $@"
+	echo ". \"$(TCL_CONFIG_SH)\" || exit \$$?" >> $@; \
+	echo "Created $@"
 
 #
 # $(T.tcl.env.source) is shell code to be run as part of any
@@ -1335,7 +1335,9 @@ tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.SO)
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
 		 $(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
-tcl: tclsqlite3$(T.exe)
+tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
+tclsqlite3$(T.exe)-0 tclsqlite3$(T.exe)-:
+tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -1478,7 +1480,9 @@ install: install-headers
 #
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
-tcl: pkgIndex.tcl
+pkgIndex.tcl-1: pkgIndex.tcl
+pkgIndex.tcl-0 pkgIndex.tcl-:
+tcl: pkgIndex.tcl-$(HAVE_TCL)
 libtclsqlite3.SO = libtclsqlite3$(T.dll)
 $(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \

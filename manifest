@@ -1,5 +1,5 @@
-C Simplify\susage\sof\sproj-assert\sby\smaking\sthe\sexpr\sprefix\simplicit.\sAdd\san\soptional\sdescription\sarg\sto\sproj-assert,\sdefaulting\sto\sthe\sbody\sof\sthe\sassertion\sscript.
-D 2024-11-09T10:23:04.469
+C Fix\sa\sdeps\sproblem,\sintroduced\sin\s[1bd9de719],\swhich\sbreaks\sthe\sbuild\son\ssystems\swhere\sHAVE_TCL=0.
+D 2024-11-09T14:34:20.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk af87776a921824639555d040d7a917de0f295b3dfa70079105b4fb42fdf425c3
+F main.mk efb8f627c5793126ff7a86d698676f4e6509a296b0b113ec284e6f723561f0bc
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 906563a7e07fca81effb31a77ee5d7cdacd4cc6157e16e1139da70c92716869a
-R 80ec48dbf7e84a814515b0c1aedd20af
+P ada7b36c37c59ea02e54462b0eb8b93ff6ab45863edfd67b19f1e1a7bb2f97de
+R bf8863b8add1d028b446d64a9e7551d4
 U stephan
-Z 18ce4bb625331a3aaef20d9b98a0b830
+Z 22d08ab5c31638260d1b0957cd0fc1f8
 # Remove this line to create a well-formed Fossil manifest.
