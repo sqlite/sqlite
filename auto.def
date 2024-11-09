@@ -12,7 +12,7 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-use cc cc-db cc-shared cc-lib proj pkg-config
+use cc cc-db cc-shared cc-lib proj
 
 # $DUMP_DEFINES_TXT is the file emitted by --dump-defines, intended
 # only for build debugging and not part of the public build interface.
