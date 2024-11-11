@@ -19,7 +19,7 @@ that are public domain include the following:
   *  All of the SQLite extension source code and test cases in the
      [ext/ directory](https://sqlite.org/src/tree/ext?type=tree&expand)
   *  All code that ends up in the "sqlite3.c" and "sqlite3.h" build products
-     that actually implements the SQLite RDBMS.
+     that actually implement the SQLite RDBMS.
   *  All of the code used to compile the
      [command-line interface](https://sqlite.org/cli.html)
   *  All of the code used to build various utility programs such as
@@ -56,7 +56,7 @@ words, there are some non-public-domain files used to implement:
 In all cases, the non-public-domain files included with this
 repository have generous BSD-style licenses.  So anyone is free to
 use any of the code in this source repository for any purpose, though
-attribution my be required to reuse or republish the configure and
+attribution may be required to reuse or republish the configure and
 build scripts.  None of the non-public-domain code ever actually reaches
 the build products, such as "sqlite3.c", however, so no attribution is
 required to use SQLite itself.  The non-public-domain code consists of
