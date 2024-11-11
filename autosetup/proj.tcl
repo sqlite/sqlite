@@ -393,13 +393,13 @@ proc proj-if-opt-truthy {boolFlag thenScript {elseScript {}}} {
 }
 
 ########################################################################
-# @proj-define-if-opt-truthy flag def ?msg? ?iftrue? ?iffalse?
+# @proj-define-for-opt flag def ?msg? ?iftrue? ?iffalse?
 #
 # If [proj-opt-truthy $flag] then [define $def $iftrue] else [define
 # $def $iffalse]. If $msg is not empty, output [msg-checking $msg] and
 # a [msg-results ...] which corresponds to the result. Returns 1 if
 # the opt-truthy check passes, else 0.
-proc proj-define-if-opt-truthy {flag def {msg ""} {iftrue 1} {iffalse 0}} {
+proc proj-define-for-opt {flag def {msg ""} {iftrue 1} {iffalse 0}} {
   if {"" ne $msg} {
     msg-checking "$msg "
   }

@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\sfts3\swhere\sa\scorrupt\sdatabase\srecord\swas\snot\sbeing\shandled\scorrectly.
-D 2024-11-09T17:54:51.146
+C Rename\sproj-define-if-opt-truthy\sto\sthe\smore\saccurate,\sand\sless\sverbose,\sproj-define-for-opt.
+D 2024-11-11T09:37:19.361
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 79e9b88684035320ba6cba53c1d6117320ff9cb937286179d0408fb69716e482
+F auto.def dd7d48438426327c37f51f8e289492058744656e2da03197c31e4fb76398050c
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1d
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 6b7939cc1afbef71327c684999278b0a0f71e9c6ad39b7a27b3e79101a0c67de
+F autosetup/proj.tcl 9772d3f89634089add92e2238551a59a5c764d501327f6eb433dca7f98138802
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7953a8bdcba7242c98f786283270d7b3f8830058a29f2d810457eef697855325
-R dc6de33b7db28edd8329e8f40b308bbe
-U dan
-Z 426b1d51434e7f07ff383bb0a9b3ae87
+P cbcb53759b9510379e2159d14b73c9746e611df550b0bd05887bd4a480b519a8
+R 21d3e08c91a6853936b86b0f2f4dc906
+U stephan
+Z b492bf4b216d126b978d56037a0f80c3
 # Remove this line to create a well-formed Fossil manifest.

@@ -469,21 +469,21 @@ proc sqlite-check-soname {} {
 }
 sqlite-check-soname
 
-proj-define-if-opt-truthy shared ENABLE_SHARED "Build shared library?"
+proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
 
-if {![proj-define-if-opt-truthy static ENABLE_STATIC \
+if {![proj-define-for-opt static ENABLE_STATIC \
         "Build static library?"]} {
   proj-warn "Static lib build may be implicitly re-activated by other components, e.g. some test apps."
 }
 
-proj-define-if-opt-truthy amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
 
-proj-define-if-opt-truthy gcov USE_GCOV "Use gcov?"
+proj-define-for-opt gcov USE_GCOV "Use gcov?"
 
-proj-define-if-opt-truthy test-status TSTRNNR_OPTS \
+proj-define-for-opt test-status TSTRNNR_OPTS \
   "test-runner flags:" {--status} {}
 
-proj-define-if-opt-truthy linemacros AMALGAMATION_LINE_MACROS \
+proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
 
 msg-checking "SQLITE_DEBUG build? "
