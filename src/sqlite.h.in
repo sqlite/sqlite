@@ -2631,10 +2631,14 @@ void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 ** deleted by the most recently completed INSERT, UPDATE or DELETE
 ** statement on the database connection specified by the only parameter.
 ** The two functions are identical except for the type of the return value
-** and that if the number of rows modified by the most recent INSERT, UPDATE
+** and that if the number of rows modified by the most recent INSERT, UPDATE,
 ** or DELETE is greater than the maximum value supported by type "int", then
 ** the return value of sqlite3_changes() is undefined. ^Executing any other
 ** type of SQL statement does not modify the value returned by these functions.
+** For the purposes of this interface, a CREATE TABLE AS SELECT statement
+** does not count as an INSERT, UPDATE or DELETE statement and hence the rows
+** added to the new table by the CREATE TABLE AS SELECT statement are not
+** counted.
 **
 ** ^Only changes made directly by the INSERT, UPDATE or DELETE statement are
 ** considered - auxiliary changes caused by [CREATE TRIGGER | triggers],
