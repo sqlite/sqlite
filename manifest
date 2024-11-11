@@ -1,5 +1,5 @@
-C Add\sthe\s".dbtotxt"\scommand\sto\sthe\sCLI.
-D 2024-11-11T19:07:58.682
+C Adjust\sthe\sbehavior\sof\ssqlite3_changes64()\sso\sthat\sit\scounts\sINSERTs\sinto\na\snew\stable\screated\susing\s"CREATE\sTABLE\sname\sAS\sSELECT\s...".\s\sIt\shas\snever\ndone\sthis\sbefore.\s\sThe\sdocumentation\sis\sa\slittle\sambiguous\sabout\swhether\sor\nnot\sit\sactually\sshould.\s\sThis\scheck-in\sis\son\sa\sbranch\sbecause\sit\swill\sprobably\nnever\smake\sit\sto\strunk\sfor\sfear\sof\sbreaking\ssome\slegacy\sprogram.
+D 2024-11-11T21:07:57.343
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -717,7 +717,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 63ca6b647342e8cef643863cd0962a542f133e1069460725ba4461dcda92b03c
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b6
-F src/build.c c6b09342d870a509529244ed8e19b4175a261f2e3163c199241d69e1d8a57607
+F src/build.c b6e5691ab8115d83234d1d8505f9b4299a2a1260daff048a465625208fb4db40
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
@@ -2198,8 +2198,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 073080cae3ea0d12b133d9c9ae98413bb32870a9738c98b89bc345181be81f23
-R 6bdbd63031b22370793e2437aff7acb5
+P b43acf5a8cd4a5efbb90b71af7710084f49bb90ffe4f56de168e8c3a6b679124
+R 54da862609181f5826ec8b59b8cc4d73
+T *branch * chngcnt-create-as
+T *sym-chngcnt-create-as *
+T -sym-trunk *
 U drh
-Z d185df0f51d41a6d3859bb43f39c0c62
+Z cca2277bcbf1bf4fe10b4b5094c73634
 # Remove this line to create a well-formed Fossil manifest.

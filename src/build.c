@@ -2836,6 +2836,8 @@ void sqlite3EndTable(
       sqlite3TableAffinity(v, p, 0);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iCsr, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iCsr, regRec, regRowid);
+      sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE);
+      sqlite3VdbeCountChanges(v);
       sqlite3VdbeGoto(v, addrInsLoop);
       sqlite3VdbeJumpHere(v, addrInsLoop);
       sqlite3VdbeAddOp1(v, OP_Close, iCsr);
