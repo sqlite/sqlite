@@ -1334,7 +1334,8 @@ tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 
 tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.SO)
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
-		 $(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+		$(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
+		$(LDFLAGS.libsqlite3)
 tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
 tclsqlite3$(T.exe)-0 tclsqlite3$(T.exe)-:
 tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
@@ -1731,7 +1732,8 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
 
 sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c
-	$(T.link.tcl) sqlite3_analyzer.c -o $@ $$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $(LDFLAGS.libsqlite3)
+	$(T.link.tcl) sqlite3_analyzer.c -o $@ $$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
+		$(LDFLAGS.libsqlite3)
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
@@ -1739,14 +1741,15 @@ sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(T.exe): $(T.tcl.env.sh) sqltclsh.c
-	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) \
+		$$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 # xbin: target for generic binaries which aren't usually built. It is
 # used primarily for testing the build process.
 xbin: sqltclsh$(T.exe) sqlite3_analyzer$(T.exe)
 
 sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
                        $(TOP)/ext/expert/expert.c sqlite3.c
-	$(T.link)	$(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
+	$(T.link) $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS.libsqlite3)
 xbin: sqlite3_expert$(T.exe)
 
@@ -1764,16 +1767,17 @@ sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(T.exe):	$(T.tcl.env.sh) sqlite3_checker.c
-	$(T.link.tcl) sqlite3_checker.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+	$(T.link.tcl) sqlite3_checker.c -o $@ $$TCL_INCLUDE_SPEC \
+		$(CFLAGS.libsqlite3) $$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
 xbin: sqlite3_checker$(T.exe)
 
 dbdump$(T.exe): $(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(T.link) -DDBDUMP_STANDALONE -o $@ \
-           $(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS.libsqlite3)
+		$(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS.libsqlite3)
 xbin: dbdump$(T.exe)
 
 dbtotxt$(T.exe): $(TOP)/tool/dbtotxt.c
-	$(T.link)-o $@ $(TOP)/tool/dbtotxt.c
+	$(T.link)-o $@ $(TOP)/tool/dbtotxt.c $(LDFLAGS.configure)
 xbin: dbtotxt$(T.exe)
 
 showdb$(T.exe):	$(TOP)/tool/showdb.c sqlite3.o
@@ -1793,20 +1797,23 @@ showwal$(T.exe):	$(TOP)/tool/showwal.c sqlite3.o
 xbin: showwal$(T.exe)
 
 showshm$(T.exe):	$(TOP)/tool/showshm.c
-	$(T.link) -o $@ $(TOP)/tool/showshm.c
+	$(T.link) -o $@ $(TOP)/tool/showshm.c $(LDFLAGS.configure)
 xbin: showshm$(T.exe)
 
 index_usage$(T.exe): $(TOP)/tool/index_usage.c sqlite3.o
-	$(T.link) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o $(LDFLAGS.libsqlite3)
+	$(T.link) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o \
+		$(LDFLAGS.libsqlite3)
 xbin: index_usage$(T.exe)
 
 # Reminder: changeset does not build without -DSQLITE_ENABLE_SESSION
 changeset$(T.exe):	$(TOP)/ext/session/changeset.c sqlite3.o
-	$(T.link) -o $@ $(TOP)/ext/session/changeset.c sqlite3.o $(LDFLAGS.libsqlite3)
+	$(T.link) -o $@ $(TOP)/ext/session/changeset.c sqlite3.o \
+		$(LDFLAGS.libsqlite3)
 xbin: changeset$(T.exe)
 
 changesetfuzz$(T.exe):	$(TOP)/ext/session/changesetfuzz.c sqlite3.o
-	$(T.link) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.o $(LDFLAGS.libsqlite3)
+	$(T.link) -o $@ $(TOP)/ext/session/changesetfuzz.c sqlite3.o \
+		$(LDFLAGS.libsqlite3)
 xbin: changesetfuzz$(T.exe)
 
 rollback-test$(T.exe):	$(TOP)/tool/rollback-test.c sqlite3.o
@@ -1818,7 +1825,7 @@ atrc$(T.exe): $(TOP)/test/atrc.c sqlite3.o
 xbin: atrc$(T.exe)
 
 LogEst$(T.exe):	$(TOP)/tool/logest.c sqlite3.h
-	$(T.link) -I. -o $@ $(TOP)/tool/logest.c
+	$(T.link) -I. -o $@ $(TOP)/tool/logest.c $(LDFLAGS.configure)
 xbin: LogEst$(T.exe)
 
 wordcount$(T.exe):	$(TOP)/test/wordcount.c sqlite3.o
@@ -1826,17 +1833,20 @@ wordcount$(T.exe):	$(TOP)/test/wordcount.c sqlite3.o
 xbin: wordcount$(T.exe)
 
 speedtest1$(T.exe):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
-	$(T.link) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c $(LDFLAGS.libsqlite3)
+	$(T.link) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c \
+		$(LDFLAGS.libsqlite3)
 xbin: speedtest1$(T.exe)
 
 startup$(T.exe):	$(TOP)/test/startup.c sqlite3.c
-	$(T.link) -Os -g -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 -o $@ $(TOP)/test/startup.c sqlite3.c $(LDFLAGS.libsqlite3)
+	$(T.link) -Os -g -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 \
+		-o $@ $(TOP)/test/startup.c sqlite3.c $(LDFLAGS.libsqlite3)
 xbin: startup$(T.exe)
 
 KV_OPT += -DSQLITE_DIRECT_OVERFLOW_READ
 
 kvtest$(T.exe):	$(TOP)/test/kvtest.c sqlite3.c
-	$(T.link) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c $(LDFLAGS.libsqlite3)
+	$(T.link) $(KV_OPT) -o $@ $(TOP)/test/kvtest.c sqlite3.c \
+		$(LDFLAGS.libsqlite3)
 xbin: kvtest$(T.exe)
 
 #
@@ -1847,7 +1857,8 @@ rbu$(T.exe): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o
 	$(T.link) -I. -o $@ $(TOP)/ext/rbu/rbu.c sqlite3.o $(LDFLAGS.libsqlite3)
 
 loadfts$(T.exe): $(TOP)/tool/loadfts.c $(libsqlite3.LIB)
-	$(T.link) $(TOP)/tool/loadfts.c $(libsqlite3.LIB) -o $@ $(LDFLAGS.libsqlite3)
+	$(T.link) $(TOP)/tool/loadfts.c $(libsqlite3.LIB) \
+		-o $@ $(LDFLAGS.libsqlite3)
 xbin: loadfts$(T.exe)
 
 # This target will fail if the SQLite amalgamation contains any exported
@@ -1893,7 +1904,8 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_lookaside1.c
 
 threadtest3$(T.exe): sqlite3.o $(THREADTEST3_SRC)
-	$(T.link) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.o -o $@ $(LDFLAGS.libsqlite3)
+	$(T.link) $(TOP)/test/threadtest3.c $(TOP)/src/test_multiplex.c sqlite3.o \
+		-o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest3$(T.exe)
 
 threadtest: threadtest3$(T.exe)
@@ -1983,7 +1995,7 @@ verify-source:	./src-verify$(B.exe)
 
 fuzzershell$(T.exe):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(T.link) -o $@ $(FUZZERSHELL_OPT) \
-	  $(TOP)/tool/fuzzershell.c sqlite3.c $(LDFLAGS.libsqlite3)
+		$(TOP)/tool/fuzzershell.c sqlite3.c $(LDFLAGS.libsqlite3)
 fuzzy: fuzzershell$(T.exe)
 xbin: fuzzershell$(T.exe)
 
@@ -2021,7 +2033,7 @@ run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
 
 ossshell$(T.exe):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(T.link) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
-             $(TOP)/test/ossfuzz.c sqlite3.c $(LDFLAGS.libsqlite3)
+		$(TOP)/test/ossfuzz.c sqlite3.c $(LDFLAGS.libsqlite3)
 fuzzy: ossshell$(T.exe)
 xbin: ossshell$(T.exe)
 
@@ -2030,7 +2042,8 @@ sessionfuzz$(T.exe):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
 fuzzy: sessionfuzz$(T.exe)
 
 dbfuzz$(T.exe):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
-	$(T.link) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(LDFLAGS.libsqlite3)
+	$(T.link) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c \
+		$(LDFLAGS.libsqlite3)
 fuzzy: dbfuzz$(T.exe)
 xbin: dbfuzz$(T.exe)
 
@@ -2172,7 +2185,7 @@ sqlite3.def: $(LIBOBJ)
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
 	$(T.cc.sqlite) $(LDFLAGS.shobj) -o $@ sqlite3.def \
-		-Wl,"--strip-all" $(LIBOBJ)
+		-Wl,"--strip-all" $(LIBOBJ) $(LDFLAGS.configure)
 
 #
 # Emit a list of commonly-used targets
