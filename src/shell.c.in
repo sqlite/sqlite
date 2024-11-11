@@ -4951,6 +4951,7 @@ static const char *(azHelp[]) = {
 #if SQLITE_SHELL_HAVE_RECOVER
   ".dbinfo ?DB?             Show status information about the database",
 #endif
+  ".dbtotxt                 Hex dump of the database file",
   ".dump ?OBJECTS?          Render database content as SQL",
   "   Options:",
   "     --data-only            Output only INSERT statements",
@@ -6621,6 +6622,101 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   return 0;
 }
 #endif /* SQLITE_SHELL_HAVE_RECOVER */
+
+/*
+** Implementation of the ".dbtotxt" command.
+**
+** Return 1 on error, 2 to exit, and 0 otherwise.
+*/
+static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
+  sqlite3_stmt *pStmt = 0;
+  sqlite3_int64 nPage = 0;
+  int pgSz = 0;
+  const char *zFilename;
+  const char *zTail;
+  char *zName = 0;
+  int rc, i, j;
+  unsigned char bShow[256];   /* Characters ok to display */
+
+  memset(bShow, '.', sizeof(bShow));
+  for(i=' '; i<='~'; i++){
+    if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
+  }
+  rc = sqlite3_prepare_v2(p->db, "PRAGMA page_size", -1, &pStmt, 0);
+  if( rc ) goto dbtotxt_error;
+  rc = 0;
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
+  pgSz = sqlite3_column_int(pStmt, 0);
+  sqlite3_finalize(pStmt);
+  pStmt = 0;
+  if( pgSz<512 || pgSz>65536 || (pgSz&(pgSz-1))!=0 ) goto dbtotxt_error;
+  rc = sqlite3_prepare_v2(p->db, "PRAGMA page_count", -1, &pStmt, 0);
+  if( rc ) goto dbtotxt_error;
+  rc = 0;
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ) goto dbtotxt_error;
+  nPage = sqlite3_column_int64(pStmt, 0);
+  sqlite3_finalize(pStmt);
+  pStmt = 0;
+  if( nPage<1 ) goto dbtotxt_error;
+  rc = sqlite3_prepare_v2(p->db, "PRAGMA databases", -1, &pStmt, 0);
+  if( rc ) goto dbtotxt_error;
+  rc = 0;
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+    zTail = zFilename = "unk.db";
+  }else{
+    zFilename = (const char*)sqlite3_column_text(pStmt, 2);
+    if( zFilename==0 || zFilename[0]==0 ) zFilename = "unk.db";
+    zTail = strrchr(zFilename, '/');
+#if defined(_WIN32)
+    if( zTail==0 ) zTail = strrchr(zFilename, '\\');
+#endif
+    if( zTail ) zFilename = zTail;
+  }
+  zName = strdup(zTail);
+  shell_check_oom(zName);
+  sqlite3_fprintf(p->out, "| size %lld pagesize %d filename %s\n",
+                  nPage*pgSz, pgSz, zName);
+  sqlite3_finalize(pStmt);
+  pStmt = 0;
+  rc = sqlite3_prepare_v2(p->db,
+           "SELECT pgno, data FROM sqlite_dbpage ORDER BY pgno", -1, &pStmt, 0);
+  if( rc ) goto dbtotxt_error;
+  rc = 0;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    sqlite3_int64 pgno = sqlite3_column_int64(pStmt, 0);
+    const u8 *aData = sqlite3_column_blob(pStmt, 1);
+    int seenPageLabel = 0;
+    for(i=0; i<pgSz; i+=16){
+      const u8 *aLine = aData+i;
+      for(j=0; j<16 && aLine[j]==0; j++){}
+      if( j==16 ) continue;
+      if( !seenPageLabel ){
+        sqlite3_fprintf(p->out, "| page %lld offset %lld\n", pgno, pgno*pgSz);
+        seenPageLabel = 1;
+      }
+      sqlite3_fprintf(p->out, "|  %5d:", i);
+      for(j=0; j<16; j++) sqlite3_fprintf(p->out, " %02x", aLine[j]);
+      sqlite3_fprintf(p->out, "   ");
+      for(j=0; j<16; j++){
+        unsigned char c = (unsigned char)aLine[j];
+        sqlite3_fprintf(p->out, "%c", bShow[c]);
+      }
+      sqlite3_fprintf(p->out, "\n");
+    }
+  }
+  sqlite3_finalize(pStmt);
+  sqlite3_fprintf(p->out, "| end %s\n", zName);
+  free(zName);
+  return 0;
+
+dbtotxt_error:
+  if( rc ){
+    sqlite3_fprintf(stderr, "ERROR: %s\n", sqlite3_errmsg(p->db));
+  }
+  sqlite3_finalize(pStmt);
+  free(zName);
+  return 1;
+}
 
 /*
 ** Print the given string as an error message.
@@ -8797,6 +8893,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputz("Usage: .echo on|off\n");
       rc = 1;
     }
+  }else
+
+  if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbtotxt", n)==0 ){
+    rc = shell_dbtotxt_command(p, nArg, azArg);
   }else
 
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
