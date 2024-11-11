@@ -69,7 +69,7 @@ In (mostly) alphabetical order:
     trimmed contents. This can be used, e.g., to set a developer's
     local preferences for the default `CFLAGS`.
 
-- **`proj-define-if-opt-truthy flag defineName ?checkingMsg? ?yesVal=1? ?noVal=0?`**\  
+- **`define-for-opt flag defineName ?checkingMsg? ?yesVal=1? ?noVal=0?`**\  
   `[define $defineName]` to either `$yesVal` or `$noVal`, depending on
   whether `--$flag` is truthy or not. `$checkingMsg` is a
   human-readable description of the check being made, e.g. "enable foo
