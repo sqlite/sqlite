@@ -350,5 +350,17 @@ do_execsql_test 11.1 {
   INSERT INTO t4 VALUES( str('') );
 }
 
+do_test 12.0 {
+  sqlite3_fts5_tokenize db trigram "abcd"
+} {abc 0 3 bcd 1 4}
+
+do_test 12.1 {
+  sqlite3_fts5_tokenize db trigram "a"
+} {}
+
+do_test 12.2 {
+  sqlite3_fts5_tokenize db trigram ""
+} {}
+
 finish_test
 
