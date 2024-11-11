@@ -1,5 +1,5 @@
-C Doc\supdate\sto\saccount\sfor\s[05073350087b].
-D 2024-11-11T09:53:40.171
+C Use\sWin32\sAPIs\sto\sread/write\sthe\sconsole\sin\sWindows\sunless\sthe\nSQLITE_USE_STDIO_FOR_CONSOLE\soption\sis\sdefined.\s\sThis\sis\san\sattempt\sto\sget\nthe\sbuild\sworking\son\sMinGW.
+D 2024-11-11T17:02:29.626
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -438,7 +438,7 @@ F ext/misc/shathree.c 1821d90a0040c9accdbe3e3527d378d30569475d758aa70f6848924c0b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c c34b4aba8aec6c1ca7058a7a6319a37ab629135091600aee202390a8cd20e842
+F ext/misc/sqlite3_stdio.c 5657afb6ec81bef31790973528980af778e0e1388a93db780d33007336efe6e6
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 05073350087b368312515134bdf9a266eb8289a065f208421fe08aa38b562d4b
-R 3e7bc73740255e6a3248a16815c573a3
-U stephan
-Z 9ae48f5cefd523f44e5eeeffcff1033d
+P b81976c520fbad0bbdbbb877fe85691bcda25c12cf5597cfe224fb6306cd65b3
+R 7eaee2fd29a0a62fa15ab30f7e1400c5
+U drh
+Z f4fb9c4d51373a0a4c48f856c51e2978
 # Remove this line to create a well-formed Fossil manifest.
