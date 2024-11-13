@@ -4886,9 +4886,9 @@ static int run_schema_dump_query(
     }else{
       rc = SQLITE_CORRUPT;
     }
-    sqlite3_free(zErr);
     free(zQ2);
   }
+  sqlite3_free(zErr);
   return rc;
 }
 
