@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_NULL_IO\sfile-control.
-D 2024-11-13T14:58:35.917
+C Add\sthe\stest/fork-test.c\stest\sprogram.
+D 2024-11-13T16:08:02.102
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1154,6 +1154,7 @@ F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d0
 F test/fkey8.test 51deda7f1a1448bca95875e4a6e1a3a75b4bd7215e924e845bd60de60e4d84bf
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
+F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
 F test/fp-speed-1.c b37de94eba034e1703668816225f54510ec60fb0685406608cc707afe6b8234d
 F test/fpconv1.test d5d8aa0c427533006c112fb1957cdd1ea68c1d0709470dabb9ca02c2e4c06ad8
@@ -2198,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a4e976a030851357049e672bbc0ff66d9cc152b3d5f8e03fff36a7c6f060a755
-R cbde25c924d15d902cdf437d5236e99e
+P f0e917fcf51b59f8ccfe5b9341937341d0e6016eb275d6c33dcb10b0b301a9da
+R 6602510d12e6c22a0b1d041f1323efab
 U drh
-Z 9feaba1d713c9ff220e94d51317a455c
+Z a609b555f7a83a611caf3857959d5dfd
 # Remove this line to create a well-formed Fossil manifest.
