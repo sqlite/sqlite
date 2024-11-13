@@ -1072,6 +1072,7 @@ static int walIndexPage(
     if( pWal->aCommitTime ){
       pWal->aCommitTime[COMMIT_TIME_HASHMAPUS] += sqlite3STimeNow() - t1;
     }
+    return rc;
   }
   return SQLITE_OK;
 }

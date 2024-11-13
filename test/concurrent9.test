@@ -51,5 +51,70 @@ do_execsql_test -db db2  1.4 {
   SELECT * FROM t2;
 } {1 2 3 a b c}
 
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  PRAGMA journal_mode = wal;
+  WITH s(i) AS (
+    SELECT 1 UNION SELECT i+1 FROM s WHERE i<500
+  )
+  INSERT INTO t1(b) SELECT hex(randomblob(200)) FROM s;
+  PRAGMA page_count;
+} {wal 255}
+
+sqlite3 db2 test.db
+do_execsql_test -db db2 2.2 {
+  DELETE FROM t1 WHERE a<100;
+  PRAGMA freelist_count;
+} {49}
+
+do_execsql_test 2.3 {
+  BEGIN CONCURRENT;
+    WITH s(i) AS (
+      SELECT 1 UNION SELECT i+1 FROM s WHERE i<100
+    )
+    INSERT INTO t1(b) SELECT hex(randomblob(200)) FROM s;
+}
+
+sqlite3_db_status db CACHE_MISS 1
+do_execsql_test 2.4.1 {
+  COMMIT;
+}
+
+do_test 2.4.2 {
+  lindex [sqlite3_db_status db CACHE_MISS 0] 1
+} {1}
+
+do_execsql_test -db db2 2.5 {
+  DELETE FROM t1 WHERE a<200;
+  PRAGMA freelist_count;
+} {50}
+
+do_execsql_test 2.6 {
+  BEGIN CONCURRENT;
+    WITH s(i) AS (
+      SELECT 1 UNION SELECT i+1 FROM s WHERE i<100
+    )
+    INSERT INTO t1(b) SELECT hex(randomblob(200)) FROM s;
+    DELETE FROM t1 WHERE rowid BETWEEN 600 AND 680;
+}
+
+sqlite3_db_status db CACHE_MISS 1
+do_execsql_test 2.7.1 {
+  COMMIT;
+}
+do_test 2.7.2 {
+  lindex [sqlite3_db_status db CACHE_MISS 0] 1
+} {1}
+
+do_execsql_test 2.8 {
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test
+
 

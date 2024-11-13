@@ -4581,10 +4581,24 @@ static int btreeRelocateRange(
         pBt->aCommitTime[COMMIT_TIME_RELOCATE2_RELOCATEUS] += (sqlite3STimeNow() - t1);
       }
       releasePageNotNull(pPg);
-    }else{
+    }else if( pEntry->eType!=0 ){
       u64 t1;
       if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
-      rc = allocateBtreePage(pBt, &pFree, &iNew, iFirst-1, BTALLOC_LE);
+
+      /* Allocate a new page from the free-list to move page iPg to. 
+      ** Except - if the page allocated is within the range being relocated
+      ** (i.e. pgno>=iFirst), then discard it and allocate another.  */
+      do {
+        rc = allocateBtreePage(pBt, &pFree, &iNew, 0, 0);
+        if( iNew>=iFirst ){
+          assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
+          assert( iNew>iPg );
+          sqlite3PcacheDrop(pFree->pDbPage);
+          pMap->aPtr[iNew - pMap->iFirst].eType = 0;
+          pFree = 0;
+        }
+      }while( pFree==0 );
+
       if( pBt->aCommitTime ){
         pBt->aCommitTime[COMMIT_TIME_RELOCATE2_ALLOCATEUS] += (sqlite3STimeNow() - t1);
       }
