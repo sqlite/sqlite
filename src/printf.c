@@ -1317,7 +1317,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 */
 static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   StrAccum acc;                          /* String accumulator */
-  char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
+  char zMsg[SQLITE_PRINT_BUF_SIZE*10];   /* Complete log message */
 
   sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
   sqlite3_str_vappendf(&acc, zFormat, ap);
