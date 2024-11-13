@@ -624,6 +624,16 @@ static int vfstraceDeviceCharacteristics(sqlite3_file *pFile){
 ** Shared-memory operations.
 */
 static int vfstraceShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
+  static const char *azLockName[] = {
+     "WRITE",
+     "CKPT",
+     "RECOVER",
+     "READ0",
+     "READ1",
+     "READ2",
+     "READ3",
+     "READ4",
+  };
   vfstrace_file *p = (vfstrace_file *)pFile;
   vfstrace_info *pInfo = p->pInfo;
   int rc;
@@ -637,8 +647,15 @@ static int vfstraceShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   if( flags & ~(0xf) ){
      sqlite3_snprintf(sizeof(zLck)-i, &zLck[i], "|0x%x", flags);
   }
-  vfstrace_printf(pInfo, "%s.xShmLock(%s,ofst=%d,n=%d,%s)",
-                  pInfo->zVfsName, p->zFName, ofst, n, &zLck[1]);
+  if( ofst>=0 && ofst<sizeof(azLockName)/sizeof(azLockName[0]) ){
+    vfstrace_printf(pInfo, "%s.xShmLock(%s,ofst=%d(%s),n=%d,%s)",
+                  pInfo->zVfsName, p->zFName, ofst, azLockName[ofst],
+                  n, &zLck[1]);
+  }else{
+    vfstrace_printf(pInfo, "%s.xShmLock(%s,ofst=5d,n=%d,%s)",
+                  pInfo->zVfsName, p->zFName, ofst,
+                  n, &zLck[1]);
+  }
   rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
   vfstrace_print_errcode(pInfo, " -> %s\n", rc);
   return rc;

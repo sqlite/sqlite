@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\s".dump"\scommand\sof\sthe\sCLI\sthat\scan\soccur\sif\san\nerror\sother\sthan\sdatabase\scorruption\sis\sseen\swhile\strying\sto\squery\sthe\ndatabase.
-D 2024-11-13T18:04:49.647
+C Enhance\sthe\svfstrace.c\sextension\sto\sshow\ssymbolic\snames\sfor\sthe\svarious\nSHM\slocks.
+D 2024-11-13T18:23:18.773
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -450,7 +450,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c ac76a4ac4d907774fd423cc2b61410c756f9d0782e27cf6032e058594accaaca
+F ext/misc/vfstrace.c 72b7cda31777173b0ca78c6c92968c17aba635682205945e394fff27b377bb81
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0611e2b0cf3f33c28cc9ff6c5da7ebba2033bcbda5b1072a30021a3e1fb4e738
-R ae1e95a303369ff7949c51518d63ae67
+P 2560cc7072c923f534a5de1e15d2b0dd4ac5faf0a8876d9e3bf9804345585444
+R 5d29f4bc70b99f0334d8d6e56e448522
 U drh
-Z 5eaa8df8893f82fa2c87e2122f21eb00
+Z 8e77042ea0a98703802cf67ef314193e
 # Remove this line to create a well-formed Fossil manifest.
