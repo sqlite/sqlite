@@ -194,6 +194,7 @@ set flags {
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
+  dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   #soname:=none         => {SONAME for libsqlite3.so}
   #^^^ we "could", but arguably shouldn't, support clients passing a
@@ -468,6 +469,16 @@ proc sqlite-check-soname {} {
   return sqlite-check-soname ""
 }
 sqlite-check-soname
+
+proj-if-opt-truthy dev {
+  # --enable-dev needs to come early so that the downstream tests
+  # which check for these flags will show the user their updated
+  # state.
+  proj-opt-set all 1
+  proj-opt-set debug 1
+  proj-opt-set amalgamation 0
+  define CFLAGS [get-env CFLAGS {-O0 -g}]
+}
 
 proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
 
