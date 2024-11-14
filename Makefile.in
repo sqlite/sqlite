@@ -308,7 +308,7 @@ sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	@touch $@
 install: install-pc # defined in main.mk
 
-sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
+sqlite_cfg.h: $(AS_AUTO_DEF)
 	$(AS_AUTORECONFIG)
 	@touch $@
 

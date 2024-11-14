@@ -1,9 +1,9 @@
-C Remove\ssome\sobsolete\smacros\sfrom\sthe\sCLI.
-D 2024-11-14T15:55:19.992
+C Remove\sunused\ssqlite_cfg.h.in\sfrom\sthe\sbuild.
+D 2024-11-14T16:06:36.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 580a60aa8deb37060c7973d9399c51c4388f1e0ad0be6555dcd44bc8d2ac3260
+F Makefile.in d941328627467c1bc2f13861b0bf5dc1e0c4669c072eec20b37285777f41d289
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -706,7 +706,6 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
-F sqlite_cfg.h.in be1d075cf77134d53fdf5cc2c0919842e7e02a648c66a56e735af25ccdcaff91
 F src/alter.c aa93e37e4a36a0525bbb2a2aeda20d2018f0aa995542c7dc658e031375e3f532
 F src/analyze.c 9a8b67239d899ac12289db5db3f5bfe7f7a0ad1277f80f87ead1d048085876eb
 F src/attach.c f35bb8cc1fcdde8f6815a7ef09ae413bcac71821d530796800ba24b3c7da1e80
@@ -2199,8 +2198,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d15fb0f75e64bbfdb8df0c0d0358aafbbd7d5e2048df676dafe1abd5e9917f2a
-R ea2490bd05c4dad29cbfefcd8763a20e
-U drh
-Z 85890363a91293052a9bfcb213db9376
+P 5c4eb625709eda24b11a0437b150a60fc1497c136a4a2ab2b9d559d893dd397a 9a726b4be8ddd4b388478024a0952cfd4f0b9f665ab69119a6de0b996ac72216
+R a15407640daa9f3a9447a9e78becdb8b
+T +closed 9a726b4be8ddd4b388478024a0952cfd4f0b9f665ab69119a6de0b996ac72216 Closed\sby\sintegrate-merge.
+U stephan
+Z 19ed65a5f5fcf67d42d45f2f1b7e12e4
 # Remove this line to create a well-formed Fossil manifest.
