@@ -6680,8 +6680,9 @@ commit_phase_one_exit:
 ** If an error occurs, an IO error code is returned and the pager
 ** moves into the error state. Otherwise, SQLITE_OK is returned.
 */
-int sqlite3PagerCommitPhaseTwo(Pager *pPager){
+int sqlite3PagerCommitPhaseTwo(Pager *pPager, int bKeepLocked){
   int rc = SQLITE_OK;                  /* Return code */
+  u8 modeSaved;
 
   /* This routine should not be called if a prior error has occurred.
   ** But if (due to a coding error elsewhere in the system) it does get
@@ -6716,7 +6717,10 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   }
 
   PAGERTRACE(("COMMIT %d\n", PAGERID(pPager)));
+  modeSaved = pPager->exclusiveMode;
+  pPager->exclusiveMode |= bKeepLocked;
   rc = pager_end_transaction(pPager, pPager->setSuper, 1);
+  pPager->exclusiveMode = modeSaved;
   return pager_error(pPager, rc);
 }
 
