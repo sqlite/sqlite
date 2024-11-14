@@ -3948,7 +3948,8 @@ case OP_Savepoint: {
 ** shared cache.
 **
 ** If P3 is 1 or 2 and P1 is 1, then COMMIT but also start a new transaction
-** atomically.
+** atomically.  P3 is 1 to restart a read transaction or 2 to restart a write
+** transaction.
 */
 case OP_AutoCommit: {
   int desiredAutoCommit;
@@ -3966,7 +3967,7 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
-    }else if( desiredAutoCommit && db->nVdbeWrite>0 ){
+    }else if( desiredAutoCommit && db->nVdbeWrite>(pOp->p3==2) ){
       /* If this instruction implements a COMMIT and other VMs are writing
       ** return an error indicating that the other VMs must complete first.
       */
@@ -3991,6 +3992,7 @@ case OP_AutoCommit: {
       if( pOp->p3 ){
         db->nVdbeActive++;
         db->nVdbeRead++;
+        if( pOp->p3==2 ) db->nVdbeWrite++;
         p->eVdbeState = VDBE_RUN_STATE;
         break;
       }

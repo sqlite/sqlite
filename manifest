@@ -1,5 +1,5 @@
-C Merge\smore\smakefile\senhancements\sfrom\strunk\sinto\sthe\scommit-and-begin\sbranch.
-D 2024-11-14T19:36:41.253
+C Fix\sassertion\sfaults\sin\sthe\sCOMMIT\sAND\sBEGIN\spath.
+D 2024-11-14T19:59:02.896
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -843,7 +843,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
 F src/util.c ceebf912f673247e305f16f97f0bb7285fca1d37413b79680714a553a9021d33
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
-F src/vdbe.c dd800b9c36d4d63cf2185cfb98cc7443321ea47b8d24bbe82a9e705d85989d82
+F src/vdbe.c f4cb87fa3c12ec151515731badeaa997defa071f677c0f2f2cb52c818a5762b6
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
 F src/vdbeInt.h 2da01c73e8e3736a9015d5b04aa04d209bc9023d279d237d4d409205e921ea1e
 F src/vdbeapi.c 6353de05e8e78e497ccb33381ba5662ccc11c0339e5b1455faff01b6dacc3075
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5dd11e0ac059573c2cc14640f0cd127a9f4c3d629023b21745f5442cb2de28a 81202d2ab5963fdcf20555b6d0b31cc955ac27f1cd87656faea5c0611c9a2ee8
-R 1e5c4f447532cf60ecddd07f5ef428a5
+P 098400d36140b90e1d6dab5f54b080568c633875916a1130b6627599b4f99469
+R 11a4595b2cb4390dbc018d3cf87a1735
 U drh
-Z 9bdfdb55a678363a84673d86e3e0775a
+Z 8f9b353dc1d070b10157323a5e0f6a11
 # Remove this line to create a well-formed Fossil manifest.
