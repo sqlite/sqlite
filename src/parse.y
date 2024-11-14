@@ -169,8 +169,9 @@ transtype(A) ::= .             {A = TK_DEFERRED;}
 transtype(A) ::= DEFERRED(X).  {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= IMMEDIATE(X). {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
-cmd ::= COMMIT|END(X) trans_opt.   {sqlite3EndTransaction(pParse,@X);}
-cmd ::= ROLLBACK(X) trans_opt.     {sqlite3EndTransaction(pParse,@X);}
+cmd ::= ROLLBACK(X) trans_opt.                {sqlite3EndTransaction(pParse,@X,0);}
+cmd ::= COMMIT|END(X) trans_opt.              {sqlite3EndTransaction(pParse,@X,0);}
+// See also the COMMIT AND BEGIN section below
 
 savepoint_opt ::= SAVEPOINT.
 savepoint_opt ::= .
@@ -473,6 +474,11 @@ orconf(A) ::= OR resolvetype(X).             {A = X;}
 resolvetype(A) ::= raisetype(A).
 resolvetype(A) ::= IGNORE.                   {A = OE_Ignore;}
 resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
+
+////////////////////////// COMMIT AND BEGIN ///////////////////////////////////
+//
+cmd ::= COMMIT|END(X) AND BEGIN transtype(A) trans_opt.
+                                              {sqlite3EndTransaction(pParse,@X,A);}
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //

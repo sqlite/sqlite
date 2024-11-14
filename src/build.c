@@ -5198,6 +5198,7 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   int i;
 
   assert( pParse!=0 );
+  assert( type==TK_DEFERRED || type==TK_IMMEDIATE || type==TK_EXCLUSIVE );
   db = pParse->db;
   assert( db!=0 );
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ){
@@ -5228,13 +5229,15 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
 ** Code for ROLLBACK is generated if eType==TK_ROLLBACK.  Otherwise
 ** code is generated for a COMMIT.
 */
-void sqlite3EndTransaction(Parse *pParse, int eType){
+void sqlite3EndTransaction(Parse *pParse, int eType, int eRestart){
   Vdbe *v;
   int isRollback;
 
   assert( pParse!=0 );
   assert( pParse->db!=0 );
   assert( eType==TK_COMMIT || eType==TK_END || eType==TK_ROLLBACK );
+  assert( eRestart==0 || eRestart==TK_DEFERRED || eRestart==TK_IMMEDIATE
+            || eRestart==TK_EXCLUSIVE );
   isRollback = eType==TK_ROLLBACK;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION,
        isRollback ? "ROLLBACK" : "COMMIT", 0, 0) ){
@@ -5242,7 +5245,10 @@ void sqlite3EndTransaction(Parse *pParse, int eType){
   }
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, isRollback);
+    int p3 = 0;
+    if( eRestart ) p3 = eRestart==TK_DEFERRED ? 1 : 2;
+    sqlite3VdbeAddOp3(v, OP_AutoCommit, 1, isRollback, p3);
+    if( eRestart ) sqlite3BeginTransaction(pParse, eRestart);
   }
 }
 

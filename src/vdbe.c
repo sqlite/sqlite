@@ -3934,14 +3934,21 @@ case OP_Savepoint: {
   break;
 }
 
-/* Opcode: AutoCommit P1 P2 * * *
+/* Opcode: AutoCommit P1 P2 P3 * *
 **
-** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
-** back any currently active btree transactions. If there are any active
-** VMs (apart from this one), then a ROLLBACK fails.  A COMMIT fails if
-** there are active writing VMs or active VMs that use shared cache.
+** Set the database auto-commit flag to P1 (1 or 0).  The current trasaction
+** while commit when the VDBE halts if the auto-commit flag is 1.  The
+** cureent transaction will stay in effect if the auto-commit flags is 0.
+** Thus, this opcode implements COMMIT when P1 is 0 and it implements
+** BEGIN when P1 is 1.
 **
-** This instruction causes the VM to halt.
+** If P2 is true, rollback any currently active btree transactions. If there
+** are any active VMs (apart from this one), then a ROLLBACK fails.  A
+** COMMIT fails if there are active writing VMs or active VMs that use
+** shared cache.
+**
+** If P3 is 1 or 2 and P1 is 1, then COMMIT but also start a new transaction
+** atomically.
 */
 case OP_AutoCommit: {
   int desiredAutoCommit;
@@ -3970,6 +3977,7 @@ case OP_AutoCommit: {
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
+      db->autoRebegin = pOp->p3;
       db->autoCommit = (u8)desiredAutoCommit;
     }
     if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
@@ -3980,6 +3988,12 @@ case OP_AutoCommit: {
     }
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
+      if( pOp->p3 ){
+        db->nVdbeActive++;
+        db->nVdbeRead++;
+        p->eVdbeState = VDBE_RUN_STATE;
+        break;
+      }
       rc = SQLITE_DONE;
     }else{
       rc = SQLITE_ERROR;
