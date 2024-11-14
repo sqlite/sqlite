@@ -686,6 +686,10 @@ proc sqlite-check-tcl {} {
     }
   }
   show-notices
+  # If TCL is not found: if it was explicitly requested then fail
+  # fatally, else just emit a warning. If we can find the APIs needed
+  # to generate a working JimTCL then that will suffice for build-time
+  # TCL purposes (see: proc sqlite-determine-codegen-tcl).
   if {![get-define HAVE_TCL] &&
       ([proj-opt-was-provided tcl] || [proj-opt-was-provided with-tcl])} {
     proj-fatal "TCL support was requested but no tclConfig.sh could be found."
@@ -718,7 +722,7 @@ sqlite-check-tcl
 #     to an unexpanded makefile var name.
 #
 #   - CFLAGS_JIMSH = any flags needed for buildng a BTCLSH-compatible
-#     jimsh. The defaults may be pass on to configure as
+#     jimsh. The defaults may be passed on to configure as
 #     CFLAGS_JIMSH=...
 set useJimForCodeGen 0 ; # Set to 1 when using jimsh for code generation.
                          # May affect later decisions.
@@ -818,7 +822,7 @@ proj-if-opt-truthy threadsafe {
 ########################################################################
 # Do we want temporary databases in memory?
 #
-if {1} {
+apply {{} {
   set ts [opt-val with-tempstore no]
   set tsn 1
   msg-checking "Use an in-RAM database for temporary tables? "
@@ -833,8 +837,7 @@ if {1} {
   }
   msg-result $ts
   define TEMP_STORE $tsn
-  unset ts tsn
-}
+}}
 
 ########################################################################
 # sqlite-check-line-editing jumps through proverbial hoops to try to
@@ -1185,11 +1188,13 @@ sqlite-check-emsdk
 # the required linker flags (which may be empty even if the math APIs
 # are found, depending on the OS).
 proc affirm-have-math {featureName} {
-  if {![msg-quiet proj-check-function-in-lib log m]} {
-    user-error "Missing math APIs for $featureName"
+  if {"" eq [get-define LDFLAGS_MATH ""]} {
+    if {![msg-quiet proj-check-function-in-lib log m]} {
+      user-error "Missing math APIs for $featureName"
+    }
+    define LDFLAGS_MATH [get-define lib_log ""]
+    undefine lib_log
   }
-  define LDFLAGS_MATH [get-define lib_log ""]
-  undefine lib_log
 }
 
 ########################################################################

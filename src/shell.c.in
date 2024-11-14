@@ -13276,15 +13276,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       char *zHome;
       char *zHistory;
       int nHistory;
-#if CIO_WIN_WC_XLATE
-# define SHELL_CIO_CHAR_SET (stdout_is_console? " (UTF-16 console I/O)" : "")
-#else
-# define SHELL_CIO_CHAR_SET ""
-#endif
       sqlite3_fprintf(stdout,
-            "SQLite version %s %.19s%s\n" /*extra-version-info*/
+            "SQLite version %s %.19s\n" /*extra-version-info*/
             "Enter \".help\" for usage hints.\n",
-            sqlite3_libversion(), sqlite3_sourceid(), SHELL_CIO_CHAR_SET);
+            sqlite3_libversion(), sqlite3_sourceid());
       if( warnInmemoryDb ){
         sputz(stdout, "Connected to a ");
         printBold("transient in-memory database");
