@@ -1,9 +1,9 @@
-C Remove\sunused\ssqlite_cfg.h.in\s(sqlite_cfg.h\sgets\sgenerated\swithout\san\sinput\stemplate).
-D 2024-11-14T15:25:05.834
+C Fix\sa\sstate\smakefile\sdependency\swhich\srefered\sto\sthe\snow-removed\ssqlite_cfg.h.in.
+D 2024-11-14T16:00:45.775
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 580a60aa8deb37060c7973d9399c51c4388f1e0ad0be6555dcd44bc8d2ac3260
+F Makefile.in d941328627467c1bc2f13861b0bf5dc1e0c4669c072eec20b37285777f41d289
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d15fb0f75e64bbfdb8df0c0d0358aafbbd7d5e2048df676dafe1abd5e9917f2a
-R d6d753c19cf72fb017b2468f8e1184ee
+P 6148f2d39237a85edb399e5c2beb305dccd99ca8c0cf143e8c2ddc0fc1d9e916
+R c8ff2644822f8bbab8e63072254a5a68
 U stephan
-Z 38d02b611518b292e9e6ae3697162b25
+Z 54ae5ab64b4869b51425727dae4b6b51
 # Remove this line to create a well-formed Fossil manifest.
