@@ -478,7 +478,7 @@ proj-if-opt-truthy dev {
   # which check for these flags will show the user their updated
   # state.
   proj-opt-set all 1
-  proj-opt-set debug 1
+  proj-opt-set with-debug 1
   proj-opt-set amalgamation 0
   define CFLAGS [get-env CFLAGS {-O0 -g}]
 }
