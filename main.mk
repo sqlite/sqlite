@@ -1915,9 +1915,22 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
+# The standard CLI is built using the amalgamation since it uses
+# special compile-time options that are interpreted by individual
+# source files within the amalgamation.
+#
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
+		$(CFLAGS.readline) $(SHELL_OPT) \
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+
+# The "sqlite3d" CLI is build using separate source files.  This
+# is useful during development and debugging.
+#
+sqlite3d$(T.exe):	shell.c $(LIBOBJS0)
+	$(T.link) -o $@ \
+		shell.c $(LIBOBJS0) \
 		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
