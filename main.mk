@@ -162,6 +162,7 @@ LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shobj ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
+CFLAGS.icu ?=
 LDFLAGS.soname.libsqlite3 ?=
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
@@ -1922,7 +1923,7 @@ xbin: threadtest5
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
-		$(CFLAGS.readline) $(SHELL_OPT) \
+		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
 # The "sqlite3d" CLI is build using separate source files.  This
@@ -2137,7 +2138,7 @@ shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh) # has_tclsh84
 #
 DEPS_EXT_COMMON = $(DEPS_OBJ_COMMON) $(EXTHDR)
 icu.o:	$(TOP)/ext/icu/icu.c $(DEPS_EXT_COMMON)
-	$(T.cc.extension) -c $(TOP)/ext/icu/icu.c
+	$(T.cc.extension) -c $(TOP)/ext/icu/icu.c $(CFLAGS.icu)
 
 fts3.o:	$(TOP)/ext/fts3/fts3.c $(DEPS_EXT_COMMON)
 	$(T.cc.extension) -c $(TOP)/ext/fts3/fts3.c
@@ -2152,7 +2153,7 @@ fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(DEPS_EXT_COMMON)
 	$(T.cc.extension) -c $(TOP)/ext/fts3/fts3_hash.c
 
 fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(DEPS_EXT_COMMON)
-	$(T.cc.extension) -c $(TOP)/ext/fts3/fts3_icu.c
+	$(T.cc.extension) -c $(TOP)/ext/fts3/fts3_icu.c $(CFLAGS.icu)
 
 fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(DEPS_EXT_COMMON)
 	$(T.cc.extension) -c $(TOP)/ext/fts3/fts3_porter.c
