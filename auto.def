@@ -686,6 +686,10 @@ proc sqlite-check-tcl {} {
     }
   }
   show-notices
+  # If TCL is not found: if it was explicitly requested then fail
+  # fatally, else just emit a warning. If we can find the APIs needed
+  # to generate a working JimTCL then that will suffice for build-time
+  # TCL purposes (see: proc sqlite-determine-codegen-tcl).
   if {![get-define HAVE_TCL] &&
       ([proj-opt-was-provided tcl] || [proj-opt-was-provided with-tcl])} {
     proj-fatal "TCL support was requested but no tclConfig.sh could be found."

@@ -1,5 +1,5 @@
-C configure:\savoid\sperforming\smultiple\schecks\sfor\s-lm\son\sbehalf\sof\s--enable-fts4\sand\s--enable-fts5.
-D 2024-11-14T12:09:09.948
+C Document\sthe\sif\sblock\sat\sthe\send\sof\ssqlite-check-tcl.
+D 2024-11-14T12:23:05.149
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 82d2276abaf7f590b700fa0c2db952a76a6ecac53d98f54a72d969269d31db36
+F auto.def 7dbe7bebe9c3bea4de674053339964b4b26cff5e2fdc20948acc723b5080bffd
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0dd7de8f1e8eb745a8beff086d8b40b289c2dd75fe099a86ccc2bd0581f5e9a
-R 892e60ac59326933dc516a31c2821f96
+P 6940caa192fa0cc84dbd24191a940aec96c304c68e60ead8f239e85d093e01e0
+R a630c6439d1fbf64015d5e1115d0f02b
 U stephan
-Z f6f990db909fc14949365b2f71d1a958
+Z 28b305c9589a667cd87e3823cca8351c
 # Remove this line to create a well-formed Fossil manifest.
