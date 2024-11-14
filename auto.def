@@ -182,7 +182,9 @@ set flags {
   # <icu>
   with-icu-ldflags:LDFLAGS
                         => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch linker flags from the given icu-config binary}
+  with-icu-cflags:CFLAGS
+                        => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU. e.g. -I/usr/local/include}
+  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch ldflags and cflags flags from the given icu-config binary}
   icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
   # </icu>
   # <alternative-builds>
@@ -362,6 +364,7 @@ proc sqlite-check-wasi-sdk {} {
     with-emsdk
     with-icu-config
     with-icu-ldflags
+    with-icu-cflags
     with-linenoise
     with-tcl
   } {
@@ -1122,6 +1125,7 @@ proj-if-opt-truthy math {
 # Handles these flags:
 #
 #  --with-icu-ldflags=LDFLAGS
+#  --with-icu-cflags=CFLAGS
 #  --with-icu-config[=/path/to/icu-config]
 #  --enable-icu-collations
 #
@@ -1134,6 +1138,7 @@ proj-if-opt-truthy math {
 # opt-in feature.
 proc sqlite-check-icu {} {
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
+  define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
   # Flags sets seen in the wild for ICU:
   # - -licui18n -licuuc -licudata
   # - -licui18n -licuuc
@@ -1155,14 +1160,17 @@ proc sqlite-check-icu {} {
         proj-fatal "$bin --ldflags returned no data"
       }
       define-append LDFLAGS_ICU $x
+      set x [exec $bin --cppflags]
+      define-append CFLAGS_ICU $x
     } else {
       proj-fatal "--with-icu-config=$bin does not refer to an executable"
     }
   }
-  set flags [define LDFLAGS_ICU [string trim [get-define LDFLAGS_ICU]]]
-  if {"" ne $flags} {
+  set ldflags [define LDFLAGS_ICU [string trim [get-define LDFLAGS_ICU]]]
+  set cflags [define CFLAGS_ICU [string trim [get-define CFLAGS_ICU]]]
+  if {"" ne $ldflags} {
     sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
-    msg-result "Enabling ICU support with libs: $flags"
+    msg-result "Enabling ICU support with libs ($ldflags) and cflags ($cflags)"
     if {[opt-bool icu-collations]} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS

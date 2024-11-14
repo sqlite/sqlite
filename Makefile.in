@@ -153,6 +153,7 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
+CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.soname.libsqlite3 = @LDFLAGS_SONAME_LIBSQLITE3@
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
@@ -168,11 +169,6 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # all builds.
 #
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
-#
-# -I$(prefix)/include is primarily so that the ICU
-# headers can be found.
-#
-T.cc.sqlite += -I$(prefix)/include
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
