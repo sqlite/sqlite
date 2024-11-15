@@ -1152,26 +1152,32 @@ proc sqlite-check-icu {} {
   # - -licui18n -licuuc -licudata
   # - -licui18n -licuuc
   # - /usr/local/bin/icu-config --ldflags
+  #
   if {[proj-opt-was-provided with-icu-config]} {
     set icuConfigBin [opt-val with-icu-config]
     set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
-    if {[pkg-config-init 0]
-        && ("auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin)} {
-      if {[pkg-config icu-uc]} {
+    if {"auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin} {
+      if {[pkg-config-init 0] && [pkg-config icu-io]} {
+        # Maintenance reminder: historical docs say to use both of
+        # (icu-io, icu-uc). icu-uc lacks a required lib and icu-io has
+        # all of them on tested OSes.
         set tryIcuConfigBin 0
-        define LDFLAGS_ICU [get-define PKG_ICU_UC_LDFLAGS]
-        define-append LDFLAGS_ICU [get-define PKG_ICU_UC_LIBS]
-        define CFLAGS_ICU [get-define PKG_ICU_UC_CFLAGS]
+        define LDFLAGS_ICU [get-define PKG_ICU_IO_LDFLAGS]
+        define-append LDFLAGS_ICU [get-define PKG_ICU_IO_LIBS]
+        define CFLAGS_ICU [get-define PKG_ICU_IO_CFLAGS]
+      } elseif {"pkg-config" eq $icuConfigBin} {
+        proj-fatal "pkg-config cannot find package icu-io"
+      } else {
+        proj-assert {"auto" eq $icuConfigBin}
       }
     }
     if {$tryIcuConfigBin} {
       if {"auto" eq $icuConfigBin} {
         set icuConfigBin [proj-first-bin-of \
-                            [get-define prefix]/bin/icu-config \
                             /usr/local/bin/icu-config \
                             /usr/bin/icu-config]
         if {"" eq $icuConfigBin} {
-          proj-fatal "--with-icu-config=auto cannot find icu-config binary"
+          proj-fatal "--with-icu-config=auto cannot find (pkg-config icu-io) or icu-config binary"
         }
       }
       if {[file-isexec $icuConfigBin]} {
