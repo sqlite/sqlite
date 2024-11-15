@@ -12,7 +12,7 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-use cc cc-db cc-shared cc-lib proj
+use cc cc-db cc-shared cc-lib proj pkg-config
 
 # $DUMP_DEFINES_TXT is the file emitted by --dump-defines, intended
 # only for build debugging and not part of the public build interface.
@@ -184,7 +184,7 @@ set flags {
                         => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
   with-icu-cflags:CFLAGS
                         => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU. e.g. -I/usr/local/include}
-  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch ldflags and cflags flags from the given icu-config binary}
+  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU. Value must be one of: auto, pkg-config, /path/to/icu-config}
   icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
   # </icu>
   # <alternative-builds>
@@ -198,12 +198,7 @@ set flags {
   linemacros           => {Enable #line macros in the amalgamation}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
-  #soname:=none         => {SONAME for libsqlite3.so}
-  #^^^ we "could", but arguably shouldn't, support clients passing a
-  # value of libsqlite3.so.0 for compatibility with clients which
-  # linked against a pre-3.48 build.
-  # Maybe we should support values of --soname=(none,auto,legacy), where auto means
-  # to use the 3.48+ value of libsqlite3.so.3..
+  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
@@ -235,7 +230,7 @@ msg-result "Source dir = $srcdir"
 msg-result "Build dir  = $::autosetup(builddir)"
 msg-result "Configuring SQLite version $PACKAGE_VERSION"
 
-if {1} {
+apply {{} {
   #
   # SQLITE_AUTORECONFIG contains make target rules for re-running the
   # configure script with the same arguments it was initially invoked
@@ -248,13 +243,13 @@ if {1} {
     if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
     return $arg
   }
-  define-append SQLITE_AUTORECONFIG cd [squote $::autosetup(builddir)] && [squote $srcdir/configure]
+  define-append SQLITE_AUTORECONFIG cd [squote $::autosetup(builddir)] && [squote $::srcdir/configure]
   #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
   foreach arg $::autosetup(argv) {
     define-append SQLITE_AUTORECONFIG [squote $arg]
   }
   rename squote ""
-}
+}}
 
 # Are we cross-compiling?
 set isCrossCompiling [proj-is-cross-compiling]
@@ -322,10 +317,20 @@ if {"" eq [proj-bin-define install]} {
 define CFLAGS [proj-get-env CFLAGS {-g -O2}]
 define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
 
+proj-if-opt-truthy dev {
+  # --enable-dev needs to come early so that the downstream tests
+  # which check for these flags will show the user their updated
+  # state.
+  proj-opt-set all 1
+  proj-opt-set with-debug 1
+  proj-opt-set amalgamation 0
+  define CFLAGS [get-env CFLAGS {-O0 -g}]
+}
+
 ########################################################################
 # Handle --with-wasi-sdk=DIR
 #
-# This MUST be run early on because it may change the toolchain and
+# This must be run early on because it may change the toolchain and
 # disable a number of config options.
 proc sqlite-check-wasi-sdk {} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
@@ -343,7 +348,7 @@ proc sqlite-check-wasi-sdk {} {
   # Disable numerous options which we know either can't work or are
   # not useful in this build...
   msg-result "Using wasi-sdk clang. Disabling CLI shell modifying config flags:"
-  # Boolean flags which must be switched off:
+  # Boolean (--enable-/--disable-) flags which must be switched off:
   foreach opt {
     editline
     gcov
@@ -442,46 +447,49 @@ proj-check-rpath  ; # Determine proper rpath-handling flag
 # It's not yet clear whether we gain anything from setting -soname,
 # but not having it has been a source of anxiety for some users.
 # Setting it to any value other than its historical value of
-# libsqlite3.so.0 may (this is not certain) break dynamic linking of
-# clients which initially linked against a legacy build.
+# libsqlite3.so.0 may break dynamic linking of clients which initially
+# linked against a legacy build (with its SONAME of libsqlite3.so.0).
+#
+# To be clear: the ABI has not changed between pre-3.48 and post-3.47
+# builds, but version number 0 (pre-3.48) was a historical remnant
+# from libtool which "should" have always been version number 3 but
+# was not, for reasons lost to history.
+#
+# If the goal is to reduce downstream disruption then we need to
+# retain the SONAME libsqlite3.so.0.  If the goal is to "pull the
+# bandaid off" then switching libsqlite3.so.3 is arguably the right
+# thing to do (at the very real risk of causing a fair amount of
+# downstream disruption for package maintainers).
 #
 # See discussion in/around:
 # https://sqlite.org/forum/forumpost/0c6fc6f46b2cb3
-proc sqlite-check-soname {} {
-  define LDFLAGS_SONAME_LIBSQLITE3 ""
+apply {{} {
+  define LDFLAGS_LIBSQLITE3_SONAME ""
   if {[proj-opt-was-provided soname]} {
     set soname [opt-val soname]
   } else {
-    return 0
+    set soname legacy
   }
   switch -exact -- $soname {
-    none       { return 0 }
-    auto   - 3 { set soname libsqlite3.so.3 }
-    legacy - 0 { set soname libsqlite3.so.0 }
+    none   { return 0 }
+    auto   { set soname libsqlite3.so.3 }
+    legacy { set soname libsqlite3.so.0 }
     default {
       proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
     }
   }
   msg-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
-    define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]$soname
-    msg-result "Setting SONAME: [get-define LDFLAGS_SONAME_LIBSQLITE3]"
-  } else {
+    define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
+    msg-result "Setting SONAME: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
+  } elseif {[proj-opt-was-provided soname]} {
+    # --soname was explicitly requested but not available, so fail fatally
     proj-fatal "This environment does not support SONAME."
+  } else {
+    msg-result "This environment does not support SONAME."
   }
-  return sqlite-check-soname ""
-}
-sqlite-check-soname
+}}
 
-proj-if-opt-truthy dev {
-  # --enable-dev needs to come early so that the downstream tests
-  # which check for these flags will show the user their updated
-  # state.
-  proj-opt-set all 1
-  proj-opt-set with-debug 1
-  proj-opt-set amalgamation 0
-  define CFLAGS [get-env CFLAGS {-O0 -g}]
-}
 
 proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
 
@@ -718,7 +726,6 @@ proc sqlite-check-tcl {} {
     }
   }
 }; # sqlite-check-tcl
-
 sqlite-check-tcl
 
 ########################################################################
@@ -1126,16 +1133,31 @@ proj-if-opt-truthy math {
 #
 #  --with-icu-ldflags=LDFLAGS
 #  --with-icu-cflags=CFLAGS
-#  --with-icu-config[=/path/to/icu-config]
+#  --with-icu-config[=auto | pkg-config | /path/to/icu-config]
 #  --enable-icu-collations
 #
-# If both icu-ldflags and icu-config are provided, they are
-# cumulative.  If neither are provided, icu-collations is not honored
-# and a warning is emitted if it is provided.
+# --with-icu-config values:
+#
+#   - auto: use the first one of (pkg-config, icu-config) found on the
+#     system.
+#   - pkg-config: use only pkg-config to determine flags
+#   - /path/to/icu-config: use that to determine flags
+#
+# If --with-icu-config is used as neither pkg-config nor icu-config
+# are found, fail fatally.
+#
+# If both --with-icu-ldflags and --with-icu-config are provided, they
+# are cumulative.  If neither are provided, icu-collations is not
+# honored and a warning is emitted if it is provided.
 #
 # Design note: though we can automatically enable ICU if the
-# icu-config binary is found, we specifically do not. ICU is always an
-# opt-in feature.
+# icu-config binary or (pkg-config icu-io) are found, we specifically
+# do not. ICU is always an opt-in feature.
+#
+# Maintenance reminder: check-in 09caa94c9e84 added pkg-config support
+# to this but the result fails to link on both Linux and OpenBSD
+# (other systems were untested) because the pkg-config results are
+# missing a required library.
 proc sqlite-check-icu {} {
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
@@ -1143,34 +1165,52 @@ proc sqlite-check-icu {} {
   # - -licui18n -licuuc -licudata
   # - -licui18n -licuuc
   # - /usr/local/bin/icu-config --ldflags
+  #
   if {[proj-opt-was-provided with-icu-config]} {
-    set bin [opt-val with-icu-config]
-    if {"auto" eq $bin} {
-      set bin [proj-first-bin-of \
-                 [get-define prefix]/bin/icu-config \
-                 /usr/local/bin/icu-config \
-                 /usr/bin/icu-config]
-      if {"" eq $bin} {
-        proj-fatal "--with-icu-config=auto cannot find icu-config binary"
+    set icuConfigBin [opt-val with-icu-config]
+    set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
+    if {"auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin} {
+      if {[pkg-config-init 0] && [pkg-config icu-io]} {
+        # Maintenance reminder: historical docs say to use both of
+        # (icu-io, icu-uc). icu-uc lacks a required lib and icu-io has
+        # all of them on tested OSes.
+        set tryIcuConfigBin 0
+        define LDFLAGS_ICU [get-define PKG_ICU_IO_LDFLAGS]
+        define-append LDFLAGS_ICU [get-define PKG_ICU_IO_LIBS]
+        define CFLAGS_ICU [get-define PKG_ICU_IO_CFLAGS]
+      } elseif {"pkg-config" eq $icuConfigBin} {
+        proj-fatal "pkg-config cannot find package icu-io"
+      } else {
+        proj-assert {"auto" eq $icuConfigBin}
       }
     }
-    if {[file-isexec $bin]} {
-      set x [exec $bin --ldflags]
-      if {"" eq $x} {
-        proj-fatal "$bin --ldflags returned no data"
+    if {$tryIcuConfigBin} {
+      if {"auto" eq $icuConfigBin} {
+        set icuConfigBin [proj-first-bin-of \
+                            /usr/local/bin/icu-config \
+                            /usr/bin/icu-config]
+        if {"" eq $icuConfigBin} {
+          proj-fatal "--with-icu-config=auto cannot find (pkg-config icu-io) or icu-config binary"
+        }
       }
-      define-append LDFLAGS_ICU $x
-      set x [exec $bin --cppflags]
-      define-append CFLAGS_ICU $x
-    } else {
-      proj-fatal "--with-icu-config=$bin does not refer to an executable"
+      if {[file-isexec $icuConfigBin]} {
+        set x [exec $icuConfigBin --ldflags]
+        if {"" eq $x} {
+          proj-fatal "$icuConfigBin --ldflags returned no data"
+        }
+        define-append LDFLAGS_ICU $x
+        set x [exec $icuConfigBin --cppflags]
+        define-append CFLAGS_ICU $x
+      } else {
+        proj-fatal "--with-icu-config=$bin does not refer to an executable"
+      }
     }
   }
   set ldflags [define LDFLAGS_ICU [string trim [get-define LDFLAGS_ICU]]]
   set cflags [define CFLAGS_ICU [string trim [get-define CFLAGS_ICU]]]
   if {"" ne $ldflags} {
     sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
-    msg-result "Enabling ICU support with libs ($ldflags) and cflags ($cflags)"
+    msg-result "Enabling ICU support with flags: $ldflags $cflags"
     if {[opt-bool icu-collations]} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
@@ -1185,9 +1225,9 @@ proc sqlite-check-icu {} {
 sqlite-check-icu
 
 ########################################################################
-# Emscripten SDK for building the web-based wasm components.
-#
-proc sqlite-check-emsdk {} {
+# Check for the Emscripten SDK for building the web-based wasm
+# components.
+apply {{} {
   set emccsh $::srcdir/tool/emcc.sh
   if {![get-define HAVE_WASI_SDK] && [proj-check-emsdk]} {
     define EMCC_WRAPPER $emccsh
@@ -1197,8 +1237,7 @@ proc sqlite-check-emsdk {} {
     define EMCC_WRAPPER ""
     file delete -force $emccsh
   }
-}
-sqlite-check-emsdk
+}}
 
 ########################################################################
 # Check for log(3) in libm and die with an error if it is not
@@ -1221,6 +1260,7 @@ proc affirm-have-math {featureName} {
 msg-result "Feature flags..."
 foreach {boolFlag featureFlag ifSetEvalThis} {
   all         {} {
+    # The 'all' option must be first in this list.
     proj-opt-set fts4
     proj-opt-set fts5
     proj-opt-set geopoly
@@ -1273,7 +1313,7 @@ foreach {boolFlag featureFlag} {
 
 #########################################################################
 # Show the final feature flag sets:
-if {1} {
+apply {{} {
   set oFF [get-define OPT_FEATURE_FLAGS]
   if {"" ne $oFF} {
     define OPT_FEATURE_FLAGS [lsort -unique $oFF]
@@ -1285,7 +1325,7 @@ if {1} {
     msg-result "Shell options: [get-define OPT_SHELL]"
   }
   unset oFF
-}
+}}
 
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something
@@ -1304,20 +1344,13 @@ proj-remap-autoconf-dir-vars
 # Potential TODO (unclear): in sqlite3.pc.in, do we need to include
 # any CFLAGS_READLINE, CFLAGS_ZLIB, etc in its "Cflags:" section?
 proj-make-from-dot-in -touch Makefile sqlite3.pc
-if {0} {
-  # Requires a hand-written sqlite_cfg.h.in...
-  proj-make-from-dot-in sqlite_cfg.h
-  # vs...
-} else {
-  # Requires no input template...
-  make-config-header sqlite_cfg.h \
-    -bare {SIZEOF_* HAVE_DECL_*} \
-    -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
-      TARGET_* USE_GCOV TCL_*} \
-    -auto {HAVE_* PACKAGE_*} \
-    -none *
-  proj-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
-}
+make-config-header sqlite_cfg.h \
+  -bare {SIZEOF_* HAVE_DECL_*} \
+  -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
+    TARGET_* USE_GCOV TCL_*} \
+  -auto {HAVE_* PACKAGE_*} \
+  -none *
+proj-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
 
 ########################################################################
 # Some build-dev/debug-only output

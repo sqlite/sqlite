@@ -107,7 +107,7 @@ if {$tcl_platform(platform)=="windows"} {
   set fd [open $LIBDIR/tclConfig.sh rb]
   set tclConfig [read $fd]
   close $fd
-  
+
   # Extract parameter we will need from the tclConfig.sh file
   #
   set TCLMAJOR 8
@@ -140,14 +140,17 @@ if {$tcl_platform(platform)=="windows"} {
   if {[string length $OPTS]>1} {
     append LDFLAGS $OPTS
   }
-  set CMD [subst $cmd]
   if {$TCLMAJOR>8} {
     set OUT libtcl9sqlite$VERSION.$SUFFIX
   } else {
     set OUT libsqlite$VERSION.$SUFFIX
   }
+  set @ $OUT; # Workaround for https://sqlite.org/forum/forumpost/0683a49cb02f31a1
+              # in which Gentoo edits their tclConfig.sh to include an soname
+              # linker flag which includes ${@} (the target file's name).
+  set CMD [subst $cmd]
 }
-  
+
 # Show information about prior installs
 #
 if {$infoonly} {

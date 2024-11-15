@@ -947,7 +947,7 @@ proc proj-check-rpath {} {
 #
 # Checks whether CC supports the -Wl,soname,lib... flag. If so, it
 # returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
-# which the client would need to append "libwhatever.N". If not, it
+# which the client would need to append "libwhatever.N".  If not, it
 # returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
 #
 # The libname argument is only for purposes of running the flag
@@ -1207,10 +1207,9 @@ proc proj-which-linenoise {dotH} {
 proc proj-remap-autoconf-dir-vars {} {
   set prefix [get-define prefix]
   set exec_prefix [get-define exec_prefix $prefix]
-  # Note that the ${...} here refers to make-side var derefs, not
-  # TCL-side vars. They must be formulated such that they are legal
-  # for use in (A) makefiles, (B) pkgconfig files, and (C) TCL's
-  # [subst] command. i.e. they must use the form ${X}.
+  # The following var derefs must be formulated such that they are
+  # legal for use in (A) makefiles, (B) pkgconfig files, and (C) TCL's
+  # [subst] command.  i.e. they must use the form ${X}.
   foreach {flag makeVar makeDeref} {
     exec-prefix     exec_prefix    ${prefix}
     datadir         datadir        ${prefix}/share
