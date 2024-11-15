@@ -1,5 +1,5 @@
-C In\sthe\sinterest\sof\sminimizing\sdownstream\sdisruption,\sset\sthe\ssoname\sof\slibsqlite3.so\sto\s(by\sdefault)\sits\slegacy\svalue\sof\slibsqlite3.so.0\sand\sunconditionally\screate\s(or\sreplace)\sa\ssymlink\swith\sthat\sname\sat\sinstall-time,\sin\saddition\sto\sthe\snewer-named\ssymlinks.
-D 2024-11-15T19:42:49.439
+C Enhance\sthe\svfstrace\sextension\ssuch\sthat\sthe\soutput\scan\sbe\scontrolled\susing\nthe\s"PRAGMA\svfstrace('...');"\sstatement.\s\sSee\sheader\scomment\son\sthe\ssource\scode\nfor\sdetails.
+D 2024-11-15T20:39:41.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -450,7 +450,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c 72b7cda31777173b0ca78c6c92968c17aba635682205945e394fff27b377bb81
+F ext/misc/vfstrace.c 2f68da859f87be350ede0e8eb94f754219d406161c1595250fc0ca55907460f6
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02aceb8c138b5b8f38c75aa0792efa12f14b002083df6141cf56ea0602d3174b
-R 5c04b60962f1254417c6b379054d3030
-U stephan
-Z 553f27947bf815a9543e751ee4c1db5b
+P 0773677b553e032e992266c6c75e10565729238df3ef52b56602a92cf651bea7
+R 1cea5b1a16b6733cdd9ac2dd470ae319
+U drh
+Z 6b0f9afcc9547572803b9a01d3227a70
 # Remove this line to create a well-formed Fossil manifest.
