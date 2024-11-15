@@ -1,5 +1,5 @@
-C buildtclext.tcl:\swork\saround\sa\scase,\sreported\sin\s[forum:0683a49cb02f31a1|forum\spost\s0683a49cb0],\sin\swhich\spackage\smaintainers\sedit\stheir\scopy\sof\stclConfig.sh\sto\schange\sthe\sTCL_SHLIB_LD\scommand.
-D 2024-11-15T15:31:13.141
+C Generic\sauto.def\scleanups.\sNo\sfunctional\sdifferences.
+D 2024-11-15T16:35:24.257
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 538d9a162a8fe4811c0a4a22a2a07df40ea4c334f683b94231bfc2a18f14b913
+F auto.def a0f92f2d7762735da5f5728ffbcf44052d8b485b207ec87d13703b681dd7820f
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e5b8077c6c6ce72ecab3110eb45943b9765372df789088982dbd6046a7c2523
-R 94ae9c25b190024c5b115d0e3a9b04f4
+P e24a3efec8c168b69d665ab20e8d715210208e6cf291ac93549fdd175a9009d6
+R c10328ada1a32fcd8e3a4906d06b0161
 U stephan
-Z 33e57c416f120305271764524e72e9c6
+Z 9ca9b894bda23cfd0311c07f841cb8fa
 # Remove this line to create a well-formed Fossil manifest.
