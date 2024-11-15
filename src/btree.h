@@ -80,7 +80,7 @@ int sqlite3BtreeSetAutoVacuum(Btree *, int);
 int sqlite3BtreeGetAutoVacuum(Btree *);
 int sqlite3BtreeBeginTrans(Btree*,int,int*);
 int sqlite3BtreeCommitPhaseOne(Btree*, const char*);
-int sqlite3BtreeCommitPhaseTwo(Btree*, int, int);
+int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
 int sqlite3BtreeRollback(Btree*,int,int);
 int sqlite3BtreeBeginStmt(Btree*,int);

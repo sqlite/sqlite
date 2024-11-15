@@ -3978,9 +3978,9 @@ case OP_AutoCommit: {
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
-      db->autoRebegin = pOp->p3;
       db->autoCommit = (u8)desiredAutoCommit;
     }
+    sqlite3PagerMinLock(db, pOp->p3);
     if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
       db->autoCommit = (u8)(1-desiredAutoCommit);
@@ -9144,6 +9144,7 @@ abort_due_to_error:
     rc = SQLITE_CORRUPT_BKPT;
   }
   assert( rc );
+  sqlite3PagerMinLock(db, 0);
 #ifdef SQLITE_DEBUG
   if( db->flags & SQLITE_VdbeTrace ){
     const char *zTrace = p->zSql;

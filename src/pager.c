@@ -643,6 +643,7 @@ struct Pager {
   */
   u8 eState;                  /* Pager state (OPEN, READER, WRITER_LOCKED..) */
   u8 eLock;                   /* Current lock held on database file */
+  u8 eMinLock;                /* Minimum lock */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u8 setSuper;                /* Super-jrnl name is written into jrnl */
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
@@ -1145,15 +1146,22 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
   assert( !pPager->exclusiveMode || pPager->eLock==eLock );
   assert( eLock==NO_LOCK || eLock==SHARED_LOCK );
   assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
+  pPager->changeCountDone = pPager->tempFile; /* ticket fb3b3024ea238d5c */
   if( isOpen(pPager->fd) ){
     assert( pPager->eLock>=eLock );
+    if( pPager->eMinLock ){
+      if( eLock<SHARED_LOCK ) eLock = SHARED_LOCK;
+      if( pPager->eMinLock==2 && eLock<EXCLUSIVE_LOCK ) eLock = EXCLUSIVE_LOCK;
+      if( eLock>=pPager->eLock ){
+        return SQLITE_OK;
+      }
+    }
     rc = pPager->noLock ? SQLITE_OK : sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
       pPager->eLock = (u8)eLock;
     }
     IOTRACE(("UNLOCK %p %d\n", pPager, eLock))
   }
-  pPager->changeCountDone = pPager->tempFile; /* ticket fb3b3024ea238d5c */
   return rc;
 }
 
@@ -5365,6 +5373,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       assert( pPager->eState==PAGER_OPEN );
       assert( (pPager->eLock==SHARED_LOCK)
            || (pPager->exclusiveMode && pPager->eLock>SHARED_LOCK)
+           || (pPager->eMinLock>0 && pPager->eLock>=SHARED_LOCK)
       );
     }
 
@@ -6680,9 +6689,8 @@ commit_phase_one_exit:
 ** If an error occurs, an IO error code is returned and the pager
 ** moves into the error state. Otherwise, SQLITE_OK is returned.
 */
-int sqlite3PagerCommitPhaseTwo(Pager *pPager, int bKeepLocked){
+int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   int rc = SQLITE_OK;                  /* Return code */
-  u8 modeSaved;
 
   /* This routine should not be called if a prior error has occurred.
   ** But if (due to a coding error elsewhere in the system) it does get
@@ -6717,10 +6725,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager, int bKeepLocked){
   }
 
   PAGERTRACE(("COMMIT %d\n", PAGERID(pPager)));
-  modeSaved = pPager->exclusiveMode;
-  pPager->exclusiveMode |= bKeepLocked;
   rc = pager_end_transaction(pPager, pPager->setSuper, 1);
-  pPager->exclusiveMode = modeSaved;
   return pager_error(pPager, rc);
 }
 
@@ -6889,6 +6894,24 @@ void sqlite3PagerCacheStat(Pager *pPager, int eStat, int reset, u64 *pnVal){
 */
 int sqlite3PagerIsMemdb(Pager *pPager){
   return pPager->tempFile || pPager->memVfs;
+}
+
+/*
+** Set the minimum locking level on all pagers.
+**
+**    0:  No minimum
+**    1:  Read lock
+**    2:  Write lock
+*/
+void sqlite3PagerMinLock(sqlite3 *db, u8 eMinLock){
+  int iDb;
+  Pager *pPager;
+  for(iDb=0; iDb<db->nDb; iDb++){
+    if( db->aDb[iDb].pBt==0 ) continue;
+    pPager = sqlite3BtreePager(db->aDb[iDb].pBt);
+    pPager->eMinLock = eMinLock;
+    if( pPager->pWal ) sqlite3WalMinLock(pPager->pWal, eMinLock);
+  }
 }
 
 /*

@@ -516,6 +516,7 @@ struct Wal {
   i16 readLock;              /* Which read lock is being held.  -1 for none */
   u8 syncFlags;              /* Flags to use to sync header writes */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
+  u8 eMinLock;               /* 0, 1, or 2, for none, read, or write */
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
@@ -2064,7 +2065,7 @@ int sqlite3WalWriteLock(Wal *pWal, int bLock){
       }
       walDisableBlocking(pWal);
     }
-  }else if( pWal->writeLock ){
+  }else if( pWal->writeLock && pWal->eMinLock<2 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
   }
@@ -2698,7 +2699,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
             *pChanged = 1;
           }
         }
-        if( bWriteLock==0 ){
+        if( bWriteLock==0 && pWal->eMinLock<2 ){
           pWal->writeLock = 0;
           walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
         }
@@ -3670,7 +3671,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
   assert( pWal->readLock>=0 );
-  assert( pWal->writeLock==0 && pWal->iReCksum==0 );
+  // assert( pWal->writeLock==0 && pWal->iReCksum==0 );
 
   if( pWal->readOnly ){
     return SQLITE_READONLY;
@@ -3679,11 +3680,13 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Only one writer allowed at a time.  Get the write lock.  Return
   ** SQLITE_BUSY if unable.
   */
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-  if( rc ){
-    return rc;
+  if( pWal->writeLock==0 ){
+    rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    if( rc ){
+      return rc;
+    }
+    pWal->writeLock = 1;
   }
-  pWal->writeLock = 1;
 
   /* If another connection has written to the database file since the
   ** time the read transaction on this connection was started, then
@@ -3708,7 +3711,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** routine merely releases the lock.
 */
 int sqlite3WalEndWriteTransaction(Wal *pWal){
-  if( pWal->writeLock ){
+  if( pWal->writeLock && pWal->eMinLock<2 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
     pWal->iReCksum = 0;
@@ -4419,7 +4422,7 @@ int sqlite3WalCallback(Wal *pWal){
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
-  assert( pWal->writeLock==0 );
+  // assert( pWal->writeLock==0 );
   assert( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE || op==-1 );
 
   /* pWal->readLock is usually set, but might be -1 if there was a
@@ -4454,6 +4457,13 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
     rc = pWal->exclusiveMode==WAL_NORMAL_MODE;
   }
   return rc;
+}
+
+/*
+** Set the temporary minimum lock level for the WAL subsystem.
+*/
+void sqlite3WalMinLock(Wal *pWal, int eMinLock){
+  pWal->eMinLock = eMinLock;
 }
 
 /*

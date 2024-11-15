@@ -4353,7 +4353,7 @@ static void btreeEndTransaction(Btree *p){
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
-int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup, int bKeepLock){
+int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup){
 
   if( p->inTrans==TRANS_NONE ) return SQLITE_OK;
   sqlite3BtreeEnter(p);
@@ -4367,7 +4367,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup, int bKeepLock){
     BtShared *pBt = p->pBt;
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
-    rc = sqlite3PagerCommitPhaseTwo(pBt->pPager, bKeepLock);
+    rc = sqlite3PagerCommitPhaseTwo(pBt->pPager);
     if( rc!=SQLITE_OK && bCleanup==0 ){
       sqlite3BtreeLeave(p);
       return rc;
@@ -4390,7 +4390,7 @@ int sqlite3BtreeCommit(Btree *p){
   sqlite3BtreeEnter(p);
   rc = sqlite3BtreeCommitPhaseOne(p, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeCommitPhaseTwo(p, 0, 0);
+    rc = sqlite3BtreeCommitPhaseTwo(p, 0);
   }
   sqlite3BtreeLeave(p);
   return rc;

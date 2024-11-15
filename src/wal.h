@@ -129,6 +129,10 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
+/* Set the transient minimum lock level for the WAL
+*/
+void sqlite3WalMinLock(Wal *pWal, int eMinLock);
+
 #ifdef SQLITE_ENABLE_SNAPSHOT
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
 void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);

@@ -2997,7 +2997,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        rc = sqlite3BtreeCommitPhaseTwo(pBt, 0, db->autoRebegin!=0);
+        rc = sqlite3BtreeCommitPhaseTwo(pBt, 0);
       }
     }
     if( rc==SQLITE_OK ){
@@ -3141,7 +3141,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     for(i=0; i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        sqlite3BtreeCommitPhaseTwo(pBt, 1, db->autoRebegin!=0);
+        sqlite3BtreeCommitPhaseTwo(pBt, 1);
       }
     }
     sqlite3EndBenignMalloc();
