@@ -1129,13 +1129,22 @@ proj-if-opt-truthy math {
 #  --with-icu-config[=/path/to/icu-config]
 #  --enable-icu-collations
 #
-# If both icu-ldflags and icu-config are provided, they are
-# cumulative.  If neither are provided, icu-collations is not honored
-# and a warning is emitted if it is provided.
+# If --with-icu-config is provided but icu-config cannot be used fail
+# fatally. If --with-icu-ldflags/cflags is/are provided, assume they
+# are valid.
+#
+# If --with-icu-ldflags/cflags and --with-icu-config are provided,
+# they are cumulative.  If neither are provided, icu-collations is not
+# honored and a warning is emitted if it is provided.
 #
 # Design note: though we can automatically enable ICU if the
 # icu-config binary is found, we specifically do not. ICU is always an
 # opt-in feature.
+#
+# Maintenance reminder: check-in 09caa94c9e84 added pkg-config support
+# to this but the result fails to link on both Linux and OpenBSD
+# (other systems were untested) because the pkg-config results are
+# missing a required library.
 proc sqlite-check-icu {} {
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
