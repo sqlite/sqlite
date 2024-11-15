@@ -198,12 +198,7 @@ set flags {
   linemacros           => {Enable #line macros in the amalgamation}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
-  #soname:=none         => {SONAME for libsqlite3.so}
-  #^^^ we "could", but arguably shouldn't, support clients passing a
-  # value of libsqlite3.so.0 for compatibility with clients which
-  # linked against a pre-3.48 build.
-  # Maybe we should support values of --soname=(none,auto,legacy), where auto means
-  # to use the 3.48+ value of libsqlite3.so.3..
+  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
@@ -452,32 +447,46 @@ proj-check-rpath  ; # Determine proper rpath-handling flag
 # It's not yet clear whether we gain anything from setting -soname,
 # but not having it has been a source of anxiety for some users.
 # Setting it to any value other than its historical value of
-# libsqlite3.so.0 may (this is not certain) break dynamic linking of
-# clients which initially linked against a legacy build.
+# libsqlite3.so.0 may break dynamic linking of clients which initially
+# linked against a legacy build (with its SONAME of libsqlite3.so.0).
+#
+# To be clear: the ABI has not changed between pre-3.48 and post-3.47
+# builds, but version number 0 (pre-3.48) was a historical remnant
+# from libtool which "should" have always been version number 3 but
+# was not, for reasons lost to history.
+#
+# If the goal is to reduce downstream disruption then we need to
+# retain the SONAME libsqlite3.so.0.  If the goal is to "pull the
+# bandaid off" then switching libsqlite3.so.3 is arguably the right
+# thing to do (at the very real risk of causing a fair amount of
+# downstream disruption for package maintainers).
 #
 # See discussion in/around:
 # https://sqlite.org/forum/forumpost/0c6fc6f46b2cb3
 apply {{} {
-  define LDFLAGS_SONAME_LIBSQLITE3 ""
+  define LDFLAGS_LIBSQLITE3_SONAME ""
   if {[proj-opt-was-provided soname]} {
     set soname [opt-val soname]
   } else {
-    return 0
+    set soname legacy
   }
   switch -exact -- $soname {
-    none       { return 0 }
-    auto   - 3 { set soname libsqlite3.so.3 }
-    legacy - 0 { set soname libsqlite3.so.0 }
+    none   { return 0 }
+    auto   { set soname libsqlite3.so.3 }
+    legacy { set soname libsqlite3.so.0 }
     default {
       proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
     }
   }
   msg-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
-    define LDFLAGS_SONAME_LIBSQLITE3 [get-define LDFLAGS_SONAME_PREFIX]$soname
-    msg-result "Setting SONAME: [get-define LDFLAGS_SONAME_LIBSQLITE3]"
-  } else {
+    define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
+    msg-result "Setting SONAME: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
+  } elseif {[proj-opt-was-provided soname]} {
+    # --soname was explicitly requested but not available, so fail fatally
     proj-fatal "This environment does not support SONAME."
+  } else {
+    msg-result "This environment does not support SONAME."
   }
 }}
 

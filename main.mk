@@ -1389,7 +1389,8 @@ all: lib
 # Dynamic libsqlite3
 #
 $(libsqlite3.SO):	$(LIBOBJ)
-	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.soname.libsqlite3) $(LDFLAGS.libsqlite3)
+	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.soname.libsqlite3) \
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
@@ -1401,9 +1402,13 @@ all: so
 #
 # - libsqlite3.so.$(PACKAGE_VERSION)
 # - libsqlite3.so.3 =symlink-> libsqlite3.so.$(PACKAGE_VERSION)
+# - libsqlite3.so.0 =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
 # - libsqlite3.so   =symlink-> libsqlite3.so.3
 #
-# Regarding the historcal installation name of libsqlite3.so.0.8.6:
+# The link named libsqlite3.so.0 is provided in an attempt to reduce
+# downstream disruption when performing upgrades from pre-3.48 to a
+# version 3.48 or higher.  That name is considered a legacy remnant
+# and will eventually be removed from this installation process.
 #
 # Historically libtool installed the library like so:
 #
@@ -1417,13 +1422,12 @@ all: so
 # compatibility for systems which have libraries installed using those
 # conventions:
 #
-# 1) If libsqlite3.so.0 is found in the target installation directory
-#    then it and libsqlite3.so.0.8.6 are re-linked to point to the
-#    newer-style names. We cannot retain both the old and new
-#    installation because they both share the high-level name
-#    $(libsqlite3.SO). The down-side of this is that it may well upset
-#    packaging tools when we replace libsqlite3.so (from a legacy
-#    package) with a new symlink.
+# 1) If libsqlite3.so.0.8.6 is found in the target installation
+#    directory then it is re-linked to point to the newer-style
+#    names. We cannot retain both the old and new installation because
+#    they both share the high-level name $(libsqlite3.SO). The
+#    down-side of this is that it may upset packaging tools when we
+#    replace libsqlite3.so (from a legacy package) with a new symlink.
 #
 # 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
 #    to the legacy-style names are created. The primary intent of this
@@ -1437,25 +1441,24 @@ all: so
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up SO symlinks..."; \
+	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
 		cd "$(install-dir.lib)" || exit $$?; \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
-		ln -s $(libsqlite3.SO).3 $(libsqlite3.SO) || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).3*; \
-		if [ -e $(libsqlite3.SO).0 ]; then \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
+		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
 			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
-			rm -f libsqlite3.la $(libsqlite3.SO).0* || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0*; \
+			ls -la $(libsqlite3.SO).0.8.6; \
 		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
 			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINKS=1"; \
-			rm -f libsqlite3.la $(libsqlite3.SO).0* || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0*; \
+			ls -la $(libsqlite3.SO).0.8.6; \
 		fi
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
