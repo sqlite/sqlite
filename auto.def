@@ -12,7 +12,7 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-use cc cc-db cc-shared cc-lib proj
+use cc cc-db cc-shared cc-lib proj pkg-config
 
 # $DUMP_DEFINES_TXT is the file emitted by --dump-defines, intended
 # only for build debugging and not part of the public build interface.
@@ -184,7 +184,7 @@ set flags {
                         => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
   with-icu-cflags:CFLAGS
                         => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU. e.g. -I/usr/local/include}
-  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU and fetch ldflags and cflags flags from the given icu-config binary}
+  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU. Value must be one of: auto, pkg-config, /path/to/icu-config}
   icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
   # </icu>
   # <alternative-builds>
@@ -1126,16 +1126,25 @@ proj-if-opt-truthy math {
 #
 #  --with-icu-ldflags=LDFLAGS
 #  --with-icu-cflags=CFLAGS
-#  --with-icu-config[=/path/to/icu-config]
+#  --with-icu-config[=auto | pkg-config | /path/to/icu-config]
 #  --enable-icu-collations
 #
-# If both icu-ldflags and icu-config are provided, they are
-# cumulative.  If neither are provided, icu-collations is not honored
-# and a warning is emitted if it is provided.
+# --with-icu-config values:
+#
+#   - auto: use the first one of (pkg-config, icu-config) found.
+#   - pkg-config: use only pkg-config to determine flags
+#   - /path/to/icu-config: use that to determine flags
+#
+# If --with-icu-config is used as neither pkg-config nor icu-config
+# are found, fail fatally.
+#
+# If both --with-icu-ldflags and --with-icu-config are provided, they
+# are cumulative.  If neither are provided, icu-collations is not
+# honored and a warning is emitted if it is provided.
 #
 # Design note: though we can automatically enable ICU if the
-# icu-config binary is found, we specifically do not. ICU is always an
-# opt-in feature.
+# icu-config binary or (pkg-config icu-uc) are found, we specifically
+# do not. ICU is always an opt-in feature.
 proc sqlite-check-icu {} {
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
@@ -1144,33 +1153,45 @@ proc sqlite-check-icu {} {
   # - -licui18n -licuuc
   # - /usr/local/bin/icu-config --ldflags
   if {[proj-opt-was-provided with-icu-config]} {
-    set bin [opt-val with-icu-config]
-    if {"auto" eq $bin} {
-      set bin [proj-first-bin-of \
-                 [get-define prefix]/bin/icu-config \
-                 /usr/local/bin/icu-config \
-                 /usr/bin/icu-config]
-      if {"" eq $bin} {
-        proj-fatal "--with-icu-config=auto cannot find icu-config binary"
+    set icuConfigBin [opt-val with-icu-config]
+    set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
+    if {[pkg-config-init 0]
+        && ("auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin)} {
+      if {[pkg-config icu-uc]} {
+        set tryIcuConfigBin 0
+        define LDFLAGS_ICU [get-define PKG_ICU_UC_LDFLAGS]
+        define-append LDFLAGS_ICU [get-define PKG_ICU_UC_LIBS]
+        define CFLAGS_ICU [get-define PKG_ICU_UC_CFLAGS]
       }
     }
-    if {[file-isexec $bin]} {
-      set x [exec $bin --ldflags]
-      if {"" eq $x} {
-        proj-fatal "$bin --ldflags returned no data"
+    if {$tryIcuConfigBin} {
+      if {"auto" eq $icuConfigBin} {
+        set icuConfigBin [proj-first-bin-of \
+                            [get-define prefix]/bin/icu-config \
+                            /usr/local/bin/icu-config \
+                            /usr/bin/icu-config]
+        if {"" eq $icuConfigBin} {
+          proj-fatal "--with-icu-config=auto cannot find icu-config binary"
+        }
       }
-      define-append LDFLAGS_ICU $x
-      set x [exec $bin --cppflags]
-      define-append CFLAGS_ICU $x
-    } else {
-      proj-fatal "--with-icu-config=$bin does not refer to an executable"
+      if {[file-isexec $icuConfigBin]} {
+        set x [exec $icuConfigBin --ldflags]
+        if {"" eq $x} {
+          proj-fatal "$icuConfigBin --ldflags returned no data"
+        }
+        define-append LDFLAGS_ICU $x
+        set x [exec $icuConfigBin --cppflags]
+        define-append CFLAGS_ICU $x
+      } else {
+        proj-fatal "--with-icu-config=$bin does not refer to an executable"
+      }
     }
   }
   set ldflags [define LDFLAGS_ICU [string trim [get-define LDFLAGS_ICU]]]
   set cflags [define CFLAGS_ICU [string trim [get-define CFLAGS_ICU]]]
   if {"" ne $ldflags} {
     sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU
-    msg-result "Enabling ICU support with libs ($ldflags) and cflags ($cflags)"
+    msg-result "Enabling ICU support with flags: $ldflags $cflags"
     if {[opt-bool icu-collations]} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
