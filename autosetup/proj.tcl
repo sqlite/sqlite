@@ -85,8 +85,7 @@ proc proj-assert {script {descr ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
-  set x {expr }
-  append x \{ $script \}
+  set x "expr \{ $script \}"
   if {![uplevel 1 $x]} {
     if {"" eq $descr} {
       set descr $script
