@@ -12237,7 +12237,10 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 }
 
 static void echo_group_input(ShellState *p, const char *zDo){
-  if( ShellHasFlag(p, SHFLG_Echo) ) sqlite3_fprintf(p->out, "%s\n", zDo);
+  if( ShellHasFlag(p, SHFLG_Echo) ){
+    sqlite3_fprintf(p->out, "%s\n", zDo);
+    fflush(p->out);
+  }
 }
 
 #ifdef SQLITE_SHELL_FIDDLE

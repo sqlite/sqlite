@@ -15,6 +15,7 @@ Options:
    --info               Show info on existing SQLite TCL extension installs
    --install-only       Install an extension previously build
    --uninstall          Uninstall the extension
+   --destdir DIR        Installation root (used by "make install DESTDIR=...")
 
 Other options are retained and passed through into the compiler.}
 
@@ -25,6 +26,7 @@ set uninstall 0
 set infoonly 0
 set CC {}
 set OPTS {}
+set DESTDIR ""; # --destdir "$(DESTDIR)"
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
@@ -42,6 +44,9 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--cc" && $ii+1<[llength $argv]} {
     incr ii
     set CC [lindex $argv $ii]
+  } elseif {$a0=="--destdir" && $ii+1<[llength $argv]} {
+    incr ii
+    set DESTDIR [lindex $argv $ii]
   } elseif {[string match -* $a0]} {
     append OPTS " $a0"
   } else {
@@ -196,7 +201,15 @@ if {$install} {
   #
   set DEST {}
   foreach dir $auto_path {
-    if {[file writable $dir]} {
+    if {[string match //*:* $dir]} {
+      # We can't install to //zipfs: paths
+      continue
+    } elseif {"" ne $DESTDIR && ![file writable $DESTDIR]} {
+      continue
+    }
+    set dir ${DESTDIR}$dir
+    if {[file writable $dir] || "" ne $DESTDIR} {
+      # the dir will be created later ^^^^^^^^
       set DEST $dir
       break
     } elseif {[glob -nocomplain $dir/sqlite3*/pkgIndex.tcl]!=""} {
@@ -214,7 +227,7 @@ if {$install} {
     puts "to work around this problem.\n"
     puts "These are the (unwritable) \$auto_path directories:\n"
     foreach dir $auto_path {
-      puts "  *  $dir"
+      puts "  *  ${DESTDIR}$dir"
     }
     exit 1
   }
