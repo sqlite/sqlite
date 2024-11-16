@@ -3937,8 +3937,8 @@ case OP_Savepoint: {
 /* Opcode: AutoCommit P1 P2 P3 * *
 **
 ** Set the database auto-commit flag to P1 (1 or 0).  The current trasaction
-** while commit when the VDBE halts if the auto-commit flag is 1.  The
-** cureent transaction will stay in effect if the auto-commit flags is 0.
+** will commit when the VDBE halts if the auto-commit flag is 1.  The
+** current transaction will stay in effect if the auto-commit flag is 0.
 ** Thus, this opcode implements COMMIT when P1 is 0 and it implements
 ** BEGIN when P1 is 1.
 **
@@ -3947,9 +3947,9 @@ case OP_Savepoint: {
 ** COMMIT fails if there are active writing VMs or active VMs that use
 ** shared cache.
 **
-** If P3 is 1 or 2 and P1 is 1, then COMMIT but also start a new transaction
-** atomically.  P3 is 1 to restart a read transaction or 2 to restart a write
-** transaction.
+** If P3 and P1 are both is 1, then COMMIT but also hang on to the write lock
+** for the transaction.  The P3 flag is used to help implement
+** COMMIT AND CONTINUE TRANSACTION.
 */
 case OP_AutoCommit: {
   int desiredAutoCommit;
@@ -3967,7 +3967,7 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
-    }else if( desiredAutoCommit && db->nVdbeWrite>(pOp->p3==2) ){
+    }else if( desiredAutoCommit && db->nVdbeWrite>pOp->p3 ){
       /* If this instruction implements a COMMIT and other VMs are writing
       ** return an error indicating that the other VMs must complete first.
       */
@@ -3980,7 +3980,8 @@ case OP_AutoCommit: {
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
     }
-    sqlite3PagerMinLock(db, pOp->p3);
+    assert( pOp->p3==0 || pOp->p3==1 );
+    sqlite3PagerHoldWrLock(db, pOp->p3);
     if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
       db->autoCommit = (u8)(1-desiredAutoCommit);
@@ -3992,7 +3993,7 @@ case OP_AutoCommit: {
       if( pOp->p3 ){
         db->nVdbeActive++;
         db->nVdbeRead++;
-        if( pOp->p3==2 ) db->nVdbeWrite++;
+        db->nVdbeWrite++;
         p->eVdbeState = VDBE_RUN_STATE;
         break;
       }
@@ -9144,7 +9145,7 @@ abort_due_to_error:
     rc = SQLITE_CORRUPT_BKPT;
   }
   assert( rc );
-  sqlite3PagerMinLock(db, 0);
+  sqlite3PagerHoldWrLock(db, 0);
 #ifdef SQLITE_DEBUG
   if( db->flags & SQLITE_VdbeTrace ){
     const char *zTrace = p->zSql;

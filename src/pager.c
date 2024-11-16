@@ -643,7 +643,7 @@ struct Pager {
   */
   u8 eState;                  /* Pager state (OPEN, READER, WRITER_LOCKED..) */
   u8 eLock;                   /* Current lock held on database file */
-  u8 eMinLock;                /* Minimum lock */
+  u8 bHoldWrLock;             /* Do not release write locks while true */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u8 setSuper;                /* Super-jrnl name is written into jrnl */
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
@@ -1149,13 +1149,7 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
   pPager->changeCountDone = pPager->tempFile; /* ticket fb3b3024ea238d5c */
   if( isOpen(pPager->fd) ){
     assert( pPager->eLock>=eLock );
-    if( pPager->eMinLock ){
-      if( eLock<SHARED_LOCK ) eLock = SHARED_LOCK;
-      if( pPager->eMinLock==2 && eLock<EXCLUSIVE_LOCK ) eLock = EXCLUSIVE_LOCK;
-      if( eLock>=pPager->eLock ){
-        return SQLITE_OK;
-      }
-    }
+    if( pPager->bHoldWrLock ) return SQLITE_OK;
     rc = pPager->noLock ? SQLITE_OK : sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
       pPager->eLock = (u8)eLock;
@@ -5373,7 +5367,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       assert( pPager->eState==PAGER_OPEN );
       assert( (pPager->eLock==SHARED_LOCK)
            || (pPager->exclusiveMode && pPager->eLock>SHARED_LOCK)
-           || (pPager->eMinLock>0 && pPager->eLock>=SHARED_LOCK)
+           || (pPager->bHoldWrLock && pPager->eLock>=SHARED_LOCK)
       );
     }
 
@@ -6897,20 +6891,17 @@ int sqlite3PagerIsMemdb(Pager *pPager){
 }
 
 /*
-** Set the minimum locking level on all pagers.
-**
-**    0:  No minimum
-**    1:  Read lock
-**    2:  Write lock
+** In all pagers associated with db, set or clear the bHoldWrLock
+** flag.
 */
-void sqlite3PagerMinLock(sqlite3 *db, u8 eMinLock){
+void sqlite3PagerHoldWrLock(sqlite3 *db, u8 bOnOff){
   int iDb;
   Pager *pPager;
   for(iDb=0; iDb<db->nDb; iDb++){
     if( db->aDb[iDb].pBt==0 ) continue;
     pPager = sqlite3BtreePager(db->aDb[iDb].pBt);
-    pPager->eMinLock = eMinLock;
-    if( pPager->pWal ) sqlite3WalMinLock(pPager->pWal, eMinLock);
+    pPager->bHoldWrLock = bOnOff;
+    if( pPager->pWal ) sqlite3WalHoldWrLock(pPager->pWal, bOnOff);
   }
 }
 

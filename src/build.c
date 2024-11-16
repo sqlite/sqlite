@@ -5228,16 +5228,20 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
 ** Generate VDBE code for a COMMIT or ROLLBACK statement.
 ** Code for ROLLBACK is generated if eType==TK_ROLLBACK.  Otherwise
 ** code is generated for a COMMIT.
+**
+** If bContinueTrans is true, then do the COMMIT so that past changes are
+** made permanent and visible to readers, but hold on to the write lock
+** and start a new transaction, without allowing any other database
+** connections to do a write or checkpoint.
 */
-void sqlite3EndTransaction(Parse *pParse, int eType, int eRestart){
+void sqlite3EndTransaction(Parse *pParse, int eType, int bContinueTrans){
   Vdbe *v;
   int isRollback;
 
   assert( pParse!=0 );
   assert( pParse->db!=0 );
   assert( eType==TK_COMMIT || eType==TK_END || eType==TK_ROLLBACK );
-  assert( eRestart==0 || eRestart==TK_DEFERRED || eRestart==TK_IMMEDIATE
-            || eRestart==TK_EXCLUSIVE );
+  assert( bContinueTrans==0 || bContinueTrans==1 );
   isRollback = eType==TK_ROLLBACK;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION,
        isRollback ? "ROLLBACK" : "COMMIT", 0, 0) ){
@@ -5245,10 +5249,8 @@ void sqlite3EndTransaction(Parse *pParse, int eType, int eRestart){
   }
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    int p3 = 0;
-    if( eRestart ) p3 = eRestart==TK_DEFERRED ? 1 : 2;
-    sqlite3VdbeAddOp3(v, OP_AutoCommit, 1, isRollback, p3);
-    if( eRestart ) sqlite3BeginTransaction(pParse, eRestart);
+    sqlite3VdbeAddOp3(v, OP_AutoCommit, 1, isRollback, bContinueTrans);
+    if( bContinueTrans ) sqlite3BeginTransaction(pParse, TK_IMMEDIATE);
   }
 }
 

@@ -218,7 +218,7 @@ void *sqlite3PagerTempSpace(Pager*);
 int sqlite3PagerIsMemdb(Pager*);
 void sqlite3PagerCacheStat(Pager *, int, int, u64*);
 void sqlite3PagerClearCache(Pager*);
-void sqlite3PagerMinLock(sqlite3*,u8);
+void sqlite3PagerHoldWrLock(sqlite3*,u8);
 int sqlite3SectorSize(sqlite3_file *);
 
 /* Functions used to truncate the database file. */

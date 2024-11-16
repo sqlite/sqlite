@@ -516,7 +516,7 @@ struct Wal {
   i16 readLock;              /* Which read lock is being held.  -1 for none */
   u8 syncFlags;              /* Flags to use to sync header writes */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
-  u8 eMinLock;               /* 0, 1, or 2, for none, read, or write */
+  u8 bHoldWrLock;            /* Do not release WAL_WRITE locks if true */
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
@@ -2065,7 +2065,7 @@ int sqlite3WalWriteLock(Wal *pWal, int bLock){
       }
       walDisableBlocking(pWal);
     }
-  }else if( pWal->writeLock && pWal->eMinLock<2 ){
+  }else if( pWal->writeLock && !pWal->bHOldWrLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
   }
@@ -2699,7 +2699,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
             *pChanged = 1;
           }
         }
-        if( bWriteLock==0 && pWal->eMinLock<2 ){
+        if( bWriteLock==0 && !pWal->bHoldWrLock ){
           pWal->writeLock = 0;
           walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
         }
@@ -3711,7 +3711,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** routine merely releases the lock.
 */
 int sqlite3WalEndWriteTransaction(Wal *pWal){
-  if( pWal->writeLock && pWal->eMinLock<2 ){
+  if( pWal->writeLock && !pWal->bHoldWrLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
     pWal->iReCksum = 0;
@@ -4462,8 +4462,8 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 /*
 ** Set the temporary minimum lock level for the WAL subsystem.
 */
-void sqlite3WalMinLock(Wal *pWal, int eMinLock){
-  pWal->eMinLock = eMinLock;
+void sqlite3WalHoldWrLock(Wal *pWal, int bOnOff){
+  pWal->bHoldWrLock = bOnOff;
 }
 
 /*

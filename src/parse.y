@@ -172,7 +172,7 @@ transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
 cmd ::= ROLLBACK(X) trans_opt.            {sqlite3EndTransaction(pParse,@X,0);}
 cmd ::= COMMIT(X) trans_opt.              {sqlite3EndTransaction(pParse,@X,0);}
 cmd ::= END(X) trans_opt.                 {sqlite3EndTransaction(pParse,@X,0);}
-// See also the COMMIT AND BEGIN section below
+// See also the COMMIT AND CONTINUE TRANSACTION section below
 
 savepoint_opt ::= SAVEPOINT.
 savepoint_opt ::= .
@@ -476,13 +476,13 @@ resolvetype(A) ::= raisetype(A).
 resolvetype(A) ::= IGNORE.                   {A = OE_Ignore;}
 resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
 
-////////////////////////// COMMIT AND BEGIN ///////////////////////////////////
+////////////////////////// COMMIT AND CONTINUE TRANSACTION ////////////////////
 //
 cmd ::= COMMIT(X) AND ID(Y) TRANSACTION. {
   if( Y.n!=8  || sqlite3_strnicmp(Y.z,"continue",8)!=0 ){
     sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &Y);
   }
-  sqlite3EndTransaction(pParse, @X, TK_IMMEDIATE);
+  sqlite3EndTransaction(pParse, @X, 1);
 }
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
