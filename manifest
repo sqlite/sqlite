@@ -1,5 +1,5 @@
-C Rename\stool/tclConfigShToTcl.sh\sto\stool/tclConfigShToAutoDef.sh\sin\sthe\sname\sof\spedantic\scorrectness.
-D 2024-11-16T10:42:33.822
+C Add\s--destdir\sflag\ssupport\sto\sbuildtclext.tcl,\sbut\sdo\snot\syet\sadd\sthat\sto\sthe\smakefile\s(so\sthat\sthis\schange\scan\sbe\scherrypicked\sto\sthe\s3.47\sbuild).
+D 2024-11-16T14:29:51.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2105,7 +2105,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl f046701e0bfa7c70116555dd4c3fbd7a8b61779c10a9e7586936c77a118c4b09
+F tool/buildtclext.tcl 74b5a09d6f1890370b4bbeeb23c70659b5e90c4b0182451871832b13aeaeb61e
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2189,7 +2189,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
-F tool/tclConfigShToAutoDef.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x tool/tclConfigShToTcl.sh
+F tool/tclConfigShToAutoDef.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x
 F tool/tclConfigShToMake.sh 7c065d81c2d178e15e45a77372c6e5a38b5a1b08755301cd6f20a3a862db7312 x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bfdc416b561937aa74483bf96c042e701e6f98997150f1f1a6b165cddd40d8d1
-R ad6c57c80354771f347efbb55126765b
+P a7dd196d99ee7c75b92a03915f2b370e3f4c598eb8521b90af1cb5dd7f9ee49c
+R a41a04f6172c3334020ea9fa150275a0
 U stephan
-Z ff27965bc7c5248a616703d2fb15edca
+Z ebf5f234ba63bec0c8691ad659e50c5b
 # Remove this line to create a well-formed Fossil manifest.

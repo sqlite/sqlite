@@ -15,6 +15,7 @@ Options:
    --info               Show info on existing SQLite TCL extension installs
    --install-only       Install an extension previously build
    --uninstall          Uninstall the extension
+   --destdir DIR        Installation root (used by "make install DESTDIR=...")
 
 Other options are retained and passed through into the compiler.}
 
@@ -25,6 +26,7 @@ set uninstall 0
 set infoonly 0
 set CC {}
 set OPTS {}
+set DESTDIR ""; # --destdir "$(DESTDIR)"
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
@@ -42,6 +44,9 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--cc" && $ii+1<[llength $argv]} {
     incr ii
     set CC [lindex $argv $ii]
+  } elseif {$a0=="--destdir" && $ii+1<[llength $argv]} {
+    incr ii
+    set DESTDIR [lindex $argv $ii]
   } elseif {[string match -* $a0]} {
     append OPTS " $a0"
   } else {
@@ -248,7 +253,7 @@ package ifneeded sqlite3 $VERSION \\
 
 if {$install} {
   # Install the extension
-  set DEST2 $DEST/sqlite$VERSION
+  set DEST2 ${DESTDIR}$DEST/sqlite$VERSION
   file mkdir $DEST2
   puts "installing $DEST2/pkgIndex.tcl"
   file copy -force pkgIndex.tcl $DEST2
