@@ -201,7 +201,15 @@ if {$install} {
   #
   set DEST {}
   foreach dir $auto_path {
-    if {[file writable $dir]} {
+    if {[string match //*:* $dir]} {
+      # We can't install to //zipfs: paths
+      continue
+    } elseif {"" ne $DESTDIR && ![file writable $DESTDIR]} {
+      continue
+    }
+    set dir ${DESTDIR}$dir
+    if {[file writable $dir] || "" ne $DESTDIR} {
+      # the dir will be created later ^^^^^^^^
       set DEST $dir
       break
     } elseif {[glob -nocomplain $dir/sqlite3*/pkgIndex.tcl]!=""} {
@@ -219,7 +227,7 @@ if {$install} {
     puts "to work around this problem.\n"
     puts "These are the (unwritable) \$auto_path directories:\n"
     foreach dir $auto_path {
-      puts "  *  $dir"
+      puts "  *  ${DESTDIR}$dir"
     }
     exit 1
   }
@@ -253,7 +261,7 @@ package ifneeded sqlite3 $VERSION \\
 
 if {$install} {
   # Install the extension
-  set DEST2 ${DESTDIR}$DEST/sqlite$VERSION
+  set DEST2 $DEST/sqlite$VERSION
   file mkdir $DEST2
   puts "installing $DEST2/pkgIndex.tcl"
   file copy -force pkgIndex.tcl $DEST2

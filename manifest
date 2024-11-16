@@ -1,5 +1,5 @@
-C Add\sthe\s--destdir\sflag\sto\sthe\stclextension-install\smakefile\starget.
-D 2024-11-16T14:30:43.559
+C Handle\sDESTDIR\sat\san\searlier\sphase\sin\sbuildtclext.tcl\sto\saccount\sfor\sthe\sis-writable-dir\scheck\sand\sto\sfilter\sout\s//zipfs:\sdirs\sas\s(im)possible\sinstallation\stargets.
+D 2024-11-16T17:09:55.838
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2105,7 +2105,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl 74b5a09d6f1890370b4bbeeb23c70659b5e90c4b0182451871832b13aeaeb61e
+F tool/buildtclext.tcl 12b49ae392006251d110f051d22036f7807d7ea1602780f4c165154b12567397
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 67a3ca0c013b6a9da3b2c50ffc86b96b14454d1e45fa90d3b0a238488a783e79
-R 64cbfdd333d943accf4446692c9fa1aa
+P d1663cf05f7dcaafd479bacf083b6b774f34fd3db89012b49599d30817eb174f
+R 657a89bc255ed08e248d99748106e69f
 U stephan
-Z ab5f1908008ea743b14ee06e559bb041
+Z b80d9fe06498e5fae8380933f57f5fcc
 # Remove this line to create a well-formed Fossil manifest.
