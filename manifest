@@ -1,5 +1,5 @@
-C Load\sall\sthe\slatest\strunk\senhancements,\sand\sespecially\sthe\senhancements\sto\nvfstrace,\sinto\sthe\scommit-and-begin\sbranch.
-D 2024-11-15T20:42:12.068
+C Simplify\sthe\snew\ssyntax\sto\sbe\sjust\s"COMMIT\sAND\sCONTINUE\sTRANSACTION".
+D 2024-11-16T14:40:11.304
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -763,7 +763,7 @@ F src/os_win.c db4baa8f62bbfe3967c71b008cea31a8f2ff337c1667ff4d8a677e697315ff0d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 6d5d8ebe7e0fbaa5ad8c6b327e17271334b99e887b871df667a79b71215acfc7
 F src/pager.h 87f5995a18a11130c52d20c9556da02cdfe40ffd7daaa43ca0fcd922d83b7257
-F src/parse.y 61033fb5fa609161a0025fe7b6941ee5afbf382f6927ea26c51892dd3b63d731
+F src/parse.y f0e72511b10d8456d456706b6e7d1ec68486622f66b5593ac00dff9ee9cd2c99
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a905bd5dd6ccb6f2e5671a5b691e61c853aa425e6a53e7e6b6dbc12e4020ef14 96105d33597765c23dbd490b3aa0c2273731d1970d7041720e9f043dbe3517b3
-R ba1f664b0b08e2a864d62c75331f9173
+P 605889b02122d98011e9a8d458ba01010423680dd69446458ffe7230a1d47937
+R 14eb9d9ad1dcefff4fb094ea7a1cb27f
 U drh
-Z c97cfdf07b76fb16844a6913e2c30105
+Z 7bc09c6cab911404200c67cb0830a94e
 # Remove this line to create a well-formed Fossil manifest.

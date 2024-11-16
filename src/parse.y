@@ -169,8 +169,9 @@ transtype(A) ::= .             {A = TK_DEFERRED;}
 transtype(A) ::= DEFERRED(X).  {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= IMMEDIATE(X). {A = @X; /*A-overwrites-X*/}
 transtype(A) ::= EXCLUSIVE(X). {A = @X; /*A-overwrites-X*/}
-cmd ::= ROLLBACK(X) trans_opt.                {sqlite3EndTransaction(pParse,@X,0);}
-cmd ::= COMMIT|END(X) trans_opt.              {sqlite3EndTransaction(pParse,@X,0);}
+cmd ::= ROLLBACK(X) trans_opt.            {sqlite3EndTransaction(pParse,@X,0);}
+cmd ::= COMMIT(X) trans_opt.              {sqlite3EndTransaction(pParse,@X,0);}
+cmd ::= END(X) trans_opt.                 {sqlite3EndTransaction(pParse,@X,0);}
 // See also the COMMIT AND BEGIN section below
 
 savepoint_opt ::= SAVEPOINT.
@@ -477,8 +478,12 @@ resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
 
 ////////////////////////// COMMIT AND BEGIN ///////////////////////////////////
 //
-cmd ::= COMMIT|END(X) AND BEGIN transtype(A) trans_opt.
-                                              {sqlite3EndTransaction(pParse,@X,A);}
+cmd ::= COMMIT(X) AND ID(Y) TRANSACTION. {
+  if( Y.n!=8  || sqlite3_strnicmp(Y.z,"continue",8)!=0 ){
+    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &Y);
+  }
+  sqlite3EndTransaction(pParse, @X, TK_IMMEDIATE);
+}
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //
