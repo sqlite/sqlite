@@ -3656,7 +3656,7 @@ Pgno sqlite3WalDbsize(Wal *pWal){
 ** There can only be a single writer active at a time.
 */
 int sqlite3WalBeginWriteTransaction(Wal *pWal){
-  int rc;
+  int rc = SQLITE_OK;
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   /* If the write-lock is already held, then it was obtained before the

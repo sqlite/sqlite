@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\scommit-and-continue\sbranch.
-D 2024-11-17T11:46:47.966
+C Fix\san\suninitialized\svariable\sthat\sappears\sto\sbe\sthe\scause\sof\sthe\sproblems\nwith\scheck-in\s[80b98446fc070d9a].
+D 2024-11-17T23:53:27.986
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -855,7 +855,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 7a4962ae1f7cff6fe83d6f23902a2d7f19975f120c718ef4aa91b7a6a9c64c7f
+F src/wal.c 522c8ab27c3d05609690d6f85c11a191721e5b0f567cbe7e2b439bdc26393d45
 F src/wal.h a1ec57934aa26c23805e00ddbc0cd5da5760028d3608d882647345de2e330a3e
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 4de9e7ca5f49e4a21c1d733e2b2fbbc8b62b1a157a58a562c569da84cfcb005b
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80b98446fc070d9a2ab5816dd941cb829f067b2fcf2a3db7a19bf73806fbcdcc f71d4900205ae6ee41f849c4026d0fe4d6cf281dfc3bac8105fc8e242d128b67
-R e22e59988c2638c600703b7719fbd691
+P 1742af1215c37c83b84b072773ddaa2ec3bacc2f0baa29a49dfeb666e6f13e63
+R 525ae7e70430fd0de2dddc29e40ae4da
 U drh
-Z 62f24559c42c52d0a20b972cbda74068
+Z ca81f644bb2a1a787934bc8ec9966da7
 # Remove this line to create a well-formed Fossil manifest.
