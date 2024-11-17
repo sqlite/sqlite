@@ -205,7 +205,18 @@ if {$install} {
       # We can't install to //zipfs: paths
       continue
     } elseif {"" ne $DESTDIR && ![file writable $DESTDIR]} {
-      continue
+      # In the common case, ${DESTDIR}${dir} will not exist when we
+      # get to this point of the installation, and the "is writable?"
+      # check just below this will fail for that case.
+      #
+      # Assumption made for simplification's sake: if ${DESTDIR} is
+      # not writable, no part of the remaining path will
+      # be. ${DESTDIR} is typically used by OS package maintainers,
+      # not normal installations, and it "shouldn't" ever happen that
+      # the DESTDIR is read-only while the target ${DESTDIR}${prefix}
+      # is not, as it's typical for such installations to create
+      # ${prefix} on-demand under ${DESTDIR}.
+      break
     }
     set dir ${DESTDIR}$dir
     if {[file writable $dir] || "" ne $DESTDIR} {

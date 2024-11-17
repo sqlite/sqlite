@@ -12701,6 +12701,15 @@ static void sayAbnormalExit(void){
   if( seenInterrupt ) eputz("Program interrupted.\n");
 }
 
+/* Routine to output from vfstrace
+*/
+static int vfstraceOut(const char *z, void *pArg){
+  ShellState *p = (ShellState*)pArg;
+  sqlite3_fputs(z, p->out);
+  fflush(p->out);
+  return 1;
+}
+
 #ifndef SQLITE_SHELL_IS_UTF8
 #  if (defined(_WIN32) || defined(WIN32)) \
    && (defined(_MSC_VER) || (defined(UNICODE) && defined(__GNUC__)))
@@ -12937,8 +12946,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
          default: sqlite3_config(SQLITE_CONFIG_SERIALIZED);    break;
       }
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
-      vfstrace_register("trace",0,(int(*)(const char*,void*))sqlite3_fputs,
-                        stderr,1);
       bEnableVfstrace = 1;
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( cli_strcmp(z,"-multiplex")==0 ){
@@ -13035,6 +13042,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   }
   data.out = stdout;
+  if( bEnableVfstrace ){
+    vfstrace_register("trace",0,vfstraceOut, &data, 1);
+  }
 #ifndef SQLITE_SHELL_FIDDLE
   sqlite3_appendvfs_init(0,0,0);
 #endif
