@@ -8723,6 +8723,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       const char *zName;
       int op;
     } aDbConfig[] = {
+        { "continue_transaction",SQLITE_DBCONFIG_CONTINUE_TRANSACTION },
         { "defensive",          SQLITE_DBCONFIG_DEFENSIVE             },
         { "dqs_ddl",            SQLITE_DBCONFIG_DQS_DDL               },
         { "dqs_dml",            SQLITE_DBCONFIG_DQS_DML               },

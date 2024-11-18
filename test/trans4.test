@@ -18,6 +18,9 @@ unset -nocomplain ecode
 db close
 sqlite3 db test.db
 sqlite3 db2 test.db
+sqlite3_db_config db CONTINUE_TRANSACTION 1
+sqlite3_db_config db2 CONTINUE_TRANSACTION 1
+
 do_execsql_test -db db2 trans4-1.1 {
   CREATE TABLE t1(x);
   BEGIN;
@@ -50,6 +53,7 @@ do_catchsql_test trans4-1.6 {
 db2 close
 db eval {PRAGMA journal_mode=WAL; VACUUM;}
 sqlite3 db2 test.db
+sqlite3_db_config db2 CONTINUE_TRANSACTION 1
 
 do_execsql_test -db db2 trans4-2.1 {
   DELETE FROM t1;
@@ -90,6 +94,11 @@ do_catchsql_test trans4-3.2 {
 do_catchsql_test trans4-3.3 {
   COMMIT AND continue Transaction;
 } {0 {}}
+sqlite3_db_config db CONTINUE_TRANSACTION 0
+do_catchsql_test trans4-3.4 {
+  COMMIT AND CONTINUE TRANSACTION;
+} {1 {near "AND": syntax error}}
+
 db2 close
 
 finish_test

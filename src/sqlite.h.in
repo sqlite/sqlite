@@ -2521,6 +2521,17 @@ struct sqlite3_mem_methods {
 ** then 0 or 1 is written into the integer that the second argument points to
 ** depending on if the reverse scan order flag is set after processing the
 ** first argument.
+**
+** [[SQLITE_DBCONFIG_CONTINUE_TRANSACTION]]
+** <dt>SQLITE_DBCONFIG_CONTINUE_TRANSACTION</dt>
+** <dd>The SQLITE_DBCONFIG_CONTINUE_TRANSACTION option enables or disables
+** the COMMIT AND CONTINUE TRANSACTION syntax.  That special syntax if off
+** by default. This option takes two arguments which are an integer and a
+** pointer to an integer.  The first argument is 1, 0, or -1 to enable,
+** disable, or leave unchanged the COMMIT AND CONTINUE TRANSACTION syntax,
+** respectively.  If the second argument is not NULL, then 0 or 1 is written
+** into the integer that the second argument points to depending on whether
+** or not the COMMIT AND CONTINUE TRANSACTION syntax is enabled.
 ** </dd>
 **
 ** </dl>
@@ -2545,7 +2556,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
 #define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_CONTINUE_TRANSACTION  1020 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1020 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
