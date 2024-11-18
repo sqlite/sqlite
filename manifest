@@ -1,5 +1,5 @@
-C Realign\strunk\sand\swal2.
-D 2024-11-18T18:27:35.734
+C Continue\sto\sreduce\sdivergence\sbetween\swal2\sand\strunk.
+D 2024-11-18T20:30:35.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1988,7 +1988,7 @@ F test/vtabdistinct.test 7688f0889358f849fd60bbfde1ded38b014b18066076d4bfbb75395
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
 F test/vtabrhs1.test 9b5ecbc74a689500c33a4b2b36761f9bcc22fcc4e3f9d21066ee0c9c74cf5f6c
 F test/wal.test a5d6c7f4bd79251ed344229d96d44ecdfb896bdbd32b7e65f118756699c7e473
-F test/wal2.test 44fe1cb4935dbbddfa0a34c2c4fd90f0ba8654d59b83c4136eb90fb327fd264f
+F test/wal2.test e89ca97593b5e92849039f6b68ce1719a853ef20fa22c669ec1ac452fbc31cab
 F test/wal2big.test 829141cbecdda4329db8fa38705424c4a73db72a06b9540b06811a825d330409
 F test/wal2fault.test 2e8e60cacd5bcd451618aeffd05f676894d17202d3e2986e288d36e2c5993249
 F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d3822060437793552
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ffe9f9ccd72f022a8388bd6426abf4b9f00d52a18206d8c3345d9dd47d4ddd71 e0d8f9916c2d899094b71af74f44e089a97db6d80f09eb80a5d8be733c1bf942
-R 6dec105d14c1dc647248e32a689305b3
+P dcf27687209670a5a1e1924f1b333fded4d71ffd4dd641fb2b7e4faafe9455eb 84d41e9d04c62601e84621e8edb3b81abbacc366a6b5e7059f8b6796fade7ffa
+R 490689a9aa5ac36f9ac91a1de82083f0
 U drh
-Z a72e5c4c9e3bb9264eef4e2582e85db4
+Z 0f265d7621f370e096901d808db03f48
 # Remove this line to create a well-formed Fossil manifest.
