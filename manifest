@@ -1,5 +1,5 @@
-C Attempt\sto\sreduce\sdivergence\sfrom\strunk.
-D 2024-11-18T16:44:45.315
+C Realign\sthe\sbegin-concurrent\sbranch\swith\strunk.
+D 2024-11-18T16:52:05.400
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -768,7 +768,7 @@ F src/os_win.c db4baa8f62bbfe3967c71b008cea31a8f2ff337c1667ff4d8a677e697315ff0d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 4c8b569b6745efd0e2af57ac00b9a4c73451b8aa0ed51fedecbaa7523c1111bb
 F src/pager.h e2df6b92e0402bc8d516016f361da82758b7d7769ef1a18e2abeadece18103e0
-F src/parse.y 091a23e828f9aa1ec560340162deab14b0563664a1ffe7d9073c4d99215d39fa
+F src/parse.y 5e6958ec69f538fe98f22dda2ace520eabcda314c651f48546ce72c8c0b4e221
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 680a2eaabb2a2fa5d52e89c99a37637aba2734ab782f63bd8cc1fb9802c3d9e0
-R 915c205e7d3ee7a75d7840f0cc912bd8
+P ae863439e88c0f1a8b605a15ab5115994b6556ebec3a41db38665d5e451e7293 f783d90187fb326faa3d0244b30138b023c4a8483486f260b7a022a927c13f3a
+R 57251d83a90e449d1e470f9cd1545c73
 U drh
-Z ca371cf98e0e7f7c0063c8e9abafbf19
+Z 5b8e719b599c4f1dc64f08075b4872fd
 # Remove this line to create a well-formed Fossil manifest.
