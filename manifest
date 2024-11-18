@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sbegin-concurrent\sbranch.
-D 2024-11-18T15:18:45.241
+C Attempt\sto\sreduce\sdivergence\sfrom\strunk.
+D 2024-11-18T16:44:45.315
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -649,7 +649,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js bb5e96cd0fd6e1e54538256433f1c60a
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 9b86ca2d8276cf919fbc9ba2a10e9786033b64f92c2db844d951804dee6c4b4e
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js e809739d71e8b35dfe1b55d24d91f02d04239e6aef7ca1ea92a15a29e704f616
 F ext/wasm/api/sqlite3-wasm.c 83f5e9f998e9fa4261eb84e9f092210e3ffe03895119f5ded0429eb34ab9d2be
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js c5ac33e39f21a3481812d7333ca6e18853640d423a01960ca8dbc6e7c5c3c21c
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46f303ba8ddd1b2f0a391798837beddfa72e8c897038c8047eda49ce7d5ed46b
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
@@ -2206,7 +2206,7 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
-F tool/tclConfigShToAutoDef.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x tool/tclConfigShToTcl.sh
+F tool/tclConfigShToAutoDef.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x
 F tool/tclConfigShToMake.sh 7c065d81c2d178e15e45a77372c6e5a38b5a1b08755301cd6f20a3a862db7312 x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0812161025272851af6233f183a6abdee5c583decc688c4763965b50e7ab1b9d e1330ecf170436678c5c235557fb95b8acbf4fad62583edba4af03aff49afbc5
-R 9a4e43379d9c2fcaaa307e099edd9167
+P 680a2eaabb2a2fa5d52e89c99a37637aba2734ab782f63bd8cc1fb9802c3d9e0
+R 915c205e7d3ee7a75d7840f0cc912bd8
 U drh
-Z 5ad00ac21e27e2085f1e605551ac79a6
+Z ca371cf98e0e7f7c0063c8e9abafbf19
 # Remove this line to create a well-formed Fossil manifest.
