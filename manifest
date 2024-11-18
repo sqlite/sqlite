@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\sin\stestrunner.tcl\sthat\spop\sup\swhen\sthe\scommand-line\sarguments\nare\ssuch\sthat\sno\stests\sare\srun.
-D 2024-11-18T13:29:16.826
+C Fix\sa\s"applying\szero\soffset\sto\snull\spointer"\susan\serror\sin\sthe\sfts5\strigram\stokenizer.
+D 2024-11-18T14:08:42.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -116,7 +116,7 @@ F ext/fts5/fts5_storage.c 337b05e4c66fc822d031e264d65bde807ec2fab08665ca2cc8aaf9
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
 F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
-F ext/fts5/fts5_tokenize.c 87ab719f0556172da3414f1741c11bb4d333ebecde157945a55478bfe6e46c44
+F ext/fts5/fts5_tokenize.c 49aea8cc400a690a6c4f83c4cedc67f4f8830c6789c4ee343404f62bcaebca7b
 F ext/fts5/fts5_unicode2.c 6f9b0fb79a8facaed76628ffd4eb9c16d7f2b84b52872784f617cf3422a9b043
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
 F ext/fts5/fts5_vocab.c e4830b00809e5da53bc10f93adc59e321407b0f801c7f4167c0e47f5552267e0
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f71d4900205ae6ee41f849c4026d0fe4d6cf281dfc3bac8105fc8e242d128b67
-R c842f5cfce9a13599fcce2ed5a6b5bb2
-U drh
-Z c55681dc305689429003d496466dfaa7
+P 321ded32f67550e964cd64d61aa0cbc0029ce2fdee4588a46b01dbb5aa87150b
+R 9bcf58276e7ecc61be5b475731de0f25
+U dan
+Z 37f8f1c1585e0f2f0b48eafeda549304
 # Remove this line to create a well-formed Fossil manifest.
