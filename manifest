@@ -1,5 +1,5 @@
-C Attempt\sto\sreduce\sdivergence\sfrom\strunk.
-D 2024-11-18T18:03:27.562
+C Realign\strunk\sand\swal2.
+D 2024-11-18T18:27:35.734
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -615,7 +615,7 @@ F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009e
 F ext/session/sqlite3session.c 3d0a7f0f7a1c946e01818c716a55a40ae30542a29a9045cb05daf7fb658cdafa
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c aa29abdcc9011ac02f4fa38e8ede226106eaeee7c3ea7d8b2b999a124e0c368c
-F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c w ext/wasm/EXPORTED_FUNCTION.fiddle.in
+F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/EXPORTED_FUNCTIONS.sqlite3-core 2bcbbfe3b95c043ed6037e2708a2ee078d212dd1612c364f93588d8dc97300fe
 F ext/wasm/GNUmakefile 311aa0d5edc7006409962cc77cc26560d92f9be69c2c4302e8bbc68189fd02db
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d19aeff609ae7a19e90cef1181706cee81d9e5ba8475f0f03ddb1ee600b90415
+P ffe9f9ccd72f022a8388bd6426abf4b9f00d52a18206d8c3345d9dd47d4ddd71 e0d8f9916c2d899094b71af74f44e089a97db6d80f09eb80a5d8be733c1bf942
 R 6dec105d14c1dc647248e32a689305b3
 U drh
-Z e4cd7e2e7de43b8796514668764d2dd3
+Z a72e5c4c9e3bb9264eef4e2582e85db4
 # Remove this line to create a well-formed Fossil manifest.
