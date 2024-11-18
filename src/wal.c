@@ -2065,7 +2065,7 @@ int sqlite3WalWriteLock(Wal *pWal, int bLock){
       }
       walDisableBlocking(pWal);
     }
-  }else if( pWal->writeLock && !pWal->bHOldWrLock ){
+  }else if( pWal->writeLock && !pWal->bHoldWrLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
   }
