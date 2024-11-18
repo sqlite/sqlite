@@ -1,5 +1,5 @@
-C Attempt\sto\sreduce\sdivergence\swith\sthe\swal2\sbranch.
-D 2024-11-18T17:05:45.350
+C Reduce\sdivergence\sfrom\sbegin-concurrent.
+D 2024-11-18T18:45:31.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1986,7 +1986,7 @@ F test/vtabdistinct.test 7688f0889358f849fd60bbfde1ded38b014b18066076d4bfbb75395
 F test/vtabdrop.test 65d4cf6722972e5499bdaf0c0d70ee3b8133944a4e4bc31862563f32a7edca12
 F test/vtabrhs1.test 9b5ecbc74a689500c33a4b2b36761f9bcc22fcc4e3f9d21066ee0c9c74cf5f6c
 F test/wal.test 519c550255c78f55959e9159b93ebbfad2b4e9f36f5b76284da41f572f9d27da
-F test/wal2.test 44fe1cb4935dbbddfa0a34c2c4fd90f0ba8654d59b83c4136eb90fb327fd264f
+F test/wal2.test e89ca97593b5e92849039f6b68ce1719a853ef20fa22c669ec1ac452fbc31cab
 F test/wal3.test 5de023bb862fd1eb9d2ad26fa8d9c43abb5370582e5b08b2ae0d6f93661bc310
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 9c11da7aeccd83a46d79a556ad11a18d3cb15aa9
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f783d90187fb326faa3d0244b30138b023c4a8483486f260b7a022a927c13f3a
-R 6377acb59760f57785ee6902b4729fcf
+P e0d8f9916c2d899094b71af74f44e089a97db6d80f09eb80a5d8be733c1bf942
+R 15b624443bf22191f7b1a220224ff1ba
 U drh
-Z a7e2057b268c20267be2a2d81b2bdc9a
+Z e17d5ca17fa701911504cdcf5a540396
 # Remove this line to create a well-formed Fossil manifest.
