@@ -9,7 +9,6 @@
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
 #
-.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
 all:
 ########################################################################
 #

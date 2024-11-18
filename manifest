@@ -1,9 +1,9 @@
-C Fix\sa\s"applying\szero\soffset\sto\snull\spointer"\susan\serror\sin\sthe\sfts5\strigram\stokenizer.
-D 2024-11-18T14:08:42.960
+C Remove\sthe\s.POSIX\sentries\sfrom\sthe\smakefiles\sbecause\sthey\scause\sportability\sproblems\srather\sthan\ssolve\sthem.
+D 2024-11-18T14:15:08.975
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 2c90ab3183f810086878a784c323b7816238a5e6943d267c25a71edc623a05a3
+F Makefile.in c3a01e98bd2ae6a4631df02f11249ac07ffa3d540d3034e2675f66cc259f2ea7
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk e2287ed82f924c9d54493634dc7bb10797b8ef69ce7becef62d6a453337d5a45
+F main.mk c4e37e3015f9c2d8fd20fa3071ba86e7396959c8d5960e37e95aa85421e2b739
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 321ded32f67550e964cd64d61aa0cbc0029ce2fdee4588a46b01dbb5aa87150b
-R 9bcf58276e7ecc61be5b475731de0f25
-U dan
-Z 37f8f1c1585e0f2f0b48eafeda549304
+P 9b79b999d4192a3a250bf343825f61e9cb83203e4d94dcfa20c320d5f1386d69
+R 327f4f8a7444c4d4336a89e4ec576fd8
+U stephan
+Z e12fcd84e46ac65f835dccb3914d7b22
 # Remove this line to create a well-formed Fossil manifest.

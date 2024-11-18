@@ -18,7 +18,6 @@
 # invoked. This file will use defaults, very possibly invalid, for any
 # which are not defined.
 ########################################################################
-.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
 all:
 #
 # $(TOP) =
