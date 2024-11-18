@@ -465,6 +465,7 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
 # number of milliseconds in the argument.
 #
 proc elapsetime {ms} {
+  if {$ms==""} {set ms 0}
   set s [expr {int(($ms+500.0)*0.001)}]
   set hr [expr {$s/3600}]
   set mn [expr {($s/60)%60}]
@@ -552,7 +553,10 @@ proc show_status {db cls} {
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
     }
-    append line " ETC [elapsetime $tmleft]"
+    set etc " ETC [elapsetime $tmleft]"
+    if {[string length $line]+[string length $etc]<80} {
+      append line $etc
+    }
   }
   puts [format %-79.79s $line]
   if {$S(running)>0} {
@@ -663,7 +667,9 @@ if {[llength $argv]>=1
   set SQL {SELECT displaytype, displayname, state FROM jobs}
   if {$pattern!=""} {
     regsub -all {[^a-zA-Z0-9*.-/]} $pattern ? pattern
-    append SQL " WHERE displayname GLOB '*$pattern*'"
+    set pattern [string tolower $pattern]
+    append SQL \
+       " WHERE lower(concat(state,' ',displaytype,' ',displayname)) GLOB '*$pattern*'"
   }
   append SQL " ORDER BY starttime"
 
@@ -1367,10 +1373,7 @@ proc script_input_ready {fd iJob jobid} {
     set state "done"
     set rc [catch { close $fd } msg]
     if {$rc} { 
-      if {[info exists TRG(reportlength)]} {
-        puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-      }
-      puts "FAILED: $job(displayname) ($iJob)"
+      puts [format %-79.79s "FAILED: $job(displayname) ($iJob)"]
       set state "failed" 
       if {$TRG(stopOnError)} {
         puts "OUTPUT: $O($iJob)"
@@ -1521,22 +1524,16 @@ proc progress_report {} {
         lappend text "r$v(running,$j)"
       }
     }
+    set report "[elapsetime $tmms] [join $text { }]"
     if {$wdone>0} {
       set tmleft [expr {($tmms/$wdone)*($wtotal-$wdone)}]
-      append text " ETC [elapsetime $tmleft]"
+      set etc " ETC [elapsetime $tmleft]"
+      if {[string length $report]+[string length $etc]<80} {
+        append report $etc
+      }
     }
-  
-    if {[info exists TRG(reportlength)]} {
-      puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
-    }
-    set report "[elapsetime $tmms] [join $text { }]"
-    set TRG(reportlength) [string length $report]
-    if {[string length $report]<100} {
-      puts -nonewline "$report\r"
-      flush stdout
-    } else {
-      puts $report
-    }
+    puts -nonewline [format %-79.79s $report]\r
+    flush stdout
   }
   after $TRG(reporttime) progress_report
 }
@@ -1607,6 +1604,8 @@ proc run_testset {} {
      SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
       ORDER BY 2 DESC LIMIT 1
   } break
+  if {$totalerr==""} {set totalerr 0}
+  if {$totaltest==""} {set totaltest 0}
   puts "$totalerr errors out of $totaltest tests in $et $pltfm"
   trdb eval {
      SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL

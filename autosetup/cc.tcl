@@ -677,80 +677,82 @@ proc calc-define-output-type {name spec} {
 	return ""
 }
 
-# Initialise some values from the environment or commandline or default settings
-foreach i {LDFLAGS LIBS CPPFLAGS LINKFLAGS CFLAGS} {
-	lassign $i var default
-	define $var [get-env $var $default]
-}
+proc cc-init {} {
+	global autosetup
 
-if {[env-is-set CC]} {
-	# Set by the user, so don't try anything else
-	set try [list [get-env CC ""]]
-} else {
-	# Try some reasonable options
-	set try [list [get-define cross]cc [get-define cross]gcc]
-}
-define CC [find-an-executable {*}$try]
-if {[get-define CC] eq ""} {
-	user-error "Could not find a C compiler. Tried: [join $try ", "]"
-}
-
-define CPP [get-env CPP "[get-define CC] -E"]
-
-# XXX: Could avoid looking for a C++ compiler until requested
-# If CXX isn't found, it is set to the empty string.
-if {[env-is-set CXX]} {
-	define CXX [find-an-executable -required [get-env CXX ""]]
-} else {
-	define CXX [find-an-executable [get-define cross]c++ [get-define cross]g++]
-}
-
-# CXXFLAGS default to CFLAGS if not specified
-define CXXFLAGS [get-env CXXFLAGS [get-define CFLAGS]]
-
-# May need a CC_FOR_BUILD, so look for one
-define CC_FOR_BUILD [find-an-executable [get-env CC_FOR_BUILD ""] cc gcc false]
-
-if {[get-define CC] eq ""} {
-	user-error "Could not find a C compiler. Tried: [join $try ", "]"
-}
-
-# These start empty and never come from the user or environment
-define AS_CFLAGS ""
-define AS_CPPFLAGS ""
-define AS_CXXFLAGS ""
-
-define CCACHE [find-an-executable [get-env CCACHE ccache]]
-
-# If any of these are set in the environment, propagate them to the AUTOREMAKE commandline
-foreach i {CC CXX CCACHE CPP CFLAGS CXXFLAGS CXXFLAGS LDFLAGS LIBS CROSS CPPFLAGS LINKFLAGS CC_FOR_BUILD LD} {
-	if {[env-is-set $i]} {
-		# Note: If the variable is set on the command line, get-env will return that value
-		# so the command line will continue to override the environment
-		define-append-argv AUTOREMAKE $i=[get-env $i ""]
+	# Initialise some values from the environment or commandline or default settings
+	foreach i {LDFLAGS LIBS CPPFLAGS LINKFLAGS CFLAGS} {
+		lassign $i var default
+		define $var [get-env $var $default]
 	}
-}
 
-# Initial cctest settings
-cc-store-settings {-cflags {} -includes {} -declare {} -link 0 -lang c -libs {} -code {} -nooutput 0}
-set autosetup(cc-include-deps) {}
+	if {[env-is-set CC]} {
+		# Set by the user, so don't try anything else
+		set try [list [get-env CC ""]]
+	} else {
+		# Try some reasonable options
+		set try [list [get-define cross]cc [get-define cross]gcc]
+	}
+	define CC [find-an-executable {*}$try]
+	if {[get-define CC] eq ""} {
+		user-error "Could not find a C compiler. Tried: [join $try ", "]"
+	}
 
-msg-result "C compiler...[get-define CCACHE] [get-define CC] [get-define CFLAGS] [get-define CPPFLAGS]"
-if {[get-define CXX] ne "false"} {
-	msg-result "C++ compiler...[get-define CCACHE] [get-define CXX] [get-define CXXFLAGS] [get-define CPPFLAGS]"
-}
-msg-result "Build C compiler...[get-define CC_FOR_BUILD]"
+	define CPP [get-env CPP "[get-define CC] -E"]
 
-# On Darwin, we prefer to use -g0 to avoid creating .dSYM directories
-# but some compilers may not support it, so test here.
-switch -glob -- [get-define host] {
-	*-*-darwin* {
-		if {[cctest -cflags {-g0}]} {
-			define cc-default-debug -g0
+	# XXX: Could avoid looking for a C++ compiler until requested
+	# If CXX isn't found, it is set to the empty string.
+	if {[env-is-set CXX]} {
+		define CXX [find-an-executable -required [get-env CXX ""]]
+	} else {
+		define CXX [find-an-executable [get-define cross]c++ [get-define cross]g++]
+	}
+
+	# CXXFLAGS default to CFLAGS if not specified
+	define CXXFLAGS [get-env CXXFLAGS [get-define CFLAGS]]
+
+	# May need a CC_FOR_BUILD, so look for one
+	define CC_FOR_BUILD [find-an-executable [get-env CC_FOR_BUILD ""] cc gcc false]
+
+	# These start empty and never come from the user or environment
+	define AS_CFLAGS ""
+	define AS_CPPFLAGS ""
+	define AS_CXXFLAGS ""
+
+	define CCACHE [find-an-executable [get-env CCACHE ccache]]
+
+	# If any of these are set in the environment, propagate them to the AUTOREMAKE commandline
+	foreach i {CC CXX CCACHE CPP CFLAGS CXXFLAGS CXXFLAGS LDFLAGS LIBS CROSS CPPFLAGS LINKFLAGS CC_FOR_BUILD LD} {
+		if {[env-is-set $i]} {
+			# Note: If the variable is set on the command line, get-env will return that value
+			# so the command line will continue to override the environment
+			define-append-argv AUTOREMAKE $i=[get-env $i ""]
 		}
 	}
+
+	# Initial cctest settings
+	cc-store-settings {-cflags {} -includes {} -declare {} -link 0 -lang c -libs {} -code {} -nooutput 0}
+	set autosetup(cc-include-deps) {}
+
+	msg-result "C compiler...[get-define CCACHE] [get-define CC] [get-define CFLAGS] [get-define CPPFLAGS]"
+	if {[get-define CXX] ne "false"} {
+		msg-result "C++ compiler...[get-define CCACHE] [get-define CXX] [get-define CXXFLAGS] [get-define CPPFLAGS]"
+	}
+	msg-result "Build C compiler...[get-define CC_FOR_BUILD]"
+
+	# On Darwin, we prefer to use -g0 to avoid creating .dSYM directories
+	# but some compilers may not support it, so test here.
+	switch -glob -- [get-define host] {
+		*-*-darwin* {
+			if {[cctest -cflags {-g0}]} {
+				define cc-default-debug -g0
+			}
+		}
+	}
+
+	if {![cc-check-includes stdlib.h]} {
+		user-error "Compiler does not work. See config.log"
+	}
 }
 
-if {![cc-check-includes stdlib.h]} {
-	user-error "Compiler does not work. See config.log"
-}
+cc-init

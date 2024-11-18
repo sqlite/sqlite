@@ -1217,6 +1217,7 @@ static void originSide(SQLiteRsync *p){
   unsigned int lockBytePage = 0;
   unsigned int szPg = 0;
   sqlite3_stmt *pCkHash = 0;
+  sqlite3_stmt *pInsHash = 0;
   char buf[200];
 
   p->isReplica = 0;
@@ -1281,10 +1282,12 @@ static void originSide(SQLiteRsync *p){
         if( pCkHash==0 ){
           runSql(p, "CREATE TEMP TABLE badHash(pgno INTEGER PRIMARY KEY)");
           pCkHash = prepareStmt(p,
-            "INSERT INTO badHash SELECT pgno FROM sqlite_dbpage('main')"
+            "SELECT pgno FROM sqlite_dbpage('main')"
             " WHERE pgno=?1 AND hash(data)!=?2"
           );
           if( pCkHash==0 ) break;
+          pInsHash = prepareStmt(p, "INSERT INTO badHash VALUES(?)");
+          if( pInsHash==0 ) break;
         }
         p->nHashSent++;
         iPage++;
@@ -1292,7 +1295,16 @@ static void originSide(SQLiteRsync *p){
         readBytes(p, 20, buf);
         sqlite3_bind_blob(pCkHash, 2, buf, 20, SQLITE_STATIC);
         rc = sqlite3_step(pCkHash);
-        if( rc!=SQLITE_DONE ){
+        if( rc==SQLITE_ROW ){
+          sqlite3_bind_int64(pInsHash, 1, sqlite3_column_int64(pCkHash, 0));
+          rc = sqlite3_step(pInsHash);
+          if( rc!=SQLITE_DONE ){
+            reportError(p, "SQL statement [%s] failed: %s",
+                sqlite3_sql(pInsHash), sqlite3_errmsg(p->db));
+          }
+          sqlite3_reset(pInsHash);
+        }
+        else if( rc!=SQLITE_DONE ){
           reportError(p, "SQL statement [%s] failed: %s",
                       sqlite3_sql(pCkHash), sqlite3_errmsg(p->db));
         }
@@ -1302,7 +1314,9 @@ static void originSide(SQLiteRsync *p){
       case REPLICA_READY: {
         sqlite3_stmt *pStmt;
         sqlite3_finalize(pCkHash);
+        sqlite3_finalize(pInsHash);
         pCkHash = 0;
+        pInsHash = 0;
         if( iPage+1<p->nPage ){
           runSql(p, "WITH RECURSIVE c(n) AS"
                     " (VALUES(%d) UNION ALL SELECT n+1 FROM c WHERE n<%d)"
@@ -1338,6 +1352,7 @@ static void originSide(SQLiteRsync *p){
   }
 
   if( pCkHash ) sqlite3_finalize(pCkHash);
+  if( pInsHash ) sqlite3_finalize(pInsHash);
   closeDb(p);
 }
 
