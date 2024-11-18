@@ -3599,6 +3599,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif
+    case SQLITE_FCNTL_NULL_IO: {
+      (void)osCloseHandle(pFile->h);
+      pFile->h = NULL;
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_TEMPFILENAME: {
       char *zTFile = 0;
       int rc = winGetTempname(pFile->pVfs, &zTFile);

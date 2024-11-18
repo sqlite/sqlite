@@ -4,60 +4,28 @@
 # Makefile for SQLITE
 #
 # This makefile is intended to be configured automatically using the
-# configure script. Hand editing may not work as expected because
-# certain blocks are added or removed depending on configure-time
-# information.
+# configure script.
 #
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
 #
 all:
-clean:
 ########################################################################
-#XX# Lines starting with #XX# are TODOs for the port to autosetup.
 #
 # Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
 # particular order...
-#
-# - libreadline detection and handling of its -I, -L, and -l flags.
-# These can vary considerably across systems. e.g. some need -lncurses,
-# and some don't know what an -lncurses is.
 #
 # - TEA pieces.
 #
 # - Replace the autotools-specific distribution deliverable(s).
 #
-# - Provide Makefile.msc, Makefile.linux-gcc, and any required similar
-# makefile stubs for environments where the configure script will not
-# run. The core makefile rules in main.mk "should" apply as-is for
-# most platforms.  We can potentially generate those makefiles, along
-# with main.mk, like we do in the Fossil project.
-#
 # - Confirm whether cross-compilation works and patch it
 # appropriately.
 #
-# - There are some lingering dependencies issues which cause a
-# re-configure to trigger more often than it should.  This is
-# especially a problem in parallel builds, which may launch multiple
-# re-configures in parallel.  GNU Make offers ways of controlling
-# that, but we're limited to POSIX Make compatibility here. The
-# automatic reconfigures are not too onerous, though, because they're
-# much, much faster than Autotools configure runs.
-#
-# - Add target(s) to dump out specific vars, e.g. SQLITE_OPT, as
-# requested at https://sqlite.org/forum/forumpost/75cb3179216f8d86.
-# This would also be useful for the ext/wasm build, which fishes
-# SHELL_OPT out of the makefile.
-#
-#
 # Maintenance reminders:
 #
-# - When using the X?=Y variable assignment formulation, please test
-#   the build with both GNU make and a POSIX make (e.g. BSD make,
-#   a.k.a. bmake). On at least one occassion, that formulation has led
-#   to inconsistent behavior between the two major make flavors when
-#   used with variable names which might sensibly be in the
-#   developer's environment (namely CC).
+# - This makefile should remain as POSIX-make-compatible as possible:
+#   https://pubs.opengroup.org/onlinepubs/9799919799/utilities/make.html
 #
 # - The naming convention of some vars, using periods instead of
 #   underscores, though unconventional, was selected for a couple of
@@ -74,15 +42,6 @@ clean:
 #
 TOP = @abs_top_srcdir@
 #
-# Some standard variables and programs
-#
-prefix ?= @prefix@
-exec_prefix ?= @exec_prefix@
-libdir ?= @libdir@
-pkgconfigdir ?= $(libdir)/pkgconfig
-bindir ?= @bindir@
-includedir ?= @includedir@
-#
 # Just testing some default dir expansions...
 # srcdir = @srcdir@
 # builddir = @builddir@
@@ -91,20 +50,95 @@ includedir ?= @includedir@
 # abs_top_builddir = @abs_top_builddir@
 #
 
+#
+# Autotools-conventional vars which are used by package installation
+# rules in main.mk.
+#
+# Autosetup allows the various XYZdir vars to be overridden at
+# configure-time with, e.g. --libdir=X and --mandir=Y. However,
+# defining them at configure-time, instead of at make-time, leads to
+# later awkwardness:
+#
+# $ ./configure --prefix=/usr
+# $ make prefix=/bar
+#
+# In that invocation, libdir will be /usr/foo, not /bar/foo as it
+# normally should, unless the user _also_ passes libdir=... to make.
+#
+# In 99%+ of use cases, setting prefix=X has the desired effect of
+# calculating conventional defaults for various other dirs, like
+# $prefix/lib, $prefix/include, etc. If, however, we export those at
+# configure-time, the passing prefix=... to make will update only
+# $prefix and none of its derived dirs.
+#
+# Because it is more important (for our use cases) that these vars be
+# overridable via a make invocation than a configure invocation, and
+# they conventionally derive from $(prefix) in all but the most exotic
+# of use cases, we do not export the configure-defined overrides of
+# those vars to this makefile.  Instead, we export only $prefix and
+# its derived vars are set to their conventional default values in
+# main.mk, which users can then override at make-time as needed.
+# Overriding $prefix via make will also calculate any derived vars, as
+# one would expect, unless each is specifically overridden.
+#
+# For completeness's sake, the aforementioned conventional vars which
+# are relevant to our installation rules are:
+#
+# datadir     = $(prefix)/share
+# mandir      = $(datadir)/man
+# includedir  = $(prefix)/include
+# exec_prefix = $(prefix)
+# bindir      = $(exec_prefix)/bin
+# libdir      = $(exec_prefix)/lib
+#
+# Our builds do not require any of their relatives:
+#
+# sbindir        = $(exec_prefix)/sbin
+# sysconfdir     = /etc
+# sharedstatedir = $(prefix)/com
+# localstatedir  = /var
+# runstatedir    = /run
+# infodir        = $(datadir)/info
+# libexecdir     = $(exec_prefix)/libexec
+#
+prefix      = @prefix@
+datadir     = @datadir@
+mandir      = @mandir@
+includedir  = @includedir@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+
 INSTALL = @BIN_INSTALL@
 AR = @AR@
 AR.flags = cr # TODO? Add a configure test to determine this?
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
-T.cc = @CC@
+T.cc = $(CC)
 #
-# CFLAGS is problematic because it is frequently overridden when
-# invoking make, which loses things like -fPIC. So... let's avoid
-# using it directly and instead add a level of indirection.  We
-# combine CFLAGS and CPPFLAGS here because that's the way the legacy
-# build did it.
+# $(CFLAGS) is problematic because it is frequently overridden when
+# invoking make, which loses things like -fPIC. So... we avoid using
+# it directly and instead add a level of indirection.  We combine
+# $(CFLAGS) and $(CPPFLAGS) here because that's the way the legacy
+# build did it and many builds rely on that. See main.mk for more
+# details.
+#
+# Historical note: the pre-3.48 build only honored CPPFLAGS at
+# configure-time, and expanded them into the generated Makefile. There
+# are, in that build, no uses of CPPFLAGS in the configure-expanded
+# Makefile. Ergo: if a client configures with CPPFLAGS=... and then
+# explicitly passes CFLAGS=... to make, the CPPFLAGS will be
+# lost. That behavior is retained in 3.48+ because also honoring
+# CPPFLAGS at make-time may have undesired side effects on any number
+# of builds.
 #
 CFLAGS = @CFLAGS@ @CPPFLAGS@
+#
+# $(LDFLAGS.configure) represents any LDFLAGS=... the client passes to
+# configure. See main.mk.
+#
+LDFLAGS.configure = @LDFLAGS@
+
 #
 # CFLAGS.core is documented in main.mk.
 #
@@ -118,7 +152,8 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
-
+CFLAGS.icu = @CFLAGS_ICU@
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -129,33 +164,17 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
 # can include the generated sqlite_cfg.h.
 #
+# main.mk will fill out T.cc.sqlite with additional flags common to
+# all builds.
+#
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
-#
-# -I$(prefix)/include is primarily so that the ICU
-# headers can be found.
-#
-T.cc.sqlite += -I$(prefix)/include
 
 #
-# main.mk will fill out T.cc.sqlite with some flags common to all builds.
-
-#XX#CFLAGS.readline += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
-#XX#CFLAGS.readline += -DHAVE_LINENOISE=@TARGET_HAVE_LINENOISE@
-#XX#
-#XX## The library that programs using readline() must link against.
-#XX##
-#XX#LIBREADLINE = @TARGET_READLINE_LIBS@
-#XX#
-#XX## Should the database engine be compiled threadsafe
-#XX##
-#XX#T.cc += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
-
-#
-# $(JIMSH) and $(CFLAGS.JIMSH) are documented in main.mk.  $(JIMSH)
+# $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
 # must start with a path component so that it can be invoked as a
 # shell command.
 #
-CFLAGS.JIMSH = @CFLAGS_JIMSH@
+CFLAGS.jimsh = @CFLAGS_JIMSH@
 JIMSH = ./jimsh$(TEXE)
 
 #
@@ -223,12 +242,6 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
 #
-# $(TCLLIB_RPATH) is calculated by the configure script. Its counterpart
-# in tclConfig.sh (TCL_LD_SEARCH_FLAGS) is defined in such a way as to
-# make it incompatible with static makefiles.
-#
-#TCLLIB_RPATH = @TCLLIB_RPATH@
-#
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
 # export it here so that it can be set at configure-time, so that
@@ -290,7 +303,7 @@ sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	@touch $@
 install: install-pc # defined in main.mk
 
-sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
+sqlite_cfg.h: $(AS_AUTO_DEF)
 	$(AS_AUTORECONFIG)
 	@touch $@
 
@@ -336,16 +349,20 @@ misspell: ./custom.rws has_tclsh84
 # perform cleanup known to be relevant to (only) the autosetup-driven
 # build.
 #
-clean-autosetup:
-	-gmake -C ext/wasm distclean 2>/dev/null; true
-clean: clean-autosetup
+#clean-autosetup:
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory --ignore-errors -C ext/wasm clean; \
+#	fi >/dev/null 2>&1; true
+#clean: clean-autosetup
 
 distclean-autosetup:	clean
 	rm -f sqlite_cfg.h config.log config.status config.defines.* Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
-	-gmake -C ext/wasm distclean 2>/dev/null; true
+#	-if [ -f ext/wasm/GNUmakefile ]; then \
+#		gmake --no-print-directory  --ignore-errors -C ext/wasm distclean; \
+#	fi >/dev/null 2>&1; true
 distclean: distclean-autosetup
 
 #
