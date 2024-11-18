@@ -148,10 +148,20 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     */
     wchar_t *b1 = sqlite3_malloc( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
-    _setmode(_fileno(in), IsConsole(in) ? _O_WTEXT : _O_U8TEXT);
-    if( fgetws(b1, sz/4, in)==0 ){
-      sqlite3_free(b1);
-      return 0;
+#ifndef SQLITE_USE_STDIO_FOR_CONSOLE
+    DWORD nRead = 0;
+    if( IsConsole(in)
+     && ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), b1, sz, &nRead, 0)
+    ){
+      b1[nRead] = 0;
+    }else
+#endif
+    {
+      _setmode(_fileno(in), IsConsole(in) ? _O_WTEXT : _O_U8TEXT);
+      if( fgetws(b1, sz/4, in)==0 ){
+        sqlite3_free(b1);
+        return 0;
+      }
     }
     WideCharToMultiByte(CP_UTF8, 0, b1, -1, buf, sz, 0, 0);
     sqlite3_free(b1);
@@ -207,20 +217,33 @@ int sqlite3_fputs(const char *z, FILE *out){
     ** any translation. */
     return fputs(z, out);
   }else{
-    /* When writing to the command-prompt in Windows, it is necessary
-    ** to use O_U8TEXT to render Unicode U+0080 and greater.  Go ahead
-    ** use O_U8TEXT for everything in text mode.
+    /* One must use UTF16 in order to get unicode support when writing
+    ** to the console on Windows. 
     */
     int sz = (int)strlen(z);
     wchar_t *b1 = sqlite3_malloc( (sz+1)*sizeof(wchar_t) );
     if( b1==0 ) return 0;
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;
-    _setmode(_fileno(out), _O_U8TEXT);
-    if( UseBinaryWText(out) ){
-      piecemealOutput(b1, sz, out);
-    }else{
-      fputws(b1, out);
+
+#ifndef SQLITE_STDIO_FOR_CONSOLE
+    DWORD nWr = 0;
+    if( IsConsole(out)
+      && WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE),b1,sz,&nWr,0)
+    ){
+      /* If writing to the console, then the WriteConsoleW() is all we
+      ** need to do. */
+    }else
+#endif
+    {
+      /* For non-console I/O, or if SQLITE_USE_STDIO_FOR_CONSOLE is defined
+      ** then write using the standard library. */
+      _setmode(_fileno(out), _O_U8TEXT);
+      if( UseBinaryWText(out) ){
+        piecemealOutput(b1, sz, out);
+      }else{
+        fputws(b1, out);
+      }
     }
     sqlite3_free(b1);
     return 0;

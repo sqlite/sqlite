@@ -730,8 +730,9 @@ static int SQLITE_TCLAPI f5tTokenize(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  char *zText;
-  Tcl_Size nText;
+  char *pCopy = 0;
+  char *zText = 0;
+  Tcl_Size nText = 0;
   sqlite3 *db = 0;
   fts5_api *pApi = 0;
   Fts5Tokenizer *pTok = 0;
@@ -778,21 +779,32 @@ static int SQLITE_TCLAPI f5tTokenize(
     return TCL_ERROR;
   }
 
+  if( nText>0 ){
+    pCopy = sqlite3_malloc(nText);
+    if( pCopy==0 ){
+      tokenizer.xDelete(pTok);
+      Tcl_AppendResult(interp, "error in sqlite3_malloc()", (char*)0);
+      return TCL_ERROR;
+    }else{
+      memcpy(pCopy, zText, nText);
+    }
+  }
+
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
   ctx.bSubst = (objc==5);
   ctx.pRet = pRet;
-  ctx.zInput = zText;
+  ctx.zInput = pCopy;
   rc = tokenizer.xTokenize(
-      pTok, (void*)&ctx, FTS5_TOKENIZE_DOCUMENT, zText,(int)nText, xTokenizeCb2
+      pTok, (void*)&ctx, FTS5_TOKENIZE_DOCUMENT, pCopy,(int)nText, xTokenizeCb2
   );
   tokenizer.xDelete(pTok);
+  sqlite3_free(pCopy);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", (char*)0);
     Tcl_DecrRefCount(pRet);
     return TCL_ERROR;
   }
-
 
   Tcl_Free((void*)azArg);
   Tcl_SetObjResult(interp, pRet);

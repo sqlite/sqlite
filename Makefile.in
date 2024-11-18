@@ -9,7 +9,6 @@
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
 #
-.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
 all:
 ########################################################################
 #
@@ -153,7 +152,8 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
-LDFLAGS.soname.libsqlite3 = @LDFLAGS_SONAME_LIBSQLITE3@
+CFLAGS.icu = @CFLAGS_ICU@
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -168,11 +168,6 @@ T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 # all builds.
 #
 T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
-#
-# -I$(prefix)/include is primarily so that the ICU
-# headers can be found.
-#
-T.cc.sqlite += -I$(prefix)/include
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -308,7 +303,7 @@ sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
 	@touch $@
 install: install-pc # defined in main.mk
 
-sqlite_cfg.h: $(TOP)/sqlite_cfg.h.in $(AS_AUTO_DEF)
+sqlite_cfg.h: $(AS_AUTO_DEF)
 	$(AS_AUTORECONFIG)
 	@touch $@
 

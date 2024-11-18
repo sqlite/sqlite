@@ -632,6 +632,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       if( p->usable==0 || iCol<0 ){
         /* As there exists an unusable MATCH constraint this is an 
         ** unusable plan. Return SQLITE_CONSTRAINT. */
+        idxStr[iIdxStr] = 0;
         return SQLITE_CONSTRAINT;
       }else{
         if( iCol==nCol+1 ){
