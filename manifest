@@ -1,5 +1,5 @@
-C The\sCOMMIT\sAND\sCONTINUE\sTRANSACTION\ssyntax\sis\sdisabled\sby\sdefault.\s\sEnable\sit\nusing\sthe\sSQLITE_DBCONFIG_CONTINUE_TRANSACTION\sconfiguration\soption.
-D 2024-11-18T11:49:47.244
+C Disable\scommit-and-continue\stests\sunder\sthe\sinmemory-journal\sand\sjournaltest\npermutations.
+D 2024-11-18T14:54:34.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1888,7 +1888,7 @@ F test/trace3.test 4f418ed30d15d9d17dcf13a17f0bd99a92e3038e038798e35db7525f82f4c
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/trans4.test 27168490397f77589c5644b70f44658d7b28daab08333aa9d331cff3f344d2c4
+F test/trans4.test ad936cefc84775723976ca1acb3cfc16e07f7769468b74366299758e0c2ad317
 F test/transitive1.test f8ee983600b33d167da1885657f064aec404e1c0d0bc8765fdf163f4c749237a
 F test/trigger1.test 2834f8830a1ae338d95c2e3ea0c2a7bc4cda126cdeb715004cf0fd071892e44f
 F test/trigger2.test 30fcb3a6aa6782020d47968735ee6086ed795f73a7affa9406c8d5a36e7b5265
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c7f569acdc2fb829354cefda42389a554f5fd957a7ef47e6e093f30789bb28e
-R 71cfe0a915dc3472a75f4219dfbd472d
+P a2b784cb876f8c7e5b713a5ae5b7c8072e40d1fb48837bff085683bf1b71c68f
+R 5230c5723d4fcd622b703101347c3177
 U drh
-Z ee6900849d9fc8da51753c4ea5b30c99
+Z 12f71d9e3f5ceacb3f1229ebf41d8558
 # Remove this line to create a well-formed Fossil manifest.

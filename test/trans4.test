@@ -15,6 +15,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 unset -nocomplain ecode
 
+if {[permutation]=="inmemory_journal" || [permutation]=="journaltest"} {
+  finish_test
+  return
+}
+
 db close
 sqlite3 db test.db
 sqlite3 db2 test.db
