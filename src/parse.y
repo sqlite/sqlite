@@ -43,7 +43,7 @@
 %syntax_error {
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
   if( TOKEN.z[0] ){
-    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+    parserSyntaxError(pParse, &TOKEN);
   }else{
     sqlite3ErrorMsg(pParse, "incomplete input");
   }
@@ -109,14 +109,14 @@
 */
 struct TrigEvent { int a; IdList * b; };
 
+struct FrameBound     { int eType; Expr *pExpr; };
+
 /*
 ** Generate a syntax error
 */
 static void parserSyntaxError(Parse *pParse, Token *p){
   sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", p);
 }
-
-struct FrameBound     { int eType; Expr *pExpr; };
 
 /*
 ** Disable lookaside memory allocation for objects that might be
