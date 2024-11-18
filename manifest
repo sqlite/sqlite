@@ -1,5 +1,5 @@
-C Attempt\sto\sreduce\sdivergence\swith\sbegin-concurrent.
-D 2024-11-18T16:44:26.814
+C Attempt\sto\sreduce\sdivergence\swith\sthe\swal2\sbranch.
+D 2024-11-18T17:05:45.350
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -804,7 +804,7 @@ F src/test_demovfs.c 3efa2adf4f21e10d95521721687d5ca047aea91fa62dd8cc22ac9e5a9c9
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
 F src/test_fs.c c411c40baba679536fc34e2679349f59d8225570aed3488b5b3ef1908525a3d5
 F src/test_func.c 8c0e89192f70fac307822d1ac2911ee51751288780b3db0c5ab5ca75fa0fe851
-F src/test_hexio.c 0f777bf9fbb2684bb4978372bacc90ef7337d5d9e3cebe067a9409941e88bacf
+F src/test_hexio.c 7449504e4bde876ba91b202617a9228c7c8c2e7bd8b957302f3803ac0e9e353c
 F src/test_init.c 17313332d58e90defc527129d5eda4a08bd6b6e8de7207a231523c8d98fb445e
 F src/test_intarray.c e4216aadee9df2de7d1aee7e70f6b22c80ee79ece72a63d57105db74217639e5
 F src/test_intarray.h 6c3534641108cd1bea517a8e117dcba237081310a29a4c35bd2190caa8972293
@@ -1583,7 +1583,7 @@ F test/savepoint.test 6e9804a17767f08432c7a5e738b9a8f4b891d243110b63d3a41d270d3d
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
-F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
+F test/savepoint6.test 48a645a7bb3a59a6fcf06a7364cfe5b655c336760de39068f7c241b0fc80d963
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e1330ecf170436678c5c235557fb95b8acbf4fad62583edba4af03aff49afbc5
-R f888b7564d00e145c0007eac37a11cdd
+P f783d90187fb326faa3d0244b30138b023c4a8483486f260b7a022a927c13f3a
+R 6377acb59760f57785ee6902b4729fcf
 U drh
-Z 42957bc99f867ff6f91e562cbfd36cd8
+Z a7e2057b268c20267be2a2d81b2bdc9a
 # Remove this line to create a well-formed Fossil manifest.
