@@ -465,6 +465,7 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
 # number of milliseconds in the argument.
 #
 proc elapsetime {ms} {
+  if {$ms==""} {set ms 0}
   set s [expr {int(($ms+500.0)*0.001)}]
   set hr [expr {$s/3600}]
   set mn [expr {($s/60)%60}]
@@ -1603,6 +1604,8 @@ proc run_testset {} {
      SELECT pltfm, count(*) FROM jobs WHERE pltfm IS NOT NULL
       ORDER BY 2 DESC LIMIT 1
   } break
+  if {$totalerr==""} {set totalerr 0}
+  if {$totaltest==""} {set totaltest 0}
   puts "$totalerr errors out of $totaltest tests in $et $pltfm"
   trdb eval {
      SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
