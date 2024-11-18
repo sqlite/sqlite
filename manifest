@@ -1,5 +1,5 @@
-C Remove\sthe\s.POSIX\sentries\sfrom\sthe\smakefiles\sbecause\sthey\scause\sportability\sproblems\srather\sthan\ssolve\sthem.
-D 2024-11-18T14:15:08.975
+C Attempt\sto\sreduce\sdivergence\swith\sbegin-concurrent.
+D 2024-11-18T16:44:26.814
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -763,7 +763,7 @@ F src/os_win.c db4baa8f62bbfe3967c71b008cea31a8f2ff337c1667ff4d8a677e697315ff0d
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
-F src/parse.y 8ec56598aa0df92428627502267d0d1c9778cc27308f8ffd31dfb2d017a8755f
+F src/parse.y dcf45a81b61223ac93e61fdfe9b22d635dd371c446e8222634d90aa37e25e5f6
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -1041,7 +1041,7 @@ F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc23dcb
 F test/corruptL.test 652fc8ac0763a6fd3eb28b951d481924167b2d9936083bcc68253b2274a0c8fe
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
-F test/corruptN.test 40bc47aee4af9aadff902be43f14d69dc17b3731448dad6c7cc722da913f1455
+F test/corruptN.test a034bb217bebd8d007625dfb078e76ec3d53515052dbceb68bd47b2c27674d5c
 F test/cost.test cc434a026b1e9d0d98137a147e24e5daf1b1ad09e9ff7da63b34c83ddd136d92
 F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
 F test/countofview.test 4088e461a10ee33e69803c177a69aa1d7bba81a9ffc2df66d76465a22ca7fdfc
@@ -1995,7 +1995,7 @@ F test/wal64k.test 2a525c0f45d709bae3765c71045ccec5df7d100ccbd3a7860fdba46c9addb
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test d9df3fba4caad5854ed69ed673c68482514203c8
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
-F test/wal_common.tcl 4589f701d5527ace2eba43823c96c2177e1f9dd2a6098256ee2203a0a313c13a
+F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995cb018d
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test be48f3a75eff0b4456209f26b3ce186c2015497d
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b79b999d4192a3a250bf343825f61e9cb83203e4d94dcfa20c320d5f1386d69
-R 327f4f8a7444c4d4336a89e4ec576fd8
-U stephan
-Z e12fcd84e46ac65f835dccb3914d7b22
+P e1330ecf170436678c5c235557fb95b8acbf4fad62583edba4af03aff49afbc5
+R f888b7564d00e145c0007eac37a11cdd
+U drh
+Z 42957bc99f867ff6f91e562cbfd36cd8
 # Remove this line to create a well-formed Fossil manifest.
