@@ -55,6 +55,8 @@ options {
 	program-prefix:
 	program-suffix:
 	program-transform-name:
+	x-includes:
+	x-libraries:
 }
 
 # @check-feature name { script }
@@ -318,95 +320,101 @@ proc make-template {template {out {}}} {
 	}
 }
 
-# build/host tuples and cross-compilation prefix
-opt-str build build ""
-define build_alias $build
-if {$build eq ""} {
-	define build [config_guess]
-} else {
-	define build [config_sub $build]
-}
+proc system-init {} {
+	global autosetup
 
-opt-str host host ""
-define host_alias $host
-if {$host eq ""} {
-	define host [get-define build]
-	set cross ""
-} else {
-	define host [config_sub $host]
-	set cross $host-
-}
-define cross [get-env CROSS $cross]
-
-# build/host _cpu, _vendor and _os
-foreach type {build host} {
-	set v [get-define $type]
-	if {![regexp {^([^-]+)-([^-]+)-(.*)$} $v -> cpu vendor os]} {
-		user-error "Invalid canonical $type: $v"
+	# build/host tuples and cross-compilation prefix
+	opt-str build build ""
+	define build_alias $build
+	if {$build eq ""} {
+		define build [config_guess]
+	} else {
+		define build [config_sub $build]
 	}
-	define ${type}_cpu $cpu
-	define ${type}_vendor $vendor
-	define ${type}_os $os
-}
 
-opt-str prefix prefix /usr/local
-
-# These are for compatibility with autoconf
-define target [get-define host]
-define prefix $prefix
-define builddir $autosetup(builddir)
-define srcdir $autosetup(srcdir)
-define top_srcdir $autosetup(srcdir)
-define abs_top_srcdir [file-normalize $autosetup(srcdir)]
-define abs_top_builddir [file-normalize $autosetup(builddir)]
-
-# autoconf supports all of these
-define exec_prefix [opt-str exec-prefix exec_prefix $prefix]
-foreach {name defpath} {
-	bindir /bin
-	sbindir /sbin
-	libexecdir /libexec
-	libdir /lib
-} {
-	define $name [opt-str $name o $exec_prefix$defpath]
-}
-foreach {name defpath} {
-	datadir /share
-	sharedstatedir /com
-	infodir /share/info
-	mandir /share/man
-	includedir /include
-} {
-	define $name [opt-str $name o $prefix$defpath]
-}
-if {$prefix ne {/usr}} {
-	opt-str sysconfdir sysconfdir $prefix/etc
-} else {
-	opt-str sysconfdir sysconfdir /etc
-}
-define sysconfdir $sysconfdir
-
-define localstatedir [opt-str localstatedir o /var]
-define runstatedir [opt-str runstatedir o /run]
-
-define SHELL [get-env SHELL [find-an-executable sh bash ksh]]
-
-# These could be used to generate Makefiles following some automake conventions
-define AM_SILENT_RULES [opt-bool silent-rules]
-define AM_MAINTAINER_MODE [opt-bool maintainer-mode]
-define AM_DEPENDENCY_TRACKING [opt-bool dependency-tracking]
-
-# Windows vs. non-Windows
-switch -glob -- [get-define host] {
-	*-*-ming* - *-*-cygwin - *-*-msys {
-		define-feature windows
-		define EXEEXT .exe
+	opt-str host host ""
+	define host_alias $host
+	if {$host eq ""} {
+		define host [get-define build]
+		set cross ""
+	} else {
+		define host [config_sub $host]
+		set cross $host-
 	}
-	default {
-		define EXEEXT ""
+	define cross [get-env CROSS $cross]
+
+	# build/host _cpu, _vendor and _os
+	foreach type {build host} {
+		set v [get-define $type]
+		if {![regexp {^([^-]+)-([^-]+)-(.*)$} $v -> cpu vendor os]} {
+			user-error "Invalid canonical $type: $v"
+		}
+		define ${type}_cpu $cpu
+		define ${type}_vendor $vendor
+		define ${type}_os $os
 	}
+
+	opt-str prefix prefix /usr/local
+
+	# These are for compatibility with autoconf
+	define target [get-define host]
+	define prefix $prefix
+	define builddir $autosetup(builddir)
+	define srcdir $autosetup(srcdir)
+	define top_srcdir $autosetup(srcdir)
+	define abs_top_srcdir [file-normalize $autosetup(srcdir)]
+	define abs_top_builddir [file-normalize $autosetup(builddir)]
+
+	# autoconf supports all of these
+	define exec_prefix [opt-str exec-prefix exec_prefix $prefix]
+	foreach {name defpath} {
+		bindir /bin
+		sbindir /sbin
+		libexecdir /libexec
+		libdir /lib
+	} {
+		define $name [opt-str $name o $exec_prefix$defpath]
+	}
+	foreach {name defpath} {
+		datadir /share
+		sharedstatedir /com
+		infodir /share/info
+		mandir /share/man
+		includedir /include
+	} {
+		define $name [opt-str $name o $prefix$defpath]
+	}
+	if {$prefix ne {/usr}} {
+		opt-str sysconfdir sysconfdir $prefix/etc
+	} else {
+		opt-str sysconfdir sysconfdir /etc
+	}
+	define sysconfdir $sysconfdir
+
+	define localstatedir [opt-str localstatedir o /var]
+	define runstatedir [opt-str runstatedir o /run]
+
+	define SHELL [get-env SHELL [find-an-executable sh bash ksh]]
+
+	# These could be used to generate Makefiles following some automake conventions
+	define AM_SILENT_RULES [opt-bool silent-rules]
+	define AM_MAINTAINER_MODE [opt-bool maintainer-mode]
+	define AM_DEPENDENCY_TRACKING [opt-bool dependency-tracking]
+
+	# Windows vs. non-Windows
+	switch -glob -- [get-define host] {
+		*-*-ming* - *-*-cygwin - *-*-msys {
+			define-feature windows
+			define EXEEXT .exe
+		}
+		default {
+			define EXEEXT ""
+		}
+	}
+
+	# Display
+	msg-result "Host System...[get-define host]"
+	msg-result "Build System...[get-define build]"
 }
 
-# Display
-msg-result "Host System...[get-define host]"
-msg-result "Build System...[get-define build]"
+system-init
