@@ -1,5 +1,5 @@
-C Reduce\sdivergence\sfrom\sbegin-concurrent.
-D 2024-11-18T18:45:31.904
+C Fix\sa\sproblem\shandling\sOOM\serrors\sin\sfts3\sthat\scould\soccur\swhen\sparsing\smulti-token\sstrings.
+D 2024-11-19T11:58:32.252
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -80,7 +80,7 @@ F ext/fts3/fts3.c 9f8ce82bbf4ec0636e6170e58f17b04817fa4c39b2d5126ac06f005d485f6d
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 968f7d7cae541a6926146e9fd3fb2b2ccbd3845b7890a8ed03de0c06ac776682
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
-F ext/fts3/fts3_expr.c 903bfb9433109fffb10e910d7066c49cbf8eeae316adc93f0499c4da7dfc932a
+F ext/fts3/fts3_expr.c 365849a2a1185e19028a9db2d9f1ea63efe909a3a6aca7ec86fc26a13a60bd58
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -1204,7 +1204,7 @@ F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
 F test/fts3expr4.test 6c7675bbdbffe6ffc95e9e861500b8ac3f739c4d004ffda812f138eeb1b45529
 F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1cf983e
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
-F test/fts3fault.test f4e1342acfe6d216a001490e8cd52afac1f9ffe4a11bbcdcb296129a45c5df45
+F test/fts3fault.test 9228f00cd69e2a5d2ed0f06c181981f4f90bd36da9f86b73f3a58b4b23451fd4
 F test/fts3fault2.test 7b2741e5095367238380b0fcdb837f36c24484c7a5f353659b387df63cf039ec
 F test/fts3fault3.test ccdd2292dd2d4e21e30fc5f4c8e064f79e516087eec5ff57ab6bc4f6a7714097
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0d8f9916c2d899094b71af74f44e089a97db6d80f09eb80a5d8be733c1bf942
-R 15b624443bf22191f7b1a220224ff1ba
-U drh
-Z e17d5ca17fa701911504cdcf5a540396
+P 84d41e9d04c62601e84621e8edb3b81abbacc366a6b5e7059f8b6796fade7ffa
+R 15d5c68f2ffe8e979f466eec5e117ba3
+U dan
+Z 7f81f47d67e456b494dfb3b575661f30
 # Remove this line to create a well-formed Fossil manifest.
