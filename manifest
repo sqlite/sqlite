@@ -1,5 +1,5 @@
-C Add\smissing\s$TCL_LIBS\sto\sthe\slink\sfor\ssqlite3_analyzer.
-D 2024-11-19T21:14:48.228
+C Add\sfix\sfrom\s[bfab759611b0]\sto\ssqltclsh.\sRemove\ssome\snow-unneeded\shas_tclsh84/5\schecks\sin\scases\swhere\sjimsh\scan\sbe\sused.
+D 2024-11-19T21:19:12.706
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 4e437d2c9cd67db9c1a0715b70e3c9f6b20f54cd97bd21b1b1a40a6181dfe874
+F main.mk 87ce967497ff2fc81406fc91c290b1faf3dfa8bb7724e3980be297381369b4f8
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 50b9f6fde44f9afda27e47badde6115ab6d9ccd5e22b446a8d8127499848815f
-R 550a68b5ea9d3db22b4d7e049a260626
-U drh
-Z 02a349b181e8372ee68443f7fc5c2aa7
+P bfab759611b0562837d8733ce56591854db08c122956524799dc1d5b3e2d0279
+R 0f52e38972daef31ec132c6a8f286547
+U stephan
+Z 58d6b35becabf99bb64f154abaacc201
 # Remove this line to create a well-formed Fossil manifest.

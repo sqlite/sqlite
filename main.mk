@@ -1031,7 +1031,7 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 # all that automatic generation.
 #
 .target_source: $(MAKE_SANITY_CHECK) $(SRC) $(TOP)/tool/vdbe-compress.tcl \
-    fts5.c $(B.tclsh) # has_tclsh84
+    fts5.c $(B.tclsh)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
@@ -1057,19 +1057,19 @@ mksourceid$(B.exe): $(MAKE_SANITY_CHECK) $(TOP)/tool/mksourceid.c
 
 sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
     $(TOP)/manifest mksourceid$(B.exe) \
-		$(TOP)/VERSION $(B.tclsh) # has_tclsh84
+		$(TOP)/VERSION $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
-		$(B.tclsh) # has_tclsh84
+		$(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
-sqlite3r.h: sqlite3.h $(B.tclsh) # has_tclsh84
+sqlite3r.h: sqlite3.h $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
 
-sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh) # has_tclsh84
+sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh)
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
@@ -1356,11 +1356,11 @@ tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh) # has_tclsh84
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c \
-		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh) # has_tclsh84
+		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh)
 	cat parse.h $(TOP)/src/vdbe.c | $(B.tclsh) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
@@ -1371,7 +1371,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(B.exe)
 	cp $(TOP)/src/parse.y .
 	./lemon$(B.exe) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
-sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh) # has_tclsh84
+sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh)
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
 	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
 	cat $(TOP)/VERSION | $(B.tclsh) $(TOP)/tool/replace.tcl exact . , >>$@
@@ -1385,7 +1385,7 @@ keywordhash.h:	mkkeywordhash$(B.exe)
 #
 # sqlite3.c split into many smaller files.
 #
-sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh) # has_tclsh84
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/split-sqlite3c.tcl
 
 #
@@ -1591,7 +1591,7 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(B.exe)
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC) $(B.tclsh) # has_tclsh84
+fts5.c: $(FTS5_SRC) $(B.tclsh)
 	$(B.tclsh) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
@@ -1759,7 +1759,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
 #
 # sqlite3_analyzer's build mode depends on $(LINK_TOOLS_DYNAMICALLY).
 #
-sqlite3_analyzer.flags.1 = -L. -lsqlite3 $(LDFLAGS.math)
+sqlite3_analyzer.flags.1 = -L. -lsqlite3
 sqlite3_analyzer.flags.0 = $(LDFLAGS.libsqlite3)
 sqlite3_analyzer.deps.1 = $(libsqlite3.SO)
 sqlite3_analyzer.deps.0 =
@@ -1775,12 +1775,12 @@ sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
-            $(TOP)/tool/sqltclsh.c.in has_tclsh85
+            $(TOP)/tool/sqltclsh.c.in
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(T.exe): $(T.tcl.env.sh) sqltclsh.c
 	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) \
-		$$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+		$(LDFLAGS.libsqlite3) $$TCL_LIB_SPEC $$TCL_LIBS
 # xbin: target for generic binaries which aren't usually built. It is
 # used primarily for testing the build process.
 xbin: sqltclsh$(T.exe) sqlite3_analyzer$(T.exe)
@@ -1801,7 +1801,7 @@ CHECKER_DEPS =\
   $(TOP)/ext/misc/btreeinfo.c \
   $(TOP)/ext/repair/sqlite3_checker.c.in
 
-sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
+sqlite3_checker.c:	$(CHECKER_DEPS)
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(T.exe):	$(T.tcl.env.sh) sqlite3_checker.c
@@ -2177,7 +2177,7 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.c \
     $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh) # has_tclsh84
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkshellc.tcl >shell.c
 
 #
