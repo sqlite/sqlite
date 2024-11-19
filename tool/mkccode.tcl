@@ -125,12 +125,12 @@ while {1} {
     puts "/* END_STRING */"
     continue
   }
-  if {[regexp {^IFNDEF +([A-Za-z_]+)} $line all name]} {
+  if {[regexp {^IFNDEF +([A-Za-z_0-9]+)} $line all name]} {
     set omit $omit[info exists DEF($name)]
     incr nomit
     continue
   }
-  if {[regexp {^IFDEF +([A-Za-z_]+)} $line all name]} {
+  if {[regexp {^IFDEF +([A-Za-z_0-9]+)} $line all name]} {
     set omit $omit[expr {![info exists DEF($name)]}]
     incr nomit
     continue

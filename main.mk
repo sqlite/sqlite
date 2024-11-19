@@ -1741,13 +1741,34 @@ smoketest:	$(TESTPROGS) fuzzcheck$(T.exe)
 shelltest:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
+#
+# sqlite3_analyzer.c build depends on $(LINK_TOOLS_DYNAMICALLY).
+#
+sqlite3_analyzer.c.flags.0 = -DINCLUDE_SQLITE3_C=1
+sqlite3_analyzer.c.flags.1 =
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
-                    $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
-	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
+                    $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
+	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in \
+		$(sqlite3_analyzer.c.flags.$(LINK_TOOLS_DYNAMICALLY)) \
+		$(OPT_FEATURE_FLAGS) \
+		> $@
 
-sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c
-	$(T.link.tcl) sqlite3_analyzer.c -o $@ $$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
-		$(LDFLAGS.libsqlite3)
+#
+# sqlite3_analyzer's build mode depends on $(LINK_TOOLS_DYNAMICALLY).
+#
+sqlite3_analyzer.flags.1 = -L. -lsqlite3 $(LDFLAGS.math)
+sqlite3_analyzer.flags.0 = $(LDFLAGS.libsqlite3)
+sqlite3_analyzer.deps.1 = $(libsqlite3.SO)
+sqlite3_analyzer.deps.0 =
+sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
+                          $(sqlite3_analyzer.deps.$(LINK_TOOLS_DYNAMICALLY))
+	$(T.link.tcl) sqlite3_analyzer.c -o $@ \
+		$(sqlite3_analyzer.flags.$(LINK_TOOLS_DYNAMICALLY)) \
+		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC
+# ^^^^ the order of those flags is relevant for
+# $(sqlite3_analyzer.flags.1): if the $$TCL_... flags come first they
+# can cause the $@ to link to an out-of-tree libsqlite3.so, which may
+# or may not fail or otherwise cause confusion.
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \

@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sthis\sbranch.\sFix\sa\ssmall\sjimtcl/tclsh\sregex\sincompatibility\sin\smkccode.tcl.
-D 2024-11-19T19:16:58.734
+C Get\ssqlite3_analyzer\soptionally\slinking\sagainst\slibsqlite3.so\sinstead\sof\sembedding\ssqlite3.c.\sPatch\smkccode.tcl\sto\saccept\sdigits\sin\sits\sIFDEF/IFNDEF\schecks\sand\ssqlite3_analyzer.c.in\sto\sonly\sinclude\ssqlite3.c\sif\s-DINCLUDE_SQLITE3_C\sis\spassed\sto\smkccode.tcl.
+D 2024-11-19T19:47:51.323
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 7cb02ba61e74ccab3ad6775b9207b12c6a26bbe3b2dd280039bc0cd532a52ceb
+F main.mk b1f78ccd8b6db3fbc6a7e9952fc3e60433ad8d25798eb0b55632b1eb502ab30a
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2135,7 +2135,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
-F tool/mkccode.tcl 0e7488b7218128271b93a4b16e60a169097b6cb555446ce4d6a131be039bb536 x
+F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
 F tool/mkctimec.tcl ef6a67ec82e5b6fc19152a4c79f237227b18bf67ff16d155bac7adb94355d9cf x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
@@ -2178,7 +2178,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
-F tool/sqlite3_analyzer.c.in 39690af454d2866e87e2b475ec5eabee366f211f2307e90b918345f35bb1a643
+F tool/sqlite3_analyzer.c.in fc7735c499d226a49d843d8209b2543e4e5229eeb71a674c331323a2217b65b4
 F tool/sqlite3_rsync.c 9a1cca2ab1271c59b37a6493c15dc1bcd0ab9149197a9125926bc08dd26b83fb
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b14309be42be4204c4d30e9741d56d75ab8ec34686791d032612337fe1c4dcf 7fec209290aa1a6dbbca8de154edaac5d8d0ce042bc0617d27fb2095c8d580f1
-R 0da2647f2e208e5fa5304d40f71239b4
+P 7fb3ebfec634e0508267049fddb2b513201dbefce4d378ca3ec261c5d8336d7f
+R 631735400a3a45c7eca237a47c49e579
 U stephan
-Z bed720f65fe4f336de4e69b585a4a039
+Z b91791961d3936264eb9b5de6178a0fb
 # Remove this line to create a well-formed Fossil manifest.
