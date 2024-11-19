@@ -1767,7 +1767,7 @@ sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
                           $(sqlite3_analyzer.deps.$(LINK_TOOLS_DYNAMICALLY))
 	$(T.link.tcl) sqlite3_analyzer.c -o $@ \
 		$(sqlite3_analyzer.flags.$(LINK_TOOLS_DYNAMICALLY)) \
-		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC
+		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $$TCL_LIBS
 # ^^^^ the order of those flags is relevant for
 # $(sqlite3_analyzer.flags.1): if the $$TCL_... flags come first they
 # can cause the $@ to link to an out-of-tree libsqlite3.so, which may
