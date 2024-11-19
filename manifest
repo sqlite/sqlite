@@ -1,5 +1,5 @@
-C Move\sthe\sin-comment-code\scommentary\sabout\s--with-debug,\sfrom\s[7b14309be4],\sinto\sthe\s--help\stext\sfor\sthat\sflag,\swhere\sit's\sreadily\svisible.
-D 2024-11-19T20:14:31.784
+C Rename\s--link-tools-dynamically\sto\s--dynlink-tools,\sper\sdiscussion.
+D 2024-11-19T20:21:40.498
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 87c3d42428225c89dba75d399ea83c756f4a21b5c6ed591436d6c930c8d6c73a
+F auto.def b81388775c7596c22d19ce7c5e0692d8cb6beb89ae591e2684a238084acabf61
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk b1f78ccd8b6db3fbc6a7e9952fc3e60433ad8d25798eb0b55632b1eb502ab30a
+F main.mk de4824958a997377f0b661329699eb0b58e81c3076d68bf45898305d074fd3ee
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80f3bf8c2ee31ba1ab9187d64d5dcbbf97a61845a21b036f89ea9133153575c0
-R 07c8458360fbc34333a873b33b8ca43f
+P c938e5d783b3f015b2a1b9f3711664b13497c4b71e4a890c65d6665539522ff8
+R 2438fd2896d39f35fc299b3fd744f13f
 U stephan
-Z 3761f0fd6432507d765cfeef5912a493
+Z e384122113bfcbb2fa4bae830787db35
 # Remove this line to create a well-formed Fossil manifest.

@@ -209,7 +209,10 @@ USE_AMALGAMATION ?= 1
 #
 # If true, certain binaries which typically statically link against
 # libsqlite3 or its component object files will instead link against
-# the DLL.
+# the DLL. The caveat is that running such builds from the source tree
+# may require that the user specifically prepend "." to their
+# $LD_LIBRARY_PATH so that the dynamic linker does not pick up a
+# libsqlite3.so from outside the source tree.
 #
 LINK_TOOLS_DYNAMICALLY ?= 0
 #

@@ -202,7 +202,7 @@ set flags {
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
-  link-tools-dynamically => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
+  dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
   soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
   # --soname has a long story behind it, as well as no small amount of uncertainty.
   # </developer>
@@ -333,7 +333,7 @@ proj-if-opt-truthy dev {
   define CFLAGS [get-env CFLAGS {-O0 -g}]
 }
 
-define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided link-tools-dynamically]
+define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
 ########################################################################
 # Handle --with-wasi-sdk=DIR
@@ -476,7 +476,7 @@ apply {{} {
   if {[proj-opt-was-provided soname]} {
     set soname [opt-val soname]
   } else {
-    set soname none; # enabling soname breaks linking for the --link-tools-dynamically feature
+    set soname none; # enabling soname breaks linking for the --dynlink-tools feature
   }
   switch -exact -- $soname {
     none   { return 0 }
