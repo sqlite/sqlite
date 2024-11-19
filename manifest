@@ -1,9 +1,9 @@
-C Fix\sa\sproblem\shandling\sOOM\serrors\sin\sfts3\sthat\scould\soccur\swhen\sparsing\smulti-token\sstrings.
-D 2024-11-19T11:58:32.252
+C Initial\sconfigure\ssupport\sfor\slinking\scertain\sbinaries\sto\slibsqlite3.so\sinstead\sof\sembedding\sit\sdynamically\s(which\sthey\stypically\sdo).\sThis\scurrently\sapplies\sonly\sto\ssqldiff,\sbut\ssupport\sfor\sadding\sthe\ssame\sfor\sother\stools\sis\splanned.\sThis\srequires\sdisabling\sthe\ssoname\sbecause\ssetting\sit\scauses\sthe\sbuild\sto\slink\sto\swhatever\slibsqlite3.so.0\sis\sinstalled\ssystem-wide,\sso\sthe\ssoname\snow\sdefaults\sto\soff.
+D 2024-11-19T15:20:47.506
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in c3a01e98bd2ae6a4631df02f11249ac07ffa3d540d3034e2675f66cc259f2ea7
+F Makefile.in 5461b1125a3039fef49f4896519d164ebe22ee394d20d69913ab0fdc8c464b63
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 94f0f4a697e8221d5c7ca561771a3afabb0e707922daad89b60908b87a8e399b
+F auto.def 6aa362ceeeaaf2521b0c781a44489d6f5bd6c7a147e9a6e8e6ae68a928158357
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c4e37e3015f9c2d8fd20fa3071ba86e7396959c8d5960e37e95aa85421e2b739
+F main.mk d82de0fbdb6b7521c55e47feced1e76204058a19d860266a7c77b194cb298321
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 84d41e9d04c62601e84621e8edb3b81abbacc366a6b5e7059f8b6796fade7ffa
-R 15d5c68f2ffe8e979f466eec5e117ba3
-U dan
-Z 7f81f47d67e456b494dfb3b575661f30
+P 4c4d1db00bd2c522165876dcf1606116a72525d9ffc891b266213704e25cde55
+R 4e525e0050af78dd77407fe8fd687f7e
+T *branch * link-tools-dynamically
+T *sym-link-tools-dynamically *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z 39424480882931664661450c95279514
 # Remove this line to create a well-formed Fossil manifest.

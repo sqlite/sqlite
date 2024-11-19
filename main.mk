@@ -205,6 +205,14 @@ ENABLE_STATIC ?= 1
 #
 USE_AMALGAMATION ?= 1
 #
+# $(LINK_TOOLS_DYNAMICALLY)
+#
+# If true, certain binaries which typically statically link against
+# libsqlite3 or its component object files will instead link against
+# the DLL.
+#
+LINK_TOOLS_DYNAMICALLY ?= 0
+#
 # $(AMALGAMATION_GEN_FLAGS) =
 #
 # Optional flags for the amalgamation generator.
@@ -1950,8 +1958,11 @@ install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
 install-shell-1 install-shell-:
 install: install-shell-$(HAVE_WASI_SDK)
 
-sqldiff$(T.exe):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
-	$(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
+sqldiff$(T.exe):	sqldiff.$(LINK_TOOLS_DYNAMICALLY)
+sqldiff.0:	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
+	$(T.link) -o sqldiff$(T.exe) $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
+sqldiff.1:	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.SO)
+	$(T.link) -o sqldiff$(T.exe) $(TOP)/tool/sqldiff.c -L. -lsqlite3 $(LDFLAGS.configure)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
 	$(INSTALL) -s sqldiff$(T.exe) "$(install-dir.bin)"
