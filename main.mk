@@ -1930,11 +1930,26 @@ xbin: threadtest5
 # special compile-time options that are interpreted by individual
 # source files within the amalgamation.
 #
-sqlite3$(T.exe):	shell.c sqlite3.c
-	$(T.link) -o $@ \
-		shell.c sqlite3.c \
-		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+# How/whether we build sqlite3$(T.exe) depends on both
+# $(HAVE_WASI_SDK) and $(LINK_TOOLS_DYNAMICALLY), thus there are
+# several targets here, only one of which the sqlite3$(T.exe) target
+# indirectly resolves to.
+#
+sqlite3-shell.0.0.deps = shell.c sqlite3.c
+sqlite3-shell.0.0.rules = \
+    $(T.link) -o $@ \
+        shell.c sqlite3.c \
+        $(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
+        $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+sqlite3-shell.0.1.deps = shell.c $(libsqlite3.SO)
+sqlite3-shell.0.1.rules = \
+    $(T.link) -o $@ \
+        shell.c -L. -lsqlite3 \
+        $(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
+        $(LDFLAGS.configure) $(LDFLAGS.readline) $(LDFLAGS.zlib)
+sqlite3$(T.exe): $(sqlite3-shell.$(HAVE_WASI_SDK).$(LINK_TOOLS_DYNAMICALLY).deps)
+	$(sqlite3-shell.$(HAVE_WASI_SDK).$(LINK_TOOLS_DYNAMICALLY).rules)
+all: sqlite3$(T.exe)
 
 # The "sqlite3d" CLI is build using separate source files.  This
 # is useful during development and debugging.
@@ -1945,24 +1960,19 @@ sqlite3d$(T.exe):	shell.c $(LIBOBJS0)
 		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
-#
-# Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
-# semantics of 0 and 1 are confusingly swapped here.
-#
-sqlite3$(T.exe)-1:
-sqlite3$(T.exe)-0 sqlite3$(T.exe)-: sqlite3$(T.exe)
-all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
-
 install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL) -s sqlite3$(T.exe) "$(install-dir.bin)"
-install-shell-1 install-shell-:
+install-shell-1:
 install: install-shell-$(HAVE_WASI_SDK)
 
-sqldiff$(T.exe):	sqldiff.$(LINK_TOOLS_DYNAMICALLY)
-sqldiff.0:	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
-	$(T.link) -o sqldiff$(T.exe) $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
-sqldiff.1:	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.SO)
-	$(T.link) -o sqldiff$(T.exe) $(TOP)/tool/sqldiff.c -L. -lsqlite3 $(LDFLAGS.configure)
+# How to build sqldiff$(T.exe) depends on $(LINK_TOOLS_DYNAMICALLY)
+#
+sqldiff.0.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
+sqldiff.0.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
+sqldiff.1.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.SO)
+sqldiff.1.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c -L. -lsqlite3 $(LDFLAGS.configure)
+sqldiff$(T.exe): $(sqldiff.$(LINK_TOOLS_DYNAMICALLY).deps)
+	$(sqldiff.$(LINK_TOOLS_DYNAMICALLY).rules)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
 	$(INSTALL) -s sqldiff$(T.exe) "$(install-dir.bin)"

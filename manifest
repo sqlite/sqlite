@@ -1,5 +1,5 @@
-C Initial\sconfigure\ssupport\sfor\slinking\scertain\sbinaries\sto\slibsqlite3.so\sinstead\sof\sembedding\sit\sdynamically\s(which\sthey\stypically\sdo).\sThis\scurrently\sapplies\sonly\sto\ssqldiff,\sbut\ssupport\sfor\sadding\sthe\ssame\sfor\sother\stools\sis\splanned.\sThis\srequires\sdisabling\sthe\ssoname\sbecause\ssetting\sit\scauses\sthe\sbuild\sto\slink\sto\swhatever\slibsqlite3.so.0\sis\sinstalled\ssystem-wide,\sso\sthe\ssoname\snow\sdefaults\sto\soff.
-D 2024-11-19T15:20:47.506
+C Reformulate\ssqldiff\sdeps\sand\srules\sso\sthat\sthe\starget\smatches\sthe\sresulting\sfile\sname,\sto\savoid\srebuilding\sit\son\severy\smake\sinvocation.\sApply\sthe\ssame\streatment\sto\sthe\ssqlite3\sCLI\sshell.
+D 2024-11-19T16:40:49.154
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 6aa362ceeeaaf2521b0c781a44489d6f5bd6c7a147e9a6e8e6ae68a928158357
+F auto.def b6fc55bf238320b58d06d6e5364374722aae3b8320c4f928e0e6c208405f2cfd
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk d82de0fbdb6b7521c55e47feced1e76204058a19d860266a7c77b194cb298321
+F main.mk 8ef1c08eb0e644df88978d2b1db4e2af9efc430a0fe3dd152d00fa21593fee41
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,11 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4c4d1db00bd2c522165876dcf1606116a72525d9ffc891b266213704e25cde55
-R 4e525e0050af78dd77407fe8fd687f7e
-T *branch * link-tools-dynamically
-T *sym-link-tools-dynamically *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 9192c146e2898456a6b8ea43a6f02c0227ddce5b584374fbeb2d63bd2ecd5d8c
+R 9e3125f578c182d0fd3f116bcadb353b
 U stephan
-Z 39424480882931664661450c95279514
+Z c9c941efe50c477f477a1622a4a0493c
 # Remove this line to create a well-formed Fossil manifest.

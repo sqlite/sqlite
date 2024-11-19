@@ -199,7 +199,7 @@ set flags {
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   link-tools-dynamically => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
-  soname:=none         => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
+  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
   # --soname has a long story behind it, as well as no small amount of uncertainty.
   # </developer>
 }
