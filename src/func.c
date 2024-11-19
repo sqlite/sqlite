@@ -2740,6 +2740,11 @@ void sqlite3RegisterBuiltinFunctions(void){
 #endif
   sqlite3WindowFunctions();
   sqlite3RegisterDateTimeFunctions();
+
+  /* CS541 - register point functions */
+
+  sqlite3RegisterPointFunctions();
+
   sqlite3RegisterJsonFunctions();
   sqlite3InsertBuiltinFuncs(aBuiltinFunc, ArraySize(aBuiltinFunc));
 

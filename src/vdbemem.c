@@ -673,6 +673,26 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
 }
 
 /*
+** Adding for CS541: get x, y from point
+*/
+
+float sqlite3VdbePointX(const Mem *pMem) {
+  if (!(pMem->flags & MEM_Point)) {
+    return 0.0f;
+  }
+
+  return pMem->u.p.x;
+}
+
+float sqlite3VdbePointY(const Mem *pMem) {
+  if (!(pMem->flags & MEM_Point)) {
+    return 0.0f;
+  }
+
+  return pMem->u.p.y;
+}
+
+/*
 ** Return the best representation of pMem that we can get into a
 ** double.  If pMem is already a double or an integer, return its
 ** value.  If it is a string or blob, try to convert it to a double.

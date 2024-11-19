@@ -202,6 +202,18 @@ int sqlite3_value_bytes16(sqlite3_value *pVal){
 double sqlite3_value_double(sqlite3_value *pVal){
   return sqlite3VdbeRealValue((Mem*)pVal);
 }
+
+/* CS541
+** Extract information from a POINT
+*/
+
+float sqlite3_value_point_x(sqlite3_value *pVal) {
+  return sqlite3VdbePointX((Mem*) pVal);
+}
+float sqlite3_value_point_y(sqlite3_value *pVal) {
+  return sqlite3VdbePointY((Mem*) pVal);
+}
+
 int sqlite3_value_int(sqlite3_value *pVal){
   return (int)sqlite3VdbeIntValue((Mem*)pVal);
 }
@@ -325,6 +337,10 @@ int sqlite3_value_type(sqlite3_value* pVal){
     assert( eType == aType[pVal->flags&MEM_AffMask] );
   }
 #endif
+  if (pVal->flags&MEM_Point) {
+    return SQLITE_POINT;
+  }
+
   return aType[pVal->flags&MEM_AffMask];
 }
 int sqlite3_value_encoding(sqlite3_value *pVal){

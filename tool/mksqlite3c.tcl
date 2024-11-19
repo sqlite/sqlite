@@ -380,6 +380,7 @@ set flist {
    global.c
    status.c
    date.c
+   point.c
    os.c
 
    fault.c

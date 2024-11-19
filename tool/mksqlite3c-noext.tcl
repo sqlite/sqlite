@@ -282,6 +282,8 @@ foreach file {
    date.c
    os.c
 
+   point.c
+
    fault.c
    mem0.c
    mem1.c

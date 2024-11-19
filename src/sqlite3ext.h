@@ -366,6 +366,8 @@ struct sqlite3_api_routines {
   /* Version 3.44.0 and later */
   void *(*get_clientdata)(sqlite3*,const char*);
   int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
+  float (*value_point_x)(sqlite3_value*);
+  float (*value_point_y)(sqlite3_value*);
 };
 
 /*

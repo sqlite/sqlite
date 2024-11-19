@@ -5183,6 +5183,11 @@ FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,u8,u8);
 void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
+
+/* Add for CS541 - register any point functions added to point.c */
+
+void sqlite3RegisterPointFunctions(void);
+
 void sqlite3RegisterJsonFunctions(void);
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)

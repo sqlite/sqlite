@@ -656,6 +656,11 @@ int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemStringify(Mem*, u8, u8);
 int sqlite3IntFloatCompare(i64,double);
 i64 sqlite3VdbeIntValue(const Mem*);
+
+/* CS541 - access x, y of point */
+float sqlite3VdbePointX(const Mem *pMem);
+float sqlite3VdbePointY(const Mem *pMem);
+
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);
