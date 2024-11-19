@@ -901,6 +901,9 @@ TESTOPTS = --verbose=file --output=test-out.txt
 #
 # Extra compiler options for various shell tools
 #
+# Note that some of these will only apply when embedding sqlite3.c
+# into the shell, as these flags are not otherwise passed on to the
+# library.
 SHELL_OPT += -DSQLITE_DQS=0
 SHELL_OPT += -DSQLITE_ENABLE_FTS4
 #SHELL_OPT += -DSQLITE_ENABLE_FTS5
@@ -1926,30 +1929,27 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-# The standard CLI is built using the amalgamation since it uses
-# special compile-time options that are interpreted by individual
-# source files within the amalgamation.
 #
-# How/whether we build sqlite3$(T.exe) depends on both
-# $(HAVE_WASI_SDK) and $(LINK_TOOLS_DYNAMICALLY), thus there are
-# several targets here, only one of which the sqlite3$(T.exe) target
-# indirectly resolves to.
+# When building sqlite3$(T.exe) we specifically embed a copy of
+# sqlite3.c, and not link to libsqlite3.so or libsqlite3.a, because
+# the shell needs to be able to enable arbitrary library features,
+# some of which have significant performance impacts. For example,,
+# SQLITE_ENABLE_EXPLAIN_COMMENTS has been measured as having a 5.2%
+# runtime performance hit, which is fine for use in the shell but is
+# not appropriate for the canonical library build.
 #
-sqlite3-shell.0.0.deps = shell.c sqlite3.c
-sqlite3-shell.0.0.rules = \
-    $(T.link) -o $@ \
-        shell.c sqlite3.c \
-        $(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
-        $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
-sqlite3-shell.0.1.deps = shell.c $(libsqlite3.SO)
-sqlite3-shell.0.1.rules = \
-    $(T.link) -o $@ \
-        shell.c -L. -lsqlite3 \
-        $(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
-        $(LDFLAGS.configure) $(LDFLAGS.readline) $(LDFLAGS.zlib)
-sqlite3$(T.exe): $(sqlite3-shell.$(HAVE_WASI_SDK).$(LINK_TOOLS_DYNAMICALLY).deps)
-	$(sqlite3-shell.$(HAVE_WASI_SDK).$(LINK_TOOLS_DYNAMICALLY).rules)
-all: sqlite3$(T.exe)
+sqlite3$(T.exe):	shell.c sqlite3.c
+	$(T.link) -o $@ \
+		shell.c sqlite3.c \
+		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
+		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+#
+# Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
+# semantics of 0 and 1 are confusingly swapped here.
+#
+sqlite3$(T.exe)-1:
+sqlite3$(T.exe)-0: sqlite3$(T.exe)
+all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
 
 # The "sqlite3d" CLI is build using separate source files.  This
 # is useful during development and debugging.

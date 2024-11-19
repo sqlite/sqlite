@@ -123,7 +123,6 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 ########################################################################
 set flags {
   # <build-modes>
-  with-debug:=1        => {Enable debug build flags}
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library (mostly)}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately.}
@@ -193,10 +192,16 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
+
+  # --with-debug does more than simply builds with a -g compilation
+  # flag and will impact performance by as much as 4x, as it includes
+  # large numbers of assert()s in performance-critical loops.  Never
+  # use --with-debug for production builds.
+  with-debug:=1        => {Enable debug build flags}
+  dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
-  dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   link-tools-dynamically => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
   soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
