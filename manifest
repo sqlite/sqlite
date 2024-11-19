@@ -1,5 +1,5 @@
-C Get\ssqlite3_analyzer\soptionally\slinking\sagainst\slibsqlite3.so\sinstead\sof\sembedding\ssqlite3.c.\sPatch\smkccode.tcl\sto\saccept\sdigits\sin\sits\sIFDEF/IFNDEF\schecks\sand\ssqlite3_analyzer.c.in\sto\sonly\sinclude\ssqlite3.c\sif\s-DINCLUDE_SQLITE3_C\sis\spassed\sto\smkccode.tcl.
-D 2024-11-19T19:47:51.323
+C Move\sthe\sin-comment-code\scommentary\sabout\s--with-debug,\sfrom\s[7b14309be4],\sinto\sthe\s--help\stext\sfor\sthat\sflag,\swhere\sit's\sreadily\svisible.
+D 2024-11-19T20:14:31.784
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 4f5ae3ed11bb110b1eda2a6b7ee46489b7371bc8f7c19f0ed944613c170e4951
+F auto.def 87c3d42428225c89dba75d399ea83c756f4a21b5c6ed591436d6c930c8d6c73a
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7fb3ebfec634e0508267049fddb2b513201dbefce4d378ca3ec261c5d8336d7f
-R 631735400a3a45c7eca237a47c49e579
+P 80f3bf8c2ee31ba1ab9187d64d5dcbbf97a61845a21b036f89ea9133153575c0
+R 07c8458360fbc34333a873b33b8ca43f
 U stephan
-Z b91791961d3936264eb9b5de6178a0fb
+Z 3761f0fd6432507d765cfeef5912a493
 # Remove this line to create a well-formed Fossil manifest.

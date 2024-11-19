@@ -192,12 +192,11 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
-
-  # --with-debug does more than simply builds with a -g compilation
-  # flag and will impact performance by as much as 4x, as it includes
-  # large numbers of assert()s in performance-critical loops.  Never
-  # use --with-debug for production builds.
-  with-debug:=1        => {Enable debug build flags}
+  with-debug:=1        => {Enable debug build flags. --with-debug does more
+    than simply builds with a -g compilation flag and will impact
+    performance by as much as 4x, as it includes large numbers of
+    assert()s in performance-critical loops.  Never use --with-debug
+    for production builds.}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
