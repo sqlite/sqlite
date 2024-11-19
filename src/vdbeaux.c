@@ -5483,6 +5483,10 @@ void sqlite3CommitTimeLog(u64 *aCommit){
              || ii==COMMIT_TIME_RELOCATE2_ALLOCATEUS 
              || ii==COMMIT_TIME_RELOCATE2_RELOCATEUS 
              || ii==COMMIT_TIME_HASHMAPUS 
+             || ii==COMMIT_TIME_RELOCATE2_EXACTUS 
+             || ii==COMMIT_TIME_WALINDEX_HASHGETUS
+             || ii==COMMIT_TIME_WALINDEX_CLEANUPUS
+             || ii==COMMIT_TIME_WALINDEX_ENTRYUS
       ){
         iVal = (int)aCommit[ii];
         zU = "us";

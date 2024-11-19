@@ -4561,7 +4561,7 @@ static int btreeRelocateRange(
       if( pBt->aCommitTime ) t1 = sqlite3STimeNow();
       rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
       if( pBt->aCommitTime ){
-        pBt->aCommitTime[COMMIT_TIME_RELOCATE2_ALLOCATEUS] += (sqlite3STimeNow() - t1);
+        pBt->aCommitTime[COMMIT_TIME_RELOCATE2_EXACTUS] += (sqlite3STimeNow() - t1);
       }
       if( pFree ){
         assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );

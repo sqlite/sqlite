@@ -1621,6 +1621,7 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
   int rc;                         /* Return code */
   WalHashLoc sLoc;                /* Wal-index hash table location */
   u32 iExternal;
+  u64 t;
   
   if( isWalMode2(pWal) ){
     iExternal = walExternalEncode(iWal, iFrame);
@@ -1629,7 +1630,11 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     iExternal = iFrame;
   }
 
+  if( pWal->aCommitTime ) t = sqlite3STimeNow();
   rc = walHashGet(pWal, walFramePage(iExternal), &sLoc);
+  if( pWal->aCommitTime ){
+    pWal->aCommitTime[COMMIT_TIME_WALINDEX_HASHGETUS] += sqlite3STimeNow()-t;
+  }
 
   /* Assuming the wal-index file was successfully mapped, populate the
   ** page number array and hash table entry.
@@ -1658,17 +1663,25 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     ** the hash-table before writing any new entries.
     */
     if( sLoc.aPgno[idx-1] ){
+      if( pWal->aCommitTime ) t = sqlite3STimeNow();
       walCleanupHash(pWal);
       assert( !sLoc.aPgno[idx-1] );
+      if( pWal->aCommitTime ){
+        pWal->aCommitTime[COMMIT_TIME_WALINDEX_CLEANUPUS]+=sqlite3STimeNow()-t;
+      }
     }
 
     /* Write the aPgno[] array entry and the hash-table slot. */
+    if( pWal->aCommitTime ) t = sqlite3STimeNow();
     nCollide = idx;
     for(iKey=walHash(iPage); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
       if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
     }
     sLoc.aPgno[idx-1] = iPage;
     AtomicStore(&sLoc.aHash[iKey], (ht_slot)idx);
+    if( pWal->aCommitTime ){
+      pWal->aCommitTime[COMMIT_TIME_WALINDEX_ENTRYUS]+=sqlite3STimeNow()-t;
+    }
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
     /* Verify that the number of entries in the hash table exactly equals
