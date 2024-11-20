@@ -1,5 +1,5 @@
-C If\sa\ssubquery\sis\scopied\sand\sthen\schanges\sare\smade\sto\sthe\scopy,\sbe\ssure\nto\sgive\sthe\scopy\sa\sunique\sSelect.selId\svalue\sso\sthat\sthe\soriginal\swill\nnot\sbe\ssubstituted\sin\splace\sof\sthe\smodified\scopy.
-D 2024-11-20T15:02:34.608
+C Cherrypick\sa\scouple\sof\schanges\srequested\sby\sMozilla\sonto\sthe\s3.47\sbranch.
+D 2024-11-20T21:45:25.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -258,7 +258,7 @@ F ext/fts5/test/fts5vocab2.test bbba149c254375d00055930c1a501c9a51e80b0d20bf7b98
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
-F ext/fts5/tool/mkfts5c.tcl 3eba8e9bee4221ed165f3304b51b2a74a705f4ec5df3d044573a2be539534af8
+F ext/fts5/tool/mkfts5c.tcl 6649ed963a9135e36866f7cc9f8de5c8dcec85b5df089388274cee6381702cb7
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c 3add8197e0a86c1761771a39500ebae749438bcf1836160b407a56b4eaa8721c
@@ -756,10 +756,10 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 14d0f80e4779f5f76bcc71e7af97e3efe318fa3d0b22335623c59fab7d39302b
-F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
+F src/os_unix.c 0ad4e0885294b3a0e135a18533590ec9ad91ffe82f6a08e55b40babd51772928
+F src/os_win.c 69fa1aaff68270423c85cff4327ba17ef99a1eb017e1a2bfb97416d9b8398b05
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c b08600ebf0db90b6d1e9b8b6577c6fa3877cbe1a100bd0b2899e4c6e9adad4b3
+F src/pager.c d57287cd0864c88740d20618e5e595b144b85bfdaefccafd353d596f254a7b35
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
 F src/parse.y a7a8d42eeff01d267444ddb476029b0b1726fb70ae3d77984140f17ad02e2d61
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -774,7 +774,7 @@ F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
 F src/shell.c.in 0662f9bcf0725461778d0254a06150e5d61c08c5a87a7281ccdf45552050c79d
-F src/sqlite.h.in add9e064d6b42af8f1a4a3322bddadec76696e520aedebd83e0d3211c15ac999
+F src/sqlite.h.in 29fc900a58f394c7488d093fd7a8dcb14d3fa6399d5178cb20adcf88dbedfe39
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h baae24292817e13e7fe748851c62efc381dcc4dac241b1182eac3d2f05eae52c
@@ -2221,9 +2221,10 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb5ddebf79f824672045cbc660ffc896e82a769e1312ab5925d334ce1e7036dd
-Q +19d1bede5654bcfa9f7a151b9b2616a3d10873b8e3f8cf54a3a7e810da08f844
-R 8774b75a34818556304d8661d7ff9a7e
+P 16d46e116086948a704c03b7b6aecbb2c66cefca4418e8e5a9ffd05e0036c7d1
+Q +1bf8daeb24142044e1b5d4b205317c42353004643fadb6b34f9ae6bfa4e3a6bc
+Q +6e7d498cda1d8fa76f3efac0ee0540dd8241db75e85b863097cab2ed530aabb0
+R d9a0ed242e8b3bbc93132bdf8f6f8664
 U drh
-Z 4b926c2364b383843c0449364f5eacbf
+Z 0e8456cccaab0df334da9037da855ce5
 # Remove this line to create a well-formed Fossil manifest.
