@@ -1,5 +1,5 @@
-C Do\snot\sreport\san\ssqlite3_error_offset()\sfor\serrors\sthat\soccur\sinside\sof\nviews\sor\striggers,\ssince\sthe\stext\sof\sthose\selements\sis\snot\spart\sof\sthe\noriginal\squery.
-D 2024-11-20T11:37:24.090
+C If\sa\ssubquery\sis\scopied\sand\sthen\schanges\sare\smade\sto\sthe\scopy,\sbe\ssure\nto\sgive\sthe\scopy\sa\sunique\sSelect.selId\svalue\sso\sthat\sthe\soriginal\swill\nnot\sbe\ssubstituted\sin\splace\sof\sthe\smodified\scopy.
+D 2024-11-20T15:02:34.608
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -859,7 +859,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c ed0e1e9ef15f01f5da54168ae2fdb5eb789a881fd20d7b4820e38454dedf9947
 F src/whereInt.h a5d079c346a658b7a6e9e47bb943d021e02fa1e6aed3b964ca112112a4892192
-F src/wherecode.c 5172d647798134e7c92536ddffe7e530c393d79b5dedd648b88faf2646c65baf
+F src/wherecode.c fa2b5bbb95b1589318f034a24e2a8b85e63cd2000b5b9b830a0874542a57e8ea
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
 F src/window.c 499d48f315a09242dc68f2fac635ed27dcf6bbb0d9ab9084857898c64489e975
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1304,7 +1304,7 @@ F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test bb767ec1cfd1730256f0a83219f0acda36bc251b63f8b8bb7d8c7cff17875a4f
 F test/in5.test 4fd79c70dfa0681313e8cdca07f5ff0400bdc0e20f808a5c59eaef1e4b48082a
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
-F test/in7.test 9256cdb30dc487f2078bb4bb30f43f2c1ff4d277a9c7c9a14bd1c9510c9c8cae
+F test/in7.test 5050b648510d88bd27ff6b40991a45e1cc277c20e258162e81650e01069a56bb
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
@@ -2221,9 +2221,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 322be94569d196a66b3671100e880f32f85777c248a662866b0579a6392a24dc
-Q +bf66c6dfc25c2562a4e6a5b24dd1660213a8fefbb5763e7583b87fb06dbaaf43
-R dcc12b417804ea5e1a76cfb741b75029
+P cb5ddebf79f824672045cbc660ffc896e82a769e1312ab5925d334ce1e7036dd
+Q +19d1bede5654bcfa9f7a151b9b2616a3d10873b8e3f8cf54a3a7e810da08f844
+R 8774b75a34818556304d8661d7ff9a7e
 U drh
-Z f97e015a28018ce072ece3c54078c943
+Z 4b926c2364b383843c0449364f5eacbf
 # Remove this line to create a well-formed Fossil manifest.
