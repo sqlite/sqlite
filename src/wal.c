@@ -1668,10 +1668,14 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     /* If this is the first entry to be added to this hash-table, zero the
     ** entire hash table and aPgno[] array before proceeding.
     */
+    if( pWal->aCommitTime ) t = sqlite3STimeNow();
     if( idx==1 ){
       int nByte = (int)((u8*)&sLoc.aHash[HASHTABLE_NSLOT] - (u8*)sLoc.aPgno);
       assert( nByte>=0 );
       memset((void*)sLoc.aPgno, 0, nByte);
+    }
+    if( pWal->aCommitTime ){
+      pWal->aCommitTime[COMMIT_TIME_WALINDEX_MEMSETUS]+=sqlite3STimeNow()-t;
     }
 
     /* If the entry in aPgno[] is already set, then the previous writer
@@ -1702,6 +1706,7 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     }
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
+    assert( this_should_not_be_enabled );
     /* Verify that the number of entries in the hash table exactly equals
     ** the number of entries in the mapping region.
     */
