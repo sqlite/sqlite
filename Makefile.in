@@ -9,7 +9,6 @@
 # The docs for many of its variables are in the primary static
 # makefile, main.mk (which this one includes at runtime).
 #
-.POSIX: #maintenance reminder: X:=Y is not POSIX-portable
 all:
 ########################################################################
 #
@@ -144,7 +143,7 @@ LDFLAGS.configure = @LDFLAGS@
 # CFLAGS.core is documented in main.mk.
 #
 CFLAGS.core = @SH_CFLAGS@
-LDFLAGS.shobj = @SHOBJ_LDFLAGS@
+LDFLAGS.shlib = @SH_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@
 LDFLAGS.rpath = @LDFLAGS_RPATH@
@@ -288,6 +287,7 @@ AS_AUTO_DEF = $(TOP)/auto.def
 AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
 
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
+LINK_TOOLS_DYNAMICALLY ?= @LINK_TOOLS_DYNAMICALLY@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 
 #

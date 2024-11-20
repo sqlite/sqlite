@@ -43,7 +43,7 @@
 %syntax_error {
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
   if( TOKEN.z[0] ){
-    sqlite3ReportSyntaxError(pParse, &TOKEN);
+    parserSyntaxError(pParse, &TOKEN);
   }else{
     sqlite3ErrorMsg(pParse, "incomplete input");
   }
@@ -112,6 +112,13 @@ struct TrigEvent { int a; IdList * b; };
 struct FrameBound     { int eType; Expr *pExpr; };
 
 /*
+** Generate a syntax error
+*/
+static void parserSyntaxError(Parse *pParse, Token *p){
+  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", p);
+}
+
+/*
 ** Disable lookaside memory allocation for objects that might be
 ** shared across database connections.
 */
@@ -141,11 +148,6 @@ static void updateDeleteLimitError(
   sqlite3ExprDelete(pParse->db, pLimit);
 }
 #endif /* SQLITE_ENABLE_UPDATE_DELETE_LIMIT */
-
-/* Report a syntax error at pToken */
-void sqlite3ReportSyntaxError(Parse *pParse, Token *pToken){
-  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", pToken);
-}
 
 } // end %include
 
@@ -485,10 +487,10 @@ resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
 //
 cmd ::= COMMIT(X) AND(A) ID(Y) TRANSACTION. {
   if( (pParse->db->flags & SQLITE_OkContTrans)==0 ){
-    sqlite3ReportSyntaxError(pParse, &A);
+    parserSyntaxError(pParse, &A);
   }
   if( Y.n!=8  || sqlite3_strnicmp(Y.z,"continue",8)!=0 ){
-    sqlite3ReportSyntaxError(pParse, &Y);
+    parserSyntaxError(pParse, &Y);
   }
   sqlite3EndTransaction(pParse, @X, 1);
 }
@@ -1175,7 +1177,7 @@ expr(A) ::= VARIABLE(X).     {
     Token t = X; /*A-overwrites-X*/
     assert( t.n>=2 );
     if( pParse->nested==0 ){
-      sqlite3ReportSyntaxError(pParse, &t);
+      parserSyntaxError(pParse, &t);
       A = 0;
     }else{
       A = sqlite3PExpr(pParse, TK_REGISTER, 0, 0);

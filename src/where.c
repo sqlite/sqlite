@@ -2332,7 +2332,7 @@ static int whereInScanEst(
 #endif /* SQLITE_ENABLE_STAT4 */
 
 
-#ifdef WHERETRACE_ENABLED
+#if defined(WHERETRACE_ENABLED) || defined(SQLITE_DEBUG)
 /*
 ** Print the content of a WhereTerm object
 */
@@ -2375,6 +2375,9 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
     sqlite3DebugPrintf("\n");
     sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
   }
+}
+void sqlite3ShowWhereTerm(WhereTerm *pTerm){
+  sqlite3WhereTermPrint(pTerm, 0);
 }
 #endif
 

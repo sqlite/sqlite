@@ -615,6 +615,7 @@ static Expr *removeUnindexableInClauseTerms(
         pNew->pLeft->x.pList = pLhs;
       }
       pSelect->pEList = pRhs;
+      pSelect->selId = ++pParse->nSelect; /* Req'd for SubrtnSig validity */
       if( pLhs && pLhs->nExpr==1 ){
         /* Take care here not to generate a TK_VECTOR containing only a
         ** single value. Since the parser never creates such a vector, some

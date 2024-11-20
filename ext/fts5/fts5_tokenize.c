@@ -1353,7 +1353,7 @@ static int fts5TriTokenize(
   char *zOut = aBuf;
   int ii;
   const unsigned char *zIn = (const unsigned char*)pText;
-  const unsigned char *zEof = &zIn[nText];
+  const unsigned char *zEof = (zIn ? &zIn[nText] : 0);
   u32 iCode = 0;
   int aStart[3];                  /* Input offset of each character in aBuf[] */
 
