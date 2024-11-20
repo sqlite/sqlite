@@ -6389,10 +6389,10 @@ static void fts5TokendataIterAppendMap(
   if( p->rc==SQLITE_OK ){
     if( pT->nMap==pT->nMapAlloc ){
       int nNew = pT->nMapAlloc ? pT->nMapAlloc*2 : 64;
-      int nByte = nNew * sizeof(Fts5TokenDataMap);
+      int nAlloc = nNew * sizeof(Fts5TokenDataMap);
       Fts5TokenDataMap *aNew;
 
-      aNew = (Fts5TokenDataMap*)sqlite3_realloc(pT->aMap, nByte);
+      aNew = (Fts5TokenDataMap*)sqlite3_realloc(pT->aMap, nAlloc);
       if( aNew==0 ){
         p->rc = SQLITE_NOMEM;
         return;
@@ -7580,7 +7580,6 @@ int sqlite3Fts5IndexIterWriteTokendata(
   assert( pIter->pTokenDataIter || pIter->nSeg>0 );
   if( pIter->nSeg>0 ){
     /* This is a prefix term iterator. */
-    Fts5TokenDataIter *pT = pIter->pTokenDataIter;
     if( pT==0 ){
       pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*pT));
       pIter->pTokenDataIter = pT;

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2024-11-06T17:31:48.766
+C Fix\scompiler\swarnings\scaused\sby\svariable\sshadowing.
+D 2024-11-20T20:39:18.431
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -113,7 +113,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c 2cef40d6fdd761229dd4127e0b1ddcb61dfd6a4ac7e73653b7fddbe0075e50be
+F ext/fts5/fts5_index.c cef6791bd9f9db4305494292d6dd5d24a7379aabf370a4d6b559e16b740fa88e
 F ext/fts5/fts5_main.c b2ec6bf97fc378906c0e78c61f10ca8e64f15e03237f2521f7d81736983be378
 F ext/fts5/fts5_storage.c 337b05e4c66fc822d031e264d65bde807ec2fab08665ca2cc8aaf9c5fa06792c
 F ext/fts5/fts5_tcl.c aee6ae6d0c6968564c392bf0d09aaabb4d8bea9ca69fd224dc9b44243324acbf
@@ -701,7 +701,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c1a91dc50ffc1cb828b85d767d02d80d9eabeb0ef47e77e57bd72617749c5dbf
+F main.mk 3dbee6d7e7678b79531b78048fea187146cb7e0352047ed774003ba4df1fb93a
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9cc04331a01760189d88697233009dbe8a60eda589792ad01b56300499e9f54d 5495b12569c318d5020b4b5a625a392ef8e777b81c0200624fbbc2a6b5eddef9
-R 43b03038eb634e877d13ab18dcd80180
+P edb842349320eda9550bdfcd5a327949c5512e02f4b993782587b2131a425746
+R 87e3d58f4f7440e00e0a55bcb770c2ab
 U dan
-Z 70a74ef30cc348badfc60dd108f53b23
+Z e1bc2b76da9d8c387af12aec8bd8d459
 # Remove this line to create a well-formed Fossil manifest.
