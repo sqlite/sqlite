@@ -1,5 +1,5 @@
-C Update\slogging\sversion\sto\s"v=11".\sThis\sshould\shave\sbeen\spart\sof\sthe\sprevious\scommit.
-D 2024-11-20T17:47:40.626
+C Experimental\schange\sto\somit\swriting\sframe\schecksums\sto\sthe\swal\sfile.
+D 2024-11-20T18:49:01.906
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -857,7 +857,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5fb499d20494b7eecaadb7584634af9afcb374cb0524912b475fcb1712458a1b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c b15990d5cc1fbc418170a5d14bc32c84b955c29ab189056ad60db31f87ea72b2
+F src/wal.c 2b1947a92536c1eeca743cd54b5fddb726040e413abd66197744b645f232fd85
 F src/wal.h 8c59ee7a835574396d7cbd04626d11fd849613e361a46e7e9519091ab03bdb29
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c c046dd58c3410f7b7528e1e6317cb876398557bad346d568ed8562321a7d002d
@@ -2249,8 +2249,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ba41da8c437e466c71f65d67a615293efb5a2d9da9b6e9cbb7b296221d4104a
-R 8660444da434974fa9ec38b189262163
+P e6663fab61cbcb6e7955ab726821831dd55cc210550d74327265210e5bb93c2a
+R 9a6fce3789fc705965d6b202838b94f6
 U dan
-Z 0bff1af09fe1a52da23cc13f5d3ade4b
+Z 6cbcba363e01fa0e7f18f1969c59edcc
 # Remove this line to create a well-formed Fossil manifest.
