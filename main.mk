@@ -159,7 +159,7 @@ LDFLAGS.math ?= -lm
 LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
-LDFLAGS.shobj ?= -shared
+LDFLAGS.shlib ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.soname.libsqlite3 ?=
@@ -385,7 +385,7 @@ T.link = $(T.cc.sqlite) $(T.link.extras)
 #
 # $(T.link.shared) = $(T.link) invocation specifically for shared libraries
 #
-T.link.shared = $(T.link) $(LDFLAGS.shobj)
+T.link.shared = $(T.link) $(LDFLAGS.shlib)
 
 #
 # $(LDFLAGS.libsqlite3) should be used with any deliverable for which
@@ -2245,7 +2245,7 @@ sqlite3.def: $(LIBOBJ)
 		| sed 's/^.* _//' >>sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	$(T.cc.sqlite) $(LDFLAGS.shobj) -o $@ sqlite3.def \
+	$(T.cc.sqlite) $(LDFLAGS.shlib) -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ) $(LDFLAGS.configure)
 
 #

@@ -143,7 +143,7 @@ LDFLAGS.configure = @LDFLAGS@
 # CFLAGS.core is documented in main.mk.
 #
 CFLAGS.core = @SH_CFLAGS@
-LDFLAGS.shobj = @SHOBJ_LDFLAGS@
+LDFLAGS.shlib = @SH_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@
 LDFLAGS.rpath = @LDFLAGS_RPATH@

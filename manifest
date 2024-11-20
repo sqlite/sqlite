@@ -1,9 +1,9 @@
-C Add\sfix\sfrom\s[bfab759611b0]\sto\ssqltclsh.\sRemove\ssome\snow-unneeded\shas_tclsh84/5\schecks\sin\scases\swhere\sjimsh\scan\sbe\sused.
-D 2024-11-19T21:19:12.706
+C Use\sshared-library\sflags,\snot\sshared-object\sflags,\sto\screate\sshared\slibraries.\nThis\smakes\sno\sdifference\son\sLinux,\sbut\sis\srequired\sfor\sMac.
+D 2024-11-20T16:17:01.857
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 5461b1125a3039fef49f4896519d164ebe22ee394d20d69913ab0fdc8c464b63
+F Makefile.in b22a52dc08b8a727c298af4f93171b2862df1d6fce4c255b15f6ce1011a9ee7d
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 87ce967497ff2fc81406fc91c290b1faf3dfa8bb7724e3980be297381369b4f8
+F main.mk e3873a2363bef0fb8e3a65a21e548ce1aa9aeeb3795362c3e78346e655d501a4
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2198,8 +2198,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bfab759611b0562837d8733ce56591854db08c122956524799dc1d5b3e2d0279
-R 0f52e38972daef31ec132c6a8f286547
-U stephan
-Z 58d6b35becabf99bb64f154abaacc201
+P 9d389b998317c5006876f2f40d56cd763d1555bbeaf48b2bca9bd46dcd02b80e
+R 8bdca5a71a238d4249a2b123157a4e29
+U drh
+Z 1e9ca84e1d99022a8171dd65daab42e8
 # Remove this line to create a well-formed Fossil manifest.
