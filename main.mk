@@ -159,7 +159,7 @@ LDFLAGS.math ?= -lm
 LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
-LDFLAGS.shobj ?= -shared
+LDFLAGS.shlib ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.soname.libsqlite3 ?=
@@ -204,6 +204,17 @@ ENABLE_STATIC ?= 1
 # the library is built from all of its original source files.
 #
 USE_AMALGAMATION ?= 1
+#
+# $(LINK_TOOLS_DYNAMICALLY)
+#
+# If true, certain binaries which typically statically link against
+# libsqlite3 or its component object files will instead link against
+# the DLL. The caveat is that running such builds from the source tree
+# may require that the user specifically prepend "." to their
+# $LD_LIBRARY_PATH so that the dynamic linker does not pick up a
+# libsqlite3.so from outside the source tree.
+#
+LINK_TOOLS_DYNAMICALLY ?= 0
 #
 # $(AMALGAMATION_GEN_FLAGS) =
 #
@@ -374,7 +385,7 @@ T.link = $(T.cc.sqlite) $(T.link.extras)
 #
 # $(T.link.shared) = $(T.link) invocation specifically for shared libraries
 #
-T.link.shared = $(T.link) $(LDFLAGS.shobj)
+T.link.shared = $(T.link) $(LDFLAGS.shlib)
 
 #
 # $(LDFLAGS.libsqlite3) should be used with any deliverable for which
@@ -893,6 +904,9 @@ TESTOPTS = --verbose=file --output=test-out.txt
 #
 # Extra compiler options for various shell tools
 #
+# Note that some of these will only apply when embedding sqlite3.c
+# into the shell, as these flags are not otherwise passed on to the
+# library.
 SHELL_OPT += -DSQLITE_DQS=0
 SHELL_OPT += -DSQLITE_ENABLE_FTS4
 #SHELL_OPT += -DSQLITE_ENABLE_FTS5
@@ -1017,7 +1031,7 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 # all that automatic generation.
 #
 .target_source: $(MAKE_SANITY_CHECK) $(SRC) $(TOP)/tool/vdbe-compress.tcl \
-    fts5.c $(B.tclsh) # has_tclsh84
+    fts5.c $(B.tclsh)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
@@ -1043,19 +1057,19 @@ mksourceid$(B.exe): $(MAKE_SANITY_CHECK) $(TOP)/tool/mksourceid.c
 
 sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
     $(TOP)/manifest mksourceid$(B.exe) \
-		$(TOP)/VERSION $(B.tclsh) # has_tclsh84
+		$(TOP)/VERSION $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
-		$(B.tclsh) # has_tclsh84
+		$(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
 
-sqlite3r.h: sqlite3.h $(B.tclsh) # has_tclsh84
+sqlite3r.h: sqlite3.h $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
 
-sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh) # has_tclsh84
+sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh)
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
 	cp $(TOP)/ext/recover/sqlite3recover.h tsrc/
 	cp $(TOP)/ext/recover/dbdata.c tsrc/
@@ -1342,11 +1356,11 @@ tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh) # has_tclsh84
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c \
-		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh) # has_tclsh84
+		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh)
 	cat parse.h $(TOP)/src/vdbe.c | $(B.tclsh) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
@@ -1357,7 +1371,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(B.exe)
 	cp $(TOP)/src/parse.y .
 	./lemon$(B.exe) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
-sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh) # has_tclsh84
+sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh)
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
 	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
 	cat $(TOP)/VERSION | $(B.tclsh) $(TOP)/tool/replace.tcl exact . , >>$@
@@ -1371,7 +1385,7 @@ keywordhash.h:	mkkeywordhash$(B.exe)
 #
 # sqlite3.c split into many smaller files.
 #
-sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh) # has_tclsh84
+sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/split-sqlite3c.tcl
 
 #
@@ -1577,7 +1591,7 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon$(B.exe)
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC) $(B.tclsh) # has_tclsh84
+fts5.c: $(FTS5_SRC) $(B.tclsh)
 	$(B.tclsh) $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
 
@@ -1730,22 +1744,43 @@ smoketest:	$(TESTPROGS) fuzzcheck$(T.exe)
 shelltest:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
+#
+# sqlite3_analyzer.c build depends on $(LINK_TOOLS_DYNAMICALLY).
+#
+sqlite3_analyzer.c.flags.0 = -DINCLUDE_SQLITE3_C=1
+sqlite3_analyzer.c.flags.1 =
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
-                    $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in has_tclsh85
-	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in >sqlite3_analyzer.c
+                    $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
+	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in \
+		$(sqlite3_analyzer.c.flags.$(LINK_TOOLS_DYNAMICALLY)) \
+		$(OPT_FEATURE_FLAGS) \
+		> $@
 
-sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c
-	$(T.link.tcl) sqlite3_analyzer.c -o $@ $$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
-		$(LDFLAGS.libsqlite3)
+#
+# sqlite3_analyzer's build mode depends on $(LINK_TOOLS_DYNAMICALLY).
+#
+sqlite3_analyzer.flags.1 = -L. -lsqlite3
+sqlite3_analyzer.flags.0 = $(LDFLAGS.libsqlite3)
+sqlite3_analyzer.deps.1 = $(libsqlite3.SO)
+sqlite3_analyzer.deps.0 =
+sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
+                          $(sqlite3_analyzer.deps.$(LINK_TOOLS_DYNAMICALLY))
+	$(T.link.tcl) sqlite3_analyzer.c -o $@ \
+		$(sqlite3_analyzer.flags.$(LINK_TOOLS_DYNAMICALLY)) \
+		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $$TCL_LIBS
+# ^^^^ the order of those flags is relevant for
+# $(sqlite3_analyzer.flags.1): if the $$TCL_... flags come first they
+# can cause the $@ to link to an out-of-tree libsqlite3.so, which may
+# or may not fail or otherwise cause confusion.
 
 sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
-            $(TOP)/tool/sqltclsh.c.in has_tclsh85
+            $(TOP)/tool/sqltclsh.c.in
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
 
 sqltclsh$(T.exe): $(T.tcl.env.sh) sqltclsh.c
 	$(T.link.tcl) sqltclsh.c -o $@ $$TCL_INCLUDE_SPEC $(CFLAGS.libsqlite3) \
-		$$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
+		$(LDFLAGS.libsqlite3) $$TCL_LIB_SPEC $$TCL_LIBS
 # xbin: target for generic binaries which aren't usually built. It is
 # used primarily for testing the build process.
 xbin: sqltclsh$(T.exe) sqlite3_analyzer$(T.exe)
@@ -1766,7 +1801,7 @@ CHECKER_DEPS =\
   $(TOP)/ext/misc/btreeinfo.c \
   $(TOP)/ext/repair/sqlite3_checker.c.in
 
-sqlite3_checker.c:	$(CHECKER_DEPS) has_tclsh85
+sqlite3_checker.c:	$(CHECKER_DEPS)
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
 
 sqlite3_checker$(T.exe):	$(T.tcl.env.sh) sqlite3_checker.c
@@ -1918,15 +1953,27 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-# The standard CLI is built using the amalgamation since it uses
-# special compile-time options that are interpreted by individual
-# source files within the amalgamation.
+#
+# When building sqlite3$(T.exe) we specifically embed a copy of
+# sqlite3.c, and not link to libsqlite3.so or libsqlite3.a, because
+# the shell needs to be able to enable arbitrary library features,
+# some of which have significant performance impacts. For example,,
+# SQLITE_ENABLE_EXPLAIN_COMMENTS has been measured as having a 5.2%
+# runtime performance hit, which is fine for use in the shell but is
+# not appropriate for the canonical library build.
 #
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
 		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+#
+# Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
+# semantics of 0 and 1 are confusingly swapped here.
+#
+sqlite3$(T.exe)-1:
+sqlite3$(T.exe)-0: sqlite3$(T.exe)
+all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
 
 # The "sqlite3d" CLI is build using separate source files.  This
 # is useful during development and debugging.
@@ -1937,21 +1984,19 @@ sqlite3d$(T.exe):	shell.c $(LIBOBJS0)
 		$(CFLAGS.readline) $(SHELL_OPT) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
-#
-# Build sqlite3$(T.exe) by default except in wasi-sdk builds.  Yes, the
-# semantics of 0 and 1 are confusingly swapped here.
-#
-sqlite3$(T.exe)-1:
-sqlite3$(T.exe)-0 sqlite3$(T.exe)-: sqlite3$(T.exe)
-all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
-
 install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL) -s sqlite3$(T.exe) "$(install-dir.bin)"
-install-shell-1 install-shell-:
+install-shell-1:
 install: install-shell-$(HAVE_WASI_SDK)
 
-sqldiff$(T.exe):	$(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
-	$(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
+# How to build sqldiff$(T.exe) depends on $(LINK_TOOLS_DYNAMICALLY)
+#
+sqldiff.0.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
+sqldiff.0.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
+sqldiff.1.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.SO)
+sqldiff.1.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c -L. -lsqlite3 $(LDFLAGS.configure)
+sqldiff$(T.exe): $(sqldiff.$(LINK_TOOLS_DYNAMICALLY).deps)
+	$(sqldiff.$(LINK_TOOLS_DYNAMICALLY).rules)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
 	$(INSTALL) -s sqldiff$(T.exe) "$(install-dir.bin)"
@@ -2132,7 +2177,7 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.c \
     $(TOP)/src/test_windirent.h
 
-shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh) # has_tclsh84
+shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkshellc.tcl >shell.c
 
 #
@@ -2200,7 +2245,7 @@ sqlite3.def: $(LIBOBJ)
 		| sed 's/^.* _//' >>sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) sqlite3.def
-	$(T.cc.sqlite) $(LDFLAGS.shobj) -o $@ sqlite3.def \
+	$(T.cc.sqlite) $(LDFLAGS.shlib) -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(LIBOBJ) $(LDFLAGS.configure)
 
 #

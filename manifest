@@ -1,9 +1,9 @@
-C Bug\sfix\sin\sthe\sSubrtnSig\slogic\sfrom\s[c9a3498113074bbc],\sif\sa\ssubquery\sis\ncopied\sand\sthen\schanges\sare\smade\sto\sthe\scopy,\sbe\ssure\sto\sgive\sthe\scopy\na\sunique\sSelect.selId\svalue\sso\sthat\sthe\soriginal\swill\snot\sbe\ssubstituted\nin\splace\sof\sthe\smodified\scopy.\n[forum:/forumpost/0b9ded2f8428ac00|Forum\spost\s0b9ded2f8428ac00].
-D 2024-11-20T14:59:32.102
+C New\sconfiguration\soption\s--dynlink-tools\scauses\ssome\scommand-line\stools\slike\nsqldiff\sand\ssqlite3_analyzer\sto\slink\sagainst\sthe\slibsqlite3.so\ssystem\slibrary\nrather\sthan\sbeing\sbuilt-in.\s\sCaution:\s\ssqlite3_analyzer\srequires\sthe\nSQLITE_ENABLE_DBSTAT_VTAB\scompile-time\soption\son\sits\sSQLite\slibrary\sin\sorder\nto\swork,\sso\sdo\snot\suse\s--dynlink-tools\sto\sbuild\ssqlite3_analyzer\swithout\sit.
+D 2024-11-20T16:21:34.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in c3a01e98bd2ae6a4631df02f11249ac07ffa3d540d3034e2675f66cc259f2ea7
+F Makefile.in b22a52dc08b8a727c298af4f93171b2862df1d6fce4c255b15f6ce1011a9ee7d
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 94f0f4a697e8221d5c7ca561771a3afabb0e707922daad89b60908b87a8e399b
+F auto.def b81388775c7596c22d19ce7c5e0692d8cb6beb89ae591e2684a238084acabf61
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1d
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 96fe16b87c9feb9c1cf2682280f678c659bc52c09fca5de02afc2f7ec5bfb154
+F autosetup/proj.tcl 22556a325c964aa5377d4d881722385f41fcd7c1b60102ba8965f7814c83e9ce
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c4e37e3015f9c2d8fd20fa3071ba86e7396959c8d5960e37e95aa85421e2b739
+F main.mk e3873a2363bef0fb8e3a65a21e548ce1aa9aeeb3795362c3e78346e655d501a4
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2136,7 +2136,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
-F tool/mkccode.tcl b0ddad168362ba6225c9372856ba0db90145734e882a9a5bb8951ef0d5bc6331 x
+F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
 F tool/mkctimec.tcl ef6a67ec82e5b6fc19152a4c79f237227b18bf67ff16d155bac7adb94355d9cf x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
@@ -2179,7 +2179,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
-F tool/sqlite3_analyzer.c.in 39690af454d2866e87e2b475ec5eabee366f211f2307e90b918345f35bb1a643
+F tool/sqlite3_analyzer.c.in fc7735c499d226a49d843d8209b2543e4e5229eeb71a674c331323a2217b65b4
 F tool/sqlite3_rsync.c 9a1cca2ab1271c59b37a6493c15dc1bcd0ab9149197a9125926bc08dd26b83fb
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2199,8 +2199,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c77a4a42f2e3d16427a69295436efe36335e56e97abd0efba814092498a8dea8
-R 334ca864785a19dfa280dbef32e35002
+P 19d1bede5654bcfa9f7a151b9b2616a3d10873b8e3f8cf54a3a7e810da08f844 bfaa3ee7588b6f6be9799882c6ed6472357d988fac31512d5e92fe28f57029c6
+R 4149ca832938d8cc469625636a536cf9
+T +closed bfaa3ee7588b6f6be9799882c6ed6472357d988fac31512d5e92fe28f57029c6
 U drh
-Z af9f774053d8dc7c5fd09306a426c7d8
+Z 353d2b1e26c72a6c71622b8679ecfa79
 # Remove this line to create a well-formed Fossil manifest.
