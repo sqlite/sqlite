@@ -1,5 +1,5 @@
-C New\sconfiguration\soption\s--dynlink-tools\scauses\ssome\scommand-line\stools\slike\nsqldiff\sand\ssqlite3_analyzer\sto\slink\sagainst\sthe\slibsqlite3.so\ssystem\slibrary\nrather\sthan\sbeing\sbuilt-in.\s\sCaution:\s\ssqlite3_analyzer\srequires\sthe\nSQLITE_ENABLE_DBSTAT_VTAB\scompile-time\soption\son\sits\sSQLite\slibrary\sin\sorder\nto\swork,\sso\sdo\snot\suse\s--dynlink-tools\sto\sbuild\ssqlite3_analyzer\swithout\sit.
-D 2024-11-20T16:21:34.531
+C Document\sthat\s-nofollow\sdoes\snot\swork\son\sWindows.\s\sFix\sWindows\ssymlink\ntest\scases\sfor\swhen\sthe\stest\ssuite\sis\srun\sas\sadministrator.
+D 2024-11-21T01:50:01.790
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -759,7 +759,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
-F src/os_win.c db4baa8f62bbfe3967c71b008cea31a8f2ff337c1667ff4d8a677e697315ff0d
+F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
@@ -1702,7 +1702,7 @@ F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27c
 F test/swarmvtab3.test 41a3ab47cb7a834d4e5336425103b617410a67bb95d335ef536f887587ece073
 F test/swarmvtabfault.test 8a67a9f27c61073a47990829e92bc0c64420a807cb642b15a25f6c788210ed95
 F test/symlink.test 4368af0e213dd6e726a6240a16f2bb96a5a58f83f2d5d60652f27547b28cbf06
-F test/symlink2.test 9531f475a53d8781c4f81373f87faf2e2aff4f5fb2102ec6386e0c827916a670
+F test/symlink2.test bf932ff7fe95c9dbb39d2a990df9098b0ea943233c97e40098e0a8d6b559a96f
 F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d4333092
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
@@ -2199,9 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19d1bede5654bcfa9f7a151b9b2616a3d10873b8e3f8cf54a3a7e810da08f844 bfaa3ee7588b6f6be9799882c6ed6472357d988fac31512d5e92fe28f57029c6
-R 4149ca832938d8cc469625636a536cf9
-T +closed bfaa3ee7588b6f6be9799882c6ed6472357d988fac31512d5e92fe28f57029c6
+P 314c606dd36e03d2ded899c536585ea21250af56b553fa4c96dc714cb5099522
+R a9c1137cb0a1880ef7ace69df297b1fe
 U drh
-Z 353d2b1e26c72a6c71622b8679ecfa79
+Z f9b2b2148aa55df305d649103f2dcab2
 # Remove this line to create a well-formed Fossil manifest.
