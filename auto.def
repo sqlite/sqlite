@@ -197,6 +197,7 @@ set flags {
     performance by as much as 4x, as it includes large numbers of
     assert()s in performance-critical loops.  Never use --with-debug
     for production builds.}
+  scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
@@ -1290,6 +1291,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
+  scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS
 } {
   proj-if-opt-truthy $boolFlag {
     sqlite-add-feature-flag $featureFlag
