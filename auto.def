@@ -1291,7 +1291,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
-  scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS
+  scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
 } {
   proj-if-opt-truthy $boolFlag {
     sqlite-add-feature-flag $featureFlag
