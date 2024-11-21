@@ -10411,7 +10411,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
-  if( c=='s' && cli_strncmp(azArg[0], "scanstats", n)==0 ){
+  if( c=='s' &&
+     (cli_strncmp(azArg[0], "scanstats",  n)==0 ||
+      cli_strncmp(azArg[0], "scanstatus", n)==0)
+  ){
     if( nArg==2 ){
       if( cli_strcmp(azArg[1], "vm")==0 ){
         p->scanstatsOn = 3;
