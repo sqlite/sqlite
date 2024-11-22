@@ -1248,11 +1248,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
-      if( wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK') ) {
-        T.assert( !this.progressHandlerCount );
-      }else{
-        T.assert( 1===this.progressHandlerCount, "Checking this.progressHandlerCount" );
-      }
       let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
