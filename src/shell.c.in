@@ -6632,7 +6632,6 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   sqlite3_stmt *pStmt = 0;
   sqlite3_int64 nPage = 0;
   int pgSz = 0;
-  const char *zFilename;
   const char *zTail;
   char *zName = 0;
   int rc, i, j;
@@ -6660,17 +6659,15 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   if( nPage<1 ) goto dbtotxt_error;
   rc = sqlite3_prepare_v2(p->db, "PRAGMA databases", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  rc = 0;
   if( sqlite3_step(pStmt)!=SQLITE_ROW ){
-    zTail = zFilename = "unk.db";
+    zTail = "unk.db";
   }else{
-    zFilename = (const char*)sqlite3_column_text(pStmt, 2);
+    const char *zFilename = (const char*)sqlite3_column_text(pStmt, 2);
     if( zFilename==0 || zFilename[0]==0 ) zFilename = "unk.db";
     zTail = strrchr(zFilename, '/');
 #if defined(_WIN32)
     if( zTail==0 ) zTail = strrchr(zFilename, '\\');
 #endif
-    if( zTail ) zFilename = zTail;
   }
   zName = strdup(zTail);
   shell_check_oom(zName);
@@ -6681,7 +6678,6 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   rc = sqlite3_prepare_v2(p->db,
            "SELECT pgno, data FROM sqlite_dbpage ORDER BY pgno", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  rc = 0;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     sqlite3_int64 pgno = sqlite3_column_int64(pStmt, 0);
     const u8 *aData = sqlite3_column_blob(pStmt, 1);
