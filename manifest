@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.47.1
-D 2024-11-22T11:18:52.082
+C Document\sthat\s-nofollow\sdoes\snot\swork\son\sWindows.\s\sFix\sWindows\ssymlink\ntest\scases\sfor\swhen\sthe\stest\ssuite\sis\srun\sas\sadministrator.
+D 2024-11-22T11:27:45.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -757,7 +757,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 0ad4e0885294b3a0e135a18533590ec9ad91ffe82f6a08e55b40babd51772928
-F src/os_win.c 69fa1aaff68270423c85cff4327ba17ef99a1eb017e1a2bfb97416d9b8398b05
+F src/os_win.c 4e2f9f8845ff5cf21b15cb66cbfa0e34330bb536332d458d80597705ce6c866c
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c d57287cd0864c88740d20618e5e595b144b85bfdaefccafd353d596f254a7b35
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
@@ -1705,7 +1705,7 @@ F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27c
 F test/swarmvtab3.test 41a3ab47cb7a834d4e5336425103b617410a67bb95d335ef536f887587ece073
 F test/swarmvtabfault.test 8a67a9f27c61073a47990829e92bc0c64420a807cb642b15a25f6c788210ed95
 F test/symlink.test 4368af0e213dd6e726a6240a16f2bb96a5a58f83f2d5d60652f27547b28cbf06
-F test/symlink2.test 9531f475a53d8781c4f81373f87faf2e2aff4f5fb2102ec6386e0c827916a670
+F test/symlink2.test bf932ff7fe95c9dbb39d2a990df9098b0ea943233c97e40098e0a8d6b559a96f
 F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d4333092
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
@@ -2221,8 +2221,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b50d20d7951311f1fbf37b228687990f515d2d5189d5c4892b771081298e0af5
-R 60593cde2bae2cd35355455a9311e4a5
+P b6942a0b2f4a3dc7e09487f1ebf6129211be565283f95ff83823b057f628208f
+Q +4de8a75ec5a2e3655a2d0c5a9333b58f8b48b681255f0a01866b610ae6249bc2
+R 55c48984bbf3da24ef529c26f7a18533
 U drh
-Z a10168911db0dcdce090c15cd1bdfd1a
+Z d79796fd03f81f302d3298446cdd2d14
 # Remove this line to create a well-formed Fossil manifest.
