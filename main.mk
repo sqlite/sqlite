@@ -105,6 +105,9 @@ TCLSH_CMD ?= tclsh
 # JIMSH requires a leading path component, even if it's ./, so that it
 # can be used as a shell command.
 #
+# On Windows platforms, if -DHAVE_REALPATH does not work then try
+# -DHAVE__FULLPATH (note the double-underscore).
+#
 CFLAGS.jimsh ?= -DHAVE_REALPATH
 JIMSH ?= ./jimsh$(T.exe)
 #
@@ -119,12 +122,12 @@ B.tclsh ?= $(JIMSH)
 
 #
 # Autotools-conventional vars which are (in this tree) used only by
-# package installation rules.
+# package installation rules and for generating sqlite3.pc (pkg-config
+# data file).
 #
 # The following ${XYZdir} vars are provided for the sake of clients
 # who expect to be able to override these using autotools-conventional
-# dir name vars. In this build they apply only to installation-related
-# rules.
+# dir name vars.
 #
 prefix      ?= /usr/local
 datadir     ?= $(prefix)/share
@@ -202,17 +205,22 @@ ENABLE_STATIC ?= 1
 #
 # 1 if the amalgamation (sqlite3.c/h) should be built/used, otherwise
 # the library is built from all of its original source files.
+# Certaint tools, like sqlite3$(T.exe), require the amalgamation and
+# will ignore this preference.
 #
 USE_AMALGAMATION ?= 1
 #
 # $(LINK_TOOLS_DYNAMICALLY)
 #
-# If true, certain binaries which typically statically link against
+# If 1, certain binaries which typically statically link against
 # libsqlite3 or its component object files will instead link against
 # the DLL. The caveat is that running such builds from the source tree
 # may require that the user specifically prepend "." to their
 # $LD_LIBRARY_PATH so that the dynamic linker does not pick up a
-# libsqlite3.so from outside the source tree.
+# libsqlite3.so from outside the source tree. Alternately, symlinking
+# the in-build-tree $(libsqlite3.SO) to some dir in the system's
+# library path will work for giving the apps access to the in-tree
+# DLL.
 #
 LINK_TOOLS_DYNAMICALLY ?= 0
 #
@@ -227,16 +235,21 @@ AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 # Preprocessor flags for enabling and disabling specific libsqlite3
 # features (-DSQLITE_OMIT*, -DSQLITE_ENABLE*). The same set of OMIT
 # and ENABLE flags must be passed to the LEMON parser generator and
-# the mkkeywordhash tool as well.
+# the mkkeywordhash tool as well. This is normally set by the
+# configure process, and passing a custom value to a
+# coonfigure-filtered Makefile may not work.
 #
-# Add OPTIONS=... on the make command line to append additional options
-# to the OPT_FEATURE_FLAGS. Note that some flags only work if the
-# build is specifically configured to account for them. Adding them
-# later, when compiling the amalgamation, may or may not work.
+# When using the canonical makefile, add $(OPTIONS)=... on the make
+# command line to append additional options to the
+# $(OPT_FEATURE_FLAGS). Note that some flags, because they influence
+# generation of the SQL parser, only work if the build is specifically
+# configured to account for them. Adding them later, when compiling
+# the amalgamation separately, may or may not work.
 #
-# TO CLARIFY: OPTS=... has historically been expected in some
-# contexts, and is distinctly different from OPTIONS and
-# OPT_FEATURE_FLAGS, but its name is confusingly close to $(OPTIONS).
+# $(OPTS)=... is another way of influencing C compilation. It is
+# distinctly separate from $(OPTIONS) and $(OPT_FEATURE_FLAGS) but,
+# like those, $(OPTS) applies to all invocations of $(T.cc). The
+# configure process does not set either of $(OPTIONS) or $(OPTS).
 #
 OPT_FEATURE_FLAGS ?=
 #
@@ -248,15 +261,17 @@ SHELL_OPT ?=
 #
 # TCL_CONFIG_SH must, for some of the build targets, refer to a valid
 # tclConfig.sh. That script will be used to populate most of the other
-# TCL-related vars the build needs.
+# TCL-related vars the build needs. The core library does not require
+# TCL, but TCL is needed for running tests and certain tools, e.g.
+# sqlite3_analyzer.
 #
 TCL_CONFIG_SH ?=
 #
 # $(HAVE_WASI_SDK) =
 #
-# 1 when building with the WASI SDK. This disables certain build
-# targets. It is expected that the invoker assigns CC to the wasi-sdk
-# CC.
+# Set to 1 when building with the WASI SDK. This disables certain
+# build targets. It is expected that the invoker sets $(CC), $(LD),
+# and $(AR) to their counterparts from the wasi-sdk.
 #
 HAVE_WASI_SDK ?= 0
 #
@@ -312,22 +327,21 @@ T.cc += $(CFLAGS.core) $(CFLAGS.env)
 # The legacy build applied such LDFLAGS to all link operations for all
 # deliverables. The 3.48+ build applies them (as of this writing) more
 # selectively: search this file LDFLAGS.configure to see where they're
-# set. As of this writing, they only affect targets which use
-# $(LDFLAGS.libsqlite3) - see that var's docs for details.
+# set.
 #
 LDFLAGS.configure ?=
 
 #
 # The difference between $(OPT_FEATURE_FLAGS) and $(OPTS) is that the
-# former is historically provided by the configure script, whereas the
-# latter is intended to be provided as arguments to the make
+# former is historically provided by the configure script, whereas
+# $(OPTS) is intended to be provided as arguments to the make
 # invocation.
 #
 T.cc += $(OPT_FEATURE_FLAGS)
 
 #
 # Add in any optional global compilation flags on the make command
-# line ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+# line i.e.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
 #
 T.cc += $(OPTS)
 

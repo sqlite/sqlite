@@ -1,5 +1,5 @@
-C Remove\sthe\slibsqlite3.so.3\slink\sfrom\sthe\sinstallation\sprocess,\sas\sit\snow\sserves\sno\sfunctional\spurpose.\sWe\sretain\slibsqlite3.so.0\s(A)\sfor\scompatibility\swith\sclients\slinked\sagainst\slegacy\sbuilds\sand\s(B)\s0\sis\sstill\svalid\sas\sthe\slibrary's\sABI\sversion.
-D 2024-11-22T13:47:12.667
+C Makefile\sdoc\scleanups.\sNo\sfunctional\schanges.
+D 2024-11-22T14:12:18.841
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 9c6c9473eb83a72a4cd80aab95c7dd64bb59286c151d5745091a5a178d111c84
+F main.mk b19ce37b58d9378b89e868d9ef9546c0068e5e6b49b02e44e600b752519e888f
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c78dcc318a36af123676e54d85fc7f980c21b0ea366d164a96e2d998286d3813
-R c696fe78d3d189a1b874e36c608737fb
+P 91bd9813e04e34e088d5e73bfe2a4f338513363d9a99095a232b811c6b616354
+R 0e0e7948374fb4ea8d89262652e0cc24
 U stephan
-Z 044fe3be3927265c623f70a401222db0
+Z c67cb4da7f21bbdaef588069bb0cb4d5
 # Remove this line to create a well-formed Fossil manifest.
