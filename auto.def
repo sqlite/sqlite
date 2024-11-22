@@ -866,7 +866,7 @@ apply {{} {
     }
   }
   msg-result $ts
-  define TEMP_STORE $tsn
+  sqlite-add-feature-flag -DSQLITE_TEMP_STORE=$tsn
 }}
 
 ########################################################################

@@ -185,11 +185,6 @@ B.tclsh = @BTCLSH@
 $(B.tclsh):
 
 #
-# $(CFLAGS.libsqlite3) is documented in main.mk.
-#
-CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
-
-#
 # $(OPT_FEATURE_FLAGS) is documented in main.mk.
 #
 # The appending of $(OPTIONS) to $(OPT_FEATURE_FLAGS) is historical
