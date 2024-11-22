@@ -1,5 +1,5 @@
-C Document\sthat\s-nofollow\sdoes\snot\swork\son\sWindows.\s\sFix\sWindows\ssymlink\ntest\scases\sfor\swhen\sthe\stest\ssuite\sis\srun\sas\sadministrator.
-D 2024-11-22T11:27:45.563
+C Fix\ssome\sharmless\sscanbuild\swarnings\sin\sthe\sshell.
+D 2024-11-22T12:12:06.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -61,7 +61,7 @@ F ext/consio/console_io.h b5ebe34aa15b357621ebbea3d3f2e2b24750d4280b5802516409e2
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 1d2da6606623b57bb47064e02140823ce1daecd4cacbf402c73ad3473d7f000c
-F ext/expert/sqlite3expert.c 9d87c5eeb86707e4dbf140ca20a32935f88cfb5d8da94a406b7e0f0cdb815af6
+F ext/expert/sqlite3expert.c 494a6b7d4e0ead6dec6a50109dd78fcc054bb1a3fcc29c6f25e06a3685ed557e
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c b767b2039a0df707eb3147e86bcf68b252d8455d9a41774b1a836cd052ceca70
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -773,7 +773,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
-F src/shell.c.in 0662f9bcf0725461778d0254a06150e5d61c08c5a87a7281ccdf45552050c79d
+F src/shell.c.in b76590ad53010e3df2d311b1eb23d62029a6dca8a1b93e4dea7f38b9782ae694
 F src/sqlite.h.in 29fc900a58f394c7488d093fd7a8dcb14d3fa6399d5178cb20adcf88dbedfe39
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
@@ -2221,9 +2221,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b6942a0b2f4a3dc7e09487f1ebf6129211be565283f95ff83823b057f628208f
-Q +4de8a75ec5a2e3655a2d0c5a9333b58f8b48b681255f0a01866b610ae6249bc2
-R 55c48984bbf3da24ef529c26f7a18533
+P 3f76388a47bd4cc181ce2e72c72d5e235edcae251785990dc568665016ec34a5
+Q +9ba1c9b505d459366274043c1c5327f1a9d4e15d3564d99f8a15926af1d6d247
+R 830ed0e17a459be6dde5351da1b3d293
 U drh
-Z d79796fd03f81f302d3298446cdd2d14
+Z 36032580ee81d6864eb7061de627a952
 # Remove this line to create a well-formed Fossil manifest.
