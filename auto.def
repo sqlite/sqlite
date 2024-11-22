@@ -204,7 +204,14 @@ set flags {
   linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
-  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
+  soname:=legacy       =>
+    {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+     soname. "legacy" sets it to its historical value of
+     libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+     it to that literal value. Any other value is assumed to be a
+     suffix which gets applied to "libsqlite3.so.",
+     e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
+    }
   # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
   # </developer>
 }
@@ -475,22 +482,27 @@ proj-check-rpath  ; # Determine proper rpath-handling flag
 apply {{} {
   define LDFLAGS_LIBSQLITE3_SONAME ""
   if {[proj-opt-was-provided soname]} {
-    set soname [opt-val soname]
+    set soname [join [opt-val soname] ""]
   } else {
     set soname none; # enabling soname breaks linking for the --dynlink-tools feature
   }
   switch -exact -- $soname {
-    none   { return 0 }
-    auto   { set soname libsqlite3.so.3 }
-    legacy { set soname libsqlite3.so.0 }
+    none - "" { return 0 }
+    auto      { set soname libsqlite3.so.3 }
+    legacy    { set soname libsqlite3.so.0 }
     default {
-      proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
+      if {[string match libsqlite3.* $soname]} {
+        # use it as-is
+      } else {
+        # Assume it's a suffix
+        set soname "libsqlite3.so.${soname}"
+      }
     }
   }
   msg-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
     define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
-    msg-result "Setting SONAME: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
+    msg-result "Setting SONAME using: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
   } elseif {[proj-opt-was-provided soname]} {
     # --soname was explicitly requested but not available, so fail fatally
     proj-fatal "This environment does not support SONAME."
