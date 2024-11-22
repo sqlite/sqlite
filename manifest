@@ -1,5 +1,5 @@
-C Add\slinks\sto\s[/forumpost/5a3b44f510df8ded|the\sSONAME\sdiscussion]\sat\srelevant\splaces\sin\sauto.def\sand\sthe\smakefiles.\sNo\sfunctional\schanges.
-D 2024-11-22T13:22:25.012
+C Remove\sthe\slibsqlite3.so.3\slink\sfrom\sthe\sinstallation\sprocess,\sas\sit\snow\sserves\sno\sfunctional\spurpose.\sWe\sretain\slibsqlite3.so.0\s(A)\sfor\scompatibility\swith\sclients\slinked\sagainst\slegacy\sbuilds\sand\s(B)\s0\sis\sstill\svalid\sas\sthe\slibrary's\sABI\sversion.
+D 2024-11-22T13:47:12.667
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk b917f0d5e6aecc035a91132dd476a7a377af493a8e57e44b852a8b9581566800
+F main.mk 9c6c9473eb83a72a4cd80aab95c7dd64bb59286c151d5745091a5a178d111c84
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 554d8fbd865436ace900859874b6c8c7e1b782184158a86b7788644e27bd1997
-R 98e9659ab220b4d9f62564eeb9669425
+P c78dcc318a36af123676e54d85fc7f980c21b0ea366d164a96e2d998286d3813
+R c696fe78d3d189a1b874e36c608737fb
 U stephan
-Z 498e6bdf598b32247f18c53c3d6f4d47
+Z 044fe3be3927265c623f70a401222db0
 # Remove this line to create a well-formed Fossil manifest.

@@ -1414,9 +1414,12 @@ all: so
 # and create symlinks which point to it:
 #
 # - libsqlite3.so.$(PACKAGE_VERSION)
-# - libsqlite3.so.3 =symlink-> libsqlite3.so.$(PACKAGE_VERSION)
-# - libsqlite3.so.0 =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
-# - libsqlite3.so   =symlink-> libsqlite3.so.3
+# - libsqlite3.so.0      =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
+# - libsqlite3.so        =symlink-> libsqlite3.so.3
+#
+# N.B. we initially had a link named libsqlite3.so.3 but it's
+# unnecessary unless we want to set SONAME to libsqlite3.so.3, which
+# is also unnecessary.
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1442,7 +1445,7 @@ all: so
 #    down-side of this is that it may upset packaging tools when we
 #    replace libsqlite3.so (from a legacy package) with a new symlink.
 #
-# 2) If INSTALL_SO_086_LINKS=1 and point (1) does not apply then links
+# 2) If INSTALL_SO_086_LINK=1 and point (1) does not apply then links
 #    to the legacy-style names are created. The primary intent of this
 #    is to enable chains of operations such as the hypothetical (apt
 #    remove sqlite3-3.47.0 && apt install sqlite3-3.48.0). In such
@@ -1456,10 +1459,9 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
 	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
 		cd "$(install-dir.lib)" || exit $$?; \
-		rm -f $(libsqlite3.SO).3 $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
-		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).3 || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
 		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
 		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
@@ -1467,8 +1469,8 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		elif [ x1 = "x$(INSTALL_SO_086_LINKS)" ]; then \
-			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINKS=1"; \
+		elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
+			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
