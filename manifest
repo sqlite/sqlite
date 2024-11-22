@@ -1,5 +1,5 @@
-C Make\s".scanstatus"\san\sundocumented\salternative\sname\sfor\s".scanstats"\sin\sthe\sCLI.
-D 2024-11-21T20:57:11.560
+C Fix\sharmless\scompiler\swarning\scaused\sby\s[c77a4a42f2e3d164].
+D 2024-11-22T12:00:31.024
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -737,7 +737,7 @@ F src/insert.c f8d1a0f8ee258411009c6b7f2d93170e351bd19f5ad89d57e1180644297cbe70
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 9f4286302727f58fddc03a820d24cb7618a1e27473501792fbe979726f846d1f
+F src/main.c efacea3a809ba236233c4bc7648e623c28cb5fd1e1a343e74fe772005f142d8c
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e527dcd016fbeb55b0e613a0b3b95350bbc8b3ee601bbadfedaf6bd5458b3570
-R de7a1058dc7d9edb28df5fa9d0ef82bc
+P f20688efc2bc54648618b0aa2593a771f455ee8cc703b52273452d15e680b67c
+R 2bcc1bc731850fcd4834b7042e1e5235
 U drh
-Z d8274e63f396ef1ba4c0c2282830a6d5
+Z 694866e50c564ff1bf4fd8cdd52185ff
 # Remove this line to create a well-formed Fossil manifest.
