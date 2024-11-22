@@ -4034,7 +4034,7 @@ static const char *tclsh_main_loop(void){
 #ifdef WIN32
       "set new [list]\n"
       "foreach arg $argv {\n"
-        "if {[file exists $arg]} {\n"
+        "if {[string match -* $arg] || [file exists $arg]} {\n"
           "lappend new $arg\n"
         "} else {\n"
           "set once 0\n"
