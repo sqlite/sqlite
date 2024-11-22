@@ -162,7 +162,7 @@ LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shlib ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
-LDFLAGS.soname.libsqlite3 ?=
+LDFLAGS.soname.libsqlite3 ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary across platforms

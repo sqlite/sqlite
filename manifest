@@ -1,9 +1,9 @@
-C Fix\sharmless\sscanbuild\swarnings\scaused\sby\sthe\sintroduction\sof\sthe\n".dbtotxt"\scommand\sinto\sthe\sCLI\sby\scheck-in\s[b43acf5a8cd4a5ef].
-D 2024-11-22T12:29:35.356
+C Add\slinks\sto\s[/forumpost/5a3b44f510df8ded|the\sSONAME\sdiscussion]\sat\srelevant\splaces\sin\sauto.def\sand\sthe\smakefiles.\sNo\sfunctional\schanges.
+D 2024-11-22T13:22:25.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in b22a52dc08b8a727c298af4f93171b2862df1d6fce4c255b15f6ce1011a9ee7d
+F Makefile.in d0ad8cdcb5a0492eee78b7ae74ace1213294649a547ba90d15e9c39cc08fdbb4
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def c71f141cbeca906b157827959ca556eb19f762428fa7f5001161e5d21093178f
+F auto.def 7cc8f9f228a234db7955ce9061bef85b74162cd890afaaf6338ebc49fa04b2de
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk e3873a2363bef0fb8e3a65a21e548ce1aa9aeeb3795362c3e78346e655d501a4
+F main.mk b917f0d5e6aecc035a91132dd476a7a377af493a8e57e44b852a8b9581566800
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9ba1c9b505d459366274043c1c5327f1a9d4e15d3564d99f8a15926af1d6d247
-R 0f0539622ac4b0da7137e3fd709352f4
-U drh
-Z 816c51d5e78086444b5f5aa51a7c35b5
+P 554d8fbd865436ace900859874b6c8c7e1b782184158a86b7788644e27bd1997
+R 98e9659ab220b4d9f62564eeb9669425
+U stephan
+Z 498e6bdf598b32247f18c53c3d6f4d47
 # Remove this line to create a well-formed Fossil manifest.

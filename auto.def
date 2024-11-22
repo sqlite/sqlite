@@ -205,7 +205,7 @@ set flags {
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
   soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
-  # --soname has a long story behind it, as well as no small amount of uncertainty.
+  # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
