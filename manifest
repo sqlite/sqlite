@@ -1,5 +1,5 @@
-C Supports\sSQLITE_ENABLE_SETLK_TIMEOUT\son\swindows.\sDoes\snot\swork\sproperly\syet.
-D 2024-11-22T21:24:08.721
+C Fixes\sfor\scode\son\sthis\sbranch.\sNow\sappears\sto\swork,\sbut\sis\snot\stested\swell.
+D 2024-11-25T16:54:10.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -759,7 +759,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c d4a33e8fbd1c6eb722a21b6ce1eee1213ec856170a2f256d99f3d2978f054f5a
-F src/os_win.c 2ed170fb6dba67952b7f07dfee71bb854463fb2fb51b0289fce5dec0fd075b0f
+F src/os_win.c 89ba97de6b7b022a4955cc63cc75535ed8d792be8e68455c753996ebef7ec9ba
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
@@ -2199,11 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0fe1622cec95b7ebecc127ee57a08113d3da1dadbe72c03a13d6751b3043e50f
-R ee8b39ab71f10eb6a0db7f5e0c48bbd2
-T *branch * win32-enable-setlk
-T *sym-win32-enable-setlk *
-T -sym-trunk *
+P 737ca8a9fb9dc74b28f2186d93c5101463497445d0fabba3def61fee29abf2c8
+R 67627b8a16f9542753e5ce4ea1a59b13
 U dan
-Z e8f9e025559e2dfd331c377d699a5f1c
+Z aaacd08c676a64c2d5781697fad0f96f
 # Remove this line to create a well-formed Fossil manifest.

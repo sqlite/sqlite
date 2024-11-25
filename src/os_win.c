@@ -16,6 +16,11 @@
 #if SQLITE_OS_WIN               /* This file is used for Windows only */
 
 /*
+** TODO: This must not clash with any other SQLITE_OPEN_XXX flag in sqlite3.h.
+*/
+#define WIN32_OPEN_SHM 0x80000000
+
+/*
 ** Include code that is common to all os_*.c files
 */
 #include "os_common.h"
@@ -2559,7 +2564,7 @@ static BOOL winLockFile(
 ** SQLITE_BUSY_TIMEOUT otherwise. Or, if an error occurs, SQLITE_IOERR.
 */
 static int winLockFileTimeout(
-  LPHANDLE phFile,
+  HANDLE hFile,
   sqlite3_mutex *pMutex,
   DWORD offset,
   DWORD nByte,
@@ -2571,37 +2576,43 @@ static int winLockFileTimeout(
   BOOL ret;
 
 #if !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
-  ret = winLockFile(phFile, flags, offset, 0, nByte, 0);
+  ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
 #else
   if( !osIsNT() ){
-    ret = winLockFile(phFile, flags, offset, 0, nByte, 0);
+    ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
   }else{
     OVERLAPPED ovlp;
     memset(&ovlp, 0, sizeof(OVERLAPPED));
     ovlp.Offset = offset;
+
     if( nMs>0 ){
       ovlp.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
       if( ovlp.hEvent==NULL ){
         return SQLITE_IOERR;
       }
+      flags &= ~LOCKFILE_FAIL_IMMEDIATELY;
     }
 
-    ret = osLockFileEx(*phFile, flags, 0, nByte, 0, &ovlp);
-
-    if( nMs>0 ){
-      if( !ret ){
-        DWORD res = WaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
-        if( res==WAIT_OBJECT_0 ){
-          /* Successfully obtained the lock. */
-          ret = TRUE;
-        }else if( res==WAIT_TIMEOUT ){
-          /* Timeout */
+    ret = osLockFileEx(hFile, flags, 0, nByte, 0, &ovlp);
+    if( !ret && nMs>0 && GetLastError()==ERROR_IO_PENDING ){
+      DWORD res = WaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
+      if( res==WAIT_OBJECT_0 ){
+        /* Successfully obtained the lock. */
+        ret = TRUE;
+      }else{
+        if( res==WAIT_TIMEOUT ){
           rc = SQLITE_BUSY_TIMEOUT;
         }else{
           /* Some other error has occurred */
           rc = SQLITE_IOERR;
         }
+        
+        /* Cancel the LockFileEx() if it is still pending. */
+        CancelIo(hFile);
       }
+    }
+
+    if( nMs>0 ){
       CloseHandle(ovlp.hEvent);
     }
   }
@@ -3954,7 +3965,7 @@ static int winShmSystemLock(
   }else{
     /* Initialize the locking parameters */
 #if SQLITE_ENABLE_SETLK_TIMEOUT
-    rc = winLockFileTimeout(&pShmNode->hFile.h, pShmNode->mutex, ofst, nByte, 
+    rc = winLockFileTimeout(pShmNode->hFile.h, pShmNode->mutex, ofst, nByte, 
         (lockType==WINSHM_WRLCK), pDbFd->iBusyTimeout);
 #else
     DWORD dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
@@ -4110,7 +4121,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
   if( pShmNode ){
     sqlite3_free(pNew);
   }else{
-    int inFlags = SQLITE_OPEN_WAL;
+    int inFlags = SQLITE_OPEN_WAL | WIN32_OPEN_SHM;
     int outFlags = 0;
 
     pShmNode = pNew;
@@ -5441,6 +5452,15 @@ static int winOpen(
   ** better if FILE_FLAG_RANDOM_ACCESS is used.  Ticket #2699. */
 #if SQLITE_OS_WINCE
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
+#endif
+
+  /* If we are really opening a *-shm file, and ENABLE_SETLK is defined,
+  ** open the file for overlapped-IO. This is to facilitate blocking locks
+  ** with timeouts, which use asynchronous IO on windows.  */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  if( flags & WIN32_OPEN_SHM ){
+    dwFlagsAndAttributes |= FILE_FLAG_OVERLAPPED;
+  } 
 #endif
 
   if( osIsNT() ){
