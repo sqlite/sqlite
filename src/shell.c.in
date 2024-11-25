@@ -12231,7 +12231,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
   char cWait = (char)qss; /* intentional narrowing loss */
   if( cWait==0 ){
   PlainScan:
-    assert( cWait==0 );
     while( (cin = *zLine++)!=0 ){
       if( IsSpace(cin) )
         continue;
@@ -12283,7 +12282,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
           if( *zLine != '/' )
             continue;
           ++zLine;
-          cWait = 0;
           CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
@@ -12295,7 +12293,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
           }
           deliberate_fall_through;
         case ']':
-          cWait = 0;
           CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
