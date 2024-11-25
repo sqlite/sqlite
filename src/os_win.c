@@ -2579,7 +2579,9 @@ static int winLockFileTimeout(
   ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
 #else
   if( !osIsNT() ){
+    sqlite3_mutex_enter(pMutex);
     ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
+    sqlite3_mutex_leave(pMutex);
   }else{
     OVERLAPPED ovlp;
     memset(&ovlp, 0, sizeof(OVERLAPPED));
@@ -2593,7 +2595,10 @@ static int winLockFileTimeout(
       flags &= ~LOCKFILE_FAIL_IMMEDIATELY;
     }
 
+    sqlite3_mutex_enter(pMutex);
     ret = osLockFileEx(hFile, flags, 0, nByte, 0, &ovlp);
+    sqlite3_mutex_leave(pMutex);
+
     if( !ret && nMs>0 && GetLastError()==ERROR_IO_PENDING ){
       DWORD res = WaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
       if( res==WAIT_OBJECT_0 ){
