@@ -1,5 +1,5 @@
-C Fix\sanother\sissue\sin\sargument\sexpansion\son\sWindows\sfor\stclsqlite3.c\sin\ninterpreter\smode.\s\sProblem\sintroduced\sby\scheck-in\s[9b87ea219bce5689]\sand\nunfixed\sby\s[cd942dce148c9d8f].
-D 2024-11-22T17:41:00.227
+C Correct\sduplicated\ssoname\slinker\sflags,\sone\sof\sthem\smis-named.
+D 2024-11-25T17:07:58.248
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -696,7 +696,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 01e9b77600f8551df7f970075c09ad9e1898bf2adf512cb861d24b30fb1e6f52
+F main.mk 1ec3c7a81198397b14bf75c9304f01e891a5d464797cd402d4f3781feadd3331
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3d6ae13805bdba4c73b7443f20073264cdd157299cb911228600e1528a136bb1
-R f112fd2beffd3eb814301c3676676b3e
-U drh
-Z 113c5b5aab1719624bc6c7ebe0ae9b2d
+P 0fe1622cec95b7ebecc127ee57a08113d3da1dadbe72c03a13d6751b3043e50f
+R 24cbca38f84059cbe901864cddc225cb
+U stephan
+Z 31635988b0bdb23e0fcab35446e8136f
 # Remove this line to create a well-formed Fossil manifest.
