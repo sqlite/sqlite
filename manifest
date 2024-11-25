@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\shandling\sOOM\serrors\sin\sfts3\sthat\scould\soccur\swhen\sparsing\smulti-token\sstrings.
-D 2024-11-22T18:50:46.101
+C Version\s3.47.1
+D 2024-11-25T12:07:48.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2221,9 +2221,10 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcef1992d55de1a8ff183baf355ec4cca23131343c6a6b30bb587aabf431d051
-Q +4c4d1db00bd2c522165876dcf1606116a72525d9ffc891b266213704e25cde55
+P c8dcac33402daef74b6e55efaa9fcf38a7a5f3e3efcc34111e653ddb33ae944e
 R 180a3706adfbae65a554eaaa0f792804
+T +sym-release *
+T +sym-version-3.47.1 *
 U drh
-Z 10993d1be60deda4aa787f15c76c0561
+Z 09a5352ad545f8998a19096120ca8910
 # Remove this line to create a well-formed Fossil manifest.
