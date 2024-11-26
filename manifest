@@ -1,5 +1,5 @@
-C Update\sfts5\sso\sthat\sthe\sxInstToken()\sextension\sAPI\sworks\swith\sprefix\squeries.
-D 2024-11-26T20:46:18.270
+C Provide\sa\stwo-argument\sversion\sof\sthe\siif()\sfunction,\splus\san\salternative\nspelling\sthat\sonly\srequires\sa\ssingle\s"i".
+D 2024-11-26T20:56:03.273
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -729,7 +729,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c a9d9f5fdfbdd3b2c94d7af1b11f181464b8a641736cf32cb92fa3c5e7ecb30df
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c fa138d44348e189817542f6efa6232420b3e0081c835ced65883adc7fd777d65
+F src/func.c 49489dcce46d2d491cedb451e974264150c473e5f5bba448498a9aa4c1993537
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -1102,7 +1102,7 @@ F test/e_createtable.test 31b9bcb6ac8876bc7ec342d86d9c231a84c62b442093a6651dfd0f
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test b950818a48269506d75a41c819003bd77a0893bc4a4f2fdee191bc74109c1a87
+F test/e_expr.test 4faef475076f676e2a009270dbd3a7658db30d12dc3d21e4b85cab5f50be18c5
 F test/e_fkey.test feeba6238aeff9d809fb6236b351da8df4ae9bda89e088e54526b31a0cbfeec5
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -2201,9 +2201,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 00dffd10f0c77fed53bdbf1536f6ef9b6076775f1b9a10794b87e3ace33ca1d9 f1e44f703acb415e2ff7d7f87fa05fc874ef1c432095bb3ccb45c6ad2fd085a9
-R 602e6f17d656c7098c104c9738f971e9
-T +closed f1e44f703acb415e2ff7d7f87fa05fc874ef1c432095bb3ccb45c6ad2fd085a9
-U dan
-Z 2fe59ff619562212dac3a249eb517d01
+P 41b79bde4a4b6510b41cc9175ff2527fbd3ca9209812361783754f24cf67ef9e
+R 95cdbd2d905cbccddf7c07f68d5125cd
+T *branch * two-argument-iif
+T *sym-two-argument-iif *
+T -sym-trunk *
+U drh
+Z 4fbc11636a3ec850ec89d3d2892ea5e5
 # Remove this line to create a well-formed Fossil manifest.
