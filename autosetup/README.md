@@ -14,6 +14,7 @@ build infrastructure. It is not an [Autosetup][] reference.
   - Symbolic Names of Feature Flags
   - Do Not Update Global Shared State
 - [Updating Autosetup](#updating)
+  - [Patching Autosetup for Project-local changes](#patching)
 
 ------------------------------------------------------------------------
 
@@ -304,8 +305,22 @@ $ fossil status # show the modified files
 ```
 
 Unless the upgrade made any incompatible changes (which is exceedingly
-rare), that's all there is to it. Check over the diff, test the
-configure process, and check it in.
+rare), that's all there is to it.  Then **apply a patch for the change
+described in the following section**, test the configure process, and
+check it in.
+
+<a name="patching"></a>
+Patching Autosetup for Project-local Changes
+------------------------------------------------------------------------
+
+Autosetup reserves the flag name **`--debug`** for its own purposes,
+and its own special handling of `--enable-...` flags makes `--debug`
+an alias for `--enable-debug`. As we have a long history of using
+`--enable-debug` for this project's own purposes, we patch autosetup
+to use the name `--autosetup-debug` in place of `--debug`. That
+requires (as of this writing) four small edits in
+[](/file/autosetup/autosetup), as demonstrated in [check-in
+3296c8d3](/info/3296c8d3).
 
 
 

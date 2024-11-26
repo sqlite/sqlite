@@ -36,7 +36,8 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 # 1) --debug is used by autosetup itself, so we have to rename it to
 # --with-debug. We cannot use --enable-debug because that is, for
-# autosetup, and alias for --debug=1.
+# autosetup, and alias for --debug=1. Alternately, we can patch
+# autosetup to use --autosetup-debug for its own purposes instead.
 #
 # 2) In autosetup, all flags starting with (--enable, --disable) are
 # forced to be booleans and receive special handling in how they're
@@ -195,10 +196,13 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
-  with-debug:=1        =>
+  # Note that using the --debug/--enable-debug flag here requires patching
+  # autosetup/autosetup to rename the --debug to --autosetup-debug.
+  with-debug=0
+  debug=0              =>
     {Enable debug build flags. This option will impact performance by
      as much as 4x, as it includes large numbers of assert()s in
-     performance-critical loops.  Never use --with-debug for production
+     performance-critical loops.  Never use --debug for production
      builds.}
   scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
@@ -234,6 +238,7 @@ unset flags
 proj-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
+  with-debug => debug
 }
 
 set srcdir $::autosetup(srcdir)
@@ -339,7 +344,7 @@ proj-if-opt-truthy dev {
   # which check for these flags will show the user their updated
   # state.
   proj-opt-set all 1
-  proj-opt-set with-debug 1
+  proj-opt-set debug 1
   proj-opt-set amalgamation 0
   define CFLAGS [get-env CFLAGS {-O0 -g}]
 }
@@ -515,7 +520,7 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
 
 msg-checking "SQLITE_DEBUG build? "
-proj-if-opt-truthy with-debug {
+proj-if-opt-truthy debug {
   define SQLITE_DEBUG 1
   define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
   msg-result yes

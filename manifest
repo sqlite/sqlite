@@ -1,5 +1,5 @@
-C Move\ssome\sof\sthe\sin-comment\sconfigure\sscript\shelp\stext\sinto\sthe\s--help\stext.\sNo\sfunctional\schanges.
-D 2024-11-26T16:12:05.631
+C Patch\sautosetup\sto\srename\s--debug\sto\s--autosetup-debug\sso\swe\scan\suse\s--debug/--enable-debug\sfor\sits\shistorical\spurpose.\sUpdate\sautosetup/README.md\swith\sdetails\sof\sthe\spatch.
+D 2024-11-26T19:19:12.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def cb4d2a6a3809c3c015ad1d1e5a06836697f78e31b38f154cc20a7b0cb350e0d1
+F auto.def 961d2cf22b65d31f9eb97470b50cbbdca34b999cf86f438811c1ec214b296b8b
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -37,8 +37,8 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md f12fd1556b50ff33ebf5c1476f4640c6010b3093ba8d75ba12b5417884011d5e
-F autosetup/autosetup 9416ffdcdd6e2dbf7f6d1e5c890078518930f8af7722a950eacc28c7f151d2d6 x
+F autosetup/README.md 083b4417637f134875709dfa8ca149ce9b3634725b65e0f7d9b96f2bf56caa3a
+F autosetup/autosetup df8b53928b1fe3c67db5bc77c8e1eb8160c1b6a26c370e9a06c68748f803b7e4 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
 F autosetup/autosetup-find-tclsh 25905f6c302959db80c2951aa267b4411c5645b598ce761cfc24a166141e2c4c x
@@ -2199,8 +2199,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7e634d0569667ce1e17f4a611039cbb726078dc2e6be1f1b19655dc569170ce5
-R b03ff8f40892202b2bfdeabe2bfe4328
+P ee8449c482b6f9cfb82fa2417da194fc9aa56f54ef3ac83d368537181634ab1c 3296c8d30559eafa20f4748339177149172ecf79b019c42ed0d5ee9cf62a666a
+R 79991bb77dce9de5475d1a6d91321988
+T +closed 3296c8d30559eafa20f4748339177149172ecf79b019c42ed0d5ee9cf62a666a Closed\sby\sintegrate-merge.
 U stephan
-Z e952930a3cd549b7813b14b13b6d132c
+Z 26e02d52e505c2209fb4076354fecc72
 # Remove this line to create a well-formed Fossil manifest.
