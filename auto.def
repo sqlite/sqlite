@@ -122,6 +122,10 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 ########################################################################
 set flags {
+  # When writing {help text blocks}, be aware that autosetup formats
+  # them differently (left-aligned, under the --flag, if the block
+  # starts with a newline.
+
   # <build-modes>
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library (mostly)}
@@ -146,20 +150,19 @@ set flags {
   all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
-  # --with-tcl=DIR may be either a dir containing tclConfig.sh or a
-  # dir one level up from that from which we can derive a dir
-  # containing tclConfig.sh.
-  with-tcl:DIR         => {Directory containing tclConfig.sh}
-  # If --with-tclsh=X given, it is used for (A) trying to find
-  # tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-  # its containing dir has multiple tclsh versions, it may select the
-  # wrong tclConfig.sh!
-  with-tclsh:PATH      => {Full pathname of tclsh to use}
-  # --disable-tcl disables building of components which require TCL,
-  # including tests. This tree requires TCL for code generation but
-  # can use the in-tree copy of autosetup/jimsh0.c for that. The
-  # SQLite TCL extension and the test code require a canonical tclsh.
-  tcl=1                => {Disable components which require TCL}
+  with-tcl:DIR         =>
+    {Directory containing tclConfig.sh or a directory one level up from
+     that, from which we can derive a directory containing tclConfig.sh.}
+  with-tclsh:PATH      =>
+    {Full pathname of tclsh to use.  It is used for (A) trying to find
+     tclConfig.sh and (B) all TCL-based code generation.  Warning: if
+     its containing dir has multiple tclsh versions, it may select the
+     wrong tclConfig.sh!}
+  tcl=1                =>
+    {Disable components which require TCL, including all tests.
+     This tree requires TCL for code generation but can use the in-tree
+     copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
+     test code require a canonical tclsh.}
   # <tcl>
   # <line-editing>
   readline=1           => {Disable readline support}
@@ -192,11 +195,11 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
-  with-debug:=1        => {Enable debug build flags. --with-debug does more
-    than simply builds with a -g compilation flag and will impact
-    performance by as much as 4x, as it includes large numbers of
-    assert()s in performance-critical loops.  Never use --with-debug
-    for production builds.}
+  with-debug:=1        =>
+    {Enable debug build flags. This option will impact performance by
+     as much as 4x, as it includes large numbers of assert()s in
+     performance-critical loops.  Never use --with-debug for production
+     builds.}
   scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
