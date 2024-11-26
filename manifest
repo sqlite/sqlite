@@ -1,5 +1,5 @@
-C Provide\sa\stwo-argument\sversion\sof\sthe\siif()\sfunction,\splus\san\salternative\nspelling\sthat\sonly\srequires\sa\ssingle\s"i".
-D 2024-11-26T20:56:03.273
+C New\stest\scases.
+D 2024-11-26T23:30:49.285
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1380,7 +1380,7 @@ F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb9
 F test/json/json-speed-check.sh 912ee03e700a65c827ee0c7b4752c21ec5ef69cf7679d2f482ca817042bead52 x
 F test/json/jsonb-q1.txt 1e180fe6491efab307e318b22879e3a736ac9a96539bbde7911a13ee5b33abc7
 F test/json101.test 30db5b055b103ccabc53a29cfe6cda3345d07e171aeb25403dafa04f19e98b19
-F test/json102.test 4b3a0f94535f033239b67c13dbee8b47d2b5ee467e0f2fdab5eadf370bbe5fd3
+F test/json102.test 9b2e5ada10845ff84853b3feaae2ce51ce7145ae458f74c6a6cecc6ef6ee3ae1
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test 043838b56e68f3252a0dcf5be1689016f6f3f05056f8dcfcdc9d074f4d932988
@@ -1697,7 +1697,7 @@ F test/subquery.test 903abf41049f8404256f7be24b3151328304a5b25162e17ab0079460237
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test 7a9c55ed84d4ce551203d18046f925e293d75f69da81bff71aaf2696e4a2a748
+F test/subtype1.test 96fd2a59bfc845c955b5f339d23b37ef4d50de5f8a04acd1450a68605fa2e3e7
 F test/superlock.test 85256830339a6871ce36a2ef591c3f67716a701b5497788fb2068b90159c2442
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -2201,11 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41b79bde4a4b6510b41cc9175ff2527fbd3ca9209812361783754f24cf67ef9e
-R 95cdbd2d905cbccddf7c07f68d5125cd
-T *branch * two-argument-iif
-T *sym-two-argument-iif *
-T -sym-trunk *
+P a251ee645e11e24b67473d8a5bd3f8b72fde1ac9d5fda074f5da2297deb2faa8
+R 824c1bcdb1f9c6fee7135023d460cb90
 U drh
-Z 4fbc11636a3ec850ec89d3d2892ea5e5
+Z ccd3808eb790ff48c86b29439b672954
 # Remove this line to create a well-formed Fossil manifest.
