@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\scaused\sby\svariable\sshadowing.
-D 2024-11-20T20:39:18.431
+C Update\sdocumentation\sin\sfts5.h.
+D 2024-11-26T20:16:34.989
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -106,7 +106,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 63db9624ccf70d4887836c320eda93ab552f21008f3be7ede551eac3ead62baa
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
-F ext/fts5/fts5.h 6b4b92df890965567360db5f1ead24fd13a72cb23b95e4ed2ff58d1d89f7aa42
+F ext/fts5/fts5.h df1741b4dbf8446f663ba30ce6eca51ef1cef0dbc481806273fc8a0cc159f4b8
 F ext/fts5/fts5Int.h 6abff7dd770dc5969c994c281e6e77fc277ce414d56cc4a62c145cc7036b0b67
 F ext/fts5/fts5_aux.c 65a0468dd177d6093aa9ae1622e6d86b0136b8d267c62c0ad6493ad1e9a3d759
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P edb842349320eda9550bdfcd5a327949c5512e02f4b993782587b2131a425746
-R 87e3d58f4f7440e00e0a55bcb770c2ab
+P 211b305791980b24c4192ffc57a0471473de3fca32bfc146c0eeacedef7a88aa
+R ce521c664e19e9b02f777e0b20a87e4f
 U dan
-Z e1bc2b76da9d8c387af12aec8bd8d459
+Z 1b49bcb3c99dc54eba71f1872e2bcc4a
 # Remove this line to create a well-formed Fossil manifest.
