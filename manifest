@@ -1,5 +1,5 @@
-C Logging\senhancements.\sAnd\smark\slogs\sv=12.
-D 2024-11-20T20:26:59.183
+C Avoid\sever\slogging\stimes\sfor\sROLLBACK\scommands.
+D 2024-11-26T17:30:15.871
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -845,7 +845,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 25e407a6dc8b288fa4295b3d92fa9ce9318503e84df53cdf403a50fccbc1ba31
-F src/vdbe.c fea60cfe46d8839a08e4680d90a96898d542d3f6d7954e2e99cd92596f1a01f8
+F src/vdbe.c c451ef4ca11be023f5ad53bfae57cd7b32b455020b82729f44f4481973767480
 F src/vdbe.h b74bfd9cb1fa895e545a5286ee1cac6d75f706d325f89be0e3bf3c5107eb8a78
 F src/vdbeInt.h 92b7eabbaadbe8127741cd96e7e39c4834c2bb0b75987d5f6251975f47233690
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
@@ -2249,8 +2249,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4d3706727005397c3c9006b9ad9a2645b09533b02735ea68974c4f2df4c2e853
-R fe4209ae8ea3d2442ba5298ec1025166
+P 853f9cf453d13cf826443b0d27331e1f4e9e06f9f4ce674f22ccadad86e20937
+R 69f1f4cdbed55beee441559e50f1f550
 U dan
-Z ba19c0c7b0db403fd9268dd73b4106ef
+Z 21397c067de85450c8a331914ec4a3ea
 # Remove this line to create a well-formed Fossil manifest.

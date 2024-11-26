@@ -4005,7 +4005,7 @@ case OP_AutoCommit: {
       rc = SQLITE_ERROR;
     }
     sqlite3CommitTimeSet(aCommit, COMMIT_TIME_FINISH);
-    if( desiredAutoCommit ) sqlite3CommitTimeLog(aCommit);
+    if( desiredAutoCommit && !iRollback ) sqlite3CommitTimeLog(aCommit);
     goto vdbe_return;
   }else{
     sqlite3VdbeError(p,
