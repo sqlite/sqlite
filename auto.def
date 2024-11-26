@@ -149,7 +149,7 @@ set flags {
   # --with-tcl=DIR may be either a dir containing tclConfig.sh or a
   # dir one level up from that from which we can derive a dir
   # containing tclConfig.sh.
-  with-tcl:            => {Root of path containing tclConfig.sh}
+  with-tcl:DIR         => {Directory containing tclConfig.sh}
   # If --with-tclsh=X given, it is used for (A) trying to find
   # tclConfig.sh and (B) all TCL-based code generation.  Warning: if
   # its containing dir has multiple tclsh versions, it may select the
