@@ -3934,7 +3934,7 @@ case OP_Savepoint: {
   break;
 }
 
-/* Opcode: AutoCommit P1 P2 P3 * *
+/* Opcode: AutoCommit P1 P2 * * P5
 **
 ** Set the database auto-commit flag to P1 (1 or 0).  The current trasaction
 ** will commit when the VDBE halts if the auto-commit flag is 1.  The
@@ -3947,7 +3947,7 @@ case OP_Savepoint: {
 ** COMMIT fails if there are active writing VMs or active VMs that use
 ** shared cache.
 **
-** If P3 and P1 are both is 1, then COMMIT but also hang on to the write lock
+** If P5 and P1 are both is 1, then COMMIT but also hold on to the write lock
 ** for the transaction.  The P3 flag is used to help implement
 ** COMMIT AND CONTINUE TRANSACTION.
 */
@@ -3967,7 +3967,7 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
-    }else if( desiredAutoCommit && db->nVdbeWrite>pOp->p3 ){
+    }else if( desiredAutoCommit && db->nVdbeWrite>pOp->p5 ){
       /* If this instruction implements a COMMIT and other VMs are writing
       ** return an error indicating that the other VMs must complete first.
       */
@@ -3980,8 +3980,8 @@ case OP_AutoCommit: {
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
     }
-    assert( pOp->p3==0 || pOp->p3==1 );
-    sqlite3PagerHoldWrLock(db, pOp->p3);
+    assert( pOp->p5==0 || pOp->p5==1 );
+    sqlite3PagerHoldWrLock(db, pOp->p5);
     if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
       db->autoCommit = (u8)(1-desiredAutoCommit);
@@ -3990,7 +3990,7 @@ case OP_AutoCommit: {
     }
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
-      if( pOp->p3 ){
+      if( pOp->p5 ){
         db->nVdbeActive++;
         db->nVdbeRead++;
         db->nVdbeWrite++;

@@ -5249,8 +5249,11 @@ void sqlite3EndTransaction(Parse *pParse, int eType, int bContinueTrans){
   }
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp3(v, OP_AutoCommit, 1, isRollback, bContinueTrans);
-    if( bContinueTrans ) sqlite3BeginTransaction(pParse, TK_IMMEDIATE);
+    sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, isRollback);
+    if( bContinueTrans ){
+      sqlite3VdbeChangeP5(v, 0x01);
+      sqlite3BeginTransaction(pParse, TK_IMMEDIATE);
+    }
   }
 }
 

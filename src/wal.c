@@ -3671,7 +3671,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
   assert( pWal->readLock>=0 );
-  // assert( pWal->writeLock==0 && pWal->iReCksum==0 );
+  testcase( pWal->writeLock );
 
   if( pWal->readOnly ){
     return SQLITE_READONLY;
@@ -4422,7 +4422,7 @@ int sqlite3WalCallback(Wal *pWal){
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
-  // assert( pWal->writeLock==0 );
+  testcase( pWal->writeLock!=0 );
   assert( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE || op==-1 );
 
   /* pWal->readLock is usually set, but might be -1 if there was a
@@ -4459,8 +4459,8 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
   return rc;
 }
 
-/*
-** Set the temporary minimum lock level for the WAL subsystem.
+/* Set or clear the transient Wal.bHoldWrFlag boolean that prevents
+** the WAL_WRITE lock from being released.
 */
 void sqlite3WalHoldWrLock(Wal *pWal, int bOnOff){
   pWal->bHoldWrLock = bOnOff;
