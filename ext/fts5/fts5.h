@@ -298,9 +298,7 @@ struct Fts5PhraseIter {
 **   value returned by xInstCount(), SQLITE_RANGE is returned.  Otherwise,
 **   output variable (*ppToken) is set to point to a buffer containing the
 **   matching document token, and (*pnToken) to the size of that buffer in 
-**   bytes. This API is not available if the specified token matches a 
-**   prefix query term. In that case both output variables are always set 
-**   to 0.
+**   bytes. 
 **
 **   The output text is not a copy of the document text that was tokenized.
 **   It is the output of the tokenizer module. For tokendata=1 tables, this 

@@ -1,5 +1,5 @@
-C Allow\sthe\siif()\sfunction\sto\swork\swith\stwo\sarguments.\s\sThe\sthird\sargument\sis\nthen\sassumed\sto\sbe\sNULL.\s\sAlso\sallow\sif()\sas\san\salternative\sspelling\sfor\siif().
-D 2024-11-26T23:40:54.327
+C Fix\san\sinaccuracy\sin\sthe\sdocumentation\sin\sfts5.h.
+D 2024-11-27T18:01:25.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -103,7 +103,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 63db9624ccf70d4887836c320eda93ab552f21008f3be7ede551eac3ead62baa
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
-F ext/fts5/fts5.h df1741b4dbf8446f663ba30ce6eca51ef1cef0dbc481806273fc8a0cc159f4b8
+F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
 F ext/fts5/fts5Int.h 6abff7dd770dc5969c994c281e6e77fc277ce414d56cc4a62c145cc7036b0b67
 F ext/fts5/fts5_aux.c 65a0468dd177d6093aa9ae1622e6d86b0136b8d267c62c0ad6493ad1e9a3d759
 F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70673cb6f09
@@ -2201,9 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41b79bde4a4b6510b41cc9175ff2527fbd3ca9209812361783754f24cf67ef9e f1cb1a815a09d71eb52d5c7f2f4e5c7689535232dee365e46ac41cce7fd86c01
-R 824c1bcdb1f9c6fee7135023d460cb90
-T +closed f1cb1a815a09d71eb52d5c7f2f4e5c7689535232dee365e46ac41cce7fd86c01
-U drh
-Z f391a3d677bdf348a89a60afcfdaaa8e
+P 1e405c39a8405e2081ce061559d1aacc70055fc74ab86d886b973076a3fb124b
+R 306a37bedf7a72c95bbfd16141af1dca
+U dan
+Z 0f8994542e0c6b090d32b7bcc99e7877
 # Remove this line to create a well-formed Fossil manifest.
