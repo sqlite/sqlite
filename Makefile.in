@@ -154,6 +154,7 @@ CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+# soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -182,11 +183,6 @@ JIMSH = ./jimsh$(TEXE)
 #
 B.tclsh = @BTCLSH@
 $(B.tclsh):
-
-#
-# $(CFLAGS.libsqlite3) is documented in main.mk.
-#
-CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 #
 # $(OPT_FEATURE_FLAGS) is documented in main.mk.

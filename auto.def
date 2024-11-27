@@ -36,7 +36,8 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 # 1) --debug is used by autosetup itself, so we have to rename it to
 # --with-debug. We cannot use --enable-debug because that is, for
-# autosetup, and alias for --debug=1.
+# autosetup, and alias for --debug=1. Alternately, we can patch
+# autosetup to use --autosetup-debug for its own purposes instead.
 #
 # 2) In autosetup, all flags starting with (--enable, --disable) are
 # forced to be booleans and receive special handling in how they're
@@ -122,6 +123,10 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 ########################################################################
 set flags {
+  # When writing {help text blocks}, be aware that autosetup formats
+  # them differently (left-aligned, under the --flag, if the block
+  # starts with a newline.
+
   # <build-modes>
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library (mostly)}
@@ -146,20 +151,19 @@ set flags {
   all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
-  # --with-tcl=DIR may be either a dir containing tclConfig.sh or a
-  # dir one level up from that from which we can derive a dir
-  # containing tclConfig.sh.
-  with-tcl:            => {Root of path containing tclConfig.sh}
-  # If --with-tclsh=X given, it is used for (A) trying to find
-  # tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-  # its containing dir has multiple tclsh versions, it may select the
-  # wrong tclConfig.sh!
-  with-tclsh:PATH      => {Full pathname of tclsh to use}
-  # --disable-tcl disables building of components which require TCL,
-  # including tests. This tree requires TCL for code generation but
-  # can use the in-tree copy of autosetup/jimsh0.c for that. The
-  # SQLite TCL extension and the test code require a canonical tclsh.
-  tcl=1                => {Disable components which require TCL}
+  with-tcl:DIR         =>
+    {Directory containing tclConfig.sh or a directory one level up from
+     that, from which we can derive a directory containing tclConfig.sh.}
+  with-tclsh:PATH      =>
+    {Full pathname of tclsh to use.  It is used for (A) trying to find
+     tclConfig.sh and (B) all TCL-based code generation.  Warning: if
+     its containing dir has multiple tclsh versions, it may select the
+     wrong tclConfig.sh!}
+  tcl=1                =>
+    {Disable components which require TCL, including all tests.
+     This tree requires TCL for code generation but can use the in-tree
+     copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
+     test code require a canonical tclsh.}
   # <tcl>
   # <line-editing>
   readline=1           => {Disable readline support}
@@ -192,19 +196,30 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
-  with-debug:=1        => {Enable debug build flags. --with-debug does more
-    than simply builds with a -g compilation flag and will impact
-    performance by as much as 4x, as it includes large numbers of
-    assert()s in performance-critical loops.  Never use --with-debug
-    for production builds.}
+  # Note that using the --debug/--enable-debug flag here requires patching
+  # autosetup/autosetup to rename the --debug to --autosetup-debug.
+  with-debug=0
+  debug=0              =>
+    {Enable debug build flags. This option will impact performance by
+     as much as 4x, as it includes large numbers of assert()s in
+     performance-critical loops.  Never use --debug for production
+     builds.}
+  scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
   dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
   dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
-  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
-  # --soname has a long story behind it, as well as no small amount of uncertainty.
+  soname:=legacy       =>
+    {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+     soname. "legacy" sets it to its historical value of
+     libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+     it to that literal value. Any other value is assumed to be a
+     suffix which gets applied to "libsqlite3.so.",
+     e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
+    }
+  # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
@@ -223,6 +238,7 @@ unset flags
 proj-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
+  with-debug => debug
 }
 
 set srcdir $::autosetup(srcdir)
@@ -328,7 +344,7 @@ proj-if-opt-truthy dev {
   # which check for these flags will show the user their updated
   # state.
   proj-opt-set all 1
-  proj-opt-set with-debug 1
+  proj-opt-set debug 1
   proj-opt-set amalgamation 0
   define CFLAGS [get-env CFLAGS {-O0 -g}]
 }
@@ -452,44 +468,32 @@ if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
 proj-check-rpath  ; # Determine proper rpath-handling flag
 
 ########################################################################
-# It's not yet clear whether we gain anything from setting -soname,
-# but not having it has been a source of anxiety for some users.
-# Setting it to any value other than its historical value of
-# libsqlite3.so.0 may break dynamic linking of clients which initially
-# linked against a legacy build (with its SONAME of libsqlite3.so.0).
-#
-# To be clear: the ABI has not changed between pre-3.48 and post-3.47
-# builds, but version number 0 (pre-3.48) was a historical remnant
-# from libtool which "should" have always been version number 3 but
-# was not, for reasons lost to history.
-#
-# If the goal is to reduce downstream disruption then we need to
-# retain the SONAME libsqlite3.so.0.  If the goal is to "pull the
-# bandaid off" then switching libsqlite3.so.3 is arguably the right
-# thing to do (at the very real risk of causing a fair amount of
-# downstream disruption for package maintainers).
-#
-# See discussion in/around:
-# https://sqlite.org/forum/forumpost/0c6fc6f46b2cb3
+# "soname" for libsqlite3.so. See discussion at:
+# https://sqlite.org/src/forumpost/5a3b44f510df8ded
 apply {{} {
   define LDFLAGS_LIBSQLITE3_SONAME ""
   if {[proj-opt-was-provided soname]} {
-    set soname [opt-val soname]
+    set soname [join [opt-val soname] ""]
   } else {
     set soname none; # enabling soname breaks linking for the --dynlink-tools feature
   }
   switch -exact -- $soname {
-    none   { return 0 }
-    auto   { set soname libsqlite3.so.3 }
-    legacy { set soname libsqlite3.so.0 }
+    none - "" { return 0 }
+    auto      { set soname libsqlite3.so.3 }
+    legacy    { set soname libsqlite3.so.0 }
     default {
-      proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
+      if {[string match libsqlite3.* $soname]} {
+        # use it as-is
+      } else {
+        # Assume it's a suffix
+        set soname "libsqlite3.so.${soname}"
+      }
     }
   }
   msg-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
     define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
-    msg-result "Setting SONAME: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
+    msg-result "Setting SONAME using: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
   } elseif {[proj-opt-was-provided soname]} {
     # --soname was explicitly requested but not available, so fail fatally
     proj-fatal "This environment does not support SONAME."
@@ -497,7 +501,6 @@ apply {{} {
     msg-result "This environment does not support SONAME."
   }
 }}
-
 
 proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
 
@@ -517,7 +520,7 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
 
 msg-checking "SQLITE_DEBUG build? "
-proj-if-opt-truthy with-debug {
+proj-if-opt-truthy debug {
   define SQLITE_DEBUG 1
   define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
   msg-result yes
@@ -865,7 +868,7 @@ apply {{} {
     }
   }
   msg-result $ts
-  define TEMP_STORE $tsn
+  sqlite-add-feature-flag -DSQLITE_TEMP_STORE=$tsn
 }}
 
 ########################################################################
@@ -1290,6 +1293,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
+  scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
 } {
   proj-if-opt-truthy $boolFlag {
     sqlite-add-feature-flag $featureFlag
