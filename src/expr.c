@@ -6193,6 +6193,15 @@ static SQLITE_NOINLINE int exprCompareVariable(
   int iVar;
   sqlite3_value *pL, *pR = 0;
  
+  if( pExpr->op==TK_VARIABLE ){
+    assert( pVar->u.zToken!=0 );
+    assert( pExpr->u.zToken!=0 );
+    if( pVar->iColumn==pExpr->iColumn
+     && strcmp(pVar->u.zToken,pExpr->u.zToken)==0
+    ){
+      return 0;
+    }
+  }
   if( (pParse->db->flags & SQLITE_EnableQPSG)!=0 ) return 2;
   sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, SQLITE_AFF_BLOB, &pR);
   if( pR ){

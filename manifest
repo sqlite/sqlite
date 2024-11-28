@@ -1,5 +1,5 @@
-C Add\stwo\sNEVER()\sconditions.
-D 2024-11-28T00:58:37.403
+C The\ssqlite3ExprCompare()\sroutine\sshould\salways\scompare\sthe\ssame\svariables\nas\sequal\sto\sone\sanother,\sregardless\sof\swhether\sor\snot\sQPSG\sis\sset.
+D 2024-11-28T01:47:44.201
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -726,7 +726,7 @@ F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
 F src/dbpage.c db1be8adaf1f839ad733c08baeac5c22aa912f7b535865c0c061382602081360
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 9084ade243ef14259986230a5f3599459eaf7cf200b87b5fe8dc29187cdcde2c
+F src/expr.c 4c63e54936581c817ae8016206d166d80984767dcbe8260335d30a3a949b46b8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 49489dcce46d2d491cedb451e974264150c473e5f5bba448498a9aa4c1993537
@@ -2201,8 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d96ecbee59b50eca25447456dfff2c168e8eade7a68e542932d5829f97debb31
-R c1720db3ecd4ced84ca8ae6628cd5f49
+P 4f358ad20dc8a45e7aaa1a1996b40abd39caf34be6556ed54e1e0c80572b7ac0
+R bf789819bbc729d8b5b556765482541d
 U drh
-Z c947295bb77ac6e7f18a91b6b404684e
+Z cce72d62fb16414e1a59b528ee955fa0
 # Remove this line to create a well-formed Fossil manifest.
