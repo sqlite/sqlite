@@ -1,9 +1,9 @@
-C Typo\sfixes\sand\scleanups\sin\sautosetup/README.md.
-D 2024-11-28T20:46:51.863
+C Remove\ssome\soutdated\sdocs\sfrom\sMakefile.in.
+D 2024-11-28T23:55:35.415
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 85f2c740cadf969abbd9a6210b8b76636dbf231b9d3efe977b060c3055fac5b9
+F Makefile.in 86e81bdb118bf332a27865090b7dce96ddde93c2f1586e1b911569acaa228f19
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -2201,8 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d2f4148db1641e9bf2989c2b1adf5b9dcb2b123526ecacd063bca208b3c36cf
-R 51f81e989696c60babea027477d55ce3
+P 7f366565f41fa4eb532cfaf83074106e235436bfc377116e3bf823ac08fd01a5
+R d7c111a7470180e499663f2f26933967
 U stephan
-Z b5c978735ffc965433e9d3c2347bdbb9
+Z f66a560c68c0b33c3bb1d4fe2506daed
 # Remove this line to create a well-formed Fossil manifest.
