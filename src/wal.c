@@ -1669,7 +1669,7 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     ** entire hash table and aPgno[] array before proceeding.
     */
     if( pWal->aCommitTime ) t = sqlite3STimeNow();
-    if( idx==1 ){
+    if( idx==1 && sLoc.aPgno[0]!=0 ){
       int nByte = (int)((u8*)&sLoc.aHash[HASHTABLE_NSLOT] - (u8*)sLoc.aPgno);
       assert( nByte>=0 );
       memset((void*)sLoc.aPgno, 0, nByte);
@@ -1842,6 +1842,7 @@ static int walIndexRecoverOne(Wal *pWal, int iWal, u32 *pnCkpt, int *pbZero){
         if( aShare==0 ) break;
         SEH_SET_ON_ERROR(iPg, aShare);
         pWal->apWiData[iPg] = aPrivate;
+        memset(aPrivate, 0, WALINDEX_PGSZ);
 
         if( iWal ){
           assert( version==WAL_VERSION2 );
@@ -2967,6 +2968,39 @@ static int walCheckpoint(
       /* Release the reader lock held while backfilling */
       if( bWal2==0 ){
         walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
+      }
+    }
+
+    if( bWal2 && rc==SQLITE_OK && eMode!=SQLITE_CHECKPOINT_PASSIVE ){
+      /* In wal2 mode, a non-passive checkpoint waits for all readers of
+      ** the wal file just checkpointed to finish, then zeroes the hash
+      ** tables associated with that wal file. This is because in some
+      ** deployments, zeroing the hash tables as they are overwritten within
+      ** COMMIT commands is a significant performance hit. 
+      **
+      ** Currently, both of the "PART" locks are held for the wal file
+      ** being checkpointed. i.e. if iCkpt==0, then we already hold both
+      ** WAL_LOCK_PART1 and WAL_LOCK_PART1_FULL2. If we now also take an
+      ** exclusive lock on WAL_LOCK_PART2_FULL1, then it is guaranteed that
+      ** there are no remaining readers of the (iCkpt==0) wal file. Similar
+      ** logic, with different locks, is used for (iCkpt==1).
+      */
+      int lockIdx = WAL_READ_LOCK(
+        iCkpt==0 ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2
+      );
+      assert( iCkpt==0 || iCkpt==1 );
+      rc = walBusyLock(pWal, xBusy, pBusyArg, lockIdx, 1);
+      if( rc==SQLITE_OK ){
+        int iHash;
+        for(iHash = walFramePage2(iCkpt, mxSafeFrame); iHash>=0; iHash-=2){
+          WalHashLoc sLoc;
+          int nByte;
+          memset(&sLoc, 0, sizeof(sLoc));
+          walHashGet(pWal, iHash, &sLoc);
+          nByte = (int)((u8*)&sLoc.aHash[HASHTABLE_NSLOT] - (u8*)sLoc.aPgno);
+          memset((void*)sLoc.aPgno, 0, nByte);
+        }
+        walUnlockExclusive(pWal, lockIdx, 1);
       }
     }
 
