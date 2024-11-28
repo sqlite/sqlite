@@ -56,14 +56,13 @@ In (mostly) alphabetical order:
 - **`file-isexec filename`**\  
   Should be used in place of `[file executable]`, as it will also
   check for `${filename}.exe` on Windows platforms. However, on such
-  platforms is also assumes that _any_ existing file is executable.
+  platforms it also assumes that _any_ existing file is executable.
 
 - **`get-env VAR ?default?`**\  
-  Will fetch an "environment variable"
-  from the first of either: (1) a KEY=VALUE passed to the configure
-  script or (2) the system's environment variables. Not to be confused
-  with `getenv`, which only does the latter and is rarely, if ever,
-  useful in this tree.
+  Will fetch an "environment variable" from the first of either: (1) a
+  KEY=VALUE passed to the configure script or (2) the system's
+  environment variables. Not to be confused with `getenv`, which only
+  does the latter and is rarely, if ever, useful in this tree.
   - **`proj-get-env VAR ?default?`**\  
     Works like `get-env` but will, if that function finds no match,
     look for a file named `./.env-$VAR` and, if found, return its
@@ -73,8 +72,8 @@ In (mostly) alphabetical order:
 - **`define-for-opt flag defineName ?checkingMsg? ?yesVal=1? ?noVal=0?`**\  
   `[define $defineName]` to either `$yesVal` or `$noVal`, depending on
   whether `--$flag` is truthy or not. `$checkingMsg` is a
-  human-readable description of the check being made, e.g. "enable foo
-  bar baz?" If no `checkingMsg` is provided, the operation is silent.\  
+  human-readable description of the check being made, e.g. "enable foo?"
+  If no `checkingMsg` is provided, the operation is silent.\  
   Potential TODO: change the final two args to `-yes` and `-no`
   flags. They're rarely needed, though: search [auto.def][] for
   `TSTRNNR_OPTS` for an example of where they are used.
@@ -113,14 +112,16 @@ In (mostly) alphabetical order:
   (described below).
 
 - **`sqlite-add-feature-flag ?-shell? FLAG...`**\  
-  Adds the given feature flag to the CFLAGS which are specific to building
-  the library. It's intended to be passed one or more `-DSQLITE_ENABLE_...`,
-  or similar, flags. If the `-shell` flag is used then it also passes
-  its arguments to `sqlite-add-shell-opt`. This is a no-op if `FLAG`
-  is not provided or is empty.
+  Adds the given feature flag to the CFLAGS which are specific to
+  building libsqlite3. It's intended to be passed one or more
+  `-DSQLITE_ENABLE_...`, or similar, flags. If the `-shell` flag is
+  used then it also passes its arguments to
+  `sqlite-add-shell-opt`. This is a no-op if `FLAG` is not provided or
+  is empty.
 
 - **`sqlite-add-shell-opt FLAG...`**\  
-  The shell-specific counterpart of `sqlite-add-feature-flag`.
+  The shell-specific counterpart of `sqlite-add-feature-flag` which
+  only adds the given flag(s) to the CLI-shell-specific CFLAGS.
 
 - **`user-notice msg`**\  
   Queues `$msg` to be sent to stderr, but does not emit it until
@@ -129,6 +130,7 @@ In (mostly) alphabetical order:
   used to generate warnings between a "checking for..." message and
   its resulting "yes/no/whatever" message in such a way as to not
   spoil the layout of such messages.
+
 
 <a name="tclcompat"></a>
 Ensuring TCL Compatibility
@@ -169,14 +171,14 @@ compatibility across TCL implementations:
    before looking for a system-level `tclsh`. Be aware, though, that
    `make distclean` will remove that file.
 
-**Note that `jimsh0` is distinctly different** from the `jimsh` which
-gets built for code-generation purposes. The latter requires
+**Note that `jimsh0` is distinctly different from the `jimsh`** which
+gets built for code-generation purposes.  The latter requires
 non-default build flags to enable features which are
 platform-dependent, most notably to make its `[file normalize]` work.
 This means, for example, that the configure script and its utility
-APIs must not use `[file normalize]`, but autosetup provides a TCL
-implementation of `[file-normalize]` (note the dash) for portable use
-in the configure script.
+APIs must not use `[file normalize]`, but autosetup provides a
+TCL-only implementation of `[file-normalize]` (note the dash) for
+portable use in the configure script.
 
 
 <a name="conventions"></a>
@@ -193,7 +195,7 @@ Symbolic Names of Feature Flags
 Historically, the project's makefile has exclusively used
 `UPPER_UNDERSCORE` form for makefile variables. This build, however,
 primarily uses `X.y` format, where `X` is often a category label,
-e.g. `CFLAGS` and `y` is the specific instance of that category,
+e.g. `CFLAGS`, and `y` is the specific instance of that category,
 e.g. `CFLAGS.readline`.
 
 When the configure script exports flags for consumption by filtered
@@ -244,7 +246,7 @@ that approach include:
   _after_ the test for zlib because the results of the `-rpath` test
   implicitly modified global state which broke the zlib feature
   test. Because the feature tests no longer (intentionally) modify
-  global state, that is not an issue.)
+  shared global state, that is not an issue.)
 
 In this build, cases where feature tests modify global state in such a
 way that it may impact later feature tests are either (A) very
@@ -305,9 +307,9 @@ $ fossil status # show the modified files
 ```
 
 Unless the upgrade made any incompatible changes (which is exceedingly
-rare), that's all there is to it.  Then **apply a patch for the change
-described in the following section**, test the configure process, and
-check it in.
+rare), that's all there is to it.  After that's done, **apply a patch
+for the change described in the following section**, test the
+configure process, and check it in.
 
 <a name="patching"></a>
 Patching Autosetup for Project-local Changes
@@ -322,6 +324,9 @@ requires (as of this writing) four small edits in
 [](/file/autosetup/autosetup), as demonstrated in [check-in
 3296c8d3](/info/3296c8d3).
 
+If autosetup is upgraded and this patch is _not_ applied the invoking
+`./configure` will fail loudly because of the declaration of the
+`debug` flag in `auto.def` - duplicated flags are not permitted.
 
 
 [Autosetup]: https://msteveb.github.io/autosetup/
