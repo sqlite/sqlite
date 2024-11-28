@@ -1,5 +1,5 @@
-C Improvements\sto\ssqlite3ExprImpliesExpr()\sso\sthat\sit\srecognizes\sthat\sexpressions\slike\s"iif(X,Y)"\sand\s"CASE\sWHEN\sX\sTHEN\sY\sEND"\simply\sX.
-D 2024-11-28T11:52:18.714
+C ext/icu/README.txt:\sclean\sup\sEOL\swhitespace\sand\sadd\sa\smention\sof\sthe\s--with-icu-...\sconfigure\sflags\savailable\sas\sof\sversion\s3.48.
+D 2024-11-28T15:52:21.879
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -270,7 +270,7 @@ F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc
 F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 135b9e160f8e10211c10c5873d5e8c3eaebd3da9ec56a12ae4db157d4738ffe4
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
-F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
+F ext/icu/README.txt 1f8d76e10d2385fc77914a14ccd99acfbaf68111dfcf26a360ad9063787f57fb
 F ext/icu/icu.c 9837f4611915baad1edbe38222f3ee7d1b5e118ab16fec9ba603720f72c78b2a
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test f3a3cba14b6aeff145ffa5515546dd22f7510dad91512e519f43b92b56514012
@@ -2201,9 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec3ca6f17972a9624018ae352e5a4be8dc34602a4569c80e827e09cd7fbed7f7 f79cb748c9447ca4d2184a24219feb19571eb79870e0bedf14704743a3d5f8b9
-R 2a463ba8c7e54a6e85c2163c1e1ce03b
-T +closed f79cb748c9447ca4d2184a24219feb19571eb79870e0bedf14704743a3d5f8b9
-U drh
-Z d7886908d3bdbdc117a1626da09a8266
+P eb5ac9e5b9a4f9c85a2203107697da14c07c1667037dff672f9d786cea964a37
+R 78a02244626590a5fbc0925d20e4f240
+U stephan
+Z fdab33deaf1f469df2a1f2ef0d0eef73
 # Remove this line to create a well-formed Fossil manifest.
