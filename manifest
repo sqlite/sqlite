@@ -1,5 +1,5 @@
-C ext/icu/README.txt:\sclean\sup\sEOL\swhitespace\sand\sadd\sa\smention\sof\sthe\s--with-icu-...\sconfigure\sflags\savailable\sas\sof\sversion\s3.48.
-D 2024-11-28T15:52:21.879
+C Configure\sscript\sdoc\supdates\sand\scleanups.\sSkip\scheck\sfor\sEMSDK\swhen\sdoing\san\sout-of-tree\sbuild,\sas\sext/wasm\sdoes\snot\ssupport\sthat\sbuild\smode.
+D 2024-11-28T16:14:19.067
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F auto.def 961d2cf22b65d31f9eb97470b50cbbdca34b999cf86f438811c1ec214b296b8b
+F auto.def a82198f9ab1db4b54a5e134196bb0256d414789f747bbed6bacb67805c4bc0db
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -49,7 +49,7 @@ F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1d
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
 F autosetup/jimsh0.c d40e381ea4526a067590e7b91bd4b2efa6d4980d286f908054c647b3df4aee14
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 22556a325c964aa5377d4d881722385f41fcd7c1b60102ba8965f7814c83e9ce
+F autosetup/proj.tcl 2e817159b997077cb79bd871f6255276b787558f386dfc0830b0f825f6a53767
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2201,8 +2201,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eb5ac9e5b9a4f9c85a2203107697da14c07c1667037dff672f9d786cea964a37
-R 78a02244626590a5fbc0925d20e4f240
+P 4976ac717bec2f2c89d94ac1d9b96afd1da573ba34e3c78637c3937287635e72
+R dfe7e573ed6abcbcf47ed2c31d6d6772
 U stephan
-Z fdab33deaf1f469df2a1f2ef0d0eef73
+Z 69e72e81037eeb2ecac489de03503f03
 # Remove this line to create a well-formed Fossil manifest.
