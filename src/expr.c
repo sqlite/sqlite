@@ -6478,7 +6478,11 @@ static int sqlite3ExprIsIIF(sqlite3 *db, const Expr *pExpr){
     if( (z[0]!='i' && z[0]!='I') ) return 0;
     if( pExpr->x.pList==0 ) return 0;
     pDef = sqlite3FindFunction(db, z, pExpr->x.pList->nExpr, ENC(db), 0);
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+    if( pDef==0 ) return 0;
+#else
     if( NEVER(pDef==0) ) return 0;
+#endif
     if( (pDef->funcFlags & SQLITE_FUNC_INLINE)==0 ) return 0;
     if( NEVER(SQLITE_PTR_TO_INT(pDef->pUserData)!=INLINEFUNC_iif) ) return 0;
   }else if( pExpr->op==TK_CASE ){
