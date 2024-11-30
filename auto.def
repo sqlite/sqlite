@@ -1400,3 +1400,26 @@ proj-if-opt-truthy dump-defines {
     undefine OPT_SHELL.list
   }
 }
+
+########################################################################
+# Perform some high-level validation on the generated files...
+#
+# 1) Ensure that no unresolved @VAR@ placeholders are in files which
+#    use those.
+#
+# 2) TBD
+apply {{} {
+  # Check #1: ensure that files which get filtered for @VAR@ do not
+  # contain any unresolved @VAR@ refs. That may indicate an
+  # unexported/unused var or a typo.
+  foreach f "Makefile sqlite3.pc $::srcdir/tool/emcc.sh" {
+    if {![file exists $f]} continue
+    set lnno 1
+    foreach line [proj-file-content-list $f] {
+      if {[regexp {(@[A-Za-z_]+@)} $line match]} {
+        error "Unresolved reference to $match at line $lnno of $f"
+      }
+      incr lnno
+    }
+  }
+}}
