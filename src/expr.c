@@ -6484,7 +6484,7 @@ static int sqlite3ExprIsIIF(sqlite3 *db, const Expr *pExpr){
     if( NEVER(pDef==0) ) return 0;
 #endif
     if( (pDef->funcFlags & SQLITE_FUNC_INLINE)==0 ) return 0;
-    if( NEVER(SQLITE_PTR_TO_INT(pDef->pUserData)!=INLINEFUNC_iif) ) return 0;
+    if( SQLITE_PTR_TO_INT(pDef->pUserData)!=INLINEFUNC_iif ) return 0;
   }else if( pExpr->op==TK_CASE ){
     if( pExpr->pLeft!=0 ) return 0;
   }else{
