@@ -1,5 +1,5 @@
-C Version\s3.47.1
-D 2024-11-25T12:07:48.317
+C Fix\sthe\spercentile\sextension\sso\sthat\sworks\sas\san\sindependent\sextension.\s[forum:/forumpost/ab25469a350e0488|Forum\spost\sab25469a350e0488]
+D 2024-12-01T16:19:58.828
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -416,7 +416,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c bd84355c118e297522aba74de34a4fd286fc775524e0499b14473918d09ea61f
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c 42eb041edab407e512aaa087f99ed9287fe0b3224f7a6d194456c00fc1454312
+F ext/misc/percentile.c 82531c62cd015b9cdca95ad6bb10c3a907ceb570d21ebd4fb7d634c809cfb089
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -2221,10 +2221,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8dcac33402daef74b6e55efaa9fcf38a7a5f3e3efcc34111e653ddb33ae944e
-R 180a3706adfbae65a554eaaa0f792804
-T +sym-release *
-T +sym-version-3.47.1 *
-U drh
-Z 09a5352ad545f8998a19096120ca8910
+P b95d11e958643b969c47a8e5857f3793b9e69700b8f1469371386369a26e577e
+Q +27b829c34463d141125d31b59dd65275b88200e3edb1f8238979e02d0fc3614e
+R 24b435a1e1dd32a54fb6bee47ff7bf02
+U stephan
+Z 9b6131af694d073a018f7d4470d42c7f
 # Remove this line to create a well-formed Fossil manifest.
