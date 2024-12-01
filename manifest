@@ -1,5 +1,5 @@
-C Re-export\ssqlite370.svg\sto\sretain\sthe\sgradient\spart\sand\sclip\sthe\ssize\susing\sthe\scutting\sguides\sin\ssqlite370.eps.
-D 2024-12-01T14:14:50.481
+C Correct\sthe\sfill\scolor\sfor\sthe\sbackground\sof\ssqlite370.svg\s-\sit\swas\sslightly\sdarker\sthan\sit\sshould\shave\sbeen.
+D 2024-12-01T14:20:19.627
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,7 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
-F art/sqlite370.svg e2bf2fe17f602cc08db00cc6b48c31a25fcfdd3fce2b99441b0d22a6b1d4bbbf
+F art/sqlite370.svg dba5c47cc680aa38041ca4756cc91f82ae7b4bc05e39bfd23adf355af8280262
 F auto.def a0e22c70e043c860dce809d436dad667c29981d9b98342b47e25747df08aaf28
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dd3a13c1209d0bac3d6eb105826429ef29b36682c347995dc266bf42e46a2193
-R e66632f480fa9889a528b2ea980ca4b7
+P 12017b01c8e6c12fdd8de3c3c325e56b5be80343a1a392538b6e6ed066e46cee
+R 4fe8c345587f741b6f487d0e07c2ea64
 U stephan
-Z 9fd04893b998b4cf42cad44ece8528fb
+Z d56d01cf37eb6543db3618f85182577e
 # Remove this line to create a well-formed Fossil manifest.
