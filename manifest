@@ -1,5 +1,5 @@
-C At\sthe\send\sof\sthe\sconfigure\sscript\sensure\sthat\snone\sof\sthe\sfiles\swhich\sare\sfiltered\sfor\s@VARS@\scontain\sany\sunresolved\s@VAR@\splaceholders,\sfailing\sfatally\sif\sany\sdo.
-D 2024-11-30T17:48:31.521
+C Export\sa\sclipped\scopy\sof\ssqlite370.eps\sas\ssqlite370.svg,\sbased\son\sdiscussion\sin\s[forum:1bbd6d17ca|forum\spost\s1bbd6d17ca].
+D 2024-12-01T14:02:19.835
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -13,6 +13,7 @@ F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
+F art/sqlite370.svg ed79b61a056ca722027f18cd63395d5bc324f925e7b8be76cdc5458a1addc77a
 F auto.def a0e22c70e043c860dce809d436dad667c29981d9b98342b47e25747df08aaf28
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
@@ -2201,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1abab10f85a4dba5ffe51a30eeef30853c120e5566ed97b3af1526fff597c647
-R e64febb3fe4e77d46b80ded354868cd5
+P 301df5c2beb08e8e2944f7a9e46a10114603518385c05a9c30a838ab436369d4
+R 773c9906e32101746f3856fce79cbd87
 U stephan
-Z c8dd07770a4ac68eb48e0cf5cc49ca34
+Z 2cfac5616be613d3912055ea36a00d71
 # Remove this line to create a well-formed Fossil manifest.
