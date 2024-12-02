@@ -519,7 +519,8 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
 msg-checking "SQLITE_DEBUG build? "
 proj-if-opt-truthy debug {
   define SQLITE_DEBUG 1
-  define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_MEMSYS5 -O0 -Wall}
+  define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+  proj-opt-set memsys5
   msg-result yes
 } {
   define TARGET_DEBUG {-DNDEBUG}
