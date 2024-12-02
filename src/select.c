@@ -7821,7 +7821,7 @@ int sqlite3Select(
 #endif
       assert( pSubq->pSelect && (pSub->selFlags & SF_PushDown)!=0 );
     }else{
-      TREETRACE(0x4000,pParse,p,("WHERE-lcause push-down not possible\n"));
+      TREETRACE(0x4000,pParse,p,("WHERE-clause push-down not possible\n"));
     }
 
     /* Convert unused result columns of the subquery into simple NULL

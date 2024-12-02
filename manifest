@@ -1,5 +1,5 @@
-C Reformulate\s[9e09d5d6]\sso\sthat\smemsys5\sshows\sup\sin\sthe\slate-config\ssummary\sas\sbeing\senabled\sand\sdoes\sthe\sright\sthing\sif\sboth\s--debug\sand\s--memsys3\sare\sused.
-D 2024-12-02T14:14:30.676
+C Fix\sa\sharmless\stypo\sin\sdebugging\soutput.
+D 2024-12-02T16:07:38.007
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -777,7 +777,7 @@ F src/printf.c 96f7f8baeedc7639da94e4e7a4a2c200e2537c4eec9e5e1c2ffc821f40eb3105
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 4b14337a2742f0c0beeba490e9a05507e9b4b12184b9cd12773501d08d48e3fe
+F src/select.c c8165a8dff9c7b0f038b566f02a1ea983f4e0fdf8a3308e357727f4c9d8b07a5
 F src/shell.c.in 7aa68b305246391984c48f10725416079394a64bf0349fa4087d835c41ef733d
 F src/sqlite.h.in 4d93768709c53b7c653a63817a82d5a8625264ca0d8cdf99967ba147bdcf2aa6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e09d5d60ac91423e1dec1169e9eb60a531f84261b48490c550cf4529540e6dc
-R d9d8b14ef1a08757ec20208f0b613d4c
-U stephan
-Z 4b6795ed2210994cf6151e4f8f333a77
+P 447db1cd0a6575432996e9735e78bbb09c83827c5e3080339b34df176ab86af0
+R 251b3cd2cc3712f9285159fa5af5f855
+U drh
+Z cb8855e74c77702fc96adfcd8b429854
 # Remove this line to create a well-formed Fossil manifest.
