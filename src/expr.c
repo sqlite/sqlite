@@ -2646,7 +2646,7 @@ static int sqlite3ExprIsTableConstant(Expr *p, int iCur, int bAllowSubq){
 **         (4a)  pExpr must come from an ON clause..
 **         (4b)  and specifically the ON clause associated with the LEFT JOIN.
 **
-**   (5)  If pSrc is not the right operand of a LEFT JOIN or the left
+**   (5)  If pSrc is the right operand of a LEFT JOIN or the left
 **        operand of a RIGHT JOIN, then pExpr must be from the WHERE
 **        clause, not an ON clause.
 **

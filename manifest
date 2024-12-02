@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo\sin\sdebugging\soutput.
-D 2024-12-02T16:07:38.007
+C Fix\sa\scomment\stypo\son\sthe\ssqlite3ExprIsSingleTableConstraint()\sroutine.
+D 2024-12-02T16:24:47.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -727,7 +727,7 @@ F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
 F src/dbpage.c 6c52074b0edb914d526c85541ca0f1fd23822b5dac39b6ee9b7f375d9fa592e9
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c cd85c48b408f67ce077155ad17b2822214b040afc2269cfcbe6510d945cc6986
+F src/expr.c ae41eb87e73a7b2e8748b0cf1e8e1d6b2e57fcb9abd093ef3da78f16fed36f33
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 49489dcce46d2d491cedb451e974264150c473e5f5bba448498a9aa4c1993537
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 447db1cd0a6575432996e9735e78bbb09c83827c5e3080339b34df176ab86af0
-R 251b3cd2cc3712f9285159fa5af5f855
+P 578f76cfb2e298fe6bfd278b545091fe682d01feb0be56ef57b6c9f2c179ac61
+R 4f8aa96fb5dc4e807fa23513f1b51f86
 U drh
-Z cb8855e74c77702fc96adfcd8b429854
+Z d928f2574431a0b1dc02438a266e7594
 # Remove this line to create a well-formed Fossil manifest.
