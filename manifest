@@ -1,5 +1,5 @@
-C Trim\sa\sbit\smore\sfrom\sthe\ssqlite370.svg\sborder\sto\sget\sit\scloser\sin\sscaled\ssize\sto\sthe\slogo\scurrently\son\sthe\sdocsrc\ssite.
-D 2024-12-01T15:23:40.866
+C Slighly\sless\sconfusing\soutput\sfrom\streeview\sduring\sdebugging.
+D 2024-12-02T13:29:29.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -839,7 +839,7 @@ F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 3f703cacdab728d7741e5a6ac242006d74fe1c2754d4f03ed889d7253259bd68
-F src/treeview.c 4eeb155abefd88a60d0c37cc00bcfac38a8dd566970f019e4af7e02672ee2599
+F src/treeview.c 921392561385e05ef5703f20a7a72f0a0a45c1fb749558d7467fae2c3f525006
 F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 732132407b3881aaa7fee151baafb6569664f1d2b82ef7743d89bd0a86cf0a09
-R a8b303cba2f0568fafb9e7b313f76e76
-U stephan
-Z 8571445bebcabe4056fe395c6d20e2a7
+P 81c7277fc59af833365f0ee5af603db49c19a6ba87bd5f252ecdfe72df252d4e
+R e1b4d376f6d1b8ae5226a7733e409232
+U drh
+Z fd572b187ecdf020733ce40c075270b8
 # Remove this line to create a well-formed Fossil manifest.
