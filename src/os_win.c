@@ -4093,6 +4093,22 @@ static int winOpenFile(
   /* TODO: platforms.
   ** TODO: retry-on-ioerr.
   */
+#if SQLITE_OS_WINRT
+  {
+    CREATEFILE2_EXTENDED_PARAMETERS extendedParameters;
+    memset(&extendedParameters, 0, sizeof(extendedParameters));
+    extendedParameters.dwSize = sizeof(extendedParameters);
+    extendedParameters.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+    extendedParameters.dwFileFlags = FILE_FLAG_OVERLAPPED;
+    extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
+    h = osCreateFile2((LPCWSTR)zConverted,
+        (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),/* dwDesiredAccess */
+        FILE_SHARE_READ | FILE_SHARE_WRITE,      /* dwShareMode */
+        OPEN_ALWAYS,                             /* dwCreationDisposition */
+        &extendedParameters
+    );
+  }
+#else
   h = osCreateFileW((LPCWSTR)zConverted,         /* lpFileName */
       (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),  /* dwDesiredAccess */
       FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
@@ -4101,6 +4117,7 @@ static int winOpenFile(
       FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
       NULL
   );
+#endif
   if( h==INVALID_HANDLE_VALUE ){
     if( bReadonly==0 ){
       bReadonly = 1;

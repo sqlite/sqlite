@@ -7979,6 +7979,10 @@ static int SQLITE_TCLAPI win32_file_lock(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_OS_WINRT
+  Tcl_AppendResult(interp, "unsupported test command", (char*)0);
+  return TCL_ERROR;
+#else
   static struct win32FileLocker x = { "win32_file_lock", 0, 0, 0, 0, 0 };
   const char *zFilename;
   char zBuf[200];
@@ -8029,6 +8033,7 @@ static int SQLITE_TCLAPI win32_file_lock(
   }
   CloseHandle(ev);
   return TCL_OK;
+#endif   /* !SQLITE_OS_WINRT */
 }
 #endif
 
