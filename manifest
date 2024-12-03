@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_OS_WINRT\sbuilds.
-D 2024-12-02T20:48:17.522
+C Fix\sthe\slock_win32_file\stest\scommand\sso\sthat\sit\sworks\swith\swinrt\sbuilds.
+D 2024-12-03T15:19:02.282
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -785,7 +785,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 1c2f697cb12a1d49f5e0b448327f7cf614809423bb43753b2d97f87354298113
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 2c63b1f57d86104dcb12a722063b193031ed9e27268eacfc029c1a3c2997bc76
+F src/test1.c 325a66d5e52b84ba6b6d54f9d605e31a8304c395df0c589e0ade87fd2b7213b2
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -2199,8 +2199,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 272d552f126357d7bc16d84f13a4bea823abc6ef7faf90e3cffcedb68210f52a
-R e892c1228a636d88e5e0280f26d48ad6
+P baf43e8c7da6aacce874ec30d0c9e1dcb44c5ed9de2214099d42fbbd335d2e93
+R bc12e47014f586eacbbc427b6b22ac8d
 U dan
-Z cbe84d70a2ef7e0a156c55e07ebb1ddb
+Z 0816a4fec5e8db048747c6ae85732289
 # Remove this line to create a well-formed Fossil manifest.
