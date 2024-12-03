@@ -218,7 +218,7 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " CteUse=0x%p", pItem->u2.pCteUse);
     }
     if( pItem->fg.isOn || (pItem->fg.isUsing==0 && pItem->u3.pOn!=0) ){
-      sqlite3_str_appendf(&x, " ON");
+      sqlite3_str_appendf(&x, " isOn");
     }
     if( pItem->fg.isTabFunc )      sqlite3_str_appendf(&x, " isTabFunc");
     if( pItem->fg.isCorrelated )   sqlite3_str_appendf(&x, " isCorrelated");

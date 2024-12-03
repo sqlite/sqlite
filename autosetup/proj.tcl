@@ -138,7 +138,12 @@ proc proj-indented-notice {args} {
   }
   set lines [split [join $args] \n]
   foreach line $lines {
-    $outFunc "      [string trimleft $line]"
+    set line [string trimleft $line]
+    if {"" eq $line} {
+      $outFunc $line
+    } else {
+      $outFunc "    $line"
+    }
   }
   if {"" ne $fErr} {
     show-notices

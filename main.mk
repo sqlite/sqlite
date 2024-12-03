@@ -165,7 +165,7 @@ LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shlib ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
-LDFLAGS.soname.libsqlite3 ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.soname ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary across platforms
@@ -1410,8 +1410,8 @@ all: lib
 # Dynamic libsqlite3
 #
 $(libsqlite3.SO):	$(LIBOBJ)
-	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.soname.libsqlite3) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
+	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3) \
+		$(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
