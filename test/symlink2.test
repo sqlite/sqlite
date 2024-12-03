@@ -37,11 +37,10 @@ proc canCreateWin32Symlink {} {
   set link [file join $::testdir lnk[pid].sym]
   if {[file exists $link]} { return 0 }
   set target [info nameofexecutable]
-  if {[catch {createWin32Symlink $link $target} msg] == 0} {
+  if {[catch {createWin32Symlink $link $target}] == 0} {
     deleteWin32Symlink $link
     return 1
   }
-  puts $msg
   return 0
 }
 

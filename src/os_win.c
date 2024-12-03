@@ -3874,25 +3874,6 @@ static int winShmMutexHeld(void) {
 ** Either winShmNode.mutex must be held or winShmNode.nRef==0 and
 ** winShmMutexHeld() is true when reading or writing any other field
 ** in this structure.
-**
-** aMutex[SQLITE_SHM_NLOCK]:
-**   Normally, when SQLITE_ENABLE_SETLK_TIMEOUT is not defined, mutex 
-**   winShmNode.mutex is used to serialize calls to the xShmLock() 
-**   method.
-**
-**   For SQLITE_ENABLE_SETLK_TIMEOUT builds, xShmLock() only takes the
-**   mutexes in the aMutex[] array that correspond to locks being taken
-**   or released. This means that:
-**
-**     *  Modifying the winShmNode.pFirst list requires holding *all*
-**        the locks in the aMutex[] array.
-**
-**     *  Reads and writes to winShm.sharedMask and winShm.exclMask must
-**        use AtomicLoad() and AtomicStore(). This is because it may be
-**        read by other threads while it is being modified.
-**
-**   TODO: winShmNode.mutex is held for the space of time when LockFileEx() 
-**   is called on winShmNode.hFile.
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
@@ -3913,7 +3894,6 @@ struct winShmNode {
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
-
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
 #endif

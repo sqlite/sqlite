@@ -4290,6 +4290,7 @@ static int unixGetpagesize(void){
 **
 **      nRef
 **
+** The following fields are read-only after the object is created:
 **
 **      hShm
 **      zFilename

@@ -506,7 +506,7 @@ do_multiclient_test tn {
   do_test wal-10.$tn.6 {
     sql3 {SELECT * FROM t1}
   } {1 2 3 4 5 6}
-  do_test wal-10.$tn.7a {
+  do_test wal-10.$tn.7 {
     sql2 COMMIT
   } {}
 
@@ -521,7 +521,7 @@ do_multiclient_test tn {
   # to the database (as it is not locked and [db] is reading the latest
   # snapshot).
   #
-  do_test wal-10.$tn.7b {
+  do_test wal-10.$tn.7 {
     sql2 { BEGIN; INSERT INTO t1 VALUES(7, 8) ; }
     catchsql { INSERT INTO t1 VALUES(9, 10) }
   } {1 {database is locked}}

@@ -314,12 +314,22 @@ static int winMutexTry(sqlite3_mutex *p){
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it
   ** is used it is merely an optimization.  So it is OK for it to always
-  ** fail on some platforms. But - it is required for ENABLE_SETLK_TIMEOUT
-  ** builds.
+  ** fail.
+  **
+  ** The TryEnterCriticalSection() interface is only available on WinNT.
+  ** And some windows compilers complain if you try to use it without
+  ** first doing some #defines that prevent SQLite from building on Win98.
+  ** For that reason, we will omit this optimization for now.  See
+  ** ticket #2685.
   */
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400
   assert( winMutex_isInit==1 );
-  if( sqlite3_win32_is_nt() && TryEnterCriticalSection(&p->mutex) ){
+  assert( winMutex_isNt>=-1 && winMutex_isNt<=1 );
+  if( winMutex_isNt<0 ){
+    winMutex_isNt = sqlite3_win32_is_nt();
+  }
+  assert( winMutex_isNt==0 || winMutex_isNt==1 );
+  if( winMutex_isNt && TryEnterCriticalSection(&p->mutex) ){
 #ifdef SQLITE_DEBUG
     p->owner = tid;
     p->nRef++;
