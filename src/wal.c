@@ -2971,7 +2971,7 @@ static int walCheckpoint(
       }
     }
 
-    if( bWal2 && rc==SQLITE_OK && eMode!=SQLITE_CHECKPOINT_PASSIVE ){
+    if( bWal2 && rc==SQLITE_OK /* && eMode!=SQLITE_CHECKPOINT_PASSIVE */ ){
       /* In wal2 mode, a non-passive checkpoint waits for all readers of
       ** the wal file just checkpointed to finish, then zeroes the hash
       ** tables associated with that wal file. This is because in some
