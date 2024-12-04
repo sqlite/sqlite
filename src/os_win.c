@@ -1456,10 +1456,9 @@ int sqlite3_win32_is_nt(void){
   }
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #elif SQLITE_TEST
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  return 1;
-#endif
-  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
+  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2
+      || osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0
+  ;
 #else
   /*
   ** NOTE: All sub-platforms where the GetVersionEx[AW] functions are
@@ -4339,7 +4338,7 @@ static int winShmLock(
       int bExcl = ((flags & SQLITE_SHM_EXCLUSIVE) ? 1 : 0);
       int nMs = 0;
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-      nMs = pDbFd->iBusyTimeout
+      nMs = pDbFd->iBusyTimeout;
 #endif
       rc = winLockFileTimeout(p->hShm, ofst+WIN_SHM_BASE, n, bExcl, nMs);
       if( rc==SQLITE_OK ){

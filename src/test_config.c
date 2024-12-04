@@ -88,7 +88,7 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "win32malloc", "0", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_OS_WINRT
+#if defined(SQLITE_OS_WINRT) && SQLITE_OS_WINRT
   Tcl_SetVar2(interp, "sqlite_options", "winrt", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "winrt", "0", TCL_GLOBAL_ONLY);
