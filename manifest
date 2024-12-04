@@ -1,5 +1,5 @@
-C Assume\san\sNT-based\sOS\swhen\srunning\stests\sif\ssqlite_os_type\sis\snot\sset.
-D 2024-12-04T18:27:13.386
+C Fix\sfilectrl.test\sso\sthat\sit\sworks\swith\swinrt\sbuilds.
+D 2024-12-04T19:32:24.081
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1141,7 +1141,7 @@ F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/external_reader.test c7d34694f1b25c32d866f56ac80c1e29edddc42b4ef90cad589263ffac2cde0c
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
-F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
+F test/filectrl.test 7e6788759997139632eb700765d5f73d53fc5ff5d9d778e773911750ab134321
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
 F test/filter1.test 590f8ba9a0cd0823b80d89ac75c5ce72276189cef9225d2436adaf1ee87f3727
 F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 68c34ffd2332d89cb6400bce5dad350a6e48c395924b8380cbeb0dbe64141808
-R 573820f2880771fa214a52abc74c258b
+P 22e4aeded0a6a691fc7026f3cd90836a289dfc994269f8576d01e28fa478902b
+R 0432cd81cc749bbfe4d694b5aab9fdf8
 U dan
-Z 10a87588cb4a8d127990ae3f081dbcc5
+Z 8a3542a0971ab31c1355fe946ed43a29
 # Remove this line to create a well-formed Fossil manifest.
