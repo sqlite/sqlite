@@ -1,11 +1,11 @@
-C Minor\sdoc\scorrection\sin\sext/misc/shathree.c,\sas\sreported\sin\sthe\sforum.\sNo\sfunctional\schanges.
-D 2024-12-04T16:01:25.587
+C Fix\sthe\sbuild\sof\ssqlite3_analyzer.exe\son\sWindows\sthat\swas\sbroken\sby\ncheck-in\s[80f3bf8c2ee31ba1].
+D 2024-12-05T23:53:16.868
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in 86e81bdb118bf332a27865090b7dce96ddde93c2f1586e1b911569acaa228f19
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc a92237976eb92c5efaa0dd2524746aec12c196e12df8d4dbff9543a4648c3312
+F Makefile.msc f8b4097dd93bd19df8fda39ca8b530904c2e7134a28094f490c0dc11abd47ce2
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de7064d118c33aab0fff39d072593b287c291870b843d093045300bde464420f
-R 86e86c5653d7da9aeabbd5fff5f5fa8b
-U stephan
-Z 756ded1a59123f8adfff343351124b4b
+P 3b82d2c6b732617b9be205efadd07326057c93b71c47ffd42de63fc05093667b
+R 24123a0459182d20f8acb8c7b97c6d23
+U drh
+Z 4aebafa1987ff29c0a240fdab74f1ca1
 # Remove this line to create a well-formed Fossil manifest.
