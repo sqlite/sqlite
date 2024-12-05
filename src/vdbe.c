@@ -3958,7 +3958,9 @@ case OP_AutoCommit: {
 
     u64 aCommit[COMMIT_TIME_N];
     memset(aCommit, 0, sizeof(aCommit));
-    sqlite3CommitTimeSet(aCommit, COMMIT_TIME_START);
+    if( iRollback==0 ){
+      sqlite3CommitTimeSet(aCommit, COMMIT_TIME_START);
+    }
 
     if( iRollback ){
       assert( desiredAutoCommit==1 );

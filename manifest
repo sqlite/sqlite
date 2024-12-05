@@ -1,5 +1,5 @@
-C Temporarily\senable\szeroing\sof\swal2-mode\shash\stables\swithin\sPASSIVE,\sas\swell\sas\snon-PASSIVE,\scheckpoints.
-D 2024-12-04T11:01:20.907
+C Use\san\sinline\sasm\s"ret\sstosp"\sinstruction\sinstead\sof\sa\smemset()\swhen\sa\swriter\sis\srequired\sto\szero\sa\shash\stable.
+D 2024-12-05T16:52:52.457
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -845,11 +845,11 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c f23165685a67b4caf8ec08fb274cb3f319103decfb2a980b7cfd55d18dfa855e
 F src/util.c 5d1a0134cf4240648d1c6bb5cc8efaca0ea2b5d5c840985aec7e947271f04375
 F src/vacuum.c 25e407a6dc8b288fa4295b3d92fa9ce9318503e84df53cdf403a50fccbc1ba31
-F src/vdbe.c c451ef4ca11be023f5ad53bfae57cd7b32b455020b82729f44f4481973767480
+F src/vdbe.c fa31aa6525e34b51763702d246a69c3877436f0bbf6be5f6351cdcb770b9b7ab
 F src/vdbe.h b74bfd9cb1fa895e545a5286ee1cac6d75f706d325f89be0e3bf3c5107eb8a78
 F src/vdbeInt.h 92b7eabbaadbe8127741cd96e7e39c4834c2bb0b75987d5f6251975f47233690
 F src/vdbeapi.c 80235ac380e9467fec1cb0883354d841f2a771976e766995f7e0c77f845406df
-F src/vdbeaux.c 05820cd1ffdb0006c8b8d70ede17137a76805a1ecb811fd795088a5eaae50086
+F src/vdbeaux.c ea544580ce7ae7c814af632cb0ee13b3e5871527e813e5c4e5153ffee353688a
 F src/vdbeblob.c 255be187436da38b01f276c02e6a08103489bbe2a7c6c21537b7aecbe0e1f797
 F src/vdbemem.c 831a244831eaa45335f9ae276b50a7a82ee10d8c46c2c72492d4eb8c98d94d89
 F src/vdbesort.c d0a3c7056c081703c8b6d91ad60f17da5e062a5c64bf568ed0fa1b5f4cae311f
@@ -857,7 +857,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5fb499d20494b7eecaadb7584634af9afcb374cb0524912b475fcb1712458a1b
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 0f3a659ad867b40fea8909462cf5c3598f8360a061e7ffc6ff2b991243d672e2
+F src/wal.c 83decd78a90b841e1dde30326308f9afa3342efac8bd4da0011c39b3a18d4ff1
 F src/wal.h 8c59ee7a835574396d7cbd04626d11fd849613e361a46e7e9519091ab03bdb29
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c c046dd58c3410f7b7528e1e6317cb876398557bad346d568ed8562321a7d002d
@@ -2250,8 +2250,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 442167b86ad6b5a7ec4862ca91c3bb0b4b8e4843aa55193b96c2daadc2e7336b
-R 81105e65accbb195d53943cfcf8e5ae2
+P a97a2b0da1f9e93a7cf5a4f08ded96d0d3511f84329524b4805b7481393c397e
+R 90ad610f7d217008d6c0831f4b0d961d
 U dan
-Z 3af5dca54f4f026f78fb56e0fd82e10f
+Z f13b6a18351017b8a025ae005190ad9a
 # Remove this line to create a well-formed Fossil manifest.

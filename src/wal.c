@@ -1632,6 +1632,25 @@ static void walCleanupHash(Wal *pWal){
 }
 
 /*
+** Zero the n byte block indicated by pointer p. n Must be a multiple of
+** 8, and p must be aligned to an 8-byte boundary.
+*/
+static void zero64(void *p, int n){
+  size_t c = n / sizeof(u64);
+  void *d = p;
+
+  assert( (n & 0x7)==0 );
+  assert( EIGHT_BYTE_ALIGNMENT(p) );
+
+  __asm__ volatile (
+      "rep stosq"
+        : "+D" (d), "+c" (c)
+        : "a" (0)
+        : "memory"
+  );
+}
+
+/*
 ** Set an entry in the wal-index that will map database page number
 ** pPage into WAL frame iFrame.
 */
@@ -1671,8 +1690,8 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     if( pWal->aCommitTime ) t = sqlite3STimeNow();
     if( idx==1 && sLoc.aPgno[0]!=0 ){
       int nByte = (int)((u8*)&sLoc.aHash[HASHTABLE_NSLOT] - (u8*)sLoc.aPgno);
-      assert( nByte>=0 );
-      memset((void*)sLoc.aPgno, 0, nByte);
+      assert( nByte>=0 && (nByte & 0x07)==0 );
+      zero64((void*)sLoc.aPgno, nByte);
     }
     if( pWal->aCommitTime ){
       pWal->aCommitTime[COMMIT_TIME_WALINDEX_MEMSETUS]+=sqlite3STimeNow()-t;
@@ -2971,7 +2990,7 @@ static int walCheckpoint(
       }
     }
 
-    if( bWal2 && rc==SQLITE_OK /* && eMode!=SQLITE_CHECKPOINT_PASSIVE */ ){
+    if( bWal2 && rc==SQLITE_OK && eMode!=SQLITE_CHECKPOINT_PASSIVE ){
       /* In wal2 mode, a non-passive checkpoint waits for all readers of
       ** the wal file just checkpointed to finish, then zeroes the hash
       ** tables associated with that wal file. This is because in some
