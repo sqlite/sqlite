@@ -1856,6 +1856,8 @@ static int loadStatTbl(
   sqlite3DbFree(db, zSql);
   if( rc ) return rc;
 
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q1);
+
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char *zIndex;                 /* Index name */
     Index *pIdx;                  /* Pointer to the index object */
@@ -1901,6 +1903,7 @@ static int loadStatTbl(
     pIdx->nSample++;
   }
   rc = sqlite3_finalize(pStmt);
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q2);
   if( rc==SQLITE_OK ) initAvgEq(pPrevIdx);
   return rc;
 }
@@ -1974,6 +1977,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 #endif
   }
 
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_CLEAR_STATS);
+
   /* Load new statistics out of the sqlite_stat1 table */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zDbSName;
@@ -1990,12 +1995,16 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     }
   }
 
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT1);
+
   /* Set appropriate defaults on all indexes not in the sqlite_stat1 table */
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   for(i=sqliteHashFirst(&pSchema->idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     if( !pIdx->hasStat1 ) sqlite3DefaultRowEst(pIdx);
   }
+
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_DEFAULTS);
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT4
@@ -2010,6 +2019,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     pIdx->aiRowEst = 0;
   }
 #endif
+
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4);
 
   if( rc==SQLITE_NOMEM ){
     sqlite3OomFault(db);
