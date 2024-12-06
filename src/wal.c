@@ -1636,6 +1636,7 @@ static void walCleanupHash(Wal *pWal){
 ** 8, and p must be aligned to an 8-byte boundary.
 */
 static void zero64(void *p, int n){
+#if defined(__x86_64__)
   size_t c = n / sizeof(u64);
   void *d = p;
 
@@ -1648,6 +1649,9 @@ static void zero64(void *p, int n){
         : "a" (0)
         : "memory"
   );
+#else
+  memset(p, 0, n);
+#endif
 }
 
 /*
