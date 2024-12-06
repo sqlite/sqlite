@@ -563,6 +563,13 @@ proc sqlite-check-tcl {} {
   define HAVE_TCL 0      ; # Will be enabled via --tcl or a successful search
   define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
   define TCL_CONFIG_SH ""; # full path to tclConfig.sh
+
+  # Clear out all vars which would be set by tclConfigToAutoDef.sh, so that the late-config
+  # validation of @VARS@ works...
+  foreach k {TCL_INCLUDE_SPEC TCL_LIB_SPEC TCL_STUB_LIB_SPEC TCL_EXEC_PREFIX TCL_VERSION} {
+    define $k ""
+  }
+
   file delete -force ".tclenv.sh"; # ensure no stale state from previous configures.
   if {![opt-bool tcl]} {
     proj-indented-notice {
