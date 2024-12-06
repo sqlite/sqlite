@@ -1805,6 +1805,8 @@ static int loadStatTbl(
     tRowcnt *pSpace; /* Available allocated memory space */
     u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
 
+    u64 t = sqlite3STimeNow();
+
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
     nSample = sqlite3_column_int(pStmt, 1);
@@ -1844,6 +1846,9 @@ static int loadStatTbl(
       pIdx->aSample[i].anDLt = pSpace; pSpace += nIdxCol;
     }
     assert( ((u8*)pSpace)-nByte==(u8*)(pIdx->aSample) );
+    if( db->aSchemaTime ){
+      db->aSchemaTime[SCHEMA_TIME_STAT4_Q1_BODY] += (sqlite3STimeNow() - t);
+    }
   }
   rc = sqlite3_finalize(pStmt);
   if( rc ) return rc;

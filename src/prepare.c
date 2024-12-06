@@ -442,7 +442,10 @@ initone_error_out:
 error_out:
   db->aSchemaTime = 0;
   sqlite3PrepareTimeSet(aSchemaTime, SCHEMA_TIME_FINISH);
-  sqlite3SchemaTimeLog(aSchemaTime);
+  if( rc==SQLITE_OK && iDb==0 ){
+    const char *zFile = sqlite3BtreeGetFilename(pDb->pBt);
+    sqlite3SchemaTimeLog(aSchemaTime, zFile);
+  }
   if( rc ){
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       sqlite3OomFault(db);

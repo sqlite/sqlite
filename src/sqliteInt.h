@@ -1869,21 +1869,22 @@ struct sqlite3 {
 #define SCHEMA_TIME_AFTER_STAT1 12
 #define SCHEMA_TIME_AFTER_DEFAULTS 13
 
-#define SCHEMA_TIME_AFTER_STAT4_Q1 14
-#define SCHEMA_TIME_AFTER_STAT4_Q2 15
-#define SCHEMA_TIME_AFTER_STAT4 16
+#define SCHEMA_TIME_STAT4_Q1_BODY 14
+#define SCHEMA_TIME_AFTER_STAT4_Q1 15
+#define SCHEMA_TIME_AFTER_STAT4_Q2 16
+#define SCHEMA_TIME_AFTER_STAT4 17
 
-#define SCHEMA_TIME_END_ANALYZE_LOAD 17
-#define SCHEMA_TIME_FINISH 18
+#define SCHEMA_TIME_END_ANALYZE_LOAD 18
+#define SCHEMA_TIME_FINISH 19
 
-#define SCHEMA_TIME_N 19
-#define SCHEMA_TIME_TIMEOUT (2 * 1000 * 1000)
+#define SCHEMA_TIME_N 20
+#define SCHEMA_TIME_TIMEOUT (0 * 1000 * 1000)
 
 
 
 #define sqlite3PrepareTimeSet(x,y) sqlite3CommitTimeSet(x,y)
 void sqlite3PrepareTimeLog(const char *zSql, int nSql, u64 *aPrepareTime);
-void sqlite3SchemaTimeLog(u64 *aSchemaTime);
+void sqlite3SchemaTimeLog(u64 *aSchemaTime, const char *zFile);
 
 #define PREPARE_TIME_TIMEOUT (2 * 1000 * 1000)    /* 2 second timeout */
 
