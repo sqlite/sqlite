@@ -564,8 +564,9 @@ proc sqlite-check-tcl {} {
   define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
   define TCL_CONFIG_SH ""; # full path to tclConfig.sh
 
-  # Clear out all vars which would be set by tclConfigToAutoDef.sh, so that the late-config
-  # validation of @VARS@ works...
+  # Clear out all vars which would be set by tclConfigToAutoDef.sh, so
+  # that the late-config validation of @VARS@ works even if
+  # --disable-tcl is used.
   foreach k {TCL_INCLUDE_SPEC TCL_LIB_SPEC TCL_STUB_LIB_SPEC TCL_EXEC_PREFIX TCL_VERSION} {
     define $k ""
   }
