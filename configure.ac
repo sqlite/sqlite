@@ -124,7 +124,7 @@ AC_ARG_WITH(tcl, AS_HELP_STRING([--with-tcl=DIR],[directory containing (tclConfi
 AC_ARG_ENABLE(tcl, AS_HELP_STRING([--disable-tcl],[omit building accessory programs that require TCL-dev]),
       [use_tcl=$enableval],[use_tcl=yes])
 original_use_tcl=${use_tcl}
-if test x"${with_tclsh}" == x -a x"${with_tcl}" == x; then
+if test x"${with_tclsh}" = x -a x"${with_tcl}" = x; then
   AC_CHECK_PROGS(TCLSH_CMD, [tclsh9.0 tclsh8.6 tclsh],none)
   with_tclsh=${TCLSH_CMD}
 fi
@@ -195,7 +195,7 @@ else
   HAVE_TCL=0
 fi
 AC_SUBST(HAVE_TCL)
-if test x"$TCLSH_CMD" == x; then
+if test x"$TCLSH_CMD" = x; then
   TCLSH_CMD=${TCL_EXEC_PREFIX}/bin/tclsh${TCL_VERSION}
   if test ! -x ${TCLSH_CMD}; then
     TCLSH_CMD_2=${TCL_EXEC_PREFIX}/bin/tclsh

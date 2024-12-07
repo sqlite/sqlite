@@ -1601,7 +1601,7 @@ tclextension:	tclsqlite3.c
 # to find it.
 #
 tclextension-install:	tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --destdir "$(DESTDIR)" --cc "$(CC)" $(CFLAGS) $(OPT_FEATURE_FLAGS) $(OPTS)
 
 # Install the SQLite TCL extension that is used by $TCLSH_CMD
 #
