@@ -539,8 +539,8 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
+  u64 s2;          /* round-tripped significand */
   double rr[2];
-  u64 s2;
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -653,14 +653,13 @@ do_atof_calc:
   }
 
   rr[0] = (double)s;
-  if( s<(LARGEST_UINT64-0x7ff) ){
-    s2 = (u64)rr[0];
-#if defined(_MSC_VER) && _MSC_VER<1700
-    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
-#endif
-    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
-  }else{
-    s2 = s;
+  s2 = (u64)rr[0];
+  rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  if( rr[1]>1e-10*rr[0] ){
+    /* On some floating-point processing units, doing the round
+    ** trip from u64 to double back to u64 can give a wonky value
+    ** when the original u64 is close to LARGEST_UINT64.  If we
+    ** did get an overly large error value, just set it to zero. */
     rr[1] = 0.0;
   }
 
