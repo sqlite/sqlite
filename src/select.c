@@ -3911,32 +3911,32 @@ static Expr *substExpr(
         if( pSubst->isOuterJoin ){
           ExprSetProperty(pNew, EP_CanBeNull);
         }
+        if( pNew->op==TK_TRUEFALSE ){
+          pNew->u.iValue = sqlite3ExprTruthValue(pNew);
+          pNew->op = TK_INTEGER;
+          ExprSetProperty(pNew, EP_IntValue);
+        }
+
+        /* Ensure that the expression now has an implicit collation sequence,
+        ** just as it did when it was a column of a view or sub-query. */
+        {
+          CollSeq *pNat = sqlite3ExprCollSeq(pSubst->pParse, pNew);
+          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse,
+                pSubst->pCList->a[iColumn].pExpr
+          );
+          if( pNat!=pColl || (pNew->op!=TK_COLUMN && pNew->op!=TK_COLLATE) ){
+            pNew = sqlite3ExprAddCollateString(pSubst->pParse, pNew,
+                (pColl ? pColl->zName : "BINARY")
+            );
+          }
+        }
+        ExprClearProperty(pNew, EP_Collate);
         if( ExprHasProperty(pExpr,EP_OuterON|EP_InnerON) ){
           sqlite3SetJoinExpr(pNew, pExpr->w.iJoin,
                              pExpr->flags & (EP_OuterON|EP_InnerON));
         }
         sqlite3ExprDelete(db, pExpr);
         pExpr = pNew;
-        if( pExpr->op==TK_TRUEFALSE ){
-          pExpr->u.iValue = sqlite3ExprTruthValue(pExpr);
-          pExpr->op = TK_INTEGER;
-          ExprSetProperty(pExpr, EP_IntValue);
-        }
-
-        /* Ensure that the expression now has an implicit collation sequence,
-        ** just as it did when it was a column of a view or sub-query. */
-        {
-          CollSeq *pNat = sqlite3ExprCollSeq(pSubst->pParse, pExpr);
-          CollSeq *pColl = sqlite3ExprCollSeq(pSubst->pParse,
-                pSubst->pCList->a[iColumn].pExpr
-          );
-          if( pNat!=pColl || (pExpr->op!=TK_COLUMN && pExpr->op!=TK_COLLATE) ){
-            pExpr = sqlite3ExprAddCollateString(pSubst->pParse, pExpr,
-                (pColl ? pColl->zName : "BINARY")
-            );
-          }
-        }
-        ExprClearProperty(pExpr, EP_Collate);
       }
     }
   }else{
@@ -7821,7 +7821,7 @@ int sqlite3Select(
 #endif
       assert( pSubq->pSelect && (pSub->selFlags & SF_PushDown)!=0 );
     }else{
-      TREETRACE(0x4000,pParse,p,("WHERE-lcause push-down not possible\n"));
+      TREETRACE(0x4000,pParse,p,("WHERE-clause push-down not possible\n"));
     }
 
     /* Convert unused result columns of the subquery into simple NULL

@@ -6632,12 +6632,13 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   sqlite3_stmt *pStmt = 0;
   sqlite3_int64 nPage = 0;
   int pgSz = 0;
-  const char *zFilename;
   const char *zTail;
   char *zName = 0;
   int rc, i, j;
   unsigned char bShow[256];   /* Characters ok to display */
 
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(azArg);
   memset(bShow, '.', sizeof(bShow));
   for(i=' '; i<='~'; i++){
     if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
@@ -6660,17 +6661,15 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   if( nPage<1 ) goto dbtotxt_error;
   rc = sqlite3_prepare_v2(p->db, "PRAGMA databases", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  rc = 0;
   if( sqlite3_step(pStmt)!=SQLITE_ROW ){
-    zTail = zFilename = "unk.db";
+    zTail = "unk.db";
   }else{
-    zFilename = (const char*)sqlite3_column_text(pStmt, 2);
+    const char *zFilename = (const char*)sqlite3_column_text(pStmt, 2);
     if( zFilename==0 || zFilename[0]==0 ) zFilename = "unk.db";
     zTail = strrchr(zFilename, '/');
 #if defined(_WIN32)
     if( zTail==0 ) zTail = strrchr(zFilename, '\\');
 #endif
-    if( zTail ) zFilename = zTail;
   }
   zName = strdup(zTail);
   shell_check_oom(zName);
@@ -6681,7 +6680,6 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   rc = sqlite3_prepare_v2(p->db,
            "SELECT pgno, data FROM sqlite_dbpage ORDER BY pgno", -1, &pStmt, 0);
   if( rc ) goto dbtotxt_error;
-  rc = 0;
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     sqlite3_int64 pgno = sqlite3_column_int64(pStmt, 0);
     const u8 *aData = sqlite3_column_blob(pStmt, 1);
@@ -10411,7 +10409,10 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
 
-  if( c=='s' && cli_strncmp(azArg[0], "scanstats", n)==0 ){
+  if( c=='s' &&
+     (cli_strncmp(azArg[0], "scanstats",  n)==0 ||
+      cli_strncmp(azArg[0], "scanstatus", n)==0)
+  ){
     if( nArg==2 ){
       if( cli_strcmp(azArg[1], "vm")==0 ){
         p->scanstatsOn = 3;
@@ -11466,7 +11467,9 @@ static int do_meta_command(char *zLine, ShellState *p){
           };
           unsigned int curOpt;
           unsigned int newOpt;
+          unsigned int m;
           int ii;
+          int nOff;
           sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
           newOpt = curOpt;
           for(ii=2; ii<nArg; ii++){
@@ -11507,24 +11510,28 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           if( curOpt!=newOpt ){
             sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,p->db,newOpt);
-          }else if( nArg<3 ){
-            curOpt = ~newOpt;
           }
-          if( newOpt==0 ){
-            sqlite3_fputs("+All\n", p->out);
-          }else if( newOpt==0xffffffff ){
-            sqlite3_fputs("-All\n", p->out);
+          for(ii=nOff=0, m=1; ii<32; ii++, m <<= 1){
+            if( m & newOpt ) nOff++;
+          }
+          if( nOff<12 ){
+            sqlite3_fputs("+All", p->out);
+            for(ii=0; ii<ArraySize(aLabel); ii++){
+              if( !aLabel[ii].bDsply  ) continue;
+              if( (newOpt & aLabel[ii].mask)!=0 ){
+                sqlite3_fprintf(p->out, " -%s", aLabel[ii].zLabel);
+              }
+            }
           }else{
-            int jj;
-            for(jj=0; jj<ArraySize(aLabel); jj++){
-              unsigned int m = aLabel[jj].mask;
-              if( !aLabel[jj].bDsply  ) continue;
-              if( (curOpt&m)!=(newOpt&m) ){
-                sqlite3_fprintf(p->out, "%c%s\n", (newOpt & m)==0 ? '+' : '-',
-                      aLabel[jj].zLabel);
+            sqlite3_fputs("-All", p->out);
+            for(ii=0; ii<ArraySize(aLabel); ii++){
+              if( !aLabel[ii].bDsply  ) continue;
+              if( (newOpt & aLabel[ii].mask)==0 ){
+                sqlite3_fprintf(p->out, " +%s", aLabel[ii].zLabel);
               }
             }
           }
+          sqlite3_fputs("\n", p->out);
           rc2 = isOk = 3;
           break;
         }
@@ -11985,7 +11992,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
   char cWait = (char)qss; /* intentional narrowing loss */
   if( cWait==0 ){
   PlainScan:
-    assert( cWait==0 );
     while( (cin = *zLine++)!=0 ){
       if( IsSpace(cin) )
         continue;
@@ -12037,7 +12043,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
           if( *zLine != '/' )
             continue;
           ++zLine;
-          cWait = 0;
           CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
@@ -12049,7 +12054,6 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
           }
           deliberate_fall_through;
         case ']':
-          cWait = 0;
           CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;

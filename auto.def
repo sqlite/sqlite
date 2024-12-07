@@ -36,13 +36,15 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 # 1) --debug is used by autosetup itself, so we have to rename it to
 # --with-debug. We cannot use --enable-debug because that is, for
-# autosetup, and alias for --debug=1.
+# autosetup, an alias for --debug=1. Alternately, we can patch
+# autosetup to use --autosetup-debug for its own purposes instead.
 #
 # 2) In autosetup, all flags starting with (--enable, --disable) are
 # forced to be booleans and receive special handling in how they're
 # resolved. Because of that we have to rename:
 #
-#   2.1) --enable-tempstore[=no] to --with-tempstore[=no].
+#   2.1) --enable-tempstore[=no] to --with-tempstore[=no], noting that
+#        it has four legal values, not two.
 #
 ########################################################################
 # A gentle introduction to flags handling in autosetup
@@ -64,17 +66,16 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 # Autosetup does no small amount of specialized handling for flags,
 # especially booleans. Each bool-type --FLAG implicitly gets
-# --enable-FLAG and --disable-FLAG forms, and explicitly adding flags
-# with those prefixes will force them to be boolean flags. e.g. we
-# define a flag "readline", which will be interpreted in one of two
-# ways, depending on how it's invoked and how its default is defined:
+# --enable-FLAG and --disable-FLAG forms. e.g. we define a flag
+# "readline", which will be interpreted in one of two ways, depending
+# on how it's invoked and how its default is defined:
 #
 #   --enable-readline ==> boolean true
 #   --disable-readline ==> boolean false
 #
-# Trying to pass --readline or --readline=1 or --readline=0 will
-# result in an "unrecognized option" error, despite the the [options]
-# call listing the flag as "readline".
+# Passing --readline or --readline=1 is equivalent to passing
+# --enable-readline, and --readline=0 is equivalent to
+# --disable-readline.
 #
 # The behavior described above can lead lead to some confusion when
 # writing help text. For example:
@@ -82,7 +83,7 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #   options { json=1 {Disable JSON functions} }
 #
 # The reason the help text says "disable" is because a boolean option
-# defaulting to true is, in the --help text, rendered as:
+# which defaults to true is, in the --help text, rendered as:
 #
 #   --disable-json          Disable JSON functions
 #
@@ -92,22 +93,7 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 # Non-boolean flags, in contrast, use the names specifically given to
 # them in the [options] invocation. e.g. "with-tcl" is the --with-tcl
-# flag. Autosetup may, however, choose to automatically alter the help
-# text, as demonstrated here:
-#
-#   options {
-#    readline=1           => {Disable readline support}
-#    with-readline-lib:   => {Readline library}
-#    with-readline-inc:   => {Readline include paths}
-#   }
-#
-#   $ ./configure --help | grep readline
-#   --disable-readline      disable readline support
-#   --with-readline-lib     specify readline library
-#   --with-readline-inc     specify readline include paths
-#
-# Note that it prefixed and lower-case the help message. Whether
-# that's a feature or a bug can be debated.
+# flag.
 #
 # Fetching values for flags:
 #
@@ -119,11 +105,17 @@ set DUMP_DEFINES_JSON ""; #./config.defines.json
 #
 #   Non-boolean (i.e. string) flags:
 #     - [opt-val FLAG ?default?]
+#     - [opt-str ...] - see the docs in ./autosetup/autosetup
 #
 ########################################################################
 set flags {
+  # When writing {help text blocks}, be aware that autosetup formats
+  # them differently (left-aligned, directly under the --flag) if the
+  # block starts with a newline. It does NOT expand vars and commands,
+  # but we use a [subst] call below which will replace (only) var
+  # refs.
+
   # <build-modes>
-  with-debug:=1        => {Enable debug build flags}
   shared=1             => {Disable build of shared libary}
   static=1             => {Disable build of static library (mostly)}
   amalgamation=1       => {Disable the amalgamation and instead build all files separately.}
@@ -147,20 +139,21 @@ set flags {
   all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
   # </lib-feature>
   # <tcl>
-  # --with-tcl=DIR may be either a dir containing tclConfig.sh or a
-  # dir one level up from that from which we can derive a dir
-  # containing tclConfig.sh.
-  with-tcl:            => {Root of path containing tclConfig.sh}
-  # If --with-tclsh=X given, it is used for (A) trying to find
-  # tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-  # its containing dir has multiple tclsh versions, it may select the
-  # wrong tclConfig.sh!
-  with-tclsh:PATH      => {Full pathname of tclsh to use}
-  # --disable-tcl disables building of components which require TCL,
-  # including tests. This tree requires TCL for code generation but
-  # can use the in-tree copy of autosetup/jimsh0.c for that. The
-  # SQLite TCL extension and the test code require a canonical tclsh.
-  tcl=1                => {Disable components which require TCL}
+  with-tcl:DIR         =>
+    {Directory containing tclConfig.sh or a directory one level up from
+     that, from which we can derive a directory containing tclConfig.sh.
+     A dir name of "prefix" is equivalent to the directory specified by
+     the --prefix flag.}
+  with-tclsh:PATH      =>
+    {Full pathname of tclsh to use.  It is used for (A) trying to find
+     tclConfig.sh and (B) all TCL-based code generation.  Warning: if
+     its containing dir has multiple tclsh versions, it may select the
+     wrong tclConfig.sh!}
+  tcl=1                =>
+    {Disable components which require TCL, including all tests.
+     This tree requires TCL for code generation but can use the in-tree
+     copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
+     test code require a canonical tclsh.}
   # <tcl>
   # <line-editing>
   readline=1           => {Disable readline support}
@@ -193,12 +186,30 @@ set flags {
   with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
   # </alternative-builds>
   # <developer>
+  # Note that using the --debug/--enable-debug flag here requires patching
+  # autosetup/autosetup to rename the --debug to --autosetup-debug.
+  with-debug=0
+  debug=0              =>
+    {Enable debug build flags. This option will impact performance by
+     as much as 4x, as it includes large numbers of assert()s in
+     performance-critical loops.  Never use --debug for production
+     builds.}
+  scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
+  dev                  => {Enable dev-mode build: automatically enables certain other flags}
   test-status          => {Enable status of tests}
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
-  dev                  => {Enable dev-mode build: automatically enables certain other flags}
   dump-defines=0       => {Dump autosetup defines to $DUMP_DEFINES_TXT (for build debugging)}
-  soname:=legacy       => {SONAME for libsqlite3.so. Must be one of: none, auto, legacy}
+  dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
+  soname:=legacy       =>
+    {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+     soname. "legacy" sets it to its historical value of
+     libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+     it to that literal value. Any other value is assumed to be a
+     suffix which gets applied to "libsqlite3.so.",
+     e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
+    }
+  # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
   # </developer>
 }
 if {"" ne $DUMP_DEFINES_JSON} {
@@ -217,6 +228,7 @@ unset flags
 proj-xfer-options-aliases {
   with-readline-inc => with-readline-cflags
   with-readline-lib => with-readline-ldflags
+  with-debug => debug
 }
 
 set srcdir $::autosetup(srcdir)
@@ -293,18 +305,17 @@ proj-file-extensions
 if {".exe" eq [get-define TARGET_EXEEXT]} {
   define SQLITE_OS_UNIX 0
   define SQLITE_OS_WIN 1
-  # todo? add -DSQLITE_OS_WIN=1 to CFLAGS or CFLAGS_sqlite3_os?
 } else {
   define SQLITE_OS_UNIX 1
   define SQLITE_OS_WIN 0
-  # todo? add -DSQLITE_OS_UNIX=1 to CFLAGS or CFLAGS_sqlite3_os
 }
 
 #########
 # Programs needed
-cc-check-tools ld ar ; # must come before sqlite-check-wasi-sdk
+cc-check-tools ld ar ; # must come before [sqlite-check-wasi-sdk]
 if {"" eq [proj-bin-define install]} {
   proj-warn "Cannot find install binary, so 'make install' will not work."
+  define BIN_INSTALL false
 }
 
 ########################################################################
@@ -319,10 +330,9 @@ define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
 
 proj-if-opt-truthy dev {
   # --enable-dev needs to come early so that the downstream tests
-  # which check for these flags will show the user their updated
-  # state.
+  # which check for the following flags use their updated state.
   proj-opt-set all 1
-  proj-opt-set with-debug 1
+  proj-opt-set debug 1
   proj-opt-set amalgamation 0
   define CFLAGS [get-env CFLAGS {-O0 -g}]
 }
@@ -330,8 +340,8 @@ proj-if-opt-truthy dev {
 ########################################################################
 # Handle --with-wasi-sdk=DIR
 #
-# This must be run early on because it may change the toolchain and
-# disable a number of config options.
+# This must be run relatively early on because it may change the
+# toolchain and disable a number of config options.
 proc sqlite-check-wasi-sdk {} {
   set wasiSdkDir [opt-val with-wasi-sdk] ; # ??? [lindex [opt-val with-wasi-sdk] end]
   define HAVE_WASI_SDK 0
@@ -350,6 +360,7 @@ proc sqlite-check-wasi-sdk {} {
   msg-result "Using wasi-sdk clang. Disabling CLI shell modifying config flags:"
   # Boolean (--enable-/--disable-) flags which must be switched off:
   foreach opt {
+    dynlink-tools
     editline
     gcov
     icu-collations
@@ -401,6 +412,11 @@ proc sqlite-check-wasi-sdk {} {
 }; # sqlite-check-wasi-sdk
 sqlite-check-wasi-sdk
 
+########################################################################
+# --dynlink-tools tells the build to dynamically link certain binaries
+# to libsqlite3.so instead of embedding a copy of the amalgamation.
+define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
+
 #
 # Enable large file support (if special flags are necessary)
 define HAVE_LFS 0
@@ -444,52 +460,44 @@ if {[cc-check-includes zlib.h] && [proj-check-function-in-lib deflate z]} {
 proj-check-rpath  ; # Determine proper rpath-handling flag
 
 ########################################################################
-# It's not yet clear whether we gain anything from setting -soname,
-# but not having it has been a source of anxiety for some users.
-# Setting it to any value other than its historical value of
-# libsqlite3.so.0 may break dynamic linking of clients which initially
-# linked against a legacy build (with its SONAME of libsqlite3.so.0).
-#
-# To be clear: the ABI has not changed between pre-3.48 and post-3.47
-# builds, but version number 0 (pre-3.48) was a historical remnant
-# from libtool which "should" have always been version number 3 but
-# was not, for reasons lost to history.
-#
-# If the goal is to reduce downstream disruption then we need to
-# retain the SONAME libsqlite3.so.0.  If the goal is to "pull the
-# bandaid off" then switching libsqlite3.so.3 is arguably the right
-# thing to do (at the very real risk of causing a fair amount of
-# downstream disruption for package maintainers).
-#
-# See discussion in/around:
-# https://sqlite.org/forum/forumpost/0c6fc6f46b2cb3
+# "soname" for libsqlite3.so. See discussion at:
+# https://sqlite.org/src/forumpost/5a3b44f510df8ded
 apply {{} {
   define LDFLAGS_LIBSQLITE3_SONAME ""
   if {[proj-opt-was-provided soname]} {
-    set soname [opt-val soname]
+    set soname [join [opt-val soname] ""]
   } else {
-    set soname legacy
+    # Enabling soname breaks linking for the --dynlink-tools feature,
+    # and this project has no direct use for soname, so default to
+    # none. Package maintainers, on the other hand, like to have an
+    # soname.
+    set soname none
   }
   switch -exact -- $soname {
-    none   { return 0 }
-    auto   { set soname libsqlite3.so.3 }
-    legacy { set soname libsqlite3.so.0 }
+    none - "" { return 0 }
+    auto      { set soname libsqlite3.so.3 }
+    legacy    { set soname libsqlite3.so.0 }
     default {
-      proj-fatal "Invalid value for --soname. Use one of (none, auto, legacy)."
+      if {[string match libsqlite3.* $soname]} {
+        # use it as-is
+      } else {
+        # Assume it's a suffix
+        set soname "libsqlite3.so.${soname}"
+      }
     }
   }
   msg-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
     define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
-    msg-result "Setting SONAME: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
+    msg-result "Setting SONAME using: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
   } elseif {[proj-opt-was-provided soname]} {
     # --soname was explicitly requested but not available, so fail fatally
     proj-fatal "This environment does not support SONAME."
   } else {
+    # --soname was not explicitly requested but not available, so just warn
     msg-result "This environment does not support SONAME."
   }
 }}
-
 
 proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
 
@@ -509,9 +517,10 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
   "Use #line macros in the amalgamation:"
 
 msg-checking "SQLITE_DEBUG build? "
-proj-if-opt-truthy with-debug {
+proj-if-opt-truthy debug {
   define SQLITE_DEBUG 1
   define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+  proj-opt-set memsys5
   msg-result yes
 } {
   define TARGET_DEBUG {-DNDEBUG}
@@ -549,16 +558,25 @@ proj-if-opt-truthy with-debug {
 # failure to find TCL is not fatal but a loud warning will be emitted.
 #
 proc sqlite-check-tcl {} {
+  rename sqlite-check-tcl ""
   define TCLSH_CMD false ; # Significant is that it exits with non-0
   define HAVE_TCL 0      ; # Will be enabled via --tcl or a successful search
   define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
   define TCL_CONFIG_SH ""; # full path to tclConfig.sh
+
+  # Clear out all vars which would be set by tclConfigToAutoDef.sh, so
+  # that the late-config validation of @VARS@ works even if
+  # --disable-tcl is used.
+  foreach k {TCL_INCLUDE_SPEC TCL_LIB_SPEC TCL_STUB_LIB_SPEC TCL_EXEC_PREFIX TCL_VERSION} {
+    define $k ""
+  }
+
   file delete -force ".tclenv.sh"; # ensure no stale state from previous configures.
   if {![opt-bool tcl]} {
     proj-indented-notice {
       NOTE: TCL is disabled via --disable-tcl. This means that none
-      of the TCL-based components, including tests and sqlite3_analyzer,
-      will be built.
+      of the TCL-based components will be built, including tests
+      and sqlite3_analyzer.
     }
     return
   }
@@ -676,8 +694,8 @@ proc sqlite-check-tcl {} {
     # in main.mk (search it for T.tcl.env.sh) so that
     # static/hand-written makefiles which import main.mk do not have
     # to define that before importing main.mk. Even so, we export
-    # TCLLIBDIR from here, which will cause the makefile to use this
-    # one rather than to re-calculate it at make-time.
+    # TCLLIBDIR from here, which will cause the canonical makefile to
+    # use this one rather than to re-calculate it at make-time.
     set tcllibdir [get-env TCLLIBDIR ""]
     if {"" eq $tcllibdir} {
       # Attempt to extract TCLLIBDIR from TCL's $auto_path
@@ -732,7 +750,7 @@ sqlite-check-tcl
 # sqlite-determine-codegen-tcl checks which TCL to use as a code
 # generator.  By default, prefer jimsh simply because we have it
 # in-tree (it's part of autosetup) unless --with-tclsh=X is used, in
-# which case prefix X.
+# which case prefer X.
 #
 # Returns the human-readable name of the TCL it selects. Fails fatally
 # if it cannot detect a TCL appropriate for code generation.
@@ -748,9 +766,16 @@ sqlite-check-tcl
 set useJimForCodeGen 0 ; # Set to 1 when using jimsh for code generation.
                          # May affect later decisions.
 proc sqlite-determine-codegen-tcl {} {
+  rename sqlite-determine-codegen-tcl ""
   msg-result "Checking for TCL to use for code generation... "
   define CFLAGS_JIMSH [proj-get-env CFLAGS_JIMSH {-O1}]
   set cgtcl [opt-val with-tclsh jimsh]
+  if {"jimsh" ne $cgtcl} {
+    # When --with-tclsh=X is used, use that for all TCL purposes,
+    # including in-tree code generation, per developer request.
+    define BTCLSH "\$(TCLSH_CMD)"
+    return $cgtcl
+  }
   set flagsToRestore {CC CFLAGS AS_CFLAGS CPPFLAGS AS_CPPFLAGS LDFLAGS LINKFLAGS LIBS CROSS}
   define-push $flagsToRestore {
     # We have to swap CC to CC_FOR_BUILD for purposes of the various
@@ -764,56 +789,50 @@ proc sqlite-determine-codegen-tcl {} {
     # block.
     foreach flag $flagsToRestore {define $flag ""}
     define CC [get-define CC_FOR_BUILD]
-    if {"jimsh" ne $cgtcl} {
-      # When --with-tclsh=X is used, use that for all TCL purposes,
-      # including in-tree code generation, per developer request.
+    # These headers are technically optional for JimTCL but necessary if
+    # we want to use it for code generation:
+    set sysh [cc-check-includes dirent.h sys/time.h]
+    # jimsh0.c hard-codes #define's for HAVE_DIRENT_H and
+    # HAVE_SYS_TIME_H on the platforms it supports, so we do not
+    # need to add -D... flags for those. We check for them here only
+    # so that we can avoid the situation that we later, at
+    # make-time, try to compile jimsh but it then fails due to
+    # missing headers (i.e. fail earlier rather than later).
+    if {$sysh && [cc-check-functions realpath]} {
+      define-append CFLAGS_JIMSH -DHAVE_REALPATH
+      define BTCLSH "\$(JIMSH)"
+      set ::useJimForCodeGen 1
+    } elseif {$sysh && [cc-check-functions _fullpath]} {
+      # _fullpath() is a Windows API. It's not entirely clear
+      # whether we need to add {-DHAVE_SYS_TIME_H -DHAVE_DIRENT_H}
+      # to CFLAGS_JIMSH in this case. On MinGW32 we definitely do
+      # not want to because it already hard-codes them. On _MSC_VER
+      # builds it does not.
+      define-append CFLAGS_JIMSH -DHAVE__FULLPATH
+      define BTCLSH "\$(JIMSH)"
+      set ::useJimForCodeGen 1
+    } elseif {[file-isexec [get-define TCLSH_CMD]]} {
+      set cgtcl [get-define TCLSH_CMD]
       define BTCLSH "\$(TCLSH_CMD)"
     } else {
-      # These headers are technically optional for JimTCL but necessary if
-      # we want to use it for code generation:
-      set sysh [cc-check-includes dirent.h sys/time.h]
-      # jimsh0.c hard-codes #define's for HAVE_DIRENT_H and
-      # HAVE_SYS_TIME_H on the platforms it supports, so we do not
-      # need to add -D... flags for those. We check for them here only
-      # so that we can avoid the situation that we later, at
-      # make-time, try to compile jimsh but it then fails due to
-      # missing headers (i.e. fail earlier rather than later).
-      if {$sysh && [cc-check-functions realpath]} {
-        define-append CFLAGS_JIMSH -DHAVE_REALPATH
-        define BTCLSH "\$(JIMSH)"
-        set ::useJimForCodeGen 1
-      } elseif {$sysh && [cc-check-functions _fullpath]} {
-        # _fullpath() is a Windows API. It's not entirely clear
-        # whether we need to add {-DHAVE_SYS_TIME_H -DHAVE_DIRENT_H}
-        # to CFLAGS_JIMSH in this case. On MinGW32 we definitely do
-        # not want to because it already hard-codes them. On _MSC_VER
-        # builds it does not.
-        define-append CFLAGS_JIMSH -DHAVE__FULLPATH
-        define BTCLSH "\$(JIMSH)"
-        set ::useJimForCodeGen 1
-      } elseif {[file-isexec [get-define TCLSH_CMD]]} {
-        set cgtcl [get-define TCLSH_CMD]
-        define BTCLSH "\$(TCLSH_CMD)"
-      } else {
-        # One last-ditch effort to find TCLSH_CMD: use info from
-        # tclConfig.sh to try to find a tclsh
-        if {"" eq [get-define TCLSH_CMD]} {
-          set tpre [get-define TCL_EXEC_PREFIX]
-          if {"" ne $tpre} {
-            set tv [get-define TCL_VERSION]
-            if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
-              define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
-            } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
-              define TCLSH_CMD "${tpre}/bin/tclsh"
-            }
+      # One last-ditch effort to find TCLSH_CMD: use info from
+      # tclConfig.sh to try to find a tclsh
+      if {"" eq [get-define TCLSH_CMD]} {
+        set tpre [get-define TCL_EXEC_PREFIX]
+        if {"" ne $tpre} {
+          set tv [get-define TCL_VERSION]
+          if {[file-isexec "${tpre}/bin/tclsh${tv}"]} {
+            define TCLSH_CMD "${tpre}/bin/tclsh${tv}"
+          } elseif {[file-isexec "${tpre}/bin/tclsh"]} {
+            define TCLSH_CMD "${tpre}/bin/tclsh"
           }
         }
-        set cgtcl [get-define TCLSH_CMD]
-        if {![file-isexec $cgtcl]} {
-          proj-fatal "Cannot find a tclsh to use for code generation."
-        }
-        define BTCLSH "\$(TCLSH_CMD)"
       }
+      set cgtcl [get-define TCLSH_CMD]
+      if {![file-isexec $cgtcl]} {
+        proj-fatal "Cannot find a tclsh to use for code generation."
+      }
+      define BTCLSH "\$(TCLSH_CMD)"
     }
   }; # CC swap-out
   return $cgtcl
@@ -834,6 +853,8 @@ proj-if-opt-truthy threadsafe {
   }
   define LDFLAGS_PTHREAD [get-define lib_pthread_create]
   undefine lib_pthread_create
+  # Recall that LDFLAGS_PTHREAD might be empty even if pthreads if
+  # found because it's in -lc on some platforms.
 } {
   msg-result no
   sqlite-add-feature-flag -DSQLITE_THREADSAFE=0
@@ -847,7 +868,7 @@ apply {{} {
   set ts [opt-val with-tempstore no]
   set tsn 1
   msg-checking "Use an in-RAM database for temporary tables? "
-  switch -- $ts {
+  switch -exact -- $ts {
     never  { set tsn 0 }
     no     { set tsn 1 }
     yes    { set tsn 2 }
@@ -857,7 +878,7 @@ apply {{} {
     }
   }
   msg-result $ts
-  define TEMP_STORE $tsn
+  sqlite-add-feature-flag -DSQLITE_TEMP_STORE=$tsn
 }}
 
 ########################################################################
@@ -897,6 +918,7 @@ apply {{} {
 #     corresponding --FEATURE flag was explicitly given, fail fatally,
 #     else fail silently.
 proc sqlite-check-line-editing {} {
+  rename sqlite-check-line-editing ""
   msg-result "Checking for line-editing capability..."
   define HAVE_READLINE 0
   define HAVE_LINENOISE 0
@@ -1150,22 +1172,13 @@ proj-if-opt-truthy math {
 # are cumulative.  If neither are provided, icu-collations is not
 # honored and a warning is emitted if it is provided.
 #
-# Design note: though we can automatically enable ICU if the
+# Design note: though we could automatically enable ICU if the
 # icu-config binary or (pkg-config icu-io) are found, we specifically
 # do not. ICU is always an opt-in feature.
-#
-# Maintenance reminder: check-in 09caa94c9e84 added pkg-config support
-# to this but the result fails to link on both Linux and OpenBSD
-# (other systems were untested) because the pkg-config results are
-# missing a required library.
 proc sqlite-check-icu {} {
+  rename sqlite-check-icu ""
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
-  # Flags sets seen in the wild for ICU:
-  # - -licui18n -licuuc -licudata
-  # - -licui18n -licuuc
-  # - /usr/local/bin/icu-config --ldflags
-  #
   if {[proj-opt-was-provided with-icu-config]} {
     set icuConfigBin [opt-val with-icu-config]
     set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
@@ -1226,8 +1239,18 @@ sqlite-check-icu
 
 ########################################################################
 # Check for the Emscripten SDK for building the web-based wasm
-# components.
+# components.  The core lib and tools do not require this but ext/wasm
+# does.
 apply {{} {
+  if {$::autosetup(srcdir) ne $::autosetup(builddir)} {
+    # The EMSDK pieces require writing to the original source tree
+    # even when doing an out-of-tree build. The ext/wasm pieces do not
+    # support an out-of-tree build so we catch that case and treat it
+    # as if EMSDK were not found.
+    msg-result "Out-of tree build: not checking for EMSDK."
+    define EMCC_WRAPPER ""
+    return
+  }
   set emccsh $::srcdir/tool/emcc.sh
   if {![get-define HAVE_WASI_SDK] && [proj-check-emsdk]} {
     define EMCC_WRAPPER $emccsh
@@ -1282,6 +1305,7 @@ foreach {boolFlag featureFlag ifSetEvalThis} {
       sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
     }
   }
+  scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
 } {
   proj-if-opt-truthy $boolFlag {
     sqlite-add-feature-flag $featureFlag
@@ -1385,3 +1409,26 @@ proj-if-opt-truthy dump-defines {
     undefine OPT_SHELL.list
   }
 }
+
+########################################################################
+# Perform some high-level validation on the generated files...
+#
+# 1) Ensure that no unresolved @VAR@ placeholders are in files which
+#    use those.
+#
+# 2) TBD
+apply {{} {
+  # Check #1: ensure that files which get filtered for @VAR@ do not
+  # contain any unresolved @VAR@ refs. That may indicate an
+  # unexported/unused var or a typo.
+  foreach f "Makefile sqlite3.pc $::srcdir/tool/emcc.sh" {
+    if {![file exists $f]} continue
+    set lnno 1
+    foreach line [proj-file-content-list $f] {
+      if {[regexp {(@[A-Za-z_]+@)} $line match]} {
+        error "Unresolved reference to $match at line $lnno of $f"
+      }
+      incr lnno
+    }
+  }
+}}
