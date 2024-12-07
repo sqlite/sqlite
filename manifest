@@ -1,5 +1,5 @@
-C On\sx64\shardware,\sround-trip\suint64_t&rarr;double&rarr;uint64_t\sconversions\nfail\sfor\svalues\sgreater\sthan\sUINT64_MAX-2047.\s\sThis\scaused\sthe\sSQLite\ntext-to-float\sconverter\sroutine\sto\sgive\sincorrect\sresults\sfor\svalues\nbetween\s'1.8446744073709550592eNNN'\sand\s'1.8446744073709551609eNNN'\sfor\sany\nexponent\sNNN.\sFixed\sby\sthis\scheck-in.
-D 2024-12-07T14:51:32.587
+C Increment\sthe\sversion\snumber\sto\s3.47.2
+D 2024-12-07T14:53:43.921
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in bb7184a6906f4f15647031c414d4b7dbe935683c14976548a793071e7133bd84
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 58b69eda1faad5d475092b8aeffab9156ee4901a82db089b166607f2ec907ee4
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
-F VERSION 6a912f22d5fbcc5242ec463774ab1b51b858129bb917356ac256a7655784b014
+F VERSION f6819a04f84cfb674a2c35379885171be92205dd18603bd989455126717b9229
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -25,7 +25,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 5c0cd8ddac88dcac0037f401deae60861448d163d4a13dec784ba2b31d9bdd27
+F autoconf/tea/configure.ac 073330791b9e99d225dbe3fd65d97d3e1fe9487bf41000e8373f677809f652d5
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 26f680f93ef0a0dc94f19c13a1fbb5eea17e3e02ebe2a943ff73bb01eb7e1701 x
+F configure 3d57abc2124fd69998939bade07aac5e97bf1139592452b2685e0c940acf2ca6 x
 F configure.ac 45dbc4aaccc943ef51826e3226671b021158434d1b17cbc6819aff63e10171bf
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2222,9 +2222,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e487d3b3c03ebcf06f8071f5c6a04faae15605200361e831df7bb2361e33efc3
-Q +81342fa6dd03fffbe7d4d699ff049dcef4d30344578bb6f91cb58a4e5a4f6036
-R 678f4a7261056197c92281288a1b78e6
+P 17537a98cb31ab41f0e02a8403b1480f8d86ddbfc263fd766e73b6b5a7dbba2f
+R fe11019865a741b8876079bd77710e7b
 U drh
-Z 5156d2cfa4b0562c8554b0561ad656fb
+Z 90efad15a3d032dd3857c20292794561
 # Remove this line to create a well-formed Fossil manifest.
