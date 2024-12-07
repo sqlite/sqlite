@@ -1,5 +1,5 @@
-C Fix\smore\sharmless\scompiler\swarnings.
-D 2024-12-07T17:08:13.773
+C A\scleaner\sand\smore\srobust\ssolution\sto\sthe\sfloating-point\sconversion\sproblem\noriginally\sfixed\sby\s[81342fa6dd03fffb].
+D 2024-12-07T19:06:25.786
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -844,7 +844,7 @@ F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
-F src/util.c 196a1498ed9ab5d3cca55db73ba10348c058c840b0a534e9d5d90db1862a50a1
+F src/util.c bf4e641c1e2d5cf40501f5f6990df412d2b6c301880a74750e7eefc4315f72bc
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c 8a6eb02823b424b273614bae41579392a5c495424592b60423dd2c443a583df0
 F src/vdbe.h 9676348d342bd04e21e384c63b57224171ce84fac77853357334ef94c4d33cf4
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 462700aeb7c183d739ead4d726ce5384b3297bcf7929abd010987fa3a5f64807
-R 9ca7022ab896402e14e56ef4a0122fef
+P f5b8fd77635e5e6d2d88a1ce74e1bd6c4311260a2b695e5055b898b880bf5718
+R 8f59f36dbcd9cf41cdce9fb59aaabbba
 U drh
-Z 5b81dd5db542d45ebbd1ee1a952722cd
+Z 7774bee9e6cea167bb38890889846afb
 # Remove this line to create a well-formed Fossil manifest.
