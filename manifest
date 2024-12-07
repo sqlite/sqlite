@@ -1,5 +1,5 @@
-C A\scleaner\sand\smore\srobust\ssolution\sto\sthe\sfloating-point\sconversion\sproblem\noriginally\sfixed\searlier\stoday.
-D 2024-12-07T19:12:41.603
+C Yet\sanother\siteration\sof\sthe\ssolution\sto\sthe\sfloating-point\sconversion\nproblem.\s\sThis\sone\savoids\scomplaints\sabout\soversize\sdouble\svalues\nfrom\s-fsanitize.
+D 2024-12-07T20:01:08.210
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -841,7 +841,7 @@ F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
-F src/util.c 10dc2a3639c9b2393ba44ddd643a9385e22a8aab950160e3a42b76cdc7e3f883
+F src/util.c 9234bbddd2ba8ff22fc07331d34b01da6c4c4ce36ca34852e44dc746acdefa18
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c 1f56a0ae24115c2e37213e77cf79aa3b8c8d0366755707385564f6b8dd83d0fb
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
@@ -2222,9 +2222,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42aa7157f8b549d4321a8811a8223a98f877b60f032f529fd3948dfc0aa54cd7
-Q +351de57f80b73045448c71d3402d877ff5d72418b1f5fc34c8147a04f7c5cb78
-R 99f2d4cc7e69d5c0358c51b93825fdc4
+P 18b20494ce0d0f8eb87f1157245ebd728d2262f0d1d902a5934f240fc781b4e6
+Q +fc6904a508eb732b1cb5cc12321a0d637d97e1e066a022a2c93cb50595f3a86a
+R 3df4e8abea3bba7571d6c59d3633b08c
 U drh
-Z e1fe34756bd989b4f916e0f8d7127934
+Z 9ea0b936588d1ad66563ee6d841ee4e2
 # Remove this line to create a well-formed Fossil manifest.

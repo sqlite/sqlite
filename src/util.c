@@ -653,15 +653,15 @@ do_atof_calc:
   }
 
   rr[0] = (double)s;
-  s2 = (u64)rr[0];
-  rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
-  if( rr[1]>1e-10*rr[0] ){
-    /* On some floating-point processing units, doing the round
-    ** trip from u64 to double back to u64 can give a wonky value
-    ** when the original u64 is close to LARGEST_UINT64.  If we
-    ** did get an overly large error value, just set it to zero. */
+  assert( sizeof(s2)==sizeof(rr[0]) );
+  memcpy(&s2, &rr[0], sizeof(s2));
+  if( s2<=0x43efffffffffffffLL ){
+    s2 = (u64)rr[0];
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  }else{
     rr[1] = 0.0;
   }
+  assert( rr[1]<=1.0e-10*rr[0] );  /* Equal only when rr[0]==0.0 */
 
   if( e>0 ){
     while( e>=100  ){
