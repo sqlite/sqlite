@@ -6637,6 +6637,8 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   int rc, i, j;
   unsigned char bShow[256];   /* Characters ok to display */
 
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(azArg);
   memset(bShow, '.', sizeof(bShow));
   for(i=' '; i<='~'; i++){
     if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
