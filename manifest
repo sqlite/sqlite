@@ -1,5 +1,5 @@
-C Yet\sanother\siteration\sof\sthe\ssolution\sto\sthe\sfloating-point\sconversion\nproblem.\s\sThis\sone\savoids\scomplaints\sabout\soversize\sdouble\svalues\nfrom\s-fsanitize.
-D 2024-12-07T20:01:08.210
+C Version\s3.47.2
+D 2024-12-07T20:39:59.211
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2222,9 +2222,10 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 18b20494ce0d0f8eb87f1157245ebd728d2262f0d1d902a5934f240fc781b4e6
-Q +fc6904a508eb732b1cb5cc12321a0d637d97e1e066a022a2c93cb50595f3a86a
+P 07bd06b13c42edb3a3efa8f26d48823c9ffa3d5ec8d06ee21a33b6c1d29b4726
 R 3df4e8abea3bba7571d6c59d3633b08c
+T +sym-release *
+T +sym-version-3.47.2 *
 U drh
-Z 9ea0b936588d1ad66563ee6d841ee4e2
+Z 2b27d6949c6873483f90ec22ca9e3998
 # Remove this line to create a well-formed Fossil manifest.
