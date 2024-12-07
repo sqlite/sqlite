@@ -540,7 +540,6 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
   double rr[2];
-  u64 s2;
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -654,13 +653,12 @@ do_atof_calc:
 
   rr[0] = (double)s;
   if( s<(LARGEST_UINT64-0x7ff) ){
-    s2 = (u64)rr[0];
+    u64 s2 = (u64)rr[0];
 #if defined(_MSC_VER) && _MSC_VER<1700
     if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
 #endif
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
   }else{
-    s2 = s;
     rr[1] = 0.0;
   }
 
