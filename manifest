@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\squery\sflattener\sdoes\snot\schange\san\sON\sclause\sterm\sto\sa\sWHERE\sclause\sterm.
-D 2024-12-02T19:32:07.485
+C On\sx64\shardware,\sround-trip\suint64_t&rarr;double&rarr;uint64_t\sconversions\nfail\sfor\svalues\sgreater\sthan\sUINT64_MAX-2047.\s\sThis\scaused\sthe\sSQLite\ntext-to-float\sconverter\sroutine\sto\sgive\sincorrect\sresults\sfor\svalues\nbetween\s'1.8446744073709550592eNNN'\sand\s'1.8446744073709551609eNNN'\sfor\sany\nexponent\sNNN.\sFixed\sby\sthis\scheck-in.
+D 2024-12-07T14:51:32.587
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -841,7 +841,7 @@ F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
-F src/util.c ceebf912f673247e305f16f97f0bb7285fca1d37413b79680714a553a9021d33
+F src/util.c fde9ad9ce18841a844ce277b4eb4ace4ada7ca4110f9bed5d1d5ce89dabaf957
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c 1f56a0ae24115c2e37213e77cf79aa3b8c8d0366755707385564f6b8dd83d0fb
 F src/vdbe.h c2549a215898a390de6669cfa32adba56f0d7e17ba5a7f7b14506d6fd5f0c36a
@@ -912,7 +912,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
-F test/atof1.test 7ec56debc04b32e8f9dc87239f4bbb07d84550fb83dd7475b0ead9e83beb35da
+F test/atof1.test bd21c4a0e718ab1470de07a2a79f2544d7903be34feebcc80de04beee4807b00
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
@@ -2222,9 +2222,9 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a2061fe09faeedbcbbcc0928f7567cc9e15e1b5417126abf2ede0e58dbe7352f
-Q +bdd408a2557ff05c9ea962a94b442f7c078d8e1ec27035aa95bc23d4d2bd5606
-R 78fff317ab4e7ff7f71b19a6a1bc8449
+P e487d3b3c03ebcf06f8071f5c6a04faae15605200361e831df7bb2361e33efc3
+Q +81342fa6dd03fffbe7d4d699ff049dcef4d30344578bb6f91cb58a4e5a4f6036
+R 678f4a7261056197c92281288a1b78e6
 U drh
-Z f4edebdfee8f550024aa66b1addc16c4
+Z 5156d2cfa4b0562c8554b0561ad656fb
 # Remove this line to create a well-formed Fossil manifest.
