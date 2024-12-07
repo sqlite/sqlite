@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_PREPARE_DONT_LOG\soption\sfor\ssqlite3_prepare_v3(),\sthat\sprevents\nerrors\sin\sthe\scompilation\sof\sthe\sSQL\sfrom\sbeing\ssent\sto\ssqlite3_log().
-D 2024-12-06T18:35:16.856
+C On\sx64\shardware,\sround-trip\suint64_t&rarr;double&rarr;uint64_t\sconversions\nfail\sfor\svalues\sgreater\sthan\sUINT64_MAX-2047.\s\sThis\scaused\sthe\sSQLite\ntext-to-float\sconverter\sroutine\sto\sgive\sincorrect\sresults\sfor\svalues\nbetween\s'1.8446744073709550592eNNN'\sand\s'1.8446744073709551609eNNN'\sfor\sany\nexponent\sNNN.\s\sThis\sproblem\swas\sintroduced\sby\scheck-in\s[761d8fd18b0ee868]\nand\sfirst\sappeared\sin\sversion\s3.47.0\sand\swas\sreported\sby\n[forum:/forumpost/569a7209179a7f5e|forum\spost\s569a7209179a7f5e].\s\sFixed\nby\sthis\scheck-in.
+D 2024-12-07T14:48:55.778
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -844,7 +844,7 @@ F src/trigger.c 0bb986a5b96047fd597c6aac28588853df56064e576e6b81ba777ef2ccaac461
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
-F src/util.c ceebf912f673247e305f16f97f0bb7285fca1d37413b79680714a553a9021d33
+F src/util.c fde9ad9ce18841a844ce277b4eb4ace4ada7ca4110f9bed5d1d5ce89dabaf957
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c 8a6eb02823b424b273614bae41579392a5c495424592b60423dd2c443a583df0
 F src/vdbe.h 9676348d342bd04e21e384c63b57224171ce84fac77853357334ef94c4d33cf4
@@ -910,7 +910,7 @@ F test/analyzeE.test d2ec7921c162cdc33ac8e7eb01f9ebf78100610af7c94c8552bbf551de1
 F test/analyzeF.test 40b5cc3ad7b10e81020d7ca86f1417647ecfae7477cfd88acc5aa7ae1068f949
 F test/analyzeG.test 623be33038c49648872746c8dd8b23b5792c08fef173c55e82f1b12fca259852
 F test/analyzer1.test 459fa02c445ddbf0101a3bad47b34290a35f2e49
-F test/atof1.test 7ec56debc04b32e8f9dc87239f4bbb07d84550fb83dd7475b0ead9e83beb35da
+F test/atof1.test bd21c4a0e718ab1470de07a2a79f2544d7903be34feebcc80de04beee4807b00
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d324be296de443bd2853c732b10960178bf3ba9f18c80c509f6b41e2cfb2f3af
-R ec11279f510ab644cd4a136e6f39dd62
+P 870403425493866232cf9e8fa62288861b7d0a4091b15d75727f8bb31da46f94
+R 2d1ae3d1053fb61b1868786464dea794
 U drh
-Z 8980c884368db10cb1cda65aa0a82ff3
+Z 8f0bbc8ae68469d8947e1d3fa193444c
 # Remove this line to create a well-formed Fossil manifest.

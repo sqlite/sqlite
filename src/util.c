@@ -643,7 +643,7 @@ do_atof_calc:
   e = (e*esign) + d;
 
   /* Try to adjust the exponent to make it smaller */
-  while( e>0 && s<(LARGEST_UINT64/10) ){
+  while( e>0 && s<((LARGEST_UINT64-0x7ff)/10) ){
     s *= 10;
     e--;
   }
@@ -653,11 +653,17 @@ do_atof_calc:
   }
 
   rr[0] = (double)s;
-  s2 = (u64)rr[0];
+  if( s<(LARGEST_UINT64-0x7ff) ){
+    s2 = (u64)rr[0];
 #if defined(_MSC_VER) && _MSC_VER<1700
-  if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
+    if( s2==0x8000000000000000LL ){ s2 = 2*(u64)(0.5*rr[0]); }
 #endif
-  rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+  }else{
+    s2 = s;
+    rr[1] = 0.0;
+  }
+
   if( e>0 ){
     while( e>=100  ){
       e -= 100;
