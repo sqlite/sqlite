@@ -4288,6 +4288,7 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowWinFunc(0);
 #endif
         sqlite3ShowSelect(0);
+        sqlite3ShowWhereTerm(0);
       }
 #endif
       break;
