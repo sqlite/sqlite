@@ -1,5 +1,5 @@
-C Add\sa\snote\sin\sMakefile.msc\sabout\sEXTRA_SRC\sfiles\spossibly\srequiring\smanual\sediting.
-D 2024-12-09T10:57:01.703
+C Fix\san\sobscure\sproblem\swith\smultiple\souter\sjoins,\sON\sclauses\sand\squery\sflattening.\sForum\s[forum:5c8a069d23|thread\s5c8a069d23].
+D 2024-12-09T11:37:37.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -777,7 +777,7 @@ F src/printf.c 96f7f8baeedc7639da94e4e7a4a2c200e2537c4eec9e5e1c2ffc821f40eb3105
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 1334b0606dbdc753c8333f41bff441c97f77ef8ad9e33f3701e8adfe3b587c28
+F src/select.c 1c2b2321e1658e02f96da96d3071abcaa6839a1d75edd960a75a0ab11b6041bb
 F src/shell.c.in 883d1470893d15b65724a42a865a25f12e02ee865ab252480d04d467881f87e4
 F src/sqlite.h.in 6afbcaae44140216704a6c82e4c4ea4118c46d5f6573d6c5fa4fc901ed9d369e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1607,7 +1607,7 @@ F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 180223af31e1ca5537dd395ef9708ae18e651a233777fd366fd0d75469fc19c6
 F test/select4.test f0684d3da3bccacbe2a1ebadf6fb49d9df6f53acb4c6ebc228a88d0d6054cc7b
 F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f390ae
-F test/select6.test 9b2fb4ffedf52e1b5703cfcae1212e7a4a063f014c0458d78d29aca3db766d1f
+F test/select6.test d455cc36cb5658ba7002ccbf23d3d392801403e64ac6516190266a8ce167ad39
 F test/select7.test b825420da8a0b5722fdb77f3369f6396a3d198c46e8787eb26ff9425d4ac9d27
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
 F test/select9.test f7586b207ce2304ab80dc93d3146469a28fd4403621dd3a82d06644563d3c812
@@ -2202,9 +2202,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc6904a508eb732b1cb5cc12321a0d637d97e1e066a022a2c93cb50595f3a86a 8f9c640818871c451e69f186224bf276f8a03c8d31a76806d81f34922a169f82
-R 50045aa0a973371ebf0a05224448e665
-T +closed 8f9c640818871c451e69f186224bf276f8a03c8d31a76806d81f34922a169f82
-U drh
-Z 97e025238fa3db983285e6f4cedea418
+P a0a36bad454fab55ff39cbada68bf9ec6494d48dc4fc88496c0f637ab100734c 289daf6cee39625e8f068179cd58efcc1d28242f46064e58ec4175a019cf48ad
+R 28fa23921e04e393ea4b0633ec5e0abc
+T +closed 289daf6cee39625e8f068179cd58efcc1d28242f46064e58ec4175a019cf48ad
+U dan
+Z 5885f8e9d357b34718ed1f6864ffaf31
 # Remove this line to create a well-formed Fossil manifest.
