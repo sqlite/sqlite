@@ -219,8 +219,20 @@ do_multiclient_test tn {
 
 #-------------------------------------------------------------------------
 reset_db
-sqlite3 db2 test.db
+
+testvfs tvfs -fullshm 1
+tvfs script xSleep_callback
+tvfs filter xSleep
+
+set ::sleep_count 0
+proc xSleep_callback {xSleep nMs} {
+  after [expr $nMs / 1000]
+  incr ::sleep_count
+}
+
+sqlite3 db2 test.db -vfs tvfs
 db2 timeout 1000
+
 do_execsql_test 3.0 {
   PRAGMA journal_mode = wal;
   CREATE TABLE x1(x, y);
@@ -232,4 +244,45 @@ do_test 3.1 {
   list [catch { db2 eval {BEGIN EXCLUSIVE} } msg] $msg
 } {1 {database is locked}}
 
+do_execsql_test 3.2 {
+  COMMIT;
+}
+
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+     INSERT INTO x1 VALUES(3, 4);
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+after 500
+db2 timeout 5000
+do_test 3.3 {
+  set t [lindex [time { db2 eval { BEGIN EXCLUSIVE } }] 0]
+  expr ($t>1000000)
+} {1}
+
+set bExpect 0
+if {$::sqlite_options(setlk_timeout)==1} {
+  set bExpect 1
+}
+do_test 3.4 {
+  expr {$::sleep_count > 0}
+} $bExpect
+
+do_execsql_test -db db2 3.5 {
+  INSERT INTO x1 VALUES(5, 6);
+  COMMIT;
+  SELECT * FROM x1;
+} {1 2 3 4 5 6}
+
+db2 close
+tvfs delete
+
 finish_test
+
