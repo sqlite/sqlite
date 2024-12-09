@@ -6641,6 +6641,8 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
   int rc, i, j;
   unsigned char bShow[256];   /* Characters ok to display */
 
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(azArg);
   memset(bShow, '.', sizeof(bShow));
   for(i=' '; i<='~'; i++){
     if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
@@ -8717,7 +8719,6 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     sqlite3_free(azName);
   }else
-
   if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbconfig", n)==0 ){
     static const struct DbConfigChoices {
       const char *zName;
@@ -11474,7 +11475,9 @@ static int do_meta_command(char *zLine, ShellState *p){
           };
           unsigned int curOpt;
           unsigned int newOpt;
+          unsigned int m;
           int ii;
+          int nOff;
           sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
           newOpt = curOpt;
           for(ii=2; ii<nArg; ii++){
@@ -11515,24 +11518,28 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           if( curOpt!=newOpt ){
             sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,p->db,newOpt);
-          }else if( nArg<3 ){
-            curOpt = ~newOpt;
           }
-          if( newOpt==0 ){
-            sqlite3_fputs("+All\n", p->out);
-          }else if( newOpt==0xffffffff ){
-            sqlite3_fputs("-All\n", p->out);
+          for(ii=nOff=0, m=1; ii<32; ii++, m <<= 1){
+            if( m & newOpt ) nOff++;
+          }
+          if( nOff<12 ){
+            sqlite3_fputs("+All", p->out);
+            for(ii=0; ii<ArraySize(aLabel); ii++){
+              if( !aLabel[ii].bDsply  ) continue;
+              if( (newOpt & aLabel[ii].mask)!=0 ){
+                sqlite3_fprintf(p->out, " -%s", aLabel[ii].zLabel);
+              }
+            }
           }else{
-            int jj;
-            for(jj=0; jj<ArraySize(aLabel); jj++){
-              unsigned int m = aLabel[jj].mask;
-              if( !aLabel[jj].bDsply  ) continue;
-              if( (curOpt&m)!=(newOpt&m) ){
-                sqlite3_fprintf(p->out, "%c%s\n", (newOpt & m)==0 ? '+' : '-',
-                      aLabel[jj].zLabel);
+            sqlite3_fputs("-All", p->out);
+            for(ii=0; ii<ArraySize(aLabel); ii++){
+              if( !aLabel[ii].bDsply  ) continue;
+              if( (newOpt & aLabel[ii].mask)==0 ){
+                sqlite3_fprintf(p->out, " +%s", aLabel[ii].zLabel);
               }
             }
           }
+          sqlite3_fputs("\n", p->out);
           rc2 = isOk = 3;
           break;
         }

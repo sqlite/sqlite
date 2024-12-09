@@ -3667,6 +3667,7 @@ static void fts5InsttokenFunc(
   sqlite3_value **apArg           /* Function arguments */
 ){
   assert( nArg==1 );
+  (void)nArg;
   sqlite3_result_value(pCtx, apArg[0]);
   sqlite3_result_subtype(pCtx, FTS5_INSTTOKEN_SUBTYPE);
 }
