@@ -6501,14 +6501,20 @@ static void output_reset(ShellState *p){
 /*
 ** Run an SQL command and return the single integer result.
 */
-static int db_int(sqlite3 *db, const char *zSql){
+static int db_int(sqlite3 *db, const char *zSql, ...){
   sqlite3_stmt *pStmt;
   int res = 0;
-  sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  char *z;
+  va_list ap;
+  va_start(ap, zSql);
+  z = sqlite3_vmprintf(zSql, ap);
+  va_end(ap);
+  sqlite3_prepare_v2(db, z, -1, &pStmt, 0);
   if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     res = sqlite3_column_int(pStmt,0);
   }
   sqlite3_finalize(pStmt);
+  sqlite3_free(z);
   return res;
 }
 
@@ -6611,9 +6617,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
     zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_schema", zDb);
   }
   for(i=0; i<ArraySize(aQuery); i++){
-    char *zSql = sqlite3_mprintf(aQuery[i].zSql, zSchemaTab);
-    int val = db_int(p->db, zSql);
-    sqlite3_free(zSql);
+    int val = db_int(p->db, aQuery[i].zSql, zSchemaTab);
     sqlite3_fprintf(p->out, "%-20s %d\n", aQuery[i].zName, val);
   }
   sqlite3_free(zSchemaTab);
@@ -8269,8 +8273,8 @@ FROM (\
   }else{
     /* Formulate the columns spec, close the DB, zero *pDb. */
     char *zColsSpec = 0;
-    int hasDupes = db_int(*pDb, zHasDupes);
-    int nDigits = (hasDupes)? db_int(*pDb, zColDigits) : 0;
+    int hasDupes = db_int(*pDb, "%s", zHasDupes);
+    int nDigits = (hasDupes)? db_int(*pDb, "%s", zColDigits) : 0;
     if( hasDupes ){
 #ifdef SHELL_COLUMN_RENAME_CLEAN
       rc = sqlite3_exec(*pDb, zDedoctor, 0, 0, 0);
@@ -8285,7 +8289,7 @@ FROM (\
       sqlite3_finalize(pStmt);
       if( rc!=SQLITE_DONE ) rc_err_oom_die(SQLITE_NOMEM);
     }
-    assert(db_int(*pDb, zHasDupes)==0); /* Consider: remove this */
+    assert(db_int(*pDb, "%s", zHasDupes)==0); /* Consider: remove this */
     rc = sqlite3_prepare_v2(*pDb, zCollectVar, -1, &pStmt, 0);
     rc_err_oom_die(rc);
     rc = sqlite3_step(pStmt);
@@ -9336,7 +9340,11 @@ static int do_meta_command(char *zLine, ShellState *p){
       while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
     }
     import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
-    if( sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) ){
+    if( sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) 
+     && 0==db_int(p->db, "SELECT count(*) FROM \"%w\".sqlite_schema"
+                         " WHERE name=%Q AND type='view'",
+                         zSchema ? zSchema : "main", zTable)
+    ){
       /* Table does not exist.  Create it. */
       sqlite3 *dbCols = 0;
       char *zRenames = 0;
