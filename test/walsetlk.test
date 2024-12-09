@@ -80,6 +80,19 @@ db2 close
 #-------------------------------------------------------------------------
 
 do_multiclient_test tn {
+
+  testvfs tvfs -fullshm 1
+  db close
+  sqlite3 db test.db -vfs tvfs
+  tvfs script xSleep_callback
+  tvfs filter xSleep
+
+  set ::sleep_count 0
+  proc xSleep_callback {xSleep nMs} {
+    after [expr $nMs / 1000]
+    incr ::sleep_count
+  }
+
   do_test 2.$tn.1 {
     sql1 {
       PRAGMA journal_mode = wal;
@@ -132,7 +145,6 @@ do_multiclient_test tn {
     set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
     expr $us>1000000 && $us<4000000
   } {1}
-
   do_test 2.$tn.9 {
     sql3 {
       INSERT INTO t1 VALUES(11, 12);
@@ -178,7 +190,31 @@ do_multiclient_test tn {
     set us [lindex [time { catch {db eval "PRAGMA wal_checkpoint=RESTART"} }] 0]
     expr $us>1000000 && $us<4000000
   } {1}
-  
+
+  db close
+  tvfs delete
+
+  # Set bSleep to true if it is expected that the above used xSleep() to
+  # wait for locks. bSleep is true unless SQLITE_ENABLE_SETLK_TIMEOUT is
+  # set to 1 and either:
+  #
+  #   * the OS is windows, or
+  #   * the OS is unix and the tests were run with each connection 
+  #     in a separate process.
+  #
+  set bSleep 1
+  if {$::sqlite_options(setlk_timeout)==1} {
+    if {$::tcl_platform(platform)=="windows"} {
+      set bSleep 0
+    }
+    if {$::tcl_platform(platform)=="unix"} {
+      set bSleep [expr $tn==2]
+    }
+  }
+
+  do_test 2.$tn.15.$bSleep {
+    expr $::sleep_count > 0
+  } $bSleep
 }
 
 #-------------------------------------------------------------------------

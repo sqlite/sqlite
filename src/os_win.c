@@ -4044,10 +4044,13 @@ static void *winConvertFromUtf8Filename(const char *zFilename){
   return zConverted;
 }
 
-static int winOpenFile(
-  const char *zUtf8,
-  int *pbReadonly,
-  HANDLE *ph
+/*
+** This function is used to open a handle on a *-shm file.
+*/
+static int winHandleOpen(
+  const char *zUtf8,              /* File to open */
+  int *pbReadonly,                /* IN/OUT: True for readonly handle */
+  HANDLE *ph                      /* OUT: New HANDLE for file */
 ){
   int rc = SQLITE_OK;
   void *zConverted = 0;
@@ -4072,8 +4075,8 @@ static int winOpenFile(
   /* TODO: platforms.
   ** TODO: retry-on-ioerr.
   */
+  if( osIsNT() ){
 #if SQLITE_OS_WINRT
-  {
     CREATEFILE2_EXTENDED_PARAMETERS extendedParameters;
     memset(&extendedParameters, 0, sizeof(extendedParameters));
     extendedParameters.dwSize = sizeof(extendedParameters);
@@ -4086,21 +4089,35 @@ static int winOpenFile(
         OPEN_ALWAYS,                             /* dwCreationDisposition */
         &extendedParameters
     );
-  }
 #else
-  h = osCreateFileW((LPCWSTR)zConverted,         /* lpFileName */
-      (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),  /* dwDesiredAccess */
-      FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
-      NULL,                                      /* lpSecurityAttributes */
-      OPEN_ALWAYS,                               /* dwCreationDisposition */
-      FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
-      NULL
-  );
+    h = osCreateFileW((LPCWSTR)zConverted,         /* lpFileName */
+        (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),  /* dwDesiredAccess */
+        FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
+        NULL,                                      /* lpSecurityAttributes */
+        OPEN_ALWAYS,                               /* dwCreationDisposition */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
+        NULL
+    );
 #endif
+  }else{
+    /* Due to pre-processor directives earlier in this file, 
+    ** SQLITE_WIN32_HAS_ANSI is always defined if osIsNT() is false. */
+#ifdef SQLITE_WIN32_HAS_ANSI
+    h = osCreateFileA((LPCSTR)zConverted,
+        (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),  /* dwDesiredAccess */
+        FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
+        NULL,                                      /* lpSecurityAttributes */
+        OPEN_ALWAYS,                               /* dwCreationDisposition */
+        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
+        NULL
+    );
+#endif
+  }
+
   if( h==INVALID_HANDLE_VALUE ){
     if( bReadonly==0 ){
       bReadonly = 1;
-      rc = winOpenFile(zUtf8, &bReadonly, &h);
+      rc = winHandleOpen(zUtf8, &bReadonly, &h);
     }else{
       rc = SQLITE_CANTOPEN_BKPT;
     }
@@ -4143,10 +4160,10 @@ static int winOpenSharedMemory(winFile *pDbFd){
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename);
 
   /* Open a file-handle on the *-shm file for this connection. This file-handle
-  ** is only used for locking. The mapping of the *-shm file is created using the
-  ** shared file handle in winShmNode.hSharedShm.  */
+  ** is only used for locking. The mapping of the *-shm file is created using
+  ** the shared file handle in winShmNode.hSharedShm.  */
   p->bReadonly = sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0);
-  rc = winOpenFile(pNew->zFilename, &p->bReadonly, &p->hShm);
+  rc = winHandleOpen(pNew->zFilename, &p->bReadonly, &p->hShm);
 
   /* Look to see if there is an existing winShmNode that can be used.
   ** If no matching winShmNode currently exists, then create a new one.  */
@@ -4169,7 +4186,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
     if( rc==SQLITE_OK ){
       HANDLE h = INVALID_HANDLE_VALUE;
       pShmNode->isReadonly = p->bReadonly;
-      rc = winOpenFile(pNew->zFilename, &pShmNode->isReadonly, &h);
+      rc = winHandleOpen(pNew->zFilename, &pShmNode->isReadonly, &h);
       pShmNode->hSharedShm = h;
     }
 

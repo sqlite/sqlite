@@ -787,6 +787,13 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "windowfunc", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#if !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  Tcl_SetVar2(interp, "sqlite_options", "setlk_timeout", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "setlk_timeout", 
+      STRINGVALUE(SQLITE_ENABLE_SETLK_TIMEOUT), TCL_GLOBAL_ONLY);
+#endif
+
 #define LINKVAR(x) { \
     static const int cv_ ## x = SQLITE_ ## x; \
     Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(cv_ ## x), \
