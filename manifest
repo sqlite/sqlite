@@ -1,5 +1,5 @@
-C Further\simprovements\sto\sthe\sdecimal-to-float\sconversion\sfor\svalues\sclose\nto\sLARGEST_UINT64.
-D 2024-12-09T11:47:28.504
+C Add\sNEVER()\saround\sbranches\sthat\sseems\sto\shave\sbeen\smade\sobsolete\sby\n[a350ea7c6b89725b].
+D 2024-12-09T13:02:13.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -861,7 +861,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 8b7e309a8012659ac9275ad8cdcc6acaf73fa04b1090e38a01335f230fd10681
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c b34adb09fdb2a4f57a0bafd4194b501047ef383976fef9f0ac3f395f4881694d
+F src/where.c 377f3363983251ec6b23aad5a3963822199d9bff2ad4072a5e006959ee5a2abb
 F src/whereInt.h 1e36ec50392f7cc3d93d1152d4338064cd522b87156a0739388b7e273735f0ca
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a350ea7c6b89725ba1a0058c77fc8e918f5cb78e868d100f5425cdee114d1320
-R 9484d813df6a2b3aa12236684aa7bcae
+P 453c949914770e8f7b9b9dd882db492bf8756c212c816f87bb2e3ed98bcd64e3
+R 0384aceb4a3c9ceb2d3aa9887b35dede
 U drh
-Z f68f61b73a99f8ed300b60501f5b051a
+Z 41154152da333de7653292dbe9c04f92
 # Remove this line to create a well-formed Fossil manifest.
