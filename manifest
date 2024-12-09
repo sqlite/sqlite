@@ -1,5 +1,5 @@
-C Add\sa\snote\sin\sMakefile.msc\sabout\sEXTRA_SRC\sfiles\spossibly\srequiring\smanual\sediting,\sas\sdiscussed\sin\s[forum:903f721f3e7c0d25|forum\sthread\s903f721f3e7c0d25].
-D 2024-12-08T18:38:40.817
+C Resynchronize\sautoconf/Makefile.msc
+D 2024-12-09T10:52:28.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -18,7 +18,7 @@ F auto.def 8f15c373e88c4c5296d6100e3d35893bd6edb57cebcb6a8c1e827e6faaef52e4
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc 1162ef7b7937ba6927b038f824b050855784d417e785fe35ab71d20afd18022b
+F autoconf/Makefile.msc 0735351f6002f0bf78b73b3b7a6a120cff38573dd37c37005b682ecc44c25bc2
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 5e946ffb6fbdbb114c81e1bdc862df27fce8beab557d7b0421820b0fe8fc048f
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc6904a508eb732b1cb5cc12321a0d637d97e1e066a022a2c93cb50595f3a86a
-R 3e289435836b044f0b3a05a6e7cf9761
-U stephan
-Z ff68f775396c11772c2696190687380e
+P 229c2f013c171bc220148c78f7db5396578f2c6aac28ad6ff9b687c9fa4998ac
+R 50045aa0a973371ebf0a05224448e665
+U drh
+Z 15c9820ccf429ada5e7694a1bec9cb28
 # Remove this line to create a well-formed Fossil manifest.
