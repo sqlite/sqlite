@@ -278,7 +278,9 @@ testfixture_nb done {
   }
 }
 
-after 500
+after 500 {set ok 1}
+vwait ok
+
 db2 timeout 5000
 do_test 3.4 {
   set t [lindex [time { db2 eval { BEGIN EXCLUSIVE } }] 0]

@@ -1,5 +1,5 @@
-C Ensure\swindows\smay\sblock\son\sa\sSHARED\s(but\snot\sEXCLUSIVE)\sDMS\slock.
-D 2024-12-10T19:00:07.376
+C Fix\sa\sproblem\swith\swalsetlk.test\son\swindows.
+D 2024-12-10T21:24:28.723
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2021,7 +2021,7 @@ F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
-F test/walsetlk.test 6e02311c7697cdc93610d24e8baaefe48592018cb5b317cba089c1bcd8d16f3a
+F test/walsetlk.test 46b7ab42ac4498e549e4bb0b0e99f72ccd386bb20d8f3c2ee42363f09fab398e
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 798dff041be46d2d5014779c0855f60e6b2a142e9946bfb79061d7dff0bc3d27
-R d7fe08eda9a97ac9dd36271e2e66b9ad
+P 55e4e7bb0074859e8c3e736e7eceb69af8408ce75135f5baa09e98aaf4e2a321
+R fc6eda57c88b8dbee00e08f5cd38d881
 U dan
-Z 8b09a868e54db464087d18bec9270611
+Z c836a38a8f9471fb3b026d0dce0ae730
 # Remove this line to create a well-formed Fossil manifest.
