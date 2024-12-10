@@ -839,7 +839,7 @@ static int constraintCompatibleWithOuterJoin(
     return 0;
   }
   if( (pSrc->fg.jointype & (JT_LEFT|JT_RIGHT))!=0
-   && ExprHasProperty(pTerm->pExpr, EP_InnerON)
+   && NEVER(ExprHasProperty(pTerm->pExpr, EP_InnerON))
   ){
     return 0;
   }
@@ -6224,7 +6224,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
       }
       if( hasRightJoin
        && ExprHasProperty(pTerm->pExpr, EP_InnerON)
-       && pTerm->pExpr->w.iJoin==pItem->iCursor
+       && NEVER(pTerm->pExpr->w.iJoin==pItem->iCursor)
       ){
         break;  /* restriction (5) */
       }

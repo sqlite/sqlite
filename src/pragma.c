@@ -1279,7 +1279,8 @@ void sqlite3Pragma(
             char *zSql = sqlite3MPrintf(db, "SELECT*FROM\"%w\"", pTab->zName);
             if( zSql ){
               sqlite3_stmt *pDummy = 0;
-              (void)sqlite3_prepare(db, zSql, -1, &pDummy, 0);
+              (void)sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_DONT_LOG,
+                                       &pDummy, 0);
               (void)sqlite3_finalize(pDummy);
               sqlite3DbFree(db, zSql);
             }

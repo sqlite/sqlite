@@ -248,6 +248,9 @@ do_execsql_test 3.2 {
   COMMIT;
 }
 
+
+# Launch a non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
 testfixture_nb done {
   sqlite3 db test.db
   db eval {
@@ -267,9 +270,11 @@ do_test 3.3 {
   expr ($t>1000000)
 } {1}
 
-set bExpect 0
+# Set bExpect to true if calls to xSleep() are expected. Such calls are
+# expected unless this is an SQLITE_ENABLE_SETLK_TIMEOUT=1 build.
+set bExpect 1
 if {$::sqlite_options(setlk_timeout)==1} {
-  set bExpect 1
+  set bExpect 0
 }
 do_test 3.4 {
   expr {$::sleep_count > 0}

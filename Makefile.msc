@@ -19,7 +19,9 @@ USE_AMALGAMATION = 1
 # <</mark>>
 
 # Optionally set EXTRA_SRC to a list of C files to append to
-# the generated sqlite3.c.
+# the generated sqlite3.c. Any sqlite3 extensions added this
+# way may require manual editing, as described in
+# https://sqlite.org/forum/forumpost/903f721f3e7c0d25
 #
 !IFNDEF EXTRA_SRC
 EXTRA_SRC =
@@ -2679,7 +2681,7 @@ shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
 sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
-	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in > $@
+	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl -DINCLUDE_SQLITE3_C $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
