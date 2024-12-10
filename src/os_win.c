@@ -292,6 +292,12 @@ struct winFile {
 #endif
 };
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+# define winFileBusyTimeout(pDbFd) pDbFd->iBusyTimeout
+#else
+# define winFileBusyTimeout(pDbFd) 0
+#endif
+
 /*
 ** The winVfsAppData structure is used for the pAppData member for all of the
 ** Win32 VFS variants.
@@ -2555,7 +2561,7 @@ static BOOL winLockFile(
 ** some other process holds the lock, SQLITE_BUSY is returned if nMs==0, or
 ** SQLITE_BUSY_TIMEOUT otherwise. Or, if an error occurs, SQLITE_IOERR.
 */
-static int winLockFileTimeout(
+static int winHandleLockTimeout(
   HANDLE hFile,
   DWORD offset,
   DWORD nByte,
@@ -2647,6 +2653,9 @@ static BOOL winUnlockFile(
 #endif
 }
 
+/*
+** Remove an nByte lock starting at offset iOff from HANDLE h.
+*/
 static int winHandleUnlock(HANDLE h, int iOff, int nByte){
   BOOL ret = winUnlockFile(&h, iOff, 0, nByte, 0);
   return (ret ? SQLITE_OK : SQLITE_IOERR_UNLOCK);
@@ -3867,12 +3876,17 @@ static int winShmMutexHeld(void) {
 **
 ** The following fields are read-only after the object is created:
 **
-**      hFile
 **      zFilename
 **
 ** Either winShmNode.mutex must be held or winShmNode.nRef==0 and
 ** winShmMutexHeld() is true when reading or writing any other field
 ** in this structure.
+**
+** File-handle hSharedShm is used to (a) take the DMS lock, (b) truncate
+** the *-shm file if the DMS-locking protocol demands it, and (c) map
+** regions of the *-shm file into memory using MapViewOfFile() or 
+** similar. Other locks are taken by individual clients using the
+** winShm.hShm handles.
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
@@ -3907,16 +3921,8 @@ static winShmNode *winShmNodeList = 0;
 
 /*
 ** Structure used internally by this VFS to record the state of an
-** open shared memory connection.
-**
-** The following fields are initialized when this object is created and
-** are read-only thereafter:
-**
-**    winShm.pShmNode
-**    winShm.id
-**
-** All other fields are read/write.  The winShm.pShmNode->mutex must be held
-** while accessing any read/write fields.
+** open shared memory connection. There is one such structure for each
+** winFile open on a wal mode database.
 */
 struct winShm {
   winShmNode *pShmNode;      /* The underlying winShmNode object */
@@ -3991,11 +3997,12 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 ** pShmNode. Take the lock. Truncate the *-shm file if required.
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise.
 */
-static int winLockSharedMemory(winShmNode *pShmNode){
+static int winLockSharedMemory(winShmNode *pShmNode, int nMs){
   HANDLE h = pShmNode->hSharedShm;
   int rc = SQLITE_OK;
 
-  rc = winLockFileTimeout(h, WIN_SHM_DMS, 1, 1, 0);
+  assert( sqlite3_mutex_held(pShmNode->mutex) );
+  rc = winHandleLockTimeout(h, WIN_SHM_DMS, 1, 1, 0);
   if( rc==SQLITE_OK ){
     /* We have an EXCLUSIVE lock on the DMS byte. This means that this
     ** is the first process to open the file. Truncate it to zero bytes
@@ -4014,7 +4021,7 @@ static int winLockSharedMemory(winShmNode *pShmNode){
 
   if( rc==SQLITE_OK ){
     /* Take a SHARED lock on the DMS byte. */
-    rc = winLockFileTimeout(h, WIN_SHM_DMS, 1, 0, 0);
+    rc = winHandleLockTimeout(h, WIN_SHM_DMS, 1, 0, nMs);
     if( rc==SQLITE_OK ){
       pShmNode->isUnlocked = 0;
     }
@@ -4353,11 +4360,8 @@ static int winShmLock(
       }
     }else{
       int bExcl = ((flags & SQLITE_SHM_EXCLUSIVE) ? 1 : 0);
-      int nMs = 0;
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-      nMs = pDbFd->iBusyTimeout;
-#endif
-      rc = winLockFileTimeout(p->hShm, ofst+WIN_SHM_BASE, n, bExcl, nMs);
+      int nMs = winFileBusyTimeout(pDbFd);
+      rc = winHandleLockTimeout(p->hShm, ofst+WIN_SHM_BASE, n, bExcl, nMs);
       if( rc==SQLITE_OK ){
         if( bExcl ){
           p->exclMask = (p->exclMask | mask);
@@ -4435,7 +4439,7 @@ static int winShmMap(
   if( pShmNode->isUnlocked ){
     /* Take the DMS lock. */
     assert( pShmNode->nRegion==0 );
-    rc = winLockSharedMemory(pShmNode);
+    rc = winLockSharedMemory(pShmNode, winFileBusyTimeout(pDbFd));
     if( rc!=SQLITE_OK ) goto shmpage_out;
   }
 

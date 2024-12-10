@@ -18,7 +18,6 @@ source $testdir/lock_common.tcl
 set testprefix walsetlk
 
 ifcapable !wal {finish_test ; return }
-if 0 {
 db timeout 1000
 
 #-------------------------------------------------------------------------
@@ -90,7 +89,6 @@ do_multiclient_test tn {
 
   set ::sleep_count 0
   proc xSleep_callback {xSleep nMs} {
-  puts POOOOOOP
     after [expr $nMs / 1000]
     incr ::sleep_count
   }
@@ -220,7 +218,6 @@ do_multiclient_test tn {
 }
 
 #-------------------------------------------------------------------------
-}
 reset_db
 
 testvfs tvfs -fullshm 1
