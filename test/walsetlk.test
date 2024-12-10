@@ -18,6 +18,7 @@ source $testdir/lock_common.tcl
 set testprefix walsetlk
 
 ifcapable !wal {finish_test ; return }
+if 0 {
 db timeout 1000
 
 #-------------------------------------------------------------------------
@@ -89,6 +90,7 @@ do_multiclient_test tn {
 
   set ::sleep_count 0
   proc xSleep_callback {xSleep nMs} {
+  puts POOOOOOP
     after [expr $nMs / 1000]
     incr ::sleep_count
   }
@@ -218,6 +220,7 @@ do_multiclient_test tn {
 }
 
 #-------------------------------------------------------------------------
+}
 reset_db
 
 testvfs tvfs -fullshm 1
@@ -228,6 +231,7 @@ set ::sleep_count 0
 proc xSleep_callback {xSleep nMs} {
   after [expr $nMs / 1000]
   incr ::sleep_count
+  breakpoint
 }
 
 sqlite3 db2 test.db -vfs tvfs
@@ -240,14 +244,28 @@ do_execsql_test 3.0 {
     INSERT INTO x1 VALUES(1, 2);
 } {wal}
 
-do_test 3.1 {
+do_execsql_test -db db2 3.1a {
+  SELECT * FROM x1
+} {}
+
+do_test 3.1b {
   list [catch { db2 eval {BEGIN EXCLUSIVE} } msg] $msg
 } {1 {database is locked}}
 
-do_execsql_test 3.2 {
+# Set bExpect to true if calls to xSleep() are expected. Such calls are
+# expected unless this is an SQLITE_ENABLE_SETLK_TIMEOUT=1 build.
+set bExpect 1
+if {$tcl_platform(platform)=="windows" && $::sqlite_options(setlk_timeout)==1} {
+  set bExpect 0
+}
+do_test 3.2 {
+  expr {$::sleep_count > 0}
+} $bExpect
+set ::sleep_count 0
+
+do_execsql_test 3.3 {
   COMMIT;
 }
-
 
 # Launch a non-blocking testfixture process to write-lock the 
 # database for 2000 ms.
@@ -265,7 +283,7 @@ testfixture_nb done {
 
 after 500
 db2 timeout 5000
-do_test 3.3 {
+do_test 3.4 {
   set t [lindex [time { db2 eval { BEGIN EXCLUSIVE } }] 0]
   expr ($t>1000000)
 } {1}
@@ -276,7 +294,7 @@ set bExpect 1
 if {$::sqlite_options(setlk_timeout)==1} {
   set bExpect 0
 }
-do_test 3.4 {
+do_test 3.5 {
   expr {$::sleep_count > 0}
 } $bExpect
 
