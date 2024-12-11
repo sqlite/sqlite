@@ -1693,9 +1693,9 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     */
     if( pWal->aCommitTime ) t = sqlite3STimeNow();
     if( idx==1 && sLoc.aPgno[0]!=0 ){
-      int nByte = (int)((u8*)&sLoc.aHash[HASHTABLE_NSLOT] - (u8*)sLoc.aPgno);
-      assert( nByte>=0 && (nByte & 0x07)==0 );
-      zero64((void*)sLoc.aPgno, nByte);
+      /* Special for BEDROCK branch: Zero only the aHash[] part. Not the
+      ** aPgno[] part of the page.  */
+      zero64((void*)sLoc.aHash, HASHTABLE_NSLOT * sizeof(sLoc.aHash[0]));
     }
     if( pWal->aCommitTime ){
       pWal->aCommitTime[COMMIT_TIME_WALINDEX_MEMSETUS]+=sqlite3STimeNow()-t;
@@ -1706,11 +1706,23 @@ static int walIndexAppend(Wal *pWal, int iWal, u32 iFrame, u32 iPage){
     ** writing one or more dirty pages to the WAL to free up memory).
     ** Remove the remnants of that writers uncommitted transaction from
     ** the hash-table before writing any new entries.
-    */
-    if( sLoc.aPgno[idx-1] ){
+    **
+    ** Special for BEDROCK branch: On this branch we do not assume that
+    ** the aPgno[] part of each hash-table has been zeroed. Therefore, we
+    ** only need to clear out the remnants of an old writer's transaction if
+    ** the hash table matches the aPgno[] entry (as it would if a write
+    ** transaction was interrupted). And, because this makes the test more
+    ** expensive, we only do the check for the first frame written by each
+    ** transaction.  */
+    if( sLoc.aPgno[idx-1] && iFrame-1==walidxGetMxFrame(&pWal->hdr, iWal) ){
       if( pWal->aCommitTime ) t = sqlite3STimeNow();
-      walCleanupHash(pWal);
-      assert( !sLoc.aPgno[idx-1] );
+      nCollide = idx;
+      for(iKey=walHash(iPage); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
+        if( sLoc.aHash[iKey]==idx ){
+          walCleanupHash(pWal);
+        }
+        if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
+      }
       if( pWal->aCommitTime ){
         pWal->aCommitTime[COMMIT_TIME_WALINDEX_CLEANUPUS]+=sqlite3STimeNow()-t;
       }
