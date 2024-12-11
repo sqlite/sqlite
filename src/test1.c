@@ -7984,13 +7984,16 @@ static int SQLITE_TCLAPI win32_file_lock(
   Tcl_Obj *CONST objv[]
 ){
   static struct win32FileLocker x = { "win32_file_lock", 0, 0, 0, 0, 0 };
-  const char *zFilename;
+  const char *zFilename = 0;
+  int nFilename = 0;
+  char *zTerm = 0;
   char zBuf[200];
   int retry = 0;
   HANDLE ev;
   DWORD wResult;
   sqlite3_vfs *pVfs = 0;
   int flags = SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_READWRITE;
+  int rc = SQLITE_OK;
   
   if( objc!=4 && objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME DELAY1 DELAY2");
@@ -8018,11 +8021,19 @@ static int SQLITE_TCLAPI win32_file_lock(
   }
   if( Tcl_GetIntFromObj(interp, objv[2], &x.delay1) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &x.delay2) ) return TCL_ERROR;
-  zFilename = Tcl_GetString(objv[1]);
-
   pVfs = sqlite3_vfs_find(0);
   x.pFd = (sqlite3_file*)sqlite3_malloc(pVfs->szOsFile);
-  if( pVfs->xOpen(pVfs, zFilename, x.pFd, flags, &flags)!=SQLITE_OK ){
+
+  /* xOpen() must be passed a dual-nul-terminated string */
+  zFilename = Tcl_GetStringFromObj(objv[1], &nFilename);
+  zTerm = (char*)sqlite3_malloc(nFilename+2);
+  memcpy(zTerm, zFilename, nFilename);
+  zTerm[nFilename] = 0;
+  zTerm[nFilename+1] = 0;
+  rc = pVfs->xOpen(pVfs, zTerm, x.pFd, flags, &flags);
+  sqlite3_free(zTerm);
+
+  if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "cannot open file: ", zFilename, (char*)0);
     return TCL_ERROR;
   }

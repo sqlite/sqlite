@@ -731,6 +731,12 @@ static struct win_syscall {
 #define osGetFullPathNameW ((DWORD(WINAPI*)(LPCWSTR,DWORD,LPWSTR, \
         LPWSTR*))aSyscall[25].pCurrent)
 
+/*
+** For GetLastError(), MSDN says:
+**
+** Minimum supported client: Windows XP [desktop apps | UWP apps]
+** Minimum supported server: Windows Server 2003 [desktop apps | UWP apps]
+*/
   { "GetLastError",            (SYSCALL)GetLastError,            0 },
 
 #define osGetLastError ((DWORD(WINAPI*)(VOID))aSyscall[26].pCurrent)
@@ -1013,11 +1019,13 @@ static struct win_syscall {
 #define osCreateEventExW ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,LPCWSTR, \
         DWORD,DWORD))aSyscall[62].pCurrent)
 
-#if !SQLITE_OS_WINRT
+/*
+** For WaitForSingleObject(), MSDN says:
+**
+** Minimum supported client: Windows XP [desktop apps | UWP apps]
+** Minimum supported server: Windows Server 2003 [desktop apps | UWP apps]
+*/
   { "WaitForSingleObject",     (SYSCALL)WaitForSingleObject,     0 },
-#else
-  { "WaitForSingleObject",     (SYSCALL)0,                       0 },
-#endif
 
 #define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
         DWORD))aSyscall[63].pCurrent)
@@ -1163,6 +1171,24 @@ static struct win_syscall {
 
 #define osFlushViewOfFile \
         ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[79].pCurrent)
+
+/*
+** If SQLITE_ENABLE_SETLK_TIMEOUT is defined, we require CreateEvent()
+** to implement blocking locks with timeouts. MSDN says:
+**
+** Minimum supported client: Windows XP [desktop apps | UWP apps]
+** Minimum supported server: Windows Server 2003 [desktop apps | UWP apps]
+*/
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  { "CreateEvent",              (SYSCALL)CreateEvent,            0 },
+#else
+  { "CreateEvent",              (SYSCALL)0,                      0 },
+#endif
+
+#define osCreateEvent ( \
+    (HANDLE(WINAPI*) (LPSECURITY_ATTRIBUTES,BOOL,BOOL,LPCSTR)) \
+    aSyscall[80].pCurrent \
+)
 
 }; /* End of the overrideable system calls */
 
@@ -2583,7 +2609,7 @@ static int winHandleLockTimeout(
     ovlp.Offset = offset;
 
     if( nMs>0 ){
-      ovlp.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+      ovlp.hEvent = osCreateEvent(NULL, TRUE, FALSE, NULL);
       if( ovlp.hEvent==NULL ){
         return SQLITE_IOERR;
       }
@@ -2593,7 +2619,7 @@ static int winHandleLockTimeout(
     ret = osLockFileEx(hFile, flags, 0, nByte, 0, &ovlp);
 
     if( !ret && nMs>0 && GetLastError()==ERROR_IO_PENDING ){
-      DWORD res = WaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
+      DWORD res = osWaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
       if( res==WAIT_OBJECT_0 ){
         /* Successfully obtained the lock. */
         ret = TRUE;
@@ -6342,7 +6368,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==80 );
+  assert( ArraySize(aSyscall)==81 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

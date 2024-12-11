@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\swalsetlk.test\son\swindows.
-D 2024-12-10T21:24:28.723
+C Ensure\sthat\sall\swin32\sAPI\sfunctions\sinvocations\sin\sos_win.c\sare\smade\svia\sthe\sfunction\stable.\sFix\sasan\serror\sin\stest\scode.
+D 2024-12-11T15:30:58.684
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -762,7 +762,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
-F src/os_win.c c7a28dee9db7f4ca01aaf1f8561635870fc660581a5a7c8ecee6aa455829cf29
+F src/os_win.c 49cd1fbdf60dd185ce25dd0d02b2670603c3e5edc9a8fb3f21585491c9d45e30
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
@@ -788,7 +788,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 90441d3cc16f966a23499d9096a3d2d971e5e8fddb4d1413b096b79c2b2cff07
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 325a66d5e52b84ba6b6d54f9d605e31a8304c395df0c589e0ade87fd2b7213b2
+F src/test1.c 04f44c6f87d3c5ee0a07775601625c319835ef35ab5060d02bbe25e0ec996615
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55e4e7bb0074859e8c3e736e7eceb69af8408ce75135f5baa09e98aaf4e2a321
-R fc6eda57c88b8dbee00e08f5cd38d881
+P 704e6567c14a4a07a1a4d1fc2bd8a7f288b55b27508d23ba7f5c755c830c14ec
+R 1b1d5ac8540859f8a7b2d263d2f24a8d
 U dan
-Z c836a38a8f9471fb3b026d0dce0ae730
+Z 95b5c408908f206ff5d85841ad8872eb
 # Remove this line to create a well-formed Fossil manifest.
