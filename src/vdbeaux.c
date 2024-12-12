@@ -5540,7 +5540,10 @@ void sqlite3SchemaTimeLog(u64 *aSchema, const char *zFile){
     int ii;
     for(ii=1; ii<SCHEMA_TIME_N; ii++){
       int val = aSchema[ii];
-      if( val!=0 && ii!=SCHEMA_TIME_STAT4_Q1_BODY ){
+      if( val!=0 
+       && ii!=SCHEMA_TIME_STAT4_Q1_BODY
+       && ii!=SCHEMA_TIME_STAT4_Q2_BODY 
+      ){
         val -= i1;
       }
       zStr = sqlite3_mprintf("%z%s%d", zStr, (zStr?", ":""), val);

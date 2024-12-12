@@ -1934,6 +1934,7 @@ static int loadStatTbl(
     char *zIndex;                 /* Index name */
     Index *pIdx;                  /* Pointer to the index object */
     int nCol = 1;                 /* Number of columns in index */
+    u64 t = sqlite3STimeNow();
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
@@ -1979,6 +1980,10 @@ static int loadStatTbl(
       memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
     }
     pIdx->nSample++;
+
+    if( db->aSchemaTime ){
+      db->aSchemaTime[SCHEMA_TIME_STAT4_Q2_BODY] += (sqlite3STimeNow() - t);
+    }
   }
   rc = sqlite3_finalize(pStmt);
   sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q2);
