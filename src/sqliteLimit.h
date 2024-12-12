@@ -88,9 +88,13 @@
 
 /*
 ** The maximum number of arguments to an SQL function.
+**
+** This value has a hard upper limit of 32767 due to storage
+** constraints (it needs to fit inside a i16).  We keep it
+** lower than that to prevent abuse.
 */
 #ifndef SQLITE_MAX_FUNCTION_ARG
-# define SQLITE_MAX_FUNCTION_ARG 127
+# define SQLITE_MAX_FUNCTION_ARG 1000
 #endif
 
 /*

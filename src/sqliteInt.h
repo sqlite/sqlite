@@ -2054,7 +2054,7 @@ void sqlite3SchemaTimeLog(u64 *aSchemaTime, const char *zFile);
 ** field is used by per-connection app-def functions.
 */
 struct FuncDef {
-  i8 nArg;             /* Number of arguments.  -1 means unlimited */
+  i16 nArg;            /* Number of arguments.  -1 means unlimited */
   u32 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */

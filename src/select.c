@@ -6825,7 +6825,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
       }
       sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
       sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3VdbeChangeP5(v, (u16)nArg);
       sqlite3VdbeAddOp2(v, OP_Next, pF->iOBTab, iTop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, iTop);
       sqlite3ReleaseTempRange(pParse, regAgg, nArg);
@@ -6988,7 +6988,7 @@ static void updateAccumulator(
       }
       sqlite3VdbeAddOp3(v, OP_AggStep, 0, regAgg, AggInfoFuncReg(pAggInfo,i));
       sqlite3VdbeAppendP4(v, pF->pFunc, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3VdbeChangeP5(v, (u16)nArg);
       sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     }
     if( addrNext ){

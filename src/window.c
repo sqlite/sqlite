@@ -1750,7 +1750,7 @@ static void windowAggStep(
       sqlite3VdbeAddOp3(v, bInverse? OP_AggInverse : OP_AggStep,
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, (u8)nArg);
+      sqlite3VdbeChangeP5(v, (u16)nArg);
       if( pWin->bExprArgs ){
         sqlite3ReleaseTempRange(pParse, regArg, nArg);
       }
