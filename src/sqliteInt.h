@@ -1878,7 +1878,7 @@ struct sqlite3 {
 #define SCHEMA_TIME_FINISH 19
 
 #define SCHEMA_TIME_N 20
-#define SCHEMA_TIME_TIMEOUT (1 * 1000 * 1000)
+#define SCHEMA_TIME_TIMEOUT (500 * 1000)
 
 
 
@@ -2882,7 +2882,7 @@ struct Index {
                            ** expression, or a reference to a VIRTUAL column */
 #ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
-  int mxSample;            /* Number of slots allocated to aSample[] */
+  int nSampleAlloc;        /* Number of slots allocated to aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
   tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */

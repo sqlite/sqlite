@@ -1677,6 +1677,7 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
   if( db->pnBytesFreed==0 ){
     pIdx->nSample = 0;
     pIdx->aSample = 0;
+    pIdx->nSampleAlloc = 0;
   }
 #else
   UNUSED_PARAMETER(db);
@@ -1762,6 +1763,70 @@ static Index *findIndexOrPrimaryKey(
 }
 
 /*
+** Grow the pIdx->aSample[] array. Return SQLITE_OK if successful, or
+** SQLITE_NOMEM otherwise.
+*/
+static int growSampleArray(sqlite3 *db, Index *pIdx){
+  int nIdxCol = pIdx->nSampleCol;
+  int nNew = 0;
+  IndexSample *aNew = 0;
+  int nByte = 0;
+  tRowcnt *pSpace; /* Available allocated memory space */
+  u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
+  int i;
+
+  /* In production set the initial allocation to SQLITE_STAT4_SAMPLES. This
+  ** means that reallocation will almost never be required. But for debug 
+  ** builds, set the initial allocation size to 6 entries so that the 
+  ** reallocation code gets tested. todo: use real tests for this. */
+  assert( pIdx->nSample==pIdx->nSampleAlloc );
+#ifdef SQLITE_DEBUG
+  nNew = 6;
+#else
+  nNew = SQLITE_STAT4_SAMPLES;
+#endif
+  if( pIdx->nSample ){
+    nNew = pIdx->nSample*2;
+  }
+
+  nByte = ROUND8(sizeof(IndexSample) * nNew);
+  nByte += sizeof(tRowcnt) * nIdxCol * 3 * nNew;
+  nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
+
+  aNew = (IndexSample*)sqlite3DbMallocZero(db, nByte);
+  if( aNew==0 ) return SQLITE_NOMEM_BKPT;
+
+  pPtr = (u8*)aNew;
+  pPtr += ROUND8(nNew*sizeof(pIdx->aSample[0]));
+  pSpace = (tRowcnt*)pPtr;
+
+  pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
+  assert( EIGHT_BYTE_ALIGNMENT( pSpace ) );
+
+  if( pIdx->nSample ){
+    /* Copy the contents of the anEq[], anLt[], anDLt[] arrays for all
+    ** extant samples to the new location.  */
+    int nByte = nIdxCol * 3 * sizeof(tRowcnt) * pIdx->nSample;
+    memcpy(pSpace, pIdx->aSample[0].anEq, nByte);
+  }
+  for(i=0; i<nNew; i++){
+    aNew[i].anEq = pSpace; pSpace += nIdxCol;
+    aNew[i].anLt = pSpace; pSpace += nIdxCol;
+    aNew[i].anDLt = pSpace; pSpace += nIdxCol;
+    if( i<pIdx->nSample ){
+      aNew[i].p = pIdx->aSample[i].p;
+      aNew[i].n = pIdx->aSample[i].n;
+    }
+  }
+  assert( ((u8*)pSpace)-nByte==(u8*)aNew );
+
+  sqlite3DbFree(db, pIdx->aSample);
+  pIdx->aSample = aNew;
+  pIdx->nSampleAlloc = nNew;
+  return SQLITE_OK;
+}
+
+/*
 ** Load the content from either the sqlite_stat4
 ** into the relevant Index.aSample[] arrays.
 **
@@ -1786,6 +1851,7 @@ static int loadStatTbl(
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
   assert( db->lookaside.bDisable );
+#if 0
   zSql = sqlite3MPrintf(db, zSql1, zDb);
   if( !zSql ){
     return SQLITE_NOMEM_BKPT;
@@ -1852,6 +1918,9 @@ static int loadStatTbl(
   }
   rc = sqlite3_finalize(pStmt);
   if( rc ) return rc;
+#endif
+
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q1);
 
   zSql = sqlite3MPrintf(db, zSql2, zDb);
   if( !zSql ){
@@ -1860,8 +1929,6 @@ static int loadStatTbl(
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
   if( rc ) return rc;
-
-  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q1);
 
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char *zIndex;                 /* Index name */
@@ -1872,18 +1939,24 @@ static int loadStatTbl(
     if( zIndex==0 ) continue;
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     if( pIdx==0 ) continue;
-    if( pIdx->nSample>=pIdx->mxSample ){
-      /* Too many slots used because the same index appears in
-      ** sqlite_stat4 using multiple names */
-      continue;
+
+    if( pIdx->nSample==pIdx->nSampleAlloc ){
+      pIdx->pTable->tabFlags |= TF_HasStat4;
+      assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
+      if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
+        pIdx->nSampleCol = pIdx->nKeyCol;
+      }else{
+        pIdx->nSampleCol = pIdx->nColumn;
+      }
+      if( growSampleArray(db, pIdx) ) break;
     }
-    /* This next condition is true if data has already been loaded from 
-    ** the sqlite_stat4 table. */
-    nCol = pIdx->nSampleCol;
+
     if( pIdx!=pPrevIdx ){
       initAvgEq(pPrevIdx);
       pPrevIdx = pIdx;
     }
+
+    nCol = pIdx->nSampleCol;
     pSample = &pIdx->aSample[pIdx->nSample];
     decodeIntArray((char*)sqlite3_column_text(pStmt,1),nCol,pSample->anEq,0,0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,2),nCol,pSample->anLt,0,0);
