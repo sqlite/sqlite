@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\swin32\sAPI\sfunctions\sinvocations\sin\sos_win.c\sare\smade\svia\sthe\sfunction\stable.\sFix\sasan\serror\sin\stest\scode.
-D 2024-12-11T15:30:58.684
+C Fix\sa\sbuffer\soverread\sin\stest\scode.\sAdd\stest\sconfigurations\sfor\sENABLE_SETLK=1\sand\sFOR_WINRT=1\sbuilds\sto\srelease\stesting.
+D 2024-12-12T20:59:32.595
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -788,7 +788,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 90441d3cc16f966a23499d9096a3d2d971e5e8fddb4d1413b096b79c2b2cff07
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 04f44c6f87d3c5ee0a07775601625c319835ef35ab5060d02bbe25e0ec996615
+F src/test1.c 6c48aad3b093af9053d27ff0386c870806b2d170a445c1e569df781c4dc2e847
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -1724,7 +1724,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 2f900e8c912fbbaf381e69a92258fa6023ad0b4c8907e426bebbb4585da23c61
 F test/testrunner.tcl 90ed8b6c2b26dc1f6af08aeb04670a5df86172f3d9828d8af000f972afa50061 x
-F test/testrunner_data.tcl ba4aeea28aa03cfa6fe7e57782ddecb7a7b91c3a0b3251583cb4f0ee002de6a6
+F test/testrunner_data.tcl 1497914126bcf5749aa9b86268bd7636b027f7dcfac8746e7bcb89b97267a81c
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 704e6567c14a4a07a1a4d1fc2bd8a7f288b55b27508d23ba7f5c755c830c14ec
-R 1b1d5ac8540859f8a7b2d263d2f24a8d
+P 2ffdc799c63ff8858f2aa9177ca9c74be2df5d7594cb10fb0a233537d83fd563
+R d7d2d15fbad0e5c9c96f44f5f5c65d63
 U dan
-Z 95b5c408908f206ff5d85841ad8872eb
+Z 936045d7cbbb213a4b812b5b26e5263d
 # Remove this line to create a well-formed Fossil manifest.

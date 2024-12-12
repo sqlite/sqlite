@@ -8024,13 +8024,13 @@ static int SQLITE_TCLAPI win32_file_lock(
   pVfs = sqlite3_vfs_find(0);
   x.pFd = (sqlite3_file*)sqlite3_malloc(pVfs->szOsFile);
 
-  /* xOpen() must be passed a dual-nul-terminated string */
+  /* xOpen() must be passed a dual-nul-terminated string preceded in memory
+  ** by 4 0x00 bytes.  */
   zFilename = Tcl_GetStringFromObj(objv[1], &nFilename);
-  zTerm = (char*)sqlite3_malloc(nFilename+2);
-  memcpy(zTerm, zFilename, nFilename);
-  zTerm[nFilename] = 0;
-  zTerm[nFilename+1] = 0;
-  rc = pVfs->xOpen(pVfs, zTerm, x.pFd, flags, &flags);
+  zTerm = (char*)sqlite3_malloc(nFilename+6);
+  memset(zTerm, 0, nFilename+6);
+  memcpy(&zTerm[4], zFilename, nFilename);
+  rc = pVfs->xOpen(pVfs, &zTerm[4], x.pFd, flags, &flags);
   sqlite3_free(zTerm);
 
   if( rc!=SQLITE_OK ){
