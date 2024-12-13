@@ -5175,8 +5175,6 @@ int sqlite3WalCheckpoint(
   
     /* Copy data from the log to the database file. */
     if( rc==SQLITE_OK ){
-      int iCkpt = walidxGetFile(&pWal->hdr);
-  
       if( (walPagesize(pWal)!=nBuf) 
        && ((pWal->hdr.mxFrame2 & 0x7FFFFFFF) || pWal->hdr.mxFrame)
       ){
@@ -5195,7 +5193,7 @@ int sqlite3WalCheckpoint(
         if( pnCkpt ){
           if( isWalMode2(pWal) ){
             if( (int)(walCkptInfo(pWal)->nBackfill) ){
-              *pnCkpt = walidxGetMxFrame(&pWal->hdr, iCkpt);
+              *pnCkpt = walidxGetMxFrame(&pWal->hdr,!walidxGetFile(&pWal->hdr));
             }else{
               *pnCkpt = 0;
             }

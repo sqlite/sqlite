@@ -470,6 +470,22 @@ do_test 7.5.4 {
   list [file size test.db-wal] [file size test.db-wal2] [file size test.db]
 } {22040 12608 87040}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  PRAGMA journal_size_limit = 10000;
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+} {10000 wal2}
+
+do_execsql_test 9.1 {
+  PRAGMA wal_checkpoint;
+} {0 50 13}
+
 
 finish_test
 
