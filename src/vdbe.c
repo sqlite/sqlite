@@ -7932,16 +7932,14 @@ case OP_JournalMode: {    /* out2 */
   /* Do not allow a transition to journal_mode=WAL for a database
   ** in temporary storage or if the VFS does not support shared memory
   */
-  if( eNew==PAGER_JOURNALMODE_WAL
+  if( isWalMode(eNew)
    && (sqlite3Strlen30(zFilename)==0           /* Temp file */
        || !sqlite3PagerWalSupported(pPager))   /* No shared-memory support */
   ){
     eNew = eOld;
   }
 
-  if( (eNew!=eOld)
-   && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
-  ){
+  if( (eNew!=eOld) && (isWalMode(eNew) || isWalMode(eOld)) ){
     if( !db->autoCommit || db->nVdbeRead>1 ){
       rc = SQLITE_ERROR;
       sqlite3VdbeError(p,
@@ -7951,7 +7949,7 @@ case OP_JournalMode: {    /* out2 */
       goto abort_due_to_error;
     }else{
 
-      if( eOld==PAGER_JOURNALMODE_WAL ){
+      if( isWalMode(eOld) ){
         /* If leaving WAL mode, close the log file. If successful, the call
         ** to PagerCloseWal() checkpoints and deletes the write-ahead-log
         ** file. An EXCLUSIVE lock may still be held on the database file
