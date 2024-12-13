@@ -654,8 +654,14 @@ do_atof_calc:
 
   rr[0] = (double)s;
   assert( sizeof(s2)==sizeof(rr[0]) );
-  memcpy(&s2, &rr[0], sizeof(s2));
-  if( s2<=0x43efffffffffffffLL ){
+#ifdef SQLITE_DEBUG
+  rr[1] = 18446744073709549568.0;
+  memcpy(&s2, &rr[1], sizeof(s2));
+  assert( s2==0x43efffffffffffffLL );
+#endif
+  /* Largest double that can be safely converted to u64
+  **         vvvvvvvvvvvvvvvvvvvvvv   */
+  if( rr[0]<=18446744073709549568.0 ){
     s2 = (u64)rr[0];
     rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
   }else{

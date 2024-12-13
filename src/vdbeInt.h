@@ -393,7 +393,7 @@ struct sqlite3_context {
   int isError;            /* Error code returned by the function. */
   u8 enc;                 /* Encoding to use for results */
   u8 skipFlag;            /* Skip accumulator loading if true */
-  u8 argc;                /* Number of arguments */
+  u16 argc;               /* Number of arguments */
   sqlite3_value *argv[1]; /* Argument set */
 };
 

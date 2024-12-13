@@ -3336,7 +3336,8 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** this version of SQLite cannot understand.
   */
   if( badHdr==0 
-   && pWal->hdr.iVersion!=WAL_VERSION1 && pWal->hdr.iVersion!=WAL_VERSION2
+   && pWal->hdr.iVersion!=WAL_VERSION1
+   && pWal->hdr.iVersion!=WAL_VERSION2
   ){
     rc = SQLITE_CANTOPEN_BKPT;
   }
