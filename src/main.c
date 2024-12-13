@@ -4271,7 +4271,6 @@ int sqlite3_test_control(int op, ...){
       ** issue "defined but not used" warnings. */
       if( x==9999 ){
         sqlite3ShowExpr(0);
-        sqlite3ShowExpr(0);
         sqlite3ShowExprList(0);
         sqlite3ShowIdList(0);
         sqlite3ShowSrcList(0);
@@ -4288,7 +4287,6 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowWinFunc(0);
 #endif
         sqlite3ShowSelect(0);
-        sqlite3ShowWhereTerm(0);
       }
 #endif
       break;

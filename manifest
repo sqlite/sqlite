@@ -1,5 +1,5 @@
-C Increase\sthe\smaximum\snumber\sof\sarguments\son\san\sSQL\sfunction\sto\s1000\swith\sthe\ncapability\sto\sincrease\sit\sfurther\sup\sto\s32767\susing\sa\scompile-time\soption.
-D 2024-12-12T15:11:27.591
+C Fix\sa\sharmless\scompiler\swarning\sthat\scomes\sup\swhen\susing\sSQLITE_DEBUG\sin\nseparate\scompilation\smode.
+D 2024-12-13T01:29:22.397
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -740,7 +740,7 @@ F src/insert.c f8d1a0f8ee258411009c6b7f2d93170e351bd19f5ad89d57e1180644297cbe70
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 13d20512d7be9c8c316a85b24d0fd0f377a046c4830eb87da08598bd3f49b10f
+F src/main.c a19dc8b47760ed95f3fbb255cfa8d3f7146b33c263eb4af05ab05e0115d161b9
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -861,7 +861,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 8b7e309a8012659ac9275ad8cdcc6acaf73fa04b1090e38a01335f230fd10681
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 377f3363983251ec6b23aad5a3963822199d9bff2ad4072a5e006959ee5a2abb
+F src/where.c 9ad3dea8003a8913da6a4ca8322e2fe30773f46e88a0d4fbf9db13bdb999efa2
 F src/whereInt.h 1e36ec50392f7cc3d93d1152d4338064cd522b87156a0739388b7e273735f0ca
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f3b484fd71fd77947a1de7c24f35f8eed2911d0565d03edb7970b8f3092a5da
-R d2087c5724f1e2048a55b1212074add0
+P e8d7d68ba0bb0bc2f948db5d9966990a5d23597fc3658b7cd0bc99d53c7353a9
+R 5cbe0e5d51e97ea31f8e1a24559f27b0
 U drh
-Z 41468182a628258b57cf14eaed6c922f
+Z 0752bc133a053f7fece0328823dfa9c8
 # Remove this line to create a well-formed Fossil manifest.
