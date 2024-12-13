@@ -1550,6 +1550,9 @@ static void decodeIntArray(
 #endif
     if( *z==' ' ) z++;
   }
+  if( aOut ){
+    for(/* no-op */; i<nOut; i++){ aOut[i] = 0; }
+  }
 #ifndef SQLITE_ENABLE_STAT4
   assert( pIndex!=0 ); {
 #else
@@ -1774,6 +1777,7 @@ static int growSampleArray(sqlite3 *db, Index *pIdx){
   tRowcnt *pSpace; /* Available allocated memory space */
   u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
   int i;
+  u64 t;
 
   /* In production set the initial allocation to SQLITE_STAT4_SAMPLES. This
   ** means that reallocation will almost never be required. But for debug 
@@ -1793,8 +1797,14 @@ static int growSampleArray(sqlite3 *db, Index *pIdx){
   nByte += sizeof(tRowcnt) * nIdxCol * 3 * nNew;
   nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
 
-  aNew = (IndexSample*)sqlite3DbMallocZero(db, nByte);
+  if( db->aSchemaTime ){
+    t = sqlite3STimeNow();
+  }
+  aNew = (IndexSample*)sqlite3DbMallocRaw(db, nByte);
   if( aNew==0 ) return SQLITE_NOMEM_BKPT;
+  if( db->aSchemaTime ){
+    db->aSchemaTime[SCHEMA_TIME_STAT4_SAMPLE_MALLOC] += (sqlite3STimeNow() - t);
+  }
 
   pPtr = (u8*)aNew;
   pPtr += ROUND8(nNew*sizeof(pIdx->aSample[0]));
