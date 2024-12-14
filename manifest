@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\snon-PASSIVE\swal2\scheckpoints\ssometimes\staking\sthe\sWRITER\slock.
-D 2024-12-14T16:50:29.177
+C Update\sto\swalRestartLog()\sfunction\sto\smake\sit\sshorter\seasier\sto\smerge\swith\sbranch\s"bedrock".
+D 2024-12-14T17:19:06.037
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -860,7 +860,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 0d024a770c3f52baab91427a3a1b89cecfaefb492964da1a8e83f94187287f46
+F src/wal.c 2ec54ef10bb354fc61424c4b65f407e795abe07059001d0d1c5f99be5bb8b7bf
 F src/wal.h 97b8a9903387401377b59507e86b93a148ef1ad4e5ce0f23659a12dcdce56af2
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c b34adb09fdb2a4f57a0bafd4194b501047ef383976fef9f0ac3f395f4881694d
@@ -2216,9 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 693cc8e8db6c00249211bdfc21be2bff169ca6b0c4560522dd404615e8ba3b76
-Q +1a59cae3c31aea25cef3705cce2477e26515a0463cf9094bd29951899b758767
-R 5649ce79a264a23dcf9673f867edeff1
+P 11d7865a56c1fbb978e3ba70ddc03c2a16080e2992c580e00e4c6c1fa47c043c
+R 4b3e1430220bd396f41d373fd3638959
 U dan
-Z 9ac7b2b52092771e4fcd759caab1f3c0
+Z 80dc095041f96e4782d4286427d7b68b
 # Remove this line to create a well-formed Fossil manifest.

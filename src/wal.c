@@ -4613,7 +4613,9 @@ static int walRestartLog(Wal *pWal){
     ** Condition (b) guarantees that wal file !iApp is either empty or
     ** completely checkpointed. 
     */
-    if( (pWal->readLock==WAL_LOCK_PART1 || pWal->readLock==WAL_LOCK_PART2)
+    assert( (0*3)+1==WAL_LOCK_PART1 ); /* iApp==0 -> require WAL_LOCK_PART1 */
+    assert( (1*3)+1==WAL_LOCK_PART2 ); /* iApp==1 -> require WAL_LOCK_PART2 */
+    if( pWal->readLock==(iApp*3)+1
      && walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize 
     ){
       rc = wal2RestartOk(pWal, iApp);
