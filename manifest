@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\sfixes\sand\senhancements\sinto\sthe\sbedrock\sbranch.
-D 2024-12-07T23:29:06.209
+C Merge\schanges\sfrom\swal2,\sincluding\sthe\sfix\sto\sprevent\snon-PASSIVE\scheckpoints\sfrom\sever\staking\sthe\swriter\slock.
+D 2024-12-14T17:36:12.410
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -866,7 +866,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 77f875970ad28d658d3804c21bd72918604267478f1ee7986cceb7e765f0ba35
+F src/wal.c 3dfcce08758eec841bab07320c2b4e495c1c0621c2fd6327b3c3b19f52da48b6
 F src/wal.h 8d02ab8c2a93a941f5898eb3345bf711c1d3f8f86f4be8d5428fb6c074962d8a
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c b34adb09fdb2a4f57a0bafd4194b501047ef383976fef9f0ac3f395f4881694d
@@ -2024,7 +2024,7 @@ F test/wal2recover3.test 4a91689e165a38bc401736e6518188c2b0ff4fa1566d1810b886753
 F test/wal2rewrite.test 6ca6f631ffcf871240beab5f02608913fd075c6d0d31310b026c8383c65c9f9c
 F test/wal2rollback.test 23adc4a099b23f6aaea8b04fdca1c35861d887dd80f8be7da2d5273eb777e428
 F test/wal2savepoint.test c2410acac73bfa63827f9346d060205080b747f0414ff27273d417dadfea28d0
-F test/wal2simple.test 320a08927f307d0ead26fa3fcef4e3f64279f49be9504f918cb33294f75aeec8
+F test/wal2simple.test d2d94fe1f30700c9f30e46c16f1c3d7d245b861a1be2bfe5ead701484c6dd38e
 F test/wal2snapshot.test f6c3945bea572fd8745774e95b8dca1e5832c696e2251bb0db33391ee567fe60
 F test/wal3.test 5de023bb862fd1eb9d2ad26fa8d9c43abb5370582e5b08b2ae0d6f93661bc310
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -2239,8 +2239,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e03dd0bd313817da7ebf2989e1a423d95503044310d9efa02610d4d3a5973996 d3ce95f7e0335b8522a1805ab602b64856ced3007c507ba42039c6183ef9ac3d
-R d8823e691da2b0f9a9ba0ce3199f7f80
-U drh
-Z 2951534e15570812952f9e1a2d7a743c
+P 08cfa7e8b3090151a56b3898ebf0526d765b4ab276d1186d8c3e850c9408899d 88d7fb2aef882fc41a4f9c1bdd2f0162289e90d62df50af1b0eb6994c5c94c28
+R f44d51de9edfea1408778c5a30d0bdec
+U dan
+Z 1f3094698fe34000e0ec18f27e27e594
 # Remove this line to create a well-formed Fossil manifest.

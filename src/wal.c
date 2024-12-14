@@ -4947,37 +4947,61 @@ static int walRestartLog(Wal *pWal){
     int iApp = walidxGetFile(&pWal->hdr);
     u32 nWalSize = WAL_DEFAULT_WALSIZE;
     if( pWal->mxWalSize>0 ){
+      /* mxWalSize is in bytes. Convert this to a number of frames. */
       nWalSize = (pWal->mxWalSize-WAL_HDRSIZE+pWal->szPage+WAL_FRAME_HDRSIZE-1) 
         / (pWal->szPage+WAL_FRAME_HDRSIZE);
       nWalSize = MAX(nWalSize, 1);
     }
 
-    assert( 1==WAL_LOCK_PART1 );
-    assert( 4==WAL_LOCK_PART2 );
-    assert( 1+(iApp*3)==WAL_LOCK_PART1 || 1+(iApp*3)==WAL_LOCK_PART2 );
-    if( pWal->readLock==1+(iApp*3)
+    /* With a BEGIN CONCURRENT transaction, it is possible for a connection
+    ** to hold the WAL_LOCK_PART1 lock even if iApp==1 (or WAL_LOCK_PART2
+    ** when iApp==0). This is because a connection running concurrent to this
+    ** one may have switched the wal file after this connection took the
+    ** read lock.
+    **
+    ** This is not a problem, as if this happens it means the current lock 
+    ** is more restrictive, not less, than required. And a BEGIN CONCURRENT
+    ** transaction cannot be committed and downgraded to a read-transaction,
+    ** so there is no chance of continuing while holding the wrong lock.
+    */
+    assert( iApp==0 || pWal->readLock==WAL_LOCK_PART2 
+                    || pWal->readLock==WAL_LOCK_PART2_FULL1 
+                    || pWal->readLock==WAL_LOCK_PART1 );
+    assert( iApp==1 || pWal->readLock==WAL_LOCK_PART1 
+                    || pWal->readLock==WAL_LOCK_PART1_FULL2 
+                    || pWal->readLock==WAL_LOCK_PART2 );
+
+    /* Switch to wal file !iApp if 
+    **
+    **   (a) Wal file iApp (the current wal file) contains >= nWalSize frames.
+    **   (b) This client is not reading from wal file !iApp.
+    **   (c) No other client is reading from wal file !iApp.
+    **
+    ** Condition (b) guarantees that wal file !iApp is either empty or
+    ** completely checkpointed. 
+    */
+    assert( (0*3)+1==WAL_LOCK_PART1 ); /* iApp==0 -> require WAL_LOCK_PART1 */
+    assert( (1*3)+1==WAL_LOCK_PART2 ); /* iApp==1 -> require WAL_LOCK_PART2 */
+    if( pWal->readLock==(iApp*3)+1
      && walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize 
     ){
-      volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
-      if( mxFrame==0 || pInfo->nBackfill ){
-        rc = wal2RestartOk(pWal, iApp);
-        if( rc==SQLITE_OK ){
-          int iNew = !iApp;
-          pWal->nCkpt++;
-          walidxSetFile(&pWal->hdr, iNew);
-          walidxSetMxFrame(&pWal->hdr, iNew, 0);
-          sqlite3Put4byte((u8*)&pWal->hdr.aSalt[0], pWal->hdr.aFrameCksum[0]);
-          sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
-          walIndexWriteHdr(pWal);
-          pInfo->nBackfill = 0;
-          wal2RestartFinished(pWal, iApp);
-          walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-          pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
-          rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-        }else if( rc==SQLITE_BUSY ){
-          rc = SQLITE_OK;
-        }
+      rc = wal2RestartOk(pWal, iApp);
+      if( rc==SQLITE_OK ){
+        volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+        int iNew = !iApp;
+        pWal->nCkpt++;
+        walidxSetFile(&pWal->hdr, iNew);
+        walidxSetMxFrame(&pWal->hdr, iNew, 0);
+        sqlite3Put4byte((u8*)&pWal->hdr.aSalt[0], pWal->hdr.aFrameCksum[0]);
+        sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
+        walIndexWriteHdr(pWal);
+        pInfo->nBackfill = 0;
+        wal2RestartFinished(pWal, iApp);
+        walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+        pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
+        rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+      }else if( rc==SQLITE_BUSY ){
+        rc = SQLITE_OK;
       }
     }
   }else if( pWal->readLock==0 ){
@@ -5504,7 +5528,7 @@ int sqlite3WalCheckpoint(
     ** writer lock retried until either the busy-handler returns 0 or the
     ** lock is successfully obtained.
     */
-    if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
+    if( eMode!=SQLITE_CHECKPOINT_PASSIVE && isWalMode2(pWal)==0 ){
       rc = walBusyLock(pWal, xBusy2, pBusyArg, WAL_WRITE_LOCK, 1);
       if( rc==SQLITE_OK ){
         pWal->writeLock = 1;
