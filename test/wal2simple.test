@@ -512,5 +512,32 @@ do_execsql_test 9.1 {
   PRAGMA wal_checkpoint;
 } {0 50 13}
 
+
+#-------------------------------------------------------------------------
+# Check that it is possible to do a non-PASSIVE checkpoint on a wal2
+# db without blocking writers.
+#
+reset_db
+do_execsql_test 10.0 {
+  PRAGMA journal_size_limit = 10000;
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+  BEGIN;
+    INSERT INTO t1 VALUES( hex( randomblob(5000) ) );
+} {10000 wal2}
+
+sqlite3 db2 test.db
+do_execsql_test -db db2 10.1 {
+  PRAGMA wal_checkpoint = FULL;
+} {0 50 13}
+
+do_execsql_test 10.2 {
+  COMMIT;
+}
+
 finish_test
 

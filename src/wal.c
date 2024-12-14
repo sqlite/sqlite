@@ -5158,7 +5158,7 @@ int sqlite3WalCheckpoint(
     ** writer lock retried until either the busy-handler returns 0 or the
     ** lock is successfully obtained.
     */
-    if( eMode!=SQLITE_CHECKPOINT_PASSIVE ){
+    if( eMode!=SQLITE_CHECKPOINT_PASSIVE && isWalMode2(pWal)==0 ){
       rc = walBusyLock(pWal, xBusy2, pBusyArg, WAL_WRITE_LOCK, 1);
       if( rc==SQLITE_OK ){
         pWal->writeLock = 1;
