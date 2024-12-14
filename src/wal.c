@@ -4593,32 +4593,46 @@ static int walRestartLog(Wal *pWal){
     int iApp = walidxGetFile(&pWal->hdr);
     u32 nWalSize = WAL_DEFAULT_WALSIZE;
     if( pWal->mxWalSize>0 ){
+      /* mxWalSize is in bytes. Convert this to a number of frames. */
       nWalSize = (pWal->mxWalSize-WAL_HDRSIZE+pWal->szPage+WAL_FRAME_HDRSIZE-1) 
         / (pWal->szPage+WAL_FRAME_HDRSIZE);
       nWalSize = MAX(nWalSize, 1);
     }
 
-    if( walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize ){
-      volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      u32 mxFrame = walidxGetMxFrame(&pWal->hdr, !iApp);
-      if( mxFrame==0 || pInfo->nBackfill ){
-        rc = wal2RestartOk(pWal, iApp);
-        if( rc==SQLITE_OK ){
-          int iNew = !iApp;
-          pWal->nCkpt++;
-          walidxSetFile(&pWal->hdr, iNew);
-          walidxSetMxFrame(&pWal->hdr, iNew, 0);
-          sqlite3Put4byte((u8*)&pWal->hdr.aSalt[0], pWal->hdr.aFrameCksum[0]);
-          sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
-          walIndexWriteHdr(pWal);
-          pInfo->nBackfill = 0;
-          wal2RestartFinished(pWal, iApp);
-          walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-          pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
-          rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-        }else if( rc==SQLITE_BUSY ){
-          rc = SQLITE_OK;
-        }
+    assert( iApp==0 || pWal->readLock==WAL_LOCK_PART2 
+                    || pWal->readLock==WAL_LOCK_PART2_FULL1 );
+    assert( iApp==1 || pWal->readLock==WAL_LOCK_PART1 
+                    || pWal->readLock==WAL_LOCK_PART1_FULL2 );
+
+    /* Switch to wal file !iApp if 
+    **
+    **   (a) Wal file iApp (the current wal file) contains >= nWalSize frames.
+    **   (b) This client is not reading from wal file !iApp.
+    **   (c) No other client is reading from wal file !iApp.
+    **
+    ** Condition (b) guarantees that wal file !iApp is either empty or
+    ** completely checkpointed. 
+    */
+    if( (pWal->readLock==WAL_LOCK_PART1 || pWal->readLock==WAL_LOCK_PART2)
+     && walidxGetMxFrame(&pWal->hdr, iApp)>=nWalSize 
+    ){
+      rc = wal2RestartOk(pWal, iApp);
+      if( rc==SQLITE_OK ){
+        volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+        int iNew = !iApp;
+        pWal->nCkpt++;
+        walidxSetFile(&pWal->hdr, iNew);
+        walidxSetMxFrame(&pWal->hdr, iNew, 0);
+        sqlite3Put4byte((u8*)&pWal->hdr.aSalt[0], pWal->hdr.aFrameCksum[0]);
+        sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
+        walIndexWriteHdr(pWal);
+        pInfo->nBackfill = 0;
+        wal2RestartFinished(pWal, iApp);
+        walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+        pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
+        rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+      }else if( rc==SQLITE_BUSY ){
+        rc = SQLITE_OK;
       }
     }
   }else if( pWal->readLock==0 ){
