@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\son\sthis\sbranch\scausing\sa\sfile-handle\sto\sbe\sleaked\sfollowing\san\sOOM\scondition.
-D 2024-12-16T15:13:34.704
+C Fix\srelease\stest\serrors\son\swinrt.
+D 2024-12-16T19:31:30.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1634,7 +1634,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 5d84e415adf7cc4edd5913c4f23c761104ff135b9c190fcf7b430a4cbca6cb65
+F test/shell1.test ccb26a0cb17a73406b5e4fe3c3260988a22f5c63680d8474b4d35e9bc195f3cb
 F test/shell2.test 01a01f76ed98088ce598794fbf5b359e148271541a8ddbf79d21cc353cc67a24
 F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
 F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b558db5db7e7c9aced1d24d74dc5ee2fab7cd04ec6570247c9c45723eb6f8fc0
-R b9d249c9aa26e24c20dc18ed85158a12
+P 5ca12dc964b2d8c3d11a2be5be7eac0dc994cec3a8b5fdfeac4ff8dde19a5a93
+R 68f20f3dcabf678da64d7efc79e9ed69
 U dan
-Z f55a7e113d76984967c653e65ab3a507
+Z 0a548518470ec9c7acb934179f861770
 # Remove this line to create a well-formed Fossil manifest.
