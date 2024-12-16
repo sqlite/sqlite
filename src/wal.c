@@ -3737,12 +3737,12 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
 
     SEH_TRY {
       /* Restore the clients cache of the wal-index header to the state it
-      ** was in before the client began writing to the database. 
+      ** was in before the client began writing to the database.
       */
       memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
-  
-      for(iFrame=pWal->hdr.mxFrame+1; 
-          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
+
+      for(iFrame=pWal->hdr.mxFrame+1;
+          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax;
           iFrame++
       ){
         /* This call cannot fail. Unless the page for which the page number
