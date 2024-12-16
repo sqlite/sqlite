@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sdivergence\sfrom\strunk.
-D 2024-12-16T12:09:02.980
+C Resynchronize\sthe\sbegin-concurrent\sbranch\swith\strunk.
+D 2024-12-16T12:19:35.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2219,8 +2219,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P faef90eac3925341df958825d80466d737b478d4f0bdaead73f0e069770e923a
+P 019b04342861589cd3bf64006f30b682d8c778b685cefd071327acefba8e55b1 ae580443d210811c12209866112fc8b0b83281e24945504b748a17d93ad84062
 R 1f747555ec6d9ac4f6898cf3a2eeefc2
 U drh
-Z c36104dc4fc3746611f1b61b64c32712
+Z 369b6546cfdb3f157af5551b7b930f4a
 # Remove this line to create a well-formed Fossil manifest.
