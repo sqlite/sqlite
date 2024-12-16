@@ -422,4 +422,5 @@ void sqlite3BtreeClearCache(Btree*);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+
 #endif /* SQLITE_BTREE_H */

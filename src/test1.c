@@ -9096,9 +9096,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snapshot_open_blob", test_snapshot_open_blob, 0 },
      { "sqlite3_snapshot_cmp_blob", test_snapshot_cmp_blob, 0 },
 #endif
-     { "sqlite3_delete_database", test_delete_database, 0 },
-     { "sqlite3_wal_info", test_wal_info, 0 },
-     { "atomic_batch_write",      test_atomic_batch_write,     0   },
+     { "sqlite3_delete_database", test_delete_database,    0 },
+     { "sqlite3_wal_info",        test_wal_info,           0 },
+     { "atomic_batch_write",      test_atomic_batch_write, 0 },
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
      { "sqlite3_autovacuum_pages", test_autovacuum_pages,   0 },

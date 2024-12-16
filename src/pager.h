@@ -171,7 +171,6 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int n);
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
 
-
 #ifndef SQLITE_OMIT_WAL
   int sqlite3PagerCheckpoint(Pager *pPager, sqlite3*, int, int*, int*);
   int sqlite3PagerWalSupported(Pager *pPager);

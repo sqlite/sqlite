@@ -761,7 +761,7 @@ static void btreePtrmapCheck(BtShared *pBt, Pgno nPage){
 # define btreePtrmapCheck(y,z) 
 #endif /* SQLITE_OMIT_CONCURRENT */
 
-static void releasePage(MemPage *pPage);  /* Forward reference */
+static void releasePage(MemPage *pPage);         /* Forward reference */
 static void releasePageOne(MemPage *pPage);      /* Forward reference */
 static void releasePageNotNull(MemPage *pPage);  /* Forward reference */
 
@@ -4727,7 +4727,6 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
   if( p->inTrans==TRANS_WRITE ){
     BtShared *pBt = p->pBt;
     sqlite3BtreeEnter(p);
-
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       assert( ISCONCURRENT==0 );

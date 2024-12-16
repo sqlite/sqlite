@@ -3521,7 +3521,8 @@ static int walFindFrame(
     return SQLITE_OK;
   }
 
-  /* Each iteration of the following for() loop searches one
+  /* Search the hash table or tables for an entry matching page number
+  ** pgno. Each iteration of the following for() loop searches one
   ** hash table (each hash table indexes up to HASHTABLE_NPAGE frames).
   **
   ** This code might run concurrently to the code in walIndexAppend()
@@ -3977,10 +3978,10 @@ int sqlite3WalUndo(
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
 
-    /* Restore the clients cache of the wal-index header to the state it
-    ** was in before the client began writing to the database.
-    */
     SEH_TRY {
+      /* Restore the clients cache of the wal-index header to the state it
+      ** was in before the client began writing to the database.
+      */
       memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
 #ifndef SQLITE_OMIT_CONCURRENT
       if( bConcurrent ){
@@ -3989,7 +3990,6 @@ int sqlite3WalUndo(
 #else
       UNUSED_PARAMETER(bConcurrent);
 #endif
-  
       for(iFrame=pWal->hdr.mxFrame+1;
           ALWAYS(rc==SQLITE_OK) && iFrame<=iMax;
           iFrame++
@@ -4009,7 +4009,8 @@ int sqlite3WalUndo(
         rc = xUndo(pUndoCtx, walFramePgno(pWal, iFrame));
       }
       if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
-    } SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+    }
+    SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   }
   return rc;
 }
@@ -4372,7 +4373,6 @@ static int walFrames(
     p->flags |= PGHDR_WAL_APPEND;
   }
 
-
   /* Recalculate checksums within the wal file if required. */
   if( isCommit && pWal->iReCksum ){
     rc = walRewriteChecksums(pWal, iFrame);
@@ -4589,7 +4589,7 @@ int sqlite3WalCheckpoint(
       }else{
         rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags, zBuf);
       }
-  
+
       /* If no error occurred, set the output variables. */
       if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
         if( pnLog ) *pnLog = (int)pWal->hdr.mxFrame;
