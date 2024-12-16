@@ -1,5 +1,5 @@
-C Changes\sfor\sbetter\salignment\swith\sthe\swal2\sbranch.
-D 2024-12-16T13:25:49.902
+C Code\sformatting\schanges\sto\smake\strunk\smore\slike\swal2.
+D 2024-12-16T18:04:39.151
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -858,7 +858,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c fcbc36c31df200daa4ed398923ab55a02dbbed9ce22a8a31c5d9bf447a130126
+F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 9ad3dea8003a8913da6a4ca8322e2fe30773f46e88a0d4fbf9db13bdb999efa2
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae580443d210811c12209866112fc8b0b83281e24945504b748a17d93ad84062
-R dc9095f065111bf3b125973079f69b6b
+P 4fab85b3d0d1cad2d185f2456de7ddf281badf8561cc051e10e16655441dcc84
+R 9aaaecad314aea90d45c80b60798b57a
 U drh
-Z 26e0562f544e2adce22ef893d4b0b579
+Z 2a765bcb487b40c3fb2da87580a07616
 # Remove this line to create a well-formed Fossil manifest.
