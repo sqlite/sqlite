@@ -4569,8 +4569,22 @@ static int btreeRelocateRange(
       if( iNew==PENDING_BYTE_PAGE(pBt) ) iNew = ++(*pnCurrent);
       rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
       releasePageNotNull(pPg);
-    }else{
-      rc = allocateBtreePage(pBt, &pFree, &iNew, iFirst-1, BTALLOC_LE);
+    }else if( pEntry->eType!=0 ){
+
+      /* Allocate a new page from the free-list to move page iPg to. 
+      ** Except - if the page allocated is within the range being relocated
+      ** (i.e. pgno>=iFirst), then discard it and allocate another.  */
+      do {
+        rc = allocateBtreePage(pBt, &pFree, &iNew, 0, 0);
+        if( iNew>=iFirst ){
+          assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
+          assert( iNew>iPg );
+          sqlite3PcacheDrop(pFree->pDbPage);
+          pMap->aPtr[iNew - pMap->iFirst].eType = 0;
+          pFree = 0;
+        }
+      }while( pFree==0 );
+
       assert( rc!=SQLITE_OK || iNew<iFirst );
       if( rc==SQLITE_OK ){
         releasePage(pFree);
