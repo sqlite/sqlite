@@ -4248,7 +4248,10 @@ static int winOpenSharedMemory(winFile *pDbFd){
     p->id = pShmNode->nextShmId++;
 #endif
     pDbFd->pShm = p;
-  }else{
+  }else if( p ){
+    if( p->hShm!=INVALID_HANDLE_VALUE ){
+      osCloseHandle(p->hShm);
+    }
     sqlite3_free(p);
   }
 

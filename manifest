@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\stest\scode.\sAdd\stest\sconfigurations\sfor\sENABLE_SETLK=1\sand\sFOR_WINRT=1\sbuilds\sto\srelease\stesting.
-D 2024-12-12T20:59:32.595
+C Fix\sa\sproblem\son\sthis\sbranch\scausing\sa\sfile-handle\sto\sbe\sleaked\sfollowing\san\sOOM\scondition.
+D 2024-12-16T15:13:34.704
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -762,7 +762,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
-F src/os_win.c 49cd1fbdf60dd185ce25dd0d02b2670603c3e5edc9a8fb3f21585491c9d45e30
+F src/os_win.c 6f6bd231709a1bd46c815a2329da9555094b13508198b857db3464857b00b3f5
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
 F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2ffdc799c63ff8858f2aa9177ca9c74be2df5d7594cb10fb0a233537d83fd563
-R d7d2d15fbad0e5c9c96f44f5f5c65d63
+P b558db5db7e7c9aced1d24d74dc5ee2fab7cd04ec6570247c9c45723eb6f8fc0
+R b9d249c9aa26e24c20dc18ed85158a12
 U dan
-Z 936045d7cbbb213a4b812b5b26e5263d
+Z f55a7e113d76984967c653e65ab3a507
 # Remove this line to create a well-formed Fossil manifest.
