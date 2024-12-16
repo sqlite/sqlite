@@ -1,9 +1,9 @@
-C Fix\sa\sharmless\scompiler\swarning\sthat\scomes\sup\swhen\susing\sSQLITE_DEBUG\sin\nseparate\scompilation\smode.
-D 2024-12-13T01:29:22.397
+C Tiny\smakefile/configure\sscript\sdoc\stweaks.\sNo\sfunctional\schanges.
+D 2024-12-16T07:03:12.241
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 86e81bdb118bf332a27865090b7dce96ddde93c2f1586e1b911569acaa228f19
+F Makefile.in ad349acf91b3569033439fe498fa197aa530cafaa01362eb7daad2f84e43d265
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc f402bb6ea63b44f5143aa3c637aa3f69794cf14b1cc964eb97c4f53124198561
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def 8f15c373e88c4c5296d6100e3d35893bd6edb57cebcb6a8c1e827e6faaef52e4
+F auto.def f2876c94403be1055db47273dde33e8fea0998b1c1d36a386f76698919ea36ad
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e8d7d68ba0bb0bc2f948db5d9966990a5d23597fc3658b7cd0bc99d53c7353a9
-R 5cbe0e5d51e97ea31f8e1a24559f27b0
-U drh
-Z 0752bc133a053f7fece0328823dfa9c8
+P 52e0f8cab9852538da0778d5f57dd85b0774e764157692111a007aecd963f10a
+R 89eec167649f7e56f45710cfe9ae12c6
+U stephan
+Z da9c21e8a76fc0e0ce1fc5f35c3f13d0
 # Remove this line to create a well-formed Fossil manifest.
