@@ -1,5 +1,5 @@
-C Remove\sunnecessary\send-of-line\swhitespace.
-D 2024-12-16T12:08:47.781
+C Changes\sfor\sbetter\salignment\swith\sthe\swal2\sbranch.
+D 2024-12-16T13:25:49.902
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -764,8 +764,8 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
 F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9656ad4e8331efb8a4f94f7a0c6440b98caea073950a367ea0c728a53b8e62c9
-F src/pager.h 4b1140d691860de0be1347474c51fee07d5420bd7f802d38cbab8ea4ab9f538a
+F src/pager.c 2fdd489447aa6bb0f672973bacb801ced92225ca9a1c874ed9b856d2741dc54e
+F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y dcf45a81b61223ac93e61fdfe9b22d635dd371c446e8222634d90aa37e25e5f6
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed5e912622839dce76dfb7352b56bb6fc698ecffde195f48db8d3339e9628cb5
-R 50452c481dab7840c92f4813a0b34c39
+P ae580443d210811c12209866112fc8b0b83281e24945504b748a17d93ad84062
+R dc9095f065111bf3b125973079f69b6b
 U drh
-Z 629c78c1cfb191194be6c80039586a1c
+Z 26e0562f544e2adce22ef893d4b0b579
 # Remove this line to create a well-formed Fossil manifest.
