@@ -1,5 +1,5 @@
-C Reduce\sdivergence\sof\swal2\sfrom\strunk.
-D 2024-12-16T17:46:21.982
+C Further\sreduction\sin\sdivergence\sfrom\strunk.
+D 2024-12-16T18:13:47.246
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -860,7 +860,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c f5588f5e2d04afcf49add28b866cc76e4af2e2d8d2531486ac98f502bf8ca93c
+F src/wal.c 3ff22607c591f208bf81b5ea2160e5715d12bbb5b762394f79b2bd13d3f7568b
 F src/wal.h 97b8a9903387401377b59507e86b93a148ef1ad4e5ce0f23659a12dcdce56af2
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 9ad3dea8003a8913da6a4ca8322e2fe30773f46e88a0d4fbf9db13bdb999efa2
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eab619453abf6979962a68d298c44553ef0d9eb18112e61420d4de8a9c16f620
-R 80e0eedebdef6156cabc3ad9fa1485f5
+P 90d744d67446a270f7547910531e76593dee82ce537e75c11af0d94eca8404cf
+R a440747468661c427837f99ee412b9ae
 U drh
-Z d17a5f7761993d7328d68cbb53bd5978
+Z 0ce636ddd1ec473c89130c2c2fee8b2e
 # Remove this line to create a well-formed Fossil manifest.
