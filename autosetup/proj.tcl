@@ -138,7 +138,12 @@ proc proj-indented-notice {args} {
   }
   set lines [split [join $args] \n]
   foreach line $lines {
-    $outFunc "      [string trimleft $line]"
+    set line [string trimleft $line]
+    if {"" eq $line} {
+      $outFunc $line
+    } else {
+      $outFunc "    $line"
+    }
   }
   if {"" ne $fErr} {
     show-notices
@@ -311,11 +316,11 @@ proc proj-first-bin-of {args} {
 ########################################################################
 # @proj-opt-was-provided key
 #
-# Returns 1 if the user specifically provided the given configure
-# flag, else 0. This can be used to distinguish between options which
-# have a default value and those which were explicitly provided by the
-# user, even if the latter is done in a way which uses the default
-# value.
+# Returns 1 if the user specifically provided the given configure flag
+# or if it was specifically set using proj-opt-set, else 0. This can
+# be used to distinguish between options which have a default value
+# and those which were explicitly provided by the user, even if the
+# latter is done in a way which uses the default value.
 #
 # For example, with a configure flag defined like:
 #

@@ -19,7 +19,9 @@ TOP = .
 
 
 # Optionally set EXTRA_SRC to a list of C files to append to
-# the generated sqlite3.c.
+# the generated sqlite3.c. Any sqlite3 extensions added this
+# way may require manual editing, as described in
+# https://sqlite.org/forum/forumpost/903f721f3e7c0d25
 #
 !IFNDEF EXTRA_SRC
 EXTRA_SRC =

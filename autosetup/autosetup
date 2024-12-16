@@ -9,7 +9,7 @@ dir=`dirname "$0"`; exec "`$dir/autosetup-find-tclsh`" "$0" "$@"
 set autosetup(version) 0.7.2
 
 # Can be set to 1 to debug early-init problems
-set autosetup(debug) [expr {"--debug" in $argv}]
+set autosetup(debug) [expr {"--autosetup-debug" in $argv}]
 
 ##################################################################
 #
@@ -98,7 +98,7 @@ proc main {argv} {
 		version         => "display the version of autosetup"
 		ref:=text manual:=text
 		reference:=text => "display the autosetup command reference. 'text', 'wiki', 'asciidoc' or 'markdown'"
-		debug           => "display debugging output as autosetup runs"
+		autosetup-debug => "display debugging output as autosetup runs"
 		install:=.      => "install autosetup to the current or given directory"
 	}
 	if {$autosetup(installed)} {
@@ -132,7 +132,7 @@ proc main {argv} {
 	}
 
 	# Debugging output (set this early)
-	incr autosetup(debug) [opt-bool debug]
+	incr autosetup(debug) [opt-bool autosetup-debug]
 	incr autosetup(force) [opt-bool force]
 	incr autosetup(msg-quiet) [opt-bool quiet]
 	incr autosetup(msg-timing) [opt-bool timing]
@@ -2530,7 +2530,7 @@ if {[catch {main $argv} msg opts] == 1} {
 	show-notices
 	autosetup-full-error [error-dump $msg $opts $autosetup(debug)]
 	if {!$autosetup(debug)} {
-		puts stderr "Try: '[file tail $autosetup(exe)] --debug' for a full stack trace"
+		puts stderr "Try: '[file tail $autosetup(exe)] --autosetup-debug' for a full stack trace"
 	}
 	exit 1
 }
