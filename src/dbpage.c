@@ -393,6 +393,8 @@ static int dbpageUpdate(
       memcpy(aPage, pData, szPage);
       pTab->pgnoTrunc = 0;
     }
+  }else{
+    pTab->pgnoTrunc = 0;
   }
   sqlite3PagerUnref(pDbPage);
   return rc;

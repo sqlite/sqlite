@@ -637,7 +637,7 @@ static int vfstraceFileControl(sqlite3_file *pFile, int op, void *pArg){
             }
             if( zArg[0]=='x' && isalpha(zArg[1]) ) zArg++;
             for(n=0; isalpha(zArg[n]); n++){}
-            for(jj=0; jj<sizeof(aKw)/sizeof(aKw[0]); jj++){
+            for(jj=0; jj<(int)(sizeof(aKw)/sizeof(aKw[0])); jj++){
               if( sqlite3_strnicmp(aKw[jj].z,(const char*)zArg,n)==0 ){
                 if( onOff ){
                   pInfo->mTrace |= aKw[jj].m;
@@ -796,7 +796,7 @@ static int vfstraceShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   if( flags & ~(0xf) ){
      sqlite3_snprintf(sizeof(zLck)-i, &zLck[i], "|0x%x", flags);
   }
-  if( ofst>=0 && ofst<sizeof(azLockName)/sizeof(azLockName[0]) ){
+  if( ofst>=0 && ofst<(int)(sizeof(azLockName)/sizeof(azLockName[0])) ){
     vfstrace_printf(pInfo, "%s.xShmLock(%s,ofst=%d(%s),n=%d,%s)",
                   pInfo->zVfsName, p->zFName, ofst, azLockName[ofst],
                   n, &zLck[1]);

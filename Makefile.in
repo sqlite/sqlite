@@ -41,45 +41,13 @@ all:
 # that contains this "Makefile.in" and the "configure" script.
 #
 TOP = @abs_top_srcdir@
-#
-# Just testing some default dir expansions...
-# srcdir = @srcdir@
-# builddir = @builddir@
-# top_srcdir = @top_srcdir@
-# abs_top_srcdir = @abs_top_srcdir@
-# abs_top_builddir = @abs_top_builddir@
-#
 
 #
 # Autotools-conventional vars which are used by package installation
-# rules in main.mk.
-#
-# Autosetup allows the various XYZdir vars to be overridden at
-# configure-time with, e.g. --libdir=X and --mandir=Y. However,
-# defining them at configure-time, instead of at make-time, leads to
-# later awkwardness:
-#
-# $ ./configure --prefix=/usr
-# $ make prefix=/bar
-#
-# In that invocation, libdir will be /usr/foo, not /bar/foo as it
-# normally should, unless the user _also_ passes libdir=... to make.
-#
-# In 99%+ of use cases, setting prefix=X has the desired effect of
-# calculating conventional defaults for various other dirs, like
-# $prefix/lib, $prefix/include, etc. If, however, we export those at
-# configure-time, the passing prefix=... to make will update only
-# $prefix and none of its derived dirs.
-#
-# Because it is more important (for our use cases) that these vars be
-# overridable via a make invocation than a configure invocation, and
-# they conventionally derive from $(prefix) in all but the most exotic
-# of use cases, we do not export the configure-defined overrides of
-# those vars to this makefile.  Instead, we export only $prefix and
-# its derived vars are set to their conventional default values in
-# main.mk, which users can then override at make-time as needed.
-# Overriding $prefix via make will also calculate any derived vars, as
-# one would expect, unless each is specifically overridden.
+# rules in main.mk. To get sane handling when a user overrides only
+# a subset of these, we perform some acrobatics with these vars
+# in the configure script: see [proj-remap-autoconf-dir-vars] for
+# full details.
 #
 # For completeness's sake, the aforementioned conventional vars which
 # are relevant to our installation rules are:
@@ -128,9 +96,7 @@ T.cc = $(CC)
 # are, in that build, no uses of CPPFLAGS in the configure-expanded
 # Makefile. Ergo: if a client configures with CPPFLAGS=... and then
 # explicitly passes CFLAGS=... to make, the CPPFLAGS will be
-# lost. That behavior is retained in 3.48+ because also honoring
-# CPPFLAGS at make-time may have undesired side effects on any number
-# of builds.
+# lost. That behavior is retained in 3.48+.
 #
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 #
@@ -143,7 +109,7 @@ LDFLAGS.configure = @LDFLAGS@
 # CFLAGS.core is documented in main.mk.
 #
 CFLAGS.core = @SH_CFLAGS@
-LDFLAGS.shobj = @SHOBJ_LDFLAGS@
+LDFLAGS.shlib = @SH_LDFLAGS@
 LDFLAGS.zlib = @LDFLAGS_ZLIB@
 LDFLAGS.math = @LDFLAGS_MATH@
 LDFLAGS.rpath = @LDFLAGS_RPATH@
@@ -154,6 +120,7 @@ CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+# soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -182,11 +149,6 @@ JIMSH = ./jimsh$(TEXE)
 #
 B.tclsh = @BTCLSH@
 $(B.tclsh):
-
-#
-# $(CFLAGS.libsqlite3) is documented in main.mk.
-#
-CFLAGS.libsqlite3 = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
 #
 # $(OPT_FEATURE_FLAGS) is documented in main.mk.
@@ -245,14 +207,14 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
 # export it here so that it can be set at configure-time, so that
-# clients are not required to pass it at make-time, or set it in their
-# environment, to override it.
+# clients are not required to pass it at make-time, or may set it in
+# their environment to override it.
 #
 TCLLIBDIR = @TCLLIBDIR@
 
 #
 # Additional options when running tests using testrunner.tcl
-# This is usually either blank, or else --status
+# This is usually either blank or --status.
 #
 TSTRNNR_OPTS = @TSTRNNR_OPTS@
 
@@ -287,6 +249,7 @@ AS_AUTO_DEF = $(TOP)/auto.def
 AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
 
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
+LINK_TOOLS_DYNAMICALLY ?= @LINK_TOOLS_DYNAMICALLY@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 
 #
