@@ -882,7 +882,6 @@ struct WalIterator {
     sizeof(ht_slot)*HASHTABLE_NSLOT + HASHTABLE_NPAGE*sizeof(u32) \
 )
 
-
 /*
 ** Structured Exception Handling (SEH) is a Windows-specific technique
 ** for catching exceptions raised while accessing memory-mapped files.
@@ -988,6 +987,7 @@ static void sehInjectFault(Wal *pWal){
 # define SEH_FREE_ON_ERROR(X,Y)
 # define SEH_SET_ON_ERROR(X,Y)
 #endif /* ifdef SQLITE_USE_SEH */
+
 
 /*
 ** Obtain a pointer to the iPage'th page of the wal-index. The wal-index
@@ -4128,7 +4128,6 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   return rc;
 }
 
-
 /*
 ** Finish with a read transaction.  All this does is release the
 ** read-lock.
@@ -4438,14 +4437,13 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
     if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
       rc = SQLITE_BUSY_SNAPSHOT;
     }
-  } 
+  }
   SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
 
   if( rc!=SQLITE_OK ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
   }
-
   return rc;
 }
 
@@ -5072,7 +5070,6 @@ static int walFrames(
   return rc;
 }
 
-
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -5198,7 +5195,7 @@ int sqlite3WalCheckpoint(
       }else{
         rc = walCheckpoint(pWal, db, eMode2, xBusy2, pBusyArg, sync_flags,zBuf);
       }
-  
+
       /* If no error occurred, set the output variables. */
       if( rc==SQLITE_OK || rc==SQLITE_BUSY ){
         if( pnLog ){
@@ -5292,7 +5289,6 @@ int sqlite3WalCallback(Wal *pWal){
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
-
   assert( pWal->writeLock==0 );
   assert( pWal->exclusiveMode!=WAL_HEAPMEMORY_MODE || op==-1 );
 
@@ -5355,7 +5351,7 @@ int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
 
   assert( pWal->readLock>=0 && pWal->writeLock==0 );
 
-  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,8)==0 ){
+  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,16)==0 ){
     *ppSnapshot = 0;
     return SQLITE_ERROR;
   }
@@ -5438,7 +5434,7 @@ int sqlite3WalSnapshotCheck(Wal *pWal, sqlite3_snapshot *pSnapshot){
       }
     }
   }
-  SEH_EXCEPT( rc = walHandleException(pWal) );
+  SEH_EXCEPT( rc = walHandleException(pWal); )
   return rc;
 }
 

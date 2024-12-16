@@ -7959,34 +7959,34 @@ case OP_JournalMode: {    /* out2 */
           (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
       );
       goto abort_due_to_error;
-    }
- 
-    if( isWalMode(eOld) ){
-      /* If leaving WAL mode, close the log file. If successful, the call
-      ** to PagerCloseWal() checkpoints and deletes the write-ahead-log 
-      ** file. An EXCLUSIVE lock may still be held on the database file 
-      ** after a successful return. 
-      */
-      rc = sqlite3PagerCloseWal(pPager, db);
-      if( rc==SQLITE_OK ){
-        sqlite3PagerSetJournalMode(pPager, eNew);
+    }else{
+
+      if( isWalMode(eOld) ){
+        /* If leaving WAL mode, close the log file. If successful, the call
+        ** to PagerCloseWal() checkpoints and deletes the write-ahead-log
+        ** file. An EXCLUSIVE lock may still be held on the database file
+        ** after a successful return.
+        */
+        rc = sqlite3PagerCloseWal(pPager, db);
+        if( rc==SQLITE_OK ){
+          sqlite3PagerSetJournalMode(pPager, eNew);
+        }
+      }else if( eOld==PAGER_JOURNALMODE_MEMORY ){
+        /* Cannot transition directly from MEMORY to WAL.  Use mode OFF
+        ** as an intermediate */
+        sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_OFF);
       }
-    }else if( eOld==PAGER_JOURNALMODE_MEMORY ){
-      /* Cannot transition directly from MEMORY to WAL.  Use mode OFF
-      ** as an intermediate */
-      sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_OFF);
-    }
-
-    /* Open a transaction on the database file. Regardless of the journal
-    ** mode, this transaction always uses a rollback journal.
-    */
-    assert( sqlite3BtreeTxnState(pBt)!=SQLITE_TXN_WRITE );
-    if( rc==SQLITE_OK ){
-      /* 1==rollback, 2==wal, 3==wal2 */
-      rc = sqlite3BtreeSetVersion(pBt, 
-          1 + isWalMode(eNew) + (eNew==PAGER_JOURNALMODE_WAL2)
-      );
-
+ 
+      /* Open a transaction on the database file. Regardless of the journal
+      ** mode, this transaction always uses a rollback journal.
+      */
+      assert( sqlite3BtreeTxnState(pBt)!=SQLITE_TXN_WRITE );
+      if( rc==SQLITE_OK ){
+        /* 1==rollback, 2==wal, 3==wal2 */
+        rc = sqlite3BtreeSetVersion(pBt, 
+            1 + isWalMode(eNew) + (eNew==PAGER_JOURNALMODE_WAL2)
+        );
+      }
     }
   }
 #endif /* ifndef SQLITE_OMIT_WAL */
