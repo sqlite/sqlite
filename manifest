@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sand\sfixes\sinto\sthe\swal2\sbranch.
-D 2024-12-16T12:41:33.006
+C Synchronize\sthe\sWASM\scode\swith\strunk.
+D 2024-12-16T13:05:47.681
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -619,7 +619,6 @@ F ext/session/sqlite3session.c 3d0a7f0f7a1c946e01818c716a55a40ae30542a29a9045cb0
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c aa29abdcc9011ac02f4fa38e8ede226106eaeee7c3ea7d8b2b999a124e0c368c
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/EXPORTED_FUNCTIONS.sqlite3-core 2bcbbfe3b95c043ed6037e2708a2ee078d212dd1612c364f93588d8dc97300fe
 F ext/wasm/GNUmakefile 311aa0d5edc7006409962cc77cc26560d92f9be69c2c4302e8bbc68189fd02db
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
@@ -628,6 +627,7 @@ F ext/wasm/SQLTester/SQLTester.mjs 66e1adc3d79467b68e3e40614fd42c1a577c7e219ec09
 F ext/wasm/SQLTester/SQLTester.run.mjs 57f2adb33f43f2784abbf8026c1bfd049d8013af1998e7dcb8b50c89ffc332e0
 F ext/wasm/SQLTester/index.html 64f3435084c7d6139b08d1f2a713828a73f68de2ae6a3112cbb5980d991ba06f
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
+F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-core 2bcbbfe3b95c043ed6037e2708a2ee078d212dd1612c364f93588d8dc97300fe
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-extras fe40d6d758646e38f8b15f709044951e10884214f5453d35502100179c388c13
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -673,8 +673,8 @@ F ext/wasm/dist.make 653e212c1e84aa3be168d62a10616ccea45ee9585b0192745d2706707a5
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make d4969f0322a582c57a22ce3541f10a5b09a609d14eab32891f613f43b3c14d8b
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
-F ext/wasm/fiddle/fiddle.html 550c5aafce40bd218de9bf26192749f69f9b10bc379423ecd2e162bcef885c08
 F ext/wasm/fiddle/fiddle.js b444a5646a9aac9f3fc06c53d78af5e1912eb235d69a8e6010723e4eb0e9d4a1
+F ext/wasm/fiddle/index.html c79b1741cbeba78f88af0a84cf5ec7de87a909a6a8d10a369b1f4824c66c2088
 F ext/wasm/index-dist.html 564b5ec5669676482c5a25dea9e721d8eafed426ecb155f93d29aeff8507511f
 F ext/wasm/index.html e4bbffdb3d40eff12b3f9c7abedef91787e2935620b7f8d40f2c774b80ad8fa9
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 88d7fb2aef882fc41a4f9c1bdd2f0162289e90d62df50af1b0eb6994c5c94c28 ae580443d210811c12209866112fc8b0b83281e24945504b748a17d93ad84062
-R a2d4860e2c5c02aaae3c6d8ecfa2a1f3
+P 011ce4ae693fb91340c014b28b0197b9f26e3a5614e301d8c6c4e1967c943441
+R b4df0a1efe11f3e544155b403f6ca5be
 U drh
-Z bec2890f29726a611ccbb7e41228d315
+Z de3301ad9dcffc005aaffcf58de933f1
 # Remove this line to create a well-formed Fossil manifest.
