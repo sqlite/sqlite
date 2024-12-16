@@ -207,8 +207,8 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
 # export it here so that it can be set at configure-time, so that
-# clients are not required to pass it at make-time, or set it in their
-# environment, to override it.
+# clients are not required to pass it at make-time, or may set it in
+# their environment to override it.
 #
 TCLLIBDIR = @TCLLIBDIR@
 
