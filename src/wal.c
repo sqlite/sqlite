@@ -458,8 +458,13 @@ int sqlite3WalTrace = 0;
 ** version-2 ("journal_mode=wal2"). Legacy clients may support version-1
 ** only.
 */
-#define WAL_VERSION1 3007000      /* For "journal_mode=wal" */
-#define WAL_VERSION2 3021000      /* For "journal_mode=wal2" */
+#ifdef SQLITE_WAL_BIGHASH
+# define WAL_VERSION1 3007001      /* For "journal_mode=wal" */
+# define WAL_VERSION2 3021001      /* For "journal_mode=wal2" */
+#else
+# define WAL_VERSION1 3007000      /* For "journal_mode=wal" */
+# define WAL_VERSION2 3021000      /* For "journal_mode=wal2" */
+#endif
 
 
 /*
@@ -831,7 +836,11 @@ struct Wal {
 ** Each page of the wal-index mapping contains a hash-table made up of
 ** an array of HASHTABLE_NSLOT elements of the following type.
 */
-typedef u16 ht_slot;
+#ifdef SQLITE_WAL_BIGHASH
+ typedef u32 ht_slot;
+#else
+ typedef u16 ht_slot;
+#endif
 
 /*
 ** This structure is used to implement an iterator that loops through
@@ -868,9 +877,14 @@ struct WalIterator {
 ** Changing any of these constants will alter the wal-index format and
 ** create incompatibilities.
 */
-#define HASHTABLE_NPAGE      4096                 /* Must be power of 2 */
-#define HASHTABLE_HASH_1     383                  /* Should be prime */
-#define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
+#ifdef SQLITE_WAL_BIGHASH
+# define HASHTABLE_BITS       17                   /* 128K frames per hash */
+#else
+# define HASHTABLE_BITS       12                   /* 4K frames per hash */
+#endif
+# define HASHTABLE_NPAGE      (1<<HASHTABLE_BITS)  /* Must be power of 2 */
+# define HASHTABLE_HASH_1     383                  /* Should be prime */
+# define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
 
 /*
 ** The block of page numbers associated with the first hash-table in a
@@ -2145,11 +2159,13 @@ int sqlite3WalOpen(
   assert(    40 ==  sizeof(WalCkptInfo)  );
   assert(   120 ==  WALINDEX_LOCK_OFFSET );
   assert(   136 ==  WALINDEX_HDR_SIZE    );
+#ifndef SQLITE_WAL_BIGHASH
   assert(  4096 ==  HASHTABLE_NPAGE      );
   assert(  4062 ==  HASHTABLE_NPAGE_ONE  );
   assert(  8192 ==  HASHTABLE_NSLOT      );
   assert(   383 ==  HASHTABLE_HASH_1     );
   assert( 32768 ==  WALINDEX_PGSZ        );
+#endif
   assert(     8 ==  SQLITE_SHM_NLOCK     );
   assert(     5 ==  WAL_NREADER          );
   assert(    24 ==  WAL_FRAME_HDRSIZE    );
@@ -2364,7 +2380,7 @@ static void walMergesort(
   ht_slot *aMerge = 0;            /* List to be merged */
   int iList;                      /* Index into input list */
   u32 iSub = 0;                   /* Index into aSub array */
-  struct Sublist aSub[13];        /* Array of sub-lists */
+  struct Sublist aSub[HASHTABLE_BITS+1];    /* Array of sub-lists */
 
   memset(aSub, 0, sizeof(aSub));
   assert( nList<=HASHTABLE_NPAGE && nList>0 );

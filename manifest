@@ -1,5 +1,5 @@
-C Optimize\sdeferred\sallocation\sof\spages\son\sthis\sbranch\sby\savoiding\sBTALLOC_LE.
-D 2024-12-16T20:30:06.892
+C Experimental:\sIf\sSQLite\sis\scompiled\swith\sSQLITE_WAL_BIGHASH\sdefined,\suse\shash\ntables\slarge\senough\sto\sfit\s128K,\sinstead\sof\s4K,\sentries\sin\sthe\s*-shm\sfile.
+D 2024-12-18T20:23:05.085
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -866,7 +866,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 316cd48e9320660db3047cd306cd056e4361180cebb4d0f10a39244e10c11422
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 964c785ac8324de1ae742c44aa72ddd4401d4abab11ef6999aec21d7221b3e67
+F src/wal.c 8a0f98b271f992b67e4dab4ed1e88698ebf7e5bdf1fb8b39a94b3de92c9bd27e
 F src/wal.h 8d02ab8c2a93a941f5898eb3345bf711c1d3f8f86f4be8d5428fb6c074962d8a
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 9ad3dea8003a8913da6a4ca8322e2fe30773f46e88a0d4fbf9db13bdb999efa2
@@ -2239,9 +2239,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec5d7025cba9f4acaea984d5ec29b05b7f4b01f0e36e5287f27a16895ec42bf7
-Q +0812161025272851af6233f183a6abdee5c583decc688c4763965b50e7ab1b9d
-R ac7f60236956711da3dda510a4e7ac18
+P b1e8046859bac7dc050884b33b84390f1e7cf38501ac4dd82eab4d91dafa446a
+R 5e9daa31e1154de1e8d75efa71c5c4af
+T *branch * bedrock-bighash
+T *sym-bedrock-bighash *
+T -sym-bedrock *
 U dan
-Z 9f1cd023d68cb4681e5eac7887acf1b8
+Z 6bc110f2c341d553ff1cb8338450593e
 # Remove this line to create a well-formed Fossil manifest.
