@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\struncate\sa\sdatabase\sin\ssqlite_dbpage\sif\sthe\sdatabase\sis\nnot\slarger\sthan\sthe\srequested\struncation\ssize.
-D 2024-12-17T14:32:37.037
+C Rename\ssome\svar\srefs\sin\sext/lsm1/Makefile\sfor\sthe\snew\sbuild\sprocess.
+D 2024-12-18T03:41:29.636
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -350,7 +350,7 @@ F ext/jni/src/org/sqlite/jni/wrapper1/WindowFunction.java c7d1452f9ff26175b3c19b
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b676c313c637a91198090f0
-F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
+F ext/lsm1/Makefile 851a8108af2f00d6086b7be8a76fe54eabe2dd4cfd4171fd39285c5b11bee90d
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
 F ext/lsm1/lsm-test/lsmtest.h cf58528ffe0cfe535e91b44584e2ec5fb1caacdabecef0d8dcf83bf83168bf28
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8f725472b0fe62359a4cd3237b43d7b834e042d8ce425abde06e3ed6c62dbafa
-R f83865aeabb05b29d2a4c65bc73bad9b
-U drh
-Z 186addad6fd799939fab1f666168b1b5
+P cf8b99e17872c054e7ac0832d12633ce497c843dfc67148daf3b17762fd2b424
+R 01b5a3081c9c82dd29ec02ca22f387c4
+U stephan
+Z 4f1059aef64fc0c129910f0aeaff4182
 # Remove this line to create a well-formed Fossil manifest.
