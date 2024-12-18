@@ -339,6 +339,9 @@ ifcapable floatingpoint {
   do_test func-4.39 {
     string tolower [db eval {SELECT round(1e500), round(-1e500);}]
   } {inf -inf}
+  do_execsql_test func-4.40 {
+    SELECT round(123.456 , 4294967297);
+  } {123.456}
 }
 
 # Test the upper() and lower() functions

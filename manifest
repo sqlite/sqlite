@@ -1,5 +1,5 @@
-C Rename\ssome\svar\srefs\sin\sext/lsm1/Makefile\sfor\sthe\snew\sbuild\sprocess.
-D 2024-12-18T03:41:29.636
+C Avoid\s32-bit\sroundoff\serror\son\sthe\ssecond\sargument\sto\sround().\n[forum:/forumpost/170aeab92a|Forum\spost\s170aeab92a].
+D 2024-12-18T18:29:19.106
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -730,7 +730,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 49489dcce46d2d491cedb451e974264150c473e5f5bba448498a9aa4c1993537
+F src/func.c 33d06376d6fed6dfce22deb475f99317b0b76694e688f06e9fce9480ff44a5c9
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -1258,7 +1258,7 @@ F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f75
 F test/fts4unicode.test 82a9c16b68ba2f358a856226bb2ee02f81583797bc4744061c54401bf1a0f4c9
 F test/fts4upfrom.test f25835162c989dffd5e2ef91ec24c4848cc9973093e2d492d1c7b32afac1b49d
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test e643522c6c67e18b14ac6453f28b39daa7e01d4cdf3b17bee6ec544804be85af
+F test/func.test 4b8d5e7f1356ca42084e56e6c6f28f9e380db727756fb40dc319107c7632b157
 F test/func2.test 69f6ae3751b4ec765bdc3b803c0a255aa0f693f28f44805bef03e6b4a3fd242f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
 F test/func4.test a02e695f62beb31cb092dccf6873ff97543407fff97a5f3ec4da70b5b337bc84
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf8b99e17872c054e7ac0832d12633ce497c843dfc67148daf3b17762fd2b424
-R 01b5a3081c9c82dd29ec02ca22f387c4
-U stephan
-Z 4f1059aef64fc0c129910f0aeaff4182
+P 0ce42fa586049e8864c5fd1a1d8703722f8549ba0a20ca748b887b7975ba9eb7
+R fec4eb95d4677d8b995343c16db49fdb
+U drh
+Z 79885f3615d84c43267a5b2a5adaf77f
 # Remove this line to create a well-formed Fossil manifest.
