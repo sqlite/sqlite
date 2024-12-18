@@ -363,7 +363,7 @@ static void substrFunc(
     return;
   }
   p0type = sqlite3_value_type(argv[0]);
-  p1 = sqlite3_value_int(argv[1]);
+  p1 = sqlite3_value_int64(argv[1]);
   if( p0type==SQLITE_BLOB ){
     len = sqlite3_value_bytes(argv[0]);
     z = sqlite3_value_blob(argv[0]);
@@ -388,7 +388,7 @@ static void substrFunc(
   if( p1==0 ) p1 = 1; /* <rdar://problem/6778339> */
 #endif
   if( argc==3 ){
-    p2 = sqlite3_value_int(argv[2]);
+    p2 = sqlite3_value_int64(argv[2]);
     if( p2<0 ){
       p2 = -p2;
       negP2 = 1;

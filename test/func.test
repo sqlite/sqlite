@@ -117,6 +117,12 @@ do_test func-2.9 {
 do_test func-2.10 {
   execsql {SELECT substr(a,2,2) FROM t2}
 } {{} {} 45 {} 78}
+do_test func-2.11 {
+  execsql {SELECT substr('abcdefg',0x100000001,2)}
+} {{}}
+do_test func-2.12 {
+  execsql {SELECT substr('abcdefg',1,0x100000002)}
+} {abcdefg}
 
 # Only do the following tests if TCL has UTF-8 capabilities
 #
