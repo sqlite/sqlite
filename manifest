@@ -1,5 +1,5 @@
-C The\sBTree\smutex\smust\sbe\sheld\swhen\scalling\ssqlite3BtreeLastPage().\s\sThis\ncheck-in\sfixes\sa\sbug\sintroduced\sby\s[cf8b99e17872c054].
-D 2024-12-19T19:02:09.632
+C Correction\sto\scheck-in\s[a9759fc78d6cb0df]\s-\sprintf()\sparameters\svalues\smust\nbe\sintegers.
+D 2024-12-19T19:52:13.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -730,7 +730,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 3772ea69ace31835841629f893d86c9316a6facbc489f8113c7a205ec373de29
+F src/func.c e6e997efb9ffaf8b07842e745159695669fdfa020f03635a2f774adab8b0f4af
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b96dcf5f6bf41dcb89ced64efd4585e36dce718c428c2324d94e4942905c3bb
-R 0d5d0fe22a08bb0bc92b56fa701d1de4
+P e6c30ee52c5cdc193804cec63374d558b45e4d67fc6bde58771ca78485ca0acf
+R f31f33bbdca91555eb20e3616452ac98
 U drh
-Z e8045b14a30fff6abbf0f3c593a246f0
+Z 72db1b78a2863ce7bb7c272a3115f243
 # Remove this line to create a well-formed Fossil manifest.
