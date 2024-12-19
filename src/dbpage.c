@@ -428,9 +428,11 @@ static int dbpageSync(sqlite3_vtab *pVtab){
   if( pTab->pgnoTrunc>0 ){
     Btree *pBt = pTab->db->aDb[pTab->iDbTrunc].pBt;
     Pager *pPager = sqlite3BtreePager(pBt);
+    sqlite3BtreeEnter(pBt);
     if( pTab->pgnoTrunc<sqlite3BtreeLastPage(pBt) ){
       sqlite3PagerTruncateImage(pPager, pTab->pgnoTrunc);
     }
+    sqlite3BtreeLeave(pBt);
   }
   pTab->pgnoTrunc = 0;
   return SQLITE_OK;

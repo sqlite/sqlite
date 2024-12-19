@@ -1,5 +1,5 @@
-C Fix\sthe\ssort4.test\smodule\sso\sthat\sthe\sfirst\stwo\stest\scases\sare\somitted\nwhen\sSQLite\shas\sbeen\scompiled\susing\sSQLITE_MAX_WORKER_THREADS=0.
-D 2024-12-19T14:20:47.005
+C The\sBTree\smutex\smust\sbe\sheld\swhen\scalling\ssqlite3BtreeLastPage().\s\sThis\ncheck-in\sfixes\sa\sbug\sintroduced\sby\s[cf8b99e17872c054].
+D 2024-12-19T19:02:09.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -724,7 +724,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c d1778e74b15549e3967974b5addf740462db1a9d441da35666177f5a6ccf34c5
+F src/dbpage.c b1aeb47c1004f26c39c6800f0045b8d729d232aca24f6aa430c491b83003d033
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7839b80972fb31df6ac81af38cf6d04c9542714c20fbaa7457c1eaf955f9222
-R c12eed049f52c9f1b08689c19a769296
+P 5b96dcf5f6bf41dcb89ced64efd4585e36dce718c428c2324d94e4942905c3bb
+R 0d5d0fe22a08bb0bc92b56fa701d1de4
 U drh
-Z 0f8a15c21cb4f473505e48e4b944f5d1
+Z e8045b14a30fff6abbf0f3c593a246f0
 # Remove this line to create a well-formed Fossil manifest.
