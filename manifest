@@ -1,5 +1,5 @@
-C Fix\sadditional\sinteger\soverflow\sproblems\sin\sthe\ssubstr()\sfunction.
-D 2024-12-19T12:08:39.381
+C Enhance\slemon\sso\sthat\sit\saccepts\sthe\s-U\scommand-line\soption\sthat\sundefines\na\spreprocessor\smacro.
+D 2024-12-19T13:36:36.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2131,7 +2131,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c d048516b2c3ad4119b1c1154a73f4f9435b275fea076318959f817effe23b827
+F tool/lemon.c 2418ee31f65764d150f7dd87ef00b4408f1b01a55db0b30bed673a3e336ae718
 F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b04b4006f38f83d36eaf43c4bace7d53866b02b45e0ddcf1704266fed3bfc11c
-R 345d60c42f9cb58fb08744de2e2cd750
+P 472abb492f1d1553ae6bdf53cc64bebfe75423526335beab7eaff26cc495cd7d
+R 9ee08cc86a2ab41c90aabb4242760c7f
 U drh
-Z 5a2ba1d4ac587b2805dae851878da0c3
+Z 57993657619d1e9f48e898579d8c0801
 # Remove this line to create a well-formed Fossil manifest.
