@@ -123,6 +123,9 @@ do_test func-2.11 {
 do_test func-2.12 {
   execsql {SELECT substr('abcdefg',1,0x100000002)}
 } {abcdefg}
+do_test func-2.13 {
+  execsql {SELECT quote(substr(x'313233343536373839',0x7ffffffffffffffe,5))}
+} {X''}
 
 # Only do the following tests if TCL has UTF-8 capabilities
 #

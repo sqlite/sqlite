@@ -427,9 +427,11 @@ static void substrFunc(
     sqlite3_result_text64(context, (char*)z, z2-z, SQLITE_TRANSIENT,
                           SQLITE_UTF8);
   }else{
-    if( p1+p2>len ){
+    if( p1>=len ){
+      p1 = p2 = 0;
+    }else if( p2>len-p1 ){
       p2 = len-p1;
-      if( p2<0 ) p2 = 0;
+      assert( p2>0 );
     }
     sqlite3_result_blob64(context, (char*)&z[p1], (u64)p2, SQLITE_TRANSIENT);
   }
