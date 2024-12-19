@@ -1,5 +1,5 @@
-C configure\sscript:\sonly\sset\sthe\sSQLITE_TEMP_STORE\sfeature\sflag\sif\s--with-tempstore\sis\sexplicitly\sset,\sto\savoid\scolliding\swith\sthat\sflag\sbeing\sset\sby\sother\smeans\svia\sthe\stest\sfixture\sscripts.
-D 2024-12-19T14:09:35.677
+C Fix\sthe\ssort4.test\smodule\sso\sthat\sthe\sfirst\stwo\stest\scases\sare\somitted\nwhen\sSQLite\shas\sbeen\scompiled\susing\sSQLITE_MAX_WORKER_THREADS=0.
+D 2024-12-19T14:20:47.005
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1664,7 +1664,7 @@ F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test f86751134159abb5e5fd4381a0d7038c91013638cd1e3fa1d7850901f6df6196
 F test/sort2.test 2f8c66402a03adebe77ce7aafca129fbf32df27d6c9b8f7a9f1b958e39f56da8
 F test/sort3.test 1480ed7c4c157682542224e05e3b75faf4a149e5
-F test/sort4.test cca6f4b0b5255882645bbbe346a6a9f4a5c7b6a18513a6a7bf4ac1c4761ddc19
+F test/sort4.test c7a88629aecc8eec3c919eda54b221da5cf7a1b48f0cd372e7e832188d6737d8
 F test/sort5.test 6b43ae0e2169b5ceed441844492e55ba7f1ae0790528395ddf7888ab3094525d
 F test/sorterref.test 9a606c86a4c682db5eeaaefa0565b52102778db53e48ca7101cd4f9ebcc0ad94
 F test/sortfault.test d4ccf606a0c77498e2beb542764fd9394acb4d66
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f9b92f9513def690311a5ca46b68cab02bedec7984960d44e7dea5c2d196725a
-R 1677c650b894e550921b2c6865a336f8
-U stephan
-Z 945c85e044fc70c85b4eacbaf56b56af
+P c7839b80972fb31df6ac81af38cf6d04c9542714c20fbaa7457c1eaf955f9222
+R c12eed049f52c9f1b08689c19a769296
+U drh
+Z 0f8a15c21cb4f473505e48e4b944f5d1
 # Remove this line to create a well-formed Fossil manifest.
