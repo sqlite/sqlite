@@ -1,5 +1,5 @@
-C Correction\sto\scheck-in\s[a9759fc78d6cb0df]\s-\sprintf()\sparameters\svalues\smust\nbe\sintegers.
-D 2024-12-19T19:52:13.470
+C Fix\sa\stest\scase\sin\ssqllimits1.test\sso\sthat\sit\sworks\swith\sthe\sApple\nconfiguration\swhich\schanges\sthe\sdefault\sSQLITE_MAX_LENGTH.
+D 2024-12-19T20:29:36.166
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1682,7 +1682,7 @@ F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 51c7c26514ade169855c66bcf130bd5acfb4d7fd090cc624645ab275ae6a41fb
 F test/sqldiff1.test 1b7ab4f312442c5cc6b3a5f299fa8ca051416d1dd173cb1126fd51bf64f2c3fb
-F test/sqllimits1.test 7fa5027c2686e0a752f9a35616966eabfb9959ce041701b091932692c4bb6448
+F test/sqllimits1.test 408131e4975d61868711c83f101a56d4602313cc5cae88d3eee81c1da364fd89
 F test/sqllog.test 6af6cb0b09f4e44e1917e06ce85be7670302517a
 F test/starschema1.test a84205f97fe278a015ac39546c86b97228d22043af28f3a2ef809e8d5637ce1d
 F test/startup.c 1beb5ca66fcc0fce95c3444db9d1674f90fc605499a574ae2434dcfc10d22805
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e6c30ee52c5cdc193804cec63374d558b45e4d67fc6bde58771ca78485ca0acf
-R f31f33bbdca91555eb20e3616452ac98
+P 2db531d1911369ea932d3559abcc02389e5f9ad72b46b0801dfb6063855aee1b
+R a03a4dd396ef02112c6a33e420d224ad
 U drh
-Z 72db1b78a2863ce7bb7c272a3115f243
+Z 911cb8ba7f00f67e5f02965dae2fd664
 # Remove this line to create a well-formed Fossil manifest.
