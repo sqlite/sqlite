@@ -514,6 +514,10 @@ void sqlite3SchemaClear(void *p){
     pSchema->iGeneration++;
   }
   pSchema->schemaFlags &= ~(DB_SchemaLoaded|DB_ResetWanted);
+#ifdef SQLITE_ENABLE_STAT4
+  sqlite3_free(pSchema->pStat4Space);
+  pSchema->pStat4Space = 0;
+#endif
 }
 
 /*

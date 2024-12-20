@@ -257,6 +257,13 @@ static void openStatTable(
 #endif
 
 /*
+** Assumed number of of samples when loading sqlite_stat4 data. It doesn't
+** matter if there are more or fewer samples than this, but is more efficient
+** if this estimate turns out to be true.
+*/
+#define SQLITE_STAT4_EST_SAMPLES SQLITE_STAT4_SAMPLES
+
+/*
 ** Three SQL functions - stat_init(), stat_push(), and stat_get() -
 ** share an instance of the following structure to hold their state
 ** information.
@@ -1675,7 +1682,9 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
       IndexSample *p = &pIdx->aSample[j];
       sqlite3DbFree(db, p->p);
     }
-    sqlite3DbFree(db, pIdx->aSample);
+    if( pIdx->nSampleAlloc!=SQLITE_STAT4_EST_SAMPLES ){
+      sqlite3DbFree(db, pIdx->aSample);
+    }
   }
   if( db->pnBytesFreed==0 ){
     pIdx->nSample = 0;
@@ -1769,7 +1778,7 @@ static Index *findIndexOrPrimaryKey(
 ** Grow the pIdx->aSample[] array. Return SQLITE_OK if successful, or
 ** SQLITE_NOMEM otherwise.
 */
-static int growSampleArray(sqlite3 *db, Index *pIdx){
+static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   int nIdxCol = pIdx->nSampleCol;
   int nNew = 0;
   IndexSample *aNew = 0;
@@ -1779,31 +1788,24 @@ static int growSampleArray(sqlite3 *db, Index *pIdx){
   int i;
   u64 t;
 
-  /* In production set the initial allocation to SQLITE_STAT4_SAMPLES. This
-  ** means that reallocation will almost never be required. But for debug 
-  ** builds, set the initial allocation size to 6 entries so that the 
-  ** reallocation code gets tested. todo: use real tests for this. */
   assert( pIdx->nSample==pIdx->nSampleAlloc );
-#ifdef SQLITE_DEBUG
-  nNew = 6;
-#else
-  nNew = SQLITE_STAT4_SAMPLES;
-#endif
+  nNew = SQLITE_STAT4_EST_SAMPLES;
   if( pIdx->nSample ){
     nNew = pIdx->nSample*2;
   }
 
+  /* Set nByte to the required amount of space */
   nByte = ROUND8(sizeof(IndexSample) * nNew);
   nByte += sizeof(tRowcnt) * nIdxCol * 3 * nNew;
   nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
 
-  if( db->aSchemaTime ){
-    t = sqlite3STimeNow();
-  }
-  aNew = (IndexSample*)sqlite3DbMallocRaw(db, nByte);
-  if( aNew==0 ) return SQLITE_NOMEM_BKPT;
-  if( db->aSchemaTime ){
-    db->aSchemaTime[SCHEMA_TIME_STAT4_SAMPLE_MALLOC] += (sqlite3STimeNow() - t);
+  if( nNew==SQLITE_STAT4_EST_SAMPLES ){
+    aNew = (IndexSample*)&((u8*)pIdx->pSchema->pStat4Space)[*piOff];
+    *piOff += nByte;
+    assert( *piOff<=sqlite3_msize(pIdx->pSchema->pStat4Space) );
+  }else{
+    aNew = (IndexSample*)sqlite3DbMallocRaw(db, nByte);
+    if( aNew==0 ) return SQLITE_NOMEM_BKPT;
   }
 
   pPtr = (u8*)aNew;
@@ -1830,15 +1832,53 @@ static int growSampleArray(sqlite3 *db, Index *pIdx){
   }
   assert( ((u8*)pSpace)-nByte==(u8*)aNew );
 
-  sqlite3DbFree(db, pIdx->aSample);
+  if( pIdx->nSample!=SQLITE_STAT4_EST_SAMPLES ){
+    sqlite3DbFree(db, pIdx->aSample);
+  }
   pIdx->aSample = aNew;
   pIdx->nSampleAlloc = nNew;
   return SQLITE_OK;
 }
 
 /*
-** Load the content from either the sqlite_stat4
-** into the relevant Index.aSample[] arrays.
+** Allocate the space that will likely be required for the Index.aSample[] 
+** arrays populated by loading data from the sqlite_stat4 table. Return
+** SQLITE_OK if successful, or SQLITE_NOMEM otherwise.
+*/
+static int stat4AllocSpace(sqlite3 *db, const char *zDb){
+  int iDb = sqlite3FindDbName(db, zDb);
+  Schema *pSchema = db->aDb[iDb].pSchema;
+  int nByte = 0;
+  HashElem *k;
+
+  assert( iDb>=0 );
+  assert( pSchema->pStat4Space==0 );
+  for(k=sqliteHashFirst(&pSchema->idxHash); k; k=sqliteHashNext(k)){
+    Index *pIdx = sqliteHashData(k);
+    int nIdxCol;
+    if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
+      nIdxCol = pIdx->nKeyCol;
+    }else{
+      nIdxCol = pIdx->nColumn;
+    }
+    nByte += ROUND8(sizeof(IndexSample) * SQLITE_STAT4_EST_SAMPLES);
+    nByte += sizeof(tRowcnt) * nIdxCol * 3 * SQLITE_STAT4_EST_SAMPLES;
+    nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
+  }
+
+  if( nByte>0 ){
+    pSchema->pStat4Space = sqlite3_malloc(nByte);
+    if( pSchema->pStat4Space==0 ){
+      return SQLITE_NOMEM_BKPT;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Load the content from the sqlite_stat4 into the relevant Index.aSample[]
+** arrays.
 **
 ** Arguments zSql1 and zSql2 must point to SQL statements that return
 ** data equivalent to the following:
@@ -1859,78 +1899,16 @@ static int loadStatTbl(
   char *zSql;                   /* Text of the SQL statement */
   Index *pPrevIdx = 0;          /* Previous index in the loop */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
+  int iBlockOff = 0;            /* Offset into Schema.pStat4Space */
 
   assert( db->lookaside.bDisable );
-#if 0
-  zSql = sqlite3MPrintf(db, zSql1, zDb);
-  if( !zSql ){
-    return SQLITE_NOMEM_BKPT;
-  }
-  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-  sqlite3DbFree(db, zSql);
-  if( rc ) return rc;
 
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    int nIdxCol = 1;              /* Number of columns in stat4 records */
+  /* Allocate the Schema.pStat4Space block that will be used for the
+  ** Index.aSample[] arrays populated by this call.  */
+  rc = stat4AllocSpace(db, zDb);
+  if( rc!=SQLITE_OK ) return rc;
 
-    char *zIndex;    /* Index name */
-    Index *pIdx;     /* Pointer to the index object */
-    int nSample;     /* Number of samples */
-    int nByte;       /* Bytes of space required */
-    int i;           /* Bytes of space required */
-    tRowcnt *pSpace; /* Available allocated memory space */
-    u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
-
-    u64 t = sqlite3STimeNow();
-
-    zIndex = (char *)sqlite3_column_text(pStmt, 0);
-    if( zIndex==0 ) continue;
-    nSample = sqlite3_column_int(pStmt, 1);
-    pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
-    assert( pIdx==0 || pIdx->nSample==0 );
-    if( pIdx==0 ) continue;
-    if( pIdx->aSample!=0 ){
-      /* The same index appears in sqlite_stat4 under multiple names */
-      continue;
-    }
-    assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
-    if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
-      nIdxCol = pIdx->nKeyCol;
-    }else{
-      nIdxCol = pIdx->nColumn;
-    }
-    pIdx->nSampleCol = nIdxCol;
-    pIdx->mxSample = nSample;
-    nByte = ROUND8(sizeof(IndexSample) * nSample);
-    nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
-    nByte += nIdxCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
-
-    pIdx->aSample = sqlite3DbMallocZero(db, nByte);
-    if( pIdx->aSample==0 ){
-      sqlite3_finalize(pStmt);
-      return SQLITE_NOMEM_BKPT;
-    }
-    pPtr = (u8*)pIdx->aSample;
-    pPtr += ROUND8(nSample*sizeof(pIdx->aSample[0]));
-    pSpace = (tRowcnt*)pPtr;
-    assert( EIGHT_BYTE_ALIGNMENT( pSpace ) );
-    pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
-    pIdx->pTable->tabFlags |= TF_HasStat4;
-    for(i=0; i<nSample; i++){
-      pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;
-      pIdx->aSample[i].anLt = pSpace; pSpace += nIdxCol;
-      pIdx->aSample[i].anDLt = pSpace; pSpace += nIdxCol;
-    }
-    assert( ((u8*)pSpace)-nByte==(u8*)(pIdx->aSample) );
-    if( db->aSchemaTime ){
-      db->aSchemaTime[SCHEMA_TIME_STAT4_Q1_BODY] += (sqlite3STimeNow() - t);
-    }
-  }
-  rc = sqlite3_finalize(pStmt);
-  if( rc ) return rc;
-#endif
-
-  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_Q1);
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_SPACE);
 
   zSql = sqlite3MPrintf(db, zSql2, zDb);
   if( !zSql ){
@@ -1939,6 +1917,8 @@ static int loadStatTbl(
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
   sqlite3DbFree(db, zSql);
   if( rc ) return rc;
+
+  sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_STAT4_PREPARE);
 
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char *zIndex;                 /* Index name */
@@ -1952,6 +1932,7 @@ static int loadStatTbl(
     if( pIdx==0 ) continue;
 
     if( pIdx->nSample==pIdx->nSampleAlloc ){
+      u64 t2;
       pIdx->pTable->tabFlags |= TF_HasStat4;
       assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
       if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
@@ -1959,7 +1940,11 @@ static int loadStatTbl(
       }else{
         pIdx->nSampleCol = pIdx->nColumn;
       }
-      if( growSampleArray(db, pIdx) ) break;
+      t2 = sqlite3STimeNow();
+      if( growSampleArray(db, pIdx, &iBlockOff) ) break;
+      if( db->aSchemaTime ){
+        db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t);
+      }
     }
 
     if( pIdx!=pPrevIdx ){
@@ -1992,7 +1977,7 @@ static int loadStatTbl(
     pIdx->nSample++;
 
     if( db->aSchemaTime ){
-      db->aSchemaTime[SCHEMA_TIME_STAT4_Q2_BODY] += (sqlite3STimeNow() - t);
+      db->aSchemaTime[SCHEMA_TIME_STAT4_Q2_BODYUS] += (sqlite3STimeNow() - t);
     }
   }
   rc = sqlite3_finalize(pStmt);
@@ -2069,6 +2054,10 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     pIdx->aSample = 0;
 #endif
   }
+#ifdef SQLITE_ENABLE_STAT4
+  sqlite3_free(pSchema->pStat4Space);
+  pSchema->pStat4Space = 0;
+#endif
 
   sqlite3PrepareTimeSet(db->aSchemaTime, SCHEMA_TIME_AFTER_CLEAR_STATS);
 

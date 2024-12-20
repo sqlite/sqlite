@@ -1490,6 +1490,9 @@ struct Schema {
   u8 enc;              /* Text encoding used by this database */
   u16 schemaFlags;     /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
+#ifdef SQLITE_ENABLE_STAT4
+  void *pStat4Space;   /* Memory for stat4 Index.aSample[] arrays */
+#endif
 };
 
 /*
@@ -1869,11 +1872,13 @@ struct sqlite3 {
 #define SCHEMA_TIME_AFTER_STAT1 12
 #define SCHEMA_TIME_AFTER_DEFAULTS 13
 
-#define SCHEMA_TIME_STAT4_Q1_BODY 14
-#define SCHEMA_TIME_AFTER_STAT4_Q1 15
-#define SCHEMA_TIME_STAT4_Q2_BODY 16
-#define SCHEMA_TIME_STAT4_SAMPLE_MALLOC 17
-#define SCHEMA_TIME_AFTER_STAT4_Q2 18
+#define SCHEMA_TIME_AFTER_STAT4_SPACE 14
+#define SCHEMA_TIME_AFTER_STAT4_PREPARE 15
+
+#define SCHEMA_TIME_STAT4_GROWUS    16
+#define SCHEMA_TIME_STAT4_Q2_BODYUS 17
+#define SCHEMA_TIME_AFTER_STAT4_Q2  18
+
 #define SCHEMA_TIME_AFTER_STAT4 19
 
 #define SCHEMA_TIME_END_ANALYZE_LOAD 20
