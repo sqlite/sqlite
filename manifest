@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\ssqllimits1.test\sso\sthat\sit\sworks\swith\sthe\sApple\nconfiguration\swhich\schanges\sthe\sdefault\sSQLITE_MAX_LENGTH.
-D 2024-12-19T20:29:36.166
+C In\sthe\s(debugging)\srtreenode()\sfunction,\sdo\snot\soverride\san\serror\scoming\sout\nof\ssqlite3_result_text().
+D 2024-12-22T21:17:27.858
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -536,7 +536,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 0dd4775e896cee6067979d67aff7c998e75c2c9d9cd8d62a1a790c09cde7adca
-F ext/rtree/rtree.c e002d8c58bf128d812db662ecc72b61c00ff14408ec807e103d5312a6d29817a
+F ext/rtree/rtree.c 4c58755830a0902435322bf61b2994ae02951a039daefb31cff9457d3e2aa201
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2db531d1911369ea932d3559abcc02389e5f9ad72b46b0801dfb6063855aee1b
-R a03a4dd396ef02112c6a33e420d224ad
+P 536fff14acb3335ad00fb1165cfb2f97e7a31c36273b9b97ffdb4b572fe72c08
+R 4447fcd0ccb80498c83515e29fbbdcc2
 U drh
-Z 911cb8ba7f00f67e5f02965dae2fd664
+Z 75ed33204df12b76c729fccd2a0270dd
 # Remove this line to create a well-formed Fossil manifest.
