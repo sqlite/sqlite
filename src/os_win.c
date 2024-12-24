@@ -1190,6 +1190,22 @@ static struct win_syscall {
     aSyscall[80].pCurrent \
 )
 
+/*
+** If SQLITE_ENABLE_SETLK_TIMEOUT is defined, we require CancelIo()
+** for the case where a timeout expires and a lock request must be 
+** cancelled.
+**
+** Minimum supported client: Windows XP [desktop apps | UWP apps]
+** Minimum supported server: Windows Server 2003 [desktop apps | UWP apps]
+*/
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  { "CancelIo",                 (SYSCALL)CancelIo,               0 },
+#else
+  { "CancelIo",                 (SYSCALL)0,                      0 },
+#endif
+
+#define osCancelIo ((BOOL(WINAPI*)(HANDLE))aSyscall[81].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -2598,9 +2614,6 @@ static int winHandleLockTimeout(
   int rc = SQLITE_OK;
   BOOL ret;
 
-#if !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
-  ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
-#else
   if( !osIsNT() ){
     ret = winLockFile(&hFile, flags, offset, 0, nByte, 0);
   }else{
@@ -2608,39 +2621,40 @@ static int winHandleLockTimeout(
     memset(&ovlp, 0, sizeof(OVERLAPPED));
     ovlp.Offset = offset;
 
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     if( nMs>0 ){
-      ovlp.hEvent = osCreateEvent(NULL, TRUE, FALSE, NULL);
-      if( ovlp.hEvent==NULL ){
-        return SQLITE_IOERR;
-      }
       flags &= ~LOCKFILE_FAIL_IMMEDIATELY;
     }
+    ovlp.hEvent = osCreateEvent(NULL, TRUE, FALSE, NULL);
+    if( ovlp.hEvent==NULL ){
+      return SQLITE_IOERR_LOCK;
+    }
+#endif
 
     ret = osLockFileEx(hFile, flags, 0, nByte, 0, &ovlp);
 
-    if( !ret && nMs>0 && GetLastError()==ERROR_IO_PENDING ){
-      DWORD res = osWaitForSingleObject(ovlp.hEvent, (DWORD)nMs);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    /* If SQLITE_ENABLE_SETLK_TIMEOUT is defined, then the file-handle was
+    ** opened with FILE_FLAG_OVERHEAD specified. In this case, the call to
+    ** LockFileEx() may fail because the request is still pending. This can
+    ** happen even if LOCKFILE_FAIL_IMMEDIATELY was specified.  */
+    if( !ret && GetLastError()==ERROR_IO_PENDING ){
+      DWORD nDelay = (nMs ? nMs : INFINITE);
+      DWORD res = osWaitForSingleObject(ovlp.hEvent, nDelay);
       if( res==WAIT_OBJECT_0 ){
-        /* Successfully obtained the lock. */
         ret = TRUE;
+      }else if( res==WAIT_TIMEOUT ){
+        rc = SQLITE_BUSY_TIMEOUT;
       }else{
-        if( res==WAIT_TIMEOUT ){
-          rc = SQLITE_BUSY_TIMEOUT;
-        }else{
-          /* Some other error has occurred */
-          rc = SQLITE_IOERR;
-        }
-        
-        /* Cancel the LockFileEx() if it is still pending. */
-        CancelIo(hFile);
+        /* Some other error has occurred */
+        rc = SQLITE_IOERR_LOCK;
       }
+      osCancelIo(hFile);
     }
 
-    if( nMs>0 ){
-      osCloseHandle(ovlp.hEvent);
-    }
+    osCloseHandle(ovlp.hEvent);
+#endif
   }
-#endif  /* defined(SQLITE_ENABLE_SETLK_TIMEOUT) */
 
   if( rc==SQLITE_OK && !ret ){
     rc = SQLITE_BUSY;
@@ -3056,17 +3070,25 @@ static int winHandleSize(HANDLE h, sqlite3_int64 *pnByte){
 #else
   DWORD upperBits = 0;
   DWORD lowerBits = 0;
-  DWORD lastErrno = 0;
 
+  assert( pnByte );
   lowerBits = osGetFileSize(h, &upperBits);
   *pnByte = (((sqlite3_int64)upperBits)<<32) + lowerBits;
-
   if( lowerBits==INVALID_FILE_SIZE && osGetLastError()!=NO_ERROR ){
     rc = SQLITE_IOERR_FSTAT;
   }
 #endif
 
   return rc;
+}
+
+/*
+** Close the handle passed as the only argument.
+*/
+static void winHandleClose(HANDLE h){
+  if( h!=INVALID_HANDLE_VALUE ){
+    osCloseHandle(h);
+  }
 }
 
 /*
@@ -3999,9 +4021,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
                  osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
         UNUSED_VARIABLE_VALUE(bRc);
       }
-      if( p->hSharedShm!=NULL && p->hSharedShm!=INVALID_HANDLE_VALUE ){
-        osCloseHandle(p->hSharedShm);
-      }
+      winHandleClose(p->hSharedShm);
       if( deleteFlag ){
         SimulateIOErrorBenign(1);
         sqlite3BeginBenignMalloc();
@@ -4079,6 +4099,9 @@ static void *winConvertFromUtf8Filename(const char *zFilename){
 
 /*
 ** This function is used to open a handle on a *-shm file.
+**
+** If SQLITE_ENABLE_SETLK_TIMEOUT is defined at build time, then the file
+** is opened with FILE_FLAG_OVERLAPPED specified. If not, it is not.
 */
 static int winHandleOpen(
   const char *zUtf8,              /* File to open */
@@ -4089,6 +4112,12 @@ static int winHandleOpen(
   void *zConverted = 0;
   int bReadonly = *pbReadonly;
   HANDLE h = INVALID_HANDLE_VALUE;
+
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  const DWORD flag_overlapped = FILE_FLAG_OVERLAPPED;
+#else
+  const DWORD flag_overlapped = 0;
+#endif
 
   /* Convert the filename to the system encoding. */
   zConverted = winConvertFromUtf8Filename(zUtf8);
@@ -4114,7 +4143,7 @@ static int winHandleOpen(
     memset(&extendedParameters, 0, sizeof(extendedParameters));
     extendedParameters.dwSize = sizeof(extendedParameters);
     extendedParameters.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
-    extendedParameters.dwFileFlags = FILE_FLAG_OVERLAPPED;
+    extendedParameters.dwFileFlags = flag_overlapped;
     extendedParameters.dwSecurityQosFlags = SECURITY_ANONYMOUS;
     h = osCreateFile2((LPCWSTR)zConverted,
         (GENERIC_READ | (bReadonly ? 0 : GENERIC_WRITE)),/* dwDesiredAccess */
@@ -4128,7 +4157,7 @@ static int winHandleOpen(
         FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
         NULL,                                      /* lpSecurityAttributes */
         OPEN_ALWAYS,                               /* dwCreationDisposition */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
+        FILE_ATTRIBUTE_NORMAL|flag_overlapped,
         NULL
     );
 #endif
@@ -4141,7 +4170,7 @@ static int winHandleOpen(
         FILE_SHARE_READ | FILE_SHARE_WRITE,        /* dwShareMode */
         NULL,                                      /* lpSecurityAttributes */
         OPEN_ALWAYS,                               /* dwCreationDisposition */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
+        FILE_ATTRIBUTE_NORMAL|flag_overlapped,
         NULL
     );
 #endif
@@ -4249,9 +4278,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 #endif
     pDbFd->pShm = p;
   }else if( p ){
-    if( p->hShm!=INVALID_HANDLE_VALUE ){
-      osCloseHandle(p->hShm);
-    }
+    winHandleClose(p->hShm);
     sqlite3_free(p);
   }
 
@@ -6371,7 +6398,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==81 );
+  assert( ArraySize(aSyscall)==82 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

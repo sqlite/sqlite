@@ -7985,7 +7985,7 @@ static int SQLITE_TCLAPI win32_file_lock(
 ){
   static struct win32FileLocker x = { "win32_file_lock", 0, 0, 0, 0, 0 };
   const char *zFilename = 0;
-  int nFilename = 0;
+  Tcl_Size nFilename = 0;
   char *zTerm = 0;
   char zBuf[200];
   int retry = 0;
