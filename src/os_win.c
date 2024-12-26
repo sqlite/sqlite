@@ -2649,6 +2649,8 @@ static int winHandleLockTimeout(
         /* Some other error has occurred */
         rc = SQLITE_IOERR_LOCK;
       }
+
+      /* If it is still pending, cancel the LockFileEx() call. */
       osCancelIo(hFile);
     }
 
@@ -3953,7 +3955,6 @@ struct winShmNode {
   DWORD lastErrno;           /* The Windows errno from the last I/O error */
 
   int nRef;                  /* Number of winShm objects pointing to this */
-  winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
@@ -3974,7 +3975,6 @@ static winShmNode *winShmNodeList = 0;
 */
 struct winShm {
   winShmNode *pShmNode;      /* The underlying winShmNode object */
-  winShm *pNext;             /* Next winShm with the same winShmNode */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
   HANDLE hShm;               /* File-handle on *-shm file. For locking. */
@@ -4270,8 +4270,6 @@ static int winOpenSharedMemory(winFile *pDbFd){
   ** the winShm to pDbFd.  */
   if( rc==SQLITE_OK ){
     p->pShmNode = pShmNode;
-    p->pNext = pShmNode->pFirst;
-    pShmNode->pFirst = p;
     pShmNode->nRef++;
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
     p->id = pShmNode->nextShmId++;
@@ -4299,7 +4297,6 @@ static int winShmUnmap(
   winFile *pDbFd;       /* Database holding shared-memory */
   winShm *p;            /* The connection to be closed */
   winShmNode *pShmNode; /* The underlying shared-memory file */
-  winShm **pp;          /* For looping over sibling connections */
 
   pDbFd = (winFile*)fd;
   p = pDbFd->pShm;
@@ -4311,17 +4308,11 @@ static int winShmUnmap(
   pShmNode = p->pShmNode;
   winShmEnterMutex();
 
-  /* Remove connection p from the set of connections associated
-  ** with pShmNode */
-  for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
-  *pp = p->pNext;
-
   /* If pShmNode->nRef has reached 0, then close the underlying
   ** shared-memory file, too. */
   assert( pShmNode->nRef>0 );
   pShmNode->nRef--;
   if( pShmNode->nRef==0 ){
-    assert( pShmNode->pFirst==0 );
     winShmPurge(pDbFd->pVfs, deleteFlag);
   }
   winShmLeaveMutex();
@@ -4345,7 +4336,7 @@ static int winShmLock(
   winShm *p = pDbFd->pShm;              /* The shared memory being locked */
   winShmNode *pShmNode;
   int rc = SQLITE_OK;                   /* Result code */
-  u16 mask = (u16)((1U<<(ofst+n)) - (1U<<ofst)); /* Mask of locks to take/untake */
+  u16 mask = (u16)((1U<<(ofst+n)) - (1U<<ofst)); /* Mask of locks to [un]take */
 
   if( p==0 ) return SQLITE_IOERR_SHMLOCK;
   pShmNode = p->pShmNode;
@@ -4429,9 +4420,12 @@ static int winShmLock(
   }
 
   OSTRACE((
-      "SHM-LOCK(%d,%d,%d) pid=%lu, id=%d, sharedMask=%03x, exclMask=%03x, rc=%s\n",
-      ofst, n, flags, osGetCurrentProcessId(), p->id, p->sharedMask, p->exclMask,
-      sqlite3ErrName(rc)));
+      "SHM-LOCK(%d,%d,%d) pid=%lu, id=%d, sharedMask=%03x, exclMask=%03x,"
+      " rc=%s\n",
+      ofst, n, flags, 
+      osGetCurrentProcessId(), p->id, p->sharedMask, p->exclMask,
+      sqlite3ErrName(rc))
+  );
   return rc;
 }
 

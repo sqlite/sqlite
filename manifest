@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2024-12-26T14:40:11.502
+C Omit\scode\sto\slink\sall\swinShm\sobjects\sopen\son\sa\ssingle\snode\sinto\sa\slist.\sThis\sis\sno\slonger\srequired.
+D 2024-12-26T16:10:15.778
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -762,7 +762,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
-F src/os_win.c 0f25f11cb81ce578a549f6df5240ea275118c536f8fff0d9f8d0e4d24e78f497
+F src/os_win.c 7c00dbf94389f45bd401ba86eded909ab4046cbba2013ae601204dd64d7183ee
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 2fdd489447aa6bb0f672973bacb801ced92225ca9a1c874ed9b856d2741dc54e
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 35b3e73c5a9efa12f9bb0dad1721fce128cd1e3bcbc87027ee4ea685a12a70d5 286559dfb3ad01fcf34360991a108dbe6bf81e7919c461ada6c691ee8f43868f
-R 2b4e3b0d242bbe20c880b273db4a1cd4
+P 3e2893097c59820def88bb4739189c9c9a4f70a98a0a72b81959658f069715f6
+R c85f19f11ab416ccd96cccf1f405b727
 U dan
-Z c2317ca10c0b5155b798155cc241659f
+Z 1b63c8668961ff43a02dc419f96e1501
 # Remove this line to create a well-formed Fossil manifest.
