@@ -864,22 +864,27 @@ proj-if-opt-truthy threadsafe {
 ########################################################################
 # Do we want temporary databases in memory?
 #
-apply {{} {
-  set ts [opt-val with-tempstore no]
-  set tsn 1
-  msg-checking "Use an in-RAM database for temporary tables? "
-  switch -exact -- $ts {
-    never  { set tsn 0 }
-    no     { set tsn 1 }
-    yes    { set tsn 2 }
-    always { set tsn 3 }
-    default {
-      user-error "Invalid --with-tempstore value '$ts'. Use one of: never, no, yes, always"
+# The test fixture likes to set SQLITE_TEMP_STORE on its own, so do
+# not set that feature flag unless it was explicitly provided to the
+# configure script.
+if {[proj-opt-was-provided with-tempstore]} {
+  apply {{} {
+    set ts [opt-val with-tempstore no]
+    set tsn 1
+    msg-checking "Use an in-RAM database for temporary tables? "
+    switch -exact -- $ts {
+      never  { set tsn 0 }
+      no     { set tsn 1 }
+      yes    { set tsn 2 }
+      always { set tsn 3 }
+      default {
+        user-error "Invalid --with-tempstore value '$ts'. Use one of: never, no, yes, always"
+      }
     }
-  }
-  msg-result $ts
-  sqlite-add-feature-flag -DSQLITE_TEMP_STORE=$tsn
-}}
+    msg-result $ts
+    sqlite-add-feature-flag -DSQLITE_TEMP_STORE=$tsn
+  }}
+}
 
 ########################################################################
 # sqlite-check-line-editing jumps through proverbial hoops to try to
@@ -1358,7 +1363,7 @@ apply {{} {
 #
 # We do this late in the config process, immediately before we export
 # the Makefile and other generated files, so that configure tests
-# which may make use of the autotools-conventional flags
+# which make make use of the autotools-conventional flags
 # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
 proj-remap-autoconf-dir-vars
 
