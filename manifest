@@ -1,5 +1,5 @@
-C In\sthe\s(debugging)\srtreenode()\sfunction,\sdo\snot\soverride\san\serror\scoming\sout\nof\ssqlite3_result_text().
-D 2024-12-22T21:17:27.858
+C Fixes\sto\sthe\ssubstr()\sSQL\sfunction\sso\sthat\sit\scan\shandle\sridiculously\slarge\nnumbers\sin\sits\s2nd\sand\s3rd\sarguments\swithout\ssigned\sinteger\soverflows.
+D 2024-12-28T12:32:01.085
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -730,7 +730,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c e6e997efb9ffaf8b07842e745159695669fdfa020f03635a2f774adab8b0f4af
+F src/func.c 89b733a5f513c4bc06b7271384363d5693d62782de8295bc87b97d79862c9714
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 536fff14acb3335ad00fb1165cfb2f97e7a31c36273b9b97ffdb4b572fe72c08
-R 4447fcd0ccb80498c83515e29fbbdcc2
+P 286559dfb3ad01fcf34360991a108dbe6bf81e7919c461ada6c691ee8f43868f
+R 6fd56d72396565e46db9a7e82d5a2906
 U drh
-Z 75ed33204df12b76c729fccd2a0270dd
+Z 2ed81eb220ab467fd47b108b1040a471
 # Remove this line to create a well-formed Fossil manifest.
