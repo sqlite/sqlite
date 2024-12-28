@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\ssubstr()\sSQL\sfunction\sso\sthat\sit\scan\shandle\sridiculously\slarge\nnumbers\sin\sits\s2nd\sand\s3rd\sarguments\swithout\ssigned\sinteger\soverflows.
-D 2024-12-28T12:32:01.085
+C Show\sETC\sin\sfuzzcheck\swith\sthe\s--spinner\soption\swhen\sthere\sis\sonly\sone\sinput\nfile.
+D 2024-12-28T13:04:31.448
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1274,7 +1274,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 89b71d92b150a532e945e489d6e0721a4b15353c9255e079c198ed2a1958018b
+F test/fuzzcheck.c 1671559091b3e134ec807490f624d306b24bd9a8f03b12aa97e292f4b31e5d96
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 286559dfb3ad01fcf34360991a108dbe6bf81e7919c461ada6c691ee8f43868f
-R 6fd56d72396565e46db9a7e82d5a2906
+P c1de8f916ea617109a903c436c57d082756fbb2b933ba9ce6998b9b912b12dea
+R c040710ee01619bb4db43dcfabab289e
 U drh
-Z 2ed81eb220ab467fd47b108b1040a471
+Z 7ae0fec8e974918548c014471849b63b
 # Remove this line to create a well-formed Fossil manifest.
