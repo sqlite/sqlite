@@ -6651,6 +6651,7 @@ static void fts5SetupPrefixIter(
     }
 
     pData = fts5IdxMalloc(p, sizeof(*pData)+s.doclist.n+FTS5_DATA_ZERO_PADDING);
+    assert( pData!=0 || p->rc!=SQLITE_OK );
     if( pData ){
       pData->p = (u8*)&pData[1];
       pData->nn = pData->szLeaf = s.doclist.n;
@@ -6658,6 +6659,7 @@ static void fts5SetupPrefixIter(
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
 
+    assert( (*ppIter)!=0 || p->rc!=SQLITE_OK );
     if( p->rc==SQLITE_OK && s.pTokendata ){
       fts5TokendataIterSortMap(p, s2.pT);
       (*ppIter)->pTokenDataIter = s2.pT;
@@ -7289,6 +7291,7 @@ int sqlite3Fts5IndexQuery(
     int iIdx = 0;                 /* Index to search */
     int iPrefixIdx = 0;           /* +1 prefix index */
     int bTokendata = pConfig->bTokendata;
+    assert( buf.p!=0 );
     if( nToken>0 ) memcpy(&buf.p[1], pToken, nToken);
 
     /* The NOTOKENDATA flag is set when each token in a tokendata=1 table
@@ -7450,6 +7453,7 @@ static int fts5SetupPrefixIterTokendata(
   memset(&ctx, 0, sizeof(ctx));
 
   fts5BufferGrow(&p->rc, &token, nToken+1);
+  assert( token.p!=0 || p->rc!=SQLITE_OK );
   ctx.pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*ctx.pT));
 
   if( p->rc==SQLITE_OK ){
