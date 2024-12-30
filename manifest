@@ -1,5 +1,5 @@
-C Four\snew\sassert()\sstatements\sto\shelp\swith\sstatic\sanalysis.
-D 2024-12-29T11:54:12.033
+C Add\san\sextra\sassert()\sto\sreleaseMemArray()\sjust\sto\sprove\sthat\sthe\nsqlite3_value.db\sfield\sis\snever\sNULL.
+D 2024-12-30T12:29:18.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -850,7 +850,7 @@ F src/vdbe.c 8a6eb02823b424b273614bae41579392a5c495424592b60423dd2c443a583df0
 F src/vdbe.h 9676348d342bd04e21e384c63b57224171ce84fac77853357334ef94c4d33cf4
 F src/vdbeInt.h bf294a0c8fc4cc80779e74b04b8bd82c6e1197b3137cefe0b16cdf002fc7dfd6
 F src/vdbeapi.c 38c252a202d70b56cfb734460bc888ddbd581afec1a10cd4d6c894c9e0b5baea
-F src/vdbeaux.c f0706ad786b8a6c5bc7ea622f3916c2ba2b883abc872d0b4911c4f021945c0e5
+F src/vdbeaux.c 1969b208ab554f0a6560a86c339dad5faf68d3ef861f96be86792d7eec23575d
 F src/vdbeblob.c 255be187436da38b01f276c02e6a08103489bbe2a7c6c21537b7aecbe0e1f797
 F src/vdbemem.c df568ef0187e4be2788c35174f6d9b8566ab9475f9aff2d73907ed05aa5684b2
 F src/vdbesort.c d0a3c7056c081703c8b6d91ad60f17da5e062a5c64bf568ed0fa1b5f4cae311f
@@ -2202,8 +2202,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 809699aeaaa4bae67e7ddeae3d42c7133f7deadbb4eb869cfb7e99dd97bdea99
-R e65009700ed066053c3d65387514268c
+P e7f7c9d22be8a17b9a4d8f954fcdd40591ba9da5fb674f1184f960bca5f3d30b
+R f8a1fde40935ca24cba561f520c119c6
 U drh
-Z c0857ad3c43398292371098755c936e4
+Z 3a5e22afa8456e78923838b8f35ae4a2
 # Remove this line to create a well-formed Fossil manifest.
