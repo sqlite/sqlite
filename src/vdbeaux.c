@@ -2144,6 +2144,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, VdbeOp *pOp){
 ** will be initialized before use.
 */
 static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
+  assert( db!=0 );
   if( N>0 ){
     do{
       p->flags = flags;
@@ -2650,6 +2651,7 @@ void sqlite3VdbeMakeReady(
   assert( pParse!=0 );
   assert( p->eVdbeState==VDBE_INIT_STATE );
   assert( pParse==p->pParse );
+  assert( pParse->db==p->db );
   p->pVList = pParse->pVList;
   pParse->pVList =  0;
   db = p->db;
