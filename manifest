@@ -1,5 +1,5 @@
-C Fix\sthe\svfstrace.c\sextension\sso\sthat\sit\ssupports\sxFetch\sand\sxUnfetch.
-D 2025-01-01T12:24:01.620
+C Fix\sthe\stool/omittest.tcl\sscript,\sbroken\sby\s[d8c0e0184226bdae].
+D 2025-01-01T18:18:49.769
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2160,7 +2160,7 @@ F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
-F tool/omittest.tcl 5ca5e4e01716d5f35b48b00fd351d929f01fbb98169a5a3cd00baf3d2e2019a9
+F tool/omittest.tcl bec70ef0e16255c8d9eb06ecd7edf823c07a60a836186cdbce3528fb34b67995
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafeb
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b17bc49655c577029919c2d409de994b0d252f8efb5da1ba0913f2c96bee552
-R 1a7b3740d0d7b0156ecda7d86d9b3eae
+P c7132b7e62422378f0560dcf0837888db5aa70cded9d783ab389581aa43dc5c8
+R b61fb2d8724df93fbff2b6eed5e91f66
 U drh
-Z ba39083b8910dae572ba02a04ab64577
+Z 966756dbeab414c1a4d72e1421c875b3
 # Remove this line to create a well-formed Fossil manifest.
