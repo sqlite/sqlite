@@ -43,14 +43,15 @@ typedef struct Pager Pager;
 typedef struct PgHdr DbPage;
 
 /*
-** Page number PAGER_MJ_PGNO is never used in an SQLite database (it is
+** Page number PAGER_SJ_PGNO is never used in an SQLite database (it is
 ** reserved for working around a windows/posix incompatibility). It is
 ** used in the journal to signify that the remainder of the journal file 
 ** is devoted to storing a super-journal name - there are no more pages to
 ** roll back. See comments for function writeSuperJournal() in pager.c 
 ** for details.
 */
-#define PAGER_MJ_PGNO(x) ((Pgno)((PENDING_BYTE/((x)->pageSize))+1))
+#define PAGER_SJ_PGNO_COMPUTED(x) ((Pgno)((PENDING_BYTE/((x)->pageSize))+1))
+#define PAGER_SJ_PGNO(x)          ((x)->lckPgno)
 
 /*
 ** Allowed values for the flags parameter to sqlite3PagerOpen().
@@ -81,6 +82,22 @@ typedef struct PgHdr DbPage;
 #define PAGER_JOURNALMODE_TRUNCATE    3   /* Commit by truncating journal */
 #define PAGER_JOURNALMODE_MEMORY      4   /* In-memory journal file */
 #define PAGER_JOURNALMODE_WAL         5   /* Use write-ahead logging */
+
+#define isWalMode(x) ((x)==PAGER_JOURNALMODE_WAL)
+
+/*
+** The argument to this macro is a file descriptor (type sqlite3_file*).
+** Return 0 if it is not open, or non-zero (but not 1) if it is.
+**
+** This is so that expressions can be written as:
+**
+**   if( isOpen(pPager->jfd) ){ ...
+**
+** instead of
+**
+**   if( pPager->jfd->pMethods ){ ...
+*/
+#define isOpen(pFd) ((pFd)->pMethods!=0)
 
 /*
 ** Flags that make up the mask passed to sqlite3PagerGet().
@@ -215,7 +232,7 @@ sqlite3_file *sqlite3PagerJrnlFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);
 void *sqlite3PagerTempSpace(Pager*);
 int sqlite3PagerIsMemdb(Pager*);
-void sqlite3PagerCacheStat(Pager *, int, int, int *);
+void sqlite3PagerCacheStat(Pager *, int, int, u64*);
 void sqlite3PagerClearCache(Pager*);
 int sqlite3SectorSize(sqlite3_file *);
 
@@ -237,6 +254,10 @@ void sqlite3PagerRekey(DbPage*, Pgno, u16);
 #else
 # define disable_simulated_io_errors()
 # define enable_simulated_io_errors()
+#endif
+
+#if defined(SQLITE_USE_SEH) && !defined(SQLITE_OMIT_WAL)
+int sqlite3PagerWalSystemErrno(Pager*);
 #endif
 
 #endif /* SQLITE_PAGER_H */

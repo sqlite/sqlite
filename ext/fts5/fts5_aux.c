@@ -110,15 +110,19 @@ static int fts5CInstIterInit(
 */
 typedef struct HighlightContext HighlightContext;
 struct HighlightContext {
-  CInstIter iter;                 /* Coalesced Instance Iterator */
-  int iPos;                       /* Current token offset in zIn[] */
+  /* Constant parameters to fts5HighlightCb() */
   int iRangeStart;                /* First token to include */
   int iRangeEnd;                  /* If non-zero, last token to include */
   const char *zOpen;              /* Opening highlight */
   const char *zClose;             /* Closing highlight */
   const char *zIn;                /* Input text */
   int nIn;                        /* Size of input text in bytes */
-  int iOff;                       /* Current offset within zIn[] */
+
+  /* Variables modified by fts5HighlightCb() */
+  CInstIter iter;                 /* Coalesced Instance Iterator */
+  int iPos;                       /* Current token offset in zIn[] */
+  int iOff;                       /* Have copied up to this offset in zIn[] */
+  int bOpen;                      /* True if highlight is open */
   char *zOut;                     /* Output value */
 };
 
@@ -151,8 +155,8 @@ static int fts5HighlightCb(
   int tflags,                     /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStartOff,                  /* Start offset of token */
-  int iEndOff                     /* End offset of token */
+  int iStartOff,                  /* Start byte offset of token */
+  int iEndOff                     /* End byte offset of token */
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
@@ -163,39 +167,65 @@ static int fts5HighlightCb(
   if( tflags & FTS5_TOKEN_COLOCATED ) return SQLITE_OK;
   iPos = p->iPos++;
 
-  if( p->iRangeEnd>0 ){
+  if( p->iRangeEnd>=0 ){
     if( iPos<p->iRangeStart || iPos>p->iRangeEnd ) return SQLITE_OK;
     if( p->iRangeStart && iPos==p->iRangeStart ) p->iOff = iStartOff;
   }
 
-  if( iPos==p->iter.iStart ){
+  /* If the parenthesis is open, and this token is not part of the current
+  ** phrase, and the starting byte offset of this token is past the point
+  ** that has currently been copied into the output buffer, close the
+  ** parenthesis. */
+  if( p->bOpen 
+   && (iPos<=p->iter.iStart || p->iter.iStart<0)
+   && iStartOff>p->iOff 
+  ){
+    fts5HighlightAppend(&rc, p, p->zClose, -1);
+    p->bOpen = 0;
+  }
+
+  /* If this is the start of a new phrase, and the highlight is not open:
+  **
+  **   * copy text from the input up to the start of the phrase, and
+  **   * open the highlight.
+  */
+  if( iPos==p->iter.iStart && p->bOpen==0 ){
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iStartOff - p->iOff);
     fts5HighlightAppend(&rc, p, p->zOpen, -1);
     p->iOff = iStartOff;
+    p->bOpen = 1;
   }
 
   if( iPos==p->iter.iEnd ){
-    if( p->iRangeEnd && p->iter.iStart<p->iRangeStart ){
+    if( p->bOpen==0 ){
+      assert( p->iRangeEnd>=0 );
       fts5HighlightAppend(&rc, p, p->zOpen, -1);
+      p->bOpen = 1;
     }
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
-    fts5HighlightAppend(&rc, p, p->zClose, -1);
     p->iOff = iEndOff;
+
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterNext(&p->iter);
     }
   }
 
-  if( p->iRangeEnd>0 && iPos==p->iRangeEnd ){
+  if( iPos==p->iRangeEnd ){
+    if( p->bOpen ){
+      if( p->iter.iStart>=0 && iPos>=p->iter.iStart ){
+        fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
+        p->iOff = iEndOff;
+      }
+      fts5HighlightAppend(&rc, p, p->zClose, -1);
+      p->bOpen = 0;
+    }
     fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
     p->iOff = iEndOff;
-    if( iPos>=p->iter.iStart && iPos<p->iter.iEnd ){
-      fts5HighlightAppend(&rc, p, p->zClose, -1);
-    }
   }
 
   return rc;
 }
+
 
 /*
 ** Implementation of highlight() function.
@@ -221,15 +251,28 @@ static void fts5HighlightFunction(
   memset(&ctx, 0, sizeof(HighlightContext));
   ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
+  ctx.iRangeEnd = -1;
   rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
-
-  if( ctx.zIn ){
+  if( rc==SQLITE_RANGE ){
+    sqlite3_result_text(pCtx, "", -1, SQLITE_STATIC);
+    rc = SQLITE_OK;
+  }else if( ctx.zIn ){
+    const char *pLoc = 0;         /* Locale of column iCol */
+    int nLoc = 0;                 /* Size of pLoc in bytes */
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
     }
 
     if( rc==SQLITE_OK ){
-      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+      rc = pApi->xColumnLocale(pFts, iCol, &pLoc, &nLoc);
+    }
+    if( rc==SQLITE_OK ){
+      rc = pApi->xTokenize_v2(
+          pFts, ctx.zIn, ctx.nIn, pLoc, nLoc, (void*)&ctx, fts5HighlightCb
+      );
+    }
+    if( ctx.bOpen ){
+      fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);
     }
     fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
 
@@ -406,6 +449,7 @@ static void fts5SnippetFunction(
   iCol = sqlite3_value_int(apVal[0]);
   ctx.zOpen = fts5ValueToText(apVal[1]);
   ctx.zClose = fts5ValueToText(apVal[2]);
+  ctx.iRangeEnd = -1;
   zEllips = fts5ValueToText(apVal[3]);
   nToken = sqlite3_value_int(apVal[4]);
 
@@ -422,6 +466,8 @@ static void fts5SnippetFunction(
   memset(&sFinder, 0, sizeof(Fts5SFinder));
   for(i=0; i<nCol; i++){
     if( iCol<0 || iCol==i ){
+      const char *pLoc = 0;       /* Locale of column iCol */
+      int nLoc = 0;               /* Size of pLoc in bytes */
       int nDoc;
       int nDocsize;
       int ii;
@@ -429,8 +475,10 @@ static void fts5SnippetFunction(
       sFinder.nFirst = 0;
       rc = pApi->xColumnText(pFts, i, &sFinder.zDoc, &nDoc);
       if( rc!=SQLITE_OK ) break;
-      rc = pApi->xTokenize(pFts, 
-          sFinder.zDoc, nDoc, (void*)&sFinder,fts5SentenceFinderCb
+      rc = pApi->xColumnLocale(pFts, i, &pLoc, &nLoc);
+      if( rc!=SQLITE_OK ) break;
+      rc = pApi->xTokenize_v2(pFts, 
+          sFinder.zDoc, nDoc, pLoc, nLoc, (void*)&sFinder, fts5SentenceFinderCb
       );
       if( rc!=SQLITE_OK ) break;
       rc = pApi->xColumnSize(pFts, i, &nDocsize);
@@ -488,6 +536,9 @@ static void fts5SnippetFunction(
     rc = pApi->xColumnSize(pFts, iBestCol, &nColSize);
   }
   if( ctx.zIn ){
+    const char *pLoc = 0;         /* Locale of column iBestCol */
+    int nLoc = 0;                 /* Bytes in pLoc */
+
     if( rc==SQLITE_OK ){
       rc = fts5CInstIterInit(pApi, pFts, iBestCol, &ctx.iter);
     }
@@ -506,7 +557,15 @@ static void fts5SnippetFunction(
     }
 
     if( rc==SQLITE_OK ){
-      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+      rc = pApi->xColumnLocale(pFts, iBestCol, &pLoc, &nLoc);
+    }
+    if( rc==SQLITE_OK ){
+      rc = pApi->xTokenize_v2(
+          pFts, ctx.zIn, ctx.nIn, pLoc, nLoc, (void*)&ctx,fts5HighlightCb
+      );
+    }
+    if( ctx.bOpen ){
+      fts5HighlightAppend(&rc, &ctx, ctx.zClose, -1);
     }
     if( ctx.iRangeEnd>=(nColSize-1) ){
       fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
@@ -687,6 +746,53 @@ static void fts5Bm25Function(
   }
 }
 
+/*
+** Implementation of fts5_get_locale() function.
+*/
+static void fts5GetLocaleFunction(
+  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
+  Fts5Context *pFts,              /* First arg to pass to pApi functions */
+  sqlite3_context *pCtx,          /* Context for returning result/error */
+  int nVal,                       /* Number of values in apVal[] array */
+  sqlite3_value **apVal           /* Array of trailing arguments */
+){
+  int iCol = 0;
+  int eType = 0;
+  int rc = SQLITE_OK;
+  const char *zLocale = 0;
+  int nLocale = 0;
+
+  /* xColumnLocale() must be available */
+  assert( pApi->iVersion>=4 );
+
+  if( nVal!=1 ){
+    const char *z = "wrong number of arguments to function fts5_get_locale()";
+    sqlite3_result_error(pCtx, z, -1);
+    return;
+  }
+
+  eType = sqlite3_value_numeric_type(apVal[0]);
+  if( eType!=SQLITE_INTEGER ){
+    const char *z = "non-integer argument passed to function fts5_get_locale()";
+    sqlite3_result_error(pCtx, z, -1);
+    return;
+  }
+
+  iCol = sqlite3_value_int(apVal[0]);
+  if( iCol<0 || iCol>=pApi->xColumnCount(pFts) ){
+    sqlite3_result_error_code(pCtx, SQLITE_RANGE);
+    return;
+  }
+
+  rc = pApi->xColumnLocale(pFts, iCol, &zLocale, &nLocale);
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    return;
+  }
+
+  sqlite3_result_text(pCtx, zLocale, nLocale, SQLITE_TRANSIENT);
+}
+
 int sqlite3Fts5AuxInit(fts5_api *pApi){
   struct Builtin {
     const char *zFunc;            /* Function name (nul-terminated) */
@@ -694,9 +800,10 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
     fts5_extension_function xFunc;/* Callback function */
     void (*xDestroy)(void*);      /* Destructor function */
   } aBuiltin [] = {
-    { "snippet",   0, fts5SnippetFunction, 0 },
-    { "highlight", 0, fts5HighlightFunction, 0 },
-    { "bm25",      0, fts5Bm25Function,    0 },
+    { "snippet",         0, fts5SnippetFunction,   0 },
+    { "highlight",       0, fts5HighlightFunction, 0 },
+    { "bm25",            0, fts5Bm25Function,      0 },
+    { "fts5_get_locale", 0, fts5GetLocaleFunction, 0 },
   };
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* To iterate through builtin functions */

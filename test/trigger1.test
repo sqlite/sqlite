@@ -827,4 +827,28 @@ do_execsql_test trigger1-22.10 {
   SELECT a, CASE WHEN typeof(b)='text' THEN quote(b) ELSE '<blob>' END, '|' FROM t1;
 } {1 <blob> | 2 'X' | 3 'Z' |}
 
+# 2022-03-06 https://sqlite.org/forum/forumpost/2024e94071
+# Harmless assertion fault following a syntax error.
+#
+reset_db
+do_catchsql_test trigger1-23.1 {
+  CREATE TABLE t1(a INT);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1 SELECT e_master LIMIT 1,#1;
+  END;
+} {1 {near "#1": syntax error}}
+
+# 2024-05-08 Allow arbitrary expressions as the 2nd argument to RAISE().
+#
+do_catchsql_test trigger1-24.1 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    SELECT raise(abort,format('attempt to insert %d where is not a power of 2',new.a))
+     WHERE (new.a & (new.a-1))!=0;
+  END;
+  INSERT INTO t1 VALUES(0),(1),(2),(4),(8),(65536);
+} {0 {}}
+do_catchsql_test trigger1-24.2 {
+  INSERT INTO t1 VALUES(9876);
+} {1 {attempt to insert 9876 where is not a power of 2}}
+
 finish_test

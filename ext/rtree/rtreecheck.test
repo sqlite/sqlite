@@ -78,6 +78,11 @@ do_execsql_test 2.3 {
   SELECT rtreecheck('r1') 
 } {{Dimension 0 of cell 0 on node 1 is corrupt
 Dimension 1 of cell 3 on node 1 is corrupt}}
+do_execsql_test 2.3b { 
+  PRAGMA integrity_check;
+} {{In RTree main.r1:
+Dimension 0 of cell 0 on node 1 is corrupt
+Dimension 1 of cell 3 on node 1 is corrupt}}
 
 setup_simple_db
 do_execsql_test 2.4 {
@@ -85,12 +90,21 @@ do_execsql_test 2.4 {
   SELECT rtreecheck('r1') 
 } {{Mapping (3 -> 1) missing from %_rowid table
 Wrong number of entries in %_rowid table - expected 5, actual 4}}
+do_execsql_test 2.4b {
+  PRAGMA integrity_check
+} {{In RTree main.r1:
+Mapping (3 -> 1) missing from %_rowid table
+Wrong number of entries in %_rowid table - expected 5, actual 4}}
 
 setup_simple_db
 do_execsql_test 2.5 {
   UPDATE r1_rowid SET nodeno=2 WHERE rowid=3;
   SELECT rtreecheck('r1') 
 } {{Found (3 -> 2) in %_rowid table, expected (3 -> 1)}}
+do_execsql_test 2.5b {
+  PRAGMA integrity_check
+} {{In RTree main.r1:
+Found (3 -> 2) in %_rowid table, expected (3 -> 1)}}
 
 reset_db
 do_execsql_test 3.0 { 
@@ -104,27 +118,34 @@ do_execsql_test 3.0 {
   INSERT INTO r1 VALUES(7, 5, 0x00000080);
   INSERT INTO r1 VALUES(8, 5, 0x40490fdb);
   INSERT INTO r1 VALUES(9, 0x7f800000, 0x7f900000);
-  SELECT rtreecheck('r1') 
-} {ok}
+  SELECT rtreecheck('r1');
+  PRAGMA integrity_check;
+} {ok ok}
 
 do_execsql_test 3.1 { 
   CREATE VIRTUAL TABLE r2 USING rtree_i32(id, x1, x2);
   INSERT INTO r2 VALUES(2, -1*(1<<31), -1*(1<<31)+5);
-  SELECT rtreecheck('r2') 
-} {ok}
+  SELECT rtreecheck('r2');
+  PRAGMA integrity_check;
+} {ok ok}
 
 sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 3.2 {
   BEGIN;
     UPDATE r2_node SET data = X'123456';
-    SELECT rtreecheck('r2')!="ok";
+    SELECT rtreecheck('r2')!='ok';
 } {1}
 
 do_execsql_test 3.3 {
   ROLLBACK;
   UPDATE r2_node SET data = X'00001234';
-  SELECT rtreecheck('r2')!="ok";
+  SELECT rtreecheck('r2')!='ok';
 } {1}
+do_execsql_test 3.4 {
+  PRAGMA integrity_check;
+} {{In RTree main.r2:
+Node 1 is too small for cell count of 4660 (4 bytes)
+Wrong number of entries in %_rowid table - expected 0, actual 1}}
 
 do_execsql_test 4.0 {
   CREATE TABLE notanrtree(i);
@@ -156,5 +177,28 @@ do_execsql_test 5.2 {
     UPDATE r3_node SET data = set_int32(data, 4, 0);
     SELECT rtreecheck('r3')=='ok'
 } 0
+
+#-------------------------------------------------------------------------
+# dbsqlfuzz 4a1399d39bf9feccbf6b290da51d3b30103a4bf6
+#
+reset_db
+do_execsql_test 6.0 {
+  PRAGMA encoding = 'utf16';
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x, y);
+}
+db close
+sqlite3 db test.db
+
+if {[permutation]=="inmemory_journal"} {
+  # This doesn't hit an SQLITE_LOCKED in this permutation as the schema
+  # has already been loaded. 
+  do_catchsql_test 6.1.inmemory_journal {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {0 0}
+} else {
+  do_catchsql_test 6.1 {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {0 0}
+}
 
 finish_test

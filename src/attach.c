@@ -85,7 +85,7 @@ static void attachFunc(
   char *zErr = 0;
   unsigned int flags;
   Db *aNew;                 /* New array of Db pointers */
-  Db *pNew;                 /* Db object for the newly attached database */
+  Db *pNew = 0;             /* Db object for the newly attached database */
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
 
@@ -105,13 +105,26 @@ static void attachFunc(
     /* This is not a real ATTACH.  Instead, this routine is being called
     ** from sqlite3_deserialize() to close database db->init.iDb and
     ** reopen it as a MemDB */
+    Btree *pNewBt = 0;
     pVfs = sqlite3_vfs_find("memdb");
     if( pVfs==0 ) return;
-    pNew = &db->aDb[db->init.iDb];
-    if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
-    pNew->pBt = 0;
-    pNew->pSchema = 0;
-    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
+    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNewBt, 0, SQLITE_OPEN_MAIN_DB);
+    if( rc==SQLITE_OK ){
+      Schema *pNewSchema = sqlite3SchemaGet(db, pNewBt);
+      if( pNewSchema ){
+        /* Both the Btree and the new Schema were allocated successfully.
+        ** Close the old db and update the aDb[] slot with the new memdb
+        ** values.  */
+        pNew = &db->aDb[db->init.iDb];
+        if( ALWAYS(pNew->pBt) ) sqlite3BtreeClose(pNew->pBt);
+        pNew->pBt = pNewBt;
+        pNew->pSchema = pNewSchema;
+      }else{
+        sqlite3BtreeClose(pNewBt);
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( rc ) goto attach_error;
   }else{
     /* This is a real ATTACH
     **
@@ -214,17 +227,8 @@ static void attachFunc(
     sqlite3BtreeLeaveAll(db);
     assert( zErrDyn==0 || rc!=SQLITE_OK );
   }
-#ifdef SQLITE_USER_AUTHENTICATION
-  if( rc==SQLITE_OK && !REOPEN_AS_MEMDB(db) ){
-    u8 newAuth = 0;
-    rc = sqlite3UserAuthCheckLogin(db, zName, &newAuth);
-    if( newAuth<db->auth.authLevel ){
-      rc = SQLITE_AUTH_USER;
-    }
-  }
-#endif
   if( rc ){
-    if( !REOPEN_AS_MEMDB(db) ){
+    if( ALWAYS(!REOPEN_AS_MEMDB(db)) ){
       int iDb = db->nDb - 1;
       assert( iDb>=2 );
       if( db->aDb[iDb].pBt ){
@@ -341,6 +345,8 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto attach_end;
+
   if( pParse->nErr ) goto attach_end;
   memset(&sName, 0, sizeof(NameContext));
   sName.pParse = pParse;
@@ -354,7 +360,7 @@ static void codeAttach(
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( pAuthArg ){
+  if( ALWAYS(pAuthArg) ){
     char *zAuthArg;
     if( pAuthArg->op==TK_STRING ){
       assert( !ExprHasProperty(pAuthArg, EP_IntValue) );
@@ -464,23 +470,28 @@ static int fixSelectCb(Walker *p, Select *pSelect){
 
   if( NEVER(pList==0) ) return WRC_Continue;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pFix->bTemp==0 ){
-      if( pItem->zDatabase ){
-        if( iDb!=sqlite3FindDbName(db, pItem->zDatabase) ){
+    if( pFix->bTemp==0 && pItem->fg.isSubquery==0 ){
+      if( pItem->fg.fixedSchema==0 && pItem->u4.zDatabase!=0 ){
+        if( iDb!=sqlite3FindDbName(db, pItem->u4.zDatabase) ){
           sqlite3ErrorMsg(pFix->pParse,
               "%s %T cannot reference objects in database %s",
-              pFix->zType, pFix->pName, pItem->zDatabase);
+              pFix->zType, pFix->pName, pItem->u4.zDatabase);
           return WRC_Abort;
         }
-        sqlite3DbFree(db, pItem->zDatabase);
-        pItem->zDatabase = 0;
+        sqlite3DbFree(db, pItem->u4.zDatabase);
         pItem->fg.notCte = 1;
+        pItem->fg.hadSchema = 1;
       }
-      pItem->pSchema = pFix->pSchema;
+      pItem->u4.pSchema = pFix->pSchema;
       pItem->fg.fromDDL = 1;
+      pItem->fg.fixedSchema = 1;
     }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
-    if( sqlite3WalkExpr(&pFix->w, pList->a[i].pOn) ) return WRC_Abort;
+    if( pList->a[i].fg.isUsing==0
+     && sqlite3WalkExpr(&pFix->w, pList->a[i].u3.pOn)
+    ){
+      return WRC_Abort;
+    }
 #endif
   }
   if( pSelect->pWith ){

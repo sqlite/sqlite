@@ -136,7 +136,7 @@ static const unsigned char sqlite3Utf8Trans1[] = {
   c = *(zIn++);                                            \
   if( c>=0xc0 ){                                           \
     c = sqlite3Utf8Trans1[c-0xc0];                         \
-    while( zIn!=zTerm && (*zIn & 0xc0)==0x80 ){            \
+    while( zIn<zTerm && (*zIn & 0xc0)==0x80 ){             \
       c = (c<<6) + (0x3f & *(zIn++));                      \
     }                                                      \
     if( c<0x80                                             \
@@ -164,7 +164,38 @@ u32 sqlite3Utf8Read(
   return c;
 }
 
-
+/*
+** Read a single UTF8 character out of buffer z[], but reading no
+** more than n characters from the buffer.  z[] is not zero-terminated.
+**
+** Return the number of bytes used to construct the character.
+**
+** Invalid UTF8 might generate a strange result.  No effort is made
+** to detect invalid UTF8.
+**
+** At most 4 bytes will be read out of z[].  The return value will always
+** be between 1 and 4.
+*/
+int sqlite3Utf8ReadLimited(
+  const u8 *z,
+  int n,
+  u32 *piOut
+){
+  u32 c;
+  int i = 1;
+  assert( n>0 );
+  c = z[0];
+  if( c>=0xc0 ){
+    c = sqlite3Utf8Trans1[c-0xc0];
+    if( n>4 ) n = 4;
+    while( i<n && (z[i] & 0xc0)==0x80 ){
+      c = (c<<6) + (0x3f & z[i]);
+      i++;
+    }
+  }
+  *piOut = c;
+  return i;
+}
 
 
 /*
@@ -483,20 +514,22 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte, u8 enc){
 }
 
 /*
-** zIn is a UTF-16 encoded unicode string at least nChar characters long.
+** zIn is a UTF-16 encoded unicode string at least nByte bytes long.
 ** Return the number of bytes in the first nChar unicode characters
-** in pZ.  nChar must be non-negative.
+** in pZ.  nChar must be non-negative.  Surrogate pairs count as a single
+** character.
 */
-int sqlite3Utf16ByteLen(const void *zIn, int nChar){
+int sqlite3Utf16ByteLen(const void *zIn, int nByte, int nChar){
   int c;
   unsigned char const *z = zIn;
+  unsigned char const *zEnd = &z[nByte-1];
   int n = 0;
   
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16LE ) z++;
-  while( n<nChar ){
+  while( n<nChar && ALWAYS(z<=zEnd) ){
     c = z[0];
     z += 2;
-    if( c>=0xd8 && c<0xdc && z[0]>=0xdc && z[0]<0xe0 ) z += 2;
+    if( c>=0xd8 && c<0xdc && z<=zEnd && z[0]>=0xdc && z[0]<0xe0 ) z += 2;
     n++;
   }
   return (int)(z-(unsigned char const *)zIn) 

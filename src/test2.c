@@ -14,11 +14,7 @@
 ** testing of the SQLite library.
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -521,6 +517,14 @@ static int SQLITE_TCLAPI fake_big_file(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+#if defined(_WIN32)
+  if( n>2 ){
+    Tcl_AppendResult(interp, "cannot create ", argv[1],
+       "MB file because Windows "
+       "does not support sparse files", (void*)0);
+    return TCL_ERROR;
+  }
+#endif
 
   pVfs = sqlite3_vfs_find(0);
   nFile = (int)strlen(argv[2]);
@@ -600,7 +604,7 @@ static int faultSimCallback(int x){
       zInt[i] = (x%10) + '0';
     }
     if( isNeg ) zInt[i--] = '-';
-    memcpy(faultSimScript+faultSimScriptSize, zInt+i+1, sizeof(zInt)-i);
+    memcpy(faultSimScript+faultSimScriptSize, zInt+i+1, sizeof(zInt)-i-1);
   }
   rc = Tcl_Eval(faultSimInterp, faultSimScript);
   if( rc ){

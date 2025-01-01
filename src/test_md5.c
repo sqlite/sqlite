@@ -16,14 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-# include "sqlite_tcl.h"
-#else
-# include "tcl.h"
-# ifndef SQLITE_TCLAPI
-#  define SQLITE_TCLAPI
-# endif
-#endif
+#include "tclsqlite.h"
 
 /*
  * This code implements the MD5 message-digest algorithm.
@@ -295,7 +288,7 @@ static void MD5DigestToBase16(unsigned char *digest, char *zBuf){
 
 
 /*
-** Convert a 128-bit MD5 digest into sequency of eight 5-digit integers
+** Convert a 128-bit MD5 digest into sequences of eight 5-digit integers
 ** each representing 16 bits of the digest and separated from each
 ** other by a "-" character.
 */

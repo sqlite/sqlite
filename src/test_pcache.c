@@ -9,17 +9,17 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** 
+**
 ** This file contains code used for testing the SQLite system.
 ** None of the code in this file goes into a deliverable build.
-** 
+**
 ** This file contains an application-defined pager cache
 ** implementation that can be plugged in in place of the
 ** default pcache.  This alternative pager cache will throw
 ** some errors that the default cache does not.
 **
 ** This pagecache implementation is designed for simplicity
-** not speed.  
+** not speed.
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -36,7 +36,7 @@ struct testpcacheGlobalType {
   int nInstance;            /* Number of current instances */
   unsigned discardChance;   /* Chance of discarding on an unpin (0-100) */
   unsigned prngSeed;        /* Seed for the PRNG */
-  unsigned highStress;      /* Call xStress agressively */
+  unsigned highStress;      /* Call xStress aggressively */
 };
 static testpcacheGlobalType testpcacheGlobal;
 
@@ -99,7 +99,7 @@ static void testpcacheShutdown(void *pArg){
 */
 typedef struct testpcache testpcache;
 struct testpcache {
-  int szPage;               /* Size of each page.  Multiple of 8. */
+  sqlite3_int64 szPage;     /* Size of each page.  Multiple of 8. */
   int szExtra;              /* Size of extra data that accompanies each page */
   int bPurgeable;           /* True if the page cache is purgeable */
   int nFree;                /* Number of unused slots in a[] */
@@ -131,8 +131,8 @@ static unsigned testpcacheRandom(testpcache *p){
 ** Allocate a new page cache instance.
 */
 static sqlite3_pcache *testpcacheCreate(
-  int szPage, 
-  int szExtra, 
+  int szPage,
+  int szExtra,
   int bPurgeable
 ){
   int nMem;
@@ -141,6 +141,7 @@ static sqlite3_pcache *testpcacheCreate(
   int i;
   assert( testpcacheGlobal.pDummy!=0 );
   szPage = (szPage+7)&~7;
+  szExtra = (szPage+7)&~7;
   nMem = sizeof(testpcache) + TESTPCACHE_NPAGE*(szPage+szExtra);
   p = sqlite3_malloc( nMem );
   if( p==0 ) return 0;
@@ -225,7 +226,7 @@ static sqlite3_pcache_page *testpcacheFetch(
     return 0;
   }
 
-  /* Do not allocate if highStress is enabled and createFlag is not 2.  
+  /* Do not allocate if highStress is enabled and createFlag is not 2.
   **
   ** The highStress setting causes pagerStress() to be called much more
   ** often, which exercises the pager logic more intensely.
@@ -428,7 +429,7 @@ void installTestPCache(
   int installFlag,            /* True to install.  False to uninstall. */
   unsigned discardChance,     /* 0-100.  Chance to discard on unpin */
   unsigned prngSeed,          /* Seed for the PRNG */
-  unsigned highStress         /* Call xStress agressively */
+  unsigned highStress         /* Call xStress aggressively */
 ){
   static const sqlite3_pcache_methods2 testPcache = {
     1,

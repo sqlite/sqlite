@@ -1159,7 +1159,7 @@ static struct win_syscall {
 
 /*
 ** This is the xSetSystemCall() method of sqlite3_vfs for all of the
-** "win32" VFSes.  Return SQLITE_OK opon successfully updating the
+** "win32" VFSes.  Return SQLITE_OK upon successfully updating the
 ** system call pointer, or SQLITE_NOTFOUND if there is no configurable
 ** system call named zName.
 */
@@ -1918,10 +1918,12 @@ int sqlite3_win32_set_directory8(
   const char *zValue  /* New value for directory being set or reset */
 ){
   char **ppDirectory = 0;
+  int rc;
 #ifndef SQLITE_OMIT_AUTOINIT
-  int rc = sqlite3_initialize();
+  rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   if( type==SQLITE_WIN32_DATA_DIRECTORY_TYPE ){
     ppDirectory = &sqlite3_data_directory;
   }else if( type==SQLITE_WIN32_TEMP_DIRECTORY_TYPE ){
@@ -1936,14 +1938,19 @@ int sqlite3_win32_set_directory8(
     if( zValue && zValue[0] ){
       zCopy = sqlite3_mprintf("%s", zValue);
       if ( zCopy==0 ){
-        return SQLITE_NOMEM_BKPT;
+        rc = SQLITE_NOMEM_BKPT;
+        goto set_directory8_done;
       }
     }
     sqlite3_free(*ppDirectory);
     *ppDirectory = zCopy;
-    return SQLITE_OK;
+    rc = SQLITE_OK;
+  }else{
+    rc = SQLITE_ERROR;
   }
-  return SQLITE_ERROR;
+set_directory8_done:
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  return rc;
 }
 
 /*
@@ -2732,7 +2739,7 @@ static int winRead(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this read request as possible by transfering
+  /* Deal with as much of this read request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2810,7 +2817,7 @@ static int winWrite(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if defined(SQLITE_MMAP_READWRITE) && SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this write request as possible by transfering
+  /* Deal with as much of this write request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2920,7 +2927,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
     ** all references to memory-mapped content are closed.  That is doable,
     ** but involves adding a few branches in the common write code path which
     ** could slow down normal operations slightly.  Hence, we have decided for
-    ** now to simply make trancations a no-op if there are pending reads.  We
+    ** now to simply make transactions a no-op if there are pending reads.  We
     ** can maybe revisit this decision in the future.
     */
     return SQLITE_OK;
@@ -2979,7 +2986,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 #ifdef SQLITE_TEST
 /*
 ** Count the number of fullsyncs and normal syncs.  This is used to test
-** that syncs and fullsyncs are occuring at the right times.
+** that syncs and fullsyncs are occurring at the right times.
 */
 int sqlite3_sync_count = 0;
 int sqlite3_fullsync_count = 0;
@@ -3336,7 +3343,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
-    res = winUnlockReadLock(pFile);
+    (void)winUnlockReadLock(pFile);
     res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
     if( res ){
@@ -3592,6 +3599,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif
+    case SQLITE_FCNTL_NULL_IO: {
+      (void)osCloseHandle(pFile->h);
+      pFile->h = NULL;
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_TEMPFILENAME: {
       char *zTFile = 0;
       int rc = winGetTempname(pFile->pVfs, &zTFile);
@@ -3653,7 +3665,7 @@ static int winSectorSize(sqlite3_file *id){
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
   winFile *p = (winFile*)id;
-  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
+  return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN | SQLITE_IOCAP_SUBPAGE_READ |
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
@@ -4070,9 +4082,13 @@ static int winShmLock(
   winFile *pDbFd = (winFile*)fd;        /* Connection holding shared memory */
   winShm *p = pDbFd->pShm;              /* The shared memory being locked */
   winShm *pX;                           /* For looping over all siblings */
-  winShmNode *pShmNode = p->pShmNode;
+  winShmNode *pShmNode;
   int rc = SQLITE_OK;                   /* Result code */
   u16 mask;                             /* Mask of locks to take or release */
+
+  if( p==0 ) return SQLITE_IOERR_SHMLOCK;
+  pShmNode = p->pShmNode;
+  if( NEVER(pShmNode==0) ) return SQLITE_IOERR_SHMLOCK;
 
   assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
   assert( n>=1 );
@@ -4510,6 +4526,11 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 
 #if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->mmapSizeMax>0 ){
+    /* Ensure that there is always at least a 256 byte buffer of addressable
+    ** memory following the returned page. If the database is corrupt,
+    ** SQLite may overread the page slightly (in practice only a few bytes,
+    ** but 256 is safe, round, number).  */
+    const int nEofBuffer = 256;
     if( pFd->pMapRegion==0 ){
       int rc = winMapfile(pFd, -1);
       if( rc!=SQLITE_OK ){
@@ -4518,7 +4539,7 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
         return rc;
       }
     }
-    if( pFd->mmapSize >= iOff+nAmt ){
+    if( pFd->mmapSize >= (iOff+nAmt+nEofBuffer) ){
       assert( pFd->pMapRegion!=0 );
       *pp = &((u8 *)pFd->pMapRegion)[iOff];
       pFd->nFetchOut++;
@@ -4714,6 +4735,19 @@ static int winMakeEndInDirSep(int nBuf, char *zBuf){
 }
 
 /*
+** If sqlite3_temp_directory is defined, take the mutex and return true.
+**
+** If sqlite3_temp_directory is NULL (undefined), omit the mutex and
+** return false.
+*/
+static int winTempDirDefined(void){
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  if( sqlite3_temp_directory!=0 ) return 1;
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
+  return 0;
+}
+
+/*
 ** Create a temporary file name and store the resulting pointer into pzBuf.
 ** The pointer returned in pzBuf must be freed via sqlite3_free().
 */
@@ -4723,6 +4757,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   size_t i, j;
+  DWORD pid;
   int nPre = sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX);
   int nMax, nBuf, nDir, nLen;
   char *zBuf;
@@ -4749,20 +4784,23 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   */
   nDir = nMax - (nPre + 15);
   assert( nDir>0 );
-  if( sqlite3_temp_directory ){
+  if( winTempDirDefined() ){
     int nDirLen = sqlite3Strlen30(sqlite3_temp_directory);
     if( nDirLen>0 ){
       if( !winIsDirSep(sqlite3_temp_directory[nDirLen-1]) ){
         nDirLen++;
       }
       if( nDirLen>nDir ){
+        sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
         sqlite3_free(zBuf);
         OSTRACE(("TEMP-FILENAME rc=SQLITE_ERROR\n"));
         return winLogError(SQLITE_ERROR, 0, "winGetTempname1", 0);
       }
       sqlite3_snprintf(nMax, zBuf, "%s", sqlite3_temp_directory);
     }
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   }
+
 #if defined(__CYGWIN__)
   else{
     static const char *azDirs[] = {
@@ -4932,7 +4970,10 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
 
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
+  pid = osGetCurrentProcessId();
   for(i=0; i<15; i++, j++){
+    zBuf[j] += pid & 0xff;
+    pid >>= 8;
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
@@ -5012,7 +5053,7 @@ static int winOpen(
 
   int rc = SQLITE_OK;            /* Function Return Code */
 #if !defined(NDEBUG) || SQLITE_OS_WINCE
-  int eType = flags&0xFFFFFF00;  /* Type of file to open */
+  int eType = flags&0x0FFF00;  /* Type of file to open */
 #endif
 
   int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
@@ -5170,7 +5211,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5187,7 +5228,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5207,7 +5248,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5430,6 +5471,13 @@ static int winAccess(
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
            zFilename, flags, pResOut));
 
+  if( zFilename==0 ){
+    *pResOut = 0;
+    OSTRACE(("ACCESS name=%s, pResOut=%p, *pResOut=%d, rc=SQLITE_OK\n",
+             zFilename, pResOut, *pResOut));
+    return SQLITE_OK;
+  }
+
   zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("ACCESS name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
@@ -5551,7 +5599,7 @@ static BOOL winIsVerbatimPathname(
 ** pathname into zOut[].  zOut[] will be at least pVfs->mxPathname
 ** bytes in size.
 */
-static int winFullPathname(
+static int winFullPathnameNoMutex(
   sqlite3_vfs *pVfs,            /* Pointer to vfs object */
   const char *zRelative,        /* Possibly relative input path */
   int nFull,                    /* Size of output buffer in bytes */
@@ -5729,6 +5777,20 @@ static int winFullPathname(
     return SQLITE_IOERR_NOMEM_BKPT;
   }
 #endif
+}
+static int winFullPathname(
+  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
+  const char *zRelative,        /* Possibly relative input path */
+  int nFull,                    /* Size of output buffer in bytes */
+  char *zFull                   /* Output buffer */
+){
+  int rc;
+  MUTEX_LOGIC( sqlite3_mutex *pMutex; )
+  MUTEX_LOGIC( pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR); )
+  sqlite3_mutex_enter(pMutex);
+  rc = winFullPathnameNoMutex(pVfs, zRelative, nFull, zFull);
+  sqlite3_mutex_leave(pMutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

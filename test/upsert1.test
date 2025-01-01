@@ -241,4 +241,55 @@ do_catchsql_test upsert1-1000 {
     ON CONFLICT(c2) DO UPDATE SET c1 = c0;
 } {1 {NOT NULL constraint failed: t0.c0}}
 
+# 2021-12-29 forum post https://sqlite.org/forum/forumpost/06b16b8b29f8c8c3
+# By Jingzhou Fu. When there is both an INTEGER PRIMARY KEY ON CONFLICT REPLACE
+# and an upsert on a constraint other than the INTEGER PRIMARY KEY, the
+# constraint checking logic generates invalid bytecode which might result
+# in a NULL pointer dereference.
+#
+reset_db
+do_execsql_test upsert1-1100 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY ON CONFLICT REPLACE, b UNIQUE);
+  INSERT INTO t1(b) VALUES(22);
+  INSERT INTO t1 VALUES(2,22) ON CONFLICT (b) DO NOTHING;
+  SELECT * FROM t1;
+} {1 22}
+
+# 2023-08-17 dbsqlfuzz 9983e2c77634a8ccf33b5c91fa9982599de5f9e9
+# Bound parameters in the ON CONFLICT clause of an UPSERT.
+#
+reset_db
+do_execsql_test upsert1-1200 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE UNIQUE INDEX t1x ON t1(b+3);
+}
+sqlite3_db_config db ENABLE_QPSG 1
+do_catchsql_test upsert1-1210 {
+  INSERT INTO t1(a,b) VALUES(1,2) ON CONFLICT(b+?1) DO NOTHING;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
+# 2024-04-11 https://sqlite.org/forum/forumpost/284955a3cd454a15
+# Incorrect value passed into a trigger that fires as the result of
+# an upsert.
+#
+reset_db
+do_execsql_test upsert1-1300 {
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1 VALUES
+    (11, printf('%.9000c','a')),
+    (11, printf('%.9000c','a')),
+    (33, printf('%.9000c','b')),
+    (33, printf('%.9000c','b'));
+  CREATE TABLE t2(x INT UNIQUE, y TEXT);
+  CREATE TRIGGER r1 BEFORE UPDATE ON t2 BEGIN
+    SELECT raise(ABORT,'Incorrect old.y value passed to trigger!')
+     WHERE old.y != new.y;
+    /* ^^^ This trigger will fire and cause the ABORT if the problem has
+    ** not been fixed, or if there is a regression. */
+  END;
+  INSERT INTO t2(x, y) SELECT x, y FROM t1
+   WHERE true
+   ON CONFLICT (x) DO UPDATE SET y = excluded.y;
+} {}
+
 finish_test

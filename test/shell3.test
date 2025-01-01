@@ -8,6 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # The focus of this file is testing the CLI shell tool.
 #
@@ -22,7 +23,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -68,7 +69,7 @@ do_test shell3-1.6 {
 } {0 {}}
 do_test shell3-1.7 {
   catchcmd "foo.db \"CREATE TABLE\""
-} {1 {Error: in prepare, incomplete input (1)}}
+} {1 {Error: in prepare, incomplete input}}
 
 #----------------------------------------------------------------------------
 #   shell3-2.*: Basic tests for running SQL file from command line.
@@ -98,7 +99,7 @@ do_test shell3-2.6 {
 } {0 {}}
 do_test shell3-2.7 {
   catchcmd "foo.db" "CREATE TABLE"
-} {1 {Error: near line 1: in prepare, incomplete input (1)}}
+} {1 {Parse error near line 1: incomplete input}}
 
 
 #----------------------------------------------------------------------------
@@ -134,5 +135,14 @@ a["b"]
 /*.
 .*/ x
 'y}} 1}
+
+do_test shell3-3.2 {
+  catchcmd "" {
+.open xyz.db
+SELECT ;
+  }
+} {1 {Parse error near line 3: near ";": syntax error
+  SELECT ;
+         ^--- error here}}
 
 finish_test

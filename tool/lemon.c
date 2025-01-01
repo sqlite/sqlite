@@ -60,6 +60,82 @@ static char *msort(char*,char**,int(*)(const char*,const char*));
 #define lemonStrlen(X)   ((int)strlen(X))
 
 /*
+** Header on the linked list of memory allocations.
+*/
+typedef struct MemChunk MemChunk;
+struct MemChunk {
+  MemChunk *pNext;
+  size_t sz;
+  /* Actually memory follows */
+};  
+
+/*
+** Global linked list of all memory allocations.
+*/
+static MemChunk *memChunkList = 0;
+
+/*
+** Wrappers around malloc(), calloc(), realloc() and free().
+**
+** All memory allocations are kept on a doubly-linked list.  The
+** lemon_free_all() function can be called prior to exit to clean
+** up any memory leaks.
+**
+** This is not necessary.  But compilers and getting increasingly
+** fussy about memory leaks, even in command-line programs like Lemon
+** where they do not matter.  So this code is provided to hush the
+** warnings.
+*/
+static void *lemon_malloc(size_t nByte){
+  MemChunk *p;
+  if( nByte<0 ) return 0;
+  p = malloc( nByte + sizeof(MemChunk) );
+  if( p==0 ){
+    fprintf(stderr, "Out of memory.  Failed to allocate %lld bytes.\n",
+            (long long int)nByte);
+    exit(1);
+  }
+  p->pNext = memChunkList;
+  p->sz = nByte;
+  memChunkList = p;
+  return (void*)&p[1];
+}
+static void *lemon_calloc(size_t nElem, size_t sz){
+  void *p = lemon_malloc(nElem*sz);
+  memset(p, 0, nElem*sz);
+  return p;
+}
+static void lemon_free(void *pOld){
+  if( pOld ){
+    MemChunk *p = (MemChunk*)pOld;
+    p--;
+    memset(pOld, 0, p->sz);
+  }
+}
+static void *lemon_realloc(void *pOld, size_t nNew){
+  void *pNew;
+  MemChunk *p;
+  if( pOld==0 ) return lemon_malloc(nNew);
+  p = (MemChunk*)pOld;
+  p--;
+  if( p->sz>=nNew ) return pOld;
+  pNew = lemon_malloc( nNew );
+  memcpy(pNew, pOld, p->sz);
+  return pNew;
+}
+
+/* Free all outstanding memory allocations.
+** Do this right before exiting.
+*/
+static void lemon_free_all(void){
+  while( memChunkList ){
+    MemChunk *pNext = memChunkList->pNext;
+    free( memChunkList );
+    memChunkList = pNext;
+  }
+}
+
+/*
 ** Compilers are starting to complain about the use of sprintf() and strcpy(),
 ** saying they are unsafe.  So we define our own versions of those routines too.
 **
@@ -418,6 +494,8 @@ struct lemon {
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
+  char *reallocFunc;       /* Function to use to allocate stack space */
+  char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
   int nactiontab;          /* Number of entries in the yy_action[] table */
   int nlookaheadtab;       /* Number of entries in yy_lookahead[] */
@@ -426,7 +504,8 @@ struct lemon {
   int printPreprocessed;   /* Show preprocessor output on stdout */
   int has_fallback;        /* True if any %fallback is seen in the grammar */
   int nolinenosflag;       /* True if #line statements should not be printed */
-  char *argv0;             /* Name of the program */
+  int argc;                /* Number of command-line arguments */
+  char **argv;             /* Command-line arguments */
 };
 
 #define MemoryCheck(X) if((X)==0){ \
@@ -494,7 +573,7 @@ static struct action *Action_new(void){
   if( actionfreelist==0 ){
     int i;
     int amt = 100;
-    actionfreelist = (struct action *)calloc(amt, sizeof(struct action));
+    actionfreelist = (struct action *)lemon_calloc(amt, sizeof(struct action));
     if( actionfreelist==0 ){
       fprintf(stderr,"Unable to allocate memory for a new parser action.");
       exit(1);
@@ -613,14 +692,14 @@ struct acttab {
 
 /* Free all memory associated with the given acttab */
 void acttab_free(acttab *p){
-  free( p->aAction );
-  free( p->aLookahead );
-  free( p );
+  lemon_free( p->aAction );
+  lemon_free( p->aLookahead );
+  lemon_free( p );
 }
 
 /* Allocate a new acttab structure */
 acttab *acttab_alloc(int nsymbol, int nterminal){
-  acttab *p = (acttab *) calloc( 1, sizeof(*p) );
+  acttab *p = (acttab *) lemon_calloc( 1, sizeof(*p) );
   if( p==0 ){
     fprintf(stderr,"Unable to allocate memory for a new acttab.");
     exit(1);
@@ -639,7 +718,7 @@ acttab *acttab_alloc(int nsymbol, int nterminal){
 void acttab_action(acttab *p, int lookahead, int action){
   if( p->nLookahead>=p->nLookaheadAlloc ){
     p->nLookaheadAlloc += 25;
-    p->aLookahead = (struct lookahead_action *) realloc( p->aLookahead,
+    p->aLookahead = (struct lookahead_action *) lemon_realloc( p->aLookahead,
                              sizeof(p->aLookahead[0])*p->nLookaheadAlloc );
     if( p->aLookahead==0 ){
       fprintf(stderr,"malloc failed\n");
@@ -689,7 +768,7 @@ int acttab_insert(acttab *p, int makeItSafe){
   if( p->nAction + n >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
-    p->aAction = (struct lookahead_action *) realloc( p->aAction,
+    p->aAction = (struct lookahead_action *) lemon_realloc( p->aAction,
                           sizeof(p->aAction[0])*p->nActionAlloc);
     if( p->aAction==0 ){
       fprintf(stderr,"malloc failed\n");
@@ -1311,7 +1390,7 @@ static struct config **basisend = 0;     /* End of list of basis configs */
 
 /* Return a pointer to a new configuration */
 PRIVATE struct config *newconfig(void){
-  return (struct config*)calloc(1, sizeof(struct config));
+  return (struct config*)lemon_calloc(1, sizeof(struct config));
 }
 
 /* The configuration "old" is no longer used */
@@ -1516,8 +1595,10 @@ void memory_error(void){
   exit(1);
 }
 
-static int nDefine = 0;      /* Number of -D options on the command line */
-static char **azDefine = 0;  /* Name of the -D macros */
+static int nDefine = 0;        /* Number of -D options on the command line */
+static int nDefineUsed = 0;    /* Number of -D options actually used */
+static char **azDefine = 0;    /* Name of the -D macros */
+static char *bDefineUsed = 0;  /* True for every -D macro actually used */
 
 /* This routine is called with the argument to each -D command-line option.
 ** Add the macro defined to the azDefine array.
@@ -1525,13 +1606,19 @@ static char **azDefine = 0;  /* Name of the -D macros */
 static void handle_D_option(char *z){
   char **paz;
   nDefine++;
-  azDefine = (char **) realloc(azDefine, sizeof(azDefine[0])*nDefine);
+  azDefine = (char **) lemon_realloc(azDefine, sizeof(azDefine[0])*nDefine);
   if( azDefine==0 ){
     fprintf(stderr,"out of memory\n");
     exit(1);
   }
+  bDefineUsed = (char*)lemon_realloc(bDefineUsed, nDefine);
+  if( bDefineUsed==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  bDefineUsed[nDefine-1] = 0;
   paz = &azDefine[nDefine-1];
-  *paz = (char *) malloc( lemonStrlen(z)+1 );
+  *paz = (char *) lemon_malloc( lemonStrlen(z)+1 );
   if( *paz==0 ){
     fprintf(stderr,"out of memory\n");
     exit(1);
@@ -1541,11 +1628,28 @@ static void handle_D_option(char *z){
   *z = 0;
 }
 
+/* This routine is called with the argument to each -U command-line option.
+** Omit a previously defined macro.
+*/
+static void handle_U_option(char *z){
+  int i;
+  for(i=0; i<nDefine; i++){
+    if( strcmp(azDefine[i],z)==0 ){
+      nDefine--;
+      if( i<nDefine ){
+        azDefine[i] = azDefine[nDefine];
+        bDefineUsed[i] = bDefineUsed[nDefine];
+      }
+      break;
+    }
+  }
+}
+
 /* Rember the name of the output directory 
 */
 static char *outputDir = NULL;
 static void handle_d_option(char *z){
-  outputDir = (char *) malloc( lemonStrlen(z)+1 );
+  outputDir = (char *) lemon_malloc( lemonStrlen(z)+1 );
   if( outputDir==0 ){
     fprintf(stderr,"out of memory\n");
     exit(1);
@@ -1555,7 +1659,7 @@ static void handle_d_option(char *z){
 
 static char *user_templatename = NULL;
 static void handle_T_option(char *z){
-  user_templatename = (char *) malloc( lemonStrlen(z)+1 );
+  user_templatename = (char *) lemon_malloc( lemonStrlen(z)+1 );
   if( user_templatename==0 ){
     memory_error();
   }
@@ -1622,6 +1726,15 @@ static void stats_line(const char *zLabel, int iValue){
          iValue);
 }
 
+/*
+** Comparison function used by qsort() to sort the azDefine[] array.
+*/
+static int defineCmp(const void *pA, const void *pB){
+  const char *zA = *(const char**)pA;
+  const char *zB = *(const char**)pB;
+  return strcmp(zA,zB);
+}
+
 /* The main program.  Parse the command line and do it... */
 int main(int argc, char **argv){
   static int version = 0;
@@ -1658,6 +1771,7 @@ int main(int argc, char **argv){
                     "Generate the *.sql file describing the parser tables."},
     {OPT_FLAG, "x", (char*)&version, "Print the version number."},
     {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
+    {OPT_FSTR, "U", (char*)handle_U_option, "Undefine a macro."},
     {OPT_FSTR, "W", 0, "Ignored.  (Placeholder for '-W' compiler options.)"},
     {OPT_FLAG,0,0,0}
   };
@@ -1666,7 +1780,6 @@ int main(int argc, char **argv){
   struct lemon lem;
   struct rule *rp;
 
-  (void)argc;
   OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n");
@@ -1678,12 +1791,14 @@ int main(int argc, char **argv){
   }
   memset(&lem, 0, sizeof(lem));
   lem.errorcnt = 0;
+  qsort(azDefine, nDefine, sizeof(azDefine[0]), defineCmp);
 
   /* Initialize the machine */
   Strsafe_init();
   Symbol_init();
   State_init();
-  lem.argv0 = argv[0];
+  lem.argv = argv;
+  lem.argc = argc;
   lem.filename = OptArg(0);
   lem.basisflag = basisflag;
   lem.nolinenosflag = nolinenosflag;
@@ -1792,6 +1907,7 @@ int main(int argc, char **argv){
 
   /* return 0 on success, 1 on failure. */
   exitcode = ((lem.errorcnt > 0) || (lem.nconflict > 0)) ? 1 : 0;
+  lemon_free_all();
   exit(exitcode);
   return (exitcode);
 }
@@ -2380,7 +2496,7 @@ static void parseonetoken(struct pstate *psp)
     case IN_RHS:
       if( x[0]=='.' ){
         struct rule *rp;
-        rp = (struct rule *)calloc( sizeof(struct rule) +
+        rp = (struct rule *)lemon_calloc( sizeof(struct rule) +
              sizeof(struct symbol*)*psp->nrhs + sizeof(char*)*psp->nrhs, 1);
         if( rp==0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
@@ -2432,17 +2548,17 @@ static void parseonetoken(struct pstate *psp)
         struct symbol *msp = psp->rhs[psp->nrhs-1];
         if( msp->type!=MULTITERMINAL ){
           struct symbol *origsp = msp;
-          msp = (struct symbol *) calloc(1,sizeof(*msp));
+          msp = (struct symbol *) lemon_calloc(1,sizeof(*msp));
           memset(msp, 0, sizeof(*msp));
           msp->type = MULTITERMINAL;
           msp->nsubsym = 1;
-          msp->subsym = (struct symbol **) calloc(1,sizeof(struct symbol*));
+          msp->subsym = (struct symbol**)lemon_calloc(1,sizeof(struct symbol*));
           msp->subsym[0] = origsp;
           msp->name = origsp->name;
           psp->rhs[psp->nrhs-1] = msp;
         }
         msp->nsubsym++;
-        msp->subsym = (struct symbol **) realloc(msp->subsym,
+        msp->subsym = (struct symbol **) lemon_realloc(msp->subsym,
           sizeof(struct symbol*)*msp->nsubsym);
         msp->subsym[msp->nsubsym-1] = Symbol_new(&x[1]);
         if( ISLOWER(x[1]) || ISLOWER(msp->subsym[0]->name[0]) ){
@@ -2521,6 +2637,12 @@ static void parseonetoken(struct pstate *psp)
           psp->insertLineMacro = 0;
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
+          psp->insertLineMacro = 0;
+        }else if( strcmp(x,"realloc")==0 ){
+          psp->declargslot = &(psp->gp->reallocFunc);
+          psp->insertLineMacro = 0;
+        }else if( strcmp(x,"free")==0 ){
+          psp->declargslot = &(psp->gp->freeFunc);
           psp->insertLineMacro = 0;
         }else if( strcmp(x,"stack_size")==0 ){
           psp->declargslot = &(psp->gp->stacksize);
@@ -2652,7 +2774,7 @@ static void parseonetoken(struct pstate *psp)
           nLine = lemonStrlen(zLine);
           n += nLine + lemonStrlen(psp->filename) + nBack;
         }
-        *psp->declargslot = (char *) realloc(*psp->declargslot, n);
+        *psp->declargslot = (char *) lemon_realloc(*psp->declargslot, n);
         zBuf = *psp->declargslot + nOld;
         if( addLineMacro ){
           if( nOld && zBuf[-1]!='\n' ){
@@ -2766,7 +2888,7 @@ static void parseonetoken(struct pstate *psp)
       }else if( ISUPPER(x[0]) || ((x[0]=='|' || x[0]=='/') && ISUPPER(x[1])) ){
         struct symbol *msp = psp->tkclass;
         msp->nsubsym++;
-        msp->subsym = (struct symbol **) realloc(msp->subsym,
+        msp->subsym = (struct symbol **) lemon_realloc(msp->subsym,
           sizeof(struct symbol*)*msp->nsubsym);
         if( !ISUPPER(x[0]) ) x++;
         msp->subsym[msp->nsubsym-1] = Symbol_new(x);
@@ -2856,6 +2978,10 @@ static int eval_preprocessor_boolean(char *z, int lineno){
       res = 0;
       for(j=0; j<nDefine; j++){
         if( strncmp(azDefine[j],&z[i],n)==0 && azDefine[j][n]==0 ){
+          if( !bDefineUsed[j] ){
+            bDefineUsed[j] = 1;
+            nDefineUsed++;
+          }
           res = 1;
           break;
         }
@@ -2977,10 +3103,10 @@ void Parse(struct lemon *gp)
   fseek(fp,0,2);
   filesize = ftell(fp);
   rewind(fp);
-  filebuf = (char *)malloc( filesize+1 );
+  filebuf = (char *)lemon_malloc( filesize+1 );
   if( filesize>100000000 || filebuf==0 ){
     ErrorMsg(ps.filename,0,"Input file too large.");
-    free(filebuf);
+    lemon_free(filebuf);
     gp->errorcnt++;
     fclose(fp);
     return;
@@ -2988,7 +3114,7 @@ void Parse(struct lemon *gp)
   if( fread(filebuf,1,filesize,fp)!=filesize ){
     ErrorMsg(ps.filename,0,"Can't read in all %d bytes of this file.",
       filesize);
-    free(filebuf);
+    lemon_free(filebuf);
     gp->errorcnt++;
     fclose(fp);
     return;
@@ -3015,6 +3141,7 @@ void Parse(struct lemon *gp)
     }
     if( c=='/' && cp[1]=='*' ){          /* Skip C style comments */
       cp+=2;
+      if( (*cp)=='/' ) cp++;
       while( (c= *cp)!=0 && (c!='/' || cp[-1]!='*') ){
         if( c=='\n' ) lineno++;
         cp++;
@@ -3099,7 +3226,7 @@ void Parse(struct lemon *gp)
     *cp = (char)c;                  /* Restore the buffer */
     cp = nextcp;
   }
-  free(filebuf);                    /* Release the buffer after parsing */
+  lemon_free(filebuf);                    /* Release the buffer after parsing */
   gp->rule = ps.firstrule;
   gp->errorcnt = ps.errorcnt;
 }
@@ -3117,7 +3244,7 @@ struct plink *Plink_new(void){
   if( plink_freelist==0 ){
     int i;
     int amt = 100;
-    plink_freelist = (struct plink *)calloc( amt, sizeof(struct plink) );
+    plink_freelist = (struct plink *)lemon_calloc( amt, sizeof(struct plink) );
     if( plink_freelist==0 ){
       fprintf(stderr,
       "Unable to allocate memory for a new follow-set propagation link.\n");
@@ -3170,9 +3297,7 @@ void Plink_delete(struct plink *plp)
 ** Procedures for generating reports and tables in the LEMON parser generator.
 */
 
-/* Generate a filename with the given suffix.  Space to hold the
-** name comes from malloc() and must be freed by the calling
-** function.
+/* Generate a filename with the given suffix.
 */
 PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
 {
@@ -3189,7 +3314,7 @@ PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
   sz += lemonStrlen(suffix);
   if( outputDir ) sz += lemonStrlen(outputDir) + 1;
   sz += 5;
-  name = (char*)malloc( sz );
+  name = (char*)lemon_malloc( sz );
   if( name==0 ){
     fprintf(stderr,"Can't allocate space for a filename.\n");
     exit(1);
@@ -3216,7 +3341,7 @@ PRIVATE FILE *file_open(
 ){
   FILE *fp;
 
-  if( lemp->outname ) free(lemp->outname);
+  if( lemp->outname ) lemon_free(lemp->outname);
   lemp->outname = file_makename(lemp, suffix);
   fp = fopen(lemp->outname,mode);
   if( fp==0 && *mode=='w' ){
@@ -3532,14 +3657,14 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
   if( cp ){
     c = *cp;
     *cp = 0;
-    path = (char *)malloc( lemonStrlen(argv0) + lemonStrlen(name) + 2 );
+    path = (char *)lemon_malloc( lemonStrlen(argv0) + lemonStrlen(name) + 2 );
     if( path ) lemon_sprintf(path,"%s/%s",argv0,name);
     *cp = c;
   }else{
     pathlist = getenv("PATH");
     if( pathlist==0 ) pathlist = ".:/bin:/usr/bin";
-    pathbuf = (char *) malloc( lemonStrlen(pathlist) + 1 );
-    path = (char *)malloc( lemonStrlen(pathlist)+lemonStrlen(name)+2 );
+    pathbuf = (char *) lemon_malloc( lemonStrlen(pathlist) + 1 );
+    path = (char *)lemon_malloc( lemonStrlen(pathlist)+lemonStrlen(name)+2 );
     if( (pathbuf != 0) && (path!=0) ){
       pathbufptr = pathbuf;
       lemon_strcpy(pathbuf, pathlist);
@@ -3555,7 +3680,7 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
         if( access(path,modemask)==0 ) break;
       }
     }
-    free(pathbufptr);
+    lemon_free(pathbufptr);
   }
   return path;
 }
@@ -3673,7 +3798,7 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
   }else if( access(templatename,004)==0 ){
     tpltname = templatename;
   }else{
-    toFree = tpltname = pathsearch(lemp->argv0,templatename,0);
+    toFree = tpltname = pathsearch(lemp->argv[0],templatename,0);
   }
   if( tpltname==0 ){
     fprintf(stderr,"Can't find the parser driver template file \"%s\".\n",
@@ -3686,7 +3811,7 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
     fprintf(stderr,"Can't open the template file \"%s\".\n",tpltname);
     lemp->errorcnt++;
   }
-  free(toFree);
+  lemon_free(toFree);
   return in;
 }
 
@@ -3815,7 +3940,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
   }
   if( (int) (n+sizeof(zInt)*2+used) >= alloced ){
     alloced = n + sizeof(zInt)*2 + used + 200;
-    z = (char *) realloc(z,  alloced);
+    z = (char *) lemon_realloc(z,  alloced);
   }
   if( z==0 ) return empty;
   while( n-- > 0 ){
@@ -4105,7 +4230,7 @@ void print_stack_union(
 
   /* Allocate and initialize types[] and allocate stddt[] */
   arraysize = lemp->nsymbol * 2;
-  types = (char**)calloc( arraysize, sizeof(char*) );
+  types = (char**)lemon_calloc( arraysize, sizeof(char*) );
   if( types==0 ){
     fprintf(stderr,"Out of memory.\n");
     exit(1);
@@ -4122,7 +4247,7 @@ void print_stack_union(
     len = lemonStrlen(sp->datatype);
     if( len>maxdtlength ) maxdtlength = len;
   }
-  stddt = (char*)malloc( maxdtlength*2 + 1 );
+  stddt = (char*)lemon_malloc( maxdtlength*2 + 1 );
   if( stddt==0 ){
     fprintf(stderr,"Out of memory.\n");
     exit(1);
@@ -4171,7 +4296,7 @@ void print_stack_union(
     }
     if( types[hash]==0 ){
       sp->dtnum = hash + 1;
-      types[hash] = (char*)malloc( lemonStrlen(stddt)+1 );
+      types[hash] = (char*)lemon_malloc( lemonStrlen(stddt)+1 );
       if( types[hash]==0 ){
         fprintf(stderr,"Out of memory.\n");
         exit(1);
@@ -4193,13 +4318,13 @@ void print_stack_union(
   for(i=0; i<arraysize; i++){
     if( types[i]==0 ) continue;
     fprintf(out,"  %s yy%d;\n",types[i],i+1); lineno++;
-    free(types[i]);
+    lemon_free(types[i]);
   }
   if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"  int yy%d;\n",lemp->errsym->dtnum); lineno++;
   }
-  free(stddt);
-  free(types);
+  lemon_free(stddt);
+  lemon_free(types);
   fprintf(out,"} YYMINORTYPE;\n"); lineno++;
   *plineno = lineno;
 }
@@ -4290,13 +4415,12 @@ void ReportTable(
   int sqlFlag     /* Generate the *.sql file too */
 ){
   FILE *out, *in, *sql;
-  char line[LINESIZE];
   int  lineno;
   struct state *stp;
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, n, sz;
+  int i, j, n, sz, mn, mx;
   int nLookAhead;
   int szActionType;     /* sizeof(YYACTIONTYPE) */
   int szCodeType;       /* sizeof(YYCODETYPE)   */
@@ -4396,7 +4520,17 @@ void ReportTable(
 
   fprintf(out, 
      "/* This file is automatically generated by Lemon from input grammar\n"
-     "** source file \"%s\". */\n", lemp->filename); lineno += 2;
+     "** source file \"%s\"", lemp->filename);  lineno++;
+  if( nDefineUsed==0 ){
+    fprintf(out, ".\n*/\n"); lineno += 2;
+  }else{
+    fprintf(out, " with these options:\n**\n"); lineno += 2;
+    for(i=0; i<nDefine; i++){
+      if( !bDefineUsed[i] ) continue;
+      fprintf(out, "**   -D%s\n", azDefine[i]); lineno++;
+    }
+    fprintf(out, "*/\n"); lineno++;
+  }
   
   /* The first %include directive begins with a C-language comment,
   ** then skip over the header comment of the template file
@@ -4419,7 +4553,7 @@ void ReportTable(
   if( mhflag ){
     char *incName = file_makename(lemp, ".h");
     fprintf(out,"#include \"%s\"\n", incName); lineno++;
-    free(incName);
+    lemon_free(incName);
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
@@ -4478,6 +4612,21 @@ void ReportTable(
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
   }
+  if( lemp->reallocFunc ){
+    fprintf(out,"#define YYREALLOC %s\n", lemp->reallocFunc); lineno++;
+  }else{
+    fprintf(out,"#define YYREALLOC realloc\n"); lineno++;
+  }
+  if( lemp->freeFunc ){
+    fprintf(out,"#define YYFREE %s\n", lemp->freeFunc); lineno++;
+  }else{
+    fprintf(out,"#define YYFREE free\n"); lineno++;
+  }
+  if( lemp->reallocFunc && lemp->freeFunc ){
+    fprintf(out,"#define YYDYNSTACK 1\n"); lineno++;
+  }else{
+    fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
+  }
   if( lemp->ctx && lemp->ctx[0] ){
     i = lemonStrlen(lemp->ctx);
     while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
@@ -4511,7 +4660,7 @@ void ReportTable(
   ** table must be computed before generating the YYNSTATE macro because
   ** we need to know how many states can be eliminated.
   */
-  ax = (struct axset *) calloc(lemp->nxstate*2, sizeof(ax[0]));
+  ax = (struct axset *) lemon_calloc(lemp->nxstate*2, sizeof(ax[0]));
   if( ax==0 ){
     fprintf(stderr,"malloc failed\n");
     exit(1);
@@ -4569,7 +4718,7 @@ void ReportTable(
     }
 #endif
   }
-  free(ax);
+  lemon_free(ax);
 
   /* Mark rules that are actually used for reduce actions after all
   ** optimizations have been applied
@@ -4601,6 +4750,22 @@ void ReportTable(
   fprintf(out,"#define YY_MIN_REDUCE        %d\n", lemp->minReduce); lineno++;
   i = lemp->minReduce + lemp->nrule;
   fprintf(out,"#define YY_MAX_REDUCE        %d\n", i-1); lineno++;
+
+  /* Minimum and maximum token values that have a destructor */
+  mn = mx = 0;
+  for(i=0; i<lemp->nsymbol; i++){
+    struct symbol *sp = lemp->symbols[i];
+
+    if( sp && sp->type!=TERMINAL && sp->destructor ){
+      if( mn==0 || sp->index<mn ) mn = sp->index;
+      if( sp->index>mx ) mx = sp->index;
+    }
+  }
+  if( lemp->tokendest ) mn = 0;
+  if( lemp->vardest ) mx = lemp->nsymbol-1;
+  fprintf(out,"#define YY_MIN_DSTRCTR       %d\n", mn);  lineno++;
+  fprintf(out,"#define YY_MAX_DSTRCTR       %d\n", mx);  lineno++;    
+
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Now output the action table and its associates:
@@ -4744,7 +4909,7 @@ void ReportTable(
   /* Generate the table of fallback tokens.
   */
   if( lemp->has_fallback ){
-    int mx = lemp->nterminal - 1;
+    mx = lemp->nterminal - 1;
     /* 2019-08-28:  Generate fallback entries for every token to avoid
     ** having to do a range check on the index */
     /* while( mx>0 && lemp->symbols[mx]->fallback==0 ){ mx--; } */
@@ -4765,7 +4930,6 @@ void ReportTable(
   /* Generate a table containing the symbolic name of every symbol
   */
   for(i=0; i<lemp->nsymbol; i++){
-    lemon_sprintf(line,"\"%s\",",lemp->symbols[i]->name);
     fprintf(out,"  /* %4d */ \"%s\",\n",i, lemp->symbols[i]->name); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
@@ -5180,7 +5344,7 @@ void SetSize(int n)
 /* Allocate a new set */
 char *SetNew(void){
   char *s;
-  s = (char*)calloc( size, 1);
+  s = (char*)lemon_calloc( size, 1);
   if( s==0 ){
     memory_error();
   }
@@ -5190,7 +5354,7 @@ char *SetNew(void){
 /* Deallocate a set */
 void SetFree(char *s)
 {
-  free(s);
+  lemon_free(s);
 }
 
 /* Add a new element to the set.  Return TRUE if the element was added
@@ -5249,7 +5413,7 @@ const char *Strsafe(const char *y)
 
   if( y==0 ) return 0;
   z = Strsafe_find(y);
-  if( z==0 && (cpy=(char *)malloc( lemonStrlen(y)+1 ))!=0 ){
+  if( z==0 && (cpy=(char *)lemon_malloc( lemonStrlen(y)+1 ))!=0 ){
     lemon_strcpy(cpy,y);
     z = cpy;
     Strsafe_insert(z);
@@ -5285,13 +5449,13 @@ static struct s_x1 *x1a;
 /* Allocate a new associative array */
 void Strsafe_init(void){
   if( x1a ) return;
-  x1a = (struct s_x1*)malloc( sizeof(struct s_x1) );
+  x1a = (struct s_x1*)lemon_malloc( sizeof(struct s_x1) );
   if( x1a ){
     x1a->size = 1024;
     x1a->count = 0;
-    x1a->tbl = (x1node*)calloc(1024, sizeof(x1node) + sizeof(x1node*));
+    x1a->tbl = (x1node*)lemon_calloc(1024, sizeof(x1node) + sizeof(x1node*));
     if( x1a->tbl==0 ){
-      free(x1a);
+      lemon_free(x1a);
       x1a = 0;
     }else{
       int i;
@@ -5326,7 +5490,7 @@ int Strsafe_insert(const char *data)
     struct s_x1 array;
     array.size = arrSize = x1a->size*2;
     array.count = x1a->count;
-    array.tbl = (x1node*)calloc(arrSize, sizeof(x1node) + sizeof(x1node*));
+    array.tbl = (x1node*)lemon_calloc(arrSize, sizeof(x1node)+sizeof(x1node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x1node**)&(array.tbl[arrSize]);
     for(i=0; i<arrSize; i++) array.ht[i] = 0;
@@ -5341,7 +5505,7 @@ int Strsafe_insert(const char *data)
       newnp->from = &(array.ht[h]);
       array.ht[h] = newnp;
     }
-    /* free(x1a->tbl); // This program was originally for 16-bit machines.
+    /* lemon_free(x1a->tbl); // This program was originally for 16-bit machines.
     ** Don't worry about freeing memory on modern platforms. */
     *x1a = array;
   }
@@ -5382,7 +5546,7 @@ struct symbol *Symbol_new(const char *x)
 
   sp = Symbol_find(x);
   if( sp==0 ){
-    sp = (struct symbol *)calloc(1, sizeof(struct symbol) );
+    sp = (struct symbol *)lemon_calloc(1, sizeof(struct symbol) );
     MemoryCheck(sp);
     sp->name = Strsafe(x);
     sp->type = ISUPPER(*x) ? TERMINAL : NONTERMINAL;
@@ -5453,13 +5617,13 @@ static struct s_x2 *x2a;
 /* Allocate a new associative array */
 void Symbol_init(void){
   if( x2a ) return;
-  x2a = (struct s_x2*)malloc( sizeof(struct s_x2) );
+  x2a = (struct s_x2*)lemon_malloc( sizeof(struct s_x2) );
   if( x2a ){
     x2a->size = 128;
     x2a->count = 0;
-    x2a->tbl = (x2node*)calloc(128, sizeof(x2node) + sizeof(x2node*));
+    x2a->tbl = (x2node*)lemon_calloc(128, sizeof(x2node) + sizeof(x2node*));
     if( x2a->tbl==0 ){
-      free(x2a);
+      lemon_free(x2a);
       x2a = 0;
     }else{
       int i;
@@ -5494,7 +5658,7 @@ int Symbol_insert(struct symbol *data, const char *key)
     struct s_x2 array;
     array.size = arrSize = x2a->size*2;
     array.count = x2a->count;
-    array.tbl = (x2node*)calloc(arrSize, sizeof(x2node) + sizeof(x2node*));
+    array.tbl = (x2node*)lemon_calloc(arrSize, sizeof(x2node)+sizeof(x2node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x2node**)&(array.tbl[arrSize]);
     for(i=0; i<arrSize; i++) array.ht[i] = 0;
@@ -5510,7 +5674,7 @@ int Symbol_insert(struct symbol *data, const char *key)
       newnp->from = &(array.ht[h]);
       array.ht[h] = newnp;
     }
-    /* free(x2a->tbl); // This program was originally written for 16-bit
+    /* lemon_free(x2a->tbl); // This program was originally written for 16-bit
     ** machines.  Don't worry about freeing this trivial amount of memory
     ** on modern platforms.  Just leak it. */
     *x2a = array;
@@ -5571,7 +5735,7 @@ struct symbol **Symbol_arrayof()
   int i,arrSize;
   if( x2a==0 ) return 0;
   arrSize = x2a->count;
-  array = (struct symbol **)calloc(arrSize, sizeof(struct symbol *));
+  array = (struct symbol **)lemon_calloc(arrSize, sizeof(struct symbol *));
   if( array ){
     for(i=0; i<arrSize; i++) array[i] = x2a->tbl[i].data;
   }
@@ -5619,7 +5783,7 @@ PRIVATE unsigned statehash(struct config *a)
 struct state *State_new()
 {
   struct state *newstate;
-  newstate = (struct state *)calloc(1, sizeof(struct state) );
+  newstate = (struct state *)lemon_calloc(1, sizeof(struct state) );
   MemoryCheck(newstate);
   return newstate;
 }
@@ -5652,13 +5816,13 @@ static struct s_x3 *x3a;
 /* Allocate a new associative array */
 void State_init(void){
   if( x3a ) return;
-  x3a = (struct s_x3*)malloc( sizeof(struct s_x3) );
+  x3a = (struct s_x3*)lemon_malloc( sizeof(struct s_x3) );
   if( x3a ){
     x3a->size = 128;
     x3a->count = 0;
-    x3a->tbl = (x3node*)calloc(128, sizeof(x3node) + sizeof(x3node*));
+    x3a->tbl = (x3node*)lemon_calloc(128, sizeof(x3node) + sizeof(x3node*));
     if( x3a->tbl==0 ){
-      free(x3a);
+      lemon_free(x3a);
       x3a = 0;
     }else{
       int i;
@@ -5693,7 +5857,7 @@ int State_insert(struct state *data, struct config *key)
     struct s_x3 array;
     array.size = arrSize = x3a->size*2;
     array.count = x3a->count;
-    array.tbl = (x3node*)calloc(arrSize, sizeof(x3node) + sizeof(x3node*));
+    array.tbl = (x3node*)lemon_calloc(arrSize, sizeof(x3node)+sizeof(x3node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x3node**)&(array.tbl[arrSize]);
     for(i=0; i<arrSize; i++) array.ht[i] = 0;
@@ -5709,7 +5873,7 @@ int State_insert(struct state *data, struct config *key)
       newnp->from = &(array.ht[h]);
       array.ht[h] = newnp;
     }
-    free(x3a->tbl);
+    lemon_free(x3a->tbl);
     *x3a = array;
   }
   /* Insert the new data */
@@ -5750,7 +5914,7 @@ struct state **State_arrayof(void)
   int i,arrSize;
   if( x3a==0 ) return 0;
   arrSize = x3a->count;
-  array = (struct state **)calloc(arrSize, sizeof(struct state *));
+  array = (struct state **)lemon_calloc(arrSize, sizeof(struct state *));
   if( array ){
     for(i=0; i<arrSize; i++) array[i] = x3a->tbl[i].data;
   }
@@ -5792,13 +5956,13 @@ static struct s_x4 *x4a;
 /* Allocate a new associative array */
 void Configtable_init(void){
   if( x4a ) return;
-  x4a = (struct s_x4*)malloc( sizeof(struct s_x4) );
+  x4a = (struct s_x4*)lemon_malloc( sizeof(struct s_x4) );
   if( x4a ){
     x4a->size = 64;
     x4a->count = 0;
-    x4a->tbl = (x4node*)calloc(64, sizeof(x4node) + sizeof(x4node*));
+    x4a->tbl = (x4node*)lemon_calloc(64, sizeof(x4node) + sizeof(x4node*));
     if( x4a->tbl==0 ){
-      free(x4a);
+      lemon_free(x4a);
       x4a = 0;
     }else{
       int i;
@@ -5833,7 +5997,8 @@ int Configtable_insert(struct config *data)
     struct s_x4 array;
     array.size = arrSize = x4a->size*2;
     array.count = x4a->count;
-    array.tbl = (x4node*)calloc(arrSize, sizeof(x4node) + sizeof(x4node*));
+    array.tbl = (x4node*)lemon_calloc(arrSize,
+                                      sizeof(x4node) + sizeof(x4node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x4node**)&(array.tbl[arrSize]);
     for(i=0; i<arrSize; i++) array.ht[i] = 0;
@@ -5848,9 +6013,6 @@ int Configtable_insert(struct config *data)
       newnp->from = &(array.ht[h]);
       array.ht[h] = newnp;
     }
-    /* free(x4a->tbl); // This code was originall written for 16-bit machines.
-    ** on modern machines, don't worry about freeing this trival amount of
-    ** memory. */
     *x4a = array;
   }
   /* Insert the new data */

@@ -233,16 +233,21 @@ static void print_oneline_frame(int iFrame, Cksum *pCksum){
   extendCksum(pCksum, getContent(iStart+24, pagesize), pagesize, 0);
   s0 = getInt32(aData+16);
   s1 = getInt32(aData+20);
-  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x,%08x 0x%08x,%08x %s\n",
+  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x,%08x 0x%08x,%08x",
           iFrame, 
           getInt32(aData),
           getInt32(aData+4),
           getInt32(aData+8),
           getInt32(aData+12),
           s0,
-          s1,
-          (s0==pCksum->s0 && s1==pCksum->s1) ? "" : "cksum-fail"
+          s1
   );
+  if( s0==pCksum->s0 && s1==pCksum->s1 ){
+    fprintf(stdout, "\n");
+  }else{
+    fprintf(stdout, " should be 0x%08x,%08x\n",
+                    pCksum->s0, pCksum->s1);
+  }
 
   /* Reset the checksum so that a single frame checksum failure will not
   ** cause all subsequent frames to also show a failure. */
@@ -512,6 +517,18 @@ static void decode_btree_page(
   }  
 }
 
+/*
+** Check the range validity for a page number.  Print an error and
+** exit if the page is out of range.
+*/
+static void checkPageValidity(int iPage, int mxPage){
+  if( iPage<1 || iPage>mxPage ){
+    fprintf(stderr, "Invalid page number %d:  valid range is 1..%d\n",
+            iPage, mxPage);
+    exit(1);
+  }
+}
+
 int main(int argc, char **argv){
   struct stat sbuf;
   unsigned char zPgSz[4];
@@ -526,15 +543,26 @@ int main(int argc, char **argv){
   }
   zPgSz[0] = 0;
   zPgSz[1] = 0;
-  lseek(fd, 8, SEEK_SET);
-  read(fd, zPgSz, 4);
+  fstat(fd, &sbuf);
+  if( sbuf.st_size<32 ){
+    printf("%s: file too small to be a WAL - only %d bytes\n",
+           argv[1], (int)sbuf.st_size);
+    return 0;
+  }
+  if( lseek(fd, 8, SEEK_SET)!=8 ){
+    printf("\"%s\" seems to not be a valid WAL file\n", argv[1]);
+    return 1;
+  }
+  if( read(fd, zPgSz, 4)!=4 ){
+    printf("\"%s\": cannot read the page size\n", argv[1]);
+    return 1;
+  }
   pagesize = zPgSz[1]*65536 + zPgSz[2]*256 + zPgSz[3];
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
-  fstat(fd, &sbuf);
-  if( sbuf.st_size<32 ){
-    printf("file too small to be a WAL\n");
-    return 0;
+  if( (pagesize & (pagesize-1))!=0 || pagesize<512 || pagesize>65536 ){
+    printf("\"%s\": invalid page size.\n", argv[1]);
+    return 1;
   }
   mxFrame = (sbuf.st_size - 32)/(pagesize + 24);
   printf("Available pages: 1..%d\n", mxFrame);
@@ -559,10 +587,12 @@ int main(int argc, char **argv){
         continue;
       }
       iStart = strtol(argv[i], &zLeft, 0);
+      checkPageValidity(iStart, mxFrame);
       if( zLeft && strcmp(zLeft,"..end")==0 ){
         iEnd = mxFrame;
       }else if( zLeft && zLeft[0]=='.' && zLeft[1]=='.' ){
         iEnd = strtol(&zLeft[2], 0, 0);
+        checkPageValidity(iEnd, mxFrame);
       }else if( zLeft && zLeft[0]=='b' ){
         i64 ofst;
         int nByte, hdrSize;

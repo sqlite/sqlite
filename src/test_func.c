@@ -13,11 +13,7 @@
 ** implements new SQL functions used by the test scripts.
 */
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -499,7 +495,8 @@ static void test_extract(
     mem.db = db;
     mem.enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    pBody += sqlite3VdbeSerialTypeLen((u32)iSerialType);
 
     if( iCurrent==iIdx ){
       sqlite3_result_value(context, &mem);
@@ -547,7 +544,8 @@ static void test_decode(
     mem.db = db;
     mem.enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    pBody += sqlite3VdbeSerialTypeLen((u32)iSerialType);
 
     switch( sqlite3_value_type(&mem) ){
       case SQLITE_TEXT:
@@ -692,7 +690,8 @@ static int registerTestFunctions(
     { "test_extract",          2, SQLITE_UTF8, test_extract},
     { "test_zeroblob",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC, test_zeroblob},
     { "test_getsubtype",       1, SQLITE_UTF8, test_getsubtype},
-    { "test_setsubtype",       2, SQLITE_UTF8, test_setsubtype},
+    { "test_setsubtype",       2, SQLITE_UTF8|SQLITE_RESULT_SUBTYPE,
+                                               test_setsubtype},
     { "test_frombind",        -1, SQLITE_UTF8, test_frombind},
   };
   int i;
@@ -774,7 +773,7 @@ static int SQLITE_TCLAPI abuse_create_function(
   rc = sqlite3_create_function(db, "tx", -2, SQLITE_UTF8, 0, tStep, 0, 0);
   if( rc!=SQLITE_MISUSE ) goto abuse_err;
 
-  rc = sqlite3_create_function(db, "tx", 128, SQLITE_UTF8, 0, tStep, 0, 0);
+  rc = sqlite3_create_function(db, "tx", 32768, SQLITE_UTF8, 0, tStep, 0, 0);
   if( rc!=SQLITE_MISUSE ) goto abuse_err;
 
   rc = sqlite3_create_function(db, "funcxx"
@@ -790,7 +789,7 @@ static int SQLITE_TCLAPI abuse_create_function(
   ** a no-op function (that always returns NULL) and which has the
   ** maximum-length function name and the maximum number of parameters.
   */
-  sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, 10000);
+  sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, 1000000);
   mxArg = sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, -1);
   rc = sqlite3_create_function(db, "nullx"
        "_123456789_123456789_123456789_123456789_123456789"

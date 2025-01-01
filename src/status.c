@@ -291,6 +291,8 @@ int sqlite3_db_status(
 
       sqlite3BtreeEnterAll(db);
       db->pnBytesFreed = &nByte;
+      assert( db->lookaside.pEnd==db->lookaside.pTrueEnd );
+      db->lookaside.pEnd = db->lookaside.pStart;
       for(i=0; i<db->nDb; i++){
         Schema *pSchema = db->aDb[i].pSchema;
         if( ALWAYS(pSchema!=0) ){
@@ -316,6 +318,7 @@ int sqlite3_db_status(
         }
       }
       db->pnBytesFreed = 0;
+      db->lookaside.pEnd = db->lookaside.pTrueEnd;
       sqlite3BtreeLeaveAll(db);
 
       *pHighwater = 0;
@@ -333,10 +336,12 @@ int sqlite3_db_status(
       int nByte = 0;              /* Used to accumulate return value */
 
       db->pnBytesFreed = &nByte;
-      for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
-        sqlite3VdbeClearObject(db, pVdbe);
-        sqlite3DbFree(db, pVdbe);
+      assert( db->lookaside.pEnd==db->lookaside.pTrueEnd );
+      db->lookaside.pEnd = db->lookaside.pStart;
+      for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pVNext){
+        sqlite3VdbeDelete(pVdbe);
       }
+      db->lookaside.pEnd = db->lookaside.pTrueEnd;
       db->pnBytesFreed = 0;
 
       *pHighwater = 0;  /* IMP: R-64479-57858 */
@@ -357,7 +362,7 @@ int sqlite3_db_status(
     case SQLITE_DBSTATUS_CACHE_MISS:
     case SQLITE_DBSTATUS_CACHE_WRITE:{
       int i;
-      int nRet = 0;
+      u64 nRet = 0;
       assert( SQLITE_DBSTATUS_CACHE_MISS==SQLITE_DBSTATUS_CACHE_HIT+1 );
       assert( SQLITE_DBSTATUS_CACHE_WRITE==SQLITE_DBSTATUS_CACHE_HIT+2 );
 
@@ -370,7 +375,7 @@ int sqlite3_db_status(
       *pHighwater = 0; /* IMP: R-42420-56072 */
                        /* IMP: R-54100-20147 */
                        /* IMP: R-29431-39229 */
-      *pCurrent = nRet;
+      *pCurrent = (int)nRet & 0x7fffffff;
       break;
     }
 

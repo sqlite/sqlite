@@ -32,7 +32,7 @@
 #endif /* !defined(SQLITE_AMALGAMATION) */
 
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -626,7 +626,7 @@ static int expertFilter(
   pCsr->pData = 0;
   if( rc==SQLITE_OK ){
     rc = idxPrintfPrepareStmt(pExpert->db, &pCsr->pData, &pVtab->base.zErrMsg,
-        "SELECT * FROM main.%Q WHERE sample()", pVtab->pTab->zName
+        "SELECT * FROM main.%Q WHERE sqlite_expert_sample()", pVtab->pTab->zName
     );
   }
 
@@ -662,6 +662,7 @@ static int idxRegisterVtab(sqlite3expert *p){
     0,                            /* xRelease */
     0,                            /* xRollbackTo */
     0,                            /* xShadowName */
+    0,                            /* xIntegrity */
   };
 
   return sqlite3_create_module(p->dbv, "expert", &expertModule, (void*)p);
@@ -697,17 +698,25 @@ static int idxGetTableInfo(
 ){
   sqlite3_stmt *p1 = 0;
   int nCol = 0;
-  int nTab = STRLEN(zTab);
-  int nByte = sizeof(IdxTable) + nTab + 1;
+  int nTab;
+  int nByte;
   IdxTable *pNew = 0;
   int rc, rc2;
   char *pCsr = 0;
   int nPk = 0;
 
+  *ppOut = 0;
+  if( zTab==0 ) return SQLITE_ERROR;
+  nTab = STRLEN(zTab);
+  nByte = sizeof(IdxTable) + nTab + 1;
   rc = idxPrintfPrepareStmt(db, &p1, pzErrmsg, "PRAGMA table_xinfo=%Q", zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     const char *zColSeq = 0;
+    if( zCol==0 ){
+      rc = SQLITE_ERROR;
+      break;
+    }
     nByte += 1 + STRLEN(zCol);
     rc = sqlite3_table_column_metadata(
         db, "main", zTab, zCol, 0, &zColSeq, 0, 0, 0
@@ -734,7 +743,9 @@ static int idxGetTableInfo(
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(p1) ){
     const char *zCol = (const char*)sqlite3_column_text(p1, 1);
     const char *zColSeq = 0;
-    int nCopy = STRLEN(zCol) + 1;
+    int nCopy;
+    if( zCol==0 ) continue;
+    nCopy = STRLEN(zCol) + 1;
     pNew->aCol[nCol].zName = pCsr;
     pNew->aCol[nCol].iPk = (sqlite3_column_int(p1, 5)==1 && nPk==1);
     memcpy(pCsr, zCol, nCopy);
@@ -810,6 +821,10 @@ static char *idxAppendText(int *pRc, char *zIn, const char *zFmt, ...){
 */
 static int idxIdentifierRequiresQuotes(const char *zId){
   int i;
+  int nId = STRLEN(zId);
+  
+  if( sqlite3_keyword_check(zId, nId) ) return 1;
+
   for(i=0; zId[i]; i++){
     if( !(zId[i]=='_')
      && !(zId[i]>='0' && zId[i]<='9')
@@ -886,6 +901,7 @@ static int idxFindCompatible(
     IdxConstraint *pT = pTail;
     sqlite3_stmt *pInfo = 0;
     const char *zIdx = (const char*)sqlite3_column_text(pIdxList, 1);
+    if( zIdx==0 ) continue;
 
     /* Zero the IdxConstraint.bFlag values in the pEq list */
     for(pIter=pEq; pIter; pIter=pIter->pLink) pIter->bFlag = 0;
@@ -1168,7 +1184,7 @@ static void idxWriteFree(IdxWrite *pTab){
 ** runs all the queries to see which indexes they prefer, and populates
 ** IdxStatement.zIdx and IdxStatement.zEQP with the results.
 */
-int idxFindIndexes(
+static int idxFindIndexes(
   sqlite3expert *p,
   char **pzErr                         /* OUT: Error message (sqlite3_malloc) */
 ){
@@ -1297,6 +1313,7 @@ static int idxProcessOneTrigger(
   rc = idxPrintfPrepareStmt(p->db, &pSelect, pzErr, zSql, zTab, zTab);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSelect) ){
     const char *zCreate = (const char*)sqlite3_column_text(pSelect, 0);
+    if( zCreate==0 ) continue;
     rc = sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
   }
   idxFinalize(&rc, pSelect);
@@ -1375,6 +1392,66 @@ static int idxProcessTriggers(sqlite3expert *p, char **pzErr){
   return rc;
 }
 
+/*
+** This function tests if the schema of the main database of database handle
+** db contains an object named zTab. Assuming no error occurs, output parameter
+** (*pbContains) is set to true if zTab exists, or false if it does not.
+**
+** Or, if an error occurs, an SQLite error code is returned. The final value
+** of (*pbContains) is undefined in this case.
+*/
+static int expertDbContainsObject(
+  sqlite3 *db, 
+  const char *zTab, 
+  int *pbContains                 /* OUT: True if object exists */
+){
+  const char *zSql = "SELECT 1 FROM sqlite_schema WHERE name = ?";
+  sqlite3_stmt *pSql = 0;
+  int rc = SQLITE_OK;
+  int ret = 0;
+
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pSql, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pSql, 1, zTab, -1, SQLITE_STATIC);
+    if( SQLITE_ROW==sqlite3_step(pSql) ){
+      ret = 1;
+    }
+    rc = sqlite3_finalize(pSql);
+  }
+
+  *pbContains = ret;
+  return rc;
+}
+
+/*
+** Execute SQL command zSql using database handle db. If no error occurs,
+** set (*pzErr) to NULL and return SQLITE_OK. 
+**
+** If an error does occur, return an SQLite error code and set (*pzErr) to
+** point to a buffer containing an English language error message. Except,
+** if the error message begins with "no such module:", then ignore the
+** error and return as if the SQL statement had succeeded.
+**
+** This is used to copy as much of the database schema as possible while 
+** ignoring any errors related to missing virtual table modules.
+*/
+static int expertSchemaSql(sqlite3 *db, const char *zSql, char **pzErr){
+  int rc = SQLITE_OK;
+  char *zErr = 0;
+
+  rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+  if( rc!=SQLITE_OK && zErr ){
+    int nErr = STRLEN(zErr);
+    if( nErr>=15 && memcmp(zErr, "no such module:", 15)==0 ){
+      sqlite3_free(zErr);
+      rc = SQLITE_OK;
+      zErr = 0;
+    }
+  }
+
+  *pzErr = zErr;
+  return rc;
+}
 
 static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   int rc = idxRegisterVtab(p);
@@ -1386,25 +1463,35 @@ static int idxCreateVtabSchema(sqlite3expert *p, char **pzErrmsg){
   **   2) Create the equivalent virtual table in dbv.
   */
   rc = idxPrepareStmt(p->db, &pSchema, pzErrmsg,
-      "SELECT type, name, sql, 1 FROM sqlite_schema "
-      "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%%' "
+      "SELECT type, name, sql, 1, "
+      "       substr(sql,1,14)=='create virtual' COLLATE nocase "
+      "FROM sqlite_schema "
+      "WHERE type IN ('table','view') AND "
+      "      substr(name,1,7)!='sqlite_' COLLATE nocase "
       " UNION ALL "
-      "SELECT type, name, sql, 2 FROM sqlite_schema "
+      "SELECT type, name, sql, 2, 0 FROM sqlite_schema "
       "WHERE type = 'trigger'"
       "  AND tbl_name IN(SELECT name FROM sqlite_schema WHERE type = 'view') "
-      "ORDER BY 4, 1"
+      "ORDER BY 4, 5 DESC, 1"
   );
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSchema) ){
     const char *zType = (const char*)sqlite3_column_text(pSchema, 0);
     const char *zName = (const char*)sqlite3_column_text(pSchema, 1);
     const char *zSql = (const char*)sqlite3_column_text(pSchema, 2);
+    int bVirtual = sqlite3_column_int(pSchema, 4);
+    int bExists = 0;
 
-    if( zType[0]=='v' || zType[1]=='r' ){
-      rc = sqlite3_exec(p->dbv, zSql, 0, 0, pzErrmsg);
+    if( zType==0 || zName==0 ) continue;
+    rc = expertDbContainsObject(p->dbv, zName, &bExists);
+    if( rc || bExists ) continue;
+
+    if( zType[0]=='v' || zType[1]=='r' || bVirtual ){
+      /* A view. Or a trigger on a view. */
+      if( zSql ) rc = expertSchemaSql(p->dbv, zSql, pzErrmsg);
     }else{
       IdxTable *pTab;
       rc = idxGetTableInfo(p->db, zName, &pTab, pzErrmsg);
-      if( rc==SQLITE_OK ){
+      if( rc==SQLITE_OK && ALWAYS(pTab!=0) ){
         int i;
         char *zInner = 0;
         char *zOuter = 0;
@@ -1482,7 +1569,7 @@ struct IdxRemCtx {
 };
 
 /*
-** Implementation of scalar function rem().
+** Implementation of scalar function sqlite_expert_rem().
 */
 static void idxRemFunc(
   sqlite3_context *pCtx,
@@ -1495,7 +1582,7 @@ static void idxRemFunc(
   assert( argc==2 );
 
   iSlot = sqlite3_value_int(argv[0]);
-  assert( iSlot<=p->nSlot );
+  assert( iSlot<p->nSlot );
   pSlot = &p->aSlot[iSlot];
 
   switch( pSlot->eType ){
@@ -1537,6 +1624,7 @@ static void idxRemFunc(
     case SQLITE_BLOB:
     case SQLITE_TEXT: {
       int nByte = sqlite3_value_bytes(argv[1]);
+      const void *pData = 0;
       if( nByte>pSlot->nByte ){
         char *zNew = (char*)sqlite3_realloc(pSlot->z, nByte*2);
         if( zNew==0 ){
@@ -1548,9 +1636,11 @@ static void idxRemFunc(
       }
       pSlot->n = nByte;
       if( pSlot->eType==SQLITE_BLOB ){
-        memcpy(pSlot->z, sqlite3_value_blob(argv[1]), nByte);
+        pData = sqlite3_value_blob(argv[1]);
+        if( pData ) memcpy(pSlot->z, pData, nByte);
       }else{
-        memcpy(pSlot->z, sqlite3_value_text(argv[1]), nByte);
+        pData = sqlite3_value_text(argv[1]);
+        memcpy(pSlot->z, pData, nByte);
       }
       break;
     }
@@ -1602,8 +1692,15 @@ static int idxPopulateOneStat1(
     const char *zComma = zCols==0 ? "" : ", ";
     const char *zName = (const char*)sqlite3_column_text(pIndexXInfo, 0);
     const char *zColl = (const char*)sqlite3_column_text(pIndexXInfo, 1);
+    if( zName==0 ){
+      /* This index contains an expression. Ignore it. */
+      sqlite3_free(zCols);
+      sqlite3_free(zOrder);
+      return sqlite3_reset(pIndexXInfo);
+    }
     zCols = idxAppendText(&rc, zCols, 
-        "%sx.%Q IS rem(%d, x.%Q) COLLATE %s", zComma, zName, nCol, zName, zColl
+        "%sx.%Q IS sqlite_expert_rem(%d, x.%Q) COLLATE %s", 
+        zComma, zName, nCol, zName, zColl
     );
     zOrder = idxAppendText(&rc, zOrder, "%s%d", zComma, ++nCol);
   }
@@ -1736,13 +1833,13 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 
   if( rc==SQLITE_OK ){
     sqlite3 *dbrem = (p->iSample==100 ? p->db : p->dbv);
-    rc = sqlite3_create_function(
-        dbrem, "rem", 2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
+    rc = sqlite3_create_function(dbrem, "sqlite_expert_rem", 
+        2, SQLITE_UTF8, (void*)pCtx, idxRemFunc, 0, 0
     );
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(
-        p->db, "sample", 0, SQLITE_UTF8, (void*)&samplectx, idxSampleFunc, 0, 0
+    rc = sqlite3_create_function(p->db, "sqlite_expert_sample", 
+        0, SQLITE_UTF8, (void*)&samplectx, idxSampleFunc, 0, 0
     );
   }
 
@@ -1761,6 +1858,7 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
     i64 iRowid = sqlite3_column_int64(pAllIndex, 0);
     const char *zTab = (const char*)sqlite3_column_text(pAllIndex, 1);
     const char *zIdx = (const char*)sqlite3_column_text(pAllIndex, 2);
+    if( zTab==0 || zIdx==0 ) continue;
     if( p->iSample<100 && iPrev!=iRowid ){
       samplectx.target = (double)p->iSample / 100.0;
       samplectx.iTarget = p->iSample;
@@ -1793,9 +1891,94 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
     rc = sqlite3_exec(p->dbm, "ANALYZE sqlite_schema", 0, 0, 0);
   }
 
+  sqlite3_create_function(p->db, "sqlite_expert_rem", 2, SQLITE_UTF8, 0,0,0,0);
+  sqlite3_create_function(p->db, "sqlite_expert_sample", 0,SQLITE_UTF8,0,0,0,0);
+
   sqlite3_exec(p->db, "DROP TABLE IF EXISTS temp."UNIQUE_TABLE_NAME,0,0,0);
   return rc;
 }
+
+/*
+** Define and possibly pretend to use a useless collation sequence.
+** This pretense allows expert to accept SQL using custom collations.
+*/
+int dummyCompare(void *up1, int up2, const void *up3, int up4, const void *up5){
+  (void)up1;
+  (void)up2;
+  (void)up3;
+  (void)up4;
+  (void)up5;
+  assert(0); /* VDBE should never be run. */
+  return 0;
+}
+/* And a callback to register above upon actual need */
+void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
+  (void)up1;
+  sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
+}
+
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
+  && !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
+/*
+** dummy functions for no-op implementation of UDFs during expert's work
+*/
+void dummyUDF(sqlite3_context *up1, int up2, sqlite3_value **up3){
+  (void)up1;
+  (void)up2;
+  (void)up3;
+  assert(0); /* VDBE should never be run. */
+}
+void dummyUDFvalue(sqlite3_context *up1){
+  (void)up1;
+  assert(0); /* VDBE should never be run. */
+}
+
+/*
+** Register UDFs from user database with another.
+*/
+int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
+  sqlite3_stmt *pStmt;
+  int rc = sqlite3_prepare_v2(dbSrc,
+            "SELECT name,type,enc,narg,flags "
+            "FROM pragma_function_list() "
+            "WHERE builtin==0", -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
+      int nargs = sqlite3_column_int(pStmt,3);
+      int flags = sqlite3_column_int(pStmt,4);
+      const char *name = (char*)sqlite3_column_text(pStmt,0);
+      const char *type = (char*)sqlite3_column_text(pStmt,1);
+      const char *enc = (char*)sqlite3_column_text(pStmt,2);
+      if( name==0 || type==0 || enc==0 ){
+        /* no-op.  Only happens on OOM */
+      }else{
+        int ienc = SQLITE_UTF8;
+        int rcf = SQLITE_ERROR;
+        if( strcmp(enc,"utf16le")==0 ) ienc = SQLITE_UTF16LE;
+        else if( strcmp(enc,"utf16be")==0 ) ienc = SQLITE_UTF16BE;
+        ienc |= (flags & (SQLITE_DETERMINISTIC|SQLITE_DIRECTONLY));
+        if( strcmp(type,"w")==0 ){
+          rcf = sqlite3_create_window_function(dbDst,name,nargs,ienc,0,
+                                               dummyUDF,dummyUDFvalue,0,0,0);
+        }else if( strcmp(type,"a")==0 ){
+          rcf = sqlite3_create_function(dbDst,name,nargs,ienc,0,
+                                        0,dummyUDF,dummyUDFvalue);
+        }else if( strcmp(type,"s")==0 ){
+          rcf = sqlite3_create_function(dbDst,name,nargs,ienc,0,
+                                        dummyUDF,0,0);
+        }
+        if( rcf!=SQLITE_OK ){
+          rc = rcf;
+          break;
+        }
+      }
+    }
+    sqlite3_finalize(pStmt);
+    if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  }
+  return rc;
+}
+#endif
 
 /*
 ** Allocate a new sqlite3expert object.
@@ -1823,18 +2006,38 @@ sqlite3expert *sqlite3_expert_new(sqlite3 *db, char **pzErrmsg){
       sqlite3_db_config(pNew->dbm, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
     }
   }
-  
+
+  /* Allow custom collations to be dealt with through prepare. */
+  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbm,0,useDummyCS);
+  if( rc==SQLITE_OK ) rc = sqlite3_collation_needed(pNew->dbv,0,useDummyCS);
+
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) \
+  && !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS)
+  /* Register UDFs from database [db] with [dbm] and [dbv]. */
+  if( rc==SQLITE_OK ){
+    rc = registerUDFs(pNew->db, pNew->dbm);
+  }
+  if( rc==SQLITE_OK ){
+    rc = registerUDFs(pNew->db, pNew->dbv);
+  }
+#endif
 
   /* Copy the entire schema of database [db] into [dbm]. */
   if( rc==SQLITE_OK ){
-    sqlite3_stmt *pSql;
+    sqlite3_stmt *pSql = 0;
     rc = idxPrintfPrepareStmt(pNew->db, &pSql, pzErrmsg, 
-        "SELECT sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%%'"
-        " AND sql NOT LIKE 'CREATE VIRTUAL %%'"
+        "SELECT sql, name, substr(sql,1,14)=='create virtual' COLLATE nocase"
+        " FROM sqlite_schema WHERE substr(name,1,7)!='sqlite_' COLLATE nocase"
+        " ORDER BY 3 DESC, rowid"
     );
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-      rc = sqlite3_exec(pNew->dbm, zSql, 0, 0, pzErrmsg);
+      const char *zName = (const char*)sqlite3_column_text(pSql, 1);
+      int bExists = 0;
+      rc = expertDbContainsObject(pNew->dbm, zName, &bExists);
+      if( rc==SQLITE_OK && zSql && bExists==0 ){
+        rc = expertSchemaSql(pNew->dbm, zSql, pzErrmsg);
+      }
     }
     idxFinalize(&rc, pSql);
   }
@@ -1899,6 +2102,10 @@ int sqlite3_expert_sql(
 
   while( rc==SQLITE_OK && zStmt && zStmt[0] ){
     sqlite3_stmt *pStmt = 0;
+    /* Ensure that the provided statement compiles against user's DB. */
+    rc = idxPrepareStmt(p->db, &pStmt, pzErr, zStmt);
+    if( rc!=SQLITE_OK ) break;
+    sqlite3_finalize(pStmt);
     rc = sqlite3_prepare_v2(p->dbv, zStmt, -1, &pStmt, &zStmt);
     if( rc==SQLITE_OK ){
       if( pStmt ){

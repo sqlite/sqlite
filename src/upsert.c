@@ -90,7 +90,8 @@ Upsert *sqlite3UpsertNew(
 int sqlite3UpsertAnalyzeTarget(
   Parse *pParse,     /* The parsing context */
   SrcList *pTabList, /* Table into which we are inserting */
-  Upsert *pUpsert    /* The ON CONFLICT clauses */
+  Upsert *pUpsert,   /* The ON CONFLICT clauses */
+  Upsert *pAll       /* Complete list of all ON CONFLICT clauses */
 ){
   Table *pTab;            /* That table into which we are inserting */
   int rc;                 /* Result code */
@@ -103,7 +104,7 @@ int sqlite3UpsertAnalyzeTarget(
   int nClause = 0;        /* Counter of ON CONFLICT clauses */
 
   assert( pTabList->nSrc==1 );
-  assert( pTabList->a[0].pTab!=0 );
+  assert( pTabList->a[0].pSTab!=0 );
   assert( pUpsert!=0 );
   assert( pUpsert->pUpsertTarget!=0 );
 
@@ -122,7 +123,7 @@ int sqlite3UpsertAnalyzeTarget(
     if( rc ) return rc;
   
     /* Check to see if the conflict target matches the rowid. */  
-    pTab = pTabList->a[0].pTab;
+    pTab = pTabList->a[0].pSTab;
     pTarget = pUpsert->pUpsertTarget;
     iCursor = pTabList->a[0].iCursor;
     if( HasRowid(pTab) 
@@ -166,6 +167,7 @@ int sqlite3UpsertAnalyzeTarget(
         if( pIdx->aiColumn[ii]==XN_EXPR ){
           assert( pIdx->aColExpr!=0 );
           assert( pIdx->aColExpr->nExpr>ii );
+          assert( pIdx->bHasExpr );
           pExpr = pIdx->aColExpr->a[ii].pExpr;
           if( pExpr->op!=TK_COLLATE ){
             sCol[0].pLeft = pExpr;
@@ -177,7 +179,7 @@ int sqlite3UpsertAnalyzeTarget(
           pExpr = &sCol[0];
         }
         for(jj=0; jj<nn; jj++){
-          if( sqlite3ExprCompare(pParse,pTarget->a[jj].pExpr,pExpr,iCursor)<2 ){
+          if( sqlite3ExprCompare(0,pTarget->a[jj].pExpr,pExpr,iCursor)<2 ){
             break;  /* Column ii of the index matches column jj of target */
           }
         }
@@ -192,6 +194,14 @@ int sqlite3UpsertAnalyzeTarget(
         continue;
       }
       pUpsert->pUpsertIdx = pIdx;
+      if( sqlite3UpsertOfIndex(pAll,pIdx)!=pUpsert ){
+        /* Really this should be an error.  The isDup ON CONFLICT clause will
+        ** never fire.  But this problem was not discovered until three years
+        ** after multi-CONFLICT upsert was added, and so we silently ignore
+        ** the problem to prevent breaking applications that might actually
+        ** have redundant ON CONFLICT clauses. */
+        pUpsert->isDup = 1;
+      }
       break;
     }
     if( pUpsert->pUpsertIdx==0 ){
@@ -218,9 +228,13 @@ int sqlite3UpsertNextIsIPK(Upsert *pUpsert){
   Upsert *pNext;
   if( NEVER(pUpsert==0) ) return 0;
   pNext = pUpsert->pNextUpsert;
-  if( pNext==0 ) return 1;
-  if( pNext->pUpsertTarget==0 ) return 1;
-  if( pNext->pUpsertIdx==0 ) return 1;
+  while( 1 /*exit-by-return*/ ){
+    if( pNext==0 ) return 1;
+    if( pNext->pUpsertTarget==0 ) return 1;
+    if( pNext->pUpsertIdx==0 ) return 1;
+    if( !pNext->isDup ) return 0;
+    pNext = pNext->pNextUpsert;
+  }
   return 0;
 }
 

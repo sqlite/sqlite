@@ -38,7 +38,7 @@ struct sqlite3_mutex {
   CRITICAL_SECTION mutex;    /* Mutex controlling the lock */
   int id;                    /* Mutex type */
 #ifdef SQLITE_DEBUG
-  volatile int nRef;         /* Number of enterances */
+  volatile int nRef;         /* Number of entrances */
   volatile DWORD owner;      /* Thread holding this mutex */
   volatile LONG trace;       /* True to trace changes */
 #endif
@@ -87,7 +87,7 @@ void sqlite3MemoryBarrier(void){
   SQLITE_MEMORY_BARRIER;
 #elif defined(__GNUC__)
   __sync_synchronize();
-#elif MSVC_VERSION>=1300
+#elif MSVC_VERSION>=1400
   _ReadWriteBarrier();
 #elif defined(MemoryBarrier)
   MemoryBarrier();

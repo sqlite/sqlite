@@ -51,6 +51,10 @@ proc fts5_test_poslist2 {cmd} {
   sort_poslist $res
 }
 
+proc fts5_test_insttoken {cmd iInst iToken} {
+  $cmd xInstToken $iInst $iToken
+}
+
 proc fts5_test_collist {cmd} {
   set res [list]
 
@@ -58,6 +62,12 @@ proc fts5_test_collist {cmd} {
     $cmd xPhraseColumnForeach $i c { lappend res $i.$c }
   }
 
+  set res
+}
+
+proc fts5_collist {cmd iPhrase} {
+  set res [list]
+  $cmd xPhraseColumnForeach $iPhrase c { lappend res $c }
   set res
 }
 
@@ -69,10 +79,25 @@ proc fts5_test_columnsize {cmd} {
   set res
 }
 
+proc fts5_columntext {cmd iCol} {
+  $cmd xColumnText $iCol
+}
+proc fts5_columnlocale {cmd iCol} {
+  $cmd xColumnLocale $iCol
+}
+
 proc fts5_test_columntext {cmd} {
   set res [list]
   for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
     lappend res [$cmd xColumnText $i]
+  }
+  set res
+}
+
+proc fts5_test_columnlocale {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xColumnCount]} {incr i} {
+    lappend res [$cmd xColumnLocale $i]
   }
   set res
 }
@@ -104,6 +129,10 @@ proc fts5_test_rowcount {cmd} {
   $cmd xRowCount
 }
 
+proc fts5_test_rowid {cmd} {
+  $cmd xRowid
+}
+
 proc test_queryphrase_cb {cnt cmd} {
   upvar $cnt L 
   for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
@@ -125,6 +154,13 @@ proc fts5_test_queryphrase {cmd} {
   set res
 }
 
+proc fts5_queryphrase {cmd iPhrase} {
+  set cnt [list]
+  for {set j 0} {$j < [$cmd xColumnCount]} {incr j} { lappend cnt 0 }
+  $cmd xQueryPhrase $iPhrase [list test_queryphrase_cb cnt]
+  set cnt
+}
+
 proc fts5_test_phrasecount {cmd} {
   $cmd xPhraseCount
 }
@@ -144,16 +180,23 @@ proc fts5_aux_test_functions {db} {
   foreach f {
     fts5_test_columnsize
     fts5_test_columntext
+    fts5_test_columnlocale
     fts5_test_columntotalsize
     fts5_test_poslist
     fts5_test_poslist2
     fts5_test_collist
+    fts5_test_insttoken
     fts5_test_tokenize
     fts5_test_rowcount
+    fts5_test_rowid
     fts5_test_all
 
     fts5_test_queryphrase
     fts5_test_phrasecount
+    fts5_columntext
+    fts5_columnlocale
+    fts5_queryphrase
+    fts5_collist
   } {
     sqlite3_fts5_create_function $db $f $f
   }
@@ -438,6 +481,20 @@ proc detail_is_none {} { detail_check ; expr {$::detail == "none"} }
 proc detail_is_col {}  { detail_check ; expr {$::detail == "col" } }
 proc detail_is_full {} { detail_check ; expr {$::detail == "full"} }
 
+proc foreach_tokenizer_mode {prefix script} {
+  set saved $::testprefix
+  foreach {d mapping} {
+    ""              {}
+    "-origintext"   {, tokenize="origintext unicode61", tokendata=1}
+  } {
+    set s [string map [list %TOKENIZER% $mapping] $script]
+    set ::testprefix "$prefix$d"
+    reset_db
+    sqlite3_fts5_register_origintext db
+    uplevel $s
+  }
+  set ::testprefix $saved
+}
 
 #-------------------------------------------------------------------------
 # Convert a poslist of the type returned by fts5_test_poslist() to a 
@@ -594,6 +651,10 @@ proc nearset_rc {aCol args} {
   list
 }
 
+proc dump {tname} {
+  execsql_pp "SELECT * FROM ${tname}_idx"
+  execsql_pp "SELECT id, quote(block), fts5_decode(id,block) FROM ${tname}_data"
+}
 
 #-------------------------------------------------------------------------
 # Code for a simple Tcl tokenizer that supports synonyms at query time.

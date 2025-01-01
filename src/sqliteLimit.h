@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** 
+**
 ** This file defines various limits of what SQLite can process.
 */
 
@@ -23,6 +23,7 @@
 #ifndef SQLITE_MAX_LENGTH
 # define SQLITE_MAX_LENGTH 1000000000
 #endif
+#define SQLITE_MIN_LENGTH 30   /* Minimum value for the length limit */
 
 /*
 ** This is the maximum number of
@@ -57,9 +58,9 @@
 #endif
 
 /*
-** The maximum depth of an expression tree. This is limited to 
-** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might 
-** want to place more severe limits on the complexity of an 
+** The maximum depth of an expression tree. This is limited to
+** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might
+** want to place more severe limits on the complexity of an
 ** expression. A value of 0 means that there is no limit.
 */
 #ifndef SQLITE_MAX_EXPR_DEPTH
@@ -72,7 +73,7 @@
 ** level of recursion for each term.  A stack overflow can result
 ** if the number of terms is too large.  In practice, most SQL
 ** never has more than 3 or 4 terms.  Use a value of 0 to disable
-** any limit on the number of terms in a compount SELECT.
+** any limit on the number of terms in a compound SELECT.
 */
 #ifndef SQLITE_MAX_COMPOUND_SELECT
 # define SQLITE_MAX_COMPOUND_SELECT 500
@@ -88,9 +89,13 @@
 
 /*
 ** The maximum number of arguments to an SQL function.
+**
+** This value has a hard upper limit of 32767 due to storage
+** constraints (it needs to fit inside a i16).  We keep it
+** lower than that to prevent abuse.
 */
 #ifndef SQLITE_MAX_FUNCTION_ARG
-# define SQLITE_MAX_FUNCTION_ARG 127
+# define SQLITE_MAX_FUNCTION_ARG 1000
 #endif
 
 /*
@@ -140,10 +145,10 @@
 **
 ** Earlier versions of SQLite allowed the user to change this value at
 ** compile time. This is no longer permitted, on the grounds that it creates
-** a library that is technically incompatible with an SQLite library 
-** compiled with a different limit. If a process operating on a database 
-** with a page-size of 65536 bytes crashes, then an instance of SQLite 
-** compiled with the default page-size limit will not be able to rollback 
+** a library that is technically incompatible with an SQLite library
+** compiled with a different limit. If a process operating on a database
+** with a page-size of 65536 bytes crashes, then an instance of SQLite
+** compiled with the default page-size limit will not be able to rollback
 ** the aborted transaction. This could lead to database corruption.
 */
 #ifdef SQLITE_MAX_PAGE_SIZE
@@ -187,7 +192,7 @@
 ** max_page_count macro.
 */
 #ifndef SQLITE_MAX_PAGE_COUNT
-# define SQLITE_MAX_PAGE_COUNT 1073741823
+# define SQLITE_MAX_PAGE_COUNT 0xfffffffe /* 4294967294 */
 #endif
 
 /*
@@ -202,7 +207,7 @@
 ** Maximum depth of recursion for triggers.
 **
 ** A value of 1 means that a trigger program will not be able to itself
-** fire any triggers. A value of 0 means that no trigger programs at all 
+** fire any triggers. A value of 0 means that no trigger programs at all
 ** may be executed.
 */
 #ifndef SQLITE_MAX_TRIGGER_DEPTH

@@ -42,6 +42,10 @@ do_test func-0.1 {
 do_test func-1.0 {
   execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
 } {4 2 7 8 4}
+set isutf16 [regexp 16 [db one {PRAGMA encoding}]]
+do_execsql_test func-1.0b {
+  SELECT octet_length(t1) FROM tbl1 ORDER BY t1;
+} [expr {$isutf16?"8 4 14 16 8":"4 2 7 8 4"}]
 do_test func-1.1 {
   set r [catch {execsql {SELECT length(*) FROM tbl1 ORDER BY t1}} msg]
   lappend r $msg
@@ -57,9 +61,29 @@ do_test func-1.3 {
 do_test func-1.4 {
   execsql {SELECT coalesce(length(a),-1) FROM t2}
 } {1 -1 3 -1 5}
+do_execsql_test func-1.5 {
+  SELECT octet_length(12345);
+} [expr {(1+($isutf16!=0))*5}]
+db null NULL
+do_execsql_test func-1.6 {
+  SELECT octet_length(NULL);
+} {NULL}
+do_execsql_test func-1.7 {
+  SELECT octet_length(7.5);
+} [expr {(1+($isutf16!=0))*3}]
+do_execsql_test func-1.8 {
+  SELECT octet_length(x'30313233');
+} {4}
+do_execsql_test func-1.9 {
+  WITH c(x) AS (VALUES(char(350,351,352,353,354)))
+  SELECT length(x), octet_length(x) FROM c;
+} {5 10}
+
+
 
 # Check out the substr() function
 #
+db null {}
 do_test func-2.0 {
   execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
 } {fr is pr so th}
@@ -93,6 +117,15 @@ do_test func-2.9 {
 do_test func-2.10 {
   execsql {SELECT substr(a,2,2) FROM t2}
 } {{} {} 45 {} 78}
+do_test func-2.11 {
+  execsql {SELECT substr('abcdefg',0x100000001,2)}
+} {{}}
+do_test func-2.12 {
+  execsql {SELECT substr('abcdefg',1,0x100000002)}
+} {abcdefg}
+do_test func-2.13 {
+  execsql {SELECT quote(substr(x'313233343536373839',0x7ffffffffffffffe,5))}
+} {X''}
 
 # Only do the following tests if TCL has UTF-8 capabilities
 #
@@ -237,9 +270,6 @@ ifcapable floatingpoint {
     catchsql {SELECT round(b,2.0) FROM t1 ORDER BY b}
   } {0 {-2.0 1.23 2.0}}
   # Verify some values reported on the mailing list.
-  # Some of these fail on MSVC builds with 64-bit
-  # long doubles, but not on GCC builds with 80-bit
-  # long doubles.
   for {set i 1} {$i<999} {incr i} {
     set x1 [expr 40222.5 + $i]
     set x2 [expr 40223.0 + $i]
@@ -318,6 +348,9 @@ ifcapable floatingpoint {
   do_test func-4.39 {
     string tolower [db eval {SELECT round(1e500), round(-1e500);}]
   } {inf -inf}
+  do_execsql_test func-4.40 {
+    SELECT round(123.456 , 4294967297);
+  } {123.456}
 }
 
 # Test the upper() and lower() functions
@@ -762,6 +795,11 @@ do_test func-16.1 {
   }
 } {X'616263' NULL}
 
+# Test the quote function for +Inf and -Inf
+do_execsql_test func-16.2 {
+  SELECT quote(4.2e+859), quote(-7.8e+904);
+} {9.0e+999 -9.0e+999}
+
 # Correctly handle function error messages that include %.  Ticket #1354
 #
 do_test func-17.1 {
@@ -839,30 +877,13 @@ do_test func-18.11 {
   }
 } integer
 ifcapable floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2.0+1) from t6;
-    }
+  do_catchsql_test func-18.12 {
+    INSERT INTO t6 VALUES(1<<62);
+    SELECT sum(x) - ((1<<62)*2.0+1) from t6;
   } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2.0+1) FROM t6
-    }
-  } 0.0
-}
-ifcapable !floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2+1) from t6;
-    }
-  } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2+1) FROM t6
-    }
-  } 0.0
+  do_catchsql_test func-18.13 {
+    SELECT total(x) - ((1<<62)*2.0+1) FROM t6
+  } {0 0.0}
 }
 if {[working_64bit_int]} {
   do_test func-18.14 {
@@ -1007,34 +1028,37 @@ do_test func-21.2 {
 } {1 {wrong number of arguments to function replace()}}
 do_test func-21.3 {
   execsql {
-    SELECT typeof(replace("This is the main test string", NULL, "ALT"));
+    SELECT typeof(replace('This is the main test string', NULL, 'ALT'));
   }
 } {null}
 do_test func-21.4 {
   execsql {
-    SELECT typeof(replace(NULL, "main", "ALT"));
+    SELECT typeof(replace(NULL, 'main', 'ALT'));
   }
 } {null}
 do_test func-21.5 {
   execsql {
-    SELECT typeof(replace("This is the main test string", "main", NULL));
+    SELECT typeof(replace('This is the main test string', 'main', NULL));
   }
 } {null}
 do_test func-21.6 {
   execsql {
-    SELECT replace("This is the main test string", "main", "ALT");
+    SELECT replace('This is the main test string', 'main', 'ALT');
   }
 } {{This is the ALT test string}}
 do_test func-21.7 {
   execsql {
-    SELECT replace("This is the main test string", "main", "larger-main");
+    SELECT replace('This is the main test string', 'main', 'larger-main');
   }
 } {{This is the larger-main test string}}
 do_test func-21.8 {
   execsql {
-    SELECT replace("aaaaaaa", "a", "0123456789");
+    SELECT replace('aaaaaaa', 'a', '0123456789');
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
+do_execsql_test func-21.9 {
+  SELECT typeof(replace(1,'',0));
+} {text}
 
 ifcapable tclvar {
   do_test func-21.9 {
@@ -1129,18 +1153,18 @@ ifcapable deprecated {
   } {3}
 }
 
-# The group_concat() function.
+# The group_concat() and string_agg() functions.
 #
 do_test func-24.1 {
   execsql {
-    SELECT group_concat(t1) FROM tbl1
+    SELECT group_concat(t1), string_agg(t1,',') FROM tbl1
   }
-} {this,program,is,free,software}
+} {this,program,is,free,software this,program,is,free,software}
 do_test func-24.2 {
   execsql {
-    SELECT group_concat(t1,' ') FROM tbl1
+    SELECT group_concat(t1,' '), string_agg(t1,' ') FROM tbl1
   }
-} {{this program is free software}}
+} {{this program is free software} {this program is free software}}
 do_test func-24.3 {
   execsql {
     SELECT group_concat(t1,' ' || rowid || ' ') FROM tbl1
@@ -1153,9 +1177,9 @@ do_test func-24.4 {
 } {{}}
 do_test func-24.5 {
   execsql {
-    SELECT group_concat(t1,NULL) FROM tbl1
+    SELECT group_concat(t1,NULL), string_agg(t1,NULL) FROM tbl1
   }
-} {thisprogramisfreesoftware}
+} {thisprogramisfreesoftware thisprogramisfreesoftware}
 do_test func-24.6 {
   execsql {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
@@ -1171,7 +1195,9 @@ set midargs {}
 unset -nocomplain midres
 set midres {}
 unset -nocomplain result
-for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]} {incr i} {
+set limit [sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]
+if {$limit>400} {set limit 400}
+for {set i 1} {$i<$limit} {incr i} {
   append midargs ,'/$i'
   append midres /$i
   set result [md5 \
@@ -1249,7 +1275,8 @@ do_test func-26.1 {
 #
 do_test func-26.2 {
   set a {}
-  for {set i 1} {$i<=$::SQLITE_MAX_FUNCTION_ARG} {incr i} {
+  set limit $::SQLITE_MAX_FUNCTION_ARG
+  for {set i 1} {$i<=$limit} {incr i} {
     lappend a $i
   }
   db eval "
@@ -1267,7 +1294,8 @@ do_test func-26.3 {
 } {1 {too many arguments on function nullx_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789}}
 do_test func-26.4 {
   set a {}
-  for {set i 1} {$i<=$::SQLITE_MAX_FUNCTION_ARG-1} {incr i} {
+  set limit [expr {$::SQLITE_MAX_FUNCTION_ARG-1}]
+  for {set i 1} {$i<=$limit} {incr i} {
     lappend a $i
   }
   catchsql "
@@ -1315,7 +1343,7 @@ do_test func-29.1 {
     CREATE TABLE t29(id INTEGER PRIMARY KEY, x, y);
     INSERT INTO t29 VALUES(1, 2, 3), (2, NULL, 4), (3, 4.5, 5);
     INSERT INTO t29 VALUES(4, randomblob(1000000), 6);
-    INSERT INTO t29 VALUES(5, "hello", 7);
+    INSERT INTO t29 VALUES(5, 'hello', 7);
   }
   db close
   sqlite3 db test.db
@@ -1506,5 +1534,65 @@ do_execsql_test func-35.200 {
   CREATE TABLE t0(c0 CHECK(ABS(-9223372036854775808)));
   PRAGMA integrity_check;
 } {ok}
+
+# 2021-01-07:  The -> and ->> operators.
+#
+proc ptr1 {a b} { return "$a->$b" }
+db func -> ptr1
+proc ptr2 {a b} { return "$a->>$b" }
+db func ->> ptr2
+do_execsql_test func-36.100 {
+  SELECT 123 -> 456
+} {123->456}
+do_execsql_test func-36.110 {
+  SELECT 123 ->> 456
+} {123->>456}
+
+# 2023-06-26
+# Enhanced precision of SUM().
+#
+reset_db
+do_catchsql_test func-37.100 {
+  WITH c(x) AS (VALUES(9223372036854775807),(9223372036854775807),
+                      (123),(-9223372036854775807),(-9223372036854775807))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+do_catchsql_test func-37.110 {
+  WITH c(x) AS (VALUES(9223372036854775807),(1))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+do_catchsql_test func-37.120 {
+  WITH c(x) AS (VALUES(9223372036854775807),(10000),(-10010))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+
+# 2023-08-28 forum post https://sqlite.org/forum/forumpost/1c06ddcacc86032a
+# Incorrect handling of infinity by SUM().
+#
+do_execsql_test func-38.100 {
+  WITH t1(x) AS (VALUES(9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
+  WITH t1(x) AS (VALUES(-9e+999)) SELECT sum(x), avg(x), total(x) FROM t1;
+} {Inf Inf Inf -Inf -Inf -Inf}
+
+# 2024-03-21 https://sqlite.org/forum/forumpost/23b8688ef4
+# Another problem with Kahan-Babushka-Neumaier summation and
+# infinities.
+#
+do_execsql_test func-39.101 {
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<1)
+  SELECT sum(1.7976931348623157e308),
+         avg(1.7976931348623157e308),
+         total(1.7976931348623157e308)
+    FROM c;
+} {1.79769313486232e+308 1.79769313486232e+308 1.79769313486232e+308}
+for {set i 2} {$i<10} {incr i} {
+  do_execsql_test func-39.[expr {10*$i+100}] {
+    WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<$i)
+    SELECT sum(1.7976931348623157e308),
+           avg(1.7976931348623157e308),
+           total(1.7976931348623157e308)
+      FROM c;
+  } {Inf Inf Inf}
+}
 
 finish_test

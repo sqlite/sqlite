@@ -1,0 +1,111 @@
+# 2023 August 7
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the content= and content_rowid= options.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5contentless5
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+unset -nocomplain res
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, content='', contentless_delete=1);
+  INSERT INTO t1 VALUES('A', 'B', 'C');
+  INSERT INTO t1 VALUES('D', 'E', 'F');
+  INSERT INTO t1 VALUES('G', 'H', 'I');
+}
+
+do_execsql_test 1.01 {
+  CREATE TABLE t2(x, y);
+  INSERT INTO t2 VALUES('x', 'y');
+}
+
+# explain_i "UPDATE t1 SET a='a' WHERE t1.rowid=1"    
+#breakpoint
+#explain_i "UPDATE t1 SET a='a' FROM t2 WHERE t1.rowid=1 AND b IS NULL"     
+
+#breakpoint
+#explain_i "UPDATE t1 SET a='a' WHERE b IS NULL AND rowid=?"
+
+foreach {tn up err} {
+  1   "UPDATE t1 SET a='a', b='b', c='c' WHERE rowid=1"                  0
+  2   "UPDATE t1 SET a='a', b='b'        WHERE rowid=1"                  1
+  3   "UPDATE t1 SET        b='b', c='c' WHERE rowid=1"                  1
+  4   "UPDATE t1 SET a='a',        c='c' WHERE rowid=1"                  1
+  5   "UPDATE t1 SET a='a',        c='c' WHERE t1.rowid=1 AND b IS NULL" 1
+  6   "UPDATE t1 SET a='a' FROM t2 WHERE t1.rowid=1"                     1
+  7   "UPDATE t1 SET a='a', b='b', c='c' FROM t2 WHERE t1.rowid=1"       0
+} {
+
+  set res(0) {0 {}}
+  set res(1) {1 {cannot UPDATE a subset of columns on fts5 contentless-delete table: t1}}
+  do_catchsql_test 1.$tn $up $res($err)
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+proc random {n} { expr {abs(int(rand()*$n))} }
+proc select_one {list} {
+  set n [llength $list]
+  lindex $list [random $n]
+}
+proc vocab {} {
+  list abc def ghi jkl mno pqr stu vwx yza
+}
+proc term {} {
+  select_one [vocab]
+}
+proc document {} {
+  set nTerm [expr [random 3] + 7]
+  set doc ""
+  for {set ii 0} {$ii < $nTerm} {incr ii} {
+    lappend doc [term]
+  }
+  set doc
+}
+db func document document
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, contentless_delete=1, content='');
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+}
+
+do_test 2.1 {
+  for {set ii 1} {$ii < 12} {incr ii} {
+    db transaction {
+      for {set jj 0} {$jj < 10} {incr jj} {
+        set doc [document]
+        execsql { INSERT INTO ft VALUES($doc); }
+      }
+    }
+  }
+} {}
+
+do_test 2.2 {
+  foreach r [db eval {SELECT rowid FROM ft}] {
+    execsql { DELETE FROM ft WHERE rowid=$r }
+  }
+} {}
+
+set doc [document]
+do_execsql_test 2.3 {
+  INSERT INTO ft VALUES($doc)
+}
+
+
+finish_test

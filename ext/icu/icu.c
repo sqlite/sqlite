@@ -299,8 +299,9 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 
     if( U_SUCCESS(status) ){
       sqlite3_set_auxdata(p, 0, pExpr, icuRegexpDelete);
-    }else{
-      assert(!pExpr);
+      pExpr = sqlite3_get_auxdata(p, 0);
+    }
+    if( !pExpr ){
       icuFunctionError(p, "uregex_open", status);
       return;
     }
@@ -470,7 +471,7 @@ static void icuLoadCollation(
   UCollator *pUCollator;    /* ICU library collation object */
   int rc;                   /* Return code from sqlite3_create_collation_x() */
 
-  assert(nArg==2);
+  assert(nArg==2 || nArg==3);
   (void)nArg; /* Unused parameter */
   zLocale = (const char *)sqlite3_value_text(apArg[0]);
   zName = (const char *)sqlite3_value_text(apArg[1]);
@@ -485,7 +486,39 @@ static void icuLoadCollation(
     return;
   }
   assert(p);
-
+  if(nArg==3){
+    const char *zOption = (const char*)sqlite3_value_text(apArg[2]);
+    static const struct {
+       const char *zName;
+       UColAttributeValue val;
+    } aStrength[] = {
+      {  "PRIMARY",      UCOL_PRIMARY           },
+      {  "SECONDARY",    UCOL_SECONDARY         },
+      {  "TERTIARY",     UCOL_TERTIARY          },
+      {  "DEFAULT",      UCOL_DEFAULT_STRENGTH  },
+      {  "QUARTERNARY",  UCOL_QUATERNARY        },
+      {  "IDENTICAL",    UCOL_IDENTICAL         },
+    };
+    unsigned int i;
+    for(i=0; i<sizeof(aStrength)/sizeof(aStrength[0]); i++){
+      if( sqlite3_stricmp(zOption,aStrength[i].zName)==0 ){
+        ucol_setStrength(pUCollator, aStrength[i].val);
+        break;
+      }
+    }
+    if( i>=sizeof(aStrength)/sizeof(aStrength[0]) ){
+      sqlite3_str *pStr = sqlite3_str_new(sqlite3_context_db_handle(p));
+      sqlite3_str_appendf(pStr,
+         "unknown collation strength \"%s\" - should be one of:",
+         zOption);
+      for(i=0; i<sizeof(aStrength)/sizeof(aStrength[0]); i++){
+         sqlite3_str_appendf(pStr, " %s", aStrength[i].zName);
+      }
+      sqlite3_result_error(p, sqlite3_str_value(pStr), -1);
+      sqlite3_free(sqlite3_str_finish(pStr));
+      return;
+    }
+  }
   rc = sqlite3_create_collation_v2(db, zName, SQLITE_UTF16, (void *)pUCollator, 
       icuCollationColl, icuCollationDel
   );
@@ -508,6 +541,7 @@ int sqlite3IcuInit(sqlite3 *db){
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
     {"icu_load_collation",2,SQLITE_UTF8|SQLITE_DIRECTONLY,1, icuLoadCollation},
+    {"icu_load_collation",3,SQLITE_UTF8|SQLITE_DIRECTONLY,1, icuLoadCollation},
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
     {"regexp", 2, SQLITE_ANY|SQLITEICU_EXTRAFLAGS,         0, icuRegexpFunc},
     {"lower",  1, SQLITE_UTF16|SQLITEICU_EXTRAFLAGS,       0, icuCaseFunc16},
@@ -537,7 +571,7 @@ int sqlite3IcuInit(sqlite3 *db){
   return rc;
 }
 
-#if !SQLITE_CORE
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif

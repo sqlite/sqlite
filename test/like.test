@@ -731,16 +731,16 @@ ifcapable like_opt&&!icu {
   }
   do_test like-9.5.1 {
     set res [sqlite3_exec_hex db {
-       SELECT x FROM t2 WHERE x LIKE '%fe%25'
+       SELECT 1 FROM t2 WHERE x LIKE '%fe%25'
     }]
-  } {0 {}}
+  } {0 {1 1}}
   ifcapable explain {
     do_test like-9.5.2 {
       set res [sqlite3_exec_hex db {
          EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%fe%25'
       }]
       regexp {INDEX i2} $res
-    } {1}
+    } {0}
   }
 
   # Do an SQL statement.  Append the search count to the end of the result.
@@ -1139,5 +1139,25 @@ do_execsql_test 17.1 {
   SELECT 'x' LIKE '%' ESCAPE '_';
 } {1}
 
+
+# 2023-08-15 https://sqlite.org/forum/forumpost/925dc9f67804c540
+#
+reset_db
+sqlite3_db_config db DEFENSIVE 1
+db eval {PRAGMA trusted_schema=OFF}
+do_execsql_test 18.0 {
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1 VALUES(1,'abc'),(2,'ABC'),(3,'Abc');
+  CREATE VIEW t2 AS SELECT * FROM t1 WHERE y LIKE 'a%';
+  SELECT * FROM t2;
+} {1 abc 2 ABC 3 Abc}
+do_execsql_test 18.1 {
+  PRAGMA case_sensitive_like=OFF;
+  SELECT * FROM t2;
+} {1 abc 2 ABC 3 Abc}
+do_execsql_test 18.2 {
+  PRAGMA case_sensitive_like=ON;
+  SELECT * FROM t2;
+} {1 abc}
 
 finish_test

@@ -13,7 +13,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5savepoint
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -71,7 +71,7 @@ ifcapable fts3 {
 
   do_catchsql_test 3.2 {
     DROP TABLE vt1;
-  } {1 {SQL logic error}}
+  } {0 {}}
 
   do_execsql_test 3.3 {
     SAVEPOINT x;

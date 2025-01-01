@@ -35,21 +35,21 @@ do_catchsql_test 1.1.2 {
 
 do_catchsql_test 1.2.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*id'); 
-} {0 {{}}}
+} {1 {no such cursor: 4}}
 
 do_catchsql_test 1.2.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*id'));
-} {0 {}}
+} {1 {no such cursor: 6}}
 
 do_catchsql_test 1.3.1 { 
   SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'); 
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 do_catchsql_test 1.3.2 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
 
 db close
 sqlite3 db test.db
@@ -57,7 +57,12 @@ sqlite3 db test.db
 do_catchsql_test 1.3.3 {
   SELECT a FROM t1
     WHERE rank = (SELECT highlight(t1, 4, '<b>', '</b>') FROM t1('*reads'));
-} {1 {no such cursor: 1}}
+} {1 {no such cursor: 0}}
+
+fts5_aux_test_functions db
+do_catchsql_test 1.3.4 {
+  SELECT fts5_columntext(t1) FROM t1('*reads');
+} {1 {no such cursor: 0}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -91,7 +96,6 @@ do_execsql_test 2.2.1 {
   INSERT INTO vt0(c0) VALUES ('xyz');
 }
 
-breakpoint
 do_execsql_test 2.2.2 {
   ALTER TABLE t0 RENAME TO t1;
 }
@@ -329,7 +333,7 @@ do_execsql_test 12.3 {
 reset_db
 sqlite3_db_config db DEFENSIVE 1
 
-do_execsql_test 13.0 {
+do_execsql_test 13.1.0 {
   CREATE TABLE a (id INTEGER PRIMARY KEY, name TEXT);
   CREATE VIRTUAL TABLE b USING fts5(name);
   CREATE TRIGGER a_trigger AFTER INSERT ON a BEGIN 
@@ -337,20 +341,329 @@ do_execsql_test 13.0 {
   END;
 }
 
-do_test 13.1 {
+do_test 13.1.1 {
   set ::STMT [
     sqlite3_prepare db "INSERT INTO a VALUES (1, 'foo') RETURNING id;" -1 dummy
   ]
   sqlite3_step $::STMT
 } {SQLITE_ROW}
 
-do_test 13.2 {
+do_test 13.1.2 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
 
-do_test 13.3 {
+do_test 13.1.3 {
   sqlite3_errmsg db
 } {not an error}
+
+reset_db
+sqlite3_db_config db DEFENSIVE 1
+do_execsql_test 13.2.0 {
+  BEGIN;
+  CREATE TABLE a (id INTEGER PRIMARY KEY, name TEXT);
+  CREATE VIRTUAL TABLE b USING fts5(name);
+  CREATE TRIGGER a_trigger AFTER INSERT ON a BEGIN 
+    INSERT INTO b (name) VALUES ('foo');
+  END;
+}
+
+do_test 13.2.1 {
+  set ::STMT [
+    sqlite3_prepare db "INSERT INTO a VALUES (1, 'foo') RETURNING id;" -1 dummy
+  ]
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+
+do_test 13.2.2 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
+
+do_test 13.2.3 {
+  sqlite3_errmsg db
+} {not an error}
+
+#-------------------------------------------------------------------------
+reset_db
+db close
+sqlite3 db test.db -uri 1
+
+do_execsql_test 14.0 {
+  PRAGMA locking_mode=EXCLUSIVE;
+  BEGIN;
+  ATTACH 'file:/one?vfs=memdb' AS aux1;
+  ATTACH 'file:/one?vfs=memdb' AS aux2;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+} {exclusive}
+do_catchsql_test 14.1 {
+  ANALYZE;
+} {1 {database is locked}}
+do_catchsql_test 14.2 {
+  COMMIT;
+} {1 {database is locked}}
+do_catchsql_test 14.3 {
+  COMMIT;
+} {1 {database is locked}}
+do_catchsql_test 14.4 {
+  ROLLBACK;
+} {0 {}}
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+
+do_execsql_test 15.0 {
+  CREATE TABLE t1(a, b);
+  BEGIN;
+    SELECT * FROM t1;
+}
+
+do_execsql_test -db db2 15.1 {
+  BEGIN; 
+    CREATE VIRTUAL TABLE x1 USING fts5(y);
+}
+do_test 15.2 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+do_execsql_test -db db2 15.3 {
+  SAVEPOINT one;
+} {}
+do_execsql_test 15.4 END
+do_test 15.5 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {0 {}}
+
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db
+do_execsql_test 16.0 {
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t2(x,y);
+  INSERT INTO t2 VALUES(1, 2);
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  BEGIN;
+    INSERT INTO x1 VALUES('abc');
+    INSERT INTO t2 VALUES(3, 4);
+}
+
+do_execsql_test -db db2 16.1 {
+  ATTACH 'test.db2' AS aux;
+  BEGIN;
+    SELECT * FROM t2
+} {1 2}
+
+do_catchsql_test 16.2 {
+  COMMIT;
+} {1 {database is locked}}
+
+do_execsql_test 16.3 {
+  INSERT INTO x1 VALUES('def');
+}
+
+do_execsql_test -db db2 16.4 { 
+  END 
+}
+
+do_execsql_test 16.5 {
+  COMMIT
+}
+
+do_execsql_test -db db2 16.6 {
+  SELECT * FROM x1
+} {abc def}
+
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, tokenize="unicode61 separators 'X'");
+}
+do_execsql_test 17.2 {
+  SELECT 0 FROM ft WHERE ft MATCH 'X' AND ft MATCH 'X'
+}
+do_execsql_test 17.3 {
+  SELECT 0 FROM ft('X')
+}
+
+do_execsql_test 17.4 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0, t="trigram");
+  INSERT INTO t0 VALUES('assertionfaultproblem');
+}
+do_execsql_test 17.5 {
+  SELECT 0 FROM t0(0) WHERE c0 GLOB 0;
+} {}
+
+do_execsql_test 17.5 {
+  SELECT c0 FROM t0 WHERE c0 GLOB '*f*';
+} {assertionfaultproblem}
+do_execsql_test 17.5 {
+  SELECT c0 FROM t0 WHERE c0 GLOB '*faul*';
+} {assertionfaultproblem}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 18.0 {
+  BEGIN;
+    CREATE VIRTUAL TABLE t1 USING fts5(text);
+    ALTER TABLE t1 RENAME TO t2;
+}
+
+do_execsql_test 18.1 {
+    DROP TABLE t2;
+}
+
+do_execsql_test 18.2 {
+  COMMIT;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 19.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(text);
+  CREATE TABLE t2(text);
+  BEGIN;
+    INSERT INTO t1 VALUES('one');
+    INSERT INTO t1 VALUES('two');
+    INSERT INTO t1 VALUES('three');
+    INSERT INTO t1 VALUES('one');
+    INSERT INTO t1 VALUES('two');
+    INSERT INTO t1 VALUES('three');
+    SAVEPOINT one;
+      INSERT INTO t2 VALUES('one');
+      INSERT INTO t2 VALUES('two');
+      INSERT INTO t2 VALUES('three');
+    ROLLBACK TO one;
+  COMMIT;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  INSERT INTO x1(rowid, a) VALUES
+      (1, 'a b c d'),
+      (2, 'x b c d'),
+      (3, 'x y z d'),
+      (4, 'a y c x');
+}
+
+do_execsql_test 20.1 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'b';
+} {1}
+
+do_execsql_test 20.2 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' AND x1 MATCH 'y';
+} {4}
+
+do_execsql_test 20.3 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR x1 MATCH 'y';
+} {1 4 3}
+
+do_execsql_test 20.4 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'a' OR (x1 MATCH 'y' AND x1 MATCH 'd');
+} {1 4 3}
+
+do_execsql_test 20.5 {
+  SELECT rowid FROM x1 WHERE x1 MATCH 'z' OR (x1 MATCH 'a' AND x1 MATCH 'd');
+} {3 1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 21.0 {
+  CREATE TABLE t1(ii INTEGER, x TEXT, y TEXT);
+  CREATE VIRTUAL TABLE xyz USING fts5(content_rowid=ii, content=t1, x, y);
+  INSERT INTO t1 VALUES(1, 'one', 'i');
+  INSERT INTO t1 VALUES(2, 'two', 'ii');
+  INSERT INTO t1 VALUES(3, 'tree', 'iii');
+  INSERT INTO xyz(xyz) VALUES('rebuild');
+}
+
+do_execsql_test 21.1 {
+  UPDATE xyz SET y='TWO' WHERE rowid=2;
+  UPDATE t1 SET y='TWO' WHERE ii=2;
+}
+
+do_execsql_test 21.2 {
+  PRAGMA integrity_check
+} {ok}
+
+breakpoint
+sqlite3_db_config db DEFENSIVE 1
+do_execsql_test 21.3 {
+  CREATE TABLE xyz_notashadow(x, y);
+  DROP TABLE xyz_notashadow;
+}
+sqlite3_db_config db DEFENSIVE 0
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 22.0 {
+  SELECT fts5(NULL);
+} {{}}
+do_execsql_test 22.1 {
+  SELECT count(*) FROM (
+    SELECT fts5_source_id()
+  )
+} {1}
+execsql_pp {
+  SELECT fts5_source_id()
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 23.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1 VALUES('one + two + three');
+  INSERT INTO x1 VALUES('one + xyz + three');
+  INSERT INTO x1 VALUES('xyz + two + xyz');
+}
+do_execsql_test 23.1 {
+  SELECT rowid FROM x1('one + two + three');
+} {1}
+
+do_execsql_test 23.2 {
+  SELECT rowid FROM x1('^".." AND one');
+} {}
+
+do_execsql_test 23.3 {
+  SELECT rowid FROM x1('abc NEAR ".." NEAR def');
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none');
+  INSERT INTO t1(a) VALUES('a');
+}
+
+do_execsql_test 24.2 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.3 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT � NOT def') ) ORDER BY 1;
+} {-1e-06}
+
+do_execsql_test 24.4 {
+  SELECT rank FROM ( SELECT rank FROM t1('a NOT "" NOT def') );
+} {-1e-06}
+
+#-------------------------------------------------------------------------
+reset_db
+fts5_aux_test_functions db
+
+do_execsql_test 25.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, detail='none', content='');
+  INSERT INTO t1(a) VALUES('a b c');
+}
+
+do_execsql_test 25.0 {
+  SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
+} {{}}
 
 finish_test
 

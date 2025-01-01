@@ -726,7 +726,7 @@ static void decode_btree_page(
   }
   if( showMap ){
     printf("Page map:  (H=header P=cell-index 1=page-1-header .=free-space)\n");
-    for(i=0; i<g.pagesize; i+=64){
+    for(i=0; (u32)i<g.pagesize; i+=64){
       printf(" %03x: %.64s\n", i, &zMap[i]);
     }
     sqlite3_free(zMap);
@@ -861,7 +861,7 @@ static int allZero(unsigned char *a, int n){
 */
 static void page_usage_btree(
   u32 pgno,             /* Page to describe */
-  u32 parent,           /* Parent of this page.  0 for root pages */
+  int parent,           /* Parent of this page.  0 for root pages */
   int idx,              /* Which child of the parent */
   const char *zName     /* Name of the table */
 ){
@@ -954,11 +954,15 @@ static void page_usage_freelist(u32 pgno){
   int iNext;
   int parent = 1;
 
-  while( pgno>0 && pgno<=g.mxPage && (cnt++)<g.mxPage ){
+  while( pgno>0 && pgno<=g.mxPage && (u32)(cnt++)<g.mxPage ){
     page_usage_msg(pgno, "freelist trunk #%d child of %d", cnt, parent);
     a = fileRead((pgno-1)*g.pagesize, g.pagesize);
     iNext = decodeInt32(a);
     n = decodeInt32(a+4);
+    if( n>(g.pagesize - 8)/4 ){
+      printf("ERROR: page %d too many freelist entries (%d)\n", pgno, n);
+      n = (g.pagesize - 8)/4;
+    }
     for(i=0; i<n; i++){
       int child = decodeInt32(a + (i*4+8));
       page_usage_msg(child, "freelist leaf, child %d of trunk page %d",
@@ -1080,19 +1084,42 @@ static void ptrmap_coverage_report(const char *zDbName){
     printf("%5llu: PTRMAP page covering %llu..%llu\n", pgno,
            pgno+1, pgno+perPage);
     a = fileRead((pgno-1)*g.pagesize, usable);
-    for(i=0; i+5<=usable && pgno+1+i/5<=g.mxPage; i+=5){
-      const char *zType = "???";
+    for(i=0; i+5<=usable; i+=5){
+      const char *zType;
       u32 iFrom = decodeInt32(&a[i+1]);
+      const char *zExtra = pgno+1+i/5>g.mxPage ? " (off end of DB)" : "";
       switch( a[i] ){
         case 1:  zType = "b-tree root page";        break;
         case 2:  zType = "freelist page";           break;
         case 3:  zType = "first page of overflow";  break;
         case 4:  zType = "later page of overflow";  break;
         case 5:  zType = "b-tree non-root page";    break;
+        default: {
+          if( zExtra[0]==0 ){
+            printf("%5llu: invalid (0x%02x), parent=%u\n", 
+                   pgno+1+i/5, a[i], iFrom);
+          }
+          zType = 0;
+          break;
+        }
       }
-      printf("%5llu: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+      if( zType ){
+        printf("%5llu: %s, parent=%u%s\n", pgno+1+i/5, zType, iFrom, zExtra);
+      }
     }
     sqlite3_free(a);
+  }
+}
+
+/*
+** Check the range validity for a page number.  Print an error and
+** exit if the page is out of range.
+*/
+static void checkPageValidity(int iPage){
+  if( iPage<1 || iPage>g.mxPage ){
+    fprintf(stderr, "Invalid page number %d:  valid range is 1..%d\n",
+            iPage, g.mxPage);
+    exit(1);
   }
 }
 
@@ -1184,10 +1211,12 @@ int main(int argc, char **argv){
         continue;
       }
       iStart = strtoul(azArg[i], &zLeft, 0);
+      checkPageValidity(iStart);
       if( zLeft && strcmp(zLeft,"..end")==0 ){
         iEnd = g.mxPage;
       }else if( zLeft && zLeft[0]=='.' && zLeft[1]=='.' ){
         iEnd = strtol(&zLeft[2], 0, 0);
+        checkPageValidity(iEnd);
       }else if( zLeft && zLeft[0]=='b' ){
         int ofst, nByte, hdrSize;
         unsigned char *a;

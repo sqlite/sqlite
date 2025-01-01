@@ -999,7 +999,7 @@ size_t sqlite3_quota_fwrite(
   const void *pBuf,      /* Take content to write from here */
   size_t size,           /* Size of each element */
   size_t nmemb,          /* Number of elements */
-  quota_FILE *p          /* Write to this quota_FILE objecct */
+  quota_FILE *p          /* Write to this quota_FILE object */
 ){
   sqlite3_int64 iOfst;
   sqlite3_int64 iEnd;
@@ -1278,14 +1278,7 @@ int sqlite3_quota_remove(const char *zFilename){
 
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#  ifndef SQLITE_TCLAPI
-#    define SQLITE_TCLAPI
-#  endif
-#endif
+#include "tclsqlite.h"
 
 /*
 ** Argument passed to a TCL quota-over-limit callback.
@@ -1420,7 +1413,7 @@ static int SQLITE_TCLAPI test_quota_set(
   Tcl_Obj *pScript;               /* Tcl script to invoke to increase quota */
   int rc;                         /* Value returned by quota_set() */
   TclQuotaCallback *p;            /* Callback object */
-  int nScript;                    /* Length of callback script */
+  Tcl_Size nScript;               /* Length of callback script */
   void (*xDestroy)(void*);        /* Optional destructor for pArg */
   void (*xCallback)(const char *, sqlite3_int64 *, sqlite3_int64, void *);
 
@@ -1876,7 +1869,7 @@ static int SQLITE_TCLAPI test_quota_glob(
   Tcl_Obj *CONST objv[]
 ){
   const char *zPattern;          /* The glob pattern */
-  const char *zText;             /* Text to compare agains the pattern */
+  const char *zText;             /* Text to compare against the pattern */
   int rc;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PATTERN TEXT");

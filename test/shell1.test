@@ -11,6 +11,7 @@
 #
 # The focus of this file is testing the CLI shell tool.
 #
+# TESTRUNNER: shell
 #
 
 # Test plan:
@@ -23,7 +24,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -53,7 +54,7 @@ do_test shell1-1.1.2 {
 # error on extra options
 do_test shell1-1.1.3 {
   catchcmd "test.db FOO test.db BAD" ".quit"
-} {1 {Error: in prepare, near "FOO": syntax error (1)}}
+} {/1 .Error: in prepare, near "FOO": syntax error*/}
 
 # -help
 do_test shell1-1.2.1 {
@@ -78,7 +79,7 @@ do_test shell1-1.3.2 {
 } {0 {}}
 do_test shell1-1.3.3 {
   catchcmd "-init FOO test.db BAD .quit" ""
-} {1 {Error: in prepare, near "BAD": syntax error (1)}}
+} {/1 .Error: in prepare, near "BAD": syntax error*/}
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
@@ -175,6 +176,16 @@ do_test shell1-1.16.1 {
   set x [catchcmd "-version test.db" ""]
 } {/3.[0-9.]+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+/}
 
+# Handle no-more-options option
+forcedelete ./--db
+do_test shell1-1.17.1 {
+  catchcmd {-- --db "CREATE TABLE T(c1);"}
+} {0 {}}
+do_test shell1-1.17.2 {
+  catchcmd {-- --db "SELECT name from sqlite_schema;"}
+} {0 T}
+forcedelete ./--db
+
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
 #
@@ -205,10 +216,10 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -236,13 +247,18 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode \"csv\""
 } {0 {}}
+
+# check that certain quoted arg escapes work
+do_test shell1-2.5.1 {
+  catchcmd ":memory:" ".print \"\\060\\077 \\x3f\\x30 \\a\\t\""
+} [list 0 "0? ?0 \a\t"]
 
 
 #----------------------------------------------------------------------------
@@ -437,7 +453,7 @@ do_test shell1-3.13.1 {
 } {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -467,17 +483,6 @@ do_test shell1-3.13.11 {
   catchcmd "test.db" ".mode tcl BAD"
 } {0 {}}
 
-# don't allow partial mode type matches
-do_test shell1-3.13.12 {
-  catchcmd "test.db" ".mode l"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.13 {
-  catchcmd "test.db" ".mode li"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.14 {
-  catchcmd "test.db" ".mode lin"
-} {0 {}}
-
 # .nullvalue STRING      Print STRING in place of NULL values
 do_test shell1-3.14.1 {
   catchcmd "test.db" ".nullvalue"
@@ -492,11 +497,16 @@ do_test shell1-3.14.3 {
 
 # .output FILENAME       Send output to FILENAME
 do_test shell1-3.15.1 {
-  catchcmd "test.db" ".output"
-} {0 {}}
+  catchcmd "test.db" ".output
+.print x"
+} {0 x}
 do_test shell1-3.15.2 {
-  catchcmd "test.db" ".output FOO"
-} {0 {}}
+  catchcmd "test.db" ".output FOO
+.print x
+.output
+SELECT readfile('FOO');"
+} {0 {x
+}}
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
@@ -506,6 +516,8 @@ do_test shell1-3.15.3 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 
@@ -522,6 +534,8 @@ do_test shell1-3.16.2 {
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
+     --plain               Use text/plain for -w option
+     -w                    Send output to a web browser
      -x                    Send output as CSV to a spreadsheet
 child process exited abnormally}}
 
@@ -604,7 +618,8 @@ CREATE VIEW v2 AS SELECT x+1 AS y FROM t1
 /* v2(y) */;
 CREATE VIEW v1 AS SELECT y+1 FROM v2
 /* v1("y+1") */;}}
-db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
+
+  catch {db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}}
 }
 
 # .separator STRING  Change column separator used by output and .import
@@ -1024,6 +1039,12 @@ do_test shell1-4.6 {
 ";"
 "$"} 7}
 
+# Test the output of ".mode quote"
+#
+do_test shell1-4.7 {
+  catchcmd test.db ".mode quote\nselect x'0123456789ABCDEF';"
+} {0 X'0123456789abcdef'}
+
 # Test using arbitrary byte data with the shell via standard input/output.
 #
 do_test shell1-5.0 {
@@ -1042,7 +1063,10 @@ do_test shell1-5.0 {
       continue
     }
     # Tcl 8.7 maps 0x80 through 0x9f into valid UTF8.  So skip those tests.
-    if {$i>=0x80 && $i<=0x9f} continue
+    if {$i>=0x80} {
+      if {$i<=0x9F || $tcl_version>=9.0} continue
+      if {$tcl_platform(platform)=="windows"} continue
+    }
     if {$i>=0xE0 && $tcl_platform(os)=="OpenBSD"}  continue
     if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os)=="Linux"}  continue
     set hex [format %02X $i]
@@ -1056,7 +1080,7 @@ do_test shell1-5.0 {
       #
       set escapes [list \
           \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
-          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+          " " "\" \"" \" \\\" \\ \\\\]
     } else {
       #
       # NOTE: On Unix, we need to escape most of the whitespace characters
@@ -1070,10 +1094,10 @@ do_test shell1-5.0 {
       #
       set escapes [list \
           \t \\t \n \\n \v \\v \f \\f \
-          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+          " " "\" \"" \" \\\" \\ \\\\]
     }
     set char [string map $escapes $char]
-    set x [catchcmdex test.db ".print $char\n"]
+    set x [catchcmdex test.db ".print \"$char\"\n"]
     set code [lindex $x 0]
     set res [lindex $x 1]
     if {$code ne "0"} {
@@ -1154,21 +1178,21 @@ do_test shell1-7.1.2 {
 } {0 {CREATE TABLE Z (x TEXT PRIMARY KEY);
 CREATE TABLE _ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.3 {
-  catchcmd "test.db" ".schema \\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\""
 } {0 {CREATE TABLE _ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.4 {
   catchcmd "test.db" ".schema __"
 } {0 {CREATE TABLE YY (x TEXT PRIMARY KEY);
 CREATE TABLE __ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.5 {
-  catchcmd "test.db" ".schema \\\\_\\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\\\\_\""
 } {0 {CREATE TABLE __ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.6 {
   catchcmd "test.db" ".schema ___"
 } {0 {CREATE TABLE WWW (x TEXT PRIMARY KEY);
 CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 do_test shell1-7.1.7 {
-  catchcmd "test.db" ".schema \\\\_\\\\_\\\\_"
+  catchcmd "test.db" ".schema \"\\\\_\\\\_\\\\_\""
 } {0 {CREATE TABLE ___ (x TEXT PRIMARY KEY);}}
 
 }
@@ -1225,6 +1249,23 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+do_test shell1-8.5 {
+  catchcmd ":memory: --box" {
+create table t(a text, b int);
+insert into t values ('too long for one line', 1), ('shorter', NULL);
+.header on
+.width 10 10
+.nullvalue NADA
+select * from t;}
+} {0 {┌────────────┬────────────┐
+│     a      │     b      │
+├────────────┼────────────┤
+│ too long f │ 1          │
+│ or one lin │            │
+│ e          │            │
+├────────────┼────────────┤
+│ shorter    │ NADA       │
+└────────────┴────────────┘}}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
@@ -1243,5 +1284,17 @@ select 2,1; select 3,4;
 } {0 {1,2
 2,1
 3,4}}
+
+#----------------------------------------------------------------------------
+# Test cases shell1-10.*: Test that certain static extensions are there.
+#
+do_test shell1-10.1 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base64(base64(cast('digity-doo' as blob))),
+ base85(base85(cast('digity-doo' as blob)));
+}
+} {0 digity-doo|digity-doo}
 
 finish_test

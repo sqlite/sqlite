@@ -28,7 +28,13 @@
 **
 ** The data field of sqlite_dbpage table can be updated.  The new
 ** value must be a BLOB which is the correct page size, otherwise the
-** update fails.  Rows may not be deleted or inserted.
+** update fails.  INSERT operations also work, and operate as if they
+** where REPLACE.  The size of the database can be extended by INSERT-ing
+** new pages on the end.
+**
+** Rows may not be deleted.  However, doing an INSERT to page number N
+** with NULL page data causes the N-th page and all subsequent pages to be
+** deleted and the database to be truncated.
 */
 
 #include "sqliteInt.h"   /* Requires access to internal data structures */
@@ -51,13 +57,14 @@ struct DbpageCursor {
 struct DbpageTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database */
+  int iDbTrunc;                   /* Database to truncate */
+  Pgno pgnoTrunc;                 /* Size to truncate to */
 };
 
 /* Columns */
 #define DBPAGE_COLUMN_PGNO    0
 #define DBPAGE_COLUMN_DATA    1
 #define DBPAGE_COLUMN_SCHEMA  2
-
 
 
 /*
@@ -72,8 +79,13 @@ static int dbpageConnect(
 ){
   DbpageTable *pTab = 0;
   int rc = SQLITE_OK;
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
+  sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
   rc = sqlite3_declare_vtab(db, 
           "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){
@@ -110,6 +122,7 @@ static int dbpageDisconnect(sqlite3_vtab *pVtab){
 static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
   int iPlan = 0;
+  (void)tab;
 
   /* If there is a schema= constraint, it must be honored.  Report a
   ** ridiculously large estimated cost if the schema= constraint is
@@ -224,6 +237,8 @@ static int dbpageFilter(
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
+  (void)idxStr;
+  
   /* Default setting is no rows of result */
   pCsr->pgno = 1; 
   pCsr->mxPgno = 0;
@@ -238,7 +253,7 @@ static int dbpageFilter(
     pCsr->iDb = 0;
   }
   pBt = db->aDb[pCsr->iDb].pBt;
-  if( pBt==0 ) return SQLITE_OK;
+  if( NEVER(pBt==0) ) return SQLITE_OK;
   pCsr->pPager = sqlite3BtreePager(pBt);
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
   pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
@@ -273,12 +288,18 @@ static int dbpageColumn(
     }
     case 1: {           /* data */
       DbPage *pDbPage = 0;
-      rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
-      if( rc==SQLITE_OK ){
-        sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
-                            SQLITE_TRANSIENT);
+      if( pCsr->pgno==((PENDING_BYTE/pCsr->szPage)+1) ){
+        /* The pending byte page. Assume it is zeroed out. Attempting to
+        ** request this page from the page is an SQLITE_CORRUPT error. */
+        sqlite3_result_zeroblob(ctx, pCsr->szPage);
+      }else{
+        rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
+        if( rc==SQLITE_OK ){
+          sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
+              SQLITE_TRANSIENT);
+        }
+        sqlite3PagerUnref(pDbPage);
       }
-      sqlite3PagerUnref(pDbPage);
       break;
     }
     default: {          /* schema */
@@ -287,7 +308,7 @@ static int dbpageColumn(
       break;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 static int dbpageRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
@@ -307,12 +328,13 @@ static int dbpageUpdate(
   DbPage *pDbPage = 0;
   int rc = SQLITE_OK;
   char *zErr = 0;
-  const char *zSchema;
   int iDb;
   Btree *pBt;
   Pager *pPager;
   int szPage;
+  int isInsert;
 
+  (void)pRowid;
   if( pTab->db->flags & SQLITE_Defensive ){
     zErr = "read-only";
     goto update_fail;
@@ -321,19 +343,29 @@ static int dbpageUpdate(
     zErr = "cannot delete";
     goto update_fail;
   }
-  pgno = sqlite3_value_int(argv[0]);
-  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
-    zErr = "cannot insert";
-    goto update_fail;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    pgno = (Pgno)sqlite3_value_int(argv[2]);
+    isInsert = 1;
+  }else{
+    pgno = sqlite3_value_int(argv[0]);
+    if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
+      zErr = "cannot insert";
+      goto update_fail;
+    }
+    isInsert = 0;
   }
-  zSchema = (const char*)sqlite3_value_text(argv[4]);
-  iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
-  if( iDb<0 ){
-    zErr = "no such schema";
-    goto update_fail;
+  if( sqlite3_value_type(argv[4])==SQLITE_NULL ){
+    iDb = 0;
+  }else{
+    const char *zSchema = (const char*)sqlite3_value_text(argv[4]);
+    iDb = sqlite3FindDbName(pTab->db, zSchema);
+    if( iDb<0 ){
+      zErr = "no such schema";
+      goto update_fail;
+    }
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno<1 || pBt==0 || pgno>(int)sqlite3BtreeLastPage(pBt) ){
+  if( pgno<1 || NEVER(pBt==0) ){
     zErr = "bad page number";
     goto update_fail;
   }
@@ -341,18 +373,28 @@ static int dbpageUpdate(
   if( sqlite3_value_type(argv[3])!=SQLITE_BLOB 
    || sqlite3_value_bytes(argv[3])!=szPage
   ){
-    zErr = "bad page value";
-    goto update_fail;
+    if( sqlite3_value_type(argv[3])==SQLITE_NULL && isInsert && pgno>1 ){
+      /* "INSERT INTO dbpage($PGNO,NULL)" causes page number $PGNO and
+      ** all subsequent pages to be deleted. */
+      pTab->iDbTrunc = iDb;
+      pgno--;
+      pTab->pgnoTrunc = pgno;
+    }else{
+      zErr = "bad page value";
+      goto update_fail;
+    }
   }
   pPager = sqlite3BtreePager(pBt);
   rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3PagerWrite(pDbPage);
-    if( rc==SQLITE_OK ){
-      memcpy(sqlite3PagerGetData(pDbPage),
-             sqlite3_value_blob(argv[3]),
-             szPage);
+    const void *pData = sqlite3_value_blob(argv[3]);
+    if( (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK && pData ){
+      unsigned char *aPage = sqlite3PagerGetData(pDbPage);
+      memcpy(aPage, pData, szPage);
+      pTab->pgnoTrunc = 0;
     }
+  }else{
+    pTab->pgnoTrunc = 0;
   }
   sqlite3PagerUnref(pDbPage);
   return rc;
@@ -373,11 +415,37 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   int i;
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt ) sqlite3BtreeBeginTrans(pBt, 1, 0);
+    if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
+  pTab->pgnoTrunc = 0;
   return SQLITE_OK;
 }
 
+/* Invoke sqlite3PagerTruncate() as necessary, just prior to COMMIT
+*/
+static int dbpageSync(sqlite3_vtab *pVtab){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  if( pTab->pgnoTrunc>0 ){
+    Btree *pBt = pTab->db->aDb[pTab->iDbTrunc].pBt;
+    Pager *pPager = sqlite3BtreePager(pBt);
+    sqlite3BtreeEnter(pBt);
+    if( pTab->pgnoTrunc<sqlite3BtreeLastPage(pBt) ){
+      sqlite3PagerTruncateImage(pPager, pTab->pgnoTrunc);
+    }
+    sqlite3BtreeLeave(pBt);
+  }
+  pTab->pgnoTrunc = 0;
+  return SQLITE_OK;
+}
+
+/* Cancel any pending truncate.
+*/
+static int dbpageRollbackTo(sqlite3_vtab *pVtab, int notUsed1){
+  DbpageTable *pTab = (DbpageTable *)pVtab;
+  pTab->pgnoTrunc = 0;
+  (void)notUsed1;
+  return SQLITE_OK;
+}
 
 /*
 ** Invoke this routine to register the "dbpage" virtual table module
@@ -399,15 +467,16 @@ int sqlite3DbpageRegister(sqlite3 *db){
     dbpageRowid,                  /* xRowid - read data */
     dbpageUpdate,                 /* xUpdate */
     dbpageBegin,                  /* xBegin */
-    0,                            /* xSync */
+    dbpageSync,                   /* xSync */
     0,                            /* xCommit */
     0,                            /* xRollback */
     0,                            /* xFindMethod */
     0,                            /* xRename */
     0,                            /* xSavepoint */
     0,                            /* xRelease */
-    0,                            /* xRollbackTo */
-    0                             /* xShadowName */
+    dbpageRollbackTo,             /* xRollbackTo */
+    0,                            /* xShadowName */
+    0                             /* xIntegrity */
   };
   return sqlite3_create_module(db, "sqlite_dbpage", &dbpage_module, 0);
 }

@@ -184,7 +184,7 @@ proc get_pwd {} {
       set comSpec {C:\Windows\system32\cmd.exe}
     }
     return [string map [list \\ /] \
-        [string trim [exec -- $comSpec /c echo %CD%]]]
+        [string trim [exec -- $comSpec /c CD]]]
   } else {
     return [pwd]
   }
@@ -305,66 +305,6 @@ proc do_delete_file {force args} {
         file delete -force $filename
       } else {
         file delete $filename
-      }
-    }
-  }
-}
-
-if {$::tcl_platform(platform) eq "windows"} {
-  proc do_remove_win32_dir {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach dirName $args {
-      # On windows, sometimes even a [remove_win32_dir] can fail just after
-      # a directory is emptied. The cause is usually "tag-alongs" - programs
-      # like anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # removal.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            remove_win32_dir $dirName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        remove_win32_dir $dirName
-      }
-    }
-  }
-
-  proc do_delete_win32_file {args} {
-    set nRetry [getFileRetries]     ;# Maximum number of retries.
-    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
-
-    foreach fileName $args {
-      # On windows, sometimes even a [delete_win32_file] can fail just after
-      # a file is closed. The cause is usually "tag-alongs" - programs like
-      # anti-virus software, automatic backup tools and various explorer
-      # extensions that keep a file open a little longer than we expect,
-      # causing the delete to fail.
-      #
-      # The solution is to wait a short amount of time before retrying the
-      # delete.
-      #
-      if {$nRetry > 0} {
-        for {set i 0} {$i < $nRetry} {incr i} {
-          set rc [catch {
-            delete_win32_file $fileName
-          } msg]
-          if {$rc == 0} break
-          if {$nDelay > 0} { after $nDelay }
-        }
-        if {$rc} { error $msg }
-      } else {
-        delete_win32_file $fileName
       }
     }
   }
@@ -552,8 +492,9 @@ if {[info exists cmdlinearg]==0} {
       }
     }
   }
+  unset -nocomplain a
   set testdir [file normalize $testdir]
-  set cmdlinearg(TESTFIXTURE_HOME) [pwd]
+  set cmdlinearg(TESTFIXTURE_HOME) [file dirname [info nameofexec]]
   set cmdlinearg(INFO_SCRIPT) [file normalize [info script]]
   set argv0 [file normalize $argv0]
   if {$cmdlinearg(testdir)!=""} {
@@ -846,6 +787,9 @@ proc do_test {name cmd expected} {
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
+        if {!$ok} {
+          set ok [fpnum_compare $result $expected]
+        }
       }
       if {!$ok} {
         # if {![info exists ::testprefix] || $::testprefix eq ""} {
@@ -883,11 +827,20 @@ proc catchcmd {db {cmd ""}} {
   set rc [catch { eval $line } msg]
   list $rc $msg
 }
+proc catchsafecmd {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI -safe $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  list $rc $msg
+}
 
 proc catchcmdex {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
-  fconfigure $out -encoding binary -translation binary
+  fconfigure $out -translation binary
   puts -nonewline $out $cmd
   close $out
   set line "exec -keepnewline -- $CLI $db < cmds.txt"
@@ -895,7 +848,7 @@ proc catchcmdex {db {cmd ""}} {
   foreach chan $chans {
     catch {
       set modes($chan) [fconfigure $chan]
-      fconfigure $chan -encoding binary -translation binary -buffering none
+      fconfigure $chan -translation binary -buffering none
     }
   }
   set rc [catch { eval $line } msg]
@@ -947,6 +900,29 @@ proc normalize_list {L} {
   foreach l $L {lappend L2 $l}
   set L2
 }
+
+# Run SQL and verify that the number of "vmsteps" required is greater
+# than or less than some constant.
+#
+proc do_vmstep_test {tn sql nstep {res {}}} {
+  uplevel [list do_execsql_test $tn.0 $sql $res]
+
+  set vmstep [db status vmstep]
+  if {[string range $nstep 0 0]=="+"} {
+    set body "if {$vmstep<$nstep} {
+      error \"got $vmstep, expected more than [string range $nstep 1 end]\"
+    }"
+  } else {
+    set body "if {$vmstep>$nstep} {
+      error \"got $vmstep, expected less than $nstep\"
+    }"
+  }
+
+  # set name "$tn.vmstep=$vmstep,expect=$nstep"
+  set name "$tn.1"
+  uplevel [list do_test $name $body {}]
+}
+
 
 # Either:
 #
@@ -1009,8 +985,9 @@ proc query_plan_graph {sql} {
   }
   set a "\n  QUERY PLAN\n"
   append a [append_graph "  " dx cx 0]
-  regsub -all { 0x[A-F0-9]+\y} $a { xxxxxx} a
+  regsub -all {SUBQUERY 0x[A-F0-9]+\y} $a {SUBQUERY xxxxxx} a
   regsub -all {(MATERIALIZE|CO-ROUTINE|SUBQUERY) \d+\y} $a {\1 xxxxxx} a
+  regsub -all {\((join|subquery)-\d+\)} $a {(\1-xxxxxx)} a
   return $a
 }
 
@@ -1061,13 +1038,45 @@ proc append_graph {prefix dxname cxname level} {
 #
 proc do_eqp_test {name sql res} {
   if {[regexp {^\s+QUERY PLAN\n} $res]} {
-    uplevel do_test $name [list [list query_plan_graph $sql]] [list $res]
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res]} {
+      uplevel [list do_test $name [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test $name [list query_plan_graph $sql] $res
+      ]
+    }
   } else {
     if {[string index $res 0]!="/"} {
       set res "/*$res*/"
     }
     uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
   }
+}
+
+# Do both an eqp_test and an execsql_test on the same SQL.
+#
+proc do_eqp_execsql_test {name sql res1 res2} {
+  if {[regexp {^\s+QUERY PLAN\n} $res1]} {
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res1]} {
+      uplevel [list do_test ${name}a [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test ${name}a [list query_plan_graph $sql] $res1
+      ]
+    }
+  } else {
+    if {[string index $res 0]!="/"} {
+      set res1 "/*$res1*/"
+    }
+    uplevel do_execsql_test ${name}a [list "EXPLAIN QUERY PLAN $sql"] [list $res1]
+  }
+  uplevel do_execsql_test ${name}b [list $sql] [list $res2]
 }
 
 
@@ -1270,10 +1279,15 @@ proc finalize_testing {} {
          out of $nTest tests"
   } else {
     set cpuinfo {}
-    if {[catch {exec hostname} hname]==0} {set cpuinfo [string trim $hname]}
+    if {[catch {exec hostname} hname]==0} {
+      regsub {\.local$} $hname {} hname
+      set cpuinfo [string trim $hname]
+    }
     append cpuinfo " $::tcl_platform(os)"
     append cpuinfo " [expr {$::tcl_platform(pointerSize)*8}]-bit"
-    append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    if {[string match big* $::tcl_platform(byteOrder)]} {
+      append cpuinfo " [string map {E -e} $::tcl_platform(byteOrder)]"
+    }
     output2 "SQLite [sqlite3 -sourceid]"
     output2 "$nErr errors out of $nTest tests on $cpuinfo"
   }
@@ -1308,9 +1322,11 @@ proc finalize_testing {} {
   if {$::cmdlinearg(binarylog)} {
     vfslog finalize binarylog
   }
-  if {$sqlite_open_file_count} {
-    output2 "$sqlite_open_file_count files were left open"
-    incr nErr
+  if {[info exists ::run_thread_tests_called]==0} {
+    if {$sqlite_open_file_count} {
+      output2 "$sqlite_open_file_count files were left open"
+      incr nErr
+    }
   }
   if {[lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]>0 ||
               [sqlite3_memory_used]>0} {
@@ -1546,6 +1562,47 @@ proc explain_i {sql {db db}} {
   }
   output2 "----  ------------  ------  ------  ------  ----------------  --  -"
 }
+
+proc execsql_pp {sql {db db}} {
+  set nCol 0
+  $db eval $sql A {
+    if {$nCol==0} {
+      set nCol [llength $A(*)]
+      foreach c $A(*) { 
+        set aWidth($c) [string length $c] 
+        lappend data $c
+      }
+    }
+    foreach c $A(*) { 
+      set n [string length $A($c)]
+      if {$n > $aWidth($c)} {
+        set aWidth($c) $n
+      }
+      lappend data $A($c)
+    }
+  }
+  if {$nCol>0} {
+    set nTotal 0
+    foreach e [array names aWidth] { incr nTotal $aWidth($e) }
+    incr nTotal [expr ($nCol-1) * 3]
+    incr nTotal 4
+
+    set fmt ""
+    foreach c $A(*) { 
+      lappend fmt "% -$aWidth($c)s"
+    }
+    set fmt "| [join $fmt { | }] |"
+    
+    puts [string repeat - $nTotal]
+    for {set i 0} {$i < [llength $data]} {incr i $nCol} {
+      set vals [lrange $data $i [expr $i+$nCol-1]]
+      puts [format $fmt {*}$vals]
+      if {$i==0} { puts [string repeat - $nTotal] }
+    }
+    puts [string repeat - $nTotal]
+  }
+}
+
 
 # Show the VDBE program for an SQL statement but omit the Trace
 # opcode at the beginning.  This procedure can be used to prove
@@ -2170,13 +2227,13 @@ proc memdebug_log_sql {filename} {
   }
 
   set escaped "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
-  set escaped [string map [list "{" "\\{" "}" "\\}"] $escaped] 
+  set escaped [string map [list "{" "\\{" "}" "\\}" "\\" "\\\\"] $escaped] 
 
   set fd [open $filename w]
   puts $fd "set BUILTIN {"
   puts $fd $escaped
   puts $fd "}"
-  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}"] $BUILTIN]}
+  puts $fd {set BUILTIN [string map [list "\\{" "{" "\\}" "}" "\\\\" "\\"] $BUILTIN]}
   set mtv [open $::testdir/malloctraceviewer.tcl]
   set txt [read $mtv]
   close $mtv
@@ -2451,8 +2508,10 @@ proc test_restore_config_pagecache {} {
   catch {db3 close}
 
   sqlite3_shutdown
-  eval sqlite3_config_pagecache $::old_pagecache_config
-  unset ::old_pagecache_config 
+  if {[info exists ::old_pagecache_config]} {
+    eval sqlite3_config_pagecache $::old_pagecache_config
+    unset ::old_pagecache_config 
+  }
   sqlite3_initialize
   autoinstall_test_functions
   sqlite3 db test.db
@@ -2477,13 +2536,44 @@ proc test_find_binary {nm} {
 }
 
 # Find the name of the 'shell' executable (e.g. "sqlite3.exe") to use for
-# the tests in shell[1-5].test. If no such executable can be found, invoke
+# the tests in shell*.test. If no such executable can be found, invoke
 # [finish_test ; return] in the callers context.
 #
 proc test_find_cli {} {
   set prog [test_find_binary sqlite3]
   if {$prog==""} { return -code return }
   return $prog
+}
+
+# Find invocation of the 'shell' executable (e.g. "sqlite3.exe") to use
+# for the tests in shell*.test with optional valgrind prefix when the
+# environment variable SQLITE_CLI_VALGRIND_OPT is set. The set value
+# operates as follows:
+#   empty or 0 => no valgrind prefix;
+#   1 => valgrind options for memory leak check;
+#   other => use value as valgrind options.
+# If shell not found, invoke [finish_test ; return] in callers context.
+#
+proc test_cli_invocation {} {
+  set prog [test_find_binary sqlite3]
+  if {$prog==""} { return -code return }
+  set vgrun [expr {[permutation]=="valgrind"}]
+  if {$vgrun || [info exists ::env(SQLITE_CLI_VALGRIND_OPT)]} {
+    if {$vgrun} {
+      set vgo "--quiet"
+    } else {
+      set vgo $::env(SQLITE_CLI_VALGRIND_OPT)
+    }
+    if {$vgo == 0 || $vgo eq ""} {
+      return $prog
+    } elseif {$vgo == 1} {
+      return "valgrind --quiet --leak-check=yes $prog"
+    } else {
+      return "valgrind $vgo $prog"
+    }
+  } else {
+    return $prog
+  }
 }
 
 # Find the name of the 'sqldiff' executable (e.g. "sqlite3.exe") to use for

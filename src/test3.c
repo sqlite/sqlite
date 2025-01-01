@@ -15,11 +15,7 @@
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -422,7 +418,7 @@ static int SQLITE_TCLAPI btree_payload_size(
 ** routines, both for accuracy and for speed.
 **
 ** An integer is written using putVarint() and read back with
-** getVarint() and varified to be unchanged.  This repeats COUNT
+** getVarint() and verified to be unchanged.  This repeats COUNT
 ** times.  The first integer is START*MULTIPLIER.  Each iteration
 ** increases the integer by INCREMENT.
 **
@@ -623,6 +619,7 @@ static int SQLITE_TCLAPI btree_insert(
   BtCursor *pCur;
   int rc;
   BtreePayload x;
+  Tcl_Size n;
 
   if( objc!=4 && objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?-intkey? CSR KEY VALUE");
@@ -633,10 +630,11 @@ static int SQLITE_TCLAPI btree_insert(
   if( objc==4 ){
     if( Tcl_GetIntFromObj(interp, objv[2], &rc) ) return TCL_ERROR;
     x.nKey = rc;
-    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &x.nData);
+    x.pData = (void*)Tcl_GetByteArrayFromObj(objv[3], &n);
+    x.nData = (int)n;
   }else{
-    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &rc);
-    x.nKey = rc;
+    x.pKey = (void*)Tcl_GetByteArrayFromObj(objv[2], &n);
+    x.nKey = (int)n;
   }
   pCur = (BtCursor*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
 

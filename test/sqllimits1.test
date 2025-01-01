@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix sqllimits1
 
 # Verify that the default per-connection limits are the same as
 # the compile-time hard limits.
@@ -73,6 +74,13 @@ do_test sqllimits1-1.22 {
 do_test sqllimits1-1.23 {
   sqlite3_limit db SQLITE_LIMIT_TOOBIG 123
 } {-1}
+
+# Minimum value for SQLITE_LIMIT_LENGTH is 30
+#
+do_test sqllimits1-1.30 {
+  set prior [sqlite3_limit db SQLITE_LIMIT_LENGTH 1]
+  sqlite3_limit db SQLITE_LIMIT_LENGTH $prior
+} 30
 
 
 # Decrease all limits by half.  Verify that the new limits take.
@@ -347,7 +355,7 @@ do_test sqllimits1-5.14.6 {
 } {SQLITE_TOOBIG}
 ifcapable utf16 {
   do_test sqllimits1-5.14.7 {
-    catch {sqlite3_bind_text16 $::STMT 1 $::str1 $np1} res
+    catch {sqlite3_bind_text16 $::STMT 1 $::str1 [expr $np1+1]} res
     set res
   } {SQLITE_TOOBIG}
 }
@@ -706,6 +714,7 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
     }]
   } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
   
+if 0 {  
   # Attempting to beat the expression depth limit using nested SELECT
   # queries causes a parser stack overflow. 
   do_test sqllimits1-9.2 {
@@ -717,7 +726,6 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
     catchsql [subst { $expr }]
   } "1 {parser stack overflow}"
   
-if 0 {  
   do_test sqllimits1-9.3 {
     execsql {
       PRAGMA max_page_count = 1000000;  -- 1 GB
@@ -909,5 +917,69 @@ set nm [string repeat x 10000]
 do_catchsql_test sqllimits1-17.1 "
   CREATE TABLE $nm (x PRIMARY KEY)
 " {1 {string or blob too big}}
+
+#-------------------------------------------------------------------------
+#
+sqlite3_limit db SQLITE_LIMIT_COMPOUND_SELECT 10
+do_catchsql_test sqllimits1-18.1 {
+  CREATE TABLE b1(x);
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11);
+} {0 {}}
+
+do_catchsql_test sqllimits1-18.2 {
+  INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10)
+    UNION VALUES(11);
+} {0 {}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+ifcapable utf16 {
+  do_execsql_test 19.0 {
+    PRAGMA encoding = 'utf16';
+  }
+  set bigstr [string repeat abcdefghij 5000]
+  set bigstr16 [encoding convertto unicode $bigstr]
+
+  do_test 19.1 {
+    string length $bigstr16
+  } {100000}
+
+  do_test 19.2 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    sqlite3_bind_text16 $::stmt 1 $bigstr16 100000
+    sqlite3_step $::stmt
+    set val [sqlite3_column_int $::stmt 0]
+    sqlite3_finalize $::stmt
+    set val
+  } {50000}
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 100000
+
+  do_test 19.3 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    sqlite3_bind_text16 $::stmt 1 $bigstr16 100000
+    sqlite3_step $::stmt
+    set val [sqlite3_column_int $::stmt 0]
+    sqlite3_finalize $::stmt
+    set val
+  } {50000}
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 99999
+
+  do_test 19.4 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    list [catch { sqlite3_bind_text16 $::stmt 1 $bigstr16 100000 } msg] $msg
+  } {1 SQLITE_TOOBIG}
+  sqlite3_finalize $::stmt
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 100000
+
+  do_test 19.5 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    list [catch { sqlite3_bind_text16 $::stmt 1 $bigstr16 100002 } msg] $msg
+  } {1 SQLITE_TOOBIG}
+  sqlite3_finalize $::stmt
+}
 
 finish_test

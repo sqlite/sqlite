@@ -733,4 +733,86 @@ do_execsql_test 19.1 {
   SELECT v0.x FROM v0, rt0 WHERE v0.x = rt0.b;
 } {0.0}
 
+# 2022-06-20 https://sqlite.org/forum/forumpost/57bdf2217d
+#
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE rt0 USING rtree(id, x0, x1);
+  CREATE TABLE t0(a INT);
+  CREATE TABLE t1(b INT);
+  INSERT INTO rt0 VALUES(0, 0, 0);
+}
+do_catchsql_test 20.1 {
+  SELECT * FROM t1 JOIN t0 ON x0>a RIGHT JOIN rt0 ON true WHERE +x0 = 0;
+} {1 {ON clause references tables to its right}}
+do_catchsql_test 20.2 {
+  SELECT * FROM t1 JOIN t0 ON x0>a RIGHT JOIN rt0 ON true WHERE x0 = 0;
+} {1 {ON clause references tables to its right}}
+db null -
+do_execsql_test 20.3 {
+  SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE +x0 = 0;
+} {- - 0 0.0 0.0}
+do_execsql_test 20.4 {
+  SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE x0 = 0;
+} {- - 0 0.0 0.0}
+
+# 2023-05-19 https://sqlite.org/forum/forumpost/da61c4a1b5b4af19
+# Do not omit constraints that involve equality comparisons of
+# floating-point values.
+#
+reset_db
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x0, x1);
+  INSERT INTO t1 VALUES(0, 1, 9223372036854775807);
+  SELECT count(*) FROM t1 WHERE x1=9223372036854775807;
+} {0}
+do_execsql_test 21.1 {
+ SELECT x1=9223372036854775807 FROM t1;
+} {0}
+
+# 2023-05-22 https://sqlite.org/forum/forumpost/da70ee0d0d
+# Round-off error associated with using large integer constraints on
+# a rtree search.
+#
+if {$tcl_platform(machine)!="i686" || $tcl_platform(os)!="Linux"} {
+  reset_db
+  do_execsql_test 22.0 {
+    CREATE VIRTUAL TABLE t1 USING rtree ( id, x0, x1 );  
+    INSERT INTO t1 VALUES (123, 9223372036854775799, 9223372036854775800);
+    SELECT id FROM t1 WHERE x0 > 9223372036854775807;
+  } {123}
+  do_execsql_test 22.1 {
+    SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
+  } {123 1}
+}
+
+# 2023-10-14 dbsqlfuzz --sql-fuzz find.  rtreecheck() should not call
+# BEGIN/COMMIT because that causes problems with statement transactions,
+# and it is unnecessary.
+#
+reset_db
+do_test 23.0 {
+  db eval {CREATE TABLE t1(a,b,c);}
+  catch {db eval {CREATE TABLE t2 AS SELECT rtreecheck('t1') AS y;}}
+  db eval {PRAGMA integrity_check;}
+} {ok}
+
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE rt1 USING rtree_i32(rid, c1, c2);
+  INSERT INTO rt1(rid, c1, c2) VALUES (9223372036854775807, 10, 18);
+}
+
+do_execsql_test 24.1 {
+  SELECT (rid = (CAST (9223372036854775807 AS REAL)))
+  FROM rt1 WHERE
+         (rid = (CAST (9223372036854775807 AS REAL)));
+}
+
+do_execsql_test 24.2 {
+  DELETE FROM rt1;
+  INSERT INTO rt1(rid, c1, c2) VALUES(1,2,3);
+  SELECT * FROM rt1 WHERE rid=1.005;
+} {}
+
 finish_test

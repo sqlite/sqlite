@@ -489,6 +489,39 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.37.0 and later */
   sqlite3_autovacuum_pages,
   /* Version 3.38.0 and later */
+  sqlite3_error_offset,
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  sqlite3_vtab_rhs_value,
+  sqlite3_vtab_distinct,
+  sqlite3_vtab_in,
+  sqlite3_vtab_in_first,
+  sqlite3_vtab_in_next,
+#else
+  0,
+  0,
+  0,
+  0,
+  0,
+#endif
+  /* Version 3.39.0 and later */
+#ifndef SQLITE_OMIT_DESERIALIZE
+  sqlite3_deserialize,
+  sqlite3_serialize,
+#else
+  0,
+  0,
+#endif
+  sqlite3_db_name,
+  /* Version 3.40.0 and later */
+  sqlite3_value_encoding,
+  /* Version 3.41.0 and later */
+  sqlite3_is_interrupted,
+  /* Version 3.43.0 and later */
+  sqlite3_stmt_explain,
+  /* Version 3.44.0 and later */
+  sqlite3_get_clientdata,
+  sqlite3_set_clientdata,
+  /* Version 3.45.0 and later */
   sqlite3_column_table_alias,
   sqlite3_column_table_alias16,
 };
@@ -563,15 +596,25 @@ static int sqlite3LoadExtension(
   /* tag-20210611-1.  Some dlopen() implementations will segfault if given
   ** an oversize filename.  Most filesystems have a pathname limit of 4K,
   ** so limit the extension filename length to about twice that.
-  ** https://sqlite.org/forum/forumpost/08a0d6d9bf */
+  ** https://sqlite.org/forum/forumpost/08a0d6d9bf
+  **
+  ** Later (2023-03-25): Save an extra 6 bytes for the filename suffix.
+  ** See https://sqlite.org/forum/forumpost/24083b579d.
+  */
   if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
+
+  /* Do not allow sqlite3_load_extension() to link to a copy of the
+  ** running application, by passing in an empty filename. */
+  if( nMsg==0 ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
     char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
     if( zAltFile==0 ) return SQLITE_NOMEM_BKPT;
-    handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    if( nMsg+strlen(azEndings[ii])+1<=SQLITE_MAX_PATHLEN ){
+      handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    }
     sqlite3_free(zAltFile);
   }
 #endif
@@ -696,6 +739,9 @@ void sqlite3CloseExtensions(sqlite3 *db){
 ** default so as not to open security holes in older applications.
 */
 int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(db->mutex);
   if( onoff ){
     db->flags |= SQLITE_LoadExtension|SQLITE_LoadExtFunc;
@@ -717,7 +763,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
 */
 typedef struct sqlite3AutoExtList sqlite3AutoExtList;
 static SQLITE_WSD struct sqlite3AutoExtList {
-  u32 nExt;              /* Number of entries in aExt[] */          
+  u32 nExt;              /* Number of entries in aExt[] */
   void (**aExt)(void);   /* Pointers to the extension init functions */
 } sqlite3Autoext = { 0, 0 };
 
@@ -745,6 +791,9 @@ int sqlite3_auto_extension(
   void (*xInit)(void)
 ){
   int rc = SQLITE_OK;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( xInit==0 ) return SQLITE_MISUSE_BKPT;
+#endif
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
   if( rc ){
@@ -797,6 +846,9 @@ int sqlite3_cancel_auto_extension(
   int i;
   int n = 0;
   wsdAutoextInit;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( xInit==0 ) return 0;
+#endif
   sqlite3_mutex_enter(mutex);
   for(i=(int)wsdAutoext.nExt-1; i>=0; i--){
     if( wsdAutoext.aExt[i]==xInit ){

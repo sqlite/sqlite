@@ -16,11 +16,7 @@
 */
 
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 
 #if SQLITE_THREADSAFE
 
@@ -94,7 +90,7 @@ static int SQLITE_TCLAPI tclScriptEvent(Tcl_Event *evPtr, int flags){
 static void postToParent(SqlThread *p, Tcl_Obj *pScript){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
 
   zMsg = Tcl_GetStringFromObj(pScript, &nMsg); 
   pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
@@ -181,8 +177,8 @@ static int SQLITE_TCLAPI sqlthread_spawn(
   SqlThread *pNew;
   int rc;
 
-  int nVarname; char *zVarname;
-  int nScript; char *zScript;
+  Tcl_Size nVarname; char *zVarname;
+  Tcl_Size nScript; char *zScript;
 
   /* Parameters for thread creation */
   const int nStack = TCL_THREAD_STACK_DEFAULT;
@@ -232,7 +228,7 @@ static int SQLITE_TCLAPI sqlthread_parent(
 ){
   EvalEvent *pEvent;
   char *zMsg;
-  int nMsg;
+  Tcl_Size nMsg;
   SqlThread *p = (SqlThread *)clientData;
 
   assert(objc==3);
@@ -378,6 +374,27 @@ static int SQLITE_TCLAPI clock_seconds_proc(
   Tcl_Time now;
   Tcl_GetTime(&now);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(now.sec));
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(objc);
+  UNUSED_PARAMETER(objv);
+  return TCL_OK;
+}
+
+/*
+** The [clock_milliseconds] command. This is more or less the same as the
+** regular tcl [clock milliseconds]. 
+*/ 
+static int SQLITE_TCLAPI clock_milliseconds_proc(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_Time now;
+  Tcl_GetTime(&now);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+    ((Tcl_WideInt)now.sec * 1000) + (now.usec / 1000)
+  ));
   UNUSED_PARAMETER(clientData);
   UNUSED_PARAMETER(objc);
   UNUSED_PARAMETER(objv);
@@ -617,15 +634,26 @@ static int SQLITE_TCLAPI blocking_prepare_v2_proc(
 ** Register commands with the TCL interpreter.
 */
 int SqlitetestThread_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, 0, 0);
-  Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
+  struct TclCmd {
+    int (*xProc)(void*, Tcl_Interp*, int, Tcl_Obj*const*);
+    const char *zName;
+    int iCtx;
+  } aCmd[] = {
+    { sqlthread_proc,           "sqlthread",                      0 },
+    { clock_seconds_proc,       "clock_second",                   0 },
+    { clock_milliseconds_proc,  "clock_milliseconds",             0 },
 #if SQLITE_OS_UNIX && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
-  Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
-  Tcl_CreateObjCommand(interp, 
-      "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
+    { blocking_step_proc,       "sqlite3_blocking_step",          0 },
+    { blocking_prepare_v2_proc, "sqlite3_blocking_prepare_v2",    1 },
+    { blocking_prepare_v2_proc, "sqlite3_nonblocking_prepare_v2", 0 },
 #endif
+  };
+  int ii;
+
+  for(ii=0; ii<sizeof(aCmd)/sizeof(aCmd[0]); ii++){
+    void *p = SQLITE_INT_TO_PTR(aCmd[ii].iCtx);
+    Tcl_CreateObjCommand(interp, aCmd[ii].zName, aCmd[ii].xProc, p, 0);
+  }
   return TCL_OK;
 }
 #else

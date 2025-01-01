@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5synonym2
 
-# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -42,7 +42,7 @@ proc fts5_test_bothlist {cmd} {
 }
 sqlite3_fts5_create_function db fts5_test_bothlist fts5_test_bothlist
 
-proc fts5_rowid {cmd} { expr [$cmd xColumnText -1] }
+proc fts5_rowid {cmd} { expr [$cmd xRowid] }
 sqlite3_fts5_create_function db fts5_rowid fts5_rowid
 
 do_execsql_test 1.$tok.0.1 "
@@ -122,6 +122,9 @@ foreach {tn expr} {
   4.1 "NEAR(one two, 2)"
   4.2 "NEAR(one two three, 2)"
   4.3 "NEAR(eight nine, 1) OR NEAR(six seven, 1)"
+
+  5.1 "one + two"
+  5.2 "1 + two"
 } {
   if {[fts5_expr_ok $expr ss]==0} {
     do_test 1.$tok.$tn.OMITTED { list } [list]

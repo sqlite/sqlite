@@ -62,12 +62,7 @@
 **   SELECT * FROM fstree WHERE path LIKE '/home/dan/sqlite/%'
 */
 #include "sqliteInt.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
-
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -816,6 +811,11 @@ static sqlite3_module fsModule = {
   0,                           /* xRollback */
   0,                           /* xFindMethod */
   0,                           /* xRename */
+  0,                           /* xSavepoint */
+  0,                           /* xRelease */
+  0,                           /* xRollbackTo */
+  0,                           /* xShadowName */
+  0                            /* xIntegrity */
 };
 
 static sqlite3_module fsdirModule = {
@@ -839,6 +839,11 @@ static sqlite3_module fsdirModule = {
   0,                              /* xRollback */
   0,                              /* xFindMethod */
   0,                              /* xRename */
+  0,                              /* xSavepoint */
+  0,                              /* xRelease */
+  0,                              /* xRollbackTo */
+  0,                              /* xShadowName */
+  0                               /* xIntegrity */
 };
 
 static sqlite3_module fstreeModule = {
@@ -862,6 +867,11 @@ static sqlite3_module fstreeModule = {
   0,                              /* xRollback */
   0,                              /* xFindMethod */
   0,                              /* xRename */
+  0,                              /* xSavepoint */
+  0,                              /* xRelease */
+  0,                              /* xRollbackTo */
+  0,                              /* xShadowName */
+  0                               /* xIntegrity */
 };
 
 /*

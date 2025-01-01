@@ -36,11 +36,7 @@
 */
 #ifdef SQLITE_TEST
 #  include "sqliteInt.h"
-#  if defined(INCLUDE_SQLITE_TCL_H)
-#    include "sqlite_tcl.h"
-#  else
-#    include "tcl.h"
-#  endif
+#  include "tclsqlite.h"
 #else
 #  include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
@@ -292,6 +288,11 @@ static sqlite3_module schemaModule = {
   0,                           /* xRollback */
   0,                           /* xFindMethod */
   0,                           /* xRename */
+  0,                           /* xSavepoint */
+  0,                           /* xRelease */
+  0,                           /* xRollbackTo */
+  0,                           /* xShadowName */
+  0                            /* xIntegrity */
 };
 
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */

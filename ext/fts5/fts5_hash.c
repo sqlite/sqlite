@@ -36,10 +36,15 @@ struct Fts5Hash {
 
 /*
 ** Each entry in the hash table is represented by an object of the 
-** following type. Each object, its key (a nul-terminated string) and 
-** its current data are stored in a single memory allocation. The 
-** key immediately follows the object in memory. The position list
-** data immediately follows the key data in memory.
+** following type. Each object, its key, and its current data are stored 
+** in a single memory allocation. The key immediately follows the object 
+** in memory. The position list data immediately follows the key data 
+** in memory.
+**
+** The key is Fts5HashEntry.nKey bytes in size. It consists of a single
+** byte identifying the index (either the main term index or a prefix-index),
+** followed by the term data. For example: "0token". There is no 
+** nul-terminator - in this case nKey=6.
 **
 ** The data that follows the key is in a similar, but not identical format
 ** to the doclist data stored in the database. It is:
@@ -174,8 +179,7 @@ static int fts5HashResize(Fts5Hash *pHash){
       unsigned int iHash;
       Fts5HashEntry *p = apOld[i];
       apOld[i] = p->pHashNext;
-      iHash = fts5HashKey(nNew, (u8*)fts5EntryKey(p),
-                          (int)strlen(fts5EntryKey(p)));
+      iHash = fts5HashKey(nNew, (u8*)fts5EntryKey(p), p->nKey);
       p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
@@ -259,7 +263,7 @@ int sqlite3Fts5HashWrite(
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     char *zKey = fts5EntryKey(p);
     if( zKey[0]==bByte 
-     && p->nKey==nToken
+     && p->nKey==nToken+1
      && memcmp(&zKey[1], pToken, nToken)==0 
     ){
       break;
@@ -289,9 +293,9 @@ int sqlite3Fts5HashWrite(
     zKey[0] = bByte;
     memcpy(&zKey[1], pToken, nToken);
     assert( iHash==fts5HashKey(pHash->nSlot, (u8*)zKey, nToken+1) );
-    p->nKey = nToken;
+    p->nKey = nToken+1;
     zKey[nToken+1] = '\0';
-    p->nData = nToken+1 + 1 + sizeof(Fts5HashEntry);
+    p->nData = nToken+1 + sizeof(Fts5HashEntry);
     p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
     pHash->nEntry++;
@@ -408,12 +412,17 @@ static Fts5HashEntry *fts5HashEntryMerge(
       *ppOut = p1;
       p1 = 0;
     }else{
-      int i = 0;
       char *zKey1 = fts5EntryKey(p1);
       char *zKey2 = fts5EntryKey(p2);
-      while( zKey1[i]==zKey2[i] ) i++;
+      int nMin = MIN(p1->nKey, p2->nKey);
 
-      if( ((u8)zKey1[i])>((u8)zKey2[i]) ){
+      int cmp = memcmp(zKey1, zKey2, nMin);
+      if( cmp==0 ){
+        cmp = p1->nKey - p2->nKey;
+      }
+      assert( cmp!=0 );
+
+      if( cmp>0 ){
         /* p2 is smaller */
         *ppOut = p2;
         ppOut = &p2->pScanNext;
@@ -432,10 +441,8 @@ static Fts5HashEntry *fts5HashEntryMerge(
 }
 
 /*
-** Extract all tokens from hash table iHash and link them into a list
-** in sorted order. The hash table is cleared before returning. It is
-** the responsibility of the caller to free the elements of the returned
-** list.
+** Link all tokens from hash table iHash into a list in sorted order. The
+** tokens are not removed from the hash table.
 */
 static int fts5HashEntrySort(
   Fts5Hash *pHash, 
@@ -457,7 +464,7 @@ static int fts5HashEntrySort(
     Fts5HashEntry *pIter;
     for(pIter=pHash->aSlot[iSlot]; pIter; pIter=pIter->pHashNext){
       if( pTerm==0 
-       || (pIter->nKey+1>=nTerm && 0==memcmp(fts5EntryKey(pIter), pTerm, nTerm))
+       || (pIter->nKey>=nTerm && 0==memcmp(fts5EntryKey(pIter), pTerm, nTerm))
       ){
         Fts5HashEntry *pEntry = pIter;
         pEntry->pScanNext = 0;
@@ -475,7 +482,6 @@ static int fts5HashEntrySort(
     pList = fts5HashEntryMerge(pList, ap[i]);
   }
 
-  pHash->nEntry = 0;
   sqlite3_free(ap);
   *ppSorted = pList;
   return SQLITE_OK;
@@ -497,12 +503,11 @@ int sqlite3Fts5HashQuery(
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     zKey = fts5EntryKey(p);
-    assert( p->nKey+1==(int)strlen(zKey) );
-    if( nTerm==p->nKey+1 && memcmp(zKey, pTerm, nTerm)==0 ) break;
+    if( nTerm==p->nKey && memcmp(zKey, pTerm, nTerm)==0 ) break;
   }
 
   if( p ){
-    int nHashPre = sizeof(Fts5HashEntry) + nTerm + 1;
+    int nHashPre = sizeof(Fts5HashEntry) + nTerm;
     int nList = p->nData - nHashPre;
     u8 *pRet = (u8*)(*ppOut = sqlite3_malloc64(nPre + nList + 10));
     if( pRet ){
@@ -529,6 +534,28 @@ int sqlite3Fts5HashScanInit(
   return fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
 }
 
+#ifdef SQLITE_DEBUG
+static int fts5HashCount(Fts5Hash *pHash){
+  int nEntry = 0;
+  int ii;
+  for(ii=0; ii<pHash->nSlot; ii++){
+    Fts5HashEntry *p = 0;
+    for(p=pHash->aSlot[ii]; p; p=p->pHashNext){
+      nEntry++;
+    }
+  }
+  return nEntry;
+}
+#endif
+
+/*
+** Return true if the hash table is empty, false otherwise.
+*/
+int sqlite3Fts5HashIsEmpty(Fts5Hash *pHash){
+  assert( pHash->nEntry==fts5HashCount(pHash) );
+  return pHash->nEntry==0;
+}
+
 void sqlite3Fts5HashScanNext(Fts5Hash *p){
   assert( !sqlite3Fts5HashScanEof(p) );
   p->pScan = p->pScan->pScanNext;
@@ -541,19 +568,22 @@ int sqlite3Fts5HashScanEof(Fts5Hash *p){
 void sqlite3Fts5HashScanEntry(
   Fts5Hash *pHash,
   const char **pzTerm,            /* OUT: term (nul-terminated) */
+  int *pnTerm,                    /* OUT: Size of term in bytes */
   const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 ){
   Fts5HashEntry *p;
   if( (p = pHash->pScan) ){
     char *zKey = fts5EntryKey(p);
-    int nTerm = (int)strlen(zKey);
+    int nTerm = p->nKey;
     fts5HashAddPoslistSize(pHash, p, 0);
     *pzTerm = zKey;
-    *ppDoclist = (const u8*)&zKey[nTerm+1];
-    *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm + 1);
+    *pnTerm = nTerm;
+    *ppDoclist = (const u8*)&zKey[nTerm];
+    *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm);
   }else{
     *pzTerm = 0;
+    *pnTerm = 0;
     *ppDoclist = 0;
     *pnDoclist = 0;
   }

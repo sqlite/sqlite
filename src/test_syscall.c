@@ -76,11 +76,7 @@
 
 #include "sqliteInt.h"
 #include "sqlite3.h"
-#if defined(INCLUDE_SQLITE_TCL_H)
-#  include "sqlite_tcl.h"
-#else
-#  include "tcl.h"
-#endif
+#include "tclsqlite.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -110,15 +106,15 @@ static int ts_stat(const char *zPath, struct stat *p);
 static int ts_fstat(int fd, struct stat *p);
 static int ts_ftruncate(int fd, off_t n);
 static int ts_fcntl(int fd, int cmd, ... );
-static int ts_read(int fd, void *aBuf, size_t nBuf);
-static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off);
+static ssize_t ts_read(int fd, void *aBuf, size_t nBuf);
+static ssize_t ts_pread(int fd, void *aBuf, size_t nBuf, off_t off);
 /* Note:  pread64() and pwrite64() actually use off64_t as the type on their
 ** last parameter.  But that datatype is not defined on many systems 
 ** (ex: Mac, OpenBSD).  So substitute a likely equivalent: sqlite3_uint64 */
-static int ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off);
-static int ts_write(int fd, const void *aBuf, size_t nBuf);
-static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off);
-static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off);
+static ssize_t ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off);
+static ssize_t ts_write(int fd, const void *aBuf, size_t nBuf);
+static ssize_t ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off);
+static ssize_t ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off);
 static int ts_fchmod(int fd, mode_t mode);
 static int ts_fallocate(int fd, off_t off, off_t len);
 static void *ts_mmap(void *, size_t, int, int, int, off_t);
@@ -197,7 +193,7 @@ static int tsIsFail(void){
 */
 static int tsErrno(const char *zFunc){
   int i;
-  int nFunc = strlen(zFunc);
+  size_t nFunc = strlen(zFunc);
   for(i=0; aSyscall[i].zName; i++){
     if( strlen(aSyscall[i].zName)!=nFunc ) continue;
     if( memcmp(aSyscall[i].zName, zFunc, nFunc) ) continue;
@@ -211,7 +207,7 @@ static int tsErrno(const char *zFunc){
 /*
 ** A wrapper around tsIsFail(). If tsIsFail() returns non-zero, set the
 ** value of errno before returning.
-*/ 
+*/
 static int tsIsFailErrno(const char *zFunc){
   if( tsIsFail() ){
     errno = tsErrno(zFunc);
@@ -313,7 +309,7 @@ static int ts_fcntl(int fd, int cmd, ... ){
 /*
 ** A wrapper around read().
 */
-static int ts_read(int fd, void *aBuf, size_t nBuf){
+static ssize_t ts_read(int fd, void *aBuf, size_t nBuf){
   if( tsIsFailErrno("read") ){
     return -1;
   }
@@ -323,7 +319,7 @@ static int ts_read(int fd, void *aBuf, size_t nBuf){
 /*
 ** A wrapper around pread().
 */
-static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
+static ssize_t ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
   if( tsIsFailErrno("pread") ){
     return -1;
   }
@@ -333,7 +329,7 @@ static int ts_pread(int fd, void *aBuf, size_t nBuf, off_t off){
 /*
 ** A wrapper around pread64().
 */
-static int ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off){
+static ssize_t ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off){
   if( tsIsFailErrno("pread64") ){
     return -1;
   }
@@ -343,7 +339,7 @@ static int ts_pread64(int fd, void *aBuf, size_t nBuf, sqlite3_uint64 off){
 /*
 ** A wrapper around write().
 */
-static int ts_write(int fd, const void *aBuf, size_t nBuf){
+static ssize_t ts_write(int fd, const void *aBuf, size_t nBuf){
   if( tsIsFailErrno("write") ){
     if( tsErrno("write")==EINTR ) orig_write(fd, aBuf, nBuf/2);
     return -1;
@@ -354,7 +350,7 @@ static int ts_write(int fd, const void *aBuf, size_t nBuf){
 /*
 ** A wrapper around pwrite().
 */
-static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
+static ssize_t ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
   if( tsIsFailErrno("pwrite") ){
     return -1;
   }
@@ -364,7 +360,7 @@ static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off){
 /*
 ** A wrapper around pwrite64().
 */
-static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off){
+static ssize_t ts_pwrite64(int fd, const void *aBuf, size_t nBuf, sqlite3_uint64 off){
   if( tsIsFailErrno("pwrite64") ){
     return -1;
   }
@@ -429,7 +425,7 @@ static int SQLITE_TCLAPI test_syscall_install(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3_vfs *pVfs; 
-  int nElem;
+  Tcl_Size nElem;
   int i;
   Tcl_Obj **apElem;
 
@@ -442,7 +438,7 @@ static int SQLITE_TCLAPI test_syscall_install(
   }
   pVfs = sqlite3_vfs_find(0);
 
-  for(i=0; i<nElem; i++){
+  for(i=0; i<(int)nElem; i++){
     int iCall;
     int rc = Tcl_GetIndexFromObjStruct(interp, 
         apElem[i], aSyscall, sizeof(aSyscall[0]), "system-call", 0, &iCall
@@ -502,7 +498,7 @@ static int SQLITE_TCLAPI test_syscall_reset(
     rc = pVfs->xSetSystemCall(pVfs, 0, 0);
     for(i=0; aSyscall[i].zName; i++) aSyscall[i].xOrig = 0;
   }else{
-    int nFunc;
+    Tcl_Size nFunc;
     char *zFunc = Tcl_GetStringFromObj(objv[2], &nFunc);
     rc = pVfs->xSetSystemCall(pVfs, Tcl_GetString(objv[2]), 0);
     for(i=0; rc==SQLITE_OK && aSyscall[i].zName; i++){
