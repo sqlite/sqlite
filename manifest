@@ -1,5 +1,5 @@
-C Add\sthe\sconvenience\smakefile\starget\s(unix-only)\s"src-archives"\sthat\sbuilds\nthe\svarious\starballs\sand\sZIP\sarchives\sthat\sgo\son\sthe\sdownload\spage.\s\sThis\sis\nintended\sto\smake\sit\seasier\sand\sless\serror\sprone\sto\sput\sup\snew\s"draft"\sdownload\npages\sfor\stesting.
-D 2024-12-30T21:23:53.148
+C Fix\sthe\svfstrace.c\sextension\sso\sthat\sit\ssupports\sxFetch\sand\sxUnfetch.
+D 2025-01-01T12:24:01.620
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -453,7 +453,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c 4d8b39570cbede1a05928c77e2142f8a744468443bf649cf86da3924e5e60fca
+F ext/misc/vfstrace.c 9c4abd2f67ae2760e7a241eca2e8517c64480ac2c3e66a499326e688a9bbee22
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7cd8ccf57d1ae0f597ec5004201395f61ef4750728f3c1b9c4dd52d28916a4f7
-R f56cb98bdebf27e28da45a1d08491799
+P 2b17bc49655c577029919c2d409de994b0d252f8efb5da1ba0913f2c96bee552
+R 1a7b3740d0d7b0156ecda7d86d9b3eae
 U drh
-Z 0ad30bdc3b0bb40aad0de043d83aa269
+Z ba39083b8910dae572ba02a04ab64577
 # Remove this line to create a well-formed Fossil manifest.
