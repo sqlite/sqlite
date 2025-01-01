@@ -2087,7 +2087,7 @@ static void generateColumnTypes(
     sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, SQLITE_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_TABLE_ALIAS, zOrigTabAlias, SQLITE_TRANSIENT);
 #else
-    zType = columnType(&sNC, p, 0, 0, 0, 0);
+    zType = columnType(&sNC, p, 0, 0, 0, 0, 0);
 #endif
     sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
   }
@@ -2385,7 +2385,7 @@ void sqlite3SubqueryColumnTypes(
         pCol->affinity = SQLITE_AFF_FLEXNUM;
       }
     }
-    zType = columnType(&sNC, p, 0, 0, 0);
+    zType = columnType(&sNC, p, 0, 0, 0, 0);
     if( zType==0 || pCol->affinity!=sqlite3AffinityType(zType, 0) ){
       if( pCol->affinity==SQLITE_AFF_NUMERIC
        || pCol->affinity==SQLITE_AFF_FLEXNUM
