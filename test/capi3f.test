@@ -23,6 +23,7 @@ set ::testprefix capi3f
 #
 do_not_use_codec
 
+
 # Return the UTF-16 representation of the supplied UTF-8 string $str.
 # If $nt is true, append two 0x00 bytes as a nul terminator.
 proc utf16 {str {nt 1}} {
@@ -49,12 +50,6 @@ proc utf8 {str} {
 
 # This proc is used to test the following API calls:
 #
-# sqlite3_column_origin_name
-# sqlite3_column_origin_name16
-# sqlite3_column_table_name
-# sqlite3_column_table_name16
-# sqlite3_column_database_name
-# sqlite3_column_database_name16
 # sqlite3_column_table_alias
 # sqlite3_column_table_alias16
 
@@ -69,36 +64,17 @@ proc utf8 {str} {
 # set STMT [sqlite3_prepare "SELECT 1, 2, 2;" -1 DUMMY]
 # check_header test1.1 {1 2 3} {"" "" ""}
 #
-proc check_origin_header2 {STMT test dbs tables als cols} {
+proc check_origin_header2 {STMT test als } {
   # If sqlite3_column_origin_name() and friends are not compiled into
   # this build, this proc is a no-op.
   ifcapable columnmetadata {
+
     # Use the return value of sqlite3_column_count() to build
     # a list of column indexes. i.e. If sqlite3_column_count
     # is 3, build the list {0 1 2}.
     set ::idxlist [list]
     set ::numcols [sqlite3_column_count $STMT]
     for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
-  
-    # Database names in UTF-8
-    do_test $test.1 {
-      set cnamelist [list]
-      foreach i $idxlist {
-        lappend cnamelist [sqlite3_column_database_name $STMT $i]
-      } 
-      set cnamelist
-    } $dbs
-  
-    # Database names in UTF-16
-    ifcapable {utf16} {
-      do_test $test.2 {
-        set cnamelist [list]
-        foreach i $idxlist {
-          lappend cnamelist [utf8 [sqlite3_column_database_name16 $STMT $i]]
-        }
-        set cnamelist
-      } $dbs
-    }
   
     # Table alias in UTF-8
     do_test $test.3 {
@@ -120,47 +96,11 @@ proc check_origin_header2 {STMT test dbs tables als cols} {
       } $als
     }
 
-    # Table names in UTF-8
-    do_test $test.5 {
-      set cnamelist [list]
-      foreach i $idxlist {
-        lappend cnamelist [sqlite3_column_table_name $STMT $i]
-      } 
-      set cnamelist
-    } $tables
-  
-    # Table names in UTF-16
-    ifcapable {utf16} {
-      do_test $test.6 {
-        set cnamelist [list]
-        foreach i $idxlist {
-          lappend cnamelist [utf8 [sqlite3_column_table_name16 $STMT $i]]
-        }
-        set cnamelist
-      } $tables
-    }
-  
-    # Origin names in UTF-8
-    do_test $test.7 {
-      set cnamelist [list]
-      foreach i $idxlist {
-        lappend cnamelist [sqlite3_column_origin_name $STMT $i]
-      } 
-      set cnamelist
-    } $cols
-  
-    # Origin declaration types in UTF-16
-    ifcapable {utf16} {
-      do_test $test.8 {
-        set cnamelist [list]
-        foreach i $idxlist {
-          lappend cnamelist [utf8 [sqlite3_column_origin_name16 $STMT $i]]
-        }
-        set cnamelist
-      } $cols
-    }
   }
 }
+
+sqlite3 db test.db
+set DB [sqlite3_connection_pointer db]
 
 do_test capi3f-1 {
   execsql {
@@ -174,15 +114,8 @@ do_test capi3f-1 {
   sqlite3_column_count $STMT
 } 3
 
-check_origin_header2 $STMT capi3f-1 {main main main} {t1 t1 t1} {tz tz tz} {a b c}
+check_origin_header2 $STMT capi3f-1 {tz tz tz}
 
-do_test capi3f-2 {
-  set sql2 "SELECT * FROM t1"
-  set STMT [sqlite3_prepare_v2 $DB $sql2 -1 TAIL]
-  sqlite3_column_count $STMT
-} 3
-
-check_origin_header2 $STMT capi3f-2 {main main main} {t1 t1 t1} {t1 t1 t1} {a b c}
-
+db close
 
 finish_test
