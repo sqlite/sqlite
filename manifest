@@ -1,5 +1,5 @@
-C Close\sdatabase\sconnections\sin\stest/dbpage.test,\sfor\sWindows.
-D 2025-01-02T17:56:11.889
+C Improvements\sto\sthe\sdisplay\sof\ssubqueries\sin\sthe\sFROM\sclause\sfor\streeview\noutput.\s\s(Debug\sand\sanalysis\scode\sonly\s-\sdoes\snot\saffect\sproduction\sbuilds.)
+D 2025-01-02T18:43:29.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -839,7 +839,7 @@ F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c fe17e03175cae35b6694d0f879e7bc3d1ddea2fd4ab148cba9bbd025b7a7bb12
-F src/treeview.c 921392561385e05ef5703f20a7a72f0a0a45c1fb749558d7467fae2c3f525006
+F src/treeview.c e5848f30a6000ca0f9a918131c220f5dff652aa08b220c1de4dc45862ca27c88
 F src/trigger.c 247e2d712d5edc6021d52a169f6ac9a9c10d7144bc4ac7ea06c1ed2aa414659f
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41f6e46695b547dece4daf2f3714e29f231aa04774f57fbd31aeb0a4290c0e7d
-R ad33df8723391488642db5cd87f0ab29
+P 322d255ed89c1dee08745e89f3c2bcf495283fd87b7526e70d6525a6e96b0ecf
+R 880caaa332dedbabd2ac0f19d743a7f2
 U drh
-Z 2ad32d699feaca719fd3e1c4c9618a89
+Z 4a0cd1fd6c1443c6320e9f6723abbf4c
 # Remove this line to create a well-formed Fossil manifest.
