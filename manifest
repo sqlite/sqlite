@@ -1,5 +1,5 @@
-C Fix\sthe\stool/omittest.tcl\sscript,\sbroken\sby\s[d8c0e0184226bdae].
-D 2025-01-01T18:18:49.769
+C Update\sthe\sbuild\sinstructions\sfor\sWindows\sto\snote\sthat\sVS2015\sor\slater\sis\nrequired\sto\savoid\sthe\sneed\sto\sinstall\stclsh.exe.
+D 2025-01-02T12:14:01.327
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -56,7 +56,7 @@ F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-unix.md 7d6a5770611ea0643de456b385581923dac7c0a7c3758825dda810d12fc3e5b2
-F doc/compile-for-windows.md 17e1491897a117ff0247531a61671b26d487bc1dad25c3894c04ad4fca936a7f
+F doc/compile-for-windows.md 791f1754fcd669b0a8fdcdc0fdd56eff8c148add7457e8bf4863b46829966fc1
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7132b7e62422378f0560dcf0837888db5aa70cded9d783ab389581aa43dc5c8
-R b61fb2d8724df93fbff2b6eed5e91f66
+P 4f6c36a61c2b27e204c00bd7467453098f756c7e596b7e62d47da8784fbd2026
+R c359455d12a83b16327a4eb96d1245c3
 U drh
-Z 966756dbeab414c1a4d72e1421c875b3
+Z 5fb03700b1eda71764ba1102db353cb9
 # Remove this line to create a well-formed Fossil manifest.

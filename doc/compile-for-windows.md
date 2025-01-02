@@ -7,6 +7,15 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       will work fine.  Do a standard install for C++ development.
       SQLite only needs the
       "cl" compiler and the "nmake" build tool.
+      <ul><li><b>Note:</b>
+      VS2015 or later is required for the procedures below to
+      all work.  You *might* be able to get the build to work with
+      earlier versions of MSVC, but in that case the TCL installation
+      of step 3 will be required, since the "jimsh0.c" program of
+      Autosetup that is used as a substitute for "tclsh.exe" won't
+      compile with versions of Visual Studio prior to VS2015.  In any
+      event, building SQLite from canonical source code on Windows
+      is not supported for earlier versions of Visual Studio.</ul>
 
   2.  Under the "Start" menu, find "All Apps" then go to "Visual Studio 20XX"
       and find "x64 Native Tools Command Prompt for VS 20XX".  Pin that
