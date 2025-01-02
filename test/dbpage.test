@@ -161,6 +161,8 @@ do_execsql_test 520 {
   SELECT * FROM t1;
 } {2}
 
+db2 close
+
 #-------------------------------------------------------------------------
 reset_db
 forcedelete test.db2
@@ -201,6 +203,8 @@ sqlite3 db test.db
 do_execsql_test 640 {
   SELECT * FROM t2;
 } {1234}
+
+db2 close
 
 #-------------------------------------------------------------------------
 reset_db
