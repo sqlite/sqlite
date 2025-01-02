@@ -1,5 +1,5 @@
-C Update\sthe\sbuild\sinstructions\sfor\sWindows\sto\snote\sthat\sVS2015\sor\slater\sis\nrequired\sto\savoid\sthe\sneed\sto\sinstall\stclsh.exe.
-D 2025-01-02T12:14:01.327
+C Improvements\sto\sthe\sway\sthat\struncation\sis\simplemented\sin\ssqlite_dbpage().
+D 2025-01-02T15:03:13.323
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -724,7 +724,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c b1aeb47c1004f26c39c6800f0045b8d729d232aca24f6aa430c491b83003d033
+F src/dbpage.c cfa9ed0a490bd2e07e4cdba68503ccd5e587dcb4ac9c7ae9ed382a9cd924f29b
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
@@ -1076,8 +1076,8 @@ F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8ba8e9c3
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 4b3c12de4d98b1b2d908ab03d217d4619e47c8b23d5e67f8a6f2b1bdee7cae23
-F test/dbpage.test fce29035c7566fd7835ec0f19422cb4b9c6944ce0e1b936ff8452443f92e887d
-F test/dbpagefault.test 35f06cfb2ef100a9b19d25754e8141b9cba9b7daabd4c60fa5af93fcce884435
+F test/dbpage.test dba7b6048c461125595278bd838e66d01bba67d8ad1da94489a7851439e8fa86
+F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e39636530b
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
 F test/decimal.test ef731887b43ee32ef86e1c8fddb61a40789f988332c029c601dcf2c319277e9e
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f6c36a61c2b27e204c00bd7467453098f756c7e596b7e62d47da8784fbd2026
-R c359455d12a83b16327a4eb96d1245c3
+P da0ef0567be55648413bcbf2e129f348776a908dbad2ac8582ee3e27ac459e3b
+R 963301e91789659974012d48c99b5d2d
 U drh
-Z 5fb03700b1eda71764ba1102db353cb9
+Z dc0b704adc2bca53154303a0d3643971
 # Remove this line to create a well-formed Fossil manifest.
