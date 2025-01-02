@@ -466,7 +466,7 @@ static int dbpageRollbackTo(sqlite3_vtab *pVtab, int notUsed1){
 */
 int sqlite3DbpageRegister(sqlite3 *db){
   static sqlite3_module dbpage_module = {
-    0,                            /* iVersion */
+    2,                            /* iVersion */
     dbpageConnect,                /* xCreate */
     dbpageConnect,                /* xConnect */
     dbpageBestIndex,              /* xBestIndex */
@@ -488,7 +488,7 @@ int sqlite3DbpageRegister(sqlite3 *db){
     0,                            /* xRename */
     0,                            /* xSavepoint */
     0,                            /* xRelease */
-    0/*dbpageRollbackTo*/,             /* xRollbackTo */
+    dbpageRollbackTo,             /* xRollbackTo */
     0,                            /* xShadowName */
     0                             /* xIntegrity */
   };

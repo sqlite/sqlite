@@ -200,4 +200,50 @@ do_execsql_test 640 {
   SELECT * FROM t2;
 } {1234}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 700 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+  INSERT INTO t1 VALUES( hex(randomblob(1000)) );
+}
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+db2 eval {
+  CREATE TABLE y1(y);
+  INSERT INTO y1 VALUES( hex(randomblob(1000)) );
+}
+
+set max [db2 one {PRAGMA page_count}]
+
+do_test 710 {
+  execsql {
+    BEGIN;
+  }
+
+  for {set ii 1} {$ii <= $max} {incr ii} {
+    set data [db2 one {SELECT data FROM sqlite_dbpage WHERE pgno=$ii}]
+    execsql {
+      UPDATE sqlite_dbpage SET data=$data WHERE pgno=$ii
+    }
+  }
+
+  execsql {
+      SAVEPOINT abc;
+        INSERT INTO sqlite_dbpage VALUES(2, NULL);
+      ROLLBACK TO abc;
+    COMMIT;
+  }
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 720 {
+  PRAGMA integrity_check
+} {ok}
+
+
 finish_test

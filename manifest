@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sway\sthat\struncation\sis\simplemented\sin\ssqlite_dbpage().
-D 2025-01-02T15:03:13.323
+C Add\sa\stest\scase\sfor\sROLLBACK\sTO\sof\sdatabase\struncate\soperations\smade\sthrough\sthe\ssqlite_dbpage\svtab.
+D 2025-01-02T15:27:15.310
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -724,7 +724,7 @@ F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d49
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
 F src/date.c 89ce1ff20512a7fa5070ba6e7dd5c171148ca7d580955795bf97c79c2456144a
-F src/dbpage.c cfa9ed0a490bd2e07e4cdba68503ccd5e587dcb4ac9c7ae9ed382a9cd924f29b
+F src/dbpage.c e90410e5d4c0217dfddc4184a81e38ec4903c25d4ec0f201060a0e54e7c2099f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 3329173aacc6c37da3971b6253827799b32e301673be00126df8271bf018e15f
@@ -1076,7 +1076,7 @@ F test/dbfuzz.c 73047c920d6210e5912c87cdffd9a1c281d4252e
 F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8ba8e9c3
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 4b3c12de4d98b1b2d908ab03d217d4619e47c8b23d5e67f8a6f2b1bdee7cae23
-F test/dbpage.test dba7b6048c461125595278bd838e66d01bba67d8ad1da94489a7851439e8fa86
+F test/dbpage.test 901ff31a7f5c80875b909d8cb5241e7d3ddfc08cd812a2f0ab9630e720e9e9c2
 F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e39636530b
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da0ef0567be55648413bcbf2e129f348776a908dbad2ac8582ee3e27ac459e3b
-R 963301e91789659974012d48c99b5d2d
-U drh
-Z dc0b704adc2bca53154303a0d3643971
+P ac4bb2e4ecf0bdb0d8ac12b1ccb42d51af02f519a038cfc79faab5c216971056
+R ae6fe4d4378dd5bb82a68cd1b247b9d9
+U dan
+Z 138def969ceba9d851c4d9f22f7101e9
 # Remove this line to create a well-formed Fossil manifest.
