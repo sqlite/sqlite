@@ -123,10 +123,12 @@ reset_db
 forcedelete test.db2
 sqlite3 db2 test.db2
 db2 eval {
+  PRAGMA auto_vacuum=NONE;
   CREATE TABLE t1(x, y);
 }
 
 do_execsql_test 500 {
+  PRAGMA auto_vacuum=NONE;
   CREATE TABLE x1(a);
   INSERT INTO x1 VALUES( hex(randomblob(2000)) );
   INSERT INTO x1 VALUES( hex(randomblob(2000)) );
