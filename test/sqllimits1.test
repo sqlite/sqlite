@@ -78,8 +78,8 @@ do_test sqllimits1-1.23 {
 # Minimum value for SQLITE_LIMIT_LENGTH is 30
 #
 do_test sqllimits1-1.30 {
-  sqlite3_limit db SQLITE_LIMIT_LENGTH 1
-  sqlite3_limit db SQLITE_LIMIT_LENGTH 1000000000
+  set prior [sqlite3_limit db SQLITE_LIMIT_LENGTH 1]
+  sqlite3_limit db SQLITE_LIMIT_LENGTH $prior
 } 30
 
 
