@@ -117,6 +117,15 @@ do_test func-2.9 {
 do_test func-2.10 {
   execsql {SELECT substr(a,2,2) FROM t2}
 } {{} {} 45 {} 78}
+do_test func-2.11 {
+  execsql {SELECT substr('abcdefg',0x100000001,2)}
+} {{}}
+do_test func-2.12 {
+  execsql {SELECT substr('abcdefg',1,0x100000002)}
+} {abcdefg}
+do_test func-2.13 {
+  execsql {SELECT quote(substr(x'313233343536373839',0x7ffffffffffffffe,5))}
+} {X''}
 
 # Only do the following tests if TCL has UTF-8 capabilities
 #
@@ -339,6 +348,9 @@ ifcapable floatingpoint {
   do_test func-4.39 {
     string tolower [db eval {SELECT round(1e500), round(-1e500);}]
   } {inf -inf}
+  do_execsql_test func-4.40 {
+    SELECT round(123.456 , 4294967297);
+  } {123.456}
 }
 
 # Test the upper() and lower() functions
