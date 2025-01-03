@@ -1,5 +1,5 @@
-C Improve\sthe\streeview\soutput\sfor\sCteUse\sobjects.
-D 2025-01-02T21:23:25.211
+C Avoid\susing\sInt32x32To64()\swith\sa\s64-bit\sargument\sin\sfileio.c\s-\sthis\slevel\sof\smicro-optimization\sis\snot\sreally\snecessary\sthere.
+D 2025-01-03T11:22:01.656
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -415,7 +415,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 172cf81a8634e6a0f0bedaf71a8372fee63348cf5a3c4e1b78bb233c35889fdc
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c e6b34db4df4b55b96265086c0010264e257b6eab1644e665697a6da587659403
+F ext/misc/fileio.c 07cf3109ec6452789e3a989a010234e2a17b599ce82ea29212c948572456abac
 F ext/misc/fossildelta.c 8c026e086e406e2b69947f1856fa3b848fff5379962276430d10085b8756b05a
 F ext/misc/fuzzer.c 8b28acf1a7e95d50e332bdd47e792ff27054ad99d3f9bc2e91273814d4b31a5a
 F ext/misc/ieee754.c 62a90978204d2c956d5036eb89e548e736ca5fac0e965912867ddd7bb833256d
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a2d65cdcdd3d21bb7d9ea0efb434484f1b8642c2bb6457db58bc2a5f4fc16e5
-R c71f9b806da01da7c4d2eda55e40e335
-U drh
-Z 07fa7dcff94b36dfa3368297cbe48fff
+P 2b16d6947ca4a102ddab4d5ba3e340a75e1e5c28e45e874ee5ff52f9b5fb964f
+R 5009b44122ef97a1941b73b1f68f9841
+U dan
+Z 3d41d92a3c50a0c7b4d04240befaa9e5
 # Remove this line to create a well-formed Fossil manifest.
