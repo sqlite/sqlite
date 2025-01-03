@@ -1,5 +1,5 @@
-C Avoid\susing\sInt32x32To64()\swith\sa\s64-bit\sargument\sin\sfileio.c\s-\sthis\slevel\sof\smicro-optimization\sis\snot\sreally\snecessary\sthere.
-D 2025-01-03T11:22:01.656
+C Add\scomment\sto\sthe\scolumnIsGoodIndexCandidate()\sroutine\sto\srecord\sthe\sresults\nof\sa\sfailed\sexperiment.\s\sNo\schanges\sto\scode.
+D 2025-01-03T11:51:50.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -861,7 +861,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 9ad3dea8003a8913da6a4ca8322e2fe30773f46e88a0d4fbf9db13bdb999efa2
+F src/where.c d519bc93b4a05928f10ba4925b1afc77cbd71c1b1b5148583ab4868925c639fb
 F src/whereInt.h 1e36ec50392f7cc3d93d1152d4338064cd522b87156a0739388b7e273735f0ca
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2204,8 +2204,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b16d6947ca4a102ddab4d5ba3e340a75e1e5c28e45e874ee5ff52f9b5fb964f
-R 5009b44122ef97a1941b73b1f68f9841
-U dan
-Z 3d41d92a3c50a0c7b4d04240befaa9e5
+P 1291b013a8c93e7001fe25783bc98d12f5f7c341d1f728e6852632e18a38af58
+R 0507e66ed59bfa5a55bc14583a9d765f
+U drh
+Z 3304d535a779543ccf066c65753e6b08
 # Remove this line to create a well-formed Fossil manifest.
