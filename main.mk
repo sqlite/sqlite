@@ -1931,6 +1931,21 @@ amalgamation-tarball: sqlite3.c sqlite3rc.h
 snapshot-tarball: sqlite3.c sqlite3rc.h
 	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
+# Build a ZIP archive snapshot of the latest check-in.
+#
+sqlite-src.zip:	$(TOP)/tool/mksrczip.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mksrczip.tcl
+
+# Build a ZIP archive of the amaglamation
+#
+sqlite-amalgamation.zip:	$(TOP)/tool/mkamalzip.tcl sqlite3.c sqlite3.h shell.c sqlite3ext.h
+	$(TCLSH_CMD) $(TOP)/tool/mkamalzip.tcl
+
+# Build all the source code deliverables
+#
+src-archives: sqlite-amalgamation.zip amalgamation-tarball sqlite-src.zip
+	ls -ltr *.zip *.tar.gz | tail -3
+
 # Build a ZIP archive containing various command-line tools.
 #
 tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
