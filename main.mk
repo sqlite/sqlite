@@ -1574,6 +1574,13 @@ tclextension-uninstall:
 tclextension-list:
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
 
+# Verify that the SQLite TCL extension that is loaded by default
+# in $(TCLSH_CMD) is the same as the version of SQLite for the
+# current source tree
+#
+tclextension-verify: sqlite3.h
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --version-check
+
 #
 # FTS5 things
 #

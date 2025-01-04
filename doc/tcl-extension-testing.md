@@ -46,16 +46,18 @@
 <li> `./configure --with-tclsh=$TCLTD/tcl86/bin/tclsh8.6`
 <li> `make tclextension-install` <br>
      &uarr; Verify extension installed at $TCLTD/tcl86/lib/tcl8.6/sqlite3.*
+<li> `make tclextension-verify`
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLTD/tcl90/bin/tclsh9.0`
 <li> `make tclextension-install` <br>
      &uarr; Verify extension installed at $TCLTD/tcl90/lib/sqlite3.*
+<li> `make tclextension-verify`
 </ol>
 
-### 1.4 Testing the extension
+### 1.4 Additional sanity tests
 
 <ol type="1">
-<li value="22"> 
+<li value="24"> 
      `$TCLTD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain` <br>
      &uarr; Verify thousands of lines of output with no errors
 <li> `$TCLTD/tcl90/bin/tclsh9.0 test/testrunner.tcl release --explain` <br>
@@ -65,7 +67,7 @@
 ### 1.5 Cleanup
 
 <ol type="1">
-<li value="24"> `rm -rf $TCLTD`
+<li value="26"> `rm -rf $TCLTD`
 </ol>
 
 ## 2.0 Testing On Windows
@@ -130,18 +132,20 @@
 <li> `set TCLSH_CMD=%TCLTD%\tcl86\bin\tclsh86t.exe`
 <li> `nmake /f Makefile.msc tclextension-install` <br>
      &uarr; Verify extension installed at %TCLTD%\\tcl86\\lib\\tcl8.6\\sqlite3.*
+<li> `nmake /f Makefile.msc tclextension-verify`
 <li> `fossil clean -x`
 <li> `set TCLDIR=%TCLTD%\tcl90`
 <li> `set PATH=%TCLTD%\tcl90\bin;%ORIGINALPATH%`
 <li> `set TCLSH_CMD=%TCLTD%\tcl90\bin\tclsh90.exe`
 <li> `nmake /f Makefile.msc tclextension-install` <br>
      &uarr; Verify extension installed at %TCLTD%\\tcl90\\lib\\sqlite3.*
+<li> `nmake /f Makefile.msc tclextension-verify`
 </ol>
 
-### 2.4 Testing on Windows
+### 2.4 Additional sanity tests for Windows
 
 <ol type="1">
-<li value="31">
+<li value="33">
    `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
 <li>`tclsh86t test/testrunner.tcl release --explain` <br>
      &uarr; Verify thousands of lines of output with no errors
@@ -153,5 +157,5 @@
 ### 2.5 Cleanup
 
 <ol type="1">
-<li value="35"> `rm -rf %TCLTD%`
+<li value="37"> `rm -rf %TCLTD%`
 </ol>

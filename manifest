@@ -1,11 +1,11 @@
-C Show\sthe\svalues\sof\s$(JIM_TCLSH)\sand\s$(VISUALSTUDIOVERSION)\sin\sthe\s\noutput\sof\s"nmake\stcl-env".
-D 2025-01-04T20:13:54.343
+C Improvements\sto\stesting\sand\svalidation\sof\sthe\sSQLite\sTCL\sextension.
+D 2025-01-04T20:50:21.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in ad349acf91b3569033439fe498fa197aa530cafaa01362eb7daad2f84e43d265
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc fd49fbfca5077436a4e7e9f38ec0f1ed900c3e5dc627a8ee00ff15d18649c00c
+F Makefile.msc 9180dae8de9534393c8a7c7d3b660deb6de5d29910471991738eed1b19c1aaa1
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -61,7 +61,7 @@ F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347b
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
-F doc/tcl-extension-testing.md 1c7225115cede8dadd8fb173d5a1ada31d0ac566d53dcbec2013bbf97464933d
+F doc/tcl-extension-testing.md ab39979265fd0e0aa1d31dfb9d468761470d8d84a285d49f11b3ed748224e2f4
 F doc/testrunner.md 15583cf8c7d8a1c3378fd5d4319ca769a14c4d950a5df9b015d01d5be290dc69
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
@@ -700,7 +700,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk fde6ef9167ab1972f6273c0cc06a7d2d776f562d06f44f4987868335910f3803
+F main.mk 566aff71e11c52e10f81548e60f79c48cc267cb4b9971e71720047105da4304b
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2110,7 +2110,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl 5e1f1aa843e635c8b7480c7d1ec1f149a5e52136ae2fca1226304053a1a60587
+F tool/buildtclext.tcl e82120d672b34b507e1d9cb220ce18c5c36c3ee0ff0328e35f1806ce74ed2266
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13a35ad792dc0afe1f7b60230aef392ae01e702972b963d732e332f21848f38b
-R b249c902701d086f7fc1e9c45b94a036
+P 4270abc071ced9e7ec1fed3c387262cc1912e321e37e45e547a1088dbb022702
+R e76bc68f8d16f2d1c5c9148746df5950
 U drh
-Z aade41f2b6bccecf69fadf6f2f547775
+Z 3470080ccfb271429f7dd29c45e9a752
 # Remove this line to create a well-formed Fossil manifest.
