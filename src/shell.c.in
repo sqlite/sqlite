@@ -10237,6 +10237,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           rc = 1;
         }
       }
+      bind_prepared_stmt(p, pStmt);
       sqlite3_step(pStmt);
       sqlite3_finalize(pStmt);
     }else
