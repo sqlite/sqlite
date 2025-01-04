@@ -1,11 +1,11 @@
-C Add\scomment\sto\sthe\scolumnIsGoodIndexCandidate()\sroutine\sto\srecord\sthe\sresults\nof\sa\sfailed\sexperiment.\s\sNo\schanges\sto\scode.
-D 2025-01-03T11:51:50.103
+C Add\sthe\sdocument\sdescribing\stest\sprocedures\sfor\sthe\sTCL\sextension\sbuild\nprocess.\s\sUpdate\sthe\sWindows\smakefile\sso\sthat\sit\sbuilds\sthe\sTCL\sextensions\nsuccessfully\swith\sa\sdefault\sinstallation\sof\sTcl8.6.
+D 2025-01-04T15:52:40.069
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in ad349acf91b3569033439fe498fa197aa530cafaa01362eb7daad2f84e43d265
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc eed0c40c365d100f3329e8fb7d0e18bad09a6f0c026aa1e4dc7f88270378929d
+F Makefile.msc a62f84e521a23168c61018420c6844a9fbb424950010dc6a3e084ffd8618312e
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 8dc0c3df15fd5ff0622f88fc483533fce990b1cbb2f5fb9fdfb4dbd71eef2889
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -61,6 +61,7 @@ F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347b
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
+F doc/tcl-extension-testing.md 1c7225115cede8dadd8fb173d5a1ada31d0ac566d53dcbec2013bbf97464933d
 F doc/testrunner.md 15583cf8c7d8a1c3378fd5d4319ca769a14c4d950a5df9b015d01d5be290dc69
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
@@ -2204,8 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1291b013a8c93e7001fe25783bc98d12f5f7c341d1f728e6852632e18a38af58
-R 0507e66ed59bfa5a55bc14583a9d765f
+P 9ee57a30a49d9813bf2669a5d8346f7e018e3fbf1792739951311a8d3a249d45 0c2cdc632f26d6acac2d508def4ecfcc97462ebcddc20c84f8847e02e42b3a1d
+R c39856b8b1c55486d94efa9f4d6e65f7
+T +closed 0c2cdc632f26d6acac2d508def4ecfcc97462ebcddc20c84f8847e02e42b3a1d
 U drh
-Z 3304d535a779543ccf066c65753e6b08
+Z 0b107a7817bd289dd55ee148db24c6d9
 # Remove this line to create a well-formed Fossil manifest.
