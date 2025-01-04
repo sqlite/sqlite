@@ -26,11 +26,13 @@
 <ol type="1">
 <li value="5">  `mkdir $TCLTD $TCLTD/tcl86 $TCLTD/tcl90`
 <li>  `cd $TCLCO/unix`
-<li>  `fossil up core-8-6-16` &larr; or some other version of Tcl8.6.
+<li>  `fossil up core-8-6-16` <br>
+      &uarr; Or some other version of Tcl8.6.
 <li>  `fossil clean -x`
 <li>  `./configure --prefix=$TCLTD/tcl86`
 <li>  `make install`
-<li>  `fossil up core-9-0-0` &larr; or some other version of Tcl9
+<li>  `fossil up core-9-0-0` <br>
+      &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
 <li>  `./configure --prefix=$TCLTD/tcl90`
 <li>  `make install`
@@ -42,28 +44,28 @@
 <li value="15"> `cd $SRCCO`
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLTD/tcl86/bin/tclsh8.6`
-<li> `make tclextension-install`
-<li> &rarr; Verify extension installed at $TCLTD/tcl86/lib/tcl8.6/sqlite3.*
+<li> `make tclextension-install` <br>
+     &uarr; Verify extension installed at $TCLTD/tcl86/lib/tcl8.6/sqlite3.*
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLTD/tcl90/bin/tclsh9.0`
-<li> `make tclextension-install`
-<li> &rarr; Verify extension installed at $TCLTD/tcl90/lib/sqlite3.*
+<li> `make tclextension-install` <br>
+     &uarr; Verify extension installed at $TCLTD/tcl90/lib/sqlite3.*
 </ol>
 
 ### 1.4 Testing the extension
 
 <ol type="1">
-<li value="24"> 
-  `$TCLTD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain`
-<li> &uarr; Verify thousands of lines of output with no errors
-<li> `$TCLTD/tcl90/bin/tclsh9.0 test/testrunner.tcl release --explain`
-<li> &uarr; Verify thousands of lines of output with no errors
+<li value="22"> 
+     `$TCLTD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors
+<li> `$TCLTD/tcl90/bin/tclsh9.0 test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors
 </ol>
 
 ### 1.5 Cleanup
 
 <ol type="1">
-<li value="28"> `rm -rf $TCLTD`
+<li value="24"> `rm -rf $TCLTD`
 </ol>
 
 ## 2.0 Testing On Windows
@@ -89,7 +91,8 @@
     [unxutils](https://unxutils.sourceforge.net/)
 <li> [Visual Studio](https://visualstudio.microsoft.com/vs/community/)
      installed.  VS2015 or later required.
-<li> `set ORIGINALPATH=%PATH%` &larr; remember the original %PATH% value
+<li> `set ORIGINALPATH=%PATH%` <br>
+     &uarr; remember the original %PATH% value
 </ol>
 
 ### 2.2 Building the TCL libraries and tclsh.exe executables on Windows
@@ -97,42 +100,54 @@
 <ol type="1">
 <li value="8">  `mkdir %TCLTD% %TCLTD%\tcl86 %TCLTD%\tcl90`
 <li>  `cd %TCLCO%\win`
-<li>  `fossil up core-8-6-16` &larr; or some other version of Tcl8.6.
+<li>  `fossil up core-8-6-16` <br>
+      &uarr; Or some other version of Tcl8.6.
 <li>  `fossil clean -x`
-<li>  `nmake /f makefile.vc INSTALLDIR=%TCLTD%\tcl86 release install`
-<li>  `fossil up core-9-0-0` &larr; or some other version of Tcl9
+<li>  `set INSTALLDIR=%TCLTD%\tcl86`
+<li>  `nmake /f makefile.vc release` <br>
+      &udarr; You *must* invoke the "release" and "install" targets
+      using separate invocations of "nmake" or tclsh86t.exe won't be
+      installed.
+<li>  `nmake /f makefile.vc install`
+<li>  `fossil up core-9-0-0` <br>
+      &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
-<li>  `nmake /f makefile.vc INSTALLDIR=%TCLTD%\tcl86 release install`
+<li>  `set INSTALLDIR=%TCLTD%\tcl90`
+<li>  `nmake /f makefile.vc release` <br>
+      &udarr; You *must* invoke the "release" and "install" targets
+      using separate invocations of "nmake" or tclsh90.exe won't be
+      installed.
+<li>  `nmake /f makefile.vc install`
 </ol>
 
 ### 2.3 Building the SQLite TCL extension on Windows
 
 <ol type="1">
-<li value="16"> `cd %SRCCO%`
+<li value="20"> `cd %SRCCO%`
 <li> `fossil clean -x`
 <li> `set TCLDIR=%TCLTD%\tcl86`
 <li> `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
 <li> `set TCLSH_CMD=%TCLTD%\tcl86\bin\tclsh86t.exe`
-<li> `nmake /f Makefile.msc tclextension-install`
-<li> &rarr; Verify extension installed at %TCLTD%\tcl86\lib\tcl8.6\sqlite3.*
+<li> `nmake /f Makefile.msc tclextension-install` <br>
+     &uarr; Verify extension installed at %TCLTD%\\tcl86\\lib\\tcl8.6\\sqlite3.*
 <li> `fossil clean -x`
 <li> `set TCLDIR=%TCLTD%\tcl90`
 <li> `set PATH=%TCLTD%\tcl90\bin;%ORIGINALPATH%`
 <li> `set TCLSH_CMD=%TCLTD%\tcl90\bin\tclsh90.exe`
-<li> `nmake /f Makefile.msc tclextension-install`
-<li> &rarr; Verify extension installed at %TCLTD%\tcl906\lib\sqlite3.*
+<li> `nmake /f Makefile.msc tclextension-install` <br>
+     &uarr; Verify extension installed at %TCLTD%\\tcl90\\lib\\sqlite3.*
 </ol>
 
 ### 2.4 Testing on Windows
 
 <ol type="1">
-<li value="29">
+<li value="31">
    `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
-<li>`tclsh86t test/testrunner.tcl release --explain`
-<li> &uarr; Verify thousands of lines of output with no errors
+<li>`tclsh86t test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors
 <li> `set PATH=%TCLTD%\tcl90\bin;%ORIGINALPATH%`
-<li> `tclsh90 test/testrunner.tcl release --explain`
-<li> &uarr; Verify thousands of lines of output with no errors
+<li> `tclsh90 test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors
 </ol>
 
 ### 2.5 Cleanup
