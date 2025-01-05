@@ -34,53 +34,56 @@ an ordinary tclsh can subsequently run "package require sqlite3".
     of the TCL libraries and the SQLite TCL Extensions.
 </ol>
 
-### 2.2 Building the TCL libraries and tclsh executables
+### 2.2 Testing TCL 8.6 on unix
 
 <ol type="1">
-<li value="5">  `mkdir $TCLTD $TCLTD/tcl86 $TCLTD/tcl90`
+<li value="5">  `mkdir $TCLTD/tcl86`
 <li>  `cd $TCLCO/unix`
 <li>  `fossil up core-8-6-16` <br>
       &uarr; Or some other version of Tcl8.6.
 <li>  `fossil clean -x`
 <li>  `./configure --prefix=$TCLTD/tcl86`
 <li>  `make install`
+<li> `cd $SRCCO`
+<li> `fossil clean -x`
+<li> `./configure --with-tclsh=$TCLTD/tcl86/bin/tclsh8.6`
+<li> `make tclextension-install` <br>
+     &uarr; Verify extension installed at $TCLTD/tcl86/lib/tcl8.6/sqlite3.*
+<li> `makek tclextension-list` <br>
+     &uarr; Verify TCL extension correctly installed.
+<li> `make tclextension-verify` <br>
+     &uarr; Verify that the correct version is installed.
+<li> `$TCLTD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors. Or
+     consider running "devtest" without --explain instead of "release".
+</ol>
+
+### 2.3 Testing TCL 9.0 on unix
+
+<ol>
+<li value="18">  `mkdir $TCLTD/tcl90`
 <li>  `fossil up core-9-0-0` <br>
       &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
 <li>  `./configure --prefix=$TCLTD/tcl90`
 <li>  `make install`
-</ol>
-
-### 2.3 Building the SQLite TCL extension
-
-<ol type="1">
-<li value="15"> `cd $SRCCO`
-<li> `fossil clean -x`
-<li> `./configure --with-tclsh=$TCLTD/tcl86/bin/tclsh8.6`
-<li> `make tclextension-install` <br>
-     &uarr; Verify extension installed at $TCLTD/tcl86/lib/tcl8.6/sqlite3.*
-<li> `make tclextension-verify`
+<li> `cd $SRCCO`
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLTD/tcl90/bin/tclsh9.0`
 <li> `make tclextension-install` <br>
      &uarr; Verify extension installed at $TCLTD/tcl90/lib/sqlite3.*
+<li> `makek tclextension-list` <br>
+     &uarr; Verify TCL extension correctly installed.
 <li> `make tclextension-verify`
-</ol>
-
-### 2.4 Additional sanity tests
-
-<ol type="1">
-<li value="24"> 
-     `$TCLTD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain` <br>
-     &uarr; Verify thousands of lines of output with no errors
 <li> `$TCLTD/tcl90/bin/tclsh9.0 test/testrunner.tcl release --explain` <br>
-     &uarr; Verify thousands of lines of output with no errors
+     &uarr; Verify thousands of lines of output with no errors.  Or
+     consider running "devtest" without --explain instead of "release".
 </ol>
 
-### 2.5 Cleanup
+### 2.4 Cleanup
 
 <ol type="1">
-<li value="26"> `rm -rf $TCLTD`
+<li value="30"> `rm -rf $TCLTD`
 </ol>
 
 ## 3.0 Testing On Windows
@@ -110,10 +113,10 @@ an ordinary tclsh can subsequently run "package require sqlite3".
      &uarr; remember the original %PATH% value
 </ol>
 
-### 3.2 Building the TCL libraries and tclsh.exe executables on Windows
+### 3.2 Testing TCL 8.6 on Windows
 
 <ol type="1">
-<li value="8">  `mkdir %TCLTD% %TCLTD%\tcl86 %TCLTD%\tcl90`
+<li value="8">  `mkdir %TCLTD%\tcl86`
 <li>  `cd %TCLCO%\win`
 <li>  `fossil up core-8-6-16` <br>
       &uarr; Or some other version of Tcl8.6.
@@ -124,6 +127,24 @@ an ordinary tclsh can subsequently run "package require sqlite3".
       using separate invocations of "nmake" or tclsh86t.exe won't be
       installed.
 <li>  `nmake /f makefile.vc install`
+<li> `cd %SRCCO%`
+<li> `fossil clean -x`
+<li> `set TCLDIR=%TCLTD%\tcl86`
+<li> `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
+<li> `set TCLSH_CMD=%TCLTD%\tcl86\bin\tclsh86t.exe`
+<li> `nmake /f Makefile.msc tclextension-install` <br>
+     &uarr; Verify extension installed at %TCLTD%\\tcl86\\lib\\tcl8.6\\sqlite3.*
+<li> `nmake /f Makefile.msc tclextension-verify`
+<li>`tclsh86t test/testrunner.tcl release --explain` <br>
+     &uarr; Verify thousands of lines of output with no errors.  Or
+     consider running "devtest" without --explain instead of "release".
+</ol>
+
+### 3.3 Testing TCL 9.0 on Windows
+
+<ol>
+<li value="23">  `mkdir %TCLTD%\tcl90`
+<li>  `cd %TCLCO%\win`
 <li>  `fossil up core-9-0-0` <br>
       &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
@@ -133,19 +154,7 @@ an ordinary tclsh can subsequently run "package require sqlite3".
       using separate invocations of "nmake" or tclsh90.exe won't be
       installed.
 <li>  `nmake /f makefile.vc install`
-</ol>
-
-### 3.3 Building the SQLite TCL extension on Windows
-
-<ol type="1">
-<li value="20"> `cd %SRCCO%`
-<li> `fossil clean -x`
-<li> `set TCLDIR=%TCLTD%\tcl86`
-<li> `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
-<li> `set TCLSH_CMD=%TCLTD%\tcl86\bin\tclsh86t.exe`
-<li> `nmake /f Makefile.msc tclextension-install` <br>
-     &uarr; Verify extension installed at %TCLTD%\\tcl86\\lib\\tcl8.6\\sqlite3.*
-<li> `nmake /f Makefile.msc tclextension-verify`
+<li> `cd %SRCCO%`
 <li> `fossil clean -x`
 <li> `set TCLDIR=%TCLTD%\tcl90`
 <li> `set PATH=%TCLTD%\tcl90\bin;%ORIGINALPATH%`
@@ -153,22 +162,13 @@ an ordinary tclsh can subsequently run "package require sqlite3".
 <li> `nmake /f Makefile.msc tclextension-install` <br>
      &uarr; Verify extension installed at %TCLTD%\\tcl90\\lib\\sqlite3.*
 <li> `nmake /f Makefile.msc tclextension-verify`
-</ol>
-
-### 3.4 Additional sanity tests for Windows
-
-<ol type="1">
-<li value="33">
-   `set PATH=%TCLTD%\tcl86\bin;%ORIGINALPATH%`
-<li>`tclsh86t test/testrunner.tcl release --explain` <br>
-     &uarr; Verify thousands of lines of output with no errors
-<li> `set PATH=%TCLTD%\tcl90\bin;%ORIGINALPATH%`
 <li> `tclsh90 test/testrunner.tcl release --explain` <br>
-     &uarr; Verify thousands of lines of output with no errors
+     &uarr; Verify thousands of lines of output with no errors.  Or
+     consider running "devtest" without --explain instead of "release".
 </ol>
 
-### 3.5 Cleanup
+### 3.4 Cleanup
 
 <ol type="1">
-<li value="37"> `rm -rf %TCLTD%`
+<li value="38"> `rm -rf %TCLTD%`
 </ol>
