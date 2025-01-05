@@ -1892,10 +1892,10 @@ tclextension-uninstall:
 	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --uninstall
 
 tclextension-list:
-	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
+	@ $(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
 
 tclextension-verify: sqlite3.h
-	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --version-check
+	@ $(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --version-check
 
 
 # <</mark>>

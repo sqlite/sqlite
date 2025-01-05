@@ -1,9 +1,22 @@
 # Test Procedures For The SQLite TCL Extension
 
+## 1.0 Background
 
-## 1.0 Testing On Unix-like Systems (Including Mac)
+The SQLite TCL extension logic (in the 
+"[tclsqlite.c](/file/src/tclsqlite3.c)" source
+file) is statically linked into "textfixture" executable
+which is the program used to do more of the testing
+associated with "make test", "make devtest", and/or
+"make releasetest".  So the functionality of the SQLite
+TCL extension is thoroughly vetted during normal testing.  The
+procedures below are designed to test the loadable extension
+aspect of the SQLite TCL extension, and in particular to verify
+that the "make tclextension-install" build target works and that
+an ordinary tclsh can subsequently run "package require sqlite3".
 
-###  1.1 Setup
+## 2.0 Testing On Unix-like Systems (Including Mac)
+
+###  2.1 Setup
 
 <ol type="1">
 <li value="1"> 
@@ -21,7 +34,7 @@
     of the TCL libraries and the SQLite TCL Extensions.
 </ol>
 
-### 1.2 Building the TCL libraries and tclsh executables
+### 2.2 Building the TCL libraries and tclsh executables
 
 <ol type="1">
 <li value="5">  `mkdir $TCLTD $TCLTD/tcl86 $TCLTD/tcl90`
@@ -38,7 +51,7 @@
 <li>  `make install`
 </ol>
 
-### 1.3 Building the SQLite TCL extension
+### 2.3 Building the SQLite TCL extension
 
 <ol type="1">
 <li value="15"> `cd $SRCCO`
@@ -54,7 +67,7 @@
 <li> `make tclextension-verify`
 </ol>
 
-### 1.4 Additional sanity tests
+### 2.4 Additional sanity tests
 
 <ol type="1">
 <li value="24"> 
@@ -64,15 +77,15 @@
      &uarr; Verify thousands of lines of output with no errors
 </ol>
 
-### 1.5 Cleanup
+### 2.5 Cleanup
 
 <ol type="1">
 <li value="26"> `rm -rf $TCLTD`
 </ol>
 
-## 2.0 Testing On Windows
+## 3.0 Testing On Windows
 
-###  2.1 Setup for Windows
+###  3.1 Setup for Windows
 
 <ol type="1">
 <li value="1"> 
@@ -97,7 +110,7 @@
      &uarr; remember the original %PATH% value
 </ol>
 
-### 2.2 Building the TCL libraries and tclsh.exe executables on Windows
+### 3.2 Building the TCL libraries and tclsh.exe executables on Windows
 
 <ol type="1">
 <li value="8">  `mkdir %TCLTD% %TCLTD%\tcl86 %TCLTD%\tcl90`
@@ -122,7 +135,7 @@
 <li>  `nmake /f makefile.vc install`
 </ol>
 
-### 2.3 Building the SQLite TCL extension on Windows
+### 3.3 Building the SQLite TCL extension on Windows
 
 <ol type="1">
 <li value="20"> `cd %SRCCO%`
@@ -142,7 +155,7 @@
 <li> `nmake /f Makefile.msc tclextension-verify`
 </ol>
 
-### 2.4 Additional sanity tests for Windows
+### 3.4 Additional sanity tests for Windows
 
 <ol type="1">
 <li value="33">
@@ -154,7 +167,7 @@
      &uarr; Verify thousands of lines of output with no errors
 </ol>
 
-### 2.5 Cleanup
+### 3.5 Cleanup
 
 <ol type="1">
 <li value="37"> `rm -rf %TCLTD%`
