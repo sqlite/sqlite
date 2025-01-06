@@ -600,6 +600,7 @@ static int SQLITE_TCLAPI test_get_table_printf(
   }
   sqlite3_free(zSql);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
+  Tcl_ResetResult(interp);
   Tcl_AppendElement(interp, zBuf);
   if( rc==SQLITE_OK ){
     if( argc==4 ){

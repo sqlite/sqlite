@@ -15,6 +15,7 @@ Options:
    --info               Show info on existing SQLite TCL extension installs
    --install-only       Install an extension previously build
    --uninstall          Uninstall the extension
+   --version-check      Check extension version against this source tree
    --destdir DIR        Installation root (used by "make install DESTDIR=...")
 
 Other options are retained and passed through into the compiler.}
@@ -24,6 +25,7 @@ set build 1
 set install 1
 set uninstall 0
 set infoonly 0
+set versioncheck 0
 set CC {}
 set OPTS {}
 set DESTDIR ""; # --destdir "$(DESTDIR)"
@@ -36,11 +38,18 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--uninstall"} {
     set build 0
     set install 0
+    set versioncheck 0
     set uninstall 1
   } elseif {$a0=="--info"} {
     set build 0
     set install 0
+    set versioncheck 0
     set infoonly 1
+  } elseif {$a0=="--version-check"} {
+    set build 0
+    set install 0
+    set infoonly 0
+    set versioncheck 1
   } elseif {$a0=="--cc" && $ii+1<[llength $argv]} {
     incr ii
     set CC [lindex $argv $ii]
@@ -154,6 +163,33 @@ if {$tcl_platform(platform)=="windows"} {
               # in which Gentoo edits their tclConfig.sh to include an soname
               # linker flag which includes ${@} (the target file's name).
   set CMD [subst $cmd]
+}
+
+# Check the SQLite TCL extension that is loaded by default by this running
+# TCL interpreter to see if it has the same SQLITE_SOURCE_ID as the source
+# code in the directory holding this script.
+#
+if {$versioncheck} {
+  if {[catch {package require sqlite3} msg]} {
+    puts stderr "No SQLite TCL extension available: $msg"
+    exit 1
+  }
+  sqlite3 db :memory:
+  set extvers [db one {SELECT sqlite_source_id()}]
+  db close
+  set fd [open sqlite3.h rb]
+  set sqlite3h [read $fd]
+  close $fd
+  regexp {#define SQLITE_SOURCE_ID +"([^"]+)"} $sqlite3h all srcvers
+  set srcvers [string range $srcvers 0 78]
+  set extvers [string range $extvers 0 78]
+  if {$srcvers==$extvers} {
+    puts "source code and extension versions aligned:\n$extvers"
+    exit 0
+  }
+  puts stderr "source code and extension versions differ"
+  puts stderr "source: $srcvers\nextension: $extvers"
+  exit 1
 }
 
 # Show information about prior installs
