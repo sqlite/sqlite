@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\susing\sboth\sSQLITE_CHANGESETAPPLY_IGNORENOOP\sand\sSQLITE_CHANGESETAPPLY_FKNOACTION.
-D 2025-01-06T17:01:35.295
+C Fix\sa\sminor\sproblem\swith\sthe\ssqlite3_get_table_printf()\stest\sinterface.\nNo\score\schanges.
+D 2025-01-06T18:32:53.875
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -789,7 +789,7 @@ F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 90441d3cc16f966a23499d9096a3d2d971e5e8fddb4d1413b096b79c2b2cff07
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 2d507751bfb4aa254dc22588ef1e3c5c5cfcb2e636d0e6e1fa0bbd307669c2a8
+F src/test1.c 7f5579f2786c11cf4391ec2abb7b5b5b234ca1408599d7a0d6dd32360e5f58d8
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
 F src/test3.c e7573aa0f78ee4e070a4bc8c3493941c1aa64d5c66d4825c74c0f055451f432b
 F src/test4.c 13e57ae7ec7a959ee180970aef09deed141252fe9bb07c61054f0dfa4f1dfd5d
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bcdaef434142973a0805117495e561b2dcd1ec1465cacc9b944a3707291afc0d
-R 39da0f1150c2b7d20d41e16df982bdbc
-U dan
-Z 0e33be44116920d8dfb3948dc71a5c16
+P b1cc53fa3fb2ac3abeadd3282d8751f4d533315754159f16ca7f7f300ccdd8c8
+R b841ee7b12f689b8a9384b533ea34d09
+U drh
+Z b3de29be7899c08cf5113466b37b5222
 # Remove this line to create a well-formed Fossil manifest.
