@@ -149,5 +149,20 @@ do_execsql_test 2.5 {
   SELECT * FROM c1;
 } {two}
 
+db_restore_and_reopen
+db eval { PRAGMA foreign_keys = 1 }
+
+do_test 2.6 {
+  list [catch { 
+    sqlite3changeset_apply_v2 -ignorenoop -noaction db $C conflict 
+  } msg] $msg
+} {1 SQLITE_CONSTRAINT}
+do_execsql_test 2.7 {
+  SELECT * FROM p1;
+} {1 1 one 2 2 two}
+do_execsql_test 2.8 {
+  SELECT * FROM c1;
+} {two}
+
 finish_test
 
