@@ -1,5 +1,5 @@
-C Fix\sa\sminor\sproblem\swith\sthe\ssqlite3_get_table_printf()\stest\sinterface.\nNo\score\schanges.
-D 2025-01-06T18:32:53.875
+C Fix\sa\sproblem\swith\stool/mksqlite3h.tcl\sthat\sprevents\sit\sfrom\srunning\sout\sof\na\sread-only\scheck-out.
+D 2025-01-06T21:36:16.287
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2154,7 +2154,7 @@ F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b0
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 4f7cfef5152b0c91920355cbfc1d608a4ad242cb819f1aea07f6d0274f584a7f
 F tool/mksqlite3c.tcl 9e88a30981280e33489fe4782f4ab1e5349ba1866603fba7f1a948d5599b9124
-F tool/mksqlite3h.tcl 7a4648fef5efb33308d575c7775eb242855d71d5bf89065df3f006b9a634a0a1
+F tool/mksqlite3h.tcl 5a8d23f35462bfcf74324a19465abd0ad6717b92a404d177160963c292df5d04
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b1cc53fa3fb2ac3abeadd3282d8751f4d533315754159f16ca7f7f300ccdd8c8
-R b841ee7b12f689b8a9384b533ea34d09
+P a0df29c7a3eb4f558aba00598d827643830591def3101a4d5464543527b8d13c
+R a69cbcd64a4b6b9f51efe8537d38ddcf
 U drh
-Z b3de29be7899c08cf5113466b37b5222
+Z c3ef709b705fad2b3868091e66557171
 # Remove this line to create a well-formed Fossil manifest.
