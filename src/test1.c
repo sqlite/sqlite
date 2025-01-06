@@ -2592,6 +2592,37 @@ static int SQLITE_TCLAPI test_sqlite3_randomness(
 }
 
 /*
+** Usage: sqlite3_schema_copy NBYTE
+*/
+static int SQLITE_TCLAPI test_schema_copy(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *dbTo = 0;
+  sqlite3 *dbFrom = 0;
+  const char *zTo = 0;
+  const char *zFrom = 0;
+  int rc = SQLITE_OK;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DBTO DBNAMETO DBFROM DBFROMNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &dbTo) ) return TCL_ERROR;
+  if( getDbPointer(interp, Tcl_GetString(objv[3]), &dbFrom) ) return TCL_ERROR;
+  zTo = Tcl_GetString(objv[2]);
+  zFrom = Tcl_GetString(objv[4]);
+
+  rc = sqlite3_schema_copy(dbTo, zTo, dbFrom, zFrom);
+
+  Tcl_ResetResult(interp);
+  Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  sqlite3_commit_status db DBNAME OP
 */
 static int SQLITE_TCLAPI test_commit_status(
@@ -9412,6 +9443,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
      { "sqlite3_commit_status",    test_commit_status,     0 },
      { "sqlite3_randomness",       test_sqlite3_randomness,     0 },
+     { "sqlite3_schema_copy",      test_schema_copy,     0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

@@ -1778,7 +1778,7 @@ static Index *findIndexOrPrimaryKey(
 ** Grow the pIdx->aSample[] array. Return SQLITE_OK if successful, or
 ** SQLITE_NOMEM otherwise.
 */
-static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
+static int growSampleArray(sqlite3 *db, Index *pIdx, int nReq, int *piOff){
   int nIdxCol = pIdx->nSampleCol;
   int nNew = 0;
   IndexSample *aNew = 0;
@@ -1789,9 +1789,13 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   u64 t;
 
   assert( pIdx->nSample==pIdx->nSampleAlloc );
-  nNew = SQLITE_STAT4_EST_SAMPLES;
-  if( pIdx->nSample ){
-    nNew = pIdx->nSample*2;
+  if( nReq==0 ){
+    nNew = SQLITE_STAT4_EST_SAMPLES;
+    if( pIdx->nSample ){
+      nNew = pIdx->nSample*2;
+    }
+  }else{
+    nNew = nReq;
   }
 
   /* Set nByte to the required amount of space */
@@ -1840,6 +1844,32 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   return SQLITE_OK;
 }
 
+int sqlite3AnalyzeCopyStat4(
+  sqlite3 *db, 
+  Index *pTo, 
+  Index *pFrom
+){
+  if( pFrom->nSample>0 ){
+    Schema *pSchema = pTo->pSchema;
+    int ii;
+
+    pTo->nSample = pTo->nSampleAlloc = 0;
+    if( growSampleArray(db, pTo, pFrom->nSample, &pSchema->nStat4Space) ){
+      return SQLITE_NOMEM;
+    }
+    pTo->nSample = pFrom->nSample;
+    memcpy(pTo->aAvgEq, pFrom->aAvgEq, pFrom->nSampleCol * sizeof(tRowcnt));
+    memcpy(pTo->aSample[0].anEq, pFrom->aSample[0].anEq, 
+        pTo->nSampleCol * 3 * sizeof(tRowcnt) * pTo->nSample
+        );
+    for(ii=0; ii<pTo->nSample; ii++){
+      pTo->aSample[ii].p = pFrom->aSample[ii].p;
+      pTo->aSample[ii].n = pFrom->aSample[ii].n;
+    }
+  }
+  return SQLITE_OK;
+}
+
 /*
 ** Allocate the space that will likely be required for the Index.aSample[] 
 ** arrays populated by loading data from the sqlite_stat4 table. Return
@@ -1871,6 +1901,7 @@ static int stat4AllocSpace(sqlite3 *db, const char *zDb){
     if( pSchema->pStat4Space==0 ){
       return SQLITE_NOMEM_BKPT;
     }
+    pSchema->nStat4Space = nByte;
   }
 
   return SQLITE_OK;
@@ -1941,7 +1972,7 @@ static int loadStatTbl(
         pIdx->nSampleCol = pIdx->nColumn;
       }
       t2 = sqlite3STimeNow();
-      if( growSampleArray(db, pIdx, &iBlockOff) ) break;
+      if( growSampleArray(db, pIdx, 0, &iBlockOff) ) break;
       if( db->aSchemaTime ){
         db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t);
       }

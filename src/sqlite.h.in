@@ -10952,6 +10952,10 @@ int sqlite3_commit_status(
 #define SQLITE_COMMIT_CONFLICT_FRAME 3
 #define SQLITE_COMMIT_CONFLICT_PGNO  4
 
+int sqlite3_schema_copy(
+    sqlite3 *pTo, const char *zTo, 
+    sqlite3 *pFrom, const char *zFrom
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for
