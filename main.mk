@@ -1043,9 +1043,9 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
-	rm tsrc/sqlite.h.in tsrc/parse.y
+	rm -f tsrc/sqlite.h.in tsrc/parse.y
 	$(B.tclsh) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
-	mv vdbe.new tsrc/vdbe.c
+	mv -f vdbe.new tsrc/vdbe.c
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
