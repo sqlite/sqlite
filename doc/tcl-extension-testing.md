@@ -67,7 +67,7 @@ an ordinary tclsh can subsequently run "package require sqlite3".
 <li>  `fossil up core-9-0-0` <br>
       &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
-<li>  `./configure --prefix=$TCLBUILD/tcl90 --disable-shared`
+<li>  `./configure --prefix=$TCLBUILD/tcl90 --disable-shared` <br>
       &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
       when using this Tcl build.
 <li>  `make install`
