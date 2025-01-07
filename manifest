@@ -1,5 +1,5 @@
-C Minor\sfixes\sto\stclsqlite.c\sto\spromote\sportability.
-D 2025-01-07T00:17:54.439
+C Fix\sa\stypo\sin\sthe\sprevious\scheck-in.
+D 2025-01-07T11:54:43.065
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -787,7 +787,7 @@ F src/sqliteInt.h 3f20dfb5ae54e787b2643edc0b5bae0cecddfb89988e28afdc3c0b05892e25
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c ada7d3ffeabcec94776693c841dae28cdee93a256989ce024c8227134d733958
+F src/tclsqlite.c 9004ed7a517e106087f70d2ec54a2a6819e55765151fa53d0d2cd408e698f99e
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 7f5579f2786c11cf4391ec2abb7b5b5b234ca1408599d7a0d6dd32360e5f58d8
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f99a70eca2fd8a54be3a6629dabd62efc623488706eed5e5a1bd0be577ac1acb
-R 5a83df004b6c0337f81b894fe038a2a2
+P dd934f032fa6fc790a951006512e3ed76a5f2930858932918eafdbe3ceec4620
+R 1ccf02cc09665431fcc21407330e398e
 U drh
-Z 202998befd372783ac123e095ab97a9d
+Z c9e32c83a7281ddac240e198b5bce057
 # Remove this line to create a well-formed Fossil manifest.

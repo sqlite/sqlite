@@ -1844,7 +1844,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
 */
 #if TCL_MAJOR_VERSION>8 || !defined(TCL_MINOR_VERSION) \
-                        || TCL_MAJOR_VERSION>=6
+                        || TCL_MINOR_VERSION>=6
 # define SQLITE_TCL_NRE 1
 static int DbUseNre(void){
   int major, minor;
