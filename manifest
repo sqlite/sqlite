@@ -1,5 +1,5 @@
-C Fix\sa\smemory\serror\sin\stest\slogic\sintroduced\sby\s[8704034254938662].
-D 2025-01-07T15:39:57.880
+C Improvements\sto\s[14b38ae6ab86a314]\sso\sthat\sthe\sTcl\sinterface\sis\sbetter\sable\nto\swork\swith\sboolean\svalues\sin\sboth\sTcl86\sand\sTcl90.
+D 2025-01-07T16:36:47.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -787,7 +787,7 @@ F src/sqliteInt.h 3f20dfb5ae54e787b2643edc0b5bae0cecddfb89988e28afdc3c0b05892e25
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 6e25a72d3f3769f779b05b2c618ae0388639d8e27d6434c2ff3926f3267342fe
+F src/tclsqlite.c c6b9d3a0b1100e1e028460c418c41ca180dac5958e96bef79f6799b552522a37
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 07c9b523f90b96f6e9a701476602fa1f82075da19955823316b3fe13eaaa52cc
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5872d7a0a7d4959562e1218bbba1115df8b292d980234273d0d38749edf19822
-R 2dc5969771af2d8527fa6ca2001dd4f3
+P 8a56e98d257e280d308b9fdc26e17e202f00a70fb9a780e30924e87a189fc7f4
+R 9f37d9e0a5a710d92c078118174ed306
 U drh
-Z 0fbc54108ea801128f403bfa92cfd727
+Z 1267df4caaf383b5de45df3c7a06eba4
 # Remove this line to create a well-formed Fossil manifest.
