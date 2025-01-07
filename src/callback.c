@@ -542,3 +542,16 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   }
   return p;
 }
+
+int sqlite3SchemaTestCopy(sqlite3 *db, int iDb){
+  Btree *pBt = db->aDb[iDb].pBt;
+  Schema *pFrom = db->aDb[iDb].pSchema;
+  Schema *pTo = sqlite3BtreeSchema(pBt, 0, 0);
+
+  assert( pTo && pFrom );
+  sqlite3SchemaCopy(db, pTo, pFrom);
+  db->aDb[iDb].pSchema = pTo;
+
+  return (db->mallocFailed ? SQLITE_NOMEM : SQLITE_OK);
+}
+

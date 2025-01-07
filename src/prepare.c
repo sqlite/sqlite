@@ -476,7 +476,20 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   assert( db->nDb>0 );
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
+    Schema *pNew = 0;
+    if( sqlite3Config.bTestSchemaCopy ){
+      pNew = sqlite3DbMallocZero(db, sizeof(Schema));
+      if( !pNew ) return SQLITE_NOMEM;
+      pNew->cache_size = db->aDb[0].pSchema->cache_size;
+      db->aDb[0].pSchema = pNew;
+    }
     rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
+    if( sqlite3Config.bTestSchemaCopy ){
+      int rc2 = sqlite3SchemaTestCopy(db, 0);
+      if( rc==SQLITE_OK ) rc = rc2;
+      sqlite3SchemaClear(pNew);
+      sqlite3DbFree(db, pNew);
+    }
     if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */

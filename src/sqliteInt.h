@@ -4417,6 +4417,7 @@ struct Sqlite3Config {
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
+  int bTestSchemaCopy;              /* True to test schema copies internally */
   /* vvvv--- must be last ---vvv */
 #ifdef SQLITE_DEBUG
   sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
@@ -5608,6 +5609,9 @@ int sqlite3AnalyzeCopyStat4(sqlite3*, Index*, Index *pFrom);
 #endif
 
 TriggerStep *sqlite3SchemaCopyTriggerStepList(sqlite3 *, TriggerStep*);
+int sqlite3SchemaTestCopy(sqlite3 *db, int);
+void sqlite3SchemaCopy(sqlite3 *db, Schema*, Schema*);
+void sqlite3BtreeSchemaPut(Btree *pBt, void*);
 
 /*
 ** The interface to the LEMON-generated parser

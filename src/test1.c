@@ -7947,6 +7947,7 @@ static int SQLITE_TCLAPI test_test_control(
     { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
     { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
     { "SQLITE_TESTCTRL_FK_NO_ACTION",       SQLITE_TESTCTRL_FK_NO_ACTION},
+    { "SQLITE_TESTCTRL_SCHEMACOPY",         SQLITE_TESTCTRL_SCHEMACOPY},
     { 0, 0 }
   };
   int iVerb;
@@ -8026,6 +8027,18 @@ static int SQLITE_TCLAPI test_test_control(
       if( Tcl_GetIntFromObj(interp, objv[4], &onOff) ) return TCL_ERROR;
       if( Tcl_GetIntFromObj(interp, objv[5], &tnum) ) return TCL_ERROR;
       sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, zDbName, onOff, tnum);
+      break;
+    }
+
+    case SQLITE_TESTCTRL_SCHEMACOPY: {
+      int val = 0;
+      sqlite3 *db = 0;
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "BOOLEAN");
+        return TCL_ERROR;
+      }
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_SCHEMACOPY, val);
       break;
     }
   }

@@ -5796,6 +5796,26 @@ void sqlite3WithDeleteGeneric(sqlite3 *db, void *pWith){
   sqlite3WithDelete(db, (With*)pWith);
 }
 
+struct TwoTable {
+  Table *pNew;
+  Table *pOld;
+};
+
+static int schemaCopyExprCb(Walker *p, Expr *pExpr){
+  struct TwoTable *pT = (struct TwoTable*)p->u.pSchema;
+  if( pExpr->op==TK_COLUMN && pExpr->y.pTab==pT->pOld ){
+    pExpr->y.pTab = pT->pNew;
+  }
+  return WRC_Continue;
+}
+
+static void schemaCopyExprWalker(Walker *p, struct TwoTable *pT){
+  memset(p, 0, sizeof(*p));
+  p->xExprCallback = schemaCopyExprCb;
+  p->xSelectCallback = sqlite3SelectWalkNoop;
+  p->u.pSchema = (Schema*)pT;
+}
+
 static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
   Schema *pSchema = pTab->pSchema;
   Index *pRet = 0;
@@ -5815,6 +5835,9 @@ static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
 
     pNew = sqlite3AllocateIndexObject(db, p->nColumn, nName+nExtra, &zExtra);
     if( pNew ){
+      struct TwoTable twotable;
+      Walker sExprWalker;
+
       pNew->zName = zExtra;
       memcpy(pNew->zName, p->zName, nName);
       zExtra += nName;
@@ -5836,14 +5859,26 @@ static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
         }
         pNew->azColl[ii] = zColl;
       }
+
       pNew->pPartIdxWhere = sqlite3ExprDup(db, p->pPartIdxWhere, 0);
+      twotable.pNew = pTab;
+      twotable.pOld = p->pTable;
+      schemaCopyExprWalker(&sExprWalker, &twotable);
+      sqlite3WalkExpr(&sExprWalker, pNew->pPartIdxWhere);
+
       pNew->aColExpr = sqlite3ExprListDup(db, p->aColExpr, 0);
+      sqlite3WalkExprList(&sExprWalker, pNew->aColExpr);
+
       pNew->tnum = p->tnum;
       pNew->szIdxRow = p->szIdxRow;
-      memcpy(&pNew->onError,&p->onError,sizeof(Index)-offsetof(Index, onError));
+      memcpy(&pNew->nKeyCol,&p->nKeyCol,sizeof(Index)-offsetof(Index, nKeyCol));
       pNew->isResized = 0;
 #ifdef SQLITE_ENABLE_STAT4 
       assert( pNew->aiRowEst==0 && p->aiRowEst==0 );
+      pNew->aAvgEq = 0;
+      pNew->aSample = 0;
+      pNew->nSample = 0;
+      pNew->nSampleAlloc = 0;
       sqlite3AnalyzeCopyStat4(db, pNew, p);
 #endif
 
@@ -6008,9 +6043,14 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
 
   pNew = (Table*)sqlite3DbMallocRawNN(db, sizeof(Table));
   if( pNew ){
+    Walker sExprWalker;
+    struct TwoTable twotable;
     memcpy(pNew, pTab, sizeof(Table));
     pNew->zName = sqlite3DbStrDup(db, pNew->zName);
-    pNew->aCol = sqlite3DbMallocRawNN(db, pNew->nCol*sizeof(Column));
+    assert( pNew->nCol>0 || pNew->eTabType!=TABTYP_NORM );
+    if( pNew->nCol>0 ){
+      pNew->aCol = sqlite3DbMallocRawNN(db, pNew->nCol*sizeof(Column));
+    }
     pNew->nTabRef = 1;
     if( pNew->aCol ){
       int ii;
@@ -6036,6 +6076,11 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
     pNew->zColAff = 0;
     pNew->pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
 
+    twotable.pNew = pNew;
+    twotable.pOld = pTab;
+    schemaCopyExprWalker(&sExprWalker, &twotable);
+    sqlite3WalkExprList(&sExprWalker, pNew->pCheck);
+
     if( IsView(pNew) ){
       Walker sWalker;
       memset(&sWalker, 0, sizeof(sWalker));
@@ -6056,6 +6101,7 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
       }
     }else{
       pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pNew->u.tab.pDfltList, 0);
+      sqlite3WalkExprList(&sExprWalker, pNew->u.tab.pDfltList);
       pNew->u.tab.pFKey = schemaCopyFKeyList(db, pNew, pNew->u.tab.pFKey);
     }
 
@@ -6067,7 +6113,7 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
       db->mallocFailed = 1;
     }
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-    if( strcmp(pNew->zName, "sqlite_sequence")==0 ){
+    if( pTab->pSchema->pSeqTab==pTab ){
       pTo->pSeqTab = pNew;
     }
 #endif
@@ -6075,6 +6121,35 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pNew);
   }
+}
+
+void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
+  HashElem *k = 0;
+
+  DisableLookaside;
+  pTo->schema_cookie = pFrom->schema_cookie;
+  pTo->iGeneration = pFrom->iGeneration;
+  pTo->file_format = pFrom->file_format;
+  pTo->enc = pFrom->enc;
+  pTo->cache_size = pFrom->cache_size;
+  pTo->schemaFlags = pFrom->schemaFlags;
+
+#ifdef SQLITE_ENABLE_STAT4
+  if( pFrom->pStat4Space ){
+    pTo->pStat4Space = sqlite3_malloc(pFrom->nStat4Space);
+    if( pTo->pStat4Space==0 ){
+      sqlite3OomFault(db);
+    }
+    pTo->nStat4Space = 0;
+  }
+#endif
+
+  for(k=sqliteHashFirst(&pFrom->tblHash); k; k=sqliteHashNext(k)){
+    Table *pTab = (Table*)sqliteHashData(k);
+    schemaCopyTable(db, pTo, pTab);
+  }
+
+  EnableLookaside;
 }
 
 int sqlite3_schema_copy(
@@ -6085,12 +6160,10 @@ int sqlite3_schema_copy(
   int iFrom = 0;
   Schema *pTo = 0;
   Schema *pFrom = 0;
-  HashElem *k = 0;
   int rc = SQLITE_OK;
 
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
-  DisableLookaside;
 
   if( zTo ) iTo = sqlite3FindDbName(db, zTo);
   if( zFrom ) iFrom = sqlite3FindDbName(dbFrom, zFrom);
@@ -6109,31 +6182,9 @@ int sqlite3_schema_copy(
   pFrom = dbFrom->aDb[iFrom].pSchema;
   assert( pTo && pFrom );
 
-  pTo->schema_cookie = pFrom->schema_cookie;
-  pTo->iGeneration = pFrom->iGeneration;
-  pTo->file_format = pFrom->file_format;
-  pTo->enc = pFrom->enc;
-  pTo->cache_size = pFrom->cache_size;
-  pTo->schemaFlags = pFrom->schemaFlags;
-
-#ifdef SQLITE_ENABLE_STAT4
-  if( pFrom->pStat4Space ){
-    pTo->pStat4Space = sqlite3_malloc(pFrom->nStat4Space);
-    if( pTo->pStat4Space==0 ){
-      rc = SQLITE_NOMEM_BKPT;
-      goto schema_copy_done;
-    }
-    pTo->nStat4Space = 0;
-  }
-#endif
-
-  for(k=sqliteHashFirst(&pFrom->tblHash); k; k=sqliteHashNext(k)){
-    Table *pTab = (Table*)sqliteHashData(k);
-    schemaCopyTable(db, pTo, pTab);
-  }
+  sqlite3SchemaCopy(db, pTo, pFrom);
 
  schema_copy_done:
-  EnableLookaside;
   sqlite3BtreeLeaveAll(db);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);

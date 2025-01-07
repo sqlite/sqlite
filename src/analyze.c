@@ -1861,10 +1861,15 @@ int sqlite3AnalyzeCopyStat4(
     memcpy(pTo->aAvgEq, pFrom->aAvgEq, pFrom->nSampleCol * sizeof(tRowcnt));
     memcpy(pTo->aSample[0].anEq, pFrom->aSample[0].anEq, 
         pTo->nSampleCol * 3 * sizeof(tRowcnt) * pTo->nSample
-        );
+    );
     for(ii=0; ii<pTo->nSample; ii++){
-      pTo->aSample[ii].p = pFrom->aSample[ii].p;
-      pTo->aSample[ii].n = pFrom->aSample[ii].n;
+      int nByte = pFrom->aSample[ii].n;
+      void *p = sqlite3DbMallocZero(db, nByte+8);
+      if( p ){
+        memcpy(p, pFrom->aSample[ii].p, nByte);
+      }
+      pTo->aSample[ii].p = p;
+      pTo->aSample[ii].n = nByte;
     }
   }
   return SQLITE_OK;
