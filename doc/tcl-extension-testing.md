@@ -42,11 +42,13 @@ an ordinary tclsh can subsequently run "package require sqlite3".
 <li>  `fossil up core-8-6-16` <br>
       &uarr; Or some other version of Tcl8.6.
 <li>  `fossil clean -x`
-<li>  `./configure --prefix=$TCLBUILD/tcl86`
+<li>  `./configure --prefix=$TCLBUILD/tcl86 --disable-shared` <br>
+      &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
+      when using this Tcl build.
 <li>  `make install`
 <li> `cd $SQLITESOURCE`
 <li> `fossil clean -x`
-<li> `./configure --with-tclsh=$TCLBUILD/tcl86/bin/tclsh8.6`
+<li> `./configure --with-tclsh=$TCLBUILD/tcl86/bin/tclsh8.6 --all`
 <li> `make tclextension-install` <br>
      &uarr; Verify extension installed at $TCLBUILD/tcl86/lib/tcl8.6/sqlite3.*
 <li> `make tclextension-list` <br>
@@ -65,11 +67,13 @@ an ordinary tclsh can subsequently run "package require sqlite3".
 <li>  `fossil up core-9-0-0` <br>
       &uarr; Or some other version of Tcl9
 <li>  `fossil clean -x`
-<li>  `./configure --prefix=$TCLBUILD/tcl90`
+<li>  `./configure --prefix=$TCLBUILD/tcl90 --disable-shared`
+      &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
+      when using this Tcl build.
 <li>  `make install`
 <li> `cd $SQLITESOURCE`
 <li> `fossil clean -x`
-<li> `./configure --with-tclsh=$TCLBUILD/tcl90/bin/tclsh9.0`
+<li> `./configure --with-tclsh=$TCLBUILD/tcl90/bin/tclsh9.0 --all`
 <li> `make tclextension-install` <br>
      &uarr; Verify extension installed at $TCLBUILD/tcl90/lib/sqlite3.*
 <li> `make tclextension-list` <br>
