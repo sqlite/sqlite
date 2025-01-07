@@ -14,6 +14,18 @@ aspect of the SQLite TCL extension, and in particular to verify
 that the "make tclextension-install" build target works and that
 an ordinary tclsh can subsequently run "package require sqlite3".
 
+This procedure can also be used as a template for how to set up
+a local TCL+SQLite development environment.  In other words, it
+can be be used as a guide on how to compile per-user copies of 
+Tcl that are used to develop, test, and debug SQLite.  In that
+case, perhaps make minor changes to the procedure such as:
+
+  *  Make TCLBUILD directory is permanent.
+  *  Enable debugging symbols on the Tcl library build.
+  *  Reduce the optimization level to -O0 for easier debugging.
+  *  Also compile "wish" to go with each "tclsh".
+
+
 ## 2.0 Testing On Unix-like Systems (Including Mac)
 
 ###  2.1 Setup
@@ -71,6 +83,9 @@ an ordinary tclsh can subsequently run "package require sqlite3".
       &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
       when using this Tcl build.
 <li>  `make install`
+<li>  `cp -r ../library $TCLBUILD/tcl90/lib/tcl9.0` <br>
+      &uarr; The Tcl library is not installed in the expected place by
+      "make install" in Tcl9.0.  This step is not required when building Tcl8.6.
 <li> `cd $SQLITESOURCE`
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLBUILD/tcl90/bin/tclsh9.0 --all`
@@ -87,7 +102,7 @@ an ordinary tclsh can subsequently run "package require sqlite3".
 ### 2.4 Cleanup
 
 <ol type="1">
-<li value="28"> `rm -rf $TCLBUILD`
+<li value="29"> `rm -rf $TCLBUILD`
 </ol>
 
 ## 3.0 Testing On Windows
