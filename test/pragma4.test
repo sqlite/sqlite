@@ -301,7 +301,7 @@ ifcapable vtab {
   do_test 6.3 {
     set ::log
   } {}
-  test_sqlite3_log {}
+  test_sqlite3_log
 }
 
 # 2024-05-08 https://sqlite.org/forum/forumpost/cf29a33e94
