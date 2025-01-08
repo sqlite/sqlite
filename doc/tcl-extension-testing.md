@@ -84,8 +84,14 @@ case, perhaps make minor changes to the procedure such as:
       when using this Tcl build.
 <li>  `make install`
 <li>  `cp -r ../library $TCLBUILD/tcl90/lib/tcl9.0` <br>
-      &uarr; The Tcl library is not installed in the expected place by
-      "make install" in Tcl9.0.  This step is not required when building Tcl8.6.
+      &uarr; The Tcl library is not installed by "make install" for Tcl9.0 unless
+      you also include the --disable-zipfs to ./configure.  But if you do that
+      then the generated tclsh9.0 is no longer stand-alone.  On the other hand,
+      if you don't install the Tcl library, other programs like testfixture
+      won't be able to find the Tcl library and hence won't work.  This
+      extra installation step resolves the dilemma.
+      This step is not required when building Tcl8.6, which lacks support for
+      zipfs and hence always installs its Tcl library.
 <li> `cd $SQLITESOURCE`
 <li> `fossil clean -x`
 <li> `./configure --with-tclsh=$TCLBUILD/tcl90/bin/tclsh9.0 --all`
