@@ -26,7 +26,11 @@ case, perhaps make minor changes to the procedure such as:
   *  Also compile "wish" to go with each "tclsh".
 
 
+<a id="unix"></a>
 ## 2.0 Testing On Unix-like Systems (Including Mac)
+
+See also the [](./compile-for-unix.md) document which provides another
+perspective on how to compile SQLite on unix-like systems.
 
 ###  2.1 Setup
 
@@ -111,7 +115,11 @@ case, perhaps make minor changes to the procedure such as:
 <li value="29"> `rm -rf $TCLBUILD`
 </ol>
 
+<a id="windows"></a>
 ## 3.0 Testing On Windows
+
+See also the [](./compile-for-windows.md) document which provides another
+perspective on how to compile SQLite on Windows.
 
 ###  3.1 Setup for Windows
 
