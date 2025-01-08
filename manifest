@@ -1,5 +1,5 @@
-C Ensure\sthat\sintegrity-check\sprocesses\stables\sin\sthe\ssame\sorder\swhen\susing\sa\scopied\sschema\sas\sit\sdoes\swhen\susing\sone\sloaded\sdirectly\sfrom\sthe\sdb.
-D 2025-01-08T10:55:39.099
+C Fix\sproblem\sin\stest\scode\son\sthis\sbranch.
+D 2025-01-08T17:16:09.485
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -769,7 +769,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 437282ad81350c98a8592425b19e1b4e132196f7a81aef49b2ca39c50937b827
 F src/pragma.c 464813bf39538eaa2c2cfe349de97888cc4d82645c0574d9c522190d46898149
 F src/pragma.h 6ebbdee90ed56a892d2c728e27fd9c1ce48c8a28841888d0c6c147946b38cb25
-F src/prepare.c 4a8b68907511de0e8cd9a7ead5ee27d2fcee219683bf2c1d36bb9ae198700926
+F src/prepare.c 2668b61c3f01c264a4bd3f460e580356ca8626e118fa7bba6d5c91b5f112fa5b
 F src/printf.c 9480e90343dfde2406eeb25ff072774a77453d0f57fcd6495102f915dcc26a82
 F src/random.c 9bd018738ec450bf35d28050b4b33fa9a6eebf3aaefb1a1cff42dc14a7725673
 F src/resolve.c 2c127880c0634962837f16f2f48a295e514357af959330cc038de73015d5b5e8
@@ -2251,8 +2251,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ac9ca885902a105a4afc3bf157688c30f100bdb1064380328fd7f7a7fa126ee8
-R 2000472e39c49466324b5132222b7cb7
+P 961af9444275f1d18730beffc4111116877dd425eb44797e9e051273e47b8396
+R cc959707cdd96f768e46ae86701af48c
 U dan
-Z 5efedf42dac9cd03096a1c008b9952db
+Z fc6e7538c42a4e2b5529471af8704ce6
 # Remove this line to create a well-formed Fossil manifest.

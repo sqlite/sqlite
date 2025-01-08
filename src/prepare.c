@@ -480,7 +480,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
     if( sqlite3Config.bTestSchemaCopy ){
       pNew = sqlite3DbMallocZero(db, sizeof(Schema));
       if( !pNew ) return SQLITE_NOMEM;
-      pNew->cache_size = db->aDb[0].pSchema->cache_size;
+      memcpy(pNew, db->aDb[0].pSchema, sizeof(Schema));
       db->aDb[0].pSchema = pNew;
     }
     rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
