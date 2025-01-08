@@ -1,5 +1,5 @@
-C Fix\smany\sproblems\sin\sthe\ssqlite3_schema_copy()\sfunction.
-D 2025-01-07T21:04:51.236
+C Ensure\sthat\sintegrity-check\sprocesses\stables\sin\sthe\ssame\sorder\swhen\susing\sa\scopied\sschema\sas\sit\sdoes\swhen\susing\sone\sloaded\sdirectly\sfrom\sthe\sdb.
+D 2025-01-08T10:55:39.099
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -716,7 +716,7 @@ F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c f840a13b2f7fe8d94925012946f0cc46251e4943852b9f00f2e11e808f716736
 F src/btree.h bdeeb35614caa33526b603138f04c8d07a3f90a1300b5ade76848b755edf2027
 F src/btreeInt.h caa893e74d2261fb0ff1681fce998533c0552858e882bd04fc6805075f5f6e75
-F src/build.c c8b1ce2275630b936f9e4f15694394fe29f542929e137771a03276dd285e628d
+F src/build.c 013ba4f080e4285eb9a53910f2ad5feb27cfa7163aeb51ebd30e49ee6a5242de
 F src/callback.c a8f3276f3f506e94b75b7102b8d4a76417cf9fa6ec1596faf0a6f7b8b4823e0e
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 193f6f9a75204274b7e7f45ac6d6517c12c70b55a5dfb39312dfc3a52e2a8138
@@ -2251,8 +2251,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65ede04d2176e7206ca6ac004df14f488c274a6b092f6a7dc897b049012898fb
-R 1e0aeb33d9fdf3db04ec8caf3017ac1d
+P ac9ca885902a105a4afc3bf157688c30f100bdb1064380328fd7f7a7fa126ee8
+R 2000472e39c49466324b5132222b7cb7
 U dan
-Z 38efdb858d3d69b6af28ade3c3b371f8
+Z 5efedf42dac9cd03096a1c008b9952db
 # Remove this line to create a well-formed Fossil manifest.

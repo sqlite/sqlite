@@ -6144,9 +6144,16 @@ void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
   }
 #endif
 
-  for(k=sqliteHashFirst(&pFrom->tblHash); k; k=sqliteHashNext(k)){
-    Table *pTab = (Table*)sqliteHashData(k);
-    schemaCopyTable(db, pTo, pTab);
+  /* Iterate through the tables in the pFrom schema in reverse order. This
+  ** ensures that they end up stored in the pTo hash table in the same order
+  ** as in pFrom. Which make the results of some test cases more consistent. */
+  k = sqliteHashFirst(&pFrom->tblHash);
+  if( k ){
+    while( k->next ) k = k->next;
+    for(/* no-op */; k; k=k->prev){
+      Table *pTab = (Table*)sqliteHashData(k);
+      schemaCopyTable(db, pTo, pTab);
+    }
   }
 
   EnableLookaside;
