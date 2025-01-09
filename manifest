@@ -1,5 +1,5 @@
-C When\sremoving\san\sfts5\sin\ssecure-delete\smode,\sdefer\ssetting\sthe\stable\sversion\sto\sSECUREDELETE\suntil\sflushing\sdata\sto\sdisk.\sThis\sprevents\sproblems\sthat\scan\soccur\sif\sthere\sis\sa\srollback\sor\sstatement\srollback\soperation.
-D 2025-01-09T14:10:25.673
+C Update\sthe\smakefile\sso\sthat\sit\sputs\sthe\samalgamation\sfiles\sin\sa\ssubdirectory\nin\sthe\samalgamation-zip.\n[forum:/forumpost/b8dd1941e1|Forum\spost\sb8dd1941e1].
+D 2025-01-09T19:57:44.593
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2139,7 +2139,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
-F tool/mkamalzip.tcl 8a1b21fb6a7f990eb9625e08daa2dd0e03cb551bccc69ccd1cdd5bd975e8177a
+F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh cbdcf993fa83dccbef7fb77b39cdeb31ef9f77d9d88c9e343b58d35ca3898a6a
 F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
 F tool/mkctimec.tcl ef6a67ec82e5b6fc19152a4c79f237227b18bf67ff16d155bac7adb94355d9cf x
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6da37893f5b5729ea5fd632e8d98789e867488a67501d4a4dad92f8e7cb6bda0
-R 659181897535bd26e43a32e9be047282
-U dan
-Z a32ef00755f10bd4444e41dd1939dfc6
+P c359e555ceafcaab2ae38074bc4f57cccdc5bc6080d17f82290c09b9e5dd80c2
+R 4acc7fa1125cb682f7786bdefbb3cacb
+U drh
+Z 1b3035dddd40c2669ae993db009fbd5c
 # Remove this line to create a well-formed Fossil manifest.
