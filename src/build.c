@@ -5796,11 +5796,19 @@ void sqlite3WithDeleteGeneric(sqlite3 *db, void *pWith){
   sqlite3WithDelete(db, (With*)pWith);
 }
 
+/*
+** Type passed as context to expression walker callback schemaCopyExprCb().
+*/
 struct TwoTable {
   Table *pNew;
   Table *pOld;
 };
 
+/*
+** This is used as an expression walker callback. It takes a TwoTable 
+** structure as context. Any TK_COLUMN node that points to TwoTable.pOld
+** is adjusted to point to TwoTable.pNew.
+*/
 static int schemaCopyExprCb(Walker *p, Expr *pExpr){
   struct TwoTable *pT = (struct TwoTable*)p->u.pSchema;
   if( pExpr->op==TK_COLUMN && pExpr->y.pTab==pT->pOld ){
@@ -5809,6 +5817,12 @@ static int schemaCopyExprCb(Walker *p, Expr *pExpr){
   return WRC_Continue;
 }
 
+/*
+** Set up the Walker passed as the first argument to call schemaCopyExprCb()
+** with the TwoTable object indicated by the second argument as context. This
+** configuration will modify all TK_COLUMN nodes that point to pT->pOld
+** to point to pT->pNew instead.
+*/
 static void schemaCopyExprWalker(Walker *p, struct TwoTable *pT){
   memset(p, 0, sizeof(*p));
   p->xExprCallback = schemaCopyExprCb;
@@ -5816,12 +5830,23 @@ static void schemaCopyExprWalker(Walker *p, struct TwoTable *pT){
   p->u.pSchema = (Schema*)pT;
 }
 
-static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
+/*
+** Argument pList points to a list of Index object linked by Index.pNext.
+** This function returns a copy of this list.
+**
+** All elements of the returned list have Index.pTable set to pTab, and
+** are set to be part of the same schema as pTab. Additionally, an entry
+** is inserted into pTab->pSchema->idxHash for each index in the returned
+** list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pList){
   Schema *pSchema = pTab->pSchema;
   Index *pRet = 0;
   Index *p = 0;
   Index **ppNew = &pRet;
-  for(p=pIdx; p; p=p->pNext){
+  for(p=pList; p; p=p->pNext){
     Index *pNew = 0;
     int nName = sqlite3Strlen30(p->zName) + 1;
     int nExtra = 0;
@@ -5881,7 +5906,6 @@ static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
       pNew->nSampleAlloc = 0;
       sqlite3AnalyzeCopyStat4(db, pNew, p);
 #endif
-
       if( sqlite3HashInsert(&pSchema->idxHash, pNew->zName, pNew) ){
         sqlite3OomFault(db);
       }
@@ -5893,6 +5917,10 @@ static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pIdx){
   return pRet;
 }
 
+/*
+** Update any elements of pSrc with the fixedSchema flag set to use
+** schema pSchema.
+*/
 static void schemaCopyRefixSrclist(Schema *pSchema, SrcList *pSrc){
   if( pSrc ){
     int ii;
@@ -5904,15 +5932,37 @@ static void schemaCopyRefixSrclist(Schema *pSchema, SrcList *pSrc){
   }
 }
 
+/*
+** Walker callback to call schemaCopyRefixSrclist().
+*/
 static int schemaCopySelectCb(Walker *pWalker, Select *pSelect){
   schemaCopyRefixSrclist(pWalker->u.pSchema, pSelect->pSrc);
   return WRC_Continue;
 }
 
+/*
+** Set up the walker object passed as the first argument so that it
+** calls schemaCopyRefixSrclist() on any SrcList it visits with pSchema
+** as the first argument.
+*/
+static void schemaRefixWalker(Walker *pWalker, Schema *pSchema){
+  memset(pWalker, 0, sizeof(Walker));
+  pWalker->xSelectCallback = schemaCopySelectCb;
+  pWalker->xExprCallback = sqlite3ExprWalkNoop;
+  pWalker->u.pSchema = pSchema;
+}
+
+/*
+** Make a copy of the list of trigger-steps in pList and return a pointer
+** to it. Set each trigger-step in the returned list to belong to trigger
+** pTrig, and also fix any embedded SrcList objects to schema pTrig->pSchema.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
 static TriggerStep *schemaCopyTriggerStepList(
-  sqlite3 *db, 
-  Trigger *pTrig,
-  TriggerStep *pList
+  sqlite3 *db,                    /* Database handle */
+  Trigger *pTrig,                 /* Trigger that will own returned list */
+  TriggerStep *pList              /* List of trigger steps to copy */
 ){
   TriggerStep *pRet = 0;
   TriggerStep *p = 0;
@@ -5949,6 +5999,16 @@ static TriggerStep *schemaCopyTriggerStepList(
   return pRet;
 }
 
+/*
+** Make a copy of the list of triggers in pList and return a pointer
+** to it. Set each of the triggers in the returned list to belong to table
+** pTab, and also fix any embedded SrcList objects to schema pTab->pSchema.
+**
+** An entry is added to hash table pTab->pSchema->trigHash for each trigger
+** in the returned list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
 static Trigger *schemaCopyTriggerList(sqlite3 *db, Table *pTab, Trigger *pList){
   Walker sWalker;
   Schema *pSchema = pTab->pSchema;
@@ -5956,11 +6016,7 @@ static Trigger *schemaCopyTriggerList(sqlite3 *db, Table *pTab, Trigger *pList){
   Trigger *p = 0;
   Trigger **ppNew = &pRet;
 
-  memset(&sWalker, 0, sizeof(sWalker));
-  sWalker.xSelectCallback = schemaCopySelectCb;
-  sWalker.xExprCallback = sqlite3ExprWalkNoop;
-  sWalker.u.pSchema = pSchema;
-
+  schemaRefixWalker(&sWalker, pSchema);
   for(p=pList; p; p=p->pNext){
     Trigger *pNew = sqlite3DbMallocZero(db, sizeof(Trigger));
     if( pNew ){
@@ -5984,6 +6040,16 @@ static Trigger *schemaCopyTriggerList(sqlite3 *db, Table *pTab, Trigger *pList){
   return pRet;
 }
 
+/*
+** Make a copy of the list of FKey objects in pList and return a pointer
+** to it. Set each of the FKey objects in the returned list to belong to 
+** table pTab.
+**
+** An entry is added to hash table pTab->pSchema->fkeyHash for each trigger
+** in the returned list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
 static FKey *schemaCopyFKeyList(sqlite3 *db, Table *pTab, FKey *pList){
   Schema *pSchema = pTab->pSchema;
   FKey *pRet = 0;
@@ -6038,6 +6104,13 @@ static FKey *schemaCopyFKeyList(sqlite3 *db, Table *pTab, FKey *pList){
   return pRet;
 }
 
+/*
+** Make a copy of the table object passed as the 3rd argument. The copy
+** should be made part of schema pTo. The new table object is added to hash
+** table pTo->tblHash before returning.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
 static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
   Table *pNew = 0;
 
@@ -6083,11 +6156,8 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
 
     if( IsView(pNew) ){
       Walker sWalker;
-      memset(&sWalker, 0, sizeof(sWalker));
-      sWalker.xSelectCallback = schemaCopySelectCb;
-      sWalker.xExprCallback = sqlite3ExprWalkNoop;
-      sWalker.u.pSchema = pTo;
       pNew->u.view.pSelect = sqlite3SelectDup(db, pNew->u.view.pSelect, 0);
+      schemaRefixWalker(&sWalker, pTo);
       sqlite3WalkSelect(&sWalker, pNew->u.view.pSelect);
     }else if( IsVirtual(pNew) ){
       int nAlloc = pNew->u.vtab.nArg * sizeof(char*);
@@ -6123,6 +6193,11 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
   }
 }
 
+/*
+** Copy the contents of schema object pFrom to schema object pTo.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
 void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
   HashElem *k = 0;
 
@@ -6135,7 +6210,7 @@ void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
   pTo->schemaFlags = pFrom->schemaFlags;
 
 #ifdef SQLITE_ENABLE_STAT4
-  if( pFrom->pStat4Space ){
+  if( pFrom->pStat4Space && pFrom->nStat4Space>0 ){
     pTo->pStat4Space = sqlite3_malloc(pFrom->nStat4Space);
     if( pTo->pStat4Space==0 ){
       sqlite3OomFault(db);
@@ -6159,9 +6234,16 @@ void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
   EnableLookaside;
 }
 
+/*
+** Copy the contents of the schema from database handle db, database zTo,
+** to database zFrom of handle dbFrom.
+**
+** Return SQLITE_OK if successful, or SQLITE_NOMEM if an OOM error is
+** encountered.
+*/
 int sqlite3_schema_copy(
-    sqlite3 *db, const char *zTo, 
-    sqlite3 *dbFrom, const char *zFrom
+    sqlite3 *db, const char *zTo,           /* Target schema */
+    sqlite3 *dbFrom, const char *zFrom      /* Source schema */
 ){
   int iTo = 0;
   int iFrom = 0;
