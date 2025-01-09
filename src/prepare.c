@@ -457,6 +457,44 @@ error_out:
 }
 
 /*
+** Calling this function is equivalent to calling:
+**
+**     sqlite3InitOne(db, iDb, pzErrMsg, 0);
+**
+** except that if SQLITE_TESTCTRL_SCHEMACOPY has been configured, then
+** the schema is first loaded into space allocated on the heap, and then
+** copied into the database schema object using sqlite3SchemaCopy(). This
+** is done to help test the internals of the sqlite3_schema_copy() API.
+*/
+static int initOneWithCopy(sqlite3 *db, int iDb, char **pzErrMsg){
+  int rc;
+#ifndef SQLITE_UNTESTABLE
+  Schema *pNew = 0;
+  Schema *pOld = 0;
+  if( iDb!=1 && sqlite3Config.bTestSchemaCopy ){
+    pNew = sqlite3DbMallocZero(db, sizeof(Schema));
+    if( !pNew ) return SQLITE_NOMEM;
+    pOld = db->aDb[iDb].pSchema;
+    memcpy(pNew, pOld, sizeof(Schema));
+    db->aDb[iDb].pSchema = pNew;
+  }
+#endif
+
+  rc = sqlite3InitOne(db, iDb, pzErrMsg, 0);
+
+#ifndef SQLITE_UNTESTABLE
+  if( iDb!=1 && sqlite3Config.bTestSchemaCopy ){
+    sqlite3SchemaCopy(db, pOld, pNew);
+    if( db->mallocFailed ) rc = SQLITE_NOMEM;
+    db->aDb[iDb].pSchema = pOld;
+    sqlite3SchemaClear(pNew);
+    sqlite3DbFree(db, pNew);
+  }
+#endif
+  return rc;
+}
+
+/*
 ** Initialize all database files - the main database file, the file
 ** used to store temporary tables, and any additional database files
 ** created using ATTACH statements.  Return a success code.  If an
@@ -476,27 +514,14 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   assert( db->nDb>0 );
   /* Do the main schema first */
   if( !DbHasProperty(db, 0, DB_SchemaLoaded) ){
-    Schema *pNew = 0;
-    if( sqlite3Config.bTestSchemaCopy ){
-      pNew = sqlite3DbMallocZero(db, sizeof(Schema));
-      if( !pNew ) return SQLITE_NOMEM;
-      memcpy(pNew, db->aDb[0].pSchema, sizeof(Schema));
-      db->aDb[0].pSchema = pNew;
-    }
-    rc = sqlite3InitOne(db, 0, pzErrMsg, 0);
-    if( sqlite3Config.bTestSchemaCopy ){
-      int rc2 = sqlite3SchemaTestCopy(db, 0);
-      if( rc==SQLITE_OK ) rc = rc2;
-      sqlite3SchemaClear(pNew);
-      sqlite3DbFree(db, pNew);
-    }
+    rc = initOneWithCopy(db, 0, pzErrMsg);
     if( rc ) return rc;
   }
   /* All other schemas after the main schema. The "temp" schema must be last */
   for(i=db->nDb-1; i>0; i--){
     assert( i==1 || sqlite3BtreeHoldsMutex(db->aDb[i].pBt) );
     if( !DbHasProperty(db, i, DB_SchemaLoaded) ){
-      rc = sqlite3InitOne(db, i, pzErrMsg, 0);
+      rc = initOneWithCopy(db, i, pzErrMsg);
       if( rc ) return rc;
     }
   }

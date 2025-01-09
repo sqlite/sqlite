@@ -11839,17 +11839,6 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
   return pBt->pSchema;
 }
 
-void sqlite3BtreeSchemaPut(Btree *p, void *pTo){
-  BtShared *pBt = p->pBt;
-  assert( sqlite3BtreeHoldsMutex(p) );
-  assert( pBt->xFreeSchema );
-  assert( pBt->pSchema );
-
-  pBt->xFreeSchema(pBt->pSchema);
-  sqlite3DbFree(0, pBt->pSchema);
-  pBt->pSchema = pTo;
-}
-
 /*
 ** Return SQLITE_LOCKED_SHAREDCACHE if another user of the same shared
 ** btree as the argument handle holds an exclusive lock on the

@@ -599,7 +599,6 @@ TriggerStep *sqlite3TriggerDeleteStep(
   return pTriggerStep;
 }
 
-
 /* 
 ** Recursively delete a Trigger structure
 */

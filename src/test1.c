@@ -2592,7 +2592,11 @@ static int SQLITE_TCLAPI test_sqlite3_randomness(
 }
 
 /*
-** Usage: sqlite3_schema_copy NBYTE
+** Usage: sqlite3_schema_copy DBTO DBNAMETO DBFROM DBNAMEFROM
+**
+**   DBTO and DBFROM must be database handles created using the [sqlite3]
+**   command. DBNAMETO and DBNAMEFROM are database names - "main", "temp"
+**   or the name of an attached database.
 */
 static int SQLITE_TCLAPI test_schema_copy(
   void * clientData,

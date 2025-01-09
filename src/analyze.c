@@ -1777,6 +1777,13 @@ static Index *findIndexOrPrimaryKey(
 /*
 ** Grow the pIdx->aSample[] array. Return SQLITE_OK if successful, or
 ** SQLITE_NOMEM otherwise.
+**
+** Space for the pIdx->aSample[] array and its contents may come either
+** directly from sqlite3DbMallocRaw(), or from buffer Schema.pStat4Space.
+** Schema.pStat4Space is only used when the aSample[] array is resized
+** to exactly SQLITE_STAT4_EST_SAMPLES entries.
+**
+** 
 */
 static int growSampleArray(sqlite3 *db, Index *pIdx, int nReq, int *piOff){
   int nIdxCol = pIdx->nSampleCol;

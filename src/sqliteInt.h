@@ -5608,10 +5608,7 @@ char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
 int sqlite3AnalyzeCopyStat4(sqlite3*, Index*, Index *pFrom);
 #endif
 
-TriggerStep *sqlite3SchemaCopyTriggerStepList(sqlite3 *, TriggerStep*);
-int sqlite3SchemaTestCopy(sqlite3 *db, int);
 void sqlite3SchemaCopy(sqlite3 *db, Schema*, Schema*);
-void sqlite3BtreeSchemaPut(Btree *pBt, void*);
 
 /*
 ** The interface to the LEMON-generated parser
