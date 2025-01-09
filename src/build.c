@@ -6180,7 +6180,7 @@ static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
 
   if( db->mallocFailed==0 ){
     if( sqlite3HashInsert(&pTo->tblHash, pNew->zName, pNew) ){
-      db->mallocFailed = 1;
+      sqlite3OomFault(db);
     }
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     if( pTab->pSchema->pSeqTab==pTab ){

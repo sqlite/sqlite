@@ -1130,6 +1130,7 @@ proc add_devtest_jobs {lBld patternlist} {
   foreach b $lBld {
     set bld [add_build_job $b $TRG(testfixture)]
     add_tcl_jobs $bld veryquick $patternlist SHELL
+    add_tcl_jobs $bld schemacopytest $patternlist
     if {$patternlist==""} {
       add_fuzztest_jobs $b
     }
