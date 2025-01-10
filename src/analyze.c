@@ -1796,7 +1796,6 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int nReq){
   tRowcnt *pSpace; /* Available allocated memory space */
   u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
   int i;
-  u64 t;
 
   assert( pIdx->nSample==pIdx->nSampleAlloc );
   if( nReq==0 ){
@@ -1866,7 +1865,6 @@ int sqlite3AnalyzeCopyStat4(
   Index *pFrom                    /* Source index */
 ){
   if( pFrom->nSample>0 ){
-    Schema *pSchema = pTo->pSchema;
     int ii;
 
     pTo->nSample = pTo->nSampleAlloc = 0;
@@ -1994,7 +1992,7 @@ static int loadStatTbl(
       t2 = sqlite3STimeNow();
       if( growSampleArray(db, pIdx, 0) ) break;
       if( db->aSchemaTime ){
-        db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t);
+        db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t2);
       }
     }
 
