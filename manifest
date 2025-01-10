@@ -1,5 +1,5 @@
-C Run\stests\swith\sSQLITE_TESTCTRL_SCHEMACOPY\sfor\smdevtest\sand\ssdevtest\son\sthis\sbranch.
-D 2025-01-09T20:41:18.825
+C Update\stest\sscript\swal2big2.test\sto\sbe\sless\ssensitive\sto\sPRNG\soutput.
+D 2025-01-10T11:34:43.017
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2009,7 +2009,7 @@ F test/vtabrhs1.test 9b5ecbc74a689500c33a4b2b36761f9bcc22fcc4e3f9d21066ee0c9c74c
 F test/wal.test a5d6c7f4bd79251ed344229d96d44ecdfb896bdbd32b7e65f118756699c7e473
 F test/wal2.test e89ca97593b5e92849039f6b68ce1719a853ef20fa22c669ec1ac452fbc31cab
 F test/wal2big.test 829141cbecdda4329db8fa38705424c4a73db72a06b9540b06811a825d330409
-F test/wal2big2.test d000b0de61388bdf2da39f747c070a05a8995b994f52490674605923d79f65f3
+F test/wal2big2.test 437a2b949041598c1722bbed7513a9eaf19222efa2345b382d0f5be4673d537f
 F test/wal2concurrent.test 7fc3e570073683a2a28f42bda46ecf516f5bc82afd703c1fbf4aa38e18fb3361
 F test/wal2fault.test 2e8e60cacd5bcd451618aeffd05f676894d17202d3e2986e288d36e2c5993249
 F test/wal2lock.test 0ef98d72dc6bcf7711dedd684760488400d9a9a6eec0dc5d3822060437793552
@@ -2251,8 +2251,8 @@ F vsixtest/vsixtest.tcl 6195aba1f12a5e10efc2b8c0009532167be5e301abe5b31385638080
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1603c9cda7cef88152cba5085541b419cee08cf58f917eecb15c4a30322fe2b
-R 6a35e3e18118647f393470d767a880ef
+P c25dd2dec58f92c4c6686ed374facc64a6847232b47ecc95bc602babeb08f4e8
+R 1e2e8f35c7c6441a53a07d3d11c672be
 U dan
-Z ed318b27e31f9dee5b976b3e3579988a
+Z d9e4b676c12f5f5742239287b77dff1b
 # Remove this line to create a well-formed Fossil manifest.

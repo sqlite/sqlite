@@ -47,14 +47,23 @@ do_test 1.4 {
   list [file size test.db-wal] [file size test.db-wal2]
 } {8416 0}
 
+proc hexrandomblob {n} {
+  for {set j 0} {$j < $n} {incr j 2} {
+    append ret [format "%02X" [expr {int(rand() * 256)}]]
+  }
+  return $ret
+}
+db func hexrandomblob hexrandomblob
+
+expr srand(0)
 do_test 1.5 {
   for {set ii 3} {$ii < 100} {incr ii} {
     execsql {
-      INSERT INTO t1 VALUES($ii, hex(randomblob(40)));
+      INSERT INTO t1 VALUES($ii, hexrandomblob(80));
     }
   }
   list [file size test.db-wal] [file size test.db-wal2]
-} {103784 223256}
+} {101688 224304}
 
 do_execsql_test 1.6 {
   PRAGMA integrity_check;
@@ -62,7 +71,7 @@ do_execsql_test 1.6 {
 
 do_execsql_test 1.7 {
   PRAGMA wal_checkpoint = RESTART;
-} {0 312 99}
+} {0 311 97}
 
 do_execsql_test 1.8 {
   PRAGMA integrity_check;
