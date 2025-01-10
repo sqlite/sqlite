@@ -6250,6 +6250,7 @@ int sqlite3_schema_copy(
   Schema *pTo = 0;
   Schema *pFrom = 0;
   int rc = SQLITE_OK;
+  u64 t = sqlite3STimeNow();
 
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
@@ -6272,6 +6273,11 @@ int sqlite3_schema_copy(
   assert( pTo && pFrom );
 
   sqlite3SchemaCopy(db, pTo, pFrom);
+
+  t = sqlite3STimeNow() - t;
+  if( t>500000 ){
+    sqlite3_log(SQLITE_WARNING, "slow schemacopy (v=22): (%lld)", t);
+  }
 
  schema_copy_done:
   sqlite3BtreeLeaveAll(db);
