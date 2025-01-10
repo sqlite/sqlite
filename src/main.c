@@ -4637,6 +4637,18 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_SCHEMACOPY, int X);
+    **
+    **   X==0    Disable test sqlite3_schema_copy()
+    **   X==1    Enable test sqlite3_schema_copy()
+    */
+    case SQLITE_TESTCTRL_SCHEMACOPY: {
+      int b = va_arg(ap, int);
+      if( b>=0 ) sqlite3Config.bTestSchemaCopy = b>0;
+      rc = sqlite3Config.bTestSchemaCopy!=0;
+      break;
+    }
+
 #if !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
     **

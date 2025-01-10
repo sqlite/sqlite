@@ -5795,4 +5795,489 @@ void sqlite3WithDelete(sqlite3 *db, With *pWith){
 void sqlite3WithDeleteGeneric(sqlite3 *db, void *pWith){
   sqlite3WithDelete(db, (With*)pWith);
 }
+
+/*
+** Type passed as context to expression walker callback schemaCopyExprCb().
+*/
+struct TwoTable {
+  Table *pNew;
+  Table *pOld;
+};
+
+/*
+** This is used as an expression walker callback. It takes a TwoTable 
+** structure as context. Any TK_COLUMN node that points to TwoTable.pOld
+** is adjusted to point to TwoTable.pNew.
+*/
+static int schemaCopyExprCb(Walker *p, Expr *pExpr){
+  struct TwoTable *pT = (struct TwoTable*)p->u.pSchema;
+  if( pExpr->op==TK_COLUMN && pExpr->y.pTab==pT->pOld ){
+    pExpr->y.pTab = pT->pNew;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Set up the Walker passed as the first argument to call schemaCopyExprCb()
+** with the TwoTable object indicated by the second argument as context. This
+** configuration will modify all TK_COLUMN nodes that point to pT->pOld
+** to point to pT->pNew instead.
+*/
+static void schemaCopyExprWalker(Walker *p, struct TwoTable *pT){
+  memset(p, 0, sizeof(*p));
+  p->xExprCallback = schemaCopyExprCb;
+  p->xSelectCallback = sqlite3SelectWalkNoop;
+  p->u.pSchema = (Schema*)pT;
+}
+
+/*
+** Argument pList points to a list of Index object linked by Index.pNext.
+** This function returns a copy of this list.
+**
+** All elements of the returned list have Index.pTable set to pTab, and
+** are set to be part of the same schema as pTab. Additionally, an entry
+** is inserted into pTab->pSchema->idxHash for each index in the returned
+** list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static Index *schemaCopyIndexList(sqlite3 *db, Table *pTab, Index *pList){
+  Schema *pSchema = pTab->pSchema;
+  Index *pRet = 0;
+  Index *p = 0;
+  Index **ppNew = &pRet;
+  for(p=pList; p; p=p->pNext){
+    Index *pNew = 0;
+    int nName = sqlite3Strlen30(p->zName) + 1;
+    int nExtra = 0;
+    char *zExtra = 0;
+    int ii;
+    for(ii=0; ii<p->nColumn; ii++){
+      if( p->azColl[ii]!=sqlite3StrBINARY ){
+        nExtra += sqlite3Strlen30(p->azColl[ii]) + 1;
+      }
+    }
+
+    pNew = sqlite3AllocateIndexObject(db, p->nColumn, nName+nExtra, &zExtra);
+    if( pNew ){
+      struct TwoTable twotable;
+      Walker sExprWalker;
+
+      pNew->zName = zExtra;
+      memcpy(pNew->zName, p->zName, nName);
+      zExtra += nName;
+      memcpy(pNew->aiColumn, p->aiColumn, sizeof(i16) * p->nColumn);
+      memcpy(pNew->aiRowLogEst, p->aiRowLogEst, sizeof(LogEst)*(p->nColumn+1));
+      pNew->pTable = pTab;
+      pNew->zColAff = 0;
+      pNew->pSchema = pSchema;
+      memcpy(pNew->aSortOrder, p->aSortOrder, p->nColumn);
+      for(ii=0; ii<p->nColumn; ii++){
+        char *zColl = 0;
+        if( p->azColl[ii]!=sqlite3StrBINARY ){
+          int nColl = sqlite3Strlen30(p->azColl[ii]) + 1;
+          memcpy(zExtra, p->azColl[ii], nColl);
+          zColl = zExtra;
+          zExtra += nColl;
+        }else{
+          zColl = (char*)sqlite3StrBINARY;
+        }
+        pNew->azColl[ii] = zColl;
+      }
+
+      pNew->pPartIdxWhere = sqlite3ExprDup(db, p->pPartIdxWhere, 0);
+      twotable.pNew = pTab;
+      twotable.pOld = p->pTable;
+      schemaCopyExprWalker(&sExprWalker, &twotable);
+      sqlite3WalkExpr(&sExprWalker, pNew->pPartIdxWhere);
+
+      pNew->aColExpr = sqlite3ExprListDup(db, p->aColExpr, 0);
+      sqlite3WalkExprList(&sExprWalker, pNew->aColExpr);
+
+      pNew->tnum = p->tnum;
+      pNew->szIdxRow = p->szIdxRow;
+      memcpy(&pNew->nKeyCol,&p->nKeyCol,sizeof(Index)-offsetof(Index, nKeyCol));
+      pNew->isResized = 0;
+#ifdef SQLITE_ENABLE_STAT4 
+      assert( pNew->aiRowEst==0 && p->aiRowEst==0 );
+      pNew->aAvgEq = 0;
+      pNew->aSample = 0;
+      pNew->nSample = 0;
+      pNew->nSampleAlloc = 0;
+      sqlite3AnalyzeCopyStat4(db, pNew, p);
+#endif
+      if( sqlite3HashInsert(&pSchema->idxHash, pNew->zName, pNew) ){
+        sqlite3OomFault(db);
+      }
+      *ppNew = pNew;
+      ppNew = &pNew->pNext;
+    }
+  }
+
+  return pRet;
+}
+
+/*
+** Update any elements of pSrc with the fixedSchema flag set to use
+** schema pSchema.
+*/
+static void schemaCopyRefixSrclist(Schema *pSchema, SrcList *pSrc){
+  if( pSrc ){
+    int ii;
+    for(ii=0; ii<pSrc->nSrc; ii++){
+      if( pSrc->a[ii].fg.fixedSchema ){
+        pSrc->a[ii].u4.pSchema = pSchema;
+      }
+    }
+  }
+}
+
+/*
+** Walker callback to call schemaCopyRefixSrclist().
+*/
+static int schemaCopySelectCb(Walker *pWalker, Select *pSelect){
+  schemaCopyRefixSrclist(pWalker->u.pSchema, pSelect->pSrc);
+  return WRC_Continue;
+}
+
+/*
+** Set up the walker object passed as the first argument so that it
+** calls schemaCopyRefixSrclist() on any SrcList it visits with pSchema
+** as the first argument.
+*/
+static void schemaRefixWalker(Walker *pWalker, Schema *pSchema){
+  memset(pWalker, 0, sizeof(Walker));
+  pWalker->xSelectCallback = schemaCopySelectCb;
+  pWalker->xExprCallback = sqlite3ExprWalkNoop;
+  pWalker->u.pSchema = pSchema;
+}
+
+/*
+** Make a copy of the list of trigger-steps in pList and return a pointer
+** to it. Set each trigger-step in the returned list to belong to trigger
+** pTrig, and also fix any embedded SrcList objects to schema pTrig->pSchema.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static TriggerStep *schemaCopyTriggerStepList(
+  sqlite3 *db,                    /* Database handle */
+  Trigger *pTrig,                 /* Trigger that will own returned list */
+  TriggerStep *pList              /* List of trigger steps to copy */
+){
+  TriggerStep *pRet = 0;
+  TriggerStep *p = 0;
+  TriggerStep **ppNew = &pRet;
+  for(p=pList; p; p=p->pNext){
+    int nTarget = sqlite3Strlen30(p->zTarget) + 1;
+    int nAlloc = sizeof(TriggerStep) + nTarget;
+    TriggerStep *pNew = (TriggerStep*)sqlite3DbMallocZero(db, nAlloc);
+    if( pNew ){
+      pNew->op = p->op;
+      pNew->orconf = p->orconf;
+      pNew->pTrig = pTrig;
+      pNew->pSelect = sqlite3SelectDup(db, p->pSelect, 0);
+      if( p->zTarget ){
+        pNew->zTarget = (char*)&pNew[1];
+        memcpy(pNew->zTarget, p->zTarget, nTarget);
+      }
+      pNew->pFrom = sqlite3SrcListDup(db, p->pFrom, 0);
+      schemaCopyRefixSrclist(pTrig->pSchema, pNew->pFrom);
+      pNew->pWhere = sqlite3ExprDup(db, p->pWhere, 0);
+      pNew->pExprList = sqlite3ExprListDup(db, p->pExprList, 0);
+      pNew->pIdList = sqlite3IdListDup(db, p->pIdList);
+      pNew->pUpsert = sqlite3UpsertDup(db, p->pUpsert);
+      assert( pNew->pUpsert==0 || pNew->pUpsert->pUpsertSrc==0 );
+      pNew->zSpan = sqlite3DbStrDup(db, p->zSpan);
+
+      *ppNew = pNew;
+      ppNew = &pNew->pNext;
+      if( pRet ){
+        pRet->pLast = pNew;
+      }
+    }
+  }
+  return pRet;
+}
+
+/*
+** Make a copy of the list of triggers in pList and return a pointer
+** to it. Set each of the triggers in the returned list to belong to table
+** pTab, and also fix any embedded SrcList objects to schema pTab->pSchema.
+**
+** An entry is added to hash table pTab->pSchema->trigHash for each trigger
+** in the returned list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static Trigger *schemaCopyTriggerList(sqlite3 *db, Table *pTab, Trigger *pList){
+  Walker sWalker;
+  Schema *pSchema = pTab->pSchema;
+  Trigger *pRet = 0;
+  Trigger *p = 0;
+  Trigger **ppNew = &pRet;
+
+  schemaRefixWalker(&sWalker, pSchema);
+  for(p=pList; p; p=p->pNext){
+    Trigger *pNew = sqlite3DbMallocZero(db, sizeof(Trigger));
+    if( pNew ){
+      memcpy(pNew, p, sizeof(Trigger));
+      pNew->zName = sqlite3DbStrDup(db, pNew->zName);
+      pNew->table = sqlite3DbStrDup(db, pNew->table);
+      pNew->pWhen = sqlite3ExprDup(db, pNew->pWhen, 0);
+      pNew->pColumns = sqlite3IdListDup(db, pNew->pColumns);
+      pNew->pSchema = pTab->pSchema;
+      pNew->pTabSchema = pTab->pSchema;
+      pNew->step_list = schemaCopyTriggerStepList(db, pNew, pNew->step_list);
+      if( sqlite3HashInsert(&pSchema->trigHash, pNew->zName, pNew) ){
+        sqlite3OomFault(db);
+      }
+      sqlite3WalkTrigger(&sWalker, pNew);
+      *ppNew = pNew;
+      ppNew = &pNew->pNext;
+    }
+  }
+
+  return pRet;
+}
+
+/*
+** Make a copy of the list of FKey objects in pList and return a pointer
+** to it. Set each of the FKey objects in the returned list to belong to 
+** table pTab.
+**
+** An entry is added to hash table pTab->pSchema->fkeyHash for each trigger
+** in the returned list.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static FKey *schemaCopyFKeyList(sqlite3 *db, Table *pTab, FKey *pList){
+  Schema *pSchema = pTab->pSchema;
+  FKey *pRet = 0;
+  FKey *p = 0;
+  FKey **ppNew = &pRet;
+  for(p=pList; p; p=p->pNextFrom){
+    FKey *pNew = 0;
+    int nByte = sizeof(FKey) + ((p->nCol - 1) * sizeof(struct sColMap));
+    int ii;
+    nByte += sqlite3Strlen30(p->zTo) + 1;
+    for(ii=0; ii<p->nCol; ii++){
+      nByte += sqlite3Strlen30(p->aCol[ii].zCol) + 1;
+    }
+    pNew = (FKey*)sqlite3DbMallocZero(db, nByte);
+    if( pNew ){
+      FKey *pNextTo = 0;
+      char *z = (char*)&pNew->aCol[p->nCol];
+      int n = 0;
+      pNew->pFrom = pTab;
+      n = sqlite3Strlen30(p->zTo) + 1;
+      pNew->zTo = z;
+      memcpy(pNew->zTo, p->zTo, n);
+      z += n;
+      pNew->nCol = p->nCol;
+      pNew->isDeferred = p->isDeferred;
+      pNew->aAction[0] = p->aAction[0];
+      pNew->aAction[1] = p->aAction[1];
+      for(ii=0; ii<p->nCol; ii++){
+        pNew->aCol[ii].iFrom = p->aCol[ii].iFrom;
+        if( p->aCol[ii].zCol ){
+          n = sqlite3Strlen30(p->aCol[ii].zCol) + 1;
+          pNew->aCol[ii].zCol = z;
+          memcpy(z, p->aCol[ii].zCol, n);
+          z += n;
+        }
+      }
+
+      pNextTo = (FKey*)sqlite3HashInsert(&pSchema->fkeyHash, pNew->zTo, pNew);
+      if( pNextTo==pNew ){
+        sqlite3OomFault(db);
+      }else if( pNextTo ){
+        assert( pNextTo->pPrevTo==0 );
+        pNew->pNextTo = pNextTo;
+        pNextTo->pPrevTo = pNew;
+      }
+
+      *ppNew = pNew;
+      ppNew = &pNew->pNextFrom;
+    }
+  }
+
+  return pRet;
+}
+
+/*
+** Make a copy of the table object passed as the 3rd argument. The copy
+** should be made part of schema pTo. The new table object is added to hash
+** table pTo->tblHash before returning.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+static void schemaCopyTable(sqlite3 *db, Schema *pTo, Table *pTab){
+  Table *pNew = 0;
+
+  pNew = (Table*)sqlite3DbMallocRawNN(db, sizeof(Table));
+  if( pNew ){
+    Walker sExprWalker;
+    struct TwoTable twotable;
+    memcpy(pNew, pTab, sizeof(Table));
+    pNew->zName = sqlite3DbStrDup(db, pNew->zName);
+    assert( pNew->nCol>0 || pNew->eTabType!=TABTYP_NORM );
+    if( pNew->nCol>0 ){
+      pNew->aCol = sqlite3DbMallocRawNN(db, pNew->nCol*sizeof(Column));
+    }
+    pNew->nTabRef = 1;
+    if( pNew->aCol ){
+      int ii;
+      memcpy(pNew->aCol, pTab->aCol, pNew->nCol*sizeof(Column));
+      for(ii=0; ii<pNew->nCol; ii++){
+        Column *pCol = &pNew->aCol[ii];
+        const char *zCopy = pCol->zCnName;
+        int nCopy = sqlite3Strlen30(zCopy);
+        if( pCol->colFlags & COLFLAG_HASTYPE ){
+          nCopy++;
+          nCopy += sqlite3Strlen30(&zCopy[nCopy]);
+        }
+        if( pCol->colFlags & COLFLAG_HASCOLL ){
+          nCopy++;
+          nCopy += sqlite3Strlen30(&zCopy[nCopy]);
+        }
+        pCol->zCnName = sqlite3DbStrNDup(db, zCopy, nCopy);
+      }
+    }
+
+    pNew->pSchema = pTo;
+    pNew->pIndex = schemaCopyIndexList(db, pNew, pNew->pIndex);
+    pNew->zColAff = 0;
+    pNew->pCheck = sqlite3ExprListDup(db, pTab->pCheck, 0);
+
+    twotable.pNew = pNew;
+    twotable.pOld = pTab;
+    schemaCopyExprWalker(&sExprWalker, &twotable);
+    sqlite3WalkExprList(&sExprWalker, pNew->pCheck);
+
+    if( IsView(pNew) ){
+      Walker sWalker;
+      pNew->u.view.pSelect = sqlite3SelectDup(db, pNew->u.view.pSelect, 0);
+      schemaRefixWalker(&sWalker, pTo);
+      sqlite3WalkSelect(&sWalker, pNew->u.view.pSelect);
+    }else if( IsVirtual(pNew) ){
+      int nAlloc = pNew->u.vtab.nArg * sizeof(char*);
+      pNew->u.vtab.p = 0;
+      pNew->u.vtab.azArg = (char**)sqlite3DbMallocRaw(db, nAlloc);
+      if( pNew->u.vtab.azArg ){
+        int ii;
+        for(ii=0; ii<pNew->u.vtab.nArg; ii++){
+          pNew->u.vtab.azArg[ii] = sqlite3DbStrDup(db, pTab->u.vtab.azArg[ii]);
+        }
+      }
+    }else{
+      pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pNew->u.tab.pDfltList, 0);
+      sqlite3WalkExprList(&sExprWalker, pNew->u.tab.pDfltList);
+      pNew->u.tab.pFKey = schemaCopyFKeyList(db, pNew, pNew->u.tab.pFKey);
+    }
+
+    pNew->pTrigger = schemaCopyTriggerList(db, pNew, pNew->pTrigger);
+  }
+
+  if( db->mallocFailed==0 ){
+    if( sqlite3HashInsert(&pTo->tblHash, pNew->zName, pNew) ){
+      sqlite3OomFault(db);
+    }
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+    if( pTab->pSchema->pSeqTab==pTab ){
+      pTo->pSeqTab = pNew;
+    }
+#endif
+  }
+  if( db->mallocFailed ){
+    sqlite3DeleteTable(db, pNew);
+  }
+}
+
+/*
+** Copy the contents of schema object pFrom to schema object pTo.
+**
+** db->mallocFailed is left set if an OOM error is encountered.
+*/
+void sqlite3SchemaCopy(sqlite3 *db, Schema *pTo, Schema *pFrom){
+  HashElem *k = 0;
+
+  DisableLookaside;
+  pTo->schema_cookie = pFrom->schema_cookie;
+  pTo->iGeneration = pFrom->iGeneration;
+  pTo->file_format = pFrom->file_format;
+  pTo->enc = pFrom->enc;
+  pTo->cache_size = pFrom->cache_size;
+  pTo->schemaFlags = pFrom->schemaFlags;
+
+#ifdef SQLITE_ENABLE_STAT4
+  if( pFrom->pStat4Space && pFrom->nStat4Space>0 ){
+    pTo->pStat4Space = sqlite3_malloc(pFrom->nStat4Space);
+    if( pTo->pStat4Space==0 ){
+      sqlite3OomFault(db);
+    }
+    pTo->nStat4Space = 0;
+  }
+#endif
+
+  /* Iterate through the tables in the pFrom schema in reverse order. This
+  ** ensures that they end up stored in the pTo hash table in the same order
+  ** as in pFrom. Which make the results of some test cases more consistent. */
+  k = sqliteHashFirst(&pFrom->tblHash);
+  if( k ){
+    while( k->next ) k = k->next;
+    for(/* no-op */; k; k=k->prev){
+      Table *pTab = (Table*)sqliteHashData(k);
+      schemaCopyTable(db, pTo, pTab);
+    }
+  }
+
+  EnableLookaside;
+}
+
+/*
+** Copy the contents of the schema from database handle db, database zTo,
+** to database zFrom of handle dbFrom.
+**
+** Return SQLITE_OK if successful, or SQLITE_NOMEM if an OOM error is
+** encountered.
+*/
+int sqlite3_schema_copy(
+    sqlite3 *db, const char *zTo,           /* Target schema */
+    sqlite3 *dbFrom, const char *zFrom      /* Source schema */
+){
+  int iTo = 0;
+  int iFrom = 0;
+  Schema *pTo = 0;
+  Schema *pFrom = 0;
+  int rc = SQLITE_OK;
+
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
+
+  if( zTo ) iTo = sqlite3FindDbName(db, zTo);
+  if( zFrom ) iFrom = sqlite3FindDbName(dbFrom, zFrom);
+
+  if( iFrom<0 || iTo<0 ){
+    rc = SQLITE_ERROR;
+    goto schema_copy_done;
+  }
+
+  if( !DbHasProperty(dbFrom, iFrom, DB_SchemaLoaded)
+   || DbHasProperty(db, iTo, DB_SchemaLoaded)
+  ){
+    goto schema_copy_done;
+  }
+  pTo = db->aDb[iTo].pSchema;
+  pFrom = dbFrom->aDb[iFrom].pSchema;
+  assert( pTo && pFrom );
+
+  sqlite3SchemaCopy(db, pTo, pFrom);
+
+ schema_copy_done:
+  sqlite3BtreeLeaveAll(db);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
 #endif /* !defined(SQLITE_OMIT_CTE) */

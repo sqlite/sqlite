@@ -1492,6 +1492,7 @@ struct Schema {
   int cache_size;      /* Number of pages to use in the cache */
 #ifdef SQLITE_ENABLE_STAT4
   void *pStat4Space;   /* Memory for stat4 Index.aSample[] arrays */
+  int nStat4Space;     /* Size of pStat4Space allocation in bytes */
 #endif
 };
 
@@ -4416,6 +4417,7 @@ struct Sqlite3Config {
   int iOnceResetThreshold;          /* When to reset OP_Once counters */
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
+  int bTestSchemaCopy;              /* True to test schema copies internally */
   /* vvvv--- must be last ---vvv */
 #ifdef SQLITE_DEBUG
   sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
@@ -4470,6 +4472,7 @@ struct Walker {
     SrcItem *pSrcItem;                        /* A single FROM clause item */
     DbFixer *pFix;                            /* See sqlite3FixSelect() */
     Mem *aMem;                                /* See sqlite3BtreeCursorHint() */
+    Schema *pSchema;
   } u;
 };
 
@@ -4953,6 +4956,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowTriggerStepList(const TriggerStep*);
   void sqlite3ShowTrigger(const Trigger*);
   void sqlite3ShowTriggerList(const Trigger*);
+  void sqlite3WalkTrigger(Walker *pWalker, Trigger *pTrigger);
 #endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
   void sqlite3ShowWindow(const Window*);
@@ -5601,7 +5605,10 @@ int sqlite3Stat4ValueFromExpr(Parse*, Expr*, u8, sqlite3_value**);
 void sqlite3Stat4ProbeFree(UnpackedRecord*);
 int sqlite3Stat4Column(sqlite3*, const void*, int, int, sqlite3_value**);
 char sqlite3IndexColumnAffinity(sqlite3*, Index*, int);
+int sqlite3AnalyzeCopyStat4(sqlite3*, Index*, Index *pFrom);
 #endif
+
+void sqlite3SchemaCopy(sqlite3 *db, Schema*, Schema*);
 
 /*
 ** The interface to the LEMON-generated parser

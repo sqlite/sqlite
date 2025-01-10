@@ -8365,7 +8365,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_TUNE                    32
 #define SQLITE_TESTCTRL_LOGEST                  33
 #define SQLITE_TESTCTRL_USELONGDOUBLE           34
-#define SQLITE_TESTCTRL_LAST                    34  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_SCHEMACOPY              35
+#define SQLITE_TESTCTRL_LAST                    35  /* Largest TESTCTRL */
 
 /*
 ** CAPI3REF: SQL Keyword Checking
@@ -10952,6 +10953,27 @@ int sqlite3_commit_status(
 #define SQLITE_COMMIT_CONFLICT_FRAME 3
 #define SQLITE_COMMIT_CONFLICT_PGNO  4
 
+/*
+** This function is used to copy an in-memory schema from one database
+** connection to another. Under some circumstances this may be faster than
+** loading it from the database. 
+**
+** The target database is identified by parameters pTo and zTo, which must
+** be "main" or the name of an attached database. The source database is
+** identified by pFrom and zFrom. It is the responsibility of the caller
+** to ensure that these two database connections really access the same
+** underlying database file.
+**
+** This function is a no-op if either the database schema has already been
+** loaded for pTo/zTo, or if it has not yet been loaded for pFrom/zFrom. In
+** these cases SQLITE_OK is returned. Otherwise, the database schema from
+** pFrom/zFrom is copied into pTo/zTo. SQLITE_OK is returned if successful,
+** or SQLITE_NOMEM if an OOM error occurs.
+*/
+int sqlite3_schema_copy(
+    sqlite3 *pTo, const char *zTo, 
+    sqlite3 *pFrom, const char *zFrom
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for

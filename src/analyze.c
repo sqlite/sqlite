@@ -1777,8 +1777,18 @@ static Index *findIndexOrPrimaryKey(
 /*
 ** Grow the pIdx->aSample[] array. Return SQLITE_OK if successful, or
 ** SQLITE_NOMEM otherwise.
+**
+** Space for the pIdx->aSample[] array and its contents may come either
+** directly from sqlite3DbMallocRaw(), or from buffer Schema.pStat4Space.
+** Schema.pStat4Space is only used when the aSample[] array is resized
+** to exactly SQLITE_STAT4_EST_SAMPLES entries.
+**
+** If parameter nReq is non-zero, then it is the exact number of samples
+** to which the array should be sized. Or, if nReq is 0, then the array
+** is set to either SQLITE_STAT4_EST_SAMPLES (if pIdx->nSample==0), or
+** to pIdx->nSample*2 (if pIdx->nSample!=0).
 */
-static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
+static int growSampleArray(sqlite3 *db, Index *pIdx, int nReq){
   int nIdxCol = pIdx->nSampleCol;
   int nNew = 0;
   IndexSample *aNew = 0;
@@ -1786,12 +1796,15 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   tRowcnt *pSpace; /* Available allocated memory space */
   u8 *pPtr;        /* Available memory as a u8 for easier manipulation */
   int i;
-  u64 t;
 
   assert( pIdx->nSample==pIdx->nSampleAlloc );
-  nNew = SQLITE_STAT4_EST_SAMPLES;
-  if( pIdx->nSample ){
-    nNew = pIdx->nSample*2;
+  if( nReq==0 ){
+    nNew = SQLITE_STAT4_EST_SAMPLES;
+    if( pIdx->nSample ){
+      nNew = pIdx->nSample*2;
+    }
+  }else{
+    nNew = nReq;
   }
 
   /* Set nByte to the required amount of space */
@@ -1800,9 +1813,10 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
 
   if( nNew==SQLITE_STAT4_EST_SAMPLES ){
-    aNew = (IndexSample*)&((u8*)pIdx->pSchema->pStat4Space)[*piOff];
-    *piOff += nByte;
-    assert( *piOff<=sqlite3_msize(pIdx->pSchema->pStat4Space) );
+    Schema *pSchema = pIdx->pSchema;
+    aNew = (IndexSample*)&((u8*)pSchema->pStat4Space)[pSchema->nStat4Space];
+    pSchema->nStat4Space += nByte;
+    assert( pSchema->nStat4Space<=sqlite3_msize(pSchema->pStat4Space) );
   }else{
     aNew = (IndexSample*)sqlite3DbMallocRaw(db, nByte);
     if( aNew==0 ) return SQLITE_NOMEM_BKPT;
@@ -1841,6 +1855,41 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
 }
 
 /*
+** Copy stat4 related data from index pFrom to index pTo. This is part
+** of the sqlite3_schema_copy() implementation. Return SQLITE_OK if 
+** successful, or SQLITE_NOMEM if an OOM error is encountered.
+*/
+int sqlite3AnalyzeCopyStat4(
+  sqlite3 *db,                    /* Database handle */
+  Index *pTo,                     /* Target index (must belong to db) */
+  Index *pFrom                    /* Source index */
+){
+  if( pFrom->nSample>0 ){
+    int ii;
+
+    pTo->nSample = pTo->nSampleAlloc = 0;
+    if( growSampleArray(db, pTo, pFrom->nSample) ){
+      return SQLITE_NOMEM;
+    }
+    pTo->nSample = pFrom->nSample;
+    memcpy(pTo->aAvgEq, pFrom->aAvgEq, pFrom->nSampleCol * sizeof(tRowcnt));
+    memcpy(pTo->aSample[0].anEq, pFrom->aSample[0].anEq, 
+        pTo->nSampleCol * 3 * sizeof(tRowcnt) * pTo->nSample
+    );
+    for(ii=0; ii<pTo->nSample; ii++){
+      int nByte = pFrom->aSample[ii].n;
+      void *p = sqlite3DbMallocZero(db, nByte+8);
+      if( p ){
+        memcpy(p, pFrom->aSample[ii].p, nByte);
+      }
+      pTo->aSample[ii].p = p;
+      pTo->aSample[ii].n = nByte;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Allocate the space that will likely be required for the Index.aSample[] 
 ** arrays populated by loading data from the sqlite_stat4 table. Return
 ** SQLITE_OK if successful, or SQLITE_NOMEM otherwise.
@@ -1868,6 +1917,7 @@ static int stat4AllocSpace(sqlite3 *db, const char *zDb){
 
   if( nByte>0 ){
     pSchema->pStat4Space = sqlite3_malloc(nByte);
+    pSchema->nStat4Space = 0;
     if( pSchema->pStat4Space==0 ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -1899,7 +1949,6 @@ static int loadStatTbl(
   char *zSql;                   /* Text of the SQL statement */
   Index *pPrevIdx = 0;          /* Previous index in the loop */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
-  int iBlockOff = 0;            /* Offset into Schema.pStat4Space */
 
   assert( db->lookaside.bDisable );
 
@@ -1941,9 +1990,9 @@ static int loadStatTbl(
         pIdx->nSampleCol = pIdx->nColumn;
       }
       t2 = sqlite3STimeNow();
-      if( growSampleArray(db, pIdx, &iBlockOff) ) break;
+      if( growSampleArray(db, pIdx, 0) ) break;
       if( db->aSchemaTime ){
-        db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t);
+        db->aSchemaTime[SCHEMA_TIME_STAT4_GROWUS] += (sqlite3STimeNow() - t2);
       }
     }
 

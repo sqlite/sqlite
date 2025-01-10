@@ -1416,7 +1416,7 @@ static int renameResolveTrigger(Parse *pParse){
 ** Invoke sqlite3WalkExpr() or sqlite3WalkSelect() on all Select or Expr
 ** objects that are part of the trigger passed as the second argument.
 */
-static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
+void sqlite3WalkTrigger(Walker *pWalker, Trigger *pTrigger){
   TriggerStep *pStep;
 
   /* Find tokens to edit in WHEN clause */
@@ -1631,7 +1631,7 @@ static void renameColumnFunc(
     }
 
     /* Find tokens to edit in various expressions and selects */
-    renameWalkTrigger(&sWalker, sParse.pNewTrigger);
+    sqlite3WalkTrigger(&sWalker, sParse.pNewTrigger);
   }
 
   assert( rc==SQLITE_OK );
@@ -1824,7 +1824,7 @@ static void renameTableFunc(
         if( isLegacy==0 ){
           rc = renameResolveTrigger(&sParse);
           if( rc==SQLITE_OK ){
-            renameWalkTrigger(&sWalker, pTrigger);
+            sqlite3WalkTrigger(&sWalker, pTrigger);
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
               if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
                 renameTokenFind(&sParse, &sCtx, pStep->zTarget);
@@ -1965,7 +1965,7 @@ static void renameQuotefixFunc(
 #ifndef SQLITE_OMIT_TRIGGER
         rc = renameResolveTrigger(&sParse);
         if( rc==SQLITE_OK ){
-          renameWalkTrigger(&sWalker, sParse.pNewTrigger);
+          sqlite3WalkTrigger(&sWalker, sParse.pNewTrigger);
         }
 #endif /* SQLITE_OMIT_TRIGGER */
       }

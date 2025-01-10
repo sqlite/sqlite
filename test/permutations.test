@@ -197,6 +197,17 @@ test_suite "veryquick" -prefix "" -description {
       *fts5corrupt* *fts5big* *fts5aj* *rbucrash*
 ]
 
+test_suite "schemacopytest" -prefix "schemacopytest-" -description {
+  "Very" quick test suite. Runs in minutes on a workstation.
+  This test suite is the same as the "quick" tests, except that some files
+  that test malloc and IO errors are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
+      *fts5corrupt* *fts5big* *fts5aj* *rbucrash*
+] -initialize {
+  sqlite3_test_control SQLITE_TESTCTRL_SCHEMACOPY 1
+}
+
 test_suite "shell" -prefix "" -description {
   Run tests of the command-line shell
 } -files [

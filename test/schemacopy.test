@@ -1,0 +1,147 @@
+# 2025 January 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix schemacopy
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+}
+
+do_test 1.1 {
+  sqlite3 db2 test.db
+  sqlite3_schema_copy db2 main db main
+} SQLITE_OK
+
+db close
+
+do_execsql_test -db db2 1.2 {
+  SELECT * FROM t1
+} {1 2 3 4}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c INTEGER, d);
+  CREATE INDEX i1 ON t1( (c+d) );
+  CREATE INDEX i2 ON t1( (c+d) DESC, (d-c) ASC);
+  CREATE INDEX i3 ON t1( c, d ) WHERE b<3;
+  CREATE INDEX i4 ON t1( d COLLATE nocase);
+  CREATE INDEX i5 ON t1( c );
+
+  CREATE TABLE t2(x, y PRIMARY KEY, z) WITHOUT ROWID;
+  CREATE TABLE t3(x COLLATE nocase, y, z, PRIMARY KEY(x, y)) WITHOUT ROWID;
+
+  CREATE UNIQUE INDEX t3i1 ON t3(z);
+
+  CREATE TABLE t4(a, b, c);
+  CREATE TABLE log(x);
+  CREATE TRIGGER t4ai AFTER INSERT ON t4 WHEN new.a!='value' BEGIN
+    INSERT INTO log VALUES(new.a ||','|| new.b ||','|| new.c);
+    UPDATE log SET x = new.rowid || ':' || x WHERE rowid = (
+      SELECT max(rowid) FROM log
+    );
+  END;
+
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE x2(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE x3(a INTEGER PRIMARY KEY, b);
+
+  CREATE VIEW xx AS 
+    SELECT a, b FROM x1
+      UNION ALL
+    SELECT a, b FROM x2
+      UNION ALL
+    SELECT a, b FROM x3;
+  SELECT * FROM xx;
+}
+
+do_test 2.1 {
+  sqlite3 db2 test.db
+  sqlite3_schema_copy db2 main db main
+} SQLITE_OK
+
+do_execsql_test -db db2 2.2 {
+  INSERT INTO t1 VALUES(1, 2, 3, 4);
+  INSERT INTO t1 VALUES(4, 3, 2, 1);
+  INSERT INTO t1 VALUES(NULL, 4, NULL, 'abc');
+  INSERT INTO t1 VALUES(NULL, 5, NULL, 'AbC');
+  INSERT INTO t1 VALUES(NULL, 6, NULL, 'DEF');
+  INSERT INTO t1 VALUES(NULL, 7, NULL, 'def');
+  INSERT INTO t1 VALUES(NULL, 8, '456', 11);
+  INSERT INTO t1 VALUES(NULL, 9, '016', 11);
+
+  INSERT INTO t2 VALUES('a', 'b', 'c');
+
+  INSERT INTO t3 VALUES('abc', 'b', '1');
+  INSERT INTO t3 VALUES('abc', 'c', '2');
+  INSERT INTO t3 VALUES('def', 'a', '3');
+  INSERT INTO t3 VALUES('DEF', 'b', '4');
+  INSERT INTO t3 VALUES('aBc', 'd', '5');
+  INSERT INTO t3 VALUES('ABC', 'e', '6');
+}
+
+do_execsql_test -db db2 2.3 {
+  SELECT * FROM t1 WHERE c='000016'
+} {10 9 16 11}
+
+do_eqp_test 2.4 {
+  SELECT * FROM t1 WHERE c='000016'
+} {i5}
+
+do_execsql_test -db db2 2.5.1 {
+  INSERT INTO t4 VALUES('a', 'b', 'c');
+}
+do_execsql_test -db db2 2.5.2 {
+  INSERT INTO t4 VALUES(1, 2, 3);
+}
+do_execsql_test -db db2 2.5.3 {
+  SELECT * FROM log;
+} {
+  1:a,b,c
+  2:1,2,3
+}
+
+do_test 2.5.4 {
+  sqlite3 db3 test.db
+  sqlite3_schema_copy db3 main db2 main
+} SQLITE_OK
+db2 close
+do_execsql_test -db db3 2.5.5 {
+  INSERT INTO t4 VALUES(11,22,33);
+}
+do_execsql_test -db db3 2.5.3 {
+  SELECT * FROM log;
+} {
+  1:a,b,c
+  2:1,2,3
+  3:11,22,33
+}
+
+do_execsql_test -db db3 2.6.1 {
+  INSERT INTO x1 VALUES(1, 'ii');
+  INSERT INTO x2 VALUES(3, 'iv');
+  INSERT INTO x3 VALUES(5, 'vi');
+  SELECT * FROM xx;
+} {
+  1 ii 3 iv 5 vi
+}
+
+do_execsql_test 2.integrity {
+  PRAGMA integrity_check
+} {ok}
+
+finish_test

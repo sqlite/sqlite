@@ -101,7 +101,6 @@ if {[info exists ::tester_tcl_has_run]} return
 set tcl_precision 15
 sqlite3_test_control_pending_byte 0x0010000
 
-
 # If the pager codec is available, create a wrapper for the [sqlite3]
 # command that appends "-key {xyzzy}" to the command line. i.e. this:
 #
