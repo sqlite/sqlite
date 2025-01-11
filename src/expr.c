@@ -3285,7 +3285,7 @@ int sqlite3FindInIndex(
             if( aiMap ) aiMap[i] = j;
           }
  
-          assert( nExpr<BMS );
+          assert( nExpr>0 && nExpr<BMS );
           assert( i==nExpr || colUsed!=(MASKBIT(nExpr)-1) );
           if( colUsed==(MASKBIT(nExpr)-1) ){
             /* If we reach this point, that means the index pIdx is usable */
