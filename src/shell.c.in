@@ -7337,7 +7337,7 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
       break;
     case AR_SWITCH_APPEND:
       pAr->bAppend = 1;
-      deliberate_fall_through;
+      deliberate_fall_through; /* FALLTHRU */
     case AR_SWITCH_FILE:
       pAr->zFile = zArg;
       break;
@@ -12029,7 +12029,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
         break;
       case '[':
         cin = ']';
-        deliberate_fall_through;
+        deliberate_fall_through; /* FALLTHRU */
       case '`': case '\'': case '"':
         cWait = cin;
         qss = QSS_HasDark | cWait;
@@ -12064,7 +12064,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
             ++zLine;
             continue;
           }
-          deliberate_fall_through;
+          deliberate_fall_through; /* FALLTHRU */
         case ']':
           CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
