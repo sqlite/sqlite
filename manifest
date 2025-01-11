@@ -1,5 +1,5 @@
-C Update\sthe\smakefile\sso\sthat\sit\sputs\sthe\samalgamation\sfiles\sin\sa\ssubdirectory\nin\sthe\samalgamation-zip.\n[forum:/forumpost/b8dd1941e1|Forum\spost\sb8dd1941e1].
-D 2025-01-09T19:57:44.593
+C Fix\san\sage-old\sbug\sin\sthe\slower-level\swasm/js\shelper\sbits\swhich\swas\s(A)\scaused\sremoval\sof\scustomized\sWASM\sfunc/argument\sconversion\sto\ssiltently\sfail\sand\s(B)\striggered\sa\swarning\sin\sthe\sclosure\stoolchain.\sReported\sin\s[jaccwabyt\sticket\sc5c296e85a7c01360820|https://fossil.wanderinghorse.net/r/jaccwabyt/info/c5c296e85a7c01360820].
+D 2025-01-11T09:02:55.088
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -658,7 +658,7 @@ F ext/wasm/c-pp.c 6d131069644964223305582a80973477fa8b06b57306781690d7874ebd3a4f
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js 6181f8cd958700f3723350bd4d76c7cc797db331a9aa14b25b42d121f12d6fee
+F ext/wasm/common/whwasmutil.js d76c69617e95d85ffc9996f7d9d7481df6976dcbd860ecd82bd8c075e3a101ae
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32e7be5bf
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c359e555ceafcaab2ae38074bc4f57cccdc5bc6080d17f82290c09b9e5dd80c2
-R 4acc7fa1125cb682f7786bdefbb3cacb
-U drh
-Z 1b3035dddd40c2669ae993db009fbd5c
+P cef8e88bedf01dc47012ef1cb878b22117c9966e615edf5a69704486f9cfa56c
+R 2966a1ed8608823769a5c4d3eb2bc028
+U stephan
+Z 02b31671f60b5e3785eaa517886d85b1
 # Remove this line to create a well-formed Fossil manifest.
