@@ -198,7 +198,7 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
       deliberate_fall_through; /* FALLTHRU */
     case 1:
       pOut[0] = (qv>>16) & 0xff;
-      deliberate_fall_through; /* FALLTHRU */
+      break;
     }
     pOut += nbo;
   }

@@ -1,5 +1,5 @@
-C Version\s3.48.0
-D 2025-01-14T11:05:00.186
+C Trying\sto\sremove\sa\swarning\sfrom\ssome\scompiler\sthat\sI\sdo\snot\shave\saccess\sto.
+D 2025-01-14T16:10:13.035
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -400,7 +400,7 @@ F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f23
 F ext/misc/amatch.c 5001711cbecdd57b288cb613386789f3034e5beb58fbe0c79f2b3d643ffd4e03
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
-F ext/misc/base64.c 95abb0547cb1799d9851f3357c8d7fc3c09a95c63c8772aa3acd5f65f12050f6
+F ext/misc/base64.c 73c31eb325c71bae2e27276565e3f674fc095d8b0d7a651becb3b241a4d2fa57
 F ext/misc/base85.c a70c885c5c9350261ea6e7b166038eab21a09cf4fceae856ce41fae9c2213b60
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
@@ -2205,11 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 315079b150b47e013e2cde4985bc39d24e0f6f6c6e60f9383fb8ea4ea897c67a
-R 0ed0cfcc7f2bc831da5d62a3490571ed
-T +sym-major-relase *
-T +sym-relase *
-T +sym-version-3.48.0 *
+P d2fe6b05f38d9d7cd78c5d252e99ac59f1aea071d669830c1ffe4e8966e84010
+R aff0689df06812b91685e37aa2e42245
 U drh
-Z cc77aac977f98c5521d75f4212754ff8
+Z 834ff516b013f84167d7c9e70325f453
 # Remove this line to create a well-formed Fossil manifest.
