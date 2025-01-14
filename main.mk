@@ -1044,9 +1044,9 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
-	rm tsrc/sqlite.h.in tsrc/parse.y
+	rm -f tsrc/sqlite.h.in tsrc/parse.y
 	$(B.tclsh) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
-	mv vdbe.new tsrc/vdbe.c
+	mv -f vdbe.new tsrc/vdbe.c
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
@@ -1573,7 +1573,14 @@ tclextension-uninstall:
 # by $TCLSH_CMD, including prior versions.
 #
 tclextension-list:
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+
+# Verify that the SQLite TCL extension that is loaded by default
+# in $(TCLSH_CMD) is the same as the version of SQLite for the
+# current source tree
+#
+tclextension-verify: sqlite3.h
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --version-check
 
 #
 # FTS5 things
