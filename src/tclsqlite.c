@@ -341,7 +341,7 @@ static int SQLITE_TCLAPI incrblobInput(
 */
 static int SQLITE_TCLAPI incrblobOutput(
   ClientData instanceData,
-  CONST char *buf,
+  const char *buf,
   int toWrite,
   int *errorCodePtr
 ){
@@ -1097,7 +1097,8 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
         /* Only return a BLOB type if the Tcl variable is a bytearray and
         ** has no string representation. */
         eType = SQLITE_BLOB;
-      }else if( (c=='b' && strcmp(zType,"boolean")==0)
+      }else if( (c=='b' && pVar->bytes==0 && strcmp(zType,"boolean")==0 )
+             || (c=='b' && pVar->bytes==0 && strcmp(zType,"booleanString")==0 )
              || (c=='w' && strcmp(zType,"wideInt")==0)
              || (c=='i' && strcmp(zType,"int")==0) 
       ){
@@ -1505,9 +1506,12 @@ static int dbPrepareAndBind(
           sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
           Tcl_IncrRefCount(pVar);
           pPreStmt->apParm[iParm++] = pVar;
-        }else if( c=='b' && strcmp(zType,"boolean")==0 ){
+        }else if( c=='b' && pVar->bytes==0 
+               && (strcmp(zType,"booleanString")==0
+                   || strcmp(zType,"boolean")==0)
+        ){
           int nn;
-          Tcl_GetIntFromObj(interp, pVar, &nn);
+          Tcl_GetBooleanFromObj(interp, pVar, &nn);
           sqlite3_bind_int(pStmt, i, nn);
         }else if( c=='d' && strcmp(zType,"double")==0 ){
           double r;
@@ -1843,7 +1847,8 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 ** are 8.6 or newer, the code still tests the Tcl version at runtime.
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
 */
-#if TCL_MAJOR_VERSION>8 || (TCL_MAJOR_VERSION==8 && TCL_MINOR_VERSION>=6)
+#if TCL_MAJOR_VERSION>8 || !defined(TCL_MINOR_VERSION) \
+                        || TCL_MINOR_VERSION>=6
 # define SQLITE_TCL_NRE 1
 static int DbUseNre(void){
   int major, minor;

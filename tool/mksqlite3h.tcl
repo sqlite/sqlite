@@ -62,7 +62,7 @@ set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
 #
 set PWD [pwd]
 cd $TOP
-set tmpfile tmp-[clock millisec]-[expr {int(rand()*100000000000)}].txt
+set tmpfile $PWD/tmp-[clock millisec]-[expr {int(rand()*100000000000)}].txt
 exec $PWD/mksourceid manifest > $tmpfile
 set fd [open $tmpfile rb]
 set zSourceId [string trim [read $fd]]

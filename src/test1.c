@@ -600,6 +600,7 @@ static int SQLITE_TCLAPI test_get_table_printf(
   }
   sqlite3_free(zSql);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
+  Tcl_ResetResult(interp);
   Tcl_AppendElement(interp, zBuf);
   if( rc==SQLITE_OK ){
     if( argc==4 ){
@@ -5757,9 +5758,11 @@ static int SQLITE_TCLAPI test_stmt_utf8(
   sqlite3_stmt *pStmt;
   int col;
   const char *(*xFunc)(sqlite3_stmt*, int);
+  const unsigned char *(*xFuncU)(sqlite3_stmt*, int);
   const char *zRet;
 
   xFunc = (const char *(*)(sqlite3_stmt*, int))clientData;
+  xFuncU = (const unsigned char*(*)(sqlite3_stmt*,int))xFunc;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT column", 0);
@@ -5768,7 +5771,11 @@ static int SQLITE_TCLAPI test_stmt_utf8(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-  zRet = xFunc(pStmt, col);
+  if( xFunc==sqlite3_column_name || xFunc==sqlite3_column_decltype ){
+    zRet = xFunc(pStmt, col);
+  }else{
+    zRet = (const char*)xFuncU(pStmt, col);
+  }
   if( zRet ){
     Tcl_SetResult(interp, (char *)zRet, 0);
   }
@@ -7629,12 +7636,16 @@ static int SQLITE_TCLAPI test_wal_autocheckpoint(
 
 /*
 ** tclcmd:  test_sqlite3_log ?SCRIPT?
+**
+** Caution:  If you register a log callback, you must deregister it (by
+** invoking test_sqlite3_log with no arguments) prior to closing the
+** Tcl interpreter or else a memory error will occur.
 */
 static struct LogCallback {
   Tcl_Interp *pInterp;
   Tcl_Obj *pObj;
 } logcallback = {0, 0};
-static void xLogcallback(void *unused, int err, char *zMsg){
+static void xLogcallback(void *unused, int err, const char *zMsg){
   Tcl_Obj *pNew = Tcl_DuplicateObj(logcallback.pObj);
   Tcl_IncrRefCount(pNew);
   Tcl_ListObjAppendElement(
@@ -7660,7 +7671,7 @@ static int SQLITE_TCLAPI test_sqlite3_log(
     logcallback.pInterp = 0;
     sqlite3_config(SQLITE_CONFIG_LOG, (void*)0, (void*)0);
   }
-  if( objc>1 ){
+  if( objc>1 && Tcl_GetString(objv[1])[0]!=0 ){
     logcallback.pObj = objv[1];
     Tcl_IncrRefCount(logcallback.pObj);
     logcallback.pInterp = interp;
@@ -8708,7 +8719,6 @@ static int SQLITE_TCLAPI test_decode_hexdb(
   const char *zIn = 0;
   unsigned char *a = 0;
   int n = 0;
-  int lineno = 0;
   int i, iNext;
   int iOffset = 0;
   int j, k;
@@ -8720,7 +8730,6 @@ static int SQLITE_TCLAPI test_decode_hexdb(
   }
   zIn = Tcl_GetString(objv[1]);
   for(i=0; zIn[i]; i=iNext){
-    lineno++;
     for(iNext=i; zIn[iNext] && zIn[iNext]!='\n'; iNext++){}
     if( zIn[iNext]=='\n' ) iNext++;
     while( zIn[i]==' ' || zIn[i]=='\t' ){ i++; }

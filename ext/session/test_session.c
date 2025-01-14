@@ -724,7 +724,6 @@ static int replace_handler(
   const char *zTab;               /* Name of table conflict is on */
   int nCol;                       /* Number of columns in table zTab */
   int i;
-  int x = 0;
 
   sqlite3changeset_op(pIter, &zTab, &nCol, &op, 0);
 
@@ -733,7 +732,6 @@ static int replace_handler(
       sqlite3_value *pVal;
       sqlite3changeset_old(pIter, i, &pVal);
       sqlite3_value_text16(pVal);
-      x++;
     }
   }
 
@@ -742,7 +740,6 @@ static int replace_handler(
       sqlite3_value *pVal;
       sqlite3changeset_new(pIter, i, &pVal);
       sqlite3_value_text16(pVal);
-      x++;
     }
   }
 
