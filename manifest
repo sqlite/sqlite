@@ -1,5 +1,5 @@
-C Remove\sa\sstray\stab\scharacter\sfrom\sa\scomment.
-D 2025-01-13T13:32:56.652
+C Version\s3.48.0
+D 2025-01-14T11:05:00.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2205,8 +2205,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed83b79100b4345235aec990303c4526874f0c2f8701160c4639a80633ebaf70
+P 315079b150b47e013e2cde4985bc39d24e0f6f6c6e60f9383fb8ea4ea897c67a
 R 0ed0cfcc7f2bc831da5d62a3490571ed
+T +sym-major-relase *
+T +sym-relase *
+T +sym-version-3.48.0 *
 U drh
-Z 2b06b025e298002c2c77b6953d35e566
+Z cc77aac977f98c5521d75f4212754ff8
 # Remove this line to create a well-formed Fossil manifest.
