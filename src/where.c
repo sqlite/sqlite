@@ -862,7 +862,7 @@ static int constraintCompatibleWithOuterJoin(
 **   3.   If no disqualifying conditions above are found, return true.
 **
 ** 2025-01-03: I experimented with a new rule that returns false if the
-** the datatype of the column is "BOOLEAN".	This did not improve
+** the datatype of the column is "BOOLEAN". This did not improve
 ** performance on any queries at hand, but it did burn CPU cycles, so the
 ** idea was not committed.
 */
