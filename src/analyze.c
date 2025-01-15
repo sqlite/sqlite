@@ -879,7 +879,7 @@ static void statGet(
 #endif
     }
     if( p->nRow>0 ){
-      sqlite3_str_appendf(&sStat, " sz=%lld", p->nByte/p->nRow);
+      sqlite3_str_appendf(&sStat, " sz=%lld", (p->nByte+p->nRow-1)/p->nRow);
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1203,7 +1203,6 @@ static void analyzeOneTable(
         sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
         analyzeVdbeCommentIndexWithColumnName(v,pIdx,i);
-        if( i==0 ) sqlite3VdbeAddOp2(v, OP_RowSize, iIdxCur, regRowSz);
         aGotoChng[i] = 
         sqlite3VdbeAddOp4(v, OP_Ne, regTemp, 0, regPrev+i, pColl, P4_COLLSEQ);
         sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
@@ -1259,6 +1258,7 @@ static void analyzeOneTable(
 #endif
     assert( regChng==(regStat+1) );
     {
+      sqlite3VdbeAddOp2(v, OP_RowSize, iIdxCur, regRowSz);
       sqlite3VdbeAddFunctionCall(pParse, 1, regStat, regTemp, 3+IsStat4,
                                  &statPushFuncdef, 0);
       if( db->nAnalysisLimit ){
