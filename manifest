@@ -1,5 +1,5 @@
-C Re-enable\scomment-stripping\sin\sthe\sJS\sdist\sbuilds.
-D 2025-01-15T21:11:31.870
+C Check-in\s[da9124fee28c155c]\sbroken\sthe\snew\sSQLITE_IOCAP_SUBPAGE_READ\smechanism\nfor\sinhibiting\sdirect-overflow-read.\s\sThis\scheck-in\sfixes\sthe\sproblem.
+D 2025-01-15T22:58:18.491
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -765,7 +765,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
 F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 2fdd489447aa6bb0f672973bacb801ced92225ca9a1c874ed9b856d2741dc54e
+F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y dcf45a81b61223ac93e61fdfe9b22d635dd371c446e8222634d90aa37e25e5f6
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0f0d263315da45f7615ae61de413f9ae5833f73fe22918323899211ceaddb31
-Q +db21d6cc9d1c425deffc0e4e92173caf586e6ac66110c71a4930b21e3e7f84b9
-R b12b6dd3360ccc194d4f1f0d2807a8e9
-U stephan
-Z 795c68c70cdab7b3f77d3bc631702f88
+P 5decfea379aed199f3624b3fc6dda66a255e4d47d72783cb301816ce770fae0a
+Q +113078d555eaf740666680562ebbb04f7d823b72e8b2d553627e54ab3d7bf653
+R ce932b2b1b867616426a820f90e0a935
+U drh
+Z 86a5c995bbb6301a13edf800d4056598
 # Remove this line to create a well-formed Fossil manifest.
