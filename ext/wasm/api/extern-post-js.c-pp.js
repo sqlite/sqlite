@@ -12,6 +12,7 @@
 const toExportForESM =
 //#endif
 (function(){
+  //console.warn("this is extern-post-js");
   /**
      In order to hide the sqlite3InitModule()'s resulting
      Emscripten module from downstream clients (and simplify our
@@ -62,6 +63,17 @@ const toExportForESM =
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
+      //console.warn("originalInit() then() arg =",EmscriptenModule);
+      //console.warn("initModuleState =",initModuleState);
+      if( EmscriptenModule.postRun && EmscriptenModule.postRun.length ){
+        /* Emscripten 4.0.0 changes the order in which our Module.postRun handler
+           runs. In 3.x postRun would have run by now, and our code relies
+           heavily on that order, so we'll work around that difference here.
+
+           https://github.com/emscripten-core/emscripten/issues/23420 */
+        //console.warn("Emscripten did not run postRun: running them now!");
+        EmscriptenModule.postRun.shift()(EmscriptenModule);
+      }
 //#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
@@ -74,7 +86,6 @@ const toExportForESM =
         return EmscriptenModule;
       }
 //#endif
-      //console.warn("sqlite3InitModule() returning sqlite3 object.");
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;
       //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
