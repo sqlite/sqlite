@@ -878,8 +878,8 @@ static void statGet(
       assert( p->current.anEq[i] || p->nRow==0 );
 #endif
     }
-    if( ALWAYS(p->nRow>0) ){
-      sqlite3_str_appendf(&sStat, " sz=%d", p->nByte/p->nRow);
+    if( p->nRow>0 ){
+      sqlite3_str_appendf(&sStat, " sz=%lld", p->nByte/p->nRow);
     }
     sqlite3ResultStrAccum(context, &sStat);
   }
@@ -1233,7 +1233,7 @@ static void analyzeOneTable(
     */
 #ifdef SQLITE_ENABLE_STAT4
     if( OptimizationEnabled(db, SQLITE_Stat4) ){
-      assert( regRowid==(regStat+2) );
+      assert( regRowid==(regStat+3) );
       if( HasRowid(pTab) ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regRowid);
       }else{
