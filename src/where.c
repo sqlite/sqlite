@@ -5491,6 +5491,28 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
 }
 
 /*
+** Two WhereLoop objects, pCandidate and pBaseline, are known to have the
+** same cost.  Look deep into each to see if pCandidate is even slightly
+** better than pBaseline.  Return false if it is, if pCandidate is is preferred.
+** Return true if pBaseline is preferred or if we cannot tell the difference.
+**
+**    Result       Meaning
+**    --------     ----------------------------------------------------------
+**    true         We cannot tell the difference in pCandidate and pBaseline
+**    false        pCandidate seems like a better choice than pBaseline
+*/
+static SQLITE_NOINLINE int whereLoopIsNoBetter(
+  const WhereLoop *pCandidate,
+  const WhereLoop *pBaseline
+){
+  if( (pCandidate->wsFlags & WHERE_INDEXED)==0 ) return 1;
+  if( (pBaseline->wsFlags & WHERE_INDEXED)==0 ) return 1;
+  if( pCandidate->u.btree.pIndex->szIdxRow <
+        pBaseline->u.btree.pIndex->szIdxRow ) return 0;
+  return 1;
+}
+
+/*
 ** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
 ** attempts to find the lowest cost path that visits each WhereLoop
 ** once.  This path is then loaded into the pWInfo->a[].pWLoop fields.
@@ -5728,7 +5750,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           */
           if( (pTo->rCost<rCost)
            || (pTo->rCost==rCost && pTo->nRow<nOut)
-           || (pTo->rCost==rCost && pTo->nRow==nOut && pTo->rUnsort<=rUnsort)
+           || (pTo->rCost==rCost && pTo->nRow==nOut && pTo->rUnsort<rUnsort)
+           || (pTo->rCost==rCost && pTo->nRow==nOut && pTo->rUnsort==rUnsort
+                  && whereLoopIsNoBetter(pWLoop, pTo->aLoop[iLoop]) )
           ){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
