@@ -97,6 +97,15 @@ STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
 # Note that we require $(bin.version-info) in order to figure out the
 # dist file's name, so cannot (without a recursive make) have the
 # target name equal to the archive name.
+#
+# 2025-01-15: Emsdk 4.0.0 introduces, in its generated code, a regex
+# which contains the pattern /*. That, of course, confuses any C-style
+# comment-stripper which is not specifically JS-aware and smart enough
+# to know that it's in a regex or string literal. Because of that,
+# comment-stripping is currently disabled, which means the builds will
+# be significantly larger than before.
+apply_comment_stripper := false
+# ^^^ shell command true or false
 dist: \
     $(bin.stripccomments) $(bin.version-info) \
     $(dist.build) $(STRIP_K1.js) $(STRIP_K2.js) \
@@ -109,8 +118,8 @@ dist: \
 	@cp -p README-dist.txt $(dist-dir.top)/README.txt
 	@cp -p index-dist.html $(dist-dir.top)/index.html
 	@cp -p $(dist.jswasm.extras) $(dist-dir.jswasm)
-	@$(foreach JS,$(STRIP_K1.js),$(call DIST_STRIP_COMMENTS,$(JS),-k))
-	@$(foreach JS,$(STRIP_K2.js),$(call DIST_STRIP_COMMENTS,$(JS),-k -k))
+	@if $(apply_comment_stripper); then $(foreach JS,$(STRIP_K1.js),$(call DIST_STRIP_COMMENTS,$(JS),-k)) fi
+	@if $(apply_comment_stripper); then $(foreach JS,$(STRIP_K2.js),$(call DIST_STRIP_COMMENTS,$(JS),-k -k)) fi
 	@cp -p $(dist.common.extras) $(dist-dir.common)
 	@set -e; \
 		vnum=$$($(bin.version-info) --download-version); \

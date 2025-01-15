@@ -1,5 +1,5 @@
-C Change\sthe\sversion\snumber\sto\s3.49.0\sto\sbegin\sthe\snext\sdevelopment\ncycle.\s\sAny\spatches\sto\s3.48.0\swill\sgo\son\sa\sbranch.
-D 2025-01-14T20:47:23.128
+C Disable\sthe\sC-style\scomment\sstripper\sin\sthe\sJS\sdist\sbuild,\sas\sexplained\sin\s[forum:529c20d344|forum\spost\s529c20d344].
+D 2025-01-15T14:28:56.143
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -668,7 +668,7 @@ F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a
 F ext/wasm/demo-worker1-promiser.c-pp.js fcc628cb42fcfaf07d250477801de1e6deb1e319d003976612a0db8d76b9fccc
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 836bece8615b17b1b572584f7b15912236a5947fe8c68b98d2737d7e287447ef
-F ext/wasm/dist.make 653e212c1e84aa3be168d62a10616ccea45ee9585b0192745d2706707a5248ce
+F ext/wasm/dist.make a5bed3b6e6d6a644e1cd416f18b799b956765333130f948d1065872a7f1ce199
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make d4969f0322a582c57a22ce3541f10a5b09a609d14eab32891f613f43b3c14d8b
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc6de90c7049dd429a82d32b186a838f4a21aa7b8a83418eaf0416d19771b41e
-R 7be4e73ee614c5955da7d841289f67c4
-U drh
-Z 4394aec1aff44c176b2cf58b3618b986
+P 8165a3d3a40c5b43275fb4b1cdf57c44a57cd56c514bd2a550deac26a14795eb
+R a0a8bbc53f3c66c17e57addc303a0fb5
+U stephan
+Z 1a15ad455819e4eca33993ca2fa2e2ed
 # Remove this line to create a well-formed Fossil manifest.
