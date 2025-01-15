@@ -1,5 +1,5 @@
-C Some\sbug\sfixes\sto\sthe\sprevious.\s\sStill\slots\sof\sbugs\sremaining.
-D 2025-01-15T00:46:11.511
+C Fix\sissues\swith\sthe\sprior\scheck-ins\son\sthis\sbranch.\sThe\scode\sseems\sto\swork\snow,\nthough\smany\stests\sfail\sbecause\sof\sthe\snew\ssqlite_stat1.stat\stext.
+D 2025-01-15T12:38:48.739
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -711,7 +711,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
 F src/alter.c aa93e37e4a36a0525bbb2a2aeda20d2018f0aa995542c7dc658e031375e3f532
-F src/analyze.c 161007676092b5c276f7c2572b5822637e3f00110d7f2524ae47c6bd9eeac926
+F src/analyze.c bd5201b9b1414d0bb9a97dbceb0bad9fecacd8ec421081892c62f758c6ef1717
 F src/attach.c f35bb8cc1fcdde8f6815a7ef09ae413bcac71821d530796800ba24b3c7da1e80
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c0d6f29df8169efef0909ec53c09624128b429c5a03fabdb067aceb1a99f45b
-R 362db0023f6c569ef8c4c4857ca06d3a
+P 76f2beded05803add0f55f6baff7fce79c08a65099782da9bfac7d5b33091ad2
+R 388bdf897b0c876017d10d958b965580
 U drh
-Z 3bfc67211703c1993b3aba9692342fcb
+Z 67aad46a800a3f6a133673155dfbc26b
 # Remove this line to create a well-formed Fossil manifest.

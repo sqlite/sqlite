@@ -748,11 +748,11 @@ static void statPush(
 #ifdef SQLITE_ENABLE_STAT4
   if( p->mxSample ){
     tRowcnt nLt;
-    if( sqlite3_value_type(argv[2])==SQLITE_INTEGER ){
-      sampleSetRowidInt64(p->db, &p->current, sqlite3_value_int64(argv[2]));
+    if( sqlite3_value_type(argv[3])==SQLITE_INTEGER ){
+      sampleSetRowidInt64(p->db, &p->current, sqlite3_value_int64(argv[3]));
     }else{
-      sampleSetRowid(p->db, &p->current, sqlite3_value_bytes(argv[2]),
-                                         sqlite3_value_blob(argv[2]));
+      sampleSetRowid(p->db, &p->current, sqlite3_value_bytes(argv[3]),
+                                         sqlite3_value_blob(argv[3]));
     }
     p->current.iHash = p->iPrn = p->iPrn*1103515245 + 12345;
 
@@ -781,7 +781,7 @@ static void statPush(
 }
 
 static const FuncDef statPushFuncdef = {
-  2+IsStat4,       /* nArg */
+  3+IsStat4,       /* nArg */
   SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
@@ -1001,8 +1001,10 @@ static void analyzeOneTable(
   int regChng = iMem++;        /* Index of changed index field */
   int regRowSz = iMem++;       /* Register holding the row size */
   int regRowid = iMem++;       /* Rowid argument passed to stat_push() */
+  /*  ^^^^^^^^----------------  Names for these four registers correspond
+  **  to their usage with stat_push().  However, regChng through regRowid
+  **  push regTemp below also used by stat_init(). */
   int regTemp = iMem++;        /* Temporary use register */
-  int regTemp2 = iMem++;       /* Second temporary use register */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
@@ -1153,11 +1155,15 @@ static void analyzeOneTable(
     **    (3) estimated number of rows in the index.
     **    (4) Analysis limit
     */
-    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat+1);
-    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regStat+2);
-    sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regStat+3,
+    assert( regChng==regStat+1 );   /* Reuse four registers regChng..regTemp */
+    assert( regRowSz==regStat+2 );  /*   as the arguments to stat_init() */
+    assert( regRowid==regStat+3 );
+    assert( regTemp==regStat+4 );
+    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regChng);
+    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regRowSz);
+    sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regRowid,
                       OptimizationDisabled(db, SQLITE_Stat4));
-    sqlite3VdbeAddOp2(v, OP_Integer, db->nAnalysisLimit, regStat+4);
+    sqlite3VdbeAddOp2(v, OP_Integer, db->nAnalysisLimit, regTemp);
     sqlite3VdbeAddFunctionCall(pParse, 0, regStat+1, regStat, 4,
                                &statInitFuncdef, 0);
     addrGotoEnd = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
@@ -1226,8 +1232,8 @@ static void analyzeOneTable(
   
     /*
     **  chng_addr_N:
-    **   regRowid = idx(rowid)            // STAT4 only
-    **   stat_push(P, regChng, regRowid)  // 3rd parameter STAT4 only
+    **   regRowid = idx(rowid)                      // STAT4 only
+    **   stat_push(P, regChng, regRowSz, regRowid)  // 4th parameter STAT4 only
     **   Next csr
     **   if !eof(csr) goto next_row;
     */
