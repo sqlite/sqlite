@@ -185,7 +185,7 @@ endif
 # Find wasm-strip, which we need for release builds (see below for
 # why) but not strictly for non-release builds.
 ifeq (1,$(MAKING_CLEAN))
-  wasm-strip-bin := irrelevant
+  wasm-strip.bin := irrelevant
 else
   wasm-strip.bin ?= $(shell which wasm-strip 2>/dev/null)
   ifeq (,$(wasm-strip.bin))
