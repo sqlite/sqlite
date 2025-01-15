@@ -10,6 +10,7 @@
 if(!Module.postRun) Module.postRun = [];
 Module.postRun.push(function(Module/*the Emscripten-style module object*/){
   'use strict';
+  //console.warn("This is the start of the Module.postRun handler.");
   /* This function will contain at least the following:
 
      - post-js-header.js (this file)
