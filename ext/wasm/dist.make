@@ -104,7 +104,8 @@ STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
 # to know that it's in a regex or string literal. Because of that,
 # comment-stripping is currently disabled, which means the builds will
 # be significantly larger than before.
-apply_comment_stripper := false
+#apply_comment_stripper := false
+apply_comment_stripper := true
 # ^^^ shell command true or false
 dist: \
     $(bin.stripccomments) $(bin.version-info) \
