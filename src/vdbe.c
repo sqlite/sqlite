@@ -6006,6 +6006,15 @@ case OP_SorterData: {       /* ncycle */
   break;
 }
 
+/* Opcode: RowSize P1 P2 ** *
+** Synopsis: r[P2]=sizeof(data)
+**
+** Write into register P2 the number of bytes in the on-disk
+** representation of the row to which cursor P1 is pointing.
+**
+** If the P1 cursor must be pointing to a valid row (not a NULL row)
+** of a real table, not a pseudo-table.
+*/
 /* Opcode: RowData P1 P2 P3 * *
 ** Synopsis: r[P2]=data
 **
@@ -6034,6 +6043,7 @@ case OP_SorterData: {       /* ncycle */
 ** The P2 register content is invalidated by opcodes like OP_Function or
 ** by any use of another cursor pointing to the same table.
 */
+case OP_RowSize:
 case OP_RowData: {
   VdbeCursor *pC;
   BtCursor *pCrsr;
@@ -6062,6 +6072,10 @@ case OP_RowData: {
   assert( sqlite3BtreeCursorIsValid(pCrsr) );
 
   n = sqlite3BtreePayloadSize(pCrsr);
+  if( pOp->opcode==OP_RowSize ){
+    sqlite3VdbeMemSetInt64(pOut, n);
+    break;
+  }
   if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }

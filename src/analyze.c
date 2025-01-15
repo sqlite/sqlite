@@ -178,9 +178,9 @@ static void openStatTable(
 #if defined(SQLITE_ENABLE_STAT4)
     { "sqlite_stat4", "tbl,idx,neq,nlt,ndlt,sample" },
 #else
-    { "sqlite_stat4", 0 },
+    { "sqlite_stat4", 0 },  /* Not created or written, but is cleared if present */
 #endif
-    { "sqlite_stat3", 0 },
+    { "sqlite_stat3", 0 },  /* Not created or written, but is cleared if present */
   };
   int i;
   sqlite3 *db = pParse->db;
@@ -282,6 +282,7 @@ struct StatAccum {
   sqlite3 *db;              /* Database connection, for malloc() */
   tRowcnt nEst;             /* Estimated number of rows */
   tRowcnt nRow;             /* Number of rows visited so far */
+  i64 nByte;                /* Total size of all rows visited */
   int nLimit;               /* Analysis row-scan limit */
   int nCol;                 /* Number of columns in index + pk/rowid */
   int nKeyCol;              /* Number of index columns w/o the pk/rowid */
@@ -680,11 +681,12 @@ static void samplePushPrevious(StatAccum *p, int iChng){
 #endif /* SQLITE_ENABLE_STAT4 */
 
 /*
-** Implementation of the stat_push SQL function:  stat_push(P,C,R)
+** Implementation of the stat_push SQL function:  stat_push(P,C,S,R)
 ** Arguments:
 **
 **    P     Pointer to the StatAccum object created by stat_init()
 **    C     Index of left-most column to differ from previous row
+**    S     The size in bytes of the on-disk representation of the current row
 **    R     Rowid for the current row.  Might be a key record for
 **          WITHOUT ROWID tables.
 **
@@ -714,6 +716,7 @@ static void statPush(
   assert( p->nCol>0 );
   assert( iChng<p->nCol );
 
+  p->nByte += sqlite3_value_int(argv[2]);
   if( p->nRow==0 ){
     /* This is the first call to this function. Do initialization. */
 #ifdef SQLITE_ENABLE_STAT4
@@ -875,6 +878,9 @@ static void statGet(
       assert( p->current.anEq[i] || p->nRow==0 );
 #endif
     }
+    if( ALWAYS(p->nRow>0) ){
+      sqlite3_str_appendf(&sStat, " sz=%d", p->nByte/p->nRow);
+    }
     sqlite3ResultStrAccum(context, &sStat);
   }
 #ifdef SQLITE_ENABLE_STAT4
@@ -993,6 +999,7 @@ static void analyzeOneTable(
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
   int regStat = iMem++;        /* Register to hold StatAccum object */
   int regChng = iMem++;        /* Index of changed index field */
+  int regRowSz = iMem++;       /* Register holding the row size */
   int regRowid = iMem++;       /* Rowid argument passed to stat_push() */
   int regTemp = iMem++;        /* Temporary use register */
   int regTemp2 = iMem++;       /* Second temporary use register */
@@ -1138,26 +1145,26 @@ static void analyzeOneTable(
     **   count()
     **   stat_init()
     **   goto chng_addr_0;
-    */
-    assert( regTemp2==regStat+4 );
-    sqlite3VdbeAddOp2(v, OP_Integer, db->nAnalysisLimit, regTemp2);
-
-    /* Arguments to stat_init(): 
+    **
+    ** Arguments to stat_init(): 
     **    (1) the number of columns in the index including the rowid
     **        (or for a WITHOUT ROWID table, the number of PK columns),
     **    (2) the number of columns in the key without the rowid/pk
-    **    (3) estimated number of rows in the index. */
+    **    (3) estimated number of rows in the index.
+    **    (4) Analysis limit
+    */
     sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat+1);
-    assert( regRowid==regStat+2 );
-    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regRowid);
-    sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regTemp,
+    sqlite3VdbeAddOp2(v, OP_Integer, pIdx->nKeyCol, regStat+2);
+    sqlite3VdbeAddOp3(v, OP_Count, iIdxCur, regStat+3,
                       OptimizationDisabled(db, SQLITE_Stat4));
+    sqlite3VdbeAddOp2(v, OP_Integer, db->nAnalysisLimit, regStat+4);
     sqlite3VdbeAddFunctionCall(pParse, 0, regStat+1, regStat, 4,
                                &statInitFuncdef, 0);
     addrGotoEnd = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
     VdbeCoverage(v);
 
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regChng);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowSz);
     addrNextRow = sqlite3VdbeCurrentAddr(v);
 
     if( nColTest>0 ){
@@ -1190,6 +1197,7 @@ static void analyzeOneTable(
         sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
         analyzeVdbeCommentIndexWithColumnName(v,pIdx,i);
+        if( i==0 ) sqlite3VdbeAddOp2(v, OP_RowSize, iIdxCur, regRowSz);
         aGotoChng[i] = 
         sqlite3VdbeAddOp4(v, OP_Ne, regTemp, 0, regPrev+i, pColl, P4_COLLSEQ);
         sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
@@ -1245,7 +1253,7 @@ static void analyzeOneTable(
 #endif
     assert( regChng==(regStat+1) );
     {
-      sqlite3VdbeAddFunctionCall(pParse, 1, regStat, regTemp, 2+IsStat4,
+      sqlite3VdbeAddFunctionCall(pParse, 1, regStat, regTemp, 3+IsStat4,
                                  &statPushFuncdef, 0);
       if( db->nAnalysisLimit ){
         int j1, j2, j3;
