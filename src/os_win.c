@@ -2639,7 +2639,7 @@ static int winHandleLockTimeout(
     ** LockFileEx() may fail because the request is still pending. This can
     ** happen even if LOCKFILE_FAIL_IMMEDIATELY was specified.  */
     if( !ret && GetLastError()==ERROR_IO_PENDING ){
-      DWORD nDelay = (nMs ? nMs : INFINITE);
+      DWORD nDelay = (nMs==0 || nMs==0x7FFFFFFF ? INFINITE : nMs);
       DWORD res = osWaitForSingleObject(ovlp.hEvent, nDelay);
       if( res==WAIT_OBJECT_0 ){
         ret = TRUE;
