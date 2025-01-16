@@ -2222,10 +2222,23 @@ void testset_json(void){
   speedtest1_exec(
     "WITH c(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<7)\n"
     "  SELECT sum(x->>format('$.c[%%d].x',n)) FROM c, j1;\n"
+
     "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<5)\n"
     "  SELECT sum(x->>format('$.\"c\"[#-%%d].y',n)) FROM c, j1;\n"
+
     "SELECT sum(x->>'$.d.ez' + x->>'$.d.\"xz\"' + x->>'a' + x->>'$.c[10].y') FROM j1;\n"
+
     "SELECT x->>'$.d.tz[2]', x->'$.d.tz' FROM j1;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(141, "queries involving json_type()");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<20)\n"
+    "  SELECT json_type(x,format('$.c[#-%%d].y',n)), count(*)\n"
+    "    FROM c, j1\n"
+    "   WHERE j1.rowid=1\n"
+    "   GROUP BY 1 ORDER BY 2;"
   );
   speedtest1_end_test();
 
@@ -2233,7 +2246,8 @@ void testset_json(void){
   speedtest1_begin_test(150, "json_insert()/set()/remove() on every row of J1");
   speedtest1_exec(
     "BEGIN;\n"
-    "UPDATE j1 SET x=jsonb_insert(x,'$.g',(x->>'f')+1);\n"
+    "UPDATE j1 SET x=jsonb_insert(x,'$.g',(x->>'f')+1,'$.h',3.14159,'$.i','hello',\n"
+    "                               '$.j',json('{x:99}'),'$.k','{y:98}');\n"
     "UPDATE j1 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
     "UPDATE j1 SET x=jsonb_remove(x,'$.d');\n"
     "COMMIT;\n"
