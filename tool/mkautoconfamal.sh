@@ -68,6 +68,10 @@ cat $TMPSPACE/configure.ac |
 sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp
 mv $TMPSPACE/tmp $TMPSPACE/configure.ac
 
+cat $TMPSPACE/sqlite3.pc.in |
+sed "s/^Libs.private:.*/Libs.private: @LIBS@/" > $TMPSPACE/tmp
+mv $TMPSPACE/tmp $TMPSPACE/sqlite3.pc.in
+
 cd $TMPSPACE
 autoreconf -i
 #libtoolize
