@@ -1052,6 +1052,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cfiles) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
+	sed -i -e '/^var _sqlite3.*createExportWrapper/d' $@
 	chmod -x $(speedtest1.wasm)
 	ls -la $@ $(speedtest1.wasm)
 

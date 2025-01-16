@@ -75,7 +75,7 @@ static void mk_pre_post(const char *zName  /* build name */,
                         const char *zMode  /* build mode */,
                         const char *zCmppD /* optional -D flags for c-pp for the
                                            ** --pre/--post-js files. */){
-  pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zName, zMode);
+  pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zNM);
   pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD ? zCmppD : "");
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
@@ -130,7 +130,7 @@ static void mk_pre_post(const char *zName  /* build name */,
      zNM, zNM, zNM);
   pf("pre-post-%s-%s.deps := $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM, zNM);
-  pf("# End --pre/--post flags for %s-%s%s", zName, zMode, zBanner);
+  pf("# End --pre/--post flags for %s-%s%s", zNM, zBanner);
 }
 
 /*
@@ -233,6 +233,13 @@ static void mk_lib_mode(const char *zName     /* build name */,
   pf("\t@dotwasm=$(basename $@).wasm; \\\n"
      "\tchmod -x $$dotwasm; \\\n"
      "\t$(maybe-wasm-strip) $$dotwasm; \\\n");
+  pf("\tsed -i -e '/^var _sqlite3.*createExportWrapper/d' %s; \\\n"
+     "\techo 'Stripped out createExportWrapper() parts.'; \\\n",
+     zJsOut) /* Our JS code installs bindings of each WASM export. The
+                generated Emscripten JS file does the same using its
+                own framework, but we don't use those results and can
+                speed up lib init, and reduce memory cost
+                considerably, by stripping them out. */;
   /*
   ** The above $(emcc.bin) call will write zJsOut and will create a
   ** like-named .wasm file. That .wasm file name gets hard-coded into
