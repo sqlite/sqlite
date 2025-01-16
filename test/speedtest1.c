@@ -42,7 +42,7 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json, debug)\n"
   "                      Can be a comma-separated list of values, with /SCALE suffixes\n"
   "                      or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"
@@ -2153,6 +2153,85 @@ void testset_debug1(void){
 }
 
 /*
+** Performance tests for JSON.
+*/
+void testset_json(void){
+  speedtest1_begin_test(100, "construct table J1 with %d rows of text JSON",
+                        g.szTest*250);
+  speedtest1_exec(
+     "CREATE TABLE j1(x JSON TEXT);\n"
+     "WITH RECURSIVE\n"
+     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d),\n"
+     "  array1(y) AS (\n"
+     "    SELECT json_group_array(\n"
+     "        json_object('x',x,'y',random(),'z',hex(randomblob(50)))\n"
+     "      )\n"
+     "    FROM c\n"
+     "  ),\n"
+     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<5)\n"
+     "INSERT INTO j1(x)\n"
+     "  SELECT json_object('a',n,'b',n*2,'c',y,'d',3,'e',5,'f',6) FROM array1, c2;\n",
+     g.szTest*250
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "construct table J2 with %d rows of JSONB",
+                        g.szTest*250);
+  speedtest1_exec(
+     "CREATE TABLE j2(x JSON TEXT);\n"
+     "WITH RECURSIVE\n"
+     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d),\n"
+     "  array1(y) AS (\n"
+     "    SELECT json_group_array(\n"
+     "        json_object('x',x,'y',random(),'z',hex(randomblob(50)))\n"
+     "      )\n"
+     "    FROM c\n"
+     "  ),\n"
+     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<5)\n"
+     "INSERT INTO j2(x)\n"
+     "  SELECT jsonb_object('a',n,'b',n*2,'c',y,'d',3,'e',5,'f',6) FROM array1, c2;\n",
+     g.szTest*250
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "create indexes on JSON expressions");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "CREATE INDEX j1x1 ON j1(x->>'a');\n"
+    "CREATE INDEX j1x2 ON j1(x->>'b');\n"
+    "CREATE INDEX j1x3 ON j1(x->>'e');\n"
+    "CREATE INDEX j1x4 ON j1(x->>'f');\n"
+    "CREATE INDEX j2x1 ON j2(x->>'a');\n"
+    "CREATE INDEX j2x2 ON j2(x->>'b');\n"
+    "CREATE INDEX j2x3 ON j2(x->>'e');\n"
+    "CREATE INDEX j2x4 ON j2(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "json_replace()/set()/remove() on every row of J1");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j1 SET x=json_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j1 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j1 SET x=json_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(140, "json_replace()/set()/remove() on every row of J2");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j2 SET x=jsonb_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j2 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j2 SET x=jsonb_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+}
+
+/*
 ** This testset focuses on the speed of parsing numeric literals (integers
 ** and real numbers). This was added to test the impact of allowing "_"
 ** characters to appear in numeric SQL literals to make them easier to read. 
@@ -2423,7 +2502,7 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
-        static char zMix1Tests[] = "main,orm/25,cte/20,fp/25,parsenumber,rtree/20";
+        static char zMix1Tests[] = "main,orm/25,cte/20,json,fp/25,parsenumber,rtree/20";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
         if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
@@ -2613,6 +2692,8 @@ int main(int argc, char **argv){
       testset_cte();
     }else if( strcmp(zThisTest,"fp")==0 ){
       testset_fp();
+    }else if( strcmp(zThisTest,"json")==0 ){
+      testset_json();
     }else if( strcmp(zThisTest,"trigger")==0 ){
       testset_trigger();
     }else if( strcmp(zThisTest,"parsenumber")==0 ){
