@@ -12,12 +12,12 @@
 
   This file is intended to be combined at build-time with other
   related code, most notably a header and footer which wraps this
-  whole file into an Emscripten Module.postRun() handler. The sqlite3
-  JS API has no hard requirements on Emscripten and does not expose
-  any Emscripten APIs to clients. It is structured such that its build
-  can be tweaked to include it in arbitrary WASM environments which
-  can supply the necessary underlying features (e.g. a POSIX file I/O
-  layer).
+  whole file into an Emscripten Module.postRun()-style handler. The
+  sqlite3 JS API has no hard requirements on Emscripten and does not
+  expose any Emscripten APIs to clients. It is structured such that
+  its build can be tweaked to include it in arbitrary WASM
+  environments which can supply the necessary underlying features
+  (e.g. a POSIX file I/O layer).
 
   Main project home page: https://sqlite.org
 
