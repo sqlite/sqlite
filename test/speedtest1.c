@@ -2166,7 +2166,7 @@ void testset_json(void){
      "  jval(n,j) AS (\n"
      "    VALUES(0,'{}'),(1,'[]'),(2,'true'),(3,'false'),(4,'null'),\n"
      "          (5,'{x:1,y:2}'),(6,'0.0'),(7,'3.14159'),(8,'-99.9'),\n"
-     "          (9,'[1,2,3,4]')\n"
+     "          (9,'[1,2,\"\\n\\u2192\\\"\\u2190\",4]')\n"
      "  ),\n"
      "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<26*26-1),\n"
      "  array1(y) AS MATERIALIZED (\n"
@@ -2218,20 +2218,32 @@ void testset_json(void){
   );
   speedtest1_end_test();
 
-  speedtest1_begin_test(130, "json_replace()/set()/remove() on every row of J1");
+  speedtest1_begin_test(140, "queries against J1");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<7)\n"
+    "  SELECT sum(x->>format('$.c[%%d].x',n)) FROM c, j1;\n"
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<5)\n"
+    "  SELECT sum(x->>format('$.\"c\"[#-%%d].y',n)) FROM c, j1;\n"
+    "SELECT sum(x->>'$.d.ez' + x->>'$.d.\"xz\"' + x->>'a' + x->>'$.c[10].y') FROM j1;\n"
+    "SELECT x->>'$.d.tz[2]', x->'$.d.tz' FROM j1;\n"
+  );
+  speedtest1_end_test();
+
+
+  speedtest1_begin_test(150, "json_insert()/set()/remove() on every row of J1");
   speedtest1_exec(
     "BEGIN;\n"
-    "UPDATE j1 SET x=jsonb_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j1 SET x=jsonb_insert(x,'$.g',(x->>'f')+1);\n"
     "UPDATE j1 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
     "UPDATE j1 SET x=jsonb_remove(x,'$.d');\n"
     "COMMIT;\n"
   );
   speedtest1_end_test();
 
-  speedtest1_begin_test(140, "json_replace()/set()/remove() on every row of J2");
+  speedtest1_begin_test(160, "json_insert()/set()/remove() on every row of J2");
   speedtest1_exec(
     "BEGIN;\n"
-    "UPDATE j2 SET x=json_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j2 SET x=json_insert(x,'$.g',(x->>'f')+1);\n"
     "UPDATE j2 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
     "UPDATE j2 SET x=json_remove(x,'$.d');\n"
     "COMMIT;\n"
@@ -2259,25 +2271,25 @@ void testset_parsenumber(void){
   const int NROW = 100*g.szTest;
   int ii;
 
-  speedtest1_begin_test(100, "parsing small integers");
+  speedtest1_begin_test(100, "parsing %d small integers", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql1, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(110, "parsing large integers");
+  speedtest1_begin_test(110, "parsing %d large integers", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql2, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(200, "parsing small reals");
+  speedtest1_begin_test(200, "parsing %d small reals", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql3, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(210, "parsing large reals");
+  speedtest1_begin_test(210, "parsing %d large reals", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql4, 0, 0, 0);
   }
@@ -2511,7 +2523,7 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
-        static char zMix1Tests[] = "main,orm/25,cte/20,json,fp/25,parsenumber,rtree/20";
+        static char zMix1Tests[] = "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
         if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
@@ -2684,6 +2696,7 @@ int main(int argc, char **argv){
         fatal_error("bad modifier on testset name: \"%s\"", zThisTest);
       }
       g.szTest = g.szBase*integerValue(zSep+1)/100;
+      if( g.szTest<=0 ) g.szTest = 1;
       zSep[0] = 0;
     }else{
       g.szTest = g.szBase;

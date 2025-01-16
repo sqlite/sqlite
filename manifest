@@ -1,5 +1,5 @@
-C Revamp\sthe\s"json"\stestset\sin\sspeedtest1.
-D 2025-01-16T17:19:06.045
+C speedtest1:\s\sImprovements\sto\sthe\s"json"\stestset.\s\sBetter\sbalance\sin\s"mix1".
+D 2025-01-16T20:08:59.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1677,7 +1677,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 6c9f30a9035aeafc767b770f0c576d45701ed928f7e354f6c18b6bbccbf81417
+F test/speedtest1.c 26f1b44de121c114d1487baa5b040c0f2d5fe6bb57febb7ae51ece6ab919783d
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2db3a3ee37a9d2fe9b94d16d35c24846c37abe73b89cde4dd763e01a2bfaa8b7
-R c60371158767e3daeea4a8672be014f0
+P d33508836bc88314a205bfa9d80f3ebe695163cf0c46d500ad674535975408fb
+R dd0ac0f4915c519ed5a12a3b5d1c6f66
 U drh
-Z 3720db8250a91ea5623fb5048e644ae1
+Z 81cac1efd10a78c1a3b6a5cb8d65a46e
 # Remove this line to create a well-formed Fossil manifest.
