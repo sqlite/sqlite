@@ -1,5 +1,5 @@
-C Check-in\s[da9124fee28c155c]\sbroken\sthe\snew\sSQLITE_IOCAP_SUBPAGE_READ\smechanism\nfor\sinhibiting\sdirect-overflow-read.\s\sThis\scheck-in\sfixes\sthe\sproblem.
-D 2025-01-15T21:13:38.465
+C When\stwo\sindexes\shave\sthe\ssame\scost,\suse\sthe\snarrower\sone\s(the\sone\swith\sthe\nsmaller\saverage\son-disk\srow\swidth).
+D 2025-01-16T01:47:03.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -862,7 +862,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 066374c086ded30e6829a909df532c22f6fb03b1a29ef1bc0f34f45bd7895687
+F src/where.c f081a371086f48201948431832f5e9bb1bf6c930397b8d7bcf8aaa9e21d819da
 F src/whereInt.h 2b0804f300c7f65de4046a1d81c65f01b208d6c08950ccd1fa6b8c16162a8af7
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2205,8 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P db21d6cc9d1c425deffc0e4e92173caf586e6ac66110c71a4930b21e3e7f84b9
-R c4c1c248146b8316d21d4d01771a3b12
+P 113078d555eaf740666680562ebbb04f7d823b72e8b2d553627e54ab3d7bf653 d4bd0d4214551f88f248698fefc821575b722ce5c194d0b3796f572e4704f641
+R 67bf1f1ea7b98f52d11babfcef31079b
+T +closed d4bd0d4214551f88f248698fefc821575b722ce5c194d0b3796f572e4704f641
 U drh
-Z 22739ec3697956e07bb55a68cf1c833f
+Z e2e745138fe18758760902106f28615a
 # Remove this line to create a well-formed Fossil manifest.
