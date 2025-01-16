@@ -1,5 +1,5 @@
-C wasm:\safter\sgenerating\sthe\s.js/.mjs\sfile,\sstrip\sout\sall\sof\sthe\sgenerated\spieces\swhich\screate\sEmscripten\scall()\sbindings\sfor\sthe\ssqlite3\sAPIs,\sas\swe\sdon't\suse\sthose\sbinding,\sso\sboth\sthe\ssetup\stime\sand\sthe\smemory\sthey\suse\sinstalling\sWASM\sproxy\sbindings\sis\swasted.\sThis\seliminates\ssome\s200\ssuperfluous/unused\sbindings\sfrom\sthe\sinit\sprocess.
-D 2025-01-16T13:10:06.949
+C Speedtest1\senhancements:\s\s(1)\sAdd\sthe\sability\sto\sscale\sperformance\sof\ntests\ssets\susing\s"/NNN"\safter\sthe\stestset\sname,\seven\sfor\stestsets\sin\sa\ncomma-separated\slist.\s\s(2)\sAdd\sthe\s"mix1"\smacro\stestset.
+D 2025-01-16T14:06:30.000
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1677,7 +1677,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c cc503febbb8559d541a67d7a33d3d7bb8a2c8cbbfc89eb336e2e2bd6ad6a63ee
+F test/speedtest1.c ef3a1b9c0938b5202a6ad7a16bf53422f13f4c3901e9b973aaac168a30d75feb
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe47154799bfefb12eb1209d9ada64ecac38bee1b7c3558d175215a2beba991d
-R 0d99f3ed7952e5d1d1a513615776937d
-U stephan
-Z 6b1b963846ad84056f214255285f2dea
+P 020d2c7528be6f11a5b2b849d7b2f04e47abe2b0842520ff60eb7defb3768e1c
+R 6782bdbb35165160181ae38f9abe3d27
+U drh
+Z 6a345f2c4878196402ebe51d9f9059ab
 # Remove this line to create a well-formed Fossil manifest.

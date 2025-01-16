@@ -43,6 +43,8 @@ static const char zHelp[] =
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
   "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
+  "                      Can be a comma-separated list of values, with /SCALE suffixes\n"
+  "                      or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -99,6 +101,7 @@ static struct Global {
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
+  int szBase;                /* Base size prior to testset scaling */
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
@@ -2299,6 +2302,7 @@ int main(int argc, char **argv){
   g.zNN = "";
   g.zPK = "UNIQUE";
   g.szTest = 100;
+  g.szBase = 100;
   g.nRepeat = 1;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -2408,7 +2412,7 @@ int main(int argc, char **argv){
         g.bMemShrink = 1;
       }else if( strcmp(z,"size")==0 ){
         ARGC_VALUE_CHECK(1);
-        g.szTest = integerValue(argv[++i]);
+        g.szTest = g.szBase = integerValue(argv[++i]);
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -2419,8 +2423,10 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
+        static char zMix1Tests[] = "main,orm/25,cte/20,fp/25,parsenumber,rtree/20";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
+        if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
       }else if( strcmp(z,"threads")==0 ){
@@ -2574,6 +2580,7 @@ int main(int argc, char **argv){
   if( g.bExplain ) printf(".explain\n.echo on\n");
   do{
     char *zThisTest = zTSet;
+    char *zSep;
     char *zComma = strchr(zThisTest,',');
     if( zComma ){
       *zComma = 0;
@@ -2581,7 +2588,19 @@ int main(int argc, char **argv){
     }else{
       zTSet = "";
     }
-    if( g.iTotal>0 || zComma!=0 ){
+    zSep = strchr(zThisTest, '/');
+    if( zSep ){
+      int kk;
+      for(kk=1; zSep[kk] && ISDIGIT(zSep[kk]); kk++){}
+      if( kk==1 || zSep[kk]!=0 ){
+        fatal_error("bad modifier on testset name: \"%s\"", zThisTest);
+      }
+      g.szTest = g.szBase*integerValue(zSep+1)/100;
+      zSep[0] = 0;
+    }else{
+      g.szTest = g.szBase;
+    }
+    if( g.iTotal>0 || zComma==0 ){
       printf("       Begin testset \"%s\"\n", zThisTest);
     }
     if( strcmp(zThisTest,"main")==0 ){
