@@ -2156,55 +2156,64 @@ void testset_debug1(void){
 ** Performance tests for JSON.
 */
 void testset_json(void){
-  speedtest1_begin_test(100, "construct table J1 with %d rows of text JSON",
-                        g.szTest*250);
+  unsigned int r = 0x12345678;
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, r, g.db);
+  speedtest1_begin_test(100, "table J1 is %d rows of JSONB",
+                        g.szTest*5);
   speedtest1_exec(
-     "CREATE TABLE j1(x JSON TEXT);\n"
+     "CREATE TABLE j1(x JSONB);\n"
      "WITH RECURSIVE\n"
-     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d),\n"
-     "  array1(y) AS (\n"
-     "    SELECT json_group_array(\n"
-     "        json_object('x',x,'y',random(),'z',hex(randomblob(50)))\n"
-     "      )\n"
-     "    FROM c\n"
+     "  jval(n,j) AS (\n"
+     "    VALUES(0,'{}'),(1,'[]'),(2,'true'),(3,'false'),(4,'null'),\n"
+     "          (5,'{x:1,y:2}'),(6,'0.0'),(7,'3.14159'),(8,'-99.9'),\n"
+     "          (9,'[1,2,3,4]')\n"
      "  ),\n"
-     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<5)\n"
+     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<26*26-1),\n"
+     "  array1(y) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_array(\n"
+     "      jsonb_object('x',x,\n"
+     "                  'y',jsonb(coalesce(j,random()%%10000)),\n"
+     "                  'z',hex(randomblob(50)))\n"
+     "    )\n"
+     "    FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  object1(z) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_object(char(0x61+x%%26,0x61+(x/26)%%26),\n"
+     "                      jsonb( coalesce(j,random()%%10000)))\n"
+     "      FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<%d)\n"
      "INSERT INTO j1(x)\n"
-     "  SELECT json_object('a',n,'b',n*2,'c',y,'d',3,'e',5,'f',6) FROM array1, c2;\n",
-     g.szTest*250
+     "  SELECT jsonb_object('a',n,'b',n+10000,'c',jsonb(y),'d',jsonb(z),\n"
+     "                     'e',n+20000,'f',n+30000)\n"
+     "    FROM array1, object1, c2;",
+     g.szTest*5
   );
   speedtest1_end_test();
 
-  speedtest1_begin_test(110, "construct table J2 with %d rows of JSONB",
-                        g.szTest*250);
+  speedtest1_begin_test(110, "table J2 is %d rows from J1 converted to text", g.szTest);
   speedtest1_exec(
      "CREATE TABLE j2(x JSON TEXT);\n"
-     "WITH RECURSIVE\n"
-     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<%d),\n"
-     "  array1(y) AS (\n"
-     "    SELECT json_group_array(\n"
-     "        json_object('x',x,'y',random(),'z',hex(randomblob(50)))\n"
-     "      )\n"
-     "    FROM c\n"
-     "  ),\n"
-     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<5)\n"
-     "INSERT INTO j2(x)\n"
-     "  SELECT jsonb_object('a',n,'b',n*2,'c',y,'d',3,'e',5,'f',6) FROM array1, c2;\n",
-     g.szTest*250
+     "INSERT INTO j2(x) SELECT json(x) FROM j1 LIMIT %d", g.szTest
   );
   speedtest1_end_test();
 
-  speedtest1_begin_test(120, "create indexes on JSON expressions");
+  speedtest1_begin_test(120, "create indexes on JSON expressions on J1");
   speedtest1_exec(
     "BEGIN;\n"
     "CREATE INDEX j1x1 ON j1(x->>'a');\n"
     "CREATE INDEX j1x2 ON j1(x->>'b');\n"
-    "CREATE INDEX j1x3 ON j1(x->>'e');\n"
-    "CREATE INDEX j1x4 ON j1(x->>'f');\n"
+    "CREATE INDEX j1x3 ON j1(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "create indexes on JSON expressions on J2");
+  speedtest1_exec(
+    "BEGIN;\n"
     "CREATE INDEX j2x1 ON j2(x->>'a');\n"
     "CREATE INDEX j2x2 ON j2(x->>'b');\n"
-    "CREATE INDEX j2x3 ON j2(x->>'e');\n"
-    "CREATE INDEX j2x4 ON j2(x->>'f');\n"
+    "CREATE INDEX j2x3 ON j2(x->>'f');\n"
     "COMMIT;\n"
   );
   speedtest1_end_test();
@@ -2212,9 +2221,9 @@ void testset_json(void){
   speedtest1_begin_test(130, "json_replace()/set()/remove() on every row of J1");
   speedtest1_exec(
     "BEGIN;\n"
-    "UPDATE j1 SET x=json_replace(x,'$.f',(x->>'f')+1);\n"
-    "UPDATE j1 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
-    "UPDATE j1 SET x=json_remove(x,'$.d');\n"
+    "UPDATE j1 SET x=jsonb_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j1 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j1 SET x=jsonb_remove(x,'$.d');\n"
     "COMMIT;\n"
   );
   speedtest1_end_test();
@@ -2222,9 +2231,9 @@ void testset_json(void){
   speedtest1_begin_test(140, "json_replace()/set()/remove() on every row of J2");
   speedtest1_exec(
     "BEGIN;\n"
-    "UPDATE j2 SET x=jsonb_replace(x,'$.f',(x->>'f')+1);\n"
-    "UPDATE j2 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
-    "UPDATE j2 SET x=jsonb_remove(x,'$.d');\n"
+    "UPDATE j2 SET x=json_replace(x,'$.f',(x->>'f')+1);\n"
+    "UPDATE j2 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j2 SET x=json_remove(x,'$.d');\n"
     "COMMIT;\n"
   );
   speedtest1_end_test();
