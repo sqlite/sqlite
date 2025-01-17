@@ -5427,9 +5427,10 @@ static LogEst whereSortingCost(
 **     12    otherwise
 **
 ** For the purposes of SQLite, a star-query is defined as a query
-** with a large central table that is joined against four or more
-** smaller tables.  The central table is called the "fact" table.
-** The smaller tables that get joined are "dimension tables".
+** with a large central table that is joined (using an INNER JOIN,
+** not a LEFT JOIN) against four or more smaller tables.  The central
+** table is called the "fact" table.  The smaller tables that get
+** joined are "dimension tables".
 **
 ** SIDE EFFECT:  (and really the whole point of this subroutine)
 **
@@ -5457,7 +5458,11 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
       LogEst rDelta;            /* Heuristic cost adjustment */
       Bitmask mSeen = 0;        /* Mask of dimension tables */
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-        if( (pWLoop->prereq & m)!=0 && (pWLoop->maskSelf & mSeen)==0 ){
+        if( (pWLoop->prereq & m)!=0        /* pWInfo depends on iLoop */
+         && (pWLoop->maskSelf & mSeen)==0  /* pWInfo not already a dependency */
+         && (pWInfo->pTabList->a[pWLoop->iTab].fg.jointype & JT_LEFT)==0
+                                               /* ^- pWInfo isn't a LEFT JOIN */
+        ){
           nDep++;
           mSeen |= pWLoop->maskSelf;
         }

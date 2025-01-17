@@ -1,5 +1,5 @@
-C Enhance\sa\scomment\son\sa\stest\scase\sto\sadd\srecent\scontext.
-D 2025-01-17T17:09:42.305
+C For\sthe\spurpose\sof\sthe\squery\splanner\sheuristic\sadded\sby\s[38db9b5c83],\sa\squery\nshould\sonly\scount\sas\sa\sstar\squery\sif\sthe\sfact\stables\sare\sconnected\sto\sthe\ndimension\stable\sby\san\sINNER\sJOIN.\s\sIf\sa\sLEFT\sJOIN\sis\sused,\sthen\sthe\sfact\ntables\sare\sconstrained\sto\sbe\sin\sinner\sloops\sanyhow\sand\sso\sthe\sheuristic\sdoes\nnot\smake\sany\ssense.\s\sBut\sit\sdoes\sinterfere\swith\sAUTOMATIC\sindex\screation,\swhich\ncauses\sthe\sperformance\sregression\sreported\sby\n[forum:/forumpost/d87570a145599033|forum\spost\sd87570a1455].
+D 2025-01-17T23:49:40.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -862,7 +862,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c f081a371086f48201948431832f5e9bb1bf6c930397b8d7bcf8aaa9e21d819da
+F src/where.c 7aa91f806d19d254d47763564e355cca50d1787d93fc0a62c7d5361d8dfbce70
 F src/whereInt.h 2b0804f300c7f65de4046a1d81c65f01b208d6c08950ccd1fa6b8c16162a8af7
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36027cf340fe2e351c63129d069f9bced090c4a028ffd78d5b8c0f418ad9f230
-R ef3d991b9c054b173fa221e38e326aa0
+P c2647d1bd16fd46dd03953afee6cad44ce14fa2c36713c487b678d63660bc072
+R 93d684fb6b94ab6c95c7721a922c90f7
 U drh
-Z 0b63cd7bd279966e11ae3eece17abfb9
+Z 89119702900b9ccbb1fc6836bf36a009
 # Remove this line to create a well-formed Fossil manifest.
