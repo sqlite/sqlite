@@ -1,5 +1,5 @@
-C Typo\sfix\sin\sspeedtest.md.
-D 2025-01-17T15:56:16.503
+C Enhance\sa\scomment\son\sa\stest\scase\sto\sadd\srecent\scontext.
+D 2025-01-17T17:09:42.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2090,7 +2090,7 @@ F test/with2.test 181674a6cc86a601ca2ac052741cdfad5b529e07e870435d2f6cdb92d589ff
 F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
 F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
-F test/with6.test 9ff3503c3ff7cd459dc4852a02aaefa998dccace53f4142a0eb726174ad5984a
+F test/with6.test 281e4861b5e517f6c3c2f08517a520c1e2ee7c11966545d3901f258a4fe8ef76
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test a5210b8770dc4736bca4e74bc96588f43025ad03ad6a80f885afd36d9890e217
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eb3853d08141bf941193e8ecaf991191bb7fb46287818708a84018520eb1835e
-R ffaa647250f944a4e334209019949953
-U stephan
-Z 0892513d03b81f8f5fa790c99efdef39
+P 36027cf340fe2e351c63129d069f9bced090c4a028ffd78d5b8c0f418ad9f230
+R ef3d991b9c054b173fa221e38e326aa0
+U drh
+Z 0b63cd7bd279966e11ae3eece17abfb9
 # Remove this line to create a well-formed Fossil manifest.
