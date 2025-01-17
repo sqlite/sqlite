@@ -1,5 +1,5 @@
-C Check-in\s[da9124fee28c155c]\sbroken\sthe\snew\sSQLITE_IOCAP_SUBPAGE_READ\smechanism\nfor\sinhibiting\sdirect-overflow-read.\s\sThis\scheck-in\sfixes\sthe\sproblem.
-D 2025-01-15T22:58:18.491
+C Fix\sa\spotential\sone-byte\sbuffer\soverrun\swhen\sreading\sfrom\sthe\sWindows\nconsole\sin\sthe\sCLI.
+D 2025-01-17T10:42:08.648
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -442,7 +442,7 @@ F ext/misc/shathree.c f3a778f27bf3e71b666a77f28e463a3b931c4dbe4219447e61bb678b4b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 5657afb6ec81bef31790973528980af778e0e1388a93db780d33007336efe6e6
+F ext/misc/sqlite3_stdio.c 18160504b9348d0ebb9f5620fd61e64cd2d55fffde05ab3f7db03396add4840a
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5decfea379aed199f3624b3fc6dda66a255e4d47d72783cb301816ce770fae0a
-Q +113078d555eaf740666680562ebbb04f7d823b72e8b2d553627e54ab3d7bf653
-R ce932b2b1b867616426a820f90e0a935
+P f741ffc01e91f969ce300a9f263a5c542a55c26c0c997beae23358f5a5f9c9e3
+Q +4d96759694c91301410f53a3f737a049c33e8b259b0954ff659714aff8b21ae8
+R 2f2832caaf3c65c7b18ba1658b5582fc
 U drh
-Z 86a5c995bbb6301a13edf800d4056598
+Z 78eb1e4f306055be89bec583a850d9f3
 # Remove this line to create a well-formed Fossil manifest.
