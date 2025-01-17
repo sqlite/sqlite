@@ -151,7 +151,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
 #ifndef SQLITE_USE_STDIO_FOR_CONSOLE
     DWORD nRead = 0;
     if( IsConsole(in)
-     && ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), b1, sz, &nRead, 0)
+     && ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), b1, sz-1, &nRead, 0)
     ){
       b1[nRead] = 0;
     }else

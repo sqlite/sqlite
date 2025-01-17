@@ -1,5 +1,5 @@
-C speedtest1:\sfurther\simprovements\sto\sthe\s"json"\stestset.
-D 2025-01-16T20:46:08.022
+C Fix\sa\spotential\sone-byte\sbuffer\soverrun\swhen\sreading\sfrom\sthe\sWindows\nconsole\sin\sthe\sCLI.\s[forum:/forumpost/95e17b8f5c|Forum\spost\s95e17b8f5c].
+D 2025-01-17T10:39:04.650
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -442,7 +442,7 @@ F ext/misc/shathree.c f3a778f27bf3e71b666a77f28e463a3b931c4dbe4219447e61bb678b4b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 5657afb6ec81bef31790973528980af778e0e1388a93db780d33007336efe6e6
+F ext/misc/sqlite3_stdio.c 18160504b9348d0ebb9f5620fd61e64cd2d55fffde05ab3f7db03396add4840a
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2205,8 +2205,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2cc73c5e08f1a16fe8accf0af6af061e42d27635883d09234516fd470e99bc0a
-R f4bb93608db14b0baa099caf842aef42
+P c4750f7cf7e2188623de8b12e01acf3e3d7dc7b5ea87ac449571eb36f97d842a
+R 45a83a05156d426ada8c2c9a4e3fc01c
 U drh
-Z 1a1ead4cbc7ce98f73040d73112e92fb
+Z 4047e2705a87b112269cd6828f65ee7b
 # Remove this line to create a well-formed Fossil manifest.
