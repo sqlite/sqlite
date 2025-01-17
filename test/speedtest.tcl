@@ -19,11 +19,16 @@ diff-file is specified then show a diff from the diff-file to the new
 output.
 
 Other options include:
-   --dryrun              Show what would happen but don't do anything
-   --help                Show this help screen
+   CC=...                Specify an alternative C compiler.  Default is "gcc".
+   -D...                 -D and -O options are passed through to the C compiler.
+   --dryrun              Show what would happen but don't do anything.
+   --help                Show this help screen.
    --lean                "Lean" mode.
-   --lookaside N SZ      Lookahead uses N slots of SZ bytes each
-   --pagesize N          Use N as the page size
+   --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
+   --pagesize N          Use N as the page size.
+   --testset TEST        Specify the specific testset to use.  The default
+                         is "mix1".  Other options include: "main", "json",
+                         "cte", "orm", "fp", "rtree".
 }
 set srcfile {}
 set outfile {}
@@ -65,6 +70,11 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
            -DSQLITE_OMIT_PROGRESS_CALLBACK \
            -DSQLITE_OMIT_SHARED_CACHE \
            -DSQLITE_USE_ALLOCA
+      }
+      -testset -
+      --testset {
+        incr i
+        set testset [lindex $argv $i]
       }
       -n -
       -dryrun -
