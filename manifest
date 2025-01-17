@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sone-byte\sbuffer\soverrun\swhen\sreading\sfrom\sthe\sWindows\nconsole\sin\sthe\sCLI.\s[forum:/forumpost/95e17b8f5c|Forum\spost\s95e17b8f5c].
-D 2025-01-17T10:39:04.650
+C Add\sthe\stest/speedtest.tcl\sscript\sto\ssimplify\sperformance\sand\ssize\stesting.
+D 2025-01-17T12:32:01.367
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1677,6 +1677,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
+F test/speedtest.tcl 76a0959d7d16cbebae49756bbb858a3d2f1d9081e757c87cb7fea7c816d1c575 x
 F test/speedtest1.c 323ce0956430a5aae56ea20f502da7bea3fb62b8ed02e9b0f12ab078b2b258f5
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
@@ -2205,8 +2206,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c4750f7cf7e2188623de8b12e01acf3e3d7dc7b5ea87ac449571eb36f97d842a
-R 45a83a05156d426ada8c2c9a4e3fc01c
+P 4d96759694c91301410f53a3f737a049c33e8b259b0954ff659714aff8b21ae8
+R 7f163047a093ae4e315e910ea1611ab4
 U drh
-Z 4047e2705a87b112269cd6828f65ee7b
+Z 4d5c65aabce50a5f7c599ac5c2690d5d
 # Remove this line to create a well-formed Fossil manifest.
