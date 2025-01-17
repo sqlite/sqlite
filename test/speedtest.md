@@ -25,7 +25,7 @@ adjustments as needed.
      suggestion.  It might be good to keep these files outside of the
      source tree so that "fossil clean" does not delete them.
   *  Obtain the baseline SQLite amalgamation.  For the purpose of this
-     technical not, assume the baseline SQLite sources are in files
+     technical note, assume the baseline SQLite sources are in files
      "../baseline/sqlite3.c" and "../baseline/sqlite3.h".
   *  <b>test/speedtest.tcl ../baseline/sqlite3.c ../speed/baseline.txt</b> <br>
      &uarr; The performance measure will be written into ../speed/baseline.txt
