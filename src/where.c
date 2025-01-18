@@ -949,7 +949,7 @@ static void explainAutomaticIndex(
     sqlite3_str *pStr = sqlite3_str_new(pParse->db);
     sqlite3_str_appendf(pStr,"CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
     assert( pIdx->nColumn>1 );
-    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
+    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID || !HasRowid(pTab) );
     for(ii=0; ii<(pIdx->nColumn-1); ii++){
       const char *zName = 0;
       int iCol = pIdx->aiColumn[ii];
