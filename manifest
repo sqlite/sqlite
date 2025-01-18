@@ -1,9 +1,9 @@
-C For\sthe\spurpose\sof\sthe\squery\splanner\sheuristic\sadded\sby\s[38db9b5c83],\sa\squery\nshould\sonly\scount\sas\sa\sstar\squery\sif\sthe\sfact\stables\sare\sconnected\sto\sthe\ndimension\stable\sby\san\sINNER\sJOIN.\s\sIf\sa\sLEFT\sJOIN\sis\sused,\sthen\sthe\sfact\ntables\sare\sconstrained\sto\sbe\sin\sinner\sloops\sanyhow\sand\sso\sthe\sheuristic\sdoes\nnot\smake\sany\ssense.\s\sBut\sit\sdoes\sinterfere\swith\sAUTOMATIC\sindex\screation,\swhich\ncauses\sthe\sperformance\sregression\sreported\sby\n[forum:/forumpost/d87570a145599033|forum\spost\sd87570a1455].
-D 2025-01-17T23:49:40.018
+C When\srunning\smake\sinstall,\savoid\sthe\s-s\s(strip)\sflag\swhen\scross-compiling,\sas\sit\sonly\sworks\sfor\sthe\sbuild\splatform.\sReported\sin\s[forum:9a67df63eda9925c|forum\spost\s9a67df63eda9925c].
+D 2025-01-18T13:51:01.877
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in ad349acf91b3569033439fe498fa197aa530cafaa01362eb7daad2f84e43d265
+F Makefile.in 572271a39d7ac1ae228ed911c63fdf374300a6a880ceb851b1f3d357e9a9534e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 39785ec45f9ae0311e49094eff2ee079562246fed6be3b9f632a99d4df20056a
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def 63dfbbc58b041d1c5c516f31a02679cce8d79123c89ad87fd2783f4ef26dedbb
+F auto.def b8135ba11ec23857bc76469f8b447c43fcfeecc9c775179107392e18ebe8c740
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
@@ -700,7 +700,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 0b62344246f8a3e920edb8a52b0c3296dde829d7eb450f67b89c63d79536de85
+F main.mk a187ada134ccb55b5d59ea3eb8f71cc6b19bfc244689e24a729f7a64aa500dc3
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c2647d1bd16fd46dd03953afee6cad44ce14fa2c36713c487b678d63660bc072
-R 93d684fb6b94ab6c95c7721a922c90f7
-U drh
-Z 89119702900b9ccbb1fc6836bf36a009
+P 0852c57ee2768224af79910e6f26e70a4962651dae0f8b45cbfc847e6707d7bb
+R ed0f0a3d6dea2dbb296ffb05bcf1dd67
+U stephan
+Z b7991c6ad22e45c5f184f51dda631f10
 # Remove this line to create a well-formed Fossil manifest.
