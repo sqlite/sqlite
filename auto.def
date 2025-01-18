@@ -475,7 +475,6 @@ apply {{} {
   }
   switch -exact -- $soname {
     none - "" { return 0 }
-    auto      { set soname libsqlite3.so.3 }
     legacy    { set soname libsqlite3.so.0 }
     default {
       if {[string match libsqlite3.* $soname]} {
@@ -1355,6 +1354,11 @@ apply {{} {
   }
   unset oFF
 }}
+
+########################################################################
+# When cross-compiling, we have to avoid using the -s flag to
+# /usr/bin/install: https://sqlite.org/forum/forumpost/9a67df63eda9925c
+define IS_CROSS_COMPILING $isCrossCompiling
 
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something
