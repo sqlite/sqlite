@@ -1,5 +1,5 @@
-C When\srunning\smake\sinstall,\savoid\sthe\s-s\s(strip)\sflag\swhen\scross-compiling,\sas\sit\sonly\sworks\sfor\sthe\sbuild\splatform.\sReported\sin\s[forum:9a67df63eda9925c|forum\spost\s9a67df63eda9925c].
-D 2025-01-18T13:51:01.877
+C Add\ssupport\sfor\sautomatic\squery-time\sindexes\son\sWITHOUT\sROWID\stables.
+D 2025-01-18T21:00:19.369
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -862,7 +862,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 7aa91f806d19d254d47763564e355cca50d1787d93fc0a62c7d5361d8dfbce70
+F src/where.c b09334881ab87dfdb1d2dbc71a8cf97f345834d36509344207a133f0e6b86161
 F src/whereInt.h 2b0804f300c7f65de4046a1d81c65f01b208d6c08950ccd1fa6b8c16162a8af7
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2207,8 +2207,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0852c57ee2768224af79910e6f26e70a4962651dae0f8b45cbfc847e6707d7bb
-R ed0f0a3d6dea2dbb296ffb05bcf1dd67
-U stephan
-Z b7991c6ad22e45c5f184f51dda631f10
+P 230e49c10e3aa6fe9c487a1e026016a8bf97f7e736e7477d5976d987da5e83cf
+R 1eb7d22a051c22dd4afc1e0246916027
+T *branch * without-rowid-autoidx
+T *sym-without-rowid-autoidx *
+T -sym-trunk *
+U drh
+Z eca129c2aba163fe6547f234a58ed149
 # Remove this line to create a well-formed Fossil manifest.
