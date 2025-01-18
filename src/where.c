@@ -949,7 +949,7 @@ static void explainAutomaticIndex(
     sqlite3_str *pStr = sqlite3_str_new(pParse->db);
     sqlite3_str_appendf(pStr,"CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
     assert( pIdx->nColumn>1 );
-    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
+    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID || !HasRowid(pTab) );
     for(ii=0; ii<(pIdx->nColumn-1); ii++){
       const char *zName = 0;
       int iCol = pIdx->aiColumn[ii];
@@ -1080,6 +1080,19 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }else{
     extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
   }
+  if( !HasRowid(pTable) ){
+    /* For WITHOUT ROWID tables, ensure that all PRIMARY KEY columns are
+    ** either in the idxCols mask or in the extraCols mask */
+    for(i=0; i<pTable->nCol; i++){
+      if( (pTable->aCol[i].colFlags & COLFLAG_PRIMKEY)==0 ) continue;
+      if( i>=BMS-1 ){
+        extraCols |= MASKBIT(BMS-1);
+        break;
+      }
+      if( idxCols & MASKBIT(i) ) continue;
+      extraCols |= MASKBIT(i);
+    }
+  }
   mxBitCol = MIN(BMS-1,pTable->nCol);
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
@@ -1091,7 +1104,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
 
   /* Construct the Index object to describe this index */
-  pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+1, 0, &zNotUsed);
+  pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+HasRowid(pTable),
+                                    0, &zNotUsed);
   if( pIdx==0 ) goto end_auto_index_create;
   pLoop->u.btree.pIndex = pIdx;
   pIdx->zName = "auto-index";
@@ -1147,8 +1161,10 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     }
   }
   assert( n==nKeyCol );
-  pIdx->aiColumn[n] = XN_ROWID;
-  pIdx->azColl[n] = sqlite3StrBINARY;
+  if( HasRowid(pTable) ){
+    pIdx->aiColumn[n] = XN_ROWID;
+    pIdx->azColl[n] = sqlite3StrBINARY;
+  }
 
   /* Create the automatic index */
   explainAutomaticIndex(pParse, pIdx, pPartial!=0, &addrExp);
@@ -3923,7 +3939,6 @@ static int whereLoopAddBtree(
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
    && !pSrc->fg.isIndexedBy  /* Has no INDEXED BY clause */
    && !pSrc->fg.notIndexed   /* Has no NOT INDEXED clause */
-   && HasRowid(pTab)         /* Not WITHOUT ROWID table. (FIXME: Why not?) */
    && !pSrc->fg.isCorrelated /* Not a correlated subquery */
    && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
    && (pSrc->fg.jointype & JT_RIGHT)==0 /* Not the right tab of a RIGHT JOIN */
