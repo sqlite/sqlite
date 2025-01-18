@@ -325,8 +325,18 @@ if {"" eq [proj-bin-define install]} {
 # compiling binaries for the target system (CC a.k.a. $(T.cc)).
 # Normally they're the same, but they will differ when
 # cross-compiling.
-define CFLAGS [proj-get-env CFLAGS {-g -O2}]
+#
+# When cross-compiling we default to not using the -g flag, based on a
+# /chat discussion prompted by
+# https://sqlite.org/forum/forumpost/9a67df63eda9925c
+set defaultCFlags {-O2}
+if {!$isCrossCompiling} {
+  lappend defaultCFlags -g
+}
+define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
+# BUILD_CFLAGS is the CFLAGS for CC_FOR_BUILD.
 define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
+unset defaultCFlags
 
 proj-if-opt-truthy dev {
   # --enable-dev needs to come early so that the downstream tests
@@ -335,6 +345,8 @@ proj-if-opt-truthy dev {
   proj-opt-set debug 1
   proj-opt-set amalgamation 0
   define CFLAGS [get-env CFLAGS {-O0 -g}]
+  # -------------^^^^^^^ intentionally using [get-env] instead of
+  # [proj-get-env] here.
 }
 
 ########################################################################
