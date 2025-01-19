@@ -5,11 +5,25 @@
 
 use cc cc-db cc-shared cc-lib pkg-config proj
 
-# Are we cross-compiling? This value may be changed by certain build
-# options, so it's important that config code which checks for
+#
+# Object for communicating config-time state across various
+# auto.def-related pieces.
+#
+array set sqliteConfig {}
+
+#
+# Set to 1 when cross-compiling This value may be changed by certain
+# build options, so it's important that config code which checks for
 # cross-compilation uses this var instead of
 # [proj-is-cross-compiling].
-set ::sqliteIsCrossCompiling [proj-is-cross-compiling]
+#
+set sqliteConfig(is-cross-compiling) [proj-is-cross-compiling]
+
+#
+# Gets set to 1 when using jimsh for code generation. May affect later
+# decisions.
+#
+set sqliteConfig(use-jim-for-codegen) 0
 
 
 ########################################################################
@@ -91,6 +105,7 @@ proc sqlite-show-feature-flags {} {
     define OPT_SHELL [lsort -unique $oFF]
     msg-result "Shell options: [get-define OPT_SHELL]"
   }
+  #parray ::sqliteConfig
 }
 
 ########################################################################
@@ -259,8 +274,7 @@ proc sqlite-check-line-editing {} {
     define CFLAGS_READLINE "-I$dirLn $lnC"
     define HAVE_LINENOISE $lnVal
     sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
-    if {[info exists sqliteUseJimForCodeGen]
-        && $::sqliteUseJimForCodeGen && 2 == $lnVal} {
+    if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
     }
@@ -309,7 +323,7 @@ proc sqlite-check-line-editing {} {
   set rlInc [opt-val with-readline-cflags auto]
   if {"auto" eq $rlInc} {
     set rlInc ""
-    if {$::sqliteIsCrossCompiling} {
+    if {$::sqliteConfig(is-cross-compiling)} {
       # ^^^ this check is derived from the legacy configure script.
       proj-warn "Skipping check for readline.h because we're cross-compiling."
     } else {

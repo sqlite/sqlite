@@ -271,7 +271,7 @@ if {"" eq [proj-bin-define install]} {
 # /chat discussion prompted by
 # https://sqlite.org/forum/forumpost/9a67df63eda9925c
 set defaultCFlags {-O2}
-if {!$sqliteIsCrossCompiling} {
+if {!$::sqliteConfig(is-cross-compiling)} {
   lappend defaultCFlags -g
 }
 define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
@@ -300,7 +300,7 @@ proc sqlite-check-wasi-sdk {} {
   define HAVE_WASI_SDK 0
   if {$wasiSdkDir eq ""} {
     return 0
-  } elseif {$::sqliteIsCrossCompiling} {
+  } elseif {$::sqliteConfig(is-cross-compiling)} {
     proj-fatal "Cannot combine --with-wasi-sdk with cross-compilation"
   }
   msg-result "Checking WASI SDK directory \[$wasiSdkDir]... "
@@ -310,7 +310,7 @@ proc sqlite-check-wasi-sdk {} {
   define WASI_SDK_DIR $wasiSdkDir
   # Disable numerous options which we know either can't work or are
   # not useful in this build...
-  msg-result "Using wasi-sdk clang. Disabling CLI shell modifying config flags:"
+  msg-result "Using wasi-sdk clang. Disabling CLI shell and modifying config flags:"
   # Boolean (--enable-/--disable-) flags which must be switched off:
   foreach opt {
     dynlink-tools
@@ -343,8 +343,8 @@ proc sqlite-check-wasi-sdk {} {
     }
   }
   # Remember that we now have a discrepancy beteween
-  # $::sqliteIsCrossCompiling and [proj-is-cross-compiling].
-  set ::sqliteIsCrossCompiling 1
+  # $::sqliteConfig(is-cross-compiling) and [proj-is-cross-compiling].
+  set ::sqliteConfig(is-cross-compiling) 1
 
   #
   # Changing --host and --target have no effect here except to
@@ -668,8 +668,6 @@ sqlite-check-tcl
 #   - CFLAGS_JIMSH = any flags needed for buildng a BTCLSH-compatible
 #     jimsh. The defaults may be passed on to configure as
 #     CFLAGS_JIMSH=...
-set sqliteUseJimForCodeGen 0 ; # Set to 1 when using jimsh for code
-                               # generation. May affect later decisions.
 proc sqlite-determine-codegen-tcl {} {
   rename sqlite-determine-codegen-tcl ""
   msg-result "Checking for TCL to use for code generation... "
@@ -706,7 +704,7 @@ proc sqlite-determine-codegen-tcl {} {
     if {$sysh && [cc-check-functions realpath]} {
       define-append CFLAGS_JIMSH -DHAVE_REALPATH
       define BTCLSH "\$(JIMSH)"
-      set ::sqliteUseJimForCodeGen 1
+      set ::sqliteConfig(use-jim-for-codegen) 1
     } elseif {$sysh && [cc-check-functions _fullpath]} {
       # _fullpath() is a Windows API. It's not entirely clear
       # whether we need to add {-DHAVE_SYS_TIME_H -DHAVE_DIRENT_H}
@@ -715,7 +713,7 @@ proc sqlite-determine-codegen-tcl {} {
       # builds it does not.
       define-append CFLAGS_JIMSH -DHAVE__FULLPATH
       define BTCLSH "\$(JIMSH)"
-      set ::sqliteUseJimForCodeGen 1
+      set ::sqliteConfig(use-jim-for-codegen) 1
     } elseif {[file-isexec [get-define TCLSH_CMD]]} {
       set cgtcl [get-define TCLSH_CMD]
       define BTCLSH "\$(TCLSH_CMD)"
@@ -775,6 +773,7 @@ if {[proj-opt-was-provided with-tempstore]} {
   }}
 }
 
+# Must come after sqlite-determine-codegen-tcl
 msg-result "Line-editing support for the sqlite3 shell: [sqlite-check-line-editing]"
 
 proj-if-opt-truthy load-extension {
@@ -908,7 +907,7 @@ sqlite-show-feature-flags
 ########################################################################
 # When cross-compiling, we have to avoid using the -s flag to
 # /usr/bin/install: https://sqlite.org/forum/forumpost/9a67df63eda9925c
-define IS_CROSS_COMPILING $sqliteIsCrossCompiling
+define IS_CROSS_COMPILING $sqliteConfig(is-cross-compiling)
 
 ########################################################################
 # "Re-export" the autoconf-conventional --XYZdir flags into something
@@ -991,3 +990,4 @@ apply {{} {
     }
   }
 }}
+
