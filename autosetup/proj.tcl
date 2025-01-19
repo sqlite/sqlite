@@ -184,7 +184,7 @@ proc proj-lshift_ {listVar {count 1}} {
 # out any lines which begin with an number of whitespace followed by a
 # '#', and returns a value containing the [append]ed results of each
 # remaining line with a \n between each.
-proc proj-strip-hash-comments_ {val} {
+proc proj-strip-hash-comments {val} {
   set x {}
   foreach line [split $val \n] {
     if {![string match "#*" [string trimleft $line]]} {
@@ -1119,7 +1119,7 @@ proc proj-dump-defs-json {file args} {
 # that [opt-value canonical] will return X if --alias=X is passed to
 # configure.
 proc proj-xfer-options-aliases {mapping} {
-  foreach {hidden - canonical} [proj-strip-hash-comments_ $mapping] {
+  foreach {hidden - canonical} [proj-strip-hash-comments $mapping] {
     if {[proj-opt-was-provided $hidden]} {
       if {[proj-opt-was-provided $canonical]} {
         proj-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."
