@@ -5459,7 +5459,10 @@ static LogEst whereSortingCost(
 */
 static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
-  if( nRowEst==0 && nLoop>=5 ){
+  if( nRowEst==0
+   && nLoop>=5 
+   && OptimizationEnabled(pWInfo->pParse->db, SQLITE_StarQuery)
+  ){
     /* Check to see if we are dealing with a star schema and if so, reduce
     ** the cost of fact tables relative to dimension tables, as a heuristic
     ** to help keep the fact tables in outer loops.
@@ -5487,8 +5490,9 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
       if( sqlite3WhereTrace&0x4 ){
          SrcItem *pItem = pWInfo->pTabList->a + iLoop;
-         sqlite3DebugPrintf("Fact-table %s: %d dimensions, cost reduced %d\n",
-             pItem->zAlias ? pItem->zAlias : pItem->pSTab->zName,
+         sqlite3DebugPrintf(
+             "Fact-table %s(%d): %d dimensions, cost reduced %d\n",
+             pItem->zAlias ? pItem->zAlias : pItem->pSTab->zName, iLoop,
              nDep, rDelta);
       }
 #endif
