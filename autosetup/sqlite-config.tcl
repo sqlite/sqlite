@@ -64,11 +64,29 @@ proc sqlite-post-options-init {} {
     define SQLITE_OS_UNIX 1
     define SQLITE_OS_WIN 0
   }
-
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
-
+  sqlite-setup-package-info
 }
 
+########################################################################
+# Called by [sqlite-post-options-init] to set up PACKAGE_NAME and
+# related defines.
+proc sqlite-setup-package-info {} {
+  set srcdir $::autosetup(srcdir)
+  set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
+  define PACKAGE_NAME "sqlite"
+  define PACKAGE_URL {https://sqlite.org}
+  define PACKAGE_VERSION $PACKAGE_VERSION
+  define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  msg-result "Source dir = $srcdir"
+  msg-result "Build dir  = $::autosetup(builddir)"
+  msg-result "Configuring SQLite version $PACKAGE_VERSION"
+}
+
+########################################################################
+# Internal config-time debugging output routine. It generates no
+# output unless msg-debug=1 is passed to the configure script.
 proc msg-debug {msg} {
   if {$::sqliteConfig(msg-debug-enabled)} {
     puts stderr [proj-bold "** DEBUG: $msg"]
