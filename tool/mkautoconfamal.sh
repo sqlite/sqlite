@@ -13,7 +13,7 @@
 #
 
 
-# Bail out of the script if any command returns a non-zero exit 
+# Bail out of the script if any command returns a non-zero exit
 # status. Or if the script tries to use an unset variable. These
 # may fail for old /bin/sh interpreters.
 #
@@ -34,12 +34,12 @@ else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
 fi
 
 # If this script is given an argument of --snapshot, then generate a
-# snapshot tarball named for the current checkout SHA1 hash, rather than
+# snapshot tarball named for the current checkout SHA hash, rather than
 # the version number.
 #
 if test "$#" -ge 1 -a x$1 != x--snapshot
 then
-  # Set global variable $ARTIFACT to the "3xxyyzz" string incorporated 
+  # Set global variable $ARTIFACT to the "3xxyyzz" string incorporated
   # into artifact filenames. And $VERSION2 to the "3.x.y[.z]" form.
   xx=`echo $VERSION|sed 's/3\.\([0-9]*\)\..*/\1/'`
   yy=`echo $VERSION|sed 's/3\.[^.]*\.\([0-9]*\).*/\1/'`
@@ -54,6 +54,8 @@ fi
 
 rm -rf $TMPSPACE
 cp -R $TOP/autoconf       $TMPSPACE
+cp -R $TOP/autosetup      $TMPSPACE
+cp -p $TOP/configure      $TMPSPACE
 cp sqlite3.c              $TMPSPACE
 cp sqlite3.h              $TMPSPACE
 cp sqlite3ext.h           $TMPSPACE
@@ -63,38 +65,39 @@ cp $TOP/sqlite3.pc.in     $TMPSPACE
 cp shell.c                $TMPSPACE
 cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
-
-cat $TMPSPACE/configure.ac |
-sed "s/--SQLITE-VERSION--/$VERSION/" > $TMPSPACE/tmp
-mv $TMPSPACE/tmp $TMPSPACE/configure.ac
-
-cat $TMPSPACE/sqlite3.pc.in |
-sed "s/^Libs.private:.*/Libs.private: @LIBS@/" > $TMPSPACE/tmp
-mv $TMPSPACE/tmp $TMPSPACE/sqlite3.pc.in
+cp $TOP/VERSION           $TMPSPACE
+cp $TOP/main.mk           $TMPSPACE
 
 cd $TMPSPACE
-autoreconf -i
+#autoreconf -i
 #libtoolize
 #aclocal
 #autoconf
 #automake --add-missing
 
+# This bit is only for use during porting of the
+# autoconf bundle to autosetup.
+if true; then
+    find . -name '*~' -exec rm \{} \;
+fi
+
 mkdir -p tea/generic
-echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
+echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c
 echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
 echo "#else"                        >> tea/generic/tclsqlite3.c
 echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
 echo "#endif"                       >> tea/generic/tclsqlite3.c
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-cat tea/configure.ac | 
-  sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" > tmp
+sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" tea/configure.ac > tmp
 mv tmp tea/configure.ac
 
 cd tea
 autoconf
 rm -rf autom4te.cache
 
+echo "--------------- TODO: -----------------"
+cat <<EOF
 cd ../
 ./configure && make dist
 tar -xzf sqlite-$VERSION.tar.gz
@@ -103,3 +106,4 @@ tar -czf $TARBALLNAME.tar.gz $TARBALLNAME
 mv $TARBALLNAME.tar.gz ..
 cd ..
 ls -l $TARBALLNAME.tar.gz
+EOF

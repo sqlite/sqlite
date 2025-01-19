@@ -240,6 +240,11 @@ proc sqlite-handle-common-feature-flags {} {
     }
     scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
   } {
+    if {$boolFlag ni $::autosetup(options)} {
+      # Skip flags which are in the canonical build but not
+      # the autoconf bundle.
+      continue
+    }
     proj-if-opt-truthy $boolFlag {
       sqlite-add-feature-flag $featureFlag
       if {0 != [eval $ifSetEvalThis] && "all" ne $boolFlag} {
