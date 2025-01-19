@@ -366,6 +366,9 @@ struct sqlite3_api_routines {
   /* Version 3.44.0 and later */
   void *(*get_clientdata)(sqlite3*,const char*);
   int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
+  /* Version 3.45.0 and later */
+  const char * (*column_table_alias)(sqlite3_stmt*,int);
+  const void * (*column_table_alias16)(sqlite3_stmt*,int);
 };
 
 /*
@@ -699,6 +702,9 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.44.0 and later */
 #define sqlite3_get_clientdata         sqlite3_api->get_clientdata
 #define sqlite3_set_clientdata         sqlite3_api->set_clientdata
+/* Version 3.45.0 and later */
+#define sqlite3_column_table_alias     sqlite3_api->column_table_alias
+#define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
