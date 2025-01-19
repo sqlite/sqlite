@@ -65,12 +65,23 @@ options {
      performance-critical loops.  Never use --debug for production
      builds.}
   # </developer>
+  soname:=legacy       =>
+    # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
+    {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+     soname. "legacy" sets it to its historical value of
+     libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+     it to that literal value. Any other value is assumed to be a
+     suffix which gets applied to "libsqlite3.so.",
+     e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
+    }
 }
 
 sqlite-post-options-init
 sqlite-check-common-bins
 sqlite-check-common-system-deps
 proj-check-rpath
+sqlite-handle-soname
+sqlite-setup-default-cflags
 sqlite-handle-debug
 sqlite-handle-threadsafe
 sqlite-handle-tempstore

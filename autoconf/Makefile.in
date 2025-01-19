@@ -55,8 +55,8 @@ LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # works on the build host's platform.
 INSTALL.strip.1 = $(INSTALL)
 INSTALL.strip.0 = $(INSTALL) -s
-INSTALL.strip.  = $(INSTALL.strip.0)
 INSTALL.strip   = $(INSTALL.strip.@IS_CROSS_COMPILING@)
+INSTALL.noexec  = $(INSTALL) -m 0644
 
 install-dir.bin = $(DESTDIR)$(bindir)
 install-dir.lib = $(DESTDIR)$(libdir)
@@ -109,21 +109,47 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
   $(LDFLAGS.configure)
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
+
+sqlite3.o:	sqlite3.h sqlite3.c
+	$(CC) -c sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
+
+libsqlite3.LIB = libsqlite3$(T.lib)
+libsqlite3.SO = libsqlite3$(T.dll)
+
+$(libsqlite3.SO): sqlite3.o
+	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
+all: $(libsqlite3.SO)
+
+$(libsqlite3.LIB): sqlite3.o
+	$(AR) $(AR.flags) $@ sqlite3.o
+all: $(libsqlite3.LIB)
 
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(CC) -o $@ \
 		shell.c sqlite3.c \
-		$(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
-		$(CFLAGS.readline) $(CFLAGS.icu) \
-		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
+		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 all: sqlite3$(T.exe)
 
 install-shell: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
 install: install-shell
 
+install-headers: sqlite3.h $(install-dir.include)
+	$(INSTALL.noexec) sqlite3.h sqlite3ext.h "$(install-dir.include)"
+install: install-headers
+
+install-pc: sqlite3.pc $(install-dir.pkgconfig)
+	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
+install: install-pc
+
 clean:
 	rm -f *.o sqlite3$(T.exe)
+	rm -f $(libsqlite3.LIB) $(libsqlite3.SO)
 
 distclean: clean
 	rm -f sqlite3.pc
@@ -135,7 +161,7 @@ DIST_FILES := auto.def autosetup tea \
   README.txt Makefile.fallback
 
 dist:
-	@echo "Not Yet Implemented: $@"
+	@echo "Not Yet Implemented: $@"; exit 1
 
 install:
-	@echo "Not Yet Implemented: $@"
+	@echo "Not Yet Implemented: $@"; exit 1
