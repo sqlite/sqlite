@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sthat\scould\sfail\sif\sa\svirtual\stable\scalled\ssqlite3_step()\sfrom\swithin\sthe\sxSync()\smethod\swhile\scommitting\sa\s"PRAGMA\sdefer_foreign_keys=1"\stransaction.
-D 2025-01-20T18:26:58.868
+C Remove\san\sassert()\sin\sthe\sunix\sfile\slocking\slogic\sthat\sis\snot\strue\nif\salternative\sVFS\s"unix-excl"\sis\sused\sfor\sa\sread-only\sconnection.
+D 2025-01-20T19:19:31.053
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -763,7 +763,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c d2edbd92b07a3f778c2defa8a2e9d75acceb6267bda56948c41e8cdda65224d6
+F src/os_unix.c 4c73f89479d90412cb736a180e9ef89ac1495a158753a7f5de1260c197bc8e1f
 F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 239a3d1573f4cb720308018280b2add54034e69e38fe7060a7238875eee4f1c9
-R dfc3a0a07b5a7948068bb24ed717b487
-U dan
-Z 96f6b83e4a526a99706f87b354741f28
+P 39bdbb3f6dd1d30d180526d35c11f789f5e9d45b99ead72fd4a3b136afab66b1
+R 2f208773f4b90552fa108ddc899a9482
+U drh
+Z e41ea2237d4e46f40152146fd24a89c1
 # Remove this line to create a well-formed Fossil manifest.
