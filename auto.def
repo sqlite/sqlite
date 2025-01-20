@@ -679,7 +679,9 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If $cfg
   # is an empty string, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec "${srcdir}/tool/tclConfigShToAutoDef.sh" "$cfg"]
+  eval [exec sh "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
+  # ---------^^ a Windows/msys workaround, without which it cannot
+  # exec a .sh file: https://sqlite.org/forum/forumpost/befb352a42a7cd6d
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
