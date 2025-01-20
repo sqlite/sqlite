@@ -990,9 +990,7 @@ proc sqlite-check-tcl {} {
   if {"" ne $with_tclsh} {
     # --with-tclsh was provided or found above. Validate it and use it
     # to trump any value passed via --with-tcl=DIR.
-    if {![file isfile $with_tclsh]} {
-      proj-fatal "TCL shell $with_tclsh is not a file"
-    } elseif {![file-isexec $with_tclsh]} {
+    if {![file-isexec $with_tclsh]} {
       proj-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
