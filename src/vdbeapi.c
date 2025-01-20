@@ -783,7 +783,7 @@ static int sqlite3Step(Vdbe *p){
       }
 
       assert( db->nVdbeWrite>0 || db->autoCommit==0
-          || (db->nDeferredCons==0 && db->nDeferredImmCons==0)
+          || ((db->nDeferredCons + db->nDeferredImmCons)==0)
       );
 
 #ifndef SQLITE_OMIT_TRACE
