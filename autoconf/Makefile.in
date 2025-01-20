@@ -1,6 +1,10 @@
+########################################################################
+# This is a main makefile for the "autoconf" bundle of SQLite.
 all:
 
 TOP = @abs_top_srcdir@
+
+PACKAGE_VERSION = @PACKAGE_VERSION@
 
 #
 # Filename extensions for binaries and libraries
@@ -30,6 +34,10 @@ INSTALL = @BIN_INSTALL@
 AR = @AR@
 AR.flags = cr
 CC = @CC@
+
+
+ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
+ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
 
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 #
@@ -127,6 +135,37 @@ $(libsqlite3.LIB): sqlite3.o
 	$(AR) $(AR.flags) $@ sqlite3.o
 all: $(libsqlite3.LIB)
 
+install-so-1: $(install-dir.lib) $(libsqlite3.SO)
+	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
+	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
+		cd "$(install-dir.lib)" || exit $$?; \
+		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
+		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
+			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0.8.6; \
+		elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
+			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0.8.6; \
+		fi
+install-so-0 install-so-:
+install-so: install-so-$(ENABLE_LIB_SHARED)
+install: install-so
+
+install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
+	$(INSTALL.noexec) $(libsqlite3.LIB) "$(install-dir.lib)"
+install-lib-0 install-lib-:
+install-lib: install-lib-$(ENABLE_LIB_STATIC)
+install: install-lib
+
+
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(CC) -o $@ \
 		shell.c sqlite3.c \
@@ -147,21 +186,33 @@ install-pc: sqlite3.pc $(install-dir.pkgconfig)
 	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 install: install-pc
 
+install-man1: sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) sqlite3.1 "$(install-dir.man1)"
+install: install-man1
+
 clean:
 	rm -f *.o sqlite3$(T.exe)
 	rm -f $(libsqlite3.LIB) $(libsqlite3.SO)
 
 distclean: clean
-	rm -f sqlite3.pc
+	rm -f jimsh0$(T.exe) config.* sqlite3.pc
 
-DIST_FILES := auto.def autosetup tea \
+DIST_FILES := \
+  README.txt VERSION \
+  auto.def autosetup configure tea \
   sqlite3.h sqlite3.c shell.c sqlite3ext.h \
-  sqlite3.1 \
-  Makefile.msc sqlite3.rc sqlite3rc.h Replace.cs \
-  README.txt Makefile.fallback
+  Makefile.in Makefile.msc Makefile.fallback \
+  sqlite3.rc sqlite3rc.h Replace.cs \
+  sqlite3.pc.in sqlite3.1
 
+# Maintenance note: dist_name must be sqlite-$(PACKAGE_VERSION) so
+# that tool/mkautoconfamal.sh knows how to find it.
+dist_name = sqlite-$(PACKAGE_VERSION)
+dist_tarball = $(dist_name).tar.gz
 dist:
-	@echo "Not Yet Implemented: $@"; exit 1
-
-install:
-	@echo "Not Yet Implemented: $@"; exit 1
+	rm -fr $(dist_name)
+	mkdir -p $(dist_name)
+	cp -rp $(DIST_FILES) $(dist_name)/.
+	tar czf $(dist_tarball) $(dist_name)
+	rm -fr $(dist_name)
+	ls -l $(dist_tarball)

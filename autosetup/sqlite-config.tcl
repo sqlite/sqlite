@@ -1013,9 +1013,7 @@ proc sqlite-check-tcl {} {
   if {"" ne $with_tclsh} {
     # --with-tclsh was provided or found above. Validate it and use it
     # to trump any value passed via --with-tcl=DIR.
-    if {![file isfile $with_tclsh]} {
-      proj-fatal "TCL shell $with_tclsh is not a file"
-    } elseif {![file-isexec $with_tclsh]} {
+    if {![file-isexec $with_tclsh]} {
       proj-fatal "TCL shell $with_tclsh is not executable"
     } else {
       define TCLSH_CMD $with_tclsh
@@ -1079,7 +1077,7 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If $cfg
   # is an empty string, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
+  eval [exec /bin/sh "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh

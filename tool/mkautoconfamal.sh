@@ -22,8 +22,8 @@ set -u
 
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
-HASH=`sed 's/^\(..........\).*/\1/' $TOP/manifest.uuid`
-DATETIME=`grep '^D' $TOP/manifest | sed -e 's/[^0-9]//g' -e 's/\(............\).*/\1/'`
+HASH=`cut -c1-10 $TOP/manifest.uuid`
+DATETIME=`grep '^D' $TOP/manifest | cut -c3- | tr -c -d '[0-9]'`
 
 # Verify that the version number in the TEA autoconf file is correct.
 # Fail with an error if not.
@@ -96,14 +96,11 @@ cd tea
 autoconf
 rm -rf autom4te.cache
 
-echo "--------------- TODO: -----------------"
-cat <<EOF
 cd ../
 ./configure && make dist
-tar -xzf sqlite-$VERSION.tar.gz
+tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
-tar -czf $TARBALLNAME.tar.gz $TARBALLNAME
+tar czf $TARBALLNAME.tar.gz $TARBALLNAME
 mv $TARBALLNAME.tar.gz ..
 cd ..
 ls -l $TARBALLNAME.tar.gz
-EOF

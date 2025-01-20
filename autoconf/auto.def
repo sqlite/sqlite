@@ -11,7 +11,8 @@ use sqlite-config
 
 options {
   # <build-modes>
-  static=1             => {Disable build of static library (mostly)}
+  static=1             => {Disable build of static library}
+  shared=1             => {Disable build of shared library}
   # </build-modes>
   # <lib-feature>
   threadsafe=1         => {Disable mutexing}
@@ -91,5 +92,9 @@ sqlite-handle-math
 sqlite-handle-icu
 sqlite-handle-common-feature-flags
 sqlite-show-feature-flags
+
+define ENABLE_LIB_SHARED [opt-bool shared]
+define ENABLE_LIB_STATIC [opt-bool static]
+
 sqlite-process-dot-in-files
 sqlite-post-config-validation
