@@ -2,10 +2,10 @@
 # ^^^ help out editors which guess this file's content type.
 #
 # This is the main autosetup-compatible configure script for the
-# TEA build of the SQLite project.
+# "autoconf" bundle of the SQLite project.
 #
-# This script should be kept compatible with JimTCL, a copy of which
-# is included in this source tree as ./autosetup/jimsh0.c.
+# This script must be kept compatible with JimTCL, a copy of which is
+# included in this source tree as ./autosetup/jimsh0.c.
 #
 use sqlite-config
 
