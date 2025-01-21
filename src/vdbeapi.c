@@ -1294,6 +1294,7 @@ static const Mem *columnNullValue(void){
 #ifdef SQLITE_DEBUG
         /* .pScopyFrom = */ (Mem*)0,
         /* .mScopyFlags= */ 0,
+        /* .bScopy     = */ 0,
 #endif
       };
   return &nullMem;
