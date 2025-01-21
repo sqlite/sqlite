@@ -2815,10 +2815,12 @@ void sqlite3RegisterBuiltinFunctions(void){
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
     INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
-    INLINE_FUNC(iif,             2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              3, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(iif,             0, 0, 0 ),
+    INLINE_FUNC(iif,             1, 0, 0 ),
+    INLINE_FUNC(iif,            -1, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(if,              0, 0, 0 ),
+    INLINE_FUNC(if,              1, 0, 0 ),
+    INLINE_FUNC(if,             -1, INLINEFUNC_iif,      0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
