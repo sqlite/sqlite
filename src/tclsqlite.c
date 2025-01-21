@@ -1964,7 +1964,7 @@ static void DbHookCmd(
   }
   if( pArg ){
     assert( !(*ppHook) );
-    if( Tcl_GetCharLength(pArg)>0 ){
+    if( Tcl_GetString(pArg)[0] ){
       *ppHook = pArg;
       Tcl_IncrRefCount(*ppHook);
     }

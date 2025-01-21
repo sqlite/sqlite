@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sin\sthe\sunix\sfile\slocking\slogic\sthat\sis\snot\strue\nif\salternative\sVFS\s"unix-excl"\sis\sused\sfor\sa\sread-only\sconnection.
-D 2025-01-20T19:19:31.053
+C Use\sTcl_GetString()\sinstead\sof\sTcl_GetCharLength()\sto\stest\sfor\sa\szero-length\nstring\sin\sthe\sTCL\sinterface,\ssince\sthat\sis\smuch\smore\sefficient.
+D 2025-01-21T11:10:16.446
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -788,7 +788,7 @@ F src/sqliteInt.h 953f2476f712b115ecb43f7a21183d07c88af8d3b4c32f18317724ce1ce04d
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c c6b9d3a0b1100e1e028460c418c41ca180dac5958e96bef79f6799b552522a37
+F src/tclsqlite.c 6a7538560adc856faea295c0f09c33a57a1cfa5c59f85ab4e12aa50dba7ff2de
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 9d2da51b4c33633e7370e4068af6d16d2c52b22a5810ec012ac32e77f8397b64
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 39bdbb3f6dd1d30d180526d35c11f789f5e9d45b99ead72fd4a3b136afab66b1
-R 2f208773f4b90552fa108ddc899a9482
+P bd5dc92368e41231a07bb59dd3db8942e238129ec7a3c8d785459d9b62bfcba3
+R e87ed836260a3ceb4ad61cd2f818556e
 U drh
-Z e41ea2237d4e46f40152146fd24a89c1
+Z 345b10e2ab0f1f1054b6abc135136648
 # Remove this line to create a well-formed Fossil manifest.
