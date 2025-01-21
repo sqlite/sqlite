@@ -1,5 +1,8 @@
 ########################################################################
-# This is a main makefile for the "autoconf" bundle of SQLite.
+# This is a main makefile for the "autoconf" bundle of SQLite. This is
+# a trimmed-down version of the canonical makefile, devoid of most
+# documentation. For the full docs, see 'main.mk' in the canonical
+# source tree.
 all:
 
 TOP = @abs_top_srcdir@

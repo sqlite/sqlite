@@ -23,7 +23,7 @@ set -u
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
 HASH=`cut -c1-10 $TOP/manifest.uuid`
-DATETIME=`grep '^D' $TOP/manifest | cut -c3- | tr -c -d '[0-9]'`
+DATETIME=`grep '^D' $TOP/manifest | tr -c -d '[0-9]' | cut -c1-12`
 
 # Verify that the version number in the TEA autoconf file is correct.
 # Fail with an error if not.
@@ -69,24 +69,22 @@ cp $TOP/VERSION           $TMPSPACE
 cp $TOP/main.mk           $TMPSPACE
 
 cd $TMPSPACE
-#autoreconf -i
-#libtoolize
-#aclocal
-#autoconf
-#automake --add-missing
 
-# This bit is only for use during porting of the
-# autoconf bundle to autosetup.
-if true; then
-    find . -name '*~' -exec rm \{} \;
-fi
+#if true; then
+  # Clean up *~ files (emacs-generated backups).
+  # This bit is only for use during development of
+  # the autoconf bundle.
+#  find . -name '*~' -exec rm \{} \;
+#fi
 
 mkdir -p tea/generic
-echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c
-echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
-echo "#else"                        >> tea/generic/tclsqlite3.c
-echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
-echo "#endif"                       >> tea/generic/tclsqlite3.c
+cat <<EOF > tea/generic/tclsqlite3.c
+#ifdef USE_SYSTEM_SQLITE
+# include <sqlite3.h>
+#else
+# include "sqlite3.c"
+#endif
+EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
 sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" tea/configure.ac > tmp
