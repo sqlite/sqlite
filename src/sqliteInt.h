@@ -1830,6 +1830,8 @@ struct sqlite3 {
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
 #define SQLITE_FkNoAction     HI(0x00008) /* Treat all FK as NO ACTION */
+#define SQLITE_AttachCreate   HI(0x00010) /* ATTACH allowed to create new dbs */
+#define SQLITE_AttachWrite    HI(0x00020) /* ATTACH allowed to open for write */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG

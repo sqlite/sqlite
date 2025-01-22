@@ -2523,6 +2523,41 @@ struct sqlite3_mem_methods {
 ** first argument.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE]]
+** <dt>SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE</dt>
+** <dd>The SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE option enables the ability
+** of the [ATTACH DATABASE] SQL command to create a new database if the
+** database filed named by the SQL command does not already exist.  This
+** ability of [ATTACH] to create a new database is enabled by default, but
+** can be disabled, using the current DBCONFIG option if desired.
+** This option takes two arguments which are an integer and a pointer
+** to an integer.  The first argument is 1, 0, or -1 to enable, disable, or
+** leave unchanged the attach-create flag, respectively.  If the second
+** argument is not NULL, then 0 or 1 is written into the integer that the
+** second argument points to depending on if the attach-create flag is set
+** after processing the first argument. 
+** </dd>
+**
+** [[SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE]]
+** <dt>SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE</dt>
+** <dd>The SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE option enables the ability
+** of the [ATTACH DATABASE] SQL command to create a new database that is
+** open for writing.  This capability is enabled by default, but
+** can be disabled, using the current DBCONFIG option if desired.  If this
+** capability is disabled, the [ATTACH] command will still work, but the
+** database is opened read-only.  If this option is disabled, then the
+** ability to create a new database using [ATTACH] is also disabled,
+** regardless of the value of the [SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE]
+** option.
+** This option takes two arguments which are an integer and a pointer
+** to an integer.  The first argument is 1, 0, or -1 to enable, disable, or
+** leave unchanged the ability to ATTACH another database for writing,
+** respectively.  If the second argument is not NULL, then 0 or 1 is written
+** into the integer that the second argument points to depending on if the
+** ability to ATTACH a read/write database is set
+** after processing the first argument.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2545,7 +2580,9 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
 #define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE  1020 /* int int* */
+#define SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE   1021 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1021 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
