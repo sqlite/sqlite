@@ -323,9 +323,6 @@ distclean-autosetup:	clean
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
-#	-if [ -f ext/wasm/GNUmakefile ]; then \
-#		gmake --no-print-directory  --ignore-errors -C ext/wasm distclean; \
-#	fi >/dev/null 2>&1; true
 distclean: distclean-autosetup
 
 #
