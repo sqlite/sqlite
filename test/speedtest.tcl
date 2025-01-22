@@ -26,6 +26,7 @@ Other options include:
    --lean                "Lean" mode.
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
    --pagesize N          Use N as the page size.
+   --quiet | -q          "Quite".  Put results in file but don't pop up editor
    --testset TEST        Specify the specific testset to use.  The default
                          is "mix1".  Other options include: "main", "json",
                          "cte", "orm", "fp", "rtree".
@@ -33,10 +34,11 @@ Other options include:
 set srcfile {}
 set outfile {}
 set difffile {}
-set cflags {}
+set cflags {-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_THREADSAFE=0}
 set cc gcc
 set testset mix1
 set dryrun 0
+set quiet 0
 set speedtestflags {--shrink-memory --reprepare --stats --heap 40000000 64}
 lappend speedtestflags --journal wal --size 5
 
@@ -86,6 +88,11 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       --help {
         puts $usage
         exit 0
+      }
+      -q -
+      -quiet -
+      --quiet {
+        set quiet 1
       }
       default {
         lappend cflags $arg
@@ -265,7 +272,9 @@ exec size speedtest1 >>$outfile
 #  Processed cachegrind output should now be in the $outfile
 #############################################################################
 
-if {$difffile!=""} {
+if {$quiet} {
+  # Skip this last part of popping up a GUI viewer
+} elseif {$difffile!=""} {
   set fossilcmd {fossil xdiff --tk -c 20}
   lappend fossilcmd $difffile
   lappend fossilcmd $outfile
