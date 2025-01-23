@@ -1,5 +1,5 @@
-C Do\snot\sstrip\sbinaries\sduring\s'make\sinstall',\sfor\sconsistency\swith\sthe\slegacy\sbuild\sand\sper\srequest\sfrom\spackage\smaintainers.
-D 2025-01-23T06:10:54.168
+C Remove\sunnecessary\s--minify\s0\semcc\sflag\sfrom\sthe\swasm\sbuild,\sas\s-g3\simplies\sthat\scapability\salong\swith\sother\santi-minification\sfeatures\swe\srely\son.
+D 2025-01-23T11:21:29.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -618,7 +618,7 @@ F ext/session/sqlite3session.c d6f5e3e83b9b0bbc4a8db4837284f0ecc6af5321d4c8e7136
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c 12e0a2c15fd60f92da4bb29c697c9177ff0c0dbcdc5129a54c47e999f147937a
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 78f49e47146d58fa44f9ac624627a718fba4b2b2baeaea641bcf6fed300c0f0d
+F ext/wasm/GNUmakefile ccd219b2db93f5dba54ba5ed45d71b46eb219e2b27a541d3dc21f98b16dc0f5f
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8c60d4c901af716d4d4dfd1dd4aa626c758fac2cb46112b24b0838b7888fc66f
-R f8ba6d19954b4d49ab26ed596b2e234d
+P cd3fed5c2082c250c32c4d99eecd49a1ab840583fc343bcfd27fb536715d0ce9
+R de609fdf581bc64ebd30372c2fbf1eb4
 U stephan
-Z 3c78270c553a7173f56e21c430eac6f8
+Z a93ce720e037c2af4cd69560e744cedd
 # Remove this line to create a well-formed Fossil manifest.
