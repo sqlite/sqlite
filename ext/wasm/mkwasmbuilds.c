@@ -157,7 +157,7 @@ static void mk_fiddle(){
     if( 1==i ){/*fiddle.debug*/
       pf("	@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
     }
-    pf("	$(emcc.bin) -o $@ $(fiddle.emcc-flags%s) "
+    pf("	$(bin.emcc) -o $@ $(fiddle.emcc-flags%s) "
        "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
        zTail);
     pf("	$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
@@ -213,10 +213,17 @@ static void mk_lib_mode(const char *zName     /* build name */,
 
   /* target zJsOut */
   pf("%s: %s $(MAKEFILE) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
-     "$(pre-post-%s-%s.deps)\n",
+     "$(pre-post-%s-%s.deps) "
+     "$(sqlite3-api.ext.jses)"
+     /* ^^^ maintenance reminder: we set these as deps so that they
+        get copied into place early. That allows the developer to
+        reload the base-most test pages while the later-stage builds
+        are still compiling, which is especially helpful when running
+        builds with long build times (like -Oz). */
+     "\n",
      zJsOut, zApiJsOut, zNM);
   pf("\t@echo \"Building $@ ...\"\n");
-  pf("\t$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
+  pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
   pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n", zMode);
   pf("\t\t$(pre-post-%s-%s.flags) \\\n", zNM);
   pf("\t\t$(emcc.flags.%s) $(emcc.flags.%s.%s) \\\n", zName, zNM);
@@ -241,7 +248,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
                 speed up lib init, and reduce memory cost
                 considerably, by stripping them out. */;
   /*
-  ** The above $(emcc.bin) call will write zJsOut and will create a
+  ** The above $(bin.emcc) call will write zJsOut and will create a
   ** like-named .wasm file. That .wasm file name gets hard-coded into
   ** zJsOut so we need to, for some cases, patch zJsOut to use the
   ** name sqlite3.wasm instead. Note that the resulting .wasm file is

@@ -1,0 +1,14 @@
+# Gets filtered by the configure script
+bin.bash = @BIN_BASH@
+bin.emcc = @EMCC_WRAPPER@
+bin.wasm-strip = @BIN_WASM_STRIP@
+bin.wasm-opt = @BIN_WASM_OPT@
+
+SHELL := $(bin.bash)
+
+# The following overrides can be activated to test
+# various validation in GNUmakefile:
+#
+#bin.bash :=
+#bin.emcc :=
+#bin.wasm-strip :=

@@ -418,26 +418,58 @@ proc sqlite-handle-tempstore {} {
 ########################################################################
 # Check for the Emscripten SDK for building the web-based wasm
 # components.  The core lib and tools do not require this but ext/wasm
-# does.
+# does. Most of the work is done via [proj-check-emsdk], then this
+# function adds the following defines:
+#
+# - EMCC_WRAPPER = "" or top-srcdir/tool/emcc.sh
+# - BIN_WASM_OPT = "" or path to wasm-opt
+# - BIN_WASM_STRIP = "" or path to wasm-strip
+#
+# Noting that:
+#
+# 1) Not finding the SDK is not fatal at this level, nor is failure to
+#    find one of the related binaries.
+#
+# 2) wasm-strip is part of the wabt package:
+#
+#   https://github.com/WebAssembly/wabt
+#
+# and this project requires it for production-mode builds but not dev
+# builds.
+#
 proc sqlite-handle-emsdk {} {
+  define EMCC_WRAPPER ""
+  define BIN_WASM_STRIP ""
+  define BIN_WASM_OPT ""
   set srcdir $::autosetup(srcdir)
   if {$srcdir ne $::autosetup(builddir)} {
     # The EMSDK pieces require writing to the original source tree
     # even when doing an out-of-tree build. The ext/wasm pieces do not
-    # support an out-of-tree build so we catch that case and treat it
-    # as if EMSDK were not found.
+    # support an out-of-tree build so we treat that case as if EMSDK
+    # were not found.
     msg-result "Out-of tree build: not checking for EMSDK."
-    define EMCC_WRAPPER ""
     return
   }
-  set emccsh $srcdir/tool/emcc.sh
+  set emccSh $srcdir/tool/emcc.sh
+  set extWasmConfig $srcdir/ext/wasm/config.make
   if {![get-define HAVE_WASI_SDK] && [proj-check-emsdk]} {
-    define EMCC_WRAPPER $emccsh
-    proj-make-from-dot-in $emccsh
-    catch {exec chmod u+x $emccsh}
+    define EMCC_WRAPPER $emccSh
+    set emsdkHome [get-define EMSDK_HOME ""]
+    proj-assert {"" ne $emsdkHome}
+    #define EMCC_WRAPPER ""; # just for testing
+    proj-bin-define wasm-strip
+    proj-bin-define bash; # ext/wasm/GNUmakefile requires bash
+    if {[file-isexec $emsdkHome/upstream/bin/wasm-opt]} {
+      define BIN_WASM_OPT $emsdkHome/upstream/bin/wasm-opt
+    } else {
+      # Maybe there's a copy in the path?
+      proj-bin-define wasm-opt BIN_WASM_OPT
+    }
+    proj-make-from-dot-in $emccSh $extWasmConfig
+    catch {exec chmod u+x $emccSh}
   } else {
     define EMCC_WRAPPER ""
-    file delete -force $emccsh
+    file delete -force -- $emccSh $extWasmConfig
   }
 }
 
@@ -851,11 +883,14 @@ proc sqlite-post-config-validation {} {
   # Check #1: ensure that files which get filtered for @VAR@ do not
   # contain any unresolved @VAR@ refs. That may indicate an
   # unexported/unused var or a typo.
-  foreach f "Makefile sqlite3.pc $::autosetup(srcdir)/tool/emcc.sh" {
+  set srcdir $::autosetup(srcdir)
+  foreach f [list Makefile sqlite3.pc \
+             $srcdir/tool/emcc.sh \
+             $srcdir/ext/wasm/config.make] {
     if {![file exists $f]} continue
     set lnno 1
     foreach line [proj-file-content-list $f] {
-      if {[regexp {(@[A-Za-z_]+@)} $line match]} {
+      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
         error "Unresolved reference to $match at line $lnno of $f"
       }
       incr lnno
