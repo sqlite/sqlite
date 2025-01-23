@@ -1,5 +1,5 @@
-C Remove\ssome\snow-dead\smakefile\scode,\srename\sa\svar\sfor\sconsistency,\sand\sfix\sa\srecipe\sbug\sintroduced\sin\sthe\sprevious\scheckin\sin\sthe\sbundler-friendly\sbuild.
-D 2025-01-23T16:11:24.436
+C When\srunning\swasm-opt,\signore\sany\sfailure\sbecause\sit\swill\sfail\sfor\sunknown\sflags\sand\sthe\sset\sof\slegal\sflags\swill\schange\sfrom\sversion\sto\sversion.\s\sDocument\sthe\ssize-reduction\seffect\s(or\snon-effect)\sof\sa\sdozen-odd\swasm-opt\sflags\sand\sretain\sthose\swhich\sdemonstrate\sa\swasm\sfile\ssize\sreduction\sin\s-Oz\sbuilds\s(our\sproduction\sbuild\smode).\sTotal\ssize\ssavings:\sroughly\s13kb.
+D 2025-01-23T19:44:09.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -679,7 +679,7 @@ F ext/wasm/index-dist.html 564b5ec5669676482c5a25dea9e721d8eafed426ecb155f93d29a
 F ext/wasm/index.html e4bbffdb3d40eff12b3f9c7abedef91787e2935620b7f8d40f2c774b80ad8fa9
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 59a20df389abcc3606eb4eaea7fb7ba14504beb3e345dbea9b99a0618ba3bec8
-F ext/wasm/mkwasmbuilds.c 0c85aef64ac94f903964c046e7d5a291a95afbbc881d2a96b7871e825e1d175c
+F ext/wasm/mkwasmbuilds.c 1d5ba1e274d0331b2c8549b288ed108f6764674deb3fa7105b0bb0cea6f68cd5
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d16e3f28364de2d6b6456a6fc56bf604b9106c3ae15719f2862192ae3020cc1
-R f70ac1b6c598112d9638929ed475c3d8
+P 0acd4ef3addb311476f4a670be0c4c4a0f3f88b0420886d4c1c3c3027dd51d73
+R 1bff543c29d839d27b34bab0c548a658
 U stephan
-Z e841368168cc448b3b9bb4f562d2f5fb
+Z 154b3ea92135b6fb56c35822cc74d582
 # Remove this line to create a well-formed Fossil manifest.

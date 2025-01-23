@@ -65,23 +65,74 @@ static void mk_prologue(void){
   ps("# --[extern-][pre/post]-js files.");
   ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
 
-  /* SQLITE.CALL.WASM-OPT = shell code to run $(1) (source wasm file
-  ** name) through $(bin.wasm-opt) */
-  ps("ifeq (,$(bin.wasm-opt))");
-  ps("define SQLITE.CALL.WASM-OPT");
-  ps("echo 'wasm-opt not available for $(1)'");
-  ps("endef");
-  ps("else");
-  ps("define SQLITE.CALL.WASM-OPT");
-  ps("echo -n 'Before wasm-opt:'; ls -l $(1);\\\n"
-     "\trm -f wasm-opt-tmp.wasm;\\\n"
-     "\t$(bin.wasm-opt) --enable-bulk-memory-opt --all-features --post-emscripten\\\n"
-     "\t$(1) -o wasm-opt-tmp.wasm || exit;\\\n"
-     "\tmv wasm-opt-tmp.wasm $(1); "
-     "echo -n 'After wasm-opt: '; ls -l $(1)"
-  );
-  ps("endef");
-  ps("endif");
+  {
+    /* SQLITE.CALL.WASM-OPT = shell code to run $(1) (source wasm file
+    ** name) through $(bin.wasm-opt) */
+    const char * zOptFlags =
+      /*
+      ** Flags for wasm-opt. It has many, many, MANY "passes" options
+      ** and the ones which appear here were selected solely on the
+      ** basis of trial and error.
+      **
+      ** All wasm file size savings/costs mentioned below are based on
+      ** the vanilla build of sqlite3.wasm with -Oz (our shipping
+      ** configuration). Comments like "saves nothing" may not be
+      ** technically correct: "nothing" means "some neglible amount."
+      **
+      ** Note that performance gains/losses are _not_ taken into
+      ** account here: only wasm file size.
+      */
+      "--enable-bulk-memory-opt " /* required */
+      "--all-features "           /* required */
+      "--post-emscripten "        /* Saves roughly 12kb */
+      "--strip-debug "            /* We already wasm-strip, but in
+                                  ** case this environment has no
+                                  ** wasm-strip... */
+      /*
+      ** The rest are trial-and-error. See wasm-opt --help and search
+      ** for "Optimization passes" to find the full list.
+      **
+      ** With many flags this gets unusuably slow.
+      */
+      /*"--converge " saves nothing for the options we're using */
+      /*"--dce " saves nothing */
+      /*"--directize " saves nothing */
+      /*"--gsi " no: requires --closed-world flag, which does not
+      ** sound like something we want. */
+      /*"--gufa --gufa-cast-all --gufa-optimizing " costs roughly 2kb */
+      /*"--heap-store-optimization " saves nothing */
+      /*"--heap2local " saves nothing */
+      //"--inlining --inlining-optimizing " costs roughly 3kb */
+      "--local-cse " /* saves roughly 1kb */
+      /*"--once-reduction " saves nothing */
+      /*"--remove-memory-init " presumably a performance tweak */
+      /*"--remove-unused-names " saves nothing */
+      /*"--safe-heap "*/
+      /*"--vacuum " saves nothing */
+      ;
+    ps("ifeq (,$(bin.wasm-opt))");
+    ps("define SQLITE.CALL.WASM-OPT");
+    ps("echo 'wasm-opt not available for $(1)'");
+    ps("endef");
+    ps("else");
+    ps("define SQLITE.CALL.WASM-OPT");
+    pf("echo -n 'Before wasm-opt:'; ls -l $(1);\\\n"
+       "\trm -f wasm-opt-tmp.wasm;\\\n"
+       /* It's very likely that the set of wasm-opt flags varies from
+       ** version to version, so we'll ignore any errors here. */
+       "\tif $(bin.wasm-opt) $(1) -o wasm-opt-tmp.wasm \\\n"
+       "\t\t%s; then \\\n"
+       "\t\tmv wasm-opt-tmp.wasm $(1); \\\n"
+       "\t\techo -n 'After wasm-opt: '; \\\n"
+       "\t\tls -l $(1); \\\n"
+       "\telse \\\n"
+       "\t\techo 'WARNING: ignoring wasm-opt failure'; \\\n"
+       "\tfi\n",
+       zOptFlags
+    );
+    ps("endef");
+    ps("endif");
+  }
 }
 
 /*
