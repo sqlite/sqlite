@@ -812,7 +812,7 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 ########################################################################
 
 ########################################################################
-# SQLITE3.xJS.ESM-EXPORT-DEFAULT is used by mkwasmbuilds.c and the
+# SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT is used by mkwasmbuilds.c and the
 # wasmfs build. $1 is 1 if the build mode needs this workaround
 # (modes: esm, bundler-friendly, node) and 0 if not (vanilla). $2 must
 # be 0 for all builds except sqlite3-wasmfs.mjs, in which case it must
@@ -833,9 +833,9 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 #
 # Maintenance reminder: Mac sed works differently than GNU sed, so we
 # use awk instead of sed for this.
-define SQLITE3.xJS.ESM-EXPORT-DEFAULT
+define SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
-		echo "Fragile workaround for emscripten/issues/18237. See SQLITE3.xJS.ESM-EXPORT-DEFAULT."; \
+		echo "Fragile workaround for emscripten/issues/18237. See SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT."; \
 		{\
 			awk '/^export default/ && !f{f=1; next} 1' $@ > $@.tmp && mv $@.tmp $@; \
 		} || exit $$?; \

@@ -64,6 +64,24 @@ static void mk_prologue(void){
   ps("# pre-post-jses.deps.* = a list of dependencies for the");
   ps("# --[extern-][pre/post]-js files.");
   ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
+
+  /* SQLITE.CALL.WASM-OPT = shell code to run $(1) (source wasm file
+  ** name) through $(bin.wasm-opt) */
+  ps("ifeq (,$(bin.wasm-opt))");
+  ps("define SQLITE.CALL.WASM-OPT");
+  ps("echo 'wasm-opt not available: $(1)'");
+  ps("endef");
+  ps("else");
+  ps("define SQLITE.CALL.WASM-OPT");
+  ps("echo -n 'Before wasm-opt:'; ls -l $(1);\\\n"
+     "\trm -f wasm-opt-tmp.wasm;\\\n"
+     "\t$(bin.wasm-opt) --enable-bulk-memory-opt --all-features --post-emscripten\\\n"
+     "\t$(1) -o wasm-opt-tmp.wasm || exit;\\\n"
+     "\tmv wasm-opt-tmp.wasm $(1); "
+     "echo -n 'After wasm-opt: '; ls -l $(1)"
+  );
+  ps("endef");
+  ps("endif");
 }
 
 /*
@@ -193,6 +211,10 @@ static void mk_lib_mode(const char *zName     /* build name */,
                         const char *zJsOut    /* name of generated sqlite3.js/.mjs */,
                         const char *zCmppD    /* extra -D flags for c-pp */,
                         const char *zEmcc     /* extra flags for emcc */){
+  const char * zTgtWasmName = "$(basename $@).wasm"
+    /* The various targets named X.js or X.mjs (zJsOut) also generate
+    ** X.wasm, and we need that part of the name to perform some
+    ** post-processing after Emscripten generates X.wasm. */;
   assert( zName );
   assert( zMode );
   assert( zApiJsOut );
@@ -234,14 +256,16 @@ static void mk_lib_mode(const char *zName     /* build name */,
     /* TODO? Replace this CALL with the corresponding makefile code.
     ** OTOH, we also use this $(call) in the speedtest1-wasmfs build,
     ** which is not part of the rules emitted by this program. */
-    pf("\t@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
+    pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
        0==strcmp("sqlite3-wasmfs", zName) ? 1 : 0);
   }
-  pf("\t@dotwasm=$(basename $@).wasm; \\\n"
-     "\tchmod -x $$dotwasm; \\\n"
-     "\t$(maybe-wasm-strip) $$dotwasm; \\\n");
-  pf("\tsed -i -e '/^var _sqlite3.*createExportWrapper/d' %s; \\\n"
-     "\techo 'Stripped out createExportWrapper() parts.'; \\\n",
+  pf("\t@chmod -x %s; \\\n"
+     "\t$(maybe-wasm-strip) %s;\n",
+     zTgtWasmName, zTgtWasmName);
+  pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zTgtWasmName);
+  pf("\t@sed -i -e '/^var _sqlite3.*createExportWrapper/d' %s || exit; \\\n"
+     /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
+     "\techo 'Stripped out createExportWrapper() parts.'\n",
      zJsOut) /* Our JS code installs bindings of each WASM export. The
                 generated Emscripten JS file does the same using its
                 own framework, but we don't use those results and can
@@ -255,13 +279,14 @@ static void mk_lib_mode(const char *zName     /* build name */,
   ** identical for all builds for which zEmcc is empty.
   */
   if( 0==strcmp("bundler-friendly", zMode)
-      || 0==strcmp("node", zMode) ) {
-    pf("\techo 'Patching $@ for %s.wasm...' \\\n", zName);
-    pf("\trm -f $$dotwasm; dotwasm=; \\\n"
-       "\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit $$?; \\\n",
+      || 0==strcmp("node", zMode) ){
+    pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", zName);
+    pf("\trm -f %s; \\\n", zTgtWasmName);
+    pf("\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit;\n",
+       /* ^^^^^^ reminder: Mac/BSD sed has no -i flag */
        zNM, zName);
   }
-  pf("\tls -la $$dotwasm $@\n");
+  pf("\t@ls -la %s $@\n", zTgtWasmName);
   if( 0!=strcmp("sqlite3-wasmfs", zName) ){
     /* The sqlite3-wasmfs build is optional and needs to be invoked
     ** conditionally using info we don't have here. */
