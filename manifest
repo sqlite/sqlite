@@ -1,5 +1,5 @@
-C Fix\sa\spossible\sinfinity\sloop\sin\sdebugging-printf\slogic\sin\sthe\squery\splanner.\nNo\schanges\sto\sproduction\scode.
-D 2025-01-23T21:06:59.817
+C wasm:\sde-list\sdemo-worker1-promiser-esm.html\sfrom\sthe\stest\spages\sbecause\s(per\sChrome\s131)\s"Module\sscripts\sdon't\ssupport\simportScripts()",\swhere\s"don't"\smeans\s"they\sused\sto\sbut\sno\slonger\sdo".
+D 2025-01-23T22:23:31.384
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -675,8 +675,8 @@ F ext/wasm/fiddle.make d4969f0322a582c57a22ce3541f10a5b09a609d14eab32891f613f43b
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
 F ext/wasm/fiddle/fiddle.js b444a5646a9aac9f3fc06c53d78af5e1912eb235d69a8e6010723e4eb0e9d4a1
 F ext/wasm/fiddle/index.html c79b1741cbeba78f88af0a84cf5ec7de87a909a6a8d10a369b1f4824c66c2088
-F ext/wasm/index-dist.html 564b5ec5669676482c5a25dea9e721d8eafed426ecb155f93d29aeff8507511f
-F ext/wasm/index.html e4bbffdb3d40eff12b3f9c7abedef91787e2935620b7f8d40f2c774b80ad8fa9
+F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf188f024b3730
+F ext/wasm/index.html 10ff3ad190aadccb713109fa55a38e5c1f3c2a8cf05cd31783745bab3f184079
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 59a20df389abcc3606eb4eaea7fb7ba14504beb3e345dbea9b99a0618ba3bec8
 F ext/wasm/mkwasmbuilds.c 1d5ba1e274d0331b2c8549b288ed108f6764674deb3fa7105b0bb0cea6f68cd5
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c9dc581e0287e3462ac55f80ca76e7e98d31157022052c892517363c45287a7b
-R fa61ff8d8db6242b1ed2cb7c9f3ef7ec
-U drh
-Z 2dbdf3625aeab02b475903def004e928
+P 9a20b94080f5379867530772e081b737ae4cf6b416469dcabb85b8dd819f491f
+R 1263da0640161ebdae6e992388a26d15
+U stephan
+Z 4ee9ffdcb199c9538a20ad596279afe3
 # Remove this line to create a well-formed Fossil manifest.
