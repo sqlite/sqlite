@@ -1,5 +1,5 @@
-C Fix\sdate/time\scomputations\sto\sdeal\swith\sthe\ssub-millisecond\srounding\nproblem.
-D 2025-01-21T17:41:39.352
+C Do\snot\sstrip\sbinaries\sduring\s'make\sinstall',\sfor\sconsistency\swith\sthe\slegacy\sbuild\sand\sper\srequest\sfrom\spackage\smaintainers.
+D 2025-01-23T06:12:29.144
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -700,7 +700,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make bc8bb227f35d5bd3863a7bd2233437c37472a0d81585979f058f9b9b503bef35
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk a187ada134ccb55b5d59ea3eb8f71cc6b19bfc244689e24a729f7a64aa500dc3
+F main.mk 18b859068a43818d29172b36d624a9bc8ce8204350ebd18a9f96994970081ab9
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e006d23a5f616ca123707608cecb41c67ca2980cef32077f320156c0ff4c14e
-Q +afb0a5923a6db4045fab5226198aab970d746d4866294ebba943c6986e97ecde
-R e64c4975972a94464c71a62ba2ec2df6
-U drh
-Z ee09624f1313dee3bc62e45880473ced
+P 55091181cccb2f32e0b16bbcd2160e9054bf6bcc38b3793ee32695405cc13c95
+Q +cd3fed5c2082c250c32c4d99eecd49a1ab840583fc343bcfd27fb536715d0ce9
+R d5c28f036cc81619d88866ec866c4392
+U stephan
+Z 406440d941c37a07f905ab2ed33d3837
 # Remove this line to create a well-formed Fossil manifest.
