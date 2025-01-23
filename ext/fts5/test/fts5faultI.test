@@ -290,5 +290,40 @@ do_faultsim_test 11 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+ifcapable foreignkey {
+  do_execsql_test 12.0 {
+    CREATE VIRTUAL TABLE f1 USING fts5(content);
+    CREATE TABLE p1(a INTEGER PRIMARY KEY);
+    CREATE TABLE c1(b REFERENCES p1 DEFERRABLE INITIALLY DEFERRED);
+  }
+
+  faultsim_save_and_close
+
+  do_faultsim_test 11 -faults oom* -prep {
+    faultsim_restore_and_reopen
+    execsql {
+      PRAGMA foreign_keys = 1;
+      BEGIN;
+        INSERT INTO c1 VALUES(123);
+        SAVEPOINT xyz;
+    }
+  } -body {
+    execsql {
+          INSERT INTO f1 VALUES('a b c');
+        ROLLBACK TO xyz;
+      COMMIT;
+    }
+  } -test {
+    execsql { SELECT 123 }
+    faultsim_test_result \
+      {1 {FOREIGN KEY constraint failed}} \
+      {1 {out of memory}} \
+      {1 {constraint failed}}
+  }
+}
+
 finish_test
 
