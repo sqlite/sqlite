@@ -5838,8 +5838,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     if( sqlite3WhereTrace & 0x02 ){
       LogEst rMin, rFloor = 0;
       int nDone = 0;
+      int nProgress;
       sqlite3DebugPrintf("---- after round %d ----\n", iLoop);
-      while( nDone<nTo ){
+      do{
+        nProgress = 0;
         rMin = 0x7fff;
         for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
           if( pTo->rCost>rFloor && pTo->rCost<rMin ) rMin = pTo->rCost;
@@ -5855,10 +5857,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
               sqlite3DebugPrintf("\n");
             }
             nDone++;
+            nProgress++;
           }
         }
         rFloor = rMin;
-      }
+      }while( nDone<nTo && nProgress>0 );
     }
 #endif
 

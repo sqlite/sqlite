@@ -1,5 +1,5 @@
-C When\srunning\swasm-opt,\signore\sany\sfailure\sbecause\sit\swill\sfail\sfor\sunknown\sflags\sand\sthe\sset\sof\slegal\sflags\swill\schange\sfrom\sversion\sto\sversion.\s\sDocument\sthe\ssize-reduction\seffect\s(or\snon-effect)\sof\sa\sdozen-odd\swasm-opt\sflags\sand\sretain\sthose\swhich\sdemonstrate\sa\swasm\sfile\ssize\sreduction\sin\s-Oz\sbuilds\s(our\sproduction\sbuild\smode).\sTotal\ssize\ssavings:\sroughly\s13kb.
-D 2025-01-23T19:44:09.613
+C Fix\sa\spossible\sinfinity\sloop\sin\sdebugging-printf\slogic\sin\sthe\squery\splanner.\nNo\schanges\sto\sproduction\scode.
+D 2025-01-23T21:06:59.817
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -863,7 +863,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 5e74d76b264abcd7e6682e02853756b5d32f543c59fb47bb55a02575b73693ae
+F src/where.c 6722991bece039c7094e9e31bb57b9eb155299f01d2209f1378a81c9605ded31
 F src/whereInt.h 2b0804f300c7f65de4046a1d81c65f01b208d6c08950ccd1fa6b8c16162a8af7
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0acd4ef3addb311476f4a670be0c4c4a0f3f88b0420886d4c1c3c3027dd51d73
-R 1bff543c29d839d27b34bab0c548a658
-U stephan
-Z 154b3ea92135b6fb56c35822cc74d582
+P c9dc581e0287e3462ac55f80ca76e7e98d31157022052c892517363c45287a7b
+R fa61ff8d8db6242b1ed2cb7c9f3ef7ec
+U drh
+Z 2dbdf3625aeab02b475903def004e928
 # Remove this line to create a well-formed Fossil manifest.
