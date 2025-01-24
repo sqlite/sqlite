@@ -10748,8 +10748,9 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 /*
 ** CAPI3REF: Serialize a database
 **
-** The sqlite3_serialize(D,S,P,F) interface returns a pointer to memory
-** that is a serialization of the S database on [database connection] D.
+** The sqlite3_serialize(D,S,P,F) interface returns a pointer to
+** memory that is a serialization of the S database on [database
+** connection] D.  If S is a NULL pointer, the main database is used.
 ** If P is not a NULL pointer, then the size of the database in bytes
 ** is written into *P.
 **

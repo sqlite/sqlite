@@ -1,5 +1,5 @@
-C Improve\sthe\sstar-query\sheuristic\sso\sthat\sit\sdoes\sa\sbetter\sjob\sof\sidentifying\nactual\sstar\squeries.\s\sAlso\sincludes\simproved\sdiagnostic\soutput\sfrom\sthe\nquery\splanner.
-D 2025-01-24T16:37:31.813
+C Clarify\shandling\sof\sa\sNULL\sfor\sthe\s2nd\sargument\sto\ssqlite3_serialize(),\sas\spointed\sout\sin\s[forum:3df7168b90|forum\spost\s3df7168b90].
+D 2025-01-24T18:37:55.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -781,7 +781,7 @@ F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 83e88fbb36f89b6703b348777491619554f0fd6f917c9fdf51e4c2e9cda6c04e
 F src/shell.c.in 9ade75afa953c5c2ded38d076533eaa6c9b2ab1977ef6cce0bc773adac178c50
-F src/sqlite.h.in 6afbcaae44140216704a6c82e4c4ea4118c46d5f6573d6c5fa4fc901ed9d369e
+F src/sqlite.h.in 135c4479d03d5dcff7f580c1997f351d94954cf37346db560948c7add6159d9a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 953f2476f712b115ecb43f7a21183d07c88af8d3b4c32f18317724ce1ce04d56
@@ -2208,9 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c338caf0fd4adc7baacf20f6d4274b1776b9487a5a976b8d85e490791be82b11 a280f5f5480e560fc2b80e8947d8062e8b3487d930e71cb60fc9ba90d87977c1
-R 7125d6757cc5225f643dd2f0408b79ed
-T +closed a280f5f5480e560fc2b80e8947d8062e8b3487d930e71cb60fc9ba90d87977c1
-U drh
-Z f818ed71ad97105ec5c66c8cb2f2a934
+P 7cfbe14d199bb631abd4d009698eeaee9b8450d5061ded612095ee4738ac6a1f
+R d95198c99c03bf1086d509885c532867
+U stephan
+Z 8d7df02ae4ad22d5b811a7e9945d57db
 # Remove this line to create a well-formed Fossil manifest.
