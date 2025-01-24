@@ -1,5 +1,5 @@
-C Clarify\shandling\sof\sa\sNULL\sfor\sthe\s2nd\sargument\sto\ssqlite3_serialize(),\sas\spointed\sout\sin\s[forum:3df7168b90|forum\spost\s3df7168b90].
-D 2025-01-24T18:37:55.155
+C Remove\san\sincorrect\sALWAYS()\sadded\sin\scheck-in\s[7cfbe14d199bb631].
+D 2025-01-24T20:59:12.630
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -863,7 +863,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 647dfba23202523c64ca204f3501a09d18670ea081acea680ddcb1e63beda163
+F src/where.c e1bd86a1f86e8713e571928db044e786d6ca99033a1642f054275cd9c4192b6c
 F src/whereInt.h 3b2ef4617758174d00c6940850e4988c1b195d39bcc20f2965319a1f7bffc714
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7cfbe14d199bb631abd4d009698eeaee9b8450d5061ded612095ee4738ac6a1f
-R d95198c99c03bf1086d509885c532867
-U stephan
-Z 8d7df02ae4ad22d5b811a7e9945d57db
+P 340edbe5540762656b648c18a359ab7039b4a0af15db199fc86317a415e2bafa
+R 6b5e2e687d0ef7732e967617df5d4d35
+U drh
+Z e079a1f3d11224b9203a1e2c133626d6
 # Remove this line to create a well-formed Fossil manifest.
