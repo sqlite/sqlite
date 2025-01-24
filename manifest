@@ -1,5 +1,5 @@
-C Replace\sa\shandful\sof\shard\stabs\sin\sstring\sliterals\swith\s\\t\sin\smkwasmbuilds.c.
-D 2025-01-24T12:54:59.643
+C Update\sautosetup/README.md\sto\sreflect\srecent\srefactoring.
+D 2025-01-24T14:13:20.824
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md 1a02f5a94fd460eb7ffc8dea5d6f1657e38ddf8ffa2d6c5dce9a630b97021a69
+F autosetup/README.md 3bd13779b29479c3ff5cab776a2932215d96d05df510ed2035b165338566eb9f
 F autosetup/autosetup df8b53928b1fe3c67db5bc77c8e1eb8160c1b6a26c370e9a06c68748f803b7e4 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85747ea1654c74d330614aa174ede4a989b6456eb1fc5eb0fc9f2d1418b6ef99
-R f289df2f01e608fa0d2578a973e6c703
+P e8e4d497a7b6aae450cb93927c7583fcce3fe971cd3691f9d9cad605de3cfb1f
+R cc2c59119834894a1981954ea1b6c946
 U stephan
-Z 87e6ba9e21ab9593bfe7380a7c7c21ab
+Z cd03a612b740dea69fa91e8f1fbec1aa
 # Remove this line to create a well-formed Fossil manifest.
