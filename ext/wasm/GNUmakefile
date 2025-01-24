@@ -32,7 +32,8 @@
 #
 # - Emscripten SDK: https://emscripten.org/docs/getting_started/downloads.html
 # - The bash shell
-# - GNU make, GNU sed, GNU awk, GNU grep (all in the $PATH)
+# - GNU make, GNU sed, GNU awk, GNU grep (all in the $PATH and without
+#   a "g" prefix like they have on some non-GNU systems)
 # - wasm-strip for release builds: https://github.com/WebAssembly/wabt
 # - InfoZip for 'dist' zip file
 ########################################################################
@@ -376,7 +377,7 @@ $(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 DISTCLEAN_FILES += $(bin.stripccomments)
 
 ########################################################################
-# C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
+# SQLITE.CALL.C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
 #
 #   ./c-pp -f $(1) -o $(2) $(3)
 #
@@ -406,7 +407,7 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # JS/WASM build. They are solely for use with $(bin.c-pp) itself.
 #
 # -D... flags which should be included in all invocations should be
-# appended to $(C-PP.FILTER.global).
+# appended to $(SQLITE.CALL.C-PP.FILTER.global).
 bin.c-pp := ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
@@ -414,20 +415,20 @@ $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
 DISTCLEAN_FILES += $(bin.c-pp)
-C-PP.FILTER.global ?=
+SQLITE.CALL.C-PP.FILTER.global ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
-  C-PP.FILTER.global += -Denable-see
+  SQLITE.CALL.C-PP.FILTER.global += -Denable-see
 endif
-define C-PP.FILTER
+define SQLITE.CALL.C-PP.FILTER
 # Create $2 from $1 using $(bin.c-pp)
 # $1 = Input file: c-pp -f $(1).js
 # $2 = Output file: c-pp -o $(2).js
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
-	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(C-PP.FILTER.global)
+	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
 #CLEAN_FILES += $(2)
 endef
-# /end C-PP.FILTER
+# /end SQLITE.CALL.C-PP.FILTER
 ########################################################################
 
 # cflags.common = C compiler flags for all builds
@@ -908,22 +909,22 @@ sqlite3-worker1-promiser.js := $(dir.dout)/sqlite3-worker1-promiser.js
 sqlite3-worker1-promiser.mjs := $(dir.dout)/sqlite3-worker1-promiser.mjs
 sqlite3-worker1-bundler-friendly.mjs := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.mjs),\
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.mjs),\
     $(c-pp.D.sqlite3-bundler-friendly)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
     $(sqlite3-worker1-promiser-bundler-friendly.js),\
     $(c-pp.D.sqlite3-bundler-friendly)))
-$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.mjs),\
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.mjs),\
     -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
 $(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.mjs) \
     $(sqlite3-worker1-promiser-bundler-friendly.js)
-$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
-$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
+$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
     -Dtarget=es6-module))
-$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
-$(eval $(call C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
+$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
     -Dtarget=es6-module))
 all: $(sqlite3-worker1.js) \
     $(sqlite3-worker1-promiser.js) $(sqlite3-worker1-promiser.mjs)
@@ -1077,10 +1078,10 @@ all: speedtest1
 #  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.js))
-$(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.sqlite3-esm)))
-$(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1.html))
-$(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.sqlite3-esm)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.sqlite3-esm)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.sqlite3-esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # Note that we do not include $(sqlite3-bundler-friendly.mjs) in this
 # because bundlers are client-specific.

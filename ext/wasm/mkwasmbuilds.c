@@ -153,14 +153,14 @@ static void mk_pre_post(const char *zName  /* build name */,
      zNM, zNM);
   pf("$(pre-js.js.%s-%s): $(MAKEFILE)\n", zNM);
 #if 1
-  pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 #else
   /* This part is needed if/when we re-enable the custom
   ** Module.instantiateModule() impl in api/pre-js.c-pp.js. */
   pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
      "$(c-pp.D.%s-%s) -Dcustom-Module.instantiateModule))\n", zNM, zNM);
   pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
   pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
@@ -176,12 +176,12 @@ static void mk_pre_post(const char *zName  /* build name */,
 
   /* --post-js=... */
   pf("post-js.js.%s-%s := $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(post-js.js.in),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(post-js.js.in),"
      "$(post-js.js.%s-%s),$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* --extern-post-js=... */
   pf("extern-post-js.js.%s-%s := $(dir.tmp)/extern-post-js.%s-%s.js\n", zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* Combine flags for use with emcc... */
@@ -274,14 +274,13 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zEmcc ) zEmcc = "";
 
   pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
-  pf("ifneq (1,$(MAKING_CLEAN))\n");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
   mk_pre_post(zNM, zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, zEmcc);
   }
-  pf("$(eval $(call C-PP.FILTER, $(sqlite3-api.js.in), %s, %s))\n",
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER, $(sqlite3-api.js.in), %s, %s))\n",
      zApiJsOut, zCmppD);
 
   /* target zJsOut */
@@ -346,7 +345,6 @@ static void mk_lib_mode(const char *zName     /* build name */,
     ** conditionally using info we don't have here. */
     pf("all: %s\n", zJsOut);
   }
-  ps("endif\n# ^^^ !$(MAKING_CLEAN)");
   pf("# End build [%s-%s]%s", zNM, zBanner);
 }
 
