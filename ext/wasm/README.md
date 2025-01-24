@@ -35,7 +35,7 @@ after upgrading it! Our build process makes no guarantees about which
 Emscripten version(s) will or won't work, but it's important that
 production builds are built using a compatible version. During active
 development, the EMSDK is frequently updated, the goal being to keep
-sqlite3.wasm working with "the latest" EMSDK)
+sqlite3.wasm working with "the latest" EMSDK.)
 
 The SQLite configure script will search for the EMSDK. One way
 to ensure that it finds it is:
@@ -88,13 +88,15 @@ needs to be served via an HTTP server.  For example, using
 ```
 $ cd ext/wasm
 $ althttpd --enable-sab --max-age 1 --page index.html
-# Or, more simply:
+# Or, more simply, from the ext/wasm dir:
 $ make httpd
 ```
 
-
-That will open the system's browser and run the index page, from which
-all of the test and demo applications can be accessed.
+That will open the system's browser and visit the index page, from
+which (almost) all of the test and demo applications can be accessed.
+(`ext/wasm/SQLTester` is not listed in that page because it's only of
+real utility when it's used in conjunction with the proprietary test
+suite, which most users don't have access to.)
 
 Note that when serving this app via [althttpd][], it must be a version
 from 2022-09-26 or newer so that it recognizes the `--enable-sab`
