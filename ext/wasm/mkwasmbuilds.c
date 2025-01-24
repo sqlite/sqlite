@@ -224,23 +224,23 @@ static void mk_fiddle(){
        "$(SOAP.js)\n",
        zTail, (i ? " $(fiddle-module.js)" : ""));
     if( 1==i ){/*fiddle.debug*/
-      pf("	@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
+      pf("\t@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
     }
-    pf("	$(bin.emcc) -o $@ $(fiddle.emcc-flags%s) "
+    pf("\t$(bin.emcc) -o $@ $(fiddle.emcc-flags%s) "
        "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
        zTail);
-    pf("	$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
-    pf("	@cp -p $(SOAP.js) $(dir $@)\n");
+    pf("\t$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
+    pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
     if( 1==i ){/*fiddle.debug*/
-      pf("	cp -p $(dir.fiddle)/index.html "
+      pf("\tcp -p $(dir.fiddle)/index.html "
          "$(dir.fiddle)/fiddle.js "
          "$(dir.fiddle)/fiddle-worker.js "
          "$(dir $@)\n");
     }
-    pf("	@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
-       "		test -f $${i} || continue;             \\\n"
-       "		gzip < $${i} > $${i}.gz; \\\n"
-       "	done\n", zDir, zDir, zDir);
+    pf("\t@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
+       "\t\ttest -f $${i} || continue;             \\\n"
+       "\t\tgzip < $${i} > $${i}.gz; \\\n"
+       "\tdone\n", zDir, zDir, zDir);
     if( 0==i ){
       ps("fiddle: $(fiddle-module.js)");
     }else{

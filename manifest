@@ -1,5 +1,5 @@
-C Minor\sadditions\sto\sext/wasm/README.md.
-D 2025-01-24T09:21:39.150
+C Replace\sa\shandful\sof\shard\stabs\sin\sstring\sliterals\swith\s\\t\sin\smkwasmbuilds.c.
+D 2025-01-24T12:54:59.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -679,7 +679,7 @@ F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf1
 F ext/wasm/index.html 10ff3ad190aadccb713109fa55a38e5c1f3c2a8cf05cd31783745bab3f184079
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 59a20df389abcc3606eb4eaea7fb7ba14504beb3e345dbea9b99a0618ba3bec8
-F ext/wasm/mkwasmbuilds.c 7f0dabf715456274bf2df1e9405aa1f658a6134ee3e863ce87b4efde954f73fb
+F ext/wasm/mkwasmbuilds.c d5885bacf2253bed913cdc7eb16b44f9c9e782133e10600652d1a78841c337af
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9abb56c6acb1c84c2df8534ca3ebb2894afd68bc7b8331d4d12611896c576749
-R b60ec68df024b8f8f0b2a3ce728fcf4f
+P 85747ea1654c74d330614aa174ede4a989b6456eb1fc5eb0fc9f2d1418b6ef99
+R f289df2f01e608fa0d2578a973e6c703
 U stephan
-Z e5bd1e0cb1773df371cd520b4807bcb1
+Z 87e6ba9e21ab9593bfe7380a7c7c21ab
 # Remove this line to create a well-formed Fossil manifest.
