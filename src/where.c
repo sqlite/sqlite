@@ -5464,7 +5464,7 @@ static LogEst whereSortingCost(
 ** disable the SQLITE_StarQuery optimization.  In the CLI, the command
 ** to do that is:  ".testctrl opt -starquery".
 */
-static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
+static int computeMxChoice(WhereInfo *pWInfo){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
   WhereLoop *pWLoop;             /* For looping over WhereLoops */
 
@@ -5481,8 +5481,8 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
   }
 #endif /* SQLITE_DEBUG */
 
-  if( nRowEst==0
-   && nLoop>=5 
+  if( nLoop>=5 
+   && !pWInfo->bStarDone
    && OptimizationEnabled(pWInfo->pParse->db, SQLITE_StarQuery)
   ){
     SrcItem *aFromTabs;    /* All terms of the FROM clause */
@@ -5490,6 +5490,8 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
     Bitmask m;             /* Bitmask for candidate fact-table */
     Bitmask mSelfJoin = 0; /* Tables that cannot be dimension tables */       
     WhereLoop *pStart;     /* Where to start searching for dimension-tables */
+
+    pWInfo->bStarDone = 1; /* Only do this computation once */
 
     /* Check to see if we are dealing with a star schema and if so, reduce
     ** the cost of fact tables relative to dimension tables, as a heuristic
@@ -5555,12 +5557,10 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
         sqlite3DebugPrintf("\n");
       }
 #endif
-      if( pWInfo->nOutStarDelta==0 ){
-        for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-          pWLoop->rStarDelta = 0;
-        }
+      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+        pWLoop->rStarDelta = 0;
       }
-      pWInfo->nOutStarDelta += rDelta;
+      pWInfo->nOutStarDelta = rDelta;
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->maskSelf==m ){
           pWLoop->rRun -= rDelta;
@@ -5568,7 +5568,7 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
           pWLoop->rStarDelta = rDelta;
         }
       }
-    }      
+    }
   }
   return pWInfo->nOutStarDelta>0 ? 18 : 12;
 }
@@ -5646,7 +5646,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }else if( nLoop==2 ){
     mxChoice = 5;
   }else{
-    mxChoice = computeMxChoice(pWInfo, nRowEst);
+    mxChoice = computeMxChoice(pWInfo);
   }
   assert( nLoop<=pWInfo->pTabList->nSrc );
 
@@ -6015,6 +6015,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }
 
   pWInfo->nRowOut = pFrom->nRow + pWInfo->nOutStarDelta;
+#ifdef WHERETRACE_ENABLED
+  pWInfo->rTotalCost = pFrom->rCost + pWInfo->nOutStarDelta;
+#endif
 
   /* Free temporary memory and return success */
   sqlite3StackFreeNN(pParse->db, pSpace);
@@ -6895,7 +6898,8 @@ WhereInfo *sqlite3WhereBegin(
   assert( db->mallocFailed==0 );
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
-    sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
+    sqlite3DebugPrintf("---- Solution cost=%d, nRow=%d",
+                       pWInfo->rTotalCost, pWInfo->nRowOut);
     if( pWInfo->nOBSat>0 ){
       sqlite3DebugPrintf(" ORDERBY=%d,0x%llx", pWInfo->nOBSat, pWInfo->revMask);
     }

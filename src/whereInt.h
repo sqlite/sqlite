@@ -486,8 +486,12 @@ struct WhereInfo {
   unsigned untestedTerms :1;   /* Not all WHERE terms resolved by outer loop */
   unsigned bOrderedInnerLoop:1;/* True if only the inner-most loop is ordered */
   unsigned sorted :1;          /* True if really sorted (not just grouped) */
+  unsigned bStarDone     :1;   /* True if check for star-query is complete */
   LogEst nOutStarDelta;     /* Artifical nOut reduction for star-query */
   LogEst nRowOut;           /* Estimated number of output rows */
+#ifdef WHERETRACE_ENABLED
+  LogEst rTotalCost;        /* Total cost of the solution */
+#endif
   int iTop;                 /* The very beginning of the WHERE loop */
   int iEndWhere;            /* End of the WHERE clause itself */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
