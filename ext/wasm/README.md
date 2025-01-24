@@ -29,8 +29,16 @@ $ ./emsdk install latest
 $ ./emsdk activate latest
 ```
 
-The following needs to be run for each shell instance which needs the
-`emcc` compiler:
+(Sidebar: Emscripten updates can and do _change things_, i.e. _break
+things_, so it's considered _required practice_ to test thoroughly
+after upgrading it! Our build process makes no guarantees about which
+Emscripten version(s) will or won't work, but it's important that
+production builds are built using a compatible version. During active
+development, the EMSDK is frequently updated, the goal being to keep
+sqlite3.wasm working with "the latest" EMSDK)
+
+The SQLite configure script will search for the EMSDK. One way
+to ensure that it finds it is:
 
 ```
 # Activate PATH and other environment variables in the current terminal:
@@ -38,15 +46,27 @@ $ source ./emsdk_env.sh
 
 $ which emcc
 /path/to/emsdk/upstream/emscripten/emcc
+
+$ ./configure ...
 ```
 
-Optionally, add that to your login shell's resource file (`~/.bashrc`
-or equivalent).
+Optionally, add that `source` part to your login shell's resource file
+(`~/.bashrc` or equivalent).
 
-That `env` script needs to be sourced for building this application
-from the top of the sqlite3 build tree:
+Another way is to pass the EMSDK dir to configure:
 
 ```
+$ ./configure --with-emsdk=/path/to/emsdk
+```
+
+The build tree uses a small wrapper for invoking the `emcc` (the
+Emscripten compiler): `tool/emcc.sh` is generated from
+`tool/emcc.sh.in` using the EMSDK path found by the configure process.
+
+With that in place, the most common build approaches are:
+
+```
+# From the top of the tree:
 $ make fiddle
 ```
 
@@ -57,7 +77,7 @@ $ cd ext/wasm
 $ make
 ```
 
-That will generate the a number of files required for a handful of
+Those will generate the a number of files required for a handful of
 test and demo applications which can be accessed via
 `index.html`. WASM content cannot, due to XMLHttpRequest security
 limitations, be loaded if the containing HTML file is opened directly
@@ -68,7 +88,10 @@ needs to be served via an HTTP server.  For example, using
 ```
 $ cd ext/wasm
 $ althttpd --enable-sab --max-age 1 --page index.html
+# Or, more simply:
+$ make httpd
 ```
+
 
 That will open the system's browser and run the index page, from which
 all of the test and demo applications can be accessed.
