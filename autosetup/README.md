@@ -51,7 +51,7 @@ following files:
 - [autoconf/auto.def][]: the main driver script for the "autoconf"
   bundle's configure script. It is essentially a slightly trimmed-down
   version of the main `auto.def` file. The `autoconf` dir was ported
-  from the Autotools to Autosetup in the 3.39 dev cycle but retains
+  from the Autotools to Autosetup in the 3.49.0 dev cycle but retains
   the "autoconf" name to minimize downstream disruption.
 
 
