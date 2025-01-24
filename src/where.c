@@ -2431,8 +2431,9 @@ void sqlite3WhereClausePrint(WhereClause *pWC){
 **     1.002.001         t2.t2xy              2 f 010241 N 2 cost 0,56,31
 */
 void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
+  WhereInfo *pWInfo;
   if( pWC ){
-    WhereInfo *pWInfo = pWC->pWInfo;
+    pWInfo = pWC->pWInfo;
     int nb = 1+(pWInfo->pTabList->nSrc+3)/4;
     SrcItem *pItem = pWInfo->pTabList->a + p->iTab;
     Table *pTab = pItem->pSTab;
@@ -2442,6 +2443,7 @@ void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
     sqlite3DebugPrintf(" %12s",
                        pItem->zAlias ? pItem->zAlias : pTab->zName);
   }else{
+    pWInfo = 0;
     sqlite3DebugPrintf("%c%2d.%03llx.%03llx %c%d",
          p->cId, p->iTab, p->maskSelf, p->prereq & 0xfff, p->cId, p->iTab);
   }
@@ -2473,7 +2475,12 @@ void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
   }else{
     sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
-  sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
+  if( pWInfo && pWInfo->nOutStarDelta>0 && p->rStarDelta!=0 ){
+    sqlite3DebugPrintf(" cost %d,%d,%d delta=%d\n",
+                       p->rSetup, p->rRun, p->nOut, -p->rStarDelta);
+  }else{
+    sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
+  }
   if( p->nLTerm && (sqlite3WhereTrace & 0x4000)!=0 ){
     int i;
     for(i=0; i<p->nLTerm; i++){
@@ -5441,11 +5448,13 @@ static LogEst whereSortingCost(
 **     18    for star queries
 **     12    otherwise
 **
-** For the purposes of SQLite, a star-query is defined as a query
-** with a large central table that is joined (using an INNER JOIN,
-** not a LEFT JOIN) against four or more smaller tables.  The central
-** table is called the "fact" table.  The smaller tables that get
-** joined are "dimension tables".
+** For the purposes of this heuristic, a star-query is defined as a query
+** with a large central table that is joined using an INNER JOIN,
+** not CROSS or OUTER JOINs, against four or more smaller tables.
+*  The central table is called the "fact" table.  The smaller tables
+** that get joined are "dimension tables".  Also, any table that is
+** self-joined cannot be a dimension table; we assume that dimension
+** tables may only be joined against fact tables.
 **
 ** SIDE EFFECT:  (and really the whole point of this subroutine)
 **
@@ -5456,52 +5465,109 @@ static LogEst whereSortingCost(
 ** resulting in poor query plans.  The total amount of heuristic cost
 ** adjustment is stored in pWInfo->nOutStarDelta and the cost adjustment
 ** for each WhereLoop is stored in its rStarDelta field.
+**
+** This heuristic can be completely disabled, so that no query is
+** considered a star-query, using SQLITE_TESTCTRL_OPTIMIZATION to
+** disable the SQLITE_StarQuery optimization.  In the CLI, the command
+** to do that is:  ".testctrl opt -starquery".
 */
-static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
+static int computeMxChoice(WhereInfo *pWInfo){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
-  if( nRowEst==0
-   && nLoop>=5 
+  WhereLoop *pWLoop;             /* For looping over WhereLoops */
+
+#ifdef SQLITE_DEBUG
+  /* The star-query detection code below makes use of the following
+  ** properties of the WhereLoop list, so verifying them before
+  ** continuing:
+  **    (1)  .maskSelf is the bitmask corresponding to .iTab
+  **    (2)  The WhereLoop list is in ascending .iTab order
+  */
+  for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+    assert( pWLoop->maskSelf==MASKBIT(pWLoop->iTab) );
+    assert( pWLoop->pNextLoop==0 || pWLoop->iTab<=pWLoop->pNextLoop->iTab );
+  }
+#endif /* SQLITE_DEBUG */
+
+  if( nLoop>=5 
+   && !pWInfo->bStarDone
    && OptimizationEnabled(pWInfo->pParse->db, SQLITE_StarQuery)
   ){
+    SrcItem *aFromTabs;    /* All terms of the FROM clause */
+    int iFromIdx;          /* Term of FROM clause is the candidate fact-table */
+    Bitmask m;             /* Bitmask for candidate fact-table */
+    Bitmask mSelfJoin = 0; /* Tables that cannot be dimension tables */       
+    WhereLoop *pStart;     /* Where to start searching for dimension-tables */
+
+    pWInfo->bStarDone = 1; /* Only do this computation once */
+
     /* Check to see if we are dealing with a star schema and if so, reduce
     ** the cost of fact tables relative to dimension tables, as a heuristic
     ** to help keep the fact tables in outer loops.
     */
-    int iLoop;                /* Counter over join terms */
-    Bitmask m;                /* Bitmask for current loop */
     assert( pWInfo->nOutStarDelta==0 );
-    for(iLoop=0, m=1; iLoop<nLoop; iLoop++, m<<=1){
-      WhereLoop *pWLoop;        /* For looping over WhereLoops */
+    aFromTabs = pWInfo->pTabList->a;
+    pStart = pWInfo->pLoops;
+    for(iFromIdx=0, m=1; iFromIdx<nLoop; iFromIdx++, m<<=1){
       int nDep = 0;             /* Number of dimension tables */
       LogEst rDelta;            /* Heuristic cost adjustment */
       Bitmask mSeen = 0;        /* Mask of dimension tables */
-      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-        if( (pWLoop->prereq & m)!=0        /* pWInfo depends on iLoop */
+      SrcItem *pFactTab;        /* The candidate fact table */
+
+      pFactTab = aFromTabs + iFromIdx;
+      if( (pFactTab->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
+        /* If the candidate fact-table is the right table of an outer join
+        ** restrict the search for dimension-tables to be tables to the right
+        ** of the fact-table. */
+        if( iFromIdx+4 > nLoop ) break;  /* Impossible to reach nDep>=4 */
+        while( ALWAYS(pStart) && pStart->iTab<=iFromIdx ){
+          pStart = pStart->pNextLoop;
+        }
+      }
+      for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( (aFromTabs[pWLoop->iTab].fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
+          /* Fact-tables and dimension-tables cannot be separated by an
+          ** outer join (at least for the definition of fact- and dimension-
+          ** used by this heuristic). */
+          break;
+        }
+        if( (pWLoop->prereq & m)!=0        /* pWInfo depends on iFromIdx */
          && (pWLoop->maskSelf & mSeen)==0  /* pWInfo not already a dependency */
-         && (pWInfo->pTabList->a[pWLoop->iTab].fg.jointype & JT_LEFT)==0
-                                               /* ^- pWInfo isn't a LEFT JOIN */
+         && (pWLoop->maskSelf & mSelfJoin)==0 /* Not a self-join */
         ){
-          nDep++;
-          mSeen |= pWLoop->maskSelf;
+          if( aFromTabs[pWLoop->iTab].pSTab==pFactTab->pSTab ){
+            mSelfJoin |= m;
+          }else{
+            nDep++;
+            mSeen |= pWLoop->maskSelf;
+          }
         }
       }
       if( nDep<=3 ) continue;
       rDelta = 15*(nDep-3);
 #ifdef WHERETRACE_ENABLED /* 0x4 */
       if( sqlite3WhereTrace&0x4 ){
-         SrcItem *pItem = pWInfo->pTabList->a + iLoop;
-         sqlite3DebugPrintf(
-             "Fact-table %s(%d): %d dimensions, cost reduced %d\n",
-             pItem->zAlias ? pItem->zAlias : pItem->pSTab->zName, iLoop,
-             nDep, rDelta);
+        Bitmask x;
+        int ii;
+        sqlite3DebugPrintf(
+          "Fact-table %s(%d): cost reduced %d due to %d dimension tables:",
+          pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
+          iFromIdx, rDelta, nDep
+        );
+        for(ii=0, x=1; ii<nLoop; ii++, x<<=1){
+          if( x & mSeen ){
+            SrcItem *pDim = aFromTabs + ii;
+            sqlite3DebugPrintf(" %s(%d)",
+              pDim->zAlias ? pDim->zAlias : pDim->pSTab->zName, ii
+            );
+          }
+        }
+        sqlite3DebugPrintf("\n");
       }
 #endif
-      if( pWInfo->nOutStarDelta==0 ){
-        for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-          pWLoop->rStarDelta = 0;
-        }
+      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+        pWLoop->rStarDelta = 0;
       }
-      pWInfo->nOutStarDelta += rDelta;
+      pWInfo->nOutStarDelta = rDelta;
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->maskSelf==m ){
           pWLoop->rRun -= rDelta;
@@ -5509,7 +5575,7 @@ static int computeMxChoice(WhereInfo *pWInfo, LogEst nRowEst){
           pWLoop->rStarDelta = rDelta;
         }
       }
-    }      
+    }
   }
   return pWInfo->nOutStarDelta>0 ? 18 : 12;
 }
@@ -5587,7 +5653,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }else if( nLoop==2 ){
     mxChoice = 5;
   }else{
-    mxChoice = computeMxChoice(pWInfo, nRowEst);
+    mxChoice = computeMxChoice(pWInfo);
   }
   assert( nLoop<=pWInfo->pTabList->nSrc );
 
@@ -5956,6 +6022,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }
 
   pWInfo->nRowOut = pFrom->nRow + pWInfo->nOutStarDelta;
+#ifdef WHERETRACE_ENABLED
+  pWInfo->rTotalCost = pFrom->rCost + pWInfo->nOutStarDelta;
+#endif
 
   /* Free temporary memory and return success */
   sqlite3StackFreeNN(pParse->db, pSpace);
@@ -6836,7 +6905,8 @@ WhereInfo *sqlite3WhereBegin(
   assert( db->mallocFailed==0 );
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
-    sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
+    sqlite3DebugPrintf("---- Solution cost=%d, nRow=%d",
+                       pWInfo->rTotalCost, pWInfo->nRowOut);
     if( pWInfo->nOBSat>0 ){
       sqlite3DebugPrintf(" ORDERBY=%d,0x%llx", pWInfo->nOBSat, pWInfo->revMask);
     }
