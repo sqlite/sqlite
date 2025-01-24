@@ -3470,8 +3470,11 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 ** read-lock.
 */
 void sqlite3WalEndReadTransaction(Wal *pWal){
-  sqlite3WalEndWriteTransaction(pWal);
+#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
+  assert( pWal->writeLock==0 || pWal->readLock<0 );
+#endif
   if( pWal->readLock>=0 ){
+    sqlite3WalEndWriteTransaction(pWal);
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->readLock = -1;
   }
@@ -3664,7 +3667,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   ** read-transaction was even opened, making this call a no-op.
   ** Return early. */
   if( pWal->writeLock ){
-    assert( !memcmp(&pWal->hdr,(void *)walIndexHdr(pWal),sizeof(WalIndexHdr)) );
+    assert( !memcmp(&pWal->hdr,(void*)pWal->apWiData[0],sizeof(WalIndexHdr)) );
     return SQLITE_OK;
   }
 #endif
