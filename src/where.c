@@ -2475,9 +2475,9 @@ void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
   }else{
     sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
-  if( pWInfo && pWInfo->nOutStarDelta>0 && p->rStarDelta!=0 ){
+  if( pWInfo && pWInfo->bStarUsed && p->rStarDelta!=0 ){
     sqlite3DebugPrintf(" cost %d,%d,%d delta=%d\n",
-                       p->rSetup, p->rRun, p->nOut, -p->rStarDelta);
+                       p->rSetup, p->rRun, p->nOut, p->rStarDelta);
   }else{
     sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
   }
@@ -5458,13 +5458,13 @@ static LogEst whereSortingCost(
 **
 ** SIDE EFFECT:  (and really the whole point of this subroutine)
 **
-** If pWInfo describes a star-query, then the cost on WhereLoops for the
-** fact table is reduced.  This heuristic helps keep fact tables in
+** If pWInfo describes a star-query, then the cost for SCANs of dimension
+** WhereLoops is increased to be slightly larger than the cost of a SCAN
+** in the fact table.  This heuristic helps keep fact tables in
 ** outer loops.  Without this heuristic, paths with fact tables in outer
 ** loops tend to get pruned by the mxChoice limit on the number of paths,
-** resulting in poor query plans.  The total amount of heuristic cost
-** adjustment is stored in pWInfo->nOutStarDelta and the cost adjustment
-** for each WhereLoop is stored in its rStarDelta field.
+** resulting in poor query plans.  The cost adjustment for each WhereLoop
+** is stored in its rStarDelta field.
 **
 ** This heuristic can be completely disabled, so that no query is
 ** considered a star-query, using SQLITE_TESTCTRL_OPTIMIZATION to
@@ -5488,7 +5488,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
   }
 #endif /* SQLITE_DEBUG */
 
-  if( nLoop>=5 
+  if( nLoop>=5
    && !pWInfo->bStarDone
    && OptimizationEnabled(pWInfo->pParse->db, SQLITE_StarQuery)
   ){
@@ -5504,12 +5504,12 @@ static int computeMxChoice(WhereInfo *pWInfo){
     ** the cost of fact tables relative to dimension tables, as a heuristic
     ** to help keep the fact tables in outer loops.
     */
-    assert( pWInfo->nOutStarDelta==0 );
+    assert( !pWInfo->bStarUsed );
     aFromTabs = pWInfo->pTabList->a;
     pStart = pWInfo->pLoops;
     for(iFromIdx=0, m=1; iFromIdx<nLoop; iFromIdx++, m<<=1){
       int nDep = 0;             /* Number of dimension tables */
-      LogEst rDelta;            /* Heuristic cost adjustment */
+      LogEst mxRun;             /* Maximum SCAN cost of a fact table */
       Bitmask mSeen = 0;        /* Mask of dimension tables */
       SrcItem *pFactTab;        /* The candidate fact table */
 
@@ -5543,43 +5543,47 @@ static int computeMxChoice(WhereInfo *pWInfo){
         }
       }
       if( nDep<=3 ) continue;
-      rDelta = 15*(nDep-3);
-#ifdef WHERETRACE_ENABLED /* 0x80000 */
-      if( sqlite3WhereTrace & 0x80000 ){
-        Bitmask x;
-        int ii;
-        sqlite3DebugPrintf(
-          "Fact-table %s(%d): cost reduced %d due to %d dimension tables:",
-          pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
-          iFromIdx, rDelta, nDep
-        );
-        for(ii=0, x=1; ii<nLoop; ii++, x<<=1){
-          if( x & mSeen ){
-            SrcItem *pDim = aFromTabs + ii;
-            sqlite3DebugPrintf(" %s(%d)",
-              pDim->zAlias ? pDim->zAlias : pDim->pSTab->zName, ii
-            );
-          }
-        }
-        sqlite3DebugPrintf("\n");
+
+      /* Compute the maximum cost of any WhereLoop for the iFromIdx-th term */
+      mxRun = -32767;
+      for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( pWLoop->iTab<iFromIdx ) continue;
+        if( pWLoop->iTab>iFromIdx ) break;
+        if( pWLoop->rRun>mxRun ) mxRun = pWLoop->rRun;
       }
-#endif
-      if( pWInfo->nOutStarDelta==0 ){
+
+      /* Make sure rStarDelta values are initialized */
+      if( !pWInfo->bStarUsed ){
         for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
           pWLoop->rStarDelta = 0;
         }
+        pWInfo->bStarUsed = 1;
       }
-      pWInfo->nOutStarDelta += rDelta;
-      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-        if( pWLoop->maskSelf==m ){
-          pWLoop->rRun -= rDelta;
-          pWLoop->nOut -= rDelta;
-          pWLoop->rStarDelta = rDelta;
+
+      /* Increase the cost of table scans for dimension tables to be slightly
+      ** more than the maximum cost of fact table */
+      for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( (pWLoop->maskSelf & mSeen)==0 ) continue;
+        if( pWLoop->nLTerm ) continue;
+        if( pWLoop->rRun<=mxRun ){
+#ifdef WHERETRACE_ENABLED /* 0x80000 */
+          if( sqlite3WhereTrace & 0x80000 ){
+            SrcItem *pDim = aFromTabs + pWLoop->iTab;
+            sqlite3DebugPrintf(
+              "Increase SCAN cost of dimension %s(%d) of fact %s(%d) to %d\n",
+              pDim->zAlias ? pDim->zAlias: pDim->pSTab->zName, pWLoop->iTab,
+              pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
+              iFromIdx, mxRun+1
+            );
+          }
+#endif /* WHERETRACE_ENABLED */
+          pWLoop->rStarDelta = mxRun+1 - pWLoop->rRun;
+          pWLoop->rRun = mxRun+1;
         }
       }
     }
 #ifdef WHERETRACE_ENABLED /* 0x80000 */
-    if( (sqlite3WhereTrace & 0x80000)!=0 && pWInfo->nOutStarDelta ){
+    if( (sqlite3WhereTrace & 0x80000)!=0 && pWInfo->bStarUsed ){
       sqlite3DebugPrintf("WhereLoops changed by star-query heuristic:\n");
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->rStarDelta ){
@@ -5589,7 +5593,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
     }
 #endif
   }
-  return pWInfo->nOutStarDelta>0 ? 18 : 12;
+  return pWInfo->bStarUsed ? 18 : 12;
 }
 
 /*
@@ -6035,9 +6039,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     }
   }
 
-  pWInfo->nRowOut = pFrom->nRow + pWInfo->nOutStarDelta;
+  pWInfo->nRowOut = pFrom->nRow;
 #ifdef WHERETRACE_ENABLED
-  pWInfo->rTotalCost = pFrom->rCost + pWInfo->nOutStarDelta;
+  pWInfo->rTotalCost = pFrom->rCost;
 #endif
 
   /* Free temporary memory and return success */
@@ -6436,7 +6440,6 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
       }
     }
     nSearch += pLoop->nOut;
-    if( pWInfo->nOutStarDelta ) nSearch += pLoop->rStarDelta;
   }
 }
 
