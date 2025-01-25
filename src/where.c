@@ -5544,8 +5544,8 @@ static int computeMxChoice(WhereInfo *pWInfo){
       }
       if( nDep<=3 ) continue;
       rDelta = 15*(nDep-3);
-#ifdef WHERETRACE_ENABLED /* 0x4 */
-      if( sqlite3WhereTrace&0x4 ){
+#ifdef WHERETRACE_ENABLED /* 0x80000 */
+      if( sqlite3WhereTrace & 0x80000 ){
         Bitmask x;
         int ii;
         sqlite3DebugPrintf(
@@ -5564,10 +5564,12 @@ static int computeMxChoice(WhereInfo *pWInfo){
         sqlite3DebugPrintf("\n");
       }
 #endif
-      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-        pWLoop->rStarDelta = 0;
+      if( pWInfo->nOutStarDelta==0 ){
+        for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+          pWLoop->rStarDelta = 0;
+        }
       }
-      pWInfo->nOutStarDelta = rDelta;
+      pWInfo->nOutStarDelta += rDelta;
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->maskSelf==m ){
           pWLoop->rRun -= rDelta;
@@ -5576,6 +5578,16 @@ static int computeMxChoice(WhereInfo *pWInfo){
         }
       }
     }
+#ifdef WHERETRACE_ENABLED /* 0x80000 */
+    if( (sqlite3WhereTrace & 0x80000)!=0 && pWInfo->nOutStarDelta ){
+      sqlite3DebugPrintf("WhereLoops changed by star-query heuristic:\n");
+      for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( pWLoop->rStarDelta ){
+          sqlite3WhereLoopPrint(pWLoop, &pWInfo->sWC);
+        }
+      }
+    }
+#endif
   }
   return pWInfo->nOutStarDelta>0 ? 18 : 12;
 }
