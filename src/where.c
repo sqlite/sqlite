@@ -5652,6 +5652,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     mxChoice = 1;
   }else if( nLoop==2 ){
     mxChoice = 5;
+  }else if( pParse->nErr ){
+    mxChoice = 1;
   }else{
     mxChoice = computeMxChoice(pWInfo);
   }
