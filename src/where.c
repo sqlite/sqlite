@@ -5519,10 +5519,9 @@ static int computeMxChoice(WhereInfo *pWInfo){
 
     pWInfo->bStarDone = 1; /* Only do this computation once */
 
-    /* Check to see if we are dealing with a star schema and if so, adjust
-    ** SCAN cost of dimensino tables so that they are as large as the SCAN
-    ** cost of the fact table.  This is a heuristic that helps keep the
-    ** fact tables in outer loops.
+    /* Look for fact tables with four or more dimensions where the
+    ** dimension tables are not separately from the fact tables by an outer
+    ** or cross join.  Adjust cost weights if found.
     */
     assert( !pWInfo->bStarUsed );
     aFromTabs = pWInfo->pTabList->a;
@@ -5539,7 +5538,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
         ** restrict the search for dimension-tables to be tables to the right
         ** of the fact-table. */
         if( iFromIdx+4 > nLoop ) break;  /* Impossible to reach nDep>=4 */
-        while( pStart && pStart->iTab<=iFromIdx ){
+        while( ALWAYS(pStart) && pStart->iTab<=iFromIdx ){
           pStart = pStart->pNextLoop;
         }
       }
@@ -5563,7 +5562,10 @@ static int computeMxChoice(WhereInfo *pWInfo){
         }
       }
       if( nDep<=3 ) continue;
-      /* If we reach this point, it means that pFactTab is a fact table */
+
+      /* If we reach this point, it means that pFactTab is a fact table
+      ** with four or more dimensions connected by inner joins.  Proceed
+      ** to make cost adjustments. */
      
 #ifdef WHERETRACE_ENABLED
       /* Make sure rStarDelta values are initialized */
@@ -5575,8 +5577,8 @@ static int computeMxChoice(WhereInfo *pWInfo){
 #endif
       pWInfo->bStarUsed = 1;
 
-      /* Compute one more than the maximum cost of any WhereLoop for the
-      ** fact table */
+      /* Compute the maximum cost of any WhereLoop for the
+      ** fact table plus one epsilon */
       mxRun = LOGEST_MIN;
       for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( pWLoop->iTab<iFromIdx ) continue;
@@ -5585,8 +5587,8 @@ static int computeMxChoice(WhereInfo *pWInfo){
       }
       if( ALWAYS(mxRun<LOGEST_MAX) ) mxRun++;
 
-      /* Increase the cost of table scans for dimension tables to be slightly
-      ** more than the maximum cost of fact table */
+      /* Increase the cost of table scans for dimension tables to be
+      ** slightly more than the maximum cost of the fact table */
       for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( (pWLoop->maskSelf & mSeen)==0 ) continue;
         if( pWLoop->nLTerm ) continue;

@@ -1,5 +1,5 @@
-C Small\ssize\sand\scomplexity\sreduction\son\sthe\sstar-query\sheuristic.\s\sImproved\ncomments\sfor\sthe\sstar-query\sheuristic.
-D 2025-01-26T17:29:33.018
+C Further\scomment\simprovements\sin\sthe\sstar-query\sheuristic.\s\sAdd\san\sALWAYS()\non\san\sunreachable\sbranch\sto\sachieve\sMC/DC.
+D 2025-01-26T20:09:57.061
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -863,7 +863,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 4e6181d8780ab0af2e1388d0754cbe6f2f04593d2b1ab6c41699a89942fd8997
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c adda3afc98a4f58713973997c699be2a8515c591701092e8380695f1a0a7b220
+F src/where.c 72cd936dcaa391fdce021840fbd1d9cbe51e34f821e0a09a05a2cc99ab506e92
 F src/whereInt.h d20cddddb1d61b18d5cb1fcfa9b77fbeebbc4afe44d996e603452a23b3009ee1
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
 F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1bc09c9e8bd77ac41ecbe510c7e003757fc11d0f586da6cdf3584315aa9d6407
-R c0f75689e724495cafe203db572d7b59
+P a7ecb2f4b7eee78b88f1b2e026dffed2007ca4ffeb152632624ab2582839b250
+R 56a3a416133fa0f7166c060fc9c27138
 U drh
-Z 5884f43bd01d477b04985ecdd4572f42
+Z a3e111b0c87ac0b331649395aaa39e29
 # Remove this line to create a well-formed Fossil manifest.
