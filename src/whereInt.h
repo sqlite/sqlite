@@ -162,8 +162,10 @@ struct WhereLoop {
   /**** whereLoopXfer() copies fields above ***********************/
 # define WHERE_LOOP_XFER_SZ offsetof(WhereLoop,nLSlot)
   u16 nLSlot;           /* Number of slots allocated for aLTerm[] */
+#ifdef WHERETRACE_ENABLED
   LogEst rStarDelta;    /* Cost delta due to star-schema heuristic.  Not
                         ** initialized unless pWInfo->bStarUsed */
+#endif
   WhereTerm **aLTerm;   /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
   WhereTerm *aLTermSpace[3];  /* Initial aLTerm[] space */
@@ -485,9 +487,9 @@ struct WhereInfo {
   unsigned bDeferredSeek :1;   /* Uses OP_DeferredSeek */
   unsigned untestedTerms :1;   /* Not all WHERE terms resolved by outer loop */
   unsigned bOrderedInnerLoop:1;/* True if only the inner-most loop is ordered */
-  unsigned sorted :1;          /* True if really sorted (not just grouped) */
+  unsigned sorted        :1;   /* True if really sorted (not just grouped) */
   unsigned bStarDone     :1;   /* True if check for star-query is complete */
-  unsigned bStarUsed     :1;   /* True if cost adjustments for star-query */
+  unsigned bStarUsed     :1;   /* True if star-query heuristic is used */
   LogEst nRowOut;           /* Estimated number of output rows */
 #ifdef WHERETRACE_ENABLED
   LogEst rTotalCost;        /* Total cost of the solution */

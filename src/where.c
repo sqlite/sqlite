@@ -5451,7 +5451,7 @@ static LogEst whereSortingCost(
 ** For the purposes of this heuristic, a star-query is defined as a query
 ** with a large central table that is joined using an INNER JOIN,
 ** not CROSS or OUTER JOINs, against four or more smaller tables.
-*  The central table is called the "fact" table.  The smaller tables
+** The central table is called the "fact" table.  The smaller tables
 ** that get joined are "dimension tables".  Also, any table that is
 ** self-joined cannot be a dimension table; we assume that dimension
 ** tables may only be joined against fact tables.
@@ -5460,16 +5460,35 @@ static LogEst whereSortingCost(
 **
 ** If pWInfo describes a star-query, then the cost for SCANs of dimension
 ** WhereLoops is increased to be slightly larger than the cost of a SCAN
-** in the fact table.  This heuristic helps keep fact tables in
-** outer loops.  Without this heuristic, paths with fact tables in outer
-** loops tend to get pruned by the mxChoice limit on the number of paths,
-** resulting in poor query plans.  The cost adjustment for each WhereLoop
-** is stored in its rStarDelta field.
+** in the fact table.  Only SCAN costs are increased.  SEARCH costs are
+** unchanged. This heuristic helps keep fact tables in outer loops. Without
+** this heuristic, paths with fact tables in outer loops tend to get pruned
+** by the mxChoice limit on the number of paths, resulting in poor query
+** plans.  See the starschema1.test test module for examples of queries
+** that need this heuristic to find good query plans.
 **
 ** This heuristic can be completely disabled, so that no query is
 ** considered a star-query, using SQLITE_TESTCTRL_OPTIMIZATION to
 ** disable the SQLITE_StarQuery optimization.  In the CLI, the command
 ** to do that is:  ".testctrl opt -starquery".
+**
+** HISTORICAL NOTES:
+**
+** This optimization was first added on 2024-05-09 by check-in 38db9b5c83d.
+** The original optimization reduced the cost and output size estimate for
+** fact tables to help them move to outer loops.  But months later (as people
+** started upgrading) performance regression reports started caming in,
+** including:
+**
+**    forum post b18ef983e68d06d1 (2024-12-21)
+**    forum post 0025389d0860af82 (2025-01-14)
+**    forum post d87570a145599033 (2025-01-17)
+**
+** To address these, the criteria for a star-query was tightened to exclude
+** cases where the fact and dimensions are separated by an outer join, and
+** the affect of star-schema detection was changed to increase the rRun cost
+** on just full table scans of dimension tables, rather than reducing costs
+** in the all access methods of the fact table.
 */
 static int computeMxChoice(WhereInfo *pWInfo){
   int nLoop = pWInfo->nLevel;    /* Number of terms in the join */
@@ -5477,7 +5496,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
 
 #ifdef SQLITE_DEBUG
   /* The star-query detection code below makes use of the following
-  ** properties of the WhereLoop list, so verifying them before
+  ** properties of the WhereLoop list, so verify them before
   ** continuing:
   **    (1)  .maskSelf is the bitmask corresponding to .iTab
   **    (2)  The WhereLoop list is in ascending .iTab order
@@ -5500,9 +5519,10 @@ static int computeMxChoice(WhereInfo *pWInfo){
 
     pWInfo->bStarDone = 1; /* Only do this computation once */
 
-    /* Check to see if we are dealing with a star schema and if so, reduce
-    ** the cost of fact tables relative to dimension tables, as a heuristic
-    ** to help keep the fact tables in outer loops.
+    /* Check to see if we are dealing with a star schema and if so, adjust
+    ** SCAN cost of dimensino tables so that they are as large as the SCAN
+    ** cost of the fact table.  This is a heuristic that helps keep the
+    ** fact tables in outer loops.
     */
     assert( !pWInfo->bStarUsed );
     aFromTabs = pWInfo->pTabList->a;
@@ -5543,29 +5563,34 @@ static int computeMxChoice(WhereInfo *pWInfo){
         }
       }
       if( nDep<=3 ) continue;
-
-      /* Compute the maximum cost of any WhereLoop for the iFromIdx-th term */
-      mxRun = -32767;
-      for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
-        if( pWLoop->iTab<iFromIdx ) continue;
-        if( pWLoop->iTab>iFromIdx ) break;
-        if( pWLoop->rRun>mxRun ) mxRun = pWLoop->rRun;
-      }
-
+      /* If we reach this point, it means that pFactTab is a fact table */
+     
+#ifdef WHERETRACE_ENABLED
       /* Make sure rStarDelta values are initialized */
       if( !pWInfo->bStarUsed ){
         for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
           pWLoop->rStarDelta = 0;
         }
-        pWInfo->bStarUsed = 1;
       }
+#endif
+      pWInfo->bStarUsed = 1;
+
+      /* Compute one more than the maximum cost of any WhereLoop for the
+      ** fact table */
+      mxRun = LOGEST_MIN;
+      for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
+        if( pWLoop->iTab<iFromIdx ) continue;
+        if( pWLoop->iTab>iFromIdx ) break;
+        if( pWLoop->rRun>mxRun ) mxRun = pWLoop->rRun;
+      }
+      if( ALWAYS(mxRun<LOGEST_MAX) ) mxRun++;
 
       /* Increase the cost of table scans for dimension tables to be slightly
       ** more than the maximum cost of fact table */
       for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( (pWLoop->maskSelf & mSeen)==0 ) continue;
         if( pWLoop->nLTerm ) continue;
-        if( pWLoop->rRun<=mxRun ){
+        if( pWLoop->rRun<mxRun ){
 #ifdef WHERETRACE_ENABLED /* 0x80000 */
           if( sqlite3WhereTrace & 0x80000 ){
             SrcItem *pDim = aFromTabs + pWLoop->iTab;
@@ -5573,12 +5598,12 @@ static int computeMxChoice(WhereInfo *pWInfo){
               "Increase SCAN cost of dimension %s(%d) of fact %s(%d) to %d\n",
               pDim->zAlias ? pDim->zAlias: pDim->pSTab->zName, pWLoop->iTab,
               pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
-              iFromIdx, mxRun+1
+              iFromIdx, mxRun
             );
           }
+          pWLoop->rStarDelta = mxRun - pWLoop->rRun;
 #endif /* WHERETRACE_ENABLED */
-          pWLoop->rStarDelta = mxRun+1 - pWLoop->rRun;
-          pWLoop->rRun = mxRun+1;
+          pWLoop->rRun = mxRun;
         }
       }
     }

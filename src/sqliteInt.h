@@ -881,6 +881,8 @@ typedef u64 tRowcnt;
 **    0.5 -> -10           0.1 -> -33        0.0625 -> -40
 */
 typedef INT16_TYPE LogEst;
+#define LOGEST_MIN (-32768)
+#define LOGEST_MAX (32767)
 
 /*
 ** Set the SQLITE_PTRSIZE macro to the number of bytes in a pointer
