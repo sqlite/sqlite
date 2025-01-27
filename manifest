@@ -1,5 +1,5 @@
-C Make\stwo\sprivate\sroutines\sin\sFTS\s"static"\sso\sthat\sthey\sare\snot\scallable\sfrom\noutside\sof\sSQLite\sitself.
-D 2025-01-26T23:34:49.014
+C Avoid\ssplitting\sa\shyperlink\sacross\slines\sin\sthe\sdocumentation\scomment\sfor\nsqlite3_serialize().
+D 2025-01-27T14:12:14.624
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -781,7 +781,7 @@ F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 83e88fbb36f89b6703b348777491619554f0fd6f917c9fdf51e4c2e9cda6c04e
 F src/shell.c.in 9ade75afa953c5c2ded38d076533eaa6c9b2ab1977ef6cce0bc773adac178c50
-F src/sqlite.h.in 135c4479d03d5dcff7f580c1997f351d94954cf37346db560948c7add6159d9a
+F src/sqlite.h.in f1362730549010733d30fff4de369f0e48b0857f71e874cca91ffcfecf587eba
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 5c859fc5b1b9fa489bc7a39d37606472b70f808f965eab11c24f14d8d7654330
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5e18ce68fbc5e73e6694936f3ba71f5b5e3758cf380951805ca6ea6a3f0943aa
-R a54b570883d195008f2678c7c81be853
+P 9b11bed0448b95319206b413c35f23bb80f3f4c0a4394d40f2e64066400a01ed
+R e2b813a3abd3bf21562fc924e1b6e152
 U drh
-Z dcfa08d4408fce3e0f4c19a22b5dac4d
+Z 538ef5af19384f8d48d29325a60a77c0
 # Remove this line to create a well-formed Fossil manifest.
