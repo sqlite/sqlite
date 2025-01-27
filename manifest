@@ -1,5 +1,5 @@
-C Avoid\ssplitting\sa\shyperlink\sacross\slines\sin\sthe\sdocumentation\scomment\sfor\nsqlite3_serialize().
-D 2025-01-27T14:12:14.624
+C Enhance\s./configure\sto\sissue\san\sunambiguious\serror\sif\sthe\spathname\sto\seither\nthe\ssource\stree\sor\sthe\sbuild\sdirectory\scontains\sany\sspace\scharacters.
+D 2025-01-27T17:48:51.296
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -14,7 +14,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def 7833c0a8630dd3a3410dcc6c8b4d1b63f25d03d6497267624b8a37aba119cb3e
+F auto.def caf7cca9c235fc6a3d7639e00eb75972d9bf8527717498b9fa1d7112d50b5720
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 56697ad25ecf23afa317148b06bdc14f85960b42e5ec434ac1ba87f63a3cb789
 F autoconf/Makefile.msc ffff61fe851443015ddb6600ab69a9df503cfec25459b336be7ba8c9a9e473f8
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b11bed0448b95319206b413c35f23bb80f3f4c0a4394d40f2e64066400a01ed
-R e2b813a3abd3bf21562fc924e1b6e152
+P 74b770bd445d98ff883000ab2e31603d729e415e4e4f640646eef30825634f48
+R 0d48e3ec7a39c2ed6a320258adde1027
 U drh
-Z 538ef5af19384f8d48d29325a60a77c0
+Z 7ae24fa2aff28dbc435f2d2a94f34ec6
 # Remove this line to create a well-formed Fossil manifest.

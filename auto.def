@@ -14,6 +14,16 @@
 #
 use sqlite-config
 
+if {[string first " " $autosetup(srcdir)] != -1} {
+  user-error "The pathname of the source tree\
+              may not contain space characters"
+}
+if {[string first " " $autosetup(builddir)] != -1} {
+  user-error "The pathname of the build directory\
+              may not contain space characters"
+}
+
+
 ########################################################################
 # Regarding flag compatibility with the historical autotool configure
 # script:
