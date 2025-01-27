@@ -1077,8 +1077,11 @@ void sqlite3Insert(
       pColumn->a[i].u4.idx = -1;
     }
     for(i=0; i<pColumn->nId; i++){
+      const char *zCName = pColumn->a[i].zName;
+      u8 hName = sqlite3StrIHash(zCName);
       for(j=0; j<pTab->nCol; j++){
-        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
+        if( pTab->aCol[j].hName!=hName ) continue;
+        if( sqlite3StrICmp(zCName, pTab->aCol[j].zCnName)==0 ){
           pColumn->a[i].u4.idx = j;
           if( i!=j ) bIdListInOrder = 0;
           if( j==pTab->iPKey ){
