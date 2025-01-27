@@ -2027,7 +2027,7 @@ static int walEnableBlockingMs(Wal *pWal, int nMs){
 static int walEnableBlocking(Wal *pWal){
   int res = 0;
   if( pWal->db ){
-    int tmout = pWal->db->busyTimeout;
+    int tmout = pWal->db->setlkTimeout;
     if( tmout ){
       res = walEnableBlockingMs(pWal, tmout);
     }

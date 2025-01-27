@@ -1766,6 +1766,9 @@ int sqlite3_busy_handler(
   db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
   db->busyTimeout = 0;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = 0;
+#endif
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -1815,9 +1818,22 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
     sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
                              (void*)db);
     db->busyTimeout = ms;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    db->setlkTimeout = ms;
+#endif
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
+  return SQLITE_OK;
+}
+
+int sqlite3_setlk_timeout(sqlite3 *db, int ms){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = (ms>0 ? ms : 0);
+#endif
   return SQLITE_OK;
 }
 

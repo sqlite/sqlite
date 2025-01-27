@@ -85,5 +85,87 @@ do_test 1.5.3 {
 db close
 tvfs delete
 
+#-------------------------------------------------------------------------
+# Check that if sqlite3_setlk_timeout() is used, blocking locks timeout
+# but other operations do not use the retry mechanism.
+#
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+}
+
+sqlite3_setlk_timeout db 2000
+
+# Launch a non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+      INSERT INTO t1 VALUES(5, 6);
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+after 500 {set ok 1}
+vwait ok
+
+do_catchsql_test 2.1 {
+  INSERT INTO t1 VALUES(7, 8);
+} {1 {database is locked}}
+
+sqlite3_busy_timeout db 2000
+
+do_catchsql_test 2.2 {
+  INSERT INTO t1 VALUES(7, 8);
+} {0 {}}
+
+do_execsql_test 2.3 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6 7 8}
+
+do_execsql_test 2.4 {
+  PRAGMA journal_mode = wal;
+} {wal}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 2.5 {
+  INSERT INTO t1 VALUES(9, 10);
+}
+
+sqlite3_setlk_timeout db 2000
+
+# Launch a non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+      INSERT INTO t1 VALUES(11, 12);
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+after 500 {set ok 1}
+vwait ok
+
+do_catchsql_test 2.6 {
+  INSERT INTO t1 VALUES(13, 14);
+} {0 {}}
+
+do_execsql_test 2.7 {
+  SELECT * FROM t1
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
+
 finish_test
 

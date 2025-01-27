@@ -2900,6 +2900,30 @@ int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
 int sqlite3_busy_timeout(sqlite3*, int ms);
 
 /*
+** CAPI3REF: Set the Setlk Timeout
+** METHOD: sqlite3
+**
+** This routine is only useful in SQLITE_ENABLE_SETLK_TIMEOUT builds. If 
+** the VFS supports blocking locks, it sets the timeout in ms used by 
+** eligible locks taken on wal mode databases by the specified database 
+** handle. In non-SQLITE_ENABLE_SETLK_TIMEOUT builds, or if the VFS does
+** not support blocking locks, this function is a no-op.
+**
+** Passing 0x7FFFFFFF to this function is interpreted by some VFS as "block
+** indefinitely". Passing zero or less than zero disables blocking locks
+** altogether.
+**
+** Internally, each SQLite database handle store two timeout values - the
+** busy-timeout (used for rollback mode databases, or if the VFS does not
+** support blocking locks) and the setlk-timeout (used for blocking locks
+** on wal-mode databases). The sqlite3_busy_timeout() method sets both
+** values, this function sets only the setlk-timeout value. Therefore,
+** to configure separate busy-timeout and setlk-timeout values for a single
+** database handle, call sqlite3_busy_timeout() followed by this function.
+*/
+int sqlite3_setlk_timeout(sqlite3*, int ms);
+
+/*
 ** CAPI3REF: Convenience Routines For Running Queries
 ** METHOD: sqlite3
 **

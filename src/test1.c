@@ -5940,6 +5940,31 @@ static int SQLITE_TCLAPI test_busy_timeout(
 }
 
 /*
+** Usage: sqlite3_setlk_timeout DB MS
+**
+** Set the setlk timeout.
+*/
+static int SQLITE_TCLAPI test_setlk_timeout(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  int rc, ms;
+  sqlite3 *db;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &ms) ) return TCL_ERROR;
+  rc = sqlite3_setlk_timeout(db, ms);
+  Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -8862,6 +8887,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
+     { "sqlite3_setlk_timeout",         (Tcl_CmdProc*)test_setlk_timeout    },
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
      { "clang_sanitize_address",        (Tcl_CmdProc*)clang_sanitize_address },
