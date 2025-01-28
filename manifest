@@ -1,5 +1,5 @@
-C Simplifh\sthe\sIdList\sobject\sto\sremove\sunnecessary\sfields.\s\sPerformance\nincreases\sby\sabout\s0.8%.
-D 2025-01-28T12:50:17.902
+C Fix\sa\scopy/paste\stypo\sin\sthe\soutput\sof\svfstrace\sfor\sxDlClose().
+D 2025-01-28T18:03:22.182
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -454,7 +454,7 @@ F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c a85df08654743922a19410d7b1e3111de41bb7cd07d20dd16eda4e2b808d269d
-F ext/misc/vfstrace.c 9c4abd2f67ae2760e7a241eca2e8517c64480ac2c3e66a499326e688a9bbee22
+F ext/misc/vfstrace.c a73386403c350b210dc788a2d23a0f5cc89c49b176109a66af11b5078c116331
 F ext/misc/vtablog.c 1100250ce8782db37c833e3a9a5c9a3ecf1af5e15b8325572b82e6e0a138ffb5
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 984a9cc22c7c8492bf4fae482749663899b0e33a25c32e6ae5c5e98fc12bb83e
-R 3ffeb05f71791678583efe8c7fde2e8f
+P a4625bb995dd5582d1f3cf0c2e54eb3f01f1cc1405811dda86ebd38b2b858994
+R ebabd9c2e4304b7712ae90388c7cdfcd
 U drh
-Z 039fb781952da1d6729d929a997aaf6e
+Z 15e8c8f9f0fdde9a0f1575293da7227a
 # Remove this line to create a well-formed Fossil manifest.
