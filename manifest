@@ -1,5 +1,5 @@
-C Fix\ssessions\smodule\shandling\sof\stables\swith\sgenerated\scolumns.
-D 2025-01-28T19:03:37.907
+C Enhance\sthe\sif()\sand\siif()\sSQL\sfunctions\sso\sthat\sthey\ssupport\sany\nnumber\sof\sarguments\sgreater\sthan\sor\sequal\sto\stwo.\nSuggested\sby\s[forum:/forumpost/40f7867f75f80|forum\spost\s40f7867f75f80].
+D 2025-01-28T20:32:48.256
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -733,7 +733,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c ce83e7361454a195f8393fa0baad694e2fee6c49a44c0d6db44d8a2b92534aeb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 30051410d0379059e1e3642ffc0caae6963a2b01b3b6d9dd44c5e09b1a66d066
+F src/func.c f5b31c805679930cc5afcdfb1e657f9dd273053f52ff51133df5a448c519e5d9
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d57b57c85bb8cb9b8a1808b771bb91eeb8150efd14f9064a390e533e715bab7
-R 28bdb97771277a5a6a62f1ef55b562ac
-U dan
-Z 3453954a42c7f4fd97cc752d61f14e68
+P 437fb316389bc3c24c5cdb4d01edfc81e2c2e9f2b399fc2a95b05d279361d8ec
+R 79d5061e2e3bbb1ea5ad89bea1a7b048
+U drh
+Z 108486be1053ae42ce8d5fd32905dfdb
 # Remove this line to create a well-formed Fossil manifest.
