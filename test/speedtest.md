@@ -9,7 +9,7 @@ You will need:
   *  tclsh
   *  A script or program named "open" that brings up *.txt files in an
      editor for viewing.  (Macs provide this by default.  You'll need to
-     come up with your own on Linxu and Windows.)
+     come up with your own on Linux and Windows.)
   *  An SQLite source tree
 
 The procedure described in this document is not the only way to make
