@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sin\sthe\sstar-query\sheuristic\sthat\sis\ssometimes\sfalse\sif\syou\nhave\sa\scorrupt\sdatabase.\s\sdbsqlfuzz\sc37ba7728d79859b79c8341b59297e88fba017d3.\nTest\scase\sin\sTH3.
-D 2025-01-28T00:48:01.787
+C Apparently\sI\sgot\sthe\slogic\sof\s[abfe488ed67e2e35]\sconfused,\seven\sbackwards.\nChange\sit\sso\sthat\sthe\sSQLITE_USE_W32_FOR_CONSOLE_IO\smacro\scauses\sWin32\sAPIs\nto\sbe\sused\sfor\sconsole\sI/O\sand\sfor\sstdio\sto\sbe\sused\sotherwise.\s\sThis\sis\nreported\sto\sbe\snecessary\sfor\sbuilds\sthat\suse\sa\sC-language\sruntime\sother\sthan\nthe\sone\sprovided\sby\sMicrosoft.\s\sThis\schanges\sif\sfor\sWindows\sonly.\s\sIt\sis\sa\nbug\sfix,\sthough\swe\sdon't\shave\sa\stest\scase\sthat\swill\sdemonstrate\sa\smalfunction.
+D 2025-01-28T01:10:45.744
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -442,7 +442,7 @@ F ext/misc/shathree.c f3a778f27bf3e71b666a77f28e463a3b931c4dbe4219447e61bb678b4b
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c bcc42ef3fd29429bc01a83e751332b8d4690e65d45008449bdffe7656371487f
 F ext/misc/sqlar.c a6175790482328171da47095f87608b48a476d4fac78d8a9ff18b03a2454f634
-F ext/misc/sqlite3_stdio.c 18160504b9348d0ebb9f5620fd61e64cd2d55fffde05ab3f7db03396add4840a
+F ext/misc/sqlite3_stdio.c 0fe5a45bd332b30aef2b68c64edbe69e31e9c42365b0fa79ce95a034bca6fbb0
 F ext/misc/sqlite3_stdio.h f05eaf5e0258f0573910324a789a9586fc360a57678c57a6d63cfaa2245b6176
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8be956383e0344fb613ec2e56fce7b518f439ae34bf9ddb424de2bd9b31c9889
-R 77d3f24a906693f579bd3b508d5195e5
+P 6b9a339628eb8bfb6dfbee02000a6ac91cc8a9ae16bd990e62c4142b9f912c36
+R 85cb8890cc290d809a1a9ad2ffbbbd4c
 U drh
-Z 249159a5b98132893f1e97c49e03bb71
+Z 5b8003927aa3346b085a7fb5e605a55b
 # Remove this line to create a well-formed Fossil manifest.
