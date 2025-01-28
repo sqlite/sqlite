@@ -5538,7 +5538,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
         ** restrict the search for dimension-tables to be tables to the right
         ** of the fact-table. */
         if( iFromIdx+4 > nLoop ) break;  /* Impossible to reach nDep>=4 */
-        while( ALWAYS(pStart) && pStart->iTab<=iFromIdx ){
+        while( pStart && pStart->iTab<=iFromIdx ){
           pStart = pStart->pNextLoop;
         }
       }
