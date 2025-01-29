@@ -1,5 +1,5 @@
-C Add\sexperimental\ssupport\sto\spause/unpause\san\sSAHPool\sOPFS\sVFS,\sas\sdiscussed\sin\s[forum:fe8cdb8431c32455|forum\spost\sfe8cdb8431c32455],\sthe\sintent\sbeing\senable\sa\spage\sto\srelinquish,\sperhaps\stemporarily,\sthe\sVFS\ssuch\sthat\sthe\sVFS's\sstorage\scan\sbe\saccessed\sby\sanother\spage/tab.
-D 2025-01-29T11:08:11.315
+C Simplify\show\sOpfsSAHPoolUtil.unpauseVfs()'s\sreturned\spromise\sis\shandled.
+D 2025-01-29T11:28:18.640
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -645,7 +645,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 5cc22a3c0d52828cb32aad8691488719f47d2
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 3774befd97cd1a5e2895c8225a894aad946848c6d9b4028acc988b5d123475af
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 69755ca8d4fa8e71d5411e3eb08c3d73b5130b8cde547eb084ea806f398a1a24
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js c8d6f02d834224290009d25876d2ec011cb9b8dc425e3a0761b7e55d9a67c24f
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 9b86ca2d8276cf919fbc9ba2a10e9786033b64f92c2db844d951804dee6c4b4e
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js e809739d71e8b35dfe1b55d24d91f02d04239e6aef7ca1ea92a15a29e704f616
 F ext/wasm/api/sqlite3-wasm.c 83f5e9f998e9fa4261eb84e9f092210e3ffe03895119f5ded0429eb34ab9d2be
@@ -2209,11 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fb76d184ee5afc41009c4023bb68b3ddd42c9235a79ec9695c26f5bbe9a1aa25
-R e66195e1cc783f35788121ca02ce3aa2
-T *branch * opfs-sahpool-pause
-T *sym-opfs-sahpool-pause *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 1d2683fe9e4be01c3137e750900f54d287e7d96185e66924d24b50f4647e7ef1
+R 66a514dac494b6089e61caf69206dcd1
 U stephan
-Z 8366991e856ca53edfe28286f618bbf1
+Z 0fe942552ec304dc399f25e3701534d9
 # Remove this line to create a well-formed Fossil manifest.

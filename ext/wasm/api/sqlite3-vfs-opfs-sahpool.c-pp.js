@@ -908,21 +908,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        re-registering it with SQLite. This is a no-op if the VFS is
        not currently paused.
 
-       The returned Promise resolves to this function's argument, and
-       is intended solely for use by the OpfsSAHPoolUtil helper class.
+       The returned Promise resolves to this object.
 
        @see isPaused()
        @see pauseVfs()
     */
-    async unpauseVfs(returnValue){
+    async unpauseVfs(){
       if(0===this.#mapSAHToName.size){
         return this.acquireAccessHandles(false).
-          then(()=>{
-            capi.sqlite3_vfs_register(this.#cVfs, 0);
-            return returnValue;
-          });
+          then(()=>capi.sqlite3_vfs_register(this.#cVfs, 0),this);
       }
-      return returnValue;
+      return this;
     }
 
     //! Documented elsewhere in this file.
@@ -1050,7 +1046,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     async removeVfs(){ return this.#p.removeVfs() }
 
     pauseVfs(){ this.#p.pauseVfs(); return this; }
-    async unpauseVfs(){ return this.#p.unpauseVfs(this); }
+    async unpauseVfs(){ return this.#p.unpauseVfs().then(()=>this); }
     isPaused(){ return this.#p.isPaused() }
 
   }/* class OpfsSAHPoolUtil */;
