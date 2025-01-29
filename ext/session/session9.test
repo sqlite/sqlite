@@ -80,7 +80,7 @@ foreach {tn delrow trans conflictargs conflictret} {
   8   3 1 {FOREIGN_KEY 1} ABORT
 } {
 
-  set A(OMIT,0)  {1 SQLITE_CONSTRAINT}
+  set A(OMIT,0)  {0 {}}
   set A(OMIT,1)  {0 {}}
   set A(ABORT,0) {1 SQLITE_CONSTRAINT}
   set A(ABORT,1) {1 SQLITE_CONSTRAINT}
@@ -95,7 +95,7 @@ foreach {tn delrow trans conflictargs conflictret} {
 
   do_test 1.2.$tn.2 { set ::xConflict } $conflictargs
 
-  set A(OMIT,0)  {0 0}
+  set A(OMIT,0)  {1 1}
   set A(OMIT,1)  {1 1}
   set A(ABORT,0) {0 0}
   set A(ABORT,1) {0 0}
