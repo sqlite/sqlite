@@ -832,12 +832,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Removes this object's sqlite3_vfs registration and shuts down
        this object, releasing all handles, mappings, and whatnot,
        including deleting its data directory. There is currently no
-       way to "revive" the object and reaquire its resources.
+       way to "revive" the object and reaquire its
+       resources. Similarly, there is no recovery strategy if removal
+       of any given SAH fails, so such errors are ignored by this
+       function.
 
        This function is intended primarily for testing.
 
        Resolves to true if it did its job, false if the
        VFS has already been shut down.
+
+       @see pauseVfs()
+       @see unpauseVfs()
     */
     async removeVfs(){
       if(!this.#cVfs.pointer || !this.#dhOpaque) return false;
@@ -859,6 +865,65 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return true;
     }
 
+
+    /**
+       "Pauses" this VFS by unregistering it from SQLite and
+       relinquishing all open SAHs, leaving the associated files
+       intact. If this object is already paused, this is a
+       no-op. Returns this object.
+
+       This function throws if any database handles are active, as the
+       alternative would be to invoke Undefined Behavior by closing
+       that file handle out from under the database. Similarly,
+       automatically closing any database handles opened by this VFS
+       would invoke Undefined Behavior in downstream code which is
+       holding those pointers.
+
+       @see isPaused()
+       @see unpauseVfs()
+    */
+    pauseVfs(){
+      if(this.#mapS3FileToOFile_.size>0){
+        toss("Cannot pause a VFS which has an opened database.")
+      }
+      if(this.#mapSAHToName.size>0){
+        capi.sqlite3_vfs_unregister(this.vfsName);
+        this.releaseAccessHandles();
+      }
+      return this;
+    }
+
+    /**
+       Returns true if this pool is currently paused else false.
+
+       @see pauseVfs()
+       @see unpauseVfs()
+    */
+    isPaused(){
+      return 0===this.#mapSAHToName.size;
+    }
+
+    /**
+       "Unpauses" this VFS, reacquiring all SAH's and (if successful)
+       re-registering it with SQLite. This is a no-op if the VFS is
+       not currently paused.
+
+       The returned Promise resolves to this function's argument, and
+       is intended solely for use by the OpfsSAHPoolUtil helper class.
+
+       @see isPaused()
+       @see pauseVfs()
+    */
+    async unpauseVfs(returnValue){
+      if(0===this.#mapSAHToName.size){
+        return this.acquireAccessHandles(false).
+          then(()=>{
+            capi.sqlite3_vfs_register(this.#cVfs, 0);
+            return returnValue;
+          });
+      }
+      return returnValue;
+    }
 
     //! Documented elsewhere in this file.
     exportFile(name){
@@ -983,6 +1048,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     unlink(filename){ return this.#p.deletePath(filename) }
 
     async removeVfs(){ return this.#p.removeVfs() }
+
+    pauseVfs(){ this.#p.pauseVfs(); return this; }
+    async unpauseVfs(){ return this.#p.unpauseVfs(this); }
+    isPaused(){ return this.#p.isPaused() }
 
   }/* class OpfsSAHPoolUtil */;
 
