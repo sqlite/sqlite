@@ -461,6 +461,17 @@ int sqlite3WalTrace = 0;
 #define WAL_VERSION1 3007000      /* For "journal_mode=wal" */
 #define WAL_VERSION2 3021000      /* For "journal_mode=wal2" */
 
+#ifdef SQLITE_ENABLE_WAL2NOCKSUM
+# undef WAL_VERSION2
+# define WAL_VERSION2 3048000     /* For "journal_mode=wal2" sans checksums */
+
+# define isNocksum(pWal) isWalMode2(pWal)
+#else
+# define isNocksum(pWal) 0
+#endif
+
+
+
 
 /*
 ** Index numbers for various locking bytes.   WAL_NREADER is the number
@@ -1240,10 +1251,13 @@ static void walEncodeFrame(
 
     nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
     walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
-    walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+    if( isNocksum(pWal)==0 ){
+      walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+    }
 
     sqlite3Put4byte(&aFrame[16], aCksum[0]);
     sqlite3Put4byte(&aFrame[20], aCksum[1]);
+
   }else{
     memset(&aFrame[8], 0, 16);
   }
@@ -1287,7 +1301,9 @@ static int walDecodeFrame(
   */
   nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
   walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
-  walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+  if( isNocksum(pWal)==0 ){
+    walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+  }
   if( aCksum[0]!=sqlite3Get4byte(&aFrame[16])
    || aCksum[1]!=sqlite3Get4byte(&aFrame[20])
   ){
@@ -5110,10 +5126,21 @@ static int walWriteOneFrame(
 
   pData = pPage->pData;
   walEncodeFrame(p->pWal, pPage->pgno, nTruncate, pData, aFrame);
-  rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
-  if( rc ) return rc;
+
+  if( isNocksum(p->pWal)==0 ){
+    /* Write the header in normal mode */
+    rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
+    if( rc ) return rc;
+  }
+
   /* Write the page data */
   rc = walWriteToLog(p, pData, p->szPage, iOffset+sizeof(aFrame));
+
+  if( isNocksum(p->pWal) ){
+    /* Write the header in no-checksum mode */
+    if( rc ) return rc;
+    rc = walWriteToLog(p, aFrame, sizeof(aFrame), iOffset);
+  }
   return rc;
 }
 

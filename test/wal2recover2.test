@@ -85,8 +85,10 @@ proc fix_wal_cksums {file} {
     set e [hexio_read $file $off 8]
     set cksum [cksum $cksum $e]
 
-    set p [hexio_read $file [expr $off+24] $pgsz]
-    set cksum [cksum $cksum $p]
+    ifcapable !wal2nocksum {
+      set p [hexio_read $file [expr $off+24] $pgsz]
+      set cksum [cksum $cksum $p]
+    }
 
     hexio_write $file [expr $off+8] $salt
     hexio_write $file [expr $off+16] $cksum
@@ -128,6 +130,11 @@ proc wal_set_follow {file prevfile} {
   hexio_write $file 16 $cksum
   fix_wal_cksums $file
 }
+
+do_execsql_test 1.3.0 {
+  SELECT sum(x) FROM t1;
+  SELECT sum(x) FROM t2;
+} [list $H $M]
 
 foreach {tn file field} {
   1 test.db2-wal    salt0
@@ -296,7 +303,15 @@ do_test 2.1 {
   forcecopy test.db-wal2 test.db2-wal
   forcecopy test.db-wal test.db2-wal2
   
-  hexio_write test.db2-wal 5000 1234567890
+  ifcapable wal2nocksum {
+    # With wal2nocksum set, each frame checksum is calculated based on the
+    # previous checksum and the contents of the first 8 bytes of the frame
+    # header. So to get the behaviour the test requires we need to mess up
+    # the frame header, not the body. Hence 4224 instead of 5000.
+    hexio_write test.db2-wal 4224 1234567890
+  } else {
+    hexio_write test.db2-wal 5000 1234567890
+  }
 } {5}
 
 do_test 2.2 {
