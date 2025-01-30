@@ -1,5 +1,5 @@
-C Updates\sto\sthe\scompile-for-windows.md\sdocument.
-D 2025-01-30T13:54:32.680
+C Improvements\sto\sthe\sTCL\sinterface\sfor\sTcl9\sas\ssuggested\sby\sJan\sNijtmans.
+D 2025-01-30T16:00:28.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 18b859068a43818d29172b36d624a9bc8ce8204350ebd18a9f96994970081ab9
+F main.mk 043987843e8365dbaf74dce60c11683b62e2bcfcb3122574c14a0324d37a72f3
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -789,7 +789,7 @@ F src/sqliteInt.h 6f23e483be7810ea1854c8fbfbbbfae2a702529d1feb9a210a290abb445541
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 6a7538560adc856faea295c0f09c33a57a1cfa5c59f85ab4e12aa50dba7ff2de
+F src/tclsqlite.c 0eb2b419b89a59085ea175423c24bb771fc83784313cf164e8d61e6bbddd58f6
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 9d2da51b4c33633e7370e4068af6d16d2c52b22a5810ec012ac32e77f8397b64
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2114,7 +2114,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl e82120d672b34b507e1d9cb220ce18c5c36c3ee0ff0328e35f1806ce74ed2266
+F tool/buildtclext.tcl 20726b6b73c7911baa8519a9467b4062104339a5ce57947819884525c56d79e3
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c990d77cb83ab371d92c97e0528f790ab6126c60f48ff77e48bd166d7834cf0
-R ee4011e86e18eda74626e7b7a4c214d1
+P bcd22ed686954657ba820d53dec255d33797924f76e57b931016813581e04e06
+R d309c684cafbcb8b827c550f3c1fa4b1
 U drh
-Z c0301aa5783297a36ea33255b63dc517
+Z a306e9e3591ef614e7789f7fb42dc8cb
 # Remove this line to create a well-formed Fossil manifest.

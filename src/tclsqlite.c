@@ -4021,7 +4021,9 @@ EXTERN int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
 EXTERN int Sqlite_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
 
-/* Also variants with a lowercase "s" */
+/* Also variants with a lowercase "s".  I'm told that these are
+** deprecated in Tcl9, but they continue to be included for backwards
+** compatibility. */
 EXTERN int sqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 
