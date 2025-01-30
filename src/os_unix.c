@@ -4038,8 +4038,9 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     case SQLITE_FCNTL_LOCK_TIMEOUT: {
       int iOld = pFile->iBusyTimeout;
+      int iNew = *(int*)pArg;
 #if SQLITE_ENABLE_SETLK_TIMEOUT==1
-      pFile->iBusyTimeout = *(int*)pArg;
+      pFile->iBusyTimeout = iNew<0 ? 0x7FFFFFFF : (unsigned)iNew;
 #elif SQLITE_ENABLE_SETLK_TIMEOUT==2
       pFile->iBusyTimeout = !!(*(int*)pArg);
 #else

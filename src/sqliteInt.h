@@ -1745,7 +1745,7 @@ struct sqlite3 {
   int nAnalysisLimit;           /* Number of index rows to ANALYZE */
   int busyTimeout;              /* Busy handler timeout, in msec */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  int setlkTimeout;             /* Blocking lock timeout, in msec */
+  int setlkTimeout;             /* Blocking lock timeout, in msec. -1 -> inf. */
 #endif
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */

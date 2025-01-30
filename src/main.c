@@ -1827,12 +1827,16 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
   return SQLITE_OK;
 }
 
+/*
+** Set the setlk timeout value.
+*/
 int sqlite3_setlk_timeout(sqlite3 *db, int ms){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
+  if( ms<-1 ) return SQLITE_RANGE;
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  db->setlkTimeout = (ms>0 ? ms : 0);
+  db->setlkTimeout = ms;
 #endif
   return SQLITE_OK;
 }

@@ -288,7 +288,7 @@ struct winFile {
   sqlite3_int64 mmapSizeMax;    /* Configured FCNTL_MMAP_SIZE value */
 #endif
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-  unsigned iBusyTimeout;        /* Wait this many millisec on locks */
+  DWORD iBusyTimeout;        /* Wait this many millisec on locks */
 #endif
 };
 
@@ -2608,7 +2608,7 @@ static int winHandleLockTimeout(
   DWORD offset,
   DWORD nByte,
   int bExcl,
-  int nMs
+  DWORD nMs
 ){
   DWORD flags = LOCKFILE_FAIL_IMMEDIATELY | (bExcl?LOCKFILE_EXCLUSIVE_LOCK:0);
   int rc = SQLITE_OK;
@@ -2622,7 +2622,7 @@ static int winHandleLockTimeout(
     ovlp.Offset = offset;
 
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    if( nMs>0 ){
+    if( nMs!=0 ){
       flags &= ~LOCKFILE_FAIL_IMMEDIATELY;
     }
     ovlp.hEvent = osCreateEvent(NULL, TRUE, FALSE, NULL);
@@ -2637,9 +2637,17 @@ static int winHandleLockTimeout(
     /* If SQLITE_ENABLE_SETLK_TIMEOUT is defined, then the file-handle was
     ** opened with FILE_FLAG_OVERHEAD specified. In this case, the call to
     ** LockFileEx() may fail because the request is still pending. This can
-    ** happen even if LOCKFILE_FAIL_IMMEDIATELY was specified.  */
+    ** happen even if LOCKFILE_FAIL_IMMEDIATELY was specified.  
+    **
+    ** If nMs is 0, then LOCKFILE_FAIL_IMMEDIATELY was set in the flags 
+    ** passed to LockFileEx(). In this case, if the operation is pending,
+    ** block indefinitely until it is finished.
+    **
+    ** Otherwise, wait for up to nMs ms for the operation to finish. nMs
+    ** may be set to INFINITE.
+    */
     if( !ret && GetLastError()==ERROR_IO_PENDING ){
-      DWORD nDelay = (nMs==0 || nMs==0x7FFFFFFF ? INFINITE : nMs);
+      DWORD nDelay = (nMs==0 ? INFINITE : nMs);
       DWORD res = osWaitForSingleObject(ovlp.hEvent, nDelay);
       if( res==WAIT_OBJECT_0 ){
         ret = TRUE;
@@ -3834,10 +3842,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
     case SQLITE_FCNTL_LOCK_TIMEOUT: {
       int iOld = pFile->iBusyTimeout;
+      int iNew = *(int*)pArg;
 #if SQLITE_ENABLE_SETLK_TIMEOUT==1
-      pFile->iBusyTimeout = *(int*)pArg;
+      pFile->iBusyTimeout = (iNew < 0) ? INFINITE : (DWORD)iNew;
 #elif SQLITE_ENABLE_SETLK_TIMEOUT==2
-      pFile->iBusyTimeout = !!(*(int*)pArg);
+      pFile->iBusyTimeout = (DWORD)(!!iNew);
 #else
 # error "SQLITE_ENABLE_SETLK_TIMEOUT must be set to 1 or 2"
 #endif
@@ -4043,7 +4052,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 ** pShmNode. Take the lock. Truncate the *-shm file if required.
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise.
 */
-static int winLockSharedMemory(winShmNode *pShmNode, int nMs){
+static int winLockSharedMemory(winShmNode *pShmNode, DWORD nMs){
   HANDLE h = pShmNode->hSharedShm;
   int rc = SQLITE_OK;
 
@@ -4407,7 +4416,7 @@ static int winShmLock(
       }
     }else{
       int bExcl = ((flags & SQLITE_SHM_EXCLUSIVE) ? 1 : 0);
-      int nMs = winFileBusyTimeout(pDbFd);
+      DWORD nMs = winFileBusyTimeout(pDbFd);
       rc = winHandleLockTimeout(p->hShm, ofst+WIN_SHM_BASE, n, bExcl, nMs);
       if( rc==SQLITE_OK ){
         if( bExcl ){

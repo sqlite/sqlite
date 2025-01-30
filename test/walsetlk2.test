@@ -167,5 +167,90 @@ do_execsql_test 2.7 {
   SELECT * FROM t1
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 
+#-------------------------------------------------------------------------
+# Check that if sqlite3_setlk_timeout(-1) is called, blocking locks are
+# enabled and last for a few seconds at least. Difficult to test that they
+# really do block indefinitely.
+#
+reset_db
+
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'one'), (3, 'three');
+} {wal}
+
+sqlite3_setlk_timeout db -1
+
+# Launch a non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+      INSERT INTO t1 VALUES(5, 'five');
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+after 500 {set ok 1}
+vwait ok
+
+breakpoint
+do_catchsql_test 3.1 {
+  INSERT INTO t1 VALUES(7, 'seven');
+} {0 {}}
+
+# Launch another non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+      INSERT INTO t1 VALUES(9, 'nine');
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+after 500 {set ok 1}
+vwait ok
+
+do_catchsql_test 3.2 {
+  INSERT INTO t1 VALUES(9, 'ten');
+} {1 {UNIQUE constraint failed: t1.a}}
+
+do_execsql_test 3.3 {
+  SELECT * FROM t1
+} {1 one 3 three 5 five 7 seven 9 nine}
+
+db close
+
+# Launch another non-blocking testfixture process to write-lock the 
+# database for 2000 ms.
+testfixture_nb done {
+  sqlite3 db test.db
+  db eval {
+    BEGIN EXCLUSIVE;
+      INSERT INTO t1 VALUES(11, 'eleven');
+  }
+  after 2000
+  db eval {
+    COMMIT
+  }
+}
+
+sqlite3 db test.db
+sqlite3_setlk_timeout db -1
+do_catchsql_test 3.4 {
+  INSERT INTO t1 VALUES(13, 'thirteen');
+} {0 {}}
+
+
 finish_test
 

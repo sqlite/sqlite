@@ -2909,9 +2909,10 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** handle. In non-SQLITE_ENABLE_SETLK_TIMEOUT builds, or if the VFS does
 ** not support blocking locks, this function is a no-op.
 **
-** Passing 0x7FFFFFFF to this function is interpreted by some VFS as "block
-** indefinitely". Passing zero or less than zero disables blocking locks
-** altogether.
+** Passing 0 to this function disables blocking locks altogether. Passing 
+** -1 to this function requests that the VFS blocks for a long time - 
+** indefinitely if possible. The results of passing any other negative value 
+** are undefined.
 **
 ** Internally, each SQLite database handle store two timeout values - the
 ** busy-timeout (used for rollback mode databases, or if the VFS does not
