@@ -1,5 +1,5 @@
-C Fix\sbuild\sregression,\sintroduced\sin\s[d2fe6b05f38d9d]\s(3.48.0),\sin\swhich\sSQLITE_OMIT\sand\sSQLITE_ENABLE\sflags\spassed\sto\sconfigure\svia\sCFLAGS\swere\snot\spropagated\sto\sthe\sOPT_FEATURE_FLAGS\slist.\sReported\sin\s[forum:9801e54665afd728|forum\spost\s9801e54665afd728].
-D 2025-01-30T11:19:16.519
+C Disable\sa\stest\scase\sthat\s(intentionally)\sdoes\suse-after-free,\sas\sit\sdoes\noccasionally\scause\sproblems\seven\sfor\snon-sanitizer\sbuilds.
+D 2025-01-30T12:01:24.848
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -990,7 +990,7 @@ F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
 F test/capi2.test 4ee545824adc3eb33bf57ef89f77440b28188ec3da72e5425ff0fcdba32e8d5a
-F test/capi3.test 4892b5e53d2a6941edc9d204a0ab174dd66e8689282d9a15e4384561c3965945
+F test/capi3.test ab90c548969613315605c555a8623f6b56e00e28d451c46a17ef73683c422c70
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a490f7
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7c07581203a0a88456588e49e51b40a8341b0e7121809f75be0ee882d91650f
-R 1c8a0d642354e8cc82e464f25cf69897
-U stephan
-Z 9d44f698cd53e225ebbddcb3eac9dddd
+P ec71d9dcd582188d7fb4ab945187de1023eaaecffeeb2903a6fcc49650bd21e9
+R 7b8d1f95b47e47a5d559070e34819714
+U drh
+Z 470d847ca31236034508764b46198386
 # Remove this line to create a well-formed Fossil manifest.
