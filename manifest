@@ -1,5 +1,5 @@
-C Fix\sbug\sin\ssessions\shandling\sof\sFK\sconstraints\sintroduced\sby\s[e09a0c02]\s(released\sin\s3.48.0).\sBug\swas\spreventing\sa\schangeset\scontaining\sFK\sviolations\sfrom\sbeing\sapplied\seven\swhen\sthe\sxConflict(CHANGESET_FOREIGN_KEY)\sreturned\sOMIT.
-D 2025-01-29T19:02:39.506
+C Make\stwo\sprivate\sroutines\sin\sFTS\s"static"\sso\sthat\sthey\sare\snot\scallable\sfrom\noutside\sof\sSQLite\sitself.
+D 2025-01-30T10:55:57.153
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c 1ce1e2b43fdd86a2047619c2ea3aafa5c7b909d0cef75185d0fda31e82f0e9c6
+F ext/fts5/fts5_index.c a59ccd06af157da2471f356198af14bc37d86e46231e4e1858b2af2f94c2c6e4
 F ext/fts5/fts5_main.c 9a1daef7247f9b8a50b4159323e340efa6b0e4bea4fcd83580480f94d4f2c888
 F ext/fts5/fts5_storage.c 1ad05dab4830a4e2eaf2900bb143477f93bc17437093582f36f4b818809e88d8
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ceafa92e7fabd8b408d270b49c6c6802f0f136d0317c1a7add21436353da3dcf
-Q +d7c07581203a0a88456588e49e51b40a8341b0e7121809f75be0ee882d91650f
-R c1c014bffbe7a37af630da9a89c21033
-U dan
-Z b710551198d9d46c28961c22c0ab6dfb
+P 946f33cd458ca9b6735bb47899649c14eaf5cffa8d643e1dfc307130e69778fd
+Q +9b11bed0448b95319206b413c35f23bb80f3f4c0a4394d40f2e64066400a01ed
+R 901a89967d8e567911f1d9ef04291378
+U drh
+Z 326860c860945f1e50f406e97fa8accf
 # Remove this line to create a well-formed Fossil manifest.

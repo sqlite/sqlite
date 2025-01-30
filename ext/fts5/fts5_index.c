@@ -778,7 +778,7 @@ static int fts5LeafFirstTermOff(Fts5Data *pLeaf){
 /*
 ** Close the read-only blob handle, if it is open.
 */
-void fts5IndexCloseReader(Fts5Index *p){
+static void fts5IndexCloseReader(Fts5Index *p){
   if( p->pReader ){
     int rc;
     sqlite3_blob *pReader = p->pReader;
@@ -6955,7 +6955,7 @@ static void fts5SegIterSetEOF(Fts5SegIter *pSeg){
   pSeg->pLeaf = 0;
 }
 
-void fts5IterClose(Fts5IndexIter *pIndexIter){
+static void fts5IterClose(Fts5IndexIter *pIndexIter){
   if( pIndexIter ){
     Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
     Fts5Index *pIndex = pIter->pIndex;
