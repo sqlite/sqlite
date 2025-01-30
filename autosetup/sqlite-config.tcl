@@ -226,6 +226,20 @@ proc sqlite-setup-default-cflags {} {
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
   # BUILD_CFLAGS is the CFLAGS for CC_FOR_BUILD.
   define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
+
+  # Copy all CFLAGS entries matching -DSQLITE_OMIT* and
+  # -DSQLITE_ENABLE* to OPT_FEATURE_FLAGS. This behavior is derived
+  # from the legacy build and was missing the 3.48.0 release (the
+  # initial Autosetup port).
+  # https://sqlite.org/forum/forumpost/9801e54665afd728
+  foreach cf [get-define CFLAGS ""] {
+    switch -glob -- $cf {
+      -DSQLITE_OMIT* -
+      -DSQLITE_ENABLE* {
+        sqlite-add-feature-flag $cf
+      }
+    }
+  }
 }
 
 ########################################################################
