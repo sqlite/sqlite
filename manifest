@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sTCL\sinterface\sfor\sTcl9\sas\ssuggested\sby\sJan\sNijtmans.
-D 2025-01-30T16:00:28.158
+C Remove\san\sunused\sparameter\sfrom\san\sinternal-use\ssubroutine\sin\sthe\sTCL\sinterface.
+D 2025-01-30T16:07:51.559
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -789,7 +789,7 @@ F src/sqliteInt.h 6f23e483be7810ea1854c8fbfbbbfae2a702529d1feb9a210a290abb445541
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 0eb2b419b89a59085ea175423c24bb771fc83784313cf164e8d61e6bbddd58f6
+F src/tclsqlite.c 5c1e367e26711044730c93d4b81312170918a8d1fe811f45be740ab48f7de8c1
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 9d2da51b4c33633e7370e4068af6d16d2c52b22a5810ec012ac32e77f8397b64
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bcd22ed686954657ba820d53dec255d33797924f76e57b931016813581e04e06
-R d309c684cafbcb8b827c550f3c1fa4b1
+P d76c5db866de2732b68401a4c3e39acddc7a99bed965160c1796477c062b478a
+R e81adcf32270498fe2fdd74c590e8f70
 U drh
-Z a306e9e3591ef614e7789f7fb42dc8cb
+Z baccdbeebeaa149b6573e44db1cfe14f
 # Remove this line to create a well-formed Fossil manifest.
