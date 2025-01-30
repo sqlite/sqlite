@@ -232,6 +232,10 @@ proc sqlite-setup-default-cflags {} {
   # from the legacy build and was missing the 3.48.0 release (the
   # initial Autosetup port).
   # https://sqlite.org/forum/forumpost/9801e54665afd728
+  #
+  # If any configure flags for features are in conflict with
+  # CFLAGS-specified feature flags, all bets are off.  There are no
+  # guarantees about which one will take precedence.
   foreach cf [get-define CFLAGS ""] {
     switch -glob -- $cf {
       -DSQLITE_OMIT* -
@@ -307,8 +311,9 @@ proc sqlite-handle-common-feature-flags {} {
 }
 
 #########################################################################
-# Show the final feature flag sets.
-proc sqlite-show-feature-flags {} {
+# Remove duplicates from the final feature flag sets and show them to
+# the user.
+proc sqlite-finalize-feature-flags {} {
   set oFF [get-define OPT_FEATURE_FLAGS]
   if {"" ne $oFF} {
     define OPT_FEATURE_FLAGS [lsort -unique $oFF]
@@ -319,7 +324,6 @@ proc sqlite-show-feature-flags {} {
     define OPT_SHELL [lsort -unique $oFF]
     msg-result "Shell options: [get-define OPT_SHELL]"
   }
-  #parray ::sqliteConfig
 }
 
 ########################################################################
@@ -858,12 +862,20 @@ proc sqlite-handle-math {} {
 }
 
 ########################################################################
-# Generate the configure-process output file(s).
+# Perform some late-stage work and generate the configure-process
+# output file(s).
 proc sqlite-process-dot-in-files {} {
   ########################################################################
   # When cross-compiling, we have to avoid using the -s flag to
-  # /usr/bin/install: https://sqlite.org/forum/forumpost/9a67df63eda9925c
+  # /usr/bin/install:
+  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   define IS_CROSS_COMPILING $::sqliteConfig(is-cross-compiling)
+
+  # Finish up handling of the various feature flags here because it's
+  # convenient for both the canonical build and autoconf bundles that
+  # it be done here.
+  sqlite-handle-common-feature-flags
+  sqlite-finalize-feature-flags
 
   ########################################################################
   # "Re-export" the autoconf-conventional --XYZdir flags into something
