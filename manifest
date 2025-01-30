@@ -1,5 +1,5 @@
-C Minor\scode\sde-duplication\sacross\sthe\stop-level\sauto.def\sand\sautoconf/auto.def.
-D 2025-01-30T12:19:30.898
+C Updates\sto\sthe\scompile-for-windows.md\sdocument.
+D 2025-01-30T13:54:32.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -56,7 +56,7 @@ F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-unix.md c9dce1ddd4bf0d25efccc5c63eb047e78c01ce06a6ff29c73e0a8af4a0f4adbc
-F doc/compile-for-windows.md 31cddda1d5f34027f1f2b7484d580e7558f22a9875884805b6fdc84d56cab848
+F doc/compile-for-windows.md 5141661e783c9ca9e3fd30e813345898712f5c311d71316f183db87038fa28a6
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md 5fab4b8613aa9153fbeb6259297bd4697988af8b3d23900deba588fa7841456b
 F doc/lemon.html 8b266ff711d2ec7f867c3dca37634963f48a630329908cc282beebfa8c708706
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 23c7d5bea351c04785153ddb30e19c1236db9d11054ab8229893531026b53655
-R ba9c9d617d2000ba71d01bbdea8f462f
-U stephan
-Z 94fb984dd769f6092f86cd16435effad
+P 3c990d77cb83ab371d92c97e0528f790ab6126c60f48ff77e48bd166d7834cf0
+R ee4011e86e18eda74626e7b7a4c214d1
+U drh
+Z c0301aa5783297a36ea33255b63dc517
 # Remove this line to create a well-formed Fossil manifest.
