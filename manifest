@@ -1,5 +1,5 @@
-C If\sany\serrors\soccur\swhile\sprocessing\ssqlite_dbpage\schanges,\scancel\npending\struncate\soperations.
-D 2025-01-31T14:54:20.344
+C Fix\sa\sproblem\swith\sLIKE\sand\sGLOB\sprocessing\sin\sutf-16be\sdatabases\sin\scases\swhere\sthe\sutf-8\sencoding\sof\sa\scharacter\sends\swith\sthe\sbyte\s0xBF.
+D 2025-01-31T14:58:00.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -865,7 +865,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 604f17baed46f4997ffe79f25c07c4b51a4165a5938cc27fe165c7e1ca485d11
 F src/whereInt.h 1e36ec50392f7cc3d93d1152d4338064cd522b87156a0739388b7e273735f0ca
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
-F src/whereexpr.c 0f93a29cabd3a338d09a1f5c6770620a1ac51ec1157f3229502a7e7767c60b6f
+F src/whereexpr.c fd80811331cebf37a96a1bbbe93a20425eb04a925baa7c2306d72e0797a47a4c
 F src/window.c 2bf01f9941a64fbcead61a0e3cb5db3fca5094b30d2ff0d23274c2a81d2e2385
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1399,7 +1399,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 70110eff607ab137ccc851edb2bc7e14a6d4f246b5d2d25f82a60b69d87a9ff2
 F test/like.test b3ea2ba3558199aa8f25a42ddeb54772e234fab50868c9f066047acdbda8fc58
 F test/like2.test d3be15fefee3e02fc88942a9b98f26c5339bbdef7783c90023c092c4955fe3d3
-F test/like3.test a76e5938fadbe6d32807284c796bafd869974a961057bc5fc5a28e06de98745c
+F test/like3.test a9d78297426279c3db1206490444f3193f579890b3c4118a52960afe2b4863cd
 F test/limit.test 350f5d03c29e7dff9a2cde016f84f8d368d40bcd02fa2b2a52fa10c4bf3cbfaf
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/literal.test a65dca9fef86e51b8e45544268e37abbd4bb94ba35fd65f6fdcab2f288cd8f79
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 66bf67842bd458c7c2d563b5addaae4fd328543f4ddbbeee63c5e59faf429903
-Q +6138e0dc4e0e4e19cb048fe0cd969156151fdc427eee21188d2a822642aad043
-R 61f42abda88321326440732c6bc3cf4f
+P 3f8d1902519009b4f37fc716ddaa9695a5bbb2a4ad5bba55a7efdfd1e99f3eab
+Q +4b4f33d791fe4318c4597bee7d2f9e486ed223e731982af470f5cc0dbdc600fc
+R b159b7f206c5ad7b10c423f9ad2662d7
 U drh
-Z 8137921b9529da45f1eb973819d03ef5
+Z b818b8e3f2f32f070323e2cf3a855914
 # Remove this line to create a well-formed Fossil manifest.

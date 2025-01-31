@@ -219,12 +219,12 @@ static int isLikeOrGlob(
      z = (u8*)pRight->u.zToken;
   }
   if( z ){
-    /* Count the number of prefix bytes prior to the first wildcard.
-    ** or U+fffd character.  If the underlying database has a UTF16LE
-    ** encoding, then only consider ASCII characters.  Note that the
-    ** encoding of z[] is UTF8 - we are dealing with only UTF8 here in
-    ** this code, but the database engine itself might be processing
-    ** content using a different encoding. */
+    /* Count the number of prefix bytes prior to the first wildcard,
+    ** U+fffd character, or malformed utf-8. If the underlying database
+    ** has a UTF16LE encoding, then only consider ASCII characters.  Note that
+    ** the encoding of z[] is UTF8 - we are dealing with only UTF8 here in this
+    ** code, but the database engine itself might be processing content using a
+    ** different encoding. */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
@@ -232,7 +232,9 @@ static int isLikeOrGlob(
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;
-        if( sqlite3Utf8Read(&z2)==0xfffd || ENC(db)==SQLITE_UTF16LE ){
+        if( sqlite3Utf8Read(&z2)==0xfffd || c==0xFF   /* bad utf-8 */
+         || ENC(db)==SQLITE_UTF16LE 
+        ){
           cnt--;
           break;
         }else{
@@ -1384,9 +1386,8 @@ static void exprAnalyze(
     }
 
     if( !db->mallocFailed ){
-      u8 c, *pC;       /* Last character before the first wildcard */
+      u8 *pC;       /* Last character before the first wildcard */
       pC = (u8*)&pStr2->u.zToken[sqlite3Strlen30(pStr2->u.zToken)-1];
-      c = *pC;
       if( noCase ){
         /* The point is to increment the last character before the first
         ** wildcard.  But if we increment '@', that will push it into the
@@ -1394,10 +1395,17 @@ static void exprAnalyze(
         ** inequality.  To avoid this, make sure to also run the full
         ** LIKE on all candidate expressions by clearing the isComplete flag
         */
-        if( c=='A'-1 ) isComplete = 0;
-        c = sqlite3UpperToLower[c];
+        if( *pC=='A'-1 ) isComplete = 0;
+        *pC = sqlite3UpperToLower[*pC];
       }
-      *pC = c + 1;
+
+      /* Increment the value of the last utf8 character in the prefix. */
+      while( *pC==0xBF && pC>(u8*)pStr2->u.zToken ){
+        *pC = 0x80;
+        pC--;
+      }
+      assert( *pC!=0xFF );        /* isLikeOrGlob() guarantees this */
+      (*pC)++;
     }
     zCollSeqName = noCase ? "NOCASE" : sqlite3StrBINARY;
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
