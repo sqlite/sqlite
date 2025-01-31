@@ -1,5 +1,5 @@
-C Add\sa\ssmall\stest\sapp\sdemonstrating\scooperative\ssemi-concurrency\sof\sthe\sopfs-sahpool\sVFS\susing\sits\sun/pauseVfs()\sAPIs.
-D 2025-01-31T16:25:18.083
+C Add\sthe\sconventional\slicense\sheader\sto\ssahpool-worker.js\sand\scorrect\sthe\sdate\son\sthe\sheader\sin\ssahpool-pausing.js.
+D 2025-01-31T16:34:52.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -701,8 +701,8 @@ F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca01385e2732294b53f4c842328
-F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js cd64dc1ea91e99a296eafffd806ce84b540b60010bc344f3ed2b95885a6a9900
-F ext/wasm/tests/opfs/sahpool/sahpool-worker.js a3c5ced52d34675cb2b413461c3ed185b1e9aef41eda1f5d22550ff737d057cd
+F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js 780952b64dcde74ced1bb74813c0f995b689130f93d0a589995c78a783ec88ac
+F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk 043987843e8365dbaf74dce60c11683b62e2bcfcb3122574c14a0324d37a72f3
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 184ba37702f63196deca91d273e798ca895fbb301938e6264bc82815a4e33149
-R 811999f4e14055835b34337c582dd5f9
+P 09570c55a23e5af76dd2153a5b28a493f498d7d4a08b0089f3074d0a2c5d3d29
+R bfbe4fbf82db0e350871f46cfbfa28ef
 U stephan
-Z 6cecf310c2a5b350f628459d87398b50
+Z d959934b83791a6e7fb628c4c0368bb3
 # Remove this line to create a well-formed Fossil manifest.

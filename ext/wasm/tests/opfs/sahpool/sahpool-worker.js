@@ -1,3 +1,18 @@
+/*
+  2025-01-31
+
+  The author disclaims copyright to this source code.  In place of a
+  legal notice, here is a blessing:
+
+  *   May you do good and not evil.
+  *   May you find forgiveness for yourself and forgive others.
+  *   May you share freely, never taking more than you give.
+
+  ***********************************************************************
+
+  This file is part of sahpool-pausing.js's demonstration of the
+  pause/unpause feature of the opfs-sahpool VFS.
+*/
 const searchParams = new URL(self.location.href).searchParams;
 const workerId = searchParams.get('workerId');
 const wPost = (type,...args)=>postMessage({type, workerId, payload:args});
