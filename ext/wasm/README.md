@@ -35,7 +35,7 @@ after upgrading it! Our build process makes no guarantees about which
 Emscripten version(s) will or won't work, but it's important that
 production builds are built using a compatible version. During active
 development, the EMSDK is frequently updated, the goal being to keep
-sqlite3.wasm working with "the latest" EMSDK.)
+`sqlite3.wasm` working with "the latest" EMSDK.)
 
 The SQLite configure script will search for the EMSDK. One way
 to ensure that it finds it is:
@@ -95,14 +95,14 @@ $ make httpd
 That will open the system's browser and visit the index page, from
 which (almost) all of the test and demo applications can be accessed.
 (`ext/wasm/SQLTester` is not listed in that page because it's only of
-real utility when it's used in conjunction with the proprietary test
-suite, which most users don't have access to.)
+real utility when it's used in conjunction with the project's
+proprietary test suite, which most users don't have access to.)
 
 Note that when serving this app via [althttpd][], it must be a version
 from 2022-09-26 or newer so that it recognizes the `--enable-sab`
 flag, which causes althttpd to emit two HTTP response headers which
 are required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
-APIs. Those APIs are required in order to enable the OPFS-related
+APIs. Those APIs are required in order to enable the [OPFS][]-related
 features in the apps which use them.
 
 # Testing on a remote machine that is accessed via SSH
@@ -129,3 +129,4 @@ be tunneled using SSH.
 [emscripten]: https://emscripten.org
 [althttpd]: https://sqlite.org/althttpd
 [SharedArrayBuffer]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
+[OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
