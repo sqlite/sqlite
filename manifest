@@ -1,5 +1,5 @@
-C The\sreuse-subroutine\soptimization\smight\shave\sgenerated\nbyte-code\sthat\sloops\sforever.\s\sThis\scheck-in\sfixes\sthe\sproblem.
-D 2025-01-30T21:16:12.554
+C Correct\sa\stypo\sin\stool/emcc.sh.in\swhich\scould\scause\sall\sof\sthe\sconfigure-time\swork\sto\slocate\sthe\semcc\sbinary\sto\sgo\sunused.\sReported\sin\s[forum:feb325cdde5b6f37|forum\spost\sfeb325cdde5b6f37].
+D 2025-01-31T11:46:48.365
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2119,7 +2119,7 @@ F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
 F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
-F tool/emcc.sh.in 1f3226166bad1765c0bf42fac3d29037704c2078eb22562f9ddfbe73bff023b0
+F tool/emcc.sh.in 41a049468c8155433e37e656ba5bae063a000768b1d627025f277732c4e7c4a4
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -2205,9 +2205,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0146a0da534edb9def39dc49f8c3f3055cff2154a0a8b383670e4415021f0e28
-Q +0cc4ed8c6e53aca1f5e94c132bedbc7f561c04a77f1a30b965ffe7560634bfeb
-R 803ec7cbc6e924b7c57742b42800d84e
-U drh
-Z 1a20bd2a9838fa93432cea616a537d7d
+P a8714e8c448adc62ce4ff2b303dac3a735e699d12875223615f68eeaf08bd7b1
+Q +f66efd5b531210407ee8f30cdf6684a7610479fd8810a609c54469f7424a0644
+R 857959fe5ecf837cf1f6f4e3357c0f10
+U stephan
+Z c185a64dbf4f45ead36e5161cc17ff43
 # Remove this line to create a well-formed Fossil manifest.
