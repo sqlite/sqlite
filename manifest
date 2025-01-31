@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_DBCONFIG_ENABLE_COMMENTS\ssetting\s(default\son)\sto\senable\sor\ndisable\sthe\sability\sto\sinclude\scomments\sin\sSQL\sinput\stext.
-D 2025-01-31T01:34:19.160
+C Improvements\sto\sthe\sSQLITE_DBCONFIG\soption\sdocumentation.
+D 2025-01-31T12:09:36.393
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -782,7 +782,7 @@ F src/resolve.c c8a5372b97b2a2e972a280676f06ddb5b74e885d3b1f5ce383f839907b57ef68
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 83e88fbb36f89b6703b348777491619554f0fd6f917c9fdf51e4c2e9cda6c04e
 F src/shell.c.in b377a59822f207106424f08aead37e78b609222e98f86f04cc8a03563ccf3237
-F src/sqlite.h.in 30a16e4f6c337803ab0917bb98d94015783a993c970ba56f5deed1dd8684e38f
+F src/sqlite.h.in 6bdaf7c577fba45afef371ba69852de9965e23e8b13b9aa099d90281bf0c1e54
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
 F src/sqliteInt.h 7f1b070ea3b4ab3c192be553810684f686fdb03f62f90afa2da64d4d61d91ec3
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86ba57561a8d8c14e401c06b2345a9417053aa3a5f0c84e52460f23f5e6aa8d0
-R a8e75b45389fdcc75e19207c37dcdc78
+P 393749a2e22d5c8eba36e2106a35909420aa6316652d1ab4f18ef699247b6fba
+R 13662bcaa4e43096d085a0dc17072d0e
 U drh
-Z 58903bc3f8cbb45b4d2beab95c7e825d
+Z e7786de21407765a3ba181d8f27262b9
 # Remove this line to create a well-formed Fossil manifest.
