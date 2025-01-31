@@ -2177,6 +2177,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   PreUpdate *p;
   Mem *pMem;
   int rc = SQLITE_OK;
+  int iStore = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( db==0 || ppValue==0 ){
@@ -2191,9 +2192,11 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     goto preupdate_old_out;
   }
   if( p->pPk ){
-    iIdx = sqlite3TableColumnToIndex(p->pPk, iIdx);
+    iStore = sqlite3TableColumnToIndex(p->pPk, iIdx);
+  }else{
+    iStore = sqlite3TableColumnToStorage(p->pTab, iIdx);
   }
-  if( iIdx>=p->pCsr->nField || iIdx<0 ){
+  if( iStore>=p->pCsr->nField || iStore<0 ){
     rc = SQLITE_RANGE;
     goto preupdate_old_out;
   }
@@ -2224,8 +2227,8 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       p->aRecord = aRec;
     }
 
-    pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
-    if( iIdx>=p->pUnpacked->nField ){
+    pMem = *ppValue = &p->pUnpacked->aMem[iStore];
+    if( iStore>=p->pUnpacked->nField ){
       /* This occurs when the table has been extended using ALTER TABLE
       ** ADD COLUMN. The value to return is the default value of the column. */
       Column *pCol = &p->pTab->aCol[iIdx];
@@ -2329,6 +2332,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   PreUpdate *p;
   int rc = SQLITE_OK;
   Mem *pMem;
+  int iStore = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( db==0 || ppValue==0 ){
@@ -2341,9 +2345,12 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     goto preupdate_new_out;
   }
   if( p->pPk && p->op!=SQLITE_UPDATE ){
-    iIdx = sqlite3TableColumnToIndex(p->pPk, iIdx);
+    iStore = sqlite3TableColumnToIndex(p->pPk, iIdx);
+  }else{
+    iStore = sqlite3TableColumnToStorage(p->pTab, iIdx);
   }
-  if( iIdx>=p->pCsr->nField || iIdx<0 ){
+
+  if( iStore>=p->pCsr->nField || iStore<0 ){
     rc = SQLITE_RANGE;
     goto preupdate_new_out;
   }
@@ -2363,14 +2370,14 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       }
       p->pNewUnpacked = pUnpack;
     }
-    pMem = &pUnpack->aMem[iIdx];
+    pMem = &pUnpack->aMem[iStore];
     if( iIdx==p->pTab->iPKey ){
       sqlite3VdbeMemSetInt64(pMem, p->iKey2);
-    }else if( iIdx>=pUnpack->nField ){
+    }else if( iStore>=pUnpack->nField ){
       pMem = (sqlite3_value *)columnNullValue();
     }
   }else{
-    /* For an UPDATE, memory cell (p->iNewReg+1+iIdx) contains the required
+    /* For an UPDATE, memory cell (p->iNewReg+1+iStore) contains the required
     ** value. Make a copy of the cell contents and return a pointer to it.
     ** It is not safe to return a pointer to the memory cell itself as the
     ** caller may modify the value text encoding.
@@ -2383,13 +2390,13 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
         goto preupdate_new_out;
       }
     }
-    assert( iIdx>=0 && iIdx<p->pCsr->nField );
-    pMem = &p->aNew[iIdx];
+    assert( iStore>=0 && iStore<p->pCsr->nField );
+    pMem = &p->aNew[iStore];
     if( pMem->flags==0 ){
       if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }else{
-        rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
+        rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iStore]);
         if( rc!=SQLITE_OK ) goto preupdate_new_out;
       }
     }

@@ -351,13 +351,6 @@ T.cc += $(OPTS)
 INSTALL.noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
-# When cross-compiling, we need to avoid the -s flag because it only
-# works on the build host's platform.
-INSTALL.strip.1 = $(INSTALL)
-INSTALL.strip.0 = $(INSTALL) -s
-INSTALL.strip.  = $(INSTALL.strip.0)
-INSTALL.strip   = $(INSTALL.strip.$(IS_CROSS_COMPILING))
-
 #
 # $(T.compile) = generic target platform compiler invocation,
 # differing only from $(T.cc) in that it appends $(T.compile.extras),
@@ -1514,7 +1507,7 @@ install: install-headers
 # libtclsqlite3...
 #
 pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
+	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] Sqlite3]' > $@
 pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
@@ -2024,7 +2017,7 @@ sqlite3d$(T.exe):	shell.c $(LIBOBJS0)
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
 install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
-	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
+	$(INSTALL) sqlite3$(T.exe) "$(install-dir.bin)"
 install-shell-1:
 install: install-shell-$(HAVE_WASI_SDK)
 
@@ -2038,7 +2031,7 @@ sqldiff$(T.exe): $(sqldiff.$(LINK_TOOLS_DYNAMICALLY).deps)
 	$(sqldiff.$(LINK_TOOLS_DYNAMICALLY).rules)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
-	$(INSTALL.strip) sqldiff$(T.exe) "$(install-dir.bin)"
+	$(INSTALL) sqldiff$(T.exe) "$(install-dir.bin)"
 #install: install-diff
 
 dbhash$(T.exe):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h

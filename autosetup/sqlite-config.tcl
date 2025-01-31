@@ -64,11 +64,29 @@ proc sqlite-post-options-init {} {
     define SQLITE_OS_UNIX 1
     define SQLITE_OS_WIN 0
   }
-
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
-
+  sqlite-setup-package-info
 }
 
+########################################################################
+# Called by [sqlite-post-options-init] to set up PACKAGE_NAME and
+# related defines.
+proc sqlite-setup-package-info {} {
+  set srcdir $::autosetup(srcdir)
+  set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
+  define PACKAGE_NAME "sqlite"
+  define PACKAGE_URL {https://sqlite.org}
+  define PACKAGE_VERSION $PACKAGE_VERSION
+  define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  msg-result "Source dir = $srcdir"
+  msg-result "Build dir  = $::autosetup(builddir)"
+  msg-result "Configuring SQLite version $PACKAGE_VERSION"
+}
+
+########################################################################
+# Internal config-time debugging output routine. It generates no
+# output unless msg-debug=1 is passed to the configure script.
 proc msg-debug {msg} {
   if {$::sqliteConfig(msg-debug-enabled)} {
     puts stderr [proj-bold "** DEBUG: $msg"]
@@ -208,6 +226,24 @@ proc sqlite-setup-default-cflags {} {
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
   # BUILD_CFLAGS is the CFLAGS for CC_FOR_BUILD.
   define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
+
+  # Copy all CFLAGS entries matching -DSQLITE_OMIT* and
+  # -DSQLITE_ENABLE* to OPT_FEATURE_FLAGS. This behavior is derived
+  # from the legacy build and was missing the 3.48.0 release (the
+  # initial Autosetup port).
+  # https://sqlite.org/forum/forumpost/9801e54665afd728
+  #
+  # If any configure flags for features are in conflict with
+  # CFLAGS-specified feature flags, all bets are off.  There are no
+  # guarantees about which one will take precedence.
+  foreach cf [get-define CFLAGS ""] {
+    switch -glob -- $cf {
+      -DSQLITE_OMIT* -
+      -DSQLITE_ENABLE* {
+        sqlite-add-feature-flag $cf
+      }
+    }
+  }
 }
 
 ########################################################################
@@ -240,6 +276,11 @@ proc sqlite-handle-common-feature-flags {} {
     }
     scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
   } {
+    if {$boolFlag ni $::autosetup(options)} {
+      # Skip flags which are in the canonical build but not
+      # the autoconf bundle.
+      continue
+    }
     proj-if-opt-truthy $boolFlag {
       sqlite-add-feature-flag $featureFlag
       if {0 != [eval $ifSetEvalThis] && "all" ne $boolFlag} {
@@ -270,8 +311,9 @@ proc sqlite-handle-common-feature-flags {} {
 }
 
 #########################################################################
-# Show the final feature flag sets.
-proc sqlite-show-feature-flags {} {
+# Remove duplicates from the final feature flag sets and show them to
+# the user.
+proc sqlite-finalize-feature-flags {} {
   set oFF [get-define OPT_FEATURE_FLAGS]
   if {"" ne $oFF} {
     define OPT_FEATURE_FLAGS [lsort -unique $oFF]
@@ -282,7 +324,6 @@ proc sqlite-show-feature-flags {} {
     define OPT_SHELL [lsort -unique $oFF]
     msg-result "Shell options: [get-define OPT_SHELL]"
   }
-  #parray ::sqliteConfig
 }
 
 ########################################################################
@@ -395,26 +436,58 @@ proc sqlite-handle-tempstore {} {
 ########################################################################
 # Check for the Emscripten SDK for building the web-based wasm
 # components.  The core lib and tools do not require this but ext/wasm
-# does.
+# does. Most of the work is done via [proj-check-emsdk], then this
+# function adds the following defines:
+#
+# - EMCC_WRAPPER = "" or top-srcdir/tool/emcc.sh
+# - BIN_WASM_OPT = "" or path to wasm-opt
+# - BIN_WASM_STRIP = "" or path to wasm-strip
+#
+# Noting that:
+#
+# 1) Not finding the SDK is not fatal at this level, nor is failure to
+#    find one of the related binaries.
+#
+# 2) wasm-strip is part of the wabt package:
+#
+#   https://github.com/WebAssembly/wabt
+#
+# and this project requires it for production-mode builds but not dev
+# builds.
+#
 proc sqlite-handle-emsdk {} {
+  define EMCC_WRAPPER ""
+  define BIN_WASM_STRIP ""
+  define BIN_WASM_OPT ""
   set srcdir $::autosetup(srcdir)
   if {$srcdir ne $::autosetup(builddir)} {
     # The EMSDK pieces require writing to the original source tree
     # even when doing an out-of-tree build. The ext/wasm pieces do not
-    # support an out-of-tree build so we catch that case and treat it
-    # as if EMSDK were not found.
+    # support an out-of-tree build so we treat that case as if EMSDK
+    # were not found.
     msg-result "Out-of tree build: not checking for EMSDK."
-    define EMCC_WRAPPER ""
     return
   }
-  set emccsh $srcdir/tool/emcc.sh
+  set emccSh $srcdir/tool/emcc.sh
+  set extWasmConfig $srcdir/ext/wasm/config.make
   if {![get-define HAVE_WASI_SDK] && [proj-check-emsdk]} {
-    define EMCC_WRAPPER $emccsh
-    proj-make-from-dot-in $emccsh
-    catch {exec chmod u+x $emccsh}
+    define EMCC_WRAPPER $emccSh
+    set emsdkHome [get-define EMSDK_HOME ""]
+    proj-assert {"" ne $emsdkHome}
+    #define EMCC_WRAPPER ""; # just for testing
+    proj-bin-define wasm-strip
+    proj-bin-define bash; # ext/wasm/GNUmakefile requires bash
+    if {[file-isexec $emsdkHome/upstream/bin/wasm-opt]} {
+      define BIN_WASM_OPT $emsdkHome/upstream/bin/wasm-opt
+    } else {
+      # Maybe there's a copy in the path?
+      proj-bin-define wasm-opt BIN_WASM_OPT
+    }
+    proj-make-from-dot-in $emccSh $extWasmConfig
+    catch {exec chmod u+x $emccSh}
   } else {
     define EMCC_WRAPPER ""
-    file delete -force $emccsh
+    file delete -force -- $emccSh $extWasmConfig
   }
 }
 
@@ -789,12 +862,20 @@ proc sqlite-handle-math {} {
 }
 
 ########################################################################
-# Generate the configure-process output file(s).
+# Perform some late-stage work and generate the configure-process
+# output file(s).
 proc sqlite-process-dot-in-files {} {
   ########################################################################
   # When cross-compiling, we have to avoid using the -s flag to
-  # /usr/bin/install: https://sqlite.org/forum/forumpost/9a67df63eda9925c
+  # /usr/bin/install:
+  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   define IS_CROSS_COMPILING $::sqliteConfig(is-cross-compiling)
+
+  # Finish up handling of the various feature flags here because it's
+  # convenient for both the canonical build and autoconf bundles that
+  # it be done here.
+  sqlite-handle-common-feature-flags
+  sqlite-finalize-feature-flags
 
   ########################################################################
   # "Re-export" the autoconf-conventional --XYZdir flags into something
@@ -828,11 +909,14 @@ proc sqlite-post-config-validation {} {
   # Check #1: ensure that files which get filtered for @VAR@ do not
   # contain any unresolved @VAR@ refs. That may indicate an
   # unexported/unused var or a typo.
-  foreach f "Makefile sqlite3.pc $::autosetup(srcdir)/tool/emcc.sh" {
+  set srcdir $::autosetup(srcdir)
+  foreach f [list Makefile sqlite3.pc \
+             $srcdir/tool/emcc.sh \
+             $srcdir/ext/wasm/config.make] {
     if {![file exists $f]} continue
     set lnno 1
     foreach line [proj-file-content-list $f] {
-      if {[regexp {(@[A-Za-z_]+@)} $line match]} {
+      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
         error "Unresolved reference to $match at line $lnno of $f"
       }
       incr lnno
@@ -1054,7 +1138,9 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If $cfg
   # is an empty string, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
+  eval [exec sh "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
+  # ---------^^ a Windows/msys workaround, without which it cannot
+  # exec a .sh file: https://sqlite.org/forum/forumpost/befb352a42a7cd6d
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
