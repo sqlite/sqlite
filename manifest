@@ -1,5 +1,5 @@
-C Three\snew\soptions\sto\ssqlite3_db_config():\s\sATTACH_CREATE,\sATTACH_WRITE,\nand\sCOMMENTS.
-D 2025-01-31T13:32:03.815
+C If\sany\serrors\soccur\swhile\sprocessing\ssqlite_dbpage\schanges,\scancel\npending\struncate\soperations.
+D 2025-01-31T14:52:05.955
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -727,7 +727,7 @@ F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c85
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
 F src/date.c 842c08ac143a56a627b05ac51d68624f2b7b03e3b4cba596205e735eed64ee57
-F src/dbpage.c e90410e5d4c0217dfddc4184a81e38ec4903c25d4ec0f201060a0e54e7c2099f
+F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 8705be31ee713aaa43c97d91399db09f16ee41b88250406eb99de6b47f550a98
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 56b618da9073db8b8d5dafa177a3c9e4c4d927bf512e14b0e6d23937f91ce4cf 59f0ba10062a6ccfd56061a16af3436b9e1b9d23378bff3302bcf33bb3137cb9
-R 9c4677ef318fd9ecf4b5844727767716
-T +closed 59f0ba10062a6ccfd56061a16af3436b9e1b9d23378bff3302bcf33bb3137cb9
+P 325e547a2195571ece4bb22ca65d67d8c2cb42030618916d37930666cf221917
+R 3bd4da0aa5d426accdfc728b0601224c
 U drh
-Z 0620756e82ee0b6bee5e8e012928d482
+Z d6c5c6307ddd02cca8c78f06a45a0bc2
 # Remove this line to create a well-formed Fossil manifest.
