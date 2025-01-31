@@ -322,37 +322,37 @@ foreach enc {
   } {
     reset_db
     execsql "PRAGMA encoding = '$enc'"
-    do_execsql_test like3-8.$tn.0 {
+    set tn utf[string range $enc 4 end].$tn
+    do_execsql_test like3-8.$tn.1 {
       CREATE TABLE t1(x);
     }
   
-    do_execsql_test like3-8.$tn.1 {
+    do_execsql_test like3-8.$tn.2 {
       PRAGMA encoding
     } $enc
   
-    do_execsql_test like3-8.$tn.1 "
+    do_execsql_test like3-8.$tn.3 "
       INSERT INTO t1 VALUES( $expr )
     "
   
-    do_execsql_test like3-8.$tn.2 {
+    do_execsql_test like3-8.$tn.4 {
       SELECT typeof(x) FROM t1
     } {text}
   
     set x [db one {SELECT x || '%' FROM t1}]
   
-    do_execsql_test like3-8.$tn.3 {
+    do_execsql_test like3-8.$tn.5 {
       SELECT rowid FROM t1 WHERE x LIKE $x
     } 1
   
-    do_execsql_test like3-8.$tn.4 {
+    do_execsql_test like3-8.$tn.6 {
       CREATE INDEX i1 ON t1(x);
     }
   
-    do_execsql_test like3-8.$tn.5 {
+    do_execsql_test like3-8.$tn.7 {
       SELECT rowid FROM t1 WHERE x LIKE $x
     } 1
   }
 }
 
 finish_test
-

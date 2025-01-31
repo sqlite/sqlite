@@ -1,5 +1,5 @@
-C Expose\sthe\snew\sSQLITE_DBCONFIG_ENABLE_ATTACH_CREATE/WRITE\sand\sSQLITE_DBCONFIG_ENABLE_COMMENTS\s(from\s[325e547a21955])\sto\sJS/WASM.
-D 2025-01-31T18:45:03.025
+C Fix\stest\scase\snumbering\sin\stests\srecently\sadded\sto\slike3.test.
+D 2025-01-31T18:56:58.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1401,7 +1401,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 70110eff607ab137ccc851edb2bc7e14a6d4f246b5d2d25f82a60b69d87a9ff2
 F test/like.test b3ea2ba3558199aa8f25a42ddeb54772e234fab50868c9f066047acdbda8fc58
 F test/like2.test d3be15fefee3e02fc88942a9b98f26c5339bbdef7783c90023c092c4955fe3d3
-F test/like3.test a9d78297426279c3db1206490444f3193f579890b3c4118a52960afe2b4863cd
+F test/like3.test b21284df226d6028feeb4dcc56ad9d32673d82c14a63f15f25471292c36491e7
 F test/limit.test 350f5d03c29e7dff9a2cde016f84f8d368d40bcd02fa2b2a52fa10c4bf3cbfaf
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/literal.test a65dca9fef86e51b8e45544268e37abbd4bb94ba35fd65f6fdcab2f288cd8f79
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0ecfc4d0ebdb272a69f8f98ddb069c7e0735fb899804027eb16f241d83b3d046
-R 17139128f5a15a8bba68ad5baf1b2013
-U stephan
-Z 3fb4b52cbb9f7ac493f2fee0f2c8e021
+P 8da1a9af66f905c683e9c3445d609b5c0e11ac912be192c468ddd79f237837f4
+R 7c3dd7099324ee3f6570f3eda4b7c65a
+U drh
+Z f8d1c9b3f391a5065e5e11e0179528b8
 # Remove this line to create a well-formed Fossil manifest.
