@@ -501,21 +501,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        currently-opened client-specified filenames. */
     getFileNames(){
       const rc = [];
-      const iter = this.#mapFilenameToSAH.keys();
-      for(const n of iter) rc.push(n);
+      for(const n of this.#mapFilenameToSAH.keys()) rc.push(n);
       return rc;
     }
-
-//    #createFileObject(sah,clientName,opaqueName){
-//      const f = Object.assign(Object.create(null),{
-//        clientName, opaqueName
-//      });
-//      this.#mapSAHToMeta.set(sah, f);
-//      return f;
-//    }
-//    #unmapFileObject(sah){
-//      this.#mapSAHToMeta.delete(sah);
-//    }
 
     /**
        Adds n files to the pool's capacity. This change is
@@ -557,8 +545,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Releases all currently-opened SAHs. The only legal
-       operation after this is acquireAccessHandles().
+       Releases all currently-opened SAHs. The only legal operation
+       after this is acquireAccessHandles() or (if this is called from
+       pauseVfs()) either of isPaused() or unpauseVfs().
     */
     releaseAccessHandles(){
       for(const ah of this.#mapSAHToName.keys()) ah.close();
@@ -568,17 +557,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Opens all files under this.vfsDir/this.#dhOpaque and acquires
-       a SAH for each. returns a Promise which resolves to no value
-       but completes once all SAHs are acquired. If acquiring an SAH
-       throws, SAHPool.$error will contain the corresponding
-       exception.
+       Opens all files under this.vfsDir/this.#dhOpaque and acquires a
+       SAH for each. Returns a Promise which resolves to no value but
+       completes once all SAHs are acquired. If acquiring an SAH
+       throws, this.$error will contain the corresponding Error
+       object.
+
+       If it throws, it releases any SAHs which it may have
+       acquired before the exception was thrown, leaving the VFS in a
+       well-defined but unusable state.
 
        If clearFiles is true, the client-stored state of each file is
        cleared when its handle is acquired, including its name, flags,
        and any data stored after the metadata block.
     */
-    async acquireAccessHandles(clearFiles){
+    async acquireAccessHandles(clearFiles=false){
       const files = [];
       for await (const [name,h] of this.#dhOpaque){
         if('file'===h.kind){
@@ -859,7 +852,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         );
         this.#dhVfsRoot = this.#dhVfsParent = undefined;
       }catch(e){
-        sqlite3.config.error(this.vfsName,"removeVfs() failed:",e);
+        sqlite3.config.error(this.vfsName,"removeVfs() failed with no recovery strategy:",e);
         /*otherwise ignored - there is no recovery strategy*/
       }
       return true;
@@ -872,19 +865,26 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        intact. If this object is already paused, this is a
        no-op. Returns this object.
 
-       This function throws if any database handles are active, as the
-       alternative would be to invoke Undefined Behavior by closing
-       that file handle out from under the database. Similarly,
-       automatically closing any database handles opened by this VFS
-       would invoke Undefined Behavior in downstream code which is
-       holding those pointers.
+       This function throws if SQLite has any opened file handles
+       hosted by this VFS, as the alternative would be to invoke
+       Undefined Behavior by closing file handles out from under any
+       the library. Similarly, automatically closing any database
+       handles opened by this VFS would invoke Undefined Behavior in
+       downstream code which is holding those pointers.
+
+       If this function throws due to open file handles then it has
+       no side effects. If the OPFS API throws while closing handles
+       then the VFS is left in an undefined state.
 
        @see isPaused()
        @see unpauseVfs()
     */
     pauseVfs(){
       if(this.#mapS3FileToOFile_.size>0){
-        toss("Cannot pause a VFS which has an opened database.")
+        sqlite3.SQLite3Error.toss(
+          capi.SQLITE_MISUSE, "Cannot pause VFS",
+          this.vfsName,"because it has opened files."
+        );
       }
       if(this.#mapSAHToName.size>0){
         capi.sqlite3_vfs_unregister(this.vfsName);
@@ -908,7 +908,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        re-registering it with SQLite. This is a no-op if the VFS is
        not currently paused.
 
-       The returned Promise resolves to this object.
+       The returned Promise resolves to this object. See
+       acquireAccessHandles() for how it behaves if it throws due to
+       SAH acquisition failure.
 
        @see isPaused()
        @see pauseVfs()
@@ -1282,6 +1284,41 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Clears all client-defined state of all SAHs and makes all of them
      available for re-use by the pool. Results are undefined if any such
      handles are currently in use, e.g. by an sqlite3 db.
+
+     APIs specific to the "pause" capability (added in version 3.49):
+
+     Summary: "pausing" the VFS disassociates it from SQLite and
+     relinquishes its SAHs so that they may be opened by another
+     instance of this VFS (running in a separate tab/page or Worker).
+     "Unpausing" it takes back control, if able.
+
+     - pauseVfs()
+
+     "Pauses" this VFS by unregistering it from SQLite and
+     relinquishing all open SAHs, leaving the associated files intact.
+     This enables pages/tabs to coordinate semi-concurrent usage of
+     this VFS.  If this object is already paused, this is a
+     no-op. Returns this object. Throws if SQLite has any opened file
+     handles hosted by this VFS. If this function throws due to open
+     file handles then it has no side effects. If the OPFS API throws
+     while closing handles then the VFS is left in an undefined state.
+
+     - isPaused()
+
+     Returns true if this VFS is paused, else false.
+
+     - [async] unpauseVfs()
+
+     Restores the VFS to an active state after having called
+     pauseVfs() on it.  This is a no-op if the VFS is not paused. The
+     returned Promise resolves to this object on success. A rejected
+     Promise means there was a problem reacquiring the SAH handles
+     (possibly because they're in use by another instance or have
+     since been removed). Generically speaking, there is recovery
+     strategy for that type of error, but if the problem is simply
+     that the OPFS files are locked, then a later attempt to unpause
+     it, made after the concurrent instance releases the SAHs, may
+     recover from the situation.
   */
   sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
     options = Object.assign(Object.create(null), optionDefaults, (options||{}));
