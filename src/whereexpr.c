@@ -232,7 +232,7 @@ static int isLikeOrGlob(
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;
-        if( sqlite3Utf8Read(&z2)==0xfffd || c==0xFF   /* bad utf-8 */
+        if( c==0xff || sqlite3Utf8Read(&z2)==0xfffd  /* bad utf-8 */
          || ENC(db)==SQLITE_UTF16LE 
         ){
           cnt--;
@@ -1400,7 +1400,7 @@ static void exprAnalyze(
       }
 
       /* Increment the value of the last utf8 character in the prefix. */
-      while( *pC==0xBF && pC>(u8*)pStr2->u.zToken ){
+      while( *pC==0xBF && ALWAYS(pC>(u8*)pStr2->u.zToken) ){
         *pC = 0x80;
         pC--;
       }
