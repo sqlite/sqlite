@@ -1,5 +1,5 @@
-C Add\sthe\sconventional\slicense\sheader\sto\ssahpool-worker.js\sand\scorrect\sthe\sdate\son\sthe\sheader\sin\ssahpool-pausing.js.
-D 2025-01-31T16:34:52.960
+C Minor\scleanups\sin\sthe\sopfs-sahpool\spause/unpause\sAPI\sdemo.
+D 2025-01-31T17:47:47.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -649,7 +649,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 4878cf2a19577093ea82b505f0b05214
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 9b86ca2d8276cf919fbc9ba2a10e9786033b64f92c2db844d951804dee6c4b4e
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js e809739d71e8b35dfe1b55d24d91f02d04239e6aef7ca1ea92a15a29e704f616
 F ext/wasm/api/sqlite3-wasm.c 83f5e9f998e9fa4261eb84e9f092210e3ffe03895119f5ded0429eb34ab9d2be
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46f303ba8ddd1b2f0a391798837beddfa72e8c897038c8047eda49ce7d5ed46b
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc65debfe43b81fc39fb25c40ad0cc1946bd82580fbf644351107b544d6177ee
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
@@ -701,7 +701,7 @@ F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca01385e2732294b53f4c842328
-F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js 780952b64dcde74ced1bb74813c0f995b689130f93d0a589995c78a783ec88ac
+F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 09570c55a23e5af76dd2153a5b28a493f498d7d4a08b0089f3074d0a2c5d3d29
-R bfbe4fbf82db0e350871f46cfbfa28ef
+P f7c3026b0d2e33cc4e3b906810d860b155b1ff714bbe4e1eb9ee392122217efa
+R d3225c8561b09d79116dc329da2feefd
 U stephan
-Z d959934b83791a6e7fb628c4c0368bb3
+Z 1cb85d7c9b9ce473d92184ec221c275c
 # Remove this line to create a well-formed Fossil manifest.

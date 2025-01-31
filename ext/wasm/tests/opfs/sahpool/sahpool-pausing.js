@@ -12,9 +12,12 @@
 
   These tests are specific to the opfs-sahpool VFS and are limited to
   demonstrating its pause/unpause capabilities.
+
+  Most of this file is infrastructure for displaying results to the
+  user. Search for runTests() to find where the work actually starts.
 */
 'use strict';
-(function(self){
+(function(){
   let logClass;
 
   const mapToString = (v)=>{
@@ -35,7 +38,6 @@
     return JSON.stringify(v,undefined,2);
   };
   const normalizeArgs = (args)=>args.map(mapToString);
-  console.log("Running in the UI thread.");
   const logTarget = document.querySelector('#test-output');
   logClass = function(cssClass,...args){
     const ln = document.createElement('div');
@@ -78,8 +80,6 @@
     throw new Error(args.join(' '));
   };
 
-  const nextHandlerQueue = [];
-
   const endOfWork = (passed=true)=>{
     const eH = document.querySelector('#color-target');
     const eT = document.querySelector('title');
@@ -95,6 +95,8 @@
     }
   };
 
+  const nextHandlerQueue = [];
+
   const nextHandler = function(workerId,...msg){
     log(workerId,...msg);
     (nextHandlerQueue.shift())();
@@ -105,7 +107,16 @@
     W.postMessage({type:msgType});
   };
 
-  const runTriangleOfDeath = function(W1, W2){
+  /**
+     Run a series of operations on an sahpool db spanning two workers.
+     This would arguably be more legible with Promises, but creating a
+     Promise-based communication channel for this purpose is left as
+     an exercise for the reader. An example of such a proxy can be
+     found in the SQLite source tree:
+
+     https://sqlite.org/src/file/ext/wasm/api/sqlite3-worker1-promiser.c-pp.js
+  */
+  const runPyramidOfDoom = function(W1, W2){
     postThen(W1, 'vfs-acquire', function(){
       postThen(W1, 'db-init', function(){
         postThen(W1, 'db-query', function(){
@@ -122,7 +133,7 @@
   };
 
   const runTests = function(){
-    log("Running sahpool pausing tests...");
+    log("Running opfs-sahpool pausing tests...");
     const wjs = 'sahpool-worker.js?sqlite3.dir=../../../jswasm';
     const W1 = new Worker(wjs+'&workerId=w1'),
           W2 = new Worker(wjs+'&workerId=w2');
@@ -160,7 +171,7 @@
         case 'initialized':
           log(data.workerId, ': Worker initialized',...data.payload);
           if( 2===++initCount ){
-            runTriangleOfDeath(W1, W2);
+            runPyramidOfDoom(W1, W2);
           }
           break;
       }
@@ -169,4 +180,4 @@
   };
 
   runTests();
-})(globalThis);
+})();
