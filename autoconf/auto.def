@@ -90,8 +90,6 @@ sqlite-handle-line-editing
 sqlite-handle-load-extension
 sqlite-handle-math
 sqlite-handle-icu
-sqlite-handle-common-feature-flags
-sqlite-show-feature-flags
 
 define ENABLE_LIB_SHARED [opt-bool shared]
 define ENABLE_LIB_STATIC [opt-bool static]

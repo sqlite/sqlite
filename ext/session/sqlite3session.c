@@ -5318,6 +5318,11 @@ static int sessionChangesetApply(
     }
   }
 
+  {
+    int rc2 = sqlite3_exec(db, "PRAGMA defer_foreign_keys = 0", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = rc2;
+  }
+
   if( (flags & SQLITE_CHANGESETAPPLY_NOSAVEPOINT)==0 ){
     if( rc==SQLITE_OK ){
       rc = sqlite3_exec(db, "RELEASE changeset_apply", 0, 0, 0);

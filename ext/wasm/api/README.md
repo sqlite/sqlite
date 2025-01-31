@@ -85,17 +85,18 @@ browser client:
   Installs the `sqlite3.vtab` namespace, which contain helpers for use
   by downstream code which creates `sqlite3_module` implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**\  
-  is an sqlite3 VFS implementation which supports the Origin-Private
-  FileSystem (OPFS) as a storage layer to provide persistent storage
-  for database files in a browser. It requires...
+  is an sqlite3 VFS implementation which supports the [Origin-Private
+  FileSystem (OPFS)][OPFS] as a storage layer to provide persistent
+  storage for database files in a browser. It requires...
     - **`sqlite3-opfs-async-proxy.js`**\  
-      is the asynchronous backend part of the OPFS proxy. It speaks
-      directly to the (async) OPFS API and channels those results back
-      to its synchronous counterpart. This file, because it must be
-      started in its own Worker, is not part of the amalgamation.
+      is the asynchronous backend part of the [OPFS][] proxy. It
+      speaks directly to the (async) OPFS API and channels those
+      results back to its synchronous counterpart. This file, because
+      it must be started in its own Worker, is not part of the
+      amalgamation.
 - **`sqlite3-vfs-opfs-sahpool.c-pp.js`**\  
-  is another sqlite3 VFS supporting the OPFS, but uses a completely
-  different approach that the above-listed one.
+  is another sqlite3 VFS supporting the [OPFS][], but uses a
+  completely different approach that the above-listed one.
 - **`sqlite3-api-cleanup.js`**\  
   The previous files do not immediately extend the library. Instead
   they add callback functions to be called during its
@@ -152,7 +153,7 @@ into the build-generated `sqlite3.js` along with `sqlite3-api.js`.
   flag. This file overwrites the Emscripten-installed
   `sqlite3InitModule()` function with one which, after the module is
   loaded, also initializes the asynchronous parts of the sqlite3
-  module. For example, the OPFS VFS support.
+  module. For example, the [OPFS][] VFS support.
 
 <a id='c-pp'></a>
 Preprocessing of Source Files
@@ -164,3 +165,6 @@ builds. The preprocessor application itself is in
 [`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
 of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).
+
+
+[OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
