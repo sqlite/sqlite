@@ -30,6 +30,8 @@
 # define sqlite3_column_database_name16 0
 # define sqlite3_column_table_name      0
 # define sqlite3_column_table_name16    0
+# define sqlite3_column_table_alias     0
+# define sqlite3_column_table_alias16   0
 # define sqlite3_column_origin_name     0
 # define sqlite3_column_origin_name16   0
 #endif
@@ -61,6 +63,7 @@
 # define sqlite3_value_text16le         0
 # define sqlite3_column_database_name16 0
 # define sqlite3_column_table_name16    0
+# define sqlite3_column_table_alias16   0
 # define sqlite3_column_origin_name16   0
 #endif
 
@@ -517,7 +520,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_stmt_explain,
   /* Version 3.44.0 and later */
   sqlite3_get_clientdata,
-  sqlite3_set_clientdata
+  sqlite3_set_clientdata,
+  /* Version 3.45.0 and later */
+  sqlite3_column_table_alias,
+  sqlite3_column_table_alias16,
 };
 
 /* True if x is the directory separator character
