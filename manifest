@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sthat\sis\snot\strue\sif\sa\strace-callback\sis\sderegistered\swhile\sthere\sare\sactive\sstatements.
-D 2025-01-31T18:33:37.705
+C Expose\sthe\snew\sSQLITE_DBCONFIG_ENABLE_ATTACH_CREATE/WRITE\sand\sSQLITE_DBCONFIG_ENABLE_COMMENTS\s(from\s[325e547a21955])\sto\sJS/WASM.
+D 2025-01-31T18:45:03.025
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -640,7 +640,7 @@ F ext/wasm/api/pre-js.c-pp.js a614a2c82b12c4d96d8e3ba77330329efc53c4d56a8a7e60ad
 F ext/wasm/api/sqlite3-api-cleanup.js 3ac1786e461ada63033143be8c3b00b26b939540661f3e839515bb92f2e35359
 F ext/wasm/api/sqlite3-api-glue.c-pp.js fb6dbfe692cc23000a65a4cd95a1a47ed5eb592dc9d8b55363b3c2952a787244
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js f3a8e2004c6625d17946c11f2fb32008be78bc5207bf746fc77d59848813225f
-F ext/wasm/api/sqlite3-api-prologue.js 3caa0d1f46fe1bfbd1cce31b57b4446ca073ddb15f67476a9ff6c93456467712
+F ext/wasm/api/sqlite3-api-prologue.js 5ff913355b3144f1c9719d0406667fa6e13eb813c71ed7ce29440e2e65363e82
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 5cc22a3c0d52828cb32aad8691488719f47d27567e63e8bc8b832d74371c352d
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 3774befd97cd1a5e2895c8225a894aad946848c6d9b4028acc988b5d123475af
@@ -648,7 +648,7 @@ F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js bb5e96cd0fd6e1e54538256433f1c60a4e3095063c4d1a79a8a022fc59be9571
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 9b86ca2d8276cf919fbc9ba2a10e9786033b64f92c2db844d951804dee6c4b4e
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js e809739d71e8b35dfe1b55d24d91f02d04239e6aef7ca1ea92a15a29e704f616
-F ext/wasm/api/sqlite3-wasm.c 83f5e9f998e9fa4261eb84e9f092210e3ffe03895119f5ded0429eb34ab9d2be
+F ext/wasm/api/sqlite3-wasm.c 6f9d8529072d072359cd22dc5dfb0572c524684686569cfbd0f9640d7619fc10
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46f303ba8ddd1b2f0a391798837beddfa72e8c897038c8047eda49ce7d5ed46b
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
@@ -696,7 +696,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 228101c290003423f0bfb66a6ebbfc6904fa7b1b69466e700c135f74ee83d62a
+F ext/wasm/tester1.c-pp.js 05df7cfd2cb8aa8728afb68c90a8af51fdf724c0e892f0f986a695584edae195
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b4f33d791fe4318c4597bee7d2f9e486ed223e731982af470f5cc0dbdc600fc
-R eb94bfac632b4e0afd83fa9877b4b4ff
-U dan
-Z 76e080bb074040fe3e81e0d36c896c38
+P 0ecfc4d0ebdb272a69f8f98ddb069c7e0735fb899804027eb16f241d83b3d046
+R 17139128f5a15a8bba68ad5baf1b2013
+U stephan
+Z 3fb4b52cbb9f7ac493f2fee0f2c8e021
 # Remove this line to create a well-formed Fossil manifest.

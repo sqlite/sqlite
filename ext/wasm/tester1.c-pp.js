@@ -1241,6 +1241,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }finally{
         wasm.pstack.restore(stack);
       }
+
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 0, null);
+      T.mustThrow(()=>this.db.exec("select 1 /* with comments */"), "SQL comments are disallowed");
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 1, null);
+      this.db.exec("select 1 /* with comments */");
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_... are in the ATTACH-specific tests */
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -1999,7 +2005,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*window UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t("ATTACH", function(){
+    .t("ATTACH", function(sqlite3){
       const db = this.db;
       const resultRows = [];
       db.exec({
@@ -2078,7 +2084,36 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.exec("detach foo");
       T.mustThrow(()=>db.exec("select * from foo.bar"),
                   "Because foo is no longer attached.");
-    })
+
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE/WRITE... */
+      const db2 = new sqlite3.oo1.DB();
+      try{
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 0, null);
+        T.mustThrow(()=>db2.exec("attach 'attached.db' as foo"),
+                    "Cannot create a new db via ATTACH");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 1, null);
+        db2.exec([
+          "attach 'attached.db' as foo;",
+          "create table foo.t(a);",
+          "insert into foo.t(a) values(1);",
+          "detach foo;"
+          ]);
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 0, null);
+        db2.exec("attach 'attached.db' as foo");
+        T.mustThrow(()=>db2.exec("insert into foo.t(a) values(2)"),
+                   "ATTACH_WRITE is false");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 1, null);
+        db2.exec([
+          "detach foo;",
+          "attach 'attached.db' as foo;",
+          "insert into foo.t(a) values(2);",
+          "drop table foo.t;",
+          "detach foo"
+        ]);
+      }finally{
+        db2.close();
+      }
+    })/*ATTACH tests*/
 
   ////////////////////////////////////////////////////////////////////
     .t("Read-only", function(sqlite3){
