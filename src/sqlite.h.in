@@ -2558,6 +2558,19 @@ struct sqlite3_mem_methods {
 ** after processing the first argument.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE]]
+** <dt>SQLITE_DBCONFIG_ENABLE_COMMENTS</dt>
+** <dd>The SQLITE_DBCONFIG_ENABLE_COMMENTS option enables or disables the
+** ability to include comments in SQL text.  Comments are enabled by default,
+** but can be disabled, using the current DBCONFIG option if desired.
+** This option takes two arguments which are an integer and a pointer
+** to an integer.  The first argument is 1, 0, or -1 to enable, disable, or
+** leave unchanged the ability to use comments in SQL text,
+** respectively.  If the second argument is not NULL, then 0 or 1 is written
+** into the integer that the second argument points to depending on if 
+** comments are allowed in SQL text after processing the first argument.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2582,7 +2595,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE  1020 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE   1021 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1021 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_ENABLE_COMMENTS       1022 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1022 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

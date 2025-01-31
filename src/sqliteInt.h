@@ -1836,6 +1836,7 @@ struct sqlite3 {
 #define SQLITE_FkNoAction     HI(0x00008) /* Treat all FK as NO ACTION */
 #define SQLITE_AttachCreate   HI(0x00010) /* ATTACH allowed to create new dbs */
 #define SQLITE_AttachWrite    HI(0x00020) /* ATTACH allowed to open for write */
+#define SQLITE_Comments       HI(0x00040) /* Enable SQL comments */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
