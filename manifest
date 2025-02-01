@@ -1,5 +1,5 @@
-C Enable\sSQLITE_ENABLE_NORMALIZE\sfor\sseveral\stest\sconfigurations.
-D 2025-02-01T21:06:49.292
+C Remove\san\sALWAYS()\sadded\sby\s[2567298f4b0fdfeb]\sbecause\sdbsqlfuzz\sfound\sa\sway\nto\sreach\sit.\s\sThe\stest\scase\swas\sadded\sto\sTH3.
+D 2025-02-01T23:28:49.538
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -867,7 +867,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 09dc313e7223ca1217c39c7026b00f16ff449a8323511a762fcba7863a00f4cd
 F src/whereInt.h d20cddddb1d61b18d5cb1fcfa9b77fbeebbc4afe44d996e603452a23b3009ee1
 F src/wherecode.c 0c3d3199a2b769a5e2bb70feb5003dc85b3d86842ecaf903a47f2b4205ca5dab
-F src/whereexpr.c d304e3fec8309cddffd194a2d06c49de3aac1c32a7ef9f6bd78546abc7d77352
+F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
 F src/window.c 2bf01f9941a64fbcead61a0e3cb5db3fca5094b30d2ff0d23274c2a81d2e2385
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 79d287a39443f2d098fcc24199627555a656b34aa5bf5d484f91cb513d83e143
-R 888619b059aabb68efc45862c1d541fe
+P b07c64077a3912ef7cdf23e9411df6387f38baa32f5a11fffec5ba4f93935e27
+R 1587f5175225e9073d51285cc57826f6
 U drh
-Z 9448395bcbe74c7bef7eba8e89fa76da
+Z 785e2e3ea6ab6da1a366fb937ef1ab28
 # Remove this line to create a well-formed Fossil manifest.

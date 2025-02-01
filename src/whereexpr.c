@@ -1400,7 +1400,7 @@ static void exprAnalyze(
       }
 
       /* Increment the value of the last utf8 character in the prefix. */
-      while( *pC==0xBF && ALWAYS(pC>(u8*)pStr2->u.zToken) ){
+      while( *pC==0xBF && pC>(u8*)pStr2->u.zToken ){
         *pC = 0x80;
         pC--;
       }
