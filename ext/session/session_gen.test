@@ -181,6 +181,7 @@ foreach {tn sql} {
     compare_db db db2
   } {}
 }
+db2 close
 
 }]}
 

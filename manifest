@@ -1,5 +1,5 @@
-C Fix\sa\scomment\stypo\s-\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.
-D 2025-02-01T23:34:33.636
+C Add\sa\smissing\s"db2\sclose"\sto\sthe\sext/session/session_gen.test\stest\smodule.
+D 2025-02-01T23:49:01.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -593,7 +593,7 @@ F ext/session/sessionF.test d37ed800881e742c208df443537bf29aa49fd56eac520d0f0c6d
 F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d085eb8efdad0a
 F ext/session/sessionH.test 71bbff6b1abb2c4ac62b84dee53273c37e0b21e5fde3aed80929403e091ef859
 F ext/session/session_common.tcl a31f537a929a695a852d241c9434f2847cadf329856401921139fbb03a5a7697
-F ext/session/session_gen.test 3f2ff2bd71694b82bd17c5ab2002635c54affb909fca2ee749b2daf95ff86648
+F ext/session/session_gen.test 942a0002df10da53c45b40b581cc3ed25e7ff42bda1e7ba497273dc2887aa8e6
 F ext/session/session_speed_test.c dcf0ef58d76b70c8fbd9eab3be77cf9deb8bc1638fed8be518b62d6cbdef88b3
 F ext/session/sessionalter.test e852acb3d2357aac7d0b920a2109da758c4331bfdf85b41d39aa3a8c18914f65
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d08a7aa8987458a91fcb861d58289e622ba8722936c7874a284f9f2fd782e269
-R e49065fa7e2398b7b6e928bf8f7bfc59
+P b8de75eeded79a8312218d7a543e7c7d11181c9f4004e875495608d11a81ff38
+R 70de67d2731c96d5565daabba5a9f711
 U drh
-Z 8691b65bebb646fe5d4e88f85d5d14cb
+Z 0c60cdc79cd4db383ea08f9fcd4c5692
 # Remove this line to create a well-formed Fossil manifest.
