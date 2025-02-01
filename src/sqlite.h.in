@@ -2587,7 +2587,7 @@ struct sqlite3_mem_methods {
 **
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
 **
-** <p>Most of the SQLITE_DBCONFIG options take two argument, an integer
+** <p>Most of the SQLITE_DBCONFIG options take two arguments: an integer
 ** and a pointer to an integer.  If the first integer argument is 1, then
 ** the option becomes enabled.  If the first integer argument is 0, then the
 ** option is disabled.  If the first argument is -1, then the option setting
