@@ -801,6 +801,7 @@ char *sqlite3Normalize(
     n = sqlite3GetToken((unsigned char*)zSql+i, &tokenType);
     if( NEVER(n<=0) ) break;
     switch( tokenType ){
+      case TK_COMMENT:
       case TK_SPACE: {
         break;
       }

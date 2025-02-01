@@ -1,5 +1,5 @@
-C JS\sdoc\stypo\sfixes.\sNo\sfunctional\schanges.
-D 2025-02-01T09:44:48.567
+C Fix\san\sissue\swith\ssqlite3_normalized_sql()\scaused\sby\schanges\sneeded\sto\nsupport\sSQLITE_DBCONFIG_ENABLE_COMMENT.
+D 2025-02-01T20:53:17.603
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -841,7 +841,7 @@ F src/test_windirent.h da2e5b73c32d09905fbdd00f27cd802212a32a58ead882736fe4f5eb7
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c cedfe799fc73106302078388547040698c5c5a3950f4ea1e4344e1b736c7d568
+F src/tokenize.c 375a772e2342274f4bf73605a70633237da09deed00a9bf4c4816a56777ea7c9
 F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc62279
 F src/trigger.c 247e2d712d5edc6021d52a169f6ac9a9c10d7144bc4ac7ea06c1ed2aa414659f
 F src/update.c 0e01aa6a3edf9ec112b33eb714b9016a81241497b1fb7c3e74332f4f71756508
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2567298f4b0fdfeb42aa6bba7e0bec3bc8d0b89bf644a79b41893dd6a6c5774c
-R eac70bc609a1618826ffd2d47e1f8359
-U stephan
-Z d7bceb2ba8b79e070ba4dc11d65193f3
+P e0d9c74c1cdddb2321131255b94f9cda6530be3f2a06aed4abb54dcda092481e
+R 645350b0e058e36134a55fdb6b3f2eb5
+U drh
+Z 9d4896add67bdd3bb69392ede8dfd087
 # Remove this line to create a well-formed Fossil manifest.
