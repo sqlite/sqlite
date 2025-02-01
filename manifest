@@ -1,5 +1,5 @@
-C Tweaks\sto\s[4b4f33d791fe4318]\sto\smake\sit\seasier\sto\stest.
-D 2025-01-31T20:18:34.963
+C JS\sdoc\stypo\sfixes.\sNo\sfunctional\schanges.
+D 2025-02-01T09:44:48.567
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -659,7 +659,7 @@ F ext/wasm/c-pp.c 6d131069644964223305582a80973477fa8b06b57306781690d7874ebd3a4f
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js d76c69617e95d85ffc9996f7d9d7481df6976dcbd860ecd82bd8c075e3a101ae
+F ext/wasm/common/whwasmutil.js 8528ac79418ee7eafe7c8f634a08704e47d694d3fd8ea6368be27a5229733338
 F ext/wasm/config.make.in 4bc43443f768a61efd43cf995a5e618f58ac9afc0936706014193537d82c41cb
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6df2098c548b58c2910837726b666a628d5c712c560c0221a771e8181f71fae7
-R 135ac307112d80006ac833a8ae148e6e
-U drh
-Z 1e05e96ac0e79f8e8ee82c826159e60e
+P 2567298f4b0fdfeb42aa6bba7e0bec3bc8d0b89bf644a79b41893dd6a6c5774c
+R eac70bc609a1618826ffd2d47e1f8359
+U stephan
+Z d7bceb2ba8b79e070ba4dc11d65193f3
 # Remove this line to create a well-formed Fossil manifest.
