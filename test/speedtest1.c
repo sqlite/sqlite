@@ -1,6 +1,28 @@
 /*
 ** A program for performance testing.
 **
+** To build this program against an historical version of SQLite for comparison
+** testing:
+**
+**    Unix:
+**
+**        ./configure --all
+**        make clean speedtest1
+**        mv speedtest1 speedtest1-current
+**        cp $HISTORICAL_SQLITE3_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        make speedtest1
+**        mv speedtest1 speedtest1-baseline
+**
+**    Windows:
+**
+**        nmake /f Makefile.msc clean speedtest1.exe
+**        mv speedtest1.exe speedtest1-current.exe
+**        cp $HISTORICAL_SQLITE_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        nmake /f Makefile.msc speedtest1.exe
+**        mv speedtest1.exe speedtest1-baseline.exe
+**
 ** The available command-line options are described below:
 */
 static const char zHelp[] =
@@ -42,7 +64,8 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json,"
+                                                                    " debug)\n"
   "                      Can be a comma-separated list of values, with /SCALE\n"
   "                      suffixes or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"

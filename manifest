@@ -1,5 +1,5 @@
-C Update\sto\sthe\s"--help"\soutput\sfrom\sspeedtest1.
-D 2025-02-02T16:52:21.308
+C Add\sa\sheader\scomment\sto\stest/speedtest1.c\sthat\soutlines\show\sto\scompile\sthe\nprogram\susing\shistorical\samalgamation\ssources,\sfor\scomparison\stesting.
+D 2025-02-02T18:01:32.649
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1681,7 +1681,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ee958457ae1b729d9715ae33c0320600000bf1d9ddea1a88dcf79f56729d6fad
 F test/speedtest.tcl 8a9362c1e429318e741b91d26888e7edcc326f98c3aea505ffd618cc5b9e7f0a x
-F test/speedtest1.c f17c04829e6e9ccd60f23c38f1a6cc640e3ae807ce54192f062eb22dece40e61
+F test/speedtest1.c 204acd8af326bbca2c28f68166635d4574381f4cabbac1bc243663f5dcc5051d
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 002a123094e4ef14eb5ec28033adca6083ba2717e1eaa23e80595e37a947e6c2
-R 0dfb19693dad143344d481eff7a8c7a1
+P 5216452047eecdd6c0f6ab85b304f975ed05a394a4ad9ae793fb65d645502b12
+R e5e73e420449b95dfe1df31fa75f6670
 U drh
-Z eab3264d2412f89567991828cb35b655
+Z c88ad2ace3864df1c4b3b50fb44cd819
 # Remove this line to create a well-formed Fossil manifest.
