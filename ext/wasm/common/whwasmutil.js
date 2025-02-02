@@ -170,7 +170,7 @@
 
    More specifically:
 
-   https://fossil.wanderinghorse.net/r/jaccwabbyt/file/common/whwasmutil.js
+   https://fossil.wanderinghorse.net/r/jaccwabyt/file/common/whwasmutil.js
 */
 globalThis.WhWasmUtilInstaller = function(target){
   'use strict';

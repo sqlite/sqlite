@@ -1,5 +1,5 @@
-C Add\sa\smissing\s"db2\sclose"\sto\sthe\sext/session/session_gen.test\stest\smodule.
-D 2025-02-01T23:49:01.341
+C URL\stypo\sfix\sin\scode\scomments.\sNo\scode\schanges.
+D 2025-02-02T12:15:25.699
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -659,7 +659,7 @@ F ext/wasm/c-pp.c 6d131069644964223305582a80973477fa8b06b57306781690d7874ebd3a4f
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js 8528ac79418ee7eafe7c8f634a08704e47d694d3fd8ea6368be27a5229733338
+F ext/wasm/common/whwasmutil.js c2e459286c1ada789cda6b17761bb1eea6034be572468eed78c049354f1051ba
 F ext/wasm/config.make.in 4bc43443f768a61efd43cf995a5e618f58ac9afc0936706014193537d82c41cb
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8de75eeded79a8312218d7a543e7c7d11181c9f4004e875495608d11a81ff38
-R 70de67d2731c96d5565daabba5a9f711
-U drh
-Z 0c60cdc79cd4db383ea08f9fcd4c5692
+P 4068f586ddadd3a818645574f7584fcee6d373dbf45805c545100883b495598a
+R bd36ece0544440b71f6e303d972a7e2f
+U stephan
+Z 78f6520da2cf6d27938a2b853e051a64
 # Remove this line to create a well-formed Fossil manifest.
