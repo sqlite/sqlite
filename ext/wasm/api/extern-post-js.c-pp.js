@@ -12,6 +12,7 @@
 const toExportForESM =
 //#endif
 (function(){
+  //console.warn("this is extern-post-js");
   /**
      In order to hide the sqlite3InitModule()'s resulting
      Emscripten module from downstream clients (and simplify our
@@ -62,6 +63,16 @@ const toExportForESM =
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
+      //console.warn("originalInit() then() arg =",EmscriptenModule);
+      //console.warn("initModuleState =",initModuleState);
+      EmscriptenModule.runSQLite3PostLoadInit(EmscriptenModule);
+      const s = EmscriptenModule.sqlite3;
+      s.scriptInfo = initModuleState;
+      //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
+      if(ff.__isUnderTest) s.__isUnderTest = true;
+      const f = s.asyncPostInit;
+      delete s.asyncPostInit;
+      const rv = f();
 //#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
@@ -74,14 +85,7 @@ const toExportForESM =
         return EmscriptenModule;
       }
 //#endif
-      //console.warn("sqlite3InitModule() returning sqlite3 object.");
-      const s = EmscriptenModule.sqlite3;
-      s.scriptInfo = initModuleState;
-      //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
-      if(ff.__isUnderTest) s.__isUnderTest = true;
-      const f = s.asyncPostInit;
-      delete s.asyncPostInit;
-      return f();
+      return rv;
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);
       throw e;

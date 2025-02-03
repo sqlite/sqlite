@@ -219,4 +219,33 @@ do_execsql_test 3.8 {
   SELECT t1.a, t2.b FROM t1, t2 WHERE (t1.a, t2.b) IN ((1, 2));
 } {1 2}
 
+# 2025-01-30 Inifinite loop in byte-code discovered by dbsqlfuzz
+# having to do with SubrtnSig logic.  The code was using a Subroutine
+# from within itself resulting in infinite recursion.
+#
+# This test will spin forever if the bug has not been fixed, or if
+# it reappears.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1,x'1111');
+  CREATE TABLE t2(c);
+  CREATE TABLE t3(d);
+  CREATE TRIGGER t1tr UPDATE ON t1 BEGIN
+    UPDATE t1 SET b=x'2222' FROM t2;
+    UPDATE t1
+       SET b = (SELECT a IN (SELECT a
+                               FROM t1
+                              WHERE (b,a) IN (SELECT rowid, d
+                                                FROM t3
+                                             )
+                            )
+                  FROM t1 NATURAL RIGHT JOIN t1
+               );
+  END;
+  UPDATE t1 SET b=x'3333';
+  SELECT quote(b) FROM t1;
+} {X'3333'}
+
 finish_test

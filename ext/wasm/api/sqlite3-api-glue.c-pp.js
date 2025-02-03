@@ -228,11 +228,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }),
       '*'
     ]],
+    /**
+       2025-02-03: We do not have a way to automatically clean up
+       destructors which are automatically converted from JS functions
+       via the final argument to sqlite3_set_auxdata(). Because of
+       that, it is strongly recommended that clients use
+       wasm.installFunction() to create such callbacks, then pass that
+       pointer to sqlite3_set_auxdata(). Relying on automated
+       conversions here will lead to leaks of JS/WASM proxy functions
+       because sqlite3_set_auxdata() is frequently called in UDFs.
+
+       The sqlite3.oo1.DB class's onclose handlers can be used for this
+       purpose. For example:
+
+       const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
+         //free ptr
+       });
+       myDb.onclose = {
+         after: ()=>{
+           wasm.uninstallFunction(pAuxDtor);
+         }
+       };
+
+       Then pass pAuxDtor as the final argument to appropriate
+       sqlite3_set_auxdata() calls.
+    */
     ["sqlite3_set_auxdata", undefined, [
       "sqlite3_context*", "int", "*",
       new wasm.xWrap.FuncPtrAdapter({
         name: 'xDestroyAuxData',
-        signature: 'v(*)',
+        signature: 'v(p)',
         contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
       })
     ]],
@@ -1047,6 +1072,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       'sqlite3_set_authorizer',
       'sqlite3_trace_v2',
       'sqlite3_update_hook'
+      /*
+        We do not yet have a way to clean up automatically-converted
+        sqlite3_set_auxdata() finalizers.
+      */
     ]) {
       const x = wasm.exports[name];
       if( !x ){

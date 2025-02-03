@@ -250,7 +250,22 @@ do_catchsql_test 4.2 {
   COMMIT;
 } {1 {FOREIGN KEY constraint failed}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE p1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE c1(x REFERENCES p1 DEFERRABLE INITIALLY DEFERRED);
+}
 
+do_execsql_test 5.1 {
+  BEGIN;
+    INSERT INTO c1 VALUES(123);
+    PRAGMA defer_foreign_keys = 1;
+    INSERT INTO p1 VALUES(123, 'one two three');
+  COMMIT;
+}
 
 
 finish_test

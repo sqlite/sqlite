@@ -591,7 +591,6 @@ do_execsql_test 21.2 {
   PRAGMA integrity_check
 } {ok}
 
-breakpoint
 sqlite3_db_config db DEFENSIVE 1
 do_execsql_test 21.3 {
   CREATE TABLE xyz_notashadow(x, y);
@@ -664,6 +663,27 @@ do_execsql_test 25.0 {
 do_execsql_test 25.0 {
   SELECT fts5_test_poslist(t1) FROM t1('b') ORDER BY rank;
 } {{}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 26.0 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  CREATE TABLE t2(y INTEGER PRIMARY KEY,
+      z INTEGER REFERENCES t1(x) DEFERRABLE INITIALLY DEFERRED
+  );
+  CREATE VIRTUAL TABLE t3 USING fts5(a, b, content='', tokendata=1);
+}
+
+do_execsql_test 26.1 {
+  BEGIN;
+    INSERT INTO t2 VALUES(1,111);
+    INSERT INTO t3 VALUES(3,3);
+    PRAGMA defer_foreign_keys=ON;
+    DELETE FROM t2 WHERE y+1;
+  COMMIT;
+}
 
 finish_test
 

@@ -1241,6 +1241,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }finally{
         wasm.pstack.restore(stack);
       }
+
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 0, null);
+      T.mustThrow(()=>this.db.exec("select 1 /* with comments */"), "SQL comments are disallowed");
+      capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_ENABLE_COMMENTS, 1, null);
+      this.db.exec("select 1 /* with comments */");
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_... are in the ATTACH-specific tests */
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -1999,7 +2005,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*window UDFs*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t("ATTACH", function(){
+    .t("ATTACH", function(sqlite3){
       const db = this.db;
       const resultRows = [];
       db.exec({
@@ -2078,7 +2084,36 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.exec("detach foo");
       T.mustThrow(()=>db.exec("select * from foo.bar"),
                   "Because foo is no longer attached.");
-    })
+
+      /* SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE/WRITE... */
+      const db2 = new sqlite3.oo1.DB();
+      try{
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 0, null);
+        T.mustThrow(()=>db2.exec("attach 'attached.db' as foo"),
+                    "Cannot create a new db via ATTACH");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, 1, null);
+        db2.exec([
+          "attach 'attached.db' as foo;",
+          "create table foo.t(a);",
+          "insert into foo.t(a) values(1);",
+          "detach foo;"
+          ]);
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 0, null);
+        db2.exec("attach 'attached.db' as foo");
+        T.mustThrow(()=>db2.exec("insert into foo.t(a) values(2)"),
+                   "ATTACH_WRITE is false");
+        capi.sqlite3_db_config(db2, capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, 1, null);
+        db2.exec([
+          "detach foo;",
+          "attach 'attached.db' as foo;",
+          "insert into foo.t(a) values(2);",
+          "drop table foo.t;",
+          "detach foo"
+        ]);
+      }finally{
+        db2.close();
+      }
+    })/*ATTACH tests*/
 
   ////////////////////////////////////////////////////////////////////
     .t("Read-only", function(sqlite3){
@@ -3400,6 +3435,73 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }finally{
           await poolUtil.removeVfs();
         }
+      }
+    })
+    .t({
+      /* https://github.com/sqlite/sqlite-wasm/issues/92 */
+      name: 'sqlite3_set_auxdata() binding signature',
+      test: function(sqlite3){
+        const db = new sqlite3.oo1.DB();
+        const stack = wasm.pstack.pointer;
+        const pAux = wasm.pstack.alloc(4);
+        let pAuxDestructed = 0;
+        const args = [];
+        const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
+          //log("freeing auxdata");
+          ++pAuxDestructed;
+        });
+        let pAuxDtorDestructed = false;
+        db.onclose = {
+          after: ()=>{
+            pAuxDtorDestructed = true;
+            wasm.uninstallFunction(pAuxDtor);
+          }
+        };
+        try{
+          db.createFunction("auxtest",{
+            xFunc: function(pCx, x, y){
+              args.push(x);
+              T.assert(wasm.isPtr(pCx));
+              const localAux = capi.sqlite3_get_auxdata(pCx, 0);
+              if( !localAux ){
+                //log("setting auxdata");
+                /**
+                   We do not currently an automated way to clean up
+                   auxdata finalizer functions (the 4th argument to
+                   sqlite3_set_auxdata()) which get automatically
+                   converted from JS to WASM. Because of that, relying
+                   on automated conversions for those is not
+                   recommended. Instead, follow the pattern show in
+                   this function: use wasm.installFunction() to create
+                   the function, then pass the resulting function
+                   pointer this function, and cleanup (at some point)
+                   using wasm.uninstallFunction().
+                */
+                capi.sqlite3_set_auxdata(pCx, 0, pAux, pAuxDtor);
+              }else{
+                /* This is never actually hit in this example and it's
+                   not entirely clear how to cause it to. The point of
+                   this test, however, is to demonstrate that the
+                   finalizer impl gets triggered, so we're not going to
+                   fret over this at the moment. */
+                //log("seen auxdata",localAux);
+                T.assert(pAux===localAux);
+              }
+              return x;
+            }
+          });
+          db.exec([
+            "create table t(a);",
+            "insert into t(a) values(1),(2),(3);",
+            "select auxtest(a,a), auxtest(a,a) from t order by a"
+          ]);
+        }finally{
+          db.close();
+          wasm.pstack.restore(stack);
+        }
+        T.assert(6===args.length);
+        T.assert(pAuxDestructed>0);
+        T.assert(pAuxDtorDestructed);
       }
     })
   ;/*end of Bug Reports group*/;

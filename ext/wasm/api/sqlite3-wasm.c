@@ -331,7 +331,6 @@ SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
 */
 SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_alloc(int n){
   if( n<=0 ) return 0;
-  //if( n & 0x7 ) n += 8 - (n & 0x7) /* align to 8-byte boundary */;
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
   if( PStack.pBegin + n > PStack.pPos /*not enough space left*/
       || PStack.pBegin + n <= PStack.pBegin /*overflow*/ ) return 0;
@@ -597,6 +596,9 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_DBCONFIG_TRUSTED_SCHEMA);
     DefInt(SQLITE_DBCONFIG_STMT_SCANSTATUS);
     DefInt(SQLITE_DBCONFIG_REVERSE_SCANORDER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_COMMENTS);
     DefInt(SQLITE_DBCONFIG_MAX);
   } _DefGroup;
 
@@ -1630,6 +1632,9 @@ int sqlite3__wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
     case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
     case SQLITE_DBCONFIG_STMT_SCANSTATUS:
     case SQLITE_DBCONFIG_REVERSE_SCANORDER:
+    case SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
+    case SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
+    case SQLITE_DBCONFIG_ENABLE_COMMENTS:
       return sqlite3_db_config(pDb, op, arg1, pArg2);
     default: return SQLITE_MISUSE;
   }

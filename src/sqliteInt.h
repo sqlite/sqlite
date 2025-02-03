@@ -881,6 +881,8 @@ typedef u64 tRowcnt;
 **    0.5 -> -10           0.1 -> -33        0.0625 -> -40
 */
 typedef INT16_TYPE LogEst;
+#define LOGEST_MIN (-32768)
+#define LOGEST_MAX (32767)
 
 /*
 ** Set the SQLITE_PTRSIZE macro to the number of bytes in a pointer
@@ -1151,7 +1153,7 @@ extern u32 sqlite3WhereTrace;
 ** 0xFFFF----   Low-level debug messages
 **
 ** 0x00000001   Code generation
-** 0x00000002   Solver
+** 0x00000002   Solver (Use 0x40000 for less detail)
 ** 0x00000004   Solver costs
 ** 0x00000008   WhereLoop inserts
 **
@@ -1170,6 +1172,8 @@ extern u32 sqlite3WhereTrace;
 **
 ** 0x00010000   Show more detail when printing WHERE terms
 ** 0x00020000   Show WHERE terms returned from whereScanNext()
+** 0x00040000   Solver overview messages
+** 0x00080000   Star-query heuristic
 */
 
 
@@ -1830,6 +1834,9 @@ struct sqlite3 {
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
 #define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
 #define SQLITE_FkNoAction     HI(0x00008) /* Treat all FK as NO ACTION */
+#define SQLITE_AttachCreate   HI(0x00010) /* ATTACH allowed to create new dbs */
+#define SQLITE_AttachWrite    HI(0x00020) /* ATTACH allowed to open for write */
+#define SQLITE_Comments       HI(0x00040) /* Enable SQL comments */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -1889,6 +1896,7 @@ struct sqlite3 {
 #define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
 #define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
+#define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3218,13 +3226,8 @@ struct ExprList {
 */
 struct IdList {
   int nId;         /* Number of identifiers on the list */
-  u8 eU4;          /* Which element of a.u4 is valid */
   struct IdList_item {
     char *zName;      /* Name of the identifier */
-    union {
-      int idx;          /* Index in some Table.aCol[] of a column named zName */
-      Expr *pExpr;      /* Expr to implement a USING variable -- NOT USED */
-    } u4;
   } a[1];
 };
 

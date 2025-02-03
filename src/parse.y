@@ -1882,7 +1882,8 @@ wqlist(A) ::= wqlist(A) COMMA wqitem(X). {
 // These must be at the end of this file. Specifically, the rules that
 // introduce tokens WINDOW, OVER and FILTER must appear last. This causes 
 // the integer values assigned to these tokens to be larger than all other 
-// tokens that may be output by the tokenizer except TK_SPACE and TK_ILLEGAL.
+// tokens that may be output by the tokenizer except TK_SPACE, TK_COMMENT,
+// and TK_ILLEGAL.
 //
 %ifndef SQLITE_OMIT_WINDOWFUNC
 %type windowdefn_list {Window*}
@@ -2059,9 +2060,9 @@ term(A) ::= QNUMBER(X). {
 }
 
 /*
-** The TK_SPACE and TK_ILLEGAL tokens must be the last two tokens.  The
-** parser depends on this.  Those tokens are not used in any grammar rule.
-** They are only used by the tokenizer.  Declare them last so that they
-** are guaranteed to be the last two tokens
+** The TK_SPACE, TK_COMMENT, and TK_ILLEGAL tokens must be the last three
+** tokens.  The parser depends on this.  Those tokens are not used in any
+** grammar rule.  They are only used by the tokenizer.  Declare them last
+** so that they are guaranteed to be the last three.
 */
-%token SPACE ILLEGAL.
+%token SPACE COMMENT ILLEGAL.

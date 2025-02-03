@@ -1,6 +1,28 @@
 /*
 ** A program for performance testing.
 **
+** To build this program against an historical version of SQLite for comparison
+** testing:
+**
+**    Unix:
+**
+**        ./configure --all
+**        make clean speedtest1
+**        mv speedtest1 speedtest1-current
+**        cp $HISTORICAL_SQLITE3_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        make speedtest1
+**        mv speedtest1 speedtest1-baseline
+**
+**    Windows:
+**
+**        nmake /f Makefile.msc clean speedtest1.exe
+**        mv speedtest1.exe speedtest1-current.exe
+**        cp $HISTORICAL_SQLITE_C_H .
+**        touch sqlite3.c sqlite3.h .target_source
+**        nmake /f Makefile.msc speedtest1.exe
+**        mv speedtest1.exe speedtest1-baseline.exe
+**
 ** The available command-line options are described below:
 */
 static const char zHelp[] =
@@ -42,7 +64,10 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json,"
+                                                                    " debug)\n"
+  "                      Can be a comma-separated list of values, with /SCALE\n"
+  "                      suffixes or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -99,6 +124,7 @@ static struct Global {
   int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int eTemp;                 /* 0: no TEMP.  9: always TEMP. */
   int szTest;                /* Scale factor for test iterations */
+  int szBase;                /* Base size prior to testset scaling */
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
@@ -2150,6 +2176,120 @@ void testset_debug1(void){
 }
 
 /*
+** Performance tests for JSON.
+*/
+void testset_json(void){
+  unsigned int r = 0x12345678;
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SEED, r, g.db);
+  speedtest1_begin_test(100, "table J1 is %d rows of JSONB",
+                        g.szTest*5);
+  speedtest1_exec(
+     "CREATE TABLE j1(x JSONB);\n"
+     "WITH RECURSIVE\n"
+     "  jval(n,j) AS (\n"
+     "    VALUES(0,'{}'),(1,'[]'),(2,'true'),(3,'false'),(4,'null'),\n"
+     "          (5,'{x:1,y:2}'),(6,'0.0'),(7,'3.14159'),(8,'-99.9'),\n"
+     "          (9,'[1,2,\"\\n\\u2192\\\"\\u2190\",4]')\n"
+     "  ),\n"
+     "  c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<26*26-1),\n"
+     "  array1(y) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_array(\n"
+     "      jsonb_object('x',x,\n"
+     "                  'y',jsonb(coalesce(j,random()%%10000)),\n"
+     "                  'z',hex(randomblob(50)))\n"
+     "    )\n"
+     "    FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  object1(z) AS MATERIALIZED (\n"
+     "    SELECT jsonb_group_object(char(0x61+x%%26,0x61+(x/26)%%26),\n"
+     "                      jsonb( coalesce(j,random()%%10000)))\n"
+     "      FROM c LEFT JOIN jval ON (x%%20)=n\n"
+     "  ),\n"
+     "  c2(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c2 WHERE n<%d)\n"
+     "INSERT INTO j1(x)\n"
+     "  SELECT jsonb_object('a',n,'b',n+10000,'c',jsonb(y),'d',jsonb(z),\n"
+     "                     'e',n+20000,'f',n+30000)\n"
+     "    FROM array1, object1, c2;",
+     g.szTest*5
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "table J2 is %d rows from J1 converted to text", g.szTest);
+  speedtest1_exec(
+     "CREATE TABLE j2(x JSON TEXT);\n"
+     "INSERT INTO j2(x) SELECT json(x) FROM j1 LIMIT %d", g.szTest
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "create indexes on JSON expressions on J1");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "CREATE INDEX j1x1 ON j1(x->>'a');\n"
+    "CREATE INDEX j1x2 ON j1(x->>'b');\n"
+    "CREATE INDEX j1x3 ON j1(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "create indexes on JSON expressions on J2");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "CREATE INDEX j2x1 ON j2(x->>'a');\n"
+    "CREATE INDEX j2x2 ON j2(x->>'b');\n"
+    "CREATE INDEX j2x3 ON j2(x->>'f');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(140, "queries against J1");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<7)\n"
+    "  SELECT sum(x->>format('$.c[%%d].x',n)) FROM c, j1;\n"
+
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<5)\n"
+    "  SELECT sum(x->>format('$.\"c\"[#-%%d].y',n)) FROM c, j1;\n"
+
+    "SELECT sum(x->>'$.d.ez' + x->>'$.d.\"xz\"' + x->>'a' + x->>'$.c[10].y') FROM j1;\n"
+
+    "SELECT x->>'$.d.tz[2]', x->'$.d.tz' FROM j1;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(141, "queries involving json_type()");
+  speedtest1_exec(
+    "WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<20)\n"
+    "  SELECT json_type(x,format('$.c[#-%%d].y',n)), count(*)\n"
+    "    FROM c, j1\n"
+    "   WHERE j1.rowid=1\n"
+    "   GROUP BY 1 ORDER BY 2;"
+  );
+  speedtest1_end_test();
+
+
+  speedtest1_begin_test(150, "json_insert()/set()/remove() on every row of J1");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j1 SET x=jsonb_insert(x,'$.g',(x->>'f')+1,'$.h',3.14159,'$.i','hello',\n"
+    "                               '$.j',json('{x:99}'),'$.k','{y:98}');\n"
+    "UPDATE j1 SET x=jsonb_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j1 SET x=jsonb_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(160, "json_insert()/set()/remove() on every row of J2");
+  speedtest1_exec(
+    "BEGIN;\n"
+    "UPDATE j2 SET x=json_insert(x,'$.g',(x->>'f')+1);\n"
+    "UPDATE j2 SET x=json_set(x,'$.e',(x->>'f')-1);\n"
+    "UPDATE j2 SET x=json_remove(x,'$.d');\n"
+    "COMMIT;\n"
+  );
+  speedtest1_end_test();
+
+}
+
+/*
 ** This testset focuses on the speed of parsing numeric literals (integers
 ** and real numbers). This was added to test the impact of allowing "_"
 ** characters to appear in numeric SQL literals to make them easier to read. 
@@ -2168,25 +2308,25 @@ void testset_parsenumber(void){
   const int NROW = 100*g.szTest;
   int ii;
 
-  speedtest1_begin_test(100, "parsing small integers");
+  speedtest1_begin_test(100, "parsing %d small integers", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql1, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(110, "parsing large integers");
+  speedtest1_begin_test(110, "parsing %d large integers", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql2, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(200, "parsing small reals");
+  speedtest1_begin_test(200, "parsing %d small reals", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql3, 0, 0, 0);
   }
   speedtest1_end_test();
 
-  speedtest1_begin_test(210, "parsing large reals");
+  speedtest1_begin_test(210, "parsing %d large reals", NROW);
   for(ii=0; ii<NROW; ii++){
     sqlite3_exec(g.db, zSql4, 0, 0, 0);
   }
@@ -2299,6 +2439,7 @@ int main(int argc, char **argv){
   g.zNN = "";
   g.zPK = "UNIQUE";
   g.szTest = 100;
+  g.szBase = 100;
   g.nRepeat = 1;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -2408,7 +2549,7 @@ int main(int argc, char **argv){
         g.bMemShrink = 1;
       }else if( strcmp(z,"size")==0 ){
         ARGC_VALUE_CHECK(1);
-        g.szTest = integerValue(argv[++i]);
+        g.szTest = g.szBase = integerValue(argv[++i]);
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -2419,8 +2560,10 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
+        static char zMix1Tests[] = "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
+        if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
       }else if( strcmp(z,"threads")==0 ){
@@ -2574,6 +2717,7 @@ int main(int argc, char **argv){
   if( g.bExplain ) printf(".explain\n.echo on\n");
   do{
     char *zThisTest = zTSet;
+    char *zSep;
     char *zComma = strchr(zThisTest,',');
     if( zComma ){
       *zComma = 0;
@@ -2581,7 +2725,20 @@ int main(int argc, char **argv){
     }else{
       zTSet = "";
     }
-    if( g.iTotal>0 || zComma!=0 ){
+    zSep = strchr(zThisTest, '/');
+    if( zSep ){
+      int kk;
+      for(kk=1; zSep[kk] && ISDIGIT(zSep[kk]); kk++){}
+      if( kk==1 || zSep[kk]!=0 ){
+        fatal_error("bad modifier on testset name: \"%s\"", zThisTest);
+      }
+      g.szTest = g.szBase*integerValue(zSep+1)/100;
+      if( g.szTest<=0 ) g.szTest = 1;
+      zSep[0] = 0;
+    }else{
+      g.szTest = g.szBase;
+    }
+    if( g.iTotal>0 || zComma==0 ){
       printf("       Begin testset \"%s\"\n", zThisTest);
     }
     if( strcmp(zThisTest,"main")==0 ){
@@ -2594,6 +2751,8 @@ int main(int argc, char **argv){
       testset_cte();
     }else if( strcmp(zThisTest,"fp")==0 ){
       testset_fp();
+    }else if( strcmp(zThisTest,"json")==0 ){
+      testset_json();
     }else if( strcmp(zThisTest,"trigger")==0 ){
       testset_trigger();
     }else if( strcmp(zThisTest,"parsenumber")==0 ){
