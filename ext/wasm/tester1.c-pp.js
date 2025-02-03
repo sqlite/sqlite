@@ -3445,7 +3445,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const stack = wasm.pstack.pointer;
         const pAux = wasm.pstack.alloc(4);
         let pAuxDestructed = 0;
-        const args = [];
         const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
           //log("freeing auxdata");
           ++pAuxDestructed;
@@ -3457,10 +3456,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             wasm.uninstallFunction(pAuxDtor);
           }
         };
+        let nAuxSet = 0 /* how many times we set aux data */;
+        let nAuxReused = 0 /* how many times we reused aux data */;
         try{
           db.createFunction("auxtest",{
             xFunc: function(pCx, x, y){
-              args.push(x);
               T.assert(wasm.isPtr(pCx));
               const localAux = capi.sqlite3_get_auxdata(pCx, 0);
               if( !localAux ){
@@ -3477,15 +3477,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                    pointer this function, and cleanup (at some point)
                    using wasm.uninstallFunction().
                 */
+                ++nAuxSet;
                 capi.sqlite3_set_auxdata(pCx, 0, pAux, pAuxDtor);
               }else{
-                /* This is never actually hit in this example and it's
-                   not entirely clear how to cause it to. The point of
-                   this test, however, is to demonstrate that the
-                   finalizer impl gets triggered, so we're not going to
-                   fret over this at the moment. */
-                //log("seen auxdata",localAux);
+                //log("reusing auxdata",localAux);
                 T.assert(pAux===localAux);
+                ++nAuxReused;
               }
               return x;
             }
@@ -3493,13 +3490,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db.exec([
             "create table t(a);",
             "insert into t(a) values(1),(2),(3);",
-            "select auxtest(a,a), auxtest(a,a) from t order by a"
+            "select auxtest(1,a), auxtest(1,a) from t order by a"
           ]);
         }finally{
           db.close();
           wasm.pstack.restore(stack);
         }
-        T.assert(6===args.length);
+        T.assert(nAuxSet>0).assert(nAuxReused>0)
+          .assert(6===nAuxReused+nAuxSet);
         T.assert(pAuxDestructed>0);
         T.assert(pAuxDtorDestructed);
       }
