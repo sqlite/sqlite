@@ -1,5 +1,5 @@
-C Enhance\sfuzzcheck\sso\sthat\sthe\s--sqlid\sand\s--dbid\soptions\scan\sspecify\sa\nrange\sof\stests\sto\sbe\srun.
-D 2025-02-03T18:36:05.574
+C Fixes\sand\simproved\sdocumentation\sto\sthe\snew\s--sqlid\sand\s--dbid\srange\noptions\sin\sfuzzcheck.
+D 2025-02-03T18:49:06.094
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1277,7 +1277,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 5445da3b9b509759dc91c7a3c8d660f4056e25ae85274d6fe40c372263ad0bd7
+F test/fuzzcheck.c 6fc952750a69168dd5fea38b9d35cb38475bfda15c8acfd156ac09cd03ddbd3e
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e33f2fedda17b4f3678fc23c438093c256b0c125da5f1ac42ecaf3d604d54b6a
-R bf3f5a9cd383f24f2f19fa2e86a993c0
+P cdd0af6f86e49ade1339ad5a3cc444400a9722a9efdf84a30b3ff9428b7ac36d
+R 97da3e589df10edb12f045b63fd334d3
 U drh
-Z ca078f36d189947e36e0ecf82c334d57
+Z 5f22e1474f8086565da475538650b809
 # Remove this line to create a well-formed Fossil manifest.

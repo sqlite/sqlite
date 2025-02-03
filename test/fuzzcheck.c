@@ -1838,7 +1838,8 @@ static void showHelp(void){
 "each database, checking for crashes and memory leaks.\n"
 "Options:\n"
 "  --cell-size-check    Set the PRAGMA cell_size_check=ON\n"
-"  --dbid N             Use only the database where dbid=N\n"
+"  --dbid M..N          Use only the databases where dbid between M and N\n"
+"                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
 "  --export-db DIR      Write databases to files(s) in DIR. Works with --dbid\n"
 "  --export-sql DIR     Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help               Show this help text\n"
@@ -1863,7 +1864,8 @@ static void showHelp(void){
 "  --script             Output CLI script instead of running tests\n"
 "  --skip N             Skip the first N test cases\n"
 "  --spinner            Use a spinner to show progress\n"
-"  --sqlid N            Use only SQL where sqlid=N\n"
+"  --sqlid M..N         Use only SQL where sqlid between M..N\n"
+"                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
 "  --timeout N          Maximum time for any one test in N millseconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
 "  --vdbe-debug         Activate VDBE debugging.\n"
@@ -1956,7 +1958,7 @@ int main(int argc, char **argv){
             lastDbid = atoi(&zDotDot[2]);
           }
         }else{
-          lastDbid = firstDbid = integerValue(argv[++i]);
+          lastDbid = firstDbid = integerValue(argv[i]);
         }
       }else
       if( strcmp(z,"export-db")==0 ){
@@ -2067,7 +2069,7 @@ int main(int argc, char **argv){
             lastSqlid = atoi(&zDotDot[2]);
           }
         }else{
-          firstSqlid = integerValue(argv[++i]);
+          firstSqlid = integerValue(argv[i]);
           lastSqlid = firstSqlid;
         }
       }else
