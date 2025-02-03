@@ -232,7 +232,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       "sqlite3_context*", "int", "*",
       new wasm.xWrap.FuncPtrAdapter({
         name: 'xDestroyAuxData',
-        signature: 'v(*)',
+        signature: 'v(p)',
         contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
       })
     ]],

@@ -2334,7 +2334,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" > $(SQLITE3H) $(MKSQLITE3H_ARGS)
+	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" -o $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
@@ -2398,7 +2398,7 @@ SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
 shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl > shell.c
+	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl shell.c
 
 zlib:
 	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
@@ -2811,7 +2811,8 @@ moreclean:	clean
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q sqlite3.def tclsqlite3.def 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
