@@ -175,6 +175,12 @@ static void attachFunc(
       sqlite3_free(zErr);
       return;
     }
+    if( (db->flags & SQLITE_AttachWrite)==0 ){
+      flags &= ~(SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE);
+      flags |= SQLITE_OPEN_READONLY;
+    }else if( (db->flags & SQLITE_AttachCreate)==0 ){
+      flags &= ~SQLITE_OPEN_CREATE;
+    }
     assert( pVfs );
     flags |= SQLITE_OPEN_MAIN_DB;
     rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);

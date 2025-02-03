@@ -33,12 +33,26 @@ $ ./configure --reference | less
 That will include any docs from any TCL files in the `./autosetup` dir
 which contain certain (simple) markup defined by autosetup.
 
-This project's own autosetup-related APIs are in [proj.tcl][] or
-[auto.def][].  The former contains helper APIs which are, more or
-less, portable across projects (that file is re-used as-is in other
-projects) and all have a `proj-` name prefix. The latter is the main
-configure script driver and contains related functions which are
-specific to this tree.
+This project's own configuration-related TCL code is spread across the
+following files:
+
+- [proj.tcl][]: project-agnostic utility code for autosetup-driven
+  projects. This file is designed to be shared between this project,
+  other projects managed under the SQLite/Hwaci umbrella
+  (e.g. Fossil), and personal projects of SQLite's developers.  It is
+  essentially an amalgamation of a decade's worth of autosetup-related
+  utility code.
+- [auto.def][]: the primary driver for the `./configure` process.
+  When we talk about "the configure script," we're referring to
+  this file.
+- [sqlite-config.tcl][]: utility code which is too project-specific
+  for `proj.tcl`. We split this out of `auto.def` so that it can be
+  used by both `auto.def` and...
+- [autoconf/auto.def][]: the main driver script for the "autoconf"
+  bundle's configure script. It is essentially a slightly trimmed-down
+  version of the main `auto.def` file. The `autoconf` dir was ported
+  from the Autotools to Autosetup in the 3.49.0 dev cycle but retains
+  the "autoconf" name to minimize downstream disruption.
 
 
 <a name="apitips"></a>
@@ -47,9 +61,11 @@ Autosetup API Tips
 
 This section briefly covers only APIs which are frequently useful in
 day-to-day maintenance and might not be immediately recognized as such
-obvious from a casual perusal of [auto.def][]. The complete docs of
-those with `proj-` prefix can be found in [proj.tcl][]. The others are
-scattered around [the TCL files in ./autosetup](/dir/autosetup).
+obvious from a casual perusal of the relevant TCL files. The complete
+docs of those with `proj-` prefix can be found in [proj.tcl][] and
+those with an `sqlite-` prefix are in [sqlite-config.tcl][]. The
+others are scattered around [the TCL files in
+./autosetup](/dir/autosetup).
 
 In (mostly) alphabetical order:
 
@@ -331,8 +347,10 @@ If autosetup is upgraded and this patch is _not_ applied the invoking
 
 [Autosetup]: https://msteveb.github.io/autosetup/
 [auto.def]: /file/auto.def
+[autoconf/auto.def]: /file/autoconf/auto.def
 [autosetup-git]: https://github.com/msteveb/autosetup
 [proj.tcl]: /file/autosetup/proj.tcl
+[sqlite-config.tcl]: /file/autosetup/sqlite-config.tcl
 [Makefile.in]: /file/Makefile.in
 [main.mk]: /file/main.mk
 [JimTCL]: https://jim.tcl.tk

@@ -46,6 +46,11 @@
 ** use O_U8TEXT when writing to the Windows console (or anything
 ** else for which _isatty() returns true) and to use O_BINARY or O_TEXT
 ** for all other output channels.
+**
+** The SQLITE_USE_W32_FOR_CONSOLE_IO macro is also available.  If
+** defined, it forces the use of Win32 APIs for all console I/O, both
+** input and output.  This is necessary for some non-Microsoft run-times
+** that implement stdio differently from Microsoft/Visual-Studio.
 */
 #if defined(SQLITE_U8TEXT_ONLY)
 # define UseWtextForOutput(fd) 1
@@ -148,10 +153,10 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     */
     wchar_t *b1 = sqlite3_malloc( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
-#ifndef SQLITE_USE_STDIO_FOR_CONSOLE
+#ifdef SQLITE_USE_W32_FOR_CONSOLE_IO
     DWORD nRead = 0;
     if( IsConsole(in)
-     && ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), b1, sz, &nRead, 0)
+     && ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), b1, sz-1, &nRead, 0)
     ){
       b1[nRead] = 0;
     }else
@@ -226,7 +231,7 @@ int sqlite3_fputs(const char *z, FILE *out){
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;
 
-#ifndef SQLITE_STDIO_FOR_CONSOLE
+#ifdef SQLITE_USE_W32_FOR_CONSOLE_IO
     DWORD nWr = 0;
     if( IsConsole(out)
       && WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE),b1,sz,&nWr,0)
@@ -236,8 +241,9 @@ int sqlite3_fputs(const char *z, FILE *out){
     }else
 #endif
     {
-      /* For non-console I/O, or if SQLITE_USE_STDIO_FOR_CONSOLE is defined
-      ** then write using the standard library. */
+      /* As long as SQLITE_USE_W32_FOR_CONSOLE_IO is not defined, or for
+      ** non-console I/O even if that macro is defined, write using the
+      ** standard library. */
       _setmode(_fileno(out), _O_U8TEXT);
       if( UseBinaryWText(out) ){
         piecemealOutput(b1, sz, out);
