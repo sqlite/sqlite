@@ -1,5 +1,5 @@
-C Version\s3.48.0
-D 2025-01-14T11:05:00.186
+C New\stest\scase\sfor\stest/fuzzdata8.db
+D 2025-02-03T17:45:41.279
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1283,7 +1283,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767a35a
+F test/fuzzdata8.db deb6533e6dfdb5841eb6a56607bdb74986a57f5739f3975ea542a1f7e7e24d97
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2205,11 +2205,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 315079b150b47e013e2cde4985bc39d24e0f6f6c6e60f9383fb8ea4ea897c67a
-R 0ed0cfcc7f2bc831da5d62a3490571ed
-T +sym-major-relase *
-T +sym-relase *
-T +sym-version-3.48.0 *
+P d2fe6b05f38d9d7cd78c5d252e99ac59f1aea071d669830c1ffe4e8966e84010
+R 02fce09966e6e21a0a59cdeb994f84e8
+T *branch * fuzz-data
+T *sym-fuzz-data *
+T -sym-trunk *
 U drh
-Z cc77aac977f98c5521d75f4212754ff8
+Z b5d75fe3951f12b9fb4038728f5d0116
 # Remove this line to create a well-formed Fossil manifest.
