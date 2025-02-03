@@ -659,7 +659,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
       const compDigest = this.computeDigest(this.#apBody, flags);
-      //console.warn("getAssociatedPath() compDigest",compDigest);
+      console.warn("getAssociatedPath() flags",flags.toString(16), "compDigest", compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
         const pathBytes = this.#apBody.findIndex((v)=>0===v);
@@ -700,7 +700,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
       const digest = this.computeDigest(this.#apBody, flags);
-      //console.warn("setAssociatedPath(",path,") digest",digest);
+      console.warn("setAssociatedPath(",path,") digest",digest);
       sah.write(this.#apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
