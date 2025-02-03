@@ -79,6 +79,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.SQLITE_OPEN_MAIN_JOURNAL |
         capi.SQLITE_OPEN_SUPER_JOURNAL |
         capi.SQLITE_OPEN_WAL;
+  const FLAG_COMPUTE_DIGEST_V2 = 1 ? capi.SQLITE_OPEN_MEMORY : 0
+  /* Part of the fix for
+     https://github.com/sqlite/sqlite-wasm/issues/97
+
+     Summary: prior to versions 3.49.1 and 3.50 computeDigest() always
+     computes a value of [0,0], so it does not actually do anything
+     useful.  Fixing it invalidates old persistent files, so we
+     instead only fix it for files created or updated since the bug
+     was discovered and fixed.
+
+     This flag determines whether we use the broken legacy
+     computeDigest() or the v2 variant. We only use this flag for
+     newly-created/overwritten files. Pre-existing files have the
+     broken digest stored in them so need to continue to use that.
+
+     This flag is stored in the same space as the
+     SQLITE_OPEN_... flags and we must be careful here to not use an
+     flag bit which is otherwise relevant for the VFS.
+     SQLITE_OPEN_MEMORY is handled by sqlite3_open_v2() and friends,
+     not the VFS, so we'll repurpose that one.  If we take a
+     currently-unused bit and it ends up, at some later point, being
+     used, we would have to invalidate existing VFS files in order to
+     move to another bit.  Similarly, if the SQLITE_OPEN_MEMORY bit
+     were ever reassigned (which it won't be!), we'd invalidate all
+     VFS-side files.
+  */;
 
   /** Subdirectory of the VFS's space where "opaque" (randomly-named)
       files are stored. Changing this effectively invalidates the data
@@ -329,6 +355,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
       const pool = getPoolForVfs(pVfs);
       try{
+        flags &= ~FLAG_COMPUTE_DIGEST_V2;
         pool.log(`xOpen ${wasm.cstrToJs(zName)} ${flags}`);
         // First try to open a path that already exists in the file system.
         const path = (zName && wasm.peek8(zName))
@@ -631,7 +658,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
-      const compDigest = this.computeDigest(this.#apBody);
+      const compDigest = this.computeDigest(this.#apBody, flags);
+      //console.warn("getAssociatedPath() compDigest",compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
         const pathBytes = this.#apBody.findIndex((v)=>0===v);
@@ -662,10 +690,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(HEADER_MAX_PATH_SIZE <= enc.written + 1/*NUL byte*/){
         toss("Path too long:",path);
       }
+      if(path && flags){
+        /* When re-writing files, update their digest, if needed,
+           to v2. We continue to use v1 for the (!path) case
+           (empty files) because there's little reason not to
+           use a digest of 0 for empty entries. */
+        flags |= FLAG_COMPUTE_DIGEST_V2;
+      }
       this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
-
-      const digest = this.computeDigest(this.#apBody);
+      const digest = this.computeDigest(this.#apBody, flags);
+      //console.warn("setAssociatedPath(",path,") digest",digest);
       sah.write(this.#apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
@@ -686,13 +721,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        metadata for each file as a validation check. Changing this
        algorithm invalidates all existing databases for this VFS, so
        don't do that.
+
+       See the docs for FLAG_COMPUTE_DIGEST_V2 for more details.
     */
-    computeDigest(byteArray){
+    computeDigest(byteArray, fileFlags){
       let h1 = 0xdeadbeef;
       let h2 = 0x41c6ce57;
-      for(const v of byteArray){
-        h1 = 31 * h1 + (v * 307);
-        h2 = 31 * h2 + (v * 307);
+      if( fileFlags & FLAG_COMPUTE_DIGEST_V2 ){
+        for(const v of byteArray){
+          h1 = Math.imul(h1 ^ v, 2654435761);
+          h2 = Math.imul(h2 ^ v, 104729);
+        }
+      }else{
+        /* this is what the buggy legacy computation worked out to */
+        h1 = h2 = 0;
       }
       return new Uint32Array([h1>>>0, h2>>>0]);
     }
