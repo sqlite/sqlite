@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sUAF\sin\sFTS3.
-D 2025-02-03T23:19:42.890
+C Test\scase\sfor\sthe\sFTS3\sfix\sin\sthe\sprevious\scheck-in.
+D 2025-02-03T23:27:27.194
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -615,7 +615,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 01e321269fe21982b79336c8b7a4b83ef0779f5c1644a04c8bb7c1174c8c71ae
+F ext/session/sqlite3session.c 52a680dbb03c4734748b215d95987fb4d95ab23baaf053a01ac2626610963b58
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c 12e0a2c15fd60f92da4bb29c697c9177ff0c0dbcdc5129a54c47e999f147937a
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
@@ -1285,7 +1285,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db deb6533e6dfdb5841eb6a56607bdb74986a57f5739f3975ea542a1f7e7e24d97
+F test/fuzzdata8.db c6f9cb7d2b808fb10894afe53ef00f51e73e43baa7aabdba7e9af4713fc5b186
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2209,8 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d81a984c6aabb9fa9180efde8ca942b40f1ec18ff5a89f2fbb1252734f051d3
-R f1017abf167769f99bdff3069bfe9e53
+P 75f3d87448793fc7fd68d817874d561842e029a2d6c1ea4abcec39764cd38469 7ee20cfc237229dbea7116149c0c35883f7b8087b9ccdce6dca16b6da1c6caf8
+R b61fd031db99a855bc246d2ed8051e3b
+T +closed 7ee20cfc237229dbea7116149c0c35883f7b8087b9ccdce6dca16b6da1c6caf8
 U drh
-Z dd1d75c4a0f7bb799c129e975f1e95da
+Z 68ed204a1a39b8731f0970e5a1459325
 # Remove this line to create a well-formed Fossil manifest.
