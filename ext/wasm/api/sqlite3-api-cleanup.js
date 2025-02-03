@@ -14,6 +14,9 @@
   intended to be appended after all other sqlite3-api-*.js files so
   that it can finalize any setup and clean up any global symbols
   temporarily used for setting up the API's various subsystems.
+
+  In Emscripten builds it's run in the context of a Module.postRun
+  handler.
 */
 'use strict';
 if('undefined' !== typeof Module){ // presumably an Emscripten build

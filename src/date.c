@@ -222,6 +222,9 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
         zDate++;
       }
       ms /= rScale;
+      /* Truncate to avoid problems with sub-milliseconds
+      ** rounding. https://sqlite.org/forum/forumpost/766a2c9231 */
+      if( ms>0.999 ) ms = 0.999;
     }
   }else{
     s = 0;
@@ -1429,7 +1432,7 @@ static void strftimeFunc(
       }
       case 'f': {  /* Fractional seconds.  (Non-standard) */
         double s = x.s;
-        if( s>59.999 ) s = 59.999;
+        if( NEVER(s>59.999) ) s = 59.999;
         sqlite3_str_appendf(&sRes, "%06.3f", s);
         break;
       }

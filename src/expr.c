@@ -1932,16 +1932,13 @@ IdList *sqlite3IdListDup(sqlite3 *db, const IdList *p){
   int i;
   assert( db!=0 );
   if( p==0 ) return 0;
-  assert( p->eU4!=EU4_EXPR );
   pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew)+(p->nId-1)*sizeof(p->a[0]) );
   if( pNew==0 ) return 0;
   pNew->nId = p->nId;
-  pNew->eU4 = p->eU4;
   for(i=0; i<p->nId; i++){
     struct IdList_item *pNewItem = &pNew->a[i];
     const struct IdList_item *pOldItem = &p->a[i];
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
-    pNewItem->u4 = pOldItem->u4;
   }
   return pNew;
 }
@@ -3465,6 +3462,7 @@ static int findCompatibleInRhsSubrtn(
     assert( pOp->opcode==OP_BeginSubrtn );
     pSig = pOp->p4.pSubrtnSig;
     assert( pSig!=0 );
+    if( !pSig->bComplete ) continue;
     if( pNewSig->selId!=pSig->selId ) continue;
     if( strcmp(pNewSig->zAff,pSig->zAff)!=0 ) continue;
     pExpr->y.sub.iAddr = pSig->iAddr;
@@ -3511,6 +3509,7 @@ void sqlite3CodeRhsOfIN(
   KeyInfo *pKeyInfo = 0;      /* Key information */
   int nVal;                   /* Size of vector pLeft */
   Vdbe *v;                    /* The prepared statement under construction */
+  SubrtnSig *pSig = 0;        /* Signature for this subroutine */
 
   v = pParse->pVdbe;
   assert( v!=0 );
@@ -3531,7 +3530,6 @@ void sqlite3CodeRhsOfIN(
     ** Compute a signature for the RHS of the IN operator to facility
     ** finding and reusing prior instances of the same IN operator.
     */
-    SubrtnSig *pSig = 0;
     assert( !ExprUseXSelect(pExpr) || pExpr->x.pSelect!=0 );
     if( ExprUseXSelect(pExpr) && (pExpr->x.pSelect->selFlags & SF_All)==0 ){
       pSig = sqlite3DbMallocRawNN(pParse->db, sizeof(pSig[0]));
@@ -3574,6 +3572,7 @@ void sqlite3CodeRhsOfIN(
     pExpr->y.sub.iAddr =
       sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pExpr->y.sub.regReturn) + 1;
     if( pSig ){
+      pSig->bComplete = 0;
       pSig->iAddr = pExpr->y.sub.iAddr;
       pSig->regReturn = pExpr->y.sub.regReturn;
       pSig->iTable = iTab;
@@ -3709,6 +3708,7 @@ void sqlite3CodeRhsOfIN(
     sqlite3ReleaseTempReg(pParse, r1);
     sqlite3ReleaseTempReg(pParse, r2);
   }
+  if( pSig ) pSig->bComplete = 1;
   if( pKeyInfo ){
     sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO);
   }

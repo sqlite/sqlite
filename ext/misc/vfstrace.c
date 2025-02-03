@@ -1033,7 +1033,7 @@ static void vfstraceDlClose(sqlite3_vfs *pVfs, void *pHandle){
   vfstrace_info *pInfo = (vfstrace_info*)pVfs->pAppData;
   sqlite3_vfs *pRoot = pInfo->pRootVfs;
   vfstraceOnOff(pInfo, VTR_DLCLOSE);
-  vfstrace_printf(pInfo, "%s.xDlOpen()\n", pInfo->zVfsName);
+  vfstrace_printf(pInfo, "%s.xDlClose()\n", pInfo->zVfsName);
   pRoot->xDlClose(pRoot, pHandle);
 }
 
