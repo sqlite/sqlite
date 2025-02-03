@@ -1,5 +1,5 @@
-C Enhance\sfuzzcheck\sso\sthat\sthe\s--sqlid\sand\s--dbid\soptions\scan\stake\sa\srange\nof\sIDs\sto\srun.
-D 2025-02-03T18:53:02.874
+C The\sParse.addrExplain\sfield\sis\snever\seven\sif\sSQLITE_OMIT_EXPLAIN\sis\sdefined.
+D 2025-02-03T21:04:21.029
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -785,7 +785,7 @@ F src/shell.c.in b377a59822f207106424f08aead37e78b609222e98f86f04cc8a03563ccf323
 F src/sqlite.h.in cc9a2d5a719b7434e2699ff7c28a56209b8aa459b7f80ff1d4d7d8ac6ebfd96e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h 7f1b070ea3b4ab3c192be553810684f686fdb03f62f90afa2da64d4d61d91ec3
+F src/sqliteInt.h 9d7052c71f46ca3a1a4880ba4a62590da334651139a38327d488894d9c883f3b
 F src/sqliteLimit.h 1bbdbf72bd0411d003267ffebc59a262f061df5653027a75627d03f48ca30523
 F src/status.c cb11f8589a6912af2da3bb1ec509a94dd8ef27df4d4c1a97e0bcf2309ece972b
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e33f2fedda17b4f3678fc23c438093c256b0c125da5f1ac42ecaf3d604d54b6a 59e26632449163a36b803cc7027ed99c1f6b675dda6f0b2b12bbe55884923f08
-R 97da3e589df10edb12f045b63fd334d3
-T +closed 59e26632449163a36b803cc7027ed99c1f6b675dda6f0b2b12bbe55884923f08
+P 408fa57f048e05a261fb62b45ae44b8a97c97fc01e3776124cbef6595df579d4
+R 19f75289781fc56c637c4500001f3f36
 U drh
-Z c70a3622de374067746199fda23d1690
+Z 6ac8bc953e7e25c0d28f52d6abec8109
 # Remove this line to create a well-formed Fossil manifest.

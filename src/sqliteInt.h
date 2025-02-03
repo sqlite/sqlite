@@ -3914,9 +3914,7 @@ struct Parse {
   int nVtabLock;            /* Number of virtual tables to lock */
 #endif
   int nHeight;              /* Expression tree height of current sub-select */
-#ifndef SQLITE_OMIT_EXPLAIN
   int addrExplain;          /* Address of current OP_Explain opcode */
-#endif
   VList *pVList;            /* Mapping between variable names and numbers */
   Vdbe *pReprepare;         /* VM being reprepared (sqlite3Reprepare()) */
   const char *zTail;        /* All SQL text past the last semicolon parsed */
