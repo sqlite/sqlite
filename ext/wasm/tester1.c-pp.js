@@ -3469,9 +3469,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                    We do not currently an automated way to clean up
                    auxdata finalizer functions (the 4th argument to
                    sqlite3_set_auxdata()) which get automatically
-                   converted from JS to WASM. Because of that, relying
-                   on automated conversions for those is not
-                   recommended. Instead, follow the pattern show in
+                   converted from JS to WASM. Because of that, enabling
+                   automated conversions here would lead to leaks more
+                   often than not. Instead, follow the pattern show in
                    this function: use wasm.installFunction() to create
                    the function, then pass the resulting function
                    pointer this function, and cleanup (at some point)
