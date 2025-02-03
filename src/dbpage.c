@@ -424,6 +424,7 @@ static int dbpageUpdate(
   return rc;
 
 update_fail:
+  pTab->pgnoTrunc = 0;
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = sqlite3_mprintf("%s", zErr);
   return SQLITE_ERROR;

@@ -130,7 +130,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   } else {
     puts $out " with changes in files:\n**"
     foreach f [lrange $res 1 end] {
-       puts $out "**    $f"
+       puts $out "**    [string trim $f]"
     }
   }
 } else {

@@ -778,11 +778,13 @@ static int fts5LeafFirstTermOff(Fts5Data *pLeaf){
 /*
 ** Close the read-only blob handle, if it is open.
 */
-void sqlite3Fts5IndexCloseReader(Fts5Index *p){
+static void fts5IndexCloseReader(Fts5Index *p){
   if( p->pReader ){
+    int rc;
     sqlite3_blob *pReader = p->pReader;
     p->pReader = 0;
-    sqlite3_blob_close(pReader);
+    rc = sqlite3_blob_close(pReader);
+    if( p->rc==SQLITE_OK ) p->rc = rc;
   }
 }
 
@@ -807,7 +809,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
       assert( p->pReader==0 );
       p->pReader = pBlob;
       if( rc!=SQLITE_OK ){
-        sqlite3Fts5IndexCloseReader(p);
+        fts5IndexCloseReader(p);
       }
       if( rc==SQLITE_ABORT ) rc = SQLITE_OK;
     }
@@ -5009,6 +5011,14 @@ static int fts5IndexReturn(Fts5Index *p){
   return rc;
 }
 
+/*
+** Close the read-only blob handle, if it is open.
+*/
+void sqlite3Fts5IndexCloseReader(Fts5Index *p){
+  fts5IndexCloseReader(p);
+  fts5IndexReturn(p);
+}
+
 typedef struct Fts5FlushCtx Fts5FlushCtx;
 struct Fts5FlushCtx {
   Fts5Index *pIdx;
@@ -6730,7 +6740,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 int sqlite3Fts5IndexSync(Fts5Index *p){
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
-  sqlite3Fts5IndexCloseReader(p);
+  fts5IndexCloseReader(p);
   return fts5IndexReturn(p);
 }
 
@@ -6741,11 +6751,10 @@ int sqlite3Fts5IndexSync(Fts5Index *p){
 ** records must be invalidated.
 */
 int sqlite3Fts5IndexRollback(Fts5Index *p){
-  sqlite3Fts5IndexCloseReader(p);
+  fts5IndexCloseReader(p);
   fts5IndexDiscardData(p);
   fts5StructureInvalidate(p);
-  /* assert( p->rc==SQLITE_OK ); */
-  return SQLITE_OK;
+  return fts5IndexReturn(p);
 }
 
 /*
@@ -6946,6 +6955,16 @@ static void fts5SegIterSetEOF(Fts5SegIter *pSeg){
   pSeg->pLeaf = 0;
 }
 
+static void fts5IterClose(Fts5IndexIter *pIndexIter){
+  if( pIndexIter ){
+    Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
+    Fts5Index *pIndex = pIter->pIndex;
+    fts5TokendataIterDelete(pIter->pTokenDataIter);
+    fts5MultiIterFree(pIter);
+    fts5IndexCloseReader(pIndex);
+  }
+}
+
 /*
 ** This function appends iterator pAppend to Fts5TokenDataIter pIn and 
 ** returns the result.
@@ -6973,7 +6992,7 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
     }
   }
   if( p->rc ){
-    sqlite3Fts5IterClose((Fts5IndexIter*)pAppend);
+    fts5IterClose((Fts5IndexIter*)pAppend);
   }else{
     pRet->apIter[pRet->nIter++] = pAppend;
   }
@@ -7186,7 +7205,7 @@ static Fts5Iter *fts5SetupTokendataIter(
       fts5BufferSet(&p->rc, &bSeek, nToken, pToken);
     }
     if( p->rc ){
-      sqlite3Fts5IterClose((Fts5IndexIter*)pNew);
+      fts5IterClose((Fts5IndexIter*)pNew);
       break;
     }
 
@@ -7251,7 +7270,7 @@ static Fts5Iter *fts5SetupTokendataIter(
     ** not point to any terms that match the query. So delete it and break
     ** out of the loop - all required iterators have been collected.  */
     if( pSmall==0 ){
-      sqlite3Fts5IterClose((Fts5IndexIter*)pNew);
+      fts5IterClose((Fts5IndexIter*)pNew);
       break;
     }
 
@@ -7380,9 +7399,9 @@ int sqlite3Fts5IndexQuery(
     }
 
     if( p->rc ){
-      sqlite3Fts5IterClose((Fts5IndexIter*)pRet);
+      fts5IterClose((Fts5IndexIter*)pRet);
       pRet = 0;
-      sqlite3Fts5IndexCloseReader(p);
+      fts5IndexCloseReader(p);
     }
 
     *ppIter = (Fts5IndexIter*)pRet;
@@ -7632,11 +7651,9 @@ int sqlite3Fts5IndexIterWriteTokendata(
 */
 void sqlite3Fts5IterClose(Fts5IndexIter *pIndexIter){
   if( pIndexIter ){
-    Fts5Iter *pIter = (Fts5Iter*)pIndexIter;
-    Fts5Index *pIndex = pIter->pIndex;
-    fts5TokendataIterDelete(pIter->pTokenDataIter);
-    fts5MultiIterFree(pIter);
-    sqlite3Fts5IndexCloseReader(pIndex);
+    Fts5Index *pIndex = ((Fts5Iter*)pIndexIter)->pIndex;
+    fts5IterClose(pIndexIter);
+    fts5IndexReturn(pIndex);
   }
 }
 
@@ -8166,7 +8183,7 @@ static int fts5QueryCksum(
       rc = sqlite3Fts5IterNext(pIter);
     }
   }
-  sqlite3Fts5IterClose(pIter);
+  fts5IterClose(pIter);
 
   *pCksum = cksum;
   return rc;

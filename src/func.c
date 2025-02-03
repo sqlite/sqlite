@@ -2697,12 +2697,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(rtrim,              2, 2, 0, trimFunc         ),
     FUNCTION(trim,               1, 3, 0, trimFunc         ),
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
-    FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
-    FUNCTION(min,                0, 0, 1, 0                ),
+    FUNCTION(min,               -3, 0, 1, minmaxFunc       ),
     WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
-    FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
-    FUNCTION(max,                0, 1, 1, 0                ),
+    FUNCTION(max,               -3, 1, 1, minmaxFunc       ),
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
@@ -2729,11 +2727,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
-    FUNCTION(concat,            -1, 0, 0, concatFunc       ),
-    FUNCTION(concat,             0, 0, 0, 0                ),
-    FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
-    FUNCTION(concat_ws,          0, 0, 0, 0                ),
-    FUNCTION(concat_ws,          1, 0, 0, 0                ),
+    FUNCTION(concat,            -3, 0, 0, concatFunc       ),
+    FUNCTION(concat_ws,         -4, 0, 0, concatwsFunc     ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
@@ -2777,8 +2772,6 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
     FUNCTION(unknown,           -1, 0, 0, unknownFunc      ),
 #endif
-    FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,           0, 0, 0, 0                ),
 #ifdef SQLITE_ENABLE_MATH_FUNCTIONS
     MFUNCTION(ceil,              1, xCeil,     ceilingFunc ),
     MFUNCTION(ceiling,           1, xCeil,     ceilingFunc ),
@@ -2816,11 +2809,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(pi,                0, 0,         piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
-    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
-    INLINE_FUNC(iif,             2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              3, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(coalesce,       -4, INLINEFUNC_coalesce, 0 ),
+    INLINE_FUNC(iif,            -4, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(if,             -4, INLINEFUNC_iif,      0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();

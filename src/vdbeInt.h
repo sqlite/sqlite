@@ -244,6 +244,7 @@ struct sqlite3_value {
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   u16 mScopyFlags;    /* flags value immediately after the shallow copy */
+  u8  bScopy;         /* The pScopyFrom of some other Mem *might* point here */
 #endif
 };
 

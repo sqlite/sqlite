@@ -43,8 +43,13 @@ systems, including MacOS.
       or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar or unzip the source archive.  CD into the "win/" subfolder
           of the source tree.
-      <li>Run: `nmake /f makefile.vc release`
-      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl release`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install` <br>
+          Notes:
+          <ol type="i">
+          <li> The previous two `nmake` commands must be run separately.
+          <li> Also, the INSTALLDIR=... argument is required on both.
+          </ol>
       <li><i>Optional:</i> CD to `c:\Tcl\bin` and make a copy of
           `tclsh90.exe` over into just `tclsh.exe`.
       <li><i>Optional:</i>

@@ -4,7 +4,7 @@ This package contains:
  * the sqlite3.h and sqlite3ext.h header files that define the C-language
    interface to the sqlite3.c library file
  * the shell.c file used to build the sqlite3 command-line shell program
- * autoconf/automake installation infrastucture for building on POSIX
+ * autoconf-like installation infrastucture for building on POSIX
    compliant systems
  * a Makefile.msc, sqlite3.rc, and Replace.cs for building with Microsoft
    Visual C++ on Windows
@@ -19,8 +19,10 @@ using only generic tools and without having to install TCL.  The purpose
 of this package is to provide that capability.
 
 This package contains a pre-build SQLite amalgamation file "sqlite3.c"
-(and its associated header file "sqlite3.h").  Because the amalgamation
-has been pre-built, no TCL is required.
+(and its associated header file "sqlite3.h").  Because the
+amalgamation has been pre-built, no TCL is required for the code
+generate (the configure script itself is written in TCL but it can use
+the embedded copy of JimTCL).
 
 REASONS TO USE THE CANONICAL BUILD SYSTEM RATHER THAN THIS PACKAGE
 ==================================================================
@@ -47,14 +49,12 @@ SUMMARY OF HOW TO BUILD USING THIS PACKAGE
 BUILDING ON POSIX
 =================
 
-The generic installation instructions for autoconf/automake are found
-in the INSTALL file.
+The configure script follows common conventions, making it easy
+to use for anyone who has configured a software tree before.
+It supports a number of build-time flags, the full list of which
+can be seen by running:
 
-The following SQLite specific boolean options are supported:
-
-  --enable-readline           use readline in shell tool   [default=yes]
-  --enable-threadsafe         build a thread-safe library  [default=yes]
-  --enable-dynamic-extensions support loadable extensions  [default=yes]
+  ./configure --help
 
 The default value for the CFLAGS variable (options passed to the C
 compiler) includes debugging symbols in the build, resulting in larger
@@ -65,10 +65,11 @@ line like this:
 
 to produce a smaller installation footprint.
 
-Other SQLite compilation parameters can also be set using CFLAGS. For
+Many SQLite compilation parameters can be defined by passing flags
+to the configure script. Others may be passed on in the CFLAGS. For
 example:
 
-  $ CFLAGS="-Os -DSQLITE_THREADSAFE=0" ./configure
+  $ CFLAGS="-Os -DSQLITE_OMIT_DEPRECATED" ./configure
 
 
 BUILDING WITH MICROSOFT VISUAL C++

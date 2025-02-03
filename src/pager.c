@@ -811,7 +811,7 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->pWal ){
     u32 iRead = 0;
     (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-    return iRead==0; /* Condition (4) */
+    if( iRead ) return 0;  /* Case (4) */
   }
 #endif
   assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );

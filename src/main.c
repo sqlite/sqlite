@@ -959,7 +959,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
     default: {
       static const struct {
         int op;      /* The opcode */
-        u32 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
+        u64 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
       } aFlagOp[] = {
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
@@ -980,6 +980,9 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_TRUSTED_SCHEMA,        SQLITE_TrustedSchema  },
         { SQLITE_DBCONFIG_STMT_SCANSTATUS,       SQLITE_StmtScanStatus },
         { SQLITE_DBCONFIG_REVERSE_SCANORDER,     SQLITE_ReverseOrder   },
+        { SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE,  SQLITE_AttachCreate   },
+        { SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE,   SQLITE_AttachWrite    },
+        { SQLITE_DBCONFIG_ENABLE_COMMENTS,       SQLITE_Comments       },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -3321,6 +3324,9 @@ static int openDatabase(
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
                  | SQLITE_CacheSpill
+                 | SQLITE_AttachCreate
+                 | SQLITE_AttachWrite
+                 | SQLITE_Comments
 #if !defined(SQLITE_TRUSTED_SCHEMA) || SQLITE_TRUSTED_SCHEMA+0!=0
                  | SQLITE_TrustedSchema
 #endif

@@ -1,0 +1,221 @@
+########################################################################
+# This is a main makefile for the "autoconf" bundle of SQLite. This is
+# a trimmed-down version of the canonical makefile, devoid of most
+# documentation. For the full docs, see 'main.mk' in the canonical
+# source tree.
+all:
+
+TOP = @abs_top_srcdir@
+
+PACKAGE_VERSION = @PACKAGE_VERSION@
+
+#
+# Filename extensions for binaries and libraries
+#
+B.exe = @BUILD_EXEEXT@
+T.exe = @TARGET_EXEEXT@
+B.dll = @BUILD_DLLEXT@
+T.dll = @TARGET_DLLEXT@
+B.lib = @BUILD_LIBEXT@
+T.lib = @TARGET_LIBEXT@
+
+#
+# Autotools-compatibility dirs
+#
+prefix      = @prefix@
+datadir     = @datadir@
+mandir      = @mandir@
+includedir  = @includedir@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+
+#
+# Required binaries
+#
+INSTALL = @BIN_INSTALL@
+AR = @AR@
+AR.flags = cr
+CC = @CC@
+
+
+ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
+ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
+
+CFLAGS = @CFLAGS@ @CPPFLAGS@
+#
+# $(LDFLAGS.configure) represents any LDFLAGS=... the client passes to
+# configure. See main.mk.
+#
+LDFLAGS.configure = @LDFLAGS@
+
+CFLAGS.core = @SH_CFLAGS@
+LDFLAGS.shlib = @SH_LDFLAGS@
+LDFLAGS.zlib = @LDFLAGS_ZLIB@
+LDFLAGS.math = @LDFLAGS_MATH@
+LDFLAGS.rpath = @LDFLAGS_RPATH@
+LDFLAGS.pthread = @LDFLAGS_PTHREAD@
+LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
+LDFLAGS.readline = @LDFLAGS_READLINE@
+CFLAGS.readline = @CFLAGS_READLINE@
+LDFLAGS.icu = @LDFLAGS_ICU@
+CFLAGS.icu = @CFLAGS_ICU@
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+
+# When cross-compiling, we need to avoid the -s flag because it only
+# works on the build host's platform.
+INSTALL.strip.1 = $(INSTALL)
+INSTALL.strip.0 = $(INSTALL) -s
+INSTALL.strip   = $(INSTALL.strip.@IS_CROSS_COMPILING@)
+INSTALL.noexec  = $(INSTALL) -m 0644
+
+install-dir.bin = $(DESTDIR)$(bindir)
+install-dir.lib = $(DESTDIR)$(libdir)
+install-dir.include = $(DESTDIR)$(includedir)
+install-dir.pkgconfig = $(DESTDIR)$(libdir)/pkgconfig
+install-dir.man1 = $(DESTDIR)$(mandir)/man1
+install-dir.all = $(install-dir.bin) $(install-dir.include) \
+  $(install-dir.lib) $(install-dir.man1) \
+  $(install-dir.pkgconfig)
+$(install-dir.all):
+	$(INSTALL) -d "$@"
+
+
+#
+# Vars with the AS_ prefix are specifically related to AutoSetup.
+#
+# AS_AUTO_DEF is the main configure script.
+#
+AS_AUTO_DEF = $(TOP)/auto.def
+
+#
+# Shell commands to re-run $(TOP)/configure with the same args it was
+# invoked with to produce this makefile.
+#
+AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
+Makefile: $(TOP)/Makefile.in $(AS_AUTO_DEF)
+	$(AS_AUTORECONFIG)
+	@touch $@
+
+sqlite3.pc: $(TOP)/sqlite3.pc.in $(AS_AUTO_DEF)
+	$(AS_AUTORECONFIG)
+	@touch $@
+
+sqlite_cfg.h: $(AS_AUTO_DEF)
+	$(AS_AUTORECONFIG)
+	@touch $@
+
+#
+# CFLAGS for sqlite3$(T.exe)
+#
+SHELL_OPT ?= @OPT_SHELL@
+
+#
+# Library-level feature flags
+#
+OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
+
+LDFLAGS.libsqlite3 = \
+  $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
+  $(LDFLAGS.math) $(LDFLAGS.dlopen) \
+  $(LDFLAGS.zlib) $(LDFLAGS.icu) \
+  $(LDFLAGS.configure)
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
+
+sqlite3.o:	sqlite3.h sqlite3.c
+	$(CC) -c sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
+
+libsqlite3.LIB = libsqlite3$(T.lib)
+libsqlite3.SO = libsqlite3$(T.dll)
+
+$(libsqlite3.SO): sqlite3.o
+	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
+all: $(libsqlite3.SO)
+
+$(libsqlite3.LIB): sqlite3.o
+	$(AR) $(AR.flags) $@ sqlite3.o
+all: $(libsqlite3.LIB)
+
+install-so-1: $(install-dir.lib) $(libsqlite3.SO)
+	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
+	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
+		cd "$(install-dir.lib)" || exit $$?; \
+		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
+		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
+		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
+			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0.8.6; \
+		elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
+			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
+			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.SO).0.8.6; \
+		fi
+install-so-0 install-so-:
+install-so: install-so-$(ENABLE_LIB_SHARED)
+install: install-so
+
+install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
+	$(INSTALL.noexec) $(libsqlite3.LIB) "$(install-dir.lib)"
+install-lib-0 install-lib-:
+install-lib: install-lib-$(ENABLE_LIB_STATIC)
+install: install-lib
+
+
+sqlite3$(T.exe):	shell.c sqlite3.c
+	$(CC) -o $@ \
+		shell.c sqlite3.c \
+		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
+		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+all: sqlite3$(T.exe)
+
+install-shell: sqlite3$(T.exe) $(install-dir.bin)
+	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
+install: install-shell
+
+install-headers: sqlite3.h $(install-dir.include)
+	$(INSTALL.noexec) sqlite3.h sqlite3ext.h "$(install-dir.include)"
+install: install-headers
+
+install-pc: sqlite3.pc $(install-dir.pkgconfig)
+	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
+install: install-pc
+
+install-man1: sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) sqlite3.1 "$(install-dir.man1)"
+install: install-man1
+
+clean:
+	rm -f *.o sqlite3$(T.exe)
+	rm -f $(libsqlite3.LIB) $(libsqlite3.SO)
+
+distclean: clean
+	rm -f jimsh0$(T.exe) config.* sqlite3.pc
+
+DIST_FILES := \
+  README.txt VERSION \
+  auto.def autosetup configure tea \
+  sqlite3.h sqlite3.c shell.c sqlite3ext.h \
+  Makefile.in Makefile.msc Makefile.fallback \
+  sqlite3.rc sqlite3rc.h Replace.cs \
+  sqlite3.pc.in sqlite3.1
+
+# Maintenance note: dist_name must be sqlite-$(PACKAGE_VERSION) so
+# that tool/mkautoconfamal.sh knows how to find it.
+dist_name = sqlite-$(PACKAGE_VERSION)
+dist_tarball = $(dist_name).tar.gz
+dist:
+	rm -fr $(dist_name)
+	mkdir -p $(dist_name)
+	cp -rp $(DIST_FILES) $(dist_name)/.
+	tar czf $(dist_tarball) $(dist_name)
+	rm -fr $(dist_name)
+	ls -l $(dist_tarball)

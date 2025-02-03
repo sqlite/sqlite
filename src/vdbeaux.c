@@ -2152,6 +2152,7 @@ static void initMemArray(Mem *p, int N, sqlite3 *db, u16 flags){
       p->szMalloc = 0;
 #ifdef SQLITE_DEBUG
       p->pScopyFrom = 0;
+      p->bScopy = 0;
 #endif
       p++;
     }while( (--N)>0 );

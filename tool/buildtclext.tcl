@@ -289,7 +289,7 @@ if {$build} {
 # Tcl package index file, version ???
 #
 package ifneeded sqlite3 $VERSION \\
-    [list load [file join \$dir $OUT] sqlite3]
+    [list load [file join \$dir $OUT] Sqlite3]
 }]
   close $fd
 
