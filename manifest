@@ -1,5 +1,5 @@
-C Improve\sthe\sJS-side\ssqlite3_set_auxdata()\stest\sto\salso\strigger\sthe\scase\sthat\sthe\saux\sdata\sactually\sgets\sreused.\sTest\schanges\sonly,\sno\slibrary\scode.
-D 2025-02-03T18:01:42.876
+C Fix\sfor\sa\spotential\sUAF\sin\sFTS5.
+D 2025-02-03T18:05:54.347
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c a59ccd06af157da2471f356198af14bc37d86e46231e4e1858b2af2f94c2c6e4
+F ext/fts5/fts5_index.c f1eec0931548b529ddd7ebd274eaef37de7461fe2b0ebdc9818f37324bdf9494
 F ext/fts5/fts5_main.c 9a1daef7247f9b8a50b4159323e340efa6b0e4bea4fcd83580480f94d4f2c888
 F ext/fts5/fts5_storage.c 1ad05dab4830a4e2eaf2900bb143477f93bc17437093582f36f4b818809e88d8
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
@@ -1285,7 +1285,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 4a53b6d077c6a5c23b609d8d3ac66996fa55ba3f8d02f9b6efdd0214a767a35a
+F test/fuzzdata8.db deb6533e6dfdb5841eb6a56607bdb74986a57f5739f3975ea542a1f7e7e24d97
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2209,8 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3fb993af0caf041da934cea29c039b27c468be0b75bce1537a6425767cf9bf8d
-R b579198e5351884de756285222a8e6ad
-U stephan
-Z a4679fe65a08b67080b3faca6c413001
+P 9f27379d860518e6e097a2c999da04176812260a61bf11fe495c3efd76971806 a4962df665084e423e020be9a2834b6886a8e3feb461cff5358b61398a2a20d2
+R 0c55f60057cb31a548300850eb056c7d
+T +closed a4962df665084e423e020be9a2834b6886a8e3feb461cff5358b61398a2a20d2
+U drh
+Z ecbc0f1712cef7fa05faf26775dcb9fc
 # Remove this line to create a well-formed Fossil manifest.
