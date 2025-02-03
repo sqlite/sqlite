@@ -1066,7 +1066,7 @@ mksourceid$(B.exe): $(MAKE_SANITY_CHECK) $(TOP)/tool/mksourceid.c
 sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
     $(TOP)/manifest mksourceid$(B.exe) \
 		$(TOP)/VERSION $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) -o sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
 		$(B.tclsh)
@@ -1075,7 +1075,7 @@ sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe
 	cp $(TOP)/ext/session/sqlite3session.h .
 
 sqlite3r.h: sqlite3.h $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover -o sqlite3r.h
 
 sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh)
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
@@ -2210,7 +2210,7 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.h
 
 shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mkshellc.tcl >shell.c
+	$(B.tclsh) $(TOP)/tool/mkshellc.tcl shell.c
 
 #
 # Rules to build the extension objects.
