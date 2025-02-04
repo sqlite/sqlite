@@ -1,5 +1,5 @@
-C Test\scase\sfor\sthe\sFTS3\sfix\sin\sthe\sprevious\scheck-in.
-D 2025-02-03T23:27:27.194
+C Detect\sand\sreport\ssigned\sinteger\soverflow\sin\sthe\ssumInverse()\sroutine,\nused\sby\swindow\sfunctions.
+D 2025-02-04T02:38:23.009
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -733,7 +733,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 8705be31ee713aaa43c97d91399db09f16ee41b88250406eb99de6b47f550a98
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c f5b31c805679930cc5afcdfb1e657f9dd273053f52ff51133df5a448c519e5d9
+F src/func.c 0712a5b03fdfc8af0cda6d076bfe231b66388d3d5a28b46dc1a94b90d41cac6a
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 75f3d87448793fc7fd68d817874d561842e029a2d6c1ea4abcec39764cd38469 7ee20cfc237229dbea7116149c0c35883f7b8087b9ccdce6dca16b6da1c6caf8
-R b61fd031db99a855bc246d2ed8051e3b
-T +closed 7ee20cfc237229dbea7116149c0c35883f7b8087b9ccdce6dca16b6da1c6caf8
+P 459d8f695ef868d0ec09920ab2035eebd36a66051f9905e2605f4600623faa47
+R 8b24f7285c9d92ca8cf04f526f040713
 U drh
-Z 68ed204a1a39b8731f0970e5a1459325
+Z fc7af611ca9f7a31dcf33650d3dd0378
 # Remove this line to create a well-formed Fossil manifest.
