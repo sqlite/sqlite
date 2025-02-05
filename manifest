@@ -1,5 +1,5 @@
-C Summarize\sknown\sincompatibilities/gotches\sbetween\sJimTCL\sand\scanonical\sTCL,\sand\stheir\sworkarounds.\sDoc\schanges\sonly.
-D 2025-02-05T12:56:55.992
+C Fix\sa\sharmless\sunused-parameter\scompiler\swarning\sintroduced\sby\s[75f3d8744879].
+D 2025-02-05T16:08:11.074
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -87,7 +87,7 @@ F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c e19807ce0ae31c1c6e9898e89ecc93183d7ec224ea101af039722a4f49e5f2b8
-F ext/fts3/fts3_snippet.c 92196bd5941be0455f2c7e51c2f8280df49c7feb0615a0d1d4d045f2dcf60713
+F ext/fts3/fts3_snippet.c 7a3d5e2cefbb1cb51fb9c65458670cc269647ede18e1ffd57b513f9b4ec10c3e
 F ext/fts3/fts3_term.c 6a96027ad364001432545fe43322b6af04ed28bb5619ec51af1f59d0710d6d69
 F ext/fts3/fts3_test.c 7a9cb3d61774134211bf4bfdf1adcb581a1a0377f2d050a121ae7ab44baef0e3
 F ext/fts3/fts3_tokenize_vtab.c 7fd9ef364f257b97218b9c331f2378e307375c592f70fd541f714e747d944962
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0974a17c4565f202777fc6203df20dca19acc1e8740ede15334783f41e3e5054
-R ac84e39b3790b8114a07b99fae22b35b
-U stephan
-Z 5ac40daff7d720f4fde033e3e4223e0e
+P 60c932e67b886d4c050698f36e1d3fc04eb99473d62bb3b1585a97d90e27227e
+R 84a73aa92675a2727074c491235ee053
+U drh
+Z 84a578fb1294f91eaec33c542173ac0d
 # Remove this line to create a well-formed Fossil manifest.

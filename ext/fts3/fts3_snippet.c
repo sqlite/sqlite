@@ -1594,6 +1594,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
 static int fts3ExprRestartIfCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
   TermOffsetCtx *p = (TermOffsetCtx*)ctx;
   int rc = SQLITE_OK;
+  UNUSED_PARAMETER(iPhrase);
   if( pExpr->pPhrase && pExpr->pPhrase->bIncr ){
     rc = sqlite3Fts3MsrCancel(p->pCsr, pExpr);
     pExpr->pPhrase->bIncr = 0;
