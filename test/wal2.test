@@ -931,6 +931,11 @@ db close
 # that exist are versions 3007000 (corresponding to SQLite version 3.7.0,
 # the first version of SQLite to feature wal mode).
 #
+set wal_version 3007000
+ifcapable wal_bighash {
+  set wal_version 3007001
+}
+
 do_test wal2-10.1.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -950,9 +955,9 @@ do_test wal2-10.1.3 {
   faultsim_restore_and_reopen
   set hdr [wal_set_walhdr test.db-wal]
   lindex $hdr 1
-} {3007000}
+} $wal_version
 do_test wal2-10.1.4 {
-  lset hdr 1 3007001
+  lset hdr 1 [expr $wal_version + 1]
   wal_set_walhdr test.db-wal $hdr
   catchsql { SELECT * FROM t1 }
 } {1 {unable to open database file}}
@@ -965,9 +970,9 @@ do_test wal2-10.2.1 {
 do_test wal2-10.2.2 { 
   set hdr [set_tvfs_hdr $::filename] 
   lindex $hdr 0 
-} {3007000}
+} $wal_version
 do_test wal2-10.2.3 { 
-  lset hdr 0 3007001
+  lset hdr 0 [expr $wal_version + 1]
   wal_fix_walindex_cksum hdr 
   set_tvfs_hdr $::filename $hdr
   catchsql { SELECT * FROM t1 }

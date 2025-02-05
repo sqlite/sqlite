@@ -17,7 +17,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix wal64k
 
-ifcapable !wal {finish_test ; return }
+ifcapable !wal||wal_bighash {finish_test ; return }
 
 if {$tcl_platform(platform) != "unix"} {
   finish_test

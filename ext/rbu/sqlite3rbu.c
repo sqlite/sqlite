@@ -89,6 +89,10 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
 #include "sqlite3rbu.h"
 
+#ifdef SQLITE_ENABLE_WAL_BIGHASH
+# error "may not use SQLITE_ENABLE_RBU with SQLITE_ENABLE_WAL_BIGHASH"
+#endif
+
 #if defined(_WIN32_WCE)
 #include "windows.h"
 #endif
