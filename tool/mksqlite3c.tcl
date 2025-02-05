@@ -88,7 +88,7 @@ set fname sqlite3.c
 if {$enable_recover} { set fname sqlite3r.c }
 set out [open $fname wb]
 # Force the output to use unix line endings, even on Windows.
-fconfigure $out -translation lf
+fconfigure $out -translation binary
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
