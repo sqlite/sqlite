@@ -2211,7 +2211,15 @@ struct sqlite3_mem_methods {
 ** CAPI3REF: Database Connection Configuration Options
 **
 ** These constants are the available integer configuration options that
-** can be passed as the second argument to the [sqlite3_db_config()] interface.
+** can be passed as the second parameter to the [sqlite3_db_config()] interface.
+**
+** The [sqlite3_db_config()] interface is a var-args functions.  It takes a
+** variable number of parameters, though always at least two.  The number of
+** parameters passed into sqlite3_db_config() depends on which of these
+** constants is given as the second parameter.  This documentation page
+** refers to parameters beyond the second as "arguments".  Thus, when this
+** page says "the N-th argument" it means "the N-th parameter past the
+** configuration option" or "the (N+2)-th parameter to sqlite3_db_config()".
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
@@ -2228,7 +2236,9 @@ struct sqlite3_mem_methods {
 ** connection.
 ** The arguments to the SQLITE_DBCONFIG_LOOKASIDE option are <i>not</i>
 ** in the [DBCONFIG arguments|usual format].
-** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two.
+** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two,
+** so that a call to [sqlite3_db_config()] that uses SQLITE_DBCONFIG_LOOKASIDE
+** should have a total of five parameters.
 ** ^The first argument (the third parameter to [sqlite3_db_config()] is a
 ** pointer to a memory buffer to use for lookaside memory.
 ** ^The first argument after the SQLITE_DBCONFIG_LOOKASIDE verb
@@ -2330,12 +2340,13 @@ struct sqlite3_mem_methods {
 ** <dd> ^This option is used to change the name of the "main" database
 ** schema.  This option does not follow the
 ** [DBCONFIG arguments|usual SQLITE_DBCONFIG argument format].
-** This option takes exactly one argument, which ust be a pointer
-** to a constant UTF8 string which will become the new schema name
-** in place of "main".  ^SQLite does not make a copy of the new main
-** schema name string, so the application must ensure that the argument
-** passed into SQLITE_DBCONFIG MAINDBNAME is unchanged
-** until after the database connection closes.
+** This option takes exactly one additional argument so that the 
+** [sqlite3_db_config()] call has a total of three parameters.  The
+** extra argument must be a pointer to a constant UTF8 string which
+** will become the new schema name in place of "main".  ^SQLite does
+** not make a copy of the new main schema name string, so the application
+** must ensure that the argument passed into SQLITE_DBCONFIG MAINDBNAME
+** is unchanged until after the database connection closes.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]]
@@ -2346,10 +2357,11 @@ struct sqlite3_mem_methods {
 ** connection being closed is the last open connection to the database),
 ** then SQLite performs a [checkpoint] before closing the connection and
 ** deletes the WAL file.  The SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE option can
-** be used to override that behavior. The first parameter passed to this
-** operation is an integer - positive to disable checkpoints-on-close, or
-** zero (the default) to enable them, and negative to leave the setting unchanged.
-** The second parameter is a pointer to an integer
+** be used to override that behavior. The first argument passed to this
+** operation (the third parameter to [sqlite3_db_config()]) is an integer
+** which is positive to disable checkpoints-on-close, or zero (the default)
+** to enable them, and negative to leave the setting unchanged.
+** The second argument (the fourth parameter) is a pointer to an integer
 ** into which is written 0 or 1 to indicate whether checkpoints-on-close
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
@@ -2587,9 +2599,11 @@ struct sqlite3_mem_methods {
 **
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
 **
-** <p>Most of the SQLITE_DBCONFIG options take two arguments: an integer
-** and a pointer to an integer.  If the first integer argument is 1, then
-** the option becomes enabled.  If the first integer argument is 0, then the
+** <p>Most of the SQLITE_DBCONFIG options take two arguments, so that the
+** overall call to [sqlite3_db_config()] has a total of four parameters.
+** The first argument (the third parameter to sqlite3_db_config()) is a integer.
+** The second argument is a pointer to an integer.  If the first argument is 1,
+** then the option becomes enabled.  If the first integer argument is 0, then the
 ** option is disabled.  If the first argument is -1, then the option setting
 ** is unchanged.  The second argument, the pointer to an integer, may be NULL.
 ** If the second argument is not NULL, then a value of 0 or 1 is written into
