@@ -24,17 +24,35 @@
 #   6) Adds the SQLITE_CALLBACK calling convention macro in front of all
 #      callback declarations.
 #
-# This script outputs to stdout.
+# This script outputs to stdout unless the -o FILENAME option is used.
 #
 # Example usage:
 #
-#   tclsh mksqlite3h.tcl ../sqlite >sqlite3.h
+#   tclsh mksqlite3h.tcl ../sqlite [OPTIONS]
+#                        ^^^^^^^^^
+#                        Root of source tree
+#
+# Where options are:
+#
+#   --enable-recover          Include the sqlite3recover extension
+#   -o FILENAME               Write results to FILENAME instead of stdout
+#   --useapicall              SQLITE_APICALL instead of SQLITE_CDECL
 #
 
+# Default output stream
+set out stdout
 
 # Get the source tree root directory from the command-line
 #
 set TOP [lindex $argv 0]
+
+# If the -o FILENAME option is present, use FILENAME for output.
+#
+set x [lsearch $argv -o]
+if {$x>0} {
+  incr x
+  set out [open [lindex $argv $x] wb]
+}
 
 # Enable use of SQLITE_APICALL macros at the right points?
 #
@@ -44,6 +62,7 @@ set useapicall 0
 #
 set enable_recover 0
 
+# Process command-line arguments
 if {[lsearch -regexp [lrange $argv 1 end] {^-+useapicall}] != -1} {
   set useapicall 1
 }
@@ -88,7 +107,7 @@ set declpattern5 \
     {^ *([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3rebaser_[_a-zA-Z0-9]+)(\(.*)$}
 
 # Force the output to use unix line endings, even on Windows.
-fconfigure stdout -translation lf
+fconfigure stdout -translation binary
 
 set filelist [subst {
   $TOP/src/sqlite.h.in
@@ -118,7 +137,7 @@ set cdecllist {
 foreach file $filelist {
   set in [open $file rb]
   if {![regexp {sqlite\.h\.in} $file]} {
-    puts "/******** Begin file [file tail $file] *********/"
+    puts $out "/******** Begin file [file tail $file] *********/"
   }
   while {![eof $in]} {
 
@@ -161,11 +180,11 @@ foreach file $filelist {
           "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
       regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     }
-    puts $line
+    puts $out $line
   }
   close $in
   if {![regexp {sqlite\.h\.in} $file]} {
-    puts "/******** End of [file tail $file] *********/"
+    puts $out "/******** End of [file tail $file] *********/"
   }
 }
-puts "#endif /* SQLITE3_H */"
+puts $out "#endif /* SQLITE3_H */"

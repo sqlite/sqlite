@@ -75,6 +75,9 @@ extern "C" {
 
 #if defined(_WIN32) || defined(WIN32)
 
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
 #define HAVE_DLOPEN
 void *dlopen(const char *path, int mode);
 int dlclose(void *handle);
@@ -1864,7 +1867,7 @@ int Jim_tclcompatInit(Jim_Interp *interp)
 "					$f buffering $v\n"
 "				}\n"
 "				-tr* {\n"
-"\n"
+"					$f translation $v\n"
 "				}\n"
 "				default {\n"
 "					return -code error \"fconfigure: unknown option $n\"\n"
@@ -2936,6 +2939,28 @@ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+static int aio_cmd_translation(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	enum {OPT_BINARY, OPT_TEXT};
+    static const char * const options[] = {
+        "binary",
+        "text",
+        NULL
+    };
+	int opt;
+
+	if (Jim_GetEnum(interp, argv[0], options, &opt, NULL, JIM_ERRMSG) != JIM_OK) {
+		return JIM_ERR;
+	}
+#if defined(_setmode) && defined(O_BINARY)
+	else {
+		AioFile *af = Jim_CmdPrivData(interp);
+		_setmode(af->fh, opt == OPT_BINARY ? O_BINARY : O_TEXT);
+	}
+#endif
+    return JIM_OK;
+}
+
 static int aio_cmd_readsize(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     AioFile *af = Jim_CmdPrivData(interp);
@@ -3144,6 +3169,13 @@ static const jim_subcmd_type aio_command_table[] = {
         aio_cmd_buffering,
         0,
         2,
+
+    },
+    {   "translation",
+        "binary|text",
+        aio_cmd_translation,
+        1,
+        1,
 
     },
     {   "readsize",
@@ -24342,6 +24374,10 @@ int Jim_InteractivePrompt(Jim_Interp *interp)
 #include <string.h>
 
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 extern int Jim_initjimshInit(Jim_Interp *interp);
 
@@ -24425,6 +24461,10 @@ int main(int argc, char *const argv[])
         }
         if (retcode != JIM_EXIT) {
             JimSetArgv(interp, 0, NULL);
+            if (!isatty(STDIN_FILENO)) {
+
+                goto eval_stdin;
+            }
             retcode = Jim_InteractivePrompt(interp);
         }
     }
@@ -24447,6 +24487,7 @@ int main(int argc, char *const argv[])
             Jim_SetVariableStr(interp, "argv0", Jim_NewStringObj(interp, argv[1], -1));
             JimSetArgv(interp, argc - 2, argv + 2);
             if (strcmp(argv[1], "-") == 0) {
+eval_stdin:
                 retcode = Jim_Eval(interp, "eval [info source [stdin read] stdin 1]");
             } else {
                 retcode = Jim_EvalFile(interp, argv[1]);
