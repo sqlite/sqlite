@@ -1394,7 +1394,7 @@ void sqlite3Insert(
         continue;
       }else if( pColumn==0 ){
         /* Hidden columns that are not explicitly named in the INSERT
-        ** get there default value */
+        ** get their default value */
         sqlite3ExprCodeFactorable(pParse,
             sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
             iRegStore);

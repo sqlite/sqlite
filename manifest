@@ -1,5 +1,5 @@
-C Bump\sversion\snumber\sto\s3.50.0\sfor\sthe\snext\sdev\scycle.
-D 2025-02-06T13:36:31.028
+C Fix\sa\sharmless\stypo\sin\sa\scomment.
+D 2025-02-06T17:10:38.852
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -739,7 +739,7 @@ F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c db8bfff30fd7f71812651df3ddf5d1624b9e19104b31e349cd9055bbc9d622c4
+F src/insert.c ccadada52dc508ab8229e343425ab2504db57cfcdf8271f0f9ce1c2c6cad97c1
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4bac76138853a89484d3ac0486a9ed5143aa671b13b4b3abb704c1487213b388
-R b5d195e43beae1111c42ac081a32392a
-U stephan
-Z ceb27f6deb0f1234888251cc1a8b6e99
+P 46d08071f3f9fef78bc2444b52060e0e7de8c357a2aa213ac13c565e33acc4a0
+R c4f19381dd3461bfce62af076631de2d
+U drh
+Z 430f69c01ee43f942d60706245b3b05a
 # Remove this line to create a well-formed Fossil manifest.
