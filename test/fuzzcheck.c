@@ -507,7 +507,8 @@ static void writefileFunc(
 static void blobListLoadFromDb(
   sqlite3 *db,             /* Read from this database */
   const char *zSql,        /* Query used to extract the blobs */
-  int onlyId,              /* Only load where id is this value */
+  int firstId,             /* First sqlid to load */
+  int lastId,              /* Last sqlid to load */
   int *pN,                 /* OUT: Write number of blobs loaded here */
   Blob **ppList            /* OUT: Write the head of the blob list here */
 ){
@@ -518,8 +519,9 @@ static void blobListLoadFromDb(
   int rc;
   char *z2;
 
-  if( onlyId>0 ){
-    z2 = sqlite3_mprintf("%s WHERE rowid=%d", zSql, onlyId);
+  if( firstId>0 ){
+    z2 = sqlite3_mprintf("%s WHERE rowid BETWEEN %d AND %d", zSql,
+                         firstId, lastId);
   }else{
     z2 = sqlite3_mprintf("%s", zSql);
   }
@@ -1836,7 +1838,8 @@ static void showHelp(void){
 "each database, checking for crashes and memory leaks.\n"
 "Options:\n"
 "  --cell-size-check    Set the PRAGMA cell_size_check=ON\n"
-"  --dbid N             Use only the database where dbid=N\n"
+"  --dbid M..N          Use only the databases where dbid between M and N\n"
+"                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
 "  --export-db DIR      Write databases to files(s) in DIR. Works with --dbid\n"
 "  --export-sql DIR     Write SQL to file(s) in DIR. Also works with --sqlid\n"
 "  --help               Show this help text\n"
@@ -1861,7 +1864,8 @@ static void showHelp(void){
 "  --script             Output CLI script instead of running tests\n"
 "  --skip N             Skip the first N test cases\n"
 "  --spinner            Use a spinner to show progress\n"
-"  --sqlid N            Use only SQL where sqlid=N\n"
+"  --sqlid M..N         Use only SQL where sqlid between M..N\n"
+"                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
 "  --timeout N          Maximum time for any one test in N millseconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
 "  --vdbe-debug         Activate VDBE debugging.\n"
@@ -1883,8 +1887,10 @@ int main(int argc, char **argv){
   Blob *pDb;                   /* For looping over template databases */
   int i;                       /* Loop index for the argv[] loop */
   int dbSqlOnly = 0;           /* Only use scripts that are dbsqlfuzz */
-  int onlySqlid = -1;          /* --sqlid */
-  int onlyDbid = -1;           /* --dbid */
+  int firstSqlid = -1;         /* First --sqlid range */
+  int lastSqlid = 0x7fffffff;  /* Last --sqlid range */
+  int firstDbid = -1;          /* --dbid */
+  int lastDbid = 0x7fffffff;   /* --dbid end */
   int nativeFlag = 0;          /* --native-vfs */
   int rebuildFlag = 0;         /* --rebuild */
   int vdbeLimitFlag = 0;       /* --limit-vdbe */
@@ -1942,8 +1948,18 @@ int main(int argc, char **argv){
         cellSzCkFlag = 1;
       }else
       if( strcmp(z,"dbid")==0 ){
+        const char *zDotDot;
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
-        onlyDbid = integerValue(argv[++i]);
+        i++;
+        zDotDot = strstr(argv[i], "..");
+        if( zDotDot ){
+          firstDbid = atoi(argv[i]);
+          if( zDotDot[2] ){
+            lastDbid = atoi(&zDotDot[2]);
+          }
+        }else{
+          lastDbid = firstDbid = integerValue(argv[i]);
+        }
       }else
       if( strcmp(z,"export-db")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
@@ -2043,8 +2059,19 @@ int main(int argc, char **argv){
         bTimer = 1;
       }else
       if( strcmp(z,"sqlid")==0 ){
+        const char *zDotDot;
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
-        onlySqlid = integerValue(argv[++i]);
+        i++;
+        zDotDot = strstr(argv[i], "..");
+        if( zDotDot ){
+          firstSqlid = atoi(argv[i]);
+          if( zDotDot[2] ){
+            lastSqlid = atoi(&zDotDot[2]);
+          }
+        }else{
+          firstSqlid = integerValue(argv[i]);
+          lastSqlid = firstSqlid;
+        }
       }else
       if( strcmp(z,"timeout")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
@@ -2292,13 +2319,14 @@ int main(int argc, char **argv){
         const char *zExDb = 
           "SELECT writefile(printf('%s/db%06d.db',?1,dbid),dbcontent),"
           "       dbid, printf('%s/db%06d.db',?1,dbid), length(dbcontent)"
-          "  FROM db WHERE ?2<0 OR dbid=?2;";
+          "  FROM db WHERE dbid BETWEEN ?2 AND ?3;";
         rc = sqlite3_prepare_v2(db, zExDb, -1, &pStmt, 0);
         if( rc ) fatalError("cannot prepare statement [%s]: %s",
                             zExDb, sqlite3_errmsg(db));
         sqlite3_bind_text64(pStmt, 1, zExpDb, strlen(zExpDb),
                             SQLITE_STATIC, SQLITE_UTF8);
-        sqlite3_bind_int(pStmt, 2, onlyDbid);
+        sqlite3_bind_int(pStmt, 2, firstDbid);
+        sqlite3_bind_int(pStmt, 3, lastDbid);
         while( sqlite3_step(pStmt)==SQLITE_ROW ){
           printf("write db-%d (%d bytes) into %s\n",
              sqlite3_column_int(pStmt,1),
@@ -2311,13 +2339,14 @@ int main(int argc, char **argv){
         const char *zExSql = 
           "SELECT writefile(printf('%s/sql%06d.txt',?1,sqlid),sqltext),"
           "       sqlid, printf('%s/sql%06d.txt',?1,sqlid), length(sqltext)"
-          "  FROM xsql WHERE ?2<0 OR sqlid=?2;";
+          "  FROM xsql WHERE sqlid BETWEEN ?2 AND ?3;";
         rc = sqlite3_prepare_v2(db, zExSql, -1, &pStmt, 0);
         if( rc ) fatalError("cannot prepare statement [%s]: %s",
                             zExSql, sqlite3_errmsg(db));
         sqlite3_bind_text64(pStmt, 1, zExpSql, strlen(zExpSql),
                             SQLITE_STATIC, SQLITE_UTF8);
-        sqlite3_bind_int(pStmt, 2, onlySqlid);
+        sqlite3_bind_int(pStmt, 2, firstSqlid);
+        sqlite3_bind_int(pStmt, 3, lastSqlid);
         while( sqlite3_step(pStmt)==SQLITE_ROW ){
           printf("write sql-%d (%d bytes) into %s\n",
              sqlite3_column_int(pStmt,1),
@@ -2333,11 +2362,11 @@ int main(int argc, char **argv){
     /* Load all SQL script content and all initial database images from the
     ** source db
     */
-    blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", onlySqlid,
-                           &g.nSql, &g.pFirstSql);
+    blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", firstSqlid,
+                           lastSqlid, &g.nSql, &g.pFirstSql);
     if( g.nSql==0 ) fatalError("need at least one SQL script");
-    blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", onlyDbid,
-                       &g.nDb, &g.pFirstDb);
+    blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", firstDbid,
+                       lastDbid, &g.nDb, &g.pFirstDb);
     if( g.nDb==0 ){
       g.pFirstDb = safe_realloc(0, sizeof(Blob));
       memset(g.pFirstDb, 0, sizeof(Blob));
