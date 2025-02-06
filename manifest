@@ -1,5 +1,5 @@
-C Fix\sa\sdependencies/order-of-operations\sbug\sin\sext/wasm/GNUmakefile\swhich\scauses\screation\sof\sfiles\sfiltered\svia\sc-pp\sto\sfail\sif\sthe\sext/wasm/jswasm\sdir\sdid\snot\sexist\sbeforehand.
-D 2025-02-06T13:18:49.829
+C Bump\sversion\snumber\sto\s3.50.0\sfor\sthe\snext\sdev\scycle.
+D 2025-02-06T13:36:31.028
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -7,7 +7,7 @@ F Makefile.in 38485d15d9190cdad0d7bee25af7b442028865964025dcc61f40fd8d6e369cfc
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
-F VERSION 01f7606130e48fd58a74d1e45e565f2674819d6eadbc219d328d94bb3362b818
+F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a7dd425dc2a0e5082a9049c9b4a9d4f199a71583d014c24b4cfe276c5a77cde
-R ace1a556cd2682c15f244d0a70c9d1c1
+P 4bac76138853a89484d3ac0486a9ed5143aa671b13b4b3abb704c1487213b388
+R b5d195e43beae1111c42ac081a32392a
 U stephan
-Z e2303326f9884746fc80a4c5bceed35d
+Z ceb27f6deb0f1234888251cc1a8b6e99
 # Remove this line to create a well-formed Fossil manifest.
