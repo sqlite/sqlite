@@ -1521,6 +1521,72 @@ nexprlist(A) ::= nexprlist(A) COMMA expr(Y).
 nexprlist(A) ::= expr(Y).
     {A = sqlite3ExprListAppend(pParse,0,Y); /*A-overwrites-Y*/}
 
+
+%include {
+  /* Forward declaration */
+  static SQLITE_NOINLINE void parserRequireInsertContext(
+    Parse *pParse,                /* The SQLite parsing context */
+    void *pLemon,                 /* The LEMON parser state */
+    Token *pErrToken,             /* Token that might be a syntax error */
+    int nRhs                      /* Number of RHS tokens on the ruls */
+  );
+}
+%code {
+  /* This routine checks to see if the parser stack looks like either of these:
+  **
+  **     insert_cmd INTO xfullname idlist_opt VALUES LP
+  **     insert_cmd INTO xfullname idlist_opt values COMMA LP
+  **
+  ** If the parser stack is different from both of these, then raise a syntax error
+  ** on pErrToken.
+  */
+  static SQLITE_NOINLINE void parserRequireInsertContext(
+    Parse *pParse,                /* The SQLite parsing context */
+    void *pLemon,                 /* The LEMON parser state */
+    Token *pErrToken,             /* Token that might be a syntax error */
+    int nRhs                      /* Number of RHS tokens on the ruls */
+  ){
+    yyParser *yypParser = (yyParser*)pLemon;
+    yyStackEntry *yytos = yypParser->yytos - nRhs;
+    int bFault = 0;
+    if( (yytos - yypParser->yystack) < 6
+     || yytos[0].major!=TK_LP
+    ){
+      bFault = 1;
+    }else
+    if( yytos[-1].major==TK_COMMA
+     && yytos[-2].major==YYNT_values
+     && yytos[-3].major==YYNT_idlist_opt
+    ){
+      /* This is ok */
+    }else
+    if( yytos[-1].major==TK_VALUES
+     && yytos[-2].major==YYNT_idlist_opt
+    ){
+      /* This is ok */
+    }else
+    {
+      bFault = 1;  /* Cannot match */
+    }
+    if( bFault ) parserSyntaxError(pParse, pErrToken);
+  }
+}
+
+// The following reduction rules only succeed if the previous two
+// tokens are "VALUES LP".  If the previous two tokens are anything
+// different, a syntax error is raised.
+//
+nexprlist(A) ::= nexprlist(A) COMMA DEFAULT(D). {
+  Expr *p = sqlite3PExpr(pParse,TK_DEFAULT,0,0);
+  parserRequireInsertContext(pParse, yypParser, &D, 3);
+  A = sqlite3ExprListAppend(pParse,A,p);
+}
+nexprlist(A) ::= DEFAULT(D). {
+  Expr *p = sqlite3PExpr(pParse,TK_DEFAULT,0,0);
+  parserRequireInsertContext(pParse, yypParser, &D, 1);
+  A = sqlite3ExprListAppend(pParse,0,p);
+}
+
 %ifndef SQLITE_OMIT_SUBQUERY
 /* A paren_exprlist is an optional expression list contained inside
 ** of parenthesis */

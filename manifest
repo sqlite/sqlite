@@ -1,5 +1,5 @@
-C Adjust\sthe\stest/speedtest.tcl\sscript\sso\sthat\sit\suses\san\son-disk\sdatabase\nrather\sthan\san\sin-memory\sdatabase.
-D 2025-02-06T17:29:14.625
+C This\sis\san\sexperimental\schange\sto\sinvestigate\sthe\sfeasibility\sof\sallow\nDEFAULT\stokens\swithin\sVALUES\sclauses\sattached\sto\sINSERT\sstatements.\sThere\nis\sa\slot\sof\sextra\scode\sspace\sconsumed\sfor\ssuch\san\sobscure\sfeature.
+D 2025-02-06T21:14:27.053
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -769,7 +769,7 @@ F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 5dce477d23c6cd41da97ff9bc4ef93fba0e0a0aaa72a15ddb8a3f71618d76cac
+F src/parse.y 537ea5f4881e924db32e786fbfe2cc5d20990731d34c2101b0abd6a1315d7970
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2136,8 +2136,8 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 2418ee31f65764d150f7dd87ef00b4408f1b01a55db0b30bed673a3e336ae718
-F tool/lempar.c e6b649778e5c027c8365ff01d7ef39297cd7285fa1f881cce31792689541e79f
+F tool/lemon.c 8a87e0ac84a9bfe48c5f13fec2282f5ffe4b2cb259f3fa6be4890e1188a32493
+F tool/lempar.c bf92d06432a217adb9cc143392b0eaac4e4083321cee1dcd14ece83eb14a7acf
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
@@ -2209,8 +2209,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed82272904deb37640286448e03153316f828c629547a615a504af1d7ec5a278
-R 3389deb8f0facbb95e58d6e9fc976f10
+P e93d7aa1db9bdbf1996c4c168e67284177e384b7acf176d74a0458258faab05c
+R d804befe9bc6b41a89ecf51824c5dd3c
+T *branch * default-in-values
+T *sym-default-in-values *
+T -sym-trunk *
 U drh
-Z 9628165988950eefdec8a4b63484fc0a
+Z 6c6a00c698a47380c071bb1637488a2a
 # Remove this line to create a well-formed Fossil manifest.

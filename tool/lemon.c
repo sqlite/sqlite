@@ -4934,6 +4934,14 @@ void ReportTable(
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
+  /* Generate internal #defines for every non-terminal symbol.
+  */
+  for(i=0; i<lemp->nsymbol; i++){
+    if( !ISLOWER(lemp->symbols[i]->name[0]) ) continue;
+    fprintf(out,"#define YYNT_%-20s %4d\n",lemp->symbols[i]->name, i);lineno++;
+  }
+  tplt_xfer(lemp->name,in,out,&lineno);
+
   /* Generate a table containing a text string that describes every
   ** rule in the rule set of the grammar.  This information is used
   ** when tracing REDUCE actions.

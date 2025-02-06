@@ -280,6 +280,9 @@ static const char *const yyTokenName[] = {
 };
 #endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
+/* Numeric values assigned to non-terminal symbols. */
+%%
+
 #ifndef NDEBUG
 /* For tracing reduce actions, the names of all rules are required.
 */
