@@ -196,6 +196,30 @@ APIs must not use `[file normalize]`, but autosetup provides a
 TCL-only implementation of `[file-normalize]` (note the dash) for
 portable use in the configure script.
 
+Known TCL Incompatibilities
+------------------------------------------------------------------------
+
+A summary of known incompatibilities in JimTCL
+
+- **CRNL line endings**: prior to 2025-02-05 `fconfigure -translation ...`
+  was a no-op in JimTCL, and it emits CRNL line endings by default on
+  Windows.  Since then, it supports `-translation binary`, which is
+  close enough to `-translation lf` for our purposes. When working
+  with files using the `open` command, it is important to use mode
+  `"rb"` or `"wb"`, as appropriate, so that the output does not get
+  CRNL-mangled on Windows.
+
+- **`file copy`** does not support multiple source files. See
+  [](/info/61f18c96183867fe) for a workaround.
+
+- **Regular expressions**:
+
+  - Patterns treat `\nnn` octal values as back-references (which it
+    does not support). Those can be reformulated as demonstrated in
+    [](/info/aeac23359bb681c0).
+
+  - `regsub` does not support the `\y` flag. A workaround is demonstrated
+    in [](/info/c2e5dd791cce3ec4).
 
 <a name="conventions"></a>
 Design Conventions
