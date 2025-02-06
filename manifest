@@ -1,5 +1,5 @@
-C Version\s3.49.0
-D 2025-02-06T11:55:18.769
+C Fix\sa\sdependencies/order-of-operations\sbug\sin\sext/wasm/GNUmakefile\swhich\scauses\screation\sof\sfiles\sfiltered\svia\sc-pp\sto\sfail\sif\sthe\sext/wasm/jswasm\sdir\sdid\snot\sexist\sbeforehand.
+D 2025-02-06T13:35:35.275
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -619,7 +619,7 @@ F ext/session/sqlite3session.c 52a680dbb03c4734748b215d95987fb4d95ab23baaf053a01
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c 12e0a2c15fd60f92da4bb29c697c9177ff0c0dbcdc5129a54c47e999f147937a
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 47f121d057c08ba49443c06c1c51ba2572e3d5d28a06c968cf0b2ccd5878c3d3
+F ext/wasm/GNUmakefile 7d1076680e687d01e0f4f343624db4e00e31edbe67bd0cb2e3ad8ecea98a3cae
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md b89605f65661cf35bf034ff6d43e448cc169b8017fc105d498e33b81218b482c
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2209,11 +2209,15 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f28f6694f97d5ee0345b45f9bf81e3fdce0990ce32fb9bdbbaac079126a67c9
-R 84a73aa92675a2727074c491235ee053
-T +sym-major-release *
-T +sym-release *
-T +sym-version-3.49.0 *
-U drh
-Z 345e0ae7aa6443f7f8d274ba6f526736
+P 4a7dd425dc2a0e5082a9049c9b4a9d4f199a71583d014c24b4cfe276c5a77cde
+Q +4bac76138853a89484d3ac0486a9ed5143aa671b13b4b3abb704c1487213b388
+R ace1a556cd2682c15f244d0a70c9d1c1
+T *branch * branch-3.49
+T *sym-branch-3.49 *
+T -sym-major-release * Cancelled\sby\sbranch.
+T -sym-release * Cancelled\sby\sbranch.
+T -sym-trunk * Cancelled\sby\sbranch.
+T -sym-version-3.49.0 * Cancelled\sby\sbranch.
+U stephan
+Z 817b52d2a8150835f129ab138a935ddb
 # Remove this line to create a well-formed Fossil manifest.

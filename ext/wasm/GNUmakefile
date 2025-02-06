@@ -425,6 +425,7 @@ define SQLITE.CALL.C-PP.FILTER
 # $2 = Output file: c-pp -o $(2).js
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE) $$(bin.c-pp)
+	mkdir -p $$(dir $$@)
 	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
 #CLEAN_FILES += $(2)
 endef
