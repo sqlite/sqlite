@@ -174,9 +174,14 @@ if {!$dryrun} {
 }
 lappend speedtestflags --testset $testset
 set stcmd [list valgrind --tool=cachegrind ./speedtest1 {*}$speedtestflags]
+lappend stcmd speedtest1.db
 lappend stcmd >valgrind-out.txt 2>valgrind-err.txt
 puts $stcmd
 if {!$dryrun} {
+   foreach file {speedtest1.db speedtest1.db-journal speedtest1.db-wal
+                 speedtest1.db-shm} {
+     if {[file exists $file]} {file delete $file}
+   }
    exec {*}$stcmd
 }
 
