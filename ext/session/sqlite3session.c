@@ -2564,9 +2564,11 @@ static void sessionAppendIdent(
     char *zOut = (char *)&p->aBuf[p->nBuf];
     const char *zIn = zStr;
     *zOut++ = '"';
-    while( *zIn ){
-      if( *zIn=='"' ) *zOut++ = '"';
-      *zOut++ = *(zIn++);
+    if( zIn!=0 ){
+      while( *zIn ){
+        if( *zIn=='"' ) *zOut++ = '"';
+        *zOut++ = *(zIn++);
+      }
     }
     *zOut++ = '"';
     p->nBuf = (int)((u8 *)zOut - p->aBuf);
