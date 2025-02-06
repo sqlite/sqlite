@@ -107,7 +107,7 @@ set declpattern5 \
     {^ *([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3rebaser_[_a-zA-Z0-9]+)(\(.*)$}
 
 # Force the output to use unix line endings, even on Windows.
-fconfigure stdout -translation lf
+fconfigure stdout -translation binary
 
 set filelist [subst {
   $TOP/src/sqlite.h.in

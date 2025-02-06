@@ -1587,6 +1587,22 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
 }
 
 /*
+** If expression pExpr is a phrase expression that uses an MSR query, 
+** restart it as a regular, non-incremental query. Return SQLITE_OK
+** if successful, or an SQLite error code otherwise.
+*/
+static int fts3ExprRestartIfCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
+  TermOffsetCtx *p = (TermOffsetCtx*)ctx;
+  int rc = SQLITE_OK;
+  UNUSED_PARAMETER(iPhrase);
+  if( pExpr->pPhrase && pExpr->pPhrase->bIncr ){
+    rc = sqlite3Fts3MsrCancel(p->pCsr, pExpr);
+    pExpr->pPhrase->bIncr = 0;
+  }
+  return rc;
+}
+
+/*
 ** Implementation of offsets() function.
 */
 void sqlite3Fts3Offsets(
@@ -1621,6 +1637,12 @@ void sqlite3Fts3Offsets(
   }
   sCtx.iDocid = pCsr->iPrevId;
   sCtx.pCsr = pCsr;
+
+  /* If a query restart will be required, do it here, rather than later of
+  ** after pointers to poslist buffers that may be invalidated by a restart
+  ** have been saved.  */
+  rc = sqlite3Fts3ExprIterate(pCsr->pExpr, fts3ExprRestartIfCb, (void*)&sCtx);
+  if( rc!=SQLITE_OK ) goto offsets_out;
 
   /* Loop through the table columns, appending offset information to 
   ** string-buffer res for each column.
