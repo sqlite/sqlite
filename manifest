@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sunused-parameter\scompiler\swarning\sintroduced\sby\s[75f3d8744879].
-D 2025-02-05T16:08:11.074
+C Version\s3.49.0
+D 2025-02-06T11:55:18.769
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2209,8 +2209,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60c932e67b886d4c050698f36e1d3fc04eb99473d62bb3b1585a97d90e27227e
+P 9f28f6694f97d5ee0345b45f9bf81e3fdce0990ce32fb9bdbbaac079126a67c9
 R 84a73aa92675a2727074c491235ee053
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.49.0 *
 U drh
-Z 84a578fb1294f91eaec33c542173ac0d
+Z 345e0ae7aa6443f7f8d274ba6f526736
 # Remove this line to create a well-formed Fossil manifest.
