@@ -70,7 +70,8 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
       assert( pParse->db->pVtabCtx==0 );
 #endif
       assert( pParse->bReturning );
-      assert( &(pParse->u1.pReturning->retTrig) == pTrig );
+      assert( !pParse->isCreate );
+      assert( &(pParse->u1.d.pReturning->retTrig) == pTrig );
       pTrig->table = pTab->zName;
       pTrig->pTabSchema = pTab->pSchema;
       pTrig->pNext = pList;
@@ -1047,7 +1048,8 @@ static void codeReturningTrigger(
     return;
   }
   assert( db->pParse==pParse );
-  pReturning = pParse->u1.pReturning;
+  assert( !pParse->isCreate );
+  pReturning = pParse->u1.d.pReturning;
   if( pTrigger != &(pReturning->retTrig) ){
     /* This RETURNING trigger is for a different statement */
     return;

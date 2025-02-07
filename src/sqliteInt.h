@@ -3841,6 +3841,8 @@ struct Parse {
 #endif
 #ifdef SQLITE_DEBUG
   u8 ifNotExists;      /* Might be true if IF NOT EXISTS.  Assert()s only */
+  u8 isCreate;         /* CREATE TABLE, INDEX, or VIEW (but not TRIGGER)
+                       ** and ALTER TABLE ADD COLUMN. */
 #endif
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -3856,11 +3858,8 @@ struct Parse {
   ExprList *pConstExpr;/* Constant expressions */
   IndexedExpr *pIdxEpr;/* List of expressions used by active indexes */
   IndexedExpr *pIdxPartExpr; /* Exprs constrained by index WHERE clauses */
-  Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
-  int regRowid;        /* Register holding rowid of CREATE TABLE entry */
-  int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
   int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
@@ -3875,10 +3874,6 @@ struct Parse {
   Table *pTriggerTab;  /* Table triggers are being coded for */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   ParseCleanup *pCleanup;   /* List of cleanup operations to run after parse */
-  union {
-    int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
-    Returning *pReturning; /* The RETURNING clause */
-  } u1;
   LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 bReturning;       /* Coding a RETURNING trigger */
@@ -3897,6 +3892,17 @@ struct Parse {
   Token sNameToken;       /* Token with unqualified schema object name */
   u32 oldmask;            /* Mask of old.* columns referenced */
   u32 newmask;            /* Mask of new.* columns referenced */
+  union {
+    struct {  /* These fields available when isCreate is true */
+      int addrCrTab;        /* Address of OP_CreateBtree on CREATE TABLE */
+      int regRowid;         /* Register holding rowid of CREATE TABLE entry */
+      int regRoot;          /* Register holding root page for new objects */
+      Token constraintName; /* Name of the constraint currently being parsed */
+    } cr;
+    struct {  /* These fields available to all other statements */
+      Returning *pReturning; /* The RETURNING clause */
+    } d;
+  } u1;
 
   /************************************************************************
   ** Above is constant between recursions.  Below is reset before and after
