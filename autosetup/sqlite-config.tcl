@@ -43,7 +43,10 @@ set sqliteConfig(is-cross-compiling) [proj-is-cross-compiling]
 
 ########################################################################
 # Runs some common initialization which must happen immediately after
-# autosetup's [options] function is called.
+# autosetup's [options] function is called. This is also a convenient
+# place to put some generic pieces common to both the canonical
+# top-level build and the "autoconf" build, but it's not intended to
+# be a catch-all dumping ground for such.
 proc sqlite-post-options-init {} {
   #
   # Carry values from hidden --flag aliases over to their canonical
@@ -859,6 +862,22 @@ proc sqlite-handle-math {} {
     define LDFLAGS_MATH ""
     msg-result "Disabling math SQL functions"
   }
+}
+
+########################################################################
+# Performs late-stage config steps common to both the canonical and
+# autoconf bundle builds.
+proc sqlite-common-late-stage-config {} {
+  if {[proj-looks-like-mac]} {
+    define LDFLAGS_LIBSQLITE3_OS_SPECIFIC \
+      "-Wl,-current_version 9.6.0 -Wl,-compatibility_version 9.0.0"
+    # ^^^ https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+    # Those are historical libtool-defined values, not library-defined ones
+  } else {
+    define LDFLAGS_LIBSQLITE3_OS_SPECIFIC ""
+  }
+  sqlite-process-dot-in-files
+  sqlite-post-config-validation
 }
 
 ########################################################################

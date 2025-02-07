@@ -166,6 +166,7 @@ LDFLAGS.shlib ?= -shared
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.libsqlite3.soname ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific ?= # see https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary across platforms
@@ -1411,7 +1412,7 @@ all: lib
 #
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3) \
-		$(LDFLAGS.libsqlite3.soname)
+		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
@@ -1428,6 +1429,9 @@ all: so
 # N.B. we initially had a link named libsqlite3.so.3 but it's
 # unnecessary unless we want to set SONAME to libsqlite3.so.3, which
 # is also unnecessary.
+#
+# N.B. different transformations are applied on systems where $(T.dll)
+# is ".dylib" and none of the following docs apply on such systems.
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1465,8 +1469,16 @@ all: so
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
-		cd "$(install-dir.lib)" || exit $$?; \
+	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	if [ x.dylib = x$(T.dll) ]; then \
+		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+		mv $(libsqlite3.SO) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+	else \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
@@ -1482,7 +1494,8 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		fi
+		fi; \
+	fi
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so
