@@ -1,8 +1,17 @@
 ########################################################################
 # This is a main makefile for the "autoconf" bundle of SQLite. This is
 # a trimmed-down version of the canonical makefile, devoid of most
-# documentation. See /main.mk in the canonical source tree for the
-# full docs and the "master copy" of most of the build target recipes.
+# documentation. For the full docs, see /main.mk in the canonical
+# source tree.
+#
+# Maintenance reminders:
+#
+# - To keep this working with an out-of-tree build, be sure to prefix
+#   input file names with $(TOP)/ where appropriate (which is most
+#   places).
+#
+# - The original/canonical recipes can be found in /main.mk in the
+#   canonical source tree.
 all:
 
 TOP = @abs_top_srcdir@
@@ -126,8 +135,8 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.configure)
 CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
 
-sqlite3.o:	sqlite3.h sqlite3.c
-	$(CC) -c sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
+sqlite3.o: $(TOP)/sqlite3.h $(TOP)/sqlite3.c
+	$(CC) -c $(TOP)/sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
 
 libsqlite3.LIB = libsqlite3$(T.lib)
 libsqlite3.SO = libsqlite3$(T.dll)
@@ -183,9 +192,9 @@ install-lib: install-lib-$(ENABLE_LIB_STATIC)
 install: install-lib
 
 
-sqlite3$(T.exe):	shell.c sqlite3.c
+sqlite3$(T.exe): $(TOP)/shell.c $(TOP)/sqlite3.c
 	$(CC) -o $@ \
-		shell.c sqlite3.c \
+		$(TOP)/shell.c $(TOP)/sqlite3.c \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
 		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
@@ -195,16 +204,16 @@ install-shell: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
 install: install-shell
 
-install-headers: sqlite3.h $(install-dir.include)
-	$(INSTALL.noexec) sqlite3.h sqlite3ext.h "$(install-dir.include)"
+install-headers: $(TOP)/sqlite3.h $(install-dir.include)
+	$(INSTALL.noexec) $(TOP)/sqlite3.h $(TOP)/sqlite3ext.h "$(install-dir.include)"
 install: install-headers
 
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
 	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 install: install-pc
 
-install-man1: sqlite3.1 $(install-dir.man1)
-	$(INSTALL.noexec) sqlite3.1 "$(install-dir.man1)"
+install-man1: $(TOP)/sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) $(TOP)/sqlite3.1 "$(install-dir.man1)"
 install: install-man1
 
 clean:

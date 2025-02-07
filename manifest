@@ -1,5 +1,5 @@
-C Use\sa\slinker\sflag\scheck,\srather\sthan\sjust\san\sOS\scheck,\sto\sdetermine\swhether\sto\suse\sthe\s-compatibility/current_version\sflags.
-D 2025-02-07T10:51:02.695
+C Merge\strunk\sinto\smac-build-fixes\sbranch\sand\sresolve\sa\sdoc-only\smerge\sconflict.
+D 2025-02-07T11:21:07.011
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def fdd6965e06bce02a8b9f9ed57a52d05bcbec4b56e4bef2174866bb5713c65fda
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 6d672c03f343d3197846c2ba281841b3cc672bbe787125cd62aedc2701cd462a
+F autoconf/Makefile.in be23c54eef87e6a64d875f96f6cf60a871219c50b04a955ebbd1aac48b4c738e
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 940e78dd0e13674f177ba1e2d6af67f7ae0d7b71958d40e02f16cb2753884979
-R 99a51d4babcf2bca84981f90f5b81654
+P 85302582fc476ec42dac837e559221170671bb99a3990049ead4e2a82f1a045d d47964a65bcfd4bc0b06baca281467a0b7fc87eba912a19c0974f63a54928ff8
+R 0c1f6391cc34821b99085d864985d1a7
 U stephan
-Z 0eb478efd5c59884e9ee014a24c7f05a
+Z b23e35c945fa3a28139e8d84a21b983e
 # Remove this line to create a well-formed Fossil manifest.
