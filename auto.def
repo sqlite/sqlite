@@ -230,7 +230,7 @@ proj-if-opt-truthy dev {
   define CFLAGS [get-env CFLAGS {-O0 -g}]
   # -------------^^^^^^^ intentionally using [get-env] instead of
   # [proj-get-env] here because [sqlite-setup-default-cflags] uses
-  # [proj-get-env].
+  # [proj-get-env] and we want this to supercede that.
 }
 
 sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
@@ -275,6 +275,5 @@ sqlite-handle-load-extension
 sqlite-handle-math
 sqlite-handle-icu
 sqlite-handle-emsdk
-sqlite-process-dot-in-files
-sqlite-post-config-validation
+sqlite-common-late-stage-config
 sqlite-dump-defines

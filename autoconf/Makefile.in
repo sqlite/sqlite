@@ -69,7 +69,6 @@ LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
-LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 
 # When cross-compiling, we need to avoid the -s flag because it only
 # works on the build host's platform.
@@ -124,12 +123,16 @@ SHELL_OPT ?= @OPT_SHELL@
 #
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+# soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@
+# os-specific: see https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
   $(LDFLAGS.configure)
-LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
 
 sqlite3.o: $(TOP)/sqlite3.h $(TOP)/sqlite3.c
@@ -140,7 +143,8 @@ libsqlite3.SO = libsqlite3$(T.dll)
 
 $(libsqlite3.SO): sqlite3.o
 	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
-		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) \
+		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 all: $(libsqlite3.SO)
 
 $(libsqlite3.LIB): sqlite3.o
@@ -149,8 +153,16 @@ all: $(libsqlite3.LIB)
 
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
-		cd "$(install-dir.lib)" || exit $$?; \
+	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	if [ x.dylib = x$(T.dll) ]; then \
+		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+		mv $(libsqlite3.SO) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+	else \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
@@ -166,7 +178,9 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		fi
+		fi; \
+	fi
+
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_LIB_SHARED)
 install: install-so
