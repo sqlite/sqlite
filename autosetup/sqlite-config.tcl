@@ -865,17 +865,42 @@ proc sqlite-handle-math {} {
 }
 
 ########################################################################
+# If this OS looks like a Mac, checks for the Mac-specific
+# -current_version and -compatibility_version linker flags. Defines
+# LDFLAGS_MAC_CVERSION to an empty string and returns 0 if they're not
+# supported, else defines that to the linker flags and returns 1.
+#
+# We don't check this on non-Macs because this whole thing is a
+# libtool compatibility kludge to account for a version stamp which
+# libtool applied only on Mac platforms.
+#
+# Based on https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7.
+proc sqlite-check-mac-cversion {} {
+  define LDFLAGS_MAC_CVERSION ""
+  set rc 0
+  if {[proj-looks-like-mac]} {
+    cc-with {} {
+      # These version numbers are historical libtool-defined values, not
+      # library-defined ones
+      if {[cc-check-flags "-Wl,-current_version,9.6.0"]
+          && [cc-check-flags "-Wl,-compatibility_version,9.0.0"]} {
+        define LDFLAGS_MAC_CVERSION "-Wl,-compatibility_version,9.0.0 -Wl,-current_version,9.6.0"
+        set rc 1
+      } elseif {[cc-check-flags "-compatibility_version 9.0.0"]
+                && [cc-check-flags "-current_version 9.6.0"]} {
+        define LDFLAGS_MAC_CVERSION "-compatibility_version 9.0.0 -current_version 9.6.0"
+        set rc 1
+      }
+    }
+  }
+  return $rc
+}
+
+########################################################################
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
 proc sqlite-common-late-stage-config {} {
-  if {[proj-looks-like-mac]} {
-    define LDFLAGS_LIBSQLITE3_OS_SPECIFIC \
-      "-Wl,-current_version 9.6.0 -Wl,-compatibility_version 9.0.0"
-    # ^^^ https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
-    # Those are historical libtool-defined values, not library-defined ones
-  } else {
-    define LDFLAGS_LIBSQLITE3_OS_SPECIFIC ""
-  }
+  sqlite-check-mac-cversion
   sqlite-process-dot-in-files
   sqlite-post-config-validation
 }

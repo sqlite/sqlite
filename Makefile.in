@@ -121,7 +121,7 @@ LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-LDFLAGS.libsqlite3.os-specific = @LDFLAGS_LIBSQLITE3_OS_SPECIFIC@
+LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@
 # os-specific: see https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@

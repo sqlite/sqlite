@@ -1,9 +1,9 @@
-C Library-linking\sand\sinstallation\sfixes\sfor\sMac\splatforms,\sas\sdiscussed\sin\s[forum:9dfd5b8fd5|forum\spost\s9dfd5b8fd5].\sThese\sstill\srequire\stesting\son\ssuch\sa\splatform.
-D 2025-02-07T02:01:20.675
+C Use\sa\slinker\sflag\scheck,\srather\sthan\sjust\san\sOS\scheck,\sto\sdetermine\swhether\sto\suse\sthe\s-compatibility/current_version\sflags.
+D 2025-02-07T10:51:02.695
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 331c1d2926227cb8feb0d127c2e7a6957d2ec69032474d6c16cfdc012d8b57d7
+F Makefile.in 85ed87882b5d3fd11e6403212f2120e5e07d341bc96a101cfa9475901edd0754
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def fdd6965e06bce02a8b9f9ed57a52d05bcbec4b56e4bef2174866bb5713c65fda
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 15f5caf5bef8f135b11ee92f3eba88c5740450f65ea736414f2af889450864ee
+F autoconf/Makefile.in 6d672c03f343d3197846c2ba281841b3cc672bbe787125cd62aedc2701cd462a
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 5a74bdbf43c52289e3f482f3b9578db4bd657e88e8fe04b16c564d9fb710540a
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 9adf1539673cef15bff862d9360b479e6920cc2c0d85de707b0ba31c04ce4531
-F autosetup/sqlite-config.tcl 3f9ed8dd2de3c80c958197b30268937dc62d2934ab10a5354e26cc6fff40d129
+F autosetup/sqlite-config.tcl f64aff26763e9ea021aabac222d43a9e0107b45f6de82972b93411fe36ef566b
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2209,11 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a1a9c780d1f1b47b0408397edded9c5d230c7b144207ad142d06c048792d31fa
-R 535b67b945a8416134ed3a37e67f49e7
-T *branch * mac-build-fixes
-T *sym-mac-build-fixes *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 940e78dd0e13674f177ba1e2d6af67f7ae0d7b71958d40e02f16cb2753884979
+R 99a51d4babcf2bca84981f90f5b81654
 U stephan
-Z c25f87dfc79fb2658dd709dd71fb07f1
+Z 0eb478efd5c59884e9ee014a24c7f05a
 # Remove this line to create a well-formed Fossil manifest.
