@@ -910,6 +910,31 @@ sqlite3-worker1-promiser.js := $(dir.dout)/sqlite3-worker1-promiser.js
 sqlite3-worker1-promiser.mjs := $(dir.dout)/sqlite3-worker1-promiser.mjs
 sqlite3-worker1-bundler-friendly.mjs := $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
+
+ifneq (1,$(MAKING_CLEAN))
+# This block MUST come between the above definitions of
+# sqlite3-...js/mjs and the $(eval) calls below this block which use
+# SQLITE.CALL.C-PP.FILTER.
+########################################################################
+# bin.mkwb is used for generating some of the makefile code for the
+# various wasm builds. It used to be generated in this makefile via a
+# difficult-to-read/maintain block of $(eval)'d code. Attempts were
+# made to generate it from tcl and bash (shell) but having to escape
+# the $ references in those languages made it just as illegible as the
+# native makefile code. Somewhat surprisingly, moving that code generation
+# to C makes it slightly less illegible than the previous 3 options.
+bin.mkwb := ./mkwasmbuilds
+$(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
+	$(CC) -o $@ $<
+DISTCLEAN_FILES += $(bin.mkwb)
+.wasmbuilds.make: $(bin.mkwb)
+	@rm -f $@
+	$(bin.mkwb) > $@
+	@chmod -w $@
+-include .wasmbuilds.make
+endif
+DISTCLEAN_FILES += .wasmbuilds.make
+
 $(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.mjs),\
     $(c-pp.D.sqlite3-bundler-friendly)))
@@ -940,27 +965,6 @@ sqlite3-api.ext.jses += \
   $(sqlite3-worker1.js)
 all quick: $(sqlite3-api.ext.jses)
 q: quick
-
-ifneq (1,$(MAKING_CLEAN))
-########################################################################
-# bin.mkwb is used for generating some of the makefile code for the
-# various wasm builds. It used to be generated in this makefile via a
-# difficult-to-read/maintain block of $(eval)'d code. Attempts were
-# made to generate it from tcl and bash (shell) but having to escape
-# the $ references in those languages made it just as illegible as the
-# native makefile code. Somewhat surprisingly, moving that code generation
-# to C makes it slightly less illegible than the previous 3 options.
-bin.mkwb := ./mkwasmbuilds
-$(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
-	$(CC) -o $@ $<
-DISTCLEAN_FILES += $(bin.mkwb)
-.wasmbuilds.make: $(bin.mkwb)
-	@rm -f $@
-	$(bin.mkwb) > $@
-	@chmod -w $@
--include .wasmbuilds.make
-endif
-DISTCLEAN_FILES += .wasmbuilds.make
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL

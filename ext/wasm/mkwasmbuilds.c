@@ -274,6 +274,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zEmcc ) zEmcc = "";
 
   pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
+  pf("# zApiJsOut=%s\n# zJsOut=%s\n# zCmppD=%s\n", zApiJsOut, zJsOut, zCmppD);
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
   mk_pre_post(zNM, zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
