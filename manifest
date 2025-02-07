@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\smac-build-fixes\sbranch\sand\sresolve\sa\sdoc-only\smerge\sconflict.
-D 2025-02-07T11:21:07.011
+C Latest\supstream\sjimsh0.c\swith\sa\sslightly\sdifferent\s(fconfigure\s-translation\sbinary)\simpl.\sTested\son\sWin11\sand\sLinux\sfor\soutput\scompatibility\swith\ssqlite3.c/h.
+D 2025-02-07T11:55:51.778
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -47,7 +47,7 @@ F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
-F autosetup/jimsh0.c 5a74bdbf43c52289e3f482f3b9578db4bd657e88e8fe04b16c564d9fb710540a
+F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 9adf1539673cef15bff862d9360b479e6920cc2c0d85de707b0ba31c04ce4531
 F autosetup/sqlite-config.tcl f64aff26763e9ea021aabac222d43a9e0107b45f6de82972b93411fe36ef566b
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85302582fc476ec42dac837e559221170671bb99a3990049ead4e2a82f1a045d d47964a65bcfd4bc0b06baca281467a0b7fc87eba912a19c0974f63a54928ff8
-R 0c1f6391cc34821b99085d864985d1a7
+P 5df30deb787bfe4785a06af0149151aa2fdca14deccfa8a8bd819eeb0a59fb1e
+R 6836988fe052ba3e7b7ab881357f518f
 U stephan
-Z b23e35c945fa3a28139e8d84a21b983e
+Z 51cbdb18872143f1265d32438bcecef6
 # Remove this line to create a well-formed Fossil manifest.
