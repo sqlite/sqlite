@@ -760,7 +760,7 @@ proc proj-exe-extension {} {
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
 # instead of -shared.
 proc proj-dll-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *apple* {
         return ".dylib"
@@ -772,9 +772,9 @@ proc proj-dll-extension {} {
         return ".so"
       }
     }
-  }
-  define BUILD_DLLEXT [inner build]
-  define TARGET_DLLEXT [inner host]
+  }}
+  define BUILD_DLLEXT [apply $inner build]
+  define TARGET_DLLEXT [apply $inner host]
 }
 
 ########################################################################
@@ -784,18 +784,20 @@ proc proj-dll-extension {} {
 # BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
 # extension for the being-built-on resp. the target platform.
 proc proj-lib-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *-*-ming* - *-*-cygwin - *-*-msys {
-        return ".lib"
+        return ".a"
+        # ^^^ this was ".lib" until 2025-02-07. See
+        # https://sqlite.org/forum/forumpost/02db2d4240
       }
       default {
         return ".a"
       }
     }
-  }
-  define BUILD_LIBEXT [inner build]
-  define TARGET_LIBEXT [inner host]
+  }}
+  define BUILD_LIBEXT [apply $inner build]
+  define TARGET_LIBEXT [apply $inner host]
 }
 
 ########################################################################
