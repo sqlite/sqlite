@@ -435,7 +435,8 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	$(INSTALL) -d "$@"
+	if [ ! -d "$@" ]; then $(INSTALL) -d "$@"; fi
+# ^^^^ on some platforms, install -d fails if the target already exists.
 
 #
 # After jimsh is compiled, we run some sanity checks to ensure that
