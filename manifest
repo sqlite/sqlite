@@ -1,5 +1,5 @@
-C Fix\sa\sdependencies/order-of-operations\sbug\sin\sext/wasm/GNUmakefile\swhich\scauses\screation\sof\sfiles\sfiltered\svia\sc-pp\sto\sfail\sif\sthe\sext/wasm/jswasm\sdir\sdid\snot\sexist\sbeforehand.
-D 2025-02-06T13:35:35.275
+C Fix\sout-of-tree\sbuilds\sof\sthe\sautoconf\sbundle,\sas\sreported\sin\s[forum:a0cd0beb1baa6bef|forum\spost\sa0cd0beb1baa6bef].\sBumd\sversion\snumber\sto\s3.49.1.
+D 2025-02-07T11:18:43.844
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -7,7 +7,7 @@ F Makefile.in 38485d15d9190cdad0d7bee25af7b442028865964025dcc61f40fd8d6e369cfc
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
-F VERSION 01f7606130e48fd58a74d1e45e565f2674819d6eadbc219d328d94bb3362b818
+F VERSION 652f6a5ba4cffa08baba6313486466378ac404381a2a173fa138879ced5619bc
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def e7e92090c98aeb0174d29988c259834eb1b71ae1ea927015c3ef300f6f9b68ae
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 56697ad25ecf23afa317148b06bdc14f85960b42e5ec434ac1ba87f63a3cb789
+F autoconf/Makefile.in 1748696041b706722fcc2289630aec596e556e10677914ec1dd5de9c627324fa
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -24,7 +24,7 @@ F autoconf/auto.def 23bc095a3890c0ca334abf7ef67d1c8af4c22c12832bcc738015e868d54f
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac d22326594f005a493a7857cb4ad2496b91480101be731d7f0541bb8d7eba22a2
+F autoconf/tea/configure.ac 2bc49c8aabc4f26e7ba5fc15ff95b7a5aa789156aa6ccb045bb0d20c2898b30a
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -2209,15 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a7dd425dc2a0e5082a9049c9b4a9d4f199a71583d014c24b4cfe276c5a77cde
-Q +4bac76138853a89484d3ac0486a9ed5143aa671b13b4b3abb704c1487213b388
-R ace1a556cd2682c15f244d0a70c9d1c1
-T *branch * branch-3.49
-T *sym-branch-3.49 *
-T -sym-major-release * Cancelled\sby\sbranch.
-T -sym-release * Cancelled\sby\sbranch.
-T -sym-trunk * Cancelled\sby\sbranch.
-T -sym-version-3.49.0 * Cancelled\sby\sbranch.
+P 44d7ad8ff8751c8efde3a9733e18a5f3244a38dca610adb652355e8c44457ac8
+Q +d47964a65bcfd4bc0b06baca281467a0b7fc87eba912a19c0974f63a54928ff8
+R b43d3491c8706e91292170c3c13d3be6
 U stephan
-Z 817b52d2a8150835f129ab138a935ddb
+Z beed1651fed7e47bf5804a7512365757
 # Remove this line to create a well-formed Fossil manifest.
