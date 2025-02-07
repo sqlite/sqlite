@@ -1,5 +1,5 @@
-C Adjust\sthe\stest/speedtest.tcl\sscript\sso\sthat\sit\suses\san\son-disk\sdatabase\nrather\sthan\san\sin-memory\sdatabase.
-D 2025-02-06T17:29:14.625
+C Bump\sTEA\sconfigure.ac\sversion\snumber.
+D 2025-02-07T01:43:05.809
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -24,7 +24,7 @@ F autoconf/auto.def 23bc095a3890c0ca334abf7ef67d1c8af4c22c12832bcc738015e868d54f
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac d22326594f005a493a7857cb4ad2496b91480101be731d7f0541bb8d7eba22a2
+F autoconf/tea/configure.ac 830cb2af5a3888312d0fd88402c2509d551d60e4c03f0481006a07c78313ef12
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed82272904deb37640286448e03153316f828c629547a615a504af1d7ec5a278
-R 3389deb8f0facbb95e58d6e9fc976f10
-U drh
-Z 9628165988950eefdec8a4b63484fc0a
+P e93d7aa1db9bdbf1996c4c168e67284177e384b7acf176d74a0458258faab05c
+R 862fe61394e7b3cb4c5d861b55c28308
+U stephan
+Z 4a5b39d46ead9ead0e536423680a6ea5
 # Remove this line to create a well-formed Fossil manifest.
