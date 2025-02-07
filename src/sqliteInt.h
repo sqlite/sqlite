@@ -3823,19 +3823,20 @@ struct Parse {
   char *zErrMsg;       /* An error message */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   int rc;              /* Return code from execution */
-  u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
-  u8 checkSchema;      /* Causes schema cookie check after an error */
+  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
-  u8 okConstFactor;    /* OK to factor out constants */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
-  u8 bHasWith;         /* True if statement contains WITH */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
+  u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
+  u8 bReturning;       /* Coding a RETURNING trigger */
+  u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
+  u8 disableTriggers;  /* True to disable triggers */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
@@ -3844,6 +3845,10 @@ struct Parse {
   u8 isCreate;         /* CREATE TABLE, INDEX, or VIEW (but not TRIGGER)
                        ** and ALTER TABLE ADD COLUMN. */
 #endif
+  u8 colNamesSet :1;   /* TRUE after OP_ColumnName has been issued to pVdbe */
+  u8 bHasWith :1;      /* True if statement contains WITH */
+  u8 okConstFactor :1; /* OK to factor out constants */
+  u8 checkSchema :1;   /* Causes schema cookie check after an error */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
@@ -3860,7 +3865,7 @@ struct Parse {
   IndexedExpr *pIdxPartExpr; /* Exprs constrained by index WHERE clauses */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
-  int nMaxArg;         /* Max args passed to user function by sub-program */
+  int nMaxArg;         /* Max args to xUpdate and xFilter vtab methods */
   int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   u32 nProgressSteps;  /* xProgress steps taken during sqlite3_prepare() */
@@ -3874,11 +3879,6 @@ struct Parse {
   Table *pTriggerTab;  /* Table triggers are being coded for */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   ParseCleanup *pCleanup;   /* List of cleanup operations to run after parse */
-  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
-  u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
-  u8 bReturning;       /* Coding a RETURNING trigger */
-  u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
-  u8 disableTriggers;  /* True to disable triggers */
 
   /**************************************************************************
   ** Fields above must be initialized to zero.  The fields that follow,

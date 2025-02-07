@@ -462,7 +462,7 @@ struct Vdbe {
   i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   Mem *aMem;              /* The memory locations */
-  Mem **apArg;            /* Arguments to currently executing user function */
+  Mem **apArg;            /* Arguments xUpdate and xFilter vtab methods */
   VdbeCursor **apCsr;     /* One element of this array for each open cursor */
   Mem *aVar;              /* Values for the OP_Variable opcode. */
 
@@ -482,6 +482,7 @@ struct Vdbe {
 #ifdef SQLITE_DEBUG
   int rcApp;              /* errcode set by sqlite3_result_error_code() */
   u32 nWrite;             /* Number of write operations that have occurred */
+  int napArg;             /* Size of the apArg[] array */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
   u16 nResAlloc;          /* Column slots allocated to aColName[] */
