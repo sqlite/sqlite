@@ -1473,7 +1473,6 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   char *zType;
   Column *pCol;
   sqlite3 *db = pParse->db;
-  u8 hName;
   Column *aNew;
   u8 eType = COLTYPE_CUSTOM;
   u8 szEst = 1;
@@ -1527,13 +1526,11 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   memcpy(z, sName.z, sName.n);
   z[sName.n] = 0;
   sqlite3Dequote(z);
-  hName = sqlite3StrIHash(z);
-  for(i=0; i<p->nCol; i++){
-    if( p->aCol[i].hName==hName && sqlite3StrICmp(z, p->aCol[i].zCnName)==0 ){
-      sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
-      sqlite3DbFree(db, z);
-      return;
-    }
+  i = sqlite3ColumnIndex(p, z);
+  if( i>=0 ){
+    sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
+    sqlite3DbFree(db, z);
+    return;
   }
   aNew = sqlite3DbRealloc(db,p->aCol,((i64)p->nCol+1)*sizeof(p->aCol[0]));
   if( aNew==0 ){
@@ -1544,7 +1541,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zCnName = z;
-  pCol->hName = hName;
+  pCol->hName = sqlite3StrIHash(z);
   sqlite3ColumnPropertiesFromName(p, pCol);
 
   if( sType.n==0 ){
@@ -1835,15 +1832,11 @@ void sqlite3AddPrimaryKey(
       assert( pCExpr!=0 );
       sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
-        const char *zCName;
         assert( !ExprHasProperty(pCExpr, EP_IntValue) );
-        zCName = pCExpr->u.zToken;
-        for(iCol=0; iCol<pTab->nCol; iCol++){
-          if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zCnName)==0 ){
-            pCol = &pTab->aCol[iCol];
-            makeColumnPartOfPrimaryKey(pParse, pCol);
-            break;
-          }
+        iCol = sqlite3ColumnIndex(pTab, pCExpr->u.zToken);
+        if( iCol>=0 ){
+          pCol = &pTab->aCol[iCol];
+          makeColumnPartOfPrimaryKey(pParse, pCol);
         }
       }
     }
