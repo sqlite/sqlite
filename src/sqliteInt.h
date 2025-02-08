@@ -843,6 +843,11 @@ typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef INT8_TYPE i8;              /* 1-byte signed integer */
 
+/* A bitfield type for use inside of structures.  Always follow with :N where
+** N is the number of bits.
+*/
+typedef unsigned bft;  /* Bit Field Type */
+
 /*
 ** SQLITE_MAX_U32 is a u64 constant that is the maximum u64 value
 ** that can be stored in a u32 without loss of data.  The value
@@ -3845,10 +3850,10 @@ struct Parse {
   u8 isCreate;         /* CREATE TABLE, INDEX, or VIEW (but not TRIGGER)
                        ** and ALTER TABLE ADD COLUMN. */
 #endif
-  u8 colNamesSet :1;   /* TRUE after OP_ColumnName has been issued to pVdbe */
-  u8 bHasWith :1;      /* True if statement contains WITH */
-  u8 okConstFactor :1; /* OK to factor out constants */
-  u8 checkSchema :1;   /* Causes schema cookie check after an error */
+  bft colNamesSet :1;   /* TRUE after OP_ColumnName has been issued to pVdbe */
+  bft bHasWith :1;      /* True if statement contains WITH */
+  bft okConstFactor :1; /* OK to factor out constants */
+  bft checkSchema :1;   /* Causes schema cookie check after an error */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */

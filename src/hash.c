@@ -54,7 +54,6 @@ void sqlite3HashClear(Hash *pH){
 */
 static unsigned int strHash(const char *z){
   unsigned int h = 0;
-  unsigned char c;
   while( z[0] ){     /*OPTIMIZATION-IF-TRUE*/
     /* Knuth multiplicative hashing.  (Sorting & Searching, p. 510).
     ** 0x9e3779b1 is 2654435761 which is the closest prime number to
@@ -159,7 +158,7 @@ static HashElem *findElementWithHash(
   HashElem *elem;                /* Used to loop thru the element list */
   unsigned int count;            /* Number of elements left to test */
   unsigned int h;                /* The computed hash */
-  static HashElem nullElement = { 0, 0, 0, 0 };
+  static HashElem nullElement = { 0, 0, 0, 0, 0 };
 
   h = strHash(pKey);
   if( pH->ht ){   /*OPTIMIZATION-IF-TRUE*/
