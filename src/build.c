@@ -1565,6 +1565,10 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
     pCol->affinity = sqlite3AffinityType(zType, pCol);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
+  if( p->nCol<=0xff ){
+    u8 h = pCol->hName % sizeof(p->aHx);
+    p->aHx[h] = p->nCol;
+  }
   p->nCol++;
   p->nNVCol++;
   assert( pParse->isCreate );

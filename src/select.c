@@ -319,10 +319,32 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
 */
 int sqlite3ColumnIndex(Table *pTab, const char *zCol){
   int i;
-  u8 h = sqlite3StrIHash(zCol);
+  u8 h;
   Column *pCol;
-  for(pCol=pTab->aCol, i=0; i<pTab->nCol; pCol++, i++){
-    if( pCol->hName==h && sqlite3StrICmp(pCol->zCnName, zCol)==0 ) return i;
+
+  if( pTab->nCol==0 ){
+    return -1;
+  }
+  h = sqlite3StrIHash(zCol);
+
+  i = pTab->aHx[h % sizeof(pTab->aHx)];
+  assert( i<pTab->nCol );
+  if( pTab->aCol[i].hName==h
+   && sqlite3StrICmp(pTab->aCol[i].zCnName, zCol)==0
+  ){
+    return i;
+  }
+  pCol = pTab->aCol;
+  i = 0;
+  while( 1 /*exit-by-break*/ ){
+    if( pCol->hName==h
+     && sqlite3StrICmp(pCol->zCnName, zCol)==0
+    ){
+      return i;
+    }
+    i++;
+    if( i>=pTab->nCol ) break;
+    pCol++;
   }
   return -1;
 }
