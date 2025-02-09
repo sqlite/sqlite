@@ -1,5 +1,5 @@
-C JS:\sadd\sa\smechanism\sto\sthe\sWorker1\sexec\sAPI\sto\sfetch\sthe\slast_insert_rowid(),\sas\srequested\sin\s[forum:56bc35390183f5d5|forum\spost\s56bc353901].
-D 2025-02-09T02:41:35.084
+C wasm:\swhen\sbuilding\sin\s-O0\smode\s(typical\sdev\smode),\suse\s-sASSERTIONS=2,\selse\s-sASSERTIONS=0,\sin\sresponse\s[https://github.com/emscripten-core/emscripten/pull/23629/commits/7e3e35cbff9c5688eacb3cddc5045f872d744efd|Emscripten\scheckin\s7e3e35cbff9],\swhich\sadds\sassertions\sto\scheck\sfor\sthe\scondition\sreported\sin\s[https://github.com/emscripten-core/emscripten/issues/23420|Emscripten\sticket\s23420].\sUpdate\ssome\sunrelated\sJS-side\sinternal\sdocs.
+D 2025-02-09T03:24:00.963
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -619,7 +619,7 @@ F ext/session/sqlite3session.c 52a680dbb03c4734748b215d95987fb4d95ab23baaf053a01
 F ext/session/sqlite3session.h 683ccbf16e2c2521661fc4c1cf918ce57002039efbcabcd8097fa4bca569104b
 F ext/session/test_session.c 12e0a2c15fd60f92da4bb29c697c9177ff0c0dbcdc5129a54c47e999f147937a
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile df23a3cb3bfb13f17fc76132a0127a89e2ad64f46b71efee9743929cfd52d441
+F ext/wasm/GNUmakefile 654f27c0735e83c63f541b1964ef0f57423ceb71b05146de90c56b2f534f7b3b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md b89605f65661cf35bf034ff6d43e448cc169b8017fc105d498e33b81218b482c
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -635,12 +635,12 @@ F ext/wasm/api/README.md c64ec8e84449c069e0217706d9d7d31b3bd53627228b2ba0c3cddbd
 F ext/wasm/api/extern-post-js.c-pp.js 3fcd904f1204685dea84e5ae90d8b7e65a1dcebab1e838386d8328b74cce46c9
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js 365405929f41ca0e6d389ed8a8da3f3c93e11d3ef43a90ae151e37fa9f75bf41
-F ext/wasm/api/post-js-header.js 54b2b4294501b3866245cc94315a16f5424c0e87729d0fb610fba151593c6d26
+F ext/wasm/api/post-js-header.js 53740d824e5d9027eb1e6fd59e216abbd2136740ce260ea5f0699ff2acb0a701
 F ext/wasm/api/pre-js.c-pp.js a614a2c82b12c4d96d8e3ba77330329efc53c4d56a8a7e60ade900f341866cfb
 F ext/wasm/api/sqlite3-api-cleanup.js 3ac1786e461ada63033143be8c3b00b26b939540661f3e839515bb92f2e35359
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 5c0209e6a28164b4c2c1a34b0bb4aee3b7b1a264988d7e71fac08b8ede5b7ae3
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js f3a8e2004c6625d17946c11f2fb32008be78bc5207bf746fc77d59848813225f
-F ext/wasm/api/sqlite3-api-prologue.js 5ff913355b3144f1c9719d0406667fa6e13eb813c71ed7ce29440e2e65363e82
+F ext/wasm/api/sqlite3-api-prologue.js 9e7d89a2c0d02b8b2052a62757a89f1e7e4dbcc0d9cd3f2dafa896786954dad2
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js f646a65257973b8c4481f8a6a216370b85644f23e64b126e7ae113570587c0ab
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 3774befd97cd1a5e2895c8225a894aad946848c6d9b4028acc988b5d123475af
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16d307cc6c1e203900e7a2dc0730fc0e453946622a2114a07d64ebb99045cfbf
-R 5520495f3ccea7918b4a343a7efb2785
+P c22c48360756b1c7e2f5a9c01aff799bc188e100d364931de0dc3686e5de57a9
+R 28b52c82e3748c1458cec26f6dc126a2
 U stephan
-Z 1bf6695082490bb2a22dcd9297477549
+Z f11611286d8691d31123798a11e49271
 # Remove this line to create a well-formed Fossil manifest.

@@ -619,6 +619,12 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
+ifeq (,$(filter -O0,$(emcc_opt)))
+emcc.assert ?= 0
+else
+emcc.assert ?= 2
+endif
+emcc.jsflags += -sASSERTIONS=$(emcc.assert)
 emcc.jsflags += -sSTRICT_JS=0
 # STRICT_JS disabled due to:
 #   https://github.com/emscripten-core/emscripten/issues/18610
