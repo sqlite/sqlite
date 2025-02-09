@@ -151,7 +151,7 @@ static void mk_pre_post(const char *zName  /* build name */,
   /* --pre-js=... */
   pf("pre-js.js.%s-%s := $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(MAKEFILE)\n", zNM);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST)\n", zNM);
 #if 1
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
@@ -218,7 +218,7 @@ static void mk_fiddle(){
     pf("fiddle-module.js%s := %s/fiddle-module.js\n", zTail, zDir);
     pf("fiddle-module.wasm%s := "
        "$(subst .js,.wasm,$(fiddle-module.js%s))\n", zTail, zTail);
-    pf("$(fiddle-module.js%s):%s $(MAKEFILE) $(MAKEFILE.fiddle) "
+    pf("$(fiddle-module.js%s):%s $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
        "$(EXPORTED_FUNCTIONS.fiddle) "
        "$(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) "
        "$(SOAP.js)\n",
@@ -285,7 +285,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
      zApiJsOut, zCmppD);
 
   /* target zJsOut */
-  pf("%s: %s $(MAKEFILE) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
+  pf("%s: %s $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
      "$(pre-post-%s-%s.deps) "
      "$(sqlite3-api.ext.jses)"
      /* ^^^ maintenance reminder: we set these as deps so that they
@@ -304,9 +304,10 @@ static void mk_lib_mode(const char *zName     /* build name */,
      "\t\t$(cflags.%s) $(cflags.%s.%s) \\\n"
      "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n", zName, zNM);
   if( bIsEsm ){
-    /* TODO? Replace this CALL with the corresponding makefile code.
-    ** OTOH, we also use this $(call) in the speedtest1-wasmfs build,
-    ** which is not part of the rules emitted by this program. */
+    /* TODO? Replace this $(call) with the corresponding makefile
+    ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
+    ** build, which is not part of the rules emitted by this
+    ** program. */
     pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
        0==strcmp("sqlite3-wasmfs", zName) ? 1 : 0);
   }
@@ -338,6 +339,16 @@ static void mk_lib_mode(const char *zName     /* build name */,
        /* ^^^^^^ reminder: Mac/BSD sed has no -i flag */
        zNM, zName);
     pf("\t@ls -la $@\n");
+    if( 0==strcmp("bundler-friendly", zMode) ){
+      /* Avoid a 3rd occurance of the bug fixed by 65798c09a00662a3,
+      ** which was (in two cases) caused by makefile refactoring and
+      ** not recognized until after a release was made with the broken
+      ** sqlite3-bundler-friendly.mjs: */
+      pf("\t@if grep -e '^ *importScripts(' $@; "
+         "then echo 'ERROR: bug fixed in 65798c09a00662a3 has re-appeared'; "
+         "exit 1; fi;\n");
+    }
+
   }else{
     pf("\t@ls -la %s $@\n", zWasmOut);
   }
