@@ -921,10 +921,32 @@ proc sqlite-check-mac-cversion {} {
 }
 
 ########################################################################
+# Define LDFLAGS_OUT_IMPLIB to either an empty string or to a
+# -Wl,... flag for the platform-specific --out-implib flag, which is
+# used for building an "import library .dll.a" file on some platforms
+# (e.g. mingw). Returns 1 if supported, else 0.
+#
+# Added in response to: https://sqlite.org/forum/forumpost/0c7fc097b2
+proc sqlite-check-out-implib {} {
+  define LDFLAGS_OUT_IMPLIB ""
+  set rc 0
+  cc-with {} {
+    set dll "libsqlite3[get-define TARGET_DLLEXT]"
+    set flags "-Wl,--out-implib,${dll}.a"
+    if {[cc-check-flags $flags]} {
+      define LDFLAGS_OUT_IMPLIB $flags
+      set rc 1
+    }
+  }
+  return $rc
+}
+
+########################################################################
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
 proc sqlite-common-late-stage-config {} {
   sqlite-check-mac-cversion
+  sqlite-check-out-implib
   sqlite-process-dot-in-files
   sqlite-post-config-validation
 }
