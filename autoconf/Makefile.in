@@ -221,7 +221,7 @@ install: install-man1
 
 clean:
 	rm -f *.o sqlite3$(T.exe)
-	rm -f $(libsqlite3.LIB) $(libsqlite3.SO)
+	rm -f $(libsqlite3.LIB) $(libsqlite3.SO) $(libsqlite3.SO).a
 
 distclean: clean
 	rm -f jimsh0$(T.exe) config.* sqlite3.pc
