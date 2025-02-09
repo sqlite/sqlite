@@ -1,5 +1,5 @@
-C Performance\sand\ssize\soptimization\sfor\sthe\ssqlite3ColumnIndex()\sroutine.
-D 2025-02-09T19:49:46.297
+C Performance\soptimization\sto\sthe\ssubstr()\sSQL\sfunction.
+D 2025-02-09T20:23:29.902
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -733,7 +733,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 15fabfb67261e298a39fe61457f3cfa24148d9ca8d02f4dff385feb5cf523ea7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 0712a5b03fdfc8af0cda6d076bfe231b66388d3d5a28b46dc1a94b90d41cac6a
+F src/func.c b2fb33139972d7d65640b27ea962a49f1616265428001090cab39fcf270228e1
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f3a35fdc9113ad5f1fed6a2f474aee670e1793d355475a7971d376bf33823cc4
-R 07cb4b330390fc770f5d5e73fded3930
+P a93e3fe0ee8f98a7ec0dfb2e1abf432cc9d5f9d3ad345b5db261475215d43df9
+R 6458c5e9c4d2d7940a949acd5df2c6a3
 U drh
-Z 8439106cb5dd02e83a92bb726a395093
+Z 384512ae3dd3c9dcc3fa9d0daadac731
 # Remove this line to create a well-formed Fossil manifest.
