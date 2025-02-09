@@ -320,31 +320,32 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
 int sqlite3ColumnIndex(Table *pTab, const char *zCol){
   int i;
   u8 h;
-  Column *pCol;
+  const Column *aCol;
+  int nCol;
 
-  if( pTab->nCol==0 ){
-    return -1;
-  }
   h = sqlite3StrIHash(zCol);
+  aCol = pTab->aCol;
+  nCol = pTab->nCol;
 
+  /* See if the aHx gives us a lucky match */
   i = pTab->aHx[h % sizeof(pTab->aHx)];
-  assert( i<pTab->nCol );
-  if( pTab->aCol[i].hName==h
-   && sqlite3StrICmp(pTab->aCol[i].zCnName, zCol)==0
+  assert( i<nCol );
+  if( aCol[i].hName==h
+   && sqlite3StrICmp(aCol[i].zCnName, zCol)==0
   ){
     return i;
   }
-  pCol = pTab->aCol;
+
+  /* No lucky match from the hash table.  Do a full search. */
   i = 0;
   while( 1 /*exit-by-break*/ ){
-    if( pCol->hName==h
-     && sqlite3StrICmp(pCol->zCnName, zCol)==0
+    if( aCol[i].hName==h
+     && sqlite3StrICmp(aCol[i].zCnName, zCol)==0
     ){
       return i;
     }
     i++;
-    if( i>=pTab->nCol ) break;
-    pCol++;
+    if( i>=nCol ) break;
   }
   return -1;
 }

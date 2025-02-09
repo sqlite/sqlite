@@ -1526,8 +1526,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   memcpy(z, sName.z, sName.n);
   z[sName.n] = 0;
   sqlite3Dequote(z);
-  i = sqlite3ColumnIndex(p, z);
-  if( i>=0 ){
+  if( p->nCol && sqlite3ColumnIndex(p, z)>=0 ){
     sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
     sqlite3DbFree(db, z);
     return;
