@@ -1,5 +1,5 @@
-C configure:\sif\sthe\slinker\ssupports\s--out-implib,\sgenerate\slibsqlite3.X.a,\swhere\sX\sis\sthe\splatform's\sDLL\sfile\sextension.\sDiscussion\sin/around\s[forum:0c7fc097b2|forum\spost\s0c7fc097b2].
-D 2025-02-09T04:40:54.018
+C Apply\s[6092b0b8]\sto\sautoconf/Makefile.in.
+D 2025-02-09T05:32:53.525
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def fdd6965e06bce02a8b9f9ed57a52d05bcbec4b56e4bef2174866bb5713c65fda
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in ee765abbb5de7281932f8ea14123cd5a854a05cab692f39626af89a371bee81f
+F autoconf/Makefile.in 916e354c3d3b1169daff2053c299f38e41cf4205abfbbd432a9bd544d1f9ca31
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 012b308b04e6a9e3acbb842317b01b4b91ac165b925918cf20c1f52d045a6ec0
-Q +6092b0b86bf93a3d58a83774b6d07ef9735e6c8a0f2ac2d0a6d263c2e9f1e3ca
-R 7359a09d1a45723ed893556f638e1038
+P 705a6d3e0e8e2044a541d89be79b1bad9a5a71b11f2f878e6d385ae735cc27ee
+Q +9ae245cff49716e4c0bbd3fbb3f82276e5fb54d595d1e1d9a452edef45d7740f
+R 52b6f20e30c6423b925abe1775741703
 U stephan
-Z e9b09604a6362214adbce7316732b0bc
+Z ad0f58aa5376a73651f3951ac79aed7f
 # Remove this line to create a well-formed Fossil manifest.
