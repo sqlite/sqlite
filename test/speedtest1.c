@@ -64,10 +64,9 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
-  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json,"
-                                                                    " debug)\n"
-  "                      Can be a comma-separated list of values, with /SCALE\n"
-  "                      suffixes or macro \"mix1\"\n"
+  "  --testset T         Run test-set T (main, cte, rtree, orm, fp, json,\n"
+  "                      star, debug).  Can be a comma-separated list of\n"
+  "                      values, with /SCALE suffixes or macro \"mix1\"\n"
   "  --trace             Turn on SQL tracing\n"
   "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
@@ -1458,6 +1457,114 @@ void testset_fp(void){
   speedtest1_end_test();
 }
 
+/*
+** A testset for star-schema queries.
+*/
+void testset_star(void){
+  int n;
+  int i;
+  n = g.szTest*50;
+  speedtest1_begin_test(100, "Create a fact table with %d entries", n);
+  speedtest1_exec(
+    "CREATE TABLE facttab("
+     " attr01 INT,"
+     " attr02 INT,"
+     " attr03 INT,"
+     " data01 TEXT,"
+     " attr04 INT,"
+     " attr05 INT,"
+     " attr06 INT,"
+     " attr07 INT,"
+     " attr08 INT,"
+     " factid INTEGER PRIMARY KEY,"
+     " data02 TEXT"
+    ");"
+  );
+  speedtest1_exec(
+    "WITH RECURSIVE counter(nnn) AS"
+       "(VALUES(1) UNION ALL SELECT nnn+1 FROM counter WHERE nnn<%d)"
+    "INSERT INTO facttab(attr01,attr02,attr03,attr04,attr05,"
+                        "attr06,attr07,attr08,data01,data02)"
+    "SELECT random()%%12, random()%%13, random()%%14, random()%%15,"
+           "random()%%16, random()%%17, random()%%18, random()%%19,"
+           "concat('data-',nnn), format('%%x',random()) FROM counter;",
+    n
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "Create indexes on all attributes columns");
+  for(i=1; i<=8; i++){
+    speedtest1_exec(
+      "CREATE INDEX fact_attr%02d ON facttab(attr%02d)", i, i
+    );
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(120, "Create dimension tables");
+  for(i=1; i<=8; i++){
+    speedtest1_exec(
+      "CREATE TABLE dimension%02d("
+        "beta%02d INT, "
+        "content%02d TEXT, "
+        "rate%02d REAL)",
+      i, i, i, i
+    );
+    speedtest1_exec(
+      "WITH RECURSIVE ctr(nn) AS"
+      " (VALUES(1) UNION ALL SELECT nn+1 FROM ctr WHERE nn<%d)"
+      " INSERT INTO dimension%02d"
+      "   SELECT nn%%(%d), concat('content-%02d-',nn),"
+               " (random()%%10000)*0.125 FROM ctr;",
+      4*(i+1), i, 2*(i+1), i
+    );
+    if( i&2 ){
+      speedtest1_exec(
+         "CREATE INDEX dim%02d ON dimension%02d(beta%02d);",
+         i, i, i
+      );
+    }else{
+      speedtest1_exec(
+         "CREATE INDEX dim%02d ON dimension%02d(beta%02d,content%02d);",
+         i, i, i, i
+      );
+    }
+  }
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "Star query over the entire fact table");
+  speedtest1_exec(
+    "SELECT count(*), max(content04), min(content03), sum(rate04), avg(rate05)"
+    " FROM facttab, dimension01, dimension02, dimension03, dimension04,"
+                  " dimension05, dimension06, dimension07, dimension08"
+    " WHERE attr01=beta01"
+      " AND attr02=beta02"
+      " AND attr03=beta03"
+      " AND attr04=beta04"
+      " AND attr05=beta05"
+      " AND attr06=beta06"
+      " AND attr07=beta07"
+      " AND attr08=beta08"
+    ";"
+   );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(130, "Star query with LEFT JOINs");
+  speedtest1_exec(
+    "SELECT count(*), max(content04), min(content03), sum(rate04), avg(rate05)"
+    " FROM facttab LEFT JOIN dimension01 ON attr01=beta01"
+                 " LEFT JOIN dimension02 ON attr02=beta02"
+                 " JOIN dimension03 ON attr03=beta03"
+                 " JOIN dimension04 ON attr04=beta04"
+                 " JOIN dimension05 ON attr05=beta05"
+                 " LEFT JOIN dimension06 ON attr06=beta06"
+                 " JOIN dimension07 ON attr07=beta07"
+                 " JOIN dimension08 ON attr08=beta08"
+    " WHERE facttab.data01 LIKE 'data-9%%'"
+    ";"
+   );
+  speedtest1_end_test();
+}
+
 #ifdef SQLITE_ENABLE_RTREE
 /* Generate two numbers between 1 and mx.  The first number is less than
 ** the second.  Usually the numbers are near each other but can sometimes
@@ -2560,7 +2667,8 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
-        static char zMix1Tests[] = "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10";
+        static char zMix1Tests[] =
+            "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
         if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
@@ -2749,6 +2857,8 @@ int main(int argc, char **argv){
       testset_orm();
     }else if( strcmp(zThisTest,"cte")==0 ){
       testset_cte();
+    }else if( strcmp(zThisTest,"star")==0 ){
+      testset_star();
     }else if( strcmp(zThisTest,"fp")==0 ){
       testset_fp();
     }else if( strcmp(zThisTest,"json")==0 ){
