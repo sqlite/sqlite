@@ -114,11 +114,13 @@ proc proj-bold {str} {
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
-# the next time autosetup goes to output a message. If -notice
-# is not used, it will send the message to stdout without delay.
+# the next time autosetup goes to output a message.
 #
 # If the -error flag is provided then it renders the message
 # immediately to stderr and then exits.
+#
+# If neither -notice nor -error are used, the message will be sent to
+# stdout without delay.
 proc proj-indented-notice {args} {
   set fErr ""
   set outFunc "puts"
@@ -126,6 +128,7 @@ proc proj-indented-notice {args} {
     switch -exact -- [lindex $args 0] {
       -error  {
         set args [lassign $args fErr]
+        set outFunc "user-notice"
       }
       -notice {
         set args [lassign $args -]
