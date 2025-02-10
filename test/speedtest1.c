@@ -2960,7 +2960,7 @@ int main(int argc, char **argv){
   int memDb = 0;                /* --memdb.  Use an in-memory database */
   int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
     ;                           /* SQLITE_OPEN_xxx flags. */
-  char *zTSet = "main";         /* Which --testset torun */
+  char *zTSet = "mix1";         /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
 
@@ -2970,6 +2970,10 @@ int main(int argc, char **argv){
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
+
+  /* "mix1" is a macro testset: */
+  static char zMix1Tests[] =
+         "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star,app";
 
 #ifdef SQLITE_SPEEDTEST1_WASM
   /* Resetting all state is important for the WASM build, which may
@@ -3116,11 +3120,8 @@ int main(int argc, char **argv){
         }
         g.eTemp = argv[i][0] - '0';
       }else if( strcmp(z,"testset")==0 ){
-        static char zMix1Tests[] =
-            "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star,app";
         ARGC_VALUE_CHECK(1);
         zTSet = argv[++i];
-        if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
       }else if( strcmp(z,"threads")==0 ){
@@ -3272,6 +3273,7 @@ int main(int argc, char **argv){
   }
 
   if( g.bExplain ) printf(".explain\n.echo on\n");
+  if( strcmp(zTSet,"mix1")==0 ) zTSet = zMix1Tests;
   do{
     char *zThisTest = zTSet;
     char *zSep;
