@@ -1,5 +1,5 @@
-C Performance\soptimization\sto\sthe\ssubstr()\sSQL\sfunction.
-D 2025-02-09T20:23:29.902
+C Small\sperformance\sincrease\sin\sjsonTranslateBlobToText().
+D 2025-02-10T00:20:50.032
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -740,7 +740,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 05e04ef637cbc0dccb9a5c5d188a5a2608891e554c8ec17c7a71afe2cf896a06
-F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
+F src/json.c 50d0032812673d304b66fa7c2dbc86207e7e78505c69d85521c762f52ac37329
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c b99d15d843f7a86adbec855de77b1656dde07359722ef63a9d9393678dbb58d1
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a93e3fe0ee8f98a7ec0dfb2e1abf432cc9d5f9d3ad345b5db261475215d43df9
-R 6458c5e9c4d2d7940a949acd5df2c6a3
+P ce228ce3d0132ad758b5b7464fcf22ae5976df3c02ec948280cc76290c79ed0b
+R 121930a1cd26bde82bd8ad52b6e51587
 U drh
-Z 384512ae3dd3c9dcc3fa9d0daadac731
+Z f5ec5ef9a94161cf3474a090fcd2095c
 # Remove this line to create a well-formed Fossil manifest.

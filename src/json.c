@@ -2199,9 +2199,12 @@ static u32 jsonTranslateBlobToText(
     }
     case JSONB_TEXT:
     case JSONB_TEXTJ: {
-      jsonAppendChar(pOut, '"');
-      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
-      jsonAppendChar(pOut, '"');
+      if( pOut->nUsed+sz+2<=pOut->nAlloc || jsonStringGrow(pOut, sz+2)==0 ){
+        pOut->zBuf[pOut->nUsed] = '"';
+        memcpy(pOut->zBuf+pOut->nUsed+1,(const char*)&pParse->aBlob[i+n],sz);
+        pOut->zBuf[pOut->nUsed+sz+1] = '"';
+        pOut->nUsed += sz+2;
+      }
       break;
     }
     case JSONB_TEXT5: {
