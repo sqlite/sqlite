@@ -27,6 +27,7 @@ Other options include:
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
    --pagesize N          Use N as the page size.
    --quiet | -q          "Quite".  Put results in file but don't pop up editor
+   --size N              Change the test size.  100 means 100%.  Default: 5.
    --testset TEST        Specify the specific testset to use.  The default
                          is "mix1".  Other options include: "main", "json",
                          "cte", "orm", "fp", "rtree".
@@ -77,6 +78,14 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       --testset {
         incr i
         set testset [lindex $argv $i]
+      }
+      -size -
+      --size {
+        incr i
+        set newsize [lindex $argv $i]
+        if {$newsize<1} {set newsize 1}
+        set speedtestflags \
+          [regsub {.-size \d+} $speedtestflags "-size $newsize"]
       }
       -n -
       -dryrun -

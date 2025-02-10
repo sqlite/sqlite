@@ -1,5 +1,5 @@
-C Minor\sautosetup\sdoc\stweaks.
-D 2025-02-10T18:41:46.630
+C Add\sthe\s--size\soption\sto\sthe\stest/speedtest.tcl\sscript.
+D 2025-02-10T19:12:18.297
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1680,7 +1680,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ee958457ae1b729d9715ae33c0320600000bf1d9ddea1a88dcf79f56729d6fad
-F test/speedtest.tcl 185f80f8db275852746e8150137b31ba4aaa1c9a1ecb1e35a3b66cd3f31783b9 x
+F test/speedtest.tcl 926d1e168f4a14e6fb68c5dc174de743536b547f365264bd5bac533b3621a4a0 x
 F test/speedtest1.c 132cd5ba064f48910bb4b68337442b0ef419218c8de9e9855f66d98015286ddb
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a0c3d0e14984dd49a7c1e824b9e50564094ad57c43182bfec7624a55815f961
-R d2d2e8c6e583d1621c49ccc900539cec
-U stephan
-Z 67e48a24ab45c6698c52d6bd11ee89d3
+P bb53beb267ee5f5836020a58f32f1bed8deb587890eef9a6e034dad53f8c3f42
+R 00ccd32b91c1afa4d9f2520464e4c3e9
+U drh
+Z c42977e3dfb38afa1042e7b43c0552ba
 # Remove this line to create a well-formed Fossil manifest.
