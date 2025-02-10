@@ -855,20 +855,53 @@ proc sqlite-handle-icu {} {
 
 
 ########################################################################
-# Handles the --enable-load-extension flag.
+# Handles the --enable-load-extension flag. Returns 1 if the support
+# is enabled, else 0. If support for that feature is not found, a
+# fatal error is triggered if --enable-load-extension is explicitly
+# provided, else a loud warning is instead emited. If
+# --disable-load-extension is used, no check is performed.
+#
+# Makes the following environment changes:
+#
+# - defines LDFLAGS_DLOPEN to any linker flags needed for this
+#   feature.  It may legally be empty on some systems where dlopen()
+#   is in libc.
+#
+# - If the feature is not available, adds
+#   -DSQLITE_OMIT_LOAD_EXTENSION=1 to the feature flags list.
 proc sqlite-handle-load-extension {} {
+  define LDFLAGS_DLOPEN ""
+  set found 0
   proj-if-opt-truthy load-extension {
-    if {[proj-check-function-in-lib dlopen dl]} {
+    set found [proj-check-function-in-lib dlopen dl]
+    if {$found} {
       define LDFLAGS_DLOPEN [get-define lib_dlopen]
       undefine lib_dlopen
     } else {
-      user-error "dlopen() not found. Use --disable-load-extension to bypass this check."
+      if {[proj-opt-was-provided load-extension]} {
+        # Explicit --enable-load-extension: fail if not found
+        proj-indented-notice -error {
+          --enable-load-extension was provided but dlopen()
+          not found. Use --disable-load-extension to bypass this
+          check.
+        }
+      } else {
+        # It was implicitly enabled: warn if not found
+        proj-indented-notice {
+          WARNING: dlopen() not found, so loadable module support will
+          be disabled. Use --disable-load-extension to bypass this
+          check.
+        }
+      }
     }
-  } {
-    define LDFLAGS_DLOPEN ""
-    sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
-    msg-result "Disabling loadable extensions."
   }
+  if {$found} {
+    msg-result "Loadable extension support enabled."
+  } else {
+    msg-result "Disabling loadable extension support. Use --enable-load-extensions to enable them."
+    sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
+  }
+  return $found
 }
 
 ########################################################################
