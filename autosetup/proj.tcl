@@ -184,8 +184,8 @@ proc proj-lshift_ {listVar {count 1}} {
 
 ########################################################################
 # Expects to receive string input, which it splits on newlines, strips
-# out any lines which begin with an number of whitespace followed by a
-# '#', and returns a value containing the [append]ed results of each
+# out any lines which begin with any number of whitespace followed by
+# a '#', and returns a value containing the [append]ed results of each
 # remaining line with a \n between each.
 proc proj-strip-hash-comments {val} {
   set x {}
@@ -203,7 +203,7 @@ proc proj-strip-hash-comments {val} {
 # A proxy for cc-check-function-in-lib which does not make any global
 # changes to the LIBS define. Returns the result of
 # cc-check-function-in-lib (i.e. true or false).  The resulting linker
-# flags are stored in ${lib_${function}}.
+# flags are stored in the [define] named lib_${function}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
   define-push {LIBS} {
