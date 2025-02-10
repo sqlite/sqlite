@@ -1849,7 +1849,6 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
     }
     pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
     pItem->fg = pOldItem->fg;
-    pItem->fg.done = 0;
     pItem->u = pOldItem->u;
   }
   return pNew;
