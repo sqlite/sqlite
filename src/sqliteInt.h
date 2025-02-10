@@ -1746,6 +1746,7 @@ struct sqlite3 {
   int busyTimeout;              /* Busy handler timeout, in msec */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   int setlkTimeout;             /* Blocking lock timeout, in msec. -1 -> inf. */
+  int setlkFlags;               /* Flags passed to setlk_timeout() */
 #endif
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */

@@ -5940,7 +5940,7 @@ static int SQLITE_TCLAPI test_busy_timeout(
 }
 
 /*
-** Usage: sqlite3_setlk_timeout DB MS
+** Usage: sqlite3_setlk_timeout ?-blockonconnect? DB MS
 **
 ** Set the setlk timeout.
 */
@@ -5952,14 +5952,25 @@ static int SQLITE_TCLAPI test_setlk_timeout(
 ){
   int rc, ms;
   sqlite3 *db;
-  if( argc!=3 ){
+  int bBlockOnConnect = 0;
+
+  if( argc==4 ){
+    const char *zArg = argv[1];
+    int nArg = strlen(zArg);
+    if( nArg>=2 && nArg<=15 && memcmp(zArg, "-blockonconnect", nArg)==0 ){
+      bBlockOnConnect = 1;
+    }
+  }
+  if( argc!=(3+bBlockOnConnect) ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-        " DB", 0);
+        " ?-blockonconnect? DB MS", 0);
     return TCL_ERROR;
   }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[2], &ms) ) return TCL_ERROR;
-  rc = sqlite3_setlk_timeout(db, ms);
+  if( getDbPointer(interp, argv[argc-2], &db) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[argc-1], &ms) ) return TCL_ERROR;
+  rc = sqlite3_setlk_timeout(
+      db, ms, (bBlockOnConnect ? SQLITE_SETLK_BLOCK_ON_CONNECT : 0)
+  );
   Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
   return TCL_OK;
 }

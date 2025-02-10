@@ -145,6 +145,7 @@ proc testfixture_nb_cb {varname chan} {
   }
 
   if { $line == "OVER" } {
+    global $varname
     set $varname [lindex $::tfnb($chan) 1]
     unset ::tfnb($chan)
     close $chan

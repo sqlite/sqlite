@@ -1163,6 +1163,11 @@ struct sqlite3_io_methods {
 ** the value that M is to be set to. Before returning, the 32-bit signed
 ** integer is overwritten with the previous value of M.
 **
+** <li>[[SQLITE_FCNTL_BLOCK_ON_CONNECT]]
+** The [SQLITE_FCNTL_BLOCK_ON_CONNECT] opcode is used to configure the
+** VFS to block when taking SHARED locks. This is used to implement the
+** functionality associated with SQLITE_SETLK_BLOCK_ON_CONNECT.
+**
 ** <li>[[SQLITE_FCNTL_DATA_VERSION]]
 ** The [SQLITE_FCNTL_DATA_VERSION] opcode is used to detect changes to
 ** a database file.  The argument is a pointer to a 32-bit unsigned integer.
@@ -1259,6 +1264,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
 #define SQLITE_FCNTL_NULL_IO                43
+#define SQLITE_FCNTL_BLOCK_ON_CONNECT       44
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -2921,8 +2927,21 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** values, this function sets only the setlk-timeout value. Therefore,
 ** to configure separate busy-timeout and setlk-timeout values for a single
 ** database handle, call sqlite3_busy_timeout() followed by this function.
+**
+** Whenever the number of connections to a wal mode database falls from
+** 1 to 0, the last connection takes an exclusive lock on the database, 
+** then checkpoints and deletes the wal file. While it is doing this, any
+** new connection that tries to read from the database fails with an
+** SQLITE_BUSY error. Or, if the SQLITE_SETLK_BLOCK_ON_CONNECT flag is
+** passed to this API, the new connection blocks until the exclusive lock
+** has been released.
 */
-int sqlite3_setlk_timeout(sqlite3*, int ms);
+int sqlite3_setlk_timeout(sqlite3*, int ms, int flags);
+
+/*
+** CAPI3REF: Flags for sqlite3_setlk_timeout()
+*/
+#define SQLITE_SETLK_BLOCK_ON_CONNECT 0x01
 
 /*
 ** CAPI3REF: Convenience Routines For Running Queries

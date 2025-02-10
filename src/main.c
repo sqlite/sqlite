@@ -1830,13 +1830,25 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 /*
 ** Set the setlk timeout value.
 */
-int sqlite3_setlk_timeout(sqlite3 *db, int ms){
+int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
+  int iDb;
+  int bBOC = ((flags & SQLITE_SETLK_BLOCK_ON_CONNECT) ? 1 : 0);
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   if( ms<-1 ) return SQLITE_RANGE;
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   db->setlkTimeout = ms;
+  db->setlkFlags = flags;
+  sqlite3BtreeEnterAll(db);
+  for(iDb=0; iDb<db->nDb; iDb++){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( pBt ){
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, (void*)&bBOC);
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
 #endif
   return SQLITE_OK;
 }

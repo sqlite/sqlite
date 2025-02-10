@@ -284,6 +284,7 @@ struct unixFile {
 #endif
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   unsigned iBusyTimeout;              /* Wait this many millisec on locks */
+  int bBlockOnConnect;                /* True to block for SHARED locks */
 #endif
 #if OS_VXWORKS
   struct vxworksFileId *pId;          /* Unique file ID */
@@ -1677,6 +1678,13 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
       rc = 0;
     }
   }else{
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( pFile->bBlockOnConnect && pLock->l_type==F_RDLCK 
+     && pLock->l_start==SHARED_FIRST && pLock->l_len==SHARED_SIZE
+    ){
+      rc = osFcntl(pFile->h, F_SETLKW, pLock);
+    }else
+#endif
     rc = osSetPosixAdvisoryLock(pFile->h, pLock, pFile);
   }
   return rc;
@@ -4049,7 +4057,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = iOld;
       return SQLITE_OK;
     }
-#endif
+    case SQLITE_FCNTL_BLOCK_ON_CONNECT: {
+      int iNew = *(int*)pArg;
+      pFile->bBlockOnConnect = iNew;
+      return SQLITE_OK;
+    }
+#endif /* SQLITE_ENABLE_SETLK_TIMEOUT */
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;

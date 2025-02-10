@@ -289,6 +289,7 @@ struct winFile {
 #endif
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   DWORD iBusyTimeout;        /* Wait this many millisec on locks */
+  int bBlockOnConnect;
 #endif
 };
 
@@ -3356,8 +3357,9 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 ** Different API routines are called depending on whether or not this
 ** is Win9x or WinNT.
 */
-static int winGetReadLock(winFile *pFile){
+static int winGetReadLock(winFile *pFile, int bBlock){
   int res;
+  DWORD mask = ~(bBlock ? LOCKFILE_FAIL_IMMEDIATELY : 0);
   OSTRACE(("READ-LOCK file=%p, lock=%d\n", pFile->h, pFile->locktype));
   if( osIsNT() ){
 #if SQLITE_OS_WINCE
@@ -3367,7 +3369,7 @@ static int winGetReadLock(winFile *pFile){
     */
     res = winceLockFile(&pFile->h, SHARED_FIRST, 0, 1, 0);
 #else
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
+    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS&mask, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
 #endif
   }
@@ -3376,7 +3378,7 @@ static int winGetReadLock(winFile *pFile){
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
+    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS&mask,
                       SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
 #endif
@@ -3510,7 +3512,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==SHARED_LOCK && res ){
     assert( pFile->locktype==NO_LOCK );
-    res = winGetReadLock(pFile);
+    res = winGetReadLock(pFile, pFile->bBlockOnConnect);
     if( res ){
       newLocktype = SHARED_LOCK;
     }else{
@@ -3548,7 +3550,7 @@ static int winLock(sqlite3_file *id, int locktype){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
       lastErrno = osGetLastError();
-      winGetReadLock(pFile);
+      winGetReadLock(pFile, 0);
     }
   }
 
@@ -3853,7 +3855,12 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = iOld;
       return SQLITE_OK;
     }
-#endif
+    case SQLITE_FCNTL_BLOCK_ON_CONNECT: {
+      int iNew = *(int*)pArg;
+      pFile->bBlockOnConnect = iNew;
+      return SQLITE_OK;
+    }
+#endif /* SQLITE_ENABLE_SETLK_TIMEOUT */
 
   }
   OSTRACE(("FCNTL file=%p, rc=SQLITE_NOTFOUND\n", pFile->h));
