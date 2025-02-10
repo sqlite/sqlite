@@ -2846,4 +2846,5 @@ clean:
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
 	del /q src-verify.exe 2>NUL
+	del /q jimsh.exe jimsh0.exe 2>NUL
 # <</mark>>

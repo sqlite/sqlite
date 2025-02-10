@@ -1,11 +1,11 @@
-C configure:\swhen\sdlopen()\sis\snot\sfound,\sonly\sfail\sfatally\sif\s--enable-loadable-module\sis\sexplicitly\sprovided,\selse\swarn\sinstead.\sBased\son\sdiscussion\saround\s[forum:2efe9c33bd9021ca|forum\spost\s2efe9c33bd9021ca].\sUpdate\sproj-indented-notice\sto\sbehave\slike\sits\sdocs\ssay\sit\sshould\swhen\sthe\s-error\sflag\sis\sused.
-D 2025-02-10T15:01:14.412
+C Add\sjimsh.exe\sand\sjimsh0.exe\sto\sthe\sclean\srules\sin\sMakefile.msc\sso\sthat\sstale\sbuilds\sof\sthose\sfiles\sfrom\smsys2\sand\sfriends\sdo\snot\scause\smysterious\sbuild\serrors.
+D 2025-02-10T15:58:22.800
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in 63c4d6e535dac4b7f6a6ffa566c96e3d68fa7f244799c38ee1e3d59305c5b55b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
+F Makefile.msc 990e4ea94a417135d1b2fd35550997c3f40fc1758bd7546bd17c0f4312f0babc
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4aad891802d9d87f1ff3cbbf4bc70fa242c6782088189a2bd5d6f8863f552d29
-R 0e46282cf2ae1fcf5877508517bc3bb3
+P f28e52cbf9e80cb5a1cde7cba099e2c2b6787a77263796e4f9febf3f30bc99dc
+R 9884f4a919e7e313dc0ab42868810e5c
 U stephan
-Z 8b12a9b798d6d21e89b61eb16ecc7324
+Z 6aa92bc3b567c51b695c0a3eafdd20c2
 # Remove this line to create a well-formed Fossil manifest.
