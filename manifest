@@ -1,5 +1,5 @@
-C Move\sthe\sconfigure\sflags\sdefinition\sand\shandling\sinto\sautosetup/sqlite-config.tcl\sto\savoid\sduplication\sbetween\sauto.def\sand\sautoconf/auto.def\swhile\sstill\sgiving\sus\sa\sway\sto\sfilter\sthe\scanonical-tree-only\sflags\sout\sof\sthe\sautoconf\sbuild.
-D 2025-02-11T17:13:24.153
+C Rename\sa\sconfigure-internal\sfunction\sand\sfix\shandling\sof\s--dump-defines\sfor\sthe\sautoconf\sbundle.
+D 2025-02-11T17:22:07.963
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -14,13 +14,13 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def d06ef819324fc157e231413ad55d1cb26ad4d83bfafa14a1daa3b9d97e33e771
+F auto.def 74ec59fbf7de5038aa9c3d0b1e0fea67e128e432ff9d84472c4016b08ec3d60b
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 7bd73a4c8cd89025cbc92b4f887c6fd1b8cd8ecbe62c4ac1f36ac84d04043479
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
-F autoconf/auto.def db6c33338294a8b10e205a9081c540b90620b12d916c2fd728a8939fb6fdd97b
+F autoconf/auto.def 1900a63cfa18e662b16d912c849ea81609a90b5fe00cea54955a41572e2c2cd0
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 42119a2e899e319b92f3159952b7ef7219c82cb45eeb636aaf8d909def8150f8
-F autosetup/sqlite-config.tcl 297f5b10a46b46d0dd417a937595916d3868c5fe70af59d7c52516d0b31d6956
+F autosetup/sqlite-config.tcl 40107b6a75a2ee367359b2adeb2221e118f5dfa6f10b0a0c0f237fc59fbedef3
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77621fd141e7a673f4d3d109ecd21bd6710eaa6f59d9e6335a6c0d971bb8b0f4
-Q +9978c87139b7b04208fd1f62121fc4e1e2080723fde69a2bbdca88769f4baf22
-R 5e233a2cbb23e42c07c25f8effc616fc
+P 5a964bf3d8311f79d812a93e76a00f8a2a62e73b737b27a1552f7169c93fc1e5
+Q +6aa54cc180e034a10d8fc8f8b0c13d7bc0c94509b4240ac855121d501853768f
+R 4fd3ec570b9e04e409e4fa94c4c3b8d1
 U stephan
-Z 0f5336bf5d3176726ab8ce88f1913892
+Z 622f2c24c2bfe1de3145158164c2a8f0
 # Remove this line to create a well-formed Fossil manifest.

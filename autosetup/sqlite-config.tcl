@@ -31,6 +31,11 @@ array set sqliteConfig [proj-strip-hash-comments {
   # Output file for --dump-defines. Intended only for build debugging
   # and not part of the public build interface.
   dump-defines-txt   ./config.defines.txt
+  #
+  # If not empty then --dump-defines will dump not only
+  # (dump-defines-txt) but also a JSON file named after this option's
+  # value.
+  dump-defines-json  ""
 }]
 
 #
@@ -1215,11 +1220,12 @@ proc sqlite-check-out-implib {} {
 ########################################################################
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
-proc sqlite-common-late-stage-config {} {
+proc sqlite-config-finalize {} {
   sqlite-check-mac-cversion
   sqlite-check-out-implib
   sqlite-process-dot-in-files
   sqlite-post-config-validation
+  sqlite-dump-defines
 }
 
 ########################################################################
