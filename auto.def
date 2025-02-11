@@ -198,6 +198,9 @@ set flags {
   gcov=0               => {Enable coverage testing using gcov}
   linemacros           => {Enable #line macros in the amalgamation}
   dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
+  dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
+  # </developer>
+  # <packaging>
   soname:=legacy       =>
     # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
     {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -207,8 +210,9 @@ set flags {
      suffix which gets applied to "libsqlite3.so.",
      e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
     }
-  dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
-  # </developer>
+  out-implib=0         =>
+    {Enable use of --out-implib linker flag to generate an "import library" for the DLL}
+  # </packaging>
 }
 if {"" ne $::sqliteConfig(dump-defines-json)} {
   lappend flags \

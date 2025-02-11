@@ -965,16 +965,23 @@ proc sqlite-check-mac-cversion {} {
 # used for building an "import library .dll.a" file on some platforms
 # (e.g. mingw). Returns 1 if supported, else 0.
 #
+# If the configure flag --out-implib is not used then this is a no-op.
+# The feature is specifically opt-in because on some platforms the
+# feature test will pass but using that flag will fail at link-time
+# (e.g. OpenBSD).
+#
 # Added in response to: https://sqlite.org/forum/forumpost/0c7fc097b2
 proc sqlite-check-out-implib {} {
   define LDFLAGS_OUT_IMPLIB ""
   set rc 0
-  cc-with {} {
-    set dll "libsqlite3[get-define TARGET_DLLEXT]"
-    set flags "-Wl,--out-implib,${dll}.a"
-    if {[cc-check-flags $flags]} {
-      define LDFLAGS_OUT_IMPLIB $flags
-      set rc 1
+  if {[proj-opt-was-provided out-implib]} {
+    cc-with {} {
+      set dll "libsqlite3[get-define TARGET_DLLEXT]"
+      set flags "-Wl,--out-implib,${dll}.a"
+      if {[cc-check-flags $flags]} {
+        define LDFLAGS_OUT_IMPLIB $flags
+        set rc 1
+      }
     }
   }
   return $rc

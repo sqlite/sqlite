@@ -66,6 +66,7 @@ options {
      performance-critical loops.  Never use --debug for production
      builds.}
   # </developer>
+  # <packaging>
   soname:=legacy       =>
     # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
     {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -75,6 +76,9 @@ options {
      suffix which gets applied to "libsqlite3.so.",
      e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
     }
+  out-implib=0         =>
+    {Enable use of --out-implib linker flag to generate an "import library" for the DLL}
+  # </packaging>
 }
 
 sqlite-post-options-init
