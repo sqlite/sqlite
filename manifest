@@ -1,9 +1,9 @@
-C Make\sthe\s--out-implib\ssupport\s([6092b0b86bf93a3d])\sspecifically\sopt-in\sbecause\sthe\sfeature\scheck\sfor\sit\spasses\son\ssome\splatforms\swhere\sit\sis\snot\srecognized\sat\slink-time.
-D 2025-02-11T13:15:28.889
+C Adapt\s[https://fossil-scm.org/home/info/3bff7b92d6d|Fossil\sSCM\spatch\s3bff7b92d6d],\sapplying\s-lrt\sfor\splatforms\swhich\sneed\sit\sfor\sone\sof\s{fdatasync,\snanosleep}.
+D 2025-02-11T13:18:01.341
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 63c4d6e535dac4b7f6a6ffa566c96e3d68fa7f244799c38ee1e3d59305c5b55b
+F Makefile.in aa869faf7ca086f35c9b3e974fddc7fd65ed2dc45a246b1a94e6f9fdc99b0ed5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def ccf74471ec89edfd5bf942fd6d60fc8ce09f7aa7527d668a1ac44d1bbbcb412d
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in f706b48abb13553ecc5034d5fc296d424fd36d73c222285b7590004dec508925
+F autoconf/Makefile.in 7bd73a4c8cd89025cbc92b4f887c6fd1b8cd8ecbe62c4ac1f36ac84d04043479
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 42119a2e899e319b92f3159952b7ef7219c82cb45eeb636aaf8d909def8150f8
-F autosetup/sqlite-config.tcl e6bb00bb90d7e057b62372b5572ed1e3ade125e9a04d584ad5928d3b075c55d9
+F autosetup/sqlite-config.tcl 62fd6e8782ecfb9f8e54cf2860e590ce9d8692218f03cfa8b25e87ff6b1d0b9b
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 7c9df07a41c406a5fbe4e7e4021f29fa4f18821d61354721fd0435fc24f95321
+F main.mk c85055d36c36c188cee94cabe2e252cd912d10d1a9d62af477e855533b9531b2
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7db7eb223e0fe39a3ba00359eb3a4645db013511c823db24823b6bd904481aa1
-Q +75535f2355b3b2e83dd57f4c30340af98c8dbcfe6ff1e9be17d23bd30d7d766c
-R c3e81f57387cae21984939f53dd047d2
+P 8212f8ee45efa290e70a397a486e02f19d8efbb0e9e374eb908aafea1e30a37c
+Q +1768de6e9e2c6ff3a9ee29fa6f488fb3d23a3599195ac7d1b09e61c02b7d18b3
+R 535423acd57ab88a51edfd9e9f85ca28
 U stephan
-Z 68e3a76fd1c6fd92a3a6dc6b88568b2d
+Z 0e714871142a96f7b985636ee26464fd
 # Remove this line to create a well-formed Fossil manifest.
