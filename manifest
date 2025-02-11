@@ -1,5 +1,5 @@
-C Fix\s"unused\svariable"\swarnings\sin\sos_unix.c\sand\sos_win.c.
-D 2025-02-11T18:29:35.601
+C Update\stool/mkctimec.tcl\sso\sthat\ssqlite3_compileoption_xxx()\sAPIs\sreport\son\sthe\sSQLITE_ENABLE_SETLK_TIMEOUT\soption.
+D 2025-02-11T18:32:22.367
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -725,7 +725,7 @@ F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b
 F src/build.c 602fc45ea6301a3dc03ec20a9f9b294c492b7e1766ae96651f2ba8044dc445a6
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
+F src/ctime.c 9bdeec80f0baa804802c42c92a80edfcc018cd0687bf1a6636ac18bf10978e9d
 F src/date.c 842c08ac143a56a627b05ac51d68624f2b7b03e3b4cba596205e735eed64ee57
 F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
@@ -2148,7 +2148,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh 14d2144043c6455958012f92324f4ce7c90a261b5daa2f2c7509498468475f8d
 F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
-F tool/mkctimec.tcl ef6a67ec82e5b6fc19152a4c79f237227b18bf67ff16d155bac7adb94355d9cf x
+F tool/mkctimec.tcl f756fba55fcfb62dcc24c470a521ad47b8e522320d6dbeaf607c43fbca2b2f66 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e5ec5bb9f4dc3e02db7ab0e49686f47617af75d3f7d4ab23288a1aea4a693e59
-R cd93c7dbc68ed42af0ea6345d25217a0
+P 8e809632ba3bb20b7ec23ce9e6ca659c57cf1338b1fe8c33502c5f3161061dd2
+R 0d8181912c6739bfd5e49e604de13386
 U dan
-Z 4758547541b3fb9f6b2874ae87ffc5c6
+Z 7d39383234846ecfbdbe2d30db37f4f9
 # Remove this line to create a well-formed Fossil manifest.

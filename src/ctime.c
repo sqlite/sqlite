@@ -316,6 +316,9 @@ static const char * const sqlite3azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_SESSION
   "ENABLE_SESSION",
 #endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  "ENABLE_SETLK_TIMEOUT",
+#endif
 #ifdef SQLITE_ENABLE_SNAPSHOT
   "ENABLE_SNAPSHOT",
 #endif
