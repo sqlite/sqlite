@@ -1,5 +1,5 @@
-C Merge\slatest\schanges\sfrom\strunk\sinto\sthis\sbranch.
-D 2025-02-11T17:10:46.191
+C Fix\s"unused\svariable"\swarnings\sin\sos_unix.c\sand\sos_win.c.
+D 2025-02-11T18:29:35.601
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def ccf74471ec89edfd5bf942fd6d60fc8ce09f7aa7527d668a1ac44d1bbbcb412d
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 7bd73a4c8cd89025cbc92b4f887c6fd1b8cd8ecbe62c4ac1f36ac84d04043479 w autoconf/Makefile.am
+F autoconf/Makefile.in 7bd73a4c8cd89025cbc92b4f887c6fd1b8cd8ecbe62c4ac1f36ac84d04043479
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -764,8 +764,8 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 49ee8571f42e1bfddc7d56829f68bce86f00c3000240ffbed0f49170631136ae
-F src/os_win.c 48c536ebd662a4b39623fffba41d95234854ddfbea4865d03fef1f51c29da187
+F src/os_unix.c 1e887f1f926a76a65ebcef79aa6da76e369ad7f899fa211c6ee56ff953c098a2
+F src/os_win.c 84502044e9d064c54f1931e015ef49a4804114e80cc75461c5bda357070bc596
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2d6a000fb9bf8097e0ce9979685408d183be3ab785ceeb11ec1f97a81a83e41 75535f2355b3b2e83dd57f4c30340af98c8dbcfe6ff1e9be17d23bd30d7d766c
-R 4f8d4a49a69f37717318dd9062d1384e
+P e5ec5bb9f4dc3e02db7ab0e49686f47617af75d3f7d4ab23288a1aea4a693e59
+R cd93c7dbc68ed42af0ea6345d25217a0
 U dan
-Z 6f5c2c68e6ed575542ad7a68cf45ae3a
+Z 4758547541b3fb9f6b2874ae87ffc5c6
 # Remove this line to create a well-formed Fossil manifest.
