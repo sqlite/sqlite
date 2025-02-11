@@ -163,6 +163,7 @@ LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shlib ?= -shared
+LDFLAGS.rt ?= # nanosleep on some platforms
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.libsqlite3.soname ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
@@ -413,7 +414,7 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.configure)
+  $(LDFLAGS.rt) $(LDFLAGS.configure)
 
 #
 # $(install-dir.XYZ) = dirs for installation.

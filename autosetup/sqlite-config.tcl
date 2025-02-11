@@ -187,9 +187,15 @@ proc sqlite-check-common-system-deps {} {
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
     malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 
-  proj-check-function-in-lib fdatasync rt
-  define LDFLAGS_FDATASYNC [get-define lib_fdatasync]
-  undefine lib_fdatasync
+  set ldrt ""
+  # Collapse funcs from librt into LDFLAGS_RT.
+  # Some systems (ex: SunOS) require -lrt in order to use nanosleep
+  foreach func {fdatasync nanosleep} {
+    if {[proj-check-function-in-lib $func rt]} {
+      lappend ldrt [get-define lib_${func}]
+    }
+  }
+  define LDFLAGS_RT [join [lsort -unique $ldrt] ""]
 
   #
   # Check for needed/wanted headers

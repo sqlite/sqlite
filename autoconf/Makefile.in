@@ -67,6 +67,7 @@ LDFLAGS.pthread = @LDFLAGS_PTHREAD@
 LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
+LDFLAGS.rt = @LDFLAGS_RT@
 LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
 
@@ -135,7 +136,7 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.configure)
+  $(LDFLAGS.rt) $(LDFLAGS.configure)
 CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
 
 sqlite3.o: $(TOP)/sqlite3.h $(TOP)/sqlite3.c
