@@ -71,5 +71,4 @@ sqlite-handle-load-extension
 sqlite-handle-math
 sqlite-handle-icu
 sqlite-handle-emsdk
-sqlite-common-late-stage-config
-sqlite-dump-defines
+sqlite-config-finalize

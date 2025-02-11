@@ -25,4 +25,4 @@ sqlite-handle-icu
 define ENABLE_LIB_SHARED [opt-bool shared]
 define ENABLE_LIB_STATIC [opt-bool static]
 
-sqlite-common-late-stage-config
+sqlite-config-finalize
