@@ -1396,7 +1396,7 @@ SRC00 = \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
   $(TOP)\src\complete.c \
-  $(TOP)\src\ctime.c \
+  ctime.c \
   $(TOP)\src\date.c \
   $(TOP)\src\dbpage.c \
   $(TOP)\src\dbstat.c \
@@ -2099,8 +2099,11 @@ callback.lo:	$(TOP)\src\callback.c $(HDR)
 complete.lo:	$(TOP)\src\complete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\complete.c
 
-ctime.lo:	$(TOP)\src\ctime.c $(HDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\ctime.c
+ctime.c:	$(TOP)\tool\mkctimec.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkctimec.tcl
+
+ctime.lo:	ctime.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c ctime.c
 
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
@@ -2812,7 +2815,7 @@ moreclean:	clean
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
-	del /Q sqlite3.def tclsqlite3.def 2>NUL
+	del /Q sqlite3.def tclsqlite3.def ctime.c 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL

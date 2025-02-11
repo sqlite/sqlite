@@ -1,11 +1,11 @@
-C Rename\sa\sconfigure-internal\sfunction\sand\sfix\shandling\sof\s--dump-defines\sfor\sthe\sautoconf\sbundle.
-D 2025-02-11T17:20:12.606
+C Omit\sthe\ssrc/ctime.c\ssource\sfile,\ssince\sit\sis\sautomatically\sgenerated\sby\sa\sTCL\nscript.\s\sInstead,\sadd\srules\sto\sthe\svarious\smakefiles\sto\sgenerate\sctime.c\son\ndemand.
+D 2025-02-11T19:40:19.136
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in aa869faf7ca086f35c9b3e974fddc7fd65ed2dc45a246b1a94e6f9fdc99b0ed5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 990e4ea94a417135d1b2fd35550997c3f40fc1758bd7546bd17c0f4312f0babc
+F Makefile.msc 3715ce0974666c8cafe391e2383a902956b983aa08bfea1cd57e98ddd27a35bb
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
 F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c85055d36c36c188cee94cabe2e252cd912d10d1a9d62af477e855533b9531b2
+F main.mk b7d36efaac04a13a85008c694762bf7b58de748dc1565c70a4dd797a944c9f9b
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -725,7 +725,6 @@ F src/btreeInt.h 98aadb6dcb77b012cab2574d6a728fad56b337fc946839b9898c4b4c969e30b
 F src/build.c 602fc45ea6301a3dc03ec20a9f9b294c492b7e1766ae96651f2ba8044dc445a6
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/ctime.c d35723024b963edce9c0fad5b3303e8bb9266083784844baed10a6dedfe26f3b
 F src/date.c 842c08ac143a56a627b05ac51d68624f2b7b03e3b4cba596205e735eed64ee57
 F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
@@ -2146,7 +2145,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh 14d2144043c6455958012f92324f4ce7c90a261b5daa2f2c7509498468475f8d
 F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
-F tool/mkctimec.tcl ef6a67ec82e5b6fc19152a4c79f237227b18bf67ff16d155bac7adb94355d9cf x
+F tool/mkctimec.tcl b57ab5c43cf6a46ba4030027da1cc73d7839e7b78da3b328545bc941bb62360b x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2195,7 +2194,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
-F tool/srctree-check.tcl 1f1f505835a4beca64c1751a7ebec5c41a1ddf22b1e80481345b95059eef6583
+F tool/srctree-check.tcl 5e40c7beaca50c3f29cd9c3aa8d6c9256359690ea0989174f097ace92d6390c2
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c dfe9cc03cf87728ac9836be30763f8aa52b82caca0780b3d3f3572e4643b01d3
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2209,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9978c87139b7b04208fd1f62121fc4e1e2080723fde69a2bbdca88769f4baf22
-R 76e33179af2e988165dad18e5266ff58
-U stephan
-Z 2f25ba1e1af4da40884b8449b6a5c47c
+P 6aa54cc180e034a10d8fc8f8b0c13d7bc0c94509b4240ac855121d501853768f
+R e691176b85b17541b0449680ba0ba564
+U drh
+Z 88df15dbb3e7e15a4c35762ecebc556a
 # Remove this line to create a well-formed Fossil manifest.

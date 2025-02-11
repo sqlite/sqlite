@@ -548,7 +548,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
-  $(TOP)/src/ctime.c \
+  ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
@@ -792,7 +792,7 @@ TESTSRC2 = \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
-  $(TOP)/src/ctime.c \
+  ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
@@ -1137,8 +1137,11 @@ callback.o:	$(TOP)/src/callback.c $(DEPS_OBJ_COMMON)
 complete.o:	$(TOP)/src/complete.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/complete.c
 
-ctime.o:	$(TOP)/src/ctime.c $(DEPS_OBJ_COMMON)
-	$(T.cc.sqlite) -c $(TOP)/src/ctime.c
+ctime.c:	$(TOP)/tool/mkctimec.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mkctimec.tcl
+
+ctime.o:	ctime.c $(DEPS_OBJ_COMMON)
+	$(T.cc.sqlite) -c ctime.c
 
 date.o:	$(TOP)/src/date.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/date.c
@@ -2353,6 +2356,7 @@ tidy: tidy-.
 	rm -f src-verify$(B.exe)
 	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)
 	rm -f sqlite3rc.h sqlite3.def
+	rm -f ctime.c
 
 #
 # Removes build products and test logs.  Retains ./configure outputs.
