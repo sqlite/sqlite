@@ -5,7 +5,6 @@
 #
 #     *    Makefile.msc and autoconf/Makefile.msc agree
 #     *    VERSION agrees with autoconf/tea/configure.ac
-#     *    src/pragma.h agrees with tool/mkpragmatab.tcl
 #
 # Other tests might be added later.  
 #
@@ -59,17 +58,5 @@ file delete tmp1.txt
 if {$f1 != $f2} {
   puts "ERROR: ./autoconf/Makefile.msc does not agree with ./Makefile.msc"
   puts "...... Fix: tclsh tool/mkmsvcmin.tcl"
-  incr NERR
-}
-
-######################### src/pragma.h ########################################
-
-set f1 [readfile $ROOT/src/pragma.h]
-exec $TCLSH $ROOT/tool/mkpragmatab.tcl tmp2.txt
-set f2 [readfile tmp2.txt]
-file delete tmp2.txt
-if {$f1 != $f2} {
-  puts "ERROR: ./src/pragma.h does not agree with ./tool/mkpragmatab.tcl"
-  puts "...... Fix: tclsh tool/mkpragmatab.tcl"
   incr NERR
 }

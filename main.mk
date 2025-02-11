@@ -596,7 +596,7 @@ SRC = \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
-  $(TOP)/src/pragma.h \
+  pragma.h \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -857,7 +857,7 @@ HDR = \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
    parse.h  \
-   $(TOP)/src/pragma.h \
+   pragma.h \
    sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
@@ -1137,8 +1137,8 @@ callback.o:	$(TOP)/src/callback.c $(DEPS_OBJ_COMMON)
 complete.o:	$(TOP)/src/complete.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/complete.c
 
-ctime.c:	$(TOP)/tool/mkctimec.tcl
-	$(TCLSH_CMD) $(TOP)/tool/mkctimec.tcl
+ctime.c:	$(TOP)/tool/mkctimec.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkctimec.tcl
 
 ctime.o:	ctime.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c ctime.c
@@ -1384,6 +1384,9 @@ parse.h:	parse.c
 parse.c:	$(TOP)/src/parse.y lemon$(B.exe)
 	cp $(TOP)/src/parse.y .
 	./lemon$(B.exe) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
+
+pragma.h:	$(TOP)/tool/mkpragmatab.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkpragmatab.tcl
 
 sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh)
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
@@ -2356,7 +2359,7 @@ tidy: tidy-.
 	rm -f src-verify$(B.exe)
 	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)
 	rm -f sqlite3rc.h sqlite3.def
-	rm -f ctime.c
+	rm -f ctime.c pragma.h
 
 #
 # Removes build products and test logs.  Retains ./configure outputs.

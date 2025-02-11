@@ -1495,7 +1495,7 @@ SRC04 = \
 SRC05 = \
   $(TOP)\src\pager.h \
   $(TOP)\src\pcache.h \
-  $(TOP)\src\pragma.h \
+  pragma.h \
   $(TOP)\src\sqlite.h.in \
   $(TOP)\src\sqlite3ext.h \
   $(TOP)\src\sqliteInt.h \
@@ -1698,7 +1698,7 @@ HDR = \
    $(TOP)\src\pager.h \
    $(TOP)\src\pcache.h \
    parse.h \
-   $(TOP)\src\pragma.h \
+   pragma.h \
    $(SQLITE3H) \
    sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
@@ -2336,6 +2336,9 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	copy /B parse.y +,,
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
+pragma.h:	$(TOP)\tool\mkpragmatab.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkpragmatab.tcl
+
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" -o $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
@@ -2815,7 +2818,7 @@ moreclean:	clean
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
-	del /Q sqlite3.def tclsqlite3.def ctime.c 2>NUL
+	del /Q sqlite3.def tclsqlite3.def ctime.c pragma.h 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
