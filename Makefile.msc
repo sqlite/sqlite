@@ -994,10 +994,14 @@ TCLLIBS =
 !ENDIF
 
 !IFNDEF LIBTCLSTUB
-!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
-LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
-!ELSE
+!IF EXISTS("$(TCLLIBDIR)\tclstub$(TCLVERSION)$(TCLSUFFIX).lib")
 LIBTCLSTUB = tclstub$(TCLVERSION)$(TCLSUFFIX).lib
+!ELSEIF EXISTS("$(TCLLIBDIR)\tclstub$(TCLSUFFIX).lib")
+LIBTCLSTUB = tclstub$(TCLSUFFIX).lib
+!ELSEIF EXISTS("$(TCLLIBDIR)\tclstub$(TCLVERSION).lib")
+LIBTCLSTUB = tclstub$(TCLVERSION).lib
+!ELSE
+LIBTCLSTUB = tclstub.lib
 !ENDIF
 !ENDIF
 
@@ -1898,7 +1902,10 @@ tclextension-uninstall:
 	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --uninstall
 
 tclextension-list:
-	$(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
+	@ $(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --info
+
+tclextension-verify: sqlite3.h
+	@ $(TCLSH_CMD) $(TOP)\tool\buildtclext.tcl --version-check
 
 
 # <</mark>>
@@ -2337,7 +2344,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" > $(SQLITE3H) $(MKSQLITE3H_ARGS)
+	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" -o $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
@@ -2401,7 +2408,7 @@ SHELL_DEP = $(SHELL_DEP) $(TOP)\ext\misc\zipfile.c
 !ENDIF
 
 shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl > shell.c
+	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl shell.c
 
 zlib:
 	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
@@ -2802,6 +2809,8 @@ tcl-env:
 	@echo LIBTCL = $(LIBTCL)
 	@echo LIBTCLSTUB = $(LIBTCLSTUB)
 	@echo TCLSH_CMD = $(TCLSH_CMD)
+	@echo JIM_TCLSH = $(JIM_TCLSH)
+	@echo VISUALSTUDIOVERSION = $(VISUALSTUDIOVERSION)
 
 LSMDIR=$(TOP)\ext\lsm1
 !INCLUDE $(LSMDIR)\Makefile.msc
@@ -2812,7 +2821,8 @@ moreclean:	clean
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
-	del /Q *.bsc *.def *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
+	del /Q sqlite3.def tclsqlite3.def 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
@@ -2846,4 +2856,5 @@ clean:
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
 	del /q src-verify.exe 2>NUL
+	del /q jimsh.exe jimsh0.exe 2>NUL
 # <</mark>>

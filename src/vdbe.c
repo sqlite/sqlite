@@ -607,6 +607,7 @@ static void registerTrace(int iReg, Mem *p){
   printf("R[%d] = ", iReg);
   memTracePrint(p);
   if( p->pScopyFrom ){
+    assert( p->pScopyFrom->bScopy );
     printf(" <== R[%d]", (int)(p->pScopyFrom - &p[-iReg]));
   }
   printf("\n");
@@ -1590,6 +1591,7 @@ case OP_Move: {
     { int i;
       for(i=1; i<p->nMem; i++){
         if( aMem[i].pScopyFrom==pIn1 ){
+          assert( aMem[i].bScopy );
           aMem[i].pScopyFrom = pOut;
         }
       }
@@ -1662,6 +1664,7 @@ case OP_SCopy: {            /* out2 */
 #ifdef SQLITE_DEBUG
   pOut->pScopyFrom = pIn1;
   pOut->mScopyFlags = pIn1->flags;
+  pIn1->bScopy = 1;
 #endif
   break;
 }
@@ -8360,6 +8363,7 @@ case OP_VFilter: {   /* jump, ncycle */
 
   /* Invoke the xFilter method */
   apArg = p->apArg;
+  assert( nArg<=p->napArg );
   for(i = 0; i<nArg; i++){
     apArg[i] = &pArgc[i+1];
   }
@@ -8570,6 +8574,7 @@ case OP_VUpdate: {
     u8 vtabOnConflict = db->vtabOnConflict;
     apArg = p->apArg;
     pX = &aMem[pOp->p3];
+    assert( nArg<=p->napArg );
     for(i=0; i<nArg; i++){
       assert( memIsValid(pX) );
       memAboutToChange(p, pX);

@@ -114,11 +114,13 @@ proc proj-bold {str} {
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
-# the next time autosetup goes to output a message. If -notice
-# is not used, it will send the message to stdout without delay.
+# the next time autosetup goes to output a message.
 #
 # If the -error flag is provided then it renders the message
 # immediately to stderr and then exits.
+#
+# If neither -notice nor -error are used, the message will be sent to
+# stdout without delay.
 proc proj-indented-notice {args} {
   set fErr ""
   set outFunc "puts"
@@ -126,6 +128,7 @@ proc proj-indented-notice {args} {
     switch -exact -- [lindex $args 0] {
       -error  {
         set args [lassign $args fErr]
+        set outFunc "user-notice"
       }
       -notice {
         set args [lassign $args -]
@@ -181,10 +184,10 @@ proc proj-lshift_ {listVar {count 1}} {
 
 ########################################################################
 # Expects to receive string input, which it splits on newlines, strips
-# out any lines which begin with an number of whitespace followed by a
-# '#', and returns a value containing the [append]ed results of each
+# out any lines which begin with any number of whitespace followed by
+# a '#', and returns a value containing the [append]ed results of each
 # remaining line with a \n between each.
-proc proj-strip-hash-comments_ {val} {
+proc proj-strip-hash-comments {val} {
   set x {}
   foreach line [split $val \n] {
     if {![string match "#*" [string trimleft $line]]} {
@@ -200,7 +203,7 @@ proc proj-strip-hash-comments_ {val} {
 # A proxy for cc-check-function-in-lib which does not make any global
 # changes to the LIBS define. Returns the result of
 # cc-check-function-in-lib (i.e. true or false).  The resulting linker
-# flags are stored in ${lib_${function}}.
+# flags are stored in the [define] named lib_${function}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
   define-push {LIBS} {
@@ -276,9 +279,9 @@ proc proj-find-executable-path {args} {
 # a binary, sets a define (see below) to the result, and returns the
 # result (an empty string if not found).
 #
-# The define'd name is: if defName is empty then "BIN_X" is used,
-# where X is the upper-case form of $binName with any '-' characters
-# replaced with '_'.
+# The define'd name is: If $defName is not empty, it is used as-is. If
+# $defName is empty then "BIN_X" is used, where X is the upper-case
+# form of $binName with any '-' characters replaced with '_'.
 proc proj-bin-define {binName {defName {}}} {
   set check [proj-find-executable-path -v $binName]
   if {"" eq $defName} {
@@ -760,7 +763,7 @@ proc proj-exe-extension {} {
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
 # instead of -shared.
 proc proj-dll-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *apple* {
         return ".dylib"
@@ -772,9 +775,9 @@ proc proj-dll-extension {} {
         return ".so"
       }
     }
-  }
-  define BUILD_DLLEXT [inner build]
-  define TARGET_DLLEXT [inner host]
+  }}
+  define BUILD_DLLEXT [apply $inner build]
+  define TARGET_DLLEXT [apply $inner host]
 }
 
 ########################################################################
@@ -784,18 +787,20 @@ proc proj-dll-extension {} {
 # BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
 # extension for the being-built-on resp. the target platform.
 proc proj-lib-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *-*-ming* - *-*-cygwin - *-*-msys {
-        return ".lib"
+        return ".a"
+        # ^^^ this was ".lib" until 2025-02-07. See
+        # https://sqlite.org/forum/forumpost/02db2d4240
       }
       default {
         return ".a"
       }
     }
-  }
-  define BUILD_LIBEXT [inner build]
-  define TARGET_LIBEXT [inner host]
+  }}
+  define BUILD_LIBEXT [apply $inner build]
+  define TARGET_LIBEXT [apply $inner host]
 }
 
 ########################################################################
@@ -850,16 +855,16 @@ proc proj-affirm-files-exist {args} {
 # If the given directory is found, it expects to find emsdk_env.sh in
 # that directory, as well as the emcc compiler somewhere under there.
 #
-# If the --with-emsdk flag is explicitly provided and the SDK is not
-# found then a fatal error is generated, otherwise failure to find the
-# SDK is not fatal.
+# If the --with-emsdk[=DIR] flag is explicitly provided and the SDK is
+# not found then a fatal error is generated, otherwise failure to find
+# the SDK is not fatal.
 #
 # Defines the following:
 #
-# - EMSDK_HOME = top dir of the emsdk or "".
-# - EMSDK_ENV_SH = path to EMSDK_HOME/emsdk_env.sh or ""
-# - BIN_EMCC = $EMSDK_HOME/upstream/emscripten/emcc or ""
 # - HAVE_EMSDK = 0 or 1 (this function's return value)
+# - EMSDK_HOME = "" or top dir of the emsdk
+# - EMSDK_ENV_SH = "" or $EMSDK_HOME/emsdk_env.sh
+# - BIN_EMCC = "" or $EMSDK_HOME/upstream/emscripten/emcc
 #
 # Returns 1 if EMSDK_ENV_SH is found, else 0.  If EMSDK_HOME is not empty
 # but BIN_EMCC is then emcc was not found in the EMSDK_HOME, in which
@@ -1119,7 +1124,7 @@ proc proj-dump-defs-json {file args} {
 # that [opt-value canonical] will return X if --alias=X is passed to
 # configure.
 proc proj-xfer-options-aliases {mapping} {
-  foreach {hidden - canonical} [proj-strip-hash-comments_ $mapping] {
+  foreach {hidden - canonical} [proj-strip-hash-comments $mapping] {
     if {[proj-opt-was-provided $hidden]} {
       if {[proj-opt-was-provided $canonical]} {
         proj-fatal "both --$canonical and its alias --$hidden were used. Use only one or the other."

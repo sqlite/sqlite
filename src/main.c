@@ -959,7 +959,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
     default: {
       static const struct {
         int op;      /* The opcode */
-        u32 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
+        u64 mask;    /* Mask of the bit in sqlite3.flags to set/clear */
       } aFlagOp[] = {
         { SQLITE_DBCONFIG_ENABLE_FKEY,           SQLITE_ForeignKeys    },
         { SQLITE_DBCONFIG_ENABLE_TRIGGER,        SQLITE_EnableTrigger  },
@@ -980,6 +980,9 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_TRUSTED_SCHEMA,        SQLITE_TrustedSchema  },
         { SQLITE_DBCONFIG_STMT_SCANSTATUS,       SQLITE_StmtScanStatus },
         { SQLITE_DBCONFIG_REVERSE_SCANORDER,     SQLITE_ReverseOrder   },
+        { SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE,  SQLITE_AttachCreate   },
+        { SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE,   SQLITE_AttachWrite    },
+        { SQLITE_DBCONFIG_ENABLE_COMMENTS,       SQLITE_Comments       },
       };
       unsigned int i;
       rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
@@ -1831,8 +1834,10 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 ** Set the setlk timeout value.
 */
 int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   int iDb;
   int bBOC = ((flags & SQLITE_SETLK_BLOCK_ON_CONNECT) ? 1 : 0);
+#endif
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
@@ -3353,6 +3358,9 @@ static int openDatabase(
                  | SQLITE_EnableTrigger
                  | SQLITE_EnableView
                  | SQLITE_CacheSpill
+                 | SQLITE_AttachCreate
+                 | SQLITE_AttachWrite
+                 | SQLITE_Comments
 #if !defined(SQLITE_TRUSTED_SCHEMA) || SQLITE_TRUSTED_SCHEMA+0!=0
                  | SQLITE_TrustedSchema
 #endif
@@ -3969,13 +3977,10 @@ int sqlite3_table_column_metadata(
   if( zColumnName==0 ){
     /* Query for existence of table only */
   }else{
-    for(iCol=0; iCol<pTab->nCol; iCol++){
+    iCol = sqlite3ColumnIndex(pTab, zColumnName);
+    if( iCol>=0 ){
       pCol = &pTab->aCol[iCol];
-      if( 0==sqlite3StrICmp(pCol->zCnName, zColumnName) ){
-        break;
-      }
-    }
-    if( iCol==pTab->nCol ){
+    }else{
       if( HasRowid(pTab) && sqlite3IsRowid(zColumnName) ){
         iCol = pTab->iPKey;
         pCol = iCol>=0 ? &pTab->aCol[iCol] : 0;

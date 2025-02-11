@@ -1,12 +1,23 @@
 # Notes On Compiling SQLite On Windows 11
 
-Here are step-by-step instructions on how to build SQLite from
-canonical source on a new Windows 11 PC, as of 2024-10-09:
+Below are step-by-step instructions on how to build SQLite from
+canonical source on a new Windows 11 PC, as of 2024-10-09.
+See [](./compile-for-unix.md) for a similar guide for unix-like
+systems, including MacOS.
 
   1.  Install Microsoft Visual Studio. The free "community edition" 
       will work fine.  Do a standard install for C++ development.
       SQLite only needs the
       "cl" compiler and the "nmake" build tool.
+      <ul><li><b>Note:</b>
+      VS2015 or later is required for the procedures below to
+      all work.  You *might* be able to get the build to work with
+      earlier versions of MSVC, but in that case the TCL installation
+      of step 3 will be required, since the "jimsh0.c" program of
+      Autosetup that is used as a substitute for "tclsh.exe" won't
+      compile with versions of Visual Studio prior to VS2015.  In any
+      event, building SQLite from canonical source code on Windows
+      is not supported for earlier versions of Visual Studio.</ul>
 
   2.  Under the "Start" menu, find "All Apps" then go to "Visual Studio 20XX"
       and find "x64 Native Tools Command Prompt for VS 20XX".  Pin that
@@ -24,16 +35,21 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       "tclsh90.exe" command-line tool as part of the build process, and
       the "tcl90.lib" and "tclstub.lib" libraries in order to run tests.
       This document assumes you are working with TCL version 9.0.
-      See versions of this document from prior to 2024-10-10 for
-      instructions on how to build using TCL version 8.6.
+      See [](./tcl-extension-testing.md#windows) for guidance on how
+      to compile TCL version 8.6 for use with SQLite.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
       <https://www.tcl.tk/software/tcltk/download.html>
       or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar or unzip the source archive.  CD into the "win/" subfolder
           of the source tree.
-      <li>Run: `nmake /f makefile.vc release`
-      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl release`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install` <br>
+          Notes:
+          <ol type="i">
+          <li> The previous two `nmake` commands must be run separately.
+          <li> Also, the INSTALLDIR=... argument is required on both.
+          </ol>
       <li><i>Optional:</i> CD to `c:\Tcl\bin` and make a copy of
           `tclsh90.exe` over into just `tclsh.exe`.
       <li><i>Optional:</i>

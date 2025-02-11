@@ -327,7 +327,7 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
     return;
   }
   if( pMem->enc!=SQLITE_UTF8 ) return;
-  if( NEVER(pMem->z==0) ) return;
+  assert( pMem->z!=0 );
   if( pMem->flags & MEM_Dyn ){
     if( pMem->xDel==sqlite3_free
      && sqlite3_msize(pMem->z) >= (u64)(pMem->n+1)
@@ -1046,27 +1046,30 @@ int sqlite3VdbeMemTooBig(Mem *p){
 void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   int i;
   Mem *pX;
-  for(i=1, pX=pVdbe->aMem+1; i<pVdbe->nMem; i++, pX++){
-    if( pX->pScopyFrom==pMem ){
-      u16 mFlags;
-      if( pVdbe->db->flags & SQLITE_VdbeTrace ){
-        sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
-          (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
+  if( pMem->bScopy ){
+    for(i=1, pX=pVdbe->aMem+1; i<pVdbe->nMem; i++, pX++){
+      if( pX->pScopyFrom==pMem ){
+        u16 mFlags;
+        if( pVdbe->db->flags & SQLITE_VdbeTrace ){
+          sqlite3DebugPrintf("Invalidate R[%d] due to change in R[%d]\n",
+            (int)(pX - pVdbe->aMem), (int)(pMem - pVdbe->aMem));
+        }
+        /* If pX is marked as a shallow copy of pMem, then try to verify that
+        ** no significant changes have been made to pX since the OP_SCopy.
+        ** A significant change would indicated a missed call to this
+        ** function for pX.  Minor changes, such as adding or removing a
+        ** dual type, are allowed, as long as the underlying value is the
+        ** same. */
+        mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
+        assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
+        
+        /* pMem is the register that is changing.  But also mark pX as
+        ** undefined so that we can quickly detect the shallow-copy error */
+        pX->flags = MEM_Undefined;
+        pX->pScopyFrom = 0;
       }
-      /* If pX is marked as a shallow copy of pMem, then try to verify that
-      ** no significant changes have been made to pX since the OP_SCopy.
-      ** A significant change would indicated a missed call to this
-      ** function for pX.  Minor changes, such as adding or removing a
-      ** dual type, are allowed, as long as the underlying value is the
-      ** same. */
-      mFlags = pMem->flags & pX->flags & pX->mScopyFlags;
-      assert( (mFlags&(MEM_Int|MEM_IntReal))==0 || pMem->u.i==pX->u.i );
-      
-      /* pMem is the register that is changing.  But also mark pX as
-      ** undefined so that we can quickly detect the shallow-copy error */
-      pX->flags = MEM_Undefined;
-      pX->pScopyFrom = 0;
     }
+    pMem->bScopy = 0;
   }
   pMem->pScopyFrom = 0;
 }

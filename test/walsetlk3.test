@@ -18,6 +18,7 @@ source $testdir/lock_common.tcl
 set testprefix walsetlk3
 
 ifcapable !wal {finish_test ; return }
+ifcapable !setlk_timeout {finish_test ; return }
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(x, y);

@@ -12,12 +12,12 @@
 
   This file is intended to be combined at build-time with other
   related code, most notably a header and footer which wraps this
-  whole file into an Emscripten Module.postRun() handler. The sqlite3
-  JS API has no hard requirements on Emscripten and does not expose
-  any Emscripten APIs to clients. It is structured such that its build
-  can be tweaked to include it in arbitrary WASM environments which
-  can supply the necessary underlying features (e.g. a POSIX file I/O
-  layer).
+  whole file into a single callback which can be run after Emscripten
+  loads the corresponding WASM module. The sqlite3 JS API has no hard
+  requirements on Emscripten and does not expose any Emscripten APIs
+  to clients. It is structured such that its build can be tweaked to
+  include it in arbitrary WASM environments which can supply the
+  necessary underlying features (e.g. a POSIX file I/O layer).
 
   Main project home page: https://sqlite.org
 
@@ -1712,41 +1712,48 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      missing or falsy pointer argument as 0.
   */
   capi.sqlite3_db_config = function(pDb, op, ...args){
-    if(!this.s){
-      this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
-                          ['sqlite3*', 'int', 'string:static']
-                          /* MAINDBNAME requires a static string */);
-      this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
-                            ['sqlite3*', 'int', '*','int', 'int']);
-      this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
-                           ['sqlite3*', 'int', 'int','*']);
-    }
     switch(op){
-        case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
-        case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
-        case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
-        case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
-        case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
-        case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
-        case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
-        case capi.SQLITE_DBCONFIG_RESET_DATABASE:
-        case capi.SQLITE_DBCONFIG_DEFENSIVE:
-        case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
-        case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
-        case capi.SQLITE_DBCONFIG_DQS_DML:
-        case capi.SQLITE_DBCONFIG_DQS_DDL:
-        case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
-        case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
-        case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
-        case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
-        case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
-          return this.ip(pDb, op, args[0], args[1] || 0);
-        case capi.SQLITE_DBCONFIG_LOOKASIDE:
-          return this.pii(pDb, op, args[0], args[1], args[2]);
-        case capi.SQLITE_DBCONFIG_MAINDBNAME:
-          return this.s(pDb, op, args[0]);
-        default:
-          return capi.SQLITE_MISUSE;
+      case capi.SQLITE_DBCONFIG_ENABLE_FKEY:
+      case capi.SQLITE_DBCONFIG_ENABLE_TRIGGER:
+      case capi.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+      case capi.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+      case capi.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+      case capi.SQLITE_DBCONFIG_ENABLE_QPSG:
+      case capi.SQLITE_DBCONFIG_TRIGGER_EQP:
+      case capi.SQLITE_DBCONFIG_RESET_DATABASE:
+      case capi.SQLITE_DBCONFIG_DEFENSIVE:
+      case capi.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+      case capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+      case capi.SQLITE_DBCONFIG_DQS_DML:
+      case capi.SQLITE_DBCONFIG_DQS_DDL:
+      case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
+      case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+      case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
+      case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
+      case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
+      case capi.SQLITE_DBCONFIG_ENABLE_COMMENTS:
+        if( !this.ip ){
+          this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
+                               ['sqlite3*', 'int', 'int', '*']);
+        }
+        return this.ip(pDb, op, args[0], args[1] || 0);
+      case capi.SQLITE_DBCONFIG_LOOKASIDE:
+        if( !this.pii ){
+          this.pii = wasm.xWrap('sqlite3__wasm_db_config_pii', 'int',
+                                ['sqlite3*', 'int', '*', 'int', 'int']);
+        }
+        return this.pii(pDb, op, args[0], args[1], args[2]);
+      case capi.SQLITE_DBCONFIG_MAINDBNAME:
+        if(!this.s){
+          this.s = wasm.xWrap('sqlite3__wasm_db_config_s','int',
+                              ['sqlite3*', 'int', 'string:static']
+                              /* MAINDBNAME requires a static string */);
+        }
+        return this.s(pDb, op, args[0]);
+      default:
+        return capi.SQLITE_MISUSE;
     }
   }.bind(Object.create(null));
 

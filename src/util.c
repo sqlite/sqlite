@@ -1130,7 +1130,11 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   }
   p->z = &p->zBuf[i+1];
   assert( i+p->n < sizeof(p->zBuf) );
-  while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
+  assert( p->n>0 );
+  while( p->z[p->n-1]=='0' ){
+    p->n--;
+    assert( p->n>0 );
+  }
 }
 
 /*

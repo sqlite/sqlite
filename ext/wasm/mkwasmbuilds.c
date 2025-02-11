@@ -64,6 +64,75 @@ static void mk_prologue(void){
   ps("# pre-post-jses.deps.* = a list of dependencies for the");
   ps("# --[extern-][pre/post]-js files.");
   ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
+
+  {
+    /* SQLITE.CALL.WASM-OPT = shell code to run $(1) (source wasm file
+    ** name) through $(bin.wasm-opt) */
+    const char * zOptFlags =
+      /*
+      ** Flags for wasm-opt. It has many, many, MANY "passes" options
+      ** and the ones which appear here were selected solely on the
+      ** basis of trial and error.
+      **
+      ** All wasm file size savings/costs mentioned below are based on
+      ** the vanilla build of sqlite3.wasm with -Oz (our shipping
+      ** configuration). Comments like "saves nothing" may not be
+      ** technically correct: "nothing" means "some neglible amount."
+      **
+      ** Note that performance gains/losses are _not_ taken into
+      ** account here: only wasm file size.
+      */
+      "--enable-bulk-memory-opt " /* required */
+      "--all-features "           /* required */
+      "--post-emscripten "        /* Saves roughly 12kb */
+      "--strip-debug "            /* We already wasm-strip, but in
+                                  ** case this environment has no
+                                  ** wasm-strip... */
+      /*
+      ** The rest are trial-and-error. See wasm-opt --help and search
+      ** for "Optimization passes" to find the full list.
+      **
+      ** With many flags this gets unusuably slow.
+      */
+      /*"--converge " saves nothing for the options we're using */
+      /*"--dce " saves nothing */
+      /*"--directize " saves nothing */
+      /*"--gsi " no: requires --closed-world flag, which does not
+      ** sound like something we want. */
+      /*"--gufa --gufa-cast-all --gufa-optimizing " costs roughly 2kb */
+      /*"--heap-store-optimization " saves nothing */
+      /*"--heap2local " saves nothing */
+      //"--inlining --inlining-optimizing " costs roughly 3kb */
+      "--local-cse " /* saves roughly 1kb */
+      /*"--once-reduction " saves nothing */
+      /*"--remove-memory-init " presumably a performance tweak */
+      /*"--remove-unused-names " saves nothing */
+      /*"--safe-heap "*/
+      /*"--vacuum " saves nothing */
+      ;
+    ps("ifeq (,$(bin.wasm-opt))");
+    ps("define SQLITE.CALL.WASM-OPT");
+    ps("echo 'wasm-opt not available for $(1)'");
+    ps("endef");
+    ps("else");
+    ps("define SQLITE.CALL.WASM-OPT");
+    pf("echo -n 'Before wasm-opt:'; ls -l $(1);\\\n"
+       "\trm -f wasm-opt-tmp.wasm;\\\n"
+       /* It's very likely that the set of wasm-opt flags varies from
+       ** version to version, so we'll ignore any errors here. */
+       "\tif $(bin.wasm-opt) $(1) -o wasm-opt-tmp.wasm \\\n"
+       "\t\t%s; then \\\n"
+       "\t\tmv wasm-opt-tmp.wasm $(1); \\\n"
+       "\t\techo -n 'After wasm-opt: '; \\\n"
+       "\t\tls -l $(1); \\\n"
+       "\telse \\\n"
+       "\t\techo 'WARNING: ignoring wasm-opt failure'; \\\n"
+       "\tfi\n",
+       zOptFlags
+    );
+    ps("endef");
+    ps("endif");
+  }
 }
 
 /*
@@ -75,23 +144,23 @@ static void mk_pre_post(const char *zName  /* build name */,
                         const char *zMode  /* build mode */,
                         const char *zCmppD /* optional -D flags for c-pp for the
                                            ** --pre/--post-js files. */){
-  pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zName, zMode);
+  pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zNM);
   pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD ? zCmppD : "");
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
   pf("pre-js.js.%s-%s := $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(MAKEFILE)\n", zNM);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST)\n", zNM);
 #if 1
-  pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 #else
   /* This part is needed if/when we re-enable the custom
   ** Module.instantiateModule() impl in api/pre-js.c-pp.js. */
   pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
      "$(c-pp.D.%s-%s) -Dcustom-Module.instantiateModule))\n", zNM, zNM);
   pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
   pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
@@ -107,12 +176,12 @@ static void mk_pre_post(const char *zName  /* build name */,
 
   /* --post-js=... */
   pf("post-js.js.%s-%s := $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(post-js.js.in),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(post-js.js.in),"
      "$(post-js.js.%s-%s),$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* --extern-post-js=... */
   pf("extern-post-js.js.%s-%s := $(dir.tmp)/extern-post-js.%s-%s.js\n", zNM, zNM);
-  pf("$(eval $(call C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* Combine flags for use with emcc... */
@@ -130,7 +199,7 @@ static void mk_pre_post(const char *zName  /* build name */,
      zNM, zNM, zNM);
   pf("pre-post-%s-%s.deps := $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM, zNM);
-  pf("# End --pre/--post flags for %s-%s%s", zName, zMode, zBanner);
+  pf("# End --pre/--post flags for %s-%s%s", zNM, zBanner);
 }
 
 /*
@@ -149,29 +218,29 @@ static void mk_fiddle(){
     pf("fiddle-module.js%s := %s/fiddle-module.js\n", zTail, zDir);
     pf("fiddle-module.wasm%s := "
        "$(subst .js,.wasm,$(fiddle-module.js%s))\n", zTail, zTail);
-    pf("$(fiddle-module.js%s):%s $(MAKEFILE) $(MAKEFILE.fiddle) "
+    pf("$(fiddle-module.js%s):%s $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
        "$(EXPORTED_FUNCTIONS.fiddle) "
        "$(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) "
        "$(SOAP.js)\n",
        zTail, (i ? " $(fiddle-module.js)" : ""));
     if( 1==i ){/*fiddle.debug*/
-      pf("	@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
+      pf("\t@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
     }
-    pf("	$(emcc.bin) -o $@ $(fiddle.emcc-flags%s) "
+    pf("\t$(bin.emcc) -o $@ $(fiddle.emcc-flags%s) "
        "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
        zTail);
-    pf("	$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
-    pf("	@cp -p $(SOAP.js) $(dir $@)\n");
+    pf("\t$(maybe-wasm-strip) $(fiddle-module.wasm%s)\n", zTail);
+    pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
     if( 1==i ){/*fiddle.debug*/
-      pf("	cp -p $(dir.fiddle)/index.html "
+      pf("\tcp -p $(dir.fiddle)/index.html "
          "$(dir.fiddle)/fiddle.js "
          "$(dir.fiddle)/fiddle-worker.js "
          "$(dir $@)\n");
     }
-    pf("	@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
-       "		test -f $${i} || continue;             \\\n"
-       "		gzip < $${i} > $${i}.gz; \\\n"
-       "	done\n", zDir, zDir, zDir);
+    pf("\t@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
+       "\t\ttest -f $${i} || continue;             \\\n"
+       "\t\tgzip < $${i} > $${i}.gz; \\\n"
+       "\tdone\n", zDir, zDir, zDir);
     if( 0==i ){
       ps("fiddle: $(fiddle-module.js)");
     }else{
@@ -193,6 +262,10 @@ static void mk_lib_mode(const char *zName     /* build name */,
                         const char *zJsOut    /* name of generated sqlite3.js/.mjs */,
                         const char *zCmppD    /* extra -D flags for c-pp */,
                         const char *zEmcc     /* extra flags for emcc */){
+  const char * zWasmOut = "$(basename $@).wasm"
+    /* The various targets named X.js or X.mjs (zJsOut) also generate
+    ** X.wasm, and we need that part of the name to perform some
+    ** post-processing after Emscripten generates X.wasm. */;
   assert( zName );
   assert( zMode );
   assert( zApiJsOut );
@@ -201,22 +274,29 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zEmcc ) zEmcc = "";
 
   pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
-  pf("ifneq (1,$(MAKING_CLEAN))\n");
+  pf("# zApiJsOut=%s\n# zJsOut=%s\n# zCmppD=%s\n", zApiJsOut, zJsOut, zCmppD);
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
   mk_pre_post(zNM, zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, zEmcc);
   }
-  pf("$(eval $(call C-PP.FILTER, $(sqlite3-api.js.in), %s, %s))\n",
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER, $(sqlite3-api.js.in), %s, %s))\n",
      zApiJsOut, zCmppD);
 
   /* target zJsOut */
-  pf("%s: %s $(MAKEFILE) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
-     "$(pre-post-%s-%s.deps)\n",
+  pf("%s: %s $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
+     "$(pre-post-%s-%s.deps) "
+     "$(sqlite3-api.ext.jses)"
+     /* ^^^ maintenance reminder: we set these as deps so that they
+        get copied into place early. That allows the developer to
+        reload the base-most test pages while the later-stage builds
+        are still compiling, which is especially helpful when running
+        builds with long build times (like -Oz). */
+     "\n",
      zJsOut, zApiJsOut, zNM);
   pf("\t@echo \"Building $@ ...\"\n");
-  pf("\t$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
+  pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
   pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n", zMode);
   pf("\t\t$(pre-post-%s-%s.flags) \\\n", zNM);
   pf("\t\t$(emcc.flags.%s) $(emcc.flags.%s.%s) \\\n", zName, zNM);
@@ -224,36 +304,59 @@ static void mk_lib_mode(const char *zName     /* build name */,
      "\t\t$(cflags.%s) $(cflags.%s.%s) \\\n"
      "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n", zName, zNM);
   if( bIsEsm ){
-    /* TODO? Replace this CALL with the corresponding makefile code.
-    ** OTOH, we also use this $(call) in the speedtest1-wasmfs build,
-    ** which is not part of the rules emitted by this program. */
-    pf("\t@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
+    /* TODO? Replace this $(call) with the corresponding makefile
+    ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
+    ** build, which is not part of the rules emitted by this
+    ** program. */
+    pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
        0==strcmp("sqlite3-wasmfs", zName) ? 1 : 0);
   }
-  pf("\t@dotwasm=$(basename $@).wasm; \\\n"
-     "\tchmod -x $$dotwasm; \\\n"
-     "\t$(maybe-wasm-strip) $$dotwasm; \\\n");
+  pf("\t@chmod -x %s; \\\n"
+     "\t\t$(maybe-wasm-strip) %s;\n",
+     zWasmOut, zWasmOut);
+  pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zWasmOut);
+  pf("\t@sed -i -e '/^var _sqlite3.*createExportWrapper/d' %s || exit; \\\n"
+     /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
+     "\t\techo 'Stripped out createExportWrapper() parts.'\n",
+     zJsOut) /* Our JS code installs bindings of each WASM export. The
+                generated Emscripten JS file does the same using its
+                own framework, but we don't use those results and can
+                speed up lib init, and reduce memory cost
+                considerably, by stripping them out. */;
   /*
-  ** The above $(emcc.bin) call will write zJsOut and will create a
-  ** like-named .wasm file. That .wasm file name gets hard-coded into
-  ** zJsOut so we need to, for some cases, patch zJsOut to use the
-  ** name sqlite3.wasm instead. Note that the resulting .wasm file is
-  ** identical for all builds for which zEmcc is empty.
+  ** The above $(bin.emcc) call will write zJsOut and will create a
+  ** like-named .wasm file (zWasmOut). That .wasm file name gets
+  ** hard-coded into zJsOut so we need to, for some cases, patch
+  ** zJsOut to use the name sqlite3.wasm instead. Note that the
+  ** resulting .wasm file is identical for all builds for which zEmcc
+  ** is empty.
   */
   if( 0==strcmp("bundler-friendly", zMode)
-      || 0==strcmp("node", zMode) ) {
-    pf("\techo 'Patching $@ for %s.wasm...' \\\n", zName);
-    pf("\trm -f $$dotwasm; dotwasm=; \\\n"
-       "\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit $$?; \\\n",
+      || 0==strcmp("node", zMode) ){
+    pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", zName);
+    pf("\t\trm -f %s; \\\n", zWasmOut);
+    pf("\t\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit;\n",
+       /* ^^^^^^ reminder: Mac/BSD sed has no -i flag */
        zNM, zName);
+    pf("\t@ls -la $@\n");
+    if( 0==strcmp("bundler-friendly", zMode) ){
+      /* Avoid a 3rd occurance of the bug fixed by 65798c09a00662a3,
+      ** which was (in two cases) caused by makefile refactoring and
+      ** not recognized until after a release was made with the broken
+      ** sqlite3-bundler-friendly.mjs: */
+      pf("\t@if grep -e '^ *importScripts(' $@; "
+         "then echo 'ERROR: bug fixed in 65798c09a00662a3 has re-appeared'; "
+         "exit 1; fi;\n");
+    }
+
+  }else{
+    pf("\t@ls -la %s $@\n", zWasmOut);
   }
-  pf("\tls -la $$dotwasm $@\n");
   if( 0!=strcmp("sqlite3-wasmfs", zName) ){
     /* The sqlite3-wasmfs build is optional and needs to be invoked
     ** conditionally using info we don't have here. */
     pf("all: %s\n", zJsOut);
   }
-  ps("endif\n# ^^^ !$(MAKING_CLEAN)");
   pf("# End build [%s-%s]%s", zNM, zBanner);
 }
 

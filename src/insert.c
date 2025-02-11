@@ -927,6 +927,7 @@ void sqlite3Insert(
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
   int *aRegIdx = 0;     /* One register allocated to each index */
+  int *aTabColMap = 0;  /* Mapping from pTab columns to pCol entries */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
@@ -1071,31 +1072,25 @@ void sqlite3Insert(
   */
   bIdListInOrder = (pTab->tabFlags & (TF_OOOHidden|TF_HasStored))==0;
   if( pColumn ){
-    assert( pColumn->eU4!=EU4_EXPR );
-    pColumn->eU4 = EU4_IDX;
+    aTabColMap = sqlite3DbMallocZero(db, pTab->nCol*sizeof(int));
+    if( aTabColMap==0 ) goto insert_cleanup;
     for(i=0; i<pColumn->nId; i++){
-      pColumn->a[i].u4.idx = -1;
-    }
-    for(i=0; i<pColumn->nId; i++){
-      for(j=0; j<pTab->nCol; j++){
-        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
-          pColumn->a[i].u4.idx = j;
-          if( i!=j ) bIdListInOrder = 0;
-          if( j==pTab->iPKey ){
-            ipkColumn = i;  assert( !withoutRowid );
-          }
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-          if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
-            sqlite3ErrorMsg(pParse,
-               "cannot INSERT into generated column \"%s\"",
-               pTab->aCol[j].zCnName);
-            goto insert_cleanup;
-          }
-#endif
-          break;
+      j = sqlite3ColumnIndex(pTab, pColumn->a[i].zName);
+      if( j>=0 ){
+        if( aTabColMap[j]==0 ) aTabColMap[j] = i+1;
+        if( i!=j ) bIdListInOrder = 0;
+        if( j==pTab->iPKey ){
+          ipkColumn = i;  assert( !withoutRowid );
         }
-      }
-      if( j>=pTab->nCol ){
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+        if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
+          sqlite3ErrorMsg(pParse,
+             "cannot INSERT into generated column \"%s\"",
+             pTab->aCol[j].zCnName);
+          goto insert_cleanup;
+        }
+#endif
+      }else{
         if( sqlite3IsRowid(pColumn->a[i].zName) && !withoutRowid ){
           ipkColumn = i;
           bIdListInOrder = 0;
@@ -1393,7 +1388,7 @@ void sqlite3Insert(
         continue;
       }else if( pColumn==0 ){
         /* Hidden columns that are not explicitly named in the INSERT
-        ** get there default value */
+        ** get their default value */
         sqlite3ExprCodeFactorable(pParse,
             sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
             iRegStore);
@@ -1401,9 +1396,9 @@ void sqlite3Insert(
       }
     }
     if( pColumn ){
-      assert( pColumn->eU4==EU4_IDX );
-      for(j=0; j<pColumn->nId && pColumn->a[j].u4.idx!=i; j++){}
-      if( j>=pColumn->nId ){
+      j = aTabColMap[i];
+      assert( j>=0 && j<=pColumn->nId );   
+      if( j==0 ){
         /* A column not named in the insert column list gets its
         ** default value */
         sqlite3ExprCodeFactorable(pParse,
@@ -1411,7 +1406,7 @@ void sqlite3Insert(
             iRegStore);
         continue;
       }
-      k = j;
+      k = j - 1;
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
       sqlite3ExprCodeFactorable(pParse,
@@ -1656,7 +1651,10 @@ insert_cleanup:
   sqlite3ExprListDelete(db, pList);
   sqlite3UpsertDelete(db, pUpsert);
   sqlite3SelectDelete(db, pSelect);
-  sqlite3IdListDelete(db, pColumn);
+  if( pColumn ){
+    sqlite3IdListDelete(db, pColumn);
+    sqlite3DbFree(db, aTabColMap);
+  }
   if( aRegIdx ) sqlite3DbNNFreeNN(db, aRegIdx);
 }
 

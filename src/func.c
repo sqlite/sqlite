@@ -354,14 +354,8 @@ static void substrFunc(
   int len;
   int p0type;
   i64 p1, p2;
-  int negP2 = 0;
 
   assert( argc==3 || argc==2 );
-  if( sqlite3_value_type(argv[1])==SQLITE_NULL
-   || (argc==3 && sqlite3_value_type(argv[2])==SQLITE_NULL)
-  ){
-    return;
-  }
   p0type = sqlite3_value_type(argv[0]);
   p1 = sqlite3_value_int64(argv[1]);
   if( p0type==SQLITE_BLOB ){
@@ -379,28 +373,31 @@ static void substrFunc(
       }
     }
   }
-#ifdef SQLITE_SUBSTR_COMPATIBILITY
-  /* If SUBSTR_COMPATIBILITY is defined then substr(X,0,N) work the same as
-  ** as substr(X,1,N) - it returns the first N characters of X.  This
-  ** is essentially a back-out of the bug-fix in check-in [5fc125d362df4b8]
-  ** from 2009-02-02 for compatibility of applications that exploited the
-  ** old buggy behavior. */
-  if( p1==0 ) p1 = 1; /* <rdar://problem/6778339> */
-#endif
   if( argc==3 ){
     p2 = sqlite3_value_int64(argv[2]);
-    if( p2<0 ){
-      p2 = -p2;
-      negP2 = 1;
-    }
+    if( p2==0 && sqlite3_value_type(argv[2])==SQLITE_NULL ) return;
   }else{
     p2 = sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH];
+  }
+  if( p1==0 ){
+#ifdef SQLITE_SUBSTR_COMPATIBILITY
+    /* If SUBSTR_COMPATIBILITY is defined then substr(X,0,N) work the same as
+    ** as substr(X,1,N) - it returns the first N characters of X.  This
+    ** is essentially a back-out of the bug-fix in check-in [5fc125d362df4b8]
+    ** from 2009-02-02 for compatibility of applications that exploited the
+    ** old buggy behavior. */
+    p1 = 1; /* <rdar://problem/6778339> */
+#endif
+    if( sqlite3_value_type(argv[1])==SQLITE_NULL ) return;
   }
   if( p1<0 ){
     p1 += len;
     if( p1<0 ){
-      p2 += p1;
-      if( p2<0 ) p2 = 0;
+      if( p2<0 ){
+        p2 = 0;
+      }else{
+        p2 += p1;
+      }
       p1 = 0;
     }
   }else if( p1>0 ){
@@ -408,12 +405,13 @@ static void substrFunc(
   }else if( p2>0 ){
     p2--;
   }
-  if( negP2 ){
-    p1 -= p2;
-    if( p1<0 ){
-      p2 += p1;
-      p1 = 0;
+  if( p2<0 ){
+    if( p2<-p1 ){
+      p2 = p1;
+    }else{
+      p2 = -p2;
     }
+    p1 -= p2;
   }
   assert( p1>=0 && p2>=0 );
   if( p0type!=SQLITE_BLOB ){
@@ -1870,7 +1868,10 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
     assert( p->cnt>0 );
     p->cnt--;
     if( !p->approx ){
-      p->iSum -= sqlite3_value_int64(argv[0]);
+      if( sqlite3SubInt64(&p->iSum, sqlite3_value_int64(argv[0])) ){
+        p->ovrfl = 1;
+        p->approx = 1;
+      }
     }else if( type==SQLITE_INTEGER ){
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal!=SMALLEST_INT64 ){
@@ -2696,12 +2697,10 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(rtrim,              2, 2, 0, trimFunc         ),
     FUNCTION(trim,               1, 3, 0, trimFunc         ),
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
-    FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
-    FUNCTION(min,                0, 0, 1, 0                ),
+    FUNCTION(min,               -3, 0, 1, minmaxFunc       ),
     WAGGREGATE(min, 1, 0, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
-    FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
-    FUNCTION(max,                0, 1, 1, 0                ),
+    FUNCTION(max,               -3, 1, 1, minmaxFunc       ),
     WAGGREGATE(max, 1, 1, 1, minmaxStep, minMaxFinalize, minMaxValue, 0,
                                  SQLITE_FUNC_MINMAX|SQLITE_FUNC_ANYORDER ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
@@ -2728,11 +2727,8 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
     FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     FUNCTION(unhex,              2, 0, 0, unhexFunc        ),
-    FUNCTION(concat,            -1, 0, 0, concatFunc       ),
-    FUNCTION(concat,             0, 0, 0, 0                ),
-    FUNCTION(concat_ws,         -1, 0, 0, concatwsFunc     ),
-    FUNCTION(concat_ws,          0, 0, 0, 0                ),
-    FUNCTION(concat_ws,          1, 0, 0, 0                ),
+    FUNCTION(concat,            -3, 0, 0, concatFunc       ),
+    FUNCTION(concat_ws,         -4, 0, 0, concatwsFunc     ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
@@ -2776,8 +2772,6 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
     FUNCTION(unknown,           -1, 0, 0, unknownFunc      ),
 #endif
-    FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,           0, 0, 0, 0                ),
 #ifdef SQLITE_ENABLE_MATH_FUNCTIONS
     MFUNCTION(ceil,              1, xCeil,     ceilingFunc ),
     MFUNCTION(ceiling,           1, xCeil,     ceilingFunc ),
@@ -2815,11 +2809,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     MFUNCTION(pi,                0, 0,         piFunc      ),
 #endif /* SQLITE_ENABLE_MATH_FUNCTIONS */
     FUNCTION(sign,               1, 0, 0,      signFunc    ),
-    INLINE_FUNC(coalesce,       -1, INLINEFUNC_coalesce, 0 ),
-    INLINE_FUNC(iif,             2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(iif,             3, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              2, INLINEFUNC_iif,      0 ),
-    INLINE_FUNC(if,              3, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(coalesce,       -4, INLINEFUNC_coalesce, 0 ),
+    INLINE_FUNC(iif,            -4, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(if,             -4, INLINEFUNC_iif,      0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();

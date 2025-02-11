@@ -51,7 +51,7 @@
 
    Its global-scope symbol is intended only to provide an easy way to
    make it available to 3rd-party scripts and "should" be deleted
-   after calling it. That symbols is _not_ used within the library.
+   after calling it. That symbol is _not_ used within the library.
 
    Forewarning: this API explicitly targets only browser
    environments. If a given non-browser environment has the
@@ -69,7 +69,8 @@
    - WASM-exported "indirect function table" access and
      manipulation. e.g.  creating new WASM-side functions using JS
      functions, analog to Emscripten's addFunction() and
-     uninstallFunction() but slightly different.
+     uninstallFunction() but slightly different and with more useful
+     lifetime semantics.
 
    - Get/set specific heap memory values, analog to Emscripten's
      getValue() and setValue().
@@ -165,11 +166,11 @@
    This code is developed and maintained in conjunction with the
    Jaccwabyt project:
 
-   https://fossil.wanderinghorse.net/r/jaccwabbyt
+   https://fossil.wanderinghorse.net/r/jaccwabyt
 
    More specifically:
 
-   https://fossil.wanderinghorse.net/r/jaccwabbyt/file/common/whwasmutil.js
+   https://fossil.wanderinghorse.net/r/jaccwabyt/file/common/whwasmutil.js
 */
 globalThis.WhWasmUtilInstaller = function(target){
   'use strict';
@@ -1627,7 +1628,7 @@ globalThis.WhWasmUtilInstaller = function(target){
        need a level of hand-written wrappers around them, depending on
        how they're used, in order to provide the client with JS
        strings. Alternately, clients will need to perform such conversions
-       on their own, e.g. using cstrtojs(). Or maybe we can find a way
+       on their own, e.g. using cstrToJs(). Or maybe we can find a way
        to perform such conversions here, via addition of an xWrap()-style
        function signature to the options argument.
   */
@@ -2055,7 +2056,7 @@ globalThis.WhWasmUtilInstaller = function(target){
       if(1===argc) return xcvPart.get(typeName);
       else if(2===argc){
         if(!adapter){
-          delete xcvPart.get(typeName);
+          xcvPart.delete(typeName);
           return func;
         }else if(!(adapter instanceof Function)){
           toss(modeName,"requires a function argument.");

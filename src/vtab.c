@@ -479,11 +479,12 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     ** schema table.  We just need to update that slot with all
     ** the information we've collected.
     **
-    ** The VM register number pParse->regRowid holds the rowid of an
+    ** The VM register number pParse->u1.cr.regRowid holds the rowid of an
     ** entry in the sqlite_schema table that was created for this vtab
     ** by sqlite3StartTable().
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    assert( pParse->isCreate );
     sqlite3NestedParse(pParse,
       "UPDATE %Q." LEGACY_SCHEMA_TABLE " "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
@@ -492,7 +493,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       pTab->zName,
       pTab->zName,
       zStmt,
-      pParse->regRowid
+      pParse->u1.cr.regRowid
     );
     v = sqlite3GetVdbe(pParse);
     sqlite3ChangeCookie(pParse, iDb);
@@ -830,7 +831,9 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   z = (const unsigned char*)zCreateTable;
   for(i=0; aKeyword[i]; i++){
     int tokenType = 0;
-    do{ z += sqlite3GetToken(z, &tokenType); }while( tokenType==TK_SPACE );
+    do{
+      z += sqlite3GetToken(z, &tokenType);
+    }while( tokenType==TK_SPACE || tokenType==TK_COMMENT );
     if( tokenType!=aKeyword[i] ){
       sqlite3ErrorWithMsg(db, SQLITE_ERROR, "syntax error");
       return SQLITE_ERROR;

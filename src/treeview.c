@@ -215,7 +215,10 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
       sqlite3_str_appendf(&x, " DDL");
     }
     if( pItem->fg.isCte ){
-      sqlite3_str_appendf(&x, " CteUse=0x%p", pItem->u2.pCteUse);
+      static const char *aMat[] = {",MAT", "", ",NO-MAT"};
+      sqlite3_str_appendf(&x, " CteUse=%d%s",
+                          pItem->u2.pCteUse->nUse,
+                          aMat[pItem->u2.pCteUse->eM10d]);
     }
     if( pItem->fg.isOn || (pItem->fg.isUsing==0 && pItem->u3.pOn!=0) ){
       sqlite3_str_appendf(&x, " isOn");
@@ -246,9 +249,6 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
         sqlite3TreeViewColumnList(pView, pTab->aCol, pTab->nCol, 1);
       }
       assert( (int)pItem->fg.isNestedFrom == IsNestedFrom(pItem) );
-      sqlite3TreeViewPush(&pView, 0);
-      sqlite3TreeViewLine(pView, "SUBQUERY");
-      sqlite3TreeViewPop(&pView);
       sqlite3TreeViewSelect(pView, pItem->u4.pSubq->pSelect, 0);
     }
     if( pItem->fg.isTabFunc ){
@@ -978,21 +978,7 @@ void sqlite3TreeViewBareIdList(
       if( zName==0 ) zName = "(null)";
       sqlite3TreeViewPush(&pView, moreToFollow);
       sqlite3TreeViewLine(pView, 0);
-      if( pList->eU4==EU4_NONE ){
-        fprintf(stdout, "%s\n", zName);
-      }else if( pList->eU4==EU4_IDX ){
-        fprintf(stdout, "%s (%d)\n", zName, pList->a[i].u4.idx);
-      }else{
-        assert( pList->eU4==EU4_EXPR );
-        if( pList->a[i].u4.pExpr==0 ){
-          fprintf(stdout, "%s (pExpr=NULL)\n", zName);
-        }else{
-          fprintf(stdout, "%s\n", zName);
-          sqlite3TreeViewPush(&pView, i<pList->nId-1);
-          sqlite3TreeViewExpr(pView, pList->a[i].u4.pExpr, 0);
-          sqlite3TreeViewPop(&pView);
-        }
-      }
+      fprintf(stdout, "%s\n", zName);
       sqlite3TreeViewPop(&pView);
     }
   }

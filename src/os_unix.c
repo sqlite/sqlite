@@ -1665,7 +1665,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
   if( (pFile->ctrlFlags & (UNIXFILE_EXCL|UNIXFILE_RDONLY))==UNIXFILE_EXCL ){
     if( pInode->bProcessLock==0 ){
       struct flock lock;
-      assert( pInode->nLock==0 );
+      /* assert( pInode->nLock==0 ); <-- Not true if unix-excl READONLY used */
       lock.l_whence = SEEK_SET;
       lock.l_start = SHARED_FIRST;
       lock.l_len = SHARED_SIZE;

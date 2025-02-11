@@ -163,9 +163,11 @@ LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shlib ?= -shared
+LDFLAGS.rt ?= # nanosleep on some platforms
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.libsqlite3.soname ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific ?= # see https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary across platforms
@@ -412,7 +414,7 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.configure)
+  $(LDFLAGS.rt) $(LDFLAGS.configure)
 
 #
 # $(install-dir.XYZ) = dirs for installation.
@@ -434,7 +436,8 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	$(INSTALL) -d "$@"
+	if [ ! -d "$@" ]; then $(INSTALL) -d "$@"; fi
+# ^^^^ on some platforms, install -d fails if the target already exists.
 
 #
 # After jimsh is compiled, we run some sanity checks to ensure that
@@ -1043,9 +1046,9 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
-	rm tsrc/sqlite.h.in tsrc/parse.y
+	rm -f tsrc/sqlite.h.in tsrc/parse.y
 	$(B.tclsh) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
-	mv vdbe.new tsrc/vdbe.c
+	mv -f vdbe.new tsrc/vdbe.c
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
@@ -1066,7 +1069,7 @@ mksourceid$(B.exe): $(MAKE_SANITY_CHECK) $(TOP)/tool/mksourceid.c
 sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
     $(TOP)/manifest mksourceid$(B.exe) \
 		$(TOP)/VERSION $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
+	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) -o sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
 		$(B.tclsh)
@@ -1075,7 +1078,7 @@ sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe
 	cp $(TOP)/ext/session/sqlite3session.h .
 
 sqlite3r.h: sqlite3.h $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover >sqlite3r.h
+	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) --enable-recover -o sqlite3r.h
 
 sqlite3r.c: sqlite3.c sqlite3r.h $(B.tclsh)
 	cp $(TOP)/ext/recover/sqlite3recover.c tsrc/
@@ -1411,7 +1414,7 @@ all: lib
 #
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3) \
-		$(LDFLAGS.libsqlite3.soname)
+		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
@@ -1428,6 +1431,9 @@ all: so
 # N.B. we initially had a link named libsqlite3.so.3 but it's
 # unnecessary unless we want to set SONAME to libsqlite3.so.3, which
 # is also unnecessary.
+#
+# N.B. different transformations are applied on systems where $(T.dll)
+# is ".dylib" and none of the following docs apply on such systems.
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1465,8 +1471,16 @@ all: so
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
-		cd "$(install-dir.lib)" || exit $$?; \
+	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	if [ x.dylib = x$(T.dll) ]; then \
+		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+		mv $(libsqlite3.SO) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+	else \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
@@ -1482,7 +1496,8 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		fi
+		fi; \
+	fi
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so
@@ -1507,7 +1522,7 @@ install: install-headers
 # libtclsqlite3...
 #
 pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
+	echo 'package ifneeded sqlite3 $(PACKAGE_VERSION) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] Sqlite3]' > $@
 pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
@@ -1572,7 +1587,14 @@ tclextension-uninstall:
 # by $TCLSH_CMD, including prior versions.
 #
 tclextension-list:
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+
+# Verify that the SQLite TCL extension that is loaded by default
+# in $(TCLSH_CMD) is the same as the version of SQLite for the
+# current source tree
+#
+tclextension-verify: sqlite3.h
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --version-check
 
 #
 # FTS5 things
@@ -1929,6 +1951,21 @@ amalgamation-tarball: sqlite3.c sqlite3rc.h
 snapshot-tarball: sqlite3.c sqlite3rc.h
 	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh --snapshot
 
+# Build a ZIP archive snapshot of the latest check-in.
+#
+sqlite-src.zip:	$(TOP)/tool/mksrczip.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mksrczip.tcl
+
+# Build a ZIP archive of the amaglamation
+#
+sqlite-amalgamation.zip:	$(TOP)/tool/mkamalzip.tcl sqlite3.c sqlite3.h shell.c sqlite3ext.h
+	$(TCLSH_CMD) $(TOP)/tool/mkamalzip.tcl
+
+# Build all the source code deliverables
+#
+src-archives: sqlite-amalgamation.zip amalgamation-tarball sqlite-src.zip
+	ls -ltr *.zip *.tar.gz | tail -3
+
 # Build a ZIP archive containing various command-line tools.
 #
 tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
@@ -1995,7 +2032,7 @@ sqlite3d$(T.exe):	shell.c $(LIBOBJS0)
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 
 install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
-	$(INSTALL) -s sqlite3$(T.exe) "$(install-dir.bin)"
+	$(INSTALL) sqlite3$(T.exe) "$(install-dir.bin)"
 install-shell-1:
 install: install-shell-$(HAVE_WASI_SDK)
 
@@ -2009,7 +2046,7 @@ sqldiff$(T.exe): $(sqldiff.$(LINK_TOOLS_DYNAMICALLY).deps)
 	$(sqldiff.$(LINK_TOOLS_DYNAMICALLY).rules)
 
 install-diff: sqldiff$(T.exe) $(install-dir.bin)
-	$(INSTALL) -s sqldiff$(T.exe) "$(install-dir.bin)"
+	$(INSTALL) sqldiff$(T.exe) "$(install-dir.bin)"
 #install: install-diff
 
 dbhash$(T.exe):	$(TOP)/tool/dbhash.c sqlite3.o sqlite3.h
@@ -2188,7 +2225,7 @@ SHELL_DEP = \
     $(TOP)/src/test_windirent.h
 
 shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh)
-	$(B.tclsh) $(TOP)/tool/mkshellc.tcl >shell.c
+	$(B.tclsh) $(TOP)/tool/mkshellc.tcl shell.c
 
 #
 # Rules to build the extension objects.
@@ -2296,7 +2333,7 @@ tidy: tidy-.
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO)
+	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO) libsqlite3$(T.dll).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
