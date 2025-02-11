@@ -3055,6 +3055,7 @@ op_column_restart:
     goto op_column_restart;
   }
 
+op_column_again:
   /* Make sure at least the first p2+1 entries of the header have been
   ** parsed and valid information is in aOffset[] and pC->aType[].
   */
@@ -3208,6 +3209,30 @@ op_column_restart:
         goto abort_due_to_error;
       }
     }
+  }
+
+  /* Try to save work if two or more OP_Columns against the same
+  ** cursor occur one right after another.
+  **
+  ** This optimization saves CPU cycles when it applies.  But it is
+  ** not applicable very often.  So we often burn more CPU cycles
+  ** determining whether or not the optimization does apply than the
+  ** optimization actually saves, depending on the workload.  Even
+  ** when there is a net gain, it is not that much.
+  **
+  ** This change (and this comment) are saved for future reference.
+  ** But unless some further improvement is found, it does not seem
+  ** worth the added complexity.
+  */
+  if( pOp[1].opcode==OP_Column
+   && pC==p->apCsr[pOp[1].p1]
+  ){
+    UPDATE_MAX_BLOBSIZE(pDest);
+    REGISTER_TRACE(pOp->p3, pDest);
+    pOp++;
+    nVmStep++;
+    p2 = (u32)pOp->p2;
+    goto op_column_again;
   }
 
 op_column_out:
