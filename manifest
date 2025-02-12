@@ -1,5 +1,5 @@
-C Fix\stest\sscript\serrors\sin\swalsetlk3.test.\sTests\sstill\sdon't\sall\spass.
-D 2025-02-12T08:07:10.218
+C Have\sthe\swin32\sVFS\stake\sa\stemporary\sshared\slock\s(instead\sof\sthe\scurrent\sexclusive)\son\sthe\spending-byte\swhen\staking\sa\sSHARED\slock\son\sa\sdb.\sDo\snot\slock\sthe\spending-byte\sat\sall\swhen\staking\san\sEXCLUSIVE\slock\sif\sRESERVED\sis\snot\salready\sheld.
+D 2025-02-12T17:21:24.919
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -765,7 +765,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 1e887f1f926a76a65ebcef79aa6da76e369ad7f899fa211c6ee56ff953c098a2
-F src/os_win.c 68a2b90772c7510f4dd826b6e8c79c9d4f648ea98cdd7677e7fb3dec1db26ebc
+F src/os_win.c 9f6120d7492e6302e509c97f7eda435319e7f3446325547b377edfeb7f477fd1
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 303e8009ab59aad32030407baf3eff9443f7f9bed7947218b78293b06bba1737
-R 92a553ba4589551655030e50133e0a04
+P 56eb4114f8bf9971960998ae0b79352767657ee19b5bdfec5149906e72ba170f
+R 98fe0af89da0584abe14ea6f46e29724
 U dan
-Z ac5c8a11b435d673fdcd5b48f8d17f0d
+Z 8a00be751ab6519922142a79f577f298
 # Remove this line to create a well-formed Fossil manifest.

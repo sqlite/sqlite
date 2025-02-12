@@ -3473,39 +3473,51 @@ static int winLock(sqlite3_file *id, int locktype){
   assert( locktype!=PENDING_LOCK );
   assert( locktype!=RESERVED_LOCK || pFile->locktype==SHARED_LOCK );
 
-  /* Lock the PENDING_LOCK byte if we need to acquire a PENDING lock or
+  /* Lock the PENDING_LOCK byte if we need to acquire an EXCLUSIVE lock or
   ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
   ** the PENDING_LOCK byte is temporary.
   */
   newLocktype = pFile->locktype;
-  if( pFile->locktype==NO_LOCK
-   || (locktype==EXCLUSIVE_LOCK && pFile->locktype<=RESERVED_LOCK)
+  if( locktype==SHARED_LOCK
+   || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
   ){
     int cnt = 3;
-    while( cnt-->0 && (res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
-                                         PENDING_BYTE, 0, 1, 0))==0 ){
+
+    /* Flags for the LockFileEx() call. This should be an exclusive lock if
+    ** this call is to obtain EXCLUSIVE, or a shared lock if this call is to
+    ** obtain SHARED.  */
+    int flags = LOCKFILE_FAIL_IMMEDIATELY;
+    if( locktype==EXCLUSIVE_LOCK ){
+      flags |= LOCKFILE_EXCLUSIVE_LOCK;
+    }
+    while( cnt>0 ){
       /* Try 3 times to get the pending lock.  This is needed to work
       ** around problems caused by indexing and/or anti-virus software on
       ** Windows systems.
+      **
       ** If you are using this code as a model for alternative VFSes, do not
-      ** copy this retry logic.  It is a hack intended for Windows only.
-      */
+      ** copy this retry logic.  It is a hack intended for Windows only.  */
+      res = winLockFile(&pFile->h, flags, PENDING_BYTE, 0, 1, 0);
+      if( res ) break;
+
       lastErrno = osGetLastError();
-      OSTRACE(("LOCK-PENDING-FAIL file=%p, count=%d, result=%d\n",
-               pFile->h, cnt, res));
+      OSTRACE(("LOCK-PENDING-FAIL file=%p, count=%d, result=%d\n", 
+            pFile->h, cnt, res
+      ));
+
       if( lastErrno==ERROR_INVALID_HANDLE ){
         pFile->lastErrno = lastErrno;
         rc = SQLITE_IOERR_LOCK;
-        OSTRACE(("LOCK-FAIL file=%p, count=%d, rc=%s\n",
-                 pFile->h, cnt, sqlite3ErrName(rc)));
+        OSTRACE(("LOCK-FAIL file=%p, count=%d, rc=%s\n", 
+              pFile->h, cnt, sqlite3ErrName(rc)
+        ));
         return rc;
       }
-      if( cnt ) sqlite3_win32_sleep(1);
+
+      cnt--;
+      if( cnt>0 ) sqlite3_win32_sleep(1);
     }
     gotPendingLock = res;
-    if( !res ){
-      lastErrno = osGetLastError();
-    }
   }
 
   /* Acquire a shared lock
