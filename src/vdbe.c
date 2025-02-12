@@ -8363,6 +8363,7 @@ case OP_VFilter: {   /* jump, ncycle */
 
   /* Invoke the xFilter method */
   apArg = p->apArg;
+  assert( nArg<=p->napArg );
   for(i = 0; i<nArg; i++){
     apArg[i] = &pArgc[i+1];
   }
@@ -8573,6 +8574,7 @@ case OP_VUpdate: {
     u8 vtabOnConflict = db->vtabOnConflict;
     apArg = p->apArg;
     pX = &aMem[pOp->p3];
+    assert( nArg<=p->napArg );
     for(i=0; i<nArg; i++){
       assert( memIsValid(pX) );
       memAboutToChange(p, pX);

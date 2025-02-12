@@ -1,8 +1,17 @@
 ########################################################################
 # This is a main makefile for the "autoconf" bundle of SQLite. This is
 # a trimmed-down version of the canonical makefile, devoid of most
-# documentation. For the full docs, see 'main.mk' in the canonical
+# documentation. For the full docs, see /main.mk in the canonical
 # source tree.
+#
+# Maintenance reminders:
+#
+# - To keep this working with an out-of-tree build, be sure to prefix
+#   input file names with $(TOP)/ where appropriate (which is most
+#   places).
+#
+# - The original/canonical recipes can be found in /main.mk in the
+#   canonical source tree.
 all:
 
 TOP = @abs_top_srcdir@
@@ -58,9 +67,9 @@ LDFLAGS.pthread = @LDFLAGS_PTHREAD@
 LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
+LDFLAGS.rt = @LDFLAGS_RT@
 LDFLAGS.icu = @LDFLAGS_ICU@
 CFLAGS.icu = @CFLAGS_ICU@
-LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 
 # When cross-compiling, we need to avoid the -s flag because it only
 # works on the build host's platform.
@@ -78,7 +87,8 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	$(INSTALL) -d "$@"
+	if [ ! -d "$@" ]; then $(INSTALL) -d "$@"; fi
+# ^^^^ on some platforms, install -d fails if the target already exists.
 
 
 #
@@ -115,23 +125,30 @@ SHELL_OPT ?= @OPT_SHELL@
 #
 OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
+LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+# soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
+# os-specific: see
+# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+# - https://sqlite.org/forum/forumpost/0c7fc097b2
+
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.configure)
-LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
+  $(LDFLAGS.rt) $(LDFLAGS.configure)
 CFLAGS.libsqlite3 = -I. $(CFLAGS.core) $(CFLAGS.icu) $(OPT_FEATURE_FLAGS)
 
-sqlite3.o:	sqlite3.h sqlite3.c
-	$(CC) -c sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
+sqlite3.o: $(TOP)/sqlite3.h $(TOP)/sqlite3.c
+	$(CC) -c $(TOP)/sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
 
 libsqlite3.LIB = libsqlite3$(T.lib)
 libsqlite3.SO = libsqlite3$(T.dll)
 
 $(libsqlite3.SO): sqlite3.o
 	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
-		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.libsqlite3.soname)
+		$(LDFLAGS) $(LDFLAGS.libsqlite3) \
+		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 all: $(libsqlite3.SO)
 
 $(libsqlite3.LIB): sqlite3.o
@@ -140,8 +157,16 @@ all: $(libsqlite3.LIB)
 
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
-		cd "$(install-dir.lib)" || exit $$?; \
+	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	if [ x.dylib = x$(T.dll) ]; then \
+		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+		mv $(libsqlite3.SO) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+	else \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
@@ -157,7 +182,9 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		fi
+		fi; \
+	fi
+
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_LIB_SHARED)
 install: install-so
@@ -169,9 +196,9 @@ install-lib: install-lib-$(ENABLE_LIB_STATIC)
 install: install-lib
 
 
-sqlite3$(T.exe):	shell.c sqlite3.c
+sqlite3$(T.exe): $(TOP)/shell.c $(TOP)/sqlite3.c
 	$(CC) -o $@ \
-		shell.c sqlite3.c \
+		$(TOP)/shell.c $(TOP)/sqlite3.c \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
 		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
@@ -181,21 +208,21 @@ install-shell: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
 install: install-shell
 
-install-headers: sqlite3.h $(install-dir.include)
-	$(INSTALL.noexec) sqlite3.h sqlite3ext.h "$(install-dir.include)"
+install-headers: $(TOP)/sqlite3.h $(install-dir.include)
+	$(INSTALL.noexec) $(TOP)/sqlite3.h $(TOP)/sqlite3ext.h "$(install-dir.include)"
 install: install-headers
 
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
 	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 install: install-pc
 
-install-man1: sqlite3.1 $(install-dir.man1)
-	$(INSTALL.noexec) sqlite3.1 "$(install-dir.man1)"
+install-man1: $(TOP)/sqlite3.1 $(install-dir.man1)
+	$(INSTALL.noexec) $(TOP)/sqlite3.1 "$(install-dir.man1)"
 install: install-man1
 
 clean:
 	rm -f *.o sqlite3$(T.exe)
-	rm -f $(libsqlite3.LIB) $(libsqlite3.SO)
+	rm -f $(libsqlite3.LIB) $(libsqlite3.SO) $(libsqlite3.SO).a
 
 distclean: clean
 	rm -f jimsh0$(T.exe) config.* sqlite3.pc

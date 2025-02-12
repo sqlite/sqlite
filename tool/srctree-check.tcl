@@ -4,9 +4,7 @@
 # various aspects of the source tree are up-to-date.  Items checked include:
 #
 #     *    Makefile.msc and autoconf/Makefile.msc agree
-#     *    src/ctime.tcl is consistent with tool/mkctimec.tcl
 #     *    VERSION agrees with autoconf/tea/configure.ac
-#     *    src/pragma.h agrees with tool/mkpragmatab.tcl
 #
 # Other tests might be added later.  
 #
@@ -62,31 +60,3 @@ if {$f1 != $f2} {
   puts "...... Fix: tclsh tool/mkmsvcmin.tcl"
   incr NERR
 }
-
-######################### src/pragma.h ########################################
-
-set f1 [readfile $ROOT/src/pragma.h]
-exec $TCLSH $ROOT/tool/mkpragmatab.tcl tmp2.txt
-set f2 [readfile tmp2.txt]
-file delete tmp2.txt
-if {$f1 != $f2} {
-  puts "ERROR: ./src/pragma.h does not agree with ./tool/mkpragmatab.tcl"
-  puts "...... Fix: tclsh tool/mkpragmatab.tcl"
-  incr NERR
-}
-
-######################### src/ctime.c ########################################
-
-set f1 [readfile $ROOT/src/ctime.c]
-exec $TCLSH $ROOT/tool/mkctimec.tcl tmp3.txt
-set f2 [readfile tmp3.txt]
-file delete tmp3.txt
-if {$f1 != $f2} {
-  puts "ERROR: ./src/ctime.c does not agree with ./tool/mkctimec.tcl"
-  puts ".....  Fix: tclsh tool/mkctimec.tcl"
-  incr NERR
-}
-
-# If any errors are seen, exit 1 so that the build will fail.
-#
-if {$NERR>0} {exit 1}

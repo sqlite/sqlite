@@ -215,7 +215,8 @@ static void openStatTable(
         sqlite3NestedParse(pParse,
             "CREATE TABLE %Q.%s(%s)", pDb->zDbSName, zTab, aTable[i].zCols
         );
-        aRoot[i] = (u32)pParse->regRoot;
+        assert( pParse->isCreate || pParse->nErr );
+        aRoot[i] = (u32)pParse->u1.cr.regRoot;
         aCreateTbl[i] = OPFLAG_P2ISREG;
       }
     }else{

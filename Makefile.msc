@@ -1396,7 +1396,7 @@ SRC00 = \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
   $(TOP)\src\complete.c \
-  $(TOP)\src\ctime.c \
+  ctime.c \
   $(TOP)\src\date.c \
   $(TOP)\src\dbpage.c \
   $(TOP)\src\dbstat.c \
@@ -1495,7 +1495,7 @@ SRC04 = \
 SRC05 = \
   $(TOP)\src\pager.h \
   $(TOP)\src\pcache.h \
-  $(TOP)\src\pragma.h \
+  pragma.h \
   $(TOP)\src\sqlite.h.in \
   $(TOP)\src\sqlite3ext.h \
   $(TOP)\src\sqliteInt.h \
@@ -1698,7 +1698,7 @@ HDR = \
    $(TOP)\src\pager.h \
    $(TOP)\src\pcache.h \
    parse.h \
-   $(TOP)\src\pragma.h \
+   pragma.h \
    $(SQLITE3H) \
    sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
@@ -2099,8 +2099,11 @@ callback.lo:	$(TOP)\src\callback.c $(HDR)
 complete.lo:	$(TOP)\src\complete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\complete.c
 
-ctime.lo:	$(TOP)\src\ctime.c $(HDR)
-	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\ctime.c
+ctime.c:	$(TOP)\tool\mkctimec.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkctimec.tcl
+
+ctime.lo:	ctime.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c ctime.c
 
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
@@ -2332,6 +2335,9 @@ parse.c:	$(TOP)\src\parse.y lemon.exe
 	copy /Y $(TOP)\src\parse.y .
 	copy /B parse.y +,,
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(EXT_FEATURE_FLAGS) $(OPTS) -S parse.y
+
+pragma.h:	$(TOP)\tool\mkpragmatab.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkpragmatab.tcl
 
 $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSION $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" -o $(SQLITE3H) $(MKSQLITE3H_ARGS)
@@ -2812,7 +2818,7 @@ moreclean:	clean
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
-	del /Q sqlite3.def tclsqlite3.def 2>NUL
+	del /Q sqlite3.def tclsqlite3.def ctime.c pragma.h 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
@@ -2846,4 +2852,5 @@ clean:
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
 	del /q src-verify.exe 2>NUL
+	del /q jimsh.exe jimsh0.exe 2>NUL
 # <</mark>>

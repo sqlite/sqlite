@@ -1,4 +1,4 @@
-#/do/not/tclsh
+#!/do/not/tclsh
 # ^^^ help out editors which guess this file's content type.
 #
 # This is the main autosetup-compatible configure script for the
@@ -12,213 +12,9 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
+
 use sqlite-config
-
-if {[string first " " $autosetup(srcdir)] != -1} {
-  user-error "The pathname of the source tree\
-              may not contain space characters"
-}
-if {[string first " " $autosetup(builddir)] != -1} {
-  user-error "The pathname of the build directory\
-              may not contain space characters"
-}
-
-
-########################################################################
-# Regarding flag compatibility with the historical autotool configure
-# script:
-#
-# A very long story made short, autosetup's --flag handling has
-# some behaviors which make it impossible to implement 100% identical
-# flags compared to the historical autotools build. The differences
-# are documented here:
-#
-# 1) --debug is used by autosetup itself, but we patch it because
-# decades of muscle memory expect --debug to apply to this code,
-# not the configure script (details are in autosetup/README.md).
-#
-# 2) In autosetup, all flags starting with (--enable, --disable) are
-# forced to be booleans and receive special handling in how they're
-# resolved. Because of that we have to rename:
-#
-#   2.1) --enable-tempstore[=no] to --with-tempstore[=no], noting that
-#        it has four legal values, not two.
-#
-########################################################################
-# A gentle introduction to flags handling in autosetup
-#
-# Reference: https://msteveb.github.io/autosetup/developer/
-#
-# All configure flags must be described in an 'options' call, which
-# must appear very early on in this script. The general syntax is:
-#
-#  FLAG => {Help text}
-#
-# Where FLAG can have any of the following formats:
-#
-#   boolopt            => "a boolean option which defaults to disabled"
-#   boolopt2=1         => "a boolean option which defaults to enabled"
-#   stringopt:         => "an option which takes an argument, e.g. --stringopt=value"
-#   stringopt2:=value  => "an option where the argument is optional and defaults to 'value'"
-#   optalias booltopt3 => "a boolean with a hidden alias. --optalias is not shown in --help"
-#
-# Autosetup does no small amount of specialized handling for flags,
-# especially booleans. Each bool-type --FLAG implicitly gets
-# --enable-FLAG and --disable-FLAG forms. e.g. we define a flag
-# "readline", which will be interpreted in one of two ways, depending
-# on how it's invoked and how its default is defined:
-#
-#   --enable-readline ==> boolean true
-#   --disable-readline ==> boolean false
-#
-# Passing --readline or --readline=1 is equivalent to passing
-# --enable-readline, and --readline=0 is equivalent to
-# --disable-readline.
-#
-# The behavior described above can lead lead to some confusion when
-# writing help text. For example:
-#
-#   options { json=1 {Disable JSON functions} }
-#
-# The reason the help text says "disable" is because a boolean option
-# which defaults to true is, in the --help text, rendered as:
-#
-#   --disable-json          Disable JSON functions
-#
-# Whereas a bool flag which defaults to false will instead render as:
-#
-#   --enable-FLAG
-#
-# Non-boolean flags, in contrast, use the names specifically given to
-# them in the [options] invocation. e.g. "with-tcl" is the --with-tcl
-# flag.
-#
-# Fetching values for flags:
-#
-#   booleans: use one of:
-#     - [opt-bool FLAG] is autosetup's built-in command for this, but we
-#       have some convenience variants:
-#     - [proj-opt-truthy FLAG]
-#     - [proj-opt-if-truthy FLAG {THEN} {ELSE}]
-#
-#   Non-boolean (i.e. string) flags:
-#     - [opt-val FLAG ?default?]
-#     - [opt-str ...] - see the docs in ./autosetup/autosetup
-#
-########################################################################
-set flags {
-  # When writing {help text blocks}, be aware that autosetup formats
-  # them differently (left-aligned, directly under the --flag) if the
-  # block starts with a newline. It does NOT expand vars and commands,
-  # but we use a [subst] call below which will replace (only) var
-  # refs.
-
-  # <build-modes>
-  shared=1             => {Disable build of shared libary}
-  static=1             => {Disable build of static library (mostly)}
-  amalgamation=1       => {Disable the amalgamation and instead build all files separately.}
-  # </build-modes>
-  # <lib-feature>
-  threadsafe=1         => {Disable mutexing}
-  with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
-  largefile=1          => {Disable large file support}
-  load-extension=1     => {Disable loading of external extensions}
-  math=1               => {Disable math functions}
-  json=1               => {Disable JSON functions}
-  memsys5              => {Enable MEMSYS5}
-  memsys3              => {Enable MEMSYS3}
-  fts3                 => {Enable the FTS3 extension}
-  fts4                 => {Enable the FTS4 extension}
-  fts5                 => {Enable the FTS5 extension}
-  update-limit         => {Enable the UPDATE/DELETE LIMIT clause}
-  geopoly              => {Enable the GEOPOLY extension}
-  rtree                => {Enable the RTREE extension}
-  session              => {Enable the SESSION extension}
-  all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
-  # </lib-feature>
-  # <tcl>
-  with-tcl:DIR         =>
-    {Directory containing tclConfig.sh or a directory one level up from
-     that, from which we can derive a directory containing tclConfig.sh.
-     A dir name of "prefix" is equivalent to the directory specified by
-     the --prefix flag.}
-  with-tclsh:PATH      =>
-    {Full pathname of tclsh to use.  It is used for (A) trying to find
-     tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-     its containing dir has multiple tclsh versions, it may select the
-     wrong tclConfig.sh!}
-  tcl=1                =>
-    {Disable components which require TCL, including all tests.
-     This tree requires TCL for code generation but can use the in-tree
-     copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
-     test code require a canonical tclsh.}
-  # <tcl>
-  # <line-editing>
-  readline=1           => {Disable readline support}
-  # --with-readline-lib is a backwards-compatible alias for
-  # --with-readline-ldflags
-  with-readline-lib:
-  with-readline-ldflags:=auto
-                       => {Readline LDFLAGS, e.g. -lreadline -lncurses}
-  # --with-readline-inc is a backwards-compatible alias for
-  # --with-readline-cflags.
-  with-readline-inc:
-  with-readline-cflags:=auto
-                       => {Readline CFLAGS, e.g. -I/path/to/includes}
-  with-readline-header:PATH
-                       => {Full path to readline.h, from which --with-readline-cflags will be derived}
-  with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
-  editline=0           => {Enable BSD editline support}
-  # </line-editing>
-  # <icu>
-  with-icu-ldflags:LDFLAGS
-                        => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
-  with-icu-cflags:CFLAGS
-                        => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU. e.g. -I/usr/local/include}
-  with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU. Value must be one of: auto, pkg-config, /path/to/icu-config}
-  icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
-  # </icu>
-  # <alternative-builds>
-  with-wasi-sdk:=/opt/wasi-sdk
-                       => {Top-most dir of the wasi-sdk for a WASI build}
-  with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
-  # </alternative-builds>
-  # <developer>
-  # Note that using the --debug/--enable-debug flag here requires patching
-  # autosetup/autosetup to rename the --debug to --autosetup-debug.
-  with-debug=0
-  debug=0              =>
-    {Enable debug build flags. This option will impact performance by
-     as much as 4x, as it includes large numbers of assert()s in
-     performance-critical loops.  Never use --debug for production
-     builds.}
-  scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
-  dev                  => {Enable dev-mode build: automatically enables certain other flags}
-  test-status          => {Enable status of tests}
-  gcov=0               => {Enable coverage testing using gcov}
-  linemacros           => {Enable #line macros in the amalgamation}
-  dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
-  soname:=legacy       =>
-    # --soname has a long story behind it: https://sqlite.org/src/forumpost/5a3b44f510df8ded
-    {SONAME for libsqlite3.so. "none", or not using this flag, sets no
-     soname. "legacy" sets it to its historical value of
-     libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
-     it to that literal value. Any other value is assumed to be a
-     suffix which gets applied to "libsqlite3.so.",
-     e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
-    }
-  dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
-  # </developer>
-}
-if {"" ne $::sqliteConfig(dump-defines-json)} {
-  lappend flags \
-    defines-json-include-lowercase=0 \
-    => {Include lower-case defines (primarily system paths) in $::sqliteConfig(dump-defines-json)}
-}
-
-options [subst -nobackslashes -nocommands $flags]
-unset flags
-sqlite-post-options-init
+sqlite-config-bootstrap canonical
 
 sqlite-setup-default-cflags
 proj-if-opt-truthy dev {
@@ -230,7 +26,7 @@ proj-if-opt-truthy dev {
   define CFLAGS [get-env CFLAGS {-O0 -g}]
   # -------------^^^^^^^ intentionally using [get-env] instead of
   # [proj-get-env] here because [sqlite-setup-default-cflags] uses
-  # [proj-get-env].
+  # [proj-get-env] and we want this to supercede that.
 }
 
 sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
@@ -275,6 +71,4 @@ sqlite-handle-load-extension
 sqlite-handle-math
 sqlite-handle-icu
 sqlite-handle-emsdk
-sqlite-process-dot-in-files
-sqlite-post-config-validation
-sqlite-dump-defines
+sqlite-config-finalize

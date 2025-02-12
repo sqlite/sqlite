@@ -1849,7 +1849,6 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
     }
     pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
     pItem->fg = pOldItem->fg;
-    pItem->fg.done = 0;
     pItem->u = pOldItem->u;
   }
   return pNew;
@@ -2966,13 +2965,7 @@ const char *sqlite3RowidAlias(Table *pTab){
   int ii;
   assert( VisibleRowid(pTab) );
   for(ii=0; ii<ArraySize(azOpt); ii++){
-    int iCol;
-    for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( sqlite3_stricmp(azOpt[ii], pTab->aCol[iCol].zCnName)==0 ) break;
-    }
-    if( iCol==pTab->nCol ){
-      return azOpt[ii];
-    }
+    if( sqlite3ColumnIndex(pTab, azOpt[ii])<0 ) return azOpt[ii];
   }
   return 0;
 }
