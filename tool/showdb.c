@@ -27,7 +27,7 @@ typedef sqlite3_uint64 u64;       /* unsigned 64-bit */
 
 
 static struct GlobalData {
-  u32 pagesize;                   /* Size of a database page */
+  i64 pagesize;                   /* Size of a database page */
   int dbfd;                       /* File descriptor for reading the DB */
   u32 mxPage;                     /* Last page number */
   int perLine;                    /* HEX elements to print per line */
@@ -1178,7 +1178,7 @@ int main(int argc, char **argv){
   if( g.pagesize==0 ) g.pagesize = 1024;
   sqlite3_free(zPgSz);
 
-  printf("Pagesize: %d\n", g.pagesize);
+  printf("Pagesize: %d\n", (int)g.pagesize);
   g.mxPage = (u32)((szFile+g.pagesize-1)/g.pagesize);
 
   printf("Available pages: 1..%u\n", g.mxPage);
@@ -1218,7 +1218,8 @@ int main(int argc, char **argv){
         iEnd = strtol(&zLeft[2], 0, 0);
         checkPageValidity(iEnd);
       }else if( zLeft && zLeft[0]=='b' ){
-        int ofst, nByte, hdrSize;
+        i64 ofst;
+        int nByte, hdrSize;
         unsigned char *a;
         if( iStart==1 ){
           ofst = hdrSize = 100;

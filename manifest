@@ -1,5 +1,5 @@
-C configure\s--help\scleanups\sand\seliminate\sthe\suse\sof\sa\sJS-esque\sinner\sfunction\sin\ssqlite-config.tcl.\sNo\sfunctional\schanges.
-D 2025-02-12T16:59:07.174
+C Fix\sa\sfew\s32-bit\soverflow\sproblems\sin\sshowdb.c.
+D 2025-02-12T20:19:57.718
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2170,7 +2170,7 @@ F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 81b04bfaa9a63665f75945947323aa68b820570aa156b1574f440fc8276092c6
+F tool/showdb.c 3956d71e5193162609a60e8c9edfcf09274c00cfea2b1d221261427adb2b5cca
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0cfbe349d4b740f3d2be8c714cf679901fc2465db4c64e4c3742da700d82f4e7
-R c7fed59cac15bf384efc445c22702858
-U stephan
-Z 6f4cb9af43d8857f0cc800aca12dd8f2
+P 6df859cd18ded3ca64a184e45709503dd9b6a3f65e7611d3352f0bad288400f4
+R ccf520bbb9a2866ca6aec9263e29fec3
+U dan
+Z 06705c2bc45432ef657decbbc71b836f
 # Remove this line to create a well-formed Fossil manifest.
