@@ -1,4 +1,4 @@
-#/do/not/tclsh
+#!/do/not/tclsh
 # ^^^ help out editors which guess this file's content type.
 #
 # This is the main autosetup-compatible configure script for the

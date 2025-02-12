@@ -130,7 +130,7 @@ proc sqlite-config-bootstrap {buildMode} {
         static=1             => {Disable build of static library (mostly)}
       }
       {canonical} {
-        amalgamation=1       => {Disable the amalgamation and instead build all files separately.}
+        amalgamation=1       => {Disable the amalgamation and instead build all files separately}
       }
     }
 
