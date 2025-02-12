@@ -792,6 +792,39 @@ static int xferOptimization(
 );
 
 /*
+** If the iCol-th column of pTab has a default value, then add
+** code that checks the content of register iReg to see if it
+** is a SQLITE_NULL_DEFAULT and if it is, changes the content
+** of iReg to the default value of the iCol-th column of pTab.
+*/
+static SQLITE_NOINLINE void insertResolveValuesDflt(
+  Parse *pParse,         /* Parsing context */
+  Table *pTab,           /* Table being inserted into */
+  int iCol,              /* Column being inserted into */
+  int iReg               /* Register containing the value to insert */
+){
+  Vdbe *v = pParse->pVdbe;
+  sqlite3 *db = pParse->db;
+  sqlite3_value *pValue = 0;
+  Column *pCol;
+
+  assert( pParse->bValuesDflt );
+  assert( pParse->pVdbe!=0 );
+  assert( pTab->aCol[iCol].iDflt>0 );
+  assert( !IsView(pTab) );
+  assert( iCol<pTab->nCol );
+
+  pCol = &pTab->aCol[iCol];
+  sqlite3ValueFromExpr(db,
+                       sqlite3ColumnExpr(pTab,pCol), ENC(db),
+                       pCol->affinity, &pValue);
+  if( pValue ){
+    sqlite3VdbeAddOp1(v, OP_ToDefault, iReg);
+    sqlite3VdbeAppendP4(v, pValue, P4_MEM);
+  }
+}
+
+/*
 ** This routine is called to handle SQL of the following forms:
 **
 **    insert into TABLE (IDLIST) values(EXPRLIST),(EXPRLIST),...
@@ -1422,10 +1455,21 @@ void sqlite3Insert(
     }else if( pSelect ){
       if( regFromSelect!=regData ){
         sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+k, iRegStore);
+        if( pParse->bValuesDflt && pTab->aCol[i].iDflt ){
+          insertResolveValuesDflt(pParse, pTab, i, iRegStore);
+        }
       }
     }else{
       Expr *pX = pList->a[k].pExpr;
-      int y = sqlite3ExprCodeTarget(pParse, pX, iRegStore);
+      int y;
+      if( pX->op==TK_DEFAULT ){
+        Expr *pDflt = sqlite3ColumnExpr(pTab, &pTab->aCol[i]);
+        if( pDflt ){
+          sqlite3ExprCodeFactorable(pParse, pDflt, iRegStore);
+          continue;
+        }
+      }
+      y = sqlite3ExprCodeTarget(pParse, pX, iRegStore);
       if( y!=iRegStore ){
         sqlite3VdbeAddOp2(v,
           ExprHasProperty(pX, EP_Subquery) ? OP_Copy : OP_SCopy, y, iRegStore);

@@ -189,6 +189,12 @@ typedef struct VdbeOpList VdbeOpList;
 #define SQLITE_PREPARE_MASK     0x1f  /* Mask of public flags */
 
 /*
+** Allowed P1 arguments to OP_Null for special kinds of NULLs.
+*/
+#define SQLITE_NULL_DEFAULT  0x0400   /* NULL is really the DEFAULT keyword */
+#define SQLITE_NULL_CLEARED  0x0100   /* NULL always <> to other NULLs */
+
+/*
 ** Prototypes for the VDBE interface.  See comments on the implementation
 ** for a description of what each of these routines does.
 */

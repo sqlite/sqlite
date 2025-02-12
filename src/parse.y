@@ -1566,7 +1566,7 @@ nexprlist(A) ::= expr(Y).
       bFault = 1;
     }else
     if( yytos[-1].major==TK_COMMA
-     && yytos[-2].major==YYNT_values
+     && (yytos[-2].major==YYNT_values || yytos[-2].major==YYNT_mvalues)
      && yytos[-3].major==YYNT_idlist_opt
     ){
       /* This is ok */
@@ -1580,6 +1580,7 @@ nexprlist(A) ::= expr(Y).
       bFault = 1;  /* Cannot match */
     }
     if( bFault ) parserSyntaxError(pParse, pErrToken);
+    pParse->bValuesDflt = 1;
   }
 }
 

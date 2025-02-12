@@ -259,8 +259,9 @@ struct sqlite3_value {
 **
 **  *  MEM_Null                An SQL NULL value
 **
-**  *  MEM_Null|MEM_Zero       An SQL NULL with the virtual table
-**                             UPDATE no-change flag set
+**  *  MEM_Null|MEM_Zero       An SQL NULL with flag that indicates
+**                             UPDATE no-change for virtual tables and
+**                             DEFAULT for ordinary tables.
 **
 **  *  MEM_Null|MEM_Term|      An SQL NULL, but also contains a
 **        MEM_Subtype          pointer accessible using

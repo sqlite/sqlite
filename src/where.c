@@ -749,6 +749,7 @@ static void translateColumnToCopy(
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
       if( iAutoidxCur==0 ){
         pOp->opcode = OP_Null;
+        pOp->p1 = 0;
         pOp->p3 = 0;
       }
 #endif

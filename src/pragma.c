@@ -1821,7 +1821,8 @@ void sqlite3Pragma(
         }else{
           pPk = sqlite3PrimaryKeyIndex(pTab);
           r2 = sqlite3GetTempRange(pParse, pPk->nKeyCol);
-          sqlite3VdbeAddOp3(v, OP_Null, 1, r2, r2+pPk->nKeyCol-1);
+          sqlite3VdbeAddOp3(v, OP_Null,
+                            SQLITE_NULL_CLEARED, r2, r2+pPk->nKeyCol-1);
         }
         sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);

@@ -1473,9 +1473,11 @@ case OP_String: {          /* out2 */
 ** is less than P2 (typically P3 is zero) then only register P2 is
 ** set to NULL.
 **
-** If the P1 value is non-zero, then also set the MEM_Cleared flag so that
-** NULL values will not compare equal even if SQLITE_NULLEQ is set on
-** OP_Ne or OP_Eq.
+** If the P1 value can be SQLITE_NULL_CLEARED to create a NULL value that 
+** will not compare equal even if SQLITE_NULLEQ is set on OP_Ne or OP_Eq.
+** In other words, SQLITE_NULL_CLEARED creates a NULL that never compares
+** equal to any other NULL.  Or P1 can be SQLITE_NULL_DEFAULT to indicate
+** that the NULL value started as a DEFAULT keyword.
 */
 case OP_BeginSubrtn:
 case OP_Null: {           /* out2 */
@@ -1484,7 +1486,10 @@ case OP_Null: {           /* out2 */
   pOut = out2Prerelease(p, pOp);
   cnt = pOp->p3-pOp->p2;
   assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
-  pOut->flags = nullFlag = pOp->p1 ? (MEM_Null|MEM_Cleared) : MEM_Null;
+  assert( pOp->p1==0 || pOp->p1==MEM_Cleared || pOp->p1==MEM_Zero );
+  assert( SQLITE_NULL_CLEARED==MEM_Cleared );
+  assert( SQLITE_NULL_DEFAULT==MEM_Zero );
+  pOut->flags = nullFlag = pOp->p1 | MEM_Null;
   pOut->n = 0;
 #ifdef SQLITE_DEBUG
   pOut->uTemp = 0;
@@ -2845,6 +2850,25 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   VdbeBranchTaken( (pIn1->flags & MEM_Null)==0, 2);
   if( (pIn1->flags & MEM_Null)==0 ){
     goto jump_to_p2;
+  }
+  break;
+}
+
+/* Opcode: ToDefault P1 * * P4 *
+** Synopsis: if r[P1]==DEFAULT then r[P1]=P4
+**
+** If register P1 contains the special NULL value that indicates
+** that it originated from the DEFAULT keyword in a VALUES clause,
+** then change its value to the value in P4.
+*/
+case OP_ToDefault: {            /* in1 */
+  assert( pOp->p4type==P4_MEM );
+  pIn1 = &aMem[pOp->p1];
+  if( (pIn1->flags & (MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero) ){
+    memAboutToChange(p, pIn1);
+    sqlite3VdbeMemShallowCopy(pIn1, pOp->p4.pMem, MEM_Static);
+    UPDATE_MAX_BLOBSIZE(pIn1);
+    REGISTER_TRACE(pOp->p1, pIn1);
   }
   break;
 }

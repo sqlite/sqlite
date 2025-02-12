@@ -1025,7 +1025,7 @@ static void fixDistinctOpenEph(
       ** the loop even if the first row is all NULLs.  */
       VdbeOp *pOp = sqlite3VdbeGetOp(v, iOpenEphAddr);
       pOp->opcode = OP_Null;
-      pOp->p1 = 1;
+      pOp->p1 = SQLITE_NULL_CLEARED;
       pOp->p2 = iVal;
     }
   }
