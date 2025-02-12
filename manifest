@@ -1,5 +1,5 @@
-C Update\stool/mkctimec.tcl\sso\sthat\ssqlite3_compileoption_xxx()\sAPIs\sreport\son\sthe\sSQLITE_ENABLE_SETLK_TIMEOUT\soption.
-D 2025-02-11T18:32:22.367
+C Fix\stest\sscript\serrors\sin\swalsetlk3.test.\sTests\sstill\sdon't\sall\spass.
+D 2025-02-12T08:07:10.218
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -765,7 +765,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 1e887f1f926a76a65ebcef79aa6da76e369ad7f899fa211c6ee56ff953c098a2
-F src/os_win.c 84502044e9d064c54f1931e015ef49a4804114e80cc75461c5bda357070bc596
+F src/os_win.c 68a2b90772c7510f4dd826b6e8c79c9d4f648ea98cdd7677e7fb3dec1db26ebc
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2028,7 +2028,7 @@ F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cf
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
 F test/walsetlk.test 9c5b92f9a20252540fedf9ffa6ee3d1b8af08ea4b80d0144d9b88e6c0c1de80d
 F test/walsetlk2.test 5ae8662a28c013e8df2ce975f9e3577a7f239aeb4622bb8d4d0ca8e16c0c132e
-F test/walsetlk3.test 7ac01cb6ca9640081fbb5c59170172b85fbaf9e7a8a1e678a38e21df5d55721e
+F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e809632ba3bb20b7ec23ce9e6ca659c57cf1338b1fe8c33502c5f3161061dd2
-R 0d8181912c6739bfd5e49e604de13386
+P 303e8009ab59aad32030407baf3eff9443f7f9bed7947218b78293b06bba1737
+R 92a553ba4589551655030e50133e0a04
 U dan
-Z 7d39383234846ecfbdbe2d30db37f4f9
+Z ac5c8a11b435d673fdcd5b48f8d17f0d
 # Remove this line to create a well-formed Fossil manifest.

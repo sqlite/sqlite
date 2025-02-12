@@ -61,7 +61,8 @@ sql_block_on_close {
   INSERT INTO t1 VALUES(5, 6);
   INSERT INTO t1 VALUES(7, 8);
 }
-after 500
+after 500 {set ok 1}
+vwait ok
 sqlite3 db test.db
 sqlite3_setlk_timeout db 2000
 do_catchsql_test 1.1 {
@@ -76,7 +77,8 @@ sql_block_on_close {
   INSERT INTO t1 VALUES(9, 10);
   INSERT INTO t1 VALUES(11, 12);
 }
-after 500
+after 500 {set ok 1}
+vwait ok
 sqlite3 db test.db
 sqlite3_setlk_timeout -block db 2000
 do_catchsql_test 1.2 {
@@ -111,7 +113,8 @@ sql_block_on_write {
   INSERT INTO x1 VALUES(4);
 }
 
-after 500
+after 500 {set ok 1}
+vwait ok
 
 sqlite3 db test.db
 sqlite3_setlk_timeout -block db 2000
@@ -121,7 +124,8 @@ do_catchsql_test 2.2 {
 } {1 {database is locked}}
 
 vwait ::done
-after 500
+after 500 {set ok 1}
+vwait ok
 
 do_catchsql_test 2.3 {
   SELECT * FROM x1

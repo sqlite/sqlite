@@ -3630,7 +3630,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     winUnlockFile(&pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
-    if( locktype==SHARED_LOCK && !winGetReadLock(pFile) ){
+    if( locktype==SHARED_LOCK && !winGetReadLock(pFile, 0) ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
       rc = winLogError(SQLITE_IOERR_UNLOCK, osGetLastError(),
