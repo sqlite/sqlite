@@ -1,5 +1,5 @@
-C Remove\sold\sfunction\sdeclaration\saccidentally\sleft\sin\ssqlite3session.h.
-D 2025-02-12T15:31:26.463
+C configure\s--help\scleanups\sand\seliminate\sthe\suse\sof\sa\sJS-esque\sinner\sfunction\sin\ssqlite-config.tcl.\sNo\sfunctional\schanges.
+D 2025-02-12T16:59:07.174
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl cef1e0aa0f2dee2042af66f28c97a9445f84d55d858ba9db4f6116846a1a325f
-F autosetup/sqlite-config.tcl bdafc3585865ada5d9a0f2b462e21ea735d49d82353fdfb641cf6f841f8eae9e
+F autosetup/sqlite-config.tcl ece913b7bb1efbabdd44fd787c0e4d2fd462d3019cc079a5e6bbe43c83d302b3
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da94e551c0ed354ae782c89fd9495d607b77ad7572d90c41ceac12bd6ec4c31b
-R 6f7f1710621940ea4683c778ed859375
-U dan
-Z 8c9d99e3c5ea71beb7debabd9d22f723
+P 0cfbe349d4b740f3d2be8c714cf679901fc2465db4c64e4c3742da700d82f4e7
+R c7fed59cac15bf384efc445c22702858
+U stephan
+Z 6f4cb9af43d8857f0cc800aca12dd8f2
 # Remove this line to create a well-formed Fossil manifest.

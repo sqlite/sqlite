@@ -109,21 +109,26 @@ proc sqlite-config-bootstrap {buildMode} {
   # the case of a default value.
   ########################################################################
   set allFlags {
-    # Structure: a list of M {Z}, where M is a descriptive option
-    # group name and Z is a list of X Y pairs. X is a list of
-    # $buildMode name(s) to which these flags apply, or {*} to apply
+    # Structure: a list of M {Z} pairs, where M is a descriptive
+    # option group name and Z is a list of X Y pairs. X is a list of
+    # $buildMode name(s) to which the Y flags apply, or {*} to apply
     # to all builds. Y is a {block} in the form expected by
     # autosetup's [options] command.  Each block which is applicable
     # to $buildMode is appended to a new list before that list is
     # passed on to [options]. The order of each Y and sub-Y is
     # retained, which is significant for rendering of --help.
 
-    # When writing {help text blocks}, be aware that autosetup formats
-    # them differently (left-aligned, directly under the --flag) if the
-    # block starts with a newline. It does NOT expand vars and commands,
-    # but we use a [subst] call below which will replace (only) var
-    # refs.
+    # When writing {help text blocks}, be aware that:
+    #
+    # A) autosetup formats them differently if the {block} starts with
+    # a newline: it starts left-aligned, directly under the --flag, and
+    # the rest of the block is pasted verbatim rather than
+    # pretty-printed.
+    #
+    # B) Vars and commands are NOT expanded, but we use a [subst] call
+    # below which will replace (only) var refs.
 
+    # Options for how to build the library
     build-modes {
       {*} {
         shared=1             => {Disable build of shared libary}
@@ -134,11 +139,14 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
 
+    # Library-level features and defaults
     lib-features {
       {*} {
         threadsafe=1         => {Disable mutexing}
         with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
         largefile=1          => {Disable large file support}
+        # ^^^ It's not clear that this actually does anything, as
+        # HAVE_LFS is not checked anywhere in the .c/.h/.in files.
         load-extension=1     => {Disable loading of external extensions}
         math=1               => {Disable math functions}
         json=1               => {Disable JSON functions}
@@ -155,108 +163,130 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
 
+    # Options for TCL support
     tcl {
       {canonical} {
-        with-tcl:DIR         =>
-        {Directory containing tclConfig.sh or a directory one level up from
-          that, from which we can derive a directory containing tclConfig.sh.
-          A dir name of "prefix" is equivalent to the directory specified by
-          the --prefix flag.}
-        with-tclsh:PATH      =>
-        {Full pathname of tclsh to use.  It is used for (A) trying to find
-          tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-          its containing dir has multiple tclsh versions, it may select the
-          wrong tclConfig.sh!}
-        tcl=1                =>
-        {Disable components which require TCL, including all tests.
-          This tree requires TCL for code generation but can use the in-tree
-          copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
-          test code require a canonical tclsh.}
+        with-tcl:DIR
+          => {Directory containing tclConfig.sh or a directory one level up from
+              that, from which we can derive a directory containing tclConfig.sh.
+              A dir name of "prefix" is equivalent to the directory specified by
+              the --prefix flag.}
+        with-tclsh:PATH
+          => {Full pathname of tclsh to use.  It is used for (A) trying to find
+              tclConfig.sh and (B) all TCL-based code generation.  Warning: if
+              its containing dir has multiple tclsh versions, it may select the
+              wrong tclConfig.sh!}
+        tcl=1
+          => {Disable components which require TCL, including all tests.
+              This tree requires TCL for code generation but can use the in-tree
+              copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
+              test code require a canonical tclsh.}
       }
     }
 
+    # Options for line-editing modes for the CLI shell
     line-editing {
       {*} {
-        readline=1           => {Disable readline support}
+        readline=1
+          => {Disable readline support}
         # --with-readline-lib is a backwards-compatible alias for
         # --with-readline-ldflags
         with-readline-lib:
         with-readline-ldflags:=auto
-        => {Readline LDFLAGS, e.g. -lreadline -lncurses}
+          => {Readline LDFLAGS, e.g. -lreadline -lncurses}
         # --with-readline-inc is a backwards-compatible alias for
         # --with-readline-cflags.
         with-readline-inc:
         with-readline-cflags:=auto
-        => {Readline CFLAGS, e.g. -I/path/to/includes}
+          => {Readline CFLAGS, e.g. -I/path/to/includes}
         with-readline-header:PATH
-        => {Full path to readline.h, from which --with-readline-cflags will be derived}
-        with-linenoise:DIR   => {Source directory for linenoise.c and linenoise.h}
-        editline=0           => {Enable BSD editline support}
+          => {Full path to readline.h, from which --with-readline-cflags will be derived}
+        with-linenoise:DIR
+          => {Source directory for linenoise.c and linenoise.h}
+        editline=0
+          => {Enable BSD editline support}
       }
     }
 
+    # Options for ICU: International Components for Unicode
     icu {
       {*} {
         with-icu-ldflags:LDFLAGS
-        => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the ICU libraries}
+          => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the
+              ICU libraries}
         with-icu-cflags:CFLAGS
-        => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU. e.g. -I/usr/local/include}
-        with-icu-config:=auto => {Enable SQLITE_ENABLE_ICU. Value must be one of: auto, pkg-config, /path/to/icu-config}
-        icu-collations=0      => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=... or --with-icu-config}
+          => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU.
+              e.g. -I/usr/local/include}
+        with-icu-config:=auto
+          => {Enable SQLITE_ENABLE_ICU. Value must be one of: auto, pkg-config,
+              /path/to/icu-config}
+        icu-collations=0
+          => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...
+              or --with-icu-config}
       }
     }
 
+    # Options for exotic/alternative build modes
     alternative-builds {
       {canonical} {
         with-wasi-sdk:=/opt/wasi-sdk
-        => {Top-most dir of the wasi-sdk for a WASI build}
-        with-emsdk:=auto     => {Top-most dir of the Emscripten SDK installation. Default = EMSDK env var.}
+          => {Top-most dir of the wasi-sdk for a WASI build}
+        with-emsdk:=auto
+          => {Top-most dir of the Emscripten SDK installation.
+              Default = EMSDK env var.}
       }
     }
 
-    # Note that using the --debug/--enable-debug flag here requires patching
-    # autosetup/autosetup to rename the --debug to --autosetup-debug.
+    # Options mostly for sqlite's own development
     developer {
       {*} {
+        # Note that using the --debug/--enable-debug flag here
+        # requires patching autosetup/autosetup to rename the --debug
+        # to --autosetup-debug.
         with-debug=0
-        debug=0              =>
-        {Enable debug build flags. This option will impact performance by
-          as much as 4x, as it includes large numbers of assert()s in
-          performance-critical loops.  Never use --debug for production
-          builds.}
-        scanstatus           => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
+        debug=0
+          => {Enable debug build flags. This option will impact performance by
+              as much as 4x, as it includes large numbers of assert()s in
+              performance-critical loops.  Never use --debug for production
+              builds.}
+        scanstatus
+          => {Enable the SQLITE_ENABLE_STMT_SCANSTATUS feature flag}
       }
       {canonical} {
         dev                  => {Enable dev-mode build: automatically enables certain other flags}
         test-status          => {Enable status of tests}
         gcov=0               => {Enable coverage testing using gcov}
         linemacros           => {Enable #line macros in the amalgamation}
-        dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it.}
+        dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it}
       }
       {*} {
         dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
       }
     }
 
+    # Options specifically for downstream package maintainers
     packaging {
       {*} {
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
-        soname:=legacy       =>
-        {SONAME for libsqlite3.so. "none", or not using this flag, sets no
-          soname. "legacy" sets it to its historical value of
-          libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
-          it to that literal value. Any other value is assumed to be a
-          suffix which gets applied to "libsqlite3.so.",
-          e.g. --soname=9.10 equates to "libsqlite3.so.9.10".
-        }
-        out-implib=0         =>
-        {Enable use of --out-implib linker flag to generate an "import library" for the DLL}
+        soname:=legacy
+          => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+              soname. "legacy" sets it to its historical value of
+              libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+              it to that literal value. Any other value is assumed to be a
+              suffix which gets applied to "libsqlite3.so.",
+              e.g. --soname=9.10 equates to "libsqlite3.so.9.10".}
+        # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
+        out-implib=0
+          => {Enable use of --out-implib linker flag to generate an
+              "import library" for the DLL}
       }
     }
   }; # $allOpts
 
+  # Filter allOpts to create the set of [options] legal for this build
   set opts {}
-  foreach {group XY} [subst -nobackslashes -nocommands [proj-strip-hash-comments $allFlags]] {
+  foreach {group XY} [subst -nobackslashes -nocommands \
+                        [proj-strip-hash-comments $allFlags]] {
     foreach {X Y} $XY {
       if { $buildMode in $X || "*" in $X } {
         foreach y $Y {
@@ -265,8 +295,7 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
   }
-  #puts "options = $opts"
-  #exit 0
+  #puts "options = $opts"; exit 0
   options $opts
   sqlite-post-options-init
 }; # sqlite-config-bootstrap
@@ -334,19 +363,19 @@ proc sqlite-autoreconfig {} {
   # configure script with the same arguments it was initially invoked
   # with. This can be used to automatically reconfigure
   #
-  proc squote {arg} {
+  set squote {{arg} {
     # Wrap $arg in single-quotes if it looks like it might need that
     # to avoid mis-handling as a shell argument. We assume that $arg
     # will never contain any single-quote characters.
     if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
     return $arg
-  }
-  define-append SQLITE_AUTORECONFIG cd [squote $::autosetup(builddir)] && [squote $::autosetup(srcdir)/configure]
+  }}
+  define-append SQLITE_AUTORECONFIG cd [apply $squote $::autosetup(builddir)] \
+    && [apply $squote $::autosetup(srcdir)/configure]
   #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
   foreach arg $::autosetup(argv) {
-    define-append SQLITE_AUTORECONFIG [squote $arg]
+    define-append SQLITE_AUTORECONFIG [apply $squote $arg]
   }
-  rename squote ""
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
