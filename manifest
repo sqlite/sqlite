@@ -1,5 +1,5 @@
-C Fix\svarious\sproblems.\s\sAppears\sto\sbe\sworking\snow.
-D 2025-02-13T16:03:11.371
+C Remove\san\sunnecessary\sbranch.\s\sImprovements\sto\serror\smessages.
+D 2025-02-13T19:19:14.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -738,7 +738,7 @@ F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c a4b288e0962ad923427bfce3ec577b92733afeb16bf7772e74c90ce5020382e2
+F src/insert.c b1dc3622fb561a4c8055ad248763a8f8ed0d3d462c589a822657e3ca6110cd1f
 F src/json.c 2663a0c7e574cb928de944720dcdcc11c931877d877549b8f1258a4002efd6f7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -768,7 +768,7 @@ F src/os_win.c 49c7725b500f5867e8360e75eeb30f9d70b62fa1f05c8a101da627210578df32
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 3a1c4e7f69af482e33c8cba8a75afe0dda0ea6391240adac22b040ce1bdeef44
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y d13928e736dad1692a4d464f0063c118aec8e53bf325ebc8e3e7c49f99edd3b9
+F src/parse.y 3da35b1c665df67ed15b4d463b28824a922ece1d838399c9596f1ad0050e0197
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b73eb3fa7180b4a94b9d8837580eec13d411f1fc7ac4b80803cbc4dfaaead6a
-R c4087acdaeab76fd347361aacb964c38
+P 7fd94f1378333e4700434c6d238ed564508466d40bce0d9a0e933bfe7796d933
+R a998bb407b1babe16cb5122d6ea3c7fb
 U drh
-Z 46b36cbf798ea4bf93c48caf9f403718
+Z 45e7819d88f165c7ca1f29433ea36d85
 # Remove this line to create a well-formed Fossil manifest.

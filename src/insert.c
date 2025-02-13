@@ -818,10 +818,8 @@ static SQLITE_NOINLINE void insertResolveValuesDflt(
   sqlite3ValueFromExpr(db,
                        sqlite3ColumnExpr(pTab,pCol), ENC(db),
                        pCol->affinity, &pValue);
-  if( pValue ){
-    sqlite3VdbeAddOp1(v, OP_ToDefault, iReg);
-    sqlite3VdbeAppendP4(v, pValue, P4_MEM);
-  }
+  sqlite3VdbeAddOp1(v, OP_ToDefault, iReg);
+  sqlite3VdbeAppendP4(v, pValue, P4_MEM);
 }
 
 /*

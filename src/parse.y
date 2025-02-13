@@ -120,7 +120,9 @@ struct FrameBound     { int eType; Expr *pExpr; };
 ** Generate a syntax error
 */
 static void parserSyntaxError(Parse *pParse, Token *p){
-  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", p);
+  if( sqlite3_strglob("*syntax error*", pParse->zErrMsg)!=0 ){
+    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", p);
+  }
 }
 
 /*
