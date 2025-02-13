@@ -1,5 +1,5 @@
-C Fix\sa\sfew\s32-bit\soverflow\sproblems\sin\sshowdb.c.
-D 2025-02-12T20:19:57.718
+C Ensure\sthe\scounts\sof\s"deferred\sFK\sviolations"\sand\s"deferred\simmediate\sFK\sviolations"\sare\skept\sseparate\swhen\s"PRAGMA\sdefer_foreign_keys"\sis\sused.
+D 2025-02-13T14:47:25.229
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -772,7 +772,7 @@ F src/parse.y f84673f1454e2bcf517623d4346e67fb2d73e57826ea103681ad5848238f6029
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 49516ad7718a3626f28f710fa7448ef1fce3c07fd169acbb4817341950264319
-F src/pragma.c ce1182217aa540e034c6da2f17515e3706bf52c837e8222361be9ccd7a9d495a
+F src/pragma.c c7ada272232e1182c4536d9637fa7b955a10bc1bd8d5a87d4dc9309dab827791
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
 F src/printf.c 96f7f8baeedc7639da94e4e7a4a2c200e2537c4eec9e5e1c2ffc821f40eb3105
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -847,7 +847,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
 F src/util.c 9ff6470dabcf943fd796d2da766c98bd328c8f6fe036a31e5b338e628603f989
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
-F src/vdbe.c b98d86de7f0e6c02fb14e0e1ae8feab6aa84669d389771a848e23f59eb70dcad
+F src/vdbe.c 063763e08f1ad00890b7377fc663dbccec85a47630f5d2bbb13f3fdf77e06f78
 F src/vdbe.h 3d26d5c7660c5c7bd33ffb0d8784615072d8b23c81f8110870efe2631136bc89
 F src/vdbeInt.h 078b1c15b26587b54c1c1879d0d2f4dec812b9de4c337fed9faf73fbcc3bf091
 F src/vdbeapi.c 82fe278a7c71b653235c6f9fb5de0b5de589908dfcb011ba2a782e8becf06f86
@@ -1153,7 +1153,7 @@ F test/fkey2.test 1063d65e5923c054cfb8f0555a92a3ae0fa8c067275a33ee1715bd856cdb30
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 6727452e163a427147e84e739da18713da553d79f9783559b04fdcd36d5c7421
-F test/fkey6.test ebd11efb00b9c70b57f4c6b6184445145c96e320329bd90a175036570c5b25ca
+F test/fkey6.test 1e0874ba15f8ed1e14a1d0a40fc8fb90a9912f4c82ea220a43137d4d9eff4d69
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
 F test/fkey8.test 51deda7f1a1448bca95875e4a6e1a3a75b4bd7215e924e845bd60de60e4d84bf
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6df859cd18ded3ca64a184e45709503dd9b6a3f65e7611d3352f0bad288400f4
-R ccf520bbb9a2866ca6aec9263e29fec3
+P 9377766647eeaa575d646cf5f66c3163ef7074930aa5c3b11073e6b1e90ce799
+R 83e471c75257ae61568ff2a0fb629999
 U dan
-Z 06705c2bc45432ef657decbbc71b836f
+Z e4f9c0246de36460838c8b5d3a4c9bbe
 # Remove this line to create a well-formed Fossil manifest.
