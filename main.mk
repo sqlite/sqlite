@@ -1471,6 +1471,9 @@ all: so
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
+	@if [ -f $(libsqlite3.SO).a ]; then \
+		$(INSTALL) $(libsqlite3.SO).a "$(install-dir.lib)"; \
+	fi
 	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
 	cd "$(install-dir.lib)" || exit $$?; \
 	if [ x.dylib = x$(T.dll) ]; then \
@@ -1485,7 +1488,7 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[a03]*; \
 		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
 			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
@@ -1498,6 +1501,7 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			ls -la $(libsqlite3.SO).0.8.6; \
 		fi; \
 	fi
+
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so
@@ -2333,7 +2337,7 @@ tidy: tidy-.
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO) libsqlite3$(T.dll).a
+	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO) $(libsqlite3.SO).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
@@ -2367,7 +2371,7 @@ distclean:	distclean-. clean
 
 
 # Show important variable settings.
-show-variables:	
+show-variables:
 	@echo "CC          = $(CC)"
 	@echo "B.cc        = $(B.cc)"
 	@echo "T.cc        = $(T.cc)"

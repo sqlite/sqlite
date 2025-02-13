@@ -1,5 +1,5 @@
-C Bring\sthe\s3.49\sbranch's\sconfigure-related\sfiles\sup\sto\spar\swith\sthe\scurrent\strunk.
-D 2025-02-13T14:45:47.956
+C When\susing\sthe\s--out-implib\sbuild\soption,\sinstall\sthe\sgenerated\s.dll.a\sfile\sto\sPREFIX/lib.
+D 2025-02-13T16:31:22.473
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 542572667678019e75e16c3e970bfb9358abed9a6ec70f3715997dd9a04b7fd9
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 7bd73a4c8cd89025cbc92b4f887c6fd1b8cd8ecbe62c4ac1f36ac84d04043479
+F autoconf/Makefile.in 0c71fcc6b2bd1703799a8e5b8f137ba64aad9bdee43c3cc23598cd0d6ce95715
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c85055d36c36c188cee94cabe2e252cd912d10d1a9d62af477e855533b9531b2
+F main.mk 46b638c7639e1be0b1bcb4cbf6c87b88a3b30cc6092cb393c130bc2a5b464c72
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2209,10 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3f539d81576068f37fbd548cca384bc1ac3dfd9049354d128aea8050c694b2f7
-Q +6df859cd18ded3ca64a184e45709503dd9b6a3f65e7611d3352f0bad288400f4
-Q +da94e551c0ed354ae782c89fd9495d607b77ad7572d90c41ceac12bd6ec4c31b
-R f6bddac48350d8f85b169c44e8e32880
+P 1cc8d16b636de128ca5e9c6cf7630fb323e2969aaac984ebee928b0fe690b84b
+Q +0dadea0ec86b6ac74281915433e41ae66cc20547d9882c4be2933a24c8287927
+R d6aa987e056da2d90adb012739ef55e5
 U stephan
-Z 361a40d2f4e53d288ce23f54980ead79
+Z ca9c23171a6964e2384cf9a49c8c3987
 # Remove this line to create a well-formed Fossil manifest.
