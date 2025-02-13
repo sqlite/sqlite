@@ -191,7 +191,6 @@ typedef struct VdbeOpList VdbeOpList;
 /*
 ** Allowed P1 arguments to OP_Null for special kinds of NULLs.
 */
-#define SQLITE_NULL_DEFAULT  0x0400   /* NULL is really the DEFAULT keyword */
 #define SQLITE_NULL_CLEARED  0x0100   /* NULL always <> to other NULLs */
 
 /*

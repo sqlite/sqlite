@@ -4897,7 +4897,7 @@ expr_code_doover:
       return target;
     }
     case TK_DEFAULT: {
-      sqlite3VdbeAddOp2(v, OP_Null, SQLITE_NULL_DEFAULT, target);
+      sqlite3VdbeAddOp1(v, OP_DfltNull, target);
       return target;
     }
     default: {

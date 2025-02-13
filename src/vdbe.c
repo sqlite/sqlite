@@ -581,7 +581,11 @@ static void memTracePrint(Mem *p){
   if( p->flags & MEM_Undefined ){
     printf(" undefined");
   }else if( p->flags & MEM_Null ){
-    printf(p->flags & MEM_Zero ? " NULL-nochng" : " NULL");
+    if( p->flags==(MEM_Null|MEM_Term|MEM_Subtype) && p->eSubtype==0 ){
+      printf(" NULL-default");
+    }else{
+      printf(p->flags & MEM_Zero ? " NULL-nochng" : " NULL");
+    }
   }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
     printf(" si:%lld", p->u.i);
   }else if( (p->flags & (MEM_IntReal))!=0 ){
@@ -601,7 +605,11 @@ static void memTracePrint(Mem *p){
     sqlite3VdbeMemPrettyPrint(p, &acc);
     printf(" %s", sqlite3StrAccumFinish(&acc));
   }
-  if( p->flags & MEM_Subtype ) printf(" subtype=0x%02x", p->eSubtype);
+  if( (p->flags & MEM_Subtype)!=0
+   && (p->eSubtype!=0 || (p->flags & MEM_Null)==0)
+  ){
+    printf(" subtype=0x%02x", p->eSubtype);
+  }
 }
 static void registerTrace(int iReg, Mem *p){
   printf("R[%d] = ", iReg);
@@ -1476,8 +1484,7 @@ case OP_String: {          /* out2 */
 ** If the P1 value can be SQLITE_NULL_CLEARED to create a NULL value that 
 ** will not compare equal even if SQLITE_NULLEQ is set on OP_Ne or OP_Eq.
 ** In other words, SQLITE_NULL_CLEARED creates a NULL that never compares
-** equal to any other NULL.  Or P1 can be SQLITE_NULL_DEFAULT to indicate
-** that the NULL value started as a DEFAULT keyword.
+** equal to any other NULL.
 */
 case OP_BeginSubrtn:
 case OP_Null: {           /* out2 */
@@ -1486,9 +1493,8 @@ case OP_Null: {           /* out2 */
   pOut = out2Prerelease(p, pOp);
   cnt = pOp->p3-pOp->p2;
   assert( pOp->p3<=(p->nMem+1 - p->nCursor) );
-  assert( pOp->p1==0 || pOp->p1==MEM_Cleared || pOp->p1==MEM_Zero );
+  assert( pOp->p1==0 || pOp->p1==MEM_Cleared );
   assert( SQLITE_NULL_CLEARED==MEM_Cleared );
-  assert( SQLITE_NULL_DEFAULT==MEM_Zero );
   pOut->flags = nullFlag = pOp->p1 | MEM_Null;
   pOut->n = 0;
 #ifdef SQLITE_DEBUG
@@ -1517,6 +1523,45 @@ case OP_SoftNull: {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pOut = &aMem[pOp->p1];
   pOut->flags = (pOut->flags&~(MEM_Undefined|MEM_AffMask))|MEM_Null;
+  break;
+}
+
+/* Opcode: DfltNull P1 * * * *
+** Synopsis: r[P1]=DEFAULT-NULL
+**
+** Set register P1 to have the value NULL that has a special pointer
+** value to indicate that it originated as a DEFAULT keyword in a VALUES
+** clause.
+*/
+case OP_DfltNull: {
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
+  pOut = &aMem[pOp->p1];
+  memAboutToChange(p, pOut);
+  sqlite3VdbeMemSetNull(pOut);
+  pOut->flags = MEM_Null|MEM_Term|MEM_Subtype;
+  pOut->eSubtype = 0;
+  break;
+}
+
+/* Opcode: ToDefault P1 * * P4 *
+** Synopsis: if r[P1]==DEFAULT then r[P1]=P4
+**
+** If register P1 contains the special NULL value created by the
+** OP_DfltNull opcode that indicates that it originated from the
+** DEFAULT keyword in a VALUES clause, then change its value to
+** the value in P4.
+*/
+case OP_ToDefault: {            /* in1 */
+  assert( pOp->p4type==P4_MEM );
+  pIn1 = &aMem[pOp->p1];
+  if( pIn1->flags==(MEM_Null|MEM_Term|MEM_Subtype)
+   && pIn1->eSubtype==0
+  ){
+    memAboutToChange(p, pIn1);
+    sqlite3VdbeMemShallowCopy(pIn1, pOp->p4.pMem, MEM_Static);
+    UPDATE_MAX_BLOBSIZE(pIn1);
+    REGISTER_TRACE(pOp->p1, pIn1);
+  }
   break;
 }
 
@@ -2850,25 +2895,6 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   VdbeBranchTaken( (pIn1->flags & MEM_Null)==0, 2);
   if( (pIn1->flags & MEM_Null)==0 ){
     goto jump_to_p2;
-  }
-  break;
-}
-
-/* Opcode: ToDefault P1 * * P4 *
-** Synopsis: if r[P1]==DEFAULT then r[P1]=P4
-**
-** If register P1 contains the special NULL value that indicates
-** that it originated from the DEFAULT keyword in a VALUES clause,
-** then change its value to the value in P4.
-*/
-case OP_ToDefault: {            /* in1 */
-  assert( pOp->p4type==P4_MEM );
-  pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & (MEM_Null|MEM_Zero))==(MEM_Null|MEM_Zero) ){
-    memAboutToChange(p, pIn1);
-    sqlite3VdbeMemShallowCopy(pIn1, pOp->p4.pMem, MEM_Static);
-    UPDATE_MAX_BLOBSIZE(pIn1);
-    REGISTER_TRACE(pOp->p1, pIn1);
   }
   break;
 }
