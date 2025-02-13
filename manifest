@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\sbranch.\s\sImprovements\sto\serror\smessages.
-D 2025-02-13T19:19:14.045
+C Omit\san\soptimization\sthat\sdid\snot\swork\s-\sit\sruns\sfaster\swith\sthe\noptimization\sremoved.
+D 2025-02-13T23:33:47.587
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -738,7 +738,7 @@ F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c b1dc3622fb561a4c8055ad248763a8f8ed0d3d462c589a822657e3ca6110cd1f
+F src/insert.c 2e78d5f8d36f92f36898ecbb13600d20087fc4630819e6212ddccc8560af2cf0
 F src/json.c 2663a0c7e574cb928de944720dcdcc11c931877d877549b8f1258a4002efd6f7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7fd94f1378333e4700434c6d238ed564508466d40bce0d9a0e933bfe7796d933
-R a998bb407b1babe16cb5122d6ea3c7fb
+P f49ddd80b1b75ceef47702dd753b603c06a7941f659f25eb9880e26a52893d43
+R cb6849d8d68db9f37513514790181050
 U drh
-Z 45e7819d88f165c7ca1f29433ea36d85
+Z 7f1f6d3fa08f490f2b4ba88b7a79b427
 # Remove this line to create a well-formed Fossil manifest.

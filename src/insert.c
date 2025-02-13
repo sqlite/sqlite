@@ -797,7 +797,7 @@ static int xferOptimization(
 ** is a SQLITE_NULL_DEFAULT and if it is, changes the content
 ** of iReg to the default value of the iCol-th column of pTab.
 */
-static SQLITE_NOINLINE void insertResolveValuesDflt(
+static void insertResolveValuesDflt(
   Parse *pParse,         /* Parsing context */
   Table *pTab,           /* Table being inserted into */
   int iCol,              /* Column being inserted into */
