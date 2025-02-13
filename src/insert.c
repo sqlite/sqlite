@@ -1455,9 +1455,9 @@ void sqlite3Insert(
     }else if( pSelect ){
       if( regFromSelect!=regData ){
         sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+k, iRegStore);
-        if( pParse->bValuesDflt && pTab->aCol[i].iDflt ){
-          insertResolveValuesDflt(pParse, pTab, i, iRegStore);
-        }
+      }
+      if( pParse->bValuesDflt && pTab->aCol[i].iDflt ){
+        insertResolveValuesDflt(pParse, pTab, i, iRegStore);
       }
     }else{
       Expr *pX = pList->a[k].pExpr;

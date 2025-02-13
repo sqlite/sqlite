@@ -1554,7 +1554,7 @@ case OP_DfltNull: {
 case OP_ToDefault: {            /* in1 */
   assert( pOp->p4type==P4_MEM );
   pIn1 = &aMem[pOp->p1];
-  if( pIn1->flags==(MEM_Null|MEM_Term|MEM_Subtype)
+  if( (pIn1->flags & (MEM_TypeMask|MEM_Term))==(MEM_Null|MEM_Term|MEM_Subtype)
    && pIn1->eSubtype==0
   ){
     memAboutToChange(p, pIn1);
