@@ -680,29 +680,32 @@ proc sqlite-handle-soname {} {
 }
 
 ########################################################################
-# If --enable-thresafe is set, this adds -DSQLITE_THREADSAFE=1 to
+# If --enable-threadsafe is set, this adds -DSQLITE_THREADSAFE=1 to
 # OPT_FEATURE_FLAGS and sets LDFLAGS_PTHREAD to the linker flags
-# needed for linking pthread. If --enable-threadsafe is not set, adds
-# -DSQLITE_THREADSAFE=0 to OPT_FEATURE_FLAGS and sets LDFLAGS_PTHREAD
-# to an empty string.
+# needed for linking pthread (possibly an empty string). If
+# --enable-threadsafe is not set, adds -DSQLITE_THREADSAFE=0 to
+# OPT_FEATURE_FLAGS and sets LDFLAGS_PTHREAD to an empty string.
 proc sqlite-handle-threadsafe {} {
   msg-checking "Support threadsafe operation? "
+  define LDFLAGS_PTHREAD ""
+  set enable 0
   proj-if-opt-truthy threadsafe {
-    msg-result yes
-    sqlite-add-feature-flag -DSQLITE_THREADSAFE=1
-    if {![proj-check-function-in-lib pthread_create pthread]
-        || ![proj-check-function-in-lib pthread_mutexattr_init pthread]} {
-      user-error "Missing required pthread bits"
+    if {[proj-check-function-in-lib pthread_create pthread]
+        && [proj-check-function-in-lib pthread_mutexattr_init pthread]} {
+      set enable 1
+      define LDFLAGS_PTHREAD [get-define lib_pthread_create]
+      undefine lib_pthread_create
+      undefine lib_pthread_mutexattr_init
+    } elseif {[proj-opt-was-provided threadsafe]} {
+      user-error "Missing required pthread libraries. Use --disable-threadsafe to disable this check."
     }
-    define LDFLAGS_PTHREAD [get-define lib_pthread_create]
-    undefine lib_pthread_create
     # Recall that LDFLAGS_PTHREAD might be empty even if pthreads if
     # found because it's in -lc on some platforms.
   } {
     msg-result no
-    sqlite-add-feature-flag -DSQLITE_THREADSAFE=0
-    define LDFLAGS_PTHREAD ""
   }
+  sqlite-add-feature-flag -DSQLITE_THREADSAFE=${enable}
+  return $enable
 }
 
 ########################################################################
