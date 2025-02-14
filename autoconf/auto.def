@@ -11,9 +11,7 @@ use sqlite-config
 if {0} {
   sqlite-config-bootstrap autoconf
 } else {
-  set sq3options [sqlite-config-bootstrap autoconf]
-  options $sq3options
-  unset sq3options
+  options [sqlite-config-bootstrap autoconf]
   sqlite-post-options-init
 }
 sqlite-check-common-bins

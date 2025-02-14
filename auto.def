@@ -17,9 +17,7 @@ use sqlite-config
 if {0} {
   sqlite-config-bootstrap canonical
 } else {
-  set sq3options [sqlite-config-bootstrap canonical]
-  options $sq3options
-  unset sq3options
+  options [sqlite-config-bootstrap canonical]
   sqlite-post-options-init
 }
 sqlite-setup-default-cflags
