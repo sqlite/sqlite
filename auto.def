@@ -14,8 +14,14 @@
 #
 
 use sqlite-config
-sqlite-config-bootstrap canonical
-
+if {0} {
+  sqlite-config-bootstrap canonical
+} else {
+  set sq3options [sqlite-config-bootstrap canonical]
+  options $sq3options
+  unset sq3options
+  sqlite-post-options-init
+}
 sqlite-setup-default-cflags
 proj-if-opt-truthy dev {
   # --enable-dev needs to come early so that the downstream tests
