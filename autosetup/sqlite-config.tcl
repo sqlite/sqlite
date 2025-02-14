@@ -213,7 +213,7 @@ proc sqlite-config-bootstrap {buildMode} {
       {*} {
         with-icu-ldflags:LDFLAGS
           => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the
-              ICU libraries}
+              ICU libraries. e.g. on Ubuntu systems, try '-licui18n -licuuc -licudata'.}
         with-icu-cflags:CFLAGS
           => {Apply extra CFLAGS/CPPFLAGS necessary for building with ICU.
               e.g. -I/usr/local/include}
@@ -1062,6 +1062,7 @@ proc sqlite-handle-icu {} {
   define LDFLAGS_ICU [join [opt-val with-icu-ldflags ""]]
   define CFLAGS_ICU [join [opt-val with-icu-cflags ""]]
   if {[proj-opt-was-provided with-icu-config]} {
+    msg-result "Checking for ICU support..."
     set icuConfigBin [opt-val with-icu-config]
     set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
     if {"auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin} {
@@ -1085,19 +1086,28 @@ proc sqlite-handle-icu {} {
                             /usr/local/bin/icu-config \
                             /usr/bin/icu-config]
         if {"" eq $icuConfigBin} {
-          proj-fatal "--with-icu-config=auto cannot find (pkg-config icu-io) or icu-config binary"
+          proj-indented-notice -error {
+            --with-icu-config=auto cannot find (pkg-config icu-io) or icu-config binary.
+            On Ubuntu-like systems try:
+            --with-icu-ldflags='-licui18n -licuuc -licudata'
+          }
         }
       }
       if {[file-isexec $icuConfigBin]} {
         set x [exec $icuConfigBin --ldflags]
         if {"" eq $x} {
-          proj-fatal "$icuConfigBin --ldflags returned no data"
+          proj-indented-notice -error \
+            [subst {
+              $icuConfigBin --ldflags returned no data.
+              On Ubuntu-like systems try:
+              --with-icu-ldflags='-licui18n -licuuc -licudata'
+            }]
         }
         define-append LDFLAGS_ICU $x
         set x [exec $icuConfigBin --cppflags]
         define-append CFLAGS_ICU $x
       } else {
-        proj-fatal "--with-icu-config=$bin does not refer to an executable"
+        proj-fatal "--with-icu-config=$icuConfigBin does not refer to an executable"
       }
     }
   }
