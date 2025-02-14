@@ -1,5 +1,5 @@
-C Fix\stest\scases\sadded\sfor\s[d7b90d92ffbfc61f]\sso\sthat\sthey\salso\swork\swhen\ncompiling\swith\sICU\ssupport.\n[forum:/forumpost/2ca8a09a7e|Forum\spost\s2ca8a09a7e]
-D 2025-02-14T10:28:28.618
+C ICU\sconfig\ssupport:\sadd\smore\sdetails\sto\serror\smessages\sand\scorrect\sa\stypo\swhich\swould\scause\sa\sconfigure\scrash\sif\s--with-icu-config=X\srefered\sto\sa\snon-executable\sX.
+D 2025-02-14T16:42:37.638
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl cef1e0aa0f2dee2042af66f28c97a9445f84d55d858ba9db4f6116846a1a325f
-F autosetup/sqlite-config.tcl ece913b7bb1efbabdd44fd787c0e4d2fd462d3019cc079a5e6bbe43c83d302b3
+F autosetup/sqlite-config.tcl c0a5e95b10d8168eb0f942a9d46b1b6a31a06a19991a294d2eace6b0a9d7e897
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0dadea0ec86b6ac74281915433e41ae66cc20547d9882c4be2933a24c8287927
-R 2aa968ae6750fa58cc8b9f9ab1460920
-U drh
-Z d2f9f0edcea4c1ead34b1dd8879b3a1a
+P 5964616dc9de9323fddfede0ded29ee135498c8760017ce1158461f596fe6914
+R 8f2beaf5ac609f50ce863af5a49fb8f4
+U stephan
+Z a0a82d139cbfe850e3642558116bae4d
 # Remove this line to create a well-formed Fossil manifest.
