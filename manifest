@@ -1,5 +1,5 @@
-C When\susing\sthe\s--out-implib\sbuild\soption,\sinstall\sthe\sgenerated\s.dll.a\sfile\sto\sPREFIX/lib.
-D 2025-02-13T16:20:05.290
+C Fix\stest\scases\sadded\sfor\s[d7b90d92ffbfc61f]\sso\sthat\sthey\salso\swork\swhen\ncompiling\swith\sICU\ssupport.\n[forum:/forumpost/2ca8a09a7e|Forum\spost\s2ca8a09a7e]
+D 2025-02-14T10:28:28.618
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1399,7 +1399,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/lemon-test01.y 70110eff607ab137ccc851edb2bc7e14a6d4f246b5d2d25f82a60b69d87a9ff2
 F test/like.test b3ea2ba3558199aa8f25a42ddeb54772e234fab50868c9f066047acdbda8fc58
 F test/like2.test d3be15fefee3e02fc88942a9b98f26c5339bbdef7783c90023c092c4955fe3d3
-F test/like3.test b21284df226d6028feeb4dcc56ad9d32673d82c14a63f15f25471292c36491e7
+F test/like3.test 1179fef50a9baa22767a431244aeefbf29f36606f0f854d4ab9e1d2fecf97dd3
 F test/limit.test 350f5d03c29e7dff9a2cde016f84f8d368d40bcd02fa2b2a52fa10c4bf3cbfaf
 F test/limit2.test 9409b033284642a859fafc95f29a5a6a557bd57c1f0d7c3f554bd64ed69df77e
 F test/literal.test a65dca9fef86e51b8e45544268e37abbd4bb94ba35fd65f6fdcab2f288cd8f79
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5190b0fd9bd76653fb7bb08e931699e42c88cef8a00352360d091948cda93a2
-R f439c2b5346ac4c6cf58b3b95ae0e844
-U stephan
-Z 52b2d5f34b70aec8885831f59cc359bf
+P 0dadea0ec86b6ac74281915433e41ae66cc20547d9882c4be2933a24c8287927
+R 2aa968ae6750fa58cc8b9f9ab1460920
+U drh
+Z d2f9f0edcea4c1ead34b1dd8879b3a1a
 # Remove this line to create a well-formed Fossil manifest.
