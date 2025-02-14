@@ -8,7 +8,14 @@
 # included in this source tree as ./autosetup/jimsh0.c.
 #
 use sqlite-config
-sqlite-config-bootstrap autoconf
+if {0} {
+  sqlite-config-bootstrap autoconf
+} else {
+  set sq3options [sqlite-config-bootstrap autoconf]
+  options $sq3options
+  unset sq3options
+  sqlite-post-options-init
+}
 sqlite-check-common-bins
 sqlite-check-common-system-deps
 proj-check-rpath

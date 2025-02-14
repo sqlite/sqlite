@@ -295,9 +295,14 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
   }
-  #puts "options = $opts"; exit 0
-  options $opts
-  sqlite-post-options-init
+  if {0} {
+    #puts "options = $opts"; exit 0
+    options $opts
+    sqlite-post-options-init
+  } else {
+    # Workaround for https://github.com/msteveb/autosetup/issues/73
+    return $opts
+  }
 }; # sqlite-config-bootstrap
 
 ########################################################################
