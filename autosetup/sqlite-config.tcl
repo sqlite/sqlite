@@ -690,6 +690,7 @@ proc sqlite-handle-threadsafe {} {
   define LDFLAGS_PTHREAD ""
   set enable 0
   proj-if-opt-truthy threadsafe {
+    msg-result "Checking for libs..."
     if {[proj-check-function-in-lib pthread_create pthread]
         && [proj-check-function-in-lib pthread_mutexattr_init pthread]} {
       set enable 1
@@ -698,11 +699,13 @@ proc sqlite-handle-threadsafe {} {
       undefine lib_pthread_mutexattr_init
     } elseif {[proj-opt-was-provided threadsafe]} {
       user-error "Missing required pthread libraries. Use --disable-threadsafe to disable this check."
+    } else {
+      msg-result "pthread support not detected"
     }
     # Recall that LDFLAGS_PTHREAD might be empty even if pthreads if
     # found because it's in -lc on some platforms.
   } {
-    msg-result no
+    msg-result "Disabled using --disable-threadsafe"
   }
   sqlite-add-feature-flag -DSQLITE_THREADSAFE=${enable}
   return $enable
