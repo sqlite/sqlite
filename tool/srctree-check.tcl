@@ -34,21 +34,6 @@ set TCLSH [info nameofexe]
 #
 set NERR 0
 
-######################### autoconf/tea/configure.ac ###########################
-
-set confac [readfile $ROOT/autoconf/tea/configure.ac]
-set vers [readfile $ROOT/VERSION]
-set pattern {AC_INIT([sqlite],[}
-append pattern [string trim $vers]
-append pattern {])}
-if {[string first $pattern $confac]<=0} {
-  puts "ERROR: ./autoconf/tea/configure.ac does not agree with ./VERSION"
-  puts "...... Fix: manually edit ./autoconf/tea/configure.ac and put the"
-  puts "......      correct version number in AC_INIT()"
-  incr NERR
-}
-unset confac
-
 ######################### autoconf/Makefile.msc ###############################
 
 set f1 [readfile $ROOT/autoconf/Makefile.msc]
