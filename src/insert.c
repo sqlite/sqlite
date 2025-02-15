@@ -800,7 +800,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 **
 **      INSERT INTO t1(e,b,g) ....
 **                  \/ \___/
-**           pTab---'    `----- IDLIST in pColumn
+**           pTab---'    `----- IDLIST
 **
 ** Then aTabColMap[] contains: { 0, 2, 0, 0, 1, 0, 3 }
 ** Thus aTabColMap provides a one-based mapping of table column indexes into
@@ -812,23 +812,20 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 ** the caller must free it) that inverts the mapping.  The returned
 ** array aColTabMap[] would be {4, 1, 6}.  This new mapping is zero-based.
 **
-** The aTabColMap and pColumn inputs might both be NULL.  This means
-** that the IDLIST on the INSERT is omitted.  This routine still
-** constructs a column map, but in this case it maps "insertable"
-** columns of the table into actual columns.  Hidden and computed
-** columns are not "insertable" and are thus skipped.
+** The aTabColMap input might both be NULL.  This means that the IDLIST
+** on the INSERT is omitted.  This routine still constructs a column map,
+** but in this case it maps "insertable" columns of the table into actual
+** columns.  Hidden and computed columns are not "insertable" and are
+** thus skipped.
 */
 static int *computeColTabMap(
   Parse *pParse,            /* Parsing context */
   int *const aTabColMap,    /* Mapping from table column to IDList column */
-  Table *pTab,              /* The table */
-  IdList *pColumn           /* The IDLIST */
+  Table *pTab               /* The table */
 ){
   int *aColTabMap;
 
   if( pParse->nErr ) return 0;
-  assert( aTabColMap!=0 || pColumn==0 );
-  assert( pColumn!=0 || aTabColMap==0 );
   assert( pTab->nCol>0 );
   aColTabMap = sqlite3DbMallocZero(pParse->db, sizeof(int)*pTab->nCol);
   if( aColTabMap==0 ) return 0;
@@ -838,18 +835,14 @@ static int *computeColTabMap(
             sizeof(int)*pTab->nCol );
     for(i=0; i<pTab->nCol; i++){
       if( aTabColMap[i]>0 ){
-        assert( aTabColMap[i]<=pColumn->nId );
         aColTabMap[aTabColMap[i]-1] = i;
       }
     }
   }else{
-    int nHidden = 0;
     int i, j;
     for(i=j=0; i<pTab->nCol; i++){
-      if( (pTab->aCol[i].colFlags & COLFLAG_NOINSERT)!=0 ){
-        nHidden++;
-      }else{
-        aColTabMap[j++] = i - nHidden;
+      if( (pTab->aCol[i].colFlags & COLFLAG_NOINSERT)==0 ){
+        aColTabMap[j++] = i;
       }
     }
   }
@@ -1212,7 +1205,7 @@ void sqlite3Insert(
   ** values.
   */
   if( pParse->bDfltInExpr ){
-    int *aColTabMap = computeColTabMap(pParse, aTabColMap, pTab, pColumn);
+    int *aColTabMap = computeColTabMap(pParse, aTabColMap, pTab);
     if( aColTabMap==0 ){
       assert( pParse->nErr && pParse->db->mallocFailed );
     }else if( pSelect==0 ){

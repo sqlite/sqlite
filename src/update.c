@@ -490,6 +490,17 @@ void sqlite3Update(
       }
 #endif
       aXRef[j] = i;
+      if( pChanges->a[i].pExpr->op==TK_DEFAULT ){
+        Expr *p = pChanges->a[i].pExpr;
+        if( pTab->aCol[j].iDflt==0 ){
+          p->op = TK_NULL;
+        }else{
+          p->op = TK_UPLUS;
+          assert( p->pLeft==0 );
+          p->pLeft = sqlite3ExprDup(pParse->db, 
+                           sqlite3ColumnExpr(pTab, &pTab->aCol[j]), 0);
+        }   
+      }
     }else{
       if( pPk==0 && sqlite3IsRowid(pChanges->a[i].zEName) ){
         j = -1;
