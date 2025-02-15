@@ -4896,6 +4896,10 @@ expr_code_doover:
       sqlite3VdbeLoadString(v, target, pExpr->u.zToken);
       return target;
     }
+    case TK_DEFAULT: {
+      sqlite3ErrorMsg(pParse, "near \"%#T\": syntax error", pExpr);
+      return target;
+    }
     default: {
       /* Make NULL the default case so that if a bug causes an illegal
       ** Expr node to be passed into this function, it will be handled

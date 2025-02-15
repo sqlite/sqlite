@@ -1404,6 +1404,13 @@ expr(A) ::= expr(B) PTR(C) expr(D). {
   A = sqlite3ExprFunction(pParse, pList, &C, 0);
 }
 
+expr(A) ::= DEFAULT(X). {
+  Expr *p = sqlite3Expr(pParse->db, TK_DEFAULT, 0);
+  sqlite3ExprSetErrorOffset(p, (int)(X.z - pParse->zTail));
+  pParse->bDfltInExpr = 1;
+  A = p;
+}
+
 %type between_op {int}
 between_op(A) ::= BETWEEN.     {A = 0;}
 between_op(A) ::= NOT BETWEEN. {A = 1;}

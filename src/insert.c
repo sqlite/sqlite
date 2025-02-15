@@ -671,11 +671,17 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 **       because the complex rules SQLite uses (see function 
 **       sqlite3SubqueryColumnTypes() in select.c) to determine the effective
 **       affinity of such a column for all rows require access to all values in
-**       the column simultaneously. 
+**       the column simultaneously.
+**
+**    e) The DEFAULT keyword cannot have been used in any of the terms
+**       of the VALUES clause.  This optimization won't work in that case
+**       because we do not yet know the mapping from VALUES-clause terms
+**       into table columns, so we cannot construct the mapping.
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
   if( pParse->bHasWith                   /* condition (a) above */
+   || pParse->bDfltInExpr                /* condition (e) above */
    || pParse->db->init.busy              /* condition (b) above */
    || exprListIsConstant(pParse,pRow)==0 /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 &&
@@ -782,6 +788,102 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
   return pLeft;
 }
 
+/*
+** The aTabColMap[] array maps table columns into terms of the IDLIST
+** of an INSERT.  For example, if we have:
+**
+**      CREATE TABLE t1(a,b,c,d,e,f,g);
+**                   \/ \___________/
+**           pTab----'        `-------- pTab->aCol[]
+**
+** And we do:
+**
+**      INSERT INTO t1(e,b,g) ....
+**                  \/ \___/
+**           pTab---'    `----- IDLIST in pColumn
+**
+** Then aTabColMap[] contains: { 0, 2, 0, 0, 1, 0, 3 }
+** Thus aTabColMap provides a one-based mapping of table column indexes into
+** IDLIST entries.  0 means "none" because there are often table columns
+** that are not in the IDLIST.  The left-most table columns is 1, and
+** the next table columns is 2 and so forth.
+**
+** This routine creates a new array (obtained from sqlite3DbMalloc() - 
+** the caller must free it) that inverts the mapping.  The returned
+** array aColTabMap[] would be {4, 1, 6}.  This new mapping is zero-based.
+**
+** The aTabColMap and pColumn inputs might both be NULL.  This means
+** that the IDLIST on the INSERT is omitted.  This routine still
+** constructs a column map, but in this case it maps "insertable"
+** columns of the table into actual columns.  Hidden and computed
+** columns are not "insertable" and are thus skipped.
+*/
+static int *computeColTabMap(
+  Parse *pParse,            /* Parsing context */
+  int *const aTabColMap,    /* Mapping from table column to IDList column */
+  Table *pTab,              /* The table */
+  IdList *pColumn           /* The IDLIST */
+){
+  int *aColTabMap;
+
+  if( pParse->nErr ) return 0;
+  assert( aTabColMap!=0 || pColumn==0 );
+  assert( pColumn!=0 || aTabColMap==0 );
+  assert( pTab->nCol>0 );
+  aColTabMap = sqlite3DbMallocZero(pParse->db, sizeof(int)*pTab->nCol);
+  if( aColTabMap==0 ) return 0;
+  if( aTabColMap ){
+    int i;
+    assert( sqlite3DbMallocSize(pParse->db, aTabColMap) >=
+            sizeof(int)*pTab->nCol );
+    for(i=0; i<pTab->nCol; i++){
+      if( aTabColMap[i]>0 ){
+        assert( aTabColMap[i]<=pColumn->nId );
+        aColTabMap[aTabColMap[i]-1] = i;
+      }
+    }
+  }else{
+    int nHidden = 0;
+    int i, j;
+    for(i=j=0; i<pTab->nCol; i++){
+      if( (pTab->aCol[i].colFlags & COLFLAG_NOINSERT)!=0 ){
+        nHidden++;
+      }else{
+        aColTabMap[j++] = i - nHidden;
+      }
+    }
+  }
+  return aColTabMap;
+}
+
+/*
+** Scan all expressions in pList.  If any is just a DEFAULT keyword,
+** convert that expression into a new expressionthat evaluates to
+** the default value of the corresponding table.
+*/
+static void convertDefaultExpr(
+  Parse *pParse,    /* Parsing context */
+  int *aColTabMap,  /* Mapping from pList entry to pTab column number */
+  Table *pTab,      /* Table being inserted into */
+  ExprList *pList   /* The list to scan */
+){
+  int i, iCol;
+  for(i=0; i<pList->nExpr; i++){
+    Expr *p = pList->a[i].pExpr;
+    if( p->op!=TK_DEFAULT ) continue;
+    iCol = aColTabMap[i];
+    assert( iCol>=0 && iCol<pTab->nCol );
+    if( pTab->aCol[iCol].iDflt==0 ){
+      p->op = TK_NULL;
+    }else{
+      p->op = TK_UPLUS;
+      assert( p->pLeft==0 );
+      p->pLeft = sqlite3ExprDup(pParse->db, 
+                           sqlite3ColumnExpr(pTab, &pTab->aCol[iCol]), 0);
+    }
+  }
+}
+
 /* Forward declaration */
 static int xferOptimization(
   Parse *pParse,        /* Parser context */
@@ -845,7 +947,8 @@ static int xferOptimization(
 **
 ** The 3rd template is for when the second template does not apply
 ** and the SELECT clause does not read from <table> at any time.
-** The generated code follows this template:
+** This template is also used when the INSERT has a VALUES clause with
+** two or more rows.  Pseudocode for this, the 3rd template is:
 **
 **         X <- A
 **         goto B
@@ -864,7 +967,7 @@ static int xferOptimization(
 **
 ** The 4th template is used if the insert statement takes its
 ** values from a SELECT but the data is being inserted into a table
-** that is also read as part of the SELECT.  In the third form,
+** that is also read as part of the SELECT.  In the fourth form,
 ** we have to use an intermediate table to store the results of
 ** the select.  The template is like this:
 **
@@ -1102,6 +1205,28 @@ void sqlite3Insert(
         }
       }
     }
+  }
+
+  /* If there are DEFAULT keywords within VALUES clauses on the right-hand
+  ** side of this INSERT, convert them into the corresponding column default
+  ** values.
+  */
+  if( pParse->bDfltInExpr ){
+    int *aColTabMap = computeColTabMap(pParse, aTabColMap, pTab, pColumn);
+    if( aColTabMap==0 ){
+      assert( pParse->nErr && pParse->db->mallocFailed );
+    }else if( pSelect==0 ){
+      /* A single-row VALUES clause in pList */
+      convertDefaultExpr(pParse, aColTabMap, pTab, pList);
+    }else if( (pSelect->selFlags & SF_Values)!=0 ){
+      /* A multi-row VALUES clause in pSelect */
+      Select *pS = pSelect;
+      do{
+        convertDefaultExpr(pParse, aColTabMap, pTab, pS->pEList);
+        pS = pS->pPrior;
+      }while( pS );
+    }
+    sqlite3DbFree(db, aColTabMap);
   }
 
   /* Figure out how many columns of data are supplied.  If the data
