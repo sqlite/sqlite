@@ -821,13 +821,14 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 static int *computeColTabMap(
   Parse *pParse,            /* Parsing context */
   int *const aTabColMap,    /* Mapping from table column to IDList column */
-  Table *pTab               /* The table */
+  Table *pTab,              /* The table */
+  int nId                   /* Number of columns in the IDLIST */
 ){
   int *aColTabMap;
 
   if( pParse->nErr ) return 0;
   assert( pTab->nCol>0 );
-  aColTabMap = sqlite3DbMallocZero(pParse->db, sizeof(int)*pTab->nCol);
+  aColTabMap = sqlite3DbMallocZero(pParse->db, sizeof(int)*nId);
   if( aColTabMap==0 ) return 0;
   if( aTabColMap ){
     int i;
@@ -858,10 +859,11 @@ static void convertDefaultExpr(
   Parse *pParse,    /* Parsing context */
   int *aColTabMap,  /* Mapping from pList entry to pTab column number */
   Table *pTab,      /* Table being inserted into */
-  ExprList *pList   /* The list to scan */
+  ExprList *pList,  /* The list to scan */
+  int nId           /* Number of columns in aColTabMap */
 ){
   int i, iCol;
-  for(i=0; i<pList->nExpr; i++){
+  for(i=0; i<pList->nExpr && i<nId; i++){
     Expr *p = pList->a[i].pExpr;
     if( p->op!=TK_DEFAULT ) continue;
     iCol = aColTabMap[i];
@@ -1204,18 +1206,22 @@ void sqlite3Insert(
   ** side of this INSERT, convert them into the corresponding column default
   ** values.
   */
-  if( pParse->bDfltInExpr ){
-    int *aColTabMap = computeColTabMap(pParse, aTabColMap, pTab);
+  if( pParse->bDfltInExpr && (pList || pSelect) ){
+    int nId;
+    int *aColTabMap;
+    nId = pColumn ? pColumn->nId : 0;
+    if( pTab->nCol > nId ) nId = pTab->nCol;
+    aColTabMap = computeColTabMap(pParse, aTabColMap, pTab, nId);
     if( aColTabMap==0 ){
-      assert( pParse->nErr && pParse->db->mallocFailed );
+      assert( pParse->nErr );
     }else if( pSelect==0 ){
       /* A single-row VALUES clause in pList */
-      convertDefaultExpr(pParse, aColTabMap, pTab, pList);
+      convertDefaultExpr(pParse, aColTabMap, pTab, pList, nId);
     }else if( (pSelect->selFlags & SF_Values)!=0 ){
       /* A multi-row VALUES clause in pSelect */
       Select *pS = pSelect;
       do{
-        convertDefaultExpr(pParse, aColTabMap, pTab, pS->pEList);
+        convertDefaultExpr(pParse, aColTabMap, pTab, pS->pEList, nId);
         pS = pS->pPrior;
       }while( pS );
     }

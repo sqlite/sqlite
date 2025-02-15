@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\sINSERT\sof\sDEFAULT\sin\sVALUES\sclauses.\s\sAdd\sthe\sability\sto\nUPDATE\sto\sDEFAULT.
-D 2025-02-15T23:03:46.651
+C Bug\sfixes\sin\sthe\sINSERT\slogic\sfor\sVALUES\scontaining\sDEFAULT\sterms.
+D 2025-02-15T23:47:25.843
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -738,7 +738,7 @@ F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 5e3476c44d7a4366729d23315a2b0fbad8341fd2423aff7d2e8a683380fac205
+F src/insert.c 1525752ebd9a3fc09692a631a8b3a3a3d51e0df479a598164e268d9886f90d2e
 F src/json.c 2663a0c7e574cb928de944720dcdcc11c931877d877549b8f1258a4002efd6f7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd1b8683726db9ff380a5c6e143b954cf5ea50351e558f3a3a1f51d63aac0ce9
-R dcaab8e2f4396e5a69294fea706767f5
+P 1902a0c16875c46b7e6f6a99d0d90c407b93fa44c4962474b13301e375f217b4
+R ee73b001203f5bc2912c6537f9cb08ca
 U drh
-Z 94135a035a82a8d7aa098ef01e6ae6c9
+Z 72f3edef63ba837099141ae37b5faae7
 # Remove this line to create a well-formed Fossil manifest.
