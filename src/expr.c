@@ -4897,7 +4897,8 @@ expr_code_doover:
       return target;
     }
     case TK_DEFAULT: {
-      sqlite3ErrorMsg(pParse, "near \"%#T\": syntax error", pExpr);
+      sqlite3ErrorMsg(pParse, "near \"default\": syntax error");
+      sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
       return target;
     }
     default: {

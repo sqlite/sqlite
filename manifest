@@ -1,5 +1,5 @@
-C An\salternative\simplementation\sof\sthe\sdefault-in-values\sfeature\sthat\sis\ncleaner\s(it\savoids\sdodgy\spoking\sabout\sin\sthe\sparser\sLALR\sstack\slooking\sfor\nerrors)\sand\shas\sless\sperformance\simpact\sin\sthe\scommon\scase\swhere\sDEFAULT\sis\nnot\sused.
-D 2025-02-15T20:31:25.346
+C Fix\sthe\serror\smessage\stext\sfor\smisuse\sof\sthe\sDEFAULT\skeyword.
+D 2025-02-15T21:53:59.820
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -729,7 +729,7 @@ F src/date.c 842c08ac143a56a627b05ac51d68624f2b7b03e3b4cba596205e735eed64ee57
 F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 22cb9d1d3fd849b3c244454e76ddfad3f454af779862424f93ef6a89d754e297
+F src/expr.c 7a78794a6432f90e6f029f79907a8c649b2c1cce7e3782a05466f0141a94209f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c b2fb33139972d7d65640b27ea962a49f1616265428001090cab39fcf270228e1
@@ -2207,11 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1860ea060bd373f49d0b5d41367409a4607e9a0a0cb606af99927af15de1e21e
-R 3cb064185b620b2a38969a214589fa36
-T *branch * default-in-values-2
-T *sym-default-in-values-2 *
-T -sym-trunk *
+P a3d831378d146f241e0a6f23eb4b8aac4da99904a91979a2e962e5cfa3ad4605
+R 7973e7b7b61d43c3df249395957d2921
 U drh
-Z d4065c99bc92bee52eb7b186d29eccbe
+Z ddda2367e3a1d980dd0bf94344c33284
 # Remove this line to create a well-formed Fossil manifest.
