@@ -436,7 +436,7 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	if [ ! -d "$@" ]; then $(INSTALL) -d "$@"; fi
+	@if [ ! -d "$@" ]; then set -x; $(INSTALL) -d "$@"; fi
 # ^^^^ on some platforms, install -d fails if the target already exists.
 
 #
@@ -1421,19 +1421,17 @@ so: $(libsqlite3.SO)-$(ENABLE_SHARED)
 all: so
 
 #
-# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(PACKAGE_VERSION)
-# and create symlinks which point to it:
+# On most Unix-like platforms, install the $(libsqlite3.SO) as
+# $(libsqlite3.SO).$(PACKAGE_VERSION) and create symlinks which point
+# to it:
 #
 # - libsqlite3.so.$(PACKAGE_VERSION)
 # - libsqlite3.so.0      =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
 # - libsqlite3.so        =symlink-> libsqlite3.so.3
 #
-# N.B. we initially had a link named libsqlite3.so.3 but it's
-# unnecessary unless we want to set SONAME to libsqlite3.so.3, which
-# is also unnecessary.
-#
-# N.B. different transformations are applied on systems where $(T.dll)
-# is ".dylib" and none of the following docs apply on such systems.
+# The symlinks are not added on platforms where $(T.dll) is ".dll",
+# and different transformations take place on platforms where $(T.dll)
+# is ".dylib".
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1475,8 +1473,10 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		$(INSTALL) $(libsqlite3.SO).a "$(install-dir.lib)"; \
 	fi
 	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
-	cd "$(install-dir.lib)" || exit $$?; \
-	if [ x.dylib = x$(T.dll) ]; then \
+	if [ x.dll = x$(T.dll) ]; then \
+		echo "No library symlinks needed on this platform"; \
+	elif [ x.dylib = x$(T.dll) ]; then \
+		cd "$(install-dir.lib)" || exit $$?; \
 		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
 		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
 		mv $(libsqlite3.SO) $$dllname || exit $$?; \
@@ -1484,6 +1484,7 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
 		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
 	else \
+		cd "$(install-dir.lib)" || exit $$?; \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
