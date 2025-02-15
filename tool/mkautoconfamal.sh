@@ -25,10 +25,14 @@ VERSION=`cat $TOP/VERSION`
 HASH=`cut -c1-10 $TOP/manifest.uuid`
 DATETIME=`grep '^D' $TOP/manifest | tr -c -d '[0-9]' | cut -c1-12`
 
-# Verify that the version number in the TEA autoconf file is correct.
-# Fail with an error if not.
+# Inject the current version into the TEA autoconf file.
 #
-if grep $VERSION $TOP/autoconf/tea/configure.ac
+sed -e "s/@VERSION@/$VERSION/" \
+    < $TOP/autoconf/tea/configure.ac.in \
+    > $TOP/autoconf/tea/configure.ac
+# And then verify that that worked...
+#
+if grep $VERSION $TOP/autoconf/tea/configure.ac > /dev/null
 then echo "TEA version number ok"
 else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
 fi
@@ -91,10 +95,8 @@ cat <<EOF > tea/generic/tclsqlite3.c
 EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" tea/configure.ac > tmp
-mv tmp tea/configure.ac
-
 cd tea
+rm -f configure.ac.in
 autoconf
 rm -rf autom4te.cache
 
