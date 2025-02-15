@@ -295,14 +295,14 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
   }
-  if {0} {
-    #puts "options = $opts"; exit 0
-    options $opts
-    sqlite-post-options-init
-  } else {
-    # Workaround for https://github.com/msteveb/autosetup/issues/73
-    return $opts
+  #lappend opts "soname:=duplicateEntry => {x}"; #just testing
+  if {[catch {options $opts}]} {
+    # Workaround for <https://github.com/msteveb/autosetup/issues/73>
+    # where [options] behaves oddly on _some_ TCL builds when it's
+    # called from deeper than the global scope.
+    return -code break
   }
+  sqlite-post-options-init
 }; # sqlite-config-bootstrap
 
 ########################################################################
