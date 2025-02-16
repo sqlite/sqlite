@@ -1,5 +1,5 @@
-C Automate\supdate\sof\sthe\slibrary\sversion\snumber\sin\sautoconf/tea/configure.ac\sas\spart\sof\sthe\stool/mkautoconfamal.sh\sprocess.
-D 2025-02-15T16:29:34.654
+C Remove\sthe\sautoconf/tea/configure.ac\scheck\sfrom\stool/srctree-check.tcl\nsince\sthat\sfile\sno\slonger\sexists.
+D 2025-02-16T11:20:00.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -24,7 +24,7 @@ F autoconf/auto.def 9af634c6d51fa4b82c9bb61b51249ca087f2cbe09c7c3c31f920759082a1
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac.in da18360dfdeac7414fa8deb549f3d65aeca0ae1150ff1a8b902019b39ce019a4 w autoconf/tea/configure.ac
+F autoconf/tea/configure.ac.in da18360dfdeac7414fa8deb549f3d65aeca0ae1150ff1a8b902019b39ce019a4
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -2195,7 +2195,7 @@ F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaa
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
-F tool/srctree-check.tcl 1f1f505835a4beca64c1751a7ebec5c41a1ddf22b1e80481345b95059eef6583
+F tool/srctree-check.tcl 9dfdaf37653df0b58a309c405cc115026468eee4c1ffad5f2af7428c531e554d
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c dfe9cc03cf87728ac9836be30763f8aa52b82caca0780b3d3f3572e4643b01d3
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d94ad545776ad5cdbd637c1532e0be5f0364eee31484ede97ec4173b2b76f781
-Q +be265559a334eda127862ae54edb58c46051f74445642daa84a9f61a81df1bac
-R f1c8af34474d855ed833c09071537ab5
-U stephan
-Z e1b72fd3cfe1b362bcc00fb0b0492941
+P d5c0be36fca18e15938ce9dc9c13bf79497d013623de85e23bb18e0940b56eba
+R 96f42463ffc073be29f85da4dbe2e1f2
+U drh
+Z 7e2e5275d1bc5b14c28ebde5e041a0d7
 # Remove this line to create a well-formed Fossil manifest.

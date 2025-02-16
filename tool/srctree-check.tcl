@@ -5,7 +5,6 @@
 #
 #     *    Makefile.msc and autoconf/Makefile.msc agree
 #     *    src/ctime.tcl is consistent with tool/mkctimec.tcl
-#     *    VERSION agrees with autoconf/tea/configure.ac
 #     *    src/pragma.h agrees with tool/mkpragmatab.tcl
 #
 # Other tests might be added later.  
@@ -35,21 +34,6 @@ set TCLSH [info nameofexe]
 # Number of errors seen.
 #
 set NERR 0
-
-######################### autoconf/tea/configure.ac ###########################
-
-set confac [readfile $ROOT/autoconf/tea/configure.ac]
-set vers [readfile $ROOT/VERSION]
-set pattern {AC_INIT([sqlite],[}
-append pattern [string trim $vers]
-append pattern {])}
-if {[string first $pattern $confac]<=0} {
-  puts "ERROR: ./autoconf/tea/configure.ac does not agree with ./VERSION"
-  puts "...... Fix: manually edit ./autoconf/tea/configure.ac and put the"
-  puts "......      correct version number in AC_INIT()"
-  incr NERR
-}
-unset confac
 
 ######################### autoconf/Makefile.msc ###############################
 
