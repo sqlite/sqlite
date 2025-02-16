@@ -199,16 +199,16 @@ public final class CApi {
   }
 
   private static native sqlite3_backup sqlite3_backup_init(
-    @NotNull long ptrToDbDest, @NotNull String destTableName,
-    @NotNull long ptrToDbSrc, @NotNull String srcTableName
+    @NotNull long ptrToDbDest, @NotNull String destSchemaName,
+    @NotNull long ptrToDbSrc, @NotNull String srcSchemaName
   );
 
   public static sqlite3_backup sqlite3_backup_init(
-    @NotNull sqlite3 dbDest, @NotNull String destTableName,
-    @NotNull sqlite3 dbSrc, @NotNull String srcTableName
+    @NotNull sqlite3 dbDest, @NotNull String destSchemaName,
+    @NotNull sqlite3 dbSrc, @NotNull String srcSchemaName
   ){
-    return sqlite3_backup_init( dbDest.getNativePointer(), destTableName,
-                                dbSrc.getNativePointer(), srcTableName );
+    return sqlite3_backup_init( dbDest.getNativePointer(), destSchemaName,
+                                dbSrc.getNativePointer(), srcSchemaName );
   }
 
   private static native int sqlite3_backup_pagecount(@NotNull long ptrToBackup);

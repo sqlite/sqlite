@@ -1,5 +1,5 @@
-C Add\sa\stypecast\sto\savoid\s32-bit\sinteger\soverflow\sin\sthe\sconcat_ws()\nfunction\swith\san\senormous\sseparator\svalues\sand\smany\sarguments.
-D 2025-02-16T10:57:25.604
+C API\snaming\stypo\sreported\sin\s[forum:416f2d8dec|forum\spost\s416f2d8dec].\sNo\sfunctional\schanges.
+D 2025-02-16T13:13:19.874
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -298,7 +298,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java 0b72cdff61533b564d65b63
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java c045a5b47e02bb5f1af91973814a905f12048c428a3504fbc5266d1c1be3de5a
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 27bbd944ea8c147afd25b93f17dc397f3627611ebe2878944a32ffeffc98e99e
+F ext/jni/src/org/sqlite/jni/capi/CApi.java 8620c652138b84af795fd65bc200028590f533407c093d4355f9524dc594c004
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 57e2d275dcebe690b1fc1f3d34eb96879b2d7039bce30b563aee547bf45d8a8b
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java 5bfa226a8e7a92e804fd52d6e42b4c7b875fa7a94f8e2c330af8cc244a8920ab
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1860ea060bd373f49d0b5d41367409a4607e9a0a0cb606af99927af15de1e21e
-R a83683a53b87e7c1a91cc72d41480630
-U drh
-Z e32688ad6baa8e44c1d5b0c7282d0615
+P 498e3f1cf57f164fbd8380e92bf91b9f26d6aa05d092fcd135d754abf1e5b1b5
+R 4e1e370efca67eead8ee775d6ab0dd45
+U stephan
+Z 1f778f59dd3029d05607c051f27c5963
 # Remove this line to create a well-formed Fossil manifest.
