@@ -4897,6 +4897,8 @@ expr_code_doover:
       return target;
     }
     case TK_DEFAULT: {
+      /* If the DEFAULT keyword ever gets this far, that means it was used
+      ** in a context that is not supported.  So raise an error. */
       sqlite3ErrorMsg(pParse, "near \"default\": syntax error");
       sqlite3RecordErrorOffsetOfExpr(pParse->db, pExpr);
       return target;

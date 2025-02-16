@@ -4976,6 +4976,7 @@ void sqlite3FreeIndex(sqlite3*, Index*);
 # define sqlite3AutoincrementBegin(X)
 # define sqlite3AutoincrementEnd(X)
 #endif
+void sqlite3ExpandDefaultValue(Parse*, Expr*, Table*, int);
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int, Upsert*);
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
   void sqlite3ComputeGeneratedColumns(Parse*, int, Table*);

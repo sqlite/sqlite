@@ -676,7 +676,8 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 **    e) The DEFAULT keyword cannot have been used in any of the terms
 **       of the VALUES clause.  This optimization won't work in that case
 **       because we do not yet know the mapping from VALUES-clause terms
-**       into table columns, so we cannot construct the mapping.
+**       into table columns, so we cannot figure out which column default
+**       value to use in place of the DEFAULT keyword.
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
@@ -831,6 +832,7 @@ static int *computeColTabMap(
   aColTabMap = sqlite3DbMallocZero(pParse->db, sizeof(int)*nId);
   if( aColTabMap==0 ) return 0;
   if( aTabColMap ){
+    /* Invert the aTabColMap[] */
     int i;
     assert( sqlite3DbMallocSize(pParse->db, aTabColMap) >=
             sizeof(int)*pTab->nCol );
@@ -840,6 +842,7 @@ static int *computeColTabMap(
       }
     }
   }else{
+    /* Construct a new mapping that merely skips over non-insertable terms */
     int i, j;
     for(i=j=0; i<pTab->nCol; i++){
       if( (pTab->aCol[i].colFlags & COLFLAG_NOINSERT)==0 ){
@@ -851,8 +854,31 @@ static int *computeColTabMap(
 }
 
 /*
+** Expression pExpr is a DEFAULT keyword.  Transform that expression to
+** an expansion of the actual default value for the iCol-th column of
+** table pTab.
+*/
+void sqlite3ExpandDefaultValue(
+  Parse *pParse,    /* Parsing context */
+  Expr *pExpr,      /* Expression to be transformed */
+  Table *pTab,      /* Table that supplies the new value to pExpr */
+  int iCol          /* Column of pTab that contains the new value for pExpr */
+){
+  assert( pExpr->op==TK_DEFAULT );
+  assert( iCol>=0 && iCol<pTab->nCol );
+  if( pTab->aCol[iCol].iDflt==0 ){
+    pExpr->op = TK_NULL;
+  }else{
+    Expr *pDfltVal = sqlite3ColumnExpr(pTab, &pTab->aCol[iCol]);
+    pExpr->op = TK_UPLUS;
+    assert( pExpr->pLeft==0 );
+    pExpr->pLeft = sqlite3ExprDup(pParse->db, pDfltVal, 0);
+  }
+}
+
+/*
 ** Scan all expressions in pList.  If any is just a DEFAULT keyword,
-** convert that expression into a new expressionthat evaluates to
+** convert that expression into a new expression that evaluates to
 ** the default value of the corresponding table.
 */
 static void convertDefaultExpr(
@@ -862,19 +888,13 @@ static void convertDefaultExpr(
   ExprList *pList,  /* The list to scan */
   int nId           /* Number of columns in aColTabMap */
 ){
-  int i, iCol;
+  int i;
+  assert( aColTabMap!=0 );
+  assert( sqlite3DbMallocSize(pParse->db, aColTabMap) >= sizeof(int)*nId );
   for(i=0; i<pList->nExpr && i<nId; i++){
     Expr *p = pList->a[i].pExpr;
-    if( p->op!=TK_DEFAULT ) continue;
-    iCol = aColTabMap[i];
-    assert( iCol>=0 && iCol<pTab->nCol );
-    if( pTab->aCol[iCol].iDflt==0 ){
-      p->op = TK_NULL;
-    }else{
-      p->op = TK_UPLUS;
-      assert( p->pLeft==0 );
-      p->pLeft = sqlite3ExprDup(pParse->db, 
-                           sqlite3ColumnExpr(pTab, &pTab->aCol[iCol]), 0);
+    if( p->op==TK_DEFAULT ){
+      sqlite3ExpandDefaultValue(pParse, p, pTab, aColTabMap[i]);
     }
   }
 }
