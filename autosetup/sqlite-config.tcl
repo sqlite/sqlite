@@ -259,6 +259,10 @@ proc sqlite-config-bootstrap {buildMode} {
         linemacros           => {Enable #line macros in the amalgamation}
         dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it}
       }
+      {autoconf} {
+        # --disable-static-shell: https://sqlite.org/forum/forumpost/cc219ee704
+        static-shell=1       => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
+      }
       {*} {
         dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
       }
