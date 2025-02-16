@@ -237,6 +237,28 @@ proc sqlite-config-bootstrap {buildMode} {
       }
     }
 
+    # Options primarily for downstream packagers/package maintainers
+    packaging {
+      {autoconf} {
+        # --disable-static-shell: https://sqlite.org/forum/forumpost/cc219ee704
+        static-shell=1       => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
+      }
+      {*} {
+        # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
+        soname:=legacy
+          => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
+              soname. "legacy" sets it to its historical value of
+              libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
+              it to that literal value. Any other value is assumed to be a
+              suffix which gets applied to "libsqlite3.so.",
+              e.g. --soname=9.10 equates to "libsqlite3.so.9.10".}
+        # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
+        out-implib=0
+          => {Enable use of --out-implib linker flag to generate an
+              "import library" for the DLL}
+      }
+    }
+
     # Options mostly for sqlite's own development
     developer {
       {*} {
@@ -259,30 +281,8 @@ proc sqlite-config-bootstrap {buildMode} {
         linemacros           => {Enable #line macros in the amalgamation}
         dynlink-tools        => {Dynamically link libsqlite3 to certain tools which normally statically embed it}
       }
-      {autoconf} {
-        # --disable-static-shell: https://sqlite.org/forum/forumpost/cc219ee704
-        static-shell=1       => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
-      }
       {*} {
         dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
-      }
-    }
-
-    # Options specifically for downstream package maintainers
-    packaging {
-      {*} {
-        # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
-        soname:=legacy
-          => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
-              soname. "legacy" sets it to its historical value of
-              libsqlite3.so.0.  A value matching the glob "libsqlite3.*" sets
-              it to that literal value. Any other value is assumed to be a
-              suffix which gets applied to "libsqlite3.so.",
-              e.g. --soname=9.10 equates to "libsqlite3.so.9.10".}
-        # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
-        out-implib=0
-          => {Enable use of --out-implib linker flag to generate an
-              "import library" for the DLL}
       }
     }
   }; # $allOpts
