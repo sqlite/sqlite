@@ -202,12 +202,21 @@ install-lib: install-lib-$(ENABLE_LIB_STATIC)
 install: install-lib
 
 
-sqlite3$(T.exe): $(TOP)/shell.c $(TOP)/sqlite3.c
+# Flags to link the shell app either directly against sqlite3.c
+# (ENABLE_STATIC_SHELL==1) or libsqlite3.so (ENABLE_STATIC_SHELL==0).
+#
+ENABLE_STATIC_SHELL = @ENABLE_STATIC_SHELL@
+sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS.libsqlite3)
+sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib)
+sqlite3-shell-deps.1 = $(TOP)/sqlite3.c
+sqlite3-shell-deps.0 = $(libsqlite3.SO)
+sqlite3$(T.exe): $(TOP)/shell.c $(sqlite3-shell-deps.$(ENABLE_STATIC_SHELL))
 	$(CC) -o $@ \
-		$(TOP)/shell.c $(TOP)/sqlite3.c \
+		$(TOP)/shell.c $(sqlite3-shell-link-flags.$(ENABLE_STATIC_SHELL)) \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
-		$(LDFLAGS) $(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
+		$(LDFLAGS) $(LDFLAGS.readline)
+
 all: sqlite3$(T.exe)
 
 install-shell: sqlite3$(T.exe) $(install-dir.bin)
