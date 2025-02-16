@@ -1,5 +1,5 @@
-C Remove\stea\sversion\scheck\sfrom\stool/srctree-check.tcl,\sas\sit's\sobsoleted\sby\s[be265559].
-D 2025-02-15T17:29:56.489
+C Add\sa\stypecast\sto\savoid\s32-bit\sinteger\soverflow\sin\sthe\sconcat_ws()\nfunction\swith\san\senormous\sseparator\svalues\sand\smany\sarguments.
+D 2025-02-16T10:57:25.604
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -732,7 +732,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c ca943270395374afc65256ce86cdb152a22fa6ff146895175833b89ba870e117
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c b2fb33139972d7d65640b27ea962a49f1616265428001090cab39fcf270228e1
+F src/func.c 838bb4c02065daef6ef359cf294e6b6f95a73d4ff0159240a4710478bae80e1c
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be265559a334eda127862ae54edb58c46051f74445642daa84a9f61a81df1bac
-R ec0de275110a891612615fec90c077b9
-U stephan
-Z db33573bd4969af02b51c5852b05ae57
+P 1860ea060bd373f49d0b5d41367409a4607e9a0a0cb606af99927af15de1e21e
+R a83683a53b87e7c1a91cc72d41480630
+U drh
+Z e32688ad6baa8e44c1d5b0c7282d0615
 # Remove this line to create a well-formed Fossil manifest.
