@@ -1,5 +1,5 @@
-C Code\schanges\sthat\smake\sit\seasier\sto\sprove\sthat\sno\s32-bit\sinteger\soverflows\nhappen\sduring\smemory\sallocation.\s\sNo\sproblems\sfixed;\sthis\schange\sis\sjust\nto\smake\sfuture\smaintenance\seasier.
-D 2025-02-17T17:33:14.937
+C Additional\schanges\smaking\sit\seasier\sto\sprove\sthat\sinteger\soverflow\sdoes\snot\noccur.\s\sNo\sproblems\sfound.
+D 2025-02-17T18:09:24.766
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -78,11 +78,11 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b840ee915a6fb36571e3fe3c096e8a481a4a9cd8a35199a1b976b132b9f84ad3
+F ext/fts3/fts3.c 1da0265e8798f335165d54959459eeb69b6d32f586f85cf8795ab5d3b1292dcb
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 2fe7c76dfd7d46dff964d17d3f4c53bca2116cf5d6252552ebbc22e38afdf4e0
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
-F ext/fts3/fts3_expr.c 365849a2a1185e19028a9db2d9f1ea63efe909a3a6aca7ec86fc26a13a60bd58
+F ext/fts3/fts3_expr.c ebf7f2adead8cc54bc91deb41cb4a156874003078116f76631d65b87ff47464d
 F ext/fts3/fts3_hash.c 8b6e31bfb0844c27dc6092c2620bdb1fca17ed613072db057d96952c6bdb48b7
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 0eec58bff585f1a44ea9147eae5da2447292080ea435957f7488c70
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
-F ext/fts5/fts5_index.c f1eec0931548b529ddd7ebd274eaef37de7461fe2b0ebdc9818f37324bdf9494
+F ext/fts5/fts5_index.c b7827b32e0e1e1ff7d7cb27c5d0480426a01c8ec4e89fd7e106bb463e2b63dd1
 F ext/fts5/fts5_main.c 9a1daef7247f9b8a50b4159323e340efa6b0e4bea4fcd83580480f94d4f2c888
 F ext/fts5/fts5_storage.c 1ad05dab4830a4e2eaf2900bb143477f93bc17437093582f36f4b818809e88d8
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
@@ -121,7 +121,7 @@ F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a
 F ext/fts5/fts5_tokenize.c 49aea8cc400a690a6c4f83c4cedc67f4f8830c6789c4ee343404f62bcaebca7b
 F ext/fts5/fts5_unicode2.c 6f9b0fb79a8facaed76628ffd4eb9c16d7f2b84b52872784f617cf3422a9b043
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
-F ext/fts5/fts5_vocab.c e4830b00809e5da53bc10f93adc59e321407b0f801c7f4167c0e47f5552267e0
+F ext/fts5/fts5_vocab.c ff0441c4ea165081e8152dec6d29056faa0cdc281a9f218a00e3d7aacc1958bc
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl c5aa7cf7148b6dcffb5b61520ae18212baf169936af734ab265143f59db328fe
@@ -739,7 +739,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 05e04ef637cbc0dccb9a5c5d188a5a2608891e554c8ec17c7a71afe2cf896a06
-F src/json.c 2663a0c7e574cb928de944720dcdcc11c931877d877549b8f1258a4002efd6f7
+F src/json.c 5abb5cb782e74451a8882f6b7ee4d5e629246642262660bd1980a5e1b796258d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 2650f54f7c2aa2c53cc61b571bad9c7c32d60400e3f6a270bd444f5d76e03eb8
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b59d0ebb22e4ca2f3a7a73dd49a0c142dbca538cb1b4eafd35a78bac87c6c456
-R a324a0ad4ec5bff22beea8348186f31d
+P 215650a5a1d55bdbca9c92524804a1a54456a17f42a17e53747b21a6507506f5
+R 051727f689eef9866e97198933e64087
 U drh
-Z e55663a48a3fa77210e8f8e7032e8f31
+Z 6482d56e78ea7ae46b1be7711d2aadc0
 # Remove this line to create a well-formed Fossil manifest.
