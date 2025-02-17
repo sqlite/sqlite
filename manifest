@@ -1,5 +1,5 @@
-C Pull\sbuild\sfix\s[edb8a78c023]\sand\scleanup\s[0c085a5ab5]\sinto\sbranch-3.49.
-D 2025-02-17T16:07:39.137
+C Add\stwo\sgenerated\sfiles\sto\sthe\sdistclean\srules\sof\sthe\sautoconf\sbundle.
+D 2025-02-17T16:15:54.509
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def eddf6aef976e2c1a56c0accc3244945e0b22ec6799074c40be160e5a9a5662b0
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 491e16a002c19263af3aeba857ca4619d2e8ad8550f6c9cea89ba0385fdd4344
+F autoconf/Makefile.in 844bc155e1c02075821530b2b4d996ab3d162e647352bb6e2895f3d0e64ad988
 F autoconf/Makefile.msc 0a071367537dc395285a5d624ac4f99f3a387b27cc5e89752423c0499e15aec4
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -2209,10 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 78c4994c1c1ee1fdbee39ad611eba251a7bdb02d146331d43f178094c0d282e3
-Q +0c085a5ab51d6ac793a147a865bd086b1a6a572932c251b38d3854e4ea802f8d
-Q +edb8a78c0238f085eefbf86aa7777528f36f3400d4ef096ffd6855cf3321a97b
-R bf84c52f99457622ad95238f32aa97eb
+P f10e7ac65baec64a64b340f6e799d876ca5dac05d6615c900784a45fa8f71019
+Q +b59d0ebb22e4ca2f3a7a73dd49a0c142dbca538cb1b4eafd35a78bac87c6c456
+R 75ce877abe8a04df5ba4cb86e46a277d
 U stephan
-Z bf14457b84f5cea85c87a1656549e545
+Z f6f22913db6115a5dab16c0ad2266067
 # Remove this line to create a well-formed Fossil manifest.
