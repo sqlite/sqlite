@@ -240,7 +240,7 @@ clean:
 	rm -f $(libsqlite3.LIB) $(libsqlite3.SO) $(libsqlite3.SO).a
 
 distclean: clean
-	rm -f jimsh0$(T.exe) config.* sqlite3.pc
+	rm -f jimsh0$(T.exe) config.* sqlite3.pc sqlite_cfg.h Makefile
 
 DIST_FILES := \
   README.txt VERSION \
