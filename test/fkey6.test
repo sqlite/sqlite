@@ -271,31 +271,36 @@ do_execsql_test 5.1 {
 #
 reset_db
 
-do_execsql_test 6.1 {
-  PRAGMA writable_schema = 1;
-  INSERT INTO sqlite_schema 
-    VALUES('table', 't1', 't1', 2, 'CREATE TABLE t1(x INTEGER PRIMARY KEY)');
+ifcapable fts5 {
+if {[permutation]!="inmemory_journal"} {
+  do_execsql_test 6.1 {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA writable_schema = 1;
+    INSERT INTO sqlite_schema 
+      VALUES('table', 't1', 't1', 2, 'CREATE TABLE t1(x INTEGER PRIMARY KEY)');
+  }
+  db close
+  sqlite3 db test.db
+  do_execsql_test 6.1 {
+    PRAGMA foreign_keys = 1;
+    PRAGMA writable_schema = 1;
+  }
+  do_execsql_test 6.2 {
+    CREATE TABLE t2(
+        y INTEGER PRIMARY KEY,
+        z INTEGER REFERENCES t1(x) DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+  do_execsql_test 6.3 {
+    BEGIN;
+      INSERT INTO t2 VALUES(1,0),(2,1);
+      CREATE VIRTUAL TABLE t3 USING fts5(a, b, content='', tokendata=1);
+      INSERT INTO t3 VALUES(3,3);
+      PRAGMA defer_foreign_keys=ON;
+      DELETE FROM t2;
+    COMMIT;
+  }
 }
-db close
-sqlite3 db test.db
-do_execsql_test 6.1 {
-  PRAGMA foreign_keys = 1;
-  PRAGMA writable_schema = 1;
-}
-do_execsql_test 6.2 {
-  CREATE TABLE t2(
-      y INTEGER PRIMARY KEY,
-      z INTEGER REFERENCES t1(x) DEFERRABLE INITIALLY DEFERRED
-  );
-}
-do_execsql_test 6.3 {
-  BEGIN;
-    INSERT INTO t2 VALUES(1,0),(2,1);
-    CREATE VIRTUAL TABLE t3 USING fts5(a, b, content='', tokendata=1);
-    INSERT INTO t3 VALUES(3,3);
-    PRAGMA defer_foreign_keys=ON;
-    DELETE FROM t2;
-  COMMIT;
 }
 
 finish_test

@@ -1,5 +1,5 @@
-C Additional\schanges\smaking\sit\seasier\sto\sprove\sthat\sinteger\soverflow\sdoes\snot\noccur.\s\sNo\sproblems\sfound.
-D 2025-02-17T18:09:24.766
+C Fix\sproblems\sin\stest\sscript\sfkey6.test.
+D 2025-02-17T19:44:45.980
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1153,7 +1153,7 @@ F test/fkey2.test 1063d65e5923c054cfb8f0555a92a3ae0fa8c067275a33ee1715bd856cdb30
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 6727452e163a427147e84e739da18713da553d79f9783559b04fdcd36d5c7421
-F test/fkey6.test 1e0874ba15f8ed1e14a1d0a40fc8fb90a9912f4c82ea220a43137d4d9eff4d69
+F test/fkey6.test 668a7299e75899b0a3342c36df655be57f76a05aca3544bda939a6e676e2f000
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
 F test/fkey8.test 51deda7f1a1448bca95875e4a6e1a3a75b4bd7215e924e845bd60de60e4d84bf
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 215650a5a1d55bdbca9c92524804a1a54456a17f42a17e53747b21a6507506f5
-R 051727f689eef9866e97198933e64087
-U drh
-Z 6482d56e78ea7ae46b1be7711d2aadc0
+P e846743a875430a5c51d41f00ac9532214f97d9925e6261113b63580f92369fc
+R bf9a2dfadfc67dccdfbf52fd5d450169
+U dan
+Z 6cfd174e1e1a340132d02a73b4dc4571
 # Remove this line to create a well-formed Fossil manifest.
