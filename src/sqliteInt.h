@@ -1017,6 +1017,14 @@ typedef INT16_TYPE LogEst;
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
 /*
+** Macro SMXV(n) return the maximum value that can be held in variable n,
+** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
+** integer types.
+*/
+#define SMXV(n) ((((i64)1)<<(sizeof(n)-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)))-1)
+
+/*
 ** Round up a number to the next larger multiple of 8.  This is used
 ** to force 8-byte alignment on 64-bit architectures.
 **

@@ -68,6 +68,7 @@ static SQLITE_NOINLINE void lockTable(
     }
   }
 
+  assert( pToplevel->nTableLock < 0x7fff0000 );
   nBytes = sizeof(TableLock) * (pToplevel->nTableLock+1);
   pToplevel->aTableLock =
       sqlite3DbReallocOrFree(pToplevel->db, pToplevel->aTableLock, nBytes);
@@ -2089,7 +2090,8 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent){
 ** from sqliteMalloc() and must be freed by the calling function.
 */
 static char *createTableStmt(sqlite3 *db, Table *p){
-  int i, k, n;
+  int i, k, len;
+  i64 n;
   char *zStmt;
   char *zSep, *zSep2, *zEnd;
   Column *pCol;
@@ -2113,8 +2115,9 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     sqlite3OomFault(db);
     return 0;
   }
-  sqlite3_snprintf(n, zStmt, "CREATE TABLE ");
-  k = sqlite3Strlen30(zStmt);
+  assert( n>14 && n<=0x7fffffff );
+  memcpy(zStmt, "CREATE TABLE ", 13);
+  k = 13;
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
@@ -2126,13 +2129,15 @@ static char *createTableStmt(sqlite3 *db, Table *p){
         /* SQLITE_AFF_REAL    */ " REAL",
         /* SQLITE_AFF_FLEXNUM */ " NUM",
     };
-    int len;
     const char *zType;
 
-    sqlite3_snprintf(n-k, &zStmt[k], zSep);
-    k += sqlite3Strlen30(&zStmt[k]);
+    len = sqlite3Strlen30(zSep);
+    assert( k+len<n );
+    memcpy(&zStmt[k], zSep, len);
+    k += len;
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zCnName);
+    assert( k<n );
     assert( pCol->affinity-SQLITE_AFF_BLOB >= 0 );
     assert( pCol->affinity-SQLITE_AFF_BLOB < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_BLOB );
@@ -2147,11 +2152,14 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     assert( pCol->affinity==SQLITE_AFF_BLOB
             || pCol->affinity==SQLITE_AFF_FLEXNUM
             || pCol->affinity==sqlite3AffinityType(zType, 0) );
+    assert( k+len<n );
     memcpy(&zStmt[k], zType, len);
     k += len;
     assert( k<=n );
   }
-  sqlite3_snprintf(n-k, &zStmt[k], "%s", zEnd);
+  len = sqlite3Strlen30(zEnd);
+  assert( k+len<n );
+  memcpy(&zStmt[k], zEnd, len+1);
   return zStmt;
 }
 
@@ -3845,7 +3853,7 @@ Index *sqlite3AllocateIndexObject(
   char **ppExtra       /* Pointer to the "extra" space */
 ){
   Index *p;            /* Allocated index object */
-  int nByte;           /* Bytes of space for Index object + arrays */
+  i64 nByte;           /* Bytes of space for Index object + arrays */
 
   nByte = ROUND8(sizeof(Index)) +              /* Index structure  */
           ROUND8(sizeof(char*)*nCol) +         /* Index.azColl     */

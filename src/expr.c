@@ -3369,7 +3369,7 @@ static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
   char *zRet;
 
   assert( pExpr->op==TK_IN );
-  zRet = sqlite3DbMallocRaw(pParse->db, nVal+1);
+  zRet = sqlite3DbMallocRaw(pParse->db, 1+(i64)nVal);
   if( zRet ){
     int i;
     for(i=0; i<nVal; i++){

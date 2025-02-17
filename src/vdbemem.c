@@ -1440,7 +1440,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 
     if( pRec==0 ){
       Index *pIdx = p->pIdx;      /* Index being probed */
-      int nByte;                  /* Bytes of space to allocate */
+      i64 nByte;                  /* Bytes of space to allocate */
       int i;                      /* Counter variable */
       int nCol = pIdx->nColumn;   /* Number of index columns including rowid */
   
@@ -1506,7 +1506,7 @@ static int valueFromFunction(
 ){
   sqlite3_context ctx;            /* Context object for function invocation */
   sqlite3_value **apVal = 0;      /* Function arguments */
-  int nVal = 0;                   /* Size of apVal[] array */
+  int nVal = 0;                   /* Number of function arguments */
   FuncDef *pFunc = 0;             /* Function definition */
   sqlite3_value *pVal = 0;        /* New value */
   int rc = SQLITE_OK;             /* Return code */

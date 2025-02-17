@@ -407,7 +407,7 @@ static void statInit(
   int nCol;                       /* Number of columns in index being sampled */
   int nKeyCol;                    /* Number of key columns */
   int nColUp;                     /* nCol rounded up for alignment */
-  int n;                          /* Bytes of space to allocate */
+  i64 n;                          /* Bytes of space to allocate */
   sqlite3 *db = sqlite3_context_db_handle(context);   /* Database connection */
 #ifdef SQLITE_ENABLE_STAT4
   /* Maximum number of samples.  0 if STAT4 data is not collected */

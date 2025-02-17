@@ -1420,7 +1420,7 @@ static void replaceFunc(
   assert( zRep==sqlite3_value_text(argv[2]) );
   nOut = nStr + 1;
   assert( nOut<SQLITE_MAX_LENGTH );
-  zOut = contextMalloc(context, (i64)nOut);
+  zOut = contextMalloc(context, nOut);
   if( zOut==0 ){
     return;
   }
