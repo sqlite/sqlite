@@ -471,7 +471,7 @@ int sqlite3WalTrace = 0;
 # ifdef SQLITE_ENABLE_WAL_BIGHASH
 #  define WAL_VERSION2 3048001     /* wal2, big-hash, checksums on frame hdrs */
 # else
-#  define WAL_VERSION2 3048000     /* wal2, big-hash, full checksums */
+#  define WAL_VERSION2 3048000     /* wal2, checksums on frame hdrs */
 # endif
 # define isNocksum(pWal) isWalMode2(pWal)
 #else
