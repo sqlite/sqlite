@@ -1,9 +1,9 @@
-C Harden\sthe\sSQLITE_DBCONFIG_LOOKASIDE\sinterface\sagainst\smisuse,\ssuch\sas\ndescribed\sin\s[forum:/forumpost/48f365daec|forum\spost\s48f365daec].\s\sEnhancements\nto\sthe\sSQLITE_DBCONFIG_LOOKASIDE\sdocumentation.\s\sTest\scases\sin\sTH3.
-D 2025-02-17T14:16:49.747
+C Replace\sTEXE\s(legacy\sname)\swith\sT.exe\s(3.48+\sname)\sin\stwo\splaces\sin\smakefiles.\sThis\sfixes\sdistclean\sof\sjimsh.exe\sin\sthe\scanonical\sbuild\sin\snon-native\sWindows\senvironments.
+D 2025-02-17T16:04:21.900
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in aa869faf7ca086f35c9b3e974fddc7fd65ed2dc45a246b1a94e6f9fdc99b0ed5
+F Makefile.in 80be2e281d4647ac15a5bac15d5d20fc76d1cfb3f3f6dc01d1a26e3346a5042a
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 50c656e096ae49ccf9e5e88b4995f0a155f231ebae5b6d185cc64ce99d728a83
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 840f0b3ac055a026930e52eb9d6300753e91ddd9fcbafe30395201908ad35e61
+F main.mk 323e71cd79e49c9e33d39b6558694a71c08973d9ac3ee4f211aa32e58bd876f5
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ea21685658df8246551650666ff59945ac27271b10a675104cbadaf57d48595f
-R 178cf752f8b81a96b68c7190d2092e4d
-U drh
-Z b489b8d8bee8421d4edf281585fd7758
+P 1ec4c308c76c69fba031184254fc3340f07607cfbf8342b13713ab445563d377
+R 04096de493525d9bda4b4505f3bd6b4f
+U stephan
+Z fb1f31bb07ada248f4e4b04a26bc9aeb
 # Remove this line to create a well-formed Fossil manifest.
