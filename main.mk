@@ -1702,7 +1702,7 @@ fuzztest:	fuzzcheck$(T.exe) $(FUZZDATA) sessionfuzz$(T.exe)
 	./fuzzcheck$(T.exe) $(FUZZDATA)
 	./sessionfuzz$(T.exe) run $(TOP)/test/sessionfuzz-data1.db
 
-valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(T.exe)
+valgrindfuzz:	fuzzcheck$(T.exe) $(FUZZDATA) sessionfuzz$(T.exe)
 	valgrind ./fuzzcheck$(T.exe) --cell-size-check --limit-mem 10M $(FUZZDATA)
 	valgrind ./sessionfuzz$(T.exe) run $(TOP)/test/sessionfuzz-data1.db
 

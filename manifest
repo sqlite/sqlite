@@ -1,9 +1,9 @@
-C Harden\sthe\sSQLITE_DBCONFIG_LOOKASIDE\sinterface\sagainst\smisuse.\s\sThis\sis\sa\nsimplification\sof\s[1ec4c308c76c69fb]\sappropriate\sfor\suse\sin\sa\spatch\srelease.
-D 2025-02-17T14:27:33.291
+C Pull\sbuild\sfix\s[edb8a78c023]\sand\scleanup\s[0c085a5ab5]\sinto\sbranch-3.49.
+D 2025-02-17T16:07:39.137
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in aa869faf7ca086f35c9b3e974fddc7fd65ed2dc45a246b1a94e6f9fdc99b0ed5
+F Makefile.in 80be2e281d4647ac15a5bac15d5d20fc76d1cfb3f3f6dc01d1a26e3346a5042a
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc a9b95ae9807e17f9b0734ebe97d68032141c3f95286bb64593cb73b206f043cf
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 42119a2e899e319b92f3159952b7ef7219c82cb45eeb636aaf8d909def8150f8
-F autosetup/sqlite-config.tcl 671b79027b162b9d945367d288cf82a9f6c7bd834c7b6812a24084f9ecf763ea
+F autosetup/sqlite-config.tcl e1d65cc632e1de94ff39618ac82b649f2062f674ca36dae78ab3573cab096761
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -702,7 +702,7 @@ F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65a
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 2565d78bf8a8eeea4d6f57d8fa4294983f73fc8b8866fcb706742172b542fdd9
+F main.mk 44392e87994fd3595f64c8973784112b5ae570d9474deaab166218c600953f09
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2209,8 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e9035c6c89e719626a55c9fa889aacc87b0b256c09817294617b515e035c4a80
-R cfad9f9d2c52f53a202905c984f0c288
-U drh
-Z 21b632f6ff474e51c3231a02fe7ed6d2
+P 78c4994c1c1ee1fdbee39ad611eba251a7bdb02d146331d43f178094c0d282e3
+Q +0c085a5ab51d6ac793a147a865bd086b1a6a572932c251b38d3854e4ea802f8d
+Q +edb8a78c0238f085eefbf86aa7777528f36f3400d4ef096ffd6855cf3321a97b
+R bf84c52f99457622ad95238f32aa97eb
+U stephan
+Z bf14457b84f5cea85c87a1656549e545
 # Remove this line to create a well-formed Fossil manifest.
