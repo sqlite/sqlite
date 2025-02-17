@@ -1,5 +1,5 @@
-C Re-add\sthe\s--disable-static-shell\sconfigure\sfeature\sto\sthe\sautoconf\sbundle.\sIt\sgot\slost\sin\sthe\sautoconf-to-autosetup\sport,\sas\sreported\sin\s[forum:cc219ee7044|forum\spost\scc219ee7044].
-D 2025-02-16T18:16:42.671
+C Harden\sthe\sSQLITE_DBCONFIG_LOOKASIDE\sinterface\sagainst\smisuse.\s\sThis\sis\sa\nsimplification\sof\s[1ec4c308c76c69fb]\sappropriate\sfor\suse\sin\sa\spatch\srelease.
+D 2025-02-17T14:27:33.291
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -743,7 +743,7 @@ F src/insert.c db8bfff30fd7f71812651df3ddf5d1624b9e19104b31e349cd9055bbc9d622c4
 F src/json.c 68a98c020c22127f2d65f08855f7fc7460ff352a6ce0b543d8931dde83319c22
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 59bdd8d9bbdb3a746eaef14d611ddd5638aa18acef7c5e3271e815dbd215a1af
+F src/main.c 54e7f07a41e3424f5c2f39db9e96d5c33bbc1555362478d90700a39b694994e6
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf6b162de534d4f5a5a02064f0618a84b70d0aa87a541cf149dacff34be2d3ab
-Q +47e817f663468ce08dae4965b7ecacefb921a77398ec958b35bf5cedee767e24
-R 77d6b40294509a045c4e30991843aae8
-U stephan
-Z e8ab4699735682e6f0809ccc97cf2939
+P e9035c6c89e719626a55c9fa889aacc87b0b256c09817294617b515e035c4a80
+R cfad9f9d2c52f53a202905c984f0c288
+U drh
+Z 21b632f6ff474e51c3231a02fe7ed6d2
 # Remove this line to create a well-formed Fossil manifest.
