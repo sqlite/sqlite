@@ -2239,7 +2239,7 @@ struct sqlite3_mem_methods {
 ** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two,
 ** so that a call to [sqlite3_db_config()] that uses SQLITE_DBCONFIG_LOOKASIDE
 ** should have a total of five parameters.
-** ^The first argument (the third parameter to [sqlite3_db_config()] is a
+** ^The first argument (the third parameter to [sqlite3_db_config()]) is a
 ** pointer to a memory buffer to use for lookaside memory.
 ** ^The first argument after the SQLITE_DBCONFIG_LOOKASIDE verb
 ** may be NULL in which case SQLite will allocate the
