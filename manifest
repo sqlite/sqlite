@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\stest\sscript\sfkey6.test.
-D 2025-02-17T19:44:45.980
+C Add\san\sORDER\sBY\sto\sa\stest\scase\sfor\sskip-scan\sto\smake\sthe\soutput\sconsistent.
+D 2025-02-17T20:13:20.679
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1653,7 +1653,7 @@ F test/skipscan1.test 9cbbb6575517b15292bd87ee85b853bbd3cd4b4735d69b0f083020cec1
 F test/skipscan2.test b032ed3e0ba5caa4df6c43ef22c31566aac67783bc031869155989a7ccdb5bd5
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 0672103fd2c8f96bd114133f356192b35ece45c794fe3677e1d9e5e3104a608e
-F test/skipscan6.test bddbb35dd335e2d21b7791a61e3b2e1f3255dc307ce80aa6fe19cc298e6feb13
+F test/skipscan6.test e2b256cf5d538a605beb97dc97ca5e2836dfc24c5e1d9b7a09e13c069a3b8b49
 F test/snapshot.test a504f2e7009f512ef66c719f0ea1c55a556bdaf1e1312c80a04d46fc1a3e9632
 F test/snapshot2.test 8d6ff5dd9cc503f6e12d408a30409c3f9c653507b24408d9cd7195931c89bc54
 F test/snapshot3.test 41350216abc6c7da37113ad462259c070786e5ad70bdc8709daaed148b1b3a2c
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e846743a875430a5c51d41f00ac9532214f97d9925e6261113b63580f92369fc
-R bf9a2dfadfc67dccdfbf52fd5d450169
-U dan
-Z 6cfd174e1e1a340132d02a73b4dc4571
+P 088e476519c2c759ba9387cb18eaad7c042cc37e45e96237d3125ba33ee3633a
+R ac29bfbe7732fa69155d4757aa0d3755
+U drh
+Z ae23d3651ecb8ceaf7a4973c35e0c2db
 # Remove this line to create a well-formed Fossil manifest.
