@@ -118,9 +118,14 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
+LDFLAGS.rt = @LDFLAGS_RT@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
+# os-specific: see
+# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+# - https://sqlite.org/forum/forumpost/0c7fc097b2
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
@@ -142,7 +147,7 @@ T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # shell command.
 #
 CFLAGS.jimsh = @CFLAGS_JIMSH@
-JIMSH = ./jimsh$(TEXE)
+JIMSH = ./jimsh$(T.exe)
 
 #
 # $(B.tclsh) is documented in main.mk.

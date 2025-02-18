@@ -538,12 +538,12 @@ static int pcache1UnderMemoryPressure(PCache1 *pCache){
 */
 static void pcache1ResizeHash(PCache1 *p){
   PgHdr1 **apNew;
-  unsigned int nNew;
-  unsigned int i;
+  u64 nNew;
+  u32 i;
 
   assert( sqlite3_mutex_held(p->pGroup->mutex) );
 
-  nNew = p->nHash*2;
+  nNew = 2*(u64)p->nHash;
   if( nNew<256 ){
     nNew = 256;
   }
@@ -780,7 +780,7 @@ static void pcache1Destroy(sqlite3_pcache *p);
 static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   PCache1 *pCache;      /* The newly created page cache */
   PGroup *pGroup;       /* The group the new page cache will belong to */
-  int sz;               /* Bytes of memory required to allocate the new cache */
+  i64 sz;               /* Bytes of memory required to allocate the new cache */
 
   assert( (szPage & (szPage-1))==0 && szPage>=512 && szPage<=65536 );
   assert( szExtra < 300 );

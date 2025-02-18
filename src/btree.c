@@ -962,7 +962,7 @@ static int saveCursorKey(BtCursor *pCur){
     ** below. */
     void *pKey;
     pCur->nKey = sqlite3BtreePayloadSize(pCur);
-    pKey = sqlite3Malloc( pCur->nKey + 9 + 8 );
+    pKey = sqlite3Malloc( ((i64)pCur->nKey) + 9 + 8 );
     if( pKey ){
       rc = sqlite3BtreePayload(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -6598,7 +6598,7 @@ bypass_moveto_root:
           rc = SQLITE_CORRUPT_PAGE(pPage);
           goto moveto_index_finish;
         }
-        pCellKey = sqlite3Malloc( nCell+nOverrun );
+        pCellKey = sqlite3Malloc( (u64)nCell+(u64)nOverrun );
         if( pCellKey==0 ){
           rc = SQLITE_NOMEM_BKPT;
           goto moveto_index_finish;
@@ -11810,6 +11810,7 @@ int sqlite3BtreeIsInBackup(Btree *p){
 */
 void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
   BtShared *pBt = p->pBt;
+  assert( nBytes==0 || nBytes==sizeof(Schema) );
   sqlite3BtreeEnter(p);
   if( !pBt->pSchema && nBytes ){
     pBt->pSchema = sqlite3DbMallocZero(0, nBytes);

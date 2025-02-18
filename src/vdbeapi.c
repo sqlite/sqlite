@@ -2233,7 +2233,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       Column *pCol = &p->pTab->aCol[iIdx];
       if( pCol->iDflt>0 ){
         if( p->apDflt==0 ){
-          int nByte = sizeof(sqlite3_value*)*p->pTab->nCol;
+          int nByte;
+          assert( sizeof(sqlite3_value*)*UMXV(p->pTab->nCol) < 0x7fffffff );
+          nByte = sizeof(sqlite3_value*)*p->pTab->nCol;
           p->apDflt = (sqlite3_value**)sqlite3DbMallocZero(db, nByte);
           if( p->apDflt==0 ) goto preupdate_old_out;
         }
@@ -2383,7 +2385,8 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     */
     assert( p->op==SQLITE_UPDATE );
     if( !p->aNew ){
-      p->aNew = (Mem *)sqlite3DbMallocZero(db, sizeof(Mem) * p->pCsr->nField);
+      assert( sizeof(Mem)*UMXV(p->pCsr->nField) < 0x7fffffff );
+      p->aNew = (Mem *)sqlite3DbMallocZero(db, sizeof(Mem)*p->pCsr->nField);
       if( !p->aNew ){
         rc = SQLITE_NOMEM;
         goto preupdate_new_out;
