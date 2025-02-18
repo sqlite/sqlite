@@ -276,7 +276,7 @@ static VdbeCursor *allocateCursor(
   */
   Mem *pMem = iCur>0 ? &p->aMem[p->nMem-iCur] : p->aMem;
 
-  int nByte;
+  i64 nByte;
   VdbeCursor *pCx = 0;
   nByte =
       ROUND8P(sizeof(VdbeCursor)) + 2*sizeof(u32)*nField +
@@ -304,7 +304,7 @@ static VdbeCursor *allocateCursor(
       pMem->szMalloc = 0;
       return 0;
     }
-    pMem->szMalloc = nByte;
+    pMem->szMalloc = (int)nByte;
   }
 
   p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->zMalloc;
@@ -7325,7 +7325,7 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 */
 case OP_Program: {        /* jump0 */
   int nMem;               /* Number of memory registers for sub-program */
-  int nByte;              /* Bytes of runtime space required for sub-program */
+  i64 nByte;              /* Bytes of runtime space required for sub-program */
   Mem *pRt;               /* Register to allocate runtime space */
   Mem *pMem;              /* Used to iterate through memory cells */
   Mem *pEnd;              /* Last memory cell in new array */
@@ -7376,7 +7376,7 @@ case OP_Program: {        /* jump0 */
     nByte = ROUND8(sizeof(VdbeFrame))
               + nMem * sizeof(Mem)
               + pProgram->nCsr * sizeof(VdbeCursor*)
-              + (pProgram->nOp + 7)/8;
+              + (7 + (i64)pProgram->nOp)/8;
     pFrame = sqlite3DbMallocZero(db, nByte);
     if( !pFrame ){
       goto no_mem;
@@ -7384,7 +7384,7 @@ case OP_Program: {        /* jump0 */
     sqlite3VdbeMemRelease(pRt);
     pRt->flags = MEM_Blob|MEM_Dyn;
     pRt->z = (char*)pFrame;
-    pRt->n = nByte;
+    pRt->n = (int)nByte;
     pRt->xDel = sqlite3VdbeFrameMemDel;
 
     pFrame->v = p;
@@ -7483,12 +7483,14 @@ case OP_Param: {           /* out2 */
 ** statement counter is incremented (immediate foreign key constraints).
 */
 case OP_FkCounter: {
-  if( db->flags & SQLITE_DeferFKs ){
-    db->nDeferredImmCons += pOp->p2;
-  }else if( pOp->p1 ){
+  if( pOp->p1 ){
     db->nDeferredCons += pOp->p2;
   }else{
-    p->nFkConstraint += pOp->p2;
+    if( db->flags & SQLITE_DeferFKs ){
+      db->nDeferredImmCons += pOp->p2;
+    }else{
+      p->nFkConstraint += pOp->p2;
+    }
   }
   break;
 }
@@ -8363,6 +8365,7 @@ case OP_VFilter: {   /* jump, ncycle */
 
   /* Invoke the xFilter method */
   apArg = p->apArg;
+  assert( nArg<=p->napArg );
   for(i = 0; i<nArg; i++){
     apArg[i] = &pArgc[i+1];
   }
@@ -8573,6 +8576,7 @@ case OP_VUpdate: {
     u8 vtabOnConflict = db->vtabOnConflict;
     apArg = p->apArg;
     pX = &aMem[pOp->p3];
+    assert( nArg<=p->napArg );
     for(i=0; i<nArg; i++){
       assert( memIsValid(pX) );
       memAboutToChange(p, pX);

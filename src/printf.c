@@ -1057,7 +1057,7 @@ void sqlite3_str_appendall(sqlite3_str *p, const char *z){
 static SQLITE_NOINLINE char *strAccumFinishRealloc(StrAccum *p){
   char *zText;
   assert( p->mxAlloc>0 && !isMalloced(p) );
-  zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+  zText = sqlite3DbMallocRaw(p->db, 1+(u64)p->nChar );
   if( zText ){
     memcpy(zText, p->zText, p->nChar+1);
     p->printfFlags |= SQLITE_PRINTF_MALLOCED;

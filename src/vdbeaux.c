@@ -728,7 +728,7 @@ static Op *opIterNext(VdbeOpIter *p){
     }
  
     if( pRet->p4type==P4_SUBPROGRAM ){
-      int nByte = (p->nSub+1)*sizeof(SubProgram*);
+      i64 nByte = (1+(u64)p->nSub)*sizeof(SubProgram*);
       int j;
       for(j=0; j<p->nSub; j++){
         if( p->apSub[j]==pRet->p4.pProgram ) break;
@@ -858,8 +858,8 @@ void sqlite3VdbeAssertAbortable(Vdbe *p){
 ** (1) For each jump instruction with a negative P2 value (a label)
 **     resolve the P2 value to an actual address.
 **
-** (2) Compute the maximum number of arguments used by any SQL function
-**     and store that value in *pMaxFuncArgs.
+** (2) Compute the maximum number of arguments used by the xUpdate/xFilter
+**     methods of any virtual table and store that value in *pMaxVtabArgs.
 **
 ** (3) Update the Vdbe.readOnly and Vdbe.bIsReader flags to accurately
 **     indicate what the prepared statement actually does.
@@ -872,8 +872,8 @@ void sqlite3VdbeAssertAbortable(Vdbe *p){
 ** script numbers the opcodes correctly.  Changes to this routine must be
 ** coordinated with changes to mkopcodeh.tcl.
 */
-static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
-  int nMaxArgs = *pMaxFuncArgs;
+static void resolveP2Values(Vdbe *p, int *pMaxVtabArgs){
+  int nMaxVtabArgs = *pMaxVtabArgs;
   Op *pOp;
   Parse *pParse = p->pParse;
   int *aLabel = pParse->aLabel;
@@ -918,15 +918,19 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
         }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         case OP_VUpdate: {
-          if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
+          if( pOp->p2>nMaxVtabArgs ) nMaxVtabArgs = pOp->p2;
           break;
         }
         case OP_VFilter: {
           int n;
+          /* The instruction immediately prior to VFilter will be an
+          ** OP_Integer that sets the "argc" value for the VFilter.  See
+          ** the code where OP_VFilter is generated at tag-20250207a. */
           assert( (pOp - p->aOp) >= 3 );
           assert( pOp[-1].opcode==OP_Integer );
+          assert( pOp[-1].p2==pOp->p3+1 );
           n = pOp[-1].p1;
-          if( n>nMaxArgs ) nMaxArgs = n;
+          if( n>nMaxVtabArgs ) nMaxVtabArgs = n;
           /* Fall through into the default case */
           /* no break */ deliberate_fall_through
         }
@@ -967,7 +971,7 @@ resolve_p2_values_loop_exit:
     pParse->aLabel = 0;
   }
   pParse->nLabel = 0;
-  *pMaxFuncArgs = nMaxArgs;
+  *pMaxVtabArgs = nMaxVtabArgs;
   assert( p->bIsReader!=0 || DbMaskAllZero(p->btreeMask) );
 }
 
@@ -1196,7 +1200,7 @@ void sqlite3VdbeScanStatus(
   const char *zName               /* Name of table or index being scanned */
 ){
   if( IS_STMT_SCANSTATUS(p->db) ){
-    sqlite3_int64 nByte = (p->nScan+1) * sizeof(ScanStatus);
+    i64 nByte = (1+(i64)p->nScan) * sizeof(ScanStatus);
     ScanStatus *aNew;
     aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
     if( aNew ){
@@ -2645,7 +2649,7 @@ void sqlite3VdbeMakeReady(
   int nVar;                      /* Number of parameters */
   int nMem;                      /* Number of VM memory registers */
   int nCursor;                   /* Number of cursors required */
-  int nArg;                      /* Number of arguments in subprograms */
+  int nArg;                      /* Max number args to xFilter or xUpdate */
   int n;                         /* Loop counter */
   struct ReusableSpace x;        /* Reusable bulk memory */
 
@@ -2717,6 +2721,9 @@ void sqlite3VdbeMakeReady(
       p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
     }
   }
+#ifdef SQLITE_DEBUG
+  p->napArg = nArg;
+#endif
 
   if( db->mallocFailed ){
     p->nVar = 0;
@@ -4214,6 +4221,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
   int nByte;                      /* Number of bytes required for *p */
+  assert( sizeof(UnpackedRecord) + sizeof(Mem)*65536 < 0x7fffffff );
   nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;

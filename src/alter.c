@@ -632,10 +632,8 @@ void sqlite3AlterRenameColumn(
   ** altered.  Set iCol to be the index of the column being renamed */
   zOld = sqlite3NameFromToken(db, pOld);
   if( !zOld ) goto exit_rename_column;
-  for(iCol=0; iCol<pTab->nCol; iCol++){
-    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
-  }
-  if( iCol==pTab->nCol ){
+  iCol = sqlite3ColumnIndex(pTab, zOld);
+  if( iCol<0 ){
     sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
     goto exit_rename_column;
   }

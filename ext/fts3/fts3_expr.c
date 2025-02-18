@@ -283,7 +283,7 @@ static int getNextString(
   Fts3Expr *p = 0;
   sqlite3_tokenizer_cursor *pCursor = 0;
   char *zTemp = 0;
-  int nTemp = 0;
+  i64 nTemp = 0;
 
   const int nSpace = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
   int nToken = 0;
