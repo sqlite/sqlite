@@ -1,5 +1,5 @@
-C Add\stwo\sgenerated\sfiles\sto\sthe\sdistclean\srules\sof\sthe\sautoconf\sbundle.
-D 2025-02-17T16:15:54.509
+C Version\s3.49.1
+D 2025-02-18T13:38:58.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f10e7ac65baec64a64b340f6e799d876ca5dac05d6615c900784a45fa8f71019
-Q +b59d0ebb22e4ca2f3a7a73dd49a0c142dbca538cb1b4eafd35a78bac87c6c456
+P 57eceb361f0290b1326acf791565eb33267a10a5201aee34bdd2d1c93d647ff8
 R 75ce877abe8a04df5ba4cb86e46a277d
-U stephan
-Z f6f22913db6115a5dab16c0ad2266067
+T +sym-release *
+T +sym-version-3.49.1 *
+U drh
+Z ca30243dceef882d9114cf681397efb8
 # Remove this line to create a well-formed Fossil manifest.
