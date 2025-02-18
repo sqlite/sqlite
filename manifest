@@ -1,5 +1,5 @@
-C Add\san\sORDER\sBY\sto\sa\stest\scase\sfor\sskip-scan\sto\smake\sthe\soutput\sconsistent.
-D 2025-02-17T20:13:20.679
+C Update\spath\son\sthe\sweb\sserver\sfor\stest/snapshot\sinstances\sof\sfiddle.
+D 2025-02-18T01:16:26.885
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -672,7 +672,7 @@ F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2
 F ext/wasm/demo-worker1.js 08720227e98fa5b44761cf6e219269cee3e9dd0421d8d91459535da776950314
 F ext/wasm/dist.make 92ef4ffe33022a50f92d602acabad10bd8dd91759f3eb7df27fc6d7d37072b96
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
-F ext/wasm/fiddle.make d4969f0322a582c57a22ce3541f10a5b09a609d14eab32891f613f43b3c14d8b
+F ext/wasm/fiddle.make c6d7a3d6cc03bb5f21acb295c1233820d0dbf5c6a89b28dc2e093edcc001c45a
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
 F ext/wasm/fiddle/fiddle.js b444a5646a9aac9f3fc06c53d78af5e1912eb235d69a8e6010723e4eb0e9d4a1
 F ext/wasm/fiddle/index.html c79b1741cbeba78f88af0a84cf5ec7de87a909a6a8d10a369b1f4824c66c2088
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 088e476519c2c759ba9387cb18eaad7c042cc37e45e96237d3125ba33ee3633a
-R ac29bfbe7732fa69155d4757aa0d3755
-U drh
-Z ae23d3651ecb8ceaf7a4973c35e0c2db
+P 9c9c19414ac243ce48a34bf13a08bff54a465e54a0c09ded50508b8d4bdba227
+R c1357609bb5713a7e3d612d7117e08d1
+U stephan
+Z d5c65d18a9c1aa9330f1639d76c6628b
 # Remove this line to create a well-formed Fossil manifest.
