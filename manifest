@@ -1,5 +1,5 @@
-C Update\spath\son\sthe\sweb\sserver\sfor\stest/snapshot\sinstances\sof\sfiddle.
-D 2025-02-18T01:16:26.885
+C Have\sSQLITE_FTS5_ENABLE_TEST_MI\sbuilds\savoid\sreading\sthe\sdatabase\sschema\sfrom\nwithin\ssqlite3_open().
+D 2025-02-18T15:11:30.645
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -113,10 +113,10 @@ F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773
 F ext/fts5/fts5_expr.c 69b8d976058512c07dfe86e229521b7a871768157bd1607cedf1a5038dfd72c9
 F ext/fts5/fts5_hash.c adda4272be401566a6e0ba1acbe70ee5cb97fce944bc2e04dc707152a0ec91b1
 F ext/fts5/fts5_index.c b7827b32e0e1e1ff7d7cb27c5d0480426a01c8ec4e89fd7e106bb463e2b63dd1
-F ext/fts5/fts5_main.c 9a1daef7247f9b8a50b4159323e340efa6b0e4bea4fcd83580480f94d4f2c888
+F ext/fts5/fts5_main.c b0e95a793f3c649d313c536269403e1a413ee665223adb5f8196edd2bc1146f7
 F ext/fts5/fts5_storage.c 1ad05dab4830a4e2eaf2900bb143477f93bc17437093582f36f4b818809e88d8
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
-F ext/fts5/fts5_test_mi.c 08c11ec968148d4cb4119d96d819f8c1f329812c568bac3684f5464be177d3ee
+F ext/fts5/fts5_test_mi.c d35fdd50db99a775a040fb57127a45adc968e97da94ae784eec664256ac86db2
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
 F ext/fts5/fts5_tokenize.c 49aea8cc400a690a6c4f83c4cedc67f4f8830c6789c4ee343404f62bcaebca7b
 F ext/fts5/fts5_unicode2.c 6f9b0fb79a8facaed76628ffd4eb9c16d7f2b84b52872784f617cf3422a9b043
@@ -203,7 +203,7 @@ F ext/fts5/test/fts5lastrowid.test f36298a1fb9f988bde060a274a7ce638faa9c38a31400
 F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc2782680740513c4d1fc114b43d4ad
 F ext/fts5/test/fts5limits.test 8ab67cf5d311c124b6ceb0062d0297767176df4572d955fce79fa43004dff01c
 F ext/fts5/test/fts5locale.test 83ba7ee12628b540d3098f39c39c1de0c0440eddff8f7512c8c698d0c4a3ae3c
-F ext/fts5/test/fts5matchinfo.test 877520582feb86bbfd95ab780099bcba4526f18ac75ee34979144cf86ba3a5a3
+F ext/fts5/test/fts5matchinfo.test 7806f6d521bb49bcb54fff88a50f137866f7000c96ccfd28500caa47b63cb0aa
 F ext/fts5/test/fts5merge.test 2654df0bcdb2d117c2d38b6aeb0168061be01c643f9e9194b36c43a2970e8082
 F ext/fts5/test/fts5merge2.test 3ebad1a59d6ad3fb66eff6523a09e95dc6367cbefb3cd73196801dea0425c8e2
 F ext/fts5/test/fts5misc.test f4dee7da898d605a6488c5b7afaace3158ed6bb9addff78faa1b37b402b77fb9
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c9c19414ac243ce48a34bf13a08bff54a465e54a0c09ded50508b8d4bdba227
-R c1357609bb5713a7e3d612d7117e08d1
-U stephan
-Z d5c65d18a9c1aa9330f1639d76c6628b
+P 57caa3136d1bfca06e4f2285734a4977b8d3fa1f75bf87453b975867e9de38fc
+R 35202329cbe88699b6bddc518439e5e7
+U dan
+Z 2607e4e091da584eea58069e1dc59b17
 # Remove this line to create a well-formed Fossil manifest.
