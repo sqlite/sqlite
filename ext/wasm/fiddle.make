@@ -91,7 +91,7 @@ all: fiddle
 fiddle_remote ?=
 ifeq (,$(fiddle_remote))
 ifneq (,$(wildcard /home/stephan))
-  fiddle_remote = wh:www/wh/sqlite3/.
+  fiddle_remote = wh:www/wasm-testing/fiddle/.
 else ifneq (,$(wildcard /home/drh))
   #fiddle_remote = if appropriate, add that user@host:/path here
 endif

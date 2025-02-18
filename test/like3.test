@@ -304,11 +304,19 @@ ifcapable utf16 {
 #-------------------------------------------------------------------------
 reset_db
 
+# See forum thread https://sqlite.org/forum/info/d7b90d92ffbfc61f
 foreach enc {
   UTF-8
   UTF-16le 
   UTF-16be
 } {
+  ifcapable icu {
+    if {$enc=="UTF-8"} {
+      # The invalid UTF8 used in these tests is incompatible with ICU
+      # https://sqlite.org/forum/forumpost/2ca8a09a7e
+      continue
+    }
+  }
   foreach {tn expr} {
     1 "CAST (X'FF' AS TEXT)"
     2 "CAST (X'FFBF' AS TEXT)"

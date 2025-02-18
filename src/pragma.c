@@ -1154,7 +1154,10 @@ void sqlite3Pragma(
         }
       }else{
         db->flags &= ~mask;
-        if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
+        if( mask==SQLITE_DeferFKs ){
+          db->nDeferredImmCons = 0;
+          db->nDeferredCons = 0;
+        }
         if( (mask & SQLITE_WriteSchema)!=0
          && sqlite3_stricmp(zRight, "reset")==0
         ){

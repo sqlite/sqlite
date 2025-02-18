@@ -883,19 +883,6 @@ int sqlite3changeset_concat(
   void **ppOut                    /* OUT: Buffer containing output changeset */
 );
 
-
-/*
-** CAPI3REF: Upgrade the Schema of a Changeset/Patchset
-*/
-int sqlite3changeset_upgrade(
-  sqlite3 *db,
-  const char *zDb,
-  int nIn, const void *pIn,       /* Input changeset */
-  int *pnOut, void **ppOut        /* OUT: Inverse of input */
-);
-
-
-
 /*
 ** CAPI3REF: Changegroup Handle
 **

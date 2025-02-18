@@ -294,7 +294,6 @@ static int lookupName(
   Schema *pSchema = 0;              /* Schema of the expression */
   int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
   Table *pTab = 0;                  /* Table holding the row */
-  Column *pCol;                     /* A column of pTab */
   ExprList *pFJMatch = 0;           /* Matches for FULL JOIN .. USING */
   const char *zCol = pRight->u.zToken;
 
@@ -345,7 +344,6 @@ static int lookupName(
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
-        u8 hCol;
         pTab = pItem->pSTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
@@ -433,43 +431,38 @@ static int lookupName(
             sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->y.pTab);
           }
         }
-        hCol = sqlite3StrIHash(zCol);
-        for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
-          if( pCol->hName==hCol
-           && sqlite3StrICmp(pCol->zCnName, zCol)==0
-          ){
-            if( cnt>0 ){
-              if( pItem->fg.isUsing==0
-               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
-              ){
-                /* Two or more tables have the same column name which is
-                ** not joined by USING.  This is an error.  Signal as much
-                ** by clearing pFJMatch and letting cnt go above 1. */
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else
-              if( (pItem->fg.jointype & JT_RIGHT)==0 ){
-                /* An INNER or LEFT JOIN.  Use the left-most table */
-                continue;
-              }else
-              if( (pItem->fg.jointype & JT_LEFT)==0 ){
-                /* A RIGHT JOIN.  Use the right-most table */
-                cnt = 0;
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else{
-                /* For a FULL JOIN, we must construct a coalesce() func */
-                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
-              }
+        j = sqlite3ColumnIndex(pTab, zCol);
+        if( j>=0 ){
+          if( cnt>0 ){
+            if( pItem->fg.isUsing==0
+             || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+            ){
+              /* Two or more tables have the same column name which is
+              ** not joined by USING.  This is an error.  Signal as much
+              ** by clearing pFJMatch and letting cnt go above 1. */
+              sqlite3ExprListDelete(db, pFJMatch);
+              pFJMatch = 0;
+            }else
+            if( (pItem->fg.jointype & JT_RIGHT)==0 ){
+              /* An INNER or LEFT JOIN.  Use the left-most table */
+              continue;
+            }else
+            if( (pItem->fg.jointype & JT_LEFT)==0 ){
+              /* A RIGHT JOIN.  Use the right-most table */
+              cnt = 0;
+              sqlite3ExprListDelete(db, pFJMatch);
+              pFJMatch = 0;
+            }else{
+              /* For a FULL JOIN, we must construct a coalesce() func */
+              extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
             }
-            cnt++;
-            pMatch = pItem;
-            /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
-            pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
-            if( pItem->fg.isNestedFrom ){
-              sqlite3SrcItemColumnUsed(pItem, j);
-            }
-            break;
+          }
+          cnt++;
+          pMatch = pItem;
+          /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
+          pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
+          if( pItem->fg.isNestedFrom ){
+            sqlite3SrcItemColumnUsed(pItem, j);
           }
         }
         if( 0==cnt && VisibleRowid(pTab) ){
@@ -559,22 +552,17 @@ static int lookupName(
 
       if( pTab ){
         int iCol;
-        u8 hCol = sqlite3StrIHash(zCol);
         pSchema = pTab->pSchema;
         cntTab++;
-        for(iCol=0, pCol=pTab->aCol; iCol<pTab->nCol; iCol++, pCol++){
-          if( pCol->hName==hCol
-           && sqlite3StrICmp(pCol->zCnName, zCol)==0
-          ){
-            if( iCol==pTab->iPKey ){
-              iCol = -1;
-            }
-            break;
+        iCol = sqlite3ColumnIndex(pTab, zCol);
+        if( iCol>=0 ){
+          if( pTab->iPKey==iCol ) iCol = -1;
+        }else{
+          if( sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
+            iCol = -1;
+          }else{
+            iCol = pTab->nCol;
           }
-        }
-        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
-          /* IMP: R-51414-32910 */
-          iCol = -1;
         }
         if( iCol<pTab->nCol ){
           cnt++;
