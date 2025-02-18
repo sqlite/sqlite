@@ -30,14 +30,14 @@ The public domain source files usually contain a header comment
 similar to the following to make it clear that the software is
 public domain.
 
-> ~~~
+```
 The author disclaims copyright to this source code.  In place of
 a legal notice, here is a blessing:
 
   *   May you do good and not evil.
   *   May you find forgiveness for yourself and forgive others.
   *   May you share freely, never taking more than you give.
-~~~
+```
 
 Almost every file you find in this source repository will be
 public domain.  But there are a small number of exceptions:
@@ -49,9 +49,9 @@ This repository contains a (relatively) small amount of non-public-domain
 code used to help implement the configuration and build logic.  In other
 words, there are some non-public-domain files used to implement:
 
-> ~~~
+```
 ./configure && make
-~~~
+```
 
 In all cases, the non-public-domain files included with this
 repository have generous BSD-style licenses.  So anyone is free to
@@ -83,9 +83,9 @@ The following unix shell command is can be run from the top-level
 of this source repository in order to remove all non-public-domain
 code:
 
-> ~~~
+```
 rm -rf configure autosetup autoconf
-~~~
+```
 
 If you unpack this source repository and then run the command above, what
 is left will be 100% public domain.
