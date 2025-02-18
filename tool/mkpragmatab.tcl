@@ -4,16 +4,16 @@
 #
 # To add new pragmas, first add the name and other relevant attributes
 # of the pragma to the "pragma_def" object below.  Then run this script
-# to generate the ../src/pragma.h header file that contains macros and
+# to generate the pragma.h header file that contains macros and
 # the lookup table needed for pragma name lookup in the pragma.c module.
 # Then add the extra "case PragTyp_XXXXX:" and subsequent code for the
 # new pragma in ../src/pragma.c.
 #
-# The results are normally written into the ../src/pragma.h file.  However,
+# The results are normally written into the pragma.h file.  However,
 # if an alternative output file name is provided as an argument, then
 # results are written into the alternative.  For example:
 #
-#     tclsh tool/mkpragmatab.tcl            ;# <--- Results to src/pragma.h
+#     tclsh tool/mkpragmatab.tcl            ;# <--- Results to pragma.h
 #
 #     tclsh tool/mkpragmatab.tcl /dev/tty   ;# <-- results to terminal
 #
@@ -419,7 +419,7 @@ set pragma_def {
 if {$argc>0} {
   set destfile [lindex $argv 0]
 } else {
-  set destfile "[file dir [file dir [file normal $argv0]]]/src/pragma.h"
+  set destfile "pragma.h"
   puts "Overwriting $destfile with new pragma table..."
 }
 set fd [open $destfile wb]

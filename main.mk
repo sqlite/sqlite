@@ -163,9 +163,11 @@ LDFLAGS.rpath ?= -Wl,-rpath -Wl,$(prefix)/lib
 LDFLAGS.pthread ?= -lpthread
 LDFLAGS.dlopen ?= -ldl
 LDFLAGS.shlib ?= -shared
+LDFLAGS.rt ?= # nanosleep on some platforms
 LDFLAGS.icu ?= # -licui18n -licuuc -licudata
 CFLAGS.icu ?=
 LDFLAGS.libsqlite3.soname ?= # see https://sqlite.org/src/forumpost/5a3b44f510df8ded
+LDFLAGS.libsqlite3.os-specific ?= # see https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # libreadline (or a workalike):
 # To activate readline in the shell: SHELL_OPT = -DHAVE_READLINE=1
 LDFLAGS.readline ?= -lreadline # these vary across platforms
@@ -412,7 +414,7 @@ LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
   $(LDFLAGS.math) $(LDFLAGS.dlopen) \
   $(LDFLAGS.zlib) $(LDFLAGS.icu) \
-  $(LDFLAGS.configure)
+  $(LDFLAGS.rt) $(LDFLAGS.configure)
 
 #
 # $(install-dir.XYZ) = dirs for installation.
@@ -434,7 +436,8 @@ install-dir.all = $(install-dir.bin) $(install-dir.include) \
   $(install-dir.lib) $(install-dir.man1) \
   $(install-dir.pkgconfig)
 $(install-dir.all):
-	$(INSTALL) -d "$@"
+	@if [ ! -d "$@" ]; then set -x; $(INSTALL) -d "$@"; fi
+# ^^^^ on some platforms, install -d fails if the target already exists.
 
 #
 # After jimsh is compiled, we run some sanity checks to ensure that
@@ -545,7 +548,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
-  $(TOP)/src/ctime.c \
+  ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
@@ -593,7 +596,7 @@ SRC = \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
-  $(TOP)/src/pragma.h \
+  pragma.h \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -790,7 +793,7 @@ TESTSRC2 = \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
-  $(TOP)/src/ctime.c \
+  ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \
   $(TOP)/src/dbstat.c \
@@ -856,7 +859,7 @@ HDR = \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
    parse.h  \
-   $(TOP)/src/pragma.h \
+   pragma.h \
    sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
@@ -1136,8 +1139,11 @@ callback.o:	$(TOP)/src/callback.c $(DEPS_OBJ_COMMON)
 complete.o:	$(TOP)/src/complete.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/complete.c
 
-ctime.o:	$(TOP)/src/ctime.c $(DEPS_OBJ_COMMON)
-	$(T.cc.sqlite) -c $(TOP)/src/ctime.c
+ctime.c:	$(TOP)/tool/mkctimec.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkctimec.tcl
+
+ctime.o:	ctime.c $(DEPS_OBJ_COMMON)
+	$(T.cc.sqlite) -c ctime.c
 
 date.o:	$(TOP)/src/date.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/date.c
@@ -1381,6 +1387,9 @@ parse.c:	$(TOP)/src/parse.y lemon$(B.exe)
 	cp $(TOP)/src/parse.y .
 	./lemon$(B.exe) $(OPT_FEATURE_FLAGS) $(OPTS) -S parse.y
 
+pragma.h:	$(TOP)/tool/mkpragmatab.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkpragmatab.tcl
+
 sqlite3rc.h:	$(TOP)/src/sqlite3.rc $(TOP)/VERSION $(B.tclsh)
 	echo '#ifndef SQLITE_RESOURCE_VERSION' >$@
 	echo -n '#define SQLITE_RESOURCE_VERSION ' >>$@
@@ -1413,23 +1422,24 @@ all: lib
 #
 $(libsqlite3.SO):	$(LIBOBJ)
 	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3) \
-		$(LDFLAGS.libsqlite3.soname)
+		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.SO)-1: $(libsqlite3.SO)
 $(libsqlite3.SO)-0 $(libsqlite3.SO)-:
 so: $(libsqlite3.SO)-$(ENABLE_SHARED)
 all: so
 
 #
-# Install the $(libsqlite3.SO) as $(libsqlite3.SO).$(PACKAGE_VERSION)
-# and create symlinks which point to it:
+# On most Unix-like platforms, install the $(libsqlite3.SO) as
+# $(libsqlite3.SO).$(PACKAGE_VERSION) and create symlinks which point
+# to it:
 #
 # - libsqlite3.so.$(PACKAGE_VERSION)
 # - libsqlite3.so.0      =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
 # - libsqlite3.so        =symlink-> libsqlite3.so.3
 #
-# N.B. we initially had a link named libsqlite3.so.3 but it's
-# unnecessary unless we want to set SONAME to libsqlite3.so.3, which
-# is also unnecessary.
+# The symlinks are not added on platforms where $(T.dll) is ".dll",
+# and different transformations take place on platforms where $(T.dll)
+# is ".dylib".
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1467,13 +1477,27 @@ all: so
 #
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@echo "Setting up $(libsqlite3.SO) symlinks..."; \
+	@if [ -f $(libsqlite3.SO).a ]; then \
+		$(INSTALL) $(libsqlite3.SO).a "$(install-dir.lib)"; \
+	fi
+	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	if [ x.dll = x$(T.dll) ]; then \
+		echo "No library symlinks needed on this platform"; \
+	elif [ x.dylib = x$(T.dll) ]; then \
+		cd "$(install-dir.lib)" || exit $$?; \
+		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+		mv $(libsqlite3.SO) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+	else \
 		cd "$(install-dir.lib)" || exit $$?; \
 		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
 		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[03]*; \
+		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[a03]*; \
 		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
 			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
@@ -1484,7 +1508,9 @@ install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
 			ls -la $(libsqlite3.SO).0.8.6; \
-		fi
+		fi; \
+	fi
+
 install-so-0 install-so-:
 install-so: install-so-$(ENABLE_SHARED)
 install: install-so
@@ -1684,7 +1710,7 @@ fuzztest:	fuzzcheck$(T.exe) $(FUZZDATA) sessionfuzz$(T.exe)
 	./fuzzcheck$(T.exe) $(FUZZDATA)
 	./sessionfuzz$(T.exe) run $(TOP)/test/sessionfuzz-data1.db
 
-valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA) sessionfuzz$(T.exe)
+valgrindfuzz:	fuzzcheck$(T.exe) $(FUZZDATA) sessionfuzz$(T.exe)
 	valgrind ./fuzzcheck$(T.exe) --cell-size-check --limit-mem 10M $(FUZZDATA)
 	valgrind ./sessionfuzz$(T.exe) run $(TOP)/test/sessionfuzz-data1.db
 
@@ -2320,7 +2346,7 @@ tidy: tidy-.
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO)
+	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO) $(libsqlite3.SO).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
@@ -2340,6 +2366,7 @@ tidy: tidy-.
 	rm -f src-verify$(B.exe)
 	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)
 	rm -f sqlite3rc.h sqlite3.def
+	rm -f ctime.c pragma.h
 
 #
 # Removes build products and test logs.  Retains ./configure outputs.
@@ -2354,7 +2381,7 @@ distclean:	distclean-. clean
 
 
 # Show important variable settings.
-show-variables:	
+show-variables:
 	@echo "CC          = $(CC)"
 	@echo "B.cc        = $(B.cc)"
 	@echo "T.cc        = $(T.cc)"

@@ -479,11 +479,12 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     ** schema table.  We just need to update that slot with all
     ** the information we've collected.
     **
-    ** The VM register number pParse->regRowid holds the rowid of an
+    ** The VM register number pParse->u1.cr.regRowid holds the rowid of an
     ** entry in the sqlite_schema table that was created for this vtab
     ** by sqlite3StartTable().
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    assert( pParse->isCreate );
     sqlite3NestedParse(pParse,
       "UPDATE %Q." LEGACY_SCHEMA_TABLE " "
          "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
@@ -492,7 +493,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       pTab->zName,
       pTab->zName,
       zStmt,
-      pParse->regRowid
+      pParse->u1.cr.regRowid
     );
     v = sqlite3GetVdbe(pParse);
     sqlite3ChangeCookie(pParse, iDb);

@@ -843,6 +843,11 @@ typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef INT8_TYPE i8;              /* 1-byte signed integer */
 
+/* A bitfield type for use inside of structures.  Always follow with :N where
+** N is the number of bits.
+*/
+typedef unsigned bft;  /* Bit Field Type */
+
 /*
 ** SQLITE_MAX_U32 is a u64 constant that is the maximum u64 value
 ** that can be stored in a u32 without loss of data.  The value
@@ -1010,6 +1015,14 @@ typedef INT16_TYPE LogEst;
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 #define LARGEST_UINT64 (0xffffffff|(((u64)0xffffffff)<<32))
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
+
+/*
+** Macro SMXV(n) return the maximum value that can be held in variable n,
+** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
+** integer types.
+*/
+#define SMXV(n) ((((i64)1)<<(sizeof(n)-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)))-1)
 
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
@@ -2447,6 +2460,7 @@ struct Table {
   } u;
   Trigger *pTrigger;   /* List of triggers on this object */
   Schema *pSchema;     /* Schema that contains this table */
+  u8 aHx[16];          /* Column aHt[K%sizeof(aHt)] might have hash K */
 };
 
 /*
@@ -3844,25 +3858,32 @@ struct Parse {
   char *zErrMsg;       /* An error message */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   int rc;              /* Return code from execution */
-  u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
-  u8 checkSchema;      /* Causes schema cookie check after an error */
+  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
-  u8 okConstFactor;    /* OK to factor out constants */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
-  u8 bHasWith;         /* True if statement contains WITH */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
+  u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
+  u8 bReturning;       /* Coding a RETURNING trigger */
+  u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
+  u8 disableTriggers;  /* True to disable triggers */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
 #ifdef SQLITE_DEBUG
   u8 ifNotExists;      /* Might be true if IF NOT EXISTS.  Assert()s only */
+  u8 isCreate;         /* CREATE TABLE, INDEX, or VIEW (but not TRIGGER)
+                       ** and ALTER TABLE ADD COLUMN. */
 #endif
+  bft colNamesSet :1;   /* TRUE after OP_ColumnName has been issued to pVdbe */
+  bft bHasWith :1;      /* True if statement contains WITH */
+  bft okConstFactor :1; /* OK to factor out constants */
+  bft checkSchema :1;   /* Causes schema cookie check after an error */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
@@ -3877,12 +3898,9 @@ struct Parse {
   ExprList *pConstExpr;/* Constant expressions */
   IndexedExpr *pIdxEpr;/* List of expressions used by active indexes */
   IndexedExpr *pIdxPartExpr; /* Exprs constrained by index WHERE clauses */
-  Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
-  int regRowid;        /* Register holding rowid of CREATE TABLE entry */
-  int regRoot;         /* Register holding root page number for new objects */
-  int nMaxArg;         /* Max args passed to user function by sub-program */
+  int nMaxArg;         /* Max args to xUpdate and xFilter vtab methods */
   int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   u32 nProgressSteps;  /* xProgress steps taken during sqlite3_prepare() */
@@ -3896,17 +3914,6 @@ struct Parse {
   Table *pTriggerTab;  /* Table triggers are being coded for */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   ParseCleanup *pCleanup;   /* List of cleanup operations to run after parse */
-  union {
-    int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
-    Returning *pReturning; /* The RETURNING clause */
-  } u1;
-  u32 oldmask;         /* Mask of old.* columns referenced */
-  u32 newmask;         /* Mask of new.* columns referenced */
-  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
-  u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
-  u8 bReturning;       /* Coding a RETURNING trigger */
-  u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
-  u8 disableTriggers;  /* True to disable triggers */
 
   /**************************************************************************
   ** Fields above must be initialized to zero.  The fields that follow,
@@ -3918,6 +3925,19 @@ struct Parse {
   int aTempReg[8];        /* Holding area for temporary registers */
   Parse *pOuterParse;     /* Outer Parse object when nested */
   Token sNameToken;       /* Token with unqualified schema object name */
+  u32 oldmask;            /* Mask of old.* columns referenced */
+  u32 newmask;            /* Mask of new.* columns referenced */
+  union {
+    struct {  /* These fields available when isCreate is true */
+      int addrCrTab;        /* Address of OP_CreateBtree on CREATE TABLE */
+      int regRowid;         /* Register holding rowid of CREATE TABLE entry */
+      int regRoot;          /* Register holding root page for new objects */
+      Token constraintName; /* Name of the constraint currently being parsed */
+    } cr;
+    struct {  /* These fields available to all other statements */
+      Returning *pReturning; /* The RETURNING clause */
+    } d;
+  } u1;
 
   /************************************************************************
   ** Above is constant between recursions.  Below is reset before and after
