@@ -94,8 +94,13 @@ static SQLITE_WSD struct Mem5Global {
   ** Memory available for allocation
   */
   int szAtom;      /* Smallest possible allocation in bytes */
-  int nBlock;      /* Number of szAtom sized blocks in zPool */
-  u8 *zPool;       /* Memory available to be allocated */
+  int nBlock;      /* Number of szAtom sized blocks in aPool */
+  u8 *aPool;       /* Memory available to be allocated */
+  u8 *aEnd;        /* Last byte of aPool[] */
+
+#ifdef SQLITE_MEM5_FAILOVER
+  u64 nFailover;   /* Number of fail-over allocations taken from system heap */
+#endif
   
   /*
   ** Mutex to control access to the memory allocation subsystem.
@@ -137,10 +142,10 @@ static SQLITE_WSD struct Mem5Global {
 #define mem5 GLOBAL(struct Mem5Global, mem5)
 
 /*
-** Assuming mem5.zPool is divided up into an array of Mem5Link
+** Assuming mem5.aPool is divided up into an array of Mem5Link
 ** structures, return a pointer to the idx-th such link.
 */
-#define MEM5LINK(idx) ((Mem5Link *)(&mem5.zPool[(idx)*mem5.szAtom]))
+#define MEM5LINK(idx) ((Mem5Link *)(&mem5.aPool[(idx)*mem5.szAtom]))
 
 /*
 ** Unlink the chunk at mem5.aPool[i] from list it is currently
@@ -201,7 +206,14 @@ static void memsys5Leave(void){
 static int memsys5Size(void *p){
   int iSize, i;
   assert( p!=0 );
-  i = (int)(((u8 *)p-mem5.zPool)/mem5.szAtom);
+#ifdef SQLITE_MEM5_FAILOVER
+  if( ((u8*)p)<mem5.aPool || ((u8*)p)>mem5.aEnd ){
+    u64 *p64 = (u64*)p;
+    p64--;
+    return (int)p64[0];
+  }
+#endif
+  i = (int)(((u8*)p - mem5.aPool)/mem5.szAtom);
   assert( i>=0 && i<mem5.nBlock );
   iSize = mem5.szAtom * (1 << (mem5.aCtrl[i]&CTRL_LOGSIZE));
   return iSize;
@@ -277,11 +289,11 @@ static void *memsys5MallocUnsafe(int nByte){
 #ifdef SQLITE_DEBUG
   /* Make sure the allocated memory does not assume that it is set to zero
   ** or retains a value from a previous allocation */
-  memset(&mem5.zPool[i*mem5.szAtom], 0xAA, iFullSz);
+  memset(&mem5.aPool[i*mem5.szAtom], 0xAA, iFullSz);
 #endif
 
   /* Return a pointer to the allocated memory. */
-  return (void*)&mem5.zPool[i*mem5.szAtom];
+  return (void*)&mem5.aPool[i*mem5.szAtom];
 }
 
 /*
@@ -292,13 +304,13 @@ static void memsys5FreeUnsafe(void *pOld){
   int iBlock;
 
   /* Set iBlock to the index of the block pointed to by pOld in 
-  ** the array of mem5.szAtom byte blocks pointed to by mem5.zPool.
+  ** the array of mem5.szAtom byte blocks pointed to by mem5.aPool.
   */
-  iBlock = (int)(((u8 *)pOld-mem5.zPool)/mem5.szAtom);
+  iBlock = (int)(((u8 *)pOld-mem5.aPool)/mem5.szAtom);
 
   /* Check that the pointer pOld points to a valid, non-free block. */
   assert( iBlock>=0 && iBlock<mem5.nBlock );
-  assert( ((u8 *)pOld-mem5.zPool)%mem5.szAtom==0 );
+  assert( ((u8 *)pOld-mem5.aPool)%mem5.szAtom==0 );
   assert( (mem5.aCtrl[iBlock] & CTRL_FREE)==0 );
 
   iLogsize = mem5.aCtrl[iBlock] & CTRL_LOGSIZE;
@@ -344,7 +356,7 @@ static void memsys5FreeUnsafe(void *pOld){
 #ifdef SQLITE_DEBUG
   /* Overwrite freed memory with the 0x55 bit pattern to verify that it is
   ** not used after being freed */
-  memset(&mem5.zPool[iBlock*mem5.szAtom], 0x55, size);
+  memset(&mem5.aPool[iBlock*mem5.szAtom], 0x55, size);
 #endif
 
   memsys5Link(iBlock, iLogsize);
@@ -358,6 +370,20 @@ static void *memsys5Malloc(int nBytes){
   if( nBytes>0 ){
     memsys5Enter();
     p = memsys5MallocUnsafe(nBytes);
+#ifdef SQLITE_MEM5_FAILOVER
+    if( p==0
+     && (p = malloc(nBytes + sizeof(u64)))!=0
+    ){
+      u64 *p64 = (u64*)p;
+      p64[0] = nBytes;
+      p = (i64*)&p64[1];
+      mem5.nFailover++;
+      sqlite3StatusHighwater(SQLITE_STATUS_FAILOVER_SIZE, nBytes);
+      sqlite3StatusUp(SQLITE_STATUS_FAILOVER_USED, nBytes);
+      sqlite3StatusUp(SQLITE_STATUS_FAILOVER_COUNT, 1);
+      assert( ((u8*)p)<mem5.aPool || ((u8*)p)>mem5.aEnd );
+    }
+#endif
     memsys5Leave();
   }
   return (void*)p; 
@@ -372,7 +398,22 @@ static void *memsys5Malloc(int nBytes){
 static void memsys5Free(void *pPrior){
   assert( pPrior!=0 );
   memsys5Enter();
-  memsys5FreeUnsafe(pPrior);
+#ifdef SQLITE_MEM5_FAILOVER
+  if( mem5.nFailover
+   && pPrior!=0
+   && (((u8*)pPrior)>mem5.aEnd || ((u8*)pPrior)<mem5.aPool)
+  ){
+    u64 *p64 = (u64*)pPrior;
+    p64--;
+    sqlite3StatusDown(SQLITE_STATUS_FAILOVER_USED, (int)p64[0]);
+    sqlite3StatusDown(SQLITE_STATUS_FAILOVER_COUNT, 1);
+    free(p64);
+    mem5.nFailover--;
+  }else
+#endif
+  {
+    memsys5FreeUnsafe(pPrior);
+  }
   memsys5Leave();  
 }
 
@@ -459,7 +500,7 @@ static int memsys5Log(int iValue){
 static int memsys5Init(void *NotUsed){
   int ii;            /* Loop counter */
   int nByte;         /* Number of bytes of memory available to this allocator */
-  u8 *zByte;         /* Memory usable by this allocator */
+  u8 *aByte;         /* Memory usable by this allocator */
   int nMinLog;       /* Log base 2 of minimum allocation size in bytes */
   int iOffset;       /* An offset into mem5.aCtrl[] */
 
@@ -474,8 +515,8 @@ static int memsys5Init(void *NotUsed){
   assert( (sizeof(Mem5Link)&(sizeof(Mem5Link)-1))==0 );
 
   nByte = sqlite3GlobalConfig.nHeap;
-  zByte = (u8*)sqlite3GlobalConfig.pHeap;
-  assert( zByte!=0 );  /* sqlite3_config() does not allow otherwise */
+  aByte = (u8*)sqlite3GlobalConfig.pHeap;
+  assert( aByte!=0 );  /* sqlite3_config() does not allow otherwise */
 
   /* boundaries on sqlite3GlobalConfig.mnReq are enforced in sqlite3_config() */
   nMinLog = memsys5Log(sqlite3GlobalConfig.mnReq);
@@ -485,8 +526,9 @@ static int memsys5Init(void *NotUsed){
   }
 
   mem5.nBlock = (nByte / (mem5.szAtom+sizeof(u8)));
-  mem5.zPool = zByte;
-  mem5.aCtrl = (u8 *)&mem5.zPool[mem5.nBlock*mem5.szAtom];
+  mem5.aPool = aByte;
+  mem5.aEnd = aByte + nByte - 1;
+  mem5.aCtrl = &mem5.aPool[mem5.nBlock*mem5.szAtom];
 
   for(ii=0; ii<=LOGMAX; ii++){
     mem5.aiFreelist[ii] = -1;

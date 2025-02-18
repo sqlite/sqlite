@@ -8798,6 +8798,31 @@ int sqlite3_status64(
 ** <dd>The *pHighwater parameter records the deepest parser stack.
 ** The *pCurrent value is undefined.  The *pHighwater value is only
 ** meaningful if SQLite is compiled with [YYTRACKMAXSTACKDEPTH].</dd>)^
+**
+** [[SQLITE_STATUS_FAILOVER_COUNT]] <dt>SQLITE_STATUS_FAILOVER_COUNT</dt>
+** <dd>
+** If [memsys5] is enabled and SQLite is compiled with extra option
+** -DSQLITE_MEM5_FAILOVER, then memsys5 will fail over to the system
+** memory allocator if it is unable to complete an allocation.  This
+** status value reports the number of times that happened.
+**
+** [[SQLITE_STATUS_FAILOVER_USED]] <dt>SQLITE_STATUS_FAILOVER_USED</dt>
+** <dd>
+** If [memsys5] is enabled and SQLite is compiled with extra option
+** -DSQLITE_MEM5_FAILOVER, then memsys5 will fail over to the system
+** memory allocator if it is unable to complete an allocation.  This
+** status value reports the number of bytes currently allocated from
+** the heap due to memsys5 overflow.
+** </dd>
+**
+** [[SQLITE_STATUS_FAILOVER_SIZE]] <dt>SQLITE_STATUS_FAILOVER_SIZE</dt>
+** <dd>
+** If [memsys5] is enabled and SQLite is compiled with extra option
+** -DSQLITE_MEM5_FAILOVER, then memsys5 will fail over to the system
+** memory allocator if it is unable to complete an allocation.  The
+** highwater mark for this status value is the maximum size of any
+** memory allocation that was allocated from the system heap in this way.
+** </dd>
 ** </dl>
 **
 ** New status parameters may be added from time to time.
@@ -8806,11 +8831,14 @@ int sqlite3_status64(
 #define SQLITE_STATUS_PAGECACHE_USED       1
 #define SQLITE_STATUS_PAGECACHE_OVERFLOW   2
 #define SQLITE_STATUS_SCRATCH_USED         3  /* NOT USED */
+#define SQLITE_STATUS_FAILOVER_COUNT       3
 #define SQLITE_STATUS_SCRATCH_OVERFLOW     4  /* NOT USED */
+#define SQLITE_STATUS_FAILOVER_USED        4
 #define SQLITE_STATUS_MALLOC_SIZE          5
 #define SQLITE_STATUS_PARSER_STACK         6
 #define SQLITE_STATUS_PAGECACHE_SIZE       7
 #define SQLITE_STATUS_SCRATCH_SIZE         8  /* NOT USED */
+#define SQLITE_STATUS_FAILOVER_SIZE        8
 #define SQLITE_STATUS_MALLOC_COUNT         9
 
 /*

@@ -3313,6 +3313,14 @@ static int display_stats(
      "%lld (max %lld) bytes", SQLITE_STATUS_MEMORY_USED, bReset);
   displayStatLine(out, "Number of Outstanding Allocations:",
      "%lld (max %lld)", SQLITE_STATUS_MALLOC_COUNT, bReset);
+#ifdef SQLITE_MEM5_FAILOVER
+  displayStatLine(out, "Failover Memory Used:",
+     "%lld (max %lld) bytes", SQLITE_STATUS_FAILOVER_USED, bReset);
+  displayStatLine(out, "Failover Allocations:",
+     "%lld (max %lld)", SQLITE_STATUS_FAILOVER_COUNT, bReset);
+  displayStatLine(out, "Largest Failover Allocation:",
+     "%lld", SQLITE_STATUS_FAILOVER_SIZE, bReset);
+#endif
   if( pArg->shellFlgs & SHFLG_Pagecache ){
     displayStatLine(out, "Number of Pcache Pages Used:",
        "%lld (max %lld) pages", SQLITE_STATUS_PAGECACHE_USED, bReset);
