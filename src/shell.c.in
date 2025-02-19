@@ -470,7 +470,7 @@ static char *Argv0;
 ** Prompt strings. Initialized in main. Settable with
 **   .prompt main continue
 */
-#define PROMPT_LEN_MAX 20
+#define PROMPT_LEN_MAX 128
 /* First line prompt.   default: "sqlite> " */
 static char mainPrompt[PROMPT_LEN_MAX];
 /* Continuation prompt. default: "   ...> " */
