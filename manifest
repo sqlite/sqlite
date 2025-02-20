@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sbedrock\sbranch.
-D 2025-02-18T14:48:14.586
+C Experimental\sprototype\sfor\s"PRAGMA\sloadall(TABLE_OR_INDEX)".
+D 2025-02-20T12:34:24.813
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -24,7 +24,7 @@ F autoconf/auto.def 3a318c4898024b35ed61a4876a42e3dcc313f93bd8486874d1ad498b8864
 F autoconf/tea/Makefile.in ba0556fee8da09c066bad85a4457904e46ee2c2eabaa309c0e83a78f2f151a8e
 F autoconf/tea/README.txt 61e62e519579e4a112791354d6d440f8b51ea6db3b0bab58d59f29df42d2dfe3
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac.in da18360dfdeac7414fa8deb549f3d65aeca0ae1150ff1a8b902019b39ce019a4 w autoconf/tea/configure.ac
+F autoconf/tea/configure.ac.in da18360dfdeac7414fa8deb549f3d65aeca0ae1150ff1a8b902019b39ce019a4
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
@@ -780,7 +780,7 @@ F src/parse.y 0248f0250118de917396f4e181d78cf16634cbf23d725262f238b5b30ee7f7c4
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c dc4e5b90947e42a2d9c0d5f38cf7649f49dfe228162a8a6df3d093ca21bf6be4
-F src/pragma.c 0a26a652ae91f8ca355b1cfbf9556b8b2c3834df4bfad939fa2b3b9f2c1f686f
+F src/pragma.c e5c01f582f48206ba8bdb17dc5efdd01d4a9c44073d8b83b2f23ed3f66085097
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
 F src/printf.c b9ac740dfaf68552f5da1266be28ae2824b53a6b73d93425f7c6b2ef62457cbb
 F src/random.c 9bd018738ec450bf35d28050b4b33fa9a6eebf3aaefb1a1cff42dc14a7725673
@@ -2185,7 +2185,7 @@ F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl a2995a2d1a94cfd51a423b2a35f003905a7128b82623bdacf92ea962a0146923
+F tool/mkpragmatab.tcl 6bffd7312b60eaabc7a0e295efcb8e4b8e879fb7e6be5bac1e08a8095f1eb739
 F tool/mkshellc.tcl 9ce74de0fa904a2c56a96f8d8b5261246bacb0eaa8d7e184f9e18ff94145ebbc
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -2244,8 +2244,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0f898f356e50568ebf62f18f39b05d2428038b88e277613bbed818dac1b0fd0 bd4651659548bfa523dd99f0c771b7d3c9f5dc41d0412f4f939710c4f4c6e17d
-R fc291289df97b3287f937a94973f5401
+P c09656c62155a6e82d0fa6c27bf8ec40a14854845adfa53db3cb42a0b1b29101
+R 8ab694ec15e995595d488594273b3445
+T *branch * pragma-loadall
+T *sym-pragma-loadall *
+T -sym-bedrock *
 U drh
-Z 9cbb9b042987efe615bef13a49da10ea
+Z cb71a1977acebe318b4222933428d6c8
 # Remove this line to create a well-formed Fossil manifest.

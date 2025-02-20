@@ -327,6 +327,10 @@ set pragma_def {
   FLAG: NeedSchema Result0 Result1 SchemaOpt
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
+  NAME: loadall
+  COLS: cnt
+  FLAG: NeedSchema Result1
+
   NAME: quick_check
   TYPE: INTEGRITY_CHECK
   FLAG: NeedSchema Result0 Result1 SchemaOpt

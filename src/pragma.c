@@ -1396,6 +1396,55 @@ void sqlite3Pragma(
   }
   break;
 
+  /*
+  **      PRAGMA loadall(TABIDXNAME);
+  **
+  **  Visit every page of the named table or index, to load it into cache.
+  */  
+  case PragTyp_LOADALL: {
+    if( zRight ){
+      Index *pIdx;
+      Table *pTab;
+      int iDb;
+      int iRoot = 0;
+      pIdx = sqlite3FindIndex(db, zRight, zDb);
+      if( pIdx==0 ){
+        /* If there is no index named zRight, check to see if there is a
+        ** WITHOUT ROWID table named zRight, and if there is, show the
+        ** structure of the PRIMARY KEY index for that table. */
+        pTab = sqlite3LocateTable(pParse, LOCATE_NOERR, zRight, zDb);
+        if( pTab ){
+          if( !HasRowid(pTab) ){
+            pIdx = sqlite3PrimaryKeyIndex(pTab);
+            iRoot = pIdx->tnum;
+          }else{
+            iRoot = pTab->tnum;
+          }
+        }
+      }else{
+        pTab = pIdx->pTable;
+        iRoot = pIdx->tnum;
+      }
+      if( iRoot ){
+        pParse->nTab++;
+        iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+        sqlite3CodeVerifySchema(pParse, iDb);
+        if( pParse->db->noSharedCache==0 ){
+          sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+        }
+        sqlite3VdbeAddOp3(v, OP_OpenRead, 0, iRoot, iDb);
+        if( pIdx ){
+          sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+        }else{
+          sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(1), P4_INT32);
+        }
+        sqlite3VdbeAddOp2(v, OP_Count, 0, 1);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+      }
+    }
+    break;
+  }
+
   case PragTyp_INDEX_LIST: if( zRight ){
     Index *pIdx;
     Table *pTab;
