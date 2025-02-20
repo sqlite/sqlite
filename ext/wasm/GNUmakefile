@@ -103,7 +103,7 @@ else
   ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
     $(info ==============================================================)
     $(info == Development build. Make one of (dist, snapshot) for a)
-    $(info == smaller release build.)
+    $(info == smaller and faster release build.)
     $(info ==============================================================)
   endif
 endif
