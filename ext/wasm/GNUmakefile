@@ -892,12 +892,13 @@ EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 ########################################################################
 ########################################################################
 # We have to ensure that we do not build $(sqlite3*.*js) in parallel
-# because they all result in the creation of $(sqlite3.wasm). We have
-# no way to build just a .[m]js file without also building the .wasm
-# file because the generated .[m]js file has to include info about the
-# imports needed by the wasm file, so they have to be built
+# for any builds which result in the creation of $(sqlite3.wasm). We
+# have no way to build just a .[m]js file without also building the
+# .wasm file because the generated .[m]js file has to include info
+# about the imports needed by the wasm file, so they have to be built
 # together. i.e.  we're building $(sqlite3.wasm) multiple times, but
-# that's unavoidable (and harmless, just a waste of build time).
+# that's unavoidable (and harmless, but is a significant waste of
+# build time).
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
