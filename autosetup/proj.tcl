@@ -921,9 +921,20 @@ proc proj-check-emsdk {} {
 #
 # Achtung: we have seen platforms which report that a given option
 # checked here will work but then fails at build-time, and the current
-# order of checks reflects that.
+# order of checks reflects that. Similarly, platforms which are known
+# to report success here but fail to handle this flag at link-time are
+# special-cased here to behave as if the check failed.
 proc proj-check-rpath {} {
-  set rc 1
+  switch -glob -- [get-define host] {
+    *-*-aix* {
+      # Skip this check on platform(s) where we know it to pass at
+      # this step but fail at build-time, as a workaround for
+      # https://sqlite.org/forum/forumpost/ae5bd8a84b until we can
+      # find a more reliable approach.
+      define LDFLAGS_RPATH ""
+      return 0
+    }
+  }
   if {[proj-opt-was-provided libdir]
       || [proj-opt-was-provided exec-prefix]} {
     set lp "[get-define libdir]"
@@ -945,10 +956,9 @@ proc proj-check-rpath {} {
       define LDFLAGS_RPATH "-Wl,-R$lp"
     } else {
       define LDFLAGS_RPATH ""
-      set rc 0
     }
   }
-  return $rc
+  expr {"" ne [get-define LDFLAGS_RPATH]}
 }
 
 ########################################################################

@@ -244,6 +244,9 @@ proc sqlite-config-bootstrap {buildMode} {
         static-shell=1       => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {*} {
+        # rpath: https://sqlite.org/forum/forumpost/fa3a6ed858
+        rpath=1
+          => {Disable checking for rpath support}
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -641,6 +644,17 @@ proc sqlite-handle-debug {} {
   } {
     define TARGET_DEBUG {-DNDEBUG}
     msg-result no
+  }
+}
+
+########################################################################
+# If the --disable-rpath flag is used, this [define]s LDFLAGS_RPATH to
+# an empty string, else it invokes [proj-check-rpath].
+proc sqlite-handle-rpath {} {
+  proj-if-opt-truthy rpath {
+    proj-check-rpath
+  } {
+    define LDFLAGS_RPATH ""
   }
 }
 
