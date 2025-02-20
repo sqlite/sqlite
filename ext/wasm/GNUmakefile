@@ -136,8 +136,9 @@ JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 #   target of browsers.
 #
 # - node = for use by node.js for node.js, as opposed to by node.js on
-#   behalf o browser-side code (use bundler-friendly for that). Note
+#   behalf of browser-side code (use bundler-friendly for that). Note
 #   that persistent storage (OPFS) is not available in these builds.
+#   These builds are UNTESTED and UNSUPPORTED!
 #
 JS_BUILD_MODES := vanilla esm bunder-friendly node
 

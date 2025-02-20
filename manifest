@@ -1,5 +1,5 @@
-C Add\sthe\spause/unpause\scapability\sto\sthe\sopfs-sahpool\sVFS,\sas\sdiscussed\sin\s[forum:fe8cdb8431c|forum\sthread\sfe8cdb8431c].\sSummary:\sthis\sgives\sclients\sa\sway\sto\seke\ssome\sdegree\sof\smulti-page/tab/Worker\sconcurrency\sout\sof\sthis\sVFS\sbut\srequires\sthat\scoordination\sto\sbe\simplemented\sclient-side,\se.g.\svia\sa\sSharedWorker\sor\sWebLocks.
-D 2025-02-20T04:14:26.736
+C wasm\smakefile\sdocs:\smake\sexplicit\sthat\sthe\snode.js-for-node.js\sbuilds\s(as\sopposed\sto\sthe\snode.js-for-browser\sbuilds)\sare\sboth\suntested\sand\sunsupported.
+D 2025-02-20T04:45:02.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -619,7 +619,7 @@ F ext/session/sqlite3session.c 52a680dbb03c4734748b215d95987fb4d95ab23baaf053a01
 F ext/session/sqlite3session.h aa5de3ec8ef0e5313e9f65dafd69e8ba292d170f07b57da9200c040068dab061
 F ext/session/test_session.c 12e0a2c15fd60f92da4bb29c697c9177ff0c0dbcdc5129a54c47e999f147937a
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 7889f9c5bab69233a65109e2bd00d627cab7470060e1b13b37781ac1b127f6c6
+F ext/wasm/GNUmakefile afecad95600b0361865a81c4490743f54fd2a5a4db64e50b361a9db0cb0553f5
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md b89605f65661cf35bf034ff6d43e448cc169b8017fc105d498e33b81218b482c
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2210,9 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ae9d6c642295e3a0c1732dacf7c18ecacd39d3e74e38381ac5531c8396f5f1c e205cdc468e02eefdeb8d391d921aa2d4d28a8b7b87036d6d937a9928261a413
-R 224600d4f738e50568ab6b26e5819abb
-T +closed e205cdc468e02eefdeb8d391d921aa2d4d28a8b7b87036d6d937a9928261a413 Closed\sby\sintegrate-merge.
+P b5dbd521951e129b4dec69f191a872500dbf387b34a8479ad58b053ffcccbab9
+R 9e14f25c151c1ed248cfdda16fbb7871
 U stephan
-Z 8b67a5570124816c376abd5faa1b9b7a
+Z a5f06d7dda0edaff65b376e4feee5c8b
 # Remove this line to create a well-formed Fossil manifest.
