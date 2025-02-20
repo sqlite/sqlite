@@ -198,15 +198,41 @@ proc proj-strip-hash-comments {val} {
 }
 
 ########################################################################
+# @proj-cflags-without-werror
+#
+# Fetches [define $var], strips out any -Werror entries, and returns
+# the new value. This is intended for temporarily stripping -Werror
+# from CFLAGS or CPPFLAGS within the scope of a [define-push] block.
+proc proj-cflags-without-werror {{var CFLAGS}} {
+  set rv {}
+  foreach f [get-define $var ""] {
+    switch -exact -- $f {
+      -Werror {}
+      default { lappend rv $f }
+    }
+  }
+  return [join $rv " "]
+}
+
+########################################################################
 # @proj-check-function-in-lib
 #
-# A proxy for cc-check-function-in-lib which does not make any global
-# changes to the LIBS define. Returns the result of
-# cc-check-function-in-lib (i.e. true or false).  The resulting linker
-# flags are stored in the [define] named lib_${function}.
+# A proxy for cc-check-function-in-lib with the following differences:
+#
+# - Does not make any global changes to the LIBS define.
+#
+# - Strips out -W... warning flags from CFLAGS before running the
+#   test, as these feature tests will often fail if -Werror is used.
+#
+# Returns the result of cc-check-function-in-lib (i.e. true or false).
+# The resulting linker flags are stored in the [define] named
+# lib_${function}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
-  define-push {LIBS} {
+  define-push {LIBS CFLAGS} {
+    #puts "CFLAGS before=[get-define CFLAGS]"
+    define CFLAGS [proj-cflags-without-werror]
+    #puts "CFLAGS after =[get-define CFLAGS]"
     set found [cc-check-function-in-lib $function $libs $otherlibs]
   }
   return $found
