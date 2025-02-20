@@ -149,11 +149,15 @@ $(libsqlite3.SO): sqlite3.o
 	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
 		$(LDFLAGS) $(LDFLAGS.libsqlite3) \
 		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
-all: $(libsqlite3.SO)
+$(libsqlite3.SO)-1: $(libsqlite3.SO)
+$(libsqlite3.SO)-0:
+all: $(libsqlite3.SO)-$(ENABLE_LIB_SHARED)
 
 $(libsqlite3.LIB): sqlite3.o
 	$(AR) $(AR.flags) $@ sqlite3.o
-all: $(libsqlite3.LIB)
+$(libsqlite3.LIB)-1: $(libsqlite3.LIB)
+$(libsqlite3.LIB)-0:
+all: $(libsqlite3.LIB)-$(ENABLE_LIB_STATIC)
 
 install-so-1: $(install-dir.lib) $(libsqlite3.SO)
 	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
