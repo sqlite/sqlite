@@ -487,4 +487,24 @@ ifcapable altertable {
     SELECT name FROM sqlite_sequence ORDER BY +name;
   } {a c0 c2}
 }
+
+# Ensure that the number of columns in an index on a WITHOUT ROWID
+# table does not exceed SQLITE_LIMIT_COLUMN.
+#
+reset_db
+sqlite3_limit db SQLITE_LIMIT_COLUMN 8
+do_catchsql_test 16.1 {
+  CREATE TABLE t1(
+    c1,c2,c3,c4,c5,c6,c7,c8,
+    PRIMARY KEY(c1,c2,c1 COLLATE NOCASE)
+  ) WITHOUT ROWID;
+} {1 {too many columns on sqlite_autoindex_t1_1}}
+do_catchsql_test 16.2 {
+  CREATE TABLE t1(
+    c1,c2,c3,c4,c5,c6,c7,c8,
+    PRIMARY KEY(c1,c2),
+    UNIQUE(c3,c4,c5,c6,c7,c8,c3 COLLATE nocase)
+  ) WITHOUT ROWID;
+} {1 {too many columns on sqlite_autoindex_t1_2}}
+
 finish_test

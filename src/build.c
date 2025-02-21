@@ -1067,10 +1067,16 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 ** find the (first) offset of that column in index pIdx.  Or return -1
 ** if column iCol is not used in index pIdx.
 */
-i16 sqlite3TableColumnToIndex(Index *pIdx, i16 iCol){
+i16 sqlite3TableColumnToIndex(Index *pIdx, int iCol){
   int i;
+  i16 iCol16;
+  assert( iCol>=(-1) && iCol<=SQLITE_MAX_COLUMN );
+  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN );
+  iCol16 = iCol;
   for(i=0; i<pIdx->nColumn; i++){
-    if( iCol==pIdx->aiColumn[i] ) return i;
+    if( iCol16==pIdx->aiColumn[i] ){
+      return i;
+    }
   }
   return -1;
 }
@@ -2167,10 +2173,16 @@ static char *createTableStmt(sqlite3 *db, Table *p){
 ** Resize an Index object to hold N columns total.  Return SQLITE_OK
 ** on success and SQLITE_NOMEM on an OOM error.
 */
-static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
+static int resizeIndexObject(Parse *pParse, Index *pIdx, int N){
   char *zExtra;
   int nByte;
+  sqlite3 *db;
   if( pIdx->nColumn>=N ) return SQLITE_OK;
+  db = pParse->db;
+  if( N>db->aLimit[SQLITE_LIMIT_COLUMN] ){
+    sqlite3ErrorMsg(pParse, "too many columns on %s", pIdx->zName);
+    return SQLITE_ERROR;
+  }
   assert( pIdx->isResized==0 );
   nByte = (sizeof(char*) + sizeof(LogEst) + sizeof(i16) + 1)*N;
   zExtra = sqlite3DbMallocZero(db, nByte);
@@ -2440,7 +2452,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
       pIdx->nColumn = pIdx->nKeyCol;
       continue;
     }
-    if( resizeIndexObject(db, pIdx, pIdx->nKeyCol+n) ) return;
+    if( resizeIndexObject(pParse, pIdx, pIdx->nKeyCol+n) ) return;
     for(i=0, j=pIdx->nKeyCol; i<nPk; i++){
       if( !isDupColumn(pIdx, pIdx->nKeyCol, pPk, i) ){
         testcase( hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) );
@@ -2464,7 +2476,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( !hasColumn(pPk->aiColumn, nPk, i)
      && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) nExtra++;
   }
-  if( resizeIndexObject(db, pPk, nPk+nExtra) ) return;
+  if( resizeIndexObject(pParse, pPk, nPk+nExtra) ) return;
   for(i=0, j=nPk; i<pTab->nCol; i++){
     if( !hasColumn(pPk->aiColumn, j, i)
      && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0

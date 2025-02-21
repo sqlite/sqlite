@@ -3097,10 +3097,10 @@ struct Expr {
 /* Macros can be used to test, set, or clear bits in the
 ** Expr.flags field.
 */
-#define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
-#define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
-#define ExprSetProperty(E,P)     (E)->flags|=(P)
-#define ExprClearProperty(E,P)   (E)->flags&=~(P)
+#define ExprHasProperty(E,P)     (((E)->flags&(u32)(P))!=0)
+#define ExprHasAllProperty(E,P)  (((E)->flags&(u32)(P))==(u32)(P))
+#define ExprSetProperty(E,P)     (E)->flags|=(u32)(P)
+#define ExprClearProperty(E,P)   (E)->flags&=~(u32)(P)
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_OuterON|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_OuterON|EP_IsFalse))==EP_IsFalse)
 #define ExprIsFullSize(E)   (((E)->flags&(EP_Reduced|EP_TokenOnly))==0)
@@ -4908,7 +4908,7 @@ void sqlite3SubqueryColumnTypes(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
-i16 sqlite3TableColumnToIndex(Index*, i16);
+i16 sqlite3TableColumnToIndex(Index*, int);
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS
 # define sqlite3TableColumnToStorage(T,X) (X)  /* No-op pass-through */
 # define sqlite3StorageColumnToTable(T,X) (X)  /* No-op pass-through */

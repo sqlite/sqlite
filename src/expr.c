@@ -1963,7 +1963,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
     pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
     pNew->iLimit = 0;
     pNew->iOffset = 0;
-    pNew->selFlags = p->selFlags & ~SF_UsesEphemeral;
+    pNew->selFlags = p->selFlags & ~(u32)SF_UsesEphemeral;
     pNew->addrOpenEphm[0] = -1;
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
