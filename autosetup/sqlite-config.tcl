@@ -267,9 +267,9 @@ proc sqlite-config-bootstrap {buildMode} {
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
         out-implib:=auto
           => {Enable use of --out-implib linker flag to generate an
-            "import library" for the DLL. The output's base name name is
-            specified by the value, with "auto" meaning to figure out a
-            name automatically.}
+              "import library" for the DLL. The output's base name name is
+              specified by the value, with "auto" meaning to figure out a
+              name automatically.}
       }
     }
 
@@ -1265,8 +1265,10 @@ proc sqlite-handle-mac-cversion {} {
 
 ########################################################################
 # Handles the --dll-basename configure flag. [define]'s
-# SQLITE_DLL_BASENAME to the build's preferred base name (minus
-# extension).
+# SQLITE_DLL_BASENAME to the DLL's preferred base name (minus
+# extension). If --dll-basename is not provided then this is always
+# "libsqlite3", otherwise it may use a different value based on the
+# value of [get-define host].
 proc sqlite-handle-dll-basename {} {
   if {[proj-opt-was-provided dll-basename]} {
     set dn [join [opt-val dll-basename] ""]
@@ -1341,6 +1343,8 @@ proc sqlite-handle-out-implib {} {
 # for that set, as well as providing a rule named install-dll which
 # resolves to install-dll-NAME (perhaps indirectly, depending on
 # whether the DLL is (de)activated).
+#
+# The default value is "unix-generic".
 proc sqlite-determine-dll-install-rules {} {
   set n unix-generic
   switch -glob -- [get-define host] {

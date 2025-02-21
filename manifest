@@ -1,5 +1,5 @@
-C Only\suse\sthe\splatform-specific\s--dll-basename\sif\sthat\soption\sis\sexplicitly\sprovided,\selse\suse\slibsqlite3.
-D 2025-02-21T22:46:18.529
+C Configure\sdocs/help\stext\stweaks.\sNo\sfunctional\schanges.
+D 2025-02-21T23:27:03.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 3124addb1a46c7d9c8c38a3016cd23797185c3fd977570728397aaa9eadd0039
-F autosetup/sqlite-config.tcl a7428c7fd318b9732146327c65ecd522f7683887cca18652d43a4de83cddfeed
+F autosetup/sqlite-config.tcl 39c5431be1a2166d830ce73c5d779ea8434fd8216ffca80d979c3e58068a9b5d
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0b9e92599dd4fbe2aafacf41eef5fecfce3295b025dad799a292e78f5e370c2
-R 40d16a9b1cd7cd36c61a7c55c16e1901
+P 69bacfdce5d99ba532feb30d19ccea9ef49ed3bbf33e44d41bb8740811f5b0cf
+R d128dc6b4d3d39ba8d20e9bdf5c6528e
 U stephan
-Z ee2b69cb3613f49bba235dd4d97246af
+Z 6e0a21859e8ea82bbc0093d5a328d7fd
 # Remove this line to create a well-formed Fossil manifest.
