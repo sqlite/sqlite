@@ -1268,10 +1268,10 @@ proc sqlite-handle-mac-cversion {} {
 # SQLITE_DLL_BASENAME to the build's preferred base name (minus
 # extension).
 proc sqlite-handle-dll-basename {} {
-  if {[proj-opt-exists dll-basename]} {
+  if {[proj-opt-was-provided dll-basename]} {
     set dn [join [opt-val dll-basename] ""]
   } else {
-    set dn auto
+    set dn libsqlite3
   }
   if {$dn in {auto ""}} {
     switch -glob -- [get-define host] {
