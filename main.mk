@@ -191,13 +191,13 @@ INSTALL ?= install
 #
 # $(ENABLE_SHARED) =
 #
-# 1 if libsqlite3.$(T.dll) should be built.
+# 1 if libsqlite3$(T.dll) should be built.
 #
 ENABLE_SHARED ?= 1
 #
 # $(ENABLE_STATIC) =
 #
-# 1 if libsqlite3.$(T.lib) should be built. Some components,
+# 1 if libsqlite3$(T.lib) should be built. Some components,
 # e.g. libtclsqlite3 and some test apps, implicitly require the static
 # library and will ignore this preference.
 #
@@ -220,7 +220,7 @@ USE_AMALGAMATION ?= 1
 # may require that the user specifically prepend "." to their
 # $LD_LIBRARY_PATH so that the dynamic linker does not pick up a
 # libsqlite3.so from outside the source tree. Alternately, symlinking
-# the in-build-tree $(libsqlite3.SO) to some dir in the system's
+# the in-build-tree $(libsqlite3.DLL) to some dir in the system's
 # library path will work for giving the apps access to the in-tree
 # DLL.
 #
@@ -1052,8 +1052,20 @@ T.link.tcl = $(T.tcl.env.source); $(T.link)
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
+#
+# libsqlite3.DLL.basename = the base name of the resulting DLL. This
+# is typically libsqlite3 but varies wildly on Unix-like Windows
+# environments (msys, cygwin, and friends).
+#
+libsqlite3.DLL.basename ?= libsqlite3
+#
+# libsqlite3.LIB => the static library
+#
 libsqlite3.LIB = libsqlite3$(T.lib)
-libsqlite3.SO = libsqlite3$(T.dll)
+#
+# libsqlite3.LIB => the DLL library
+#
+libsqlite3.DLL = $(libsqlite3.DLL.basename)$(T.dll)
 
 # Rules to build the LEMON compiler generator
 #
@@ -1360,9 +1372,9 @@ tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.SO)
+tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.DLL)
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
-		$(libsqlite3.SO) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
+		$(libsqlite3.DLL) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
 		$(LDFLAGS.libsqlite3)
 tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
 tclsqlite3$(T.exe)-0 tclsqlite3$(T.exe)-:
@@ -1418,17 +1430,17 @@ all: lib
 #
 # Dynamic libsqlite3
 #
-$(libsqlite3.SO):	$(LIBOBJ)
+$(libsqlite3.DLL):	$(LIBOBJ)
 	$(T.link.shared) -o $@ $(LIBOBJ) $(LDFLAGS.libsqlite3) \
 		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
-$(libsqlite3.SO)-1: $(libsqlite3.SO)
-$(libsqlite3.SO)-0 $(libsqlite3.SO)-:
-so: $(libsqlite3.SO)-$(ENABLE_SHARED)
+$(libsqlite3.DLL)-1: $(libsqlite3.DLL)
+$(libsqlite3.DLL)-0 $(libsqlite3.DLL)-:
+so: $(libsqlite3.DLL)-$(ENABLE_SHARED)
 all: so
 
 #
-# On most Unix-like platforms, install the $(libsqlite3.SO) as
-# $(libsqlite3.SO).$(PACKAGE_VERSION) and create symlinks which point
+# On most Unix-like platforms, install the $(libsqlite3.DLL) as
+# $(libsqlite3.DLL).$(PACKAGE_VERSION) and create symlinks which point
 # to it:
 #
 # - libsqlite3.so.$(PACKAGE_VERSION)
@@ -1459,7 +1471,7 @@ all: so
 # 1) If libsqlite3.so.0.8.6 is found in the target installation
 #    directory then it is re-linked to point to the newer-style
 #    names. We cannot retain both the old and new installation because
-#    they both share the high-level name $(libsqlite3.SO). The
+#    they both share the high-level name $(libsqlite3.DLL). The
 #    down-side of this is that it may upset packaging tools when we
 #    replace libsqlite3.so (from a legacy package) with a new symlink.
 #
@@ -1473,39 +1485,39 @@ all: so
 # In either case, libsqlite3.la, if found, is deleted because it would
 # contain stale state, refering to non-libtool-generated libraries.
 #
-install-so-1: $(install-dir.lib) $(libsqlite3.SO)
-	$(INSTALL) $(libsqlite3.SO) "$(install-dir.lib)"
-	@if [ -f $(libsqlite3.SO).a ]; then \
-		$(INSTALL) $(libsqlite3.SO).a "$(install-dir.lib)"; \
+install-so-1: $(install-dir.lib) $(libsqlite3.DLL)
+	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.lib)"
+	@if [ -f $(libsqlite3.DLL).a ]; then \
+		$(INSTALL) $(libsqlite3.DLL).a "$(install-dir.lib)"; \
 	fi
-	@echo "Setting up $(libsqlite3.SO) version symlinks..."; \
+	@echo "Setting up $(libsqlite3.DLL) version symlinks..."; \
 	if [ x.dll = x$(T.dll) ]; then \
 		echo "No library symlinks needed on this platform"; \
 	elif [ x.dylib = x$(T.dll) ]; then \
 		cd "$(install-dir.lib)" || exit $$?; \
 		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
 		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
-		mv $(libsqlite3.SO) $$dllname || exit $$?; \
-		ln -s $$dllname $(libsqlite3.SO) || exit $$?; \
+		mv $(libsqlite3.DLL) $$dllname || exit $$?; \
+		ln -s $$dllname $(libsqlite3.DLL) || exit $$?; \
 		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
-		ls -la $$dllname $(libsqlite3.SO) libsqlite3.0$(T.dll); \
+		ls -la $$dllname $(libsqlite3.DLL) libsqlite3.0$(T.dll); \
 	else \
 		cd "$(install-dir.lib)" || exit $$?; \
-		rm -f $(libsqlite3.SO).0 $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
-		mv $(libsqlite3.SO) $(libsqlite3.SO).$(PACKAGE_VERSION) || exit $$?; \
-		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO) || exit $$?; \
-		ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0 || exit $$?; \
-		ls -la $(libsqlite3.SO) $(libsqlite3.SO).[a03]*; \
-		if [ -e $(libsqlite3.SO).0.8.6 ]; then \
+		rm -f $(libsqlite3.DLL).0 $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
+		mv $(libsqlite3.DLL) $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
+		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL) || exit $$?; \
+		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0 || exit $$?; \
+		ls -la $(libsqlite3.DLL) $(libsqlite3.DLL).[a03]*; \
+		if [ -e $(libsqlite3.DLL).0.8.6 ]; then \
 			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
-			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0.8.6; \
+			rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.DLL).0.8.6; \
 		elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
 			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
-			rm -f libsqlite3.la $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ln -s $(libsqlite3.SO).$(PACKAGE_VERSION) $(libsqlite3.SO).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.SO).0.8.6; \
+			rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
+			ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
+			ls -la $(libsqlite3.DLL).0.8.6; \
 		fi; \
 	fi
 
@@ -1804,7 +1816,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
 #
 sqlite3_analyzer.flags.1 = -L. -lsqlite3
 sqlite3_analyzer.flags.0 = $(LDFLAGS.libsqlite3)
-sqlite3_analyzer.deps.1 = $(libsqlite3.SO)
+sqlite3_analyzer.deps.1 = $(libsqlite3.DLL)
 sqlite3_analyzer.deps.0 =
 sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
                           $(sqlite3_analyzer.deps.$(LINK_TOOLS_DYNAMICALLY))
@@ -2051,7 +2063,7 @@ install: install-shell-$(HAVE_WASI_SDK)
 #
 sqldiff.0.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h sqlite3.o sqlite3.h
 sqldiff.0.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c sqlite3.o $(LDFLAGS.libsqlite3)
-sqldiff.1.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.SO)
+sqldiff.1.deps = $(TOP)/tool/sqldiff.c $(TOP)/ext/misc/sqlite3_stdio.h $(libsqlite3.DLL)
 sqldiff.1.rules = $(T.link) -o $@ $(TOP)/tool/sqldiff.c -L. -lsqlite3 $(LDFLAGS.configure)
 sqldiff$(T.exe): $(sqldiff.$(LINK_TOOLS_DYNAMICALLY).deps)
 	$(sqldiff.$(LINK_TOOLS_DYNAMICALLY).rules)
@@ -2344,7 +2356,7 @@ tidy: tidy-.
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.SO) $(libsqlite3.LIB) $(libtclsqlite3.SO) $(libsqlite3.SO).a
+	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.SO) $(libsqlite3.DLL).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
