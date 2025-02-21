@@ -143,7 +143,10 @@ sqlite3.o: $(TOP)/sqlite3.h $(TOP)/sqlite3.c
 	$(CC) -c $(TOP)/sqlite3.c -o $@ $(CFLAGS) $(CFLAGS.libsqlite3)
 
 libsqlite3.LIB = libsqlite3$(T.lib)
-libsqlite3.DLL = libsqlite3$(T.dll)
+libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
+libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
+libsqlite3.DLL = $(libsqlite3.DLL.basename)$(T.dll)
+libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
 $(libsqlite3.DLL): sqlite3.o
 	$(CC) -o $@  sqlite3.o $(LDFLAGS.shlib) \
@@ -159,45 +162,59 @@ $(libsqlite3.LIB)-1: $(libsqlite3.LIB)
 $(libsqlite3.LIB)-0:
 all: $(libsqlite3.LIB)-$(ENABLE_LIB_STATIC)
 
-install-so-1: $(install-dir.lib) $(libsqlite3.DLL)
-	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.lib)"
-	@if [ -f $(libsqlite3.DLL).a ]; then \
-		$(INSTALL) $(libsqlite3.DLL).a "$(install-dir.lib)"; \
-	fi
-	@echo "Setting up $(libsqlite3.DLL) version symlinks..."; \
-	if [ x.dll = x$(T.dll) ]; then \
-		echo "No library symlinks needed on this platform"; \
-	elif [ x.dylib = x$(T.dll) ]; then \
-		cd "$(install-dir.lib)" || exit $$?; \
-		rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
-		dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
-		mv $(libsqlite3.DLL) $$dllname || exit $$?; \
-		ln -s $$dllname $(libsqlite3.DLL) || exit $$?; \
-		ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
-		ls -la $$dllname $(libsqlite3.DLL) libsqlite3.0$(T.dll); \
-	else \
-		cd "$(install-dir.lib)" || exit $$?; \
-		rm -f $(libsqlite3.DLL).0 $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
-		mv $(libsqlite3.DLL) $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
-		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL) || exit $$?; \
-		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0 || exit $$?; \
-		ls -la $(libsqlite3.DLL) $(libsqlite3.DLL).[a03]*; \
-		if [ -e $(libsqlite3.DLL).0.8.6 ]; then \
-			echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
-			rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
-			ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.DLL).0.8.6; \
-		elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
-			echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
-			rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
-			ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
-			ls -la $(libsqlite3.DLL).0.8.6; \
+#
+# Maintenance reminder: the install-dll-... rules must be kept in sync
+# with the main copies rom /main.mk.
+#
+install-dll-out-implib: $(install-dir.lib) $(libsqlite3.DLL)
+	@if [ x != "x$(libsqlite3.out.implib)"; then \
+		if [ -f "$(libsqlite3.out.implib)" ]; then \
+			$(INSTALL) $(libsqlite3.out.implib) "$(install-dir.lib)"; \
 		fi; \
 	fi
 
-install-so-0 install-so-:
-install-so: install-so-$(ENABLE_LIB_SHARED)
-install: install-so
+install-dll-unix-generic: install-dll-out-implib
+	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.lib)"
+	@echo "Setting up $(libsqlite3.DLL) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	rm -f $(libsqlite3.DLL).0 $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
+	mv $(libsqlite3.DLL) $(libsqlite3.DLL).$(PACKAGE_VERSION) || exit $$?; \
+	ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL) || exit $$?; \
+	ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0 || exit $$?; \
+	ls -la $(libsqlite3.DLL) $(libsqlite3.DLL).[a03]*; \
+	if [ -e $(libsqlite3.DLL).0.8.6 ]; then \
+		echo "ACHTUNG: legacy libtool-compatible install found. Re-linking it..."; \
+		rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
+		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
+		ls -la $(libsqlite3.DLL).0.8.6; \
+	elif [ x1 = "x$(INSTALL_SO_086_LINK)" ]; then \
+		echo "ACHTUNG: installing legacy libtool-style links because INSTALL_SO_086_LINK=1"; \
+		rm -f libsqlite3.la $(libsqlite3.DLL).0.8.6 || exit $$?; \
+		ln -s $(libsqlite3.DLL).$(PACKAGE_VERSION) $(libsqlite3.DLL).0.8.6 || exit $$?; \
+		ls -la $(libsqlite3.DLL).0.8.6; \
+	fi
+
+install-dll-msys: install-dll-out-implib
+	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
+# ----------------------------------------------^^^ yes, bin
+install-dll-mingw:  install-dll-msys
+install-dll-cygwin: install-dll-msys
+
+install-dll-darwin: $(install-dir.lib) $(libsqlite3.DLL)
+	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.lib)"
+	@echo "Setting up $(libsqlite3.DLL) version symlinks..."; \
+	cd "$(install-dir.lib)" || exit $$?; \
+	rm -f libsqlite3.0$(T.dll) libsqlite3.$(PACKAGE_VERSION)$(T.dll) || exit $$?; \
+	dllname=libsqlite3.$(PACKAGE_VERSION)$(T.dll); \
+	mv $(libsqlite3.DLL) $$dllname || exit $$?; \
+	ln -s $$dllname $(libsqlite3.DLL) || exit $$?; \
+	ln -s $$dllname libsqlite3.0$(T.dll) || exit $$?; \
+	ls -la $$dllname $(libsqlite3.DLL) libsqlite3.0$(T.dll)
+
+install-dll-1: install-dll-$(libsqlite3.DLL.install-rules)
+install-dll-0 install-dll-:
+install-dll: install-dll-$(ENABLE_LIB_SHARED)
+install: install-dll
 
 install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
 	$(INSTALL.noexec) $(libsqlite3.LIB) "$(install-dir.lib)"

@@ -231,6 +231,8 @@ proc sqlite-config-bootstrap {buildMode} {
     # Options for exotic/alternative build modes
     alternative-builds {
       {canonical} {
+        # Potential TODO: add --with-wasi-sdk support to the autoconf
+        # build
         with-wasi-sdk:=/opt/wasi-sdk
           => {Top-most dir of the wasi-sdk for a WASI build}
         with-emsdk:=auto
@@ -247,12 +249,6 @@ proc sqlite-config-bootstrap {buildMode} {
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {*} {
-        # dll-basename: https://sqlite.org/forum/forumpost/828fdfe904
-#        dll-basename:=auto
-#          => {Secifies the base name of the resulting DLL file, defaulting to a
-#              platform-depending name (libsqlite3 on my Unix-style platforms).
-#              e.g. --dll-basename=msys-sqlite3-0
-#          }
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -261,6 +257,13 @@ proc sqlite-config-bootstrap {buildMode} {
               it to that literal value. Any other value is assumed to be a
               suffix which gets applied to "libsqlite3.so.",
               e.g. --soname=9.10 equates to "libsqlite3.so.9.10".}
+        # dll-basename: https://sqlite.org/forum/forumpost/828fdfe904
+        dll-basename:=auto
+          => {Specifies the base name of the resulting DLL file, defaulting to a
+              platform-depending name (libsqlite3 on most Unix-style platforms).
+              If not provided, libsqlite3 is assumed, but if provided without a
+              value then a platform-dependent default is used.
+              e.g. --dll-basename=msys-sqlite3-0}
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
         out-implib:=auto
           => {Enable use of --out-implib linker flag to generate an
@@ -1261,10 +1264,33 @@ proc sqlite-handle-mac-cversion {} {
 }
 
 ########################################################################
-# Define LDFLAGS_OUT_IMPLIB to either an empty string or to a
+# Handles the --dll-basename configure flag. [define]'s
+# SQLITE_DLL_BASENAME to the build's preferred base name (minus
+# extension).
+proc sqlite-handle-dll-basename {} {
+  if {[proj-opt-exists dll-basename]} {
+    set dn [join [opt-val dll-basename] ""]
+  } else {
+    set dn auto
+  }
+  if {$dn in {auto ""}} {
+    switch -glob -- [get-define host] {
+      *-*-cygwin* { set dn cygsqlite3-0 }
+      *-*-ming*   { set dn libsqlite3-0 }
+      *-*-msys*   { set dn msys-sqlite3-0 }
+      default     { set dn libsqlite3 }
+    }
+  }
+  define SQLITE_DLL_BASENAME $dn
+}
+
+########################################################################
+# [define]s LDFLAGS_OUT_IMPLIB to either an empty string or to a
 # -Wl,... flag for the platform-specific --out-implib flag, which is
 # used for building an "import library .dll.a" file on some platforms
-# (e.g. mingw). Returns 1 if supported, else 0. The actual
+# (e.g. msys2, mingw). Returns 1 if supported, else 0.
+#
+# The name of the import library is [define]d in SQLITE_OUT_IMPLIB.
 #
 # If the configure flag --out-implib is not used then this is a no-op.
 # If that flag is used but the capability is not available, a fatal
@@ -1283,18 +1309,21 @@ proc sqlite-handle-mac-cversion {} {
 # - msys2 packages historically install /usr/lib/libsqlite3.dll.a
 #   despite the DLL being in /usr/bin/msys-sqlite3-0.dll.
 proc sqlite-handle-out-implib {} {
+  sqlite-handle-dll-basename
   define LDFLAGS_OUT_IMPLIB ""
+  define SQLITE_OUT_IMPLIB ""
   set rc 0
   if {[proj-opt-was-provided out-implib]} {
-    set dn [join [opt-val out-implib] ""]
-    if {$dn in {auto ""}} {
-      set dn "libsqlite3" ;# [get-define SQLITE_DLL_BASENAME]
+    set olBaseName [join [opt-val out-implib] ""]
+    if {$olBaseName in {auto ""}} {
+      set olBaseName "libsqlite3" ;# [get-define SQLITE_DLL_BASENAME]
     }
     cc-with {-link 1} {
-      set dll "${dn}[get-define TARGET_DLLEXT]"
+      set dll "${olBaseName}[get-define TARGET_DLLEXT]"
       set flags "-Wl,--out-implib,${dll}.a"
       if {[cc-check-flags $flags]} {
         define LDFLAGS_OUT_IMPLIB $flags
+        define SQLITE_OUT_IMPLIB ${dll}.a
         set rc 1
       }
     }
@@ -1306,10 +1335,36 @@ proc sqlite-handle-out-implib {} {
 }
 
 ########################################################################
+# [define] SQLITE_DLL_INSTALL_RULES to a symbolic name of a set of
+# "make install" rules to use. The makefile is tasked with with
+# providing rules named install-dll-NAME which runs the installation
+# for that set, as well as providing a rule named install-dll which
+# resolves to install-dll-NAME (perhaps indirectly, depending on
+# whether the DLL is (de)activated).
+proc sqlite-determine-dll-install-rules {} {
+  set n unix-generic
+  switch -glob -- [get-define host] {
+    *-*-cygwin* { set n cygwin }
+    *-*-ming*   { set n mingw }
+    *-*-msys*   { set n msys }
+    *apple* -
+    *darwin*    { set n darwin }
+  }
+  define SQLITE_DLL_INSTALL_RULES $n
+}
+
+########################################################################
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
 proc sqlite-config-finalize {} {
-  #sqlite-handle-dll-basename
+# Pending: move some of the auto.def code into this switch
+#  switch -exact -- $::sqliteConfig(build-mode) {
+#    canonical {
+#    }
+#    autoconf {
+#    }
+#  }
+  sqlite-determine-dll-install-rules
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
   sqlite-process-dot-in-files
@@ -1765,23 +1820,6 @@ proc sqlite-determine-codegen-tcl {} {
 proc sqlite-handle-tcl {} {
   sqlite-check-tcl
   msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
-}
-
-########################################################################
-# Handles the --dll-basename configure flag. [define]'s
-# SQLITE_DLL_BASENAME to the build's perferred base name (minus
-# extension).
-proc sqlite-handle-dll-basename {} {
-  set dn [opt-val dll-basename]
-  if {$rn in {auto ""}} {
-    switch -glob -- [get-define host] {
-      *-*-cygwin* { set dn cygsqlite3-0 }
-      *-*-ming*   { set dn libsqlite3-0 }
-      *-*-msys*   { set dn msys-sqlite3-0 }
-      default     { set dn libsqlite3 }
-    }
-  }
-  define SQLITE_DLL_BASENAME $dn
 }
 
 # TODO? Figure out whether the DLL needs to go under /lib or /bin

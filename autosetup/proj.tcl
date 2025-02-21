@@ -390,6 +390,15 @@ proc proj-opt-set {flag {val 1}} {
 }
 
 ########################################################################
+# @proj-opt-exists flag
+#
+# Returns 1 if the given flag has been defined as a legal configure
+# option, else returns 0.
+proc proj-opt-exists {flag} {
+  expr {$flag in $::autosetup(options)};
+}
+
+########################################################################
 # @proj-val-truthy val
 #
 # Returns 1 if $val appears to be a truthy value, else returns

@@ -126,11 +126,13 @@ LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
 # os-specific: see
 # - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # - https://sqlite.org/forum/forumpost/0c7fc097b2
+libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
+libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
 # dll.basename: see https://sqlite.org/forum/forumpost/828fdfe904
-#libsqlite3.DLL.basename = @ SQLITE_DLL_BASENAME @
 ENABLE_SHARED = @ENABLE_SHARED@
 ENABLE_STATIC = @ENABLE_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
+libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
 T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 
