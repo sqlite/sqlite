@@ -189,19 +189,19 @@ CFLAGS.readline ?= -I$(prefix)/include
 #
 INSTALL ?= install
 #
-# $(ENABLE_SHARED) =
+# $(ENABLE_LIB_SHARED) =
 #
 # 1 if libsqlite3$(T.dll) should be built.
 #
-ENABLE_SHARED ?= 1
+ENABLE_LIB_SHARED ?= 1
 #
-# $(ENABLE_STATIC) =
+# $(ENABLE_LIB_STATIC) =
 #
 # 1 if libsqlite3$(T.lib) should be built. Some components,
 # e.g. libtclsqlite3 and some test apps, implicitly require the static
 # library and will ignore this preference.
 #
-ENABLE_STATIC ?= 1
+ENABLE_LIB_STATIC ?= 1
 #
 # $(USE_AMALGAMATION)
 #
@@ -1438,7 +1438,7 @@ $(libsqlite3.LIB): $(LIBOBJ)
 	$(AR) $(AR.flags) $@ $(LIBOBJ)
 $(libsqlite3.LIB)-1: $(libsqlite3.LIB)
 $(libsqlite3.LIB)-0 $(libsqlite3.LIB)-:
-lib: $(libsqlite3.LIB)-$(ENABLE_STATIC)
+lib: $(libsqlite3.LIB)-$(ENABLE_LIB_STATIC)
 all: lib
 
 #
@@ -1449,7 +1449,7 @@ $(libsqlite3.DLL):	$(LIBOBJ)
 		$(LDFLAGS.libsqlite3.os-specific) $(LDFLAGS.libsqlite3.soname)
 $(libsqlite3.DLL)-1: $(libsqlite3.DLL)
 $(libsqlite3.DLL)-0 $(libsqlite3.DLL)-:
-so: $(libsqlite3.DLL)-$(ENABLE_SHARED)
+so: $(libsqlite3.DLL)-$(ENABLE_LIB_SHARED)
 all: so
 
 #
@@ -1545,7 +1545,7 @@ install-dll-darwin: $(install-dir.lib) $(libsqlite3.DLL)
 
 install-dll-1: install-dll-$(libsqlite3.DLL.install-rules)
 install-dll-0 install-dll-:
-install-dll: install-dll-$(ENABLE_SHARED)
+install-dll: install-dll-$(ENABLE_LIB_SHARED)
 install: install-dll
 
 #
@@ -1554,7 +1554,7 @@ install: install-dll
 install-lib-1: $(install-dir.lib) $(libsqlite3.LIB)
 	$(INSTALL.noexec) $(libsqlite3.LIB) "$(install-dir.lib)"
 install-lib-0 install-lib-:
-install-lib: install-lib-$(ENABLE_STATIC)
+install-lib: install-lib-$(ENABLE_LIB_STATIC)
 install: install-lib
 
 #

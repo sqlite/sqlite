@@ -1,9 +1,9 @@
-C Configure\sdocs/help\stext\stweaks.\sNo\sfunctional\schanges.
-D 2025-02-21T23:27:03.552
+C Rename\sconfigure-defined\sENABLE_SHARED/STATIC\smakefile\svars\sto\sENABLE_LIB_...\sso\sthat\sthey're\sconsistent\sbetween\sthe\scanonical\sand\sautoconf\sbuilds\s(baby\ssteps\stowards\sfurther\sconfigure\scode\sconsolidation).
+D 2025-02-21T23:43:10.891
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 367abe20304ed8b467477be68ab9110daeef8d63186789706e66d4b7c73bc561
+F Makefile.in b2b4b30fd8c1be9713861c501f8035b57845c54ac42c4276452d5eb94e9ea3eb
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 50c656e096ae49ccf9e5e88b4995f0a155f231ebae5b6d185cc64ce99d728a83
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -14,7 +14,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def eddf6aef976e2c1a56c0accc3244945e0b22ec6799074c40be160e5a9a5662b0
+F auto.def 3875d07903dde3aadf396ce008b7eee2fec3aa61843d745b4fb574ce3797b2ac
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 1683f910febd935d1c4f82de1fabfff4b821102896ddd594fcb7a9a655ab5e7b
 F autoconf/Makefile.msc 1249e425a24859c7b3f17575275247df9eec3bddc0d1d7e73941f1abdbb95a92
@@ -705,7 +705,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 9c4b47a2dd1f75c71570b17758e0dc07ecf1a00011c62650a9fa102776619738
+F main.mk adfc8d55db64c8dd3e89c74611c2f8be15b204b68338133763df8eb8d7faa344
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 69bacfdce5d99ba532feb30d19ccea9ef49ed3bbf33e44d41bb8740811f5b0cf
-R d128dc6b4d3d39ba8d20e9bdf5c6528e
+P 701cc1aff423b87996134801abbbcd06d529bbf522c725837844b6aea406fb1c
+R cfd59444de14c58c3b0cb91971c70398
 U stephan
-Z 6e0a21859e8ea82bbc0093d5a328d7fd
+Z 2a8d0ab48d4f7aa807a9bebec4fae941
 # Remove this line to create a well-formed Fossil manifest.
