@@ -11,7 +11,7 @@ use sqlite-config
 sqlite-config-bootstrap autoconf
 sqlite-check-common-bins
 sqlite-check-common-system-deps
-sqlite-handle-rpath
+proj-check-rpath
 sqlite-handle-soname
 sqlite-setup-default-cflags
 sqlite-handle-debug
