@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sprefix/bin\sdir\sexists\son\smsys/cygwin\sinstallations\sbefore\sinstalling\sthe\sDLL\sthere.
-D 2025-02-21T22:35:10.100
+C Fix\sanother\sdeps\sproblem\sfor\smsys\sinstalls.
+D 2025-02-21T22:39:48.403
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -16,7 +16,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def eddf6aef976e2c1a56c0accc3244945e0b22ec6799074c40be160e5a9a5662b0
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in e734c1de8803b9bf3d06610c392c16bdaf8db0d6ee913aa5562c8ad866fcd7aa
+F autoconf/Makefile.in 1683f910febd935d1c4f82de1fabfff4b821102896ddd594fcb7a9a655ab5e7b
 F autoconf/Makefile.msc 1249e425a24859c7b3f17575275247df9eec3bddc0d1d7e73941f1abdbb95a92
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d5fed807b7151dcb79b97cfc2da0e8ac3586a0bf8b4c28967ad4cffafa53c08
-R 8adda8c0250211beca8748d3a1322259
+P 5ecbe7ddc48f688b1a511a86f81e7fb8ad3a559c2d513738c839f4d37c63db1c
+R 9dc596cb5274a979a7368672e2959264
 U stephan
-Z aedab870e52a96b29814c375cb30235a
+Z 8889604465e41281de16a5d57b51c6d2
 # Remove this line to create a well-formed Fossil manifest.
