@@ -1,9 +1,9 @@
-C Makefile-internal\svar\srenaming\sin\sprep\sfor\spending\sportability-related\schanges\sin\sthe\shandling\sof\sDLLs.\sNo\sfunctional/build\sinterface\schanges.
-D 2025-02-21T20:22:56.972
+C Extend\s--out-implib\sto\soptionally\sspecify\sthe\simport\slib's\sname.\sAdd\sas-yet-unused\sinternals\sfor\sspecifying\sthe\sDLL's\sbase\sname\s(which\sdiffers\sacross\sthe\sWindows-side\sUnix-esque\senvironments).
+D 2025-02-21T20:28:44.646
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in 80be2e281d4647ac15a5bac15d5d20fc76d1cfb3f3f6dc01d1a26e3346a5042a
+F Makefile.in 2d87dc1a64add400f047d0357f8f30e73b890aa5076b7f8f7d02cd1f3557beb1
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 50c656e096ae49ccf9e5e88b4995f0a155f231ebae5b6d185cc64ce99d728a83
 F README.md c3c0f19532ce28f6297a71870f3c7b424729f0e6d9ab889616d3587dd2332159
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c 6573f6bc6ff204de0139692648d7037ca0b6c067bac83a7b4e087f20a86866a4
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl cd6134e98d06ab4ae3be746d185dcdbf5180bfa049fe46a6726e703f56ea2f9c
-F autosetup/sqlite-config.tcl 9d1e3bbc561af5f8705f96c0f48252112d3e2d3356383f5529f7f9f7b51afb65
+F autosetup/sqlite-config.tcl c6c9ad74147e5f0ae39f0e5e207c4a8140066982c7eb21c68dd4b6483f85968e
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2210,8 +2210,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7729dbbf231d57cbcaaa5004d0a9c4957f112dd6520052995b232aa521c0ca3
-R 9fa57efe9e24b037978a77954d886617
+P ebf41fc90aa9fb1bb96239145c0cdd06eced391499975c71734610996d088641
+R b539368d0fe58a110d27ce4df6690ee7
+T *branch * configure-dll-support
+T *sym-configure-dll-support *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 3e199b62ebb0fe5383698c3c45ceb587
+Z d83368e818c74940a16d5a2f7cf79842
 # Remove this line to create a well-formed Fossil manifest.
