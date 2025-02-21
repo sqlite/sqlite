@@ -244,9 +244,6 @@ proc sqlite-config-bootstrap {buildMode} {
         static-shell=1       => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {*} {
-        # rpath: https://sqlite.org/forum/forumpost/fa3a6ed858
-        rpath=1
-          => {Disable checking for rpath support}
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -644,17 +641,6 @@ proc sqlite-handle-debug {} {
   } {
     define TARGET_DEBUG {-DNDEBUG}
     msg-result no
-  }
-}
-
-########################################################################
-# If the --disable-rpath flag is used, this [define]s LDFLAGS_RPATH to
-# an empty string, else it invokes [proj-check-rpath].
-proc sqlite-handle-rpath {} {
-  proj-if-opt-truthy rpath {
-    proj-check-rpath
-  } {
-    define LDFLAGS_RPATH ""
   }
 }
 
@@ -1240,7 +1226,7 @@ proc sqlite-check-mac-cversion {} {
   define LDFLAGS_MAC_CVERSION ""
   set rc 0
   if {[proj-looks-like-mac]} {
-    cc-with {} {
+    cc-with {-link 1} {
       # These version numbers are historical libtool-defined values, not
       # library-defined ones
       if {[cc-check-flags "-Wl,-current_version,9.6.0"]
@@ -1264,22 +1250,28 @@ proc sqlite-check-mac-cversion {} {
 # (e.g. mingw). Returns 1 if supported, else 0.
 #
 # If the configure flag --out-implib is not used then this is a no-op.
-# The feature is specifically opt-in because on some platforms the
-# feature test will pass but using that flag will fail at link-time
-# (e.g. OpenBSD).
+# If that flag is used but the capability is not available, a fatal
+# error is triggered.
+#
+# This feature is specifically opt-in because it's supported on far
+# more platforms than actually need it and enabling it causes creation
+# of libsqlite3.so.a files which are unnecessary in most environments.
 #
 # Added in response to: https://sqlite.org/forum/forumpost/0c7fc097b2
 proc sqlite-check-out-implib {} {
   define LDFLAGS_OUT_IMPLIB ""
   set rc 0
   if {[proj-opt-was-provided out-implib]} {
-    cc-with {} {
+    cc-with {-link 1} {
       set dll "libsqlite3[get-define TARGET_DLLEXT]"
       set flags "-Wl,--out-implib,${dll}.a"
       if {[cc-check-flags $flags]} {
         define LDFLAGS_OUT_IMPLIB $flags
         set rc 1
       }
+    }
+    if {!$rc} {
+      user-error "--out-implib is not supported on this platform"
     }
   }
   return $rc
