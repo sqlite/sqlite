@@ -194,7 +194,7 @@ install-dll-unix-generic: install-dll-out-implib
 		ls -la $(libsqlite3.DLL).0.8.6; \
 	fi
 
-install-dll-msys: install-dll-out-implib
+install-dll-msys: install-dll-out-implib "$(install-dir.bin)"
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
 install-dll-mingw:  install-dll-msys
