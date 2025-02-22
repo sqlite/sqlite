@@ -1409,8 +1409,8 @@ proc sqlite-handle-env-quirks {} {
       # Imply --out-implib=auto
       proj-indented-notice [subst -nocommands -nobackslashes {
         NOTICE: auto-enabling --out-implib for $host.
-        Use --out-implib=none to disable it or --out-implib=auto
-        to squelch this notice.
+        Use --out-implib=none to disable this special case
+        or --out-implib=auto to squelch this notice.
       }]
       proj-opt-set out-implib auto
     }
@@ -1418,8 +1418,8 @@ proc sqlite-handle-env-quirks {} {
       # Imply --dll-basename=auto
       proj-indented-notice [subst -nocommands -nobackslashes {
         NOTICE: auto-enabling --dll-basename for $host.
-        Use --dll-basename=none to disable it or --dll-basename=auto
-        to squelch this notice.
+        Use --dll-basename=default to disable this special case
+        or --dll-basename=auto to squelch this notice.
       }]
       proj-opt-set dll-basename auto
     }
