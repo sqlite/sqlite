@@ -1261,14 +1261,15 @@ static int renameEditSql(
         memcpy(zBuf1, pBest->t.z, pBest->t.n);
         zBuf1[pBest->t.n] = 0;
         sqlite3Dequote(zBuf1);
-        sqlite3_snprintf(nSql*2, zBuf2, "%Q%s", zBuf1,
+        assert( nSql < 0x15555554 /* otherwise malloc would have failed */ );
+        sqlite3_snprintf((int)(nSql*2), zBuf2, "%Q%s", zBuf1,
             pBest->t.z[pBest->t.n]=='\'' ? " " : ""
         );
         zReplace = zBuf2;
         nReplace = sqlite3Strlen30(zReplace);
       }
 
-      iOff = pBest->t.z - zSql;
+      iOff = (int)(pBest->t.z - zSql);
       if( pBest->t.n!=nReplace ){
         memmove(&zOut[iOff + nReplace], &zOut[iOff + pBest->t.n],
             nOut - (iOff + pBest->t.n)
@@ -1294,11 +1295,12 @@ static int renameEditSql(
 ** Set all pEList->a[].fg.eEName fields in the expression-list to val.
 */
 static void renameSetENames(ExprList *pEList, int val){
+  assert( val==ENAME_NAME || val==ENAME_TAB || val==ENAME_SPAN );
   if( pEList ){
     int i;
     for(i=0; i<pEList->nExpr; i++){
       assert( val==ENAME_NAME || pEList->a[i].fg.eEName==ENAME_NAME );
-      pEList->a[i].fg.eEName = val;
+      pEList->a[i].fg.eEName = val&0x3;
     }
   }
 }
@@ -2045,7 +2047,7 @@ static void renameTableTest(
   if( zDb && zInput ){
     int rc;
     Parse sParse;
-    int flags = db->flags;
+    u64 flags = db->flags;
     if( bNoDQS ) db->flags &= ~(SQLITE_DqsDML|SQLITE_DqsDDL);
     rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
     db->flags |= (flags & (SQLITE_DqsDML|SQLITE_DqsDDL));
