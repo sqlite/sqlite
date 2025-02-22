@@ -261,15 +261,17 @@ proc sqlite-config-bootstrap {buildMode} {
         dll-basename:=auto
           => {Specifies the base name of the resulting DLL file, defaulting to a
               platform-depending name (libsqlite3 on most Unix-style platforms).
-              If not provided, libsqlite3 is assumed, but if provided without a
-              value then a platform-dependent default is used.
-              e.g. --dll-basename=msys-sqlite3-0}
+              If not provided, libsqlite3 is usually assumed but on some platforms
+              a platform-dependent default is used. Use "none" to explicitly
+              disable platform-dependent defaults on platforms where "auto" is
+              implicitly used if this flag is not provided.}
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
         out-implib:=auto
           => {Enable use of --out-implib linker flag to generate an
               "import library" for the DLL. The output's base name name is
               specified by the value, with "auto" meaning to figure out a
-              name automatically.}
+              name automatically. Use "none" to explicitly disable the
+              feature on platforms where it is implicitly on if not provided.}
       }
     }
 
@@ -1272,6 +1274,7 @@ proc sqlite-handle-mac-cversion {} {
 proc sqlite-handle-dll-basename {} {
   if {[proj-opt-was-provided dll-basename]} {
     set dn [join [opt-val dll-basename] ""]
+    if {$dn eq "none"} { set dn libsqlite3 }
   } else {
     set dn libsqlite3
   }
@@ -1320,23 +1323,52 @@ proc sqlite-handle-out-implib {} {
     if {$olBaseName in {auto ""}} {
       set olBaseName "libsqlite3" ;# [get-define SQLITE_DLL_BASENAME]
     }
-    cc-with {-link 1} {
-      set dll "${olBaseName}[get-define TARGET_DLLEXT]"
-      set flags "-Wl,--out-implib,${dll}.a"
-      if {[cc-check-flags $flags]} {
-        define LDFLAGS_OUT_IMPLIB $flags
-        define SQLITE_OUT_IMPLIB ${dll}.a
-        set rc 1
+    if {$olBaseName ne "none"} {
+      cc-with {-link 1} {
+        set dll "${olBaseName}[get-define TARGET_DLLEXT]"
+        set flags "-Wl,--out-implib,${dll}.a"
+        if {[cc-check-flags $flags]} {
+          define LDFLAGS_OUT_IMPLIB $flags
+          define SQLITE_OUT_IMPLIB ${dll}.a
+          set rc 1
+        }
       }
-    }
-    if {!$rc} {
-      user-error "--out-implib is not supported on this platform"
+      if {!$rc} {
+        user-error "--out-implib is not supported on this platform"
+      }
     }
   }
   return $rc
 }
 
 ########################################################################
+# If the given platform identifier (defaulting to [get-define host])
+# appears to be one of the Unix-on-Windows environments, returns a
+# brief symbolic name for that environment, else returns an empty
+# string.
+#
+# It does not distinguish between msys and msys2, returning msys for
+# both. The build does not, as of this writing, specifically support
+# msys v1.
+proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
+  if {"" eq $envTuple} {
+    set envTuple [get-define host]
+  }
+  switch -glob -- $envTuple {
+    *-*-cygwin* { return cygwin }
+    *-*-ming*   { return mingw }
+    *-*-msys*   { return msys }
+  }
+  return "";
+}
+
+########################################################################
+# Performs various tweaks to the build which are only relevant on
+# certain platforms, e.g. Mac and "Unix on Windows" platforms (msys2,
+# cygwin, ...).
+#
+# DLL installation:
+#
 # [define]s SQLITE_DLL_INSTALL_RULES to a symbolic name of a set of
 # "make install" rules to use for installation of the DLL
 # deliverable. The makefile is tasked with with providing rules named
@@ -1346,16 +1378,54 @@ proc sqlite-handle-out-implib {} {
 # is (de)activated).
 #
 # The default value is "unix-generic".
-proc sqlite-determine-dll-install-rules {} {
-  set n unix-generic
-  switch -glob -- [get-define host] {
-    *-*-cygwin* { set n cygwin }
-    *-*-ming*   { set n mingw }
-    *-*-msys*   { set n msys }
+#
+# --out-implib:
+#
+# On platforms where an "import library" is conventionally used but
+# --out-implib was not explicitly used, automatically add that flag.
+#
+# --dll-basename:
+#
+# On the same platforms addressed by --out-implib, if --dll-basename
+# is not specified, --dll-basename=auto is implied.
+proc sqlite-handle-env-quirks {} {
+  set instName unix-generic; # name of installation rules set
+  set autoDll 0; # true if --out-implib/--dll-basename should be implied
+  set host [get-define host]
+  switch -glob -- $host {
     *apple* -
-    *darwin*    { set n darwin }
+    *darwin*    { set instName darwin }
+    default {
+      set x [sqlite-env-is-unix-on-windows $host]
+      if {"" ne $x} {
+        set instName $x
+        set autoDll 1
+      }
+    }
   }
-  define SQLITE_DLL_INSTALL_RULES $n
+  define SQLITE_DLL_INSTALL_RULES $instName
+  if {$autoDll} {
+    if {![proj-opt-was-provided out-implib]} {
+      # Imply --out-implib=auto
+      proj-indented-notice [subst -nocommands -nobackslashes {
+        NOTICE: auto-enabling --out-implib for $host.
+        Use --out-implib=none to disable it or --out-implib=auto
+        to squelch this notice.
+      }]
+      proj-opt-set out-implib auto
+    }
+    if {![proj-opt-was-provided dll-basename]} {
+      # Imply --dll-basename=auto
+      proj-indented-notice [subst -nocommands -nobackslashes {
+        NOTICE: auto-enabling --dll-basename for $host.
+        Use --dll-basename=none to disable it or --dll-basename=auto
+        to squelch this notice.
+      }]
+      proj-opt-set dll-basename auto
+    }
+  }
+  sqlite-handle-out-implib
+  sqlite-handle-mac-cversion
 }
 
 ########################################################################
@@ -1369,9 +1439,7 @@ proc sqlite-config-finalize {} {
 #    autoconf {
 #    }
 #  }
-  sqlite-determine-dll-install-rules
-  sqlite-handle-out-implib
-  sqlite-handle-mac-cversion
+  sqlite-handle-env-quirks
   sqlite-process-dot-in-files
   sqlite-post-config-validation
   sqlite-dump-defines
