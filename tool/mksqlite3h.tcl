@@ -86,7 +86,7 @@ set mksourceid $PWD/mksourceid
 if {![file exists $mksourceid] && [file exists ${mksourceid}.exe]} {
   # Workaround for Windows-based Unix-like environments
   # https://sqlite.org/forum/forumpost/41ba710dd9943453
-  set mksourceid mksourceid.exe
+  set mksourceid ${mksourceid}.exe
 }
 exec $mksourceid manifest > $tmpfile
 set fd [open $tmpfile rb]

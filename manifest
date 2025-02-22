@@ -1,5 +1,5 @@
-C Random\snon-functional\sconfigure\sscript\scleanups.
-D 2025-02-22T14:53:31.061
+C Ensure\sthat\s[08c9e56f60]\suses\san\sabsolute\spath\swhen\sappending\s.exe\sto\smksourceid.
+D 2025-02-22T14:58:20.584
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2159,7 +2159,7 @@ F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b0
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
 F tool/mksqlite3c.tcl ba13086555b3cb835eba5e47a9250300ab85304d23fd1081abd3f29d8ab71a2b
-F tool/mksqlite3h.tcl 2275e7bf25a9ee31b10bef8305641b63a293955245a22967ca6ea77b336cac78
+F tool/mksqlite3h.tcl 989948c6a26e188e673d7c2f2f093ea3acd816ad6ac65bab596280075c8f3a45
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 08c9e56f6082bb609a42f0e34c83542fe8b682757bc45616810d91491950fd0f
-R 3208ed004b6e716ce6b17ce27009887c
+P 2ee73109809e7d4a9d203cfa42f29c62837c06dc414f9dbf17ce00d9bbb5a883
+R 9554fb958ccc8ca614713f13fcd64b48
 U stephan
-Z 3a85d85ac087bda321c6e7dc9381c222
+Z 090a992d630fbdcddf86913e7feb0d82
 # Remove this line to create a well-formed Fossil manifest.
