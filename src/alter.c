@@ -1217,7 +1217,7 @@ static int renameEditSql(
       nQuot = sqlite3Strlen30(zQuot)-1;
     }
 
-    assert( nQuot>=nNew && nSql>0 && nNew>0 );
+    assert( nQuot>=nNew && nSql>=0 && nNew>=0 );
     zOut = sqlite3DbMallocZero(db, (u64)(nSql + pRename->nList*nQuot + 1));
   }else{
     assert( nSql>0 );
