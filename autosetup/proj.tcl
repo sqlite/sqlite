@@ -379,7 +379,6 @@ proc proj-opt-was-provided {key} {
 #
 # Returns $val.
 proc proj-opt-set {flag {val 1}} {
-  global autosetup
   if {$flag ni $::autosetup(options)} {
     # We have to add this to autosetup(options) or else future calls
     # to [opt-bool $flag] will fail validation of $flag.

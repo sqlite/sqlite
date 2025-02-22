@@ -1337,12 +1337,13 @@ proc sqlite-handle-out-implib {} {
 }
 
 ########################################################################
-# [define] SQLITE_DLL_INSTALL_RULES to a symbolic name of a set of
-# "make install" rules to use. The makefile is tasked with with
-# providing rules named install-dll-NAME which runs the installation
-# for that set, as well as providing a rule named install-dll which
-# resolves to install-dll-NAME (perhaps indirectly, depending on
-# whether the DLL is (de)activated).
+# [define]s SQLITE_DLL_INSTALL_RULES to a symbolic name of a set of
+# "make install" rules to use for installation of the DLL
+# deliverable. The makefile is tasked with with providing rules named
+# install-dll-NAME which runs the installation for that set, as well
+# as providing a rule named install-dll which resolves to
+# install-dll-NAME (perhaps indirectly, depending on whether the DLL
+# is (de)activated).
 #
 # The default value is "unix-generic".
 proc sqlite-determine-dll-install-rules {} {
@@ -1825,10 +1826,6 @@ proc sqlite-handle-tcl {} {
   sqlite-check-tcl
   msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
 }
-
-# TODO? Figure out whether the DLL needs to go under /lib or /bin
-# (msys, cygwin, etc).
-# proc sqlite-handle-dll-install-dir {} {}
 
 ########################################################################
 # If the --dump-defines configure flag is provided then emit a list of
