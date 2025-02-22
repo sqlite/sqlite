@@ -262,7 +262,7 @@ proc sqlite-config-bootstrap {buildMode} {
           => {Specifies the base name of the resulting DLL file, defaulting to a
               platform-depending name (libsqlite3 on most Unix-style platforms).
               If not provided, libsqlite3 is usually assumed but on some platforms
-              a platform-dependent default is used. Use "none" to explicitly
+              a platform-dependent default is used. Use "default" to explicitly
               disable platform-dependent defaults on platforms where "auto" is
               implicitly used if this flag is not provided.}
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
@@ -1274,7 +1274,7 @@ proc sqlite-handle-mac-cversion {} {
 proc sqlite-handle-dll-basename {} {
   if {[proj-opt-was-provided dll-basename]} {
     set dn [join [opt-val dll-basename] ""]
-    if {$dn eq "none"} { set dn libsqlite3 }
+    if {$dn in {none default}} { set dn libsqlite3 }
   } else {
     set dn libsqlite3
   }
