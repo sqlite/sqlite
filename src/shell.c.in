@@ -1446,6 +1446,7 @@ struct ShellState {
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
   u8 crlfMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
+  u8 eEscMode;           /* Escape mode for text output */
   ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
@@ -1545,6 +1546,11 @@ static ShellState shellState;
                                    ** callback limit is reached, and for each
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
+
+/* Allowed values for ShellState.eEscMode
+*/
+#define SHELL_ESC_GRAPHIC      0      /* Substitute U+2400 graphics */
+#define SHELL_ESC_OFF          1      /* Send characters verbatim */
 
 /*
 ** These are the allowed shellFlgs values
@@ -2155,6 +2161,84 @@ static void output_json_string(FILE *out, const char *z, i64 n){
 }
 
 /*
+** Escape the input string if it is needed and in accordance with
+** eEscMode.
+**
+** Escaping is needed if the string contains any control characters
+** other than \t, \n, and \r\n
+**
+** If no escaping is needed (the common case) then set *ppFree to NULL
+** and return the original string.  If escapingn is needed, write the
+** escaped string into memory obtained from sqlite3_malloc64() or the
+** equivalent, and return the new string and set *ppFree to the new string
+** as well.
+**
+** The caller is responsible for freeing *ppFree if it is non-NULL in order
+** to reclaim memory.
+*/
+static const char *escapeOutput(
+  ShellState *p,
+  const char *zInX,
+  char **ppFree
+){
+  i64 i, j;
+  i64 nCtrl = 0;
+  unsigned char *zIn;
+  unsigned char c;
+  unsigned char *zOut;
+
+
+  /* No escaping if disabled */
+  if( p->eEscMode==SHELL_ESC_OFF ){
+    *ppFree = 0;
+     return zInX;
+  }
+
+  /* Count the number of control characters in the string. */
+  zIn = (unsigned char*)zInX;
+  for(i=0; (c = zIn[i])!=0; i++){
+    if( c<=0x1f
+     && c!='\t'
+     && c!='\n'
+     && (c!='\r' || zIn[i+1]!='\n')
+    ){
+      nCtrl++;
+    }
+  }
+  if( nCtrl==0 ){
+    *ppFree = 0;
+    return zInX;
+  }
+  zOut = sqlite3_malloc64( i + 2*nCtrl + 1 );
+  shell_check_oom(zOut);
+  for(i=j=0; (c = zIn[i])!=0; i++){
+    if( c>0x1f
+     || c=='\t'
+     || c=='\n'
+     || (c=='\r' && zIn[i+1]=='\n')
+    ){
+      continue;
+    }
+    if( i>0 ){
+      memcpy(&zOut[j], zIn, i);
+      j += i;
+    }
+    zIn += i+1;
+    i = -1;
+    zOut[j++] = 0xe2;
+    zOut[j++] = 0x90;
+    zOut[j++] = 0x80+c;
+  }
+  if( i>0 ){
+    memcpy(&zOut[j], zIn, i);
+    j += i;
+  }
+  zOut[j] = 0;
+  *ppFree = (char*)zOut;
+  return (char*)zOut;
+}
+
+/*
 ** Output the given string with characters that are special to
 ** HTML escaped.
 */
@@ -2597,8 +2681,12 @@ static int shell_callback(
       }
       if( p->cnt++>0 ) sqlite3_fputs(p->rowSeparator, p->out);
       for(i=0; i<nArg; i++){
+        char *pFree = 0;
+        const char *pDisplay;
+        pDisplay = escapeOutput(p, azArg[i] ? azArg[i] : p->nullValue, &pFree);
         sqlite3_fprintf(p->out, "%*s = %s%s", w, azCol[i],
-              azArg[i] ? azArg[i] : p->nullValue, p->rowSeparator);
+                        pDisplay, p->rowSeparator);
+        if( pFree ) sqlite3_free(pFree);
       }
       break;
     }
@@ -2730,15 +2818,23 @@ static int shell_callback(
     case MODE_List: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          sqlite3_fprintf(p->out, "%s%s", azCol[i],
+          char *z = azCol[i];
+          char *pFree;
+          const char *zOut = escapeOutput(p, z, &pFree);
+          sqlite3_fprintf(p->out, "%s%s", zOut,
                           i==nArg-1 ? p->rowSeparator : p->colSeparator);
+          if( pFree ) sqlite3_free(pFree);
         }
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         char *z = azArg[i];
+        char *pFree;
+        const char *zOut;
         if( z==0 ) z = p->nullValue;
-        sqlite3_fputs(z, p->out);
+        zOut = escapeOutput(p, z, &pFree);
+        sqlite3_fputs(zOut, p->out);
+        if( pFree ) sqlite3_free(pFree);
         sqlite3_fputs((i<nArg-1)? p->colSeparator : p->rowSeparator, p->out);
       }
       break;
@@ -3891,6 +3987,7 @@ static char *translateForDisplayAndDup(
       j++;
       continue;
     }
+    if( c==0 || c=='\n' || (c=='\r' && z[i+1]=='\n') ) break;
     if( c=='\t' ){
       do{
         n++;
@@ -3899,7 +3996,9 @@ static char *translateForDisplayAndDup(
       i++;
       continue;
     }
-    break;
+    n++;
+    j += 3;
+    i++;
   }
   if( n>=mxWidth && bWordWrap  ){
     /* Perhaps try to back up to a better place to break the line */
@@ -3946,6 +4045,7 @@ static char *translateForDisplayAndDup(
       zOut[j++] = z[i++];
       continue;
     }
+    if( c==0 ) break;
     if( z[i]=='\t' ){
       do{
         n++;
@@ -3954,7 +4054,10 @@ static char *translateForDisplayAndDup(
       i++;
       continue;
     }
-    break;
+    zOut[j++] = 0xe2;
+    zOut[j++] = 0x90;
+    zOut[j++] = 0x80 + c;
+    i++;
   }
   zOut[j] = 0;
   return (char*)zOut;
@@ -9792,6 +9895,10 @@ static int do_meta_command(char *zLine, ShellState *p){
         cmOpts.bQuote = 1;
       }else if( optionMatch(z,"noquote") ){
         cmOpts.bQuote = 0;
+      }else if( optionMatch(z,"escape") ){
+        p->eEscMode = SHELL_ESC_GRAPHIC;
+      }else if( optionMatch(z,"noescape") ){
+        p->eEscMode = SHELL_ESC_OFF;
       }else if( zMode==0 ){
         zMode = z;
         /* Apply defaults for qbox pseudo-mode.  If that
@@ -9825,13 +9932,19 @@ static int do_meta_command(char *zLine, ShellState *p){
        || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
       ){
         sqlite3_fprintf(p->out,
-              "current output mode: %s --wrap %d --wordwrap %s --%squote\n",
+              "current output mode: %s --wrap %d --wordwrap %s "
+              "--%squote --%sescape\n",
               modeDescr[p->mode], p->cmOpts.iWrap,
               p->cmOpts.bWordWrap ? "on" : "off",
-              p->cmOpts.bQuote ? "" : "no");
+              p->cmOpts.bQuote ? "" : "no",
+              p->eEscMode ? "no" : ""
+        );
       }else{
         sqlite3_fprintf(p->out,
-              "current output mode: %s\n", modeDescr[p->mode]);
+              "current output mode: %s --%sescape\n",
+              modeDescr[p->mode],
+              p->eEscMode ? "no" : ""
+        );
       }
       zMode = modeDescr[p->mode];
     }
@@ -12586,6 +12699,7 @@ static const char zOptions[] =
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
   "   -echo                print inputs before execution\n"
+  "   -escape              print control character XX as U+24XX\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
@@ -12608,6 +12722,7 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
+  "   -noescape            output control characters unmodified\n"
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -no-rowid-in-view    Disable rowid-in-view using sqlite3_config()\n"
@@ -13118,6 +13233,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
+    }else if( cli_strcmp(z,"-noescape")==0 ){
+      data.eEscMode = SHELL_ESC_OFF;
+    }else if( cli_strcmp(z,"-escape")==0 ){
+      data.eEscMode = SHELL_ESC_GRAPHIC;
 #ifdef SQLITE_HAVE_ZLIB
     }else if( cli_strcmp(z,"-zip")==0 ){
       data.openMode = SHELL_OPEN_ZIPFILE;
