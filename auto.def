@@ -59,7 +59,7 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
 
 define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
-proj-check-rpath
+sqlite-handle-rpath
 sqlite-handle-soname
 sqlite-handle-debug
 sqlite-handle-tcl

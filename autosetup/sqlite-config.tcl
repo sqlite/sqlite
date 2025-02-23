@@ -249,6 +249,7 @@ proc sqlite-config-bootstrap {buildMode} {
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {*} {
+        #rpath=1 => {Disable use of the rpath linker flag}
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -1895,6 +1896,17 @@ proc sqlite-determine-codegen-tcl {} {
 proc sqlite-handle-tcl {} {
   sqlite-check-tcl
   msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+}
+
+########################################################################
+# Handle the --enable/disable-rpath flag.
+proc sqlite-handle-rpath {} {
+#  if {[proj-opt-truthy rpath]} {
+    proj-check-rpath
+#  } else {
+#    msg-result "Disabling use of rpath."
+#    define LDFLAGS_RPATH ""
+#  }
 }
 
 ########################################################################
