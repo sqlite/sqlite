@@ -1889,59 +1889,61 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 }
 
 /*
-** Find a string that is not found anywhere in z[].  Return a pointer
-** to that string.
-**
-** Try to use zA and zB first.  If both of those are already found in z[]
-** then make up some string and store it in the buffer zBuf.
-*/
-static const char *unused_string(
-  const char *z,                    /* Result must not appear anywhere in z */
-  const char *zA, const char *zB,   /* Try these first */
-  char *zBuf                        /* Space to store a generated string */
-){
-  unsigned i = 0;
-  if( strstr(z, zA)==0 ) return zA;
-  if( strstr(z, zB)==0 ) return zB;
-  do{
-    sqlite3_snprintf(20,zBuf,"(%s%u)", zA, i++);
-  }while( strstr(z,zBuf)!=0 );
-  return zBuf;
-}
-
-/*
 ** Output the given string as a quoted string using SQL quoting conventions.
 **
 ** See also: output_quoted_escaped_string()
 */
-static void output_quoted_string(ShellState *p, const char *z){
+static void output_quoted_string(ShellState *p, const char *zInX){
   int i;
-  char c;
+  int needUnistr = 0;
+  int needDblQuote = 0;
+  const unsigned char *z = (const unsigned char*)zInX;
+  unsigned char c;
   FILE *out = p->out;
   sqlite3_fsetmode(out, _O_BINARY);
   if( z==0 ) return;
-  for(i=0; (c = z[i])!=0 && c!='\''; i++){}
-  if( c==0 ){
+  for(i=0; (c = z[i])!=0; i++){
+    if( c=='\'' ){ needDblQuote = 1; }
+    if( c>0x1f ) continue;
+    if( c=='\t' || c=='\n' ) continue;
+    if( c=='\r' && z[i+1]=='\n' ) continue;
+    needUnistr = 1;
+    break;
+  }
+  if( needDblQuote==0 && needUnistr==0 ){
     sqlite3_fprintf(out, "'%s'",z);
   }else{
-    sqlite3_fputs("'", out);
+    if( needUnistr ){
+      sqlite3_fputs("unistr('", out);
+    }else{
+      sqlite3_fputs("'", out);
+    }
     while( *z ){
-      for(i=0; (c = z[i])!=0 && c!='\''; i++){}
-      if( c=='\'' ) i++;
+      for(i=0; (c = z[i])!=0; i++){
+        if( c=='\'' ) break;
+        if( c>0x1f ) continue;
+        if( c=='\t' || c=='\n' ) continue;
+        if( c=='\r' && z[i+1]=='\n' ) continue;
+        break;
+      }
       if( i ){
         sqlite3_fprintf(out, "%.*s", i, z);
         z += i;
       }
+      if( c==0 ) break;
       if( c=='\'' ){
-        sqlite3_fputs("'", out);
+        sqlite3_fputs("''", out);
         continue;
-      }
-      if( c==0 ){
-        break;
+      }else{
+        sqlite3_fprintf(out, "\\u%04x", c);
       }
       z++;
     }
-    sqlite3_fputs("'", out);
+    if( needUnistr ){
+      sqlite3_fputs("')", out);
+    }else{
+      sqlite3_fputs("'", out);
+    }
   }
   setCrlfMode(p);
 }
@@ -1956,61 +1958,10 @@ static void output_quoted_string(ShellState *p, const char *z){
 ** escape mechanism.
 */
 static void output_quoted_escaped_string(ShellState *p, const char *z){
-  int i;
-  char c;
-  FILE *out = p->out;
+  char *zEscaped = sqlite3_mprintf("%#Q", z);
   sqlite3_fsetmode(out, _O_BINARY);
-  for(i=0; (c = z[i])!=0 && c!='\'' && c!='\n' && c!='\r'; i++){}
-  if( c==0 ){
-    sqlite3_fprintf(out, "'%s'",z);
-  }else{
-    const char *zNL = 0;
-    const char *zCR = 0;
-    int nNL = 0;
-    int nCR = 0;
-    char zBuf1[20], zBuf2[20];
-    for(i=0; z[i]; i++){
-      if( z[i]=='\n' ) nNL++;
-      if( z[i]=='\r' ) nCR++;
-    }
-    if( nNL ){
-      sqlite3_fputs("replace(", out);
-      zNL = unused_string(z, "\\n", "\\012", zBuf1);
-    }
-    if( nCR ){
-      sqlite3_fputs("replace(", out);
-      zCR = unused_string(z, "\\r", "\\015", zBuf2);
-    }
-    sqlite3_fputs("'", out);
-    while( *z ){
-      for(i=0; (c = z[i])!=0 && c!='\n' && c!='\r' && c!='\''; i++){}
-      if( c=='\'' ) i++;
-      if( i ){
-        sqlite3_fprintf(out, "%.*s", i, z);
-        z += i;
-      }
-      if( c=='\'' ){
-        sqlite3_fputs("'", out);
-        continue;
-      }
-      if( c==0 ){
-        break;
-      }
-      z++;
-      if( c=='\n' ){
-        sqlite3_fputs(zNL, out);
-        continue;
-      }
-      sqlite3_fputs(zCR, out);
-    }
-    sqlite3_fputs("'", out);
-    if( nCR ){
-      sqlite3_fprintf(out, ",'%s',char(13))", zCR);
-    }
-    if( nNL ){
-      sqlite3_fprintf(out, ",'%s',char(10))", zNL);
-    }
-  }
+  sqlite3_fputs(zEscaped, p->out);
+  sqlite3_free(zEscaped);
   setCrlfMode(p);
 }
 
@@ -4077,7 +4028,7 @@ static char *quoted_column(sqlite3_stmt *pStmt, int i){
       return sqlite3_mprintf("%s",sqlite3_column_text(pStmt,i));
     }
     case SQLITE_TEXT: {
-      return sqlite3_mprintf("%Q",sqlite3_column_text(pStmt,i));
+      return sqlite3_mprintf("%#Q",sqlite3_column_text(pStmt,i));
     }
     case SQLITE_BLOB: {
       int j;
