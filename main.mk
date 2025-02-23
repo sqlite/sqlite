@@ -1453,6 +1453,8 @@ so: $(libsqlite3.DLL)-$(ENABLE_LIB_SHARED)
 all: so
 
 #
+# DLL installation...
+#
 # On most Unix-like platforms, install the $(libsqlite3.DLL) as
 # $(libsqlite3.DLL).$(PACKAGE_VERSION) and create symlinks which point
 # to it:
@@ -1461,9 +1463,8 @@ all: so
 # - libsqlite3.so.0      =symlink-> libsqlite3.so.$(PACKAGE_VERSION) (see below)
 # - libsqlite3.so        =symlink-> libsqlite3.so.3
 #
-# The symlinks are not added on platforms where $(T.dll) is ".dll",
-# and different transformations take place on platforms where $(T.dll)
-# is ".dylib".
+# Different rules apply for platforms where $(T.dll)==.dylib and for
+# the "Unix on Windows" environments.
 #
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
@@ -1526,7 +1527,7 @@ install-dll-unix-generic: install-dll-out-implib
 		ls -la $(libsqlite3.DLL).0.8.6; \
 	fi
 
-install-dll-msys: install-dll-out-implib
+install-dll-msys: install-dll-out-implib $(install-dir.bin)
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
 install-dll-mingw:  install-dll-msys

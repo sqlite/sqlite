@@ -1166,7 +1166,7 @@ proc proj-xfer-options-aliases {mapping} {
 ########################################################################
 # Arguable/debatable...
 #
-# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explicitly
 # specified, force CC_FOR_BUILD to be the same as CC, so that:
 #
 # ./configure CC=clang

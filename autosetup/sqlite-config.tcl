@@ -1314,7 +1314,6 @@ proc sqlite-handle-dll-basename {} {
 # - msys2 packages historically install /usr/lib/libsqlite3.dll.a
 #   despite the DLL being in /usr/bin/msys-sqlite3-0.dll.
 proc sqlite-handle-out-implib {} {
-  sqlite-handle-dll-basename
   define LDFLAGS_OUT_IMPLIB ""
   define SQLITE_OUT_IMPLIB ""
   set rc 0
@@ -1367,10 +1366,10 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
 # certain platforms, e.g. Mac and "Unix on Windows" platforms (msys2,
 # cygwin, ...).
 #
-# DLL installation:
+# 1) DLL installation:
 #
-# [define]s SQLITE_DLL_INSTALL_RULES to a symbolic name of a set of
-# "make install" rules to use for installation of the DLL
+# [define]s SQLITE_DLL_INSTALL_RULES to a symbolic name suffix for a
+# set of "make install" rules to use for installation of the DLL
 # deliverable. The makefile is tasked with with providing rules named
 # install-dll-NAME which runs the installation for that set, as well
 # as providing a rule named install-dll which resolves to
@@ -1379,12 +1378,14 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
 #
 # The default value is "unix-generic".
 #
-# --out-implib:
+# 2) --out-implib:
 #
 # On platforms where an "import library" is conventionally used but
 # --out-implib was not explicitly used, automatically add that flag.
+# This conventionally applies to the "Unix on Windows" environments
+# like msys and cygwin.
 #
-# --dll-basename:
+# 3) --dll-basename:
 #
 # On the same platforms addressed by --out-implib, if --dll-basename
 # is not specified, --dll-basename=auto is implied.
@@ -1408,7 +1409,7 @@ proc sqlite-handle-env-quirks {} {
     if {![proj-opt-was-provided out-implib]} {
       # Imply --out-implib=auto
       proj-indented-notice [subst -nocommands -nobackslashes {
-        NOTICE: auto-enabling --out-implib for $host.
+        NOTICE: auto-enabling --out-implib for environment [$host].
         Use --out-implib=none to disable this special case
         or --out-implib=auto to squelch this notice.
       }]
@@ -1417,13 +1418,14 @@ proc sqlite-handle-env-quirks {} {
     if {![proj-opt-was-provided dll-basename]} {
       # Imply --dll-basename=auto
       proj-indented-notice [subst -nocommands -nobackslashes {
-        NOTICE: auto-enabling --dll-basename for $host.
+        NOTICE: auto-enabling --dll-basename for environment [$host].
         Use --dll-basename=default to disable this special case
         or --dll-basename=auto to squelch this notice.
       }]
       proj-opt-set dll-basename auto
     }
   }
+  sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
 }
@@ -1696,9 +1698,9 @@ proc sqlite-check-tcl {} {
         proj-fatal "No tclConfig.sh found under ${with_tcl}"
       }
     } else {
-      # If we have not yet found a tclConfig.sh file, look in
-      # $libdir which is set automatically by autosetup or by the
-      # --prefix command-line option.  See
+      # If we have not yet found a tclConfig.sh file, look in $libdir
+      # which is set automatically by autosetup or via the --prefix
+      # command-line option.  See
       # https://sqlite.org/forum/forumpost/e04e693439a22457
       set libdir [get-define libdir]
       if {[file readable "${libdir}/tclConfig.sh"]} {
@@ -1884,7 +1886,7 @@ proc sqlite-determine-codegen-tcl {} {
       }
       define BTCLSH "\$(TCLSH_CMD)"
     }
-  }; # CC swap-out
+  }; # /define-push $flagsToRestore
   return $cgtcl
 }; # sqlite-determine-codegen-tcl
 
