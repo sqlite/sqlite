@@ -79,7 +79,7 @@ libdir      = @libdir@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@
-AR.flags = cr # TODO? Add a configure test to determine this?
+AR.flags = cr
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = $(CC)
@@ -129,6 +129,7 @@ LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
 libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
 # DLL.basename: see https://sqlite.org/forum/forumpost/828fdfe904
 libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
+# libsqlite3.out.implib => the output filename part of LDFLAGS_OUT_IMPLIB.
 ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
 ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@

@@ -942,6 +942,35 @@ proc proj-check-emsdk {} {
 }
 
 ########################################################################
+# @proj-cc-check-Wl-flag ?flag ?args??
+#
+# Checks whether the given linker flag (and optional arguments) can be
+# passed from the compiler to the linker using one of these formats:
+#
+# - -Wl,flag[,arg1[,...argN]]
+# - -Wl,flag -Wl,arg1 ...-Wl,argN
+#
+# If so, that flag string is returned, else an empty string is
+# returned.
+proc proj-cc-check-Wl-flag {args} {
+  cc-with {-link 1} {
+    # Try -Wl,flag,...args
+    set fli "-Wl"
+    foreach f $args { append fli ",$f" }
+    if {[cc-check-flags $fli]} {
+      return $fli
+    }
+    # Try -Wl,flag -Wl,arg1 ...-Wl,argN
+    set fli ""
+    foreach f $args { append fli "-Wl,$f " }
+    if {[cc-check-flags $fli]} {
+      return [string trim $fli]
+    }
+    return ""
+  }
+}
+
+########################################################################
 # @proj-check-rpath
 #
 # Tries various approaches to handling the -rpath link-time
@@ -966,14 +995,12 @@ proc proj-check-rpath {} {
   cc-with {-link 1} {
     if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
-    } elseif {[cc-check-flags "-Wl,-rpath,$lp"]} {
-      define LDFLAGS_RPATH "-Wl,-rpath,$lp"
-    } elseif {[cc-check-flags "-Wl,-rpath -Wl,$lp"]} {
-      define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
-    } elseif {[cc-check-flags -Wl,-R$lp]} {
-      define LDFLAGS_RPATH "-Wl,-R$lp"
     } else {
-      define LDFLAGS_RPATH ""
+      set wl [proj-cc-check-Wl-flag -rpath $lp]
+      if {"" eq $wl} {
+        set wl [proj-cc-check-Wl-flag -R$lp]
+      }
+      define LDFLAGS_RPATH $wl
     }
   }
   expr {"" ne [get-define LDFLAGS_RPATH]}
@@ -1219,11 +1246,11 @@ proc proj-which-linenoise {dotH} {
 #
 # In that make invocation, $(libdir) would, at make-time, normally be
 # hard-coded to /foo/lib, rather than /blah/lib. That happens because
-# the autosetup exports conventional $prefix-based values for the
-# numerous autoconfig-compatible XYZdir vars at configure-time.  What
-# we would normally want, however, is that --libdir derives from the
-# make-time $(prefix).  The distinction between configure-time and
-# make-time is the significant factor there.
+# autosetup exports conventional $prefix-based values for the numerous
+# autoconfig-compatible XYZdir vars at configure-time.  What we would
+# normally want, however, is that --libdir derives from the make-time
+# $(prefix).  The distinction between configure-time and make-time is
+# the significant factor there.
 #
 # This function attempts to reconcile those vars in such a way that
 # they will derive, at make-time, from $(prefix) in a conventional

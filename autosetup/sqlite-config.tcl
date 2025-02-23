@@ -1325,8 +1325,8 @@ proc sqlite-handle-out-implib {} {
     if {$olBaseName ne "none"} {
       cc-with {-link 1} {
         set dll "${olBaseName}[get-define TARGET_DLLEXT]"
-        set flags "-Wl,--out-implib,${dll}.a"
-        if {[cc-check-flags $flags]} {
+        set flags [proj-cc-check-Wl-flag --out-implib ${dll}.a]
+        if {"" ne $flags} {
           define LDFLAGS_OUT_IMPLIB $flags
           define SQLITE_OUT_IMPLIB ${dll}.a
           set rc 1
