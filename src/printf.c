@@ -799,6 +799,17 @@ void sqlite3_str_vappendf(
             while( (escarg[i+1]&0xc0)==0x80 ){ i++; }
           }
         }
+        if( flag_alternateform ){
+          /* for %#q, %#Q, and %#w, do unistr()-style backslash escapes for
+          ** all control characters, and for backslash itself */
+          for(k=0; k<i; k++){
+            if( escarg[k]=='\\' ){
+              n++;
+            }else if( escarg[k]<=0x1f ){
+              n += 4;
+            }
+          }
+        }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 3;
         if( n>etBUFSIZE ){
@@ -812,7 +823,19 @@ void sqlite3_str_vappendf(
         k = i;
         for(i=0; i<k; i++){
           bufpt[j++] = ch = escarg[i];
-          if( ch==q ) bufpt[j++] = ch;
+          if( ch==q ){
+            bufpt[j++] = ch;
+          }else if( flag_alternateform ){
+            if( ch=='\\' ){
+              bufpt[j++] = '\\';
+            }else if( ch<=0x1f ){
+              bufpt[j-1] = '\\';
+              bufpt[j++] = '0';
+              bufpt[j++] = '0';
+              bufpt[j++] = ch>=0x10 ? '1' : '0';
+              bufpt[j++] = "0123456789abcdef"[ch&0xf];
+            }
+          }
         }
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;

@@ -1,5 +1,5 @@
-C Prototype\simplementation\sof\sthe\sunistr()\sSQL\sfunction.
-D 2025-02-22T23:18:38.072
+C Enhance\sthe\s%Q,\s%q,\sand\s%w\sprintf\sconversions\sso\sthat\sif\sthe\salternate-form\nflag\s#\sis\spresent,\sthey\stransform\sbackslash\sand\scontrol\scharacters\sinto\nunistr()-style\sbackslash\sescape\scodes.
+D 2025-02-23T00:09:24.456
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -777,7 +777,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 78d4935e510f7bed0fdd1a3f742c0e663b36a795f9dc7411161dc22bdae1245e
 F src/pragma.c c7ada272232e1182c4536d9637fa7b955a10bc1bd8d5a87d4dc9309dab827791
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
-F src/printf.c b9ac740dfaf68552f5da1266be28ae2824b53a6b73d93425f7c6b2ef62457cbb
+F src/printf.c 41f5ccdec1d9db821903e37181b9bf5ecc07748e4b48d99f830edb6433971187
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 626c24b258b111f75c22107aa5614ad89810df3026f5ca071116d3fe75925c75
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2210,11 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 742827f049768c4f69ccdfaadfad339aaad3bc126d3a68b90cfea01d825bf7ce
-R 487d823b2a97be800308516e5c94d276
-T *branch * unistr
-T *sym-unistr *
-T -sym-trunk *
+P 7cc302de05ed2a973372c05f55b048bf99af3d2590dd29f6fd0f379fb451aa0e
+R 4bc2cfded966113e2805f8612a2c2a29
 U drh
-Z f399533fbf6bd526a1da3885c8fdaf47
+Z 4e1c6c3e8807d851d73b039b2ed1c034
 # Remove this line to create a well-formed Fossil manifest.
