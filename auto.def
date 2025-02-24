@@ -30,21 +30,6 @@ sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
 sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
 sqlite-check-common-system-deps
 
-#
-# Enable large file support (if special flags are necessary)
-#
-define HAVE_LFS 0
-if {[opt-bool largefile]} {
-  cc-check-lfs
-}
-
-proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
-
-if {![proj-define-for-opt static ENABLE_LIB_STATIC \
-        "Build static library?"]} {
-  proj-warn "Static lib build may be implicitly re-activated by other components, e.g. some test apps."
-}
-
 proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
 
 proj-define-for-opt gcov USE_GCOV "Use gcov?"

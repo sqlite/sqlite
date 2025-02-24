@@ -153,7 +153,7 @@ proc sqlite-config-bootstrap {buildMode} {
     build-modes {
       {*} {
         shared=1             => {Disable build of shared libary}
-        static=1             => {Disable build of static library (mostly)}
+        static=1             => {Disable build of static library}
       }
       {canonical} {
         amalgamation=1       => {Disable the amalgamation and instead build all files separately}
@@ -165,7 +165,9 @@ proc sqlite-config-bootstrap {buildMode} {
       {*} {
         threadsafe=1         => {Disable mutexing}
         with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
-        largefile=1          => {Disable large file support}
+        largefile=1
+          => {This legacy flag has no effect on the library but may influence
+              the contents of the generated sqlite_cfg.h}
         # ^^^ It's not clear that this actually does anything, as
         # HAVE_LFS is not checked anywhere in the .c/.h/.in files.
         load-extension=1     => {Disable loading of external extensions}
@@ -1443,13 +1445,27 @@ proc sqlite-handle-env-quirks {} {
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
 proc sqlite-config-finalize {} {
-# Pending: move some of the auto.def code into this switch
-#  switch -exact -- $::sqliteConfig(build-mode) {
-#    canonical {
-#    }
-#    autoconf {
-#    }
-#  }
+  define HAVE_LFS 0
+  if {[opt-bool largefile]} {
+    #
+    # Insofar as we can determine HAVE_LFS has no effect on the
+    # library.  Perhaps it did back in the early 2000's. The
+    # --enable/disable-largefile flag is retained because it's
+    # harmless, but it doesn't do anything useful.
+    #
+    cc-check-lfs
+  }
+  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
+
+  if {![proj-define-for-opt static ENABLE_LIB_STATIC \
+          "Build static library?"]} {
+    if {"canonical" eq $::sqliteConfig(build-mode)} {
+      proj-indented-notice {
+        NOTICE: static lib build may be implicitly re-activated by
+        other components, e.g. some test apps.
+      }
+    }
+  }
 
   sqlite-handle-debug
   sqlite-handle-rpath
