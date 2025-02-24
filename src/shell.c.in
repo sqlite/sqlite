@@ -4198,6 +4198,7 @@ static void exec_prepared_stmt_columnar(
         uz = azNextLine[i];
         if( uz==0 ) uz = (u8*)zEmpty;
       }else if( p->cmOpts.bQuote ){
+        assert( azQuoted!=0 );
         sqlite3_free(azQuoted[i]);
         azQuoted[i] = quoted_column(pStmt,i);
         uz = (const unsigned char*)azQuoted[i];
