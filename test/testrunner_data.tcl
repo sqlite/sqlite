@@ -37,6 +37,7 @@ namespace eval trd {
   set tcltest(win.Windows-Memdebug)       veryquick
   set tcltest(win.Windows-Win32Heap)      veryquick
   set tcltest(win.Windows-Sanitize)       veryquick
+  set tcltest(win.Windows-WinRT)          veryquick
   set tcltest(win.Default)                full
 
   # Extra [make xyz] tests that should be run for various builds.
@@ -358,11 +359,17 @@ namespace eval trd {
   set build(Windows-Win32Heap) {
     WIN32HEAP=1
     DEBUG=4
+    ENABLE_SETLK=1
   }
   set build(Windows-Sanitize) {
     ASAN=1
   }
 
+  set build(Windows-WinRT) {
+    FOR_WINRT=1
+    ENABLE_SETLK=1
+    -DSQLITE_TEMP_STORE=3
+  }
 }
 
 
