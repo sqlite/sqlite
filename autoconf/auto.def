@@ -10,7 +10,6 @@
 #
 use sqlite-config
 sqlite-config-bootstrap autoconf
-define ENABLE_STATIC_SHELL [opt-bool static-shell]
 sqlite-check-common-bins
 sqlite-check-common-system-deps
 sqlite-config-finalize

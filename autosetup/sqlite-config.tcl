@@ -1477,7 +1477,8 @@ proc sqlite-config-finalize {} {
     }
   } else {
     proj-assert { $isAutoconf } "Invalid build mode"
-    define ENABLE_STATIC_SHELL [opt-bool static-shell]
+    proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
+      "Link library statically into the CLI shell?"
     if {![opt-bool shared] && ![opt-bool static-shell]} {
       proj-opt-set shared 1
       proj-indented-notice {
