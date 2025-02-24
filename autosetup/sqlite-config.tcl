@@ -28,10 +28,6 @@ proc sqlite-setup-package-info {} {
   msg-result "Source dir = $srcdir"
   msg-result "Build dir  = $::autosetup(builddir)"
 }
-sqlite-setup-package-info
-
-use cc cc-db cc-shared cc-lib pkg-config
-#proj-redefine-cc-for-build; # arguable
 
 #
 # Object for communicating config-time state across various
@@ -256,9 +252,10 @@ proc sqlite-config-bootstrap {buildMode} {
         # build
         with-wasi-sdk:=/opt/wasi-sdk
           => {Top-most dir of the wasi-sdk for a WASI build}
+
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
-              Default = EMSDK env var.}
+              Needed only by ext/wasm build. Default=EMSDK env var.}
       }
     }
 
@@ -282,8 +279,7 @@ proc sqlite-config-bootstrap {buildMode} {
               e.g. --soname=9.10 equates to "libsqlite3.so.9.10".}
         # dll-basename: https://sqlite.org/forum/forumpost/828fdfe904
         dll-basename:=auto
-          => {Specifies the base name of the resulting DLL file, defaulting to a
-              platform-depending name (libsqlite3 on most Unix-style platforms).
+          => {Specifies the base name of the resulting DLL file.
               If not provided, libsqlite3 is usually assumed but on some platforms
               a platform-dependent default is used. On some platforms this flag
               gets automatically enabled if it is not provided. Use "default" to
@@ -353,6 +349,14 @@ proc sqlite-config-bootstrap {buildMode} {
     # where [options] behaves oddly on _some_ TCL builds when it's
     # called from deeper than the global scope.
     return -code break
+  }
+  sqlite-setup-package-info
+  uplevel 1 {
+    # The odd placement of this block is so that we can emit the
+    # output from sqlite-setup-package-info after --help is processed
+    # but before any other info is emitted, e.g. the host/target
+    # system info and the C compiler check.
+    use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
 }; # sqlite-config-bootstrap
@@ -1319,10 +1323,11 @@ proc sqlite-handle-dll-basename {} {
 #
 # Platform notes:
 #
-# - cygwin packages historically install no .dll.a file.
+# - cygwin sqlite packages historically install no .dll.a file.
 #
-# - msys2 packages historically install /usr/lib/libsqlite3.dll.a
-#   despite the DLL being in /usr/bin/msys-sqlite3-0.dll.
+# - msys2 and mingw sqlite packages historically install
+#   /usr/lib/libsqlite3.dll.a despite the DLL being in
+#   /usr/bin/msys-sqlite3-0.dll.
 proc sqlite-handle-out-implib {} {
   define LDFLAGS_OUT_IMPLIB ""
   define SQLITE_OUT_IMPLIB ""
@@ -1331,6 +1336,9 @@ proc sqlite-handle-out-implib {} {
     set olBaseName [join [opt-val out-implib] ""]
     if {$olBaseName in {auto ""}} {
       set olBaseName "libsqlite3" ;# [get-define SQLITE_DLL_BASENAME]
+      # Based on discussions with mingw/msys users, the import lib
+      # should always be called libsqlite3.dll.a even on platforms
+      # which rename libsqlite3.dll to something else.
     }
     if {$olBaseName ne "none"} {
       cc-with {-link 1} {
