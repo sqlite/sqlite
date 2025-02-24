@@ -1453,6 +1453,10 @@ proc sqlite-handle-env-quirks {} {
 # Performs late-stage config steps common to both the canonical and
 # autoconf bundle builds.
 proc sqlite-config-finalize {} {
+  set buildMode $::sqliteConfig(build-mode)
+  set isCanonical [expr {$buildMode eq "canonical"}]
+  set isAutoconf [expr {$buildMode eq "autoconf"}]
+
   define HAVE_LFS 0
   if {[opt-bool largefile]} {
     #
@@ -1463,17 +1467,27 @@ proc sqlite-config-finalize {} {
     #
     cc-check-lfs
   }
-  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
 
-  if {![proj-define-for-opt static ENABLE_LIB_STATIC \
-          "Build static library?"]} {
-    if {"canonical" eq $::sqliteConfig(build-mode)} {
+  if {$isCanonical} {
+    if {![opt-bool static]} {
       proj-indented-notice {
         NOTICE: static lib build may be implicitly re-activated by
         other components, e.g. some test apps.
       }
     }
+  } else {
+    proj-assert { $isAutoconf } "Invalid build mode"
+    define ENABLE_STATIC_SHELL [opt-bool static-shell]
+    if {![opt-bool shared] && ![opt-bool static-shell]} {
+      proj-opt-set shared 1
+      proj-indented-notice {
+        NOTICE: ignoring --disable-shared because --disable-static-shell
+        was specified.
+      }
+    }
   }
+  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
+  proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"
 
   sqlite-handle-debug
   sqlite-handle-rpath
