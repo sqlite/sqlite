@@ -13,6 +13,7 @@ if {[string first " " $autosetup(builddir)] != -1} {
 }
 
 use cc cc-db cc-shared cc-lib pkg-config proj
+#proj-redefine-cc-for-build; # arguable
 
 #
 # Object for communicating config-time state across various
@@ -364,6 +365,7 @@ proc sqlite-post-options-init {} {
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   sqlite-setup-package-info
+  sqlite-setup-default-cflags
 }
 
 ########################################################################
@@ -1447,6 +1449,16 @@ proc sqlite-config-finalize {} {
 #    autoconf {
 #    }
 #  }
+
+  sqlite-handle-debug
+  sqlite-handle-rpath
+  sqlite-handle-soname
+  sqlite-handle-threadsafe
+  sqlite-handle-tempstore
+  sqlite-handle-line-editing
+  sqlite-handle-load-extension
+  sqlite-handle-math
+  sqlite-handle-icu
   sqlite-handle-env-quirks
   sqlite-process-dot-in-files
   sqlite-post-config-validation

@@ -1201,7 +1201,7 @@ proc proj-xfer-options-aliases {mapping} {
 # will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
 # tools. This is based off of an email discussion and is thought to
 # be likely to cause less confusion than seeing 'cc' invocations
-# will when the user passes CC=clang.
+# when when the user passes CC=clang.
 #
 # Sidebar: if we do this before the cc package is installed, it gets
 # reverted by that package. Ergo, the cc package init will tell the

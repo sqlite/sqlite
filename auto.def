@@ -4,18 +4,17 @@
 # This is the main autosetup-compatible configure script for the
 # SQLite project.
 #
-# This script should be kept compatible with JimTCL, a copy of which
-# is included in this source tree as ./autosetup/jimsh0.c. The number
-# of incompatibilities between canonical TCL and JimTCL is very low
-# and alternative formulations of incompatible constructs have, so
-# far, been easy to find.
+# This script and all of its dependencies must be kept compatible with
+# JimTCL, a copy of which is included in this source tree as
+# ./autosetup/jimsh0.c. The number of incompatibilities between
+# canonical TCL and JimTCL is very low and alternative formulations of
+# incompatible constructs have, so far, been easy to find.
 #
 # JimTCL: https://jim.tcl.tk
 #
 
 use sqlite-config
 sqlite-config-bootstrap canonical
-sqlite-setup-default-cflags
 proj-if-opt-truthy dev {
   # --enable-dev needs to come early so that the downstream tests
   # which check for the following flags use their updated state.
@@ -27,7 +26,6 @@ proj-if-opt-truthy dev {
   # [proj-get-env] here because [sqlite-setup-default-cflags] uses
   # [proj-get-env] and we want this to supercede that.
 }
-
 sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
 sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
 sqlite-check-common-system-deps
@@ -59,15 +57,6 @@ proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
 
 define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
-sqlite-handle-rpath
-sqlite-handle-soname
-sqlite-handle-debug
 sqlite-handle-tcl
-sqlite-handle-threadsafe
-sqlite-handle-tempstore
-sqlite-handle-line-editing
-sqlite-handle-load-extension
-sqlite-handle-math
-sqlite-handle-icu
 sqlite-handle-emsdk
 sqlite-config-finalize
