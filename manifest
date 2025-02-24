@@ -1,5 +1,5 @@
-C Use\san\sassert()\sto\sfix\sa\sharmless\s(false-positive)\sscan-build\swarning\nin\sthe\sCLI.
-D 2025-02-24T20:13:29.374
+C Fix\sthe\snew\sshellA.test\stest\sscript\sso\sthat\sit\sworks\swith\sValgrind.
+D 2025-02-24T23:34:50.874
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1647,7 +1647,7 @@ F test/shell6.test e3b883b61d4916b6906678a35f9d19054861123ad91b856461e0a456273bd
 F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d5c3
 F test/shell8.test aea51ecbcd4494c746b096aeff51d841d04d5f0dc4b62eb42427f16109b87acd
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
-F test/shellA.test 78efeadb4191240914e787325dc2edab44c586c4d9d3a44a2a4ab066190e7e63
+F test/shellA.test 09a6dd097ffa984ddf1fc0ddd2ae5f1a199cf11f3894b6a16410471c1536efe3
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e029828de91b10b4c7f4a19bc70c35e4f36fae4ebf32b40553a6ba9f2b3af295
-R 62dc4924d0f345bbea95b0294f27e51b
+P 4c56cd7392f114e27b43d8fcc79444c3078cd65285ba7dd3338a414e2a9f5392
+R 13d013de3c78981833017ee209b07ff8
 U drh
-Z 6b0a25939039131590c6c2268407c4ae
+Z 457892f8d9951398e0ae7676d77bfb1c
 # Remove this line to create a well-formed Fossil manifest.

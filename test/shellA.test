@@ -8,19 +8,16 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: shell
 #
 # Test cases for the command-line shell - focusing on .mode and
 # especially control-character escaping and the --escape option.
 #
-# TESTRUNNER: shell
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set CLI [test_cli_invocation]
-db close
-forcedelete test.db test.db-journal test.db-wal
-sqlite3 db test.db
 
 do_execsql_test shellA-1.0 {
   CREATE TABLE t1(a INT, x TEXT);
@@ -39,7 +36,7 @@ do_execsql_test shellA-1.0 {
 # and that our calls to the CLI are working.
 #
 do_test shellA-1.2 {
-  exec $CLI test.db {.mode box} {SELECT * FROM t1;}
+  exec {*}$CLI test.db {.mode box} {SELECT * FROM t1;}
 } {
 ┌───┬──────────────────────────┐
 │ a │            x             │
@@ -66,33 +63,33 @@ do_test shellA-1.2 {
 # ".mode list"
 #
 do_test shellA-1.3 {
-  exec $CLI test.db {SELECT x FROM t1 WHERE a=2;}
+  exec {*}$CLI test.db {SELECT x FROM t1 WHERE a=2;}
 } {
 ␛[31mVT-100 codes␛[0m
 }
 do_test shellA-1.4 {
-  exec $CLI test.db --escape symbol {SELECT x FROM t1 WHERE a=2;}
+  exec {*}$CLI test.db --escape symbol {SELECT x FROM t1 WHERE a=2;}
 } {
 ␛[31mVT-100 codes␛[0m
 }
 do_test shellA-1.5 {
-  exec $CLI test.db --escape ascii {SELECT x FROM t1 WHERE a=2;}
+  exec {*}$CLI test.db --escape ascii {SELECT x FROM t1 WHERE a=2;}
 } {
 ^[[31mVT-100 codes^[[0m
 }
 do_test shellA-1.6 {
-  exec $CLI test.db {.mode list --escape symbol} {SELECT x FROM t1 WHERE a=2;}
+  exec {*}$CLI test.db {.mode list --escape symbol} {SELECT x FROM t1 WHERE a=2;}
 } {
 ␛[31mVT-100 codes␛[0m
 }
 do_test shellA-1.7 {
-  exec $CLI test.db {.mode list --escape ascii} {SELECT x FROM t1 WHERE a=2;}
+  exec {*}$CLI test.db {.mode list --escape ascii} {SELECT x FROM t1 WHERE a=2;}
 } {
 ^[[31mVT-100 codes^[[0m
 }
 do_test shellA-1.8 {
   file delete -force out.txt
-  exec $CLI test.db {.mode list --escape off} {SELECT x FROM t1 WHERE a=7;} \
+  exec {*}$CLI test.db {.mode list --escape off} {SELECT x FROM t1 WHERE a=7;} \
      >out.txt
   set fd [open out.txt rb]
   set res [read $fd]
@@ -101,13 +98,13 @@ do_test shellA-1.8 {
 } "carriage\rreturn"
 do_test shellA-1.9 {
   set rc [catch {
-     exec $CLI test.db {.mode test --escape xyz}
+     exec {*}$CLI test.db {.mode test --escape xyz}
   } msg]
   lappend rc $msg
 } {1 {unknown control character escape mode "xyz" - choices: symbol ascii off}}
 do_test shellA-1.10 {
   set rc [catch {
-     exec $CLI --escape abc test.db .q
+     exec {*}$CLI --escape abc test.db .q
   } msg]
   lappend rc $msg
 } {1 {unknown control character escape mode "abc" - choices: symbol ascii off}}
@@ -115,7 +112,7 @@ do_test shellA-1.10 {
 # ".mode quote"
 #
 do_test shellA-2.1 {
- exec $CLI test.db --quote {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
+ exec {*}$CLI test.db --quote {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
 1,'line with '' single quote'
 2,unistr('\u001b[31mVT-100 codes\u001b[0m')
@@ -125,20 +122,20 @@ line'
 8,'last line'
 }
 do_test shellA-2.2 {
-  exec $CLI test.db --quote {.mode}
+  exec {*}$CLI test.db --quote {.mode}
 } {current output mode: quote --escape symbol}
 do_test shellA-2.3 {
-  exec $CLI test.db --quote --escape ASCII {.mode}
+  exec {*}$CLI test.db --quote --escape ASCII {.mode}
 } {current output mode: quote --escape ascii}
 do_test shellA-2.4 {
-  exec $CLI test.db --quote --escape OFF {.mode}
+  exec {*}$CLI test.db --quote --escape OFF {.mode}
 } {current output mode: quote --escape off}
 
 
 # ".mode line"
 #
 do_test shellA-3.1 {
- exec $CLI test.db --line --escape symbol \
+ exec {*}$CLI test.db --line --escape symbol \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
     a = 1
@@ -158,7 +155,7 @@ line
     x = last line
 }
 do_test shellA-3.2 {
- exec $CLI test.db --line --escape ascii \
+ exec {*}$CLI test.db --line --escape ascii \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
     a = 1
@@ -181,7 +178,7 @@ line
 # ".mode box"
 #
 do_test shellA-4.1 {
- exec $CLI test.db --box --escape ascii \
+ exec {*}$CLI test.db --box --escape ascii \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
 ┌───┬──────────────────────────┐
@@ -200,7 +197,7 @@ do_test shellA-4.1 {
 └───┴──────────────────────────┘
 }
 do_test shellA-4.2 {
- exec $CLI test.db {.mode qbox} {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
+ exec {*}$CLI test.db {.mode qbox} {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
 ┌───┬───────────────────────────────────────────┐
 │ a │                     x                     │
@@ -221,7 +218,7 @@ do_test shellA-4.2 {
 # ".mode insert"
 #
 do_test shellA-5.1 {
- exec $CLI test.db {.mode insert t1 --escape ascii} \
+ exec {*}$CLI test.db {.mode insert t1 --escape ascii} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
 INSERT INTO t1 VALUES(1,'line with '' single quote');
@@ -231,7 +228,7 @@ INSERT INTO t1 VALUES(7,unistr('carriage\u000dreturn'));
 INSERT INTO t1 VALUES(8,'last line');
 }
 do_test shellA-5.2 {
- exec $CLI test.db {.mode insert t1 --escape symbol} \
+ exec {*}$CLI test.db {.mode insert t1 --escape symbol} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
 INSERT INTO t1 VALUES(1,'line with '' single quote');
@@ -242,7 +239,7 @@ INSERT INTO t1 VALUES(8,'last line');
 }
 do_test shellA-5.3 {
   file delete -force out.txt
-  exec $CLI test.db {.mode insert t1 --escape off} \
+  exec {*}$CLI test.db {.mode insert t1 --escape off} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)} >out.txt
   set fd [open out.txt rb]
   set res [read $fd]
