@@ -1892,9 +1892,18 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 }
 
 /*
-** Output the given string as a quoted string using SQL quoting conventions.
+** Output the given string as a quoted string using SQL quoting conventions:
 **
-** See also: output_quoted_escaped_string()
+**   (1)   Single quotes (') within the string are doubled
+**   (2)   The whle string is enclosed in '...'
+**   (3)   Control characters other than \n, \t, and \r\n are escaped
+**         using \u00XX notation and if such substitutions occur,
+**         the whole string is enclosed in unistr('...') instead of '...'.
+**         
+** Step (3) is omitted if the control-character escape mode is OFF.
+**
+** See also: output_quoted_escaped_string() which does the same except
+** that it does not make exceptions for \n, \t, and \r\n in step (3).
 */
 static void output_quoted_string(ShellState *p, const char *zInX){
   int i;
@@ -1913,8 +1922,14 @@ static void output_quoted_string(ShellState *p, const char *zInX){
     needUnistr = 1;
     break;
   }
-  if( needDblQuote==0 && needUnistr==0 ){
+  if( (needDblQuote==0 && needUnistr==0)
+   || (needDblQuote==0 && p->eEscMode==SHELL_ESC_OFF)
+  ){
     sqlite3_fprintf(out, "'%s'",z);
+  }else if( p->eEscMode==SHELL_ESC_OFF ){
+    char *zEncoded = sqlite3_mprintf("%Q", z);
+    sqlite3_fputs(zEncoded, out);
+    sqlite3_free(zEncoded);
   }else{
     if( needUnistr ){
       sqlite3_fputs("unistr('", out);
@@ -1936,7 +1951,6 @@ static void output_quoted_string(ShellState *p, const char *zInX){
       if( c==0 ) break;
       if( c=='\'' ){
         sqlite3_fputs("''", out);
-        continue;
       }else{
         sqlite3_fprintf(out, "\\u%04x", c);
       }
@@ -1961,8 +1975,13 @@ static void output_quoted_string(ShellState *p, const char *zInX){
 ** escape mechanism.
 */
 static void output_quoted_escaped_string(ShellState *p, const char *z){
-  char *zEscaped = sqlite3_mprintf("%#Q", z);
+  char *zEscaped;
   sqlite3_fsetmode(out, _O_BINARY);
+  if( p->eEscMode==SHELL_ESC_OFF ){
+    zEscaped = sqlite3_mprintf("%Q", z);
+  }else{
+    zEscaped = sqlite3_mprintf("%#Q", z);
+  }
   sqlite3_fputs(zEscaped, p->out);
   sqlite3_free(zEscaped);
   setCrlfMode(p);
@@ -9857,37 +9876,39 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zMode = 0;
     const char *zTabname = 0;
     int i, n2;
-    int chng = 0;
+    int chng = 0;       /* 0x01:  change to cmopts.  0x02:  Any other change */
     ColModeOpts cmOpts = ColModeOpts_default;
     for(i=1; i<nArg; i++){
       const char *z = azArg[i];
       if( optionMatch(z,"wrap") && i+1<nArg ){
         cmOpts.iWrap = integerValue(azArg[++i]);
-        chng = 1;
+        chng |= 1;
       }else if( optionMatch(z,"ww") ){
         cmOpts.bWordWrap = 1;
-        chng = 1;
+        chng |= 1;
       }else if( optionMatch(z,"wordwrap") && i+1<nArg ){
         cmOpts.bWordWrap = (u8)booleanValue(azArg[++i]);
-        chng = 1;
+        chng |= 1;
       }else if( optionMatch(z,"quote") ){
         cmOpts.bQuote = 1;
-        chng = 1;
+        chng |= 1;
       }else if( optionMatch(z,"noquote") ){
         cmOpts.bQuote = 0;
-        chng = 1;
+        chng |= 1;
       }else if( optionMatch(z,"escape") && i+1<nArg ){
+        /* See similar code at tag-20250224-1 */
         const char *zEsc = azArg[++i];
         int k;
         for(k=0; k<ArraySize(shell_EscModeNames); k++){
           if( sqlite3_stricmp(zEsc,shell_EscModeNames[k])==0 ){
             p->eEscMode = k;
-            chng = 1;
+            chng |= 2;
             break;
           }
         }
         if( k>=ArraySize(shell_EscModeNames) ){
-          sqlite3_fprintf(stderr, "unknown escape mod \"%s\" - choices:", zEsc);
+          sqlite3_fprintf(stderr, "unknown control character escape mode \"%s\""
+                                  " - choices:", zEsc);
           for(k=0; k<ArraySize(shell_EscModeNames); k++){
             sqlite3_fprintf(stderr, " %s", shell_EscModeNames[k]);
           }
@@ -9900,7 +9921,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         /* Apply defaults for qbox pseudo-mode.  If that
          * overwrites already-set values, user was informed of this.
          */
-        chng = 1;
+        chng |= 1;
         if( cli_strcmp(z, "qbox")==0 ){
           ColModeOpts cmo = ColModeOpts_default_qbox;
           zMode = "box";
@@ -9947,6 +9968,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     if( zMode==0 ){
       zMode = modeDescr[p->mode];
+      if( (chng&1)==0 ) cmOpts = p->cmOpts;
     }
     n2 = strlen30(zMode);
     if( cli_strncmp(zMode,"lines",n2)==0 ){
@@ -13236,6 +13258,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Csv;
       memcpy(data.colSeparator,",",2);
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
+      /* See similar code at tag-20250224-1 */
       const char *zEsc = argv[++i];
       int k;
       for(k=0; k<ArraySize(shell_EscModeNames); k++){
@@ -13245,7 +13268,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         }
       }
       if( k>=ArraySize(shell_EscModeNames) ){
-        sqlite3_fprintf(stderr, "unknown escape mode \"%s\" - choices:", zEsc);
+        sqlite3_fprintf(stderr, "unknown control character escape mode \"%s\""
+                                " - choices:", zEsc);
         for(k=0; k<ArraySize(shell_EscModeNames); k++){
           sqlite3_fprintf(stderr, " %s", shell_EscModeNames[k]);
         }
