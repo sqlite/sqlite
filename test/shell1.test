@@ -450,7 +450,7 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode"
-} {0 {current output mode: list --escape}}
+} {0 {current output mode: list --escape symbol}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
 } {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
