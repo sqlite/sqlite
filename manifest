@@ -1,5 +1,5 @@
-C Further\sconsolidation\sof\sthe\smain\sauto.def\sand\sthe\sautoconf\sauto.def\scontent\sinto\ssqlite-config.tcl.
-D 2025-02-24T08:42:40.698
+C Move\sthe\sconfigure\soutput\sabout\sthe\sSQLite\sversion\sand\sbuild\sdirs\sup,\sso\sthat\sthey\sappear\sbefore\sany\stests\sfor\sthe\sC\scompiler\sand\ssuch.
+D 2025-02-24T10:30:59.511
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl e69b91f814ea510057ce7663845de703c3746d71cff9a0db6b2563ee3e7fd25e
-F autosetup/sqlite-config.tcl 02641273a8b03e76e90099acf3879661962ecea09034812cc73d3bec83bb38c6
+F autosetup/sqlite-config.tcl 77773e9bd1dff7ba78a48e38adc8346dab6fe88765b0ee7526537fb121d09d7b
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8641e2c7c868be67ebb367fe7c8ceeee0e0d96574c164191ce9e340e7a527f49
-R 818a30faa9e290412a92ac5e650b3758
+P 76a4efa9668791f23de8d4db1788708891f5efa01ba73bced6abfc54391c3b28
+R 4667efa7b570cf92b4a6f51968976648
 U stephan
-Z 9054f5a6c6f9641c08e70f76bffc8fa1
+Z 61416e11f4cbb69393a38e27073f54d5
 # Remove this line to create a well-formed Fossil manifest.

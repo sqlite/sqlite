@@ -12,7 +12,25 @@ if {[string first " " $autosetup(builddir)] != -1} {
               may not contain space characters"
 }
 
-use cc cc-db cc-shared cc-lib pkg-config proj
+use proj
+########################################################################
+# Set up PACKAGE_NAME and related defines and emit some useful
+# bootstrapping info to the user.
+proc sqlite-setup-package-info {} {
+  set srcdir $::autosetup(srcdir)
+  set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
+  define PACKAGE_NAME "sqlite"
+  define PACKAGE_URL {https://sqlite.org}
+  define PACKAGE_VERSION $PACKAGE_VERSION
+  define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  msg-result "Configuring SQLite version $PACKAGE_VERSION"
+  msg-result "Source dir = $srcdir"
+  msg-result "Build dir  = $::autosetup(builddir)"
+}
+sqlite-setup-package-info
+
+use cc cc-db cc-shared cc-lib pkg-config
 #proj-redefine-cc-for-build; # arguable
 
 #
@@ -364,24 +382,7 @@ proc sqlite-post-options-init {} {
     define SQLITE_OS_WIN 0
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
-  sqlite-setup-package-info
   sqlite-setup-default-cflags
-}
-
-########################################################################
-# Called by [sqlite-post-options-init] to set up PACKAGE_NAME and
-# related defines.
-proc sqlite-setup-package-info {} {
-  set srcdir $::autosetup(srcdir)
-  set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
-  define PACKAGE_NAME "sqlite"
-  define PACKAGE_URL {https://sqlite.org}
-  define PACKAGE_VERSION $PACKAGE_VERSION
-  define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
-  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
-  msg-result "Source dir = $srcdir"
-  msg-result "Build dir  = $::autosetup(builddir)"
-  msg-result "Configuring SQLite version $PACKAGE_VERSION"
 }
 
 ########################################################################
