@@ -198,15 +198,41 @@ proc proj-strip-hash-comments {val} {
 }
 
 ########################################################################
+# @proj-cflags-without-werror
+#
+# Fetches [define $var], strips out any -Werror entries, and returns
+# the new value. This is intended for temporarily stripping -Werror
+# from CFLAGS or CPPFLAGS within the scope of a [define-push] block.
+proc proj-cflags-without-werror {{var CFLAGS}} {
+  set rv {}
+  foreach f [get-define $var ""] {
+    switch -exact -- $f {
+      -Werror {}
+      default { lappend rv $f }
+    }
+  }
+  return [join $rv " "]
+}
+
+########################################################################
 # @proj-check-function-in-lib
 #
-# A proxy for cc-check-function-in-lib which does not make any global
-# changes to the LIBS define. Returns the result of
-# cc-check-function-in-lib (i.e. true or false).  The resulting linker
-# flags are stored in the [define] named lib_${function}.
+# A proxy for cc-check-function-in-lib with the following differences:
+#
+# - Does not make any global changes to the LIBS define.
+#
+# - Strips out -W... warning flags from CFLAGS before running the
+#   test, as these feature tests will often fail if -Werror is used.
+#
+# Returns the result of cc-check-function-in-lib (i.e. true or false).
+# The resulting linker flags are stored in the [define] named
+# lib_${function}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
-  define-push {LIBS} {
+  define-push {LIBS CFLAGS} {
+    #puts "CFLAGS before=[get-define CFLAGS]"
+    define CFLAGS [proj-cflags-without-werror]
+    #puts "CFLAGS after =[get-define CFLAGS]"
     set found [cc-check-function-in-lib $function $libs $otherlibs]
   }
   return $found
@@ -918,12 +944,7 @@ proc proj-check-emsdk {} {
 # --exec-prefix=... or --libdir=...  are explicitly passed to
 # configure then [get-define libdir] is used (noting that it derives
 # from exec-prefix by default).
-#
-# Achtung: we have seen platforms which report that a given option
-# checked here will work but then fails at build-time, and the current
-# order of checks reflects that.
 proc proj-check-rpath {} {
-  set rc 1
   if {[proj-opt-was-provided libdir]
       || [proj-opt-was-provided exec-prefix]} {
     set lp "[get-define libdir]"
@@ -934,7 +955,7 @@ proc proj-check-rpath {} {
   # CFLAGS or LIBS or whatever it is that cc-check-flags updates) then
   # downstream tests may fail because the resulting rpath gets
   # implicitly injected into them.
-  cc-with {} {
+  cc-with {-link 1} {
     if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
     } elseif {[cc-check-flags "-Wl,-rpath,$lp"]} {
@@ -945,10 +966,9 @@ proc proj-check-rpath {} {
       define LDFLAGS_RPATH "-Wl,-R$lp"
     } else {
       define LDFLAGS_RPATH ""
-      set rc 0
     }
   }
-  return $rc
+  expr {"" ne [get-define LDFLAGS_RPATH]}
 }
 
 ########################################################################
@@ -965,7 +985,7 @@ proc proj-check-rpath {} {
 # potentially avoid some end-user confusion by using their own lib's
 # name here (which shows up in the "checking..." output).
 proc proj-check-soname {{libname "libfoo.so.0"}} {
-  cc-with {} {
+  cc-with {-link 1} {
     if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
       return 1

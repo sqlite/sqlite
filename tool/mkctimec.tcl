@@ -4,13 +4,13 @@
 #
 #   const char **azCompileOpt[]
 #
-# definition used in src/ctime.c, run this script from
-# the checkout root. It generates src/ctime.c .
+# definition used in ctime.c, run this script from
+# the checkout root. It generates ctime.c .
 #
-# Results are normally written into src/ctime.c.  But if an argument is
+# Results are normally written into ctime.c.  But if an argument is
 # provided, results are written there instead.  Examples:
 #
-#    tclsh tool/mkctimec.tcl                ;# <-- results to src/ctime.c
+#    tclsh tool/mkctimec.tcl                ;# <-- ctime.c
 #
 #    tclsh tool/mkctimec.tcl /dev/tty       ;# <-- results to the terminal
 #
@@ -441,7 +441,7 @@ foreach v $value2_options {
 if {$argc>0} {
   set destfile [lindex $argv 0]
 } else {
-  set destfile "[file dir [file dir [file normal $argv0]]]/src/ctime.c"
+  set destfile ctime.c
   puts "Overwriting $destfile..."
 }
 

@@ -726,7 +726,7 @@ static Op *opIterNext(VdbeOpIter *p){
     }
  
     if( pRet->p4type==P4_SUBPROGRAM ){
-      int nByte = (p->nSub+1)*sizeof(SubProgram*);
+      i64 nByte = (1+(u64)p->nSub)*sizeof(SubProgram*);
       int j;
       for(j=0; j<p->nSub; j++){
         if( p->apSub[j]==pRet->p4.pProgram ) break;
@@ -1198,7 +1198,7 @@ void sqlite3VdbeScanStatus(
   const char *zName               /* Name of table or index being scanned */
 ){
   if( IS_STMT_SCANSTATUS(p->db) ){
-    sqlite3_int64 nByte = (p->nScan+1) * sizeof(ScanStatus);
+    i64 nByte = (1+(i64)p->nScan) * sizeof(ScanStatus);
     ScanStatus *aNew;
     aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
     if( aNew ){
@@ -4219,6 +4219,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
   int nByte;                      /* Number of bytes required for *p */
+  assert( sizeof(UnpackedRecord) + sizeof(Mem)*65536 < 0x7fffffff );
   nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;

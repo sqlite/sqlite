@@ -147,7 +147,7 @@ T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # shell command.
 #
 CFLAGS.jimsh = @CFLAGS_JIMSH@
-JIMSH = ./jimsh$(TEXE)
+JIMSH = ./jimsh$(T.exe)
 
 #
 # $(B.tclsh) is documented in main.mk.

@@ -567,13 +567,13 @@ static int memdbOpen(
     }
     if( p==0 ){
       MemStore **apNew;
-      p = sqlite3Malloc( sizeof(*p) + szName + 3 );
+      p = sqlite3Malloc( sizeof(*p) + (i64)szName + 3 );
       if( p==0 ){
         sqlite3_mutex_leave(pVfsMutex);
         return SQLITE_NOMEM;
       }
       apNew = sqlite3Realloc(memdb_g.apMemStore,
-                             sizeof(apNew[0])*(memdb_g.nMemStore+1) );
+                             sizeof(apNew[0])*(1+(i64)memdb_g.nMemStore) );
       if( apNew==0 ){
         sqlite3_free(p);
         sqlite3_mutex_leave(pVfsMutex);

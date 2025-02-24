@@ -335,8 +335,8 @@ sqlite3Worker1Promiser.v2 = function(config){
 /**
   When built as a module, we export sqlite3Worker1Promiser.v2()
   instead of sqlite3Worker1Promise() because (A) its interface is more
-  conventional for ESM usage and (B) the ESM option export option for
-  this API did not exist until v2 was created, so there's no backwards
+  conventional for ESM usage and (B) the ESM export option for this
+  API did not exist until v2 was created, so there's no backwards
   incompatibility.
 */
 export default sqlite3Worker1Promiser.v2;
