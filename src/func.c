@@ -1090,7 +1090,7 @@ static const char hexdigits[] = {
 ** Append to pStr text that is the SQL literal representation of the
 ** value contained in pValue.
 */
-void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
+void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
   /* As currently implemented, the string must be initially empty.
   ** we might relax this requirement in the future, but that will
   ** require enhancements to the implementation. */
@@ -1138,7 +1138,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
     }
     case SQLITE_TEXT: {
       const unsigned char *zArg = sqlite3_value_text(pValue);
-      sqlite3_str_appendf(pStr, "%Q", zArg);
+      sqlite3_str_appendf(pStr, bEscape ? "%#Q" : "%Q", zArg);
       break;
     }
     default: {
@@ -1218,6 +1218,7 @@ static void unistrFunc(
   u32 v;
 
   assert( argc==1 );
+  UNUSED_PARAMETER( argc );
   zIn = (const char*)sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
   nIn = sqlite3_value_bytes(argv[0]);
@@ -1284,6 +1285,10 @@ unistr_error:
 ** as needed. BLOBs are encoded as hexadecimal literals. Strings with
 ** embedded NUL characters cannot be represented as string literals in SQL
 ** and hence the returned string literal is truncated prior to the first NUL.
+**
+** If sqlite3_user_data() is non-zero, then the UNISTR_QUOTE() function is
+** implemented instead.  The difference is that UNISTR_QUOTE() uses the
+** UNISTR() function to escape control characters.
 */
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3_str str;
@@ -1291,7 +1296,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
-  sqlite3QuoteValue(&str,argv[0]);
+  sqlite3QuoteValue(&str,argv[0],SQLITE_PTR_TO_INT(sqlite3_user_data(context)));
   sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
                       SQLITE_DYNAMIC);
   if( str.accError!=SQLITE_OK ){
@@ -2864,6 +2869,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
     FUNCTION(unistr,             1, 0, 0, unistrFunc       ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
+    FUNCTION(unistr_quote,       1, 1, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
     VFUNCTION(changes,           0, 0, 0, changes          ),
     VFUNCTION(total_changes,     0, 0, 0, total_changes    ),
