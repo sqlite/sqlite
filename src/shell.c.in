@@ -3916,6 +3916,7 @@ static void print_box_row_separator(
 ** the last line, write a NULL into *pzTail. (*pzTail is not allocated.)
 */
 static char *translateForDisplayAndDup(
+  ShellState *p,                     /* To access current settings */
   const unsigned char *z,            /* Input text to be transformed */
   const unsigned char **pzTail,      /* OUT: Tail of the input for next line */
   int mxWidth,                       /* Max width.  0 means no limit */
@@ -4017,9 +4018,20 @@ static char *translateForDisplayAndDup(
       i++;
       continue;
     }
-    zOut[j++] = 0xe2;
-    zOut[j++] = 0x90;
-    zOut[j++] = 0x80 + c;
+    switch( p->eEscMode ){
+      case SHELL_ESC_SYMBOL:
+        zOut[j++] = 0xe2;
+        zOut[j++] = 0x90;
+        zOut[j++] = 0x80 + c;
+        break;
+      case SHELL_ESC_ASCII:
+        zOut[j++] = '^';
+        zOut[j++] = 0x40 + c;
+        break;
+      case SHELL_ESC_OFF:
+        zOut[j++] = c;
+        break;
+    }
     i++;
   }
   zOut[j] = 0;
@@ -4132,7 +4144,7 @@ static void exec_prepared_stmt_columnar(
     if( wx<0 ) wx = -wx;
     uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
     if( uz==0 ) uz = (u8*)"";
-    azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
+    azData[i] = translateForDisplayAndDup(p, uz, &zNotUsed, wx, bw);
   }
   do{
     int useNextLine = bNextLine;
@@ -4164,7 +4176,7 @@ static void exec_prepared_stmt_columnar(
         if( uz==0 ) uz = (u8*)zShowNull;
       }
       azData[nRow*nColumn + i]
-        = translateForDisplayAndDup(uz, &azNextLine[i], wx, bw);
+        = translateForDisplayAndDup(p, uz, &azNextLine[i], wx, bw);
       if( azNextLine[i] ){
         bNextLine = 1;
         abRowDiv[nRow-1] = 0;
