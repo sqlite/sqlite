@@ -3,13 +3,8 @@
 #
 # This is the main autosetup-compatible configure script for the
 # "autoconf" bundle of the SQLite project.
-#
-# This script and all of its dependencies must be kept compatible with
-# JimTCL, a copy of which is included in this source tree as
-# ./autosetup/jimsh0.c.
-#
 use sqlite-config
-sqlite-config-bootstrap autoconf
-sqlite-check-common-bins
-sqlite-check-common-system-deps
-sqlite-config-finalize
+sqlite-configure autoconf {
+  sqlite-check-common-bins
+  sqlite-check-common-system-deps
+}

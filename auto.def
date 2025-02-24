@@ -14,34 +14,34 @@
 #
 
 use sqlite-config
-sqlite-config-bootstrap canonical
-proj-if-opt-truthy dev {
-  # --enable-dev needs to come early so that the downstream tests
-  # which check for the following flags use their updated state.
-  proj-opt-set all 1
-  proj-opt-set debug 1
-  proj-opt-set amalgamation 0
-  define CFLAGS [get-env CFLAGS {-O0 -g}]
-  # -------------^^^^^^^ intentionally using [get-env] instead of
-  # [proj-get-env] here because [sqlite-setup-default-cflags] uses
-  # [proj-get-env] and we want this to supercede that.
+sqlite-configure canonical {
+  proj-if-opt-truthy dev {
+    # --enable-dev needs to come early so that the downstream tests
+    # which check for the following flags use their updated state.
+    proj-opt-set all 1
+    proj-opt-set debug 1
+    proj-opt-set amalgamation 0
+    define CFLAGS [get-env CFLAGS {-O0 -g}]
+    # -------------^^^^^^^ intentionally using [get-env] instead of
+    # [proj-get-env] here because [sqlite-setup-default-cflags] uses
+    # [proj-get-env] and we want this to supercede that.
+  }
+  sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
+  sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
+  sqlite-check-common-system-deps
+
+  proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+
+  proj-define-for-opt gcov USE_GCOV "Use gcov?"
+
+  proj-define-for-opt test-status TSTRNNR_OPTS \
+    "test-runner flags:" {--status} {}
+
+  proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
+    "Use #line macros in the amalgamation:"
+
+  define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
+
+  sqlite-handle-tcl
+  sqlite-handle-emsdk
 }
-sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
-sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
-sqlite-check-common-system-deps
-
-proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
-
-proj-define-for-opt gcov USE_GCOV "Use gcov?"
-
-proj-define-for-opt test-status TSTRNNR_OPTS \
-  "test-runner flags:" {--status} {}
-
-proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
-  "Use #line macros in the amalgamation:"
-
-define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
-
-sqlite-handle-tcl
-sqlite-handle-emsdk
-sqlite-config-finalize

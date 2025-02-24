@@ -64,8 +64,12 @@ set sqliteConfig(is-cross-compiling) [proj-is-cross-compiling]
 ########################################################################
 # Processes all configure --flags for this build $buildMode must be
 # either "canonical" or "autoconf", and others may be added in the
-# future.
-proc sqlite-config-bootstrap {buildMode} {
+# future. After bootstrapping, $configScript is eval'd in the caller's
+# scope, then post-configuration finalization is run. $configScript is
+# intended to hold configure code which is specific to the given
+# $buildMode, with the caveat that _some_ build-specific code is
+# encapsulated in the configuration finalization step.
+proc sqlite-configure {buildMode configScript} {
   set allBuildModes {canonical autoconf}
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
@@ -344,11 +348,12 @@ proc sqlite-config-bootstrap {buildMode} {
     }
   }
   #lappend opts "soname:=duplicateEntry => {x}"; #just testing
-  if {[catch {options $opts}]} {
+  if {[catch {options $opts} msg opts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
     # where [options] behaves oddly on _some_ TCL builds when it's
     # called from deeper than the global scope.
-    return -code break
+    dict incr opts -level
+    return {*}$opts $msg
   }
   sqlite-setup-package-info
   uplevel 1 {
@@ -359,7 +364,67 @@ proc sqlite-config-bootstrap {buildMode} {
     use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
-}; # sqlite-config-bootstrap
+  uplevel 1 $configScript
+  sqlite-configure-finalize
+}; # sqlite-configure
+
+########################################################################
+# Performs late-stage config steps common to both the canonical and
+# autoconf bundle builds.
+proc sqlite-configure-finalize {} {
+  set buildMode $::sqliteConfig(build-mode)
+  set isCanonical [expr {$buildMode eq "canonical"}]
+  set isAutoconf [expr {$buildMode eq "autoconf"}]
+
+  define HAVE_LFS 0
+  if {[opt-bool largefile]} {
+    #
+    # Insofar as we can determine HAVE_LFS has no effect on the
+    # library.  Perhaps it did back in the early 2000's. The
+    # --enable/disable-largefile flag is retained because it's
+    # harmless, but it doesn't do anything useful. It does have
+    # visible side-effects, though: the generated sqlite_cfg.h may (or
+    # may not) define HAVE_LFS.
+    #
+    cc-check-lfs
+  }
+
+  if {$isCanonical} {
+    if {![opt-bool static]} {
+      proj-indented-notice {
+        NOTICE: static lib build may be implicitly re-activated by
+        other components, e.g. some test apps.
+      }
+    }
+  } else {
+    proj-assert { $isAutoconf } "Invalid build mode"
+    proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
+      "Link library statically into the CLI shell?"
+    if {![opt-bool shared] && ![opt-bool static-shell]} {
+      proj-opt-set shared 1
+      proj-indented-notice {
+        NOTICE: ignoring --disable-shared because --disable-static-shell
+        was specified.
+      }
+    }
+  }
+  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
+  proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"
+
+  sqlite-handle-debug
+  sqlite-handle-rpath
+  sqlite-handle-soname
+  sqlite-handle-threadsafe
+  sqlite-handle-tempstore
+  sqlite-handle-line-editing
+  sqlite-handle-load-extension
+  sqlite-handle-math
+  sqlite-handle-icu
+  sqlite-handle-env-quirks
+  sqlite-process-dot-in-files
+  sqlite-post-config-validation
+  sqlite-dump-defines
+}; # sqlite-configure-finalize
 
 ########################################################################
 # Runs some common initialization which must happen immediately after
@@ -1447,62 +1512,6 @@ proc sqlite-handle-env-quirks {} {
   sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
-}
-
-########################################################################
-# Performs late-stage config steps common to both the canonical and
-# autoconf bundle builds.
-proc sqlite-config-finalize {} {
-  set buildMode $::sqliteConfig(build-mode)
-  set isCanonical [expr {$buildMode eq "canonical"}]
-  set isAutoconf [expr {$buildMode eq "autoconf"}]
-
-  define HAVE_LFS 0
-  if {[opt-bool largefile]} {
-    #
-    # Insofar as we can determine HAVE_LFS has no effect on the
-    # library.  Perhaps it did back in the early 2000's. The
-    # --enable/disable-largefile flag is retained because it's
-    # harmless, but it doesn't do anything useful.
-    #
-    cc-check-lfs
-  }
-
-  if {$isCanonical} {
-    if {![opt-bool static]} {
-      proj-indented-notice {
-        NOTICE: static lib build may be implicitly re-activated by
-        other components, e.g. some test apps.
-      }
-    }
-  } else {
-    proj-assert { $isAutoconf } "Invalid build mode"
-    proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
-      "Link library statically into the CLI shell?"
-    if {![opt-bool shared] && ![opt-bool static-shell]} {
-      proj-opt-set shared 1
-      proj-indented-notice {
-        NOTICE: ignoring --disable-shared because --disable-static-shell
-        was specified.
-      }
-    }
-  }
-  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
-  proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"
-
-  sqlite-handle-debug
-  sqlite-handle-rpath
-  sqlite-handle-soname
-  sqlite-handle-threadsafe
-  sqlite-handle-tempstore
-  sqlite-handle-line-editing
-  sqlite-handle-load-extension
-  sqlite-handle-math
-  sqlite-handle-icu
-  sqlite-handle-env-quirks
-  sqlite-process-dot-in-files
-  sqlite-post-config-validation
-  sqlite-dump-defines
 }
 
 ########################################################################
