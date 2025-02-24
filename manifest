@@ -1,5 +1,5 @@
-C Update\sjimsh0.c\sfrom\supstream\sautosetup\sto\saddress\s[https://github.com/msteveb/autosetup/issues/75|autosetup\sticket\s#75],\striggered\sby\sthis\sbuild\sin\sthe\sGentoo\sproject.
-D 2025-02-24T04:47:34.727
+C Add\ssome\sinternal\snotes\sabout\spotential\schanges\sfor\sthe\srpath\sflag\shandling.
+D 2025-02-24T05:10:09.506
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl cc300c15633cb2835eb52c235c5abfd2de0e8e989e9b650e82df3c1d3b856d22
-F autosetup/sqlite-config.tcl ecdf12a482eb4779e7af48f917d31742ea881ad4ab989518c83e3400d9f8106f
+F autosetup/sqlite-config.tcl 3e6815229a2e43d0ceb35c051ccdb7888feacc6ff94ed9da9dca1d81494ca105
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2210,8 +2210,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 38ba8e837c2679f12a4019612f7188cb4afffd43cef7af4a4aa02e62c20885ac
-R 4c0aa0676d1a4513bf4ed482d0d66271
+P ffd05de8a3b7cab1b8e91b99da74b43ec5a7b91c78dcfd7cf338b66126e30a56
+R eeeefd36d893cc55dc27e27479712352
 U stephan
-Z f85c47e7c816fa6b50a85716ddc8c88a
+Z 2cdb20385f544083be489e48d188981f
 # Remove this line to create a well-formed Fossil manifest.
