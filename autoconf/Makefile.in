@@ -256,7 +256,7 @@ install: install-man1
 
 clean:
 	rm -f *.o sqlite3$(T.exe)
-	rm -f $(libsqlite3.LIB) $(libsqlite3.DLL) $(libsqlite3.DLL).a
+	rm -f $(libsqlite3.LIB) $(libsqlite3.DLL) libsqlite3$(T.dll).a
 
 distclean: clean
 	rm -f jimsh0$(T.exe) config.* sqlite3.pc sqlite_cfg.h Makefile

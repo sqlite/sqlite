@@ -264,16 +264,17 @@ proc sqlite-config-bootstrap {buildMode} {
           => {Specifies the base name of the resulting DLL file, defaulting to a
               platform-depending name (libsqlite3 on most Unix-style platforms).
               If not provided, libsqlite3 is usually assumed but on some platforms
-              a platform-dependent default is used. Use "default" to explicitly
-              disable platform-dependent defaults on platforms where "auto" is
-              implicitly used if this flag is not provided.}
+              a platform-dependent default is used. On some platforms this flag
+              gets automatically enabled if it is not provided. Use "default" to
+              explicitly disable platform-dependent activation on such systems.}
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
         out-implib:=auto
           => {Enable use of --out-implib linker flag to generate an
               "import library" for the DLL. The output's base name name is
               specified by the value, with "auto" meaning to figure out a
-              name automatically. Use "none" to explicitly disable the
-              feature on platforms where it is implicitly on if not provided.}
+              name automatically. On some platforms this flag gets
+              automatically enabled if it is not provided. Use "none" to
+              explicitly disable this feature on such platforms.}
       }
     }
 
@@ -283,7 +284,7 @@ proc sqlite-config-bootstrap {buildMode} {
         # Note that using the --debug/--enable-debug flag here
         # requires patching autosetup/autosetup to rename its builtin
         # --debug to --autosetup-debug. See details in
-        # autosetup/README.md.
+        # autosetup/README.md#patching.
         with-debug=0
         debug=0
           => {Enable debug build flags. This option will impact performance by
@@ -306,7 +307,9 @@ proc sqlite-config-bootstrap {buildMode} {
           => {Dynamically link libsqlite3 to certain tools which normally statically embed it}
       }
       {*} {
-        dump-defines=0       => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt) (for build debugging)}
+        dump-defines=0
+          => {Dump autosetup defines to $::sqliteConfig(dump-defines-txt)
+              (for build debugging)}
       }
     }
   }; # $allOpts
@@ -1282,9 +1285,9 @@ proc sqlite-handle-dll-basename {} {
   }
   if {$dn in {auto ""}} {
     switch -glob -- [get-define host] {
-      *-*-cygwin* { set dn cygsqlite3-0 }
+      *-*-cygwin  { set dn cygsqlite3-0 }
       *-*-ming*   { set dn libsqlite3-0 }
-      *-*-msys*   { set dn msys-sqlite3-0 }
+      *-*-msys    { set dn msys-sqlite3-0 }
       default     { set dn libsqlite3 }
     }
   }
@@ -1355,12 +1358,13 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
   if {"" eq $envTuple} {
     set envTuple [get-define host]
   }
+  set name ""
   switch -glob -- $envTuple {
-    *-*-cygwin* { return cygwin }
-    *-*-ming*   { return mingw }
-    *-*-msys*   { return msys }
+    *-*-cygwin { set name cygwin }
+    *-*-ming*  { set name mingw }
+    *-*-msys   { set name msys }
   }
-  return "";
+  return $name;
 }
 
 ########################################################################
