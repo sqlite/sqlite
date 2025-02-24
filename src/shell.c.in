@@ -1976,7 +1976,7 @@ static void output_quoted_string(ShellState *p, const char *zInX){
 */
 static void output_quoted_escaped_string(ShellState *p, const char *z){
   char *zEscaped;
-  sqlite3_fsetmode(out, _O_BINARY);
+  sqlite3_fsetmode(p->out, _O_BINARY);
   if( p->eEscMode==SHELL_ESC_OFF ){
     zEscaped = sqlite3_mprintf("%Q", z);
   }else{
