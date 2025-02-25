@@ -141,6 +141,8 @@ do_execsql_test 2.5 {
   INSERT INTO t1 VALUES(9, 10);
 }
 
+if {$::sqlite_options(setlk_timeout)==1} {
+
 sqlite3_setlk_timeout db 2000
 
 # Launch a non-blocking testfixture process to write-lock the 
@@ -169,6 +171,9 @@ do_execsql_test 2.7 {
   SELECT * FROM t1
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 
+}
+
+
 #-------------------------------------------------------------------------
 # Check that if sqlite3_setlk_timeout(-1) is called, blocking locks are
 # enabled and last for a few seconds at least. Difficult to test that they
@@ -176,6 +181,7 @@ do_execsql_test 2.7 {
 #
 reset_db
 
+if {$::sqlite_options(setlk_timeout)==1} {
 do_execsql_test 3.0 {
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
@@ -255,6 +261,7 @@ do_catchsql_test 3.4 {
   INSERT INTO t1 VALUES(13, 'thirteen');
 } {0 {}}
 
+}
 
 finish_test
 

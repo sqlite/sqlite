@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sadded\sby\s[e88212b1]\sthat\sis\ssometimes\sfalse.
-D 2025-02-25T11:29:04.914
+C Avoid\srunning\scertain\stests\sin\swalsetlk2.test\sif\sSQLITE_ENABLE_SETLK_TIMEOUT\sis\sset\sto\s2,\snot\s1.
+D 2025-02-25T11:48:57.933
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2028,7 +2028,7 @@ F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
 F test/walsetlk.test 9c5b92f9a20252540fedf9ffa6ee3d1b8af08ea4b80d0144d9b88e6c0c1de80d
-F test/walsetlk2.test 5ae8662a28c013e8df2ce975f9e3577a7f239aeb4622bb8d4d0ca8e16c0c132e
+F test/walsetlk2.test 9097083633cdf55bf1098b694fb8651d0356d38fef28b869481d18029d7ceaf4
 F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e88212b10a7829ff42ef51a02863d788c929e54161faf492f9ef2ad90fd7074e
-R 208c10d1a99423d6443e5484adf3eb06
+P 0f6223b8f6c044db687f78e19f6373d0dda9155445c511a297efa05bac3b16e5
+R fb82f4ee6ef5b793d1eb19b781cf961a
 U dan
-Z 8b4b4e6eeb34d8972dfc2e11c0d63f24
+Z 98ff71ee5d4b0fa0c1b172736bd46ff5
 # Remove this line to create a well-formed Fossil manifest.
