@@ -1,5 +1,5 @@
-C Diverse\sconfigure\stweaks\sto\sbetter\ssupport\spackage\smaintainers\son\sthe\sunix-on-windows\senvironments\slike\smsys2,\scygwin,\sand\smingw,\sbased\slargely\son\sfeedback\sin\sforum\sposts\s[forum:e6cf2bbb70da2922|e6cf2bbb70da2922]\sand\s[forum:828fdfe9041fd725|828fdfe9041fd725].
-D 2025-02-25T16:17:57.126
+C Configure\sscript\scosmetics:\semit\sthe\shost/build\ssystem\sinfo\sbefore\sthe\sdirectory\sinfo.
+D 2025-02-25T16:48:34.064
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 187d82550cfa55df00e285542e88278c51876d7813d63eaffb2fc5af40566d9f
-F autosetup/sqlite-config.tcl f0f65115fc1102b6c07c92b068c880f53609979f42997c875cd26b41ded18ee4
+F autosetup/sqlite-config.tcl 341d530f531c1dd70c3bc4e16905ad0a83cde1a2104d0b5655aa44b13bd37349
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2209,11 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47c43fcb5109ae660d5b56c536d8c23bdc99727648f4dd8b336ff98f9ef07d6c
-Q +85b56fb0cce4b628f80b26a67b43236ef1557282775739bdbe7cc4d65948d66f
-Q +d284230f68616b78a527d34df777b0220376ba6a00e9e927d4ffb4cbddab900c
-Q +ebf41fc90aa9fb1bb96239145c0cdd06eced391499975c71734610996d088641
-R 47f095ce4b16bff16826d907f3f25a33
+P 144aacfdf76d89d30f0f6f4dfccd686d3a219f778f98487264b6ef69331ae722
+Q +6f0b6d95db17e69ac7e46a39f52770291ac4cfe43eea09add224946a6e11f04e
+R a177374df3571a18a886195e5479e3e0
 U stephan
-Z cd454a6ad0ada97faeba9fbc8f924284
+Z 7acc5317cd65185efe88aa8bd68f469b
 # Remove this line to create a well-formed Fossil manifest.
