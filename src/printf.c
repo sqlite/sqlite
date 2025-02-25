@@ -757,7 +757,7 @@ void sqlite3_str_vappendf(
       case etESCAPE_Q:          /* %Q: Escape ' and enclose in '...' */
       case etESCAPE_w: {        /* %w: Escape " characters */
         i64 i, j, k, n;
-        int isnull, needQuote = 0;
+        int needQuote = 0;
         char ch;
         char *escarg;
         char q;
@@ -767,17 +767,16 @@ void sqlite3_str_vappendf(
         }else{
           escarg = va_arg(ap,char*);
         }
-        isnull = escarg==0;
+        if( escarg==0 ){
+          escarg = (xtype==etESCAPE_Q ? "NULL" : "(NULL)");
+        }else if( xtype==etESCAPE_Q ){
+          needQuote = 1;
+        }
         if( xtype==etESCAPE_w ){
           q = '"';
           flag_alternateform = 0;
         }else{
           q = '\'';
-        }
-        if( isnull ){
-          escarg = (xtype==etESCAPE_Q ? "NULL" : "(NULL)");
-        }else if( xtype==etESCAPE_Q ){
-          needQuote = 1;
         }
         /* For %q, %Q, and %w, the precision is the number of bytes (or
         ** characters if the ! flags is present) to use from the input.
@@ -832,12 +831,12 @@ void sqlite3_str_vappendf(
           }
         }
         k = i;
-        for(i=0; i<k; i++){
-          bufpt[j++] = ch = escarg[i];
-          if( ch==q ){
-            bufpt[j++] = ch;
-          }else if( flag_alternateform ){
-            if( ch=='\\' ){
+        if( flag_alternateform ){
+          for(i=0; i<k; i++){
+            bufpt[j++] = ch = escarg[i];
+            if( ch==q ){
+              bufpt[j++] = ch;
+            }else if( ch=='\\' ){
               bufpt[j++] = '\\';
             }else if( ch<=0x1f ){
               bufpt[j-1] = '\\';
@@ -847,6 +846,11 @@ void sqlite3_str_vappendf(
               bufpt[j++] = ch>=0x10 ? '1' : '0';
               bufpt[j++] = "0123456789abcdef"[ch&0xf];
             }
+          }
+        }else{
+          for(i=0; i<k; i++){
+            bufpt[j++] = ch = escarg[i];
+            if( ch==q ) bufpt[j++] = ch;
           }
         }
         if( needQuote ){
