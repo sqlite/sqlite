@@ -12,24 +12,19 @@ if {[string first " " $autosetup(builddir)] != -1} {
               may not contain space characters"
 }
 
+# The mixing of output and 'use' here is largely cosmetic, the intent
+# being to put the most-frequently-useful info at the top.
 use proj
-########################################################################
-# Set up PACKAGE_NAME and related defines and emit some useful
-# bootstrapping info to the user.
-proc sqlite-setup-package-info {} {
-  set srcdir $::autosetup(srcdir)
-  set PACKAGE_VERSION [proj-file-content -trim $srcdir/VERSION]
-  define PACKAGE_NAME "sqlite"
-  define PACKAGE_URL {https://sqlite.org}
-  define PACKAGE_VERSION $PACKAGE_VERSION
-  define PACKAGE_STRING "[get-define PACKAGE_NAME] $PACKAGE_VERSION"
-  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
-  msg-result "Configuring SQLite version $PACKAGE_VERSION"
-  msg-result "Source dir = $srcdir"
-  msg-result "Build dir  = $::autosetup(builddir)"
-}
-sqlite-setup-package-info
+define PACKAGE_VERSION [proj-file-content -trim $::autosetup(srcdir)/VERSION]
+msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
+use system ; # Will output "Host System" and "Build System" lines
+msg-result "Source dir = $::autosetup(srcdir)"
+msg-result "Build dir  = $::autosetup(builddir)"
 use cc cc-db cc-shared cc-lib pkg-config
+define PACKAGE_NAME "sqlite"
+define PACKAGE_URL {https://sqlite.org}
+define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
 
 #
 # Object for communicating config-time state across various

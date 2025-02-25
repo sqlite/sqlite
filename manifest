@@ -1,5 +1,5 @@
-C Restructure\s[826bad10e9ccd6f71e]\sas\sthat\sstructure\smysteriously\sbreaks\sthe\s--prefix=...\sconfigure\sflag.
-D 2025-02-25T16:11:25.004
+C Configure\sscript\scosmetics:\semit\sthe\shost/build\ssystem\sinfo\sbefore\sthe\sdirectory\sinfo.
+D 2025-02-25T16:39:51.686
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl e69b91f814ea510057ce7663845de703c3746d71cff9a0db6b2563ee3e7fd25e
-F autosetup/sqlite-config.tcl f0f65115fc1102b6c07c92b068c880f53609979f42997c875cd26b41ded18ee4
+F autosetup/sqlite-config.tcl 341d530f531c1dd70c3bc4e16905ad0a83cde1a2104d0b5655aa44b13bd37349
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e3e509ae145ee2623ac68ededa59991a97fcd28313e03f67a3890b560c5381b0
-R fd4ebe752142efbb8ac5cd30b48aab12
+P d284230f68616b78a527d34df777b0220376ba6a00e9e927d4ffb4cbddab900c
+R f4aaf63c39bb031c24a4e45f4e062b3e
 U stephan
-Z efa68ac0882424e3130ad8b6fbb82f0b
+Z 34d3402ca6007d9c26a6383d8b273884
 # Remove this line to create a well-formed Fossil manifest.
