@@ -1547,13 +1547,14 @@ static ShellState shellState;
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
-/* Allowed values for ShellState.eEscMode
+/* Allowed values for ShellState.eEscMode.  The default value should
+** be 0, so to change the default, reorder the names.
 */
-#define SHELL_ESC_SYMBOL       0      /* Substitute U+2400 graphics */
-#define SHELL_ESC_ASCII        1      /* Substitute ^Y for X where Y=X+0x40 */
+#define SHELL_ESC_ASCII        0      /* Substitute ^Y for X where Y=X+0x40 */
+#define SHELL_ESC_SYMBOL       1      /* Substitute U+2400 graphics */
 #define SHELL_ESC_OFF          2      /* Send characters verbatim */
 
-static const char *shell_EscModeNames[] = { "symbol", "ascii", "off" };
+static const char *shell_EscModeNames[] = { "ascii", "symbol", "off" };
 
 /*
 ** These are the allowed shellFlgs values

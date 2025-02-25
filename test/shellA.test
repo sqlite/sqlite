@@ -36,7 +36,7 @@ do_execsql_test shellA-1.0 {
 # and that our calls to the CLI are working.
 #
 do_test shellA-1.2 {
-  exec {*}$CLI test.db {.mode box} {SELECT * FROM t1;}
+  exec {*}$CLI test.db {.mode box --escape symbol} {SELECT * FROM t1;}
 } {
 ┌───┬──────────────────────────┐
 │ a │            x             │
@@ -65,7 +65,7 @@ do_test shellA-1.2 {
 do_test shellA-1.3 {
   exec {*}$CLI test.db {SELECT x FROM t1 WHERE a=2;}
 } {
-␛[31mVT-100 codes␛[0m
+^[[31mVT-100 codes^[[0m
 }
 do_test shellA-1.4 {
   exec {*}$CLI test.db --escape symbol {SELECT x FROM t1 WHERE a=2;}
@@ -101,13 +101,13 @@ do_test shellA-1.9 {
      exec {*}$CLI test.db {.mode test --escape xyz}
   } msg]
   lappend rc $msg
-} {1 {unknown control character escape mode "xyz" - choices: symbol ascii off}}
+} {1 {unknown control character escape mode "xyz" - choices: ascii symbol off}}
 do_test shellA-1.10 {
   set rc [catch {
      exec {*}$CLI --escape abc test.db .q
   } msg]
   lappend rc $msg
-} {1 {unknown control character escape mode "abc" - choices: symbol ascii off}}
+} {1 {unknown control character escape mode "abc" - choices: ascii symbol off}}
 
 # ".mode quote"
 #
@@ -123,10 +123,10 @@ line'
 }
 do_test shellA-2.2 {
   exec {*}$CLI test.db --quote {.mode}
-} {current output mode: quote --escape symbol}
-do_test shellA-2.3 {
-  exec {*}$CLI test.db --quote --escape ASCII {.mode}
 } {current output mode: quote --escape ascii}
+do_test shellA-2.3 {
+  exec {*}$CLI test.db --quote --escape SYMBOL {.mode}
+} {current output mode: quote --escape symbol}
 do_test shellA-2.4 {
   exec {*}$CLI test.db --quote --escape OFF {.mode}
 } {current output mode: quote --escape off}
