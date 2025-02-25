@@ -1,5 +1,5 @@
-C Avoid\srunning\scertain\stests\sin\swalsetlk2.test\sif\sSQLITE_ENABLE_SETLK_TIMEOUT\sis\sset\sto\s2,\snot\s1.
-D 2025-02-25T11:48:57.933
+C Update\sthe\sautoconf\sMakefile\sfor\snmake\sto\ssupport\sSETLK_TIMEOUT.
+D 2025-02-25T12:11:57.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -17,7 +17,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def eddf6aef976e2c1a56c0accc3244945e0b22ec6799074c40be160e5a9a5662b0
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in d376f623fa747798e40f7fcb23f9392e4f87610daa8425673ab83a8f33578b65
-F autoconf/Makefile.msc 1249e425a24859c7b3f17575275247df9eec3bddc0d1d7e73941f1abdbb95a92
+F autoconf/Makefile.msc 5bc67d3912444c40c6f96d003e5c90663e51abb83d204a520110b1b2038dcd8b
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt 7f01dc3915e2d68f329011073662369e62a0938a2c69398807823c57591cb288
 F autoconf/auto.def 3a318c4898024b35ed61a4876a42e3dcc313f93bd8486874d1ad498b88643d1a
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f6223b8f6c044db687f78e19f6373d0dda9155445c511a297efa05bac3b16e5
-R fb82f4ee6ef5b793d1eb19b781cf961a
-U dan
-Z 98ff71ee5d4b0fa0c1b172736bd46ff5
+P 86788c08fa09019f224d5dbd76f06c1d113b04ca5eca5d773719194a8b02da22
+R ea3a74ee4d470bb2405d8144559736d8
+U drh
+Z 5df352e631e8a81c77c665aa821d8494
 # Remove this line to create a well-formed Fossil manifest.
