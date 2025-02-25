@@ -1150,34 +1150,6 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
 }
 
 /*
-** Write a single UTF8 character whose value if v into the
-** buffer starting at zOut.  Return the number of bytes needed
-** to encode that character.
-*/
-static int appendOneUtf8Char(char *zOut, u32 v){
-  if( v<0x00080 ){
-    zOut[0] = (u8)(v & 0xff);
-    return 1;
-  }
-  if( v<0x00800 ){
-    zOut[0] = 0xc0 + (u8)((v>>6) & 0x1f);
-    zOut[1] = 0x80 + (u8)(v & 0x3f);
-    return 2;
-  }
-  if( v<0x10000 ){
-    zOut[0] = 0xe0 + (u8)((v>>12) & 0x0f);
-    zOut[1] = 0x80 + (u8)((v>>6) & 0x3f);
-    zOut[2] = 0x80 + (u8)(v & 0x3f);
-    return 3;
-  }
-  zOut[0] = 0xf0 + (u8)((v>>18) & 0x07);
-  zOut[1] = 0x80 + (u8)((v>>12) & 0x3f);
-  zOut[2] = 0x80 + (u8)((v>>6) & 0x3f);
-  zOut[3] = 0x80 + (u8)(v & 0x3f);
-  return 4;
-}
-
-/*
 ** Return true if z[] begins with N hexadecimal digits, and write
 ** a decoding of those digits into *pVal.  Or return false if any
 ** one of the first N characters in z[] is not a hexadecimal digit.
@@ -1248,19 +1220,19 @@ static void unistrFunc(
     }else if( sqlite3Isxdigit(zIn[i+1]) ){
       if( !isNHex(&zIn[i+1], 4, &v) ) goto unistr_error;
       i += 5;
-      j += appendOneUtf8Char(&zOut[j], v);
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
     }else if( zIn[i+1]=='+' ){
       if( !isNHex(&zIn[i+2], 6, &v) ) goto unistr_error;
       i += 8;
-      j += appendOneUtf8Char(&zOut[j], v);
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
     }else if( zIn[i+1]=='u' ){
       if( !isNHex(&zIn[i+2], 4, &v) ) goto unistr_error;
       i += 6;
-      j += appendOneUtf8Char(&zOut[j], v);
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
     }else if( zIn[i+1]=='U' ){
       if( !isNHex(&zIn[i+2], 8, &v) ) goto unistr_error;
       i += 10;
-      j += appendOneUtf8Char(&zOut[j], v);
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
     }else{
       goto unistr_error;
     }

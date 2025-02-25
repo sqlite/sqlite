@@ -673,25 +673,7 @@ void sqlite3_str_vappendf(
           }
         }else{
           unsigned int ch = va_arg(ap,unsigned int);
-          if( ch<0x00080 ){
-            buf[0] = ch & 0xff;
-            length = 1;
-          }else if( ch<0x00800 ){
-            buf[0] = 0xc0 + (u8)((ch>>6)&0x1f);
-            buf[1] = 0x80 + (u8)(ch & 0x3f);
-            length = 2;
-          }else if( ch<0x10000 ){
-            buf[0] = 0xe0 + (u8)((ch>>12)&0x0f);
-            buf[1] = 0x80 + (u8)((ch>>6) & 0x3f);
-            buf[2] = 0x80 + (u8)(ch & 0x3f);
-            length = 3;
-          }else{
-            buf[0] = 0xf0 + (u8)((ch>>18) & 0x07);
-            buf[1] = 0x80 + (u8)((ch>>12) & 0x3f);
-            buf[2] = 0x80 + (u8)((ch>>6) & 0x3f);
-            buf[3] = 0x80 + (u8)(ch & 0x3f);
-            length = 4;
-          }
+          length = sqlite3AppendOneUtf8Character(buf, ch);
         }
         if( precision>1 ){
           i64 nPrior = 1;
