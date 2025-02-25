@@ -4,70 +4,44 @@
 # This is the main autosetup-compatible configure script for the
 # SQLite project.
 #
-# This script should be kept compatible with JimTCL, a copy of which
-# is included in this source tree as ./autosetup/jimsh0.c. The number
-# of incompatibilities between canonical TCL and JimTCL is very low
-# and alternative formulations of incompatible constructs have, so
-# far, been easy to find.
+# This script and all of its dependencies must be kept compatible with
+# JimTCL, a copy of which is included in this source tree as
+# ./autosetup/jimsh0.c. The number of incompatibilities between
+# canonical TCL and JimTCL is very low and alternative formulations of
+# incompatible constructs have, so far, been easy to find.
 #
 # JimTCL: https://jim.tcl.tk
 #
 
 use sqlite-config
-sqlite-config-bootstrap canonical
-sqlite-setup-default-cflags
-proj-if-opt-truthy dev {
-  # --enable-dev needs to come early so that the downstream tests
-  # which check for the following flags use their updated state.
-  proj-opt-set all 1
-  proj-opt-set debug 1
-  proj-opt-set amalgamation 0
-  define CFLAGS [get-env CFLAGS {-O0 -g}]
-  # -------------^^^^^^^ intentionally using [get-env] instead of
-  # [proj-get-env] here because [sqlite-setup-default-cflags] uses
-  # [proj-get-env] and we want this to supercede that.
+sqlite-configure canonical {
+  proj-if-opt-truthy dev {
+    # --enable-dev needs to come early so that the downstream tests
+    # which check for the following flags use their updated state.
+    proj-opt-set all 1
+    proj-opt-set debug 1
+    proj-opt-set amalgamation 0
+    define CFLAGS [get-env CFLAGS {-O0 -g}]
+    # -------------^^^^^^^ intentionally using [get-env] instead of
+    # [proj-get-env] here because [sqlite-setup-default-cflags] uses
+    # [proj-get-env] and we want this to supercede that.
+  }
+  sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
+  sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
+  sqlite-check-common-system-deps
+
+  proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
+
+  proj-define-for-opt gcov USE_GCOV "Use gcov?"
+
+  proj-define-for-opt test-status TSTRNNR_OPTS \
+    "test-runner flags:" {--status} {}
+
+  proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
+    "Use #line macros in the amalgamation:"
+
+  define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
+
+  sqlite-handle-tcl
+  sqlite-handle-emsdk
 }
-
-sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
-sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
-sqlite-check-common-system-deps
-
-#
-# Enable large file support (if special flags are necessary)
-#
-define HAVE_LFS 0
-if {[opt-bool largefile]} {
-  cc-check-lfs
-}
-
-proj-define-for-opt shared ENABLE_SHARED "Build shared library?"
-
-if {![proj-define-for-opt static ENABLE_STATIC \
-        "Build static library?"]} {
-  proj-warn "Static lib build may be implicitly re-activated by other components, e.g. some test apps."
-}
-
-proj-define-for-opt amalgamation USE_AMALGAMATION "Use amalgamation for builds?"
-
-proj-define-for-opt gcov USE_GCOV "Use gcov?"
-
-proj-define-for-opt test-status TSTRNNR_OPTS \
-  "test-runner flags:" {--status} {}
-
-proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
-  "Use #line macros in the amalgamation:"
-
-define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
-
-proj-check-rpath
-sqlite-handle-soname
-sqlite-handle-debug
-sqlite-handle-tcl
-sqlite-handle-threadsafe
-sqlite-handle-tempstore
-sqlite-handle-line-editing
-sqlite-handle-load-extension
-sqlite-handle-math
-sqlite-handle-icu
-sqlite-handle-emsdk
-sqlite-config-finalize
