@@ -1,5 +1,5 @@
-C Change\sthe\sdefault\scontrol-character\sescape\salgorithm\sfrom\s"symbol"\sto\n"ascii",\ssince\sthe\s"ascii"\salgorithm\sworks\seven\son\sterminals\sthat\sdo\nnot\ssupport\sunicode.
-D 2025-02-25T20:10:46.001
+C Fix\sa\stest\scase\sthat\swas\sbroken\swhen\sthe\sdefault\s--escape\stype\swas\schanged\nby\sthe\sprevious\scheck-in.
+D 2025-02-25T20:36:46.116
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1638,7 +1638,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 9f5ad2c80002175428eb375f020c4cec3d5053f244e5612ac317080cfb5b52a3
+F test/shell1.test 573942b8d0e444956445993d5a5275c6912bc49b654441eec0b5e1e735f2e5b7
 F test/shell2.test 01a01f76ed98088ce598794fbf5b359e148271541a8ddbf79d21cc353cc67a24
 F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
 F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a68a3ead8e6c75203641542256bcfa05067bed4bf9035452fbd134534801a08
-R 9150601691b6949cdfd27e2d8fc2b2d5
+P d35320495eb282601ab4f3b9efc53c7c1d58e890f025317e34c7046a43c8cb53
+R 04c04f142a27d75e025c0ba133fe1798
 U drh
-Z 0c126ce764aac44793da4922fbb2e61b
+Z b55ed85e90ac874ba1b5e9186f139abf
 # Remove this line to create a well-formed Fossil manifest.
