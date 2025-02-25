@@ -28,6 +28,8 @@ proc sqlite-setup-package-info {} {
   msg-result "Source dir = $srcdir"
   msg-result "Build dir  = $::autosetup(builddir)"
 }
+sqlite-setup-package-info
+use cc cc-db cc-shared cc-lib pkg-config
 
 #
 # Object for communicating config-time state across various
@@ -354,14 +356,6 @@ proc sqlite-configure {buildMode configScript} {
     # called from deeper than the global scope.
     dict incr opts -level
     return {*}$opts $msg
-  }
-  sqlite-setup-package-info
-  uplevel 1 {
-    # The odd placement of this block is so that we can emit the
-    # output from sqlite-setup-package-info after --help is processed
-    # but before any other info is emitted, e.g. the host/target
-    # system info and the C compiler check.
-    use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
   uplevel 1 $configScript
