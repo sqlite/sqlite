@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\sMakefile\sfor\snmake\sto\ssupport\sSETLK_TIMEOUT.
-D 2025-02-25T12:11:57.680
+C Fix\sa\stest\sscript\sproblem\scausing\serrors\swith\sTcl\s9.
+D 2025-02-25T13:33:43.248
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1417,7 +1417,7 @@ F test/lock4.test 27143363eda1622f03c133efc8db808fc331afd973486cb571ea71cd717d37
 F test/lock5.test 583cae05992af0f66607286917f7d5f8aed3b6053c52df5994efb98f2a8fdbaf
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
-F test/lock_common.tcl f33b7fbc275be25a6f2863b4cc8af35278e24d127a3f734825477bf223b05ffe
+F test/lock_common.tcl f0a1f7b8f3fbb8629dc6231613a02841736f86ef72151429d5ffc12c7f613fb3
 F test/lookaside.test 5a828e7256f1ee4da8e1bdaa03373a3ccdb0f1ff98dfa82e9b76cb41a45b1083
 F test/main.test e8752d76233b1c8906cd2c98ad920dba868bd63c87d51d8a2ea5e9cba55dd496
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86788c08fa09019f224d5dbd76f06c1d113b04ca5eca5d773719194a8b02da22
-R ea3a74ee4d470bb2405d8144559736d8
-U drh
-Z 5df352e631e8a81c77c665aa821d8494
+P 46909fe3348976448d6a0d9e9aacaeaccdf0978c9e9d10742a96842418ab3a08
+R 526cf0a0be1bc6e2b85addf701939bc4
+U dan
+Z 52df1a59d6f0cdd2cab89227f5c1e86d
 # Remove this line to create a well-formed Fossil manifest.

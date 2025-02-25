@@ -145,7 +145,7 @@ proc testfixture_nb_cb {varname chan} {
   }
 
   if { $line == "OVER" } {
-    global $varname
+    if {[string range $varname 0 1]!="::"} { global $varname }
     set $varname [lindex $::tfnb($chan) 1]
     unset ::tfnb($chan)
     close $chan
