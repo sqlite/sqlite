@@ -25,17 +25,17 @@
 #define etPERCENT     7 /* Percent symbol. %% */
 #define etCHARX       8 /* Characters. %c */
 /* The rest are extensions, not normally found in printf() */
-#define etSQLESCAPE   9 /* Strings with '\'' doubled.  %q */
-#define etSQLESCAPE2 10 /* Strings with '\'' doubled and enclosed in '',
-                          NULL pointers replaced by SQL NULL.  %Q */
-#define etTOKEN      11 /* a pointer to a Token structure */
-#define etSRCITEM    12 /* a pointer to a SrcItem */
-#define etPOINTER    13 /* The %p conversion */
-#define etSQLESCAPE3 14 /* %w -> Strings with '\"' doubled */
-#define etORDINAL    15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
-#define etDECIMAL    16 /* %d or %u, but not %x, %o */
+#define etESCAPE_q    9  /* Strings with '\'' doubled.  %q */
+#define etESCAPE_Q    10 /* Strings with '\'' doubled and enclosed in '',
+                            NULL pointers replaced by SQL NULL.  %Q */
+#define etTOKEN       11 /* a pointer to a Token structure */
+#define etSRCITEM     12 /* a pointer to a SrcItem */
+#define etPOINTER     13 /* The %p conversion */
+#define etESCAPE_w    14 /* %w -> Strings with '\"' doubled */
+#define etORDINAL     15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
+#define etDECIMAL     16 /* %d or %u, but not %x, %o */
 
-#define etINVALID    17 /* Any unrecognized conversion type */
+#define etINVALID     17 /* Any unrecognized conversion type */
 
 
 /*
@@ -74,9 +74,9 @@ static const et_info fmtinfo[] = {
   {  's',  0, 4, etSTRING,     0,  0 },
   {  'g',  0, 1, etGENERIC,    30, 0 },
   {  'z',  0, 4, etDYNSTRING,  0,  0 },
-  {  'q',  0, 4, etSQLESCAPE,  0,  0 },
-  {  'Q',  0, 4, etSQLESCAPE2, 0,  0 },
-  {  'w',  0, 4, etSQLESCAPE3, 0,  0 },
+  {  'q',  0, 4, etESCAPE_q,   0,  0 },
+  {  'Q',  0, 4, etESCAPE_Q,   0,  0 },
+  {  'w',  0, 4, etESCAPE_w,   0,  0 },
   {  'c',  0, 0, etCHARX,      0,  0 },
   {  'o',  8, 0, etRADIX,      0,  2 },
   {  'u', 10, 0, etDECIMAL,    0,  0 },
@@ -673,25 +673,7 @@ void sqlite3_str_vappendf(
           }
         }else{
           unsigned int ch = va_arg(ap,unsigned int);
-          if( ch<0x00080 ){
-            buf[0] = ch & 0xff;
-            length = 1;
-          }else if( ch<0x00800 ){
-            buf[0] = 0xc0 + (u8)((ch>>6)&0x1f);
-            buf[1] = 0x80 + (u8)(ch & 0x3f);
-            length = 2;
-          }else if( ch<0x10000 ){
-            buf[0] = 0xe0 + (u8)((ch>>12)&0x0f);
-            buf[1] = 0x80 + (u8)((ch>>6) & 0x3f);
-            buf[2] = 0x80 + (u8)(ch & 0x3f);
-            length = 3;
-          }else{
-            buf[0] = 0xf0 + (u8)((ch>>18) & 0x07);
-            buf[1] = 0x80 + (u8)((ch>>12) & 0x3f);
-            buf[2] = 0x80 + (u8)((ch>>6) & 0x3f);
-            buf[3] = 0x80 + (u8)(ch & 0x3f);
-            length = 4;
-          }
+          length = sqlite3AppendOneUtf8Character(buf, ch);
         }
         if( precision>1 ){
           i64 nPrior = 1;
@@ -771,22 +753,31 @@ void sqlite3_str_vappendf(
           while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
-      case etSQLESCAPE:           /* %q: Escape ' characters */
-      case etSQLESCAPE2:          /* %Q: Escape ' and enclose in '...' */
-      case etSQLESCAPE3: {        /* %w: Escape " characters */
+      case etESCAPE_q:          /* %q: Escape ' characters */
+      case etESCAPE_Q:          /* %Q: Escape ' and enclose in '...' */
+      case etESCAPE_w: {        /* %w: Escape " characters */
         i64 i, j, k, n;
-        int needQuote, isnull;
+        int needQuote = 0;
         char ch;
-        char q = ((xtype==etSQLESCAPE3)?'"':'\'');   /* Quote character */
         char *escarg;
+        char q;
 
         if( bArgList ){
           escarg = getTextArg(pArgList);
         }else{
           escarg = va_arg(ap,char*);
         }
-        isnull = escarg==0;
-        if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        if( escarg==0 ){
+          escarg = (xtype==etESCAPE_Q ? "NULL" : "(NULL)");
+        }else if( xtype==etESCAPE_Q ){
+          needQuote = 1;
+        }
+        if( xtype==etESCAPE_w ){
+          q = '"';
+          flag_alternateform = 0;
+        }else{
+          q = '\'';
+        }
         /* For %q, %Q, and %w, the precision is the number of bytes (or
         ** characters if the ! flags is present) to use from the input.
         ** Because of the extra quoting characters inserted, the number
@@ -799,7 +790,30 @@ void sqlite3_str_vappendf(
             while( (escarg[i+1]&0xc0)==0x80 ){ i++; }
           }
         }
-        needQuote = !isnull && xtype==etSQLESCAPE2;
+        if( flag_alternateform ){
+          /* For %#q, do unistr()-style backslash escapes for
+          ** all control characters, and for backslash itself.
+          ** For %#Q, do the same but only if there is at least
+          ** one control character. */
+          u32 nBack = 0;
+          u32 nCtrl = 0;
+          for(k=0; k<i; k++){
+            if( escarg[k]=='\\' ){
+              nBack++;
+            }else if( escarg[k]<=0x1f ){
+              nCtrl++;
+            }
+          }
+          if( nCtrl || xtype==etESCAPE_q ){
+            n += nBack + 5*nCtrl;
+            if( xtype==etESCAPE_Q ){
+              n += 10;
+              needQuote = 2;
+            }
+          }else{
+            flag_alternateform = 0;
+          }
+        }
         n += i + 3;
         if( n>etBUFSIZE ){
           bufpt = zExtra = printfTempBuf(pAccum, n);
@@ -808,13 +822,41 @@ void sqlite3_str_vappendf(
           bufpt = buf;
         }
         j = 0;
-        if( needQuote ) bufpt[j++] = q;
-        k = i;
-        for(i=0; i<k; i++){
-          bufpt[j++] = ch = escarg[i];
-          if( ch==q ) bufpt[j++] = ch;
+        if( needQuote ){
+          if( needQuote==2 ){
+            memcpy(&bufpt[j], "unistr('", 8);
+            j += 8;
+          }else{
+            bufpt[j++] = '\'';
+          }
         }
-        if( needQuote ) bufpt[j++] = q;
+        k = i;
+        if( flag_alternateform ){
+          for(i=0; i<k; i++){
+            bufpt[j++] = ch = escarg[i];
+            if( ch==q ){
+              bufpt[j++] = ch;
+            }else if( ch=='\\' ){
+              bufpt[j++] = '\\';
+            }else if( ch<=0x1f ){
+              bufpt[j-1] = '\\';
+              bufpt[j++] = 'u';
+              bufpt[j++] = '0';
+              bufpt[j++] = '0';
+              bufpt[j++] = ch>=0x10 ? '1' : '0';
+              bufpt[j++] = "0123456789abcdef"[ch&0xf];
+            }
+          }
+        }else{
+          for(i=0; i<k; i++){
+            bufpt[j++] = ch = escarg[i];
+            if( ch==q ) bufpt[j++] = ch;
+          }
+        }
+        if( needQuote ){
+          bufpt[j++] = '\'';
+          if( needQuote==2 ) bufpt[j++] = ')';
+        }
         bufpt[j] = 0;
         length = j;
         goto adjust_width_for_utf8;

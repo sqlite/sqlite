@@ -1,5 +1,5 @@
-C Diverse\sconfigure\stweaks\sto\sbetter\ssupport\spackage\smaintainers\son\sthe\sunix-on-windows\senvironments\slike\smsys2,\scygwin,\sand\smingw,\sbased\slargely\son\sfeedback\sin\sforum\sposts\s[forum:e6cf2bbb70da2922|e6cf2bbb70da2922]\sand\s[forum:828fdfe9041fd725|828fdfe9041fd725].
-D 2025-02-25T15:54:07.384
+C Enhancements\sto\shelp\savoid\sproblems\sin\sthe\sCLI\swhen\strying\sdisplay\scontent\nthat\scontains\sANSI\sescape\scodes:\s\s(1)\sAdd\sthe\s--escape\sMODE\soption\sto\sthe\sCLI\nwhere\sMODE\sis\sone\sof\s"symbol",\s"ascii",\s"off"\swhere\sthe\sdefault\sis\s"symbol".\n(2)\sAdd\sthe\sunistr()\sSQL\sfunction.\s\s(3)\sAdd\sthe\sunistr_quote()\sSQL\sfunction.\n(4)\sAdd\sthe\s%#Q\sand\s%#q\sconversions\sin\sthe\sbuilt-in\sprintf.
+D 2025-02-25T15:57:49.285
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -735,7 +735,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 6769d3f0ca9b1792e883e3ff21fdc5ca0033cece65571ebbf9d8b8fe2f47cd27
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 6c8b7bbdc5b588f3cfc79ed5effcfd3031758f5034c464fcd8891e8010b4d317
+F src/func.c dfd3d099d2381f034185457f2181cadc7c86e226578ebf85b158878e294a69c0
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -777,16 +777,16 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 78d4935e510f7bed0fdd1a3f742c0e663b36a795f9dc7411161dc22bdae1245e
 F src/pragma.c c7ada272232e1182c4536d9637fa7b955a10bc1bd8d5a87d4dc9309dab827791
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
-F src/printf.c b9ac740dfaf68552f5da1266be28ae2824b53a6b73d93425f7c6b2ef62457cbb
+F src/printf.c b373a8800e09fb888497b2bc640e455ee8ebc584a60f16368989394d5b895ac0
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 626c24b258b111f75c22107aa5614ad89810df3026f5ca071116d3fe75925c75
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a076f7db3a0fcbd9f710d7746cfc07e0b3baadee45eb3136bedc29c598ef8f1c
-F src/shell.c.in bf997e43faaa1ef0ff78d4d7b9be6a9430cf1edda9a47a14e7fef646fcb459af
+F src/shell.c.in 19cde2832968fff4d26a75b40b3af1ad7744dfeb0023467f4100849e23a81ce0
 F src/sqlite.h.in 95c01911006f42019ee4dacd62101740a75fdfaeeca9b1c5fd7a70cfac3bb6f8
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 3f046c04ea3595d6bfda99b781926b17e672fd6d27da2ba6d8d8fc39981dcb54
-F src/sqliteInt.h c997c67257778a3a866424adea36d4f2b4439742a978c0ddc11e694c1e9ea3ca
+F src/sqliteInt.h 130217107c0425ab43d098c6eadf8aa2e1a037e26d79384127e2d950b27eec77
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -847,7 +847,7 @@ F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc6227
 F src/trigger.c da3c25786870d8bf97cd46b493374c2375d1abaf20a9b0f5f8629a3f2f2ce383
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
-F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
+F src/utf.c d4d55ca95106a2029ec1cdbd2497a34e69ea1d338f1a9d80ef15ebf4ff01690d
 F src/util.c 9ff6470dabcf943fd796d2da766c98bd328c8f6fe036a31e5b338e628603f989
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
 F src/vdbe.c e7567bed441a53c4ceb48d2bdf3d1747677fc296a91e8d2a0fe8facdb9b890ce
@@ -1638,7 +1638,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test ccb26a0cb17a73406b5e4fe3c3260988a22f5c63680d8474b4d35e9bc195f3cb
+F test/shell1.test 9f5ad2c80002175428eb375f020c4cec3d5053f244e5612ac317080cfb5b52a3
 F test/shell2.test 01a01f76ed98088ce598794fbf5b359e148271541a8ddbf79d21cc353cc67a24
 F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
 F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
@@ -1647,6 +1647,7 @@ F test/shell6.test e3b883b61d4916b6906678a35f9d19054861123ad91b856461e0a456273bd
 F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d5c3
 F test/shell8.test aea51ecbcd4494c746b096aeff51d841d04d5f0dc4b62eb42427f16109b87acd
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
+F test/shellA.test 09a6dd097ffa984ddf1fc0ddd2ae5f1a199cf11f3894b6a16410471c1536efe3
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2212,9 +2213,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 277e150d6ab75de2407f6761aa2359df80a4e1dbce30788df06621dee05b2ef1 d84f591b962ea44efb902043444e4e54bc55e5bb32e5108f04df824407c412dd
-R 78c310a9a4af5ff9c75cc7a5fab1176b
-T +closed d84f591b962ea44efb902043444e4e54bc55e5bb32e5108f04df824407c412dd Closed\sby\sintegrate-merge.
-U stephan
-Z 5c4979a70508a4a3090e304de3c87f20
+P 85b56fb0cce4b628f80b26a67b43236ef1557282775739bdbe7cc4d65948d66f 17e440781e68d7d3ea68c5144e1e08e183f0caef595a6c7ac4ce56489c60f476
+R c94972830506b6b395965daf9af442ac
+T +closed 17e440781e68d7d3ea68c5144e1e08e183f0caef595a6c7ac4ce56489c60f476
+U drh
+Z 631ba5f922f8bda01c5446d2ca5a70ab
 # Remove this line to create a well-formed Fossil manifest.
