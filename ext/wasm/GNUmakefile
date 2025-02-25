@@ -359,7 +359,7 @@ endif
 # Slight caveat: this uses the version info from the in-tree
 # sqlite3.c/h, which may diff from a user-provided $(sqlite3.c).  The
 # end result is that the generated JS files may have static version
-# info from $(bin.version-info) which differ from their runtime-emited
+# info from $(bin.version-info) which differ from their runtime-emitted
 # version info (e.g. from sqlite3_libversion()).
 bin.version-info := $(dir.top)/version-info
 .NOTPARALLEL: $(bin.version-info)
@@ -513,7 +513,7 @@ sqlite3-api-build-version.js := $(dir.tmp)/sqlite3-api-build-version.js
 # sqlite3-api.jses = the list of JS files which make up
 # $(sqlite3-api.js.in), in the order they need to be assembled.
 sqlite3-api.jses := $(sqlite3-license-version.js)
-# sqlite3-api-prologue.js: initial boostrapping bits:
+# sqlite3-api-prologue.js: initial bootstrapping bits:
 sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 # whwhasm.js and jaccwabyt.js: Low-level utils, mostly replacing
 # Emscripten glue:

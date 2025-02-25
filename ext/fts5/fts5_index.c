@@ -8667,7 +8667,7 @@ static void fts5DecodeRowid(
 
 #if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid compenents */
+  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid components */
   fts5DecodeRowid(iKey, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){

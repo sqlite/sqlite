@@ -4203,8 +4203,8 @@ int sqlite3_test_control(int op, ...){
     /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
     **
     ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
-    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
-    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** false then clear that setting.  If the SQLITE_FkNoAction setting is
+    ** enabled, all foreign key ON DELETE and ON UPDATE actions behave as if
     ** they were NO ACTION, regardless of how they are defined.
     **
     ** NB:  One must usually run "PRAGMA writable_schema=RESET" after

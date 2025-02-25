@@ -1238,7 +1238,7 @@ proc sqlite-handle-icu {} {
 # Handles the --enable-load-extension flag. Returns 1 if the support
 # is enabled, else 0. If support for that feature is not found, a
 # fatal error is triggered if --enable-load-extension is explicitly
-# provided, else a loud warning is instead emited. If
+# provided, else a loud warning is instead emitted. If
 # --disable-load-extension is used, no check is performed.
 #
 # Makes the following environment changes:
@@ -1618,7 +1618,7 @@ proc sqlite-handle-wasi-sdk {} {
       proj-opt-set $opt ""
     }
   }
-  # Remember that we now have a discrepancy beteween
+  # Remember that we now have a discrepancy between
   # $::sqliteConfig(is-cross-compiling) and [proj-is-cross-compiling].
   set ::sqliteConfig(is-cross-compiling) 1
 

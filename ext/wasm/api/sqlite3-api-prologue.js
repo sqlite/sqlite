@@ -1453,7 +1453,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      creates (or overwrites) the given file using those APIs. This is
      primarily intended for use in Emscripten-based builds where the POSIX
      APIs are transparently proxied by an in-memory virtual filesystem.
-     It may behave diffrently in other environments.
+     It may behave differently in other environments.
 
      The first argument must be either a JS string or WASM C-string
      holding the filename. Note that this routine does _not_ create

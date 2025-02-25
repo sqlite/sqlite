@@ -451,7 +451,7 @@ distclean: clean
 	-rm -fr $(dir.bld.c) $(dir.doc)
 
 ########################################################################
-# disttribution bundle rules...
+# distribution bundle rules...
 
 ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
 dist-name-prefix := sqlite-jni

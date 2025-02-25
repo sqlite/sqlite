@@ -207,7 +207,7 @@ ENABLE_LIB_STATIC ?= 1
 #
 # 1 if the amalgamation (sqlite3.c/h) should be built/used, otherwise
 # the library is built from all of its original source files.
-# Certaint tools, like sqlite3$(T.exe), require the amalgamation and
+# Certain tools, like sqlite3$(T.exe), require the amalgamation and
 # will ignore this preference.
 #
 USE_AMALGAMATION ?= 1
@@ -1989,7 +1989,7 @@ checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | egrep -v $(VALIDIDS); test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
-# Build the amalgamation-autoconf package.  The amalamgation-tarball target builds
+# Build the amalgamation-autoconf package.  The amalgamation-tarball target builds
 # a tarball named for the version number.  Ex:  sqlite-autoconf-3110000.tar.gz.
 # The snapshot-tarball target builds a tarball named by the SHA3 hash
 #
@@ -2004,7 +2004,7 @@ snapshot-tarball: sqlite3.c sqlite3rc.h
 sqlite-src.zip:	$(TOP)/tool/mksrczip.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksrczip.tcl
 
-# Build a ZIP archive of the amaglamation
+# Build a ZIP archive of the amalgamation
 #
 sqlite-amalgamation.zip:	$(TOP)/tool/mkamalzip.tcl sqlite3.c sqlite3.h shell.c sqlite3ext.h
 	$(TCLSH_CMD) $(TOP)/tool/mkamalzip.tcl

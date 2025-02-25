@@ -948,7 +948,7 @@ static JNIEnv * s3jni_env(void){
 }
 
 /*
-** Fetches the S3JniGlobal.envCache row for the given env, allocing a
+** Fetches the S3JniGlobal.envCache row for the given env, allocating a
 ** row if needed. When a row is allocated, its state is initialized
 ** insofar as possible. Calls (*env)->FatalError() if allocation of an
 ** entry fails. That's hypothetically possible but "shouldn't happen."
@@ -5696,7 +5696,7 @@ JniDeclFtsApi(jint,xCreateFunction)(JniArgsEnvObj, jstring jName,
 
 typedef struct S3JniFts5AuxData S3JniFts5AuxData;
 /*
-** TODO: this middle-man struct is no longer necessary. Conider
+** TODO: this middle-man struct is no longer necessary. Consider
 ** removing it and passing around jObj itself instead.
 */
 struct S3JniFts5AuxData {

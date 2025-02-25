@@ -950,7 +950,7 @@ const char * wasm__ctype_json(void){
   assert(LEVEL<5); memset(pos, '}', LEVEL); pos+=LEVEL; lenCheck
 
   ////////////////////////////////////////////////////////////////////
-  // Macros for emiting StructBinders...
+  // Macros for emitting StructBinders...
 #define StructBinder__(TYPE)                 \
   n = 0;                                     \
   outf("%s{", (structCount++ ? ", " : ""));  \

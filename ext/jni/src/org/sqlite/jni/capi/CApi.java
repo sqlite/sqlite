@@ -1076,7 +1076,7 @@ public final class CApi {
 
   /**
      <p>Works like in the C API with the exception that it only supports
-     the following subset of configution flags:
+     the following subset of configuration flags:
 
      <p>SQLITE_CONFIG_SINGLETHREAD
      SQLITE_CONFIG_MULTITHREAD

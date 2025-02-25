@@ -4737,7 +4737,7 @@ static int incrPhraseTokenNext(
 **
 **   * does not contain any deferred tokens.
 **
-** Advance it to the next matching documnent in the database and populate
+** Advance it to the next matching document in the database and populate
 ** the Fts3Doclist.pList and nList fields. 
 **
 ** If there is no "next" entry and no error occurs, then *pbEof is set to
