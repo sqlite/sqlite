@@ -1,5 +1,5 @@
-C Improved\shelp\smessages\sfor\sthe\s--escape\soption\sin\sthe\sCLI.
-D 2025-02-25T18:10:47.123
+C Fix\sharmless\s"unused\sparameter"\scompiler\swarnings.
+D 2025-02-25T20:02:58.548
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -745,7 +745,7 @@ F src/insert.c a5f0366266be993ebf533808f22cb7a788624805b55bc45424ceed3f48c54a16
 F src/json.c 5abb5cb782e74451a8882f6b7ee4d5e629246642262660bd1980a5e1b796258d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c 9584f789e573f7fb9b5bdc90b35eb16eeea5126419dd3d7166df532f6e121fd8
+F src/main.c 04a1d2725b51bfbff77b735cae12be3cd66f34da0dd3053433b5c9d9fcad84c5
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f0b6d95db17e69ac7e46a39f52770291ac4cfe43eea09add224946a6e11f04e
-R 7c090b4968aa0e8ac71166a84a710e20
+P e6784af6d50f715338ae3218fc8ba1b894883c27d797f0b7fd2625cac17d9cd7
+R ed1ab79dc08a09ea5f550a35fad2b849
 U drh
-Z 697ed46df73faf7261ac7cfa9611a38d
+Z 22f76806aee91f7d6b86860e87290c49
 # Remove this line to create a well-formed Fossil manifest.

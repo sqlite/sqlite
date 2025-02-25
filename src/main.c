@@ -1865,6 +1865,10 @@ int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
   }
   sqlite3BtreeLeaveAll(db);
 #endif
+#if !defined(SQLITE_ENABLE_API_ARMOR) && !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(flags);
+#endif
   return SQLITE_OK;
 }
 
