@@ -5130,7 +5130,7 @@ static const char *(azHelp[]) = {
 #else
   ".log on|off              Turn logging on or off.",
 #endif
-  ".mode MODE ?OPTIONS?     Set output mode",
+  ".mode ?MODE? ?OPTIONS?   Set output mode",
   "   MODE is one of:",
   "     ascii       Columns/rows delimited by 0x1F and 0x1E",
   "     box         Tables using unicode box-drawing characters",
@@ -5148,6 +5148,7 @@ static const char *(azHelp[]) = {
   "     tabs        Tab-separated values",
   "     tcl         TCL list elements",
   "   OPTIONS: (for columnar modes or insert mode):",
+  "     --escape T     ctrl-char escape; T is one of: symbol, ascii, off",
   "     --wrap N       Wrap output lines to no longer than N characters",
   "     --wordwrap B   Wrap or not at word boundaries per B (on/off)",
   "     --ww           Shorthand for \"--wordwrap 1\"",
@@ -12738,7 +12739,7 @@ static const char zOptions[] =
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
   "   -echo                print inputs before execution\n"
-  "   -escape MODE         ctrl-char escape mode, one of: symbol, ascii, off\n"
+  "   -escape T            ctrl-char escape; T is one of: symbol, ascii, off\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
