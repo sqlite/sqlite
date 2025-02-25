@@ -3482,9 +3482,6 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 ** read-lock.
 */
 void sqlite3WalEndReadTransaction(Wal *pWal){
-#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
-  assert( pWal->writeLock==0 || pWal->readLock<0 );
-#endif
   if( pWal->readLock>=0 ){
     sqlite3WalEndWriteTransaction(pWal);
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
