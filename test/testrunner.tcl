@@ -237,7 +237,7 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
-  *linux* {
+  *linux* - MSYS_NT* {
     set TRG(platform)    linux
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
@@ -265,9 +265,10 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(runcmd)      "run.bat"
   }
   default {
+    puts "tcl_platform(os)=$::tcl_platform(os)"
     error "cannot determine platform!"
   }
-} 
+}
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------
