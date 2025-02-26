@@ -1608,6 +1608,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
     sqlite3VdbeAddOp2(v, OP_Integer, nConstraint, iReg+1);
+    /* The instruction immediately prior to OP_VFilter must be an OP_Integer
+    ** that sets the "argc" value for xVFilter.  This is necessary for
+    ** resolveP2() to work correctly.  See tag-20250207a. */
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrNotFound, iReg,
                       pLoop->u.vtab.idxStr,
                       pLoop->u.vtab.needFree ? P4_DYNAMIC : P4_STATIC);

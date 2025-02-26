@@ -36,7 +36,7 @@
 ** the following macro or to the actual analysis_limit if it is non-zero,
 ** in order to prevent PRAGMA optimize from running for too long.
 **
-** The value of 2000 is chosen emperically so that the worst-case run-time
+** The value of 2000 is chosen empirically so that the worst-case run-time
 ** for PRAGMA optimize does not exceed 100 milliseconds against a variety
 ** of test databases on a RaspberryPI-4 compiled using -Os and without
 ** -DSQLITE_DEBUG.  Of course, your mileage may vary.  For the purpose of
@@ -1153,7 +1153,10 @@ void sqlite3Pragma(
         }
       }else{
         db->flags &= ~mask;
-        if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
+        if( mask==SQLITE_DeferFKs ){
+          db->nDeferredImmCons = 0;
+          db->nDeferredCons = 0;
+        }
         if( (mask & SQLITE_WriteSchema)!=0
          && sqlite3_stricmp(zRight, "reset")==0
         ){

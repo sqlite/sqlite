@@ -759,17 +759,22 @@ int sqlite3_config(int op, ...){
 ** If lookaside is already active, return SQLITE_BUSY.
 **
 ** The sz parameter is the number of bytes in each lookaside slot.
-** The cnt parameter is the number of slots.  If pStart is NULL the
-** space for the lookaside memory is obtained from sqlite3_malloc().
-** If pStart is not NULL then it is sz*cnt bytes of memory to use for
-** the lookaside memory.
+** The cnt parameter is the number of slots.  If pBuf is NULL the
+** space for the lookaside memory is obtained from sqlite3_malloc()
+** or similar.  If pBuf is not NULL then it is sz*cnt bytes of memory
+** to use for the lookaside memory.
 */
-static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
+static int setupLookaside(
+  sqlite3 *db,    /* Database connection being configured */
+  void *pBuf,     /* Memory to use for lookaside.  May be NULL */
+  int sz,         /* Desired size of each lookaside memory slot */
+  int cnt         /* Number of slots to allocate */
+){
 #ifndef SQLITE_OMIT_LOOKASIDE
-  void *pStart;
-  sqlite3_int64 szAlloc = sz*(sqlite3_int64)cnt;
-  int nBig;   /* Number of full-size slots */
-  int nSm;    /* Number smaller LOOKASIDE_SMALL-byte slots */
+  void *pStart;          /* Start of the lookaside buffer */
+  sqlite3_int64 szAlloc; /* Total space set aside for lookaside memory */
+  int nBig;              /* Number of full-size slots */
+  int nSm;               /* Number smaller LOOKASIDE_SMALL-byte slots */
  
   if( sqlite3LookasideUsed(db,0)>0 ){
     return SQLITE_BUSY;
@@ -782,17 +787,22 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     sqlite3_free(db->lookaside.pStart);
   }
   /* The size of a lookaside slot after ROUNDDOWN8 needs to be larger
-  ** than a pointer to be useful.
+  ** than a pointer and small enough to fit in a u16.
   */
-  sz = ROUNDDOWN8(sz);  /* IMP: R-33038-09382 */
+  sz = ROUNDDOWN8(sz);
   if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
-  if( cnt<0 ) cnt = 0;
-  if( sz==0 || cnt==0 ){
+  if( sz>65528 ) sz = 65528;
+  /* Count must be at least 1 to be useful, but not so large as to use
+  ** more than 0x7fff0000 total bytes for lookaside. */
+  if( cnt<1 ) cnt = 0;
+  if( sz>0 && cnt>(0x7fff0000/sz) ) cnt = 0x7fff0000/sz;
+  szAlloc = (i64)sz*(i64)cnt;
+  if( szAlloc==0 ){
     sz = 0;
     pStart = 0;
   }else if( pBuf==0 ){
     sqlite3BeginBenignMalloc();
-    pStart = sqlite3Malloc( szAlloc );  /* IMP: R-61949-35727 */
+    pStart = sqlite3Malloc( szAlloc );
     sqlite3EndBenignMalloc();
     if( pStart ) szAlloc = sqlite3MallocSize(pStart);
   }else{
@@ -801,10 +811,10 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
   if( sz>=LOOKASIDE_SMALL*3 ){
     nBig = szAlloc/(3*LOOKASIDE_SMALL+sz);
-    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+    nSm = (szAlloc - (i64)sz*(i64)nBig)/LOOKASIDE_SMALL;
   }else if( sz>=LOOKASIDE_SMALL*2 ){
     nBig = szAlloc/(LOOKASIDE_SMALL+sz);
-    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+    nSm = (szAlloc - (i64)sz*(i64)nBig)/LOOKASIDE_SMALL;
   }else
 #endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
   if( sz>0 ){
@@ -1769,6 +1779,9 @@ int sqlite3_busy_handler(
   db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
   db->busyTimeout = 0;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = 0;
+#endif
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -1818,9 +1831,44 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
     sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
                              (void*)db);
     db->busyTimeout = ms;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    db->setlkTimeout = ms;
+#endif
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
+  return SQLITE_OK;
+}
+
+/*
+** Set the setlk timeout value.
+*/
+int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int iDb;
+  int bBOC = ((flags & SQLITE_SETLK_BLOCK_ON_CONNECT) ? 1 : 0);
+#endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  if( ms<-1 ) return SQLITE_RANGE;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = ms;
+  db->setlkFlags = flags;
+  sqlite3BtreeEnterAll(db);
+  for(iDb=0; iDb<db->nDb; iDb++){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( pBt ){
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, (void*)&bBOC);
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+#endif
+#if !defined(SQLITE_ENABLE_API_ARMOR) && !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(flags);
+#endif
   return SQLITE_OK;
 }
 
@@ -3943,13 +3991,10 @@ int sqlite3_table_column_metadata(
   if( zColumnName==0 ){
     /* Query for existence of table only */
   }else{
-    for(iCol=0; iCol<pTab->nCol; iCol++){
+    iCol = sqlite3ColumnIndex(pTab, zColumnName);
+    if( iCol>=0 ){
       pCol = &pTab->aCol[iCol];
-      if( 0==sqlite3StrICmp(pCol->zCnName, zColumnName) ){
-        break;
-      }
-    }
-    if( iCol==pTab->nCol ){
+    }else{
       if( HasRowid(pTab) && sqlite3IsRowid(zColumnName) ){
         iCol = pTab->iPKey;
         pCol = iCol>=0 ? &pTab->aCol[iCol] : 0;
@@ -4158,8 +4203,8 @@ int sqlite3_test_control(int op, ...){
     /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
     **
     ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
-    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
-    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** false then clear that setting.  If the SQLITE_FkNoAction setting is
+    ** enabled, all foreign key ON DELETE and ON UPDATE actions behave as if
     ** they were NO ACTION, regardless of how they are defined.
     **
     ** NB:  One must usually run "PRAGMA writable_schema=RESET" after

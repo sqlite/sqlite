@@ -1163,6 +1163,12 @@ struct sqlite3_io_methods {
 ** the value that M is to be set to. Before returning, the 32-bit signed
 ** integer is overwritten with the previous value of M.
 **
+** <li>[[SQLITE_FCNTL_BLOCK_ON_CONNECT]]
+** The [SQLITE_FCNTL_BLOCK_ON_CONNECT] opcode is used to configure the
+** VFS to block when taking a SHARED lock to connect to a wal mode database.
+** This is used to implement the functionality associated with
+** SQLITE_SETLK_BLOCK_ON_CONNECT.
+**
 ** <li>[[SQLITE_FCNTL_DATA_VERSION]]
 ** The [SQLITE_FCNTL_DATA_VERSION] opcode is used to detect changes to
 ** a database file.  The argument is a pointer to a 32-bit unsigned integer.
@@ -1259,6 +1265,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
 #define SQLITE_FCNTL_NULL_IO                43
+#define SQLITE_FCNTL_BLOCK_ON_CONNECT       44
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1989,13 +1996,16 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_CONFIG_LOOKASIDE]] <dt>SQLITE_CONFIG_LOOKASIDE</dt>
 ** <dd> ^(The SQLITE_CONFIG_LOOKASIDE option takes two arguments that determine
-** the default size of lookaside memory on each [database connection].
+** the default size of [lookaside memory] on each [database connection].
 ** The first argument is the
-** size of each lookaside buffer slot and the second is the number of
-** slots allocated to each database connection.)^  ^(SQLITE_CONFIG_LOOKASIDE
-** sets the <i>default</i> lookaside size. The [SQLITE_DBCONFIG_LOOKASIDE]
-** option to [sqlite3_db_config()] can be used to change the lookaside
-** configuration on individual connections.)^ </dd>
+** size of each lookaside buffer slot ("sz") and the second is the number of
+** slots allocated to each database connection ("cnt").)^
+** ^(SQLITE_CONFIG_LOOKASIDE sets the <i>default</i> lookaside size.
+** The [SQLITE_DBCONFIG_LOOKASIDE] option to [sqlite3_db_config()] can
+** be used to change the lookaside configuration on individual connections.)^
+** The [-DSQLITE_DEFAULT_LOOKASIDE] option can be used to change the
+** default lookaside configuration at compile-time.
+** </dd>
 **
 ** [[SQLITE_CONFIG_PCACHE2]] <dt>SQLITE_CONFIG_PCACHE2</dt>
 ** <dd> ^(The SQLITE_CONFIG_PCACHE2 option takes a single argument which is
@@ -2211,7 +2221,15 @@ struct sqlite3_mem_methods {
 ** CAPI3REF: Database Connection Configuration Options
 **
 ** These constants are the available integer configuration options that
-** can be passed as the second argument to the [sqlite3_db_config()] interface.
+** can be passed as the second parameter to the [sqlite3_db_config()] interface.
+**
+** The [sqlite3_db_config()] interface is a var-args functions.  It takes a
+** variable number of parameters, though always at least two.  The number of
+** parameters passed into sqlite3_db_config() depends on which of these
+** constants is given as the second parameter.  This documentation page
+** refers to parameters beyond the second as "arguments".  Thus, when this
+** page says "the N-th argument" it means "the N-th parameter past the
+** configuration option" or "the (N+2)-th parameter to sqlite3_db_config()".
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
@@ -2224,29 +2242,50 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_DBCONFIG_LOOKASIDE]]
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd> The SQLITE_DBCONFIG_LOOKASIDE option is used to adjust the 
-** configuration of the lookaside memory allocator within a database
+** configuration of the [lookaside memory allocator] within a database
 ** connection.
 ** The arguments to the SQLITE_DBCONFIG_LOOKASIDE option are <i>not</i>
 ** in the [DBCONFIG arguments|usual format].
-** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two.
-** ^The first argument (the third parameter to [sqlite3_db_config()] is a
+** The SQLITE_DBCONFIG_LOOKASIDE option takes three arguments, not two,
+** so that a call to [sqlite3_db_config()] that uses SQLITE_DBCONFIG_LOOKASIDE
+** should have a total of five parameters.
+** <ol>
+** <li><p>The first argument ("buf") is a
 ** pointer to a memory buffer to use for lookaside memory.
-** ^The first argument after the SQLITE_DBCONFIG_LOOKASIDE verb
-** may be NULL in which case SQLite will allocate the
-** lookaside buffer itself using [sqlite3_malloc()]. ^The second argument is the
-** size of each lookaside buffer slot.  ^The third argument is the number of
-** slots.  The size of the buffer in the first argument must be greater than
-** or equal to the product of the second and third arguments.  The buffer
-** must be aligned to an 8-byte boundary.  ^If the second argument to
-** SQLITE_DBCONFIG_LOOKASIDE is not a multiple of 8, it is internally
-** rounded down to the next smaller multiple of 8.  ^(The lookaside memory
+** The first argument may be NULL in which case SQLite will allocate the
+** lookaside buffer itself using [sqlite3_malloc()].
+** <li><P>The second argument ("sz") is the
+** size of each lookaside buffer slot.  Lookaside is disabled if "sz"
+** is less than 8.  The "sz" argument should be a multiple of 8 less than
+** 65536.  If "sz" does not meet this constraint, it is reduced in size until
+** it does.
+** <li><p>The third argument ("cnt") is the number of slots. Lookaside is disabled
+** if "cnt"is less than 1.  The "cnt" value will be reduced, if necessary, so
+** that the product of "sz" and "cnt" does not exceed 2,147,418,112.  The "cnt"
+** parameter is usually chosen so that the product of "sz" and "cnt" is less
+** than 1,000,000.
+** </ol>
+** <p>If the "buf" argument is not NULL, then it must
+** point to a memory buffer with a size that is greater than
+** or equal to the product of "sz" and "cnt".
+** The buffer must be aligned to an 8-byte boundary.
+** The lookaside memory
 ** configuration for a database connection can only be changed when that
 ** connection is not currently using lookaside memory, or in other words
-** when the "current value" returned by
-** [sqlite3_db_status](D,[SQLITE_DBSTATUS_LOOKASIDE_USED],...) is zero.
+** when the value returned by [SQLITE_DBSTATUS_LOOKASIDE_USED] is zero.
 ** Any attempt to change the lookaside memory configuration when lookaside
 ** memory is in use leaves the configuration unchanged and returns
-** [SQLITE_BUSY].)^</dd>
+** [SQLITE_BUSY].
+** If the "buf" argument is NULL and an attempt
+** to allocate memory based on "sz" and "cnt" fails, then
+** lookaside is silently disabled.
+** <p>
+** The [SQLITE_CONFIG_LOOKASIDE] configuration option can be used to set the
+** default lookaside configuration at initialization.  The
+** [-DSQLITE_DEFAULT_LOOKASIDE] option can be used to set the default lookaside
+** configuration at compile-time.  Typical values for lookaside are 1200 for
+** "sz" and 40 to 100 for "cnt".
+** </dd>
 **
 ** [[SQLITE_DBCONFIG_ENABLE_FKEY]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FKEY</dt>
@@ -2330,12 +2369,13 @@ struct sqlite3_mem_methods {
 ** <dd> ^This option is used to change the name of the "main" database
 ** schema.  This option does not follow the
 ** [DBCONFIG arguments|usual SQLITE_DBCONFIG argument format].
-** This option takes exactly one argument, which ust be a pointer
-** to a constant UTF8 string which will become the new schema name
-** in place of "main".  ^SQLite does not make a copy of the new main
-** schema name string, so the application must ensure that the argument
-** passed into SQLITE_DBCONFIG MAINDBNAME is unchanged
-** until after the database connection closes.
+** This option takes exactly one additional argument so that the 
+** [sqlite3_db_config()] call has a total of three parameters.  The
+** extra argument must be a pointer to a constant UTF8 string which
+** will become the new schema name in place of "main".  ^SQLite does
+** not make a copy of the new main schema name string, so the application
+** must ensure that the argument passed into SQLITE_DBCONFIG MAINDBNAME
+** is unchanged until after the database connection closes.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE]]
@@ -2346,10 +2386,11 @@ struct sqlite3_mem_methods {
 ** connection being closed is the last open connection to the database),
 ** then SQLite performs a [checkpoint] before closing the connection and
 ** deletes the WAL file.  The SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE option can
-** be used to override that behavior. The first parameter passed to this
-** operation is an integer - positive to disable checkpoints-on-close, or
-** zero (the default) to enable them, and negative to leave the setting unchanged.
-** The second parameter is a pointer to an integer
+** be used to override that behavior. The first argument passed to this
+** operation (the third parameter to [sqlite3_db_config()]) is an integer
+** which is positive to disable checkpoints-on-close, or zero (the default)
+** to enable them, and negative to leave the setting unchanged.
+** The second argument (the fourth parameter) is a pointer to an integer
 ** into which is written 0 or 1 to indicate whether checkpoints-on-close
 ** have been disabled - 0 if they are not disabled, 1 if they are.
 ** </dd>
@@ -2587,9 +2628,11 @@ struct sqlite3_mem_methods {
 **
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
 **
-** <p>Most of the SQLITE_DBCONFIG options take two arguments: an integer
-** and a pointer to an integer.  If the first integer argument is 1, then
-** the option becomes enabled.  If the first integer argument is 0, then the
+** <p>Most of the SQLITE_DBCONFIG options take two arguments, so that the
+** overall call to [sqlite3_db_config()] has a total of four parameters.
+** The first argument (the third parameter to sqlite3_db_config()) is a integer.
+** The second argument is a pointer to an integer.  If the first argument is 1,
+** then the option becomes enabled.  If the first integer argument is 0, then the
 ** option is disabled.  If the first argument is -1, then the option setting
 ** is unchanged.  The second argument, the pointer to an integer, may be NULL.
 ** If the second argument is not NULL, then a value of 0 or 1 is written into
@@ -2978,6 +3021,44 @@ int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
 ** See also:  [PRAGMA busy_timeout]
 */
 int sqlite3_busy_timeout(sqlite3*, int ms);
+
+/*
+** CAPI3REF: Set the Setlk Timeout
+** METHOD: sqlite3
+**
+** This routine is only useful in SQLITE_ENABLE_SETLK_TIMEOUT builds. If 
+** the VFS supports blocking locks, it sets the timeout in ms used by 
+** eligible locks taken on wal mode databases by the specified database 
+** handle. In non-SQLITE_ENABLE_SETLK_TIMEOUT builds, or if the VFS does
+** not support blocking locks, this function is a no-op.
+**
+** Passing 0 to this function disables blocking locks altogether. Passing 
+** -1 to this function requests that the VFS blocks for a long time - 
+** indefinitely if possible. The results of passing any other negative value 
+** are undefined.
+**
+** Internally, each SQLite database handle store two timeout values - the
+** busy-timeout (used for rollback mode databases, or if the VFS does not
+** support blocking locks) and the setlk-timeout (used for blocking locks
+** on wal-mode databases). The sqlite3_busy_timeout() method sets both
+** values, this function sets only the setlk-timeout value. Therefore,
+** to configure separate busy-timeout and setlk-timeout values for a single
+** database handle, call sqlite3_busy_timeout() followed by this function.
+**
+** Whenever the number of connections to a wal mode database falls from
+** 1 to 0, the last connection takes an exclusive lock on the database, 
+** then checkpoints and deletes the wal file. While it is doing this, any
+** new connection that tries to read from the database fails with an
+** SQLITE_BUSY error. Or, if the SQLITE_SETLK_BLOCK_ON_CONNECT flag is
+** passed to this API, the new connection blocks until the exclusive lock
+** has been released.
+*/
+int sqlite3_setlk_timeout(sqlite3*, int ms, int flags);
+
+/*
+** CAPI3REF: Flags for sqlite3_setlk_timeout()
+*/
+#define SQLITE_SETLK_BLOCK_ON_CONNECT 0x01
 
 /*
 ** CAPI3REF: Convenience Routines For Running Queries

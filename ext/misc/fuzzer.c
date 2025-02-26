@@ -68,7 +68,7 @@
 **       AND distance<200;
 **
 ** This first query outputs the string "abcdefg" and all strings that
-** can be derived from that string by appling the specified transformations.
+** can be derived from that string by applying the specified transformations.
 ** The strings are output together with their total transformation cost
 ** (called "distance") and appear in order of increasing cost.  No string
 ** is output more than once.  If there are multiple ways to transform the

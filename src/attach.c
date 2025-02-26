@@ -156,7 +156,7 @@ static void attachFunc(
       if( aNew==0 ) return;
       memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
     }else{
-      aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+      aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(1+(i64)db->nDb));
       if( aNew==0 ) return;
     }
     db->aDb = aNew;
@@ -227,6 +227,13 @@ static void attachFunc(
     sqlite3BtreeEnterAll(db);
     db->init.iDb = 0;
     db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( db->setlkFlags & SQLITE_SETLK_BLOCK_ON_CONNECT ){
+      int val = 1;
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pNew->pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, &val);
+    }
+#endif
     if( !REOPEN_AS_MEMDB(db) ){
       rc = sqlite3Init(db, &zErrDyn);
     }

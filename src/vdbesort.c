@@ -936,7 +936,7 @@ int sqlite3VdbeSorterInit(
   VdbeSorter *pSorter;            /* The new sorter */
   KeyInfo *pKeyInfo;              /* Copy of pCsr->pKeyInfo with db==0 */
   int szKeyInfo;                  /* Size of pCsr->pKeyInfo in bytes */
-  int sz;                         /* Size of pSorter in bytes */
+  i64 sz;                         /* Size of pSorter in bytes */
   int rc = SQLITE_OK;
 #if SQLITE_MAX_WORKER_THREADS==0
 # define nWorker 0
@@ -964,6 +964,8 @@ int sqlite3VdbeSorterInit(
   assert( pCsr->pKeyInfo );
   assert( !pCsr->isEphemeral );
   assert( pCsr->eCurType==CURTYPE_SORTER );
+  assert( sizeof(KeyInfo) + UMXV(pCsr->pKeyInfo->nKeyField)*sizeof(CollSeq*)
+               < 0x7fffffff );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nKeyField-1)*sizeof(CollSeq*);
   sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);
 
@@ -1177,7 +1179,7 @@ static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
 */
 static MergeEngine *vdbeMergeEngineNew(int nReader){
   int N = 2;                      /* Smallest power of two >= nReader */
-  int nByte;                      /* Total bytes of space to allocate */
+  i64 nByte;                      /* Total bytes of space to allocate */
   MergeEngine *pNew;              /* Pointer to allocated object to return */
 
   assert( nReader<=SORTER_MAX_MERGE_COUNT );

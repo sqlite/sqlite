@@ -358,7 +358,7 @@ struct Fts3Cursor {
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
-** Actualy, Fts3Cursor.eSearch can be greater than or equal to
+** Actually, Fts3Cursor.eSearch can be greater than or equal to
 ** FTS3_FULLTEXT_SEARCH.  If so, then Fts3Cursor.eSearch - 2 is the index
 ** of the column to be searched.  For example, in
 **
@@ -640,6 +640,7 @@ int sqlite3Fts3MsrIncrNext(
 int sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol, char **); 
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
+int sqlite3Fts3MsrCancel(Fts3Cursor*, Fts3Expr*);
 
 /* fts3_tokenize_vtab.c */
 int sqlite3Fts3InitTok(sqlite3*, Fts3Hash *, void(*xDestroy)(void*));

@@ -1198,6 +1198,11 @@ int Jim_OpenForRead(const char *filename);
     #define Jim_FileStat _fstat64
     #define Jim_Lseek _lseeki64
     #define O_TEXT _O_TEXT
+    #define O_BINARY _O_BINARY
+    #define Jim_SetMode _setmode
+    #ifndef STDIN_FILENO
+    #define STDIN_FILENO 0
+    #endif
 
 #else
     #if defined(HAVE_STAT64)
@@ -1246,6 +1251,14 @@ int Jim_OpenForRead(const char *filename);
     #endif
 
 #endif
+
+# ifndef MAXPATHLEN
+# ifdef PATH_MAX
+# define MAXPATHLEN PATH_MAX
+# else
+# define MAXPATHLEN JIM_PATH_LEN
+# endif
+# endif
 
 
 int Jim_FileStoreStatData(Jim_Interp *interp, Jim_Obj *varName, const jim_stat_t *sb);
@@ -1864,7 +1877,7 @@ int Jim_tclcompatInit(Jim_Interp *interp)
 "					$f buffering $v\n"
 "				}\n"
 "				-tr* {\n"
-"\n"
+"					$f translation $v\n"
 "				}\n"
 "				default {\n"
 "					return -code error \"fconfigure: unknown option $n\"\n"
@@ -2081,10 +2094,6 @@ enum wbuftype {
 #define UNIX_SOCKETS 1
 #else
 #define UNIX_SOCKETS 0
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN JIM_PATH_LEN
 #endif
 
 
@@ -2936,6 +2945,28 @@ static int aio_cmd_buffering(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+static int aio_cmd_translation(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    enum {OPT_BINARY, OPT_TEXT};
+    static const char * const options[] = {
+        "binary",
+        "text",
+        NULL
+    };
+    int opt;
+
+    if (Jim_GetEnum(interp, argv[0], options, &opt, NULL, JIM_ERRMSG) != JIM_OK) {
+            return JIM_ERR;
+    }
+#if defined(Jim_SetMode)
+    else {
+        AioFile *af = Jim_CmdPrivData(interp);
+        Jim_SetMode(af->fd, opt == OPT_BINARY ? O_BINARY : O_TEXT);
+    }
+#endif
+    return JIM_OK;
+}
+
 static int aio_cmd_readsize(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     AioFile *af = Jim_CmdPrivData(interp);
@@ -3144,6 +3175,13 @@ static const jim_subcmd_type aio_command_table[] = {
         aio_cmd_buffering,
         0,
         2,
+
+    },
+    {   "translation",
+        "binary|text",
+        aio_cmd_translation,
+        1,
+        1,
 
     },
     {   "readsize",
@@ -4138,14 +4176,6 @@ int Jim_regexpInit(Jim_Interp *interp)
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
-
-# ifndef MAXPATHLEN
-# ifdef PATH_MAX
-# define MAXPATHLEN PATH_MAX
-# else
-# define MAXPATHLEN JIM_PATH_LEN
-# endif
-# endif
 
 #if defined(__MINGW32__) || defined(__MSYS__) || defined(_MSC_VER)
 #define ISWINDOWS 1
@@ -24425,6 +24455,10 @@ int main(int argc, char *const argv[])
         }
         if (retcode != JIM_EXIT) {
             JimSetArgv(interp, 0, NULL);
+            if (!isatty(STDIN_FILENO)) {
+
+                goto eval_stdin;
+            }
             retcode = Jim_InteractivePrompt(interp);
         }
     }
@@ -24447,6 +24481,7 @@ int main(int argc, char *const argv[])
             Jim_SetVariableStr(interp, "argv0", Jim_NewStringObj(interp, argv[1], -1));
             JimSetArgv(interp, argc - 2, argv + 2);
             if (strcmp(argv[1], "-") == 0) {
+eval_stdin:
                 retcode = Jim_Eval(interp, "eval [info source [stdin read] stdin 1]");
             } else {
                 retcode = Jim_EvalFile(interp, argv[1]);

@@ -4438,7 +4438,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nDistance = iPrev - nMaxUndeferred;
       }
 
-      aOut = (char *)sqlite3Fts3MallocZero(nPoslist+FTS3_BUFFER_PADDING);
+      aOut = (char *)sqlite3Fts3MallocZero(((i64)nPoslist)+FTS3_BUFFER_PADDING);
       if( !aOut ){
         sqlite3_free(aPoslist);
         return SQLITE_NOMEM;
@@ -4737,7 +4737,7 @@ static int incrPhraseTokenNext(
 **
 **   * does not contain any deferred tokens.
 **
-** Advance it to the next matching documnent in the database and populate
+** Advance it to the next matching document in the database and populate
 ** the Fts3Doclist.pList and nList fields. 
 **
 ** If there is no "next" entry and no error occurs, then *pbEof is set to
@@ -5785,6 +5785,24 @@ static void fts3EvalRestart(
     fts3EvalRestart(pCsr, pExpr->pLeft, pRc);
     fts3EvalRestart(pCsr, pExpr->pRight, pRc);
   }
+}
+
+/*
+** Expression node pExpr is an MSR phrase. This function restarts pExpr
+** so that it is a regular phrase query, not an MSR. SQLITE_OK is returned
+** if successful, or an SQLite error code otherwise.
+*/
+int sqlite3Fts3MsrCancel(Fts3Cursor *pCsr, Fts3Expr *pExpr){
+  int rc = SQLITE_OK;
+  if( pExpr->bEof==0 ){
+    i64 iDocid = pExpr->iDocid;
+    fts3EvalRestart(pCsr, pExpr, &rc);
+    while( rc==SQLITE_OK && pExpr->iDocid!=iDocid ){
+      fts3EvalNextRow(pCsr, pExpr, &rc);
+      if( pExpr->bEof ) rc = FTS_CORRUPT_VTAB;
+    }
+  }
+  return rc;
 }
 
 /*

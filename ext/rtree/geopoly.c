@@ -877,7 +877,7 @@ static void geopolyWithinFunc(
   sqlite3_free(p2);
 }
 
-/* Objects used by the overlap algorihm. */
+/* Objects used by the overlap algorithm. */
 typedef struct GeoEvent GeoEvent;
 typedef struct GeoSegment GeoSegment;
 typedef struct GeoOverlap GeoOverlap;

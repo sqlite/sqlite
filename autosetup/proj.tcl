@@ -114,11 +114,13 @@ proc proj-bold {str} {
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
-# the next time autosetup goes to output a message. If -notice
-# is not used, it will send the message to stdout without delay.
+# the next time autosetup goes to output a message.
 #
 # If the -error flag is provided then it renders the message
 # immediately to stderr and then exits.
+#
+# If neither -notice nor -error are used, the message will be sent to
+# stdout without delay.
 proc proj-indented-notice {args} {
   set fErr ""
   set outFunc "puts"
@@ -126,6 +128,7 @@ proc proj-indented-notice {args} {
     switch -exact -- [lindex $args 0] {
       -error  {
         set args [lassign $args fErr]
+        set outFunc "user-notice"
       }
       -notice {
         set args [lassign $args -]
@@ -181,8 +184,8 @@ proc proj-lshift_ {listVar {count 1}} {
 
 ########################################################################
 # Expects to receive string input, which it splits on newlines, strips
-# out any lines which begin with an number of whitespace followed by a
-# '#', and returns a value containing the [append]ed results of each
+# out any lines which begin with any number of whitespace followed by
+# a '#', and returns a value containing the [append]ed results of each
 # remaining line with a \n between each.
 proc proj-strip-hash-comments {val} {
   set x {}
@@ -195,15 +198,41 @@ proc proj-strip-hash-comments {val} {
 }
 
 ########################################################################
+# @proj-cflags-without-werror
+#
+# Fetches [define $var], strips out any -Werror entries, and returns
+# the new value. This is intended for temporarily stripping -Werror
+# from CFLAGS or CPPFLAGS within the scope of a [define-push] block.
+proc proj-cflags-without-werror {{var CFLAGS}} {
+  set rv {}
+  foreach f [get-define $var ""] {
+    switch -exact -- $f {
+      -Werror {}
+      default { lappend rv $f }
+    }
+  }
+  return [join $rv " "]
+}
+
+########################################################################
 # @proj-check-function-in-lib
 #
-# A proxy for cc-check-function-in-lib which does not make any global
-# changes to the LIBS define. Returns the result of
-# cc-check-function-in-lib (i.e. true or false).  The resulting linker
-# flags are stored in ${lib_${function}}.
+# A proxy for cc-check-function-in-lib with the following differences:
+#
+# - Does not make any global changes to the LIBS define.
+#
+# - Strips out -W... warning flags from CFLAGS before running the
+#   test, as these feature tests will often fail if -Werror is used.
+#
+# Returns the result of cc-check-function-in-lib (i.e. true or false).
+# The resulting linker flags are stored in the [define] named
+# lib_${function}.
 proc proj-check-function-in-lib {function libs {otherlibs {}}} {
   set found 0
-  define-push {LIBS} {
+  define-push {LIBS CFLAGS} {
+    #puts "CFLAGS before=[get-define CFLAGS]"
+    define CFLAGS [proj-cflags-without-werror]
+    #puts "CFLAGS after =[get-define CFLAGS]"
     set found [cc-check-function-in-lib $function $libs $otherlibs]
   }
   return $found
@@ -350,7 +379,6 @@ proc proj-opt-was-provided {key} {
 #
 # Returns $val.
 proc proj-opt-set {flag {val 1}} {
-  global autosetup
   if {$flag ni $::autosetup(options)} {
     # We have to add this to autosetup(options) or else future calls
     # to [opt-bool $flag] will fail validation of $flag.
@@ -358,6 +386,15 @@ proc proj-opt-set {flag {val 1}} {
   }
   dict set ::autosetup(optset) $flag $val
   return $val
+}
+
+########################################################################
+# @proj-opt-exists flag
+#
+# Returns 1 if the given flag has been defined as a legal configure
+# option, else returns 0.
+proc proj-opt-exists {flag} {
+  expr {$flag in $::autosetup(options)};
 }
 
 ########################################################################
@@ -760,7 +797,7 @@ proc proj-exe-extension {} {
 # Trivia: for .dylib files, the linker needs the -dynamiclib flag
 # instead of -shared.
 proc proj-dll-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *apple* {
         return ".dylib"
@@ -772,9 +809,9 @@ proc proj-dll-extension {} {
         return ".so"
       }
     }
-  }
-  define BUILD_DLLEXT [inner build]
-  define TARGET_DLLEXT [inner host]
+  }}
+  define BUILD_DLLEXT [apply $inner build]
+  define TARGET_DLLEXT [apply $inner host]
 }
 
 ########################################################################
@@ -784,18 +821,20 @@ proc proj-dll-extension {} {
 # BUILD_LIBEXT and TARGET_LIBEXT to the conventional static library
 # extension for the being-built-on resp. the target platform.
 proc proj-lib-extension {} {
-  proc inner {key} {
+  set inner {{key} {
     switch -glob -- [get-define $key] {
       *-*-ming* - *-*-cygwin - *-*-msys {
-        return ".lib"
+        return ".a"
+        # ^^^ this was ".lib" until 2025-02-07. See
+        # https://sqlite.org/forum/forumpost/02db2d4240
       }
       default {
         return ".a"
       }
     }
-  }
-  define BUILD_LIBEXT [inner build]
-  define TARGET_LIBEXT [inner host]
+  }}
+  define BUILD_LIBEXT [apply $inner build]
+  define TARGET_LIBEXT [apply $inner host]
 }
 
 ########################################################################
@@ -903,6 +942,35 @@ proc proj-check-emsdk {} {
 }
 
 ########################################################################
+# @proj-cc-check-Wl-flag ?flag ?args??
+#
+# Checks whether the given linker flag (and optional arguments) can be
+# passed from the compiler to the linker using one of these formats:
+#
+# - -Wl,flag[,arg1[,...argN]]
+# - -Wl,flag -Wl,arg1 ...-Wl,argN
+#
+# If so, that flag string is returned, else an empty string is
+# returned.
+proc proj-cc-check-Wl-flag {args} {
+  cc-with {-link 1} {
+    # Try -Wl,flag,...args
+    set fli "-Wl"
+    foreach f $args { append fli ",$f" }
+    if {[cc-check-flags $fli]} {
+      return $fli
+    }
+    # Try -Wl,flag -Wl,arg1 ...-Wl,argN
+    set fli ""
+    foreach f $args { append fli "-Wl,$f " }
+    if {[cc-check-flags $fli]} {
+      return [string trim $fli]
+    }
+    return ""
+  }
+}
+
+########################################################################
 # @proj-check-rpath
 #
 # Tries various approaches to handling the -rpath link-time
@@ -913,12 +981,7 @@ proc proj-check-emsdk {} {
 # --exec-prefix=... or --libdir=...  are explicitly passed to
 # configure then [get-define libdir] is used (noting that it derives
 # from exec-prefix by default).
-#
-# Achtung: we have seen platforms which report that a given option
-# checked here will work but then fails at build-time, and the current
-# order of checks reflects that.
 proc proj-check-rpath {} {
-  set rc 1
   if {[proj-opt-was-provided libdir]
       || [proj-opt-was-provided exec-prefix]} {
     set lp "[get-define libdir]"
@@ -929,21 +992,18 @@ proc proj-check-rpath {} {
   # CFLAGS or LIBS or whatever it is that cc-check-flags updates) then
   # downstream tests may fail because the resulting rpath gets
   # implicitly injected into them.
-  cc-with {} {
+  cc-with {-link 1} {
     if {[cc-check-flags "-rpath $lp"]} {
       define LDFLAGS_RPATH "-rpath $lp"
-    } elseif {[cc-check-flags "-Wl,-rpath,$lp"]} {
-      define LDFLAGS_RPATH "-Wl,-rpath,$lp"
-    } elseif {[cc-check-flags "-Wl,-rpath -Wl,$lp"]} {
-      define LDFLAGS_RPATH "-Wl,-rpath -Wl,$lp"
-    } elseif {[cc-check-flags -Wl,-R$lp]} {
-      define LDFLAGS_RPATH "-Wl,-R$lp"
     } else {
-      define LDFLAGS_RPATH ""
-      set rc 0
+      set wl [proj-cc-check-Wl-flag -rpath $lp]
+      if {"" eq $wl} {
+        set wl [proj-cc-check-Wl-flag -R$lp]
+      }
+      define LDFLAGS_RPATH $wl
     }
   }
-  return $rc
+  expr {"" ne [get-define LDFLAGS_RPATH]}
 }
 
 ########################################################################
@@ -960,7 +1020,7 @@ proc proj-check-rpath {} {
 # potentially avoid some end-user confusion by using their own lib's
 # name here (which shows up in the "checking..." output).
 proc proj-check-soname {{libname "libfoo.so.0"}} {
-  cc-with {} {
+  cc-with {-link 1} {
     if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
       return 1
@@ -1133,7 +1193,7 @@ proc proj-xfer-options-aliases {mapping} {
 ########################################################################
 # Arguable/debatable...
 #
-# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explcitely
+# When _not_ cross-compiling and CC_FOR_BUILD is _not_ explicitly
 # specified, force CC_FOR_BUILD to be the same as CC, so that:
 #
 # ./configure CC=clang
@@ -1141,7 +1201,7 @@ proc proj-xfer-options-aliases {mapping} {
 # will use CC_FOR_BUILD=clang, instead of cc, for building in-tree
 # tools. This is based off of an email discussion and is thought to
 # be likely to cause less confusion than seeing 'cc' invocations
-# will when the user passes CC=clang.
+# when when the user passes CC=clang.
 #
 # Sidebar: if we do this before the cc package is installed, it gets
 # reverted by that package. Ergo, the cc package init will tell the
@@ -1186,11 +1246,11 @@ proc proj-which-linenoise {dotH} {
 #
 # In that make invocation, $(libdir) would, at make-time, normally be
 # hard-coded to /foo/lib, rather than /blah/lib. That happens because
-# the autosetup exports conventional $prefix-based values for the
-# numerous autoconfig-compatible XYZdir vars at configure-time.  What
-# we would normally want, however, is that --libdir derives from the
-# make-time $(prefix).  The distinction between configure-time and
-# make-time is the significant factor there.
+# autosetup exports conventional $prefix-based values for the numerous
+# autoconfig-compatible XYZdir vars at configure-time.  What we would
+# normally want, however, is that --libdir derives from the make-time
+# $(prefix).  The distinction between configure-time and make-time is
+# the significant factor there.
 #
 # This function attempts to reconcile those vars in such a way that
 # they will derive, at make-time, from $(prefix) in a conventional

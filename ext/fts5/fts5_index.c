@@ -5206,7 +5206,7 @@ static void fts5DoSecureDelete(
   int iDelKeyOff = 0;       /* Offset of deleted key, if any */
 
   nIdx = nPg-iPgIdx;
-  aIdx = sqlite3Fts5MallocZero(&p->rc, nIdx+16);
+  aIdx = sqlite3Fts5MallocZero(&p->rc, ((i64)nIdx)+16);
   if( p->rc ) return;
   memcpy(aIdx, &aPg[iPgIdx], nIdx);
 
@@ -5476,8 +5476,11 @@ static void fts5DoSecureDelete(
 ** This is called as part of flushing a delete to disk in 'secure-delete'
 ** mode. It edits the segments within the database described by argument
 ** pStruct to remove the entries for term zTerm, rowid iRowid.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error
+** has occurred. Any error code is also stored in the Fts5Index handle.
 */
-static void fts5FlushSecureDelete(
+static int fts5FlushSecureDelete(
   Fts5Index *p,
   Fts5Structure *pStruct,
   const char *zTerm,
@@ -5522,6 +5525,7 @@ static void fts5FlushSecureDelete(
   }
 
   fts5MultiIterFree(pIter);
+  return p->rc;
 }
 
 
@@ -5605,8 +5609,9 @@ static void fts5FlushOneHash(Fts5Index *p){
             ** using fts5FlushSecureDelete().  */
             if( bSecureDelete ){
               if( eDetail==FTS5_DETAIL_NONE ){
-                if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
-                  fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid);
+                if( iOff<nDoclist && pDoclist[iOff]==0x00 
+                 && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
+                ){
                   iOff++;
                   if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
                     iOff++;
@@ -5615,8 +5620,9 @@ static void fts5FlushOneHash(Fts5Index *p){
                     continue;
                   }
                 }
-              }else if( (pDoclist[iOff] & 0x01) ){
-                fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid);
+              }else if( (pDoclist[iOff] & 0x01) 
+                && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
+              ){
                 if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
                   iOff++;
                   continue;
@@ -5794,7 +5800,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     assert( pStruct->aLevel[i].nMerge<=nThis );
   }
 
-  nByte += (pStruct->nLevel+1) * sizeof(Fts5StructureLevel);
+  nByte += (((i64)pStruct->nLevel)+1) * sizeof(Fts5StructureLevel);
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
 
   if( pNew ){
@@ -6682,7 +6688,8 @@ static void fts5SetupPrefixIter(
       }
     }
 
-    pData = fts5IdxMalloc(p, sizeof(*pData)+s.doclist.n+FTS5_DATA_ZERO_PADDING);
+    pData = fts5IdxMalloc(p, sizeof(*pData)
+                             + ((i64)s.doclist.n)+FTS5_DATA_ZERO_PADDING);
     assert( pData!=0 || p->rc!=SQLITE_OK );
     if( pData ){
       pData->p = (u8*)&pData[1];
@@ -8660,7 +8667,7 @@ static void fts5DecodeRowid(
 
 #if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid compenents */
+  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid components */
   fts5DecodeRowid(iKey, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){
@@ -8906,7 +8913,7 @@ static void fts5DecodeFunction(
   ** buffer overreads even if the record is corrupt.  */
   n = sqlite3_value_bytes(apVal[1]);
   aBlob = sqlite3_value_blob(apVal[1]);
-  nSpace = n + FTS5_DATA_ZERO_PADDING;
+  nSpace = ((i64)n) + FTS5_DATA_ZERO_PADDING;
   a = (u8*)sqlite3Fts5MallocZero(&rc, nSpace);
   if( a==0 ) goto decode_out;
   if( n>0 ) memcpy(a, aBlob, n);

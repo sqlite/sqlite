@@ -798,7 +798,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.peek8 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i8' );
   /**
-     Convience form of poke() intended for setting individual bytes.
+     Convenience form of poke() intended for setting individual bytes.
      Its difference from poke() is that it always writes to the
      i8-sized heap view.
   */

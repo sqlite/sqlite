@@ -995,7 +995,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pWhere = 0;
     p->pGroupBy = 0;
     p->pHaving = 0;
-    p->selFlags &= ~SF_Aggregate;
+    p->selFlags &= ~(u32)SF_Aggregate;
     p->selFlags |= SF_WinRewrite;
 
     /* Create the ORDER BY clause for the sub-select. This is the concatenation

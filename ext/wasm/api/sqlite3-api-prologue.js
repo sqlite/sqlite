@@ -12,12 +12,12 @@
 
   This file is intended to be combined at build-time with other
   related code, most notably a header and footer which wraps this
-  whole file into an Emscripten Module.postRun()-style handler. The
-  sqlite3 JS API has no hard requirements on Emscripten and does not
-  expose any Emscripten APIs to clients. It is structured such that
-  its build can be tweaked to include it in arbitrary WASM
-  environments which can supply the necessary underlying features
-  (e.g. a POSIX file I/O layer).
+  whole file into a single callback which can be run after Emscripten
+  loads the corresponding WASM module. The sqlite3 JS API has no hard
+  requirements on Emscripten and does not expose any Emscripten APIs
+  to clients. It is structured such that its build can be tweaked to
+  include it in arbitrary WASM environments which can supply the
+  necessary underlying features (e.g. a POSIX file I/O layer).
 
   Main project home page: https://sqlite.org
 
@@ -1453,7 +1453,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      creates (or overwrites) the given file using those APIs. This is
      primarily intended for use in Emscripten-based builds where the POSIX
      APIs are transparently proxied by an in-memory virtual filesystem.
-     It may behave diffrently in other environments.
+     It may behave differently in other environments.
 
      The first argument must be either a JS string or WASM C-string
      holding the filename. Note that this routine does _not_ create

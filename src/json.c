@@ -1086,7 +1086,7 @@ static void jsonWrongNumArgs(
 */
 static int jsonBlobExpand(JsonParse *pParse, u32 N){
   u8 *aNew;
-  u32 t;
+  u64 t;
   assert( N>pParse->nBlobAlloc );
   if( pParse->nBlobAlloc==0 ){
     t = 100;
@@ -1096,8 +1096,9 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
   if( t<N ) t = N+100;
   aNew = sqlite3DbRealloc(pParse->db, pParse->aBlob, t);
   if( aNew==0 ){ pParse->oom = 1; return 1; }
+  assert( t<0x7fffffff );
   pParse->aBlob = aNew;
-  pParse->nBlobAlloc = t;
+  pParse->nBlobAlloc = (u32)t;
   return 0;
 }
 
@@ -2054,10 +2055,7 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
   u8 x;
   u32 sz;
   u32 n;
-  if( NEVER(i>pParse->nBlob) ){
-    *pSz = 0;
-    return 0;
-  }
+  assert( i<=pParse->nBlob );
   x = pParse->aBlob[i]>>4;
   if( x<=11 ){
     sz = x;
@@ -2101,8 +2099,8 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
   if( (i64)i+sz+n > pParse->nBlob
    && (i64)i+sz+n > pParse->nBlob-pParse->delta
   ){
-    sz = 0;
-    n = 0;
+    *pSz = 0;
+    return 0;
   }
   *pSz = sz;
   return n;
@@ -2199,9 +2197,12 @@ static u32 jsonTranslateBlobToText(
     }
     case JSONB_TEXT:
     case JSONB_TEXTJ: {
-      jsonAppendChar(pOut, '"');
-      jsonAppendRaw(pOut, (const char*)&pParse->aBlob[i+n], sz);
-      jsonAppendChar(pOut, '"');
+      if( pOut->nUsed+sz+2<=pOut->nAlloc || jsonStringGrow(pOut, sz+2)==0 ){
+        pOut->zBuf[pOut->nUsed] = '"';
+        memcpy(pOut->zBuf+pOut->nUsed+1,(const char*)&pParse->aBlob[i+n],sz);
+        pOut->zBuf[pOut->nUsed+sz+1] = '"';
+        pOut->nUsed += sz+2;
+      }
       break;
     }
     case JSONB_TEXT5: {
@@ -3116,7 +3117,7 @@ static void jsonReturnFromBlob(
       char *zOut;
       u32 nOut = sz;
       z = (const char*)&pParse->aBlob[i+n];
-      zOut = sqlite3DbMallocRaw(db, nOut+1);
+      zOut = sqlite3DbMallocRaw(db, ((u64)nOut)+1);
       if( zOut==0 ) goto returnfromblob_oom;
       for(iIn=iOut=0; iIn<sz; iIn++){
         char c = z[iIn];

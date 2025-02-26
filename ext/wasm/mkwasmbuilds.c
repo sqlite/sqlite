@@ -136,12 +136,35 @@ static void mk_prologue(void){
 }
 
 /*
+** Flags for use with the 3rd argument to mk_pre_post() and
+** mk_lib_mode().
+**
+** Maintenance reminder: do not combine flags within this enum,
+** e.g. LIBMODE_BUNDLER_FRIEND=0x02|LIBMODE_ESM, as that will lead to
+** breakage in some of the flag checks.
+*/
+enum LibModeFlags {
+  /* Indicates an ESM module build. */
+  LIBMODE_ESM = 0x01,
+  /* Indicates a "bundler-friendly" build mode. */
+  LIBMODE_BUNDLER_FRIENDLY = 0x02,
+  /* Indicates to _not_ add this build to the 'all' target. */
+  LIBMODE_DONT_ADD_TO_ALL = 0x04,
+  /* Indicates a node.js-for-node.js build (untested and
+  ** unsupported). */
+  LIBMODE_NODEJS = 0x08,
+  /* Indicates a wasmfs build (untested and unsupported). */
+  LIBMODE_WASMFS = 0x10
+};
+
+/*
 ** Emits makefile code for setting up values for the --pre-js=FILE,
 ** --post-js=FILE, and --extern-post-js=FILE emcc flags, as well as
 ** populating those files.
 */
 static void mk_pre_post(const char *zName  /* build name */,
                         const char *zMode  /* build mode */,
+                        int flags          /* LIBMODE_... mask */,
                         const char *zCmppD /* optional -D flags for c-pp for the
                                            ** --pre/--post-js files. */){
   pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zNM);
@@ -151,7 +174,7 @@ static void mk_pre_post(const char *zName  /* build name */,
   /* --pre-js=... */
   pf("pre-js.js.%s-%s := $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(MAKEFILE)\n", zNM);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST)\n", zNM);
 #if 1
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
@@ -166,9 +189,10 @@ static void mk_pre_post(const char *zName  /* build name */,
   pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
 
   /* Amend $(pre-js.js.zName-zMode) for all targets except the plain
-  ** "sqlite3" build... */
+  ** "sqlite3" and the "sqlite3-wasmfs" builds... */
   if( 0!=strcmp("sqlite3-wasmfs", zName)
       && 0!=strcmp("sqlite3", zName) ){
+#error "This part ^^^ is needs adapting for use with the LIBMODE_... flags"
     pf("\t@echo 'Module[xNameOfInstantiateWasm].uri = "
        "\"%s.wasm\";' >> $@\n", zName);
   }
@@ -209,7 +233,7 @@ static void mk_pre_post(const char *zName  /* build name */,
 static void mk_fiddle(){
   int i = 0;
 
-  mk_pre_post("fiddle-module","vanilla", 0);
+  mk_pre_post("fiddle-module","vanilla", 0, 0);
   for( ; i < 2; ++i ){
     const char *zTail = i ? ".debug" : "";
     const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
@@ -218,7 +242,7 @@ static void mk_fiddle(){
     pf("fiddle-module.js%s := %s/fiddle-module.js\n", zTail, zDir);
     pf("fiddle-module.wasm%s := "
        "$(subst .js,.wasm,$(fiddle-module.js%s))\n", zTail, zTail);
-    pf("$(fiddle-module.js%s):%s $(MAKEFILE) $(MAKEFILE.fiddle) "
+    pf("$(fiddle-module.js%s):%s $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
        "$(EXPORTED_FUNCTIONS.fiddle) "
        "$(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) "
        "$(SOAP.js)\n",
@@ -257,7 +281,7 @@ static void mk_fiddle(){
 */
 static void mk_lib_mode(const char *zName     /* build name */,
                         const char *zMode     /* build mode */,
-                        int bIsEsm            /* true only for ESM build */,
+                        int flags             /* LIBMODE_... mask */,
                         const char *zApiJsOut /* name of generated sqlite3-api.js/.mjs */,
                         const char *zJsOut    /* name of generated sqlite3.js/.mjs */,
                         const char *zCmppD    /* extra -D flags for c-pp */,
@@ -274,8 +298,9 @@ static void mk_lib_mode(const char *zName     /* build name */,
   if( !zEmcc ) zEmcc = "";
 
   pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
+  pf("# zApiJsOut=%s\n# zJsOut=%s\n# zCmppD=%s\n", zApiJsOut, zJsOut, zCmppD);
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, zJsOut);
-  mk_pre_post(zNM, zCmppD);
+  mk_pre_post(zNM, flags, zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, zEmcc);
@@ -284,7 +309,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
      zApiJsOut, zCmppD);
 
   /* target zJsOut */
-  pf("%s: %s $(MAKEFILE) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
+  pf("%s: %s $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
      "$(pre-post-%s-%s.deps) "
      "$(sqlite3-api.ext.jses)"
      /* ^^^ maintenance reminder: we set these as deps so that they
@@ -302,12 +327,13 @@ static void mk_lib_mode(const char *zName     /* build name */,
   pf("\t\t$(cflags.common) $(SQLITE_OPT) \\\n"
      "\t\t$(cflags.%s) $(cflags.%s.%s) \\\n"
      "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n", zName, zNM);
-  if( bIsEsm ){
-    /* TODO? Replace this CALL with the corresponding makefile code.
-    ** OTOH, we also use this $(call) in the speedtest1-wasmfs build,
-    ** which is not part of the rules emitted by this program. */
+  if( LIBMODE_ESM & flags ){
+    /* TODO? Replace this $(call) with the corresponding makefile
+    ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
+    ** build, which is not part of the rules emitted by this
+    ** program. */
     pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
-       0==strcmp("sqlite3-wasmfs", zName) ? 1 : 0);
+       (LIBMODE_WASMFS & flags) ? 1 : 0);
   }
   pf("\t@chmod -x %s; \\\n"
      "\t\t$(maybe-wasm-strip) %s;\n",
@@ -329,20 +355,28 @@ static void mk_lib_mode(const char *zName     /* build name */,
   ** resulting .wasm file is identical for all builds for which zEmcc
   ** is empty.
   */
-  if( 0==strcmp("bundler-friendly", zMode)
-      || 0==strcmp("node", zMode) ){
+  if( (LIBMODE_BUNDLER_FRIENDLY & flags)
+      || (LIBMODE_NODEJS & flags) ){
     pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", zName);
     pf("\t\trm -f %s; \\\n", zWasmOut);
     pf("\t\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit;\n",
        /* ^^^^^^ reminder: Mac/BSD sed has no -i flag */
        zNM, zName);
     pf("\t@ls -la $@\n");
+    if( LIBMODE_BUNDLER_FRIENDLY & flags ){
+      /* Avoid a 3rd occurance of the bug fixed by 65798c09a00662a3,
+      ** which was (in two cases) caused by makefile refactoring and
+      ** not recognized until after a release was made with the broken
+      ** sqlite3-bundler-friendly.mjs: */
+      pf("\t@if grep -e '^ *importScripts(' $@; "
+         "then echo 'ERROR: bug fixed in 65798c09a00662a3 has re-appeared'; "
+         "exit 1; fi;\n");
+    }
+
   }else{
     pf("\t@ls -la %s $@\n", zWasmOut);
   }
-  if( 0!=strcmp("sqlite3-wasmfs", zName) ){
-    /* The sqlite3-wasmfs build is optional and needs to be invoked
-    ** conditionally using info we don't have here. */
+  if( 0==(LIBMODE_DONT_ADD_TO_ALL & flags) ){
     pf("all: %s\n", zJsOut);
   }
   pf("# End build [%s-%s]%s", zNM, zBanner);
@@ -354,22 +388,29 @@ int main(void){
   mk_prologue();
   mk_lib_mode("sqlite3", "vanilla", 0,
               "$(sqlite3-api.js)", "$(sqlite3.js)", 0, 0);
-  mk_lib_mode("sqlite3", "esm", 1,
+  mk_lib_mode("sqlite3", "esm", LIBMODE_ESM,
               "$(sqlite3-api.mjs)", "$(sqlite3.mjs)",
               "-Dtarget=es6-module", 0);
-  mk_lib_mode("sqlite3", "bundler-friendly", 1,
-              "$(sqlite3-api-bundler-friendly.mjs)", "$(sqlite3-bundler-friendly.mjs)",
+  mk_lib_mode("sqlite3", "bundler-friendly",
+              LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
+              "$(sqlite3-api-bundler-friendly.mjs)",
+              "$(sqlite3-bundler-friendly.mjs)",
               "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0);
-  mk_lib_mode("sqlite3" , "node", 1,
+  mk_lib_mode("sqlite3" , "node",
+              LIBMODE_NODEJS | LIBMODE_DONT_ADD_TO_ALL,
               "$(sqlite3-api-node.mjs)", "$(sqlite3-node.mjs)",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0);
-  mk_lib_mode("sqlite3-wasmfs", "esm" ,1,
+  mk_lib_mode("sqlite3-wasmfs", "esm" ,
+              LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
+              /* The sqlite3-wasmfs build is optional and needs to be invoked
+              ** conditionally using info we don't have here. */
               "$(sqlite3-api-wasmfs.mjs)", "$(sqlite3-wasmfs.mjs)",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META");
 
   mk_fiddle();
-  mk_pre_post("speedtest1","vanilla", 0);
-  mk_pre_post("speedtest1-wasmfs","esm", "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
+  mk_pre_post("speedtest1","vanilla", 0, 0);
+  mk_pre_post("speedtest1-wasmfs","esm", 0,
+              "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
   return rc;
 }

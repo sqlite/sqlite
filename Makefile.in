@@ -79,7 +79,7 @@ libdir      = @libdir@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@
-AR.flags = cr # TODO? Add a configure test to determine this?
+AR.flags = cr
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = $(CC)
@@ -118,12 +118,22 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
+LDFLAGS.rt = @LDFLAGS_RT@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-ENABLE_SHARED = @ENABLE_SHARED@
-ENABLE_STATIC = @ENABLE_STATIC@
+LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
+# os-specific: see
+# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+# - https://sqlite.org/forum/forumpost/0c7fc097b2
+libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
+# DLL.basename: see https://sqlite.org/forum/forumpost/828fdfe904
+libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
+# libsqlite3.out.implib => the output filename part of LDFLAGS_OUT_IMPLIB.
+ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
+ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
+libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
 T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 
@@ -142,7 +152,7 @@ T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # shell command.
 #
 CFLAGS.jimsh = @CFLAGS_JIMSH@
-JIMSH = ./jimsh$(TEXE)
+JIMSH = ./jimsh$(T.exe)
 
 #
 # $(B.tclsh) is documented in main.mk.

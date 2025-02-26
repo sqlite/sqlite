@@ -1849,7 +1849,6 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
     }
     pItem->zEName = sqlite3DbStrDup(db, pOldItem->zEName);
     pItem->fg = pOldItem->fg;
-    pItem->fg.done = 0;
     pItem->u = pOldItem->u;
   }
   return pNew;
@@ -1964,7 +1963,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
     pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
     pNew->iLimit = 0;
     pNew->iOffset = 0;
-    pNew->selFlags = p->selFlags & ~SF_UsesEphemeral;
+    pNew->selFlags = p->selFlags & ~(u32)SF_UsesEphemeral;
     pNew->addrOpenEphm[0] = -1;
     pNew->addrOpenEphm[1] = -1;
     pNew->nSelectRow = p->nSelectRow;
@@ -2966,13 +2965,7 @@ const char *sqlite3RowidAlias(Table *pTab){
   int ii;
   assert( VisibleRowid(pTab) );
   for(ii=0; ii<ArraySize(azOpt); ii++){
-    int iCol;
-    for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( sqlite3_stricmp(azOpt[ii], pTab->aCol[iCol].zCnName)==0 ) break;
-    }
-    if( iCol==pTab->nCol ){
-      return azOpt[ii];
-    }
+    if( sqlite3ColumnIndex(pTab, azOpt[ii])<0 ) return azOpt[ii];
   }
   return 0;
 }
@@ -3376,7 +3369,7 @@ static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
   char *zRet;
 
   assert( pExpr->op==TK_IN );
-  zRet = sqlite3DbMallocRaw(pParse->db, nVal+1);
+  zRet = sqlite3DbMallocRaw(pParse->db, 1+(i64)nVal);
   if( zRet ){
     int i;
     for(i=0; i<nVal; i++){

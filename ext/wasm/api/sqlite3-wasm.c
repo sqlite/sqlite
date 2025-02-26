@@ -980,7 +980,7 @@ const char * sqlite3__wasm_enum_json(void){
 #undef _DefGroup
 
   /*
-  ** Emit an array of "StructBinder" struct descripions, which look
+  ** Emit an array of "StructBinder" struct descriptions, which look
   ** like:
   **
   ** {
