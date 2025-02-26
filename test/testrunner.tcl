@@ -30,8 +30,8 @@ proc find_interpreter {} {
       && [file executable ./testfixture]
     } {
       puts "Failed to find tcl package sqlite3. Restarting with ./testfixture.."
-      set status [catch { 
-          exec ./testfixture [info script] {*}$::argv >@ stdout 
+      set status [catch {
+        exec [trd_get_bin_name testfixture] [info script] {*}$::argv >@ stdout
       } msg]
       exit $status
     }
@@ -237,7 +237,7 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
-  *linux* - MSYS_NT* {
+  *linux* - MSYS_NT* - MINGW64_NT* - MINGW32_NT* {
     set TRG(platform)    linux
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"

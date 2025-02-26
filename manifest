@@ -1,5 +1,5 @@
-C Test\stestrunner.tcl\sto\sidentify\san\smsys\senvironment.
-D 2025-02-26T18:31:42.955
+C Teach\stestrunner\show\sto\srun\slocal\sbinaries\swhich\shave\sa\s.exe\sextension.\sAlso\steach\sit\sto\srecognized\smingw\senvironments\s(but\sactually\sbuilding\sthe\stest\sprograms\sthere\scurrently\sdoesn't\swork).
+D 2025-02-26T19:22:52.979
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1730,8 +1730,8 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 2f900e8c912fbbaf381e69a92258fa6023ad0b4c8907e426bebbb4585da23c61
-F test/testrunner.tcl b93a2b77435f6495d274d70207cac7bcac0555217dcff4806a60548c015bb90d x
-F test/testrunner_data.tcl f64589ddd05abc2be4d6ab7573fb1cebb27a1034a092d95da684187dd455cd41
+F test/testrunner.tcl 0ffa67806e75aa2c186c63d7d00b16bb45adb91ed6560461fda6dbe3e18c885e x
+F test/testrunner_data.tcl 4f7197007504e18117dfe2da0e730fa374d7ec144878f39307da51973adc712e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd2a84a72c922c330441d6b75df0c8b2f6df2c25bc7c37ac37046fffd702624a
-R cad412104842ae0984e52f17376b1122
+P e9f777ceda9fca51c37caca0afeadfc3f99b86e945496f52c71adcc520dcee98
+R 902f54bd7da497a6ce0c7654c5f29166
 U stephan
-Z 1cdc970f41ca3a38b977f41ad6f349cb
+Z e07327cf32c5961b1da1fa78348a6def
 # Remove this line to create a well-formed Fossil manifest.
