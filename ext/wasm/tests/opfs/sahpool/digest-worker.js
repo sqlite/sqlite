@@ -48,7 +48,7 @@ const runTests = function(sqlite3, poolUtil){
       sql: "insert into t(a) values(?)",
       bind: n++
     });
-    log("Record count: ",db.selectValue("select count(*) from t"));
+    log(fname,"record count: ",db.selectValue("select count(*) from t"));
   }finally{
     db.close();
   }
@@ -59,7 +59,7 @@ const runTests = function(sqlite3, poolUtil){
       sql: "insert into t(a) values(?)",
       bind: n++
     });
-    log("Record count: ",db.selectValue("select count(*) from t"));
+    log(fname,"record count: ",db.selectValue("select count(*) from t"));
   }finally{
     db.close();
   }
@@ -74,15 +74,14 @@ const runTests = function(sqlite3, poolUtil){
       sql: "insert into t(a) values(?)",
       bind: n++
     });
-    log("Record count: ",db.selectValue("select count(*) from t"));
+    log(fname2,"record count: ",db.selectValue("select count(*) from t"));
   }finally{
     db.close();
   }
 };
 
 globalThis.sqlite3InitModule().then(async function(sqlite3){
-  log("sqlite3 version:",sqlite3.capi.sqlite3_libversion(),
-      sqlite3.capi.sqlite3_sourceid());
+  log("sqlite3 version:",sqlite3.version);
   const sahPoolConfig = {
     name: 'opfs-sahpool-digest',
     clearOnInit: false,

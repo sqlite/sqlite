@@ -79,23 +79,39 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.SQLITE_OPEN_MAIN_JOURNAL |
         capi.SQLITE_OPEN_SUPER_JOURNAL |
         capi.SQLITE_OPEN_WAL;
-  const FLAG_COMPUTE_DIGEST_V2 = 1 ? capi.SQLITE_OPEN_MEMORY : 0
+  const FLAG_COMPUTE_DIGEST_V2 = capi.SQLITE_OPEN_MEMORY
   /* Part of the fix for
      https://github.com/sqlite/sqlite-wasm/issues/97
 
-     Summary: prior to versions 3.49.1 and 3.50 computeDigest() always
-     computes a value of [0,0], so it does not actually do anything
-     useful.  Fixing it invalidates old persistent files, so we
-     instead only fix it for files created or updated since the bug
-     was discovered and fixed.
+     Summary: prior to versions 3.49.2 and 3.50.0 computeDigest()
+     always computes a value of [0,0] due to overflows, so it does not
+     do anything useful.  Fixing it invalidates old persistent files,
+     so we instead only fix it for files created or updated since the
+     bug was discovered and fixed.
 
      This flag determines whether we use the broken legacy
      computeDigest() or the v2 variant. We only use this flag for
      newly-created/overwritten files. Pre-existing files have the
      broken digest stored in them so need to continue to use that.
 
-     This flag is stored in the same space as the
-     SQLITE_OPEN_... flags and we must be careful here to not use an
+     What this means, in terms of db file compatibility between
+     versions:
+
+     - DBs created with versions older than this fix (<=3.49.1)
+     can be read by post-fix versions. Such DBs which are written
+     to in-place (not replaced) by newer versions can still be read
+     by older versions, as the affected digest is only modified
+     when the SAH slot is assigned to a given filename.
+
+     - DBs created with post-fix versions will, when read by a pre-fix
+     version, be seen as having a "bad digest" and will be
+     unceremoniously replaced by that pre-fix version. When swapping
+     back to a post-fix version, that version will see that the file
+     entry is missing the FLAG_COMPUTE_DIGEST_V2 bit so will treat it
+     as a legacy file.
+
+     This flag is stored in the same memory as the variour
+     SQLITE_OPEN_... flags and we must be careful here to not use a
      flag bit which is otherwise relevant for the VFS.
      SQLITE_OPEN_MEMORY is handled by sqlite3_open_v2() and friends,
      not the VFS, so we'll repurpose that one.  If we take a
@@ -659,7 +675,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
       const compDigest = this.computeDigest(this.#apBody, flags);
-      console.warn("getAssociatedPath() flags",flags.toString(16), "compDigest", compDigest);
+      //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
         const pathBytes = this.#apBody.findIndex((v)=>0===v);
@@ -691,16 +707,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss("Path too long:",path);
       }
       if(path && flags){
-        /* When re-writing files, update their digest, if needed,
-           to v2. We continue to use v1 for the (!path) case
-           (empty files) because there's little reason not to
-           use a digest of 0 for empty entries. */
+        /* When creating or re-writing files, update their digest, if
+           needed, to v2. We continue to use v1 for the (!path) case
+           (empty files) because there's little reason not to use a
+           digest of 0 for empty entries. */
         flags |= FLAG_COMPUTE_DIGEST_V2;
       }
       this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
       const digest = this.computeDigest(this.#apBody, flags);
-      console.warn("setAssociatedPath(",path,") digest",digest);
+      //console.warn("setAssociatedPath(",path,") digest",digest);
       sah.write(this.#apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
@@ -725,18 +741,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        See the docs for FLAG_COMPUTE_DIGEST_V2 for more details.
     */
     computeDigest(byteArray, fileFlags){
-      let h1 = 0xdeadbeef;
-      let h2 = 0x41c6ce57;
       if( fileFlags & FLAG_COMPUTE_DIGEST_V2 ){
+        let h1 = 0xdeadbeef;
+        let h2 = 0x41c6ce57;
         for(const v of byteArray){
           h1 = Math.imul(h1 ^ v, 2654435761);
           h2 = Math.imul(h2 ^ v, 104729);
         }
+        return new Uint32Array([h1>>>0, h2>>>0]);
       }else{
         /* this is what the buggy legacy computation worked out to */
-        h1 = h2 = 0;
+        return new Uint32Array([0,0]);
       }
-      return new Uint32Array([h1>>>0, h2>>>0]);
     }
 
     /**
