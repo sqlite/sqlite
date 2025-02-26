@@ -892,6 +892,35 @@ proc sqlite-handle-emsdk {} {
 }
 
 ########################################################################
+# Internal helper for [sqlite-check-line-editing]. Returns a list of
+# potential locations under which readline.h might be found.
+proc sqlite-get-readline-dir-list {} {
+  # Historical note: the dirs list, except for the inclusion of
+  # $prefix and some platform-specific dirs, originates from the
+  # legacy configure script
+  set dirs [list [get-define prefix]]
+  switch -glob -- [get-define host] {
+    *-linux-android {
+      # Possibly termux
+      lappend dirs /data/data/com.termux/files/usr
+    }
+    *-mingw32 {
+      lappend dirs /mingw32 /mingw
+    }
+    *-mingw64 {
+      lappend dirs /mingw64 /mingw
+    }
+  }
+  lappend dirs /usr /usr/local /usr/local/readline /usr/contrib
+  set rv {}
+  foreach d $dirs {
+    if {[file isdir $d]} {lappend rv $d}
+  }
+  #msg-debug "sqlite-get-readline-dir-list dirs=$rv"
+  return $rv
+}
+
+########################################################################
 # sqlite-check-line-editing jumps through proverbial hoops to try to
 # find a working line-editing library, setting:
 #
@@ -1027,7 +1056,7 @@ proc sqlite-check-line-editing {} {
       # ^^^ this check is derived from the legacy configure script.
       proj-warn "Skipping check for readline.h because we're cross-compiling."
     } else {
-      set dirs "[get-define prefix] /usr /usr/local /usr/local/readline /usr/contrib /mingw"
+      set dirs [sqlite-get-readline-dir-list]
       set subdirs "include/$editLibName"
       if {"editline" eq $editLibName} {
         lappend subdirs include/readline
@@ -1035,16 +1064,14 @@ proc sqlite-check-line-editing {} {
         # and uses libreadline's header.
       }
       lappend subdirs include
-      # ^^^ The dirs and subdirs lists are, except for the inclusion
-      # of $prefix and editline, from the legacy configure script
       set rlInc [proj-search-for-header-dir readline.h \
                  -dirs $dirs -subdirs $subdirs]
       if {"" ne $rlInc} {
         if {[string match */readline $rlInc]} {
-          set rlInc [file dirname $rlInc]; # shell #include's <readline/readline.h>
+          set rlInc [file dirname $rlInc]; # CLI shell: #include <readline/readline.h>
         } elseif {[string match */editline $rlInc]} {
           set editLibDef HAVE_EDITLINE
-          set rlInc [file dirname $rlInc]; # shell #include's <editline/readline.h>
+          set rlInc [file dirname $rlInc]; # CLI shell: #include <editline/readline.h>
         }
         set rlInc "-I${rlInc}"
       }
@@ -1088,7 +1115,7 @@ proc sqlite-check-line-editing {} {
       # linking to the GPL'd libreadline. Presumably that distinction is
       # significant for those using --editline.
       proj-indented-notice {
-        NOTE: the local libedit but uses <readline/readline.h> so we
+        NOTE: the local libedit uses <readline/readline.h> so we
         will compile with -DHAVE_READLINE=1 but will link with
         libedit.
       }
