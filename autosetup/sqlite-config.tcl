@@ -13,6 +13,18 @@ if {[string first " " $autosetup(builddir)] != -1} {
 }
 
 use proj
+# We want this version info to be emitted up front, but we have to
+# 'use system' for --prefix=... to work. Ergo, this bit is up here
+# instead of in [sqlite-configure].
+define PACKAGE_VERSION [proj-file-content -trim $::autosetup(srcdir)/VERSION]
+if {"--help" ni $::argv} {
+  msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
+}
+use system ; # Will output "Host System" and "Build System" lines
+if {"--help" ni $::argv} {
+  msg-result "Source dir = $::autosetup(srcdir)"
+  msg-result "Build dir  = $::autosetup(builddir)"
+}
 
 #
 # Object for communicating config-time state across various
@@ -344,11 +356,6 @@ proc sqlite-configure {buildMode configScript} {
   # the most-frequently-useful info at the top of the ./configure
   # output, but also avoiding outputing it if --help is used.
   uplevel 1 {
-    define PACKAGE_VERSION [proj-file-content -trim $::autosetup(srcdir)/VERSION]
-    msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
-    use system ; # Will output "Host System" and "Build System" lines
-    msg-result "Source dir = $::autosetup(srcdir)"
-    msg-result "Build dir  = $::autosetup(builddir)"
     use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
