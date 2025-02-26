@@ -1,5 +1,5 @@
-C Disable\ssome\smisuse\stests\sthat\ssometimes\scause\ssegfaults\sduring\n"make\sreleasetest".
-D 2025-02-25T21:16:13.778
+C Fix\sa\sbug\sin\smkwasmbuilds.c\swhich\scaused\ssqlite3.wasm\sto\sget\sdeleted\sdirectly\safter\sit\swas\sbuilt.
+D 2025-02-26T03:20:26.791
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -680,7 +680,7 @@ F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf1
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 77d004a93ab52bcafcf94d7c6646bbe43e4ff39c4f3f228baf80732ee7a1626d
-F ext/wasm/mkwasmbuilds.c 57ce3c6e30c17078586dde9b5dec946f6a2d08f195067d4b6feefbc0bf1e0a4b
+F ext/wasm/mkwasmbuilds.c e5c30286c8252fc8cfd398a286a2ae1e46dba9c1bafdfe36966b853432577460
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af928818a030924060ee0762431dae0f16d53a62f4e1132754d052eb9c621ac2
-R eeb744512326d8f3b2694527497b4830
-U drh
-Z 13c562a7cc57861933a75af1aee43090
+P 5856251a7e8a69aa181f89533bc2a78812d8b450a407b4b2f73f0c146cd78072
+R b840bd624d9384d1c2e20ee14054bc6d
+U stephan
+Z b6a8d00e4e4586215158387bb7650244
 # Remove this line to create a well-formed Fossil manifest.

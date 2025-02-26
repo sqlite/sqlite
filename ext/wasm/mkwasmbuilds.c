@@ -138,19 +138,23 @@ static void mk_prologue(void){
 /*
 ** Flags for use with the 3rd argument to mk_pre_post() and
 ** mk_lib_mode().
+**
+** Maintenance reminder: do not combine flags within this enum,
+** e.g. LIBMODE_BUNDLER_FRIEND=0x02|LIBMODE_ESM, as that will lead to
+** breakage in some of the flag checks.
 */
 enum LibModeFlags {
   /* Indicates an ESM module build. */
   LIBMODE_ESM = 0x01,
   /* Indicates a "bundler-friendly" build mode. */
-  LIBMODE_BUNDLER_FRIENDLY = 0x02 | LIBMODE_ESM,
+  LIBMODE_BUNDLER_FRIENDLY = 0x02,
   /* Indicates to _not_ add this build to the 'all' target. */
   LIBMODE_DONT_ADD_TO_ALL = 0x04,
   /* Indicates a node.js-for-node.js build (untested and
   ** unsupported). */
   LIBMODE_NODEJS = 0x08,
   /* Indicates a wasmfs build (untested and unsupported). */
-  LIBMODE_WASMFS = 0x10 | LIBMODE_ESM
+  LIBMODE_WASMFS = 0x10
 };
 
 /*
@@ -387,7 +391,8 @@ int main(void){
   mk_lib_mode("sqlite3", "esm", LIBMODE_ESM,
               "$(sqlite3-api.mjs)", "$(sqlite3.mjs)",
               "-Dtarget=es6-module", 0);
-  mk_lib_mode("sqlite3", "bundler-friendly", LIBMODE_BUNDLER_FRIENDLY,
+  mk_lib_mode("sqlite3", "bundler-friendly",
+              LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
               "$(sqlite3-api-bundler-friendly.mjs)",
               "$(sqlite3-bundler-friendly.mjs)",
               "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0);
@@ -396,7 +401,7 @@ int main(void){
               "$(sqlite3-api-node.mjs)", "$(sqlite3-node.mjs)",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0);
   mk_lib_mode("sqlite3-wasmfs", "esm" ,
-              LIBMODE_WASMFS | LIBMODE_DONT_ADD_TO_ALL,
+              LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
               /* The sqlite3-wasmfs build is optional and needs to be invoked
               ** conditionally using info we don't have here. */
               "$(sqlite3-api-wasmfs.mjs)", "$(sqlite3-wasmfs.mjs)",
