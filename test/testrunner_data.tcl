@@ -459,7 +459,7 @@ proc trd_fuzztest_data {} {
     return [list fuzzcheck.exe $lFuzzDb]
   }
 
-  return [list fuzzcheck $lFuzzDb {sessionfuzz run} $lSessionDb]
+  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb {sessionfuzz run} $lSessionDb]
 }
 
 
@@ -687,4 +687,18 @@ proc trd_test_script_properties {path} {
   }
 
   set trd_test_script_properties_cache($path)
+}
+
+# Usage:
+#
+#    trd_get_bin_name executable-file-name
+#
+# If file $bin exists, return $bin. Else if ${bin}.exe
+# exists, return that. Else error out.
+proc trd_get_bin_name {bin} {
+  global tcl_platform
+  if {[file exists $bin]} {return $bin}
+  if {[file exists $bin.exe]} {return $bin.exe}
+  if {$tcl_platform(platform)=="Windows"} {return $bin.exe}
+  return $bin
 }
