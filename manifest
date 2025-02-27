@@ -1,5 +1,5 @@
-C Internal\sdoc\stypo\sfixes\sreported\sin\s[forum:01d15f21b6|forum\spost\s01d15f21b6].
-D 2025-02-27T03:23:33.413
+C Add\ssupport\sfor\sSQLITE_EXTRA_INIT_MUTEXED\s-\slike\sSQLITE_EXTRA_INIT,\sbut\sis\scalled\sfrom\swithin\ssqlite3_initialize()\swhen\sthe\sSQLITE_MUTEX_STATIC_MAIN\smutex\sis\sstill\sheld.
+D 2025-02-27T11:03:54.680
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -745,7 +745,7 @@ F src/insert.c a5f0366266be993ebf533808f22cb7a788624805b55bc45424ceed3f48c54a16
 F src/json.c 5abb5cb782e74451a8882f6b7ee4d5e629246642262660bd1980a5e1b796258d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
-F src/main.c b3714544b61db632703159ab58fa20e57cdbf63dc3afacc3f81521b95ceaad47
+F src/main.c 5102588cbe7668d5ee19fd9945546e4f1fd99e41815432decf5dd29f01f55597
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2150,7 +2150,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh c5e65fa1c922f2e3b3e4f6cd0331ec7d84bdef085f32cb1c46673cdf95ec8090
 F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
-F tool/mkctimec.tcl 809e42c417ca46f585991c832d7672364c3b0b47807d8b488a13dd1ff54bdd39 x
+F tool/mkctimec.tcl f76dbfc74cefad8d126384ba3263677939f077bd184fcdf8c592a1daf64f50c3 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2bd23f251359e7a818c4cfacf114aa9fd8c0a9a1cb802654e96fad67b505508
-R 8a882503d7f3458e4972083bb6c52969
-U stephan
-Z ab4d8eff019c77d92f4e0a1b22dac0f6
+P d6514c20ff583ccc4fb3a526fb8f86a563224f513ee10bb39a978046bd952726
+R c3077920b203dcc030b8f65faed2368a
+U dan
+Z ab88d5c2674f6063fcdc4cc9b07ac216
 # Remove this line to create a well-formed Fossil manifest.
