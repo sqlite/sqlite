@@ -696,7 +696,9 @@ proc trd_test_script_properties {path} {
 # If file $bin exists, return $bin. Else if ${bin}.exe
 # exists, return that. Else error out.
 proc trd_get_bin_name {bin} {
+  global tcl_platform
   if {[file exists $bin]} {return $bin}
   if {[file exists $bin.exe]} {return $bin.exe}
-  error "Cannot find binary named $bin"
+  if {$tcl_platform(platform)=="Windows"} {return $bin.exe}
+  return $bin
 }
