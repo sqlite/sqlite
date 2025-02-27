@@ -1105,7 +1105,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - `clearOnInit`: (default=false) if truthy, contents and filename
      mapping are removed from each SAH it is acquired during
-     initalization of the VFS, leaving the VFS's storage in a pristine
+     initialization of the VFS, leaving the VFS's storage in a pristine
      state. Use this only for databases which need not survive a page
      reload.
 
@@ -1232,7 +1232,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      VFS-hosted database file. The result of the resolved Promise when
      called this way is the size of the resulting database.
 
-     On succes this routine rewrites the database header bytes in the
+     On success this routine rewrites the database header bytes in the
      output file (not the input array) to force disabling of WAL mode.
 
      On a write error, the handle is removed from the pool and made

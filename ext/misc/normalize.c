@@ -286,7 +286,7 @@ static const unsigned char sqlite3CtypeMap[256] = {
 #define TK_VARIABLE TK_LITERAL
 #define TK_BLOB     TK_LITERAL
 
-/* Disable nuisence warnings about case fall-through */
+/* Disable nuisance warnings about case fall-through */
 #if !defined(deliberate_fall_through) && defined(__GCC__) && __GCC__>=7
 # define deliberate_fall_through __attribute__((fallthrough));
 #else

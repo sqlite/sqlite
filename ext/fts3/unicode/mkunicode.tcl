@@ -893,7 +893,7 @@ proc print_test_main {} {
   puts "\}"
 }
 
-# Proces the command line arguments. Exit early if they are not to
+# Process the command line arguments. Exit early if they are not to
 # our liking.
 #
 proc usage {} {

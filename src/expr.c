@@ -4672,7 +4672,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 
 
 /*
-** Expresion pExpr is guaranteed to be a TK_COLUMN or equivalent. This
+** Expression pExpr is guaranteed to be a TK_COLUMN or equivalent. This
 ** function checks the Parse.pIdxPartExpr list to see if this column
 ** can be replaced with a constant value. If so, it generates code to
 ** put the constant value in a register (ideally, but not necessarily, 

@@ -169,7 +169,7 @@ deliberately return an error code, instead of segfaulting, when passed
 a `null`.
 
 Client-defined callbacks _must never throw exceptions_ unless _very
-explitly documented_ as being throw-safe. Exceptions are generally
+explicitly documented_ as being throw-safe. Exceptions are generally
 reserved for higher-level bindings which are constructed to
 specifically deal with them and ensure that they do not leak C-level
 resources. In some cases, callback handlers are permitted to throw, in

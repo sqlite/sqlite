@@ -149,7 +149,7 @@ proc sqlite-configure {buildMode configScript} {
     # Options for how to build the library
     build-modes {
       {*} {
-        shared=1             => {Disable build of shared libary}
+        shared=1             => {Disable build of shared library}
         static=1             => {Disable build of static library}
       }
       {canonical} {

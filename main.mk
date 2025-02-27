@@ -1499,7 +1499,7 @@ all: so
 #    still expect to see the legacy file names.
 #
 # In either case, libsqlite3.la, if found, is deleted because it would
-# contain stale state, refering to non-libtool-generated libraries.
+# contain stale state, referring to non-libtool-generated libraries.
 #
 
 install-dll-out-implib: $(install-dir.lib) $(libsqlite3.DLL)

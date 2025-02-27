@@ -97,7 +97,7 @@
 **    LIMIT 20
 **
 ** The query above gives the 20 closest words to the $word being tested.
-** (Note that for good performance, the vocubulary.w column should be
+** (Note that for good performance, the vocabulary.w column should be
 ** indexed.)
 **
 ** A similar query can be used to find all words in the dictionary that
@@ -207,7 +207,7 @@ struct fuzzer_rule {
 ** Every stem is added to a hash table as it is output.  Generation of
 ** duplicate stems is suppressed.
 **
-** Active stems (those that might generate new outputs) are kepts on a linked
+** Active stems (those that might generate new outputs) are kept on a linked
 ** list sorted by increasing cost.  The cost is the sum of rBaseCost and
 ** pRule->rCost.
 */

@@ -1769,7 +1769,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   /** If true, the constructor emits a warning. The intent is that
       this be set to true after bootstrapping of the higher-level
       client library is complete, to warn downstream clients that
-      they shouldn't be relying on this implemenation detail which
+      they shouldn't be relying on this implementation detail which
       does not have a stable interface. */
   xArg.FuncPtrAdapter.warnOnUse = false;
 
@@ -1949,7 +1949,7 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      - `json:dealloc` (results): works exactly like `string:dealloc` but
        returns the same thing as the `json` adapter. Note the
-       warning in `string:dealloc` regarding maching allocators and
+       warning in `string:dealloc` regarding matching allocators and
        deallocators.
 
      The type names for results and arguments are validated when

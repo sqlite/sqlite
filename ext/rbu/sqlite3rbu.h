@@ -49,7 +49,7 @@
 **
 ** "RBU" stands for "Resumable Bulk Update". As in a large database update
 ** transmitted via a wireless network to a mobile device. A transaction
-** applied using this extension is hence refered to as an "RBU update".
+** applied using this extension is hence referred to as an "RBU update".
 **
 **
 ** LIMITATIONS
@@ -346,7 +346,7 @@ SQLITE_API sqlite3rbu *sqlite3rbu_open(
 ** the next call to sqlite3rbu_vacuum() opens a handle that starts a 
 ** new RBU vacuum operation.
 **
-** As with sqlite3rbu_open(), Zipvfs users should rever to the comment
+** As with sqlite3rbu_open(), Zipvfs users should refer to the comment
 ** describing the sqlite3rbu_create_vfs() API function below for 
 ** a description of the complications associated with using RBU with 
 ** zipvfs databases.

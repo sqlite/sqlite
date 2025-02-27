@@ -12256,7 +12256,7 @@ static int line_is_command_terminator(char *zLine){
 ** out of the build if compiling with SQLITE_OMIT_COMPLETE.
 */
 #ifdef SQLITE_OMIT_COMPLETE
-# error the CLI application is imcompatable with SQLITE_OMIT_COMPLETE.
+# error the CLI application is incompatable with SQLITE_OMIT_COMPLETE.
 #endif
 
 /*

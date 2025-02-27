@@ -482,9 +482,9 @@ struct amatch_rule {
   amatch_rule *pNext;      /* Next rule in order of increasing rCost */
   char *zFrom;             /* Transform from (a string from user input) */
   amatch_cost rCost;       /* Cost of this transformation */
-  amatch_langid iLang;     /* The langauge to which this rule belongs */
+  amatch_langid iLang;     /* The language to which this rule belongs */
   amatch_len nFrom, nTo;   /* Length of the zFrom and zTo strings */
-  char zTo[4];             /* Tranform to V.W value (extra space appended) */
+  char zTo[4];             /* Transform to V.W value (extra space appended) */
 };
 
 /* 
