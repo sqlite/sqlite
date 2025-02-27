@@ -1,5 +1,5 @@
-C Merge\sback\sa\ssequence\sof\sthree\schanges\sthat\swere\sbranched\sdue\sto\sa\sbuild\sbreak.
-D 2025-02-27T15:55:01.063
+C Strive\sto\smake\ssorts\sstable\sin\sthe\smkpragmatab.tcl\sbuild\sscript,\sso\sthat\nwe\sget\sconsistent\samalgamations\sregardless\sof\splatform.\n[forum:/forumpost/c9914addebf3da51|Forum\sthread\sc9914addebf3da51].
+D 2025-02-27T16:07:49.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2156,7 +2156,7 @@ F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
-F tool/mkpragmatab.tcl 365ff4c0367b2fa686fdb20a1a03e36c697959c1ca854fc82af42b9056170893
+F tool/mkpragmatab.tcl 3801ce32f8c55fe63a3b279f231fb26c2c1a2ea9a09d2dd599239d87a609acec
 F tool/mkshellc.tcl 9ce74de0fa904a2c56a96f8d8b5261246bacb0eaa8d7e184f9e18ff94145ebbc
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -2213,9 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e9f777ceda9fca51c37caca0afeadfc3f99b86e945496f52c71adcc520dcee98 6ed84211033ee0ff00c8fd088979fe06d3a264e4f935162f36a62c00af135c63
-R a7e661399baadc74a19d1d0659fe985b
-T +closed 6ed84211033ee0ff00c8fd088979fe06d3a264e4f935162f36a62c00af135c63
+P 67809715977a5bad0ec7830e27746aba2080852eb725d471c0fd62d4f464a884
+R a0c87770c5faeb4d0cace408f3443ee4
 U drh
-Z aba31a06453c95b6e43f522af834d97f
+Z 621f4002c82d2c0de11cbafd0bf13ed2
 # Remove this line to create a well-formed Fossil manifest.
