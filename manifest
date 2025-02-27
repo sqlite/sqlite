@@ -1,5 +1,5 @@
-C Strive\sto\smake\ssorts\sstable\sin\sthe\smkpragmatab.tcl\sbuild\sscript,\sso\sthat\nwe\sget\sconsistent\samalgamations\sregardless\sof\splatform.\n[forum:/forumpost/c9914addebf3da51|Forum\sthread\sc9914addebf3da51].
-D 2025-02-27T16:07:49.451
+C Reimplement\stestrunner_data.tcl::trd_get_bin_name()\sto\sassume\sa\s.exe\sextension\son\sall\splatforms\snot\smatching\s"unix",\sto\savoid\shaving\sto\sdo\sfile-exists\schecks.
+D 2025-02-27T19:40:02.870
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1731,7 +1731,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 2f900e8c912fbbaf381e69a92258fa6023ad0b4c8907e426bebbb4585da23c61
 F test/testrunner.tcl 0ffa67806e75aa2c186c63d7d00b16bb45adb91ed6560461fda6dbe3e18c885e x
-F test/testrunner_data.tcl 99606bf4b46ced6218220118d290e19dfdea59da90d8ae11a93533c48ea34954
+F test/testrunner_data.tcl 6d7e7824bb36278ea65c33f7da6dd3ca101fc7d6f7a765b807dce0aa68c52521
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 67809715977a5bad0ec7830e27746aba2080852eb725d471c0fd62d4f464a884
-R a0c87770c5faeb4d0cace408f3443ee4
-U drh
-Z 621f4002c82d2c0de11cbafd0bf13ed2
+P 3f57584710d611748eb0af797c58c72e4ac099db09f5286cafdbd9a8ce354c90
+R 751c703d740193fc7366f43b6c664b27
+U stephan
+Z d212532ab550d43449b9649fce920416
 # Remove this line to create a well-formed Fossil manifest.
