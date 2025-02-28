@@ -12,19 +12,19 @@ if {[string first " " $autosetup(builddir)] != -1} {
               may not contain space characters"
 }
 
-# The mixing of output and 'use' here is largely cosmetic, the intent
-# being to put the most-frequently-useful info at the top.
 use proj
+# We want this version info to be emitted up front, but we have to
+# 'use system' for --prefix=... to work. Ergo, this bit is up here
+# instead of in [sqlite-configure].
 define PACKAGE_VERSION [proj-file-content -trim $::autosetup(srcdir)/VERSION]
-msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
+if {"--help" ni $::argv} {
+  msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
+}
 use system ; # Will output "Host System" and "Build System" lines
-msg-result "Source dir = $::autosetup(srcdir)"
-msg-result "Build dir  = $::autosetup(builddir)"
-use cc cc-db cc-shared cc-lib pkg-config
-define PACKAGE_NAME "sqlite"
-define PACKAGE_URL {https://sqlite.org}
-define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
-define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
+if {"--help" ni $::argv} {
+  msg-result "Source dir = $::autosetup(srcdir)"
+  msg-result "Build dir  = $::autosetup(builddir)"
+}
 
 #
 # Object for communicating config-time state across various
@@ -345,12 +345,18 @@ proc sqlite-configure {buildMode configScript} {
     }
   }
   #lappend opts "soname:=duplicateEntry => {x}"; #just testing
-  if {[catch {options $opts} msg opts]} {
+  if {[catch {options $opts} msg xopts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
     # where [options] behaves oddly on _some_ TCL builds when it's
     # called from deeper than the global scope.
-    dict incr opts -level
-    return {*}$opts $msg
+    dict incr xopts -level
+    return {*}$xopts $msg
+  }
+  # The following uplevel is largely cosmetic, the intent being to put
+  # the most-frequently-useful info at the top of the ./configure
+  # output, but also avoiding outputing it if --help is used.
+  uplevel 1 {
+    use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
   uplevel 1 $configScript
@@ -422,6 +428,10 @@ proc sqlite-configure-finalize {} {
 # top-level build and the "autoconf" build, but it's not intended to
 # be a catch-all dumping ground for such.
 proc sqlite-post-options-init {} {
+  define PACKAGE_NAME "sqlite"
+  define PACKAGE_URL {https://sqlite.org}
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
   #
   # Carry values from hidden --flag aliases over to their canonical
   # flag forms. This list must include only options which are common
@@ -889,6 +899,35 @@ proc sqlite-handle-emsdk {} {
 }
 
 ########################################################################
+# Internal helper for [sqlite-check-line-editing]. Returns a list of
+# potential locations under which readline.h might be found.
+proc sqlite-get-readline-dir-list {} {
+  # Historical note: the dirs list, except for the inclusion of
+  # $prefix and some platform-specific dirs, originates from the
+  # legacy configure script
+  set dirs [list [get-define prefix]]
+  switch -glob -- [get-define host] {
+    *-linux-android {
+      # Possibly termux
+      lappend dirs /data/data/com.termux/files/usr
+    }
+    *-mingw32 {
+      lappend dirs /mingw32 /mingw
+    }
+    *-mingw64 {
+      lappend dirs /mingw64 /mingw
+    }
+  }
+  lappend dirs /usr /usr/local /usr/local/readline /usr/contrib
+  set rv {}
+  foreach d $dirs {
+    if {[file isdir $d]} {lappend rv $d}
+  }
+  #msg-debug "sqlite-get-readline-dir-list dirs=$rv"
+  return $rv
+}
+
+########################################################################
 # sqlite-check-line-editing jumps through proverbial hoops to try to
 # find a working line-editing library, setting:
 #
@@ -1024,7 +1063,7 @@ proc sqlite-check-line-editing {} {
       # ^^^ this check is derived from the legacy configure script.
       proj-warn "Skipping check for readline.h because we're cross-compiling."
     } else {
-      set dirs "[get-define prefix] /usr /usr/local /usr/local/readline /usr/contrib /mingw"
+      set dirs [sqlite-get-readline-dir-list]
       set subdirs "include/$editLibName"
       if {"editline" eq $editLibName} {
         lappend subdirs include/readline
@@ -1032,16 +1071,14 @@ proc sqlite-check-line-editing {} {
         # and uses libreadline's header.
       }
       lappend subdirs include
-      # ^^^ The dirs and subdirs lists are, except for the inclusion
-      # of $prefix and editline, from the legacy configure script
       set rlInc [proj-search-for-header-dir readline.h \
                  -dirs $dirs -subdirs $subdirs]
       if {"" ne $rlInc} {
         if {[string match */readline $rlInc]} {
-          set rlInc [file dirname $rlInc]; # shell #include's <readline/readline.h>
+          set rlInc [file dirname $rlInc]; # CLI shell: #include <readline/readline.h>
         } elseif {[string match */editline $rlInc]} {
           set editLibDef HAVE_EDITLINE
-          set rlInc [file dirname $rlInc]; # shell #include's <editline/readline.h>
+          set rlInc [file dirname $rlInc]; # CLI shell: #include <editline/readline.h>
         }
         set rlInc "-I${rlInc}"
       }
@@ -1085,7 +1122,7 @@ proc sqlite-check-line-editing {} {
       # linking to the GPL'd libreadline. Presumably that distinction is
       # significant for those using --editline.
       proj-indented-notice {
-        NOTE: the local libedit but uses <readline/readline.h> so we
+        NOTE: the local libedit uses <readline/readline.h> so we
         will compile with -DHAVE_READLINE=1 but will link with
         libedit.
       }
@@ -1957,7 +1994,7 @@ proc sqlite-handle-tcl {} {
 # Handle the --enable/disable-rpath flag.
 proc sqlite-handle-rpath {} {
   proj-check-rpath
-  # autosetup/cc-chared.tcl sets the rpath flag definition in
+  # autosetup/cc-shared.tcl sets the rpath flag definition in
   # [get-define SH_LINKRPATH], but it does so on a per-platform basis
   # rather than as a compiler check. Though we should do a proper
   # compiler check (as proj-check-rpath does), we may want to consider
