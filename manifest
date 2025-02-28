@@ -1,5 +1,5 @@
-C Approximately\s100\stypo\scorrections\sspanning\sthe\swhole\stree,\ssubmitted\svia\s[forum:0db9827f0464bc33|forum\spost\s0db9827f0464bc33]\sand\sindividually\saudited\sand\sverified.\sAffects\sonly\scode\scomments,\sinnocuous\stest\sstrings,\serror\smessage\stext\sin\stool\s(not\slibrary)\scode,\sand\sconfigure-level\shelp\stext.
-D 2025-02-27T21:17:55.715
+C Latest\supstream\sautosetup.\sFixes\stwo\sminor\scorner-case\sissues\swhich\swe\shaven't\syet\sseen\sin\spractice.
+D 2025-02-28T04:58:43.003
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -38,10 +38,10 @@ F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f041
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
 F autosetup/README.md b306314e8a87ccf873cb5b2a360c4a27bbf841df5b76f3acbd65322cff165476
-F autosetup/autosetup df8b53928b1fe3c67db5bc77c8e1eb8160c1b6a26c370e9a06c68748f803b7e4 x
+F autosetup/autosetup 74a9782b68d07934510190fbd03fc6ad92e63f0ea3b5cbffa5f0bd271ad60f01 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
-F autosetup/autosetup-find-tclsh 25905f6c302959db80c2951aa267b4411c5645b598ce761cfc24a166141e2c4c x
+F autosetup/autosetup-find-tclsh b08f883f5753cfff1ecb8581f98b314e190b7e3f3059798e274ae5f5aad571af x
 F autosetup/autosetup-test-tclsh 749d20defee533a3842139df47d700fc7a334a5da7bdbd444ae5331744b06c5f
 F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034b10a7b
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ce5519102a1b4df5d513835974799cdcda3478ec53ae99bbb631951095291919
-R e3241bf0ac5962059be6c41a6a453f54
+P f50c21484d3cac73589da0376c423de39ae8b842218105786c5aa3726e4dcaed
+R f5160fd02bcf6eb4c02cd59c87a01cc7
 U stephan
-Z a2fe4009b1f18bd334731d2d2726e84f
+Z dadd2b126fe0d985ec575f04748b5c31
 # Remove this line to create a well-formed Fossil manifest.
