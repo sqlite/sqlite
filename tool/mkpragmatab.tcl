@@ -528,10 +528,13 @@ foreach f [lsort [array names allflags]] {
   set fv [expr {$fv*2}]
 }
 
-# Sort the column lists so that longer column lists occur first
+# Sort the column lists so that longer column lists occur first.
+# In the event of a tie, sort column lists lexicographically.
 #
 proc colscmp {a b} {
-  return [expr {[llength $b] - [llength $a]}]
+  set rc [expr {[llength $b] - [llength $a]}]
+  if {$rc} {return $rc}
+  return [string compare $a $b]
 }
 set cols_list [lsort -command colscmp $cols_list]
 
