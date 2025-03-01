@@ -128,7 +128,9 @@
 #endif
 
 #ifdef SQLITE_WASM_EXTRA_INIT
-#  define SQLITE_EXTRA_INIT sqlite3_wasm_extra_init
+/* SQLITE_EXTRA_INIT vs SQLITE_EXTRA_INIT_MUTEXED:
+** see https://sqlite.org/forum/forumpost/14183b98fc0b1dea */
+#  define SQLITE_EXTRA_INIT_MUTEXED sqlite3_wasm_extra_init
 #endif
 
 /*
