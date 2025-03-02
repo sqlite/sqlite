@@ -1,5 +1,5 @@
-C Use\sSQLITE_EXTRA_INIT_MUTEXED\sinstead\sof\sSQLITE_EXTRA_INIT\sfor\sthe\sSQLITE_WASM_EXTRA_INIT\sfeature,\sas\ssuggested\sin\s[forum:14183b98fc0b1dea|forum\spost\s14183b98fc0b1dea].\sThis\sdoesn't\smake\sa\sfunctional\sdifference\snow\s-\sthis\sis\sin\sthe\sname\sof\sfuture-proofing\sagainst\seventual\sthreading\ssupport\sin\swasm.
-D 2025-03-01T23:44:11.653
+C Ensure\sthat\sdetection\sof\scontrol\scharacters\sby\scomparison\sagainst\s0x1f\nuses\sunsigned\scharacters.\s[forum:/forumpost/4c344ca61f|Forum\spost\s4c344ca61f].
+D 2025-03-02T20:29:49.693
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -777,7 +777,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 78d4935e510f7bed0fdd1a3f742c0e663b36a795f9dc7411161dc22bdae1245e
 F src/pragma.c 30b535d0a66348df844ee36f890617b4cf45e9a22dcbc47ec3ca92909c50aaf1
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
-F src/printf.c b373a8800e09fb888497b2bc640e455ee8ebc584a60f16368989394d5b895ac0
+F src/printf.c 33fc0d7643c848a098afdcb6e1db6de12379d47084b1cd0912cfce1d09345e44
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 626c24b258b111f75c22107aa5614ad89810df3026f5ca071116d3fe75925c75
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -1270,7 +1270,7 @@ F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d8
 F test/func6.test 3bc89ec0f2605736d3a118f43d25ef58115a7db4dba8ae939a363917d815c0bb
 F test/func7.test 7e009275f52c52954c8c028fdb62f8bc16cc47276fcc8753c1d2b22c6e074598
 F test/func8.test c4e2ecacf9f16e47a245e7a25fbabcc7e78f9c7c41a80f158527cdfdc6dd299d
-F test/func9.test b32d313f679aa9698d52f39519d301c3941823cb72b4e23406c210eadd82c824
+F test/func9.test 62750dbbbcc9a2d241918b5f999f59e2126084d5f81904f9e1d8ee466666a19d
 F test/fuzz-oss1.test 514dcabb24687818ea949fa6760229eaacad74ca70157743ef36d35bbe01ffb0
 F test/fuzz.test 819ea7e483bcee91209aacbe6f9eaf3287baa1841479ee5f639f57c5e7c42b86
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a14d4afd5020af327629e5c72b0699ddab0ef4e3f23938a1b72669aa29fc2e87
-R 0f3668df4f86a7041cd2614cd2f877d7
-U stephan
-Z 0946cb8e40bf651ea393735762a2e148
+P 46479c2e30b9676e0fa8da117ba67f673671fb340c9bea38ece19a1b2371a57b
+R 57b899b4b6d637412d3118216d961f05
+U drh
+Z 75690587bbb206b10d61b3135a456b8f
 # Remove this line to create a well-formed Fossil manifest.
