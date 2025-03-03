@@ -3189,8 +3189,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         db.close();
         T.assert(1 === u1.getFileCount());
         db = new u2.OpfsSAHPoolDb(dbName);
-        T.assert(1 === u1.getFileCount());
+        T.assert(1 === u1.getFileCount())
+          .mustThrowMatching(
+            ()=>u1.pauseVfs(),
+            (err)=>{
+              return capi.SQLITE_MISUSE===err.resultCode
+                && /^SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
+            },
+            "Cannot pause VFS with opened db."
+          );
         db.close();
+        T.assert( u2===u2.pauseVfs() )
+          .assert( u2.isPaused() )
+          .assert( 0===capi.sqlite3_vfs_find(u2.vfsName) )
+          .mustThrowMatching(()=>new u2.OpfsSAHPoolDb(dbName),
+                             /.+no such vfs: .+/,
+                             "VFS is not available")
+          .assert( u2===await u2.unpauseVfs() )
+          .assert( u2===await u1.unpauseVfs(), "unpause is a no-op if the VFS is not paused" )
+          .assert( 0!==capi.sqlite3_vfs_find(u2.vfsName) );
         const fileNames = u1.getFileNames();
         T.assert(1 === fileNames.length)
           .assert(dbName === fileNames[0])

@@ -315,7 +315,7 @@ typedef struct CsvTable {
 } CsvTable;
 
 /* Allowed values for tstFlags */
-#define CSVTEST_FIDX  0x0001      /* Pretend that constrained searchs cost less*/
+#define CSVTEST_FIDX  0x0001      /* Pretend that constrained search cost less*/
 
 /* A cursor for the CSV virtual table */
 typedef struct CsvCursor {

@@ -781,6 +781,11 @@ struct WalCkptInfo {
 /*
 ** An open write-ahead log file is represented by an instance of the
 ** following object.
+**
+** writeLock:
+**   This is usually set to 1 whenever the WRITER lock is held. However,
+**   if it is set to 2, then the WRITER lock is held but must be released
+**   by walHandleException() if a SEH exception is thrown.
 */
 struct Wal {
   sqlite3_vfs *pVfs;         /* The VFS used to create pDbFd */
@@ -2578,7 +2583,7 @@ static int walEnableBlockingMs(Wal *pWal, int nMs){
 static int walEnableBlocking(Wal *pWal){
   int res = 0;
   if( pWal->db ){
-    int tmout = pWal->db->busyTimeout;
+    int tmout = pWal->db->setlkTimeout;
     if( tmout ){
       res = walEnableBlockingMs(pWal, tmout);
     }
@@ -3061,7 +3066,9 @@ static int walHandleException(Wal *pWal){
     static const int S = 1;
     static const int E = (1<<SQLITE_SHM_NLOCK);
     int ii;
-    u32 mUnlock = pWal->lockMask & ~(
+    u32 mUnlock;
+    if( pWal->writeLock==2 ) pWal->writeLock = 0;
+    mUnlock = pWal->lockMask & ~(
         (pWal->readLock<0 ? 0 : (S << WAL_READ_LOCK(pWal->readLock)))
         | (pWal->writeLock ? (E << WAL_WRITE_LOCK) : 0)
         | (pWal->ckptLock ? (E << WAL_CKPT_LOCK) : 0)
@@ -3358,7 +3365,12 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       if( bWriteLock 
        || SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) 
       ){
-        pWal->writeLock = 1;
+        /* If the write-lock was just obtained, set writeLock to 2 instead of
+        ** the usual 1. This causes walIndexPage() to behave as if the 
+        ** write-lock were held (so that it allocates new pages as required),
+        ** and walHandleException() to unlock the write-lock if a SEH exception
+        ** is thrown.  */
+        if( !bWriteLock ) pWal->writeLock = 2;
         if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
           badHdr = walIndexTryHdr(pWal, pChanged);
           if( badHdr ){
@@ -4191,8 +4203,11 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 ** read-lock.
 */
 void sqlite3WalEndReadTransaction(Wal *pWal){
-  sqlite3WalEndWriteTransaction(pWal);
+#ifndef SQLITE_ENABLE_SETLK_TIMEOUT
+  assert( pWal->writeLock==0 || pWal->readLock<0 );
+#endif
   if( pWal->readLock!=WAL_LOCK_NONE ){
+    sqlite3WalEndWriteTransaction(pWal);
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->readLock = WAL_LOCK_NONE;
   }
@@ -4506,7 +4521,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   ** read-transaction was even opened, making this call a no-op.
   ** Return early. */
   if( pWal->writeLock ){
-    assert( !memcmp(&pWal->hdr,(void *)walIndexHdr(pWal),sizeof(WalIndexHdr)) );
+    assert( !memcmp(&pWal->hdr,(void*)pWal->apWiData[0],sizeof(WalIndexHdr)) );
     return SQLITE_OK;
   }
 #endif

@@ -419,7 +419,7 @@ static int jsonCacheInsert(
 ** most-recently used entry if it isn't so already.
 **
 ** The JsonParse object returned still belongs to the Cache and might
-** be deleted at any moment.  If the caller whants the JsonParse to
+** be deleted at any moment.  If the caller wants the JsonParse to
 ** linger, it needs to increment the nPJRef reference counter.
 */
 static JsonParse *jsonCacheSearch(
@@ -3464,7 +3464,7 @@ rebuild_from_cache:
     ** JSON functions were suppose to work.  From the beginning, blob was
     ** reserved for expansion and a blob value should have raised an error.
     ** But it did not, due to a bug.  And many applications came to depend
-    ** upon this buggy behavior, espeically when using the CLI and reading
+    ** upon this buggy behavior, especially when using the CLI and reading
     ** JSON text using readfile(), which returns a blob.  For this reason
     ** we will continue to support the bug moving forward.
     ** See for example https://sqlite.org/forum/forumpost/012136abd5292b8d

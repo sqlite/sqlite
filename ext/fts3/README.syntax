@@ -146,7 +146,7 @@
        <col> MATCH '(hello world) OR (simple example)'
 
      matches documents that contain both "hello" and "world", and documents
-     that contain both "simple" and "example". It is not possible to forumlate
+     that contain both "simple" and "example". It is not possible to formulate
      such a query using the standard syntax.
 
   2) Instead of separating tokens and phrases by whitespace, an AND operator
@@ -174,7 +174,7 @@
 
   4) Unlike in the standard syntax, where the OR operator has a higher
      precedence than the implicit AND operator, when using the enhanced
-     syntax implicit and explict AND operators have a higher precedence
+     syntax implicit and explicit AND operators have a higher precedence
      than OR operators. Using the enhanced syntax, the following two
      queries are equivalent:
 

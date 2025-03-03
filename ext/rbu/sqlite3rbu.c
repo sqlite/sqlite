@@ -4826,7 +4826,7 @@ static int rbuVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 
   /* If this is an RBU vacuum operation and this is the target database,
   ** pretend that it has at least one page. Otherwise, SQLite will not
-  ** check for the existance of a *-wal file. rbuVfsRead() contains 
+  ** check for the existence of a *-wal file. rbuVfsRead() contains 
   ** similar logic.  */
   if( rc==SQLITE_OK && *pSize==0 
    && p->pRbu && rbuIsVacuum(p->pRbu) 

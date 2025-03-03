@@ -26,7 +26,7 @@ SQLite that does not require first installing TCL and/or "tclsh".
 The canonical Makefile in the SQLite source tree provides more
 capabilities (such as the the ability to run test cases to ensure
 that the build worked) and is better maintained.  The only
-downside of the canonical Makfile is that it requires a TCL
+downside of the canonical Makefile is that it requires a TCL
 installation.  But if you are wanting to build the TCL extension for
 SQLite, then presumably you already have a TCL installation.  So why
 not just use the more-capable and better-maintained canoncal Makefile?

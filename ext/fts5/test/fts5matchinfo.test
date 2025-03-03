@@ -520,4 +520,26 @@ do_execsql_test 15.3 {
   {columnsize {1 1} columntext {c d} columntotalsize {2 2} poslist {} tokenize {c d} rowcount 2}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(x);
+  BEGIN EXCLUSIVE;
+}
+
+sqlite3 db2 test.db
+do_test 16.1 { 
+  catchsql { SELECT * FROM t1 } db2
+} {1 {database is locked}}
+
+do_execsql_test 16.2 {
+  ROLLBACK;
+}
+
+do_test 16.3 { 
+  catchsql { SELECT * FROM t1 } db2
+} {0 {}}
+
 finish_test
+

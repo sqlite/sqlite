@@ -115,7 +115,12 @@ do_test 1.6 {
 
 db3 close
 
-foreach tn {1a 1b 1c 1d 1e 1f} {
+# winrt platforms do not handle paths with unix-style '/' directory separators.
+#
+set lUri [list 1a 1b 1c 1d 1e 1f]
+ifcapable winrt { set lUri [list 1a 1c 1e] }
+
+foreach tn $lUri {
   sqlite3 db3 $uri($tn) -vfs win32-longpath -uri 1 -translatefilename 0
 
   do_test 1.7.$tn {

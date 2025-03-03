@@ -79,7 +79,7 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 	$(MAKE) -C $(dir.top) version-info
 
 # Be explicit about which Java files to compile so that we can work on
-# in-progress files without requiring them to be in a compilable statae.
+# in-progress files without requiring them to be in a compilable state.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/annotation/%,\
   Experimental.java \
   NotNull.java \
@@ -451,7 +451,7 @@ distclean: clean
 	-rm -fr $(dir.bld.c) $(dir.doc)
 
 ########################################################################
-# disttribution bundle rules...
+# distribution bundle rules...
 
 ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
 dist-name-prefix := sqlite-jni

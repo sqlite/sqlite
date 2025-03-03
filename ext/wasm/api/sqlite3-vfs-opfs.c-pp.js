@@ -459,7 +459,7 @@ const installOpfsVfs = function callee(options){
        Runs the given operation (by name) in the async worker
        counterpart, waits for its response, and returns the result
        which the async worker writes to SAB[state.opIds.rc]. The
-       2nd and subsequent arguments must be the aruguments for the
+       2nd and subsequent arguments must be the arguments for the
        async op.
     */
     const opRun = (op,...args)=>{

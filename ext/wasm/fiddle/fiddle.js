@@ -112,7 +112,7 @@
 
     /**
        A proxy for localStorage or sessionStorage or a
-       page-instance-local proxy, if neither one is availble.
+       page-instance-local proxy, if neither one is available.
 
        Which exact storage implementation is uses is unspecified, and
        apps must not rely on it.

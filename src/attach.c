@@ -227,6 +227,13 @@ static void attachFunc(
     sqlite3BtreeEnterAll(db);
     db->init.iDb = 0;
     db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( db->setlkFlags & SQLITE_SETLK_BLOCK_ON_CONNECT ){
+      int val = 1;
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pNew->pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, &val);
+    }
+#endif
     if( !REOPEN_AS_MEMDB(db) ){
       rc = sqlite3Init(db, &zErrDyn);
     }

@@ -3695,7 +3695,7 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   switch( ap->type ){
     case SHIFT:  act = ap->x.stp->statenum;                        break;
     case SHIFTREDUCE: {
-      /* Since a SHIFT is inherient after a prior REDUCE, convert any
+      /* Since a SHIFT is inherent after a prior REDUCE, convert any
       ** SHIFTREDUCE action with a nonterminal on the LHS into a simple
       ** REDUCE action: */
       if( ap->sp->index>=lemp->nterminal

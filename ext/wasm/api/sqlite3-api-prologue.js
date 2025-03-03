@@ -124,7 +124,7 @@
 globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
-  if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
+  if(sqlite3ApiBootstrap.sqlite3){ /* already initialized */
     (sqlite3ApiBootstrap.sqlite3.config || console).warn(
       "sqlite3ApiBootstrap() called multiple times.",
       "Config and external initializers are ignored on calls after the first."
@@ -869,7 +869,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        Emscripten -sWASM_BIGINT flag, else false. When
        enabled, certain 64-bit sqlite3 APIs are enabled which
        are not otherwise enabled due to JS/WASM int64
-       impedence mismatches.
+       impedance mismatches.
     */
     bigIntEnabled: !!config.bigIntEnabled,
     /**
@@ -880,7 +880,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
     /**
        When Emscripten compiles with `-sIMPORTED_MEMORY`, it
-       initalizes the heap and imports it into wasm, as opposed to
+       initializes the heap and imports it into wasm, as opposed to
        the other way around. In this case, the memory is not
        available via this.exports.memory.
     */
@@ -1453,7 +1453,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      creates (or overwrites) the given file using those APIs. This is
      primarily intended for use in Emscripten-based builds where the POSIX
      APIs are transparently proxied by an in-memory virtual filesystem.
-     It may behave diffrently in other environments.
+     It may behave differently in other environments.
 
      The first argument must be either a JS string or WASM C-string
      holding the filename. Note that this routine does _not_ create
@@ -1555,7 +1555,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      - "memdb": results are undefined.
 
      - "kvvfs": will fail with an I/O error due to strict internal
-       requirments of that VFS's xTruncate().
+       requirements of that VFS's xTruncate().
 
      - "unix" and related: will use the WASM build's equivalent of the
        POSIX I/O APIs. This will work so long as neither a specific
