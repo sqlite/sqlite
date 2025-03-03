@@ -3801,8 +3801,8 @@ static int fts5Init(sqlite3 *db){
   ** its entry point to enable the matchinfo() demo.  */
 #ifdef SQLITE_FTS5_ENABLE_TEST_MI
   if( rc==SQLITE_OK ){
-    extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
-    rc = sqlite3Fts5TestRegisterMatchinfo(db);
+    extern int sqlite3Fts5TestRegisterMatchinfoAPI(fts5_api*);
+    rc = sqlite3Fts5TestRegisterMatchinfoAPI(&pGlobal->api);
   }
 #endif
 

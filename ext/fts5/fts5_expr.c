@@ -3252,7 +3252,7 @@ int sqlite3Fts5ExprInstToken(
 }
 
 /*
-** Clear the token mappings for all Fts5IndexIter objects mannaged by 
+** Clear the token mappings for all Fts5IndexIter objects managed by 
 ** the expression passed as the only argument.
 */
 void sqlite3Fts5ExprClearTokens(Fts5Expr *pExpr){

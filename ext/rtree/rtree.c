@@ -2105,7 +2105,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** Return the N-dimensional volumn of the cell stored in *p.
+** Return the N-dimensional volume of the cell stored in *p.
 */
 static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
   RtreeDValue area = (RtreeDValue)1;
@@ -3871,7 +3871,7 @@ static sqlite3_stmt *rtreeCheckPrepare(
 /*
 ** The second and subsequent arguments to this function are a printf()
 ** style format string and arguments. This function formats the string and
-** appends it to the report being accumuated in pCheck.
+** appends it to the report being accumulated in pCheck.
 */
 static void rtreeCheckAppendMsg(RtreeCheck *pCheck, const char *zFmt, ...){
   va_list ap;

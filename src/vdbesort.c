@@ -1431,6 +1431,10 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
     p->u.pNext = 0;
     for(i=0; aSlot[i]; i++){
       p = vdbeSorterMerge(pTask, p, aSlot[i]);
+      /* ,--Each aSlot[] holds twice as much as the previous. So we cannot use
+      ** |  up all 64 aSlots[] with only a 64-bit address space.
+      ** v                                                                */
+      assert( i<ArraySize(aSlot) );
       aSlot[i] = 0;
     }
     aSlot[i] = p;

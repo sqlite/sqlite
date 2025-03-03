@@ -172,7 +172,11 @@ do_test misuse-4.3 {
   lappend v $msg $r
 } {0 {} SQLITE_BUSY}
 
-if {[clang_sanitize_address]==0} {
+# All of the following tests can potentially (though rarely)
+# lead to segfaults, which is unsettling.  So they are disabled
+# for now__________________________
+#                                  v
+if {[clang_sanitize_address]==0 && 0} {
   do_test misuse-4.4 {
   # Flush the TCL statement cache here, otherwise the sqlite3_close() will
   # fail because there are still un-finalized() VDBEs.

@@ -6451,7 +6451,7 @@ static void fts5TokendataIterAppendMap(
 /*
 ** Sort the contents of the pT->aMap[] array.
 **
-** The sorting algorithm requries a malloc(). If this fails, an error code
+** The sorting algorithm requires a malloc(). If this fails, an error code
 ** is left in Fts5Index.rc before returning.
 */
 static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){
@@ -8667,7 +8667,7 @@ static void fts5DecodeRowid(
 
 #if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid compenents */
+  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid components */
   fts5DecodeRowid(iKey, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){

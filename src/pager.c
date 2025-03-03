@@ -1849,6 +1849,15 @@ static void pager_unlock(Pager *pPager){
 
   if( pagerUseWal(pPager) ){
     assert( !isOpen(pPager->jfd) );
+    if( pPager->eState==PAGER_ERROR ){
+      /* If an IO error occurs in wal.c while attempting to wrap the wal file,
+      ** then the Wal object may be holding a write-lock but no read-lock.
+      ** This call ensures that the write-lock is dropped as well. We cannot
+      ** have sqlite3WalEndReadTransaction() drop the write-lock, as it once
+      ** did, because this would break "BEGIN EXCLUSIVE" handling for
+      ** SQLITE_ENABLE_SETLK_TIMEOUT builds.  */
+      sqlite3WalEndWriteTransaction(pPager->pWal);
+    }
     sqlite3WalEndReadTransaction(pPager->pWal);
     pPager->eState = PAGER_OPEN;
   }else if( !pPager->exclusiveMode ){

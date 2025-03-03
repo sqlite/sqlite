@@ -192,8 +192,9 @@ int sqlite3LookasideUsed(sqlite3 *db, int *pHighwater){
   nInit += countLookasideSlots(db->lookaside.pSmallInit);
   nFree += countLookasideSlots(db->lookaside.pSmallFree);
 #endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
-  if( pHighwater ) *pHighwater = db->lookaside.nSlot - nInit;
-  return db->lookaside.nSlot - (nInit+nFree);
+  assert( db->lookaside.nSlot >= nInit+nFree );
+  if( pHighwater ) *pHighwater = (int)(db->lookaside.nSlot - nInit);
+  return (int)(db->lookaside.nSlot - (nInit+nFree));
 }
 
 /*
@@ -246,7 +247,7 @@ int sqlite3_db_status(
       assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)>=0 );
       assert( (op-SQLITE_DBSTATUS_LOOKASIDE_HIT)<3 );
       *pCurrent = 0;
-      *pHighwater = db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT];
+      *pHighwater = (int)db->lookaside.anStat[op-SQLITE_DBSTATUS_LOOKASIDE_HIT];
       if( resetFlag ){
         db->lookaside.anStat[op - SQLITE_DBSTATUS_LOOKASIDE_HIT] = 0;
       }

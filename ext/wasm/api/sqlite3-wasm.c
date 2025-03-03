@@ -128,7 +128,9 @@
 #endif
 
 #ifdef SQLITE_WASM_EXTRA_INIT
-#  define SQLITE_EXTRA_INIT sqlite3_wasm_extra_init
+/* SQLITE_EXTRA_INIT vs SQLITE_EXTRA_INIT_MUTEXED:
+** see https://sqlite.org/forum/forumpost/14183b98fc0b1dea */
+#  define SQLITE_EXTRA_INIT_MUTEXED sqlite3_wasm_extra_init
 #endif
 
 /*
@@ -284,7 +286,7 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_alloc(int n){
 /*
 ** State for the "pseudo-stack" allocator implemented in
 ** sqlite3__wasm_pstack_xyz(). In order to avoid colliding with
-** Emscripten-controled stack space, it carves out a bit of stack
+** Emscripten-controlled stack space, it carves out a bit of stack
 ** memory to use for that purpose. This memory ends up in the
 ** WASM-managed memory, such that routines which manipulate the wasm
 ** heap can also be used to manipulate this memory.
@@ -311,7 +313,7 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_ptr(void){
   return PStack.pPos;
 }
 /*
-** Sets the pstack position poitner to p. Results are undefined if the
+** Sets the pstack position pointer to p. Results are undefined if the
 ** given value did not come from sqlite3__wasm_pstack_ptr().
 */
 SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
@@ -980,7 +982,7 @@ const char * sqlite3__wasm_enum_json(void){
 #undef _DefGroup
 
   /*
-  ** Emit an array of "StructBinder" struct descripions, which look
+  ** Emit an array of "StructBinder" struct descriptions, which look
   ** like:
   **
   ** {
@@ -1417,7 +1419,7 @@ int sqlite3__wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** NULL), or nData is negative, SQLITE_MISUSE are returned.
 **
 ** On success, it creates a new file with the given name, populated
-** with the fist nData bytes of pData. If pData is NULL, the file is
+** with the first nData bytes of pData. If pData is NULL, the file is
 ** created and/or truncated to nData bytes.
 **
 ** Whether or not directory components of zFilename are created

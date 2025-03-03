@@ -247,6 +247,12 @@ SESSION = 0
 RBU = 0
 !ENDIF
 
+# Set this to non-0 to enable support for blocking locks.
+#
+!IFNDEF SETLK_TIMEOUT
+SETLK_TIMEOUT = 0
+!ENDIF
+
 # Set the source code file to be used by executables and libraries when
 # they need the amalgamation.
 #
@@ -370,6 +376,10 @@ EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS) -DSQLITE_OMIT_LOCALTIME=1
 !ELSE
 EXT_FEATURE_FLAGS =
 !ENDIF
+!ENDIF
+
+!IF $(SETLK_TIMEOUT)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_SETLK_TIMEOUT
 !ENDIF
 
 ###############################################################################

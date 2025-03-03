@@ -793,7 +793,7 @@ void lsmFsClose(FileSystem *pFS){
 **
 ** This function returns a pointer to an object that can be linked into
 ** the list described above. The returned object now 'owns' the database
-** file descriptr, so that when the FileSystem object is destroyed, it
+** file descriptor, so that when the FileSystem object is destroyed, it
 ** will not be closed. 
 **
 ** This function may be called at most once in the life-time of a 
@@ -2293,7 +2293,7 @@ int lsmFsMetaPageGet(
         );
       }
 #ifndef NDEBUG
-      /* pPg->aData causes an uninitialized access via a downstreadm write().
+      /* pPg->aData causes an uninitialized access via a downstream write().
          After discussion on this list, this memory should not, for performance
          reasons, be memset. However, tracking down "real" misuse is more
          difficult with this "false" positive, so it is set when NDEBUG.

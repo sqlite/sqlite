@@ -264,7 +264,7 @@ public final class CApi {
   }
 
   /**
-     Convenience overload which is equivalant to passing its arguments
+     Convenience overload which is equivalent to passing its arguments
      to sqlite3_bind_nio_buffer() with the values 0 and -1 for the
      final two arguments.
   */
@@ -312,7 +312,7 @@ public final class CApi {
 
      The byte range of the buffer may be restricted by providing a
      start index and a number of bytes. beginPos may not be negative.
-     Negative howMany is interpretated as the remainder of the buffer
+     Negative howMany is interpreted as the remainder of the buffer
      past the given start position, up to the buffer's limit() (as
      opposed its capacity()).
 
@@ -1076,7 +1076,7 @@ public final class CApi {
 
   /**
      <p>Works like in the C API with the exception that it only supports
-     the following subset of configution flags:
+     the following subset of configuration flags:
 
      <p>SQLITE_CONFIG_SINGLETHREAD
      SQLITE_CONFIG_MULTITHREAD

@@ -3,27 +3,8 @@
 #
 # This is the main autosetup-compatible configure script for the
 # "autoconf" bundle of the SQLite project.
-#
-# This script must be kept compatible with JimTCL, a copy of which is
-# included in this source tree as ./autosetup/jimsh0.c.
-#
 use sqlite-config
-sqlite-config-bootstrap autoconf
-sqlite-check-common-bins
-sqlite-check-common-system-deps
-proj-check-rpath
-sqlite-handle-soname
-sqlite-setup-default-cflags
-sqlite-handle-debug
-sqlite-handle-threadsafe
-sqlite-handle-tempstore
-sqlite-handle-line-editing
-sqlite-handle-load-extension
-sqlite-handle-math
-sqlite-handle-icu
-
-define ENABLE_STATIC_SHELL [opt-bool static-shell]
-define ENABLE_LIB_SHARED [opt-bool shared]
-define ENABLE_LIB_STATIC [opt-bool static]
-
-sqlite-config-finalize
+sqlite-configure autoconf {
+  sqlite-check-common-bins
+  sqlite-check-common-system-deps
+}

@@ -130,8 +130,9 @@ struct Testvfs {
 #define TESTVFS_LOCK_MASK         0x00040000
 #define TESTVFS_CKLOCK_MASK       0x00080000
 #define TESTVFS_FCNTL_MASK        0x00100000
+#define TESTVFS_SLEEP_MASK        0x00200000
 
-#define TESTVFS_ALL_MASK          0x001FFFFF
+#define TESTVFS_ALL_MASK          0x003FFFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -813,6 +814,10 @@ static int tvfsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 ** actually slept.
 */
 static int tvfsSleep(sqlite3_vfs *pVfs, int nMicro){
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+  if( p->pScript && (p->mask&TESTVFS_SLEEP_MASK) ){
+    tvfsExecTcl(p, "xSleep", Tcl_NewIntObj(nMicro), 0, 0, 0);
+  }
   return sqlite3OsSleep(PARENTVFS(pVfs), nMicro);
 }
 
@@ -1197,6 +1202,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
         { "xLock",              TESTVFS_LOCK_MASK },
         { "xCheckReservedLock", TESTVFS_CKLOCK_MASK },
         { "xFileControl",       TESTVFS_FCNTL_MASK },
+        { "xSleep",             TESTVFS_SLEEP_MASK },
       };
       Tcl_Obj **apElem = 0;
       Tcl_Size nElem = 0;
