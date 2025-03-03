@@ -1373,7 +1373,8 @@ proc sqlite-handle-mac-cversion {} {
 ########################################################################
 # Handles the --dll-basename configure flag. [define]'s
 # SQLITE_DLL_BASENAME to the DLL's preferred base name (minus
-# extension). If --dll-basename is not provided then this is always
+# extension). If --dll-basename is not provided (or programmatically
+# set - see [sqlite-handle-env-quirks]) then this is always
 # "libsqlite3", otherwise it may use a different value based on the
 # value of [get-define host].
 proc sqlite-handle-dll-basename {} {
@@ -1402,9 +1403,10 @@ proc sqlite-handle-dll-basename {} {
 #
 # The name of the import library is [define]d in SQLITE_OUT_IMPLIB.
 #
-# If the configure flag --out-implib is not used then this is a no-op.
-# If that flag is used but the capability is not available, a fatal
-# error is triggered.
+# If the configure flag --out-implib is not used (or programmatically
+# set) then this is a no-op (but see [sqliet-handle-env-quirks]).  If
+# that flag is used but the capability is not available, a fatal error
+# is triggered.
 #
 # This feature is specifically opt-in because it's supported on far
 # more platforms than actually need it and enabling it causes creation
@@ -1418,7 +1420,7 @@ proc sqlite-handle-dll-basename {} {
 #
 # - msys2 and mingw sqlite packages historically install
 #   /usr/lib/libsqlite3.dll.a despite the DLL being in
-#   /usr/bin/msys-sqlite3-0.dll.
+#   /usr/bin.
 proc sqlite-handle-out-implib {} {
   define LDFLAGS_OUT_IMPLIB ""
   define SQLITE_OUT_IMPLIB ""
