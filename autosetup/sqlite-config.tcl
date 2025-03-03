@@ -24,6 +24,8 @@ use system ; # Will output "Host System" and "Build System" lines
 if {"--help" ni $::argv} {
   msg-result "Source dir = $::autosetup(srcdir)"
   msg-result "Build dir  = $::autosetup(builddir)"
+
+  use cc cc-db cc-shared cc-lib pkg-config
 }
 
 #
@@ -256,7 +258,7 @@ proc sqlite-configure {buildMode configScript} {
 
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
-              Needed only by ext/wasm build. Default=EMSDK env var.}
+              Needed only by ext/wasm. Default=EMSDK env var.}
       }
     }
 
@@ -281,7 +283,7 @@ proc sqlite-configure {buildMode configScript} {
         # dll-basename: https://sqlite.org/forum/forumpost/828fdfe904
         dll-basename:=auto
           => {Specifies the base name of the resulting DLL file.
-              If not provided, libsqlite3 is usually assumed but on some platforms
+              If not provided, "libsqlite3" is usually assumed but on some platforms
               a platform-dependent default is used. On some platforms this flag
               gets automatically enabled if it is not provided. Use "default" to
               explicitly disable platform-dependent activation on such systems.}
@@ -351,12 +353,6 @@ proc sqlite-configure {buildMode configScript} {
     # called from deeper than the global scope.
     dict incr xopts -level
     return {*}$xopts $msg
-  }
-  # The following uplevel is largely cosmetic, the intent being to put
-  # the most-frequently-useful info at the top of the ./configure
-  # output, but also avoiding outputing it if --help is used.
-  uplevel 1 {
-    use cc cc-db cc-shared cc-lib pkg-config
   }
   sqlite-post-options-init
   uplevel 1 $configScript
@@ -584,27 +580,12 @@ proc sqlite-check-common-system-deps {} {
   }
 }
 
-proc sqlite-setup-default-cflags {} {
-  ########################################################################
-  # We differentiate between two C compilers: the one used for binaries
-  # which are to run on the build system (in autosetup it's called
-  # CC_FOR_BUILD and in Makefile.in it's $(B.cc)) and the one used for
-  # compiling binaries for the target system (CC a.k.a. $(T.cc)).
-  # Normally they're the same, but they will differ when
-  # cross-compiling.
-  #
-  # When cross-compiling we default to not using the -g flag, based on a
-  # /chat discussion prompted by
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
-  set defaultCFlags {-O2}
-  if {!$::sqliteConfig(is-cross-compiling)} {
-    lappend defaultCFlags -g
-  }
-  define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
-  # BUILD_CFLAGS is the CFLAGS for CC_FOR_BUILD.
-  define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
-
-  # Copy all CFLAGS and CPPFLAGS entries matching -DSQLITE_OMIT* and
+########################################################################
+# Move -DSQLITE_OMIT... and -DSQLITE_ENABLE... flags from CFLAGS and
+# CPPFLAGS to OPT_FEATURE_FLAGS and remove them from BUILD_CFLAGS.
+# This is derived from the legacy build but is still practical.
+proc sqlite-munge-cflags {} {
+  # Move CFLAGS and CPPFLAGS entries matching -DSQLITE_OMIT* and
   # -DSQLITE_ENABLE* to OPT_FEATURE_FLAGS. This behavior is derived
   # from the legacy build and was missing the 3.48.0 release (the
   # initial Autosetup port).
@@ -645,6 +626,30 @@ proc sqlite-setup-default-cflags {} {
     }
   }
   define BUILD_CFLAGS $tmp
+}
+
+#########################################################################
+# Set up the default CFLAGS and BUILD_CFLAGS values.
+proc sqlite-setup-default-cflags {} {
+  ########################################################################
+  # We differentiate between two C compilers: the one used for binaries
+  # which are to run on the build system (in autosetup it's called
+  # CC_FOR_BUILD and in Makefile.in it's $(B.cc)) and the one used for
+  # compiling binaries for the target system (CC a.k.a. $(T.cc)).
+  # Normally they're the same, but they will differ when
+  # cross-compiling.
+  #
+  # When cross-compiling we default to not using the -g flag, based on a
+  # /chat discussion prompted by
+  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
+  set defaultCFlags {-O2}
+  if {!$::sqliteConfig(is-cross-compiling)} {
+    lappend defaultCFlags -g
+  }
+  define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
+  # BUILD_CFLAGS is the CFLAGS for CC_FOR_BUILD.
+  define BUILD_CFLAGS [proj-get-env BUILD_CFLAGS {-g}]
+  sqlite-munge-cflags
 }
 
 ########################################################################

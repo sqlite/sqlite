@@ -25,6 +25,7 @@ sqlite-configure canonical {
     # -------------^^^^^^^ intentionally using [get-env] instead of
     # [proj-get-env] here because [sqlite-setup-default-cflags] uses
     # [proj-get-env] and we want this to supercede that.
+    sqlite-munge-cflags
   }
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
