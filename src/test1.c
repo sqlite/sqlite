@@ -5947,6 +5947,42 @@ static int SQLITE_TCLAPI test_busy_timeout(
 }
 
 /*
+** Usage: sqlite3_setlk_timeout ?-blockonconnect? DB MS
+**
+** Set the setlk timeout.
+*/
+static int SQLITE_TCLAPI test_setlk_timeout(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  int rc, ms;
+  sqlite3 *db;
+  int bBlockOnConnect = 0;
+
+  if( argc==4 ){
+    const char *zArg = argv[1];
+    int nArg = strlen(zArg);
+    if( nArg>=2 && nArg<=15 && memcmp(zArg, "-blockonconnect", nArg)==0 ){
+      bBlockOnConnect = 1;
+    }
+  }
+  if( argc!=(3+bBlockOnConnect) ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " ?-blockonconnect? DB MS", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[argc-2], &db) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[argc-1], &ms) ) return TCL_ERROR;
+  rc = sqlite3_setlk_timeout(
+      db, ms, (bBlockOnConnect ? SQLITE_SETLK_BLOCK_ON_CONNECT : 0)
+  );
+  Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -7939,7 +7975,7 @@ static int SQLITE_TCLAPI test_getrusage(
 */
 struct win32FileLocker {
   char *evName;       /* Name of event to signal thread startup */
-  HANDLE h;           /* Handle of the file to be locked */
+  sqlite3_file *pFd;  /* Handle of the file to be locked */
   int delay1;         /* Delay before locking */
   int delay2;         /* Delay before unlocking */
   int ok;             /* Finished ok */
@@ -7955,6 +7991,8 @@ struct win32FileLocker {
 */
 static void SQLITE_CDECL win32_file_locker(void *pAppData){
   struct win32FileLocker *p = (struct win32FileLocker*)pAppData;
+  sqlite3_file *pFd = p->pFd;
+  HANDLE h = INVALID_HANDLE_VALUE;
   if( p->evName ){
     HANDLE ev = OpenEvent(EVENT_MODIFY_STATE, FALSE, p->evName);
     if ( ev ){
@@ -7963,15 +8001,17 @@ static void SQLITE_CDECL win32_file_locker(void *pAppData){
     }
   }
   if( p->delay1 ) Sleep(p->delay1);
-  if( LockFile(p->h, 0, 0, 100000000, 0) ){
+  pFd->pMethods->xFileControl(pFd, SQLITE_FCNTL_WIN32_GET_HANDLE, (void*)&h);
+  if( LockFile(h, 0, 0, 100000000, 0) ){
     Sleep(p->delay2);
-    UnlockFile(p->h, 0, 0, 100000000, 0);
+    UnlockFile(h, 0, 0, 100000000, 0);
     p->ok = 1;
   }else{
     p->err = 1;
   }
-  CloseHandle(p->h);
-  p->h = 0;
+  pFd->pMethods->xClose(pFd);
+  sqlite3_free(pFd);
+  p->pFd = 0;
   p->delay1 = 0;
   p->delay2 = 0;
 }
@@ -7991,37 +8031,56 @@ static int SQLITE_TCLAPI win32_file_lock(
   Tcl_Obj *CONST objv[]
 ){
   static struct win32FileLocker x = { "win32_file_lock", 0, 0, 0, 0, 0 };
-  const char *zFilename;
+  const char *zFilename = 0;
+  Tcl_Size nFilename = 0;
+  char *zTerm = 0;
   char zBuf[200];
   int retry = 0;
   HANDLE ev;
   DWORD wResult;
+  sqlite3_vfs *pVfs = 0;
+  int flags = SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_READWRITE;
+  int rc = SQLITE_OK;
   
   if( objc!=4 && objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME DELAY1 DELAY2");
     return TCL_ERROR;
   }
   if( objc==1 ){
+    HANDLE h = INVALID_HANDLE_VALUE;
+    if( x.pFd ){
+      x.pFd->pMethods->xFileControl(
+          x.pFd, SQLITE_FCNTL_WIN32_GET_HANDLE, (void*)&h
+      );
+    }
     sqlite3_snprintf(sizeof(zBuf), zBuf, "%d %d %d %d %d",
-                     x.ok, x.err, x.delay1, x.delay2, x.h);
+                     x.ok, x.err, x.delay1, x.delay2, h);
     Tcl_AppendResult(interp, zBuf, (char*)0);
     return TCL_OK;
   }
-  while( x.h && retry<30 ){
+  while( x.pFd && retry<30 ){
     retry++;
     Sleep(100);
   }
-  if( x.h ){
+  if( x.pFd ){
     Tcl_AppendResult(interp, "busy", (char*)0);
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[2], &x.delay1) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &x.delay2) ) return TCL_ERROR;
-  zFilename = Tcl_GetString(objv[1]);
-  x.h = CreateFile(zFilename, GENERIC_READ|GENERIC_WRITE,
-              FILE_SHARE_READ|FILE_SHARE_WRITE, 0, OPEN_ALWAYS,
-              FILE_ATTRIBUTE_NORMAL, 0);
-  if( !x.h ){
+  pVfs = sqlite3_vfs_find(0);
+  x.pFd = (sqlite3_file*)sqlite3_malloc(pVfs->szOsFile);
+
+  /* xOpen() must be passed a dual-nul-terminated string preceded in memory
+  ** by 4 0x00 bytes.  */
+  zFilename = Tcl_GetStringFromObj(objv[1], &nFilename);
+  zTerm = (char*)sqlite3_malloc(nFilename+6);
+  memset(zTerm, 0, nFilename+6);
+  memcpy(&zTerm[4], zFilename, nFilename);
+  rc = pVfs->xOpen(pVfs, &zTerm[4], x.pFd, flags, &flags);
+  sqlite3_free(zTerm);
+
+  if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "cannot open file: ", zFilename, (char*)0);
     return TCL_ERROR;
   }
@@ -8883,6 +8942,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
+     { "sqlite3_setlk_timeout",         (Tcl_CmdProc*)test_setlk_timeout    },
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
      { "clang_sanitize_address",        (Tcl_CmdProc*)clang_sanitize_address },

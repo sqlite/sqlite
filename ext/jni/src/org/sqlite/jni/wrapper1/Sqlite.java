@@ -661,7 +661,7 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
-     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
+     Equivalent to prepareMulti(X,prepFlags,visitor), where X is
      sql.getBytes(StandardCharsets.UTF_8).
   */
   public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){

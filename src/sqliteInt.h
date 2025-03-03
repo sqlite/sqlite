@@ -1772,6 +1772,10 @@ struct sqlite3 {
   Savepoint *pSavepoint;        /* List of active savepoints */
   int nAnalysisLimit;           /* Number of index rows to ANALYZE */
   int busyTimeout;              /* Busy handler timeout, in msec */
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int setlkTimeout;             /* Blocking lock timeout, in msec. -1 -> inf. */
+  int setlkFlags;               /* Flags passed to setlk_timeout() */
+#endif
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
@@ -2780,7 +2784,7 @@ struct Index {
   Pgno tnum;               /* DB Page containing root of this index */
   LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nKeyCol;             /* Number of columns forming the key */
-  u16 nColumn;             /* Number of columns stored in the index */
+  u16 nColumn;             /* Nr columns in btree. Can be 2*Table.nCol */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned idxType:2;      /* 0:Normal 1:UNIQUE, 2:PRIMARY KEY, 3:IPK */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
@@ -3118,10 +3122,10 @@ struct Expr {
 /* Macros can be used to test, set, or clear bits in the
 ** Expr.flags field.
 */
-#define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
-#define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
-#define ExprSetProperty(E,P)     (E)->flags|=(P)
-#define ExprClearProperty(E,P)   (E)->flags&=~(P)
+#define ExprHasProperty(E,P)     (((E)->flags&(u32)(P))!=0)
+#define ExprHasAllProperty(E,P)  (((E)->flags&(u32)(P))==(u32)(P))
+#define ExprSetProperty(E,P)     (E)->flags|=(u32)(P)
+#define ExprClearProperty(E,P)   (E)->flags&=~(u32)(P)
 #define ExprAlwaysTrue(E)   (((E)->flags&(EP_OuterON|EP_IsTrue))==EP_IsTrue)
 #define ExprAlwaysFalse(E)  (((E)->flags&(EP_OuterON|EP_IsFalse))==EP_IsFalse)
 #define ExprIsFullSize(E)   (((E)->flags&(EP_Reduced|EP_TokenOnly))==0)
@@ -4929,7 +4933,7 @@ void sqlite3SubqueryColumnTypes(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
-i16 sqlite3TableColumnToIndex(Index*, i16);
+int sqlite3TableColumnToIndex(Index*, int);
 #ifdef SQLITE_OMIT_GENERATED_COLUMNS
 # define sqlite3TableColumnToStorage(T,X) (X)  /* No-op pass-through */
 # define sqlite3StorageColumnToTable(T,X) (X)  /* No-op pass-through */
@@ -5027,7 +5031,7 @@ void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
 void sqlite3ClearOnOrUsing(sqlite3*, OnOrUsing*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
-Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
+Index *sqlite3AllocateIndexObject(sqlite3*,int,int,char**);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                           Expr*, int, int, u8);
 void sqlite3DropIndex(Parse*, SrcList*, int);
@@ -5165,7 +5169,8 @@ Select *sqlite3SelectDup(sqlite3*,const Select*,int);
 FuncDef *sqlite3FunctionSearch(int,const char*);
 void sqlite3InsertBuiltinFuncs(FuncDef*,int);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,u8,u8);
-void sqlite3QuoteValue(StrAccum*,sqlite3_value*);
+void sqlite3QuoteValue(StrAccum*,sqlite3_value*,int);
+int sqlite3AppendOneUtf8Character(char*, u32);
 void sqlite3RegisterBuiltinFunctions(void);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterJsonFunctions(void);

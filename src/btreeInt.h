@@ -504,6 +504,12 @@ struct CellInfo {
 #define BTCURSOR_MAX_DEPTH 20
 
 /*
+** Maximum amount of storage local to a database page, regardless of
+** page size.
+*/
+#define BT_MAX_LOCAL  65501  /* 65536 - 35 */
+
+/*
 ** A cursor is a pointer to a particular entry within a particular
 ** b-tree within a database file.
 **

@@ -1197,7 +1197,7 @@ static int sessionTableInfo(
 /*
 ** This function is called to initialize the SessionTable.nCol, azCol[]
 ** abPK[] and azDflt[] members of SessionTable object pTab. If these
-** fields are already initilialized, this function is a no-op.
+** fields are already initialized, this function is a no-op.
 **
 ** If an error occurs, an error code is stored in sqlite3_session.rc and
 ** non-zero returned. Or, if no error occurs but the table has no primary
@@ -3020,7 +3020,7 @@ static int sessionGenerateChangeset(
 ){
   sqlite3 *db = pSession->db;     /* Source database handle */
   SessionTable *pTab;             /* Used to iterate through attached tables */
-  SessionBuffer buf = {0,0,0};    /* Buffer in which to accumlate changeset */
+  SessionBuffer buf = {0,0,0};    /* Buffer in which to accumulate changeset */
   int rc;                         /* Return code */
 
   assert( xOutput==0 || (pnChangeset==0 && ppChangeset==0) );

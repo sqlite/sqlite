@@ -264,7 +264,7 @@ public class SQLTester {
         threw = true;
         outln("🔥EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
         ++nAbortedScript;
-        if( keepGoing ) outln("Continuing anyway becaure of the keep-going option.");
+        if( keepGoing ) outln("Continuing anyway because of the keep-going option.");
         else if( e.isFatal() ) throw e;
       }finally{
         final long timeEnd = System.currentTimeMillis();

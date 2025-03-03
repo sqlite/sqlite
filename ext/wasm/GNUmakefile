@@ -103,7 +103,7 @@ else
   ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
     $(info ==============================================================)
     $(info == Development build. Make one of (dist, snapshot) for a)
-    $(info == smaller release build.)
+    $(info == smaller and faster release build.)
     $(info ==============================================================)
   endif
 endif
@@ -136,8 +136,9 @@ JS_BUILD_NAMES := sqlite3 sqlite3-wasmfs
 #   target of browsers.
 #
 # - node = for use by node.js for node.js, as opposed to by node.js on
-#   behalf o browser-side code (use bundler-friendly for that). Note
+#   behalf of browser-side code (use bundler-friendly for that). Note
 #   that persistent storage (OPFS) is not available in these builds.
+#   These builds are UNTESTED and UNSUPPORTED!
 #
 JS_BUILD_MODES := vanilla esm bunder-friendly node
 
@@ -326,7 +327,7 @@ endif
 # If the canonical build process finds the file
 # sqlite3_wasm_extra_init.c in the main wasm build directory, it
 # arranges to include that file in the build of sqlite3.wasm and
-# defines SQLITE_EXTRA_INIT=sqlite3_wasm_extra_init.
+# defines SQLITE_EXTRA_INIT_MUTEXED=sqlite3_wasm_extra_init.
 #
 # sqlite3_wasm_extra_init() must be a function with this signature:
 #
@@ -358,7 +359,7 @@ endif
 # Slight caveat: this uses the version info from the in-tree
 # sqlite3.c/h, which may diff from a user-provided $(sqlite3.c).  The
 # end result is that the generated JS files may have static version
-# info from $(bin.version-info) which differ from their runtime-emited
+# info from $(bin.version-info) which differ from their runtime-emitted
 # version info (e.g. from sqlite3_libversion()).
 bin.version-info := $(dir.top)/version-info
 .NOTPARALLEL: $(bin.version-info)
@@ -512,7 +513,7 @@ sqlite3-api-build-version.js := $(dir.tmp)/sqlite3-api-build-version.js
 # sqlite3-api.jses = the list of JS files which make up
 # $(sqlite3-api.js.in), in the order they need to be assembled.
 sqlite3-api.jses := $(sqlite3-license-version.js)
-# sqlite3-api-prologue.js: initial boostrapping bits:
+# sqlite3-api-prologue.js: initial bootstrapping bits:
 sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 # whwhasm.js and jaccwabyt.js: Low-level utils, mostly replacing
 # Emscripten glue:
@@ -891,12 +892,13 @@ EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 ########################################################################
 ########################################################################
 # We have to ensure that we do not build $(sqlite3*.*js) in parallel
-# because they all result in the creation of $(sqlite3.wasm). We have
-# no way to build just a .[m]js file without also building the .wasm
-# file because the generated .[m]js file has to include info about the
-# imports needed by the wasm file, so they have to be built
+# for any builds which result in the creation of $(sqlite3.wasm). We
+# have no way to build just a .[m]js file without also building the
+# .wasm file because the generated .[m]js file has to include info
+# about the imports needed by the wasm file, so they have to be built
 # together. i.e.  we're building $(sqlite3.wasm) multiple times, but
-# that's unavoidable (and harmless, just a waste of build time).
+# that's unavoidable (and harmless, but is a significant waste of
+# build time).
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
@@ -907,7 +909,7 @@ $(sqlite3-node.mjs): $(sqlite3.mjs)
 # We need separate copies of certain supplementary JS files for the
 # bundler-friendly build. Concretely, any supplemental JS files which
 # themselves use importScripts() or Workers or URL() constructors
-# which refer to other in-tree (m)JS files quire a bundler-friendly
+# which refer to other in-tree (m)JS files require a bundler-friendly
 # copy.
 sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
 sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js

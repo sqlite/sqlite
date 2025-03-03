@@ -117,7 +117,7 @@ void do_it_all(void){
 
                https://github.com/emscripten-core/emscripten/issues/23412
 
-               Such regexes will always necessarily be preceeded by a
+               Such regexes will always necessarily be preceded by a
                backslash, though.
 
                It is hypothetically possible for a legitimate comment

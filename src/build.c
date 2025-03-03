@@ -1069,10 +1069,16 @@ Index *sqlite3PrimaryKeyIndex(Table *pTab){
 ** find the (first) offset of that column in index pIdx.  Or return -1
 ** if column iCol is not used in index pIdx.
 */
-i16 sqlite3TableColumnToIndex(Index *pIdx, i16 iCol){
+int sqlite3TableColumnToIndex(Index *pIdx, int iCol){
   int i;
+  i16 iCol16;
+  assert( iCol>=(-1) && iCol<=SQLITE_MAX_COLUMN );
+  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN );
+  iCol16 = iCol;
   for(i=0; i<pIdx->nColumn; i++){
-    if( iCol==pIdx->aiColumn[i] ) return i;
+    if( iCol16==pIdx->aiColumn[i] ){
+      return i;
+    }
   }
   return -1;
 }
@@ -2169,12 +2175,17 @@ static char *createTableStmt(sqlite3 *db, Table *p){
 ** Resize an Index object to hold N columns total.  Return SQLITE_OK
 ** on success and SQLITE_NOMEM on an OOM error.
 */
-static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
+static int resizeIndexObject(Parse *pParse, Index *pIdx, int N){
   char *zExtra;
-  int nByte;
+  u64 nByte;
+  sqlite3 *db;
   if( pIdx->nColumn>=N ) return SQLITE_OK;
+  db = pParse->db;
+  assert( N>0 );
+  assert( N <= SQLITE_MAX_COLUMN*2 /* tag-20250221-1 */ );
+  testcase( N==2*pParse->db->aLimit[SQLITE_LIMIT_COLUMN] );
   assert( pIdx->isResized==0 );
-  nByte = (sizeof(char*) + sizeof(LogEst) + sizeof(i16) + 1)*N;
+  nByte = (sizeof(char*) + sizeof(LogEst) + sizeof(i16) + 1)*(u64)N;
   zExtra = sqlite3DbMallocZero(db, nByte);
   if( zExtra==0 ) return SQLITE_NOMEM_BKPT;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
@@ -2188,7 +2199,7 @@ static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   zExtra += sizeof(i16)*N;
   memcpy(zExtra, pIdx->aSortOrder, pIdx->nColumn);
   pIdx->aSortOrder = (u8*)zExtra;
-  pIdx->nColumn = N;
+  pIdx->nColumn = (u16)N;  /* See tag-20250221-1 above for proof of safety */
   pIdx->isResized = 1;
   return SQLITE_OK;
 }
@@ -2442,7 +2453,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
       pIdx->nColumn = pIdx->nKeyCol;
       continue;
     }
-    if( resizeIndexObject(db, pIdx, pIdx->nKeyCol+n) ) return;
+    if( resizeIndexObject(pParse, pIdx, pIdx->nKeyCol+n) ) return;
     for(i=0, j=pIdx->nKeyCol; i<nPk; i++){
       if( !isDupColumn(pIdx, pIdx->nKeyCol, pPk, i) ){
         testcase( hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) );
@@ -2466,7 +2477,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( !hasColumn(pPk->aiColumn, nPk, i)
      && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ) nExtra++;
   }
-  if( resizeIndexObject(db, pPk, nPk+nExtra) ) return;
+  if( resizeIndexObject(pParse, pPk, nPk+nExtra) ) return;
   for(i=0, j=nPk; i<pTab->nCol; i++){
     if( !hasColumn(pPk->aiColumn, j, i)
      && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0
@@ -3850,13 +3861,14 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 */
 Index *sqlite3AllocateIndexObject(
   sqlite3 *db,         /* Database connection */
-  i16 nCol,            /* Total number of columns in the index */
+  int nCol,            /* Total number of columns in the index */
   int nExtra,          /* Number of bytes of extra space to alloc */
   char **ppExtra       /* Pointer to the "extra" space */
 ){
   Index *p;            /* Allocated index object */
   i64 nByte;           /* Bytes of space for Index object + arrays */
 
+  assert( nCol <= 2*db->aLimit[SQLITE_LIMIT_COLUMN] );
   nByte = ROUND8(sizeof(Index)) +              /* Index structure  */
           ROUND8(sizeof(char*)*nCol) +         /* Index.azColl     */
           ROUND8(sizeof(LogEst)*(nCol+1) +     /* Index.aiRowLogEst   */
@@ -3869,8 +3881,9 @@ Index *sqlite3AllocateIndexObject(
     p->aiRowLogEst = (LogEst*)pExtra; pExtra += sizeof(LogEst)*(nCol+1);
     p->aiColumn = (i16*)pExtra;       pExtra += sizeof(i16)*nCol;
     p->aSortOrder = (u8*)pExtra;
-    p->nColumn = nCol;
-    p->nKeyCol = nCol - 1;
+    assert( nCol>0 );
+    p->nColumn = (u16)nCol;
+    p->nKeyCol = (u16)(nCol - 1);
     *ppExtra = ((char*)p) + nByte;
   }
   return p;

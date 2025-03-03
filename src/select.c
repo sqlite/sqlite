@@ -5646,7 +5646,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 #ifndef SQLITE_OMIT_WINDOWFUNC
   p->pWinDefn = 0;
 #endif
-  p->selFlags &= ~SF_Compound;
+  p->selFlags &= ~(u32)SF_Compound;
   assert( (p->selFlags & SF_Converted)==0 );
   p->selFlags |= SF_Converted;
   assert( pNew->pPrior!=0 );
@@ -7252,7 +7252,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     pSub->pPrior = 0;
     pSub->pNext = 0;
     pSub->selFlags |= SF_Aggregate;
-    pSub->selFlags &= ~SF_Compound;
+    pSub->selFlags &= ~(u32)SF_Compound;
     pSub->nSelectRow = 0;
     sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pSub->pEList);
     pTerm = pPrior ? sqlite3ExprDup(db, pCount, 0) : pCount;
@@ -7267,7 +7267,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     pSub = pPrior;
   }
   p->pEList->a[0].pExpr = pExpr;
-  p->selFlags &= ~SF_Aggregate;
+  p->selFlags &= ~(u32)SF_Aggregate;
 
 #if TREETRACE_ENABLED
   if( sqlite3TreeTrace & 0x200 ){
@@ -7474,7 +7474,7 @@ int sqlite3Select(
       testcase( pParse->earlyCleanup );
       p->pOrderBy = 0;
     }
-    p->selFlags &= ~SF_Distinct;
+    p->selFlags &= ~(u32)SF_Distinct;
     p->selFlags |= SF_NoopOrderBy;
   }
   sqlite3SelectPrep(pParse, p, 0);
@@ -7513,7 +7513,7 @@ int sqlite3Select(
     ** and leaving this flag set can cause errors if a compound sub-query
     ** in p->pSrc is flattened into this query and this function called
     ** again as part of compound SELECT processing.  */
-    p->selFlags &= ~SF_UFSrcCheck;
+    p->selFlags &= ~(u32)SF_UFSrcCheck;
   }
 
   if( pDest->eDest==SRT_Output ){
@@ -8002,7 +8002,7 @@ int sqlite3Select(
    && p->pWin==0
 #endif
   ){
-    p->selFlags &= ~SF_Distinct;
+    p->selFlags &= ~(u32)SF_Distinct;
     pGroupBy = p->pGroupBy = sqlite3ExprListDup(db, pEList, 0);
     if( pGroupBy ){
       for(i=0; i<pGroupBy->nExpr; i++){

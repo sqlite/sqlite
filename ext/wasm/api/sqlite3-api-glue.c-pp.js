@@ -1835,7 +1835,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(!(tgt instanceof StructBinder.StructType)){
       toss("Usage error: target object is-not-a StructType.");
     }else if(!(func instanceof Function) && !wasm.isPtr(func)){
-      toss("Usage errror: expecting a Function or WASM pointer to one.");
+      toss("Usage error: expecting a Function or WASM pointer to one.");
     }
     if(1===arguments.length){
       return (n,f)=>callee(tgt, n, f, applyArgcCheck);

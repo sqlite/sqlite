@@ -64,7 +64,7 @@
 **
 **    typeof(Y)='blob'         The hash is taken over prefix "Bnnn:" followed
 **                             by the binary content of the blob.  The "nnn"
-**                             in the prefix is the mimimum-length decimal
+**                             in the prefix is the minimum-length decimal
 **                             representation of the byte-length of the blob.
 **
 ** According to the rules above, all of the following SELECT statements

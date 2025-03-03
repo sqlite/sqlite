@@ -331,7 +331,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 // keywords.  Any non-standard keyword can also be an identifier.
 //
 %token_class id  ID|INDEXED.
-// And "ids" is an identifer-or-string.
+// And "ids" is an identifier-or-string.
 //
 %token_class ids  ID|STRING.
 
@@ -625,8 +625,8 @@ selectnowith(A) ::= selectnowith(A) multiselect_op(Y) oneselect(Z).  {
   if( pRhs ){
     pRhs->op = (u8)Y;
     pRhs->pPrior = pLhs;
-    if( ALWAYS(pLhs) ) pLhs->selFlags &= ~SF_MultiValue;
-    pRhs->selFlags &= ~SF_MultiValue;
+    if( ALWAYS(pLhs) ) pLhs->selFlags &= ~(u32)SF_MultiValue;
+    pRhs->selFlags &= ~(u32)SF_MultiValue;
     if( Y!=TK_ALL ) pParse->hasCompound = 1;
   }else{
     sqlite3SelectDelete(pParse->db, pLhs);
@@ -846,7 +846,7 @@ joinop(X) ::= JOIN_KW(A) nm(B) JOIN.
 joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
                   {X = sqlite3JoinType(pParse,&A,&B,&C);/*X-overwrites-A*/}
 
-// There is a parsing abiguity in an upsert statement that uses a
+// There is a parsing ambiguity in an upsert statement that uses a
 // SELECT on the RHS of a the INSERT:
 //
 //      INSERT INTO tab SELECT * FROM aaa JOIN bbb ON CONFLICT ...
@@ -1227,7 +1227,7 @@ expr(A) ::= idj(X) LP STAR RP. {
   ** The purpose of this function is to generate an Expr node from the first syntax
   ** into a TK_FUNCTION node that looks like it came from the second syntax.
   **
-  ** Only functions that have the SQLITE_SELFORDER1 perperty are allowed to do this
+  ** Only functions that have the SQLITE_SELFORDER1 property are allowed to do this
   ** transformation.  Because DISTINCT is not allowed in the ordered-set aggregate
   ** syntax, an error is raised if DISTINCT is used.
   */

@@ -693,7 +693,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       f = (f & pLeft->selFlags);
     }
     pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, f, 0);
-    pLeft->selFlags &= ~SF_MultiValue;
+    pLeft->selFlags &= ~(u32)SF_MultiValue;
     if( pSelect ){
       pSelect->op = TK_ALL;
       pSelect->pPrior = pLeft;

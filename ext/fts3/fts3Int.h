@@ -306,7 +306,7 @@ struct Fts3Table {
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-  /* True to disable the incremental doclist optimization. This is controled
+  /* True to disable the incremental doclist optimization. This is controlled
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
 
@@ -358,7 +358,7 @@ struct Fts3Cursor {
 
 /*
 ** The Fts3Cursor.eSearch member is always set to one of the following.
-** Actualy, Fts3Cursor.eSearch can be greater than or equal to
+** Actually, Fts3Cursor.eSearch can be greater than or equal to
 ** FTS3_FULLTEXT_SEARCH.  If so, then Fts3Cursor.eSearch - 2 is the index
 ** of the column to be searched.  For example, in
 **

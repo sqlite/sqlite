@@ -561,7 +561,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     const dbg = ctor.prototype.debugFlags.__flags;
     /*
       TODO?: set prototype of descr to an object which can set/fetch
-      its prefered representation, e.g. conversion to string or mapped
+      its preferred representation, e.g. conversion to string or mapped
       function. Advantage: we can avoid doing that via if/else if/else
       in the get/set methods.
     */
