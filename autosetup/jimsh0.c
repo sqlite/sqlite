@@ -1252,6 +1252,14 @@ int Jim_OpenForRead(const char *filename);
 
 #endif
 
+# ifndef MAXPATHLEN
+# ifdef PATH_MAX
+# define MAXPATHLEN PATH_MAX
+# else
+# define MAXPATHLEN JIM_PATH_LEN
+# endif
+# endif
+
 
 int Jim_FileStoreStatData(Jim_Interp *interp, Jim_Obj *varName, const jim_stat_t *sb);
 
@@ -2086,10 +2094,6 @@ enum wbuftype {
 #define UNIX_SOCKETS 1
 #else
 #define UNIX_SOCKETS 0
-#endif
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN JIM_PATH_LEN
 #endif
 
 
@@ -4172,14 +4176,6 @@ int Jim_regexpInit(Jim_Interp *interp)
 #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
 #define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
-
-# ifndef MAXPATHLEN
-# ifdef PATH_MAX
-# define MAXPATHLEN PATH_MAX
-# else
-# define MAXPATHLEN JIM_PATH_LEN
-# endif
-# endif
 
 #if defined(__MINGW32__) || defined(__MSYS__) || defined(_MSC_VER)
 #define ISWINDOWS 1

@@ -303,6 +303,14 @@ int sqlite3_initialize(void){
     if( rc==SQLITE_OK ){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage,
           sqlite3GlobalConfig.szPage, sqlite3GlobalConfig.nPage);
+#ifdef SQLITE_EXTRA_INIT_MUTEXED
+      {
+        int SQLITE_EXTRA_INIT_MUTEXED(const char*);
+        rc = SQLITE_EXTRA_INIT_MUTEXED(0);
+      }
+#endif
+    }
+    if( rc==SQLITE_OK ){
       sqlite3MemoryBarrier();
       sqlite3GlobalConfig.isInit = 1;
 #ifdef SQLITE_EXTRA_INIT
@@ -1791,6 +1799,9 @@ int sqlite3_busy_handler(
   db->busyHandler.pBusyArg = pArg;
   db->busyHandler.nBusy = 0;
   db->busyTimeout = 0;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = 0;
+#endif
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
@@ -1840,9 +1851,44 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
     sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
                              (void*)db);
     db->busyTimeout = ms;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    db->setlkTimeout = ms;
+#endif
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
+  return SQLITE_OK;
+}
+
+/*
+** Set the setlk timeout value.
+*/
+int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  int iDb;
+  int bBOC = ((flags & SQLITE_SETLK_BLOCK_ON_CONNECT) ? 1 : 0);
+#endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  if( ms<-1 ) return SQLITE_RANGE;
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  db->setlkTimeout = ms;
+  db->setlkFlags = flags;
+  sqlite3BtreeEnterAll(db);
+  for(iDb=0; iDb<db->nDb; iDb++){
+    Btree *pBt = db->aDb[iDb].pBt;
+    if( pBt ){
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, (void*)&bBOC);
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+#endif
+#if !defined(SQLITE_ENABLE_API_ARMOR) && !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(flags);
+#endif
   return SQLITE_OK;
 }
 
@@ -4193,8 +4239,8 @@ int sqlite3_test_control(int op, ...){
     /*  sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, sqlite3 *db, int b);
     **
     ** If b is true, then activate the SQLITE_FkNoAction setting.  If b is
-    ** false then clearn that setting.  If the SQLITE_FkNoAction setting is
-    ** abled, all foreign key ON DELETE and ON UPDATE actions behave as if
+    ** false then clear that setting.  If the SQLITE_FkNoAction setting is
+    ** enabled, all foreign key ON DELETE and ON UPDATE actions behave as if
     ** they were NO ACTION, regardless of how they are defined.
     **
     ** NB:  One must usually run "PRAGMA writable_schema=RESET" after

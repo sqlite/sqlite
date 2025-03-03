@@ -37,6 +37,7 @@ namespace eval trd {
   set tcltest(win.Windows-Memdebug)       veryquick
   set tcltest(win.Windows-Win32Heap)      veryquick
   set tcltest(win.Windows-Sanitize)       veryquick
+  set tcltest(win.Windows-WinRT)          veryquick
   set tcltest(win.Default)                full
 
   # Extra [make xyz] tests that should be run for various builds.
@@ -370,11 +371,17 @@ namespace eval trd {
   set build(Windows-Win32Heap) {
     WIN32HEAP=1
     DEBUG=4
+    ENABLE_SETLK=1
   }
   set build(Windows-Sanitize) {
     ASAN=1
   }
 
+  set build(Windows-WinRT) {
+    FOR_WINRT=1
+    ENABLE_SETLK=1
+    -DSQLITE_TEMP_STORE=3
+  }
 }
 
 
@@ -464,7 +471,7 @@ proc trd_fuzztest_data {} {
     return [list fuzzcheck.exe $lFuzzDb]
   }
 
-  return [list fuzzcheck $lFuzzDb {sessionfuzz run} $lSessionDb]
+  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb {sessionfuzz run} $lSessionDb]
 }
 
 
@@ -692,4 +699,16 @@ proc trd_test_script_properties {path} {
   }
 
   set trd_test_script_properties_cache($path)
+}
+
+# Usage:
+#
+#    trd_get_bin_name executable-file-name
+#
+# If the tcl platform is "unix", return $bin, else return
+# ${bin}.exe.
+proc trd_get_bin_name {bin} {
+  global tcl_platform
+  if {"unix" eq $tcl_platform(platform)} {return $bin}
+  return $bin.exe
 }

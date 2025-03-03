@@ -444,7 +444,7 @@ static void statInit(
   p->db = db;
   p->nEst = sqlite3_value_int64(argv[2]);
   p->nRow = 0;
-  p->nLimit = sqlite3_value_int64(argv[3]);
+  p->nLimit = sqlite3_value_int(argv[3]);
   p->nCol = nCol;
   p->nKeyCol = nKeyCol;
   p->nSkipAhead = 0;

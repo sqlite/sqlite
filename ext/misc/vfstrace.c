@@ -120,7 +120,7 @@
 **
 ** Individual APIs can be enabled or disabled by name, with or without
 ** the initial "x" character.  For example, to set up for tracing lock
-** primatives only:
+** primitives only:
 **
 **    PRAGMA vfstrace('-all, +Lock,Unlock,ShmLock');
 **

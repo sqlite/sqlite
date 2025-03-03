@@ -82,7 +82,13 @@ set nVersion [eval format "%d%03d%03d" [split $zVersion .]]
 set PWD [pwd]
 cd $TOP
 set tmpfile $PWD/tmp-[clock millisec]-[expr {int(rand()*100000000000)}].txt
-exec $PWD/mksourceid manifest > $tmpfile
+set mksourceid $PWD/mksourceid
+if {![file exists $mksourceid] && [file exists ${mksourceid}.exe]} {
+  # Workaround for Windows-based Unix-like environments
+  # https://sqlite.org/forum/forumpost/41ba710dd9943453
+  set mksourceid ${mksourceid}.exe
+}
+exec $mksourceid manifest > $tmpfile
 set fd [open $tmpfile rb]
 set zSourceId [string trim [read $fd]]
 close $fd

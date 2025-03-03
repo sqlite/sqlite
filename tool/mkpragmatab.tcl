@@ -534,10 +534,13 @@ puts $fd "** Ored with HEADER_VALUE_READONLY if the field is read only. */"
 puts $fd "#define PRAGMA_HEADER_VALUE_READONLY 0x0100"
 puts $fd "#define PRAGMA_HEADER_VALUE_MASK 0x00FF\n"
 
-# Sort the column lists so that longer column lists occur first
+# Sort the column lists so that longer column lists occur first.
+# In the event of a tie, sort column lists lexicographically.
 #
 proc colscmp {a b} {
-  return [expr {[llength $b] - [llength $a]}]
+  set rc [expr {[llength $b] - [llength $a]}]
+  if {$rc} {return $rc}
+  return [string compare $a $b]
 }
 set cols_list [lsort -command colscmp $cols_list]
 

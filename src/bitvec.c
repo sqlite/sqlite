@@ -67,7 +67,7 @@
 ** no fewer collisions than the no-op *1. */
 #define BITVEC_HASH(X)   (((X)*1)%BITVEC_NINT)
 
-#define BITVEC_NPTR      (BITVEC_USIZE/sizeof(Bitvec *))
+#define BITVEC_NPTR      ((u32)(BITVEC_USIZE/sizeof(Bitvec *)))
 
 
 /*
@@ -250,7 +250,7 @@ void sqlite3BitvecClear(Bitvec *p, u32 i, void *pBuf){
     }
   }
   if( p->iSize<=BITVEC_NBIT ){
-    p->u.aBitmap[i/BITVEC_SZELEM] &= ~(1 << (i&(BITVEC_SZELEM-1)));
+    p->u.aBitmap[i/BITVEC_SZELEM] &= ~(BITVEC_TELEM)(1<<(i&(BITVEC_SZELEM-1)));
   }else{
     unsigned int j;
     u32 *aiValues = pBuf;
@@ -301,7 +301,7 @@ u32 sqlite3BitvecSize(Bitvec *p){
 ** individual bits within V.
 */
 #define SETBIT(V,I)      V[I>>3] |= (1<<(I&7))
-#define CLEARBIT(V,I)    V[I>>3] &= ~(1<<(I&7))
+#define CLEARBIT(V,I)    V[I>>3] &= ~(BITVEC_TELEM)(1<<(I&7))
 #define TESTBIT(V,I)     (V[I>>3]&(1<<(I&7)))!=0
 
 /*

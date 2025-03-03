@@ -1090,7 +1090,7 @@ static const char hexdigits[] = {
 ** Append to pStr text that is the SQL literal representation of the
 ** value contained in pValue.
 */
-void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
+void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
   /* As currently implemented, the string must be initially empty.
   ** we might relax this requirement in the future, but that will
   ** require enhancements to the implementation. */
@@ -1138,7 +1138,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
     }
     case SQLITE_TEXT: {
       const unsigned char *zArg = sqlite3_value_text(pValue);
-      sqlite3_str_appendf(pStr, "%Q", zArg);
+      sqlite3_str_appendf(pStr, bEscape ? "%#Q" : "%Q", zArg);
       break;
     }
     default: {
@@ -1150,6 +1150,105 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
 }
 
 /*
+** Return true if z[] begins with N hexadecimal digits, and write
+** a decoding of those digits into *pVal.  Or return false if any
+** one of the first N characters in z[] is not a hexadecimal digit.
+*/
+static int isNHex(const char *z, int N, u32 *pVal){
+  int i;
+  int v = 0;
+  for(i=0; i<N; i++){
+    if( !sqlite3Isxdigit(z[i]) ) return 0;
+    v = (v<<4) + sqlite3HexToInt(z[i]);
+  }
+  *pVal = v;
+  return 1;
+}
+
+/*
+** Implementation of the UNISTR() function.
+**
+** This is intended to be a work-alike of the UNISTR() function in
+** PostgreSQL.  Quoting from the PG documentation (PostgreSQL 17 -
+** scraped on 2025-02-22):
+**
+**    Evaluate escaped Unicode characters in the argument. Unicode
+**    characters can be specified as \XXXX (4 hexadecimal digits),
+**    \+XXXXXX (6 hexadecimal digits), \uXXXX (4 hexadecimal digits),
+**    or \UXXXXXXXX (8 hexadecimal digits). To specify a backslash,
+**    write two backslashes. All other characters are taken literally.
+*/
+static void unistrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  char *zOut;
+  const char *zIn;
+  int nIn;
+  int i, j, n;
+  u32 v;
+
+  assert( argc==1 );
+  UNUSED_PARAMETER( argc );
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  if( zIn==0 ) return;
+  nIn = sqlite3_value_bytes(argv[0]);
+  zOut = sqlite3_malloc64(nIn+1);
+  if( zOut==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  i = j = 0;
+  while( i<nIn ){
+    char *z = strchr(&zIn[i],'\\');
+    if( z==0 ){
+      n = nIn - i;
+      memmove(&zOut[j], &zIn[i], n);
+      j += n;
+      break;
+    }
+    n = z - &zIn[i];
+    if( n>0 ){
+      memmove(&zOut[j], &zIn[i], n);
+      j += n;
+      i += n;
+    }
+    if( zIn[i+1]=='\\' ){
+      i += 2;
+      zOut[j++] = '\\';
+    }else if( sqlite3Isxdigit(zIn[i+1]) ){
+      if( !isNHex(&zIn[i+1], 4, &v) ) goto unistr_error;
+      i += 5;
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
+    }else if( zIn[i+1]=='+' ){
+      if( !isNHex(&zIn[i+2], 6, &v) ) goto unistr_error;
+      i += 8;
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
+    }else if( zIn[i+1]=='u' ){
+      if( !isNHex(&zIn[i+2], 4, &v) ) goto unistr_error;
+      i += 6;
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
+    }else if( zIn[i+1]=='U' ){
+      if( !isNHex(&zIn[i+2], 8, &v) ) goto unistr_error;
+      i += 10;
+      j += sqlite3AppendOneUtf8Character(&zOut[j], v);
+    }else{
+      goto unistr_error;
+    }
+  }
+  zOut[j] = 0;
+  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8);
+  return;
+
+unistr_error:
+  sqlite3_free(zOut);
+  sqlite3_result_error(context, "invalid Unicode escape", -1);
+  return;
+}
+
+
+/*
 ** Implementation of the QUOTE() function. 
 **
 ** The quote(X) function returns the text of an SQL literal which is the
@@ -1158,6 +1257,10 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
 ** as needed. BLOBs are encoded as hexadecimal literals. Strings with
 ** embedded NUL characters cannot be represented as string literals in SQL
 ** and hence the returned string literal is truncated prior to the first NUL.
+**
+** If sqlite3_user_data() is non-zero, then the UNISTR_QUOTE() function is
+** implemented instead.  The difference is that UNISTR_QUOTE() uses the
+** UNISTR() function to escape control characters.
 */
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3_str str;
@@ -1165,7 +1268,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
-  sqlite3QuoteValue(&str,argv[0]);
+  sqlite3QuoteValue(&str,argv[0],SQLITE_PTR_TO_INT(sqlite3_user_data(context)));
   sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
                       SQLITE_DYNAMIC);
   if( str.accError!=SQLITE_OK ){
@@ -1816,7 +1919,7 @@ static void kahanBabuskaNeumaierInit(
 ** that it returns NULL if it sums over no inputs.  TOTAL returns
 ** 0.0 in that case.  In addition, TOTAL always returns a float where
 ** SUM might return an integer if it never encounters a floating point
-** value.  TOTAL never fails, but SUM might through an exception if
+** value.  TOTAL never fails, but SUM might throw an exception if
 ** it overflows an integer.
 */
 static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
@@ -2736,7 +2839,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
+    FUNCTION(unistr,             1, 0, 0, unistrFunc       ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
+    FUNCTION(unistr_quote,       1, 1, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
     VFUNCTION(changes,           0, 0, 0, changes          ),
     VFUNCTION(total_changes,     0, 0, 0, total_changes    ),

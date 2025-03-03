@@ -226,6 +226,13 @@ static void attachFunc(
   if( rc==SQLITE_OK ){
     db->init.iDb = 0;
     db->mDbFlags &= ~(DBFLAG_SchemaKnownOk);
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( db->setlkFlags & SQLITE_SETLK_BLOCK_ON_CONNECT ){
+      int val = 1;
+      sqlite3_file *fd = sqlite3PagerFile(sqlite3BtreePager(pNew->pBt));
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_BLOCK_ON_CONNECT, &val);
+    }
+#endif
     if( !IsSharedSchema(db) && !REOPEN_AS_MEMDB(db) ){
       sqlite3BtreeEnterAll(db);
       rc = sqlite3Init(db, &zErrDyn);

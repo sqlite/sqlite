@@ -2652,7 +2652,7 @@ int lsmSortedLoadFreelist(
   void **ppVal,                   /* OUT: Blob containing LSM free-list */
   int *pnVal                      /* OUT: Size of *ppVal blob in bytes */
 ){
-  MultiCursor *pCsr;              /* Cursor used to retreive free-list */
+  MultiCursor *pCsr;              /* Cursor used to retrieve free-list */
   int rc = LSM_OK;                /* Return Code */
 
   assert( pDb->pWorker );
@@ -2764,7 +2764,7 @@ static int mcursorLocationOk(MultiCursor *pCsr, int bDeleteOk){
   }
 
   /* If the cursor points to a system key (free-list entry), and the
-  ** CURSOR_IGNORE_SYSTEM flag is set, skip thie entry.  */
+  ** CURSOR_IGNORE_SYSTEM flag is set, skip this entry.  */
   if( (pCsr->flags & CURSOR_IGNORE_SYSTEM) && rtTopic(eType)!=0 ){
     return 0;
   }
@@ -3586,7 +3586,7 @@ static int mergeWorkerBtreeWrite(
   Hierarchy *p = &pMW->hier;
   lsm_db *pDb = pMW->pDb;         /* Database handle */
   int rc = LSM_OK;                /* Return Code */
-  int iLevel;                     /* Level of b-tree hierachy to write to */
+  int iLevel;                     /* Level of b-tree hierarchy to write to */
   int nData;                      /* Size of aData[] in bytes */
   u8 *aData;                      /* Page data for level iLevel */
   int iOff;                       /* Offset on b-tree page to write record to */

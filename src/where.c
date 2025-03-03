@@ -1104,6 +1104,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
 
   /* Construct the Index object to describe this index */
+  assert( nKeyCol <= pTable->nCol + MAX(0, pTable->nCol - BMS + 1) );
+  /* ^-- This guarantees that the number of index columns will fit in the u16 */
   pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+HasRowid(pTable),
                                     0, &zNotUsed);
   if( pIdx==0 ) goto end_auto_index_create;

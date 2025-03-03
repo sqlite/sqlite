@@ -27,7 +27,7 @@ the embedded copy of JimTCL).
 REASONS TO USE THE CANONICAL BUILD SYSTEM RATHER THAN THIS PACKAGE
 ==================================================================
 
- * the cononical build system allows you to run tests to verify that
+ * the canonical build system allows you to run tests to verify that
    the build worked
  * the canonical build system supports more compile-time options
  * the canonical build system works for any arbitrary check-in to
