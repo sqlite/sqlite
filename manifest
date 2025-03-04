@@ -1,5 +1,5 @@
-C Makefile\sdoc\supdates.\sRemove\sa\scouple\sextraneous\stargets.\sNo\sfunctional\schanges.
-D 2025-03-04T07:29:28.611
+C tclsqlite3\spatch\sfrom\sChristian\sWerner:\sreplace\sFILE\shandles\swith\sTCL\schannels\sfor\sthe\sdb\scopy\scommand.
+D 2025-03-04T21:25:18.734
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -790,7 +790,7 @@ F src/sqliteInt.h 130217107c0425ab43d098c6eadf8aa2e1a037e26d79384127e2d950b27eec
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 4fc796025977d278d78bb4143adf77dd5e45ea4a9b5066da0f2887c2c59004a6
+F src/tclsqlite.c 254e69d6b4bc185ca2a3b186a92bda186aec9038063ebb9247b9b3181d4b4d4f
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c ba7b93478a6a7a3f48ec5507f28bc662636ac5d9f9791700d3648a8e788f0bb2
 F src/test2.c 7ebc518e6735939d8979273a6f7b1d9b5702babf059f6ad62499f7f60a9eb9a3
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f6a03e93cf58eaee79603de0b28ad34c872fb4b4b7d9c4e7fe35c698b27618a
-R c299274d4db174b41c97a78fbd64f0cd
+P 5a3e22999f8da075f7ca3e039f10386fb85295a2457c9495d2c48b7137a84296
+R c611a7482eb8641b88d9bc488bdfa269
 U stephan
-Z 61fe3cdeb2e2d49de4c5c1687247521c
+Z 061b791ebaa23dd94dfeab6b47007441
 # Remove this line to create a well-formed Fossil manifest.
