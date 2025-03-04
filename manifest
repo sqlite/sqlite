@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sreuse-schema\sbranch.
-D 2025-03-03T16:53:48.892
+C Fix\spointless\scomparison\sof\san\sunsigned\sinteger\sto\sless\sthan\szero\sin\sLemon.
+D 2025-03-04T17:06:38.231
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2152,7 +2152,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c f51a488369046cd4f4212d755a214a57673ded400cbeb01e298cbf63539e1d8c
+F tool/lemon.c 7bcb2260da613323718746469e314025b46f33ccb8c6753dbc39eb76bed756c8
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2225,8 +2225,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2bf063011df07a4ee8031461dee9ee9b6e4de46f24e492d95104707332b26dc 0554c00f32b7cc81d35340080df10ea6d66c9ff07fe749ea76cc523a4149b5c8
-R 138926fa7940118d1e241a66d06c078a
+P b51690e180cfb6034c772899f068453da8484a830283f7c152cfb6fa4330c31e
+R 3a658530666f2614542125c8c0123731
 U drh
-Z 2948bdff2ec01481d111121888801490
+Z a3c8a6bfe570a8e9f50de3de3edd3fe5
 # Remove this line to create a well-formed Fossil manifest.
