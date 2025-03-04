@@ -1692,6 +1692,14 @@ proc sqlite-handle-wasi-sdk {} {
   return 1
 }; # sqlite-handle-wasi-sdk
 
+set sqliteConfig(host-is-windows) [proj-looks-like-windows]
+proc sqlite-bin-for-name {fname} {
+  if {$::sqliteConfig(host-is-windows)} {
+    return ${fname}.exe
+  }
+  return $fname
+}
+
 ########################################################################
 # TCL...
 #
@@ -1760,7 +1768,7 @@ proc sqlite-check-tcl {} {
   if {"" eq $with_tclsh && "" eq $with_tcl} {
     # If neither --with-tclsh nor --with-tcl are provided, try to find
     # a workable tclsh.
-    set with_tclsh [proj-first-bin-of tclsh9.0 tclsh8.6 tclsh]
+    set with_tclsh [proj-first-bin-of tclsh9.0 tclsh90 tclsh8.6 tclsh]
     msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
   }
 
@@ -1786,7 +1794,7 @@ proc sqlite-check-tcl {} {
     }
   }
   set cfg ""
-  set tclSubdirs {tcl9.0 tcl8.6 lib}
+  set tclSubdirs {tcl9.0 tcl90 tcl8.6 lib}
   while {$use_tcl} {
     if {"" ne $with_tcl} {
       # Ensure that we can find tclConfig.sh under ${with_tcl}/...
@@ -1840,14 +1848,19 @@ proc sqlite-check-tcl {} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
     # based on info from tclConfig.sh.
     proj-assert {"" ne [get-define TCL_EXEC_PREFIX]}
-    set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
-    if {![file-isexec $with_tclsh]} {
-      set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
-      if {![file-isexec $with_tclsh2]} {
-        proj-warn "Cannot find a usable tclsh (tried: $with_tclsh $with_tclsh2)"
-      } else {
-        set with_tclsh $with_tclsh2
+    set tryThese ""
+    lappend tryThese [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
+    lappend tryThese [get-define TCL_EXEC_PREFIX]/bin/tclsh[string map {. {}} [get-define TCL_VERSION]]
+    # ^^^^ cygwin
+    lappend tryThese [get-define TCL_EXEC_PREFIX]/bin/tclsh
+    foreach trySh $tryThese {
+      if {[file-isexec $trySh]} {
+        set with_tclsh $trySh
+        break
       }
+    }
+    if {![file-isexec $with_tclsh]} {
+      proj-warn "Cannot find a usable tclsh (tried: $tryThese)
     }
   }
   define TCLSH_CMD $with_tclsh
