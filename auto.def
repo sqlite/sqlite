@@ -41,8 +41,12 @@ sqlite-configure canonical {
   proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
     "Use #line macros in the amalgamation:"
 
+  define AMALGAMATION_EXTRA_SRC \
+    [join [opt-val amalgamation-extra-src ""] " "]
+
   define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
   sqlite-handle-tcl
   sqlite-handle-emsdk
+
 }

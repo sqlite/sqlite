@@ -232,6 +232,13 @@ LINK_TOOLS_DYNAMICALLY ?= 0
 #
 AMALGAMATION_GEN_FLAGS ?= --linemacros=0
 #
+# EXTRA_SRC = list of C files to append as-is to the generated
+# amalgamation. It should arguably be called AMALGAMATION_EXTRA_SRC
+# but this older name is already in use by clients.
+#
+EXTRA_SRC ?=
+
+#
 # $(OPT_FEATURE_FLAGS) =
 #
 # Preprocessor flags for enabling and disabling specific libsqlite3

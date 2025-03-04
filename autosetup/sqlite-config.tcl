@@ -89,6 +89,7 @@ proc sqlite-configure {buildMode configScript} {
   #   boolopt            => "a boolean option which defaults to disabled"
   #   boolopt2=1         => "a boolean option which defaults to enabled"
   #   stringopt:         => "an option which takes an argument, e.g. --stringopt=value"
+  #   stringopt:DESCR    => As for stringopt: with a description for the value
   #   stringopt2:=value  => "an option where the argument is optional and defaults to 'value'"
   #   optalias booltopt3 => "a boolean with a hidden alias. --optalias is not shown in --help"
   #
@@ -259,6 +260,10 @@ proc sqlite-configure {buildMode configScript} {
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
               Needed only by ext/wasm. Default=EMSDK env var.}
+
+        amalgamation-extra-src:FILES
+          => {Space-separated list of soure files to append as-is to the resulting
+              sqlite3.c amalgamation file. May be provided multiple times.}
       }
     }
 
@@ -1562,6 +1567,9 @@ proc sqlite-process-dot-in-files {} {
   # it be done here.
   sqlite-handle-common-feature-flags
   sqlite-finalize-feature-flags
+  if {"" ne [set extraSrc [get-define AMALGAMATION_EXTRA_SRC ""]]} {
+    msg-result "Appending source files to amalgamation: $extraSrc"
+  }
 
   ########################################################################
   # "Re-export" the autoconf-conventional --XYZdir flags into something
