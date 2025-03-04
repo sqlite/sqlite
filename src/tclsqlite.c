@@ -2057,7 +2057,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   **   (4) Name of the database (ex: "main", "temp")
   **   (5) Name of trigger that is doing the access
   **
-  ** The callback should return on of the following strings: SQLITE_OK,
+  ** The callback should return one of the following strings: SQLITE_OK,
   ** SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
   **
   ** If this method is invoked with no arguments, the current authorization
