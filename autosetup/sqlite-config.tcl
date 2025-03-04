@@ -1839,15 +1839,19 @@ proc sqlite-check-tcl {} {
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
     # based on info from tclConfig.sh.
-    proj-assert {"" ne [get-define TCL_EXEC_PREFIX]}
-    set with_tclsh [get-define TCL_EXEC_PREFIX]/bin/tclsh[get-define TCL_VERSION]
-    if {![file-isexec $with_tclsh]} {
-      set with_tclsh2 [get-define TCL_EXEC_PREFIX]/bin/tclsh
-      if {![file-isexec $with_tclsh2]} {
-        proj-warn "Cannot find a usable tclsh (tried: $with_tclsh $with_tclsh2)"
-      } else {
-        set with_tclsh $with_tclsh2
+    set tclExecPrefix [get-define TCL_EXEC_PREFIX]
+    proj-assert {"" ne $tclExecPrefix}
+    set tryThese [list \
+                    $tclExecPrefix/bin/tclsh[get-define TCL_VERSION] \
+                    $tclExecPrefix/bin/tclsh ]
+    foreach trySh $tryThese {
+      if {[file-isexec $trySh]} {
+        set with_tclsh $trySh
+        break
       }
+    }
+    if {![file-isexec $with_tclsh]} {
+      proj-warn "Cannot find a usable tclsh (tried: $tryThese)
     }
   }
   define TCLSH_CMD $with_tclsh
