@@ -1,5 +1,5 @@
-C Update\sthe\srecovery\sextension\sso\sthat\sit\sworks\swith\sencrypted\sdatabases.
-D 2025-03-05T17:26:56.613
+C Always\signore\scomments\sin\sthe\sschema\sof\sa\sdatabase,\seven\sif\nSQLITE_DBCONFIG_ENABLE_COMMENTS\sis\sturned\soff.
+D 2025-03-05T18:18:17.032
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -715,7 +715,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
-F src/alter.c 0d2122ade76617b7cca383428d0881a9821ef8ddaf9cce6ff91d69a215614b95
+F src/alter.c 6a21a487290ed0990a0fac9db6b0b09c63de4b1cdaa6ba3fa3872e6f26b87768
 F src/analyze.c 13895d4da6ac857d95d3291dc607d492eba3ea1cbc3bc04baaa0383fbc1bb3d4
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
@@ -842,14 +842,14 @@ F src/test_windirent.h da2e5b73c32d09905fbdd00f27cd802212a32a58ead882736fe4f5eb7
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 375a772e2342274f4bf73605a70633237da09deed00a9bf4c4816a56777ea7c9
+F src/tokenize.c 3e37ac2b6cbb9b0abe33827b0153c27595269afd7152b48019808974481aca2c
 F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc62279
 F src/trigger.c da3c25786870d8bf97cd46b493374c2375d1abaf20a9b0f5f8629a3f2f2ce383
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c d4d55ca95106a2029ec1cdbd2497a34e69ea1d338f1a9d80ef15ebf4ff01690d
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
-F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
+F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c 014769c8f7e528d59f5a8e25d0035258396cc2c755673dee29885b6049725ee6
 F src/vdbe.h 3d26d5c7660c5c7bd33ffb0d8784615072d8b23c81f8110870efe2631136bc89
 F src/vdbeInt.h 078b1c15b26587b54c1c1879d0d2f4dec812b9de4c337fed9faf73fbcc3bf091
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41ec85637a7fac710a3986ee78ed25a96d331a03653069bae4d9f826cc6f944a
-R 582b7971e396c30b2218351e016b0f8d
-U dan
-Z 5a5dbf0f398d5f37eb4104bbb14ded4d
+P b0b66f21159b47e1950ca63a01f92fe4f621efb9a2962b310d65fa7ebdbb43b3
+R 80ec4c58f66aaf3822aba9e80edae374
+U drh
+Z d18a58001daeeed84852f4117b8a6ab7
 # Remove this line to create a well-formed Fossil manifest.
