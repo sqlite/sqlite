@@ -1,5 +1,5 @@
-C Use\sAtomicRead()\sand\sAtomicWrite()\sto\saccess\sthe\spcache1_g.bUnderPressure\nglobal,\sto\sforestall\sunnecessary\sangst\sfrom\sthread\sanalyzers.
-D 2025-03-05T17:12:42.089
+C Update\sthe\srecovery\sextension\sso\sthat\sit\sworks\swith\sencrypted\sdatabases.
+D 2025-03-05T17:26:56.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -523,7 +523,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test 5205a9742dd9490ee99950dabb622307355ef1662dea6a3a21030057bfd81411
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 788438a6735108d14ca82cf39c59abf8cde2ee384b962fb93e975eb24f2732fe
+F ext/recover/sqlite3recover.c f9f454ffb9299092e99cdd72d9bbf22a74042b61d3ee832b78a11295caf057fa
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 072260d7452a3b81aba995b2b3269e7ec2aa7f06725544ba4c25b1b0a1dbc61a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P defd7187ff8c4388f8b5467ed168462ec48215a1f4263bc4128b8e4d89a0bb2a
-R 05af8c2f5c3fa53fea0739d7a958399d
-U drh
-Z 125e88d9b4593ebcb98627cb326bad61
+P 41ec85637a7fac710a3986ee78ed25a96d331a03653069bae4d9f826cc6f944a
+R 582b7971e396c30b2218351e016b0f8d
+U dan
+Z 5a5dbf0f398d5f37eb4104bbb14ded4d
 # Remove this line to create a well-formed Fossil manifest.
