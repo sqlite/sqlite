@@ -1,5 +1,5 @@
-C Fix\spointless\scomparison\sof\san\sunsigned\sinteger\sto\sless\sthan\szero\sin\sLemon.
-D 2025-03-04T17:06:38.231
+C Update\sLemon\sso\sthat\sit\saccepts\sfilename\sarguments\sto\sdirectives\slike\n"%include".\s\sEx:\s\s"<tt>%include\s&lt;./subdir/file-to-include.txt&gt;</tt>".\nThis\swas\scapability\sneeded\sby\spikchr\sand\sbackported\shere\sfor\ssafe\skeeping.\nSQLite\sdoes\snot\sneed\sthis\scapability,\sthough\sit\sdoesn't\shurt\sto\shave\sit\sin\stree.
+D 2025-03-05T13:39:33.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -59,7 +59,7 @@ F doc/compile-for-unix.md c9dce1ddd4bf0d25efccc5c63eb047e78c01ce06a6ff29c73e0a8a
 F doc/compile-for-windows.md 5141661e783c9ca9e3fd30e813345898712f5c311d71316f183db87038fa28a6
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md ede3238186e3a90bb79d20b2a6a06d0f9429a38e069e9da0efbad0f2ed48b924
-F doc/lemon.html 7504a6dc9b56dd376a046833ea9cc8b08def93f19bfad6eab9f1a365a4b5f49a
+F doc/lemon.html 6aa6b6a75890bc71a6ad2b94e0723c273818b8b5e43b591eb483a6db0838441f
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
 F doc/shared_schema.md 759fc374709fccf4e5d2d0cbd05f8fedd38fb022bdd8a6c5b5f492684c7023b9
 F doc/tcl-extension-testing.md 864875c3b672db79e7d42348dd726f9a4fbd852b1d8e5efcf09fe3d1ff6bf2a2
@@ -2152,7 +2152,7 @@ F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
 F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
-F tool/lemon.c 7bcb2260da613323718746469e314025b46f33ccb8c6753dbc39eb76bed756c8
+F tool/lemon.c 5f999ac3801e8b585149a5fd5c7c2bbdde3baca98985ebe68e1a41b8e19d19a4
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2225,8 +2225,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b51690e180cfb6034c772899f068453da8484a830283f7c152cfb6fa4330c31e
-R 3a658530666f2614542125c8c0123731
+P 559560da45d0e22ccc6f47dd9eb5ba16851ea444da7e4e951f07b8aa6f6b3753
+R 07ddd929d7c988ac87c481e6c4cfbbbc
 U drh
-Z a3c8a6bfe570a8e9f50de3de3edd3fe5
+Z c7f5ed8a6a37ec5d454f01999c7e18cd
 # Remove this line to create a well-formed Fossil manifest.

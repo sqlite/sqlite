@@ -725,6 +725,10 @@ as part of the output file.</p>
 <p>There can be multiple <tt>%code</tt> directives.  The arguments of
 all <tt>%code</tt> directives are concatenated.</p>
 
+<p>If the argument to <tt>%code</tt> is a filename within <tt>&lt;...&gt;</tt>
+then the content of the named file is inserted instead of the text of the
+argument itself.
+
 <a id='default_destructor'></a>
 <h4>4.4.2 The <tt>%default_destructor</tt> directive</h4>
 
@@ -919,6 +923,11 @@ For example:</p>
 
 <p>This might be needed, for example, if some of the C actions in the
 grammar call functions that are prototyped in unistd.h.</p>
+
+<p>If the argument to <tt>%include</tt> is a filename within
+<tt>&lt;...&gt;</tt> then the content of that file is inserted instead
+of the text of the argument itself.
+
 
 <p>Use the <tt><a href="#pcode">%code</a></tt> directive to add code to
 the end of the generated parser.</p>

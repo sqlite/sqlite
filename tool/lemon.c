@@ -2314,6 +2314,8 @@ void OptPrint(void){
   }
 }
 /*********************** From the file "parse.c" ****************************/
+
+
 /*
 ** Input file parser for the LEMON parser generator.
 */
@@ -2368,6 +2370,60 @@ struct pstate {
   struct rule *firstrule;    /* Pointer to first rule in the grammar */
   struct rule *lastrule;     /* Pointer to the most recently parsed rule */
 };
+
+/*
+** input x[] is a filename enclosed in <...>.  This routine strives
+** to load the complete text of the named file into memory obtained
+** from lemon_malloc() and return that text.  The complete filename
+** (without the enclosing <...>) is also written into memory obtained
+** from lemon_malloc() and written back into *pzFN.
+**
+** Except, if any error occurs, the error message is set on psp and
+** no memory is allocated and a NULL is returned.
+*/
+static char *load_file_content(
+  struct pstate *psp,   /* Parsing context */
+  const char *x,        /* Filename enclosed in <....> */
+  char **pzFN           /* Write true filename here */
+){
+  char *zContent;
+  char *zFN;
+  int nFN;
+  FILE *in;
+  int nAlloc;
+  int nContent;
+  
+  *pzFN = 0;
+  nFN = lemonStrlen(x);
+  zFN = lemon_malloc( nFN );
+  memcpy(zFN, x+1, nFN-1);
+  zFN[nFN-1] = 0;
+  in = fopen(zFN, "rb");
+  if( in==0 ){
+    ErrorMsg(psp->filename,psp->tokenlineno,
+       "Cannot read file \"%s\"", zFN);
+    psp->errorcnt++;
+    lemon_free(zFN);
+    return 0;
+  }
+  *pzFN = zFN;
+  nAlloc = 2000;
+  zContent = lemon_malloc( nAlloc );
+  nContent = 0;
+  while( nContent<nAlloc-1 ){
+    long got = fread(&zContent[nContent], 1, nAlloc-nContent-1, in);
+    if( got<=0 ) break;
+    nContent += got;
+    if( nContent>=nAlloc-1 ){
+      nAlloc *= 2;
+      zContent = lemon_realloc(zContent, nAlloc);
+    }
+  }
+  zContent[nContent] = 0;
+  fclose(in);
+  return zContent;
+}
+
 
 /* Parse a single token */
 static void parseonetoken(struct pstate *psp)
@@ -2746,14 +2802,30 @@ static void parseonetoken(struct pstate *psp)
       }
       break;
     case WAITING_FOR_DECL_ARG:
-      if( x[0]=='{' || x[0]=='\"' || ISALNUM(x[0]) ){
+      if( x[0]=='{' || x[0]=='\"' || ISALNUM(x[0]) 
+       || (x[0]=='<' && psp->insertLineMacro)
+      ){
         const char *zOld, *zNew;
-        char *zBuf, *z;
+        char *zBuf;
+        const char *z;
         int nOld, n, nLine = 0, nNew, nBack;
         int addLineMacro;
         char zLine[50];
-        zNew = x;
-        if( zNew[0]=='"' || zNew[0]=='{' ) zNew++;
+        char *zToFreeTxt = 0;
+        char *zToFreeFN = 0;
+        const char *zFN = psp->filename;
+        int ln = psp->tokenlineno;
+
+        if( x[0]=='<' ){
+          zToFreeTxt = load_file_content(psp,x,&zToFreeFN);
+          if( psp->errorcnt ) break;
+          zNew = zToFreeTxt;
+          zFN = zToFreeFN;
+          ln = 1;
+        }else{
+          zNew = x;
+          if( zNew[0]=='"' || zNew[0]=='{' ) zNew++;
+        }
         nNew = lemonStrlen(zNew);
         if( *psp->declargslot ){
           zOld = *psp->declargslot;
@@ -2766,13 +2838,14 @@ static void parseonetoken(struct pstate *psp)
                        && psp->insertLineMacro
                        && psp->tokenlineno>1
                        && (psp->decllinenoslot==0 || psp->decllinenoslot[0]!=0);
-        if( addLineMacro ){
-          for(z=psp->filename, nBack=0; *z; z++){
+        if( addLineMacro || x[0]=='<' ){
+          addLineMacro = 1;
+          for(z=zFN, nBack=0; *z; z++){
             if( *z=='\\' ) nBack++;
           }
-          lemon_sprintf(zLine, "#line %d ", psp->tokenlineno);
+          lemon_sprintf(zLine, "#line %d ", ln);
           nLine = lemonStrlen(zLine);
-          n += nLine + lemonStrlen(psp->filename) + nBack;
+          n += nLine + lemonStrlen(zFN) + nBack;
         }
         *psp->declargslot = (char *) lemon_realloc(*psp->declargslot, n);
         zBuf = *psp->declargslot + nOld;
@@ -2783,7 +2856,7 @@ static void parseonetoken(struct pstate *psp)
           memcpy(zBuf, zLine, nLine);
           zBuf += nLine;
           *(zBuf++) = '"';
-          for(z=psp->filename; *z; z++){
+          for(z=zFN; *z; z++){
             if( *z=='\\' ){
               *(zBuf++) = '\\';
             }
@@ -2799,6 +2872,8 @@ static void parseonetoken(struct pstate *psp)
         zBuf += nNew;
         *zBuf = 0;
         psp->state = WAITING_FOR_DECL_OR_RULE;
+        lemon_free(zToFreeTxt);
+        lemon_free(zToFreeFN);
       }else{
         ErrorMsg(psp->filename,psp->tokenlineno,
           "Illegal argument to %%%s: %s",psp->declkeyword,x);
@@ -3161,6 +3236,18 @@ void Parse(struct lemon *gp)
         ErrorMsg(ps.filename,startline,
             "String starting on this line is not terminated before "
             "the end of the file.");
+        ps.errorcnt++;
+        nextcp = cp;
+      }else{
+        nextcp = cp+1;
+      }
+    }else if( c=='<' ){                /* Pathname in <...> */
+      cp++;
+      while( (c= *cp)!=0 && c!='>' && (c&0xfc)!=0 ){ cp++; }
+      if( (c&0xfc)==0 ){
+        ErrorMsg(ps.filename,startline,
+            c==0 ? "Unterminated filename"
+                 : "Control-character in filename");
         ps.errorcnt++;
         nextcp = cp;
       }else{
