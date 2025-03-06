@@ -65,12 +65,12 @@ static int SQLITE_TCLAPI btree_open(
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3BtreeSetCacheSize(pBt, nCache);
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pBt);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return TCL_OK;
 }
 
@@ -95,7 +95,7 @@ static int SQLITE_TCLAPI btree_close(
   pBt = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3BtreeClose(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   nRefSqlite3--;
@@ -132,7 +132,7 @@ static int SQLITE_TCLAPI btree_begin_transaction(
   rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
   sqlite3BtreeLeave(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -229,11 +229,11 @@ static int SQLITE_TCLAPI btree_cursor(
   sqlite3_mutex_leave(pBt->db->mutex);
   if( rc ){
     ckfree((char *)pCur);
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -271,7 +271,7 @@ static int SQLITE_TCLAPI btree_close_cursor(
 #endif
   ckfree((char *)pCur);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return SQLITE_OK;
@@ -309,11 +309,11 @@ static int SQLITE_TCLAPI btree_next(
   }
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -344,11 +344,11 @@ static int SQLITE_TCLAPI btree_first(
   rc = sqlite3BtreeFirst(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -378,7 +378,7 @@ static int SQLITE_TCLAPI btree_eof(
   rc = sqlite3BtreeEof(pCur);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", rc);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -407,7 +407,7 @@ static int SQLITE_TCLAPI btree_payload_size(
   n = sqlite3BtreePayloadSize(pCur);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_snprintf(sizeof(zBuf),zBuf, "%u", n);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   return SQLITE_OK;
 }
 
@@ -452,20 +452,20 @@ static int SQLITE_TCLAPI btree_varint_test(
     if( n1>9 || n1<1 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
          "putVarint returned %d - should be between 1 and 9", n1);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     n2 = getVarint(zBuf, &out);
     if( n1!=n2 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
           "putVarint returned %d and getVarint returned %d", n1, n2);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     if( in!=out ){
       sqlite3_snprintf(sizeof(zErr), zErr,
           "Wrote 0x%016llx and got back 0x%016llx", in, out);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
     if( (in & 0xffffffff)==in ){
@@ -476,14 +476,14 @@ static int SQLITE_TCLAPI btree_varint_test(
         sqlite3_snprintf(sizeof(zErr), zErr,
           "putVarint returned %d and GetVarint32 returned %d", 
                   n1, n2);
-        Tcl_AppendResult(interp, zErr, 0);
+        Tcl_AppendResult(interp, zErr, NULL);
         return TCL_ERROR;
       }
       if( in!=out ){
         sqlite3_snprintf(sizeof(zErr), zErr,
           "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
             in, out);
-        Tcl_AppendResult(interp, zErr, 0);
+        Tcl_AppendResult(interp, zErr, NULL);
         return TCL_ERROR;
       }
     }
@@ -528,7 +528,7 @@ static int SQLITE_TCLAPI btree_from_db(
   }
 
   if( 1!=Tcl_GetCommandInfo(interp, argv[1], &info) ){
-    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", 0);
+    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", NULL);
     return TCL_ERROR;
   }
   if( argc==3 ){
@@ -646,7 +646,7 @@ static int SQLITE_TCLAPI btree_insert(
 
   Tcl_ResetResult(interp);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
   return TCL_OK;

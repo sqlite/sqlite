@@ -646,7 +646,7 @@ static int SQLITE_TCLAPI test_memdebug_fail(
     }
 
     if( zErr ){
-      Tcl_AppendResult(interp, zErr, zOption, 0);
+      Tcl_AppendResult(interp, zErr, zOption, NULL);
       return TCL_ERROR;
     }
   }

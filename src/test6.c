@@ -934,7 +934,7 @@ static int SQLITE_TCLAPI crashParamsObjCmd(
 
   zCrashFile = Tcl_GetStringFromObj(objv[objc-1], &nCrashFile);
   if( nCrashFile>=sizeof(g.zCrashFile) ){
-    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
+    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", NULL);
     goto error;
   }
   if( Tcl_GetIntFromObj(interp, objv[objc-2], &iDelay) ){
@@ -1055,7 +1055,7 @@ static int SQLITE_TCLAPI jtObjCmd(
     zParent = 0;
   }
   if( jt_register(zParent, objc==3) ){
-    Tcl_AppendResult(interp, "Error in jt_register", 0);
+    Tcl_AppendResult(interp, "Error in jt_register", NULL);
     return TCL_ERROR;
   }
 

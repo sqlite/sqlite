@@ -106,7 +106,7 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
     }
   }
   if( !pEnc->enc ){
-    Tcl_AppendResult(interp, "No such encoding: ", z, 0);
+    Tcl_AppendResult(interp, "No such encoding: ", z, NULL);
   }
   if( pEnc->enc==SQLITE_UTF16 ){
     return SQLITE_UTF16NATIVE;

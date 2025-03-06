@@ -1147,7 +1147,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
       }
       ckfree(zName);
       if( !pBuffer ){
-        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), 0);
+        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
       }
       if( objc==4 ){
@@ -1225,7 +1225,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
           }
         }
         if( iMethod==ArraySize(vfsmethod) ){
-          Tcl_AppendResult(interp, "unknown method: ", zElem, 0);
+          Tcl_AppendResult(interp, "unknown method: ", zElem, NULL);
           return TCL_ERROR;
         }
       }
@@ -1353,7 +1353,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
             return TCL_ERROR;
           }
           if( aFlag[idx].iValue<0 && nFlags>1 ){
-            Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), 0);
+            Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), NULL);
             return TCL_ERROR;
           }
           iNew |= aFlag[idx].iValue;
@@ -1673,7 +1673,7 @@ static int SQLITE_TCLAPI test_vfs_set_readmark(
     return TCL_ERROR;
   }
   if( pShm==0 ){
-    Tcl_AppendResult(interp, "*-shm is not yet mapped", 0);
+    Tcl_AppendResult(interp, "*-shm is not yet mapped", NULL);
     return TCL_ERROR;
   }
   aShm = (u32*)pShm;

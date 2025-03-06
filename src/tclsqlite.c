@@ -76,7 +76,9 @@
 #     define SQLITE_PTRSIZE 8
 #   endif
 # endif /* SQLITE_PTRSIZE */
-# if defined(HAVE_STDINT_H)
+# if defined(HAVE_STDINT_H) || (defined(__STDC_VERSION__) &&  \
+                                (__STDC_VERSION__ >= 199901L))
+#   include <stdint.h>
     typedef uintptr_t uptr;
 # elif SQLITE_PTRSIZE==4
     typedef unsigned int uptr;
