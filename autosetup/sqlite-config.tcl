@@ -445,15 +445,12 @@ proc sqlite-post-options-init {} {
   }
   sqlite-autoreconfig
   proj-file-extensions
-  switch -exact -- [sqlite-env-is-unix-on-windows] {
-    "" - cygwin {
-      define SQLITE_OS_UNIX 1
-      define SQLITE_OS_WIN 0
-    }
-    default {
-      define SQLITE_OS_UNIX 0
-      define SQLITE_OS_WIN 1
-    }
+  if {".exe" eq [get-define TARGET_EXEEXT]} {
+    define SQLITE_OS_UNIX 0
+    define SQLITE_OS_WIN 1
+  } else {
+    define SQLITE_OS_UNIX 1
+    define SQLITE_OS_WIN 0
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   sqlite-setup-default-cflags
