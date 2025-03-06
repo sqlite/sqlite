@@ -2789,12 +2789,12 @@ static int shell_callback(
           }else if( (c=='w' || c=='W')
                  && nParen==0 && isIndex
                  && sqlite3_strnicmp("WHERE",&z[i],5)==0
-                 && !isalnum(z[i+5]) && z[i+5]!='_' ){
+                 && !IsAlnum(z[i+5]) && z[i+5]!='_' ){
             isWhere = 1;
           }else if( isWhere && (c=='A' || c=='a')
                  && nParen==0
                  && sqlite3_strnicmp("AND",&z[i],3)==0
-                 && !isalnum(z[i+3]) && z[i+3]!='_' ){
+                 && !IsAlnum(z[i+3]) && z[i+3]!='_' ){
             printSchemaLineN(p->out, z, j, "\n    ");
             j = 0;
           }
