@@ -445,7 +445,7 @@ proc sqlite-post-options-init {} {
   }
   sqlite-autoreconfig
   proj-file-extensions
-  switch --exact -- [sqlite-env-is-unix-on-windows] {
+  switch -exact -- [sqlite-env-is-unix-on-windows] {
     "" - cygwin {
       define SQLITE_OS_UNIX 1
       define SQLITE_OS_WIN 0
