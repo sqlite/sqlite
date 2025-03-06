@@ -445,12 +445,15 @@ proc sqlite-post-options-init {} {
   }
   sqlite-autoreconfig
   proj-file-extensions
-  if {".exe" eq [get-define TARGET_EXEEXT]} {
-    define SQLITE_OS_UNIX 0
-    define SQLITE_OS_WIN 1
-  } else {
-    define SQLITE_OS_UNIX 1
-    define SQLITE_OS_WIN 0
+  switch --exact -- [sqlite-env-is-unix-on-windows] {
+    "" - cygwin {
+      define SQLITE_OS_UNIX 1
+      define SQLITE_OS_WIN 0
+    }
+    default {
+      define SQLITE_OS_UNIX 0
+      define SQLITE_OS_WIN 1
+    }
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   sqlite-setup-default-cflags
@@ -1469,7 +1472,8 @@ proc sqlite-handle-out-implib {} {
 #
 # It does not distinguish between msys and msys2, returning msys for
 # both. The build does not, as of this writing, specifically support
-# msys v1.
+# msys v1. Similarly, this function returns "mingw" for both "mingw32"
+# and "mingw64".
 proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
   if {"" eq $envTuple} {
     set envTuple [get-define host]
@@ -1480,7 +1484,7 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
     *-*-ming*  { set name mingw }
     *-*-msys   { set name msys }
   }
-  return $name;
+  return $name
 }
 
 ########################################################################
