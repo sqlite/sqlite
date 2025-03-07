@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sthe\scygwin-fixes\sbranch\s(which\swas\sinadvertently\sbranched\stoo\searly).
-D 2025-03-06T14:40:45.465
+C os_win.c\spatches\sfor\sCygwin\s(described\sin\sthe\scygwin-fixes\sbranch\swiki\spage).\sMakefile.msc's\stest\starget\son\strunk\sfails\sthe\ssame\s13\stests\sas\sthis\sbranch.
+D 2025-03-07T06:54:04.344
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -767,7 +767,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 410185df4900817c218c0efdb8064b3481af88cb3f7cea7392f820b6eebc7889
-F src/os_win.c ab9912a2c1cb39a6429b8de919a5b63ad1c7775e511d748391c57bf9ad03bd29
+F src/os_win.c e58f0861b3b939a8f32c52fb8bfeaac45cabf13a5e0a546292b19df1700c0de5
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 9fbb541b46125dfa8914827575e6bb4d15048caa008073b1709112d495d7983b
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9868615b7d41179672dde2eafff878d50cf9d647c7050ccf5103e385fd182fc2 44adf8f38761a0d756c047f93fc76fc1d0aba8cc209970e3ba13e7040dd14b13
-R 6720fafd003ea32af768dea715e79f11
+P a7863b2e2fbea0ea11c494016b99921f70aae09607868aa65af988cbd173b31a
+R ea5818813fceadcfc7cbbe3fe0406646
 U stephan
-Z 4921eb5838dff5a5d0b087efb7597040
+Z 4d833d4901925f4ec5cc4c393f5e8b1d
 # Remove this line to create a well-formed Fossil manifest.

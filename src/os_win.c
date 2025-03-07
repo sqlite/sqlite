@@ -617,7 +617,7 @@ static struct win_syscall {
   { "FileTimeToLocalFileTime", (SYSCALL)0,                       0 },
 #endif
 
-#define osFileTimeToLocalFileTime ((BOOL(WINAPI*)(CONST FILETIME*, \
+#define osFileTimeToLocalFileTime ((BOOL(WINAPI*)(const FILETIME*, \
         LPFILETIME))aSyscall[11].pCurrent)
 
 #if SQLITE_OS_WINCE
@@ -626,7 +626,7 @@ static struct win_syscall {
   { "FileTimeToSystemTime",    (SYSCALL)0,                       0 },
 #endif
 
-#define osFileTimeToSystemTime ((BOOL(WINAPI*)(CONST FILETIME*, \
+#define osFileTimeToSystemTime ((BOOL(WINAPI*)(const FILETIME*, \
         LPSYSTEMTIME))aSyscall[12].pCurrent)
 
   { "FlushFileBuffers",        (SYSCALL)FlushFileBuffers,        0 },
@@ -970,7 +970,7 @@ static struct win_syscall {
 
   { "SystemTimeToFileTime",    (SYSCALL)SystemTimeToFileTime,    0 },
 
-#define osSystemTimeToFileTime ((BOOL(WINAPI*)(CONST SYSTEMTIME*, \
+#define osSystemTimeToFileTime ((BOOL(WINAPI*)(const SYSTEMTIME*, \
         LPFILETIME))aSyscall[56].pCurrent)
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
@@ -1207,6 +1207,63 @@ static struct win_syscall {
 
 #define osCancelIo ((BOOL(WINAPI*)(HANDLE))aSyscall[81].pCurrent)
 
+#if defined(SQLITE_WIN32_HAS_WIDE) && defined(_WIN32)
+  { "GetModuleHandleW",         (SYSCALL)GetModuleHandleW,       0 },
+#else
+  { "GetModuleHandleW",         (SYSCALL)0,                      0 },
+#endif
+
+#define osGetModuleHandleW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[82].pCurrent)
+
+#ifndef _WIN32
+  { "getenv",                   (SYSCALL)getenv,                 0 },
+#else
+  { "getenv",                   (SYSCALL)0,                      0 },
+#endif
+
+#define osGetenv ((const char *(*)(const char *))aSyscall[83].pCurrent)
+
+#ifndef _WIN32
+  { "getcwd",                   (SYSCALL)getcwd,                 0 },
+#else
+  { "getcwd",                   (SYSCALL)0,                      0 },
+#endif
+
+#define osGetcwd ((char*(*)(char*,size_t))aSyscall[84].pCurrent)
+
+#ifndef _WIN32
+  { "readlink",                 (SYSCALL)readlink,               0 },
+#else
+  { "readlink",                 (SYSCALL)0,                      0 },
+#endif
+
+#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[85].pCurrent)
+
+#ifndef _WIN32
+  { "lstat",                    (SYSCALL)lstat,                  0 },
+#else
+  { "lstat",                    (SYSCALL)0,                      0 },
+#endif
+
+#define osLstat ((int(*)(const char*,struct stat*))aSyscall[86].pCurrent)
+
+#ifndef _WIN32
+  { "__errno",                  (SYSCALL)__errno,                0 },
+#else
+  { "__errno",                  (SYSCALL)0,                      0 },
+#endif
+
+#define osErrno (*((int*(*)(void))aSyscall[87].pCurrent)())
+
+#ifndef _WIN32
+  { "cygwin_conv_path",         (SYSCALL)cygwin_conv_path,       0 },
+#else
+  { "cygwin_conv_path",         (SYSCALL)0,                      0 },
+#endif
+
+#define osCygwin_conv_path ((size_t(*)(unsigned int, \
+    const void *, void *, size_t))aSyscall[88].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -1380,6 +1437,7 @@ int sqlite3_win32_reset_heap(){
 }
 #endif /* SQLITE_WIN32_MALLOC */
 
+#ifdef _WIN32
 /*
 ** This function outputs the specified (ANSI) string to the Win32 debugger
 ** (if available).
@@ -1422,6 +1480,7 @@ void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
   }
 #endif
 }
+#endif /* _WIN32 */
 
 /*
 ** The following routine suspends the current thread for at least ms
@@ -1781,28 +1840,29 @@ static char *winUnicodeToUtf8(LPCWSTR zWideText){
 ** Space to hold the returned string is obtained from sqlite3_malloc().
 */
 static LPWSTR winMbcsToUnicode(const char *zText, int useAnsi){
-  int nByte;
+  int nWideChar;
   LPWSTR zMbcsText;
   int codepage = useAnsi ? CP_ACP : CP_OEMCP;
 
-  nByte = osMultiByteToWideChar(codepage, 0, zText, -1, NULL,
-                                0)*sizeof(WCHAR);
-  if( nByte==0 ){
+  nWideChar = osMultiByteToWideChar(codepage, 0, zText, -1, NULL,
+                                0);
+  if( nWideChar==0 ){
     return 0;
   }
-  zMbcsText = sqlite3MallocZero( nByte*sizeof(WCHAR) );
+  zMbcsText = sqlite3MallocZero( nWideChar*sizeof(WCHAR) );
   if( zMbcsText==0 ){
     return 0;
   }
-  nByte = osMultiByteToWideChar(codepage, 0, zText, -1, zMbcsText,
-                                nByte);
-  if( nByte==0 ){
+  nWideChar = osMultiByteToWideChar(codepage, 0, zText, -1, zMbcsText,
+                                nWideChar);
+  if( nWideChar==0 ){
     sqlite3_free(zMbcsText);
     zMbcsText = 0;
   }
   return zMbcsText;
 }
 
+#ifdef _WIN32
 /*
 ** Convert a Microsoft Unicode string to a multi-byte character string,
 ** using the ANSI or OEM code page.
@@ -1830,6 +1890,7 @@ static char *winUnicodeToMbcs(LPCWSTR zWideText, int useAnsi){
   }
   return zText;
 }
+#endif /* _WIN32 */
 
 /*
 ** Convert a multi-byte character string to UTF-8.
@@ -1849,6 +1910,7 @@ static char *winMbcsToUtf8(const char *zText, int useAnsi){
   return zTextUtf8;
 }
 
+#ifdef _WIN32
 /*
 ** Convert a UTF-8 string to a multi-byte character string.
 **
@@ -1898,6 +1960,7 @@ char *sqlite3_win32_unicode_to_utf8(LPCWSTR zWideText){
 #endif
   return winUnicodeToUtf8(zWideText);
 }
+#endif /* _WIN32 */
 
 /*
 ** This is a public wrapper for the winMbcsToUtf8() function.
@@ -1915,6 +1978,7 @@ char *sqlite3_win32_mbcs_to_utf8(const char *zText){
   return winMbcsToUtf8(zText, osAreFileApisANSI());
 }
 
+#ifdef _WIN32
 /*
 ** This is a public wrapper for the winMbcsToUtf8() function.
 */
@@ -2039,6 +2103,7 @@ int sqlite3_win32_set_directory(
 ){
   return sqlite3_win32_set_directory16(type, zValue);
 }
+#endif /* _WIN32 */
 
 /*
 ** The return value of winGetLastErrorMsg
@@ -4120,7 +4185,7 @@ static void *winConvertFromUtf8Filename(const char *zFilename){
   if( osIsNT() ){
     zConverted = winUtf8ToUnicode(zFilename);
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
+#if defined(SQLITE_WIN32_HAS_ANSI) && defined(_WIN32)
   else{
     zConverted = winUtf8ToMbcs(zFilename, osAreFileApisANSI());
   }
@@ -4949,7 +5014,7 @@ static winVfsAppData winNolockAppData = {
 ** sqlite3_vfs object.
 */
 
-#if defined(__CYGWIN__)
+#ifndef _WIN32
 /*
 ** Convert a filename from whatever the underlying operating system
 ** supports for filenames into UTF-8.  Space to hold the result is
@@ -5059,7 +5124,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_TEMPDIR));
   }
 
-#if defined(__CYGWIN__)
+#ifndef _WIN32
   else{
     static const char *azDirs[] = {
        0, /* getenv("SQLITE_TMPDIR") */
@@ -5076,11 +5141,11 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     unsigned int i;
     const char *zDir = 0;
 
-    if( !azDirs[0] ) azDirs[0] = getenv("SQLITE_TMPDIR");
-    if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
-    if( !azDirs[2] ) azDirs[2] = getenv("TMP");
-    if( !azDirs[3] ) azDirs[3] = getenv("TEMP");
-    if( !azDirs[4] ) azDirs[4] = getenv("USERPROFILE");
+    if( !azDirs[0] ) azDirs[0] = osGetenv("SQLITE_TMPDIR");
+    if( !azDirs[1] ) azDirs[1] = osGetenv("TMPDIR");
+    if( !azDirs[2] ) azDirs[2] = osGetenv("TMP");
+    if( !azDirs[3] ) azDirs[3] = osGetenv("TEMP");
+    if( !azDirs[4] ) azDirs[4] = osGetenv("USERPROFILE");
     for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
       void *zConverted;
       if( zDir==0 ) continue;
@@ -5109,8 +5174,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
           return SQLITE_IOERR_NOMEM_BKPT;
         }
-        if( cygwin_conv_path(
-                osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
+        if( osCygwin_conv_path(
+                CCP_POSIX_TO_WIN_W, zDir,
                 zConverted, nMax+1)<0 ){
           sqlite3_free(zConverted);
           sqlite3_free(zBuf);
@@ -5139,7 +5204,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       }
     }
   }
-#elif !SQLITE_OS_WINRT && !defined(__CYGWIN__)
+#elif !SQLITE_OS_WINRT && defined(_WIN32)
   else if( osIsNT() ){
     char *zMulti;
     LPWSTR zWidePath = sqlite3MallocZero( nMax*sizeof(WCHAR) );
@@ -5863,7 +5928,7 @@ static int winFullPathnameNoMutex(
   int nFull,                    /* Size of output buffer in bytes */
   char *zFull                   /* Output buffer */
 ){
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(_WIN32)
   DWORD nByte;
   void *zConverted;
   char *zOut;
@@ -5877,64 +5942,34 @@ static int winFullPathnameNoMutex(
     zRelative++;
   }
 
-#if defined(__CYGWIN__)
+#ifndef _WIN32
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   assert( nFull>=pVfs->mxPathname );
-  if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
-    /*
-    ** NOTE: We are dealing with a relative path name and the data
-    **       directory has been set.  Therefore, use it as the basis
-    **       for converting the relative path name to an absolute
-    **       one by prepending the data directory and a slash.
-    */
-    char *zOut = sqlite3MallocZero( 1+(u64)pVfs->mxPathname );
-    if( !zOut ){
-      return SQLITE_IOERR_NOMEM_BKPT;
-    }
-    if( cygwin_conv_path(
-            (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A) |
-            CCP_RELATIVE, zRelative, zOut, pVfs->mxPathname+1)<0 ){
-      sqlite3_free(zOut);
-      return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
-                         "winFullPathname1", zRelative);
-    }else{
-      char *zUtf8 = winConvertToUtf8Filename(zOut);
-      if( !zUtf8 ){
-        sqlite3_free(zOut);
-        return SQLITE_IOERR_NOMEM_BKPT;
-      }
-      sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
-                       sqlite3_data_directory, winGetDirSep(), zUtf8);
-      sqlite3_free(zUtf8);
-      sqlite3_free(zOut);
-    }
+  char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
+  if( !zOut ){
+    return SQLITE_IOERR_NOMEM_BKPT;
+  }
+  if( osCygwin_conv_path(
+          CCP_POSIX_TO_WIN_W,
+          zRelative, zOut, pVfs->mxPathname+1)<0 ){
+    sqlite3_free(zOut);
+    return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
+                       "winFullPathname2", zRelative);
   }else{
-    char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
-    if( !zOut ){
+    char *zUtf8 = winConvertToUtf8Filename(zOut);
+    if( !zUtf8 ){
+      sqlite3_free(zOut);
       return SQLITE_IOERR_NOMEM_BKPT;
     }
-    if( cygwin_conv_path(
-            (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A),
-            zRelative, zOut, pVfs->mxPathname+1)<0 ){
-      sqlite3_free(zOut);
-      return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
-                         "winFullPathname2", zRelative);
-    }else{
-      char *zUtf8 = winConvertToUtf8Filename(zOut);
-      if( !zUtf8 ){
-        sqlite3_free(zOut);
-        return SQLITE_IOERR_NOMEM_BKPT;
-      }
-      sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zUtf8);
-      sqlite3_free(zUtf8);
-      sqlite3_free(zOut);
-    }
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zUtf8);
+    sqlite3_free(zUtf8);
+    sqlite3_free(zOut);
   }
   return SQLITE_OK;
 #endif
 
-#if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && !defined(__CYGWIN__)
+#if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && defined(_WIN32)
   SimulateIOError( return SQLITE_ERROR );
   /* WinCE has no concept of a relative pathname, or so I am told. */
   /* WinRT has no way to convert a relative path to an absolute one. */
@@ -5953,7 +5988,7 @@ static int winFullPathnameNoMutex(
   return SQLITE_OK;
 #endif
 
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(__CYGWIN__)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(_WIN32)
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
   ** function failing. This function could fail if, for example, the
@@ -6056,7 +6091,7 @@ static int winFullPathname(
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
-#if defined(__CYGWIN__)
+#ifndef _WIN32
   int nFull = pVfs->mxPathname+1;
   char *zFull = sqlite3MallocZero( nFull );
   void *zConverted = 0;
@@ -6423,7 +6458,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==82 );
+  assert( ArraySize(aSyscall)==89 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
