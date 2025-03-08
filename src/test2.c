@@ -51,7 +51,7 @@ static int SQLITE_TCLAPI pager_open(
   char zBuf[100];
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME N-PAGE\"", 0);
+       " FILENAME N-PAGE\"", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
@@ -85,7 +85,7 @@ static int SQLITE_TCLAPI pager_close(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -112,7 +112,7 @@ static int SQLITE_TCLAPI pager_rollback(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -139,7 +139,7 @@ static int SQLITE_TCLAPI pager_commit(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -171,7 +171,7 @@ static int SQLITE_TCLAPI pager_stmt_begin(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -198,7 +198,7 @@ static int SQLITE_TCLAPI pager_stmt_rollback(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -226,7 +226,7 @@ static int SQLITE_TCLAPI pager_stmt_commit(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -253,7 +253,7 @@ static int SQLITE_TCLAPI pager_stats(
   int i, *a;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -287,7 +287,7 @@ static int SQLITE_TCLAPI pager_pagecount(
   int nPage;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -315,7 +315,7 @@ static int SQLITE_TCLAPI page_get(
   int rc;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID PGNO\"", 0);
+       " ID PGNO\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -351,7 +351,7 @@ static int SQLITE_TCLAPI page_lookup(
   int pgno;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID PGNO\"", 0);
+       " ID PGNO\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -377,7 +377,7 @@ static int SQLITE_TCLAPI pager_truncate(
   int pgno;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID PGNO\"", 0);
+       " ID PGNO\"", NULL);
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
@@ -401,7 +401,7 @@ static int SQLITE_TCLAPI page_unref(
   DbPage *pPage;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " PAGE\"", 0);
+       " PAGE\"", NULL);
     return TCL_ERROR;
   }
   pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
@@ -424,7 +424,7 @@ static int SQLITE_TCLAPI page_read(
   DbPage *pPage;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " PAGE\"", 0);
+       " PAGE\"", NULL);
     return TCL_ERROR;
   }
   pPage = sqlite3TestTextToPtr(argv[1]);
@@ -448,7 +448,7 @@ static int SQLITE_TCLAPI page_number(
   DbPage *pPage;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " PAGE\"", 0);
+       " PAGE\"", NULL);
     return TCL_ERROR;
   }
   pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
@@ -473,7 +473,7 @@ static int SQLITE_TCLAPI page_write(
   int rc;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " PAGE DATA\"", 0);
+       " PAGE DATA\"", NULL);
     return TCL_ERROR;
   }
   pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
@@ -513,7 +513,7 @@ static int SQLITE_TCLAPI fake_big_file(
   int nFile;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " N-MEGABYTES FILE\"", 0);
+       " N-MEGABYTES FILE\"", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;

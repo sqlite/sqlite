@@ -3350,7 +3350,7 @@ static int SQLITE_TCLAPI test_collate(
 
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
-      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", NULL);
   return TCL_ERROR;
 }
 
@@ -3629,7 +3629,7 @@ static int SQLITE_TCLAPI test_function(
   return TCL_OK;
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
-      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", NULL);
 #endif /* SQLITE_OMIT_UTF16 */
   return TCL_ERROR;
 }
@@ -3777,7 +3777,7 @@ static int SQLITE_TCLAPI test_bind_int(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", NULL);
     return TCL_ERROR;
   }
 
@@ -3954,7 +3954,7 @@ static int SQLITE_TCLAPI test_bind_int64(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", NULL);
     return TCL_ERROR;
   }
 
@@ -4010,7 +4010,7 @@ static int SQLITE_TCLAPI test_bind_double(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", NULL);
     return TCL_ERROR;
   }
 
@@ -4067,7 +4067,7 @@ static int SQLITE_TCLAPI test_bind_null(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N", NULL);
     return TCL_ERROR;
   }
 
@@ -4107,7 +4107,7 @@ static int SQLITE_TCLAPI test_bind_text(
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", NULL);
     return TCL_ERROR;
   }
 
@@ -4167,7 +4167,7 @@ static int SQLITE_TCLAPI test_bind_text16(
 
   if( objc!=5 && objc!=6){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", NULL);
     return TCL_ERROR;
   }
 
@@ -4220,7 +4220,7 @@ static int SQLITE_TCLAPI test_bind_blob(
 
   if( objc!=5 && objc!=6 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " STMT N DATA BYTES", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N DATA BYTES", NULL);
     return TCL_ERROR;
   }
 
@@ -4718,7 +4718,7 @@ static int SQLITE_TCLAPI test_ex_errcode(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB", 0);
+       Tcl_GetString(objv[0]), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4745,7 +4745,7 @@ static int SQLITE_TCLAPI test_errcode(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB", 0);
+       Tcl_GetString(objv[0]), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4771,7 +4771,7 @@ static int SQLITE_TCLAPI test_errmsg(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB", 0);
+       Tcl_GetString(objv[0]), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4799,7 +4799,7 @@ static int SQLITE_TCLAPI test_error_offset(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB", 0);
+       Tcl_GetString(objv[0]), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4831,7 +4831,7 @@ static int SQLITE_TCLAPI test_errmsg16(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB", 0);
+       Tcl_GetString(objv[0]), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4870,7 +4870,7 @@ static int SQLITE_TCLAPI test_prepare(
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -4929,7 +4929,7 @@ static int SQLITE_TCLAPI test_prepare_v2(
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -5003,7 +5003,7 @@ static int SQLITE_TCLAPI test_prepare_v3(
 
   if( objc!=6 && objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes flags tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes flags tailvar", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -5070,7 +5070,7 @@ static int SQLITE_TCLAPI test_prepare_tkt3134(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -5118,7 +5118,7 @@ static int SQLITE_TCLAPI test_prepare16(
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -5178,7 +5178,7 @@ static int SQLITE_TCLAPI test_prepare16_v2(
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -5226,7 +5226,7 @@ static int SQLITE_TCLAPI test_open(
 
   if( objc!=3 && objc!=2 && objc!=1 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " filename options-list", 0);
+       Tcl_GetString(objv[0]), " filename options-list", NULL);
     return TCL_ERROR;
   }
 
@@ -5325,7 +5325,7 @@ static int SQLITE_TCLAPI test_open16(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " filename options-list", 0);
+       Tcl_GetString(objv[0]), " filename options-list", NULL);
     return TCL_ERROR;
   }
 
@@ -5409,7 +5409,7 @@ static int SQLITE_TCLAPI test_step(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT", 0);
+       Tcl_GetString(objv[0]), " STMT", NULL);
     return TCL_ERROR;
   }
 
@@ -5493,7 +5493,7 @@ static int SQLITE_TCLAPI test_column_count(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5520,7 +5520,7 @@ static int SQLITE_TCLAPI test_column_type(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5569,7 +5569,7 @@ static int SQLITE_TCLAPI test_column_int64(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5598,7 +5598,7 @@ static int SQLITE_TCLAPI test_column_blob(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5628,7 +5628,7 @@ static int SQLITE_TCLAPI test_column_double(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5655,7 +5655,7 @@ static int SQLITE_TCLAPI test_data_count(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5688,7 +5688,7 @@ static int SQLITE_TCLAPI test_stmt_utf8(
   xFuncU = (const unsigned char*(*)(sqlite3_stmt*,int))xFunc;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5746,7 +5746,7 @@ static int SQLITE_TCLAPI test_stmt_utf16(
   xFunc = (const void *(*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5787,7 +5787,7 @@ static int SQLITE_TCLAPI test_stmt_int(
   xFunc = (int (*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
+       Tcl_GetString(objv[0]), " STMT column", NULL);
     return TCL_ERROR;
   }
 
@@ -5936,7 +5936,7 @@ static int SQLITE_TCLAPI test_busy_timeout(
   sqlite3 *db;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-        " DB", 0);
+        " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
@@ -5970,7 +5970,7 @@ static int SQLITE_TCLAPI test_setlk_timeout(
   }
   if( argc!=(3+bBlockOnConnect) ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-        " ?-blockonconnect? DB MS", 0);
+        " ?-blockonconnect? DB MS", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[argc-2], &db) ) return TCL_ERROR;
@@ -6390,7 +6390,7 @@ static int SQLITE_TCLAPI test_pager_refcounts(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -6632,7 +6632,7 @@ static int SQLITE_TCLAPI file_control_test(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
@@ -6667,7 +6667,7 @@ static int SQLITE_TCLAPI file_control_lasterrno_test(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -6680,7 +6680,7 @@ static int SQLITE_TCLAPI file_control_lasterrno_test(
   }
   if( iArg!=0 ) {
     Tcl_AppendResult(interp, "Unexpected non-zero errno: ",
-                     Tcl_GetStringFromObj(Tcl_NewIntObj(iArg), 0), " ", 0);
+                     Tcl_GetStringFromObj(Tcl_NewIntObj(iArg), 0), " ", NULL);
     return TCL_ERROR;
   }
   return TCL_OK;  
@@ -6816,7 +6816,7 @@ static int SQLITE_TCLAPI file_control_lockproxy_test(
   
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-                     Tcl_GetStringFromObj(objv[0], 0), " DB PWD", 0);
+                     Tcl_GetStringFromObj(objv[0], 0), " DB PWD", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -6852,7 +6852,7 @@ static int SQLITE_TCLAPI file_control_lockproxy_test(
     rc = sqlite3_file_control(db, NULL, SQLITE_GET_LOCKPROXYFILE, &testPath);
     if( strncmp(proxyPath,testPath,11) ){
       Tcl_AppendResult(interp, "Lock proxy file did not match the "
-                               "previously assigned value", 0);
+                               "previously assigned value", NULL);
       return TCL_ERROR;
     }
     if( rc ){
@@ -6889,7 +6889,7 @@ static int SQLITE_TCLAPI file_control_win32_av_retry(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB NRETRY DELAY", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB NRETRY DELAY", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -6922,7 +6922,7 @@ static int file_control_win32_get_handle(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -6954,7 +6954,7 @@ static int SQLITE_TCLAPI file_control_win32_set_handle(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB HANDLE", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB HANDLE", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -6990,7 +6990,7 @@ static int SQLITE_TCLAPI file_control_persist_wal(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -7022,7 +7022,7 @@ static int SQLITE_TCLAPI file_control_powersafe_overwrite(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB FLAG", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -7053,7 +7053,7 @@ static int SQLITE_TCLAPI file_control_vfsname(
 
   if( objc!=2 && objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -7115,7 +7115,7 @@ static int SQLITE_TCLAPI file_control_tempfilename(
 
   if( objc!=2 && objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -7148,7 +7148,7 @@ static int SQLITE_TCLAPI file_control_external_reader(
 
   if( objc!=2 && objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB ?AUXDB?", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
@@ -7232,7 +7232,7 @@ static int SQLITE_TCLAPI test_limit(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " DB ID VALUE", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB ID VALUE", NULL);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;

@@ -46,9 +46,10 @@ static int SQLITE_TCLAPI btree_open(
   char *zFilename;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME NCACHE FLAGS\"", 0);
+       " FILENAME NCACHE FLAGS\"", NULL);
     return TCL_ERROR;
   }
+
   if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
   nRefSqlite3++;
   if( nRefSqlite3==1 ){
@@ -89,7 +90,7 @@ static int SQLITE_TCLAPI btree_close(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -124,7 +125,7 @@ static int SQLITE_TCLAPI btree_begin_transaction(
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -155,7 +156,7 @@ static int SQLITE_TCLAPI btree_pager_stats(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -208,7 +209,7 @@ static int SQLITE_TCLAPI btree_cursor(
 
   if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID TABLENUM WRITEABLE\"", 0);
+       " ID TABLENUM WRITEABLE\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -253,7 +254,7 @@ static int SQLITE_TCLAPI btree_close_cursor(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -297,7 +298,7 @@ static int SQLITE_TCLAPI btree_next(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -336,7 +337,7 @@ static int SQLITE_TCLAPI btree_first(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -370,7 +371,7 @@ static int SQLITE_TCLAPI btree_eof(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -399,7 +400,7 @@ static int SQLITE_TCLAPI btree_payload_size(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
@@ -437,7 +438,7 @@ static int SQLITE_TCLAPI btree_varint_test(
   unsigned char zBuf[100];
   if( argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " START MULTIPLIER COUNT INCREMENT\"", 0);
+       " START MULTIPLIER COUNT INCREMENT\"", NULL);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&start) ) return TCL_ERROR;
@@ -523,7 +524,7 @@ static int SQLITE_TCLAPI btree_from_db(
 
   if( argc!=2 && argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " DB-HANDLE ?N?\"", 0);
+       " DB-HANDLE ?N?\"", NULL);
     return TCL_ERROR;
   }
 
@@ -561,7 +562,7 @@ static int SQLITE_TCLAPI btree_ismemdb(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);
@@ -591,7 +592,7 @@ static int SQLITE_TCLAPI btree_set_cache_size(
   
   if( argc!=3 ){
     Tcl_AppendResult(
-        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", 0);
+        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", NULL);
     return TCL_ERROR;
   }
   pBt = sqlite3TestTextToPtr(argv[1]);

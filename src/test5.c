@@ -67,7 +67,7 @@ static int SQLITE_TCLAPI test_value_overhead(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", NULL);
     return TCL_ERROR;
   }
 
@@ -135,7 +135,7 @@ static int SQLITE_TCLAPI test_translate(
   if( objc!=4 && objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), 
-        " <string/blob> <from enc> <to enc>", 0
+        " <string/blob> <from enc> <to enc>", NULL
     );
     return TCL_ERROR;
   }

@@ -755,12 +755,12 @@ static int processDevSymArgs(
     ){
       Tcl_AppendResult(interp,
         "Bad option: \"", zOpt,
-        "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
+        "\" - must be \"-characteristics\" or \"-sectorsize\"", NULL
       );
       return TCL_ERROR;
     }
     if( i==objc-1 ){
-      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
+      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"", NULL);
       return TCL_ERROR;
     }
 
@@ -1044,7 +1044,7 @@ static int SQLITE_TCLAPI jtObjCmd(
   if( objc==3 ){
     if( strcmp(zParent, "-default") ){
       Tcl_AppendResult(interp,
-          "bad option \"", zParent, "\": must be -default", 0
+          "bad option \"", zParent, "\": must be -default", NULL
       );
       return TCL_ERROR;
     }

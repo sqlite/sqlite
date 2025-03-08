@@ -1138,7 +1138,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
       );
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed to get full path: ",
-                         Tcl_GetString(objv[2]), 0);
+                         Tcl_GetString(objv[2]), NULL);
         ckfree(zName);
         return TCL_ERROR;
       }

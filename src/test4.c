@@ -143,7 +143,7 @@ static int SQLITE_TCLAPI tcl_thread_create(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID FILENAME", 0);
+       " ID FILENAME", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -192,7 +192,7 @@ static int SQLITE_TCLAPI tcl_thread_wait(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -236,7 +236,7 @@ static int SQLITE_TCLAPI tcl_thread_halt(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   if( argv[1][0]=='*' && argv[1][1]==0 ){
@@ -272,7 +272,7 @@ static int SQLITE_TCLAPI tcl_thread_argc(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -304,7 +304,7 @@ static int SQLITE_TCLAPI tcl_thread_argv(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID N", 0);
+       " ID N", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -340,7 +340,7 @@ static int SQLITE_TCLAPI tcl_thread_colname(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID N", 0);
+       " ID N", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -376,7 +376,7 @@ static int SQLITE_TCLAPI tcl_thread_result(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -407,7 +407,7 @@ static int SQLITE_TCLAPI tcl_thread_error(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -451,7 +451,7 @@ static int SQLITE_TCLAPI tcl_thread_compile(
   int i;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID SQL", 0);
+       " ID SQL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -505,7 +505,7 @@ static int SQLITE_TCLAPI tcl_thread_step(
   int i;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " IDL", 0);
+       " IDL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -548,7 +548,7 @@ static int SQLITE_TCLAPI tcl_thread_finalize(
   int i;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " IDL", 0);
+       " IDL", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -581,7 +581,7 @@ static int SQLITE_TCLAPI tcl_thread_swap(
   sqlite3 *temp;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID1 ID2", 0);
+       " ID1 ID2", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -622,7 +622,7 @@ static int SQLITE_TCLAPI tcl_thread_db_get(
   extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -653,7 +653,7 @@ static int SQLITE_TCLAPI tcl_thread_db_put(
   extern void *sqlite3TestTextToPtr(const char *);
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID DB", 0);
+       " ID DB", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
@@ -685,7 +685,7 @@ static int SQLITE_TCLAPI tcl_thread_stmt_get(
   extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID", 0);
+       " ID", NULL);
     return TCL_ERROR;
   }
   i = parse_thread_id(interp, argv[1]);
