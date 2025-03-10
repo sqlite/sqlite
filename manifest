@@ -1,5 +1,5 @@
-C Disable\sthe\s[d1ba200234f40b84|count-of-view\soptimization]\sif\sany\ssubquery\nis\sDISTINCT,\sas\sthe\soptimization\sdoes\snot\swork\sin\sthat\scase.\nBug\sreported\sby\s[forum/forumpost/a860f5fb2e|forum\spost\sa860f5fb2e].
-D 2025-03-10T10:32:31.119
+C Add\san\sexplicit\sdb\sclose\sto\stest/walsetlk.test\sto\swork\saround\san\sunjustified\stest\sfailure\son\sWindows\swhen\sthe\swalsetlk\stests\sare\srun\sin\sthe\ssame\sinvocation\sof\stestfixture.exe\sin\sWindows.
+D 2025-03-10T17:28:43.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2028,7 +2028,7 @@ F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
-F test/walsetlk.test 9c5b92f9a20252540fedf9ffa6ee3d1b8af08ea4b80d0144d9b88e6c0c1de80d
+F test/walsetlk.test aaa418dc2c11002b3e270f8128235a3bbb846796907095a0a02bf0f0bbf8512e
 F test/walsetlk2.test 9097083633cdf55bf1098b694fb8651d0356d38fef28b869481d18029d7ceaf4
 F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 44adf8f38761a0d756c047f93fc76fc1d0aba8cc209970e3ba13e7040dd14b13
-R 735b55335991e2eca4b936904ae34985
-U drh
-Z 90d0f1ecb6a4cbce9113dcb85fe39113
+P d7013b63932b2f5750572ae6bdd259a2b6e6548c20fb9a5559edd22d2f2fc6cb
+R cb2e10fc56d1e1fbf885d5500a62f25a
+U stephan
+Z c867479e9a5d0c3a65bf2562516a55c9
 # Remove this line to create a well-formed Fossil manifest.
