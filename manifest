@@ -1,5 +1,5 @@
-C Tweak\s[6f24da264cf8d]\sso\sthat\sit\shas\sno\sside-effects\son\sautoconf/Makefile.msc.
-D 2025-03-10T14:10:46.234
+C Reimplement\spathname\sconversion\son\sCygwin.\sMSC\stest\spasses/failures\sare\son\spar\swith\strunk\sand\s'make\stest'\srunning\son\scygwin\sis\sdown\sto\sa\ssingle\sfailure.
+D 2025-03-10T15:15:13.945
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -767,7 +767,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 410185df4900817c218c0efdb8064b3481af88cb3f7cea7392f820b6eebc7889
-F src/os_win.c e58f0861b3b939a8f32c52fb8bfeaac45cabf13a5e0a546292b19df1700c0de5
+F src/os_win.c 9862c27eba30a684d51b07b542e3b286346edf14e2b92b6b1391df43bd1b611e
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 9fbb541b46125dfa8914827575e6bb4d15048caa008073b1709112d495d7983b
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f24da264cf8d4c9fef706e6ab89e8c002ac4abfb79516f65ff4eb806f864959
-R 9018a2364511c477dd8496777615a210
+P d3d322f122e88ea7d7f086f1c7d3ba8ab5ba7c2899d6d1e18b0b593001f01dcf
+R bb2c8958e651ad26411f925c0c07a756
 U stephan
-Z 93cb67b1fac012060f97bb3b6f1aa4aa
+Z c605801bdf07518cea6a7c66b5f5a8cb
 # Remove this line to create a well-formed Fossil manifest.
