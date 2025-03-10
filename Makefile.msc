@@ -2835,7 +2835,6 @@ clean:
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
 	del /Q sqlite3.def tclsqlite3.def ctime.c pragma.h 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
-	del /Q tf.bat 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
@@ -2850,7 +2849,7 @@ clean:
 	del /Q lsm.dll lsmtest.exe 2>NUL
 	del /Q atrc.exe changesetfuzz.exe dbtotxt.exe index_usage.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
-	del /Q testfixture.exe test.db 2>NUL
+	del /Q testfixture.exe test.db tf.bat 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL

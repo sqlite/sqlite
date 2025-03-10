@@ -1,11 +1,11 @@
-C Add\stf.bat\starget\sto\sMakefile.msc\sto\sfacilitate\srunning\sof\sindividual\stest\sscripts\svia\stestfixture.exe.
-D 2025-03-10T09:54:01.422
+C Tweak\s[6f24da264cf8d]\sso\sthat\sit\shas\sno\sside-effects\son\sautoconf/Makefile.msc.
+D 2025-03-10T14:10:46.234
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in 88f74a1b9fcd903fe3414fe9f8484f8491dc403615dbf1c28c6f415f5220b8b2
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 36ec765308c6da65d1a7fd4e4820c46f672034885843761a2e733fe5b931ee82
+F Makefile.msc bdf7fa08bbc3f4da2b66840adf599b8249bebe9282e64f48fa9d897405184e70
 F README.md a953c0cffd6e4f2501a306c00ee2b6e1e6630c25031e094629307fe99dd003d1
 F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 84d8fcfca19cd183d05a702d0eb1742bfae462d3383a3db72741a48cefac1058
-R ea7c3c063bd620bb195b3ee137e59828
+P 6f24da264cf8d4c9fef706e6ab89e8c002ac4abfb79516f65ff4eb806f864959
+R 9018a2364511c477dd8496777615a210
 U stephan
-Z a3a62485c6c45d45c142214550c57efd
+Z 93cb67b1fac012060f97bb3b6f1aa4aa
 # Remove this line to create a well-formed Fossil manifest.
