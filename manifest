@@ -1,5 +1,5 @@
-C Add\san\sexplicit\sdb\sclose\sto\stest/walsetlk.test\sto\swork\saround\san\sunjustified\stest\sfailure\son\sWindows\swhen\sthe\swalsetlk\stests\sare\srun\sin\sthe\ssame\sinvocation\sof\stestfixture.exe\sin\sWindows.
-D 2025-03-10T17:28:43.120
+C Ensure\sthat\sthe\sTEMP\sdatabase\shas\sbeen\sinitialized\sat\sthe\sbeginning\sof\na\scall\sto\ssqlite3_open_blob()\sfor\sthe\sTEMP\sdatabase.\s\sFix\sfor\sthe\sissue\nreported\sby\s[forum:/forumpost/0a556d619b|forum\spost\s0a556d619b].
+D 2025-03-10T22:31:55.627
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -855,7 +855,7 @@ F src/vdbe.h 3d26d5c7660c5c7bd33ffb0d8784615072d8b23c81f8110870efe2631136bc89
 F src/vdbeInt.h 078b1c15b26587b54c1c1879d0d2f4dec812b9de4c337fed9faf73fbcc3bf091
 F src/vdbeapi.c cb8eb9e41a16f5fa3ce5b8f3910edfbba336d10156cfb7a79f92cf7bf443977b
 F src/vdbeaux.c d7ef1a0a7233589d789eda1ba9ffa4b0ea61fca9651e4f47fb4250d03d62bcaf
-F src/vdbeblob.c 9166b6eb7054e5da82e35255892fb1ed551355a4716452539e8e3ac14f25fbe3
+F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
 F src/vdbemem.c 571ae3116dbf840a62c4aaa6bc09d577dfef8ad4d3978cf37275bb5f9653217b
 F src/vdbesort.c f7ce6eb4c0e8b0273329d2f43b8b6e5ebe8f2d853fc323d5787dada702ea0b66
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7013b63932b2f5750572ae6bdd259a2b6e6548c20fb9a5559edd22d2f2fc6cb
-R cb2e10fc56d1e1fbf885d5500a62f25a
-U stephan
-Z c867479e9a5d0c3a65bf2562516a55c9
+P f418de109335cd7cb29d2b587540c163bbaaa7129c662c2908ef67492139b2d7
+R c32606fb5e8adbe46b53d16576b6e8b5
+U drh
+Z 031b66c2465b667491ccd6797fe6a4c2
 # Remove this line to create a well-formed Fossil manifest.
