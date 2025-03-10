@@ -2850,6 +2850,8 @@ clean:
 	del /Q atrc.exe changesetfuzz.exe dbtotxt.exe index_usage.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
 	del /Q testfixture.exe test.db tf.bat 2>NUL
+	del /Q /S testdir 2>/NUL
+	-rmdir /Q /S testdir 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL

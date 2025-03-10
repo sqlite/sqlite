@@ -1,11 +1,11 @@
-C Reimplement\spathname\sconversion\son\sCygwin.\sMSC\stest\spasses/failures\sare\son\spar\swith\strunk\sand\s'make\stest'\srunning\son\scygwin\sis\sdown\sto\sa\ssingle\sfailure.
-D 2025-03-10T15:15:13.945
+C Ensure\sthat\sthe\s'clean'\starget\sfor\sMakefile.msc\scleans\sup\sthe\stestdir\sdir,\sanalog\sto\show\sthe\scanonical\smakefile\sworks,\sas\sstale\sfiles\sthere\shave\sbeen\sleading\sto\stest\sfailures.
+D 2025-03-10T15:27:17.633
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in 88f74a1b9fcd903fe3414fe9f8484f8491dc403615dbf1c28c6f415f5220b8b2
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc bdf7fa08bbc3f4da2b66840adf599b8249bebe9282e64f48fa9d897405184e70
+F Makefile.msc bb2cc6f75bbcb2d690fbdd1489914a2febd5e99bad9c77538cb3330d304694c6
 F README.md a953c0cffd6e4f2501a306c00ee2b6e1e6630c25031e094629307fe99dd003d1
 F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d3d322f122e88ea7d7f086f1c7d3ba8ab5ba7c2899d6d1e18b0b593001f01dcf
-R bb2c8958e651ad26411f925c0c07a756
+P 57a4de09149663ac001848773c9dffe53e30f9263e4dacc792a0267401147d25
+R 00e398144b1c8021c6a6644aea3ea6c1
 U stephan
-Z c605801bdf07518cea6a7c66b5f5a8cb
+Z 15bf01d5a4aeb25a1a9a9747fc0d920b
 # Remove this line to create a well-formed Fossil manifest.
