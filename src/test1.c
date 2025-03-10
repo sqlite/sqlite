@@ -5963,7 +5963,7 @@ static int SQLITE_TCLAPI test_setlk_timeout(
 
   if( argc==4 ){
     const char *zArg = argv[1];
-    int nArg = strlen(zArg);
+    const size_t nArg = strlen(zArg);
     if( nArg>=2 && nArg<=15 && memcmp(zArg, "-blockonconnect", nArg)==0 ){
       bBlockOnConnect = 1;
     }

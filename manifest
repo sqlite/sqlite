@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\s'clean'\starget\sfor\sMakefile.msc\scleans\sup\sthe\stestdir\sdir,\sanalog\sto\show\sthe\scanonical\smakefile\sworks,\sas\sstale\sfiles\sthere\shave\sbeen\sleading\sto\stest\sfailures.
-D 2025-03-10T15:27:17.633
+C Patch\san\sunnecessary\ssize_t-to-int\sconversion\swhich\swarns\son\ssome\scompilers.
+D 2025-03-10T15:35:43.346
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -792,7 +792,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 5875b959c3262d93b32893540c40d4ebb111495adc80db3ee0ddd440966ddcd5
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c ccfef3b483ce4204741347cb1514d997365f21d6aef79343a216f3c126e79282
+F src/test1.c e89a11192dd15da20e8f7dc0731297182b2fff56cf4afe6ca6f9aeab890595c5
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 57a4de09149663ac001848773c9dffe53e30f9263e4dacc792a0267401147d25
-R 00e398144b1c8021c6a6644aea3ea6c1
+P a591c018558af70e0ddfdd2d4d61905f030bac01df19ac9b204aed09d44517be
+R 6bed3060a5a54ab64492dc249411b575
 U stephan
-Z 15bf01d5a4aeb25a1a9a9747fc0d920b
+Z 690380eef0b46b079ce996dc120adcaf
 # Remove this line to create a well-formed Fossil manifest.
