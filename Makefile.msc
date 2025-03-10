@@ -2593,6 +2593,11 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS)
 		$(TESTFIXTURE_SRC) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
+# A small helper for manually running individual tests
+tf.bat: testfixture.exe Makefile.msc
+	echo @set PATH=$(LIBTCLPATH);%PATH% > $@
+	echo .\testfixture.exe %* >> $@
+
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
@@ -2830,6 +2835,7 @@ clean:
 	del /Q *.bsc *.cod *.da *.bb *.bbg *.vc gmon.out 2>NUL
 	del /Q sqlite3.def tclsqlite3.def ctime.c pragma.h 2>NUL
 	del /Q $(SQLITE3EXE) $(SQLITE3DLL) Replace.exe 2>NUL
+	del /Q tf.bat 2>NUL
 # <<mark>>
 	del /Q $(SQLITE3TCLDLL) pkgIndex.tcl 2>NUL
 	del /Q opcodes.c opcodes.h 2>NUL
