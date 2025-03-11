@@ -263,6 +263,17 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(shell)       sqlite3.exe
     set TRG(run)         run.bat
     set TRG(runcmd)      "run.bat"
+    if {"unix" eq $tcl_platform(platform)} {
+      # Presumably cygwin. This block gets testrunner.tcl started on
+      # Cygwin but then downstream tests all fail, at least in part
+      # because of the discrepancies in build target names which need
+      # .exe on cygwin but not on other Unix-like platforms.
+      set TRG(platform)  cygwin
+      set TRG(make)      make.sh
+      set TRG(makecmd)   "bash make.sh"
+      set TRG(run)       run.sh
+      set TRG(runcmd)    "bash run.sh"
+    }
   }
   default {
     puts "tcl_platform(os)=$::tcl_platform(os)"
