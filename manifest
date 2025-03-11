@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sTEMP\sdatabase\shas\sbeen\sinitialized\sat\sthe\sbeginning\sof\na\scall\sto\ssqlite3_open_blob()\sfor\sthe\sTEMP\sdatabase.\s\sFix\sfor\sthe\sissue\nreported\sby\s[forum:/forumpost/0a556d619b|forum\spost\s0a556d619b].
-D 2025-03-10T22:31:55.627
+C The\ssubstitute\s"puts"\scommand\sused\sby\sthe\sWindows\simplementation\sof\nsqlite3_analyzer\smust\sinvoke\sfflush()\safter\seach\sline\sof\soutput.\s\sOtherwise\nthe\soutput\scan\sbe\struncated\swhen\sredirected\sinto\sa\sfile.
+D 2025-03-11T12:19:27.605
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2193,7 +2193,7 @@ F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
-F tool/sqlite3_analyzer.c.in fc7735c499d226a49d843d8209b2543e4e5229eeb71a674c331323a2217b65b4
+F tool/sqlite3_analyzer.c.in 5a2984ac457a49c7ad4f0924c738df55aafdc97661e912fd99c5cfcdfd4725fd
 F tool/sqlite3_rsync.c 9a1cca2ab1271c59b37a6493c15dc1bcd0ab9149197a9125926bc08dd26b83fb
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f418de109335cd7cb29d2b587540c163bbaaa7129c662c2908ef67492139b2d7
-R c32606fb5e8adbe46b53d16576b6e8b5
+P 2cfccdbe08b7b14a6b255f7157ac20d0807327adefcb33fcffeeed14c7603fe1
+R 7158e964e2d9b27882ac231601582e3d
 U drh
-Z 031b66c2465b667491ccd6797fe6a4c2
+Z 67031cafd0f114410834393ff697fc3b
 # Remove this line to create a well-formed Fossil manifest.
