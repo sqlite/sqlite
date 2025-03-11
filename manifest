@@ -1,5 +1,5 @@
-C The\ssubstitute\s"puts"\scommand\sused\sby\sthe\sWindows\simplementation\sof\nsqlite3_analyzer\smust\sinvoke\sfflush()\safter\seach\sline\sof\soutput.\s\sOtherwise\nthe\soutput\scan\sbe\struncated\swhen\sredirected\sinto\sa\sfile.
-D 2025-03-11T12:19:27.605
+C Avoid\srunning\stest\scases\sinvolving\sANSI\scontrol\scharacters\sor\sUnicode\non\sWindows\sin\sa\sslave\sinterpreter,\sas\sthat\scombination\sdoes\snot\swork.
+D 2025-03-11T15:46:23.643
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1638,16 +1638,16 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 573942b8d0e444956445993d5a5275c6912bc49b654441eec0b5e1e735f2e5b7
+F test/shell1.test a00910c3d811420c15c1411106871c65678516435e352cbb013a09839bf327c6
 F test/shell2.test 01a01f76ed98088ce598794fbf5b359e148271541a8ddbf79d21cc353cc67a24
 F test/shell3.test db1953a8e59d08e9240b7cc5948878e184f7eb2623591587f8fd1f1a5bd536d8
-F test/shell4.test 522fdc628c55eff697b061504fb0a9e4e6dfc5d9087a633ab0f3dd11bcc4f807
-F test/shell5.test 0e5f8ce08206b9998a778cfe1989e20e47839153c05af2da29198150172e22fc
+F test/shell4.test ad7eee983b5e7f1dd92d8c87bc0f39474086bc32c980c00f3934c54aabc636a2
+F test/shell5.test d17e7927ab8b7f720efbdd9b5d05fceb6c3c56c25917901b315400214bf24ef4
 F test/shell6.test e3b883b61d4916b6906678a35f9d19054861123ad91b856461e0a456273bdbb8
 F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d5c3
 F test/shell8.test aea51ecbcd4494c746b096aeff51d841d04d5f0dc4b62eb42427f16109b87acd
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
-F test/shellA.test 079c05c11947ade4ea8d51053d3abb687ec96a3dce6680d01838519b705190c5
+F test/shellA.test 4ecff8b7b2c0122ba8174abfbcc4b0f59e44d80f2a911068f8cd4cfc6661032d
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1729,7 +1729,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 2244752d5dd5135c03370fa09fec3d02c87440521ca600c09c635b1c2cded9ef
+F test/tester.tcl e7f0c903b2d9dcaa44e707db183d22a5fe17b3f9a3c05a5eed1f4cb5c8fe63bc
 F test/testrunner.tcl 0ffa67806e75aa2c186c63d7d00b16bb45adb91ed6560461fda6dbe3e18c885e x
 F test/testrunner_data.tcl 6d7e7824bb36278ea65c33f7da6dd3ca101fc7d6f7a765b807dce0aa68c52521
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2213,8 +2213,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2cfccdbe08b7b14a6b255f7157ac20d0807327adefcb33fcffeeed14c7603fe1
-R 7158e964e2d9b27882ac231601582e3d
+P ba058ce90a2ba9ebc4d8fb289108c04f80fa85da01c0b8bd58855681836ba83d
+R 2d0f5c98c34656c9305a00020578df75
+T *branch * windows-ansi
+T *sym-windows-ansi *
+T -sym-trunk *
 U drh
-Z 67031cafd0f114410834393ff697fc3b
+Z bdc3151ad87897e8fba6141365623040
 # Remove this line to create a well-formed Fossil manifest.
