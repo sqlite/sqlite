@@ -1,5 +1,5 @@
-C The\s--echo\sflag\son\sthe\sCLI\salso\sechos\sdot-commands\sprovided\son\sthe\scommand-line.
-D 2025-03-12T15:17:13.208
+C Fix\sthe\sgenerate_series\sextension\sfor\sthe\scase\swhere\sthe\stermination\svalue\nis\snot\san\seven\smultiple\sof\sthe\sstep\sfrom\sthe\sstart\svalue\sand\sthere\sis\salso\na\svalue=NNN\sconstraint\sin\sthe\sWHERE\sclause.\n[forum:/info/bf2dc8e909983511|Forum\spost\sbf2dc8e9]
+D 2025-03-13T18:51:18.706
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -436,7 +436,7 @@ F ext/misc/regexp.c 388e7f237307c7dfbfb8dde44e097946f6c437801d63f0d7ad63f3320d4e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 13c13768db923313c561851c7feb0adf5c456a40d01bf7c57051895f3e4b81c7
+F ext/misc/series.c 69e0d2b5d193c67bdfee5baf79c10ec24a61a40212c7ca9c219edf7afa24305f
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1717,7 +1717,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 7be82bd50c7ede7f01b2dd17cd1b84f352c516078222d0b067d858f081e3f9a7
+F test/tabfunc01.test 66d1ea27289c19317bf111744a4d5fda901759945d22ddb5bc964641fc38c185
 F test/table.test 7862a00b58b5541511a26757ea9c5c7c3f8298766e98aa099deec703d9c0a8e0
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba058ce90a2ba9ebc4d8fb289108c04f80fa85da01c0b8bd58855681836ba83d
-R 8a620b0dc40f645c425a37f6c9520afe
+P 6ec0c03b954cf705da076d035a1cc2e784233ae28857385379e44a59af6c5ec4
+R ed704471ff935c4c658477722480723c
 U drh
-Z 59b1c4ee8192208101e011858b1f1e61
+Z 7365cbca0dfe1a68adc01dee6650e845
 # Remove this line to create a well-formed Fossil manifest.
