@@ -1,5 +1,5 @@
-C Cherrypick\sthe\s[2b582c0097e33]\sdoc\saddition,\swhich\swas\sinitially\scommitted\sto\sthe\swrong\sbranch.
-D 2025-03-14T09:34:09.128
+C Fix\san\sinternal\sdoc\stypo\sreported\sin\s[forum:e25e581f917|forum\spost\se25e581f917].
+D 2025-03-14T12:37:36.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -851,7 +851,7 @@ F src/utf.c d4d55ca95106a2029ec1cdbd2497a34e69ea1d338f1a9d80ef15ebf4ff01690d
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c 014769c8f7e528d59f5a8e25d0035258396cc2c755673dee29885b6049725ee6
-F src/vdbe.h 3d26d5c7660c5c7bd33ffb0d8784615072d8b23c81f8110870efe2631136bc89
+F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
 F src/vdbeInt.h 078b1c15b26587b54c1c1879d0d2f4dec812b9de4c337fed9faf73fbcc3bf091
 F src/vdbeapi.c cb8eb9e41a16f5fa3ce5b8f3910edfbba336d10156cfb7a79f92cf7bf443977b
 F src/vdbeaux.c d7ef1a0a7233589d789eda1ba9ffa4b0ea61fca9651e4f47fb4250d03d62bcaf
@@ -2213,9 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 75e72e3b0d0d689d39e00a01dc361dd6ce2649e68d200bf501ddcf04063041b2
-Q +2b582c0097e3374beb280dfa6b03e0dacb9911da1bceb0dce0468e6b7291e74f
-R 56a19e59ade4736dd825679ace2bb72a
+P f786de8d1873cd27b1bf83273a1e100e9d481144674888ccf65974e003a3caad
+R d7baa5b59cd39b651d61c163fdc55c15
 U stephan
-Z 2c7e1671f57e7e6f44a52a14c045869a
+Z bd2d36d9f3639b6b3b36c30d817df77d
 # Remove this line to create a well-formed Fossil manifest.
