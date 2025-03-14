@@ -771,7 +771,7 @@ static void geopolyBBoxFinal(
 ** Determine if point (x0,y0) is beneath line segment (x1,y1)->(x2,y2).
 ** Returns:
 **
-**    +2  x0,y0 is on the line segement
+**    +2  x0,y0 is on the line segment
 **
 **    +1  x0,y0 is beneath line segment
 **

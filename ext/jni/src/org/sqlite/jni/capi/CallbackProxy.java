@@ -18,7 +18,7 @@ package org.sqlite.jni.capi;
    classes which have a call() method implementing some specific
    callback interface on behalf of the C library.
 
-   <p>Unless very explicitely documented otherwise, callbacks must
+   <p>Unless very explicitly documented otherwise, callbacks must
    never throw. Any which do throw but should not might trigger debug
    output regarding the error, but the exception will not be
    propagated.  For callback interfaces which support returning error

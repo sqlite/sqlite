@@ -25,6 +25,7 @@ sqlite-configure canonical {
     # -------------^^^^^^^ intentionally using [get-env] instead of
     # [proj-get-env] here because [sqlite-setup-default-cflags] uses
     # [proj-get-env] and we want this to supercede that.
+    sqlite-munge-cflags
   }
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
@@ -40,8 +41,12 @@ sqlite-configure canonical {
   proj-define-for-opt linemacros AMALGAMATION_LINE_MACROS \
     "Use #line macros in the amalgamation:"
 
+  define AMALGAMATION_EXTRA_SRC \
+    [join [opt-val amalgamation-extra-src ""] " "]
+
   define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
   sqlite-handle-tcl
   sqlite-handle-emsdk
+
 }

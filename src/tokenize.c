@@ -692,7 +692,11 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
         assert( n==6 );
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif /* SQLITE_OMIT_WINDOWFUNC */
-      }else if( tokenType==TK_COMMENT && (db->flags & SQLITE_Comments)!=0 ){
+      }else if( tokenType==TK_COMMENT
+             && (db->init.busy || (db->flags & SQLITE_Comments)!=0)
+      ){
+        /* Ignore SQL comments if either (1) we are reparsing the schema or
+        ** (2) SQLITE_DBCONFIG_ENABLE_COMMENTS is turned on (the default). */
         zSql += n;
         continue;
       }else if( tokenType!=TK_QNUMBER ){

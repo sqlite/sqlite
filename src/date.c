@@ -1357,7 +1357,7 @@ static int daysAfterMonday(DateTime *pDate){
 ** In other words, return the day of the week according
 ** to this code:
 **
-**   0=Sunday, 1=Monday, 2=Tues, ..., 6=Saturday
+**   0=Sunday, 1=Monday, 2=Tuesday, ..., 6=Saturday
 */
 static int daysAfterSunday(DateTime *pDate){
   assert( pDate->validJD );

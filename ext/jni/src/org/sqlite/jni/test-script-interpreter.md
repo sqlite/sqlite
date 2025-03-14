@@ -101,7 +101,7 @@ interpreter is in a "verbose" mode, the interpreter might choose to emit
 an informational message along the lines of "test script NAME abandoned
 due to unsupported command: --whatever".
 
-The initial implemention will only recognize a few commands.  Other
+The initial implementation will only recognize a few commands.  Other
 commands may be added later.  The following is the initial set of
 commands:
 

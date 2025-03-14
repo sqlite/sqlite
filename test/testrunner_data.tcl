@@ -459,7 +459,7 @@ proc trd_fuzztest_data {} {
     return [list fuzzcheck.exe $lFuzzDb]
   }
 
-  return [list fuzzcheck $lFuzzDb {sessionfuzz run} $lSessionDb]
+  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb {sessionfuzz run} $lSessionDb]
 }
 
 
@@ -687,4 +687,16 @@ proc trd_test_script_properties {path} {
   }
 
   set trd_test_script_properties_cache($path)
+}
+
+# Usage:
+#
+#    trd_get_bin_name executable-file-name
+#
+# If the tcl platform is "unix", return $bin, else return
+# ${bin}.exe.
+proc trd_get_bin_name {bin} {
+  global tcl_platform
+  if {"unix" eq $tcl_platform(platform)} {return $bin}
+  return $bin.exe
 }

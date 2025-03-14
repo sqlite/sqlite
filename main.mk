@@ -22,10 +22,10 @@ all:
 #
 # $(TOP) =
 #
-# The toplevel directory of the source tree.  For canonical builds
+# The top-level directory of the source tree.  For canonical builds
 # this is the directory that contains this "Makefile.in" and the
-# "configure.in" script. For out-of-tree builds, this will differ
-# from $(PWD).
+# "auto.def" script. For out-of-tree builds, this will differ from
+# $(PWD).
 #
 TOP ?= $(PWD)
 #
@@ -115,8 +115,8 @@ JIMSH ?= ./jimsh$(T.exe)
 #
 # The TCL interpreter for in-tree code generation. May be either the
 # in-tree JimTCL ($(JIMSH)) or the canonical TCL ($(TCLSH_CMD). If
-# it's JimTCL, it must be compiled with -DHAVE_REALPATH or
-# -DHAVE__FULLPATH.
+# it's JimTCL, it must be compiled with -DHAVE_REALPATH (Unix) or
+# -DHAVE__FULLPATH (Windows).
 #
 B.tclsh ?= $(JIMSH)
 
@@ -231,6 +231,13 @@ LINK_TOOLS_DYNAMICALLY ?= 0
 # Optional flags for the amalgamation generator.
 #
 AMALGAMATION_GEN_FLAGS ?= --linemacros=0
+#
+# EXTRA_SRC = list of C files to append as-is to the generated
+# amalgamation. It should arguably be called AMALGAMATION_EXTRA_SRC
+# but this older name is already in use by clients.
+#
+EXTRA_SRC ?=
+
 #
 # $(OPT_FEATURE_FLAGS) =
 #
@@ -448,8 +455,9 @@ $(install-dir.all):
 # to an empty string.
 #
 # 2) Ensure that it is built with -DJIM_COMPAT (which may be
-# hard-coded into jimsh0.c). Without this, the [expr] command
-# accepts only a single argument.
+# hard-coded into jimsh0.c). Without this, the [expr] command accepts
+# only a single argument. (That said: the real fix for that is to
+# update any scripts which still pass multiple arguments to [expr].)
 #
 $(JIMSH): $(TOP)/autosetup/jimsh0.c
 	$(B.cc) -o $@ $(CFLAGS.jimsh) $(TOP)/autosetup/jimsh0.c
@@ -1499,7 +1507,7 @@ all: so
 #    still expect to see the legacy file names.
 #
 # In either case, libsqlite3.la, if found, is deleted because it would
-# contain stale state, refering to non-libtool-generated libraries.
+# contain stale state, referring to non-libtool-generated libraries.
 #
 
 install-dll-out-implib: $(install-dir.lib) $(libsqlite3.DLL)
@@ -2333,6 +2341,9 @@ stmt.o:	$(TOP)/ext/misc/stmt.c $(DEPS_EXT_COMMON)
 #
 # Windows section
 #
+# 2025-03-03: sqlite3.def and sqlite3.dll might no longer be relevant
+# in this particular build, but that's difficult to verify.
+#
 dll: sqlite3.dll
 sqlite3.def: $(LIBOBJ)
 	echo 'EXPORTS' >sqlite3.def
@@ -2345,6 +2356,7 @@ sqlite3.dll: $(LIBOBJ) sqlite3.def
 
 #
 # Emit a list of commonly-used targets
+#
 help:
 	@echo; echo "Frequently-used high-level make targets:"; echo; \
 	echo " - all [default] = builds most components"; \
@@ -2367,14 +2379,15 @@ help:
 	echo
 
 
+#
 # Remove build products sufficient so that subsequent makes will recompile
 # everything from scratch.  Do not remove:
 #
 #   *   test results and test logs
 #   *   output from ./configure
 #
-tidy-.:
-tidy: tidy-.
+#
+tidy:
 	rm -f *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(T.exe)
 	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
 	rm -rf .libs .deps tsrc .target_source
@@ -2406,16 +2419,23 @@ tidy: tidy-.
 #
 # Removes build products and test logs.  Retains ./configure outputs.
 #
-clean-.:
-clean:	clean-. tidy
+clean:	tidy
 	rm -rf omittest* testrunner* testdir*
 
-# Clean up everything.  No exceptions.
-distclean-.:
-distclean:	distclean-. clean
+#
+# Clean up everything.  No exceptions. From an out-of-tree build which
+# starts in an empty directory, this should result in an empty
+# directory (assuming the user does not create new files in this
+# directory).
+#
+# The main distclean rules are in Makefile.in.
+#
+distclean:	clean
 
 
+#
 # Show important variable settings.
+#
 show-variables:
 	@echo "CC          = $(CC)"
 	@echo "B.cc        = $(B.cc)"

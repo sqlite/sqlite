@@ -364,7 +364,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
        zNM, zName);
     pf("\t@ls -la $@\n");
     if( LIBMODE_BUNDLER_FRIENDLY & flags ){
-      /* Avoid a 3rd occurance of the bug fixed by 65798c09a00662a3,
+      /* Avoid a 3rd occurrence of the bug fixed by 65798c09a00662a3,
       ** which was (in two cases) caused by makefile refactoring and
       ** not recognized until after a release was made with the broken
       ** sqlite3-bundler-friendly.mjs: */

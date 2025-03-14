@@ -1919,7 +1919,7 @@ static void kahanBabuskaNeumaierInit(
 ** that it returns NULL if it sums over no inputs.  TOTAL returns
 ** 0.0 in that case.  In addition, TOTAL always returns a float where
 ** SUM might return an integer if it never encounters a floating point
-** value.  TOTAL never fails, but SUM might through an exception if
+** value.  TOTAL never fails, but SUM might throw an exception if
 ** it overflows an integer.
 */
 static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){

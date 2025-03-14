@@ -6056,7 +6056,7 @@ case OP_RowData: {
   /* The OP_RowData opcodes always follow OP_NotExists or
   ** OP_SeekRowid or OP_Rewind/Op_Next with no intervening instructions
   ** that might invalidate the cursor.
-  ** If this where not the case, on of the following assert()s
+  ** If this were not the case, one of the following assert()s
   ** would fail.  Should this ever change (because of changes in the code
   ** generator) then the fix would be to insert a call to
   ** sqlite3VdbeCursorMoveto().

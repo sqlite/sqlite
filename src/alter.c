@@ -1136,6 +1136,7 @@ static int renameParseSql(
   int bTemp                       /* True if SQL is from temp schema */
 ){
   int rc;
+  u64 flags;
 
   sqlite3ParseObjectInit(p, db);
   if( zSql==0 ){
@@ -1154,7 +1155,11 @@ static int renameParseSql(
   p->eParseMode = PARSE_MODE_RENAME;
   p->db = db;
   p->nQueryLoop = 1;
+  flags = db->flags;
+  testcase( (db->flags & SQLITE_Comments)==0 && strstr(zSql," /* ")!=0 );
+  db->flags |= SQLITE_Comments;
   rc = sqlite3RunParser(p, zSql);
+  db->flags = flags;
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc==SQLITE_OK
    && NEVER(p->pNewTable==0 && p->pNewIndex==0 && p->pNewTrigger==0)
@@ -2050,7 +2055,7 @@ static void renameTableTest(
     u64 flags = db->flags;
     if( bNoDQS ) db->flags &= ~(SQLITE_DqsDML|SQLITE_DqsDDL);
     rc = renameParseSql(&sParse, zDb, db, zInput, bTemp);
-    db->flags |= (flags & (SQLITE_DqsDML|SQLITE_DqsDDL));
+    db->flags = flags;
     if( rc==SQLITE_OK ){
       if( isLegacy==0 && sParse.pNewTable && IsView(sParse.pNewTable) ){
         NameContext sNC;

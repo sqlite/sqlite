@@ -306,7 +306,7 @@ struct Fts3Table {
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-  /* True to disable the incremental doclist optimization. This is controled
+  /* True to disable the incremental doclist optimization. This is controlled
   ** by special insert command 'test-no-incr-doclist'.  */
   int bNoIncrDoclist;
 

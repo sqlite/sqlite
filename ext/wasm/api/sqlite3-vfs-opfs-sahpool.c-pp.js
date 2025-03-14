@@ -83,11 +83,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /* Part of the fix for
      https://github.com/sqlite/sqlite-wasm/issues/97
 
-     Summary: prior to versions 3.49.2 and 3.50.0 computeDigest()
-     always computes a value of [0,0] due to overflows, so it does not
-     do anything useful.  Fixing it invalidates old persistent files,
-     so we instead only fix it for files created or updated since the
-     bug was discovered and fixed.
+     Summary: prior to version 3.50.0 computeDigest() always computes
+     a value of [0,0] due to overflows, so it does not do anything
+     useful.  Fixing it invalidates old persistent files, so we
+     instead only fix it for files created or updated since the bug
+     was discovered and fixed.
 
      This flag determines whether we use the broken legacy
      computeDigest() or the v2 variant. We only use this flag for
@@ -97,7 +97,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      What this means, in terms of db file compatibility between
      versions:
 
-     - DBs created with versions older than this fix (<=3.49.1)
+     - DBs created with versions older than this fix (<3.50.0)
      can be read by post-fix versions. Such DBs which are written
      to in-place (not replaced) by newer versions can still be read
      by older versions, as the affected digest is only modified
@@ -110,7 +110,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      entry is missing the FLAG_COMPUTE_DIGEST_V2 bit so will treat it
      as a legacy file.
 
-     This flag is stored in the same memory as the variour
+     This flag is stored in the same memory as the various
      SQLITE_OPEN_... flags and we must be careful here to not use a
      flag bit which is otherwise relevant for the VFS.
      SQLITE_OPEN_MEMORY is handled by sqlite3_open_v2() and friends,
@@ -1163,7 +1163,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - `clearOnInit`: (default=false) if truthy, contents and filename
      mapping are removed from each SAH it is acquired during
-     initalization of the VFS, leaving the VFS's storage in a pristine
+     initialization of the VFS, leaving the VFS's storage in a pristine
      state. Use this only for databases which need not survive a page
      reload.
 
@@ -1290,7 +1290,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      VFS-hosted database file. The result of the resolved Promise when
      called this way is the size of the resulting database.
 
-     On succes this routine rewrites the database header bytes in the
+     On success this routine rewrites the database header bytes in the
      output file (not the input array) to force disabling of WAL mode.
 
      On a write error, the handle is removed from the pool and made

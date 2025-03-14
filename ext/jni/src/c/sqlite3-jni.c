@@ -1603,7 +1603,7 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 ** 2023-11-09: testing has not revealed any measurable performance
 ** difference between the approach of passing type T to C compared to
 ** passing pointer-to-T to C, and adding support for the latter
-** everywhere requires sigificantly more code. As of this writing, the
+** everywhere requires significantly more code. As of this writing, the
 ** older/simpler approach is being applied except for (A) where the
 ** newer approach has already been applied and (B) hot-spot APIs where
 ** a difference of microseconds (i.e. below our testing measurement
@@ -3290,7 +3290,7 @@ static void s3jni_rollback_hook_impl(void *pP){
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
                                           jlong jpDb, jobject jHook){
   S3JniDb * ps;
-  jobject pOld = 0;  /* previous hoook */
+  jobject pOld = 0;  /* previous hook */
   S3JniHook * pHook; /* ps->hooks.commit|rollback */
 
   S3JniDb_mutex_enter;

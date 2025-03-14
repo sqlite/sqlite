@@ -134,7 +134,7 @@ later.  The "tclextension-install" target and the test targets that follow
 all require TCL development libraries too.  ("apt install tcl-dev").  It is
 helpful, but is not required, to install the SQLite TCL extension (the
 "tclextension-install" target) prior to running tests.  The "releasetest"
-target has additional requiremenst, such as "valgrind".
+target has additional requirements, such as "valgrind".
 
 On "make" command-lines, one can add "OPTIONS=..." to specify additional
 compile-time options over and above those set by ./configure.  For example,

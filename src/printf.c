@@ -800,7 +800,7 @@ void sqlite3_str_vappendf(
           for(k=0; k<i; k++){
             if( escarg[k]=='\\' ){
               nBack++;
-            }else if( escarg[k]<=0x1f ){
+            }else if( ((u8*)escarg)[k]<=0x1f ){
               nCtrl++;
             }
           }
@@ -838,7 +838,7 @@ void sqlite3_str_vappendf(
               bufpt[j++] = ch;
             }else if( ch=='\\' ){
               bufpt[j++] = '\\';
-            }else if( ch<=0x1f ){
+            }else if( ((unsigned char)ch)<=0x1f ){
               bufpt[j-1] = '\\';
               bufpt[j++] = 'u';
               bufpt[j++] = '0';

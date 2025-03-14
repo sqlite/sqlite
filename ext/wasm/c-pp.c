@@ -36,7 +36,7 @@
 ** - `#pragma` is in place for adding "meta-commands", but it does not
 **   yet have any concrete list of documented commands.
 **
-*  - `#stderr` outputs its file name, line number, and the remaininder
+*  - `#stderr` outputs its file name, line number, and the remainder
 **   of that line to stderr.
 **
 ** - `#//` acts as a single-line comment, noting that there must be as
@@ -1215,7 +1215,7 @@ static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
       CmppLevel_push(t);
       break;
     default:
-      cmpp_kwd__misuse(pKw, t, "Unpexected keyword token type");
+      cmpp_kwd__misuse(pKw, t, "Unexpected keyword token type");
       break;
   }
   buul = db_define_has((char const *)t->args.argv[1]);

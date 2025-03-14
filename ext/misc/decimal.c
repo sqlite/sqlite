@@ -27,6 +27,9 @@ SQLITE_EXTENSION_INIT1
 # define UNUSED_PARAMETER(X)  (void)(X)
 #endif
 
+#ifndef IsSpace
+#define IsSpace(X)  isspace((unsigned char)X)
+#endif
 
 /* A decimal object */
 typedef struct Decimal Decimal;
@@ -76,7 +79,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   p->nFrac = 0;
   p->a = sqlite3_malloc64( n+1 );
   if( p->a==0 ) goto new_from_text_failed;
-  for(i=0; isspace(zIn[i]); i++){}
+  for(i=0; IsSpace(zIn[i]); i++){}
   if( zIn[i]=='-' ){
     p->sign = 1;
     i++;
@@ -731,7 +734,7 @@ static void decimalSubFunc(
   decimal_free(pB);
 }
 
-/* Aggregate funcion:   decimal_sum(X)
+/* Aggregate function:   decimal_sum(X)
 **
 ** Works like sum() except that it uses decimal arithmetic for unlimited
 ** precision.

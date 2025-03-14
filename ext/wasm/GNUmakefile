@@ -327,7 +327,7 @@ endif
 # If the canonical build process finds the file
 # sqlite3_wasm_extra_init.c in the main wasm build directory, it
 # arranges to include that file in the build of sqlite3.wasm and
-# defines SQLITE_EXTRA_INIT=sqlite3_wasm_extra_init.
+# defines SQLITE_EXTRA_INIT_MUTEXED=sqlite3_wasm_extra_init.
 #
 # sqlite3_wasm_extra_init() must be a function with this signature:
 #
@@ -909,7 +909,7 @@ $(sqlite3-node.mjs): $(sqlite3.mjs)
 # We need separate copies of certain supplementary JS files for the
 # bundler-friendly build. Concretely, any supplemental JS files which
 # themselves use importScripts() or Workers or URL() constructors
-# which refer to other in-tree (m)JS files quire a bundler-friendly
+# which refer to other in-tree (m)JS files require a bundler-friendly
 # copy.
 sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
 sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js

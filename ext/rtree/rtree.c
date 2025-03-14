@@ -2105,7 +2105,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 /*
-** Return the N-dimensional volumn of the cell stored in *p.
+** Return the N-dimensional volume of the cell stored in *p.
 */
 static RtreeDValue cellArea(Rtree *pRtree, RtreeCell *p){
   RtreeDValue area = (RtreeDValue)1;

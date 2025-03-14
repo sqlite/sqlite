@@ -6451,7 +6451,7 @@ static void fts5TokendataIterAppendMap(
 /*
 ** Sort the contents of the pT->aMap[] array.
 **
-** The sorting algorithm requries a malloc(). If this fails, an error code
+** The sorting algorithm requires a malloc(). If this fails, an error code
 ** is left in Fts5Index.rc before returning.
 */
 static void fts5TokendataIterSortMap(Fts5Index *p, Fts5TokenDataIter *pT){

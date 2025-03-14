@@ -281,7 +281,7 @@ happen if and when they are actually needed.
 A valid JSONB BLOB consists of a single JSON element.  The element must
 exactly fill the BLOB.  This one element is often a JSON object or array
 and those usually contain additional elements as its payload, but the
-element can be a primite value such a string, number, boolean, or null.
+element can be a primitive value such a string, number, boolean, or null.
 
 When the built-in JSON functions are attempting to determine if a BLOB
 argument is a JSONB or just a random BLOB, they look at the header of
