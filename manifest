@@ -1,5 +1,5 @@
-C In\sFTS3,\srename\sthe\sMatchinfoBuffer.aMatchinfo\sfield\sto\saMI,\sto\savoid\sconfusing\nit\swith\sMatchInfo.aMatchinfo.\s\sMake\saMI\sa\sflexiable\sarray.
-D 2025-03-14T23:20:12.428
+C Turn\sFts5Colset.aiCol\sinto\sa\sflexible\sarray.
+D 2025-03-14T23:57:53.780
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -106,11 +106,11 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h 6abff7dd770dc5969c994c281e6e77fc277ce414d56cc4a62c145cc7036b0b67
+F ext/fts5/fts5Int.h bffbd0acdcdf509899681f4e1cfeef1c955030acd9fe15ff9082410f80c3bead
 F ext/fts5/fts5_aux.c da4a7a9a11ec15c6df0699d908915a209bcde48f0b04101461316b59f71abffb
 F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d7c53066c7
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
-F ext/fts5/fts5_expr.c 4a35c6edc4a36862597532ace43db20f5dfd4a2f789d4fa1dd7786b677b73036
+F ext/fts5/fts5_expr.c 390502c9954e20a9b6fcc31e4dc699df78a4ad52fd64e5b8aef0bfb82aa4a40d
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
 F ext/fts5/fts5_index.c 2f35dd8408946f0e0bfea8f3bfbe8dfaafe90a5345885b43d678546c19266673
 F ext/fts5/fts5_main.c b0e95a793f3c649d313c536269403e1a413ee665223adb5f8196edd2bc1146f7
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ddfa87c17906ecf7fd5639a87bbfa9a87d17ab688159acd2fd80cc5b6f25f09b
-R 5924af19939adfea920b9a7d74b7564d
+P bb00b973980d259ca85af84c054501cae78b3a9d33ccffa54d7034235dd8d50d
+R 05b17a99b8821529239b9da49f396cc0
 U drh
-Z e36dec86ff4d157017d3250585c57577
+Z 04bcbcb01c8f02443f6768740e1f8171
 # Remove this line to create a well-formed Fossil manifest.

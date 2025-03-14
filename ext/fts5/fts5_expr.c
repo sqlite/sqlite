@@ -292,7 +292,7 @@ int sqlite3Fts5ExprNew(
   /* If the LHS of the MATCH expression was a user column, apply the
   ** implicit column-filter.  */
   if( sParse.rc==SQLITE_OK && iCol<pConfig->nCol ){
-    int n = sizeof(Fts5Colset);
+    int n = SZ_FTS5COLSET(1);
     Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&sParse.rc, n);
     if( pColset ){
       pColset->nCol = 1;
@@ -1912,7 +1912,7 @@ int sqlite3Fts5ExprClonePhrase(
     if( pColsetOrig ){
       sqlite3_int64 nByte;
       Fts5Colset *pColset;
-      nByte = sizeof(Fts5Colset) + (pColsetOrig->nCol-1) * sizeof(int);
+      nByte = SZ_FTS5COLSET(pColsetOrig->nCol);
       pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
       if( pColset ){ 
         memcpy(pColset, pColsetOrig, (size_t)nByte);
@@ -2034,7 +2034,7 @@ static Fts5Colset *fts5ParseColset(
   assert( pParse->rc==SQLITE_OK );
   assert( iCol>=0 && iCol<pParse->pConfig->nCol );
 
-  pNew = sqlite3_realloc64(p, sizeof(Fts5Colset) + sizeof(int)*nCol);
+  pNew = sqlite3_realloc64(p, SZ_FTS5COLSET(nCol+1));
   if( pNew==0 ){
     pParse->rc = SQLITE_NOMEM;
   }else{
@@ -2069,7 +2069,7 @@ Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse *pParse, Fts5Colset *p){
   int nCol = pParse->pConfig->nCol;
 
   pRet = (Fts5Colset*)sqlite3Fts5MallocZero(&pParse->rc, 
-      sizeof(Fts5Colset) + sizeof(int)*nCol
+      SZ_FTS5COLSET(nCol+1)
   );
   if( pRet ){
     int i;
@@ -2130,7 +2130,7 @@ Fts5Colset *sqlite3Fts5ParseColset(
 static Fts5Colset *fts5CloneColset(int *pRc, Fts5Colset *pOrig){
   Fts5Colset *pRet;
   if( pOrig ){
-    sqlite3_int64 nByte = sizeof(Fts5Colset) + (pOrig->nCol-1) * sizeof(int);
+    sqlite3_int64 nByte = SZ_FTS5COLSET(pOrig->nCol);
     pRet = (Fts5Colset*)sqlite3Fts5MallocZero(pRc, nByte);
     if( pRet ){ 
       memcpy(pRet, pOrig, (size_t)nByte);
