@@ -7071,6 +7071,8 @@ int sqlite3_autovacuum_pages(
 **
 ** ^The second argument is a pointer to the function to invoke when a
 ** row is updated, inserted or deleted in a rowid table.
+** ^The update hook is disabled by invoking sqlite3_update_hook()
+** with a NULL pointer as the second parameter.
 ** ^The first argument to the callback is a copy of the third argument
 ** to sqlite3_update_hook().
 ** ^The second callback argument is one of [SQLITE_INSERT], [SQLITE_DELETE],
