@@ -202,7 +202,7 @@ static int getNextToken(
 
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
     if( rc==SQLITE_OK ){
-      nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase) + nToken;
+      nByte = sizeof(Fts3Expr) + SZ_FTS3PHRASE(1) + nToken;
       pRet = (Fts3Expr *)sqlite3Fts3MallocZero(nByte);
       if( !pRet ){
         rc = SQLITE_NOMEM;
@@ -212,7 +212,7 @@ static int getNextToken(
         pRet->pPhrase->nToken = 1;
         pRet->pPhrase->iColumn = iCol;
         pRet->pPhrase->aToken[0].n = nToken;
-        pRet->pPhrase->aToken[0].z = (char *)&pRet->pPhrase[1];
+        pRet->pPhrase->aToken[0].z = (char*)&pRet->pPhrase->aToken[1];
         memcpy(pRet->pPhrase->aToken[0].z, zToken, nToken);
 
         if( iEnd<n && z[iEnd]=='*' ){
@@ -285,7 +285,7 @@ static int getNextString(
   char *zTemp = 0;
   i64 nTemp = 0;
 
-  const int nSpace = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
+  const int nSpace = sizeof(Fts3Expr) + SZ_FTS3PHRASE(1);
   int nToken = 0;
 
   /* The final Fts3Expr data structure, including the Fts3Phrase,

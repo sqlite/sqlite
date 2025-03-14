@@ -111,6 +111,10 @@ struct MatchinfoBuffer {
   u32 aMatchinfo[1];
 };
 
+/* Size (in bytes) of a MatchinfoBuffer sufficient for N elements */
+#define SZ_MATCHINFOBUFFER(N) \
+            (offsetof(MatchinfoBuffer,aMatchinfo)+((((N)+1)/2)*sizeof(u64))
+
 
 /*
 ** The snippet() and offsets() functions both return text values. An instance
