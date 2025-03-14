@@ -1,5 +1,5 @@
-C Fix\sone\sof\stwo\sflexible\sarrays\sin\sFTS3.
-D 2025-03-14T21:15:11.288
+C In\sFTS3,\srename\sthe\sMatchinfoBuffer.aMatchinfo\sfield\sto\saMI,\sto\savoid\sconfusing\nit\swith\sMatchInfo.aMatchinfo.\s\sMake\saMI\sa\sflexiable\sarray.
+D 2025-03-14T23:20:12.428
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -87,7 +87,7 @@ F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 024417020c57dd1ab39816f5fe6cf45222a857b78a1f6412f040ada1ceabd4ff
-F ext/fts3/fts3_snippet.c 53cb456dbf7f1cfed57f031bf94efc5df7bcd20158fb0442f891879f3b9337f8
+F ext/fts3/fts3_snippet.c 55506af9c656d06ad6acef0735b67749d199617421f2e66c5b7101745b9cf1ba
 F ext/fts3/fts3_term.c 6a96027ad364001432545fe43322b6af04ed28bb5619ec51af1f59d0710d6d69
 F ext/fts3/fts3_test.c 7a9cb3d61774134211bf4bfdf1adcb581a1a0377f2d050a121ae7ab44baef0e3
 F ext/fts3/fts3_tokenize_vtab.c 7fd9ef364f257b97218b9c331f2378e307375c592f70fd541f714e747d944962
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b41776179c726586e3ff836edcf235938cf02f7c5e33c1d6954b84d4061b8d5
-R b928acd4f3ec564994a518332f83b638
+P ddfa87c17906ecf7fd5639a87bbfa9a87d17ab688159acd2fd80cc5b6f25f09b
+R 5924af19939adfea920b9a7d74b7564d
 U drh
-Z f48ebbbdb7fe4570c0fe613e575ace55
+Z e36dec86ff4d157017d3250585c57577
 # Remove this line to create a well-formed Fossil manifest.

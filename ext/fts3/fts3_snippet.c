@@ -108,12 +108,12 @@ struct MatchinfoBuffer {
   int nElem;
   int bGlobal;                    /* Set if global data is loaded */
   char *zMatchinfo;
-  u32 aMatchinfo[1];
+  u32 aMI[FLEXARRAY];
 };
 
 /* Size (in bytes) of a MatchinfoBuffer sufficient for N elements */
 #define SZ_MATCHINFOBUFFER(N) \
-            (offsetof(MatchinfoBuffer,aMatchinfo)+((((N)+1)/2)*sizeof(u64))
+            (offsetof(MatchinfoBuffer,aMI)+(((N)+1)/2)*sizeof(u64))
 
 
 /*
@@ -139,13 +139,13 @@ struct StrBuffer {
 static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
   sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
-                           + sizeof(MatchinfoBuffer);
+                           + SZ_MATCHINFOBUFFER(1);
   sqlite3_int64 nStr = strlen(zMatchinfo);
 
   pRet = sqlite3Fts3MallocZero(nByte + nStr+1);
   if( pRet ){
-    pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
-    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0]
+    pRet->aMI[0] = (u8*)(&pRet->aMI[1]) - (u8*)pRet;
+    pRet->aMI[1+nElem] = pRet->aMI[0]
                                       + sizeof(u32)*((int)nElem+1);
     pRet->nElem = (int)nElem;
     pRet->zMatchinfo = ((char*)pRet) + nByte;
@@ -159,10 +159,10 @@ static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
 static void fts3MIBufferFree(void *p){
   MatchinfoBuffer *pBuf = (MatchinfoBuffer*)((u8*)p - ((u32*)p)[-1]);
 
-  assert( (u32*)p==&pBuf->aMatchinfo[1] 
-       || (u32*)p==&pBuf->aMatchinfo[pBuf->nElem+2] 
+  assert( (u32*)p==&pBuf->aMI[1] 
+       || (u32*)p==&pBuf->aMI[pBuf->nElem+2] 
   );
-  if( (u32*)p==&pBuf->aMatchinfo[1] ){
+  if( (u32*)p==&pBuf->aMI[1] ){
     pBuf->aRef[1] = 0;
   }else{
     pBuf->aRef[2] = 0;
@@ -179,18 +179,18 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
 
   if( p->aRef[1]==0 ){
     p->aRef[1] = 1;
-    aOut = &p->aMatchinfo[1];
+    aOut = &p->aMI[1];
     xRet = fts3MIBufferFree;
   }
   else if( p->aRef[2]==0 ){
     p->aRef[2] = 1;
-    aOut = &p->aMatchinfo[p->nElem+2];
+    aOut = &p->aMI[p->nElem+2];
     xRet = fts3MIBufferFree;
   }else{
     aOut = (u32*)sqlite3_malloc64(p->nElem * sizeof(u32));
     if( aOut ){
       xRet = sqlite3_free;
-      if( p->bGlobal ) memcpy(aOut, &p->aMatchinfo[1], p->nElem*sizeof(u32));
+      if( p->bGlobal ) memcpy(aOut, &p->aMI[1], p->nElem*sizeof(u32));
     }
   }
 
@@ -200,7 +200,7 @@ static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
 
 static void fts3MIBufferSetGlobal(MatchinfoBuffer *p){
   p->bGlobal = 1;
-  memcpy(&p->aMatchinfo[2+p->nElem], &p->aMatchinfo[1], p->nElem*sizeof(u32));
+  memcpy(&p->aMI[2+p->nElem], &p->aMI[1], p->nElem*sizeof(u32));
 }
 
 /*
