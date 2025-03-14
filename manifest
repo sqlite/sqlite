@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\sflexible-array\sfeature\sof\sC99,\swhen\savailable,\sto\stry\sto\npacify\s-fsanitize=strict-bounds.\s\sThis\scheck-in\sfixes\sthe\score.\sThere\sis\nmore\syet\sto\sdo\sin\sFTS3,\sRTREE,\sand\sin\sFTS5.
-D 2025-03-14T18:10:02.673
+C KeyInfo\sis\snow\san\sindeterminate\ssize,\sso\swe\scannot\sdeclare\sa\svariable\sof\sthat\ntype,\sonly\sa\spointer\sto\san\sinstance\sof\sthat\stype.
+D 2025-03-14T19:07:11.842
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -852,9 +852,9 @@ F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c b5deed01000b3970cfca089dc531cf9342afd96d00cc8b4ad26d303f088116ee
 F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
-F src/vdbeInt.h 11041d559992165651413e5868a907f698a2ec7af169fb2d20eb058a9ccd2313
-F src/vdbeapi.c cb8eb9e41a16f5fa3ce5b8f3910edfbba336d10156cfb7a79f92cf7bf443977b
-F src/vdbeaux.c 932105750c15378176980288daea80008ffdac360716ae4e7c7f85bf462d272d
+F src/vdbeInt.h 366843cb88740595011e091e180bb7258487ec9fd91c0b5a47cf9ff25620a482
+F src/vdbeapi.c a9ad72afed9aaec2acdde4daa5caa2f342b298f8c8859704143f6e3b78cb9966
+F src/vdbeaux.c 72a1c99d9300a5e0adff2c708074ac1355a619664301db474a48e147418fba05
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
 F src/vdbemem.c 571ae3116dbf840a62c4aaa6bc09d577dfef8ad4d3978cf37275bb5f9653217b
 F src/vdbesort.c 49e366d0216c782eba287bf602384e4330d2526a22f1275492d2785ce103c79b
@@ -2213,11 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fa6f6ccdffc50024624306900efd2538c7415d8bdd0f02835b2e9c05adab3cf1
-R a7f539cde629f0570849a89a860ffc9d
-T *branch * flex-array
-T *sym-flex-array *
-T -sym-trunk *
+P 6fd6b32d06bd6a705e5140cd613af823b8183a6f6a9ceeeedfcf5e8b50821d68
+R fe593c8c6938e177844eba6146548bc4
 U drh
-Z ea27c767023e4b4e578a073476796f47
+Z 1a2d68d765d400a0cfddfeaade189b5f
 # Remove this line to create a well-formed Fossil manifest.
