@@ -1039,7 +1039,8 @@ static void codeReturningTrigger(
   ExprList *pNew;
   Returning *pReturning;
   Select sSelect;
-  SrcList sFrom;
+  SrcList *pFrom;
+  u8 fromSpace[SZ_SRCLIST_1];
 
   assert( v!=0 );
   if( !pParse->bReturning ){
@@ -1055,13 +1056,14 @@ static void codeReturningTrigger(
     return;
   }
   memset(&sSelect, 0, sizeof(sSelect));
-  memset(&sFrom, 0, sizeof(sFrom));
+  pFrom = (SrcList*)fromSpace;
+  memset(pFrom, 0, SZ_SRCLIST_1);
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
-  sSelect.pSrc = &sFrom;
-  sFrom.nSrc = 1;
-  sFrom.a[0].pSTab = pTab;
-  sFrom.a[0].zName = pTab->zName; /* tag-20240424-1 */
-  sFrom.a[0].iCursor = -1;
+  sSelect.pSrc = pFrom;
+  pFrom->nSrc = 1;
+  pFrom->a[0].pSTab = pTab;
+  pFrom->a[0].zName = pTab->zName; /* tag-20240424-1 */
+  pFrom->a[0].iCursor = -1;
   sqlite3SelectPrep(pParse, &sSelect, 0);
   if( pParse->nErr==0 ){
     assert( db->mallocFailed==0 );

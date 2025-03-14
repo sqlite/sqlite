@@ -3845,7 +3845,7 @@ int sqlite3_set_clientdata(
     return SQLITE_OK;
   }else{
     size_t n = strlen(zName);
-    p = sqlite3_malloc64( sizeof(DbClientData)+n+1 );
+    p = sqlite3_malloc64( SZ_DBCLIENTDATA(n+1) );
     if( p==0 ){
       if( xDestructor ) xDestructor(pData);
       sqlite3_mutex_leave(db->mutex);

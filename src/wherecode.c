@@ -2313,8 +2313,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       int nNotReady;                 /* The number of notReady tables */
       SrcItem *origSrc;              /* Original list of tables */
       nNotReady = pWInfo->nLevel - iLevel - 1;
-      pOrTab = sqlite3DbMallocRawNN(db,
-                            sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
+      pOrTab = sqlite3DbMallocRawNN(db, SZ_SRCLIST(nNotReady+1));
       if( pOrTab==0 ) return notReady;
       pOrTab->nAlloc = (u8)(nNotReady + 1);
       pOrTab->nSrc = pOrTab->nAlloc;
@@ -2857,7 +2856,8 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   WhereInfo *pSubWInfo;
   WhereLoop *pLoop = pLevel->pWLoop;
   SrcItem *pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
-  SrcList sFrom;
+  SrcList *pFrom;
+  u8 fromSpace[SZ_SRCLIST_1];
   Bitmask mAll = 0;
   int k;
 
@@ -2901,13 +2901,14 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
                                  sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
     }
   }
-  sFrom.nSrc = 1;
-  sFrom.nAlloc = 1;
-  memcpy(&sFrom.a[0], pTabItem, sizeof(SrcItem));
-  sFrom.a[0].fg.jointype = 0;
+  pFrom = (SrcList*)fromSpace;
+  pFrom->nSrc = 1;
+  pFrom->nAlloc = 1;
+  memcpy(&pFrom->a[0], pTabItem, sizeof(SrcItem));
+  pFrom->a[0].fg.jointype = 0;
   assert( pParse->withinRJSubrtn < 100 );
   pParse->withinRJSubrtn++;
-  pSubWInfo = sqlite3WhereBegin(pParse, &sFrom, pSubWhere, 0, 0, 0,
+  pSubWInfo = sqlite3WhereBegin(pParse, pFrom, pSubWhere, 0, 0, 0,
                                 WHERE_RIGHT_JOIN, 0);
   if( pSubWInfo ){
     int iCur = pLevel->iTabCur;

@@ -501,8 +501,13 @@ struct WhereInfo {
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
-  WhereLevel a[1];          /* Information about each nest loop in WHERE */
+  WhereLevel a[FLEXARRAY];  /* Information about each nest loop in WHERE */
 };
+
+/*
+** The size (in bytes) of a WhereInfo object that holds N WhereLevels.
+*/
+#define SZ_WHEREINFO(N) (offsetof(WhereInfo,a)+(N)*sizeof(WhereLevel))
 
 /*
 ** Private interfaces - callable only by other where.c routines.

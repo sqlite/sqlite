@@ -133,11 +133,17 @@ struct VdbeCursor {
 #endif
   VdbeTxtBlbCache *pCache; /* Cache of large TEXT or BLOB values */
 
-  /* 2*nField extra array elements allocated for aType[], beyond the one
-  ** static element declared in the structure.  nField total array slots for
-  ** aType[] and nField+1 array slots for aOffset[] */
-  u32 aType[1];           /* Type values record decode.  MUST BE LAST */
+  /* Space is allocated for aType to hold at least 2*nField+1 entries:
+  ** nField slots for aType[] and nField+1 array slots for aOffset[] */
+  u32 aType[FLEXARRAY];    /* Type values record decode.  MUST BE LAST */
 };
+
+/*
+** The size (in bytes) of a VdbeCursor object that has an nField value of N
+** or less.  The value of SZ_VDBECURSOR(n) is guaranteed to be a multiple
+** of 8.
+*/
+#define SZ_VDBECURSOR(N) (offsetof(VdbeCursor,aType) + ((N)+1)*sizeof(u64))
 
 /* Return true if P is a null-only cursor
 */
@@ -395,8 +401,15 @@ struct sqlite3_context {
   u8 enc;                 /* Encoding to use for results */
   u8 skipFlag;            /* Skip accumulator loading if true */
   u16 argc;               /* Number of arguments */
-  sqlite3_value *argv[1]; /* Argument set */
+  sqlite3_value *argv[FLEXARRAY]; /* Argument set */
 };
+
+/*
+** The size (in bytes) of an sqlite3_context object that holds N
+** argv[] arguments.
+*/
+#define SZ_CONTEXT(N)  \
+   (offsetof(sqlite3_context,argv)+(N)*sizeof(sqlite3_value*))
 
 
 /* The ScanStatus object holds a single value for the

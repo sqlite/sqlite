@@ -445,12 +445,10 @@ int sqlite3VdbeAddFunctionCall(
   int eCallCtx          /* Calling context */
 ){
   Vdbe *v = pParse->pVdbe;
-  int nByte;
   int addr;
   sqlite3_context *pCtx;
   assert( v );
-  nByte = sizeof(*pCtx) + (nArg-1)*sizeof(sqlite3_value*);
-  pCtx = sqlite3DbMallocRawNN(pParse->db, nByte);
+  pCtx = sqlite3DbMallocRawNN(pParse->db, SZ_CONTEXT(nArg));
   if( pCtx==0 ){
     assert( pParse->db->mallocFailed );
     freeEphemeralFunction(pParse->db, (FuncDef*)pFunc);
