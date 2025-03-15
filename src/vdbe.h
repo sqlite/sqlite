@@ -319,8 +319,8 @@ int sqlite3NotPureFunc(sqlite3_context*);
 int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 #endif
 
-/* Use SQLITE_ENABLE_COMMENTS to enable generation of extra comments on
-** each VDBE opcode.
+/* Use SQLITE_ENABLE_EXPLAIN_COMMENTS to enable generation of extra
+** comments on each VDBE opcode.
 **
 ** Use the SQLITE_ENABLE_MODULE_COMMENTS macro to see some extra no-op
 ** comments in VDBE programs that show key decision points in the code

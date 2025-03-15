@@ -765,7 +765,17 @@
 ** ourselves.
 */
 #ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
+#define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
+
+/*
+** Work around C99 "flex-array" syntax for pre-C99 compilers, so as
+** to avoid complaints from -fsanitize=strict-bounds.
+*/
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
 #endif
 
 /*
@@ -2597,8 +2607,12 @@ struct FKey {
   struct sColMap {      /* Mapping of columns in pFrom to columns in zTo */
     int iFrom;            /* Index of column in pFrom */
     char *zCol;           /* Name of column in zTo.  If NULL use PRIMARY KEY */
-  } aCol[1];            /* One entry for each of nCol columns */
+  } aCol[FLEXARRAY];      /* One entry for each of nCol columns */
 };
+
+/* The size (in bytes) of an FKey object holding N columns.  The answer
+** does NOT include space to hold the zTo name. */
+#define SZ_FKEY(N)  (offsetof(FKey,aCol)+(N)*sizeof(struct sColMap))
 
 /*
 ** SQLite supports many different ways to resolve a constraint
@@ -2661,8 +2675,11 @@ struct KeyInfo {
   u16 nAllField;      /* Total columns, including key plus others */
   sqlite3 *db;        /* The database connection */
   u8 *aSortFlags;     /* Sort order for each column. */
-  CollSeq *aColl[1];  /* Collating sequence for each term of the key */
+  CollSeq *aColl[FLEXARRAY]; /* Collating sequence for each term of the key */
 };
+
+/* The size (in bytes) of a KeyInfo object with up to N fields */
+#define SZ_KEYINFO(N)  (offsetof(KeyInfo,aColl) + (N)*sizeof(CollSeq*))
 
 /*
 ** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.
@@ -3236,8 +3253,13 @@ struct ExprList {
       int iConstExprReg;   /* Register in which Expr value is cached. Used only
                            ** by Parse.pConstExpr */
     } u;
-  } a[1];                  /* One slot for each expression in the list */
+  } a[FLEXARRAY];          /* One slot for each expression in the list */
 };
+
+/* The size (in bytes) of an ExprList object that is big enough to hold
+** as many as N expressions. */
+#define SZ_EXPRLIST(N)  \
+             (offsetof(ExprList,a) + (N)*sizeof(struct ExprList_item))
 
 /*
 ** Allowed values for Expr.a.eEName
@@ -3266,8 +3288,11 @@ struct IdList {
   int nId;         /* Number of identifiers on the list */
   struct IdList_item {
     char *zName;      /* Name of the identifier */
-  } a[1];
+  } a[FLEXARRAY];
 };
+
+/* The size (in bytes) of an IdList object that can hold up to N IDs. */
+#define SZ_IDLIST(N)  (offsetof(IdList,a)+(N)*sizeof(struct IdList_item))
 
 /*
 ** Allowed values for IdList.eType, which determines which value of the a.u4
@@ -3388,10 +3413,18 @@ struct OnOrUsing {
 **
 */
 struct SrcList {
-  int nSrc;        /* Number of tables or subqueries in the FROM clause */
-  u32 nAlloc;      /* Number of entries allocated in a[] below */
-  SrcItem a[1];    /* One entry for each identifier on the list */
+  int nSrc;             /* Number of tables or subqueries in the FROM clause */
+  u32 nAlloc;           /* Number of entries allocated in a[] below */
+  SrcItem a[FLEXARRAY]; /* One entry for each identifier on the list */
 };
+
+/* Size (in bytes) of a SrcList object that can hold as many as N
+** SrcItem objects. */
+#define SZ_SRCLIST(N) (offsetof(SrcList,a)+(N)*sizeof(SrcItem))
+
+/* Size (in bytes( of a SrcList object that holds 1 SrcItem.  This is a
+** special case of SZ_SRCITEM(1) that comes up often. */
+#define SZ_SRCLIST_1  (offsetof(SrcList,a)+sizeof(SrcItem))
 
 /*
 ** Permitted values of the SrcList.a.jointype field
@@ -4460,8 +4493,12 @@ struct With {
   int nCte;               /* Number of CTEs in the WITH clause */
   int bView;              /* Belongs to the outermost Select of a view */
   With *pOuter;           /* Containing WITH clause, or NULL */
-  Cte a[1];               /* For each CTE in the WITH clause.... */
+  Cte a[FLEXARRAY];       /* For each CTE in the WITH clause.... */
 };
+
+/* The size (in bytes) of a With object that can hold as many
+** as N different CTEs. */
+#define SZ_WITH(N)  (offsetof(With,a) + (N)*sizeof(Cte))
 
 /*
 ** The Cte object is not guaranteed to persist for the entire duration
@@ -4491,8 +4528,12 @@ struct DbClientData {
   DbClientData *pNext;        /* Next in a linked list */
   void *pData;                /* The data */
   void (*xDestructor)(void*); /* Destructor.  Might be NULL */
-  char zName[1];              /* Name of this client data. MUST BE LAST */
+  char zName[FLEXARRAY];      /* Name of this client data. MUST BE LAST */
 };
+
+/* The size (in bytes) of a DbClientData object that can has a name
+** that is N bytes long, including the zero-terminator. */
+#define SZ_DBCLIENTDATA(N) (offsetof(DbClientData,zName)+(N))
 
 #ifdef SQLITE_DEBUG
 /*

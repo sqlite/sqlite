@@ -422,8 +422,12 @@ struct Fts5Structure {
   u64 nOriginCntr;                /* Origin value for next top-level segment */
   int nSegment;                   /* Total segments in this structure */
   int nLevel;                     /* Number of levels in this index */
-  Fts5StructureLevel aLevel[1];   /* Array of nLevel level objects */
+  Fts5StructureLevel aLevel[FLEXARRAY]; /* Array of nLevel level objects */
 };
+
+/* Size (in bytes) of an Fts5Structure object holding up to N levels */
+#define SZ_FTS5STRUCTURE(N) \
+         (offsetof(Fts5Structure,aLevel) + (N)*sizeof(Fts5StructureLevel))
 
 /*
 ** An object of type Fts5SegWriter is used to write to segments.
@@ -554,10 +558,14 @@ struct Fts5SegIter {
 ** Array of tombstone pages. Reference counted.
 */
 struct Fts5TombstoneArray {
-  int nRef;                       /* Number of pointers to this object */
+  int nRef;                         /* Number of pointers to this object */
   int nTombstone;
-  Fts5Data *apTombstone[1];       /* Array of tombstone pages */
+  Fts5Data *apTombstone[FLEXARRAY]; /* Array of tombstone pages */
 };
+
+/* Size (in bytes) of an Fts5TombstoneArray holding up to N tombstones */
+#define SZ_FTS5TOMBSTONEARRAY(N) \
+  (offsetof(Fts5TombstoneArray,apTombstone)+(N)*sizeof(Fts5Data*))
 
 /*
 ** Argument is a pointer to an Fts5Data structure that contains a 
@@ -627,8 +635,11 @@ struct Fts5Iter {
 
   i64 iSwitchRowid;               /* Firstest rowid of other than aFirst[1] */
   Fts5CResult *aFirst;            /* Current merge state (see above) */
-  Fts5SegIter aSeg[1];            /* Array of segment iterators */
+  Fts5SegIter aSeg[FLEXARRAY];    /* Array of segment iterators */
 };
+
+/* Size (in bytes) of an Fts5Iter object holding up to N segment iterators */
+#define SZ_FTS5ITER(N)  (offsetof(Fts5Iter,aSeg)+(N)*sizeof(Fts5SegIter))
 
 /*
 ** An instance of the following type is used to iterate through the contents
@@ -656,8 +667,12 @@ struct Fts5DlidxLvl {
 struct Fts5DlidxIter {
   int nLvl;
   int iSegid;
-  Fts5DlidxLvl aLvl[1];
+  Fts5DlidxLvl aLvl[FLEXARRAY];
 };
+
+/* Size (in bytes) of an Fts5DlidxIter object with up to N levels */
+#define SZ_FTS5DLIDXITER(N) \
+          (offsetof(Fts5DlidxIter,aLvl)+(N)*sizeof(Fts5DlidxLvl))
 
 static void fts5PutU16(u8 *aOut, u16 iVal){
   aOut[0] = (iVal>>8);
@@ -1026,7 +1041,7 @@ int sqlite3Fts5StructureTest(Fts5Index *p, void *pStruct){
 static void fts5StructureMakeWritable(int *pRc, Fts5Structure **pp){
   Fts5Structure *p = *pp;
   if( *pRc==SQLITE_OK && p->nRef>1 ){
-    i64 nByte = sizeof(Fts5Structure)+(p->nLevel-1)*sizeof(Fts5StructureLevel);
+    i64 nByte = SZ_FTS5STRUCTURE(p->nLevel);
     Fts5Structure *pNew;
     pNew = (Fts5Structure*)sqlite3Fts5MallocZero(pRc, nByte);
     if( pNew ){
@@ -1100,10 +1115,7 @@ static int fts5StructureDecode(
   ){
     return FTS5_CORRUPT;
   }
-  nByte = (
-      sizeof(Fts5Structure) +                    /* Main structure */
-      sizeof(Fts5StructureLevel) * (nLevel-1)    /* aLevel[] array */
-  );
+  nByte = SZ_FTS5STRUCTURE(nLevel);
   pRet = (Fts5Structure*)sqlite3Fts5MallocZero(&rc, nByte);
 
   if( pRet ){
@@ -1183,10 +1195,7 @@ static void fts5StructureAddLevel(int *pRc, Fts5Structure **ppStruct){
   if( *pRc==SQLITE_OK ){
     Fts5Structure *pStruct = *ppStruct;
     int nLevel = pStruct->nLevel;
-    sqlite3_int64 nByte = (
-        sizeof(Fts5Structure) +                  /* Main structure */
-        sizeof(Fts5StructureLevel) * (nLevel+1)  /* aLevel[] array */
-    );
+    sqlite3_int64 nByte = SZ_FTS5STRUCTURE(nLevel+2);
 
     pStruct = sqlite3_realloc64(pStruct, nByte);
     if( pStruct ){
@@ -1725,7 +1734,7 @@ static Fts5DlidxIter *fts5DlidxIterInit(
   int bDone = 0;
 
   for(i=0; p->rc==SQLITE_OK && bDone==0; i++){
-    sqlite3_int64 nByte = sizeof(Fts5DlidxIter) + i * sizeof(Fts5DlidxLvl);
+    sqlite3_int64 nByte = SZ_FTS5DLIDXITER(i+1);
     Fts5DlidxIter *pNew;
 
     pNew = (Fts5DlidxIter*)sqlite3_realloc64(pIter, nByte);
@@ -1943,7 +1952,7 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
   const int nTomb = pIter->pSeg->nPgTombstone;
   if( nTomb>0 ){
-    int nByte = nTomb * sizeof(Fts5Data*) + sizeof(Fts5TombstoneArray);
+    int nByte = SZ_FTS5TOMBSTONEARRAY(nTomb+1);
     Fts5TombstoneArray *pNew;
     pNew = (Fts5TombstoneArray*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pNew ){
@@ -3404,8 +3413,7 @@ static Fts5Iter *fts5MultiIterAlloc(
 
   for(nSlot=2; nSlot<nSeg; nSlot=nSlot*2);
   pNew = fts5IdxMalloc(p, 
-      sizeof(Fts5Iter) +                  /* pNew */
-      sizeof(Fts5SegIter) * (nSlot-1) +   /* pNew->aSeg[] */
+      SZ_FTS5ITER(nSlot) +                /* pNew + pNew->aSeg[] */
       sizeof(Fts5CResult) * nSlot         /* pNew->aFirst[] */
   );
   if( pNew ){
@@ -5771,7 +5779,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   Fts5Structure *pStruct
 ){
   Fts5Structure *pNew = 0;
-  sqlite3_int64 nByte = sizeof(Fts5Structure);
+  sqlite3_int64 nByte = SZ_FTS5STRUCTURE(1);
   int nSeg = pStruct->nSegment;
   int i;
 
@@ -5801,6 +5809,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   }
 
   nByte += (((i64)pStruct->nLevel)+1) * sizeof(Fts5StructureLevel);
+  assert( nByte==SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
 
   if( pNew ){
@@ -6377,8 +6386,12 @@ struct Fts5TokenDataIter {
   int nIterAlloc;
   Fts5PoslistReader *aPoslistReader;
   int *aPoslistToIter;
-  Fts5Iter *apIter[1];
+  Fts5Iter *apIter[FLEXARRAY];
 };
+
+/* Size in bytes of an Fts5TokenDataIter object holding up to N iterators */
+#define SZ_FTS5TOKENDATAITER(N) \
+    (offsetof(Fts5TokenDataIter,apIter) + (N)*sizeof(Fts5Iter))
 
 /*
 ** The two input arrays - a1[] and a2[] - are in sorted order. This function
@@ -6642,7 +6655,7 @@ static void fts5SetupPrefixIter(
    && p->pConfig->bPrefixInsttoken 
   ){
     s.pTokendata = &s2;
-    s2.pT = (Fts5TokenDataIter*)fts5IdxMalloc(p, sizeof(*s2.pT));
+    s2.pT = (Fts5TokenDataIter*)fts5IdxMalloc(p, SZ_FTS5TOKENDATAITER(1));
   }
 
   if( p->pConfig->eDetail==FTS5_DETAIL_NONE ){
@@ -6770,15 +6783,17 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 ** and the initial version of the "averages" record (a zero-byte blob).
 */
 int sqlite3Fts5IndexReinit(Fts5Index *p){
-  Fts5Structure s;
+  Fts5Structure *pTmp;
+  u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
-  memset(&s, 0, sizeof(Fts5Structure));
+  pTmp = (Fts5Structure*)tmpSpace;
+  memset(pTmp, 0, SZ_FTS5STRUCTURE(1));
   if( p->pConfig->bContentlessDelete ){
-    s.nOriginCntr = 1;
+    pTmp->nOriginCntr = 1;
   }
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
-  fts5StructureWrite(p, &s);
+  fts5StructureWrite(p, pTmp);
   return fts5IndexReturn(p);
 }
 
@@ -6986,7 +7001,7 @@ static Fts5TokenDataIter *fts5AppendTokendataIter(
   if( p->rc==SQLITE_OK ){
     if( pIn==0 || pIn->nIter==pIn->nIterAlloc ){
       int nAlloc = pIn ? pIn->nIterAlloc*2 : 16;
-      int nByte = nAlloc * sizeof(Fts5Iter*) + sizeof(Fts5TokenDataIter);
+      int nByte = SZ_FTS5TOKENDATAITER(nAlloc+1);
       Fts5TokenDataIter *pNew = (Fts5TokenDataIter*)sqlite3_realloc(pIn, nByte);
 
       if( pNew==0 ){
@@ -7502,7 +7517,8 @@ static int fts5SetupPrefixIterTokendata(
 
   fts5BufferGrow(&p->rc, &token, nToken+1);
   assert( token.p!=0 || p->rc!=SQLITE_OK );
-  ctx.pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*ctx.pT));
+  ctx.pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc,
+                                                   SZ_FTS5TOKENDATAITER(1));
 
   if( p->rc==SQLITE_OK ){
 
@@ -7633,7 +7649,8 @@ int sqlite3Fts5IndexIterWriteTokendata(
   if( pIter->nSeg>0 ){
     /* This is a prefix term iterator. */
     if( pT==0 ){
-      pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(*pT));
+      pT = (Fts5TokenDataIter*)sqlite3Fts5MallocZero(&p->rc,
+                                           SZ_FTS5TOKENDATAITER(1));
       pIter->pTokenDataIter = pT;
     }
     if( pT ){

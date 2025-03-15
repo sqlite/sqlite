@@ -35,10 +35,15 @@ struct HiddenIndexInfo {
   int eDistinct;           /* Value to return from sqlite3_vtab_distinct() */
   u32 mIn;                 /* Mask of terms that are <col> IN (...) */
   u32 mHandleIn;           /* Terms that vtab will handle as <col> IN (...) */
-  sqlite3_value *aRhs[1];  /* RHS values for constraints. MUST BE LAST
-                           ** because extra space is allocated to hold up
-                           ** to nTerm such values */
+  sqlite3_value *aRhs[FLEXARRAY];  /* RHS values for constraints. MUST BE LAST
+                                   ** Extra space is allocated to hold up
+                                   ** to nTerm such values */
 };
+
+/* Size (in bytes) of a HiddenIndeInfo object sufficient to hold as
+** many as N constraints */
+#define SZ_HIDDENINDEXINFO(N) \
+                  (offsetof(HiddenIndexInfo,aRhs) + (N)*sizeof(sqlite3_value*))
 
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
@@ -1517,8 +1522,8 @@ static sqlite3_index_info *allocateIndexInfo(
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
                            + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy + sizeof(*pHidden)
-                           + sizeof(sqlite3_value*)*nTerm );
+                           + sizeof(*pIdxOrderBy)*nOrderBy
+                           + SZ_HIDDENINDEXINFO(nTerm) );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -6712,10 +6717,7 @@ WhereInfo *sqlite3WhereBegin(
   ** field (type Bitmask) it must be aligned on an 8-byte boundary on
   ** some architectures. Hence the ROUND8() below.
   */
-  nByteWInfo = ROUND8P(sizeof(WhereInfo));
-  if( nTabList>1 ){
-    nByteWInfo = ROUND8P(nByteWInfo + (nTabList-1)*sizeof(WhereLevel));
-  }
+  nByteWInfo = SZ_WHEREINFO(nTabList);
   pWInfo = sqlite3DbMallocRawNN(db, nByteWInfo + sizeof(WhereLoop));
   if( db->mallocFailed ){
     sqlite3DbFree(db, pWInfo);

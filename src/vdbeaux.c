@@ -445,12 +445,10 @@ int sqlite3VdbeAddFunctionCall(
   int eCallCtx          /* Calling context */
 ){
   Vdbe *v = pParse->pVdbe;
-  int nByte;
   int addr;
   sqlite3_context *pCtx;
   assert( v );
-  nByte = sizeof(*pCtx) + (nArg-1)*sizeof(sqlite3_value*);
-  pCtx = sqlite3DbMallocRawNN(pParse->db, nByte);
+  pCtx = sqlite3DbMallocRawNN(pParse->db, SZ_CONTEXT(nArg));
   if( pCtx==0 ){
     assert( pParse->db->mallocFailed );
     freeEphemeralFunction(pParse->db, (FuncDef*)pFunc);
@@ -5528,10 +5526,11 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pCsr = pCsr;
   preupdate.op = op;
   preupdate.iNewReg = iReg;
-  preupdate.keyinfo.db = db;
-  preupdate.keyinfo.enc = ENC(db);
-  preupdate.keyinfo.nKeyField = pTab->nCol;
-  preupdate.keyinfo.aSortFlags = (u8*)&fakeSortOrder;
+  preupdate.pKeyinfo = (KeyInfo*)&preupdate.keyinfoSpace;
+  preupdate.pKeyinfo->db = db;
+  preupdate.pKeyinfo->enc = ENC(db);
+  preupdate.pKeyinfo->nKeyField = pTab->nCol;
+  preupdate.pKeyinfo->aSortFlags = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;
@@ -5541,8 +5540,8 @@ void sqlite3VdbePreUpdateHook(
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
   db->pPreUpdate = 0;
   sqlite3DbFree(db, preupdate.aRecord);
-  vdbeFreeUnpacked(db, preupdate.keyinfo.nKeyField+1, preupdate.pUnpacked);
-  vdbeFreeUnpacked(db, preupdate.keyinfo.nKeyField+1, preupdate.pNewUnpacked);
+  vdbeFreeUnpacked(db, preupdate.pKeyinfo->nKeyField+1,preupdate.pUnpacked);
+  vdbeFreeUnpacked(db, preupdate.pKeyinfo->nKeyField+1,preupdate.pNewUnpacked);
   sqlite3VdbeMemRelease(&preupdate.oldipk);
   if( preupdate.aNew ){
     int i;

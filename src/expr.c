@@ -1738,7 +1738,7 @@ static Expr *exprDup(
 With *sqlite3WithDup(sqlite3 *db, With *p){
   With *pRet = 0;
   if( p ){
-    sqlite3_int64 nByte = sizeof(*p) + sizeof(p->a[0]) * (p->nCte-1);
+    sqlite3_int64 nByte = SZ_WITH(p->nCte);
     pRet = sqlite3DbMallocZero(db, nByte);
     if( pRet ){
       int i;
@@ -1865,11 +1865,9 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, const ExprList *p, int flags){
 SrcList *sqlite3SrcListDup(sqlite3 *db, const SrcList *p, int flags){
   SrcList *pNew;
   int i;
-  int nByte;
   assert( db!=0 );
   if( p==0 ) return 0;
-  nByte = sizeof(*p) + (p->nSrc>0 ? sizeof(p->a[0]) * (p->nSrc-1) : 0);
-  pNew = sqlite3DbMallocRawNN(db, nByte );
+  pNew = sqlite3DbMallocRawNN(db, SZ_SRCLIST(p->nSrc) );
   if( pNew==0 ) return 0;
   pNew->nSrc = pNew->nAlloc = p->nSrc;
   for(i=0; i<p->nSrc; i++){
@@ -1931,7 +1929,7 @@ IdList *sqlite3IdListDup(sqlite3 *db, const IdList *p){
   int i;
   assert( db!=0 );
   if( p==0 ) return 0;
-  pNew = sqlite3DbMallocRawNN(db, sizeof(*pNew)+(p->nId-1)*sizeof(p->a[0]) );
+  pNew = sqlite3DbMallocRawNN(db, SZ_IDLIST(p->nId));
   if( pNew==0 ) return 0;
   pNew->nId = p->nId;
   for(i=0; i<p->nId; i++){
@@ -2015,7 +2013,7 @@ SQLITE_NOINLINE ExprList *sqlite3ExprListAppendNew(
   struct ExprList_item *pItem;
   ExprList *pList;
 
-  pList = sqlite3DbMallocRawNN(db, sizeof(ExprList)+sizeof(pList->a[0])*4 );
+  pList = sqlite3DbMallocRawNN(db, SZ_EXPRLIST(4));
   if( pList==0 ){
     sqlite3ExprDelete(db, pExpr);
     return 0;
@@ -2035,8 +2033,7 @@ SQLITE_NOINLINE ExprList *sqlite3ExprListAppendGrow(
   struct ExprList_item *pItem;
   ExprList *pNew;
   pList->nAlloc *= 2;
-  pNew = sqlite3DbRealloc(db, pList,
-       sizeof(*pList)+(pList->nAlloc-1)*sizeof(pList->a[0]));
+  pNew = sqlite3DbRealloc(db, pList, SZ_EXPRLIST(pList->nAlloc));
   if( pNew==0 ){
     sqlite3ExprListDelete(db, pList);
     sqlite3ExprDelete(db, pExpr);
