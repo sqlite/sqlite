@@ -3633,7 +3633,7 @@ void sqlite3CreateForeignKey(
   }else{
     nCol = pFromCol->nExpr;
   }
-  nByte = sizeof(*pFKey) + (nCol-1)*sizeof(pFKey->aCol[0]) + pTo->n + 1;
+  nByte = SZ_FKEY(nCol) + pTo->n + 1;
   if( pToCol ){
     for(i=0; i<pToCol->nExpr; i++){
       nByte += sqlite3Strlen30(pToCol->a[i].zEName) + 1;
@@ -4692,12 +4692,11 @@ IdList *sqlite3IdListAppend(Parse *pParse, IdList *pList, Token *pToken){
   sqlite3 *db = pParse->db;
   int i;
   if( pList==0 ){
-    pList = sqlite3DbMallocZero(db, sizeof(IdList) );
+    pList = sqlite3DbMallocZero(db, SZ_IDLIST(1));
     if( pList==0 ) return 0;
   }else{
     IdList *pNew;
-    pNew = sqlite3DbRealloc(db, pList,
-                 sizeof(IdList) + pList->nId*sizeof(pList->a));
+    pNew = sqlite3DbRealloc(db, pList, SZ_IDLIST(pList->nId+1));
     if( pNew==0 ){
       sqlite3IdListDelete(db, pList);
       return 0;
@@ -4796,8 +4795,7 @@ SrcList *sqlite3SrcListEnlarge(
       return 0;
     }
     if( nAlloc>SQLITE_MAX_SRCLIST ) nAlloc = SQLITE_MAX_SRCLIST;
-    pNew = sqlite3DbRealloc(db, pSrc,
-               sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
+    pNew = sqlite3DbRealloc(db, pSrc, SZ_SRCLIST(nAlloc));
     if( pNew==0 ){
       assert( db->mallocFailed );
       return 0;
@@ -4872,7 +4870,7 @@ SrcList *sqlite3SrcListAppend(
   assert( pParse->db!=0 );
   db = pParse->db;
   if( pList==0 ){
-    pList = sqlite3DbMallocRawNN(pParse->db, sizeof(SrcList) );
+    pList = sqlite3DbMallocRawNN(pParse->db, SZ_SRCLIST(1));
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
     pList->nSrc = 1;
@@ -5758,10 +5756,9 @@ With *sqlite3WithAdd(
   }
 
   if( pWith ){
-    sqlite3_int64 nByte = sizeof(*pWith) + (sizeof(pWith->a[1]) * pWith->nCte);
-    pNew = sqlite3DbRealloc(db, pWith, nByte);
+    pNew = sqlite3DbRealloc(db, pWith, SZ_WITH(pWith->nCte+1));
   }else{
-    pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
+    pNew = sqlite3DbMallocZero(db, SZ_WITH(1));
   }
   assert( (pNew!=0 && zName!=0) || db->mallocFailed );
 

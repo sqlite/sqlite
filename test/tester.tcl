@@ -1725,7 +1725,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
   return -code $c $r
 }
 
-# This proc execs a seperate process that crashes midway through executing
+# This proc execs a separate process that crashes midway through executing
 # the SQL script $sql on database test.db.
 #
 # The crash occurs during a sync() of file $crashfile. When the crash

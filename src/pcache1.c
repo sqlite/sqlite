@@ -232,10 +232,6 @@ static SQLITE_WSD struct PCacheGlobal {
   sqlite3_mutex *mutex;          /* Mutex for accessing the following: */
   PgFreeslot *pFree;             /* Free page blocks */
   int nFreeSlot;                 /* Number of unused pcache slots */
-  /* The following value requires a mutex to change.  We skip the mutex on
-  ** reading because (1) most platforms read a 32-bit integer atomically and
-  ** (2) even if an incorrect value is read, no great harm is done since this
-  ** is really just an optimization. */
   int bUnderPressure;            /* True if low on PAGECACHE memory */
 } pcache1_g;
 
@@ -283,7 +279,7 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
     pcache1.nReserve = n>90 ? 10 : (n/10 + 1);
     pcache1.pStart = pBuf;
     pcache1.pFree = 0;
-    pcache1.bUnderPressure = 0;
+    AtomicStore(&pcache1.bUnderPressure,0);
     while( n-- ){
       p = (PgFreeslot*)pBuf;
       p->pNext = pcache1.pFree;
@@ -351,7 +347,7 @@ static void *pcache1Alloc(int nByte){
     if( p ){
       pcache1.pFree = pcache1.pFree->pNext;
       pcache1.nFreeSlot--;
-      pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
+      AtomicStore(&pcache1.bUnderPressure,pcache1.nFreeSlot<pcache1.nReserve);
       assert( pcache1.nFreeSlot>=0 );
       sqlite3StatusHighwater(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
       sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_USED, 1);
@@ -390,7 +386,7 @@ static void pcache1Free(void *p){
     pSlot->pNext = pcache1.pFree;
     pcache1.pFree = pSlot;
     pcache1.nFreeSlot++;
-    pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
+    AtomicStore(&pcache1.bUnderPressure,pcache1.nFreeSlot<pcache1.nReserve);
     assert( pcache1.nFreeSlot<=pcache1.nSlot );
     sqlite3_mutex_leave(pcache1.mutex);
   }else{
@@ -521,7 +517,7 @@ void sqlite3PageFree(void *p){
 */
 static int pcache1UnderMemoryPressure(PCache1 *pCache){
   if( pcache1.nSlot && (pCache->szPage+pCache->szExtra)<=pcache1.szSlot ){
-    return pcache1.bUnderPressure;
+    return AtomicLoad(&pcache1.bUnderPressure);
   }else{
     return sqlite3HeapNearlyFull();
   }

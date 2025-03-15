@@ -885,8 +885,12 @@ struct WalIterator {
     u32 *aPgno;                   /* Array of page numbers. */
     int nEntry;                   /* Nr. of entries in aPgno[] and aIndex[] */
     int iZero;                    /* Frame number associated with aPgno[0] */
-  } aSegment[1];                  /* One for every 32KB page in the wal-index */
+  } aSegment[FLEXARRAY];          /* One for every 32KB page in the wal-index */
 };
+
+/* Size (in bytes) of a WalIterator object suitable for N or fewer segments */
+#define SZ_WALITERATOR(N)  \
+     (offsetof(WalIterator,aSegment)*(N)*sizeof(struct WalSegment))
 
 /*
 ** Define the parameters of the hash tables in the wal-index file. There
@@ -2501,8 +2505,7 @@ static int walIteratorInit(
   nSegment = 1 + (iLastSeg/iMode);
 
   /* Allocate space for the WalIterator object. */
-  nByte = sizeof(WalIterator)
-        + (nSegment-1)*sizeof(struct WalSegment)
+  nByte = SZ_WALITERATOR(nSegment)
         + iLast*sizeof(ht_slot);
   p = (WalIterator *)sqlite3_malloc64(nByte
       + sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)

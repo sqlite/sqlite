@@ -519,8 +519,7 @@ static int seriesFilter(
         pCur->ss.iBase += ((d+szStep-1)/szStep)*szStep;
       }
       if( pCur->ss.iTerm>iMax ){
-        sqlite3_uint64 d = pCur->ss.iTerm - iMax;
-        pCur->ss.iTerm -= ((d+szStep-1)/szStep)*szStep;
+        pCur->ss.iTerm = iMax;
       }
     }else{
       sqlite3_int64 szStep = -pCur->ss.iStep;
@@ -530,8 +529,7 @@ static int seriesFilter(
         pCur->ss.iBase -= ((d+szStep-1)/szStep)*szStep;
       }
       if( pCur->ss.iTerm<iMin ){
-        sqlite3_uint64 d = iMin - pCur->ss.iTerm;
-        pCur->ss.iTerm += ((d+szStep-1)/szStep)*szStep;
+        pCur->ss.iTerm = iMin;
       }
     }
   }

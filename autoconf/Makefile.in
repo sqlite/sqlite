@@ -220,7 +220,7 @@ install-lib-0 install-lib-:
 install-lib: install-lib-$(ENABLE_LIB_STATIC)
 install: install-lib
 
-
+#
 # Flags to link the shell app either directly against sqlite3.c
 # (ENABLE_STATIC_SHELL==1) or libsqlite3.so (ENABLE_STATIC_SHELL==0).
 #
@@ -269,8 +269,10 @@ DIST_FILES := \
   sqlite3.rc sqlite3rc.h Replace.cs \
   sqlite3.pc.in sqlite3.1
 
+#
 # Maintenance note: dist_name must be sqlite-$(PACKAGE_VERSION) so
 # that tool/mkautoconfamal.sh knows how to find it.
+#
 dist_name = sqlite-$(PACKAGE_VERSION)
 dist_tarball = $(dist_name).tar.gz
 dist:

@@ -315,6 +315,7 @@ testfixture_nb done {
   db eval {
     COMMIT
   }
+  db close
 }
 
 after 500 {set ok 1}
