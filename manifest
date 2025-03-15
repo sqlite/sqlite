@@ -1,5 +1,5 @@
-C Turn\sFts5Colset.aiCol\sinto\sa\sflexible\sarray.
-D 2025-03-14T23:57:53.780
+C Convert\sthe\sFts5Sorter.aIdx\sfield\sto\sa\sflexible\sarray.
+D 2025-03-15T00:11:22.914
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -113,7 +113,7 @@ F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773
 F ext/fts5/fts5_expr.c 390502c9954e20a9b6fcc31e4dc699df78a4ad52fd64e5b8aef0bfb82aa4a40d
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
 F ext/fts5/fts5_index.c 2f35dd8408946f0e0bfea8f3bfbe8dfaafe90a5345885b43d678546c19266673
-F ext/fts5/fts5_main.c b0e95a793f3c649d313c536269403e1a413ee665223adb5f8196edd2bc1146f7
+F ext/fts5/fts5_main.c 57933c18efe1058d8871199875c7a59744dabc3904f3aefbf9ff4a4e11fc79e2
 F ext/fts5/fts5_storage.c 1ad05dab4830a4e2eaf2900bb143477f93bc17437093582f36f4b818809e88d8
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
 F ext/fts5/fts5_test_mi.c d35fdd50db99a775a040fb57127a45adc968e97da94ae784eec664256ac86db2
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb00b973980d259ca85af84c054501cae78b3a9d33ccffa54d7034235dd8d50d
-R 05b17a99b8821529239b9da49f396cc0
+P 0c4d9c74741794468adc444908f6024f016738aa2852d3a646f2c28d079d9446
+R 36e1481e3adfdafd4b3b226a43a9ad79
 U drh
-Z 04bcbcb01c8f02443f6768740e1f8171
+Z 97caa33dc844f08a198788bd53346fc8
 # Remove this line to create a well-formed Fossil manifest.
