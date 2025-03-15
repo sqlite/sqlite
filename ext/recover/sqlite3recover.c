@@ -140,8 +140,11 @@ struct RecoverColumn {
 typedef struct RecoverBitmap RecoverBitmap;
 struct RecoverBitmap {
   i64 nPg;                        /* Size of bitmap */
-  u32 aElem[1];                   /* Array of 32-bit bitmasks */
+  u32 aElem[];                    /* Array of 32-bit bitmasks */
 };
+
+/* Size in bytes of a RecoverBitmap object sufficient to cover 32 pages */
+#define SZ_RECOVERBITMAP_32  (16)
 
 /*
 ** State variables (part of the sqlite3_recover structure) used while
@@ -382,7 +385,7 @@ static int recoverError(
 */
 static RecoverBitmap *recoverBitmapAlloc(sqlite3_recover *p, i64 nPg){
   int nElem = (nPg+1+31) / 32;
-  int nByte = sizeof(RecoverBitmap) + nElem*sizeof(u32);
+  int nByte = SZ_RECOVERBITMAP_32 + nElem*sizeof(u32);
   RecoverBitmap *pRet = (RecoverBitmap*)recoverMalloc(p, nByte);
 
   if( pRet ){

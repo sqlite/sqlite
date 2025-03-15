@@ -2169,7 +2169,7 @@ fuzzy: fuzzcheck$(T.exe)
 xbin: fuzzcheck$(T.exe)
 
 fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-	$(T.link) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
+	$(T.link) -o $@ -fsanitize=address,bounds-strict $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
 		sqlite3.c $(LDFLAGS.libsqlite3)
 fuzzy: fuzzcheck-asan$(T.exe)
 xbin: fuzzcheck-asan$(T.exe)

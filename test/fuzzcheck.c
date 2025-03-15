@@ -129,8 +129,11 @@ struct Blob {
   int id;                 /* Id of this Blob */
   int seq;                /* Sequence number */
   int sz;                 /* Size of this Blob in bytes */
-  unsigned char a[1];     /* Blob content.  Extra space allocated as needed. */
+  unsigned char a[];      /* Blob content.  Extra space allocated as needed. */
 };
+
+/* Size in bytes of a Blob object sufficient to store N byte of content */
+#define SZ_BLOB(N) (offsetof(Blob,a) + (((N)+7)&~7))
 
 /*
 ** Maximum number of files in the in-memory virtual filesystem.
@@ -512,13 +515,15 @@ static void blobListLoadFromDb(
   int *pN,                 /* OUT: Write number of blobs loaded here */
   Blob **ppList            /* OUT: Write the head of the blob list here */
 ){
-  Blob head;
+  Blob *head;
   Blob *p;
   sqlite3_stmt *pStmt;
   int n = 0;
   int rc;
   char *z2;
+  unsigned char tmp[SZ_BLOB(8)];
 
+  head = (Blob*)tmp;
   if( firstId>0 ){
     z2 = sqlite3_mprintf("%s WHERE rowid BETWEEN %d AND %d", zSql,
                          firstId, lastId);
@@ -528,11 +533,11 @@ static void blobListLoadFromDb(
   rc = sqlite3_prepare_v2(db, z2, -1, &pStmt, 0);
   sqlite3_free(z2);
   if( rc ) fatalError("%s", sqlite3_errmsg(db));
-  head.pNext = 0;
-  p = &head;
+  head->pNext = 0;
+  p = head;
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     int sz = sqlite3_column_bytes(pStmt, 1);
-    Blob *pNew = safe_realloc(0, sizeof(*pNew)+sz );
+    Blob *pNew = safe_realloc(0, SZ_BLOB(sz+1));
     pNew->id = sqlite3_column_int(pStmt, 0);
     pNew->sz = sz;
     pNew->seq = n++;
@@ -544,7 +549,7 @@ static void blobListLoadFromDb(
   }
   sqlite3_finalize(pStmt);
   *pN = n;
-  *ppList = head.pNext;
+  *ppList = head->pNext;
 }
 
 /*
