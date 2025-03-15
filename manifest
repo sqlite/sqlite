@@ -1,5 +1,5 @@
-C Configure-internal\sbuild\scleanups\s(no\sfunctional\schanges).\sAdd\sEXTRA_SRC\sto\sthe\sdeps\sof\ssqlite3.c.
-D 2025-03-15T15:19:42.945
+C Speed\sup\sparsing\sof\svery\slong\sfts3\squery\sexpressions.
+D 2025-03-15T16:58:39.639
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c fd2a8642fa4701ef5dd6bce7947ecb3c7ae472e1d44022772454a8b74a1315
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 75b9cf37c93d3c56d8e569d64527c927cb54a5279afb3823740ca1e29e481c15
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
-F ext/fts3/fts3_expr.c 673bf600655f5080239ff0e1e80eaae0176389f7e7d3af54c6d51491280ca360
+F ext/fts3/fts3_expr.c b8ff0d3775f33eddae559b444df2000d48768d7d9bdb642e3f6434c9f2543ffc
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fa6f6ccdffc50024624306900efd2538c7415d8bdd0f02835b2e9c05adab3cf1
-R fa3f42bd795b87d6c693892aa92ef559
-U stephan
-Z 60eb85208863d91adaf5e3aa8394c9ef
+P 8afb8bbce8654d6f76207fb136e79dc52b6724a71eae82a4c098690a68eb75a1
+R 1bd8f3cfa90570231383a500e0910fe3
+U dan
+Z 1c83f58e6b1181c1bb790bbf7879f1cb
 # Remove this line to create a well-formed Fossil manifest.
