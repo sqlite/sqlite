@@ -135,6 +135,9 @@ ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
 libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
+# -fsanitize flags for the fuzzcheck-asap app
+LDFLAGS.fuzzcheck.fsanitize = @LDFLAGS_FUZZCHECK_FSANITIZE@
+
 T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 
 #
