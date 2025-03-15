@@ -507,7 +507,7 @@ struct WhereInfo {
 /*
 ** The size (in bytes) of a WhereInfo object that holds N WhereLevels.
 */
-#define SZ_WHEREINFO(N) (offsetof(WhereInfo,a)+(N)*sizeof(WhereLevel))
+#define SZ_WHEREINFO(N) ROUND8(offsetof(WhereInfo,a)+(N)*sizeof(WhereLevel))
 
 /*
 ** Private interfaces - callable only by other where.c routines.

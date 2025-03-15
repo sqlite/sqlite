@@ -1,5 +1,5 @@
-C -fsanitize\sis\sa\sCFLAG,\snot\sLDFLAG,\sso\srename\ssome\svars\saccordingly\sand\ssimplify\sthe\sfeature\scheck\sto\snot\srun\sthe\slinker.
-D 2025-03-15T13:50:07.673
+C Fix\salignment\sproblems\son\sLinux\swith\s-m32\sand\son\sMac\sPPC.
+D 2025-03-15T18:26:27.012
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -852,7 +852,7 @@ F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c b5deed01000b3970cfca089dc531cf9342afd96d00cc8b4ad26d303f088116ee
 F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
-F src/vdbeInt.h 366843cb88740595011e091e180bb7258487ec9fd91c0b5a47cf9ff25620a482
+F src/vdbeInt.h 5446f60e89b2aa7cdf3ab0ec4e7b01b8732cd9d52d9092a0b8b1bf700768f784
 F src/vdbeapi.c a9ad72afed9aaec2acdde4daa5caa2f342b298f8c8859704143f6e3b78cb9966
 F src/vdbeaux.c 72a1c99d9300a5e0adff2c708074ac1355a619664301db474a48e147418fba05
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
@@ -866,7 +866,7 @@ F src/wal.c 554a6b1afaaecb98cb47bb598bccf1374c9d3b624e5c4c3c4eb2ad364cc579f8
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c e80177e452b4e436abc6ece0cb0249631000434f2a7425cc1df709015fce74ad
-F src/whereInt.h 8373791e8dfbef3ca0d4ad7eab350be860b2740c44d94d0c54d2a8d36209c41a
+F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
 F src/wherecode.c 0d3de258d7922aede028841c6e0060633c50be26737c92cc62ce8be280535430
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b70f9cc81516e57e73960bed4b4d2abdcf3dab0ad4a400ca1aed49365c25231e
-R 5d61542419e2a8828e0b0a6d6bc8149b
-U stephan
-Z b02345883d043cd5c1744f64864d3542
+P 44f2c64ec16f4720dc538be30410863c4138ea4ce41c94521bd7980535261735
+R 0aa0704287ff919c67b51206bc5ac75c
+U drh
+Z 83d96f08f2610b8988f70e4446915dd1
 # Remove this line to create a well-formed Fossil manifest.
