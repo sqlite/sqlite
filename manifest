@@ -1,5 +1,5 @@
-C Fix\salignment\sproblems\son\sLinux\swith\s-m32\sand\son\sMac\sPPC.
-D 2025-03-15T18:26:27.012
+C Work\saround\scompilers\sthat\sdo\snot\sunderstand\sflexible\sarrays,\sin\sthe\nrecovery\sextension\sand\sin\sthe\sfuzzcheck\stest\smodule.
+D 2025-03-15T19:00:46.484
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -523,7 +523,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 098b622d34499625a3c87bc31abc237f8e9b992fa93ac5071f280bb0d90e7fd8
+F ext/recover/sqlite3recover.c 56c216332ea91233d6d820d429f3384adbec9ecedda67aa98186b691d427cc57
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 072260d7452a3b81aba995b2b3269e7ec2aa7f06725544ba4c25b1b0a1dbc61a
 F ext/repair/README.md 92f5e8aae749a4dae14f02eea8e1bb42d4db2b6ce5e83dbcdd6b1446997e0c15
@@ -1278,7 +1278,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 128789e46d14f2a3ab452fb341165897ff471c4bbef09f8e113c80839acf8941
+F test/fuzzcheck.c e94511f5f5b8c134c83535b4799004b85ead69ed8375d74e9af90e41549a82ad
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 44f2c64ec16f4720dc538be30410863c4138ea4ce41c94521bd7980535261735
-R 0aa0704287ff919c67b51206bc5ac75c
+P 8a91aeca60548d5cd19add128cf65b9c3815c9103b1ef8ff6bc02711b6d709de
+R 1db0ab70ab59a8097f7bb0d50c768431
 U drh
-Z 83d96f08f2610b8988f70e4446915dd1
+Z 9641d2a6129bd2783700fa8c8a1376d8
 # Remove this line to create a well-formed Fossil manifest.

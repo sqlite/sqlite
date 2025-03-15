@@ -33,6 +33,16 @@ typedef unsigned int u32;
 typedef unsigned char u8;
 typedef sqlite3_int64 i64;
 
+/*
+** Work around C99 "flex-array" syntax for pre-C99 compilers, so as
+** to avoid complaints from -fsanitize=strict-bounds.
+*/
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
+
 typedef struct RecoverTable RecoverTable;
 typedef struct RecoverColumn RecoverColumn;
 
@@ -140,7 +150,7 @@ struct RecoverColumn {
 typedef struct RecoverBitmap RecoverBitmap;
 struct RecoverBitmap {
   i64 nPg;                        /* Size of bitmap */
-  u32 aElem[];                    /* Array of 32-bit bitmasks */
+  u32 aElem[FLEXARRAY];           /* Array of 32-bit bitmasks */
 };
 
 /* Size in bytes of a RecoverBitmap object sufficient to cover 32 pages */

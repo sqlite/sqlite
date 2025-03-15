@@ -88,6 +88,11 @@
 #include "sqlite3recover.h"
 #define ISSPACE(X) isspace((unsigned char)(X))
 #define ISDIGIT(X) isdigit((unsigned char)(X))
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
 
 
 #ifdef __unix__
@@ -129,7 +134,7 @@ struct Blob {
   int id;                 /* Id of this Blob */
   int seq;                /* Sequence number */
   int sz;                 /* Size of this Blob in bytes */
-  unsigned char a[];      /* Blob content.  Extra space allocated as needed. */
+  unsigned char a[FLEXARRAY]; /* Blob content. Allocated as needed. */
 };
 
 /* Size in bytes of a Blob object sufficient to store N byte of content */
