@@ -75,6 +75,18 @@ typedef sqlite3_uint64 u64;
 # define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&7)==0)
 #endif
 
+/*
+** Macros needed to provide flexible arrays in a portable way
+*/
+#ifndef offsetof
+# define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
+
 #endif
 
 /* Truncate very long tokens to this many bytes. Hard limit is 
@@ -147,10 +159,11 @@ typedef struct Fts5Colset Fts5Colset;
 */
 struct Fts5Colset {
   int nCol;
-  int aiCol[1];
+  int aiCol[FLEXARRAY];
 };
 
-
+/* Size (int bytes) of a complete Fts5Colset object with N columns. */
+#define SZ_FTS5COLSET(N) (sizeof(i64)*((N+2)/2))
 
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code

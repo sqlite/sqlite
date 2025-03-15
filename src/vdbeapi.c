@@ -2216,7 +2216,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       if( !aRec ) goto preupdate_old_out;
       rc = sqlite3BtreePayload(p->pCsr->uc.pCursor, 0, nRec, aRec);
       if( rc==SQLITE_OK ){
-        p->pUnpacked = vdbeUnpackRecord(&p->keyinfo, nRec, aRec);
+        p->pUnpacked = vdbeUnpackRecord(p->pKeyinfo, nRec, aRec);
         if( !p->pUnpacked ) rc = SQLITE_NOMEM;
       }
       if( rc!=SQLITE_OK ){
@@ -2281,7 +2281,7 @@ int sqlite3_preupdate_count(sqlite3 *db){
 #else
   p = db->pPreUpdate;
 #endif
-  return (p ? p->keyinfo.nKeyField : 0);
+  return (p ? p->pKeyinfo->nKeyField : 0);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
 
@@ -2364,7 +2364,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       Mem *pData = &p->v->aMem[p->iNewReg];
       rc = ExpandBlob(pData);
       if( rc!=SQLITE_OK ) goto preupdate_new_out;
-      pUnpack = vdbeUnpackRecord(&p->keyinfo, pData->n, pData->z);
+      pUnpack = vdbeUnpackRecord(p->pKeyinfo, pData->n, pData->z);
       if( !pUnpack ){
         rc = SQLITE_NOMEM;
         goto preupdate_new_out;

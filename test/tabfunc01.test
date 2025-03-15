@@ -181,6 +181,19 @@ do_execsql_test tabfunc01-4.4 {
   SELECT * FROM (generate_series(1,5,2)) AS x LIMIT 10;
 } {1 3 5}
 
+# 2025-03-13 forum post bf2dc8e909983511
+#
+do_execsql_test tabfunc01-5.1 {
+  SELECT value
+    FROM generate_series(60,73,6)
+   WHERE value=66;
+} 66
+do_execsql_test tabfunc01-5.2 {
+  SELECT value
+    FROM generate_series(73,60,-6)
+   WHERE value=67;
+} 67
+
 # The next series of tests is verifying that virtual table are able
 # to optimize the IN operator, even on terms that are not marked "omit".
 # When the generate_series virtual table is compiled for the testfixture,

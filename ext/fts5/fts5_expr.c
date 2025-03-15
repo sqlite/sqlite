@@ -86,8 +86,12 @@ struct Fts5ExprNode {
   /* Child nodes. For a NOT node, this array always contains 2 entries. For 
   ** AND or OR nodes, it contains 2 or more entries.  */
   int nChild;                     /* Number of child nodes */
-  Fts5ExprNode *apChild[1];       /* Array of child nodes */
+  Fts5ExprNode *apChild[FLEXARRAY]; /* Array of child nodes */
 };
+
+/* Size (in bytes) of an Fts5ExprNode object that holds up to N children */
+#define SZ_FTS5EXPRNODE(N) \
+  (offsetof(Fts5ExprNode,apChild) + (N)*sizeof(Fts5ExprNode*))
 
 #define Fts5NodeIsString(p) ((p)->eType==FTS5_TERM || (p)->eType==FTS5_STRING)
 
@@ -119,8 +123,12 @@ struct Fts5ExprPhrase {
   Fts5ExprNode *pNode;            /* FTS5_STRING node this phrase is part of */
   Fts5Buffer poslist;             /* Current position list */
   int nTerm;                      /* Number of entries in aTerm[] */
-  Fts5ExprTerm aTerm[1];          /* Terms that make up this phrase */
+  Fts5ExprTerm aTerm[FLEXARRAY];  /* Terms that make up this phrase */
 };
+
+/* Size (in bytes) of an Fts5ExprPhrase object that holds up to N terms */
+#define SZ_FTS5EXPRPHRASE(N) \
+    (offsetof(Fts5ExprPhrase,aTerm) + (N)*sizeof(Fts5ExprTerm))
 
 /*
 ** One or more phrases that must appear within a certain token distance of
@@ -130,9 +138,12 @@ struct Fts5ExprNearset {
   int nNear;                      /* NEAR parameter */
   Fts5Colset *pColset;            /* Columns to search (NULL -> all columns) */
   int nPhrase;                    /* Number of entries in aPhrase[] array */
-  Fts5ExprPhrase *apPhrase[1];    /* Array of phrase pointers */
+  Fts5ExprPhrase *apPhrase[FLEXARRAY]; /* Array of phrase pointers */
 };
 
+/* Size (in bytes) of an Fts5ExprNearset object covering up to N phrases */
+#define SZ_FTS5EXPRNEARSET(N) \
+  (offsetof(Fts5ExprNearset,apPhrase)+(N)*sizeof(Fts5ExprPhrase*))
 
 /*
 ** Parse context.
@@ -292,7 +303,7 @@ int sqlite3Fts5ExprNew(
   /* If the LHS of the MATCH expression was a user column, apply the
   ** implicit column-filter.  */
   if( sParse.rc==SQLITE_OK && iCol<pConfig->nCol ){
-    int n = sizeof(Fts5Colset);
+    int n = SZ_FTS5COLSET(1);
     Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&sParse.rc, n);
     if( pColset ){
       pColset->nCol = 1;
@@ -1650,7 +1661,7 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   if( pParse->rc==SQLITE_OK ){
     if( pNear==0 ){
       sqlite3_int64 nByte;
-      nByte = sizeof(Fts5ExprNearset) + SZALLOC * sizeof(Fts5ExprPhrase*);
+      nByte = SZ_FTS5EXPRNEARSET(SZALLOC+1);
       pRet = sqlite3_malloc64(nByte);
       if( pRet==0 ){
         pParse->rc = SQLITE_NOMEM;
@@ -1661,7 +1672,7 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
       int nNew = pNear->nPhrase + SZALLOC;
       sqlite3_int64 nByte;
 
-      nByte = sizeof(Fts5ExprNearset) + nNew * sizeof(Fts5ExprPhrase*);
+      nByte = SZ_FTS5EXPRNEARSET(nNew+1);
       pRet = (Fts5ExprNearset*)sqlite3_realloc64(pNear, nByte);
       if( pRet==0 ){
         pParse->rc = SQLITE_NOMEM;
@@ -1752,12 +1763,12 @@ static int fts5ParseTokenize(
       int nNew = SZALLOC + (pPhrase ? pPhrase->nTerm : 0);
 
       pNew = (Fts5ExprPhrase*)sqlite3_realloc64(pPhrase, 
-          sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
+          SZ_FTS5EXPRPHRASE(nNew+1)
       );
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
+        if( pPhrase==0 ) memset(pNew, 0, SZ_FTS5EXPRPHRASE(1));
         pCtx->pPhrase = pPhrase = pNew;
         pNew->nTerm = nNew - SZALLOC;
       }
@@ -1865,7 +1876,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     if( sCtx.pPhrase==0 ){
       /* This happens when parsing a token or quoted phrase that contains
       ** no token characters at all. (e.g ... MATCH '""'). */
-      sCtx.pPhrase = sqlite3Fts5MallocZero(&pParse->rc, sizeof(Fts5ExprPhrase));
+      sCtx.pPhrase = sqlite3Fts5MallocZero(&pParse->rc, SZ_FTS5EXPRPHRASE(1));
     }else if( sCtx.pPhrase->nTerm ){
       sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = (u8)bPrefix;
     }
@@ -1900,19 +1911,18 @@ int sqlite3Fts5ExprClonePhrase(
         sizeof(Fts5ExprPhrase*));
   }
   if( rc==SQLITE_OK ){
-    pNew->pRoot = (Fts5ExprNode*)sqlite3Fts5MallocZero(&rc, 
-        sizeof(Fts5ExprNode));
+    pNew->pRoot = (Fts5ExprNode*)sqlite3Fts5MallocZero(&rc, SZ_FTS5EXPRNODE(1));
   }
   if( rc==SQLITE_OK ){
-    pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
-        sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*));
+    pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc,
+                                                    SZ_FTS5EXPRNEARSET(2));
   }
   if( rc==SQLITE_OK && ALWAYS(pOrig!=0) ){
     Fts5Colset *pColsetOrig = pOrig->pNode->pNear->pColset;
     if( pColsetOrig ){
       sqlite3_int64 nByte;
       Fts5Colset *pColset;
-      nByte = sizeof(Fts5Colset) + (pColsetOrig->nCol-1) * sizeof(int);
+      nByte = SZ_FTS5COLSET(pColsetOrig->nCol);
       pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&rc, nByte);
       if( pColset ){ 
         memcpy(pColset, pColsetOrig, (size_t)nByte);
@@ -1940,7 +1950,7 @@ int sqlite3Fts5ExprClonePhrase(
     }else{
       /* This happens when parsing a token or quoted phrase that contains
       ** no token characters at all. (e.g ... MATCH '""'). */
-      sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
+      sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, SZ_FTS5EXPRPHRASE(1));
     }
   }
 
@@ -2034,7 +2044,7 @@ static Fts5Colset *fts5ParseColset(
   assert( pParse->rc==SQLITE_OK );
   assert( iCol>=0 && iCol<pParse->pConfig->nCol );
 
-  pNew = sqlite3_realloc64(p, sizeof(Fts5Colset) + sizeof(int)*nCol);
+  pNew = sqlite3_realloc64(p, SZ_FTS5COLSET(nCol+1));
   if( pNew==0 ){
     pParse->rc = SQLITE_NOMEM;
   }else{
@@ -2069,7 +2079,7 @@ Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse *pParse, Fts5Colset *p){
   int nCol = pParse->pConfig->nCol;
 
   pRet = (Fts5Colset*)sqlite3Fts5MallocZero(&pParse->rc, 
-      sizeof(Fts5Colset) + sizeof(int)*nCol
+      SZ_FTS5COLSET(nCol+1)
   );
   if( pRet ){
     int i;
@@ -2130,7 +2140,7 @@ Fts5Colset *sqlite3Fts5ParseColset(
 static Fts5Colset *fts5CloneColset(int *pRc, Fts5Colset *pOrig){
   Fts5Colset *pRet;
   if( pOrig ){
-    sqlite3_int64 nByte = sizeof(Fts5Colset) + (pOrig->nCol-1) * sizeof(int);
+    sqlite3_int64 nByte = SZ_FTS5COLSET(pOrig->nCol);
     pRet = (Fts5Colset*)sqlite3Fts5MallocZero(pRc, nByte);
     if( pRet ){ 
       memcpy(pRet, pOrig, (size_t)nByte);
@@ -2298,7 +2308,7 @@ static Fts5ExprNode *fts5ParsePhraseToAnd(
   assert( pNear->nPhrase==1 );
   assert( pParse->bPhraseToAnd );
 
-  nByte = sizeof(Fts5ExprNode) + nTerm*sizeof(Fts5ExprNode*);
+  nByte = SZ_FTS5EXPRNODE(nTerm+1);
   pRet = (Fts5ExprNode*)sqlite3Fts5MallocZero(&pParse->rc, nByte);
   if( pRet ){
     pRet->eType = FTS5_AND;
@@ -2308,7 +2318,7 @@ static Fts5ExprNode *fts5ParsePhraseToAnd(
     pParse->nPhrase--;
     for(ii=0; ii<nTerm; ii++){
       Fts5ExprPhrase *pPhrase = (Fts5ExprPhrase*)sqlite3Fts5MallocZero(
-          &pParse->rc, sizeof(Fts5ExprPhrase)
+          &pParse->rc, SZ_FTS5EXPRPHRASE(1)
       );
       if( pPhrase ){
         if( parseGrowPhraseArray(pParse) ){
@@ -2377,7 +2387,7 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
         if( pRight->eType==eType ) nChild += pRight->nChild-1;
       }
 
-      nByte = sizeof(Fts5ExprNode) + sizeof(Fts5ExprNode*)*(nChild-1);
+      nByte = SZ_FTS5EXPRNODE(nChild);
       pRet = (Fts5ExprNode*)sqlite3Fts5MallocZero(&pParse->rc, nByte);
 
       if( pRet ){

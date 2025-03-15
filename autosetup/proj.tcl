@@ -183,6 +183,8 @@ proc proj-lshift_ {listVar {count 1}} {
 }
 
 ########################################################################
+# @proj-strip-hash-comments value
+#
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
@@ -1029,6 +1031,29 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
       return 0
     }
   }
+}
+
+########################################################################
+# @proj-check-fsanitize ?list-of-opts?
+#
+# Checks whether CC supports -fsanitize=X, where X is each entry of
+# the given list of flags. If any of those flags are supported, it
+# returns the string "-fsanitize=X..." where X... is a comma-separated
+# list of all supported flags. If none of the given options are
+# supported then it returns an empty string.
+proc proj-check-fsanitize {{opts {address bounds-strict}}} {
+  set sup {}
+  foreach opt $opts {
+    cc-with {} {
+      if {[cc-check-flags "-fsanitize=$opt"]} {
+        lappend sup $opt
+      }
+    }
+  }
+  if {[llength $sup] > 0} {
+    return "-fsanitize=[join $sup ,]"
+  }
+  return ""
 }
 
 ########################################################################
