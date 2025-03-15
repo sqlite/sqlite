@@ -1034,6 +1034,29 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
 }
 
 ########################################################################
+# @proj-check-fsanitize ?list-of-opts?
+#
+# Checks whether CC supports -fsanitize=X, where X is each entry of
+# the given list of flags. If any of those flags are supported, it
+# returns the string "-fsanitize=X..." where X... is a comma-separated
+# list of all supported flags. If none of the given options are
+# supported then it returns an empty string.
+proc proj-check-fsanitize {{opts {address bounds-strict}}} {
+  set sup {}
+  foreach opt $opts {
+    cc-with {} {
+      if {[cc-check-flags "-fsanitize=$opt"]} {
+        lappend sup $opt
+      }
+    }
+  }
+  if {[llength $sup] > 0} {
+    return "-fsanitize=[join $sup ,]"
+  }
+  return ""
+}
+
+########################################################################
 # Internal helper for proj-dump-defs-json. Expects to be passed a
 # [define] name and the variadic $args which are passed to
 # proj-dump-defs-json. If it finds a pattern match for the given

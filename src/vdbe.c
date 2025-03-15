@@ -278,9 +278,9 @@ static VdbeCursor *allocateCursor(
 
   i64 nByte;
   VdbeCursor *pCx = 0;
-  nByte =
-      ROUND8P(sizeof(VdbeCursor)) + 2*sizeof(u32)*nField +
-      (eCurType==CURTYPE_BTREE?sqlite3BtreeCursorSize():0);
+  nByte = SZ_VDBECURSOR(nField);
+  assert( ROUND8(nByte)==nByte );
+  if( eCurType==CURTYPE_BTREE ) nByte += sqlite3BtreeCursorSize();
 
   assert( iCur>=0 && iCur<p->nCursor );
   if( p->apCsr[iCur] ){ /*OPTIMIZATION-IF-FALSE*/
@@ -313,8 +313,8 @@ static VdbeCursor *allocateCursor(
   pCx->nField = nField;
   pCx->aOffset = &pCx->aType[nField];
   if( eCurType==CURTYPE_BTREE ){
-    pCx->uc.pCursor = (BtCursor*)
-        &pMem->z[ROUND8P(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
+    assert( ROUND8(SZ_VDBECURSOR(nField))==SZ_VDBECURSOR(nField) );
+    pCx->uc.pCursor = (BtCursor*)&pMem->z[SZ_VDBECURSOR(nField)];
     sqlite3BtreeCursorZero(pCx->uc.pCursor);
   }
   return pCx;
@@ -7705,7 +7705,7 @@ case OP_AggStep: {
   **
   ** Note: We could avoid this by using a regular memory cell from aMem[] for 
   ** the accumulator, instead of allocating one here. */
-  nAlloc = ROUND8P( sizeof(pCtx[0]) + (n-1)*sizeof(sqlite3_value*) );
+  nAlloc = ROUND8P( SZ_CONTEXT(n) );
   pCtx = sqlite3DbMallocRawNN(db, nAlloc + sizeof(Mem));
   if( pCtx==0 ) goto no_mem;
   pCtx->pOut = (Mem*)((u8*)pCtx + nAlloc);
