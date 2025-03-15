@@ -46,7 +46,7 @@ sqlite-configure canonical {
 
   define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
-  define LDFLAGS_FUZZCHECK_FSANITIZE [proj-check-fsanitize {address bounds-strict}]
+  define CFLAGS_FUZZCHECK_FSANITIZE [proj-check-fsanitize {address bounds-strict}]
 
   sqlite-handle-tcl
   sqlite-handle-emsdk
