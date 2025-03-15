@@ -1,5 +1,5 @@
-C Use\sflexible\sarrays\sin\sthe\srecovery\sextension\sand\sin\sthe\sfuzzcheck\stest\sprogram.\nAdjust\sthe\sunix\smakefile\sto\suse\s-fsanitize=bounds-strict\swhen\sbuilding\nfuzzcheck-asan.
-D 2025-03-15T13:04:16.138
+C Omit\sthe\s-fsanitize=bounds-strict\sfor\snow,\sas\sthat\sis\sstill\snot\swidely\nimplemented.\s\sIn\sparticular,\sit\sdoes\snot\swork\son\sMacs.
+D 2025-03-15T13:11:24.810
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -705,7 +705,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c7716a7f5559e9055519796fb27f257e4588bfae0f5c59e38b40f4e6ea51f5f0
+F main.mk f2f6af216cf14ec010d317e2f75ed5dc2134a2f9d6be7df3a96ee11149598ca1
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16dfc415b6e98a2acae79a24bb0afd401e60efc27cbdd1603a426fd33e17d427
-R 16bdd7a30aeb17479eb9d6ab2f69c679
+P 6ea6a6b211fed1a14d7bec1ab1790dec09e2a00423860498a60b760c4a4561fa
+R 230925c95f57711ebe48c1e2c164b78b
 U drh
-Z f00ea2f5fbf083c38b332f57e1d5d154
+Z 2c119b268b3dca0dc5ff030ca58b304e
 # Remove this line to create a well-formed Fossil manifest.
