@@ -1107,7 +1107,7 @@ sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) -o sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
-		$(B.tclsh)
+		$(B.tclsh) $(EXTRA_SRC)
 	$(B.tclsh) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .

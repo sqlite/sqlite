@@ -183,6 +183,8 @@ proc proj-lshift_ {listVar {count 1}} {
 }
 
 ########################################################################
+# @proj-strip-hash-comments value
+#
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
