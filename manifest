@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\sC99\sflexible\sarray\sfeature,\swhen\savailable,\sso\sthat\nthe\s-fsanitize=bounds-strict\soption\scan\sbe\sused,\swhen\savailable.\n[forum:/forumpost/311dbf9a1cadfae6|Forum\sthread\s311dbf9a1c].
-D 2025-03-15T19:55:19.890
+C Enhance\sthe\sfuzzcheck\stesting\stool\swith\snew\scommand-line\soptions:\n--brief,\sand\s--slice\sM\sN.
+D 2025-03-15T23:42:32.735
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1278,7 +1278,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c e94511f5f5b8c134c83535b4799004b85ead69ed8375d74e9af90e41549a82ad
+F test/fuzzcheck.c 19f8af47a5c4ee2c3943fdee270f1f14e3d83fe968a9737a7557fb4e3c06efc1
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2213,9 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dd5b6895a3b23c2b9cbf0c1c1e802faf8f2b41ef60819eea25d609755266e64 f101c46cf83e532fd33034abccba496bf395ef10c161af003211614d6581d5eb
-R cffcee5ac5b13fdb08ee088881970bf2
-T +closed f101c46cf83e532fd33034abccba496bf395ef10c161af003211614d6581d5eb
+P d4307a0d43f42e96ec06ad2c1d8d0f5c8ecae759bae8231b1998633089809f49
+R b41c223f32c59ab49558d35f05a2bfa9
 U drh
-Z 5f005a89032955065b39a2e143d5c279
+Z 01a995e61d39142e747ab20e203c7c6f
 # Remove this line to create a well-formed Fossil manifest.
