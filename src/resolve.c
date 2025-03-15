@@ -2277,20 +2277,22 @@ int sqlite3ResolveSelfReference(
   Expr *pExpr,     /* Expression to resolve.  May be NULL. */
   ExprList *pList  /* Expression list to resolve.  May be NULL. */
 ){
-  SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
+  SrcList *pSrc;                  /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
+  u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
 
   assert( type==0 || pTab!=0 );
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
-  memset(&sSrc, 0, sizeof(sSrc));
+  pSrc = (SrcList*)srcSpace;
+  memset(pSrc, 0, SZ_SRCLIST_1);
   if( pTab ){
-    sSrc.nSrc = 1;
-    sSrc.a[0].zName = pTab->zName;
-    sSrc.a[0].pSTab = pTab;
-    sSrc.a[0].iCursor = -1;
+    pSrc->nSrc = 1;
+    pSrc->a[0].zName = pTab->zName;
+    pSrc->a[0].pSTab = pTab;
+    pSrc->a[0].iCursor = -1;
     if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
       /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP
       ** schema elements */
@@ -2298,7 +2300,7 @@ int sqlite3ResolveSelfReference(
     }
   }
   sNC.pParse = pParse;
-  sNC.pSrcList = &sSrc;
+  sNC.pSrcList = pSrc;
   sNC.ncFlags = type | NC_IsDDL;
   if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
   if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);

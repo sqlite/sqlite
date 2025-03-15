@@ -154,7 +154,7 @@ Select *sqlite3SelectNew(
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = 0;
-  if( pSrc==0 ) pSrc = sqlite3DbMallocZero(pParse->db, sizeof(*pSrc));
+  if( pSrc==0 ) pSrc = sqlite3DbMallocZero(pParse->db, SZ_SRCLIST_1);
   pNew->pSrc = pSrc;
   pNew->pWhere = pWhere;
   pNew->pGroupBy = pGroupBy;
@@ -1537,8 +1537,8 @@ static void selectInnerLoop(
 ** X extra columns.
 */
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
-  int nExtra = (N+X)*(sizeof(CollSeq*)+1) - sizeof(CollSeq*);
-  KeyInfo *p = sqlite3DbMallocRawNN(db, sizeof(KeyInfo) + nExtra);
+  int nExtra = (N+X)*(sizeof(CollSeq*)+1);
+  KeyInfo *p = sqlite3DbMallocRawNN(db, SZ_KEYINFO(0) + nExtra);
   if( p ){
     p->aSortFlags = (u8*)&p->aColl[N+X];
     p->nKeyField = (u16)N;
@@ -1546,7 +1546,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
     p->enc = ENC(db);
     p->db = db;
     p->nRef = 1;
-    memset(&p[1], 0, nExtra);
+    memset(p->aColl, 0, nExtra);
   }else{
     return (KeyInfo*)sqlite3OomFault(db);
   }
@@ -6062,7 +6062,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   pEList = p->pEList;
   if( pParse->pWith && (p->selFlags & SF_View) ){
     if( p->pWith==0 ){
-      p->pWith = (With*)sqlite3DbMallocZero(db, sizeof(With));
+      p->pWith = (With*)sqlite3DbMallocZero(db, SZ_WITH(1) );
       if( p->pWith==0 ){
         return WRC_Abort;
       }
@@ -7201,6 +7201,7 @@ static void agginfoFree(sqlite3 *db, void *pArg){
 **   *  There is no WHERE or GROUP BY or HAVING clauses on the subqueries
 **   *  The outer query is a simple count(*) with no WHERE clause or other
 **      extraneous syntax.
+**   *  None of the subqueries are DISTINCT (forumpost/a860f5fb2e 2025-03-10)
 **
 ** Return TRUE if the optimization is undertaken.
 */
@@ -7233,7 +7234,11 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
-    if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
+    if( pSub->selFlags & (SF_Aggregate|SF_Distinct) ){
+       testcase( pSub->selFlags & SF_Aggregate );
+       testcase( pSub->selFlags & SF_Distinct );
+       return 0;     /* Not an aggregate nor DISTINCT */
+    }
     assert( pSub->pHaving==0 );  /* Due to the previous */
     pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
@@ -7245,7 +7250,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   pExpr = 0;
   pSub = sqlite3SubqueryDetach(db, pFrom);
   sqlite3SrcListDelete(db, p->pSrc);
-  p->pSrc = sqlite3DbMallocZero(pParse->db, sizeof(*p->pSrc));
+  p->pSrc = sqlite3DbMallocZero(pParse->db, SZ_SRCLIST_1);
   while( pSub ){
     Expr *pTerm;
     pPrior = pSub->pPrior;
