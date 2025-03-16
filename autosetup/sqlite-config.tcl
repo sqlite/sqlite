@@ -1,6 +1,6 @@
 # This file holds functions for autosetup which are specific to the
 # sqlite build tree.  They are in this file, instead of auto.def, so
-# that they can be reused in the TEA sub-tree. This file requires
+# that they can be reused in the autoconf sub-tree. This file requires
 # functions from proj.tcl.
 
 if {[string first " " $autosetup(srcdir)] != -1} {
@@ -24,7 +24,6 @@ use system ; # Will output "Host System" and "Build System" lines
 if {"--help" ni $::argv} {
   msg-result "Source dir = $::autosetup(srcdir)"
   msg-result "Build dir  = $::autosetup(builddir)"
-
   use cc cc-db cc-shared cc-lib pkg-config
 }
 
@@ -445,7 +444,7 @@ proc sqlite-configure-finalize {} {
 # top-level build and the "autoconf" build, but it's not intended to
 # be a catch-all dumping ground for such.
 proc sqlite-post-options-init {} {
-  define PACKAGE_NAME "sqlite"
+  define PACKAGE_NAME sqlite
   define PACKAGE_URL {https://sqlite.org}
   define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
   define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
@@ -1285,7 +1284,9 @@ proc sqlite-handle-icu {} {
     if {[opt-bool icu-collations]} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -shell -DSQLITE_ENABLE_ICU_COLLATIONS
-      # Recall that shell.c builds with sqlite3.c
+      # Recall that shell.c builds with sqlite3.c except in the case
+      # of --disable-static-shell, a combination we do not
+      # specifically attempt to account for.
     }
   } elseif {[opt-bool icu-collations]} {
     proj-warn "ignoring --enable-icu-collations because neither --with-icu-ldflags nor --with-icu-config provided any linker flags"
@@ -1428,7 +1429,7 @@ proc sqlite-handle-dll-basename {} {
 # The name of the import library is [define]d in SQLITE_OUT_IMPLIB.
 #
 # If the configure flag --out-implib is not used (or programmatically
-# set) then this is a no-op (but see [sqliet-handle-env-quirks]).  If
+# set) then this is a no-op (but see [sqlite-handle-env-quirks]).  If
 # that flag is used but the capability is not available, a fatal error
 # is triggered.
 #
@@ -1507,7 +1508,7 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
 #
 # [define]s SQLITE_DLL_INSTALL_RULES to a symbolic name suffix for a
 # set of "make install" rules to use for installation of the DLL
-# deliverable. The makefile is tasked with with providing rules named
+# deliverable. The makefile is tasked with providing rules named
 # install-dll-NAME which runs the installation for that set, as well
 # as providing a rule named install-dll which resolves to
 # install-dll-NAME (perhaps indirectly, depending on whether the DLL
@@ -1519,13 +1520,13 @@ proc sqlite-env-is-unix-on-windows {{envTuple ""}} {
 #
 # On platforms where an "import library" is conventionally used but
 # --out-implib was not explicitly used, automatically add that flag.
-# This conventionally applies to the "Unix on Windows" environments
-# like msys and cygwin.
+# This conventionally applies only to the "Unix on Windows"
+# environments like msys and cygwin.
 #
 # 3) --dll-basename:
 #
 # On the same platforms addressed by --out-implib, if --dll-basename
-# is not specified, --dll-basename=auto is implied.
+# is not explicitly specified, --dll-basename=auto is implied.
 proc sqlite-handle-env-quirks {} {
   set instName unix-generic; # name of installation rules set
   set autoDll 0; # true if --out-implib/--dll-basename should be implied

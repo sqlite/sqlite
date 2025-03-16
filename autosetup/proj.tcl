@@ -1039,8 +1039,15 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
 # Checks whether CC supports -fsanitize=X, where X is each entry of
 # the given list of flags. If any of those flags are supported, it
 # returns the string "-fsanitize=X..." where X... is a comma-separated
-# list of all supported flags. If none of the given options are
-# supported then it returns an empty string.
+# list of all flags from the original set which are supported. If none
+# of the given options are supported then it returns an empty string.
+#
+# Example:
+#
+#  set f [proj-check-fsanitize {address bounds-check just-testing}]
+#
+# Will, on many systems, resolve to "-fsanitize=address,bounds-check",
+# but may also resolve to "-fsanitize=address".
 proc proj-check-fsanitize {{opts {address bounds-strict}}} {
   set sup {}
   foreach opt $opts {
