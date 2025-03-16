@@ -1,5 +1,5 @@
-C Enhance\sthe\sfuzzcheck\stesting\stool\swith\snew\scommand-line\soptions:\n--brief,\sand\s--slice\sM\sN.
-D 2025-03-15T23:42:32.735
+C Rework\sthe\srun-fuzzcheck\smakefile\starget\sso\sthat\sit\sbetter\sexploit\sparallelism.\nTest\scase\s"<tt>make\s-j16\srun-fuzzcheck\sFUZZDB=20250222.db</tt>"\nwent\sfrom\s596\sseconds\sdown\sto\s107\sseconds.
+D 2025-03-16T00:13:29.453
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -705,7 +705,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk e15a567c0bcc1aed49d53944c92a30705e77d21be087cbc0f7359cf1bddb31c8
+F main.mk ec71d4fda51578c017ea922cc28cb71395e097bd58900943fd31599933299230
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d4307a0d43f42e96ec06ad2c1d8d0f5c8ecae759bae8231b1998633089809f49
-R b41c223f32c59ab49558d35f05a2bfa9
+P e64132723db0c4f2b9a58932a93beb1671e42006eebc1aeaa8f320e717043051
+R a0d6184ee2c59df7a27bc937eaa19775
 U drh
-Z 01a995e61d39142e747ab20e203c7c6f
+Z 4d1b91d0df9093e02464f9ab269aee1c
 # Remove this line to create a well-formed Fossil manifest.

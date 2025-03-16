@@ -2192,11 +2192,138 @@ xbin: fuzzcheck-ubsan$(T.exe)
 #
 #     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
 #
-run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
+# The original rules for this target were like this:
+#
+# run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
+#	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+#	./fuzzcheck$(T.exe) --spinner $(FUZZDB)
+#	./fuzzcheck-asan$(T.exe) --spinner $(FUZZDB)
+#	./fuzzcheck-ubsan$(T.exe) --spinner $(FUZZDB)
+#
+# What follows is a decomposition of these rules in a way that allows make
+# to run things in parallel when using the -jN option.
+#
+run-fuzzcheck: run-fuzzcheck-n0
+run-fuzzcheck-n0: fuzzcheck$(T.exe)
 	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
-	./fuzzcheck$(T.exe) --spinner $(FUZZDB)
-	./fuzzcheck-asan$(T.exe) --spinner $(FUZZDB)
-	./fuzzcheck-ubsan$(T.exe) --spinner $(FUZZDB)
+	./fuzzcheck$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n1
+run-fuzzcheck-n1: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n2
+run-fuzzcheck-n2: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n3
+run-fuzzcheck-n3: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n4
+run-fuzzcheck-n4: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n5
+run-fuzzcheck-n5: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n6
+run-fuzzcheck-n6: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n7
+run-fuzzcheck-n7: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n8
+run-fuzzcheck-n8: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n9
+run-fuzzcheck-n9: fuzzcheck$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck$(T.exe) --slice 9 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a0
+run-fuzzcheck-a0: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a1
+run-fuzzcheck-a1: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a2
+run-fuzzcheck-a2: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a3
+run-fuzzcheck-a3: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a4
+run-fuzzcheck-a4: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a5
+run-fuzzcheck-a5: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a6
+run-fuzzcheck-a6: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a7
+run-fuzzcheck-a7: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a8
+run-fuzzcheck-a8: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a9
+run-fuzzcheck-a9: fuzzcheck-asan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-asan$(T.exe) --slice 9 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u0
+run-fuzzcheck-u0: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u1
+run-fuzzcheck-u1: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u2
+run-fuzzcheck-u2: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u3
+run-fuzzcheck-u3: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u4
+run-fuzzcheck-u4: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u5
+run-fuzzcheck-u5: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u6
+run-fuzzcheck-u6: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u7
+run-fuzzcheck-u7: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u8
+run-fuzzcheck-u8: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u9
+run-fuzzcheck-u9: fuzzcheck-ubsan$(T.exe)
+	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+	./fuzzcheck-ubsan$(T.exe) --slice 9 10 $(FUZZDB)
+
 
 ossshell$(T.exe):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(T.link) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
