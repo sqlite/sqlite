@@ -337,6 +337,10 @@ proc sqlite-configure {buildMode configScript} {
           => {Enable #line macros in the amalgamation}
         dynlink-tools
           => {Dynamically link libsqlite3 to certain tools which normally statically embed it}
+        asan-fsanitize:=auto
+          => {Comma- or space-separated list of -fsanitize flags for use with the
+              fuzzcheck-asan tool. Only those which the compiler claims to support
+              will actually be used. May be provided multiple times.}
       }
       {*} {
         dump-defines=0

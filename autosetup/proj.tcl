@@ -1051,7 +1051,10 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
 proc proj-check-fsanitize {{opts {address bounds-strict}}} {
   set sup {}
   foreach opt $opts {
-    cc-with {} {
+    # -nooutput is used because -fsanitize=hwaddress will otherwise
+    # pass this test on x86_64, but then warn at build time that
+    # "hwaddress is not supported for this target".
+    cc-with {-nooutput 1} {
       if {[cc-check-flags "-fsanitize=$opt"]} {
         lappend sup $opt
       }
