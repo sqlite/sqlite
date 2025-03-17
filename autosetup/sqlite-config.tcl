@@ -258,11 +258,11 @@ proc sqlite-configure {buildMode configScript} {
 
     # Options for exotic/alternative build modes
     alternative-builds {
-      {canonical} {
-        # Potential TODO: add --with-wasi-sdk support to the autoconf
-        # build
+      {*} {
         with-wasi-sdk:=/opt/wasi-sdk
           => {Top-most dir of the wasi-sdk for a WASI build}
+      }
+      {canonical} {
 
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
@@ -1656,7 +1656,8 @@ proc sqlite-handle-wasi-sdk {} {
     tcl
     threadsafe
   } {
-    if {[opt-bool $opt]} {
+    if {[proj-opt-exists $opt] && [opt-bool $opt]} {
+      # -^^^^ distinguish between canonical and autoconf builds
       msg-result "  --disable-$opt"
       proj-opt-set $opt 0
     }
