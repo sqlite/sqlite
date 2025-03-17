@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\s--with-wasi-sdk\sconfigure\sflag\sto\sthe\sautoconf\sbuild.
-D 2025-03-17T14:59:55.092
+C Prevent\sinteger\soverflow\swhen\sparsing\sNEAR\squeries\sin\sFTS5.
+D 2025-03-17T15:13:47.985
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h bffbd0acdcdf509899681f4e1cfeef1c955030acd9fe15ff9082410f80c
 F ext/fts5/fts5_aux.c da4a7a9a11ec15c6df0699d908915a209bcde48f0b04101461316b59f71abffb
 F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d7c53066c7
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
-F ext/fts5/fts5_expr.c 887a611b34094c828ff5fb19bbc50a6b1bbfd28791db01b0c8bf722e3c9f437a
+F ext/fts5/fts5_expr.c be9e5f7f11d87e7bd3680832c93c13050fe351994b5052b0215c2ef40312c23a
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
 F ext/fts5/fts5_index.c d171f2a507abccb3d524bf461b01f0d3971a9bf221be622ac7c671a991cb62ee
 F ext/fts5/fts5_main.c 57933c18efe1058d8871199875c7a59744dabc3904f3aefbf9ff4a4e11fc79e2
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 493cbe74504e8eb1ca8f2edf49fdab6bebc7fe36ffab06932a4b8c5a4eea86cd
-R 2a00f59ca343d92d1ab593996ae581fb
-U stephan
-Z c372334b201c7cc2e21fcf33dbf843ab
+P 44880fa3f0748604ef50b942c28390e041138759efea1d076dfcaa1da48970cb
+R 62b06ea4ad92e5bc3b483d586cc748b3
+U drh
+Z 243e630e7be3fc1ae898e3d108d054eb
 # Remove this line to create a well-formed Fossil manifest.
