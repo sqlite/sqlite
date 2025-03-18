@@ -1,5 +1,5 @@
-C Prevent\sinteger\soverflow\swhen\sparsing\sNEAR\squeries\sin\sFTS5.
-D 2025-03-17T15:13:47.985
+C Update\sthe\sdocs\sin\stool/mkccode.tcl\sto\sreflect\sthat\sit's\smore\sgeneric\sthan\sit\swas\swhen\sthe\sdocs\swere\swritten.\sChange\sthe\sshebang\sline\sto\suse\s/bin/env\stclsh\sinstead\sof\sa\shard-coded\stclsh\spath.
+D 2025-03-18T10:28:56.725
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2151,7 +2151,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh c5e65fa1c922f2e3b3e4f6cd0331ec7d84bdef085f32cb1c46673cdf95ec8090
-F tool/mkccode.tcl 210159febe0ef0ecbc53c79833500663ceaba0115b2b374405818dc835b5f84b x
+F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkctimec.tcl f76dbfc74cefad8d126384ba3263677939f077bd184fcdf8c592a1daf64f50c3 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 44880fa3f0748604ef50b942c28390e041138759efea1d076dfcaa1da48970cb
-R 62b06ea4ad92e5bc3b483d586cc748b3
-U drh
-Z 243e630e7be3fc1ae898e3d108d054eb
+P 1a5283d7dab210badb8a33eac29f44dc8c1c210ffb5ef84f43e348170aa406a6
+R a929af68b23ab89a4ef69e835299c074
+U stephan
+Z cc5c9a3f1559d25c8e48b1b5fb513517
 # Remove this line to create a well-formed Fossil manifest.
