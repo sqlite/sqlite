@@ -1,5 +1,5 @@
-C Update\sthe\sdocs\sin\stool/mkccode.tcl\sto\sreflect\sthat\sit's\smore\sgeneric\sthan\sit\swas\swhen\sthe\sdocs\swere\swritten.\sChange\sthe\sshebang\sline\sto\suse\s/bin/env\stclsh\sinstead\sof\sa\shard-coded\stclsh\spath.
-D 2025-03-18T10:28:56.725
+C General\supdates\sto\sautosetup/README.md.
+D 2025-03-18T11:36:15.450
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md b306314e8a87ccf873cb5b2a360c4a27bbf841df5b76f3acbd65322cff165476
+F autosetup/README.md f98cc827a162a1da4877e9656d749d414ba3f408d457d30e029afc66590c00c3
 F autosetup/autosetup 74a9782b68d07934510190fbd03fc6ad92e63f0ea3b5cbffa5f0bd271ad60f01 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a5283d7dab210badb8a33eac29f44dc8c1c210ffb5ef84f43e348170aa406a6
-R a929af68b23ab89a4ef69e835299c074
+P 9300f7f42dfd143f77fd51aa9e080099540854d36b6997ab1a16be7d77f78d8e
+R a74ff5093dd14720da044ecaa9143a8b
 U stephan
-Z cc5c9a3f1559d25c8e48b1b5fb513517
+Z 7470894fe299edfa712004a6589105cc
 # Remove this line to create a well-formed Fossil manifest.
