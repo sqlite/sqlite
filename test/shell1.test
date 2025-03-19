@@ -1228,7 +1228,7 @@ do_test shell1-8.1 {
       FROM pow2, c WHERE pow2.x=ieee754_exponent(c.n);
   }
 } {0 47.49000000000000198951966012828052043914794921875}
-do_test shell1-8.2 {
+do_test_with_ansi_output shell1-8.2 {
   catchcmd :memory: {
 .mode box
 SELECT ieee754(47.49) AS x;
@@ -1238,7 +1238,7 @@ SELECT ieee754(47.49) AS x;
 ├───────────────────────────────┤
 │ ieee754(6683623321994527,-47) │
 └───────────────────────────────┘}}
-do_test shell1-8.3 {
+do_test_with_ansi_output shell1-8.3 {
   catchcmd ":memory: --box" {
     select ieee754(6683623321994527,-47) as x;
   }
@@ -1254,7 +1254,7 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
-do_test shell1-8.5 {
+do_test_with_ansi_output shell1-8.5 {
   catchcmd ":memory: --box" {
 create table t(a text, b int);
 insert into t values ('too long for one line', 1), ('shorter', NULL);
