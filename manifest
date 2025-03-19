@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sthe\scygwin-fixes\sbranch\sfor\sthe\sshell\stest\simprovements\son\sWindows.\sAn\sMSC\sbuild's\smake\stest\snow\shas\szero\sfailures.
-D 2025-03-19T13:13:12.804
+C Test\sscript\spatches\sfrom\sJan\sNijtmans:\salways\suse\s-DUSE_TCL_STUBS\sin\sbuildtclext.tcl\sand\simprovements\sin\show\sTRG\sis\spopulated\sin\stestrunner.tcl.
+D 2025-03-19T13:49:34.348
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -1732,7 +1732,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl e7f0c903b2d9dcaa44e707db183d22a5fe17b3f9a3c05a5eed1f4cb5c8fe63bc
-F test/testrunner.tcl c876f1ee06c69c9aaf4a1df9e4f288d20f6ae9aa8bb8b7ba73ba909e7e4dee4f x
+F test/testrunner.tcl 331e5babe5ffff8adb4be91439e698f12aed80d4b137d2f40346ac84e0b3c03f x
 F test/testrunner_data.tcl 6d7e7824bb36278ea65c33f7da6dd3ca101fc7d6f7a765b807dce0aa68c52521
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2120,7 +2120,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat 1960a7a3e5d8176c4329e31476f6e3dfa9543675355fa9020a569f4452628458 x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl 20726b6b73c7911baa8519a9467b4062104339a5ce57947819884525c56d79e3
+F tool/buildtclext.tcl 11087f26ba6893b0dab4f1df2d5fa9a62ce60523d8955f83c3c5a06e0ef2e65e
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 34eadd374b3c0a8c9e1f5f4a1c60fda8f16b1c56213b8c4047f96390c676b695 c7fd71c77f1716c9c85d0f41a07ebd7c96f2e9d5e4c1392fefa1fb53f3cbb746
-R 845242d912ca9bbb3e29d43c1ca0e37f
+P 2de4efe10c2591192edca3833fc9e2fae10ebc925fb556f5b53ad483b491b5b3
+R a1f9b9c695690bc937b92783cf4b7ead
 U stephan
-Z 041683d3233cddf8d81113a8c4a0a404
+Z 5451b318439ae9b1137b5b0735e64e79
 # Remove this line to create a well-formed Fossil manifest.
