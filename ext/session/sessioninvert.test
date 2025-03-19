@@ -143,9 +143,7 @@ do_test 3.0 {
     DELETE FROM t2 WHERE d = 3;
   }]
 
-  set rv [list [catch { sqlite3changeset_apply_v2 -invert db2 $P {} } msg] $msg]
-  db2 close
-  return $rv
+  list [catch { sqlite3changeset_apply_v2 -invert db2 $P {} } msg] $msg
 } {1 SQLITE_CORRUPT}
 
 do_test 3.1 {
@@ -156,6 +154,8 @@ do_test 3.2 {
   sqlite3changeset_apply_v2 db2 $P {} 
   compare_db db db2
 } {}
+
+db2 close
 
 #-------------------------------------------------------------------------
 #
