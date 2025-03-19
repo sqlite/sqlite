@@ -183,6 +183,8 @@ proc proj-lshift_ {listVar {count 1}} {
 }
 
 ########################################################################
+# @proj-strip-hash-comments value
+#
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
@@ -1029,6 +1031,39 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
       return 0
     }
   }
+}
+
+########################################################################
+# @proj-check-fsanitize ?list-of-opts?
+#
+# Checks whether CC supports -fsanitize=X, where X is each entry of
+# the given list of flags. If any of those flags are supported, it
+# returns the string "-fsanitize=X..." where X... is a comma-separated
+# list of all flags from the original set which are supported. If none
+# of the given options are supported then it returns an empty string.
+#
+# Example:
+#
+#  set f [proj-check-fsanitize {address bounds-check just-testing}]
+#
+# Will, on many systems, resolve to "-fsanitize=address,bounds-check",
+# but may also resolve to "-fsanitize=address".
+proc proj-check-fsanitize {{opts {address bounds-strict}}} {
+  set sup {}
+  foreach opt $opts {
+    # -nooutput is used because -fsanitize=hwaddress will otherwise
+    # pass this test on x86_64, but then warn at build time that
+    # "hwaddress is not supported for this target".
+    cc-with {-nooutput 1} {
+      if {[cc-check-flags "-fsanitize=$opt"]} {
+        lappend sup $opt
+      }
+    }
+  }
+  if {[llength $sup] > 0} {
+    return "-fsanitize=[join $sup ,]"
+  }
+  return ""
 }
 
 ########################################################################

@@ -50,6 +50,7 @@ CC = @CC@
 
 ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
 ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
+HAVE_WASI_SDK = @HAVE_WASI_SDK@
 
 CFLAGS = @CFLAGS@ @CPPFLAGS@
 #
@@ -236,11 +237,14 @@ sqlite3$(T.exe): $(TOP)/shell.c $(sqlite3-shell-deps.$(ENABLE_STATIC_SHELL))
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
 		$(LDFLAGS) $(LDFLAGS.readline)
 
-all: sqlite3$(T.exe)
+sqlite3$(T.exe)-1:
+sqlite3$(T.exe)-0: sqlite3$(T.exe)
+all: sqlite3$(T.exe)-$(HAVE_WASI_SDK)
 
-install-shell: sqlite3$(T.exe) $(install-dir.bin)
+install-shell-0: sqlite3$(T.exe) $(install-dir.bin)
 	$(INSTALL.strip) sqlite3$(T.exe) "$(install-dir.bin)"
-install: install-shell
+install-shell-1:
+install: install-shell-$(HAVE_WASI_SDK)
 
 install-headers: $(TOP)/sqlite3.h $(install-dir.include)
 	$(INSTALL.noexec) $(TOP)/sqlite3.h $(TOP)/sqlite3ext.h "$(install-dir.include)"

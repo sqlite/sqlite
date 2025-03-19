@@ -25,7 +25,7 @@ sqlite-configure canonical {
     # -------------^^^^^^^ intentionally using [get-env] instead of
     # [proj-get-env] here because [sqlite-setup-default-cflags] uses
     # [proj-get-env] and we want this to supercede that.
-    sqlite-munge-cflags
+    sqlite-munge-cflags; # straighten out -DSQLITE_ENABLE/OMIT flags
   }
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
@@ -45,6 +45,11 @@ sqlite-configure canonical {
     [join [opt-val amalgamation-extra-src ""] " "]
 
   define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
+
+  if {[set fsan [join [opt-val asan-fsanitize] ","]] in {auto ""}} {
+    set fsan address,bounds-strict
+  }
+  define CFLAGS_ASAN_FSANITIZE [proj-check-fsanitize [split $fsan ", "]]
 
   sqlite-handle-tcl
   sqlite-handle-emsdk

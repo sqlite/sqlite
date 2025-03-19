@@ -61,6 +61,7 @@ static int subst_puts(
   }
   sqlite3_fputs(zOut, pOut);
   if( addNewLine ) sqlite3_fputs("\n", pOut);
+  fflush(pOut);
   return TCL_OK;
 }
 #endif /* defined(_WIN32) */

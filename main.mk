@@ -1107,7 +1107,7 @@ sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) -o sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
-		$(B.tclsh)
+		$(B.tclsh) $(EXTRA_SRC)
 	$(B.tclsh) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -2168,8 +2168,11 @@ fuzzcheck$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 fuzzy: fuzzcheck$(T.exe)
 xbin: fuzzcheck$(T.exe)
 
+# -fsanitize=... flags for fuzzcheck-asan.
+CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address
+
 fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-	$(T.link) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
+	$(T.link) -o $@ $(CFLAGS.fuzzcheck-asan.fsanitize) $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
 		sqlite3.c $(LDFLAGS.libsqlite3)
 fuzzy: fuzzcheck-asan$(T.exe)
 xbin: fuzzcheck-asan$(T.exe)
@@ -2189,11 +2192,110 @@ xbin: fuzzcheck-ubsan$(T.exe)
 #
 #     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
 #
-run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
+# The original rules for this target were like this:
+#
+# run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
+#	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
+#	./fuzzcheck$(T.exe) --spinner $(FUZZDB)
+#	./fuzzcheck-asan$(T.exe) --spinner $(FUZZDB)
+#	./fuzzcheck-ubsan$(T.exe) --spinner $(FUZZDB)
+#
+# What follows is a decomposition of these rules in a way that allows make
+# to run things in parallel when using the -jN option.
+#
+FUZZDB-check:
 	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
-	./fuzzcheck$(T.exe) --spinner $(FUZZDB)
-	./fuzzcheck-asan$(T.exe) --spinner $(FUZZDB)
-	./fuzzcheck-ubsan$(T.exe) --spinner $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n0
+run-fuzzcheck-n0: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n1
+run-fuzzcheck-n1: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n2
+run-fuzzcheck-n2: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n3
+run-fuzzcheck-n3: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n4
+run-fuzzcheck-n4: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n5
+run-fuzzcheck-n5: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n6
+run-fuzzcheck-n6: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n7
+run-fuzzcheck-n7: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n8
+run-fuzzcheck-n8: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-n9
+run-fuzzcheck-n9: FUZZDB-check fuzzcheck$(T.exe)
+	./fuzzcheck$(T.exe) --slice 9 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a0
+run-fuzzcheck-a0: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a1
+run-fuzzcheck-a1: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a2
+run-fuzzcheck-a2: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a3
+run-fuzzcheck-a3: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a4
+run-fuzzcheck-a4: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a5
+run-fuzzcheck-a5: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a6
+run-fuzzcheck-a6: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a7
+run-fuzzcheck-a7: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a8
+run-fuzzcheck-a8: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-a9
+run-fuzzcheck-a9: FUZZDB-check fuzzcheck-asan$(T.exe)
+	./fuzzcheck-asan$(T.exe) --slice 9 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u0
+run-fuzzcheck-u0: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 0 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u1
+run-fuzzcheck-u1: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 1 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u2
+run-fuzzcheck-u2: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 2 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u3
+run-fuzzcheck-u3: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 3 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u4
+run-fuzzcheck-u4: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 4 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u5
+run-fuzzcheck-u5: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 5 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u6
+run-fuzzcheck-u6: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 6 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u7
+run-fuzzcheck-u7: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 7 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u8
+run-fuzzcheck-u8: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 8 10 $(FUZZDB)
+run-fuzzcheck: run-fuzzcheck-u9
+run-fuzzcheck-u9: FUZZDB-check fuzzcheck-ubsan$(T.exe)
+	./fuzzcheck-ubsan$(T.exe) --slice 9 10 $(FUZZDB)
+
 
 ossshell$(T.exe):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(T.link) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
