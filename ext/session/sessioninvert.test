@@ -144,6 +144,7 @@ do_test 3.0 {
   }]
 
   list [catch { sqlite3changeset_apply_v2 -invert db2 $P {} } msg] $msg
+  db2 close
 } {1 SQLITE_CORRUPT}
 
 do_test 3.1 {
