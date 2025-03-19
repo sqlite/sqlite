@@ -1,5 +1,5 @@
-C Add\ssome\sexplicit\sdb\sclose\scalls\sto\swork\saround\sa\sprocess-reaping\stiming\sproblem\son\scygwin\sbuilds.
-D 2025-03-19T14:52:39.421
+C Correct\spart\sof\s[04075517]\swhich\schanged\sthe\simplicit\sreturn\svalue\sof\sa\stest\sfunction.
+D 2025-03-19T14:57:32.611
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -605,7 +605,7 @@ F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576dc79ed344c46fbf41c
 F ext/session/sessionfault3.test ce0b5d182133935c224d72507dbf1c5be1a1febf7e85d0b0fbd6d2f724b32b96
-F ext/session/sessioninvert.test 526474af44eff2e10294917156157351c1ef8d0b0e11a471c3455ac307a39f33 x
+F ext/session/sessioninvert.test 61e686ddfede3a73235e95eca9955d747bdaf8f817ca8687c15c524fc8257701 x
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
 F ext/session/sessionnoact.test 4c7ae5c7d351cb5323bca62b6b095592ad24bd90a6713c178b62ab0063d23e19
 F ext/session/sessionnoop.test a9366a36a95ef85f8a3687856ebef46983df399541174cb1ede2ee53b8011bc7
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa192203aa1aa188866fe00a5d40dc7b7c72b4f38b06da8708ed0a6c8b8638a6
-R edf7734e5412e3ba5b84bd2ff897b04b
+P 7126a51ed8a1b90b7f4cf3f1c13f7a1d560ff7a3ae73897ce8d9194df40356ed
+R e63576a4439e1023f4363a8cd98ac65c
 U stephan
-Z 6f02f8b1b56e149fdce26078a0f8b42a
+Z ec876770a21d7686f86f9c0d8c202700
 # Remove this line to create a well-formed Fossil manifest.
