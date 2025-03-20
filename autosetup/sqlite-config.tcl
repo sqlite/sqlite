@@ -928,6 +928,11 @@ proc sqlite-handle-emsdk {} {
 ########################################################################
 # Internal helper for [sqlite-check-line-editing]. Returns a list of
 # potential locations under which readline.h might be found.
+#
+# On some environments this function may perform extra work to help
+# sqlite-check-line-editing figure out how to find libreadline and
+# friends. It will communicate those results via means other than the
+# result value, e.g. by modifying configure --flags.
 proc sqlite-get-readline-dir-list {} {
   # Historical note: the dirs list, except for the inclusion of
   # $prefix and some platform-specific dirs, originates from the
@@ -943,6 +948,17 @@ proc sqlite-get-readline-dir-list {} {
     }
     *-mingw64 {
       lappend dirs /mingw64 /mingw
+    }
+    *-haiku {
+      lappend dirs /boot/system/develop/headers
+      if {[opt-val with-readline-ldflags] in {auto ""}} {
+        # If the user did not supply their own --with-readline-ldflags
+        # value, hijack that flag to inject options which are known to
+        # work on a default Haiku installation.
+        if {"" ne [glob -nocomplain /boot/system/lib/libreadline*]} {
+          proj-opt-set with-readline-ldflags {-L/boot/system/lib -lreadline}
+        }
+      }
     }
   }
   lappend dirs /usr /usr/local /usr/local/readline /usr/contrib
@@ -1091,7 +1107,9 @@ proc sqlite-check-line-editing {} {
       proj-warn "Skipping check for readline.h because we're cross-compiling."
     } else {
       set dirs [sqlite-get-readline-dir-list]
-      set subdirs "include/$editLibName"
+      set subdirs [list \
+                     include/$editLibName \
+                     readline]
       if {"editline" eq $editLibName} {
         lappend subdirs include/readline
         # ^^^ editline, on some systems, does not have its own header,
@@ -1099,7 +1117,8 @@ proc sqlite-check-line-editing {} {
       }
       lappend subdirs include
       set rlInc [proj-search-for-header-dir readline.h \
-                 -dirs $dirs -subdirs $subdirs]
+                   -dirs $dirs -subdirs $subdirs]
+      #msg-debug "rlInc=$rlInc"
       if {"" ne $rlInc} {
         if {[string match */readline $rlInc]} {
           set rlInc [file dirname $rlInc]; # CLI shell: #include <readline/readline.h>
@@ -1124,6 +1143,7 @@ proc sqlite-check-line-editing {} {
   set rlLib ""
   if {"" ne $rlInc} {
     set rlLib [opt-val with-readline-ldflags]
+    #msg-debug "rlLib=$rlLib"
     if {$rlLib eq "auto" || $rlLib eq ""} {
       set rlLib ""
       set libTerm ""
