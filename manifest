@@ -1,5 +1,5 @@
-C Avoid\srunning\stest\scases\sinvolving\sANSI\scontrol\scharacters\sor\sUnicode\son\sWindows\sin\sa\sslave\sinterpreter,\sas\sthat\scombination\sdoes\snot\swork.
-D 2025-03-19T11:53:46.152
+C Fix\sa\sproblem\sin\sthe\ssqlite_dbpage()\stable-valued\sfunction\swhen\sit\sis\ntrying\sto\struncate\sa\sfile\sin\slocking-mode=EXCLUSIVE\sand\sthe\sfile\swas\nobtained\svia\ssqlite3_deserialize().\s\sProblem\sfound\sby\sdbsqlfuzz.
+D 2025-03-20T11:47:39.061
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -731,7 +731,7 @@ F src/build.c 3fe9b9d0f411cc2139a2d5ffa1c9b555417f89332f4dbf7f8e311c2e69e40c81
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
-F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
+F src/dbpage.c fcb1aafe00872a8aff9a7aa0ef7ff1b01e5817ec7bbd521f8f3e1e674ac8d609
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 61c3baab38f1b50eb4696e1f37c8f7ae1d1ecbfc1a35d446cfd1886624784131
@@ -1288,7 +1288,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db c6f9cb7d2b808fb10894afe53ef00f51e73e43baa7aabdba7e9af4713fc5b186
+F test/fuzzdata8.db 8f34ae00d8d5d4747dd80983cf46161065e4f78324dcff3c893506ff8db3a4a6
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2215,9 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77db4d85e70fbf358ae2321c2601966666bdb4d971d7c113ce30a3e541458ee8 f6745a7355c62ee64c08e23b795f437dd74add903b55e1255c1d03f9a811170d
-R a46056f95f3aa69f0dfc1aefc7391930
-T +closed f6745a7355c62ee64c08e23b795f437dd74add903b55e1255c1d03f9a811170d Closed\sby\sintegrate-merge.
-U stephan
-Z b755d7eda21c9f2918bebcee085f28b7
+P c7fd71c77f1716c9c85d0f41a07ebd7c96f2e9d5e4c1392fefa1fb53f3cbb746
+R 4634b7df48b729bfd4bde6753f06dc09
+U drh
+Z 6107a05db82cfd1bf03b9f66e2d05b45
 # Remove this line to create a well-formed Fossil manifest.
