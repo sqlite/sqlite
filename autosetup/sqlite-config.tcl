@@ -486,7 +486,7 @@ proc msg-debug {msg} {
 # the debug message. It is not legal to call this from the global
 # scope.
 proc proc-debug {msg} {
-  msg-debug "\[[proj-current-proc-name 2]\]: $msg"
+  msg-debug "\[[proj-current-proc-name 1]\]: $msg"
 }
 
 ########################################################################

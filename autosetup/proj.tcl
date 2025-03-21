@@ -1369,8 +1369,9 @@ proc proj-get-env {var {dflt ""}} {
 ########################################################################
 # @proj-current-proc-name
 #
-# Returns the name of the _calling_ proc from $lvl levels up the call
-# stack. Derived from: https://stackoverflow.com/questions/10012851
-proc proj-current-proc-name {{lvl 1}} {
-  uplevel $lvl {lindex [info level 0] 0}
+# Returns the name of the _calling_ proc from ($lvl + 1) levels up the
+# call stack (where the caller's level will be 1 below _this_
+# call). It is not legal to call this from the top scope.
+proc proj-current-proc-name {{lvl 0}} {
+  uplevel [expr $lvl + 1] {lindex [info level 0] 0}
 }
