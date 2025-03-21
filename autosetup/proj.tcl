@@ -1373,5 +1373,5 @@ proc proj-get-env {var {dflt ""}} {
 # call stack (where the caller's level will be 1 below _this_
 # call). It is not legal to call this from the top scope.
 proc proj-current-proc-name {{lvl 0}} {
-  uplevel [expr $lvl + 1] {lindex [info level 0] 0}
+  uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
 }
