@@ -1365,3 +1365,12 @@ proc proj-env-file {flag {dflt ""}} {
 proc proj-get-env {var {dflt ""}} {
   return [get-env $var [proj-env-file $var $dflt]]
 }
+
+########################################################################
+# @proj-current-proc-name
+#
+# Returns the name of the _calling_ proc from $lvl levels up the call
+# stack. Derived from: https://stackoverflow.com/questions/10012851
+proc proj-current-proc-name {{lvl 1}} {
+  uplevel $lvl {lindex [info level 0] 0}
+}

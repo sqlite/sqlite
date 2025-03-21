@@ -481,6 +481,13 @@ proc msg-debug {msg} {
     puts stderr [proj-bold "** DEBUG: $msg"]
   }
 }
+########################################################################
+# A [msg-debug] proxy which prepends the name of the current proc to
+# the debug message. It is not legal to call this from the global
+# scope.
+proc proc-debug {msg} {
+  msg-debug "\[[proj-current-proc-name 2]\]: $msg"
+}
 
 ########################################################################
 # Sets up the SQLITE_AUTORECONFIG define.
@@ -797,7 +804,7 @@ proc sqlite-handle-soname {} {
       }
     }
   }
-  msg-debug "soname=$soname"
+  proc-debug "soname=$soname"
   if {[proj-check-soname $soname]} {
     define LDFLAGS_LIBSQLITE3_SONAME [get-define LDFLAGS_SONAME_PREFIX]$soname
     msg-result "Setting SONAME using: [get-define LDFLAGS_LIBSQLITE3_SONAME]"
@@ -966,7 +973,7 @@ proc sqlite-get-readline-dir-list {} {
   foreach d $dirs {
     if {[file isdir $d]} {lappend rv $d}
   }
-  #msg-debug "sqlite-get-readline-dir-list dirs=$rv"
+  #proc-debug "dirs=$rv"
   return $rv
 }
 
@@ -1118,7 +1125,7 @@ proc sqlite-check-line-editing {} {
       lappend subdirs include
       set rlInc [proj-search-for-header-dir readline.h \
                    -dirs $dirs -subdirs $subdirs]
-      #msg-debug "rlInc=$rlInc"
+      #proc-debug "rlInc=$rlInc"
       if {"" ne $rlInc} {
         if {[string match */readline $rlInc]} {
           set rlInc [file dirname $rlInc]; # CLI shell: #include <readline/readline.h>
@@ -1143,7 +1150,7 @@ proc sqlite-check-line-editing {} {
   set rlLib ""
   if {"" ne $rlInc} {
     set rlLib [opt-val with-readline-ldflags]
-    #msg-debug "rlLib=$rlLib"
+    #proc-debug "rlLib=$rlLib"
     if {$rlLib eq "auto" || $rlLib eq ""} {
       set rlLib ""
       set libTerm ""
@@ -1780,14 +1787,14 @@ proc sqlite-check-tcl {} {
   if {"prefix" eq $with_tcl} {
     set with_tcl [get-define prefix]
   }
-  msg-debug "sqlite-check-tcl: use_tcl ${use_tcl}"
-  msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
-  msg-debug "sqlite-check-tcl: with_tcl=$with_tcl"
+  proc-debug "use_tcl ${use_tcl}"
+  proc-debug "with_tclsh=${with_tclsh}"
+  proc-debug "with_tcl=$with_tcl"
   if {"" eq $with_tclsh && "" eq $with_tcl} {
     # If neither --with-tclsh nor --with-tcl are provided, try to find
     # a workable tclsh.
     set with_tclsh [proj-first-bin-of tclsh9.0 tclsh8.6 tclsh]
-    msg-debug "sqlite-check-tcl: with_tclsh=${with_tclsh}"
+    proc-debug "with_tclsh=${with_tclsh}"
   }
 
   set doConfigLookup 1 ; # set to 0 to test the tclConfig.sh-not-found cases
