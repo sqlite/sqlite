@@ -1,5 +1,5 @@
-C Fix\sa\smulti-arg\sexpr\scall\sin\sproj-current-proc-name\s(must\sbe\ssingle-arg\sfor\sportability).
-D 2025-03-21T21:13:44.763
+C Slightly\ssimplify\sproj-current-proc-name.
+D 2025-03-21T22:14:30.044
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -49,7 +49,7 @@ F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1d
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 60e46519d8fa5da2c8b0226195923543e91b20657c27d33227af2d843f1b3a2a
+F autosetup/proj.tcl 8bb4158e71b5d60070b86af3f7b1edf960c60b77f102ea5d688d89c7d57d8a32
 F autosetup/sqlite-config.tcl ff39112eddc68e9505562c6aefc0b505190fe1fe93b2273e0b50ce5c7bbf6e64
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d0a8a6c38981552748ff5fc2eeba86590e0f116abac260a7fc9318de0a0dbda
-R 8c92fc288e7af142732c8fe3f14cf5ee
+P 914768f3f5d63a891e1cd578afc676960376fc28ee0fa452fcd32cec0ea5cdaf
+R 5ebc42a335e940672eaf8de2b02c74fc
 U stephan
-Z 96ac08c8317a7dd73f053a8770e6d9bf
+Z 11db84ad0c2b37daef67514310a5b653
 # Remove this line to create a well-formed Fossil manifest.
