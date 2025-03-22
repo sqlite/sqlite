@@ -1,5 +1,5 @@
-C Add\sa\smechanism\sto\sthe\sconfigure\sscript\sto\sallow\scertain\sclient-specific\sbuilds\sto\sextend\sor\soverride\sthe\sconfigure\soptions\swithout\shaving\sto\sedit\ssqlite-config.tcl,\sthe\sgoal\sbeing\sto\sreduce\smerge\sconflicts\sin\sthose\sbuilds\swhen\supdating\ssqlite-config.tcl\sfrom\sthe\scanonical\scopy.
-D 2025-03-22T16:14:34.864
+C Teach\smkautoconfamal.sh\sto\savoid\scopying\sautosetup/local.tcl\sand\sautosetup/*.auto\sexcept\sfor\sautosetup/lib/CURRENT-BRANCH-NAME.auto\s(if\sany),\sthe\sintent\sbeing\sto\suse\slib/CURRENT-BRANCH-NAME.auto\sfor\sbranch-specific\sconfiguration\scustomizations.
+D 2025-03-22T17:00:32.967
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2151,7 +2151,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
-F tool/mkautoconfamal.sh c5e65fa1c922f2e3b3e4f6cd0331ec7d84bdef085f32cb1c46673cdf95ec8090
+F tool/mkautoconfamal.sh 6b040e008a318c2b92b0b8cf9b7879f2843433aea6834e89897a0f21ebc46e5b
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkctimec.tcl f76dbfc74cefad8d126384ba3263677939f077bd184fcdf8c592a1daf64f50c3 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f619e40fb05d3e09dca2ad9d9bbf38c66b4b93dd3d4e7c2071db28e671ee6a9c
-R f67c95dd2f17cb92eaf9fc59dd22ee04
+P bafab4ee5545c6cf6eafc5e352a7f25dfcbc7e58d4cc9064d05658c39de2af0d
+R 6b1a45c990d67ff1ce7361064641b32c
 U stephan
-Z 9a64dbd75b7ea845562f9902f8b1107a
+Z 2e3346333053a23fc85b7950d2cfe6bb
 # Remove this line to create a well-formed Fossil manifest.
