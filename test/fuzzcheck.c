@@ -392,6 +392,21 @@ static void renderDbSqlForCLI(
 }
 
 /*
+** Find the tail (the last component) of a pathname.
+*/
+static const char *pathTail(const char *zPath){
+  const char *zTail = zPath;
+  while( zPath[0] ){
+    if( zPath[0]=='/' && zPath[1]!=0 ) zTail = &zPath[1];
+#ifndef __unix__
+    if( zPath[0]=='\\' && zPath[1]!=0 ) zTail = &zPath[1];
+#endif
+    zPath++;
+  }
+  return zTail;
+}
+
+/*
 ** Read the complete content of a file into memory.  Add a 0x00 terminator
 ** and return a pointer to the result.
 **
@@ -1847,6 +1862,7 @@ static void showHelp(void){
 "Read databases and SQL scripts from SOURCE-DB and execute each script against\n"
 "each database, checking for crashes and memory leaks.\n"
 "Options:\n"
+"  --brief              Output only a summary of results at the end\n"
 "  --cell-size-check    Set the PRAGMA cell_size_check=ON\n"
 "  --dbid M..N          Use only the databases where dbid between M and N\n"
 "                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
@@ -1873,6 +1889,7 @@ static void showHelp(void){
 "  --result-trace       Show the results of each SQL command\n"
 "  --script             Output CLI script instead of running tests\n"
 "  --skip N             Skip the first N test cases\n"
+"  --slice M N          Run only the M-th out of each group of N tests\n"
 "  --spinner            Use a spinner to show progress\n"
 "  --sqlid M..N         Use only SQL where sqlid between M..N\n"
 "                       \"M..\" for M and afterwards. Just \"M\" for M only\n"
@@ -1887,6 +1904,7 @@ static void showHelp(void){
 int main(int argc, char **argv){
   sqlite3_int64 iBegin;        /* Start time of this program */
   int quietFlag = 0;           /* True if --quiet or -q */
+  int briefFlag = 0;           /* Output summary report at the end */
   int verboseFlag = 0;         /* True if --verbose or -v */
   char *zInsSql = 0;           /* SQL statement for --load-db or --load-sql */
   int iFirstInsArg = 0;        /* First argv[] for --load-db or --load-sql */
@@ -1934,6 +1952,8 @@ int main(int argc, char **argv){
   int nV;                      /* How much to increase verbosity with -vvvv */
   sqlite3_int64 tmStart;       /* Start of each test */
   int iEstTime = 0;            /* LPF for the time-to-go */
+  int iSliceSz = 0;            /* Divide the test space into this many pieces */
+  int iSliceIdx = 0;           /* Only run the piece with this index */
 
   sqlite3_config(SQLITE_CONFIG_URI,1);
   registerOomSimulator();
@@ -1954,6 +1974,12 @@ int main(int argc, char **argv){
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
+      if( strcmp(z,"brief")==0 ){
+        briefFlag = 1;
+        quietFlag = 1;
+        verboseFlag = 1;
+        eVerbosity = 0;
+      }else
       if( strcmp(z,"cell-size-check")==0 ){
         cellSzCkFlag = 1;
       }else
@@ -2044,6 +2070,7 @@ int main(int argc, char **argv){
         g.uRandom = atoi(argv[++i]);
       }else
       if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
+        briefFlag = 0;
         quietFlag = 1;
         verboseFlag = 0;
         eVerbosity = 0;
@@ -2062,11 +2089,18 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         nSkip = atoi(argv[++i]);
       }else
+      if( strcmp(z,"slice")==0 ){
+        if( i>=argc-2 ) fatalError("missing arguments on %s", argv[i]);
+        iSliceIdx = integerValue(argv[++i]);
+        iSliceSz = integerValue(argv[++i]);
+        /* --slice implices --brief */
+        briefFlag = 1;
+        quietFlag = 1;
+        verboseFlag = 1;
+        eVerbosity = 0;
+      }else
       if( strcmp(z,"spinner")==0 ){
         bSpinner = 1;
-      }else
-      if( strcmp(z,"timer")==0 ){
-        bTimer = 1;
       }else
       if( strcmp(z,"sqlid")==0 ){
         const char *zDotDot;
@@ -2093,10 +2127,14 @@ int main(int argc, char **argv){
         fatalError("timeout is not available on non-unix systems");
 #endif
       }else
+      if( strcmp(z,"timer")==0 ){
+        bTimer = 1;
+      }else
       if( strcmp(z,"vdbe-debug")==0 ){
         bVdbeDebug = 1;
       }else
       if( strcmp(z,"verbose")==0 ){
+        briefFlag = 0;
         quietFlag = 0;
         verboseFlag++;
         eVerbosity++;
@@ -2162,6 +2200,12 @@ int main(int argc, char **argv){
     if( zInsSql ){
       fatalError("cannot import into more than one database");
     }
+  }
+  if( iSliceSz<=iSliceIdx 
+   || iSliceSz<=0
+   || iSliceIdx<0
+  ){
+    iSliceSz = iSliceIdx = 0;
   }
 
   /* Process each source database separately */
@@ -2452,6 +2496,10 @@ int main(int argc, char **argv){
     for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
       tmStart = timeOfDay();
       if( isDbSql(pSql->a, pSql->sz) ){
+        if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
+          nTest++;
+          continue;
+        }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
         if( bScript ){
           /* No progress output */
@@ -2510,6 +2558,10 @@ int main(int argc, char **argv){
       for(pDb=g.pFirstDb; pDb; pDb=pDb->pNext){
         int openFlags;
         const char *zVfs = "inmem";
+        if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
+          nTest++;
+          continue;
+        }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
                          pSql->id, pDb->id);
         if( bScript ){
@@ -2616,7 +2668,20 @@ int main(int argc, char **argv){
         }
       }
     }
-    if( bScript ){
+    if( briefFlag ){
+      sqlite3_int64 iElapse = timeOfDay() - iBegin;
+      if( iSliceSz>0 ){
+        printf("%s %s: slice %d/%d of %d tests, %d.%03d seconds\n",
+               pathTail(argv[0]), pathTail(g.zDbFile),
+               iSliceIdx, iSliceSz, nTest,
+               (int)(iElapse/1000), (int)(iElapse%1000));
+      }else{
+        printf("%s %s: 0 errors, %d tests, %d.%03d seconds\n",
+               pathTail(argv[0]), pathTail(g.zDbFile), nTest,
+               (int)(iElapse/1000), (int)(iElapse%1000));
+      }
+      iBegin = timeOfDay();
+    }else if( bScript ){
       /* No progress output */
     }else if( bSpinner ){
       int nTotal = g.nDb*g.nSql;
@@ -2634,6 +2699,7 @@ int main(int argc, char **argv){
  
   } /* End loop over all source databases */
 
+           
   if( !quietFlag && !bScript ){
     sqlite3_int64 iElapse = timeOfDay() - iBegin;
     if( g.nInvariant ){

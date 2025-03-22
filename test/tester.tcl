@@ -810,6 +810,15 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+# Like do_test except the test is not run in a slave interpreter
+# on Windows because of issues with ANSI and UTF8 I/O on Win11.
+#
+proc do_test_with_ansi_output {name cmd expected} {
+  if {![info exists ::SLAVE] || $::tcl_platform(platform)!="windows"} {
+    uplevel 1 [list do_test $name $cmd $expected]
+  }
+}
+
 proc dumpbytes {s} {
   set r ""
   for {set i 0} {$i < [string length $s]} {incr i} {
