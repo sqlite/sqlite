@@ -412,6 +412,7 @@ proc sqlite-custom-flags {} {
   # then call:
   options-defaults {
     flag-name new-default-value
+    ...
   }
   # ^^^ That will replace the default value but will not update
   # the --help text, which may lead to some confusion:
@@ -419,7 +420,7 @@ proc sqlite-custom-flags {} {
 
   return {
    {*} {
-     new-flag-name {Help text}
+     new-flag-name => {Help text}
      ...
    }
   }; #see below
