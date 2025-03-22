@@ -1,5 +1,5 @@
-C In\sthe\spost-configure\svalidation,\sensure\sthan\sno\smore\sthan\sone\sautosetup/lib/*.auto\sfile\sis\sfound,\sfor\sreasons\sexplained\sin\sthe\svalidation's\serror\smessage.
-D 2025-03-22T18:41:48.016
+C Replace\suse\sof\sautosetup/lib/*.auto\sfor\ssqlite-custom-...\sfeatures\sto\savoid\sthe\spossibility\sof\smultiple\sfiles\sbeing\sloaded\s(in\san\sunpredictable\sorder)\sfor\sthat\spurpose.\sInstead\slook\sfor\sautosetup/sqlite-custom.tcl\sand\ssource\sit\sif\sit\sexists.\sThe\sintent\sis\sthat\ssqlite-custom.tcl\sonly\sever\sbe\sadded\sin\svendor-specific\sbranches\sand\snever\sin\sthe\strunk.
+D 2025-03-22T19:07:54.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -37,7 +37,7 @@ F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0
 F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md 824d12ee3c094419084f31dc5408afc4d950b041497f9f21b357fd2e1070c8c9
+F autosetup/README.md f324bb9f9bf1cc787122034df53fbfdfed28ee2657e6652b763d992ab0d04829
 F autosetup/autosetup 74a9782b68d07934510190fbd03fc6ad92e63f0ea3b5cbffa5f0bd271ad60f01 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 49faf960df88a374686234105def663dbfc297ab79c87686df0a0b973dd77018
-F autosetup/sqlite-config.tcl 7349901814106dee86ee2b9daf68afd26c13f7f92be69ffda9f6fdc7aedc442e
+F autosetup/sqlite-config.tcl a2a786ccdccead789c8e4cc82408257bf7857dcbdf45accab4a1538d641d3070
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2151,7 +2151,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
-F tool/mkautoconfamal.sh 6b040e008a318c2b92b0b8cf9b7879f2843433aea6834e89897a0f21ebc46e5b
+F tool/mkautoconfamal.sh 401f6378a99bb045b63abe8c2dad6bd6fd5a1c2b9c8cded9d7ac5848ea578994
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkctimec.tcl f76dbfc74cefad8d126384ba3263677939f077bd184fcdf8c592a1daf64f50c3 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55029e41e03d9b61b8a53f86d7f69afe71459846f3a1a1723f6934e0d37ca77f
-R f7433d2d6b9b7224d419751c11759d8c
+P 50bbd69a684988a1df4c9c7616b76ae62bc4eb755cde18616de58aa0880fd4a7
+R c8205cd2fdc2d6cb1bffef77ec445211
 U stephan
-Z ce4dace35b5c51a050a3591235a1b475
+Z 9feaa8e098307dad1729b5f1c60b7427
 # Remove this line to create a well-formed Fossil manifest.

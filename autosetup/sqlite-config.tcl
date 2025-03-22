@@ -361,10 +361,18 @@ proc sqlite-configure {buildMode configScript} {
   # ^^^ lappend of [sqlite-custom-flags] introduces weirdness if
   # we delay [proj-strip-hash-comments] until after that.
 
+
+  ########################################################################
+  # sqlite-custom.tcl is intended only for vendor-branch-specific
+  # customization.  See autosetup/README.md#branch-customization for
+  # details.
+  if {[file exists $::autosetup(libdir)/sqlite-custom.tcl]} {
+    uplevel 1 {source $::autosetup(libdir)/sqlite-custom.tcl}
+  }
+
   if {[llength [info proc sqlite-custom-flags]] > 0} {
-    # sqlite-custom-flags is assumed to be imported via a
-    # client-specific import: autosetup/local.tcl, autosetup/*.auto,
-    # or autosetup/*/*.auto.
+    # sqlite-custom-flags is assumed to be imported via
+    # autosetup/sqlite-custom.tcl.
     set scf [sqlite-custom-flags]
     if {"" ne $scf} {
       lappend allFlags sqlite-custom-flags $scf
@@ -1595,11 +1603,10 @@ proc sqlite-handle-env-quirks {} {
   sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
-  if {[llength [info proc sqlite-handle-custom-flags]] > 0} {
-    # sqlite-handle-custom-flags is assumed to be imported via a
-    # client-specific import: autosetup/local.tcl, autosetup/*.auto,
-    # or autosetup/*/*.auto.
-    sqlite-handle-custom-flags
+  if {[llength [info proc sqlite-custom-handle-flags]] > 0} {
+    # sqlite-custom-handle-flags is assumed to be imported via a
+    # client-specific import: autosetup/sqlite-custom.tcl.
+    sqlite-custom-handle-flags
   }
 }
 
@@ -1634,12 +1641,7 @@ proc sqlite-process-dot-in-files {} {
 # 1) Ensure that no unresolved @VAR@ placeholders are in files which
 #    use those.
 #
-# 2) Ensure that no more than one autosetup/lib/*.auto file is found.
-#    Those are used for vendor-branch-specific customization of the
-#    configure process (see autosetup/README.md#branch-customization)
-#    and having more than one can lead to subtle errors.
-#
-# 3) TBD
+# 2) TBD
 proc sqlite-post-config-validation {} {
   # Check #1: ensure that files which get filtered for @VAR@ do not
   # contain any unresolved @VAR@ refs. That may indicate an
@@ -1656,32 +1658,6 @@ proc sqlite-post-config-validation {} {
       }
       incr lnno
     }
-  }
-
-  # Check #2: ensure that no more than one autosetup/lib/*.auto file
-  # is found.
-  set libdir $::autosetup(libdir)
-  set li [glob -nocomplain $libdir/lib/*.auto]
-  if {[llength $li] > 1} {
-    puts stderr "Configuration validation error:"
-    proj-indented-notice -error [subst {
-      Multiple $libdir/lib/*.auto files found:
-
-      $li
-
-      This probably means one of the following:
-
-      1) Multiple vendor branches have been merged together, each with
-      their own configure-script customizations. They will be loaded
-      and applied in an unpredictable order, so the tree should have,
-      at most one lib/*.auto file, conventionally named after the
-      current vendor branch.
-
-      2) It can also mean that files have been left lying around from
-      another branch after doing "fossil update", in which case they
-      can all be deleted, then do "fossil update" again to replace
-      only the intended one (if any).
-    }]
   }
 }
 

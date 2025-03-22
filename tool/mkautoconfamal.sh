@@ -24,12 +24,6 @@ TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
 HASH=`cut -c1-10 $TOP/manifest.uuid`
 DATETIME=`grep '^D' $TOP/manifest | tr -c -d '[0-9]' | cut -c1-12`
-BRANCH=`fossil whatis $HASH | awk '/tags:/{print $2}'`
-
-if [ x = "x${BRANCH}" ]; then
-    echo "Cannot determine the current branch" 1>&2
-    exit 1
-fi
 
 # Inject the current version into the TEA autoconf file.
 #
@@ -67,15 +61,6 @@ fi
 rm -rf $TMPSPACE
 cp -R $TOP/autoconf       $TMPSPACE
 cp -R $TOP/autosetup      $TMPSPACE
-# Do not include build-specific customizations in the autoconf build:
-rm -f $TMPSPACE/autosetup/local.tcl $TMPSPACE/autosetup/*.auto $TMPSPACE/autosetup/*/*.auto
-# ... unless we find one which matches the current branch name:
-bac=$TOP/autosetup/lib/${BRANCH}.auto
-if [ -f $bac ]; then
-    echo "Copying branch-specific autosetup configuration: $bac"
-    mkdir -p $TMPSPACE/autosetup/lib
-    cp $bac $TMPSPACE/autosetup/lib
-fi
 cp -p $TOP/configure      $TMPSPACE
 cp sqlite3.c              $TMPSPACE
 cp sqlite3.h              $TMPSPACE

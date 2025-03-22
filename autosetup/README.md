@@ -397,9 +397,7 @@ which frequently leads to merge conflicts, the following approach
 is recommended:
 
 In the vendor-specific branch, create a file named
-`autosetup/lib/THE-BRANCH-NAME.auto`. Autosetup will automatically
-load any files named `autosetup/*.auto` or `autosetup/*/*.auto` when
-it starts up.
+`autosetup/sqlite-custom.tcl`.
 
 That file should contain the following content...
 
@@ -434,25 +432,14 @@ Next, define:
 
 >
 ```
-proc sqlite-handle-custom-flags {} {
+proc sqlite-custom-handle-flags {} {
   ... do any custom flag handling here ...
 }
 ```
 
-That function will be called relatively late in the configure process,
-before any filtered files are generated but after all other
-significant processing.
-
-It is important that no more than one `*.auto` or `local.tcl` file
-defines these functions. Autosetup will load these in an unspecified
-order, and the _last_ one which is loaded will overwrite any procs
-defined in files loaded before it.
-
-When running [mkautoconfamal.sh](/file/tool/mkautoconfamal.sh)
-(typically via `make amalgamation-tarball` or `make snapshot-tarball`),
-all `autosetup/local.tcl` and `autosetup/[*/]*.auto` files will be
-elided from the tarball except for `autosetup/lib/X.auto`, where `X`
-is the name of the current checkout's branch.
+That function, if defined, will be called relatively late in the
+configure process, before any filtered files are generated but after
+all other significant processing.
 
 
 [Autosetup]: https://msteveb.github.io/autosetup/
