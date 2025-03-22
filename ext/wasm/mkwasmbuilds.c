@@ -45,6 +45,7 @@
 ** "sqlite3-wasmfs" build, only "esm" (ES6 Module) is legal.
 */
 #define JS_BUILD_MODES vanilla esm bundler-friendly node
+/* Separator to help eyeballs find the different sections */
 static const char * zBanner =
   "\n########################################################################\n";
 
@@ -140,8 +141,8 @@ static void mk_prologue(void){
 ** mk_lib_mode().
 **
 ** Maintenance reminder: do not combine flags within this enum,
-** e.g. LIBMODE_BUNDLER_FRIEND=0x02|LIBMODE_ESM, as that will lead to
-** breakage in some of the flag checks.
+** e.g. LIBMODE_BUNDLER_FRIENDLY=0x02|LIBMODE_ESM, as that will lead
+** to breakage in some of the flag checks.
 */
 enum LibModeFlags {
   /* Indicates an ESM module build. */
@@ -208,7 +209,7 @@ static void mk_pre_post(const char *zName  /* build name */,
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
-  /* Combine flags for use with emcc... */
+  /* Combined flags for use with emcc... */
   pf("pre-post-common.flags.%s-%s := "
      "$(pre-post-common.flags) "
      "--post-js=$(post-js.js.%s-%s) "

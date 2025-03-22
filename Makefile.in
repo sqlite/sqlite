@@ -136,7 +136,7 @@ HAVE_WASI_SDK = @HAVE_WASI_SDK@
 libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
 # -fsanitize flags for the fuzzcheck-asap app
-CFLAGS.fuzzcheck.fsanitize = @CFLAGS_FUZZCHECK_FSANITIZE@
+CFLAGS.fuzzcheck-asan.fsanitize = @CFLAGS_ASAN_FSANITIZE@
 
 T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
 
@@ -340,5 +340,4 @@ distclean: distclean-autosetup
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
-IS_CROSS_COMPILING = @IS_CROSS_COMPILING@
 include $(TOP)/main.mk
