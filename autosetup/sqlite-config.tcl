@@ -13,9 +13,11 @@ if {[string first " " $autosetup(builddir)] != -1} {
 }
 
 use proj
-# We want this version info to be emitted up front, but we have to
-# 'use system' for --prefix=... to work. Ergo, this bit is up here
-# instead of in [sqlite-configure].
+#
+# We want the package version info to be emitted early on, but doing
+# so requires a bit of juggling. We have to [use system] for
+# --prefix=... to work and to emit the Host/Build system info, but we
+# don't want those to interfere with --help output.
 define PACKAGE_VERSION [proj-file-content -trim $::autosetup(srcdir)/VERSION]
 if {"--help" ni $::argv} {
   msg-result "Configuring SQLite version [get-define PACKAGE_VERSION]"
@@ -28,14 +30,22 @@ if {"--help" ni $::argv} {
 }
 
 #
-# Object for communicating config-time state across various
+# Object for communicating certain config-time state across various
 # auto.def-related pieces.
-#
-array set sqliteConfig [proj-strip-hash-comments {
+array set sqliteConfig [subst [proj-strip-hash-comments {
+  #
+  # Gets set by [sqlite-configure] (the main configure script driver).
+  build-mode unknown
   #
   # Gets set to 1 when using jimsh for code generation. May affect
   # later decisions.
   use-jim-for-codegen  0
+  #
+  # Set to 1 when cross-compiling This value may be changed by certain
+  # build options, so it's important that config code which checks for
+  # cross-compilation uses this var instead of
+  # [proj-is-cross-compiling].
+  is-cross-compiling [proj-is-cross-compiling]
   #
   # Pass msg-debug=1 to configure to enable obnoxiously loud output
   # from [msg-debug].
@@ -49,15 +59,7 @@ array set sqliteConfig [proj-strip-hash-comments {
   # (dump-defines-txt) but also a JSON file named after this option's
   # value.
   dump-defines-json  ""
-}]
-
-#
-# Set to 1 when cross-compiling This value may be changed by certain
-# build options, so it's important that config code which checks for
-# cross-compilation uses this var instead of
-# [proj-is-cross-compiling].
-#
-set sqliteConfig(is-cross-compiling) [proj-is-cross-compiling]
+}]]
 
 ########################################################################
 # Processes all configure --flags for this build, run build-specific
@@ -69,13 +71,18 @@ set sqliteConfig(is-cross-compiling) [proj-is-cross-compiling]
 # $buildMode, with the caveat that _some_ build-specific code is
 # encapsulated in the configuration finalization step.
 #
-# The intent is that all build-mode-specific configuration goes inside
-# the $configScript argument to this function, and that an auto.def file
-# contains only two commands:
+# The intent is that all (or almost all) build-mode-specific
+# configuration goes inside the $configScript argument to this
+# function, and that an auto.def file contains only two commands:
 #
 #  use sqlite-config
 #  sqlite-configure BUILD_NAME { build-specific configure script }
+#
+# There are snippets of build-mode-specific decision-making in
+# [sqlite-configure-finalize]
 proc sqlite-configure {buildMode configScript} {
+  proj-assert {$::sqliteConfig(build-mode) eq "unknown"} \
+    "sqlite-configure must not be called more than once"
   set allBuildModes {canonical autoconf}
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
@@ -172,11 +179,6 @@ proc sqlite-configure {buildMode configScript} {
       {*} {
         threadsafe=1         => {Disable mutexing}
         with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
-        largefile=1
-          => {This legacy flag has no effect on the library but may influence
-              the contents of the generated sqlite_cfg.h}
-        # ^^^ It's not clear that LFS support actually does anything,
-        # as HAVE_LFS is not checked anywhere in the .c/.h/.in files.
         load-extension=1     => {Disable loading of external extensions}
         math=1               => {Disable math functions}
         json=1               => {Disable JSON functions}
@@ -190,6 +192,9 @@ proc sqlite-configure {buildMode configScript} {
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
         all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+        largefile=1
+          => {This legacy flag has no effect on the library but may influence
+              the generated sqlite_cfg.h by adding #define HAVE_LFS}
       }
     }
 
@@ -370,84 +375,16 @@ proc sqlite-configure {buildMode configScript} {
     dict incr xopts -level
     return {*}$xopts $msg
   }
-  sqlite-post-options-init
+  sqlite-configure-phase1 $buildMode
   uplevel 1 $configScript
   sqlite-configure-finalize
 }; # sqlite-configure
 
 ########################################################################
-# Performs late-stage config steps common to all supported
-# $::sqliteConfig(build-mode) values.
-proc sqlite-configure-finalize {} {
-  set buildMode $::sqliteConfig(build-mode)
-  set isCanonical [expr {$buildMode eq "canonical"}]
-  set isAutoconf [expr {$buildMode eq "autoconf"}]
-  proj-assert {$isCanonical || $isAutoconf} "Unknown build mode: $buildMode"
-
-  define HAVE_LFS 0
-  if {[opt-bool largefile]} {
-    #
-    # Insofar as we can determine HAVE_LFS has no effect on the
-    # library.  Perhaps it did back in the early 2000's. The
-    # --enable/disable-largefile flag is retained because it's
-    # harmless, but it doesn't do anything useful. It does have
-    # visible side-effects, though: the generated sqlite_cfg.h may (or
-    # may not) define HAVE_LFS.
-    #
-    cc-check-lfs
-  }
-
-  if {$isCanonical} {
-    if {![opt-bool static]} {
-      proj-indented-notice {
-        NOTICE: static lib build may be implicitly re-activated by
-        other components, e.g. some test apps.
-      }
-    }
-  } else {
-    proj-assert { $isAutoconf } "Invalid build mode"
-    proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
-      "Link library statically into the CLI shell?"
-    if {![opt-bool shared] && ![opt-bool static-shell]} {
-      proj-opt-set shared 1
-      proj-indented-notice {
-        NOTICE: ignoring --disable-shared because --disable-static-shell
-        was specified.
-      }
-    }
-  }
-  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
-  proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"
-
-  sqlite-handle-debug
-  sqlite-handle-rpath
-  sqlite-handle-soname
-  sqlite-handle-threadsafe
-  sqlite-handle-tempstore
-  sqlite-handle-line-editing
-  sqlite-handle-load-extension
-  sqlite-handle-math
-  sqlite-handle-icu
-  sqlite-handle-env-quirks
-  sqlite-handle-common-feature-flags
-  sqlite-finalize-feature-flags
-  ########################################################################
-  # When cross-compiling, we have to avoid using the -s flag to
-  # /usr/bin/install:
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
-  define IS_CROSS_COMPILING $::sqliteConfig(is-cross-compiling)
-  sqlite-process-dot-in-files
-  sqlite-post-config-validation
-  sqlite-dump-defines
-}; # sqlite-configure-finalize
-
-########################################################################
-# Runs some common initialization which must happen immediately after
-# autosetup's [options] function is called. This is also a convenient
-# place to put some generic pieces common to both the canonical
-# top-level build and the "autoconf" build, but it's not intended to
-# be a catch-all dumping ground for such.
-proc sqlite-post-options-init {} {
+# Runs "phase 1" of the configure process: after initial --flags
+# handling but before the build-specific parts are run. $buildMode
+# must be the mode which was passed to [sqlite-configure].
+proc sqlite-configure-phase1 {buildMode} {
   define PACKAGE_NAME sqlite
   define PACKAGE_URL {https://sqlite.org}
   define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
@@ -460,6 +397,8 @@ proc sqlite-post-options-init {} {
     with-readline-lib => with-readline-ldflags
     with-debug => debug
   }
+  set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
+  proc-debug "msg-debug is enabled"
   sqlite-autoreconfig
   proj-file-extensions
   if {".exe" eq [get-define TARGET_EXEEXT]} {
@@ -469,8 +408,49 @@ proc sqlite-post-options-init {} {
     define SQLITE_OS_UNIX 1
     define SQLITE_OS_WIN 0
   }
-  set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   sqlite-setup-default-cflags
+  sqlite-handle-debug
+  define HAVE_LFS 0
+  if {[opt-bool largefile]} {
+    #
+    # Insofar as we can determine HAVE_LFS has no effect on the
+    # library.  Perhaps it did back in the early 2000's. The
+    # --enable/disable-largefile flag is retained because it's
+    # harmless, but it doesn't do anything useful. It does have
+    # visible side-effects, though: the generated sqlite_cfg.h may (or
+    # may not) define HAVE_LFS.
+    cc-check-lfs
+  }
+}; # sqlite-configure-phase1
+
+########################################################################
+# Performs late-stage config steps common to all supported
+# $::sqliteConfig(build-mode) values.
+proc sqlite-configure-finalize {} {
+  sqlite-handle-rpath
+  sqlite-handle-soname
+  sqlite-handle-threadsafe
+  sqlite-handle-tempstore
+  sqlite-handle-load-extension
+  sqlite-handle-math
+  sqlite-handle-icu
+  sqlite-handle-line-editing
+
+  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
+  if {![proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"]} {
+    # This notice really only applies to the canonical build...
+    proj-indented-notice {
+      NOTICE: static lib build may be implicitly re-activated by
+      other components, e.g. some test apps.
+    }
+  }
+
+  sqlite-handle-env-quirks
+  sqlite-handle-common-feature-flags
+  sqlite-finalize-feature-flags
+  sqlite-process-dot-in-files; # do not [define] anything after this
+  sqlite-post-config-validation
+  sqlite-dump-defines
 }
 
 ########################################################################
@@ -568,6 +548,10 @@ proc sqlite-check-common-bins {} {
 ########################################################################
 # Run checks for system-level includes and libs which are common to
 # both the canonical build and the "autoconf" bundle.
+#
+# For the canonical build this must come after
+# [sqlite-handle-wasi-sdk], as that function may change the
+# environment in ways which affect this.
 proc sqlite-check-common-system-deps {} {
   # Check for needed/wanted data types
   cc-with {-includes stdint.h} \
@@ -678,7 +662,7 @@ proc sqlite-setup-default-cflags {} {
 }
 
 ########################################################################
-# Handle various SQLITE_ENABLE_... feature flags.
+# Handle various SQLITE_ENABLE/OMIT_... feature flags.
 proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
   foreach {boolFlag featureFlag ifSetEvalThis} {
@@ -738,7 +722,6 @@ proc sqlite-handle-common-feature-flags {} {
       msg-result "  - $boolFlag"
     }
   }
-
 }
 
 #########################################################################
@@ -762,13 +745,12 @@ proc sqlite-finalize-feature-flags {} {
 }
 
 ########################################################################
-# Checks for the --debug flag, defining SQLITE_DEBUG to 1 if it is
-# true.  TARGET_DEBUG gets defined either way, with content depending
-# on whether --debug is true or false.
+# Checks for the --debug flag and [define]s TARGET_DEBUG based on
+# that.  TARGET_DEBUG is unused in the autoconf build but that is
+# arguably a bug.
 proc sqlite-handle-debug {} {
   msg-checking "SQLITE_DEBUG build? "
   proj-if-opt-truthy debug {
-    define SQLITE_DEBUG 1
     define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
     proj-opt-set memsys5
     msg-result yes
@@ -1151,7 +1133,7 @@ proc sqlite-check-line-editing {} {
   if {"" ne $rlInc} {
     set rlLib [opt-val with-readline-ldflags]
     #proc-debug "rlLib=$rlLib"
-    if {$rlLib eq "auto" || $rlLib eq ""} {
+    if {$rlLib in {auto ""}} {
       set rlLib ""
       set libTerm ""
       if {[proj-check-function-in-lib tgetent "$editLibName ncurses curses termcap"]} {
@@ -1261,7 +1243,7 @@ proc sqlite-handle-icu {} {
     msg-result "Checking for ICU support..."
     set icuConfigBin [opt-val with-icu-config]
     set tryIcuConfigBin 1; # set to 0 if we end up using pkg-config
-    if {"auto" eq $icuConfigBin || "pkg-config" eq $icuConfigBin} {
+    if {$icuConfigBin in {auto pkg-config}} {
       if {[pkg-config-init 0] && [pkg-config icu-io]} {
         # Maintenance reminder: historical docs say to use both of
         # (icu-io, icu-uc). icu-uc lacks a required lib and icu-io has
@@ -1387,7 +1369,7 @@ proc sqlite-handle-math {} {
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
     sqlite-add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
-    msg-result "Enabling math SQL functions [get-define LDFLAGS_MATH]"
+    msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
     msg-result "Disabling math SQL functions"

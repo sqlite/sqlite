@@ -75,22 +75,22 @@ proc proj-fatal {msg} {
 }
 
 ########################################################################
-# @proj-assert script
+# @proj-assert script ?message?
 #
 # Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
 # false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $descr is set then
+# includes the body of the failed assertion, but if $msg is set then
 # that is used instead.
-proc proj-assert {script {descr ""}} {
+proc proj-assert {script {msg ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
   set x "expr \{ $script \}"
   if {![uplevel 1 $x]} {
-    if {"" eq $descr} {
-      set descr $script
+    if {"" eq $msg} {
+      set msg $script
     }
-    proj-fatal "Assertion failed: $descr"
+    proj-fatal "Assertion failed: $msg"
   }
 }
 
@@ -188,7 +188,8 @@ proc proj-lshift_ {listVar {count 1}} {
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
-# remaining line with a \n between each.
+# remaining line with a \n between each. It does not strip out
+# comments which appear after the first non-whitespace character.
 proc proj-strip-hash-comments {val} {
   set x {}
   foreach line [split $val \n] {
@@ -223,8 +224,8 @@ proc proj-cflags-without-werror {{var CFLAGS}} {
 #
 # - Does not make any global changes to the LIBS define.
 #
-# - Strips out -W... warning flags from CFLAGS before running the
-#   test, as these feature tests will often fail if -Werror is used.
+# - Strips out the -Werror flag from CFLAGS before running the test,
+#   as these feature tests will often fail if -Werror is used.
 #
 # Returns the result of cc-check-function-in-lib (i.e. true or false).
 # The resulting linker flags are stored in the [define] named

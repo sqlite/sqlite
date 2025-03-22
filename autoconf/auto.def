@@ -8,4 +8,13 @@ sqlite-configure autoconf {
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
   sqlite-check-common-system-deps
+  proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
+    "Link library statically into the CLI shell?"
+  if {![opt-bool shared] && ![opt-bool static-shell]} {
+    proj-opt-set shared 1
+    proj-indented-notice {
+      NOTICE: ignoring --disable-shared because --disable-static-shell
+      was specified.
+    }
+  }
 }

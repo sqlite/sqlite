@@ -340,5 +340,4 @@ distclean: distclean-autosetup
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
 
-IS_CROSS_COMPILING = @IS_CROSS_COMPILING@
 include $(TOP)/main.mk
