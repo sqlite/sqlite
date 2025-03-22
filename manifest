@@ -1,5 +1,5 @@
-C Slight\scorrections\sto\sthe\snew\sdocs\sin\sautosetup/README.md.
-D 2025-03-22T17:56:20.782
+C In\sthe\spost-configure\svalidation,\sensure\sthan\sno\smore\sthan\sone\sautosetup/lib/*.auto\sfile\sis\sfound,\sfor\sreasons\sexplained\sin\sthe\svalidation's\serror\smessage.
+D 2025-03-22T18:41:48.016
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 49faf960df88a374686234105def663dbfc297ab79c87686df0a0b973dd77018
-F autosetup/sqlite-config.tcl 9d4ccbfd24f97be0e7e2be05a211700033521fc1d8d3bab40c1e923028e56e6c
+F autosetup/sqlite-config.tcl 7349901814106dee86ee2b9daf68afd26c13f7f92be69ffda9f6fdc7aedc442e
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0c7800b0106e90cb7bf7e5d9f48d21f9b058eff6e42339a1621d713ab2dd03c
-R 04399760b25701e54cab662a55267fa0
+P 55029e41e03d9b61b8a53f86d7f69afe71459846f3a1a1723f6934e0d37ca77f
+R f7433d2d6b9b7224d419751c11759d8c
 U stephan
-Z b23822ed77b6b288de67fa220f936c97
+Z ce4dace35b5c51a050a3591235a1b475
 # Remove this line to create a well-formed Fossil manifest.

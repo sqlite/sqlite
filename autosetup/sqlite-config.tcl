@@ -11,7 +11,7 @@ if {[string first " " $autosetup(builddir)] != -1} {
   user-error "The pathname of the build directory\
               may not contain space characters"
 }
-
+#parray ::autosetup; exit 0
 use proj
 #
 # We want the package version info to be emitted early on, but doing
@@ -1634,7 +1634,12 @@ proc sqlite-process-dot-in-files {} {
 # 1) Ensure that no unresolved @VAR@ placeholders are in files which
 #    use those.
 #
-# 2) TBD
+# 2) Ensure that no more than one autosetup/lib/*.auto file is found.
+#    Those are used for vendor-branch-specific customization of the
+#    configure process (see autosetup/README.md#branch-customization)
+#    and having more than one can lead to subtle errors.
+#
+# 3) TBD
 proc sqlite-post-config-validation {} {
   # Check #1: ensure that files which get filtered for @VAR@ do not
   # contain any unresolved @VAR@ refs. That may indicate an
@@ -1651,6 +1656,32 @@ proc sqlite-post-config-validation {} {
       }
       incr lnno
     }
+  }
+
+  # Check #2: ensure that no more than one autosetup/lib/*.auto file
+  # is found.
+  set libdir $::autosetup(libdir)
+  set li [glob -nocomplain $libdir/lib/*.auto]
+  if {[llength $li] > 1} {
+    puts stderr "Configuration validation error:"
+    proj-indented-notice -error [subst {
+      Multiple $libdir/lib/*.auto files found:
+
+      $li
+
+      This probably means one of the following:
+
+      1) Multiple vendor branches have been merged together, each with
+      their own configure-script customizations. They will be loaded
+      and applied in an unpredictable order, so the tree should have,
+      at most one lib/*.auto file, conventionally named after the
+      current vendor branch.
+
+      2) It can also mean that files have been left lying around from
+      another branch after doing "fossil update", in which case they
+      can all be deleted, then do "fossil update" again to replace
+      only the intended one (if any).
+    }]
   }
 }
 
