@@ -365,7 +365,10 @@ proc sqlite-configure {buildMode configScript} {
     # sqlite-custom-flags is assumed to be imported via a
     # client-specific import: autosetup/local.tcl, autosetup/*.auto,
     # or autosetup/*/*.auto.
-    lappend allFlags sqlite-custom-flags [sqlite-custom-flags]
+    set scf [sqlite-custom-flags]
+    if {"" ne $scf} {
+      lappend allFlags sqlite-custom-flags $scf
+    }
   }
 
   # Filter allFlags to create the set of [options] legal for this build
