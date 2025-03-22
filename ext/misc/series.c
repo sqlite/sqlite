@@ -60,8 +60,7 @@
 **       step HIDDEN
 **     );
 **
-** The virtual table also has a rowid, logically equivalent to n+1 where
-** "n" is the ascending integer in the aforesaid production definition.
+** The virtual table also has a rowid which is an alias for the value.
 **
 ** Function arguments in queries against this virtual table are translated
 ** into equality constraints against successive hidden columns.  In other
@@ -276,6 +275,7 @@ static int seriesConnect(
   int rc;
 
 /* Column numbers */
+#define SERIES_COLUMN_ROWID (-1)
 #define SERIES_COLUMN_VALUE 0
 #define SERIES_COLUMN_START 1
 #define SERIES_COLUMN_STOP  2
@@ -363,13 +363,11 @@ static int seriesColumn(
 #endif
 
 /*
-** Return the rowid for the current row, logically equivalent to n+1 where
-** "n" is the ascending integer in the aforesaid production definition.
+** The rowid is the same as the value.
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
-  sqlite3_uint64 n = pCur->ss.uSeqIndexNow;
-  *pRowid = (sqlite3_int64)((n<LARGEST_UINT64)? n+1 : 0);
+  *pRowid = pCur->ss.iValueNow;
   return SQLITE_OK;
 }
 
@@ -657,7 +655,10 @@ static int seriesBestIndex(
       continue;
     }
     if( pConstraint->iColumn<SERIES_COLUMN_START ){
-      if( pConstraint->iColumn==SERIES_COLUMN_VALUE && pConstraint->usable ){
+      if( (pConstraint->iColumn==SERIES_COLUMN_VALUE ||
+           pConstraint->iColumn==SERIES_COLUMN_ROWID)
+       && pConstraint->usable
+      ){
         switch( op ){
           case SQLITE_INDEX_CONSTRAINT_EQ:
           case SQLITE_INDEX_CONSTRAINT_IS: {

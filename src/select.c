@@ -3247,6 +3247,7 @@ static int multiSelect(
 multi_select_end:
   pDest->iSdst = dest.iSdst;
   pDest->nSdst = dest.nSdst;
+  pDest->iSDParm2 = dest.iSDParm2;
   if( pDelete ){
     sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pDelete);
   }

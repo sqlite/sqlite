@@ -75,22 +75,22 @@ proc proj-fatal {msg} {
 }
 
 ########################################################################
-# @proj-assert script
+# @proj-assert script ?message?
 #
 # Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
 # false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $descr is set then
+# includes the body of the failed assertion, but if $msg is set then
 # that is used instead.
-proc proj-assert {script {descr ""}} {
+proc proj-assert {script {msg ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
   set x "expr \{ $script \}"
   if {![uplevel 1 $x]} {
-    if {"" eq $descr} {
-      set descr $script
+    if {"" eq $msg} {
+      set msg $script
     }
-    proj-fatal "Assertion failed: $descr"
+    proj-fatal "Assertion failed: $msg"
   }
 }
 
@@ -188,7 +188,8 @@ proc proj-lshift_ {listVar {count 1}} {
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
-# remaining line with a \n between each.
+# remaining line with a \n between each. It does not strip out
+# comments which appear after the first non-whitespace character.
 proc proj-strip-hash-comments {val} {
   set x {}
   foreach line [split $val \n] {
@@ -223,8 +224,8 @@ proc proj-cflags-without-werror {{var CFLAGS}} {
 #
 # - Does not make any global changes to the LIBS define.
 #
-# - Strips out -W... warning flags from CFLAGS before running the
-#   test, as these feature tests will often fail if -Werror is used.
+# - Strips out the -Werror flag from CFLAGS before running the test,
+#   as these feature tests will often fail if -Werror is used.
 #
 # Returns the result of cc-check-function-in-lib (i.e. true or false).
 # The resulting linker flags are stored in the [define] named
@@ -1039,12 +1040,22 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
 # Checks whether CC supports -fsanitize=X, where X is each entry of
 # the given list of flags. If any of those flags are supported, it
 # returns the string "-fsanitize=X..." where X... is a comma-separated
-# list of all supported flags. If none of the given options are
-# supported then it returns an empty string.
+# list of all flags from the original set which are supported. If none
+# of the given options are supported then it returns an empty string.
+#
+# Example:
+#
+#  set f [proj-check-fsanitize {address bounds-check just-testing}]
+#
+# Will, on many systems, resolve to "-fsanitize=address,bounds-check",
+# but may also resolve to "-fsanitize=address".
 proc proj-check-fsanitize {{opts {address bounds-strict}}} {
   set sup {}
   foreach opt $opts {
-    cc-with {} {
+    # -nooutput is used because -fsanitize=hwaddress will otherwise
+    # pass this test on x86_64, but then warn at build time that
+    # "hwaddress is not supported for this target".
+    cc-with {-nooutput 1} {
       if {[cc-check-flags "-fsanitize=$opt"]} {
         lappend sup $opt
       }
@@ -1354,4 +1365,15 @@ proc proj-env-file {flag {dflt ""}} {
 # If none of those are set, $dflt is returned.
 proc proj-get-env {var {dflt ""}} {
   return [get-env $var [proj-env-file $var $dflt]]
+}
+
+########################################################################
+# @proj-current-proc-name
+#
+# Returns the name of the _calling_ proc from ($lvl + 1) levels up the
+# call stack (where the caller's level will be 1 up from _this_
+# call). It is not legal to call this from the top scope.
+proc proj-current-proc-name {{lvl 0}} {
+  #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
+  lindex [info level [expr {-$lvl - 1}]] 0
 }

@@ -553,7 +553,7 @@ Columns renamed during .import shell5.csv due to duplicates:
 # Tests for preserving utf-8 that is not also ASCII.
 #
 
-do_test shell5-6.1 {
+do_test_with_ansi_output shell5-6.1 {
   set out [open shell5.csv w]
   fconfigure $out -translation lf
   puts $out {あい,うえお}
@@ -566,7 +566,7 @@ SELECT * FROM t1;}
 } {0 {   あい = 1
 うえお = 2}}
 
-do_test shell5-6.2 {
+do_test_with_ansi_output shell5-6.2 {
   set out [open shell5.csv w]
   fconfigure $out -translation lf
   puts $out {1,2}

@@ -395,8 +395,8 @@ static int dbpageUpdate(
       /* "INSERT INTO dbpage($PGNO,NULL)" causes page number $PGNO and
       ** all subsequent pages to be deleted. */
       pTab->iDbTrunc = iDb;
-      pgno--;
-      pTab->pgnoTrunc = pgno;
+      pTab->pgnoTrunc = pgno-1;
+      pgno = 1;
     }else{
       zErr = "bad page value";
       goto update_fail;
