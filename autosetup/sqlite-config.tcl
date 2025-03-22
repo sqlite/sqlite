@@ -180,6 +180,8 @@ proc sqlite-configure {buildMode configScript} {
         threadsafe=1         => {Disable mutexing}
         with-tempstore:=no   => {Use an in-RAM database for temporary tables: never,no,yes,always}
         load-extension=1     => {Disable loading of external extensions}
+        # ^^^ one of the downstream custom builds overrides the load-extension default to 0, which
+        # confuses the --help text generator. https://github.com/msteveb/autosetup/issues/77
         math=1               => {Disable math functions}
         json=1               => {Disable JSON functions}
         memsys5              => {Enable MEMSYS5}
@@ -307,9 +309,9 @@ proc sqlite-configure {buildMode configScript} {
         # out-implib: https://sqlite.org/forum/forumpost/0c7fc097b2
         out-implib:=auto
           => {Enable use of --out-implib linker flag to generate an
-              "import library" for the DLL. The output's base name name is
-              specified by the value, with "auto" meaning to figure out a
-              name automatically. On some platforms this flag gets
+              "import library" for the DLL. The output's base name is
+              specified by this flag's value, with "auto" meaning to figure
+              out a name automatically. On some platforms this flag gets
               automatically enabled if it is not provided. Use "none" to
               explicitly disable this feature on such platforms.}
       }
@@ -353,9 +355,20 @@ proc sqlite-configure {buildMode configScript} {
               (for build debugging)}
       }
     }
-  }; # $allOpts
+  }; # $allFlags
 
-  # Filter allOpts to create the set of [options] legal for this build
+  set allFlags [proj-strip-hash-comments $allFlags]
+  # ^^^ lappend of [sqlite-custom-flags] introduces weirdness if
+  # we delay [proj-strip-hash-comments] until after that.
+
+  if {[llength [info proc sqlite-custom-flags]] > 0} {
+    # sqlite-custom-flags is assumed to be imported via a
+    # client-specific import: autosetup/local.tcl, autosetup/*.auto,
+    # or autosetup/*/*.auto.
+    lappend allFlags sqlite-custom-flags [sqlite-custom-flags]
+  }
+
+  # Filter allFlags to create the set of [options] legal for this build
   set opts {}
   foreach {group XY} [subst -nobackslashes -nocommands \
                         [proj-strip-hash-comments $allFlags]] {
@@ -1353,7 +1366,7 @@ proc sqlite-handle-load-extension {} {
   if {$found} {
     msg-result "Loadable extension support enabled."
   } else {
-    msg-result "Disabling loadable extension support. Use --enable-load-extensions to enable them."
+    msg-result "Disabling loadable extension support. Use --enable-load-extension to enable them."
     sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
   }
   return $found
@@ -1579,6 +1592,12 @@ proc sqlite-handle-env-quirks {} {
   sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
+  if {[llength [info proc sqlite-handle-custom-flags]] > 0} {
+    # sqlite-handle-custom-flags is assumed to be imported via a
+    # client-specific import: autosetup/local.tcl, autosetup/*.auto,
+    # or autosetup/*/*.auto.
+    sqlite-handle-custom-flags
+  }
 }
 
 ########################################################################
