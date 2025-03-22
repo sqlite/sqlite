@@ -3506,7 +3506,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           });
           db.exec([
             "create table t(a);",
-            "insert into t(a) values(1),(2),(3);",
+            "insert into t(a) values(1),(2),(1);",
             "select auxtest(1,a), auxtest(1,a) from t order by a"
           ]);
         }finally{

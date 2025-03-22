@@ -2015,7 +2015,8 @@ void sqlite3Fts5ParseSetDistance(
               );
           return;
         }
-        nNear = nNear * 10 + (p->p[i] - '0');
+        if( nNear<214748363 ) nNear = nNear * 10 + (p->p[i] - '0');
+        /*  ^^^^^^^^^^^^^^^---  Prevent integer overflow */
       }
     }else{
       nNear = FTS5_DEFAULT_NEARDIST;
