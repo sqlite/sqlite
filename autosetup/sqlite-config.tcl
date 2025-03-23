@@ -1631,8 +1631,9 @@ proc sqlite-process-dot-in-files {} {
   # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
   proj-remap-autoconf-dir-vars
 
+  set srcdir $::autosetup(srcdir)/
   foreach f {Makefile sqlite3.pc} {
-    if {[file exists $f.in]} {
+    if {[file exists $srcdir/$f.in]} {
       # ^^^ we do this only so that this block can be made to work for
       # multiple builds. e.g. the tea build (under construction) does
       # not hae sqlite3.pc.in.

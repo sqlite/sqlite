@@ -1,5 +1,5 @@
-C Configure\srefactoring\sto\ssupport\san\songoing\sconversion\sof\s./autoconf/tea\sto\sautosetup.
-D 2025-03-23T15:37:34.758
+C Correct\sfile-exists\scheck\sin\ssqlite-process-dot-in-files,\sbroken\sfor\sout-of-tree\sbuilds\sby\s[38d5acd9e0fa47a4].
+D 2025-03-23T21:13:00.065
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -47,11 +47,11 @@ F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
-F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e w tool/find_tclconfig.tcl
+F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 24454aadc819ec561af0f622f97205549696dc36e285a82fc0e34b6ffc27f05c
-F autosetup/sqlite-config.tcl ac5e96c45e096d92ac5e382b4a91614356dc75d694558a0ef80fa384d72c5599
+F autosetup/sqlite-config.tcl 7c98065dbf05fcdfd87d645fbf8710b0f47296f9bf37a1ba2f36e01c44ce860a
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c113e31b818d16770bec1edc980f6833dfb27c4d74178e66a778fbb5671c3a13
-R 13bbe570070867783171559ee990fa2e
+P 38d5acd9e0fa47a4b49c611dce11262fe8e43239bc8a7eb832ce8aad27172f8c
+R 557b7fa5d7e43396d57e0c67b5fd24f8
 U stephan
-Z 8946db0d1a23e939f50f583913c3ef95
+Z 894e3fa4e8e4fd926554420b10807c90
 # Remove this line to create a well-formed Fossil manifest.
