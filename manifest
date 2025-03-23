@@ -1,5 +1,5 @@
-C Fix\sthe\sgenerate_series()\senhancement\sfrom\scheck-in\s[d50b784807333c54]\nso\sthat\sit\sworks\seven\sif\sthe\snumber\sthat\s"value"\sis\sbeing\scompared\sagainst\nis\sa\snon-integer\sfloating\spoint\snumber.\s\sBug\sreported\sby\n[forum:/forumpost/0d5d63257e3ff4f6|forum\spost\s0d5d63257].
-D 2025-03-22T22:55:33.194
+C Internal\sconfigure\srefactoring\sto\ssupport\san\songoing\sconversion\sof\s./autoconf/tea\sto\sautosetup.
+D 2025-03-23T21:38:28.791
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -47,10 +47,11 @@ F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
+F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e w tool/find_tclconfig.tcl
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 49faf960df88a374686234105def663dbfc297ab79c87686df0a0b973dd77018
-F autosetup/sqlite-config.tcl a2a786ccdccead789c8e4cc82408257bf7857dcbdf45accab4a1538d641d3070
+F autosetup/proj.tcl 18ab0775dab8864d9f38ad0becb5d2a13b0c3986ecf4f9661de490341085e7b9
+F autosetup/sqlite-config.tcl 45182c777228e92f66357b63b686a80fcedd114e77a86f562e6b27c981454e95
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2135,7 +2136,6 @@ F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651e
 F tool/extract-sqlite3h.tcl 069ceab0cee26cba99952bfa08c0b23e35941c837acabe143f0c355d96c9e2eb x
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c c129ae2924a48310c7b766810391da9e8fda532b9f6bd3f9a9e3a799a1b42af9
-F tool/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/fuzzershell.c 41480c8a1e4749351f381431ecfdfceba645396c5d836f8d26b51a33c4a21b33
 F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf836eb1
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f3c0071284fbe1c0a8c3fe73792a79f9df6be983e5c9bd1a7e2fe71ba7b2d400
-R bb2b8fb97c5254c022b045f9e204d5a8
-U drh
-Z 3b840e739e362fa32d6af0f736408d3e
+P c113e31b818d16770bec1edc980f6833dfb27c4d74178e66a778fbb5671c3a13
+R 309a2c3afab1d662c70990a09672e776
+U stephan
+Z fb7c999d8dfb13e08fe006e0a7885fc0
 # Remove this line to create a well-formed Fossil manifest.

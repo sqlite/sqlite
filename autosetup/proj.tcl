@@ -594,7 +594,7 @@ proc proj-file-content {args} {
     set trim 1
     lassign $args - fname
   }
-  set fp [open $fname r]
+  set fp [open $fname rb]
   set rc [read $fp]
   close $fp
   if {$trim} { return [string trim $rc] }
@@ -607,13 +607,24 @@ proc proj-file-content {args} {
 # Returns the contents of the given file as an array of lines, with
 # the EOL stripped from each input line.
 proc proj-file-content-list {fname} {
-  set fp [open $fname r]
+  set fp [open $fname rb]
   set rc {}
   while { [gets $fp line] >= 0 } {
     lappend rc $line
   }
   close $fp
   return $rc
+}
+
+########################################################################
+# @proj-file-write fname content
+#
+# Works like autosetup's [writefile] but explicitly uses binary mode
+# to avoid EOL translation on Windows.
+proc proj-file-write {fname content} {
+  set f [open $fname wb]
+  puts -nonewline $f $content
+  close $f
 }
 
 ########################################################################
@@ -1376,4 +1387,51 @@ proc proj-get-env {var {dflt ""}} {
 proc proj-current-proc-name {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   lindex [info level [expr {-$lvl - 1}]] 0
+}
+
+
+########################################################################
+# Converts parts of tclConfig.sh to autosetup [define]s.
+#
+# Expects to be passed the name of a value tclConfig.sh or an empty
+# string.  It converts certain parts of that file's contents to
+# [define]s (see the code for the whole list). If $tclConfigSh is an
+# empty string then it [define]s the various vars as empty strings.
+proc proj-tclConfig-to-autosetup {tclConfigSh} {
+  set shBody {}
+  set tclVars {
+    TCL_INCLUDE_SPEC
+    TCL_LIB_SPEC
+    TCL_STUB_LIB_SPEC
+    TCL_EXEC_PREFIX
+    TCL_PREFIX
+    TCL_VERSION
+  }
+  lappend shBody "if test x = \"x${tclConfigSh}\"; then"
+  foreach v $tclVars {
+    lappend shBody "$v= ;"
+  }
+  lappend shBody "else . \"${tclConfigSh}\"; fi"
+  foreach v $tclVars {
+    lappend shBody "echo define $v {\$$v} ;"
+  }
+  lappend shBody "exit"
+  set shBody [join $shBody "\n"]
+  #puts "shBody=$shBody\n"; exit
+  if {0} {
+    # This doesn't work but would be preferable to using a temp file...
+    set fd [open "| sh" "rw"]
+    #puts "fd = $fd"; exit
+    puts $fd $shBody
+    flush $fd
+    set rd [read $fd]
+    close $fd
+    puts "rd=$rd"; exit 1
+    eval $rd
+  } else {
+    set shName ".tclConfigSh.tcl"
+    proj-file-write $shName $shBody
+    eval [exec sh $shName $tclConfigSh]
+    file delete --force $shName
+  }
 }
