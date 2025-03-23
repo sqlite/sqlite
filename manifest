@@ -1,5 +1,5 @@
-C Internal\sconfigure\srefactoring\sto\ssupport\san\songoing\sconversion\sof\s./autoconf/tea\sto\sautosetup.
-D 2025-03-23T21:38:28.791
+C Remove\stool/tclConfigShToAutoDef.sh,\sas\sthat\sfunctionality\swas\smoved\sinto\sautosetup/proj.tcl\sso\sthat\sit\scan\sbe\sreused\sin,\se.g.,\sautoconf/tea.
+D 2025-03-23T22:49:00.085
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -47,11 +47,11 @@ F autosetup/cc-db.tcl 6e0ed90146197a5a05b245e649975c07c548e30926b218ca3e1d4dc034
 F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795facf7360
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
-F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e w tool/find_tclconfig.tcl
+F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 18ab0775dab8864d9f38ad0becb5d2a13b0c3986ecf4f9661de490341085e7b9
-F autosetup/sqlite-config.tcl 45182c777228e92f66357b63b686a80fcedd114e77a86f562e6b27c981454e95
+F autosetup/proj.tcl 3fb4df80f4e114a6a5ef2f66c79e9836f8af798be6e5112fa525dd499e297e76
+F autosetup/sqlite-config.tcl 85490e59fb374cf091765308eae96bb96cc85169af46d78e034f3766bdbd0523
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2207,7 +2207,6 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 68d2aa8cb504439f541ce66b8f128067612bdd16f5fb7bfe540f3fcb67c9c197
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9b9
-F tool/tclConfigShToAutoDef.sh 44ec55046d86a3febb2cb3e099399b41794e80e9cd138eee7b9b016f819e882b x
 F tool/tclConfigShToMake.sh 7c065d81c2d178e15e45a77372c6e5a38b5a1b08755301cd6f20a3a862db7312 x
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
@@ -2216,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c113e31b818d16770bec1edc980f6833dfb27c4d74178e66a778fbb5671c3a13
-R 309a2c3afab1d662c70990a09672e776
+P e1d483e342670092c3579f2f0975e49a0c74516ae34103a63b4cde156bf5e92b
+R cd4f41e401426ec770b3b52663dd55f7
 U stephan
-Z fb7c999d8dfb13e08fe006e0a7885fc0
+Z 2310dd6e43c6cf51b7512d8d58ddf2d8
 # Remove this line to create a well-formed Fossil manifest.

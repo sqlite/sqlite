@@ -1787,10 +1787,10 @@ proc sqlite-check-tcl {} {
   define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
   define TCL_CONFIG_SH ""; # full path to tclConfig.sh
 
-  # Clear out all vars which would be set by tclConfigShToAutoDef.sh, so
-  # that the late-config validation of @VARS@ works even if
-  # --disable-tcl is used.
-  proj-tclConfig-to-autosetup ""
+  # Clear out all vars which would harvest from tclConfig.sh so that
+  # the late-config validation of @VARS@ works even if --disable-tcl
+  # is used.
+  proj-tclConfig-sh-to-autosetup ""
 
   file delete -force ".tclenv.sh"; # ensure no stale state from previous configures.
   if {![opt-bool tcl]} {
@@ -1889,7 +1889,7 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If $cfg
   # is an empty string, this emits empty-string entries for the
   # various options we're interested in.
-  proj-tclConfig-to-autosetup $cfg
+  proj-tclConfig-sh-to-autosetup $cfg
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh

@@ -1397,7 +1397,7 @@ proc proj-current-proc-name {{lvl 0}} {
 # string.  It converts certain parts of that file's contents to
 # [define]s (see the code for the whole list). If $tclConfigSh is an
 # empty string then it [define]s the various vars as empty strings.
-proc proj-tclConfig-to-autosetup {tclConfigSh} {
+proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
   set shBody {}
   set tclVars {
     TCL_INCLUDE_SPEC
