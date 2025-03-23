@@ -1,5 +1,5 @@
-C Remove\stool/tclConfigShToAutoDef.sh,\sas\sthat\sfunctionality\swas\smoved\sinto\sautosetup/proj.tcl\sso\sthat\sit\scan\sbe\sreused\sin,\se.g.,\sautoconf/tea.
-D 2025-03-23T22:49:00.085
+C Correct\sa\s--force\sflag\swhich\sshould\sbe\s-force\sin\sa\sTCL\sfile\sdelete\scall.\sSome\sTCL\sversions\s(like\sthe\sone\son\smy\ssystem)\saccepts\seither\sbut\sothers\sdon't.\sProblem\sreported\sin\s[forum:c02224d862|forum\spost\sc02224d862].
+D 2025-03-23T23:04:48.534
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -50,7 +50,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 3fb4df80f4e114a6a5ef2f66c79e9836f8af798be6e5112fa525dd499e297e76
+F autosetup/proj.tcl 4706741184076b3056356324727b7691e3b6877c84224fa05bbf7d804e895e55
 F autosetup/sqlite-config.tcl 85490e59fb374cf091765308eae96bb96cc85169af46d78e034f3766bdbd0523
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e1d483e342670092c3579f2f0975e49a0c74516ae34103a63b4cde156bf5e92b
-R cd4f41e401426ec770b3b52663dd55f7
+P c9c5a15d4d8141aae68d6643869f74879ae053cb86538b805058099af2cec16b
+R cede8298428fc3b5753dc7441a438a62
 U stephan
-Z 2310dd6e43c6cf51b7512d8d58ddf2d8
+Z aaca6f130a80cd53a17483fde3862546
 # Remove this line to create a well-formed Fossil manifest.

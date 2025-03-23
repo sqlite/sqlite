@@ -1432,6 +1432,6 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     set shName ".tclConfigSh.tcl"
     proj-file-write $shName $shBody
     eval [exec sh $shName $tclConfigSh]
-    file delete --force $shName
+    file delete -force $shName
   }
 }
