@@ -64,7 +64,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 ########################################################################
 # Processes all configure --flags for this build, run build-specific
 # config checks, then finalize the configure process. $buildMode must
-# be either "canonical" or "autoconf", and others may be added in the
+# be one of (canonical, autoconf), and others may be added in the
 # future. After bootstrapping, $configScript is eval'd in the caller's
 # scope, then post-configuration finalization is run. $configScript is
 # intended to hold configure code which is specific to the given
@@ -83,7 +83,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 proc sqlite-configure {buildMode configScript} {
   proj-assert {$::sqliteConfig(build-mode) eq "unknown"} \
     "sqlite-configure must not be called more than once"
-  set allBuildModes {canonical autoconf}
+  set allBuildModes {canonical autoconf tcl-extension}
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
   }
@@ -165,7 +165,7 @@ proc sqlite-configure {buildMode configScript} {
 
     # Options for how to build the library
     build-modes {
-      {*} {
+      {canonical autoconf} {
         shared=1             => {Disable build of shared library}
         static=1             => {Disable build of static library}
       }
@@ -202,7 +202,7 @@ proc sqlite-configure {buildMode configScript} {
 
     # Options for TCL support
     tcl {
-      {canonical} {
+      {canonical tcl-extension} {
         with-tcl:DIR
           => {Directory containing tclConfig.sh or a directory one level up from
               that, from which we can derive a directory containing tclConfig.sh.
@@ -213,6 +213,8 @@ proc sqlite-configure {buildMode configScript} {
               tclConfig.sh and (B) all TCL-based code generation.  Warning: if
               its containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
+      }
+      {canonical} {
         tcl=1
           => {Disable components which require TCL, including all tests.
               This tree requires TCL for code generation but can use the in-tree
@@ -223,7 +225,7 @@ proc sqlite-configure {buildMode configScript} {
 
     # Options for line-editing modes for the CLI shell
     line-editing {
-      {*} {
+      {canonical autoconf} {
         readline=1
           => {Disable readline support}
         # --with-readline-lib is a backwards-compatible alias for
@@ -265,12 +267,12 @@ proc sqlite-configure {buildMode configScript} {
 
     # Options for exotic/alternative build modes
     alternative-builds {
-      {*} {
+      {canonical autoconf} {
         with-wasi-sdk:=/opt/wasi-sdk
           => {Top-most dir of the wasi-sdk for a WASI build}
       }
-      {canonical} {
 
+      {canonical} {
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
               Needed only by ext/wasm. Default=EMSDK env var.}
@@ -288,7 +290,7 @@ proc sqlite-configure {buildMode configScript} {
         static-shell=1
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
-      {*} {
+      {canonical autoconf} {
         # A potential TODO without a current use case:
         #rpath=1 => {Disable use of the rpath linker flag}
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
@@ -458,17 +460,21 @@ proc sqlite-configure-finalize {} {
   sqlite-handle-load-extension
   sqlite-handle-math
   sqlite-handle-icu
-  sqlite-handle-line-editing
-
-  proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
-  if {![proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"]} {
-    # This notice really only applies to the canonical build...
-    proj-indented-notice {
-      NOTICE: static lib build may be implicitly re-activated by
-      other components, e.g. some test apps.
+  if {[proj-opt-exists readline]} {
+    sqlite-handle-line-editing
+  }
+  if {[proj-opt-exists shared]} {
+    proj-define-for-opt shared ENABLE_LIB_SHARED "Build shared library?"
+  }
+  if {[proj-opt-exists static]} {
+    if {![proj-define-for-opt static ENABLE_LIB_STATIC "Build static library?"]} {
+      # This notice really only applies to the canonical build...
+      proj-indented-notice {
+        NOTICE: static lib build may be implicitly re-activated by
+        other components, e.g. some test apps.
+      }
     }
   }
-
   sqlite-handle-env-quirks
   sqlite-handle-common-feature-flags
   sqlite-finalize-feature-flags
@@ -1625,7 +1631,14 @@ proc sqlite-process-dot-in-files {} {
   # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
   proj-remap-autoconf-dir-vars
 
-  proj-make-from-dot-in -touch Makefile sqlite3.pc
+  foreach f {Makefile sqlite3.pc} {
+    if {[file exists $f.in]} {
+      # ^^^ we do this only so that this block can be made to work for
+      # multiple builds. e.g. the tea build (under construction) does
+      # not hae sqlite3.pc.in.
+      proj-make-from-dot-in -touch $f
+    }
+  }
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
     -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
@@ -1695,7 +1708,7 @@ proc sqlite-handle-wasi-sdk {} {
     threadsafe
   } {
     if {[proj-opt-exists $opt] && [opt-bool $opt]} {
-      # -^^^^ distinguish between canonical and autoconf builds
+      # -^^^^ not all builds define all of these flags
       msg-result "  --disable-$opt"
       proj-opt-set $opt 0
     }
@@ -1772,12 +1785,10 @@ proc sqlite-check-tcl {} {
   define TCLLIBDIR ""    ; # Installation dir for TCL extension lib
   define TCL_CONFIG_SH ""; # full path to tclConfig.sh
 
-  # Clear out all vars which would be set by tclConfigToAutoDef.sh, so
+  # Clear out all vars which would be set by tclConfigShToAutoDef.sh, so
   # that the late-config validation of @VARS@ works even if
   # --disable-tcl is used.
-  foreach k {TCL_INCLUDE_SPEC TCL_LIB_SPEC TCL_STUB_LIB_SPEC TCL_EXEC_PREFIX TCL_VERSION} {
-    define $k ""
-  }
+  proj-tclConfig-to-autosetup ""
 
   file delete -force ".tclenv.sh"; # ensure no stale state from previous configures.
   if {![opt-bool tcl]} {
@@ -1819,7 +1830,7 @@ proc sqlite-check-tcl {} {
       #msg-result "Using tclsh: $with_tclsh"
     }
     if {$doConfigLookup &&
-        [catch {exec $with_tclsh $srcdir/tool/find_tclconfig.tcl} result] == 0} {
+        [catch {exec $with_tclsh $::autosetup(libdir)/find_tclconfig.tcl} result] == 0} {
       set with_tcl $result
     }
     if {"" ne $with_tcl && [file isdir $with_tcl]} {
@@ -1876,9 +1887,7 @@ proc sqlite-check-tcl {} {
   # Export a subset of tclConfig.sh to the current TCL-space.  If $cfg
   # is an empty string, this emits empty-string entries for the
   # various options we're interested in.
-  eval [exec sh "$srcdir/tool/tclConfigShToAutoDef.sh" "$cfg"]
-  # ---------^^ a Windows/msys workaround, without which it cannot
-  # exec a .sh file: https://sqlite.org/forum/forumpost/befb352a42a7cd6d
+  proj-tclConfig-to-autosetup $cfg
 
   if {"" eq $with_tclsh && $cfg ne ""} {
     # We have tclConfig.sh but no tclsh. Attempt to locate a tclsh
