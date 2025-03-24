@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\ssession1.test.
-D 2025-03-24T11:13:18.510
+C Test\sthat\sthe\ssqlite3changeset_apply()\sfunction\sis\sproperly\sappling\sindirect\schanges.
+D 2025-03-24T19:58:13.162
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -577,7 +577,7 @@ F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1
 F ext/session/changeset.c 7a1e6a14c7e92d36ca177e92e88b5281acd709f3b726298dc34ec0fb58869cb5
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
 F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254831f3d12b113b616cd
-F ext/session/session1.test a9cf4280a01ccee85c9be3d5b76047a05bea2dfbb2891e7775acbec227d9c823
+F ext/session/session1.test 57cb77a816af7760bf4e321d315603ab517e46abd853e75620cfb07eb409c6f8
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
 F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
 F ext/session/session4.test 823f6f018fcbb8dacf61e2960f8b3b848d492b094f8b495eae1d9407d9ab7219
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 172f4e4772d90f4737eddb43d97a566a6e3b92702c61e23391e43134737cc838
-R a200b3e63d995804ba9cb2f6183e529f
+P dda9d7cf319e74de7703bda1eb77e3e7aa7459d6fa1508cc1d62cdfc7985c368
+R 59f8eb65053a8c37b81b1cc130461378
 U dan
-Z 9e23138503c61e5d6f72d80a5d70588a
+Z 3ffcb094ab9fb9973d19c727d478cf37
 # Remove this line to create a well-formed Fossil manifest.
