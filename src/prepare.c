@@ -21,7 +21,7 @@
 */
 static void corruptSchema(
   InitData *pData,     /* Initialization context */
-  char **azObj,        /* Type and name of object being parsed */
+  const char **azObj,  /* Type and name of object being parsed */
   const char *zExtra   /* Error information */
 ){
   sqlite3 *db = pData->db;
@@ -92,16 +92,13 @@ static int sqlite3Prepare(
 **     argv[4] = SQL text for the CREATE statement.
 **
 */
-int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
+int sqlite3InitCallback(void *pInit, const char **argv){
   InitData *pData = (InitData*)pInit;
   sqlite3 *db = pData->db;
   int iDb = pData->iDb;
 
-  assert( argc==5 );
-  UNUSED_PARAMETER2(NotUsed, argc);
   assert( sqlite3_mutex_held(db->mutex) );
   db->mDbFlags |= DBFLAG_EncodingFixed;
-  if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   pData->nInitRow++;
   if( db->mallocFailed ){
     corruptSchema(pData, argv, 0);
@@ -236,7 +233,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   initData.mInitFlags = mFlags;
   initData.nInitRow = 0;
   initData.mxPage = 0;
-  sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
+  sqlite3InitCallback(&initData, azArg);
   db->mDbFlags &= mask;
   if( initData.rc ){
     rc = initData.rc;
@@ -370,7 +367,7 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
       xAuth = db->xAuth;
       db->xAuth = 0;
 #endif
-      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+      rc = sqlite3QuerySchema(db, zSql, 5, sqlite3InitCallback, &initData);
 #ifndef SQLITE_OMIT_AUTHORIZATION
       db->xAuth = xAuth;
     }
@@ -870,6 +867,39 @@ static int sqlite3LockAndPrepare(
   assert( rc==SQLITE_OK || (*ppStmt)==0 );
   return rc;
 }
+
+/*
+** Prepare a single new SQL statement for internal use.  Run the
+** statement and invoke the callback for each row.
+*/
+int sqlite3QuerySchema(
+  sqlite3 *db,                /* Database handle. */
+  const char *zSql,           /* UTF-8 encoded SQL statement. */
+  int nCol,                   /* Number of columns:  3 or 5 */
+  sqlite3SchemaCB xCallback,  /* Invoked once for each result row */
+  void *pData                 /* First argument to xCallback */
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  assert( nCol==3 || nCol==5 );
+  rc = sqlite3LockAndPrepare(db, zSql, -1, 0, 0, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *az[5];
+      int i;
+      for(i=0; i<nCol; i++) az[i] = (const char*)sqlite3_column_text(pStmt,i);
+      rc = xCallback(pData,az);
+      if( rc ) break;
+    }
+  }
+  if( pStmt ){
+    rc = sqlite3VdbeReset((Vdbe*)pStmt);
+    sqlite3VdbeDelete((Vdbe*)pStmt);
+  }
+  return rc;
+}
+
 
 
 /*

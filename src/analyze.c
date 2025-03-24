@@ -1600,16 +1600,13 @@ static void decodeIntArray(
 ** Entries for which argv[1]==NULL simply record the number of rows in
 ** the table.
 */
-static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
+static int analysisLoader(void *pData, const char **argv){
   analysisInfo *pInfo = (analysisInfo*)pData;
   Index *pIndex;
   Table *pTable;
   const char *z;
 
-  assert( argc==3 );
-  UNUSED_PARAMETER2(NotUsed, argc);
-
-  if( argv==0 || argv[0]==0 || argv[2]==0 ){
+  if( argv[0]==0 || argv[2]==0 ){
     return 0;
   }
   pTable = sqlite3FindTable(pInfo->db, argv[0], pInfo->zDatabase);
@@ -1986,7 +1983,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     if( zSql==0 ){
       rc = SQLITE_NOMEM_BKPT;
     }else{
-      rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
+      rc = sqlite3QuerySchema(db, zSql, 3, analysisLoader, &sInfo);
       sqlite3DbFree(db, zSql);
     }
   }

@@ -7064,7 +7064,7 @@ case OP_ParseSchema: {
       initData.rc = SQLITE_OK;
       initData.nInitRow = 0;
       assert( !db->mallocFailed );
-      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+      rc = sqlite3QuerySchema(db, zSql, 5, sqlite3InitCallback, &initData);
       if( rc==SQLITE_OK ) rc = initData.rc;
       if( rc==SQLITE_OK && initData.nInitRow==0 ){
         /* The OP_ParseSchema opcode with a non-NULL P4 argument should parse

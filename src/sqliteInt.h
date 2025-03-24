@@ -4932,7 +4932,9 @@ void sqlite3ExprListDeleteGeneric(sqlite3*,void*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
-int sqlite3InitCallback(void*, int, char**, char**);
+int sqlite3InitCallback(void*, const char**);
+typedef int(*sqlite3SchemaCB)(void*,const char**);
+int sqlite3QuerySchema(sqlite3*,const char*,int,sqlite3SchemaCB,void*);
 int sqlite3InitOne(sqlite3*, int, char**, u32);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
