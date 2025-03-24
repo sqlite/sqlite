@@ -1,5 +1,5 @@
-C Test\sthat\sthe\ssqlite3changeset_apply()\sfunction\sis\sproperly\sappling\sindirect\schanges.
-D 2025-03-24T19:58:13.162
+C Clarify\sand\sreduce\sredundancy\sin\san\sassert()\sin\swalChecksumBytes().
+D 2025-03-24T23:08:40.014
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -865,7 +865,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 554a6b1afaaecb98cb47bb598bccf1374c9d3b624e5c4c3c4eb2ad364cc579f8
+F src/wal.c bcf40795a09b699ad7e42624dd6282b13335164fbabcd5a98a717758cebef451
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c e80177e452b4e436abc6ece0cb0249631000434f2a7425cc1df709015fce74ad
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dda9d7cf319e74de7703bda1eb77e3e7aa7459d6fa1508cc1d62cdfc7985c368
-R 59f8eb65053a8c37b81b1cc130461378
-U dan
-Z 3ffcb094ab9fb9973d19c727d478cf37
+P 1dadea3a79c3edd110b0b32b07287744300958fed31f2da11901a42b16f86669
+R c08c05d83169d801717107adbed59c20
+U drh
+Z 6fb51dc820f4b9af99017fdaa2038941
 # Remove this line to create a well-formed Fossil manifest.
