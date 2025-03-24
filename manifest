@@ -1,5 +1,5 @@
-C Correct\sa\s--force\sflag\swhich\sshould\sbe\s-force\sin\sa\sTCL\sfile\sdelete\scall.\sSome\sTCL\sversions\s(like\sthe\sone\son\smy\ssystem)\saccepts\seither\sbut\sothers\sdon't.\sProblem\sreported\sin\s[forum:c02224d862|forum\spost\sc02224d862].
-D 2025-03-23T23:04:48.534
+C Add\stest\scases\sto\ssession1.test.
+D 2025-03-24T11:13:18.510
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -577,7 +577,7 @@ F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1
 F ext/session/changeset.c 7a1e6a14c7e92d36ca177e92e88b5281acd709f3b726298dc34ec0fb58869cb5
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
 F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254831f3d12b113b616cd
-F ext/session/session1.test cc7e58976c2cc6263fb7ef0c5125a98eafc2f213c75929f986768d2dbc224725
+F ext/session/session1.test a9cf4280a01ccee85c9be3d5b76047a05bea2dfbb2891e7775acbec227d9c823
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
 F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
 F ext/session/session4.test 823f6f018fcbb8dacf61e2960f8b3b848d492b094f8b495eae1d9407d9ab7219
@@ -2215,8 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c9c5a15d4d8141aae68d6643869f74879ae053cb86538b805058099af2cec16b
-R cede8298428fc3b5753dc7441a438a62
-U stephan
-Z aaca6f130a80cd53a17483fde3862546
+P 172f4e4772d90f4737eddb43d97a566a6e3b92702c61e23391e43134737cc838
+R a200b3e63d995804ba9cb2f6183e529f
+U dan
+Z 9e23138503c61e5d6f72d80a5d70588a
 # Remove this line to create a well-formed Fossil manifest.
