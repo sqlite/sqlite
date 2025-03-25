@@ -64,6 +64,7 @@ proc proj-warn {msg} {
   show-notices
   puts stderr "WARNING: $msg"
 }
+
 ########################################################################
 # @proj-error msg
 #
@@ -111,6 +112,7 @@ proc proj-bold {str} {
 # @proj-indented-notice ?-error? ?-notice? msg
 #
 # Takes a multi-line message and emits it with consistent indentation.
+# It does not perform any line-wrapping of its own.
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
@@ -160,26 +162,6 @@ proc proj-indented-notice {args} {
 # Returns 1 if cross-compiling, else 0.
 proc proj-is-cross-compiling {} {
   return [expr {[get-define host] ne [get-define build]}]
-}
-
-########################################################################
-# proj-lshift_ shifts $count elements from the list named $listVar
-# and returns them as a new list. On empty input, returns "".
-#
-# Modified slightly from: https://wiki.tcl-lang.org/page/lshift
-proc proj-lshift_ {listVar {count 1}} {
-  upvar 1 $listVar l
-  if {![info exists l]} {
-    # make the error message show the real variable name
-    error "can't read \"$listVar\": no such variable"
-  }
-  if {![llength $l]} {
-    # error Empty
-    return ""
-  }
-  set r [lrange $l 0 [incr count -1]]
-  set l [lreplace $l [set l 0] $count]
-  return $r
 }
 
 ########################################################################
@@ -479,16 +461,16 @@ proc proj-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
     set invert 1
-    set args [lrange $args 1 end]
+    lassign $args - optName defName descr
+  } else {
+    lassign $args optName defName descr
   }
-  set optName [proj-lshift_ args]
-  set defName [proj-lshift_ args]
-  set descr [proj-lshift_ args]
   if {"" eq $descr} {
     set descr $defName
   }
+  puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
-  msg-checking "$descr ... "
+  msg-checking "[join $descr] ... "
   if {[proj-opt-truthy $optName]} {
     if {0 eq $invert} {
       set rc 1
@@ -617,14 +599,28 @@ proc proj-file-content-list {fname} {
 }
 
 ########################################################################
-# @proj-file-write fname content
+# @proj-file-write ?-ro? fname content
 #
 # Works like autosetup's [writefile] but explicitly uses binary mode
-# to avoid EOL translation on Windows.
-proc proj-file-write {fname content} {
+# to avoid EOL translation on Windows. If $fname already exists, it is
+# overwritten, even if it's flagged as read-only.
+proc proj-file-write {args} {
+  if {"-ro" eq [lindex $args 0]} {
+    lassign $args ro fname content
+  } else {
+    set ro ""
+    lassign $args fname content
+  }
+  file delete -force -- $fname; # in case it's read-only
   set f [open $fname wb]
   puts -nonewline $f $content
   close $f
+  if {"" ne $ro} {
+    catch {
+      exec chmod -w $fname
+      #file attributes -w $fname; #jimtcl has no 'attributes'
+    }
+  }
 }
 
 ########################################################################
@@ -693,12 +689,17 @@ proc proj-make-from-dot-in {args} {
   }
   foreach f $filename {
     set f [string trim $f]
-    catch { exec chmod u+w $f }
+    if {[file exists $f]} {
+      catch { exec chmod u+w $f }
+    }
     make-template $f.in $f
     if {$touch} {
       proj-touch $f
     }
-    catch { exec chmod -w $f }
+    catch {
+      exec chmod -w $f
+      #file attributes -w $f; #jimtcl has no 'attributes'
+    }
   }
 }
 
@@ -1407,6 +1408,8 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     TCL_PREFIX
     TCL_VERSION
   }
+  # Build a small shell script which proxies the $tclVars from
+  # $tclConfigSh into autosetup code...
   lappend shBody "if test x = \"x${tclConfigSh}\"; then"
   foreach v $tclVars {
     lappend shBody "$v= ;"
