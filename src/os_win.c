@@ -5280,6 +5280,12 @@ static int winAccess(
 );
 
 /*
+** The Windows version of xAccess() accepts an extra bit in the flags
+** parameter that prevents an anti-virus retry loop.
+*/
+#define NORETRY 0x4000
+
+/*
 ** Open a file.
 */
 static int winOpen(
@@ -5466,10 +5472,10 @@ static int winOpen(
                         dwCreationDisposition,
                         &extendedParameters);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite ){
+      if( isReadWrite && cnt==0 ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5483,10 +5489,10 @@ static int winOpen(
                         dwFlagsAndAttributes,
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite ){
+      if( isReadWrite && cnt==0 ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5503,10 +5509,10 @@ static int winOpen(
                         dwFlagsAndAttributes,
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite ){
+      if( isReadWrite && cnt==0 ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5723,7 +5729,13 @@ static int winAccess(
   int rc = 0;
   DWORD lastErrno = 0;
   void *zConverted;
+  int noRetry = 0;           /* Do not use winRetryIoerr() */
   UNUSED_PARAMETER(pVfs);
+
+  if( (flags & NORETRY)!=0 ){
+    noRetry = 1;
+    flags &= ~NORETRY;
+  }  
 
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
@@ -5747,7 +5759,10 @@ static int winAccess(
     memset(&sAttrData, 0, sizeof(sAttrData));
     while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
                              GetFileExInfoStandard,
-                             &sAttrData)) && winRetryIoerr(&cnt, &lastErrno) ){}
+                             &sAttrData))
+       && !noRetry
+       && winRetryIoerr(&cnt, &lastErrno)
+    ){ /* Loop until true */}
     if( rc ){
       /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
       ** as if it does not exist.
