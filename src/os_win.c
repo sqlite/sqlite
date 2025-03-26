@@ -5473,7 +5473,7 @@ static int winOpen(
                         dwCreationDisposition,
                         &extendedParameters);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite && cnt==0 ){
+      if( isReadWrite ){
         int rc2;
         sqlite3BeginBenignMalloc();
         rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
@@ -5490,7 +5490,7 @@ static int winOpen(
                         dwFlagsAndAttributes,
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite && cnt==0 ){
+      if( isReadWrite ){
         int rc2;
         sqlite3BeginBenignMalloc();
         rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
@@ -5510,7 +5510,7 @@ static int winOpen(
                         dwFlagsAndAttributes,
                         NULL);
       if( h!=INVALID_HANDLE_VALUE ) break;
-      if( isReadWrite && cnt==0 ){
+      if( isReadWrite ){
         int rc2;
         sqlite3BeginBenignMalloc();
         rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ|NORETRY, &isRO);
