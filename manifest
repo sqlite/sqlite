@@ -1,5 +1,5 @@
-C Attempt\sto\sreduce\sthe\samount\sof\sretry\stime\swhen\strying\sto\sopen\nan\sinaccessible\sdatabase\sfile\son\sWindows.\s\sSee\n[forum:/forumpost/e7991420f54dca50|forum\sthread\se7991420f5]
-D 2025-03-26T14:45:15.858
+C Further\sattempted\simprovements\sat\sfast-fail\sfor\san\sinaccessible\ndatabase\sfile.
+D 2025-03-26T15:51:05.795
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -770,7 +770,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 410185df4900817c218c0efdb8064b3481af88cb3f7cea7392f820b6eebc7889
-F src/os_win.c 4101da78fb67baebff7fb4e763015b943aa3a1160d3a50e6b1932d77154d9fcb
+F src/os_win.c de4315b809e8c8a8dd9556a14bf4dd74d090d7e3d92ab535ff6f200408c50c15
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9fbb541b46125dfa8914827575e6bb4d15048caa008073b1709112d495d7983b
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2215,11 +2215,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1f98fc07fdf06d699ffbf1521b0b5e937a582017e4325bd994b488e06becbecc
-R 6f6ce59b3ff23057e3579b9943d2a4aa
-T *branch * winopen-retry
-T *sym-winopen-retry *
-T -sym-trunk *
+P 986e45912cde7cb8e6db8ba7a9364aef7187a23032be64ef6cd573163f56676d
+R 71d9939e4210ac024e91383da51b8b95
 U drh
-Z ef0135aae199dad5cd806976ce43f48e
+Z a58eb24c7298b49ea23e24e867766e9d
 # Remove this line to create a well-formed Fossil manifest.
