@@ -12,7 +12,6 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
-
 use sqlite-config
 sqlite-configure canonical {
   proj-if-opt-truthy dev {

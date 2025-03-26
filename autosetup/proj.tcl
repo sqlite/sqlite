@@ -64,6 +64,7 @@ proc proj-warn {msg} {
   show-notices
   puts stderr "WARNING: $msg"
 }
+
 ########################################################################
 # @proj-error msg
 #
@@ -75,22 +76,22 @@ proc proj-fatal {msg} {
 }
 
 ########################################################################
-# @proj-assert script
+# @proj-assert script ?message?
 #
 # Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
 # false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $descr is set then
+# includes the body of the failed assertion, but if $msg is set then
 # that is used instead.
-proc proj-assert {script {descr ""}} {
+proc proj-assert {script {msg ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
   set x "expr \{ $script \}"
   if {![uplevel 1 $x]} {
-    if {"" eq $descr} {
-      set descr $script
+    if {"" eq $msg} {
+      set msg $script
     }
-    proj-fatal "Assertion failed: $descr"
+    proj-fatal "Assertion failed: $msg"
   }
 }
 
@@ -111,6 +112,7 @@ proc proj-bold {str} {
 # @proj-indented-notice ?-error? ?-notice? msg
 #
 # Takes a multi-line message and emits it with consistent indentation.
+# It does not perform any line-wrapping of its own.
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
@@ -163,32 +165,13 @@ proc proj-is-cross-compiling {} {
 }
 
 ########################################################################
-# proj-lshift_ shifts $count elements from the list named $listVar
-# and returns them as a new list. On empty input, returns "".
-#
-# Modified slightly from: https://wiki.tcl-lang.org/page/lshift
-proc proj-lshift_ {listVar {count 1}} {
-  upvar 1 $listVar l
-  if {![info exists l]} {
-    # make the error message show the real variable name
-    error "can't read \"$listVar\": no such variable"
-  }
-  if {![llength $l]} {
-    # error Empty
-    return ""
-  }
-  set r [lrange $l 0 [incr count -1]]
-  set l [lreplace $l [set l 0] $count]
-  return $r
-}
-
-########################################################################
 # @proj-strip-hash-comments value
 #
 # Expects to receive string input, which it splits on newlines, strips
 # out any lines which begin with any number of whitespace followed by
 # a '#', and returns a value containing the [append]ed results of each
-# remaining line with a \n between each.
+# remaining line with a \n between each. It does not strip out
+# comments which appear after the first non-whitespace character.
 proc proj-strip-hash-comments {val} {
   set x {}
   foreach line [split $val \n] {
@@ -223,8 +206,8 @@ proc proj-cflags-without-werror {{var CFLAGS}} {
 #
 # - Does not make any global changes to the LIBS define.
 #
-# - Strips out -W... warning flags from CFLAGS before running the
-#   test, as these feature tests will often fail if -Werror is used.
+# - Strips out the -Werror flag from CFLAGS before running the test,
+#   as these feature tests will often fail if -Werror is used.
 #
 # Returns the result of cc-check-function-in-lib (i.e. true or false).
 # The resulting linker flags are stored in the [define] named
@@ -478,16 +461,16 @@ proc proj-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
     set invert 1
-    set args [lrange $args 1 end]
+    lassign $args - optName defName descr
+  } else {
+    lassign $args optName defName descr
   }
-  set optName [proj-lshift_ args]
-  set defName [proj-lshift_ args]
-  set descr [proj-lshift_ args]
   if {"" eq $descr} {
     set descr $defName
   }
+  puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
-  msg-checking "$descr ... "
+  msg-checking "[join $descr] ... "
   if {[proj-opt-truthy $optName]} {
     if {0 eq $invert} {
       set rc 1
@@ -593,7 +576,7 @@ proc proj-file-content {args} {
     set trim 1
     lassign $args - fname
   }
-  set fp [open $fname r]
+  set fp [open $fname rb]
   set rc [read $fp]
   close $fp
   if {$trim} { return [string trim $rc] }
@@ -606,13 +589,38 @@ proc proj-file-content {args} {
 # Returns the contents of the given file as an array of lines, with
 # the EOL stripped from each input line.
 proc proj-file-content-list {fname} {
-  set fp [open $fname r]
+  set fp [open $fname rb]
   set rc {}
   while { [gets $fp line] >= 0 } {
     lappend rc $line
   }
   close $fp
   return $rc
+}
+
+########################################################################
+# @proj-file-write ?-ro? fname content
+#
+# Works like autosetup's [writefile] but explicitly uses binary mode
+# to avoid EOL translation on Windows. If $fname already exists, it is
+# overwritten, even if it's flagged as read-only.
+proc proj-file-write {args} {
+  if {"-ro" eq [lindex $args 0]} {
+    lassign $args ro fname content
+  } else {
+    set ro ""
+    lassign $args fname content
+  }
+  file delete -force -- $fname; # in case it's read-only
+  set f [open $fname wb]
+  puts -nonewline $f $content
+  close $f
+  if {"" ne $ro} {
+    catch {
+      exec chmod -w $fname
+      #file attributes -w $fname; #jimtcl has no 'attributes'
+    }
+  }
 }
 
 ########################################################################
@@ -681,12 +689,17 @@ proc proj-make-from-dot-in {args} {
   }
   foreach f $filename {
     set f [string trim $f]
-    catch { exec chmod u+w $f }
+    if {[file exists $f]} {
+      catch { exec chmod u+w $f }
+    }
     make-template $f.in $f
     if {$touch} {
       proj-touch $f
     }
-    catch { exec chmod -w $f }
+    catch {
+      exec chmod -w $f
+      #file attributes -w $f; #jimtcl has no 'attributes'
+    }
   }
 }
 
@@ -1364,4 +1377,64 @@ proc proj-env-file {flag {dflt ""}} {
 # If none of those are set, $dflt is returned.
 proc proj-get-env {var {dflt ""}} {
   return [get-env $var [proj-env-file $var $dflt]]
+}
+
+########################################################################
+# @proj-current-proc-name
+#
+# Returns the name of the _calling_ proc from ($lvl + 1) levels up the
+# call stack (where the caller's level will be 1 up from _this_
+# call). It is not legal to call this from the top scope.
+proc proj-current-proc-name {{lvl 0}} {
+  #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
+  lindex [info level [expr {-$lvl - 1}]] 0
+}
+
+
+########################################################################
+# Converts parts of tclConfig.sh to autosetup [define]s.
+#
+# Expects to be passed the name of a value tclConfig.sh or an empty
+# string.  It converts certain parts of that file's contents to
+# [define]s (see the code for the whole list). If $tclConfigSh is an
+# empty string then it [define]s the various vars as empty strings.
+proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
+  set shBody {}
+  set tclVars {
+    TCL_INCLUDE_SPEC
+    TCL_LIB_SPEC
+    TCL_STUB_LIB_SPEC
+    TCL_EXEC_PREFIX
+    TCL_PREFIX
+    TCL_VERSION
+  }
+  # Build a small shell script which proxies the $tclVars from
+  # $tclConfigSh into autosetup code...
+  lappend shBody "if test x = \"x${tclConfigSh}\"; then"
+  foreach v $tclVars {
+    lappend shBody "$v= ;"
+  }
+  lappend shBody "else . \"${tclConfigSh}\"; fi"
+  foreach v $tclVars {
+    lappend shBody "echo define $v {\$$v} ;"
+  }
+  lappend shBody "exit"
+  set shBody [join $shBody "\n"]
+  #puts "shBody=$shBody\n"; exit
+  if {0} {
+    # This doesn't work but would be preferable to using a temp file...
+    set fd [open "| sh" "rw"]
+    #puts "fd = $fd"; exit
+    puts $fd $shBody
+    flush $fd
+    set rd [read $fd]
+    close $fd
+    puts "rd=$rd"; exit 1
+    eval $rd
+  } else {
+    set shName ".tclConfigSh.tcl"
+    proj-file-write $shName $shBody
+    eval [exec sh $shName $tclConfigSh]
+    file delete -force $shName
+  }
 }

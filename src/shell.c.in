@@ -785,6 +785,23 @@ int cli_wcswidth(const char *z){
 #endif
 
 /*
+** Check to see if z[] is a valid VT100 escape.  If it is, then
+** return the number of bytes in the escape sequence.  Return 0 if
+** z[] is not a VT100 escape.
+**
+** This routine assumes that z[0] is \033 (ESC).
+*/
+static int isVt100(const unsigned char *z){
+  int i;
+  if( z[1]!='[' ) return 0;
+  i = 2;
+  while( z[i]>=0x30 && z[i]<=0x3f ){ i++; }
+  while( z[i]>=0x20 && z[i]<=0x2f ){ i++; }
+  if( z[i]<0x40 || z[i]>0x7e ) return 0;
+  return i+1;
+}
+
+/*
 ** Output string zUtf to stdout as w characters.  If w is negative,
 ** then right-justify the text.  W is the width in UTF-8 characters, not
 ** in bytes.  This is different from the %*.*s specification in printf
@@ -799,6 +816,7 @@ static void utf8_width_print(FILE *out, int w, const char *zUtf){
   unsigned char c;
   int i = 0;
   int n = 0;
+  int k;
   int aw = w<0 ? -w : w;
   if( zUtf==0 ) zUtf = "";
   while( (c = a[i])!=0 ){
@@ -811,6 +829,8 @@ static void utf8_width_print(FILE *out, int w, const char *zUtf){
       }
       i += len;
       n += x;
+    }else if( c==0x1b && (k = isVt100(&a[i]))>0 ){
+      i += k;       
     }else if( n>=aw ){
       break;
     }else{
@@ -3998,9 +4018,14 @@ static char *translateForDisplayAndDup(
       i++;
       continue;
     }
-    n++;
-    j += 3;
-    i++;
+    if( c==0x1b && p->eEscMode==SHELL_ESC_OFF && (k = isVt100(&z[i]))>0 ){
+      i += k;
+      j += k;
+    }else{
+      n++;
+      j += 3;
+      i++;
+    }
   }
   if( n>=mxWidth && bWordWrap  ){
     /* Perhaps try to back up to a better place to break the line */
@@ -4066,9 +4091,17 @@ static char *translateForDisplayAndDup(
         zOut[j++] = '^';
         zOut[j++] = 0x40 + c;
         break;
-      case SHELL_ESC_OFF:
-        zOut[j++] = c;
+      case SHELL_ESC_OFF: {
+        int nn;
+        if( c==0x1b && (nn = isVt100(&z[i]))>0 ){
+          memcpy(&zOut[j], &z[i], nn);
+          j += nn;
+          i += nn - 1;
+        }else{
+          zOut[j++] = c;
+        }
         break;
+      }
     }
     i++;
   }

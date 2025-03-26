@@ -187,6 +187,9 @@ CFLAGS.readline ?= -I$(prefix)/include
 # during installation, which may break the build of targets which are
 # built after others are installed.
 #
+# Maintenance reminder: we specifically do not strip binaries, as
+# discussed in https://sqlite.org/forum/forumpost/9a67df63eda9925c.
+#
 INSTALL ?= install
 #
 # $(ENABLE_LIB_SHARED) =

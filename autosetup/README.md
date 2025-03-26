@@ -15,6 +15,8 @@ build infrastructure. It is not an [Autosetup][] reference.
   - Do Not Update Global Shared State
 - [Updating Autosetup](#updating)
   - ***[Patching Autosetup for Project-local changes](#patching)***
+- [Branch-specific Customization](#branch-customization)
+
 
 ------------------------------------------------------------------------
 
@@ -384,6 +386,60 @@ demonstrated in [check-in 3296c8d3](/info/3296c8d3).
 If autosetup is upgraded and this patch is _not_ applied the invoking
 `./configure` will fail loudly because of the declaration of the
 `debug` flag in `auto.def` - duplicated flags are not permitted.
+
+<a name="branch-customization"></a>
+Branch-specific Customization
+========================================================================
+
+Certain vendor-specific branches require slight configure script
+customization. Rather than editing `sqlite-config.tcl` for this,
+which frequently leads to merge conflicts, the following approach
+is recommended:
+
+In the vendor-specific branch, create a file named
+`autosetup/sqlite-custom.tcl`.
+
+That file should contain the following content...
+
+If flag customization is required, add:
+
+>
+```
+proc sqlite-custom-flags {} {
+  # If any existing --flags require different default values
+  # then call:
+  options-defaults {
+    flag-name new-default-value
+    ...
+  }
+  # ^^^ That will replace the default value but will not update
+  # the --help text, which may lead to some confusion:
+  # https://github.com/msteveb/autosetup/issues/77
+
+  return {
+   {*} {
+     new-flag-name => {Help text}
+     ...
+   }
+  }; #see below
+}
+```
+
+That function must return either an empty string or a list in the form
+used internally by `sqlite-config.tcl:sqlite-configure`.
+
+Next, define:
+
+>
+```
+proc sqlite-custom-handle-flags {} {
+  ... do any custom flag handling here ...
+}
+```
+
+That function, if defined, will be called relatively late in the
+configure process, before any filtered files are generated but after
+all other significant processing.
 
 
 [Autosetup]: https://msteveb.github.io/autosetup/
