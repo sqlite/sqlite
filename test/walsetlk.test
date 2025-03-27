@@ -204,10 +204,10 @@ do_multiclient_test tn {
   #
   set bSleep 1
   if {$::sqlite_options(setlk_timeout)==1} {
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       set bSleep 0
     }
-    if {$::tcl_platform(platform)=="unix"} {
+    if {$::tcl_platform(platform) eq "unix"} {
       set bSleep [expr $tn==2]
     }
   }
@@ -252,7 +252,7 @@ do_test 3.1b {
 # Set bExpect to true if calls to xSleep() are expected. Such calls are
 # expected unless this is an SQLITE_ENABLE_SETLK_TIMEOUT=1 build.
 set bExpect 1
-if {$tcl_platform(platform)=="windows" && $::sqlite_options(setlk_timeout)==1} {
+if {$tcl_platform(platform) eq "windows" && $::sqlite_options(setlk_timeout)==1} {
   set bExpect 0
 }
 do_test 3.2 {

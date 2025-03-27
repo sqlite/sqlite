@@ -75,7 +75,7 @@ set fd [open $srcdir/VERSION]
 set VERSION [string trim [read $fd]]
 close $fd
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   # We are only able to install, uninstall, and list on Windows.
   # The build process is handled by the Makefile.msc, specifically
   # using "nmake /f Makefile.msc pkgIndex.tcl tclsqlite3.dll"
@@ -154,7 +154,7 @@ if {$tcl_platform(platform)=="windows"} {
   if {[string length $OPTS]>1} {
     append LDFLAGS $OPTS
   }
-  if {$tcl_platform(os)=="Windows NT"} {
+  if {$tcl_platform(os) eq "Windows NT"} {
     set OUT cyg
   } else {
     set OUT lib

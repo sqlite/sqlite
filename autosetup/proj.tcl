@@ -757,7 +757,7 @@ proc proj-looks-like-windows {{key host}} {
     # These apply only to the local OS, not a cross-compilation target,
     # as the above check potentially can.
     if {$::autosetup(iswin)} { return 1 }
-    if {[find-an-executable cygpath] ne "" || $::tcl_platform(os)=="Windows NT"} {
+    if {[find-an-executable cygpath] ne "" || $::tcl_platform(os) eq "Windows NT"} {
       return 1
     }
   }

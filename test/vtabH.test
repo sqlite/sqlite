@@ -124,13 +124,13 @@ foreach ::tclvar_set_omit {0 1} {
 
 #-------------------------------------------------------------------------
 #
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set drive [string range [pwd] 0 1]
   set ::env(fstreeDrive) $drive
 }
 reset_db
 register_fs_module db
-if {$tcl_platform(platform)!="windows" || \
+if {$tcl_platform(platform) ne "windows" || \
     [regexp -nocase -- {^[A-Z]:} $drive]} {
   do_execsql_test 3.0 {
     SELECT name FROM fsdir WHERE dir = '.' AND name = 'test.db';

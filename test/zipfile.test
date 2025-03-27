@@ -45,7 +45,7 @@ if {[catch {exec unzip} msg]==0 && \
     [regexp -line {^UnZip \d+\.\d+ .*? Info-ZIP\.} $msg]} {
   set ::UNZIP unzip
   proc fix_stat_mode {name mode} {
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       #
       # NOTE: Set or unset the write bits of the file permissions
       #       based on the read-only attribute because the Win32
@@ -280,7 +280,7 @@ do_execsql_test 1.6.2 {
   i.txt 33188 4 zxcvb 0
 }
 
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   set modes -rw-r--r-x
   set perms 33189
 } else {
@@ -407,7 +407,7 @@ if {[info exists ::UNZIP]} {
   do_test 2.5.1 {
     forcedelete dirname
     forcedelete dirname2
-    if {$::tcl_platform(platform)=="unix"} {
+    if {$::tcl_platform(platform) eq "unix"} {
       set null /dev/null
     } else {
       set null NUL
@@ -765,7 +765,7 @@ do_execsql_test 11.11 {
 } {b0suffix two b2suffix one}
 
 
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform) ne "windows"} {
   do_test 12.0 {
     catch { file delete -force subdir }
     foreach {path sz} {

@@ -567,7 +567,7 @@ foreach {tn1 tcl} {
     # make sure SQLite doesn't get confused by this.
     #
     set nPadding [expr 511 - $::mj_filename_length]
-    if {$tcl_platform(platform)=="windows"} {
+    if {$tcl_platform(platform) eq "windows"} {
       # TBD need to figure out how to do this correctly for Windows!!!
       set nPadding [expr 255 - $::mj_filename_length]
     }
