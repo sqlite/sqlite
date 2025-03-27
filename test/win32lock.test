@@ -15,7 +15,7 @@
 # TESTRUNNER: slow
 #
 
-if {$tcl_platform(platform)!="windows"} return
+if {$tcl_platform(os) ne "Windows NT"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
