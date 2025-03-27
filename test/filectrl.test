@@ -47,7 +47,7 @@ db close
 forcedelete .test_control_lockproxy.db-conch test.proxy
 forcedelete test.db test2.db
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   do_test filectrl-2.1 {
     sqlite3 db test2.db
     set size [file size test2.db]

@@ -2593,6 +2593,11 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS)
 		$(TESTFIXTURE_SRC) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
+# A small helper for manually running individual tests
+tf.bat: testfixture.exe Makefile.msc
+	echo @set PATH=$(LIBTCLPATH);%PATH% > $@
+	echo .\testfixture.exe %* >> $@
+
 extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
@@ -2844,7 +2849,9 @@ clean:
 	del /Q lsm.dll lsmtest.exe 2>NUL
 	del /Q atrc.exe changesetfuzz.exe dbtotxt.exe index_usage.exe 2>NUL
 	del /Q testloadext.dll 2>NUL
-	del /Q testfixture.exe test.db 2>NUL
+	del /Q testfixture.exe test.db tf.bat 2>NUL
+	del /Q /S testdir 2>/NUL
+	-rmdir /Q /S testdir 2>NUL
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL

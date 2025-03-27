@@ -56,7 +56,7 @@ static int SQLITE_TCLAPI c_collation_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 
@@ -96,7 +96,7 @@ static int SQLITE_TCLAPI c_realloc_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 
@@ -174,7 +174,7 @@ static int SQLITE_TCLAPI c_misuse_test(
 
 error_out:
   Tcl_ResetResult(interp);
-  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, 0);
+  Tcl_AppendResult(interp, "Error testing function: ", zErrFunction, NULL);
   return TCL_ERROR;
 }
 
