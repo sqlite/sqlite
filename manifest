@@ -1,5 +1,5 @@
-C More\s==/!=\s=>\seq/ne\sfixes
-D 2025-03-27T14:37:07.271
+C shell1.test:\s==\s=>\seq
+D 2025-03-27T17:25:38.922
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1642,7 +1642,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test a00910c3d811420c15c1411106871c65678516435e352cbb013a09839bf327c6
+F test/shell1.test 1467ef88c498a1002b47028c304ad55511e5bdfed9db23d25628b2bd483e1026
 F test/shell2.test ac102ebc0a9ec166257600c4ee8bdefec242163afced295f10b004f4af3fc9dd
 F test/shell3.test 603b448e917537cf77be0f265c05c6f63bc677c63a533c8e96aae923b56f4a0e
 F test/shell4.test ad7eee983b5e7f1dd92d8c87bc0f39474086bc32c980c00f3934c54aabc636a2
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f96a5346e3e890adfdc94a682688c2c15893e50fbaf2a26e5ef39cda8b331ee4
-R 3a061abeb81e61c88ca5615acd1ca53a
+P 2aa6c4fa6c9c47c7a8548ac3493bfb9ed4e4dec1b6dc4f3599a0373086b3e917
+R 781cb8e00ffc42775fc38e66407caae8
 U jan.nijtmans
-Z c5ae25499ec7925175f7ce3442c79e26
+Z 0fc36aed98c6f109c6b40b40ad0dda33
 # Remove this line to create a well-formed Fossil manifest.
