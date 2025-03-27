@@ -800,8 +800,8 @@ do_test $tn.15.3 {
   }
 } {1 data 1 {} {} First 2 data 2 {} {} Second}
 
+db2 close
 }]
 }
-
 
 finish_test

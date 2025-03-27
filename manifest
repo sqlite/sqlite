@@ -1,5 +1,5 @@
-C shell1.test:\s==\s=>\seq
-D 2025-03-27T17:25:38.922
+C Add\san\sexplicit\sdb\sclose\sto\sfix\sa\sfile-is-opened\sfailure\sin\ssession1.test\sin\scygwin.
+D 2025-03-27T18:42:51.747
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1
 F ext/session/changeset.c 7a1e6a14c7e92d36ca177e92e88b5281acd709f3b726298dc34ec0fb58869cb5
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
 F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254831f3d12b113b616cd
-F ext/session/session1.test 57cb77a816af7760bf4e321d315603ab517e46abd853e75620cfb07eb409c6f8
+F ext/session/session1.test 5d2502922d38a1579076863827342379a1609ca6bae78c40691a2be1ed1be2aa x
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
 F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
 F ext/session/session4.test 823f6f018fcbb8dacf61e2960f8b3b848d492b094f8b495eae1d9407d9ab7219
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2aa6c4fa6c9c47c7a8548ac3493bfb9ed4e4dec1b6dc4f3599a0373086b3e917
-R 781cb8e00ffc42775fc38e66407caae8
-U jan.nijtmans
-Z 0fc36aed98c6f109c6b40b40ad0dda33
+P 99fdd19193056259d84768f46519328c300976b102f1b1e0b815720df01b28d0
+R 0e7cf04d0b98fc57a6a54399d55f0abd
+U stephan
+Z 8501b14f4f0f61714b2ced1b79f0fe62
 # Remove this line to create a well-formed Fossil manifest.
