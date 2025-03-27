@@ -6855,7 +6855,7 @@ static int shell_dbtotxt_command(ShellState *p, int nArg, char **azArg){
       for(j=0; j<16 && aLine[j]==0; j++){}
       if( j==16 ) continue;
       if( !seenPageLabel ){
-        sqlite3_fprintf(p->out, "| page %lld offset %lld\n", pgno, pgno*pgSz);
+        sqlite3_fprintf(p->out, "| page %lld offset %lld\n",pgno,(pgno-1)*pgSz);
         seenPageLabel = 1;
       }
       sqlite3_fprintf(p->out, "|  %5d:", i);
