@@ -1,5 +1,5 @@
-C In\sTcl,\salways\suse\seq/ne\sfor\scomparing\sstrings,\snot\s==/!=
-D 2025-03-27T14:32:57.504
+C More\s==/!=\s=>\seq/ne\sfixes
+D 2025-03-27T14:37:07.271
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -952,7 +952,7 @@ F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f310fd3b24a491b6b77bccdf14923b85d6ebcce751068c180d93a6b8ff854399
 F test/basexx1.test d8a50f0744b93dca656625597bcd3499ff4b9a4ea2a82432b119b7d46e3e0c08
-F test/bc_common.tcl b5e42d80305be95697e6370e015af571e5333a1c
+F test/bc_common.tcl c70b896d1d4ce72f769d2c7c1fc15b2cb07559eb2093f2736c8ca51664b29ff5
 F test/bestindex1.test 856a453dff8c68b4568601eed5a8b5e20b4763af9229f3947c215729ed878db0
 F test/bestindex2.test 394ff8fbf34703391247116d6a44e1c50ee7282236ee77909044573cefc37bc0
 F test/bestindex3.test 34bea272b0e0f835651b16a3931dbe7ac927039be6b2e1cb617bbe1d584b492b
@@ -1733,9 +1733,9 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl e7f0c903b2d9dcaa44e707db183d22a5fe17b3f9a3c05a5eed1f4cb5c8fe63bc
-F test/testrunner.tcl 331e5babe5ffff8adb4be91439e698f12aed80d4b137d2f40346ac84e0b3c03f x
-F test/testrunner_data.tcl 6d7e7824bb36278ea65c33f7da6dd3ca101fc7d6f7a765b807dce0aa68c52521
+F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
+F test/testrunner.tcl 228732ca62ea60e97785e13528bd36627cf3c115d59364a5181ed7f85fd0031d x
+F test/testrunner_data.tcl 07f2d36a6321bfd196975aca237db6bba1991032809264a1abeb62e697196d20
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b36adadfa202fb8951149561471c3e01085d31e1837c99806f308f234cd24a8e
-R 87363f71f72b250581db8a9b120ecc74
+P f96a5346e3e890adfdc94a682688c2c15893e50fbaf2a26e5ef39cda8b331ee4
+R 3a061abeb81e61c88ca5615acd1ca53a
 U jan.nijtmans
-Z 4377057af14450d647f3a3daa5be55b0
+Z c5ae25499ec7925175f7ce3442c79e26
 # Remove this line to create a well-formed Fossil manifest.

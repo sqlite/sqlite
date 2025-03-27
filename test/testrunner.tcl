@@ -38,7 +38,7 @@ proc find_interpreter {} {
   }
   if {$rc} {
     puts "Cannot find tcl package sqlite3: Trying to build it now..."
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       set bat [open make-tcl-extension.bat w]
       puts $bat "nmake /f Makefile.msc tclextension"
       close $bat
@@ -170,7 +170,7 @@ proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
   
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
       if {$::tcl_platform(os)=="Darwin"} {
@@ -817,7 +817,7 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {[string match "$a*" --stop-on-coredump]} {
       set TRG(stopOnCore) 1
     } elseif {[string match "$a*" --status]} {
-      if {$tcl_platform(platform)=="windows"} {
+      if {$tcl_platform(platform) eq "windows"} {
         puts stdout \
 "The --status option is not available on Windows. A suggested work-around"
         puts stdout \
@@ -1500,7 +1500,7 @@ proc progress_report {} {
   global TRG
 
   if {$TRG(fullstatus)} {
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       exec [info nameofexe] $::argv0 status --cls
     } else {
       show_status trdb 1
