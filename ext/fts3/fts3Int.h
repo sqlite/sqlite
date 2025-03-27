@@ -14,6 +14,13 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
+#include <assert.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
 #endif
