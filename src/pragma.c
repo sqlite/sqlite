@@ -1025,7 +1025,7 @@ void sqlite3Pragma(
     break;
   }
 
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   /*
   **   PRAGMA data_store_directory
   **   PRAGMA data_store_directory = ""|"directory_name"

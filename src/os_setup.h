@@ -40,7 +40,11 @@
 #  if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || \
           defined(__MINGW32__) || defined(__BORLANDC__)
 #    define SQLITE_OS_WIN 1
-#    define SQLITE_OS_UNIX 0
+#    if defined(__CYGWIN__)
+#      define SQLITE_OS_UNIX 1
+#    else
+#      define SQLITE_OS_UNIX 0
+#    endif
 #  else
 #    define SQLITE_OS_WIN 0
 #    define SQLITE_OS_UNIX 1

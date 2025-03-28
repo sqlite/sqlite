@@ -529,7 +529,8 @@ proc make_script {cfg srcdir bMsvc} {
   # Define either SQLITE_OS_WIN or SQLITE_OS_UNIX, as appropriate.
   if {$::tcl_platform(os) eq "Windows NT"} {
     lappend opts -DSQLITE_OS_WIN=1
-  } else {
+  }
+  if {$::tcl_platform(platform) eq "unix"} {
     lappend opts -DSQLITE_OS_UNIX=1
   }
 

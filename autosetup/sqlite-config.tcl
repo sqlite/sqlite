@@ -428,7 +428,11 @@ proc sqlite-configure-phase1 {buildMode} {
   sqlite-autoreconfig
   proj-file-extensions
   if {".exe" eq [get-define TARGET_EXEEXT]} {
-    define SQLITE_OS_UNIX 0
+    if {$::tcl_platform(platform) eq "unix"} {
+      define SQLITE_OS_UNIX 1
+    } else {
+      define SQLITE_OS_UNIX 0
+    }
     define SQLITE_OS_WIN 1
   } else {
     define SQLITE_OS_UNIX 1

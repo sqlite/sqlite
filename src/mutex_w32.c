@@ -13,7 +13,7 @@
 */
 #include "sqliteInt.h"
 
-#if SQLITE_OS_WIN
+#ifdef _WIN32
 /*
 ** Include code that is common to all os_*.c files
 */

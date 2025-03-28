@@ -420,6 +420,7 @@ static int unixGetpagesize(void);
 ** testing and sandboxing.  The following array holds the names and pointers
 ** to all overrideable system calls.
 */
+#define aSyscall aUnixSyscall
 static struct unix_syscall {
   const char *zName;            /* Name of the system call */
   sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
@@ -1273,7 +1274,7 @@ static int unixLogErrorAtLine(
   const char *zPath,              /* File path associated with error */
   int iLine                       /* Source line number where error occurred */
 ){
-  char *zErr;                     /* Message from strerror() or equivalent */
+  const char *zErr;               /* Message from strerror() or equivalent */
   int iErrno = errno;             /* Saved syscall error number */
 
   /* If this is not a threadsafe build (SQLITE_THREADSAFE==0), then use
@@ -3568,8 +3569,12 @@ static int unixWrite(
 ** Count the number of fullsyncs and normal syncs.  This is used to test
 ** that syncs and fullsyncs are occurring at the right times.
 */
+#if SQLITE_OS_WIN
+extern int sqlite3_sync_count, sqlite3_fullsync_count;
+#else
 int sqlite3_sync_count = 0;
 int sqlite3_fullsync_count = 0;
+#endif
 #endif
 
 /*
@@ -6040,7 +6045,7 @@ static int unixGetTempname(int nBuf, char *zBuf){
       sqlite3_randomness(sizeof(r), &r);
       assert( nBuf>2 );
       zBuf[nBuf-2] = 0;
-      sqlite3_snprintf(nBuf, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX"%llx%c",
+      sqlite3_snprintf(nBuf, zBuf, "%s/" SQLITE_TEMP_FILE_PREFIX "%llx%c",
                        zDir, r, 0);
       if( zBuf[nBuf-2]!=0 || (iLimit++)>10 ){
         rc = SQLITE_ERROR;
@@ -6879,7 +6884,11 @@ static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
 ** sqlite3OsCurrentTime() during testing.
 */
 #ifdef SQLITE_TEST
+# if SQLITE_OS_WIN
+extern int sqlite3_current_time;  /* Fake system time in seconds since 1970. */
+# else
 int sqlite3_current_time = 0;  /* Fake system time in seconds since 1970. */
+# endif
 #endif
 
 /*
@@ -8147,7 +8156,14 @@ static int proxyClose(sqlite3_file *id) {
 ** necessarily been initialized when this routine is called, and so they
 ** should not be used.
 */
+#if SQLITE_OS_WIN
+#if defined(SQLITE_AMALGAMATION)
+static
+#endif
+int sqlite3_os_unix_init(void){
+#else
 int sqlite3_os_init(void){
+#endif
   /*
   ** The following macro defines an initializer for an sqlite3_vfs object.
   ** The name of the VFS is NAME.  The pAppData is a pointer to a pointer
@@ -8270,6 +8286,8 @@ int sqlite3_os_init(void){
   return SQLITE_OK;
 }
 
+#undef aSyscall
+#if !SQLITE_OS_WIN
 /*
 ** Shutdown the operating system interface.
 **
@@ -8281,5 +8299,6 @@ int sqlite3_os_end(void){
   unixBigLock = 0;
   return SQLITE_OK;
 }
+#endif /* !SQLITE_OS_WIN */
 
 #endif /* SQLITE_OS_UNIX */

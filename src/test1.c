@@ -8017,7 +8017,7 @@ static void SQLITE_CDECL win32_file_locker(void *pAppData){
 }
 #endif
 
-#ifdef _WIN32
+#if SQLITE_OS_WIN
 /*
 **      lock_win32_file FILENAME DELAY1 DELAY2
 **

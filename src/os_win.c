@@ -1490,6 +1490,9 @@ void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
 static HANDLE sleepObj = NULL;
 #endif
 
+#if defined(__CYGWIN__) && defined(SQLITE_AMALGAMATION)
+static
+#endif
 void sqlite3_win32_sleep(DWORD milliseconds){
 #if SQLITE_OS_WINRT
   if ( sleepObj==NULL ){
@@ -6625,6 +6628,10 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   if( nBuf>0 ) winGetLastErrorMsg(e, nBuf, zBuf);
   return e;
 }
+
+#if SQLITE_OS_UNIX && !defined(SQLITE_AMALGAMATION)
+int sqlite3_os_unix_init(void);
+#endif
 
 /*
 ** Initialize and deinitialize the operating system interface.

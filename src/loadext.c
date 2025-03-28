@@ -559,7 +559,7 @@ static int sqlite3LoadExtension(
 
   /* Shared library endings to try if zFile cannot be loaded as written */
   static const char *azEndings[] = {
-#if SQLITE_OS_WIN
+#if SQLITE_OS_WIN || defined(__CYGWIN__)
      "dll"   
 #elif defined(__APPLE__)
      "dylib"
