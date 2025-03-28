@@ -1468,14 +1468,15 @@ proc sqlite-handle-dll-basename {} {
 # [define]s LDFLAGS_OUT_IMPLIB to either an empty string or to a
 # -Wl,... flag for the platform-specific --out-implib flag, which is
 # used for building an "import library .dll.a" file on some platforms
-# (e.g. msys2, mingw). Returns 1 if supported, else 0.
+# (e.g. msys2, mingw). SQLITE_OUT_IMPLIB is defined to the name of the
+# import lib or an empty string. Returns 1 if supported, else 0.
 #
 # The name of the import library is [define]d in SQLITE_OUT_IMPLIB.
 #
 # If the configure flag --out-implib is not used (or programmatically
-# set) then this is a no-op (but see [sqlite-handle-env-quirks]).  If
-# that flag is used but the capability is not available, a fatal error
-# is triggered.
+# set) then this simply sets the above-listed defines to empty strings
+# (but see [sqlite-handle-env-quirks]).  If that flag is used but the
+# capability is not available, a fatal error is triggered.
 #
 # This feature is specifically opt-in because it's supported on far
 # more platforms than actually need it and enabling it causes creation

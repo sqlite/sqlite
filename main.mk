@@ -1481,7 +1481,7 @@ all: so
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
 # version 3.48 or higher.  That name is considered a legacy remnant
-# and will eventually be removed from this installation process.
+# and may eventually be removed from this installation process.
 #
 # Historically libtool installed the library like so:
 #
@@ -1542,6 +1542,8 @@ install-dll-unix-generic: install-dll-out-implib
 install-dll-msys: install-dll-out-implib $(install-dir.bin)
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
+# Each of {msys,mingw,cygwin} uses a different name for the DLL, but
+# that is already accounted for via $(libsqlite3.DLL).
 install-dll-mingw:  install-dll-msys
 install-dll-cygwin: install-dll-msys
 
