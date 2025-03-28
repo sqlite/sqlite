@@ -4,8 +4,8 @@
  *
  *	This is used to fix limitations within nmake and the environment.
  *
- * Copyright (c) 2002 by David Gravereaux.
- * Copyright (c) 2006 by Pat Thoyts
+ * Copyright (c) 2002 David Gravereaux.
+ * Copyright (c) 2006 Pat Thoyts
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,7 +19,6 @@
 #pragma comment (lib, "kernel32.lib")
 #endif
 #include <stdio.h>
-#include <math.h>
 
 /*
  * This library is required for x64 builds with _some_ versions of MSVC
@@ -31,7 +30,7 @@
 #endif
 
 /* ISO hack for dumb VC++ */
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER < 1900
 #define   snprintf	_snprintf
 #endif
 
@@ -91,7 +90,7 @@ main(
 	case 'c':
 	    if (argc != 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-		        "usage: %s -c <compiler option>\n"
+			"usage: %s -c <compiler option>\n"
 			"Tests for whether cl.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -102,7 +101,7 @@ main(
 	case 'l':
 	    if (argc < 3) {
 		chars = snprintf(msg, sizeof(msg) - 1,
-	       		"usage: %s -l <linker option> ?<mandatory option> ...?\n"
+			"usage: %s -l <linker option> ?<mandatory option> ...?\n"
 			"Tests for whether link.exe supports an option\n"
 			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -207,25 +206,25 @@ CheckForCompilerFeature(
 
     hProcess = GetCurrentProcess();
 
-    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&si, sizeof(STARTUPINFO));
+    memset(&pi, 0, sizeof(PROCESS_INFORMATION));
+    memset(&si, 0, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
     si.dwFlags   = STARTF_USESTDHANDLES;
     si.hStdInput = INVALID_HANDLE_VALUE;
 
-    ZeroMemory(&sa, sizeof(SECURITY_ATTRIBUTES));
+    memset(&sa, 0, sizeof(SECURITY_ATTRIBUTES));
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = FALSE;
 
     /*
-     * Create a non-inheritible pipe.
+     * Create a non-inheritable pipe.
      */
 
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,
@@ -319,11 +318,11 @@ CheckForCompilerFeature(
      */
 
     return !(strstr(Out.buffer, "D4002") != NULL
-             || strstr(Err.buffer, "D4002") != NULL
-             || strstr(Out.buffer, "D9002") != NULL
-             || strstr(Err.buffer, "D9002") != NULL
-             || strstr(Out.buffer, "D2021") != NULL
-             || strstr(Err.buffer, "D2021") != NULL);
+	    || strstr(Err.buffer, "D4002") != NULL
+	    || strstr(Out.buffer, "D9002") != NULL
+	    || strstr(Err.buffer, "D9002") != NULL
+	    || strstr(Out.buffer, "D2021") != NULL
+	    || strstr(Err.buffer, "D2021") != NULL);
 }
 
 static int
@@ -343,13 +342,13 @@ CheckForLinkerFeature(
 
     hProcess = GetCurrentProcess();
 
-    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-    ZeroMemory(&si, sizeof(STARTUPINFO));
+    memset(&pi, 0, sizeof(PROCESS_INFORMATION));
+    memset(&si, 0, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
     si.dwFlags   = STARTF_USESTDHANDLES;
     si.hStdInput = INVALID_HANDLE_VALUE;
 
-    ZeroMemory(&sa, sizeof(SECURITY_ATTRIBUTES));
+    memset(&sa, 0, sizeof(SECURITY_ATTRIBUTES));
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = TRUE;
@@ -361,7 +360,7 @@ CheckForLinkerFeature(
     CreatePipe(&Out.pipe, &h, &sa, 0);
 
     /*
-     * Dupe the write side, make it inheritible, and close the original.
+     * Dupe the write side, make it inheritable, and close the original.
      */
 
     DuplicateHandle(hProcess, h, hProcess, &si.hStdOutput, 0, TRUE,
@@ -494,9 +493,9 @@ IsIn(
 
 /*
  * GetVersionFromFile --
- * 	Looks for a match string in a file and then returns the version
- * 	following the match where a version is anything acceptable to
- * 	package provide or package ifneeded.
+ *	Looks for a match string in a file and then returns the version
+ *	following the match where a version is anything acceptable to
+ *	package provide or package ifneeded.
  */
 
 static const char *
@@ -593,7 +592,7 @@ list_free(list_item_t **listPtrPtr)
  * SubstituteFile --
  *	As windows doesn't provide anything useful like sed and it's unreliable
  *	to use the tclsh you are building against (consider x-platform builds -
- *	eg compiling AMD64 target from IX86) we provide a simple substitution
+ *	e.g. compiling AMD64 target from IX86) we provide a simple substitution
  *	option here to handle autoconf style substitutions.
  *	The substitution file is whitespace and line delimited. The file should
  *	consist of lines matching the regular expression:
@@ -601,9 +600,9 @@ list_free(list_item_t **listPtrPtr)
  *
  *	Usage is something like:
  *	  nmakehlp -S << $** > $@
- *        @PACKAGE_NAME@ $(PACKAGE_NAME)
- *        @PACKAGE_VERSION@ $(PACKAGE_VERSION)
- *        <<
+ *	    @PACKAGE_NAME@ $(PACKAGE_NAME)
+ *	    @PACKAGE_VERSION@ $(PACKAGE_VERSION)
+ *	    <<
  */
 
 static int
@@ -619,7 +618,7 @@ SubstituteFile(
     if (fp != NULL) {
 
 	/*
-	 * Build a list of substutitions from the first filename
+	 * Build a list of substitutions from the first filename
 	 */
 
 	sp = fopen(substitutions, "rt");
@@ -727,11 +726,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
     int keylen, ret;
     WIN32_FIND_DATA finfo;
 
-    if (dir == NULL || keypath == NULL)
+    if (dir == NULL || keypath == NULL) {
 	return 2; /* Have no real error reporting mechanism into nmake */
+    }
     dirlen = strlen(dir);
-    if ((dirlen + 3) > sizeof(path))
+    if (dirlen > sizeof(path) - 3) {
 	return 2;
+    }
     strncpy(path, dir, dirlen);
     strncpy(path+dirlen, "\\*", 3);	/* Including terminating \0 */
     keylen = strlen(keypath);
@@ -746,8 +747,9 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 #else
     hSearch = FindFirstFile(path, &finfo);
 #endif
-    if (hSearch == INVALID_HANDLE_VALUE)
+    if (hSearch == INVALID_HANDLE_VALUE) {
 	return 1; /* Not found */
+    }
 
     /* Loop through all subdirs checking if the keypath is under there */
     ret = 1; /* Assume not found */
@@ -757,11 +759,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
 	 * We need to check it is a directory despite the
 	 * FindExSearchLimitToDirectories in the above call. See SDK docs
 	 */
-	if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+	if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	    continue;
+	}
 	sublen = strlen(finfo.cFileName);
-	if ((dirlen+1+sublen+1+keylen+1) > sizeof(path))
+	if ((dirlen+1+sublen+1+keylen+1) > sizeof(path)) {
 	    continue;		/* Path does not fit, assume not matched */
+	}
 	strncpy(path+dirlen+1, finfo.cFileName, sublen);
 	path[dirlen+1+sublen] = '\\';
 	strncpy(path+dirlen+1+sublen+1, keypath, keylen+1);
@@ -781,13 +785,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
  * LocateDependency --
  *
  *	Locates a dependency for a package.
- *        keypath - a relative path within the package directory
- *          that is used to confirm it is the correct directory.
+ *	    keypath - a relative path within the package directory
+ *	      that is used to confirm it is the correct directory.
  *	The search path for the package directory is currently only
- *      the parent and grandparent of the current working directory.
- *      If found, the command prints
- *         name_DIRPATH=<full path of located directory>
- *      and returns 0. If not found, does not print anything and returns 1.
+ *	    the parent and grandparent of the current working directory.
+ *	    If found, the command prints
+ *	      name_DIRPATH=<full path of located directory>
+ *	    and returns 0. If not found, does not print anything and returns 1.
  */
 static int LocateDependency(const char *keypath)
 {
@@ -797,8 +801,9 @@ static int LocateDependency(const char *keypath)
 
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);
-	if (ret == 0)
+	if (ret == 0) {
 	    return ret;
+	}
     }
     return ret;
 }

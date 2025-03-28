@@ -1,6 +1,7 @@
-C Merge\scygwin\sand\stclsqlite\sfixes\sinto\strunk.
-D 2025-03-27T23:29:25.564
+C Update\sall\sTEA\sfiles\sto\sthe\slatest\sversion.\sAll\s*.vc\sfiles\sshould\suse\sWindows\sCRLF
+D 2025-03-28T12:43:15.183
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
+F .fossil-settings/crlf-glob dc14bef0e50047c1bb241412c0ece8244b094b79205c330e207a91617b3f559b
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -31,11 +32,11 @@ F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
 F autoconf/tea/tclconfig/install-sh 2182b3705d92e25753411e2c28cf788c69e35a48fbb8aa332e342dfc6b95b80d
 F autoconf/tea/tclconfig/tcl.m4 284faa1d9cf66c1efb42817beb5c8a63626fb35bf903993d4f11fde75677cc1a
-F autoconf/tea/win/makefile.vc 55721106928894cb818164a8ce054da11d948948f5a92a54d262dd0a6a891d4d
-F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea00342d1a1a7eaa19cb
-F autoconf/tea/win/rules-ext.vc fd5740d97aac8c41c97eaa0fbcc0c15a41b6f7075d5f9f593e147d7a284a247a
-F autoconf/tea/win/rules.vc 94a18c3e453535459b4a643983acca52fb8756e79055bd2ad4b0999d66484f4c
-F autoconf/tea/win/targets.vc 96a25a1fa6e9e9cfb348fd3760a5395b4ce8acafc8ed10f0412937ec200d5dbd
+F autoconf/tea/win/makefile.vc 7c9c27520b5aca4213ea1567afefc60f8d52ba5269d8b971f558ea076ca40a61
+F autoconf/tea/win/nmakehlp.c 01a0e9f85df9d23d735cbc7b5ec99d2c45868ebf976d0842650721d0184e362e
+F autoconf/tea/win/rules-ext.vc 50db9d785c66e5b35a5573717ce96340b0bc54ed5659cdb2209ae11fe2cdfe60
+F autoconf/tea/win/rules.vc 4f72691b64283ac3978c535c45d38276558e584c6a94b220582df6b4485e797b
+F autoconf/tea/win/targets.vc 3627f336071161bfb6bbaea40465b731e42f4ad750189a967e58b1ce40b4eb0b
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
 F autosetup/README.md f324bb9f9bf1cc787122034df53fbfdfed28ee2657e6652b763d992ab0d04829
@@ -2216,8 +2217,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5206cee83a4f1e59bfceda35cdfa528f9b4611eaf306da863ae83e9f93cdeb7 c6e4e1cf2b70d2e603ea3faabd9cb5fbd9f5497672574283ace8c62984dfbb97 e60198001e12f85a5d6504ce72226dfceb8666fe5ec649237fa23ae20e8aa32d
-R d6dc8c3c7bf9724429b6bef84640ccd0
-U drh
-Z 9fba388b00eb19a7b9fc8b81e9cc02c7
+P 121f4d97f9a855131859d342bc2ade5f8c34ba7732029ae156d02cec7cb6dd85
+R f7b11a66ce5faa2e6fd24691e3dd6b4d
+T *branch * tea-update
+T *sym-tea-update *
+T -sym-trunk *
+U jan.nijtmans
+Z e55afeea4131e03d2df8cf096458f020
 # Remove this line to create a well-formed Fossil manifest.

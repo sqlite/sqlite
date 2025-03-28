@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 12
+RULES_VERSION_MINOR = 14
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -697,7 +697,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
    && [nmakehlp -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
+   && [nmakehlp -V "$(_TCL_H)" "define TCL_MINOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
@@ -880,6 +880,10 @@ USE_THREAD_ALLOC= 0
 !if [nmakehlp -f $(OPTS) "tcl8"]
 !message *** Build for Tcl8
 TCL_BUILD_FOR = 8
+!endif
+!if [nmakehlp -f $(OPTS) "tk8"]
+!message *** Build for Tk8
+TK_BUILD_FOR = 8
 !endif
 
 !if $(TCL_MAJOR_VERSION) == 8
@@ -1293,7 +1297,8 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+# Even when building against Tcl 9, PRJLIBNAME8 must have "t"
+PRJLIBNAME8	= $(PROJECT)$(VERSION)t$(SUFX:t=).$(EXT)
 # Even when building against Tcl 8, PRJLIBNAME9 must not have "t"
 PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX:t=).$(EXT)
 !if $(TCL_MAJOR_VERSION) == 8 || "$(TCL_BUILD_FOR)" == "8"
@@ -1451,6 +1456,9 @@ OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !if "$(TCL_BUILD_FOR)" == "8"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 !endif
+!if "$(TK_BUILD_FOR)" == "8"
+OPTDEFINES	= $(OPTDEFINES) /DTK_MAJOR_VERSION=8
+!endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
 # Note: some extensions use PACKAGE_NAME and others use PACKAGE_TCLNAME
@@ -1581,7 +1589,7 @@ ldebug= $(ldebug) -profile
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
-lflags	= $(lflags) -nodefaultlib:libucrt.lib
+lflags	= $(lflags) -nodefaultlib:ucrt.lib
 !endif
 
 dlllflags = $(lflags) -dll
