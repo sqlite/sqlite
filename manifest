@@ -1,5 +1,5 @@
-C Add\san\sexplicit\sdb\sclose\sto\sfix\sa\sfile-is-opened\sfailure\sin\ssession1.test\sin\scygwin.
-D 2025-03-27T18:42:51.747
+C Merge\strunk
+D 2025-03-28T07:09:56.542
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -80,9 +80,9 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax b72477722e9b4fe43f8403227d790a1c94221bfad15c27863a4b36d1052e892b
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c fd2a8642fa4701ef5dd6bce7947ecb3c7ae472e1d44022772454a8b74a13155d
+F ext/fts3/fts3.c 4f02858ab845a97bedf06e6cc1fba49a81fe5e00a26df68d0ad0f00a5814fa70
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h ad51347fa5a5a49f6c3bd40a961eafd08f1e410f60b64dea06f115697a2ad9fe
+F ext/fts3/fts3Int.h 53f00a0d037c81174af1089ad7776563dcbccb5ed4697405256d3d4260d9fccc
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
 F ext/fts3/fts3_expr.c 5c13796638d8192c388777166075cdc8bc4b6712024cd5b72c31acdbefce5984
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
@@ -794,7 +794,7 @@ F src/sqliteInt.h 96133c5b4371629b30644a88108a0ca99e6a95a55509cdfc8de9961fba4bbd
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 5875b959c3262d93b32893540c40d4ebb111495adc80db3ee0ddd440966ddcd5
+F src/tclsqlite.c 767a11d470b031e85f51b8924a0e8929b2362ff1975aee3474a10eba3c2e0d36
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c e89a11192dd15da20e8f7dc0731297182b2fff56cf4afe6ca6f9aeab890595c5
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 99fdd19193056259d84768f46519328c300976b102f1b1e0b815720df01b28d0
-R 0e7cf04d0b98fc57a6a54399d55f0abd
-U stephan
-Z 8501b14f4f0f61714b2ced1b79f0fe62
+P c6e4e1cf2b70d2e603ea3faabd9cb5fbd9f5497672574283ace8c62984dfbb97 121f4d97f9a855131859d342bc2ade5f8c34ba7732029ae156d02cec7cb6dd85
+R d6dc8c3c7bf9724429b6bef84640ccd0
+U jan.nijtmans
+Z 38dfb15f7bbfaab098008f6182374596
 # Remove this line to create a well-formed Fossil manifest.

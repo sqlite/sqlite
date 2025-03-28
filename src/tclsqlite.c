@@ -2527,7 +2527,7 @@ static int SQLITE_TCLAPI DbObjCmd(
     Tcl_Channel in;             /* The input file */
     int lineno = 0;             /* Line number of input file */
     char zLineNum[80];          /* Line number print buffer */
-    Tcl_DString str;
+    Tcl_Obj *str;
     Tcl_Obj *pResult;           /* interp result */
 
     const char *zSep;
@@ -2611,19 +2611,22 @@ static int SQLITE_TCLAPI DbObjCmd(
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
+    Tcl_SetChannelOption(NULL, in, "-translation", "auto");
     azCol = malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ) {
       Tcl_AppendResult(interp, "Error: can't malloc()", (char*)0);
       Tcl_Close(interp, in);
       return TCL_ERROR;
     }
-    Tcl_DStringInit(&str);
+    str = Tcl_NewObj();
+    Tcl_IncrRefCount(str);
     (void)sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
-    while( Tcl_Gets(in, &str)>=0 ) {
+    while( Tcl_GetsObj(in, str)>=0 ) {
       char *z;
+      Tcl_Size byteLen;
       lineno++;
-      zLine = Tcl_DStringValue(&str);
+      zLine = (char *)Tcl_GetByteArrayFromObj(str, &byteLen);
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
         if( *z==zSep[0] && strncmp(z, zSep, nSep)==0 ){
@@ -2661,14 +2664,14 @@ static int SQLITE_TCLAPI DbObjCmd(
       }
       sqlite3_step(pStmt);
       rc = sqlite3_reset(pStmt);
-      Tcl_DStringSetLength(&str, 0);
+      Tcl_SetObjLength(str, 0);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp,"Error: ", sqlite3_errmsg(pDb->db), (char*)0);
         zCommit = "ROLLBACK";
         break;
       }
     }
-    Tcl_DStringFree(&str);
+    Tcl_DecrRefCount(str);
     free(azCol);
     Tcl_Close(interp, in);
     sqlite3_finalize(pStmt);
