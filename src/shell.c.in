@@ -10234,9 +10234,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   ){
     char *zFile = 0;
     int i;
-    int eMode = 0;
-    int bOnce = 0;            /* 0: .output, 1: .once, 2: .excel/.www */
-    int bPlain = 0;           /* --plain option */
+    int eMode = 0;          /* 0: .outout/.once, 'x'=.excel, 'w'=.www */
+    int bOnce = 0;          /* 0: .output, 1: .once, 2: .excel/.www */
+    int bPlain = 0;         /* --plain option */
     static const char *zBomUtf8 = "\357\273\277";
     const char *zBom = 0;
 
@@ -10265,7 +10265,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }else if( c=='o' && cli_strcmp(z,"-w")==0 ){
           eMode = 'w';  /* Web browser */
         }else{
-          sqlite3_fprintf(p->out, 
+          sqlite3_fprintf(p->out,
                           "ERROR: unknown option: \"%s\". Usage:\n", azArg[i]);
           showHelp(p->out, azArg[0]);
           rc = 1;
