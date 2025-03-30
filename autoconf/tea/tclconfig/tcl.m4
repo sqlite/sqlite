@@ -142,16 +142,10 @@ AC_DEFUN([TEA_PATH_TCLCONFIG], [
 			`ls -d /usr/pkg/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
-			`ls -d /usr/lib/tcl9.0 2>/dev/null` \
-			`ls -d /usr/lib/tcl8.7 2>/dev/null` \
 			`ls -d /usr/lib/tcl8.6 2>/dev/null` \
 			`ls -d /usr/lib/tcl8.5 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl8.7 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl8.6 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl8.5 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tcl9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tcl8.7 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl/tcl8.6 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl/tcl8.5 2>/dev/null` \
 			; do
@@ -292,18 +286,12 @@ AC_DEFUN([TEA_PATH_TKCONFIG], [
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/pkg/lib 2>/dev/null` \
-			`ls -d /usr/lib/tk9.0 2>/dev/null` \
-			`ls -d /usr/lib/tk8.7 2>/dev/null` \
 			`ls -d /usr/lib/tk8.6 2>/dev/null` \
 			`ls -d /usr/lib/tk8.5 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
-			`ls -d /usr/local/lib/tk9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tk8.7 2>/dev/null` \
 			`ls -d /usr/local/lib/tk8.6 2>/dev/null` \
 			`ls -d /usr/local/lib/tk8.5 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tk9.0 2>/dev/null` \
-			`ls -d /usr/local/lib/tcl/tk8.7 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl/tk8.6 2>/dev/null` \
 			`ls -d /usr/local/lib/tcl/tk8.5 2>/dev/null` \
 			; do
@@ -382,10 +370,10 @@ AC_DEFUN([TEA_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of ${TCL_BIN_DIR}/tclConfig.sh])
 
     if test -f "${TCL_BIN_DIR}/tclConfig.sh" ; then
-	AC_MSG_RESULT([loading])
+        AC_MSG_RESULT([loading])
 	. "${TCL_BIN_DIR}/tclConfig.sh"
     else
-	AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
+        AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
 
     # If the TCL_BIN_DIR is the build directory (not the install directory),
@@ -395,9 +383,9 @@ AC_DEFUN([TEA_LOAD_TCLCONFIG], [
     # instead of TCL_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
     if test -f "${TCL_BIN_DIR}/Makefile" ; then
-	TCL_LIB_SPEC="${TCL_BUILD_LIB_SPEC}"
-	TCL_STUB_LIB_SPEC="${TCL_BUILD_STUB_LIB_SPEC}"
-	TCL_STUB_LIB_PATH="${TCL_BUILD_STUB_LIB_PATH}"
+        TCL_LIB_SPEC="${TCL_BUILD_LIB_SPEC}"
+        TCL_STUB_LIB_SPEC="${TCL_BUILD_STUB_LIB_SPEC}"
+        TCL_STUB_LIB_PATH="${TCL_BUILD_STUB_LIB_PATH}"
     elif test "`uname -s`" = "Darwin"; then
 	# If Tcl was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
@@ -490,10 +478,10 @@ AC_DEFUN([TEA_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of ${TK_BIN_DIR}/tkConfig.sh])
 
     if test -f "${TK_BIN_DIR}/tkConfig.sh" ; then
-	AC_MSG_RESULT([loading])
+        AC_MSG_RESULT([loading])
 	. "${TK_BIN_DIR}/tkConfig.sh"
     else
-	AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
+        AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
 
     # If the TK_BIN_DIR is the build directory (not the install directory),
@@ -503,9 +491,9 @@ AC_DEFUN([TEA_LOAD_TKCONFIG], [
     # instead of TK_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
     if test -f "${TK_BIN_DIR}/Makefile" ; then
-	TK_LIB_SPEC="${TK_BUILD_LIB_SPEC}"
-	TK_STUB_LIB_SPEC="${TK_BUILD_STUB_LIB_SPEC}"
-	TK_STUB_LIB_PATH="${TK_BUILD_STUB_LIB_PATH}"
+        TK_LIB_SPEC="${TK_BUILD_LIB_SPEC}"
+        TK_STUB_LIB_SPEC="${TK_BUILD_STUB_LIB_SPEC}"
+        TK_STUB_LIB_PATH="${TK_BUILD_STUB_LIB_PATH}"
     elif test "`uname -s`" = "Darwin"; then
 	# If Tk was built as a framework, attempt to use the libraries
 	# from the framework at the given location so that linking works
@@ -583,37 +571,37 @@ AC_DEFUN([TEA_LOAD_TKCONFIG], [
 AC_DEFUN([TEA_PROG_TCLSH], [
     AC_MSG_CHECKING([for tclsh])
     if test -f "${TCL_BIN_DIR}/Makefile" ; then
-	# tclConfig.sh is in Tcl build directory
-	if test "${TEA_PLATFORM}" = "windows"; then
-	  if test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}" ; then
-	    TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}"
-	  elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}s${EXEEXT}" ; then
-	    TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}s${EXEEXT}"
-	  elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}t${EXEEXT}" ; then
-	    TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}t${EXEEXT}"
-	  elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}st${EXEEXT}" ; then
-	    TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}st${EXEEXT}"
-	  fi
-	else
-	    TCLSH_PROG="${TCL_BIN_DIR}/tclsh"
-	fi
+        # tclConfig.sh is in Tcl build directory
+        if test "${TEA_PLATFORM}" = "windows"; then
+          if test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}" ; then
+            TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}"
+          elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}s${EXEEXT}" ; then
+            TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}s${EXEEXT}"
+          elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}t${EXEEXT}" ; then
+            TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}t${EXEEXT}"
+          elif test -f "${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}st${EXEEXT}" ; then
+            TCLSH_PROG="${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}st${EXEEXT}"
+          fi
+        else
+            TCLSH_PROG="${TCL_BIN_DIR}/tclsh"
+        fi
     else
-	# tclConfig.sh is in install location
-	if test "${TEA_PLATFORM}" = "windows"; then
-	    TCLSH_PROG="tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}"
-	else
-	    TCLSH_PROG="tclsh${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}"
-	fi
-	list="`ls -d ${TCL_BIN_DIR}/../bin 2>/dev/null` \
-	      `ls -d ${TCL_BIN_DIR}/..     2>/dev/null` \
-	      `ls -d ${TCL_PREFIX}/bin     2>/dev/null`"
-	for i in $list ; do
-	    if test -f "$i/${TCLSH_PROG}" ; then
-		REAL_TCL_BIN_DIR="`cd "$i"; pwd`/"
-		break
-	    fi
-	done
-	TCLSH_PROG="${REAL_TCL_BIN_DIR}${TCLSH_PROG}"
+        # tclConfig.sh is in install location
+        if test "${TEA_PLATFORM}" = "windows"; then
+            TCLSH_PROG="tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}"
+        else
+            TCLSH_PROG="tclsh${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}"
+        fi
+        list="`ls -d ${TCL_BIN_DIR}/../bin 2>/dev/null` \
+              `ls -d ${TCL_BIN_DIR}/..     2>/dev/null` \
+              `ls -d ${TCL_PREFIX}/bin     2>/dev/null`"
+        for i in $list ; do
+            if test -f "$i/${TCLSH_PROG}" ; then
+                REAL_TCL_BIN_DIR="`cd "$i"; pwd`/"
+                break
+            fi
+        done
+        TCLSH_PROG="${REAL_TCL_BIN_DIR}${TCLSH_PROG}"
     fi
     AC_MSG_RESULT([${TCLSH_PROG}])
     AC_SUBST(TCLSH_PROG)
@@ -641,37 +629,37 @@ AC_DEFUN([TEA_PROG_TCLSH], [
 AC_DEFUN([TEA_PROG_WISH], [
     AC_MSG_CHECKING([for wish])
     if test -f "${TK_BIN_DIR}/Makefile" ; then
-	# tkConfig.sh is in Tk build directory
-	if test "${TEA_PLATFORM}" = "windows"; then
-	  if test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}" ; then
-	    WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}"
-	  elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}s${EXEEXT}" ; then
-	    WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}$s{EXEEXT}"
-	  elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}t${EXEEXT}" ; then
-	    WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}t${EXEEXT}"
-	  elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}st${EXEEXT}" ; then
-	    WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}st${EXEEXT}"
-	  fi
-	else
-	    WISH_PROG="${TK_BIN_DIR}/wish"
-	fi
+        # tkConfig.sh is in Tk build directory
+        if test "${TEA_PLATFORM}" = "windows"; then
+          if test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}" ; then
+            WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}"
+          elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}s${EXEEXT}" ; then
+            WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}$s{EXEEXT}"
+          elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}t${EXEEXT}" ; then
+            WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}t${EXEEXT}"
+          elif test -f "${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}st${EXEEXT}" ; then
+            WISH_PROG="${TK_BIN_DIR}/wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}st${EXEEXT}"
+          fi
+        else
+            WISH_PROG="${TK_BIN_DIR}/wish"
+        fi
     else
-	# tkConfig.sh is in install location
-	if test "${TEA_PLATFORM}" = "windows"; then
-	    WISH_PROG="wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}"
-	else
-	    WISH_PROG="wish${TK_MAJOR_VERSION}.${TK_MINOR_VERSION}"
-	fi
-	list="`ls -d ${TK_BIN_DIR}/../bin 2>/dev/null` \
-	      `ls -d ${TK_BIN_DIR}/..     2>/dev/null` \
-	      `ls -d ${TK_PREFIX}/bin     2>/dev/null`"
-	for i in $list ; do
-	    if test -f "$i/${WISH_PROG}" ; then
-		REAL_TK_BIN_DIR="`cd "$i"; pwd`/"
-		break
-	    fi
-	done
-	WISH_PROG="${REAL_TK_BIN_DIR}${WISH_PROG}"
+        # tkConfig.sh is in install location
+        if test "${TEA_PLATFORM}" = "windows"; then
+            WISH_PROG="wish${TK_MAJOR_VERSION}${TK_MINOR_VERSION}${EXEEXT}"
+        else
+            WISH_PROG="wish${TK_MAJOR_VERSION}.${TK_MINOR_VERSION}"
+        fi
+        list="`ls -d ${TK_BIN_DIR}/../bin 2>/dev/null` \
+              `ls -d ${TK_BIN_DIR}/..     2>/dev/null` \
+              `ls -d ${TK_PREFIX}/bin     2>/dev/null`"
+        for i in $list ; do
+            if test -f "$i/${WISH_PROG}" ; then
+                REAL_TK_BIN_DIR="`cd "$i"; pwd`/"
+                break
+            fi
+        done
+        WISH_PROG="${REAL_TK_BIN_DIR}${WISH_PROG}"
     fi
     AC_MSG_RESULT([${WISH_PROG}])
     AC_SUBST(WISH_PROG)
@@ -733,22 +721,22 @@ AC_DEFUN([TEA_ENABLE_SHARED], [
     if test "$shared_ok" = "yes" ; then
 	AC_MSG_RESULT([shared])
 	SHARED_BUILD=1
-	STUBS_BUILD=1
+        STUBS_BUILD=1
     else
 	AC_MSG_RESULT([static])
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD, 1, [This a static build])
-	if test "$stubs_ok" = "yes" ; then
-	  STUBS_BUILD=1
-	else
-	  STUBS_BUILD=0
-	fi
+        if test "$stubs_ok" = "yes" ; then
+          STUBS_BUILD=1
+        else
+          STUBS_BUILD=0
+        fi
     fi
     if test "${STUBS_BUILD}" = "1" ; then
       AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
       AC_DEFINE(USE_TCLOO_STUBS, 1, [Use TclOO stubs])
       if test "${TEA_WINDOWINGSYSTEM}" != ""; then
-	AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
+        AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
       fi
     fi
 
@@ -1193,21 +1181,21 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    fi
 
 	    if test "$GCC" != "yes" ; then
-		if test "${SHARED_BUILD}" = "0" ; then
+	        if test "${SHARED_BUILD}" = "0" ; then
 		    runtime=-MT
-		else
+	        else
 		    runtime=-MD
-		fi
-		case "x`echo \${VisualStudioVersion}`" in
-		    x1[[4-9]]*)
-			lflags="${lflags} -nodefaultlib:libucrt.lib"
-			TEA_ADD_LIBS([ucrt.lib])
-		    ;;
-		    *)
-		    ;;
-		esac
+	        fi
+	        case "x`echo \${VisualStudioVersion}`" in
+	            x1[[4-9]]*)
+		        lflags="${lflags} -nodefaultlib:libucrt.lib"
+		        TEA_ADD_LIBS([ucrt.lib])
+	            ;;
+	            *)
+	            ;;
+	        esac
 
-		if test "$do64bit" != "no" ; then
+                if test "$do64bit" != "no" ; then
 		    CC="cl.exe"
 		    RC="rc.exe"
 		    lflags="${lflags} -nologo -MACHINE:${MACHINE} "
@@ -1506,14 +1494,14 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    # Check to enable 64-bit flags for compiler/linker
 
 	    AS_IF([test "$do64bit" = yes], [
-		AS_IF([test "$GCC" = yes], [
-		    AC_MSG_WARN([64bit mode not supported by gcc])
-		], [
-		    do64bit_ok=yes
-		    SHLIB_LD="ld -64 -shared -rdata_shared"
-		    CFLAGS="$CFLAGS -64"
-		    LDFLAGS_ARCH="-64"
-		])
+	        AS_IF([test "$GCC" = yes], [
+	            AC_MSG_WARN([64bit mode not supported by gcc])
+	        ], [
+	            do64bit_ok=yes
+	            SHLIB_LD="ld -64 -shared -rdata_shared"
+	            CFLAGS="$CFLAGS -64"
+	            LDFLAGS_ARCH="-64"
+	        ])
 	    ])
 	    ;;
 	Linux*|GNU*|NetBSD-Debian|DragonFly-*|FreeBSD-*)
@@ -1535,7 +1523,7 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 		    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
 	    ;;
-	    esac
+            esac
 
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'])
@@ -1740,9 +1728,9 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    # Digital OSF/1
 	    SHLIB_CFLAGS=""
 	    AS_IF([test "$SHARED_BUILD" = 1], [
-		SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='ld -shared -expect_unresolved "*"'
 	    ], [
-		SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
 	    ])
 	    SHLIB_SUFFIX=".so"
 	    AS_IF([test $doRpath = yes], [
@@ -1912,7 +1900,7 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 		LDFLAGS="$LDFLAGS -Wl,-Bexport"
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],
 			[tcl_cv_ld_Bexport=yes],[tcl_cv_ld_Bexport=no])
-		LDFLAGS=$hold_ldflags])
+	        LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_Bexport = yes], [
 		LDFLAGS="$LDFLAGS -Wl,-Bexport"
 	    ])
@@ -2031,8 +2019,8 @@ dnl # preprocessing tests use only CPPFLAGS.
 		SHORT s;
 		LONG l;
 	    ]])],
-	[tcl_cv_winnt_ignore_void=yes],
-	[tcl_cv_winnt_ignore_void=no])
+        [tcl_cv_winnt_ignore_void=yes],
+        [tcl_cv_winnt_ignore_void=no])
 	)
 	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
@@ -2608,9 +2596,9 @@ AC_DEFUN([TEA_TCL_64BIT_FLAGS], [
 	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[switch (0) {
-	    case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
-	}]])],[tcl_cv_type_64bit=${tcl_type_64bit}],[])])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[switch (0) {
+            case 1: case (sizeof(${tcl_type_64bit})==sizeof(long)): ;
+        }]])],[tcl_cv_type_64bit=${tcl_type_64bit}],[])])
     if test "${tcl_cv_type_64bit}" = none ; then
 	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
 	AC_MSG_RESULT([yes])
@@ -2655,7 +2643,7 @@ AC_DEFUN([TEA_TCL_64BIT_FLAGS], [
 	AC_CACHE_CHECK([for DIR64], tcl_cv_DIR64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <dirent.h>]], [[struct dirent64 *p; DIR64 d = opendir64(".");
-	    p = readdir64(d); rewinddir64(d); closedir64(d);]])],
+            p = readdir64(d); rewinddir64(d); closedir64(d);]])],
 		[tcl_cv_DIR64=yes], [tcl_cv_DIR64=no])])
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
@@ -2678,8 +2666,8 @@ AC_DEFUN([TEA_TCL_64BIT_FLAGS], [
 	dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
 	dnl functions lseek64 and open64 are defined.
 	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-		test "x${ac_cv_func_lseek64}" = "xyes" && \
-		test "x${ac_cv_func_open64}" = "xyes" ; then
+	        test "x${ac_cv_func_lseek64}" = "xyes" && \
+	        test "x${ac_cv_func_open64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
 	    AC_MSG_RESULT([yes])
 	else
@@ -3211,7 +3199,7 @@ print("manifest needed")
 
     PACKAGE_LIB_PREFIX8="${PACKAGE_LIB_PREFIX}"
     PACKAGE_LIB_PREFIX9="${PACKAGE_LIB_PREFIX}tcl9"
-    if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" = x; then
+    if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" == x; then
 	PACKAGE_LIB_PREFIX="${PACKAGE_LIB_PREFIX9}"
     else
 	PACKAGE_LIB_PREFIX="${PACKAGE_LIB_PREFIX8}"
@@ -3240,7 +3228,7 @@ print("manifest needed")
 	    eval eval "PKG_LIB_FILE=${PACKAGE_LIB_PREFIX}${PACKAGE_NAME}${UNSHARED_LIB_SUFFIX}"
 	fi
 	# Some packages build their own stubs libraries
-	if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" = x; then
+	if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" == x; then
 	    eval eval "PKG_STUB_LIB_FILE=${PACKAGE_LIB_PREFIX8}${PACKAGE_NAME}stub.a"
 	else
 	    eval eval "PKG_STUB_LIB_FILE=${PACKAGE_LIB_PREFIX8}${PACKAGE_NAME}stub${UNSHARED_LIB_SUFFIX}"
@@ -3268,7 +3256,7 @@ print("manifest needed")
 	    eval eval "PKG_LIB_FILE=lib${PACKAGE_LIB_PREFIX}${PACKAGE_NAME}${UNSHARED_LIB_SUFFIX}"
 	fi
 	# Some packages build their own stubs libraries
-	if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" = x; then
+	if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" == x; then
 	    eval eval "PKG_STUB_LIB_FILE=lib${PACKAGE_LIB_PREFIX8}${PACKAGE_NAME}stub.a"
 	else
 	    eval eval "PKG_STUB_LIB_FILE=lib${PACKAGE_LIB_PREFIX8}${PACKAGE_NAME}stub${UNSHARED_LIB_SUFFIX}"
@@ -3414,9 +3402,9 @@ AC_DEFUN([TEA_PRIVATE_TCL_HEADERS], [
 	# any *_NATIVE vars be defined in the Makefile
 	TCL_INCLUDES="-I${TCL_GENERIC_DIR_NATIVE} -I${TCL_PLATFORM_DIR_NATIVE}"
 	if test "`uname -s`" = "Darwin"; then
-	    # If Tcl was built as a framework, attempt to use
-	    # the framework's Headers and PrivateHeaders directories
-	    case ${TCL_DEFS} in
+            # If Tcl was built as a framework, attempt to use
+            # the framework's Headers and PrivateHeaders directories
+            case ${TCL_DEFS} in
 	    	*TCL_FRAMEWORK*)
 		    if test -d "${TCL_BIN_DIR}/Headers" -a \
 			    -d "${TCL_BIN_DIR}/PrivateHeaders"; then
@@ -3424,7 +3412,7 @@ AC_DEFUN([TEA_PRIVATE_TCL_HEADERS], [
 		    else
 			TCL_INCLUDES="${TCL_INCLUDES} ${TCL_INCLUDE_SPEC} `echo "${TCL_INCLUDE_SPEC}" | sed -e 's/Headers/PrivateHeaders/'`"
 		    fi
-		    ;;
+	            ;;
 	    esac
 	    result="Using ${TCL_INCLUDES}"
 	else
@@ -3865,10 +3853,10 @@ AC_DEFUN([TEA_LOAD_CONFIG], [
     AC_MSG_CHECKING([for existence of ${$1_BIN_DIR}/$1Config.sh])
 
     if test -f "${$1_BIN_DIR}/$1Config.sh" ; then
-	AC_MSG_RESULT([loading])
+        AC_MSG_RESULT([loading])
 	. "${$1_BIN_DIR}/$1Config.sh"
     else
-	AC_MSG_RESULT([file not found])
+        AC_MSG_RESULT([file not found])
     fi
 
     #
@@ -3882,11 +3870,11 @@ AC_DEFUN([TEA_LOAD_CONFIG], [
 
     if test -f "${$1_BIN_DIR}/Makefile" ; then
 	AC_MSG_WARN([Found Makefile - using build library specs for $1])
-	$1_LIB_SPEC=${$1_BUILD_LIB_SPEC}
-	$1_STUB_LIB_SPEC=${$1_BUILD_STUB_LIB_SPEC}
-	$1_STUB_LIB_PATH=${$1_BUILD_STUB_LIB_PATH}
-	$1_INCLUDE_SPEC=${$1_BUILD_INCLUDE_SPEC}
-	$1_LIBRARY_PATH=${$1_LIBRARY_PATH}
+        $1_LIB_SPEC=${$1_BUILD_LIB_SPEC}
+        $1_STUB_LIB_SPEC=${$1_BUILD_STUB_LIB_SPEC}
+        $1_STUB_LIB_PATH=${$1_BUILD_STUB_LIB_PATH}
+        $1_INCLUDE_SPEC=${$1_BUILD_INCLUDE_SPEC}
+        $1_LIBRARY_PATH=${$1_LIBRARY_PATH}
     fi
 
     AC_SUBST($1_VERSION)
@@ -3967,7 +3955,7 @@ AC_DEFUN([TEA_EXPORT_CONFIG], [
 	eval $1_LIB_FLAG="-l$1`echo ${PACKAGE_VERSION} | tr -d .`"
 	eval $1_STUB_LIB_FLAG="-l$1stub`echo ${PACKAGE_VERSION} | tr -d .`"
     fi
-    if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" = x; then
+    if test "${TCL_MAJOR_VERSION}" -gt 8 -a x"${with_tcl8}" == x; then
 	eval $1_STUB_LIB_FLAG="-l$1stub"
     fi
 
@@ -4060,52 +4048,52 @@ AC_DEFUN([TEA_ZIPFS_SUPPORT], [
     AC_CACHE_VAL(ac_cv_path_macher, [
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-	for j in `ls -r $dir/macher 2> /dev/null` \
-	    `ls -r $dir/macher 2> /dev/null` ; do
-	if test x"$ac_cv_path_macher" = x ; then
-	    if test -f "$j" ; then
-	    ac_cv_path_macher=$j
-	    break
-	    fi
-	fi
-	done
+        for j in `ls -r $dir/macher 2> /dev/null` \
+            `ls -r $dir/macher 2> /dev/null` ; do
+        if test x"$ac_cv_path_macher" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_macher=$j
+            break
+            fi
+        fi
+        done
     done
     ])
     if test -f "$ac_cv_path_macher" ; then
-	MACHER_PROG="$ac_cv_path_macher"
-	AC_MSG_RESULT([$MACHER_PROG])
-	AC_MSG_RESULT([Found macher in environment])
+        MACHER_PROG="$ac_cv_path_macher"
+        AC_MSG_RESULT([$MACHER_PROG])
+        AC_MSG_RESULT([Found macher in environment])
     fi
     AC_MSG_CHECKING([for zip])
     AC_CACHE_VAL(ac_cv_path_zip, [
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
     for dir in $search_path ; do
-	for j in `ls -r $dir/zip 2> /dev/null` \
-	    `ls -r $dir/zip 2> /dev/null` ; do
-	if test x"$ac_cv_path_zip" = x ; then
-	    if test -f "$j" ; then
-	    ac_cv_path_zip=$j
-	    break
-	    fi
-	fi
-	done
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
+            fi
+        fi
+        done
     done
     ])
     if test -f "$ac_cv_path_zip" ; then
-	ZIP_PROG="$ac_cv_path_zip"
-	AC_MSG_RESULT([$ZIP_PROG])
-	ZIP_PROG_OPTIONS="-rq"
-	ZIP_PROG_VFSSEARCH="*"
-	AC_MSG_RESULT([Found INFO Zip in environment])
-	# Use standard arguments for zip
+        ZIP_PROG="$ac_cv_path_zip"
+        AC_MSG_RESULT([$ZIP_PROG])
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="*"
+        AC_MSG_RESULT([Found INFO Zip in environment])
+        # Use standard arguments for zip
     else
-	# It is not an error if an installed version of Zip can't be located.
-	# We can use the locally distributed minizip instead
-	ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
-	ZIP_PROG_OPTIONS="-o -r"
-	ZIP_PROG_VFSSEARCH="*"
-	ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-	AC_MSG_RESULT([No zip found on PATH. Building minizip])
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="*"
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        AC_MSG_RESULT([No zip found on PATH. Building minizip])
     fi
     AC_SUBST(MACHER_PROG)
     AC_SUBST(ZIP_PROG)

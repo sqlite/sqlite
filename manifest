@@ -1,5 +1,5 @@
-C Update\sall\sTEA\sfiles\sto\sthe\slatest\sversion.\sAll\s*.vc\sfiles\sshould\suse\sWindows\sCRLF
-D 2025-03-28T12:43:15.183
+C Update\stcl.m4\sas\swell
+D 2025-03-30T09:08:10.791
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/crlf-glob dc14bef0e50047c1bb241412c0ece8244b094b79205c330e207a91617b3f559b
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
@@ -31,7 +31,7 @@ F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 55aec3c6d7e9a1de9b8d2fdc9c27fd055da3ac3a51b572195e2ae7300bcfd3a2
 F autoconf/tea/tclconfig/install-sh 2182b3705d92e25753411e2c28cf788c69e35a48fbb8aa332e342dfc6b95b80d
-F autoconf/tea/tclconfig/tcl.m4 284faa1d9cf66c1efb42817beb5c8a63626fb35bf903993d4f11fde75677cc1a
+F autoconf/tea/tclconfig/tcl.m4 24841be70516af95124d989e9b9a9fb07879fdc9cf2248c4ce6fc7aa3a5ae72b
 F autoconf/tea/win/makefile.vc 7c9c27520b5aca4213ea1567afefc60f8d52ba5269d8b971f558ea076ca40a61
 F autoconf/tea/win/nmakehlp.c 01a0e9f85df9d23d735cbc7b5ec99d2c45868ebf976d0842650721d0184e362e
 F autoconf/tea/win/rules-ext.vc 50db9d785c66e5b35a5573717ce96340b0bc54ed5659cdb2209ae11fe2cdfe60
@@ -2217,11 +2217,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 121f4d97f9a855131859d342bc2ade5f8c34ba7732029ae156d02cec7cb6dd85
-R f7b11a66ce5faa2e6fd24691e3dd6b4d
-T *branch * tea-update
-T *sym-tea-update *
-T -sym-trunk *
+P aa8dc559cc078bd186b999f3c5b83ea42304433e284c499ee93949c7165745eb
+R 0f55e76e192f18066787a8ca3891ac47
 U jan.nijtmans
-Z e55afeea4131e03d2df8cf096458f020
+Z 8aa3b33895e3668cd8ad2e5944ead30b
 # Remove this line to create a well-formed Fossil manifest.
