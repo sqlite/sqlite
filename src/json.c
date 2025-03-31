@@ -3295,7 +3295,7 @@ static char *jsonBadPathError(
 }
 
 /* argv[0] is a BLOB that seems likely to be a JSONB.  Subsequent
-** arguments come in parse where each pair contains a JSON path and
+** arguments come in pairs where each pair contains a JSON path and
 ** content to insert or set at that patch.  Do the updates
 ** and return the result.
 **
