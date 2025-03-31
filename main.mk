@@ -371,12 +371,17 @@ INSTALL.noexec = $(INSTALL) -m 0644
 T.compile = $(T.cc) $(T.compile.extras)
 
 #
+# Optionally set by the configure script to include -DSQLITE_DEBUG=1
+#
+T.cc.TARGET_DEBUG ?=
+
+#
 # $(T.cc.sqlite) is $(T.cc) plus any flags which are desired for the
 # library as a whole, but not necessarily needed for every binary. It
 # will normally get initially populated with flags by the
 # configure-generated makefile.
 #
-T.cc.sqlite ?= $(T.cc)
+T.cc.sqlite ?= $(T.cc) $(T.cc.sqlite.extras) $(T.cc.TARGET_DEBUG)
 
 #
 # $(CFLAGS.intree_includes) = -I... flags relevant specifically to
@@ -392,7 +397,7 @@ T.cc.sqlite += $(CFLAGS.intree_includes)
 #
 # $(T.cc.extension) = compiler invocation for loadable extensions.
 #
-T.cc.extension = $(T.compile) -I. -I$(TOP)/src -DSQLITE_CORE
+T.cc.extension = $(T.compile) -I. -I$(TOP)/src $(T.cc.TARGET_DEBUG) -DSQLITE_CORE
 
 #
 # $(T.link) = compiler invocation for when the target will be an
