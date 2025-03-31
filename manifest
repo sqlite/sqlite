@@ -1,5 +1,5 @@
-C Minor\sshell-internal\sdoc\saddition.\sNo\sfunctional\schanges.
-D 2025-03-29T11:50:25.471
+C The\s--dev\soption\son\s./configure\simplies\s--debug\sand\sadds\s-DSQLITE_DEBUG.
+D 2025-03-31T09:53:20.118
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -15,7 +15,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
-F auto.def f769bf3111089ee9471a2a872c47651c4e29e81d104a52867ab544fde5ef6bad
+F auto.def e8f8cb7396826bc5d89e6619a4fd6a39069786686d469f850c482d2eaa9339aa
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 66d98d473556c4e2daf7252355f4b5db129091800027f280082804eb4c45784f
 F autoconf/Makefile.msc 5bc67d3912444c40c6f96d003e5c90663e51abb83d204a520110b1b2038dcd8b
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 909dd0a02a967baef46c3efdca42a0ab4e15003e34ce7e9af82fce5f17213d7b
-R a860434daa4f1cff46b86cfaeeda49ba
-U stephan
-Z e72984ff9206134a5850abf221ac3d72
+P 01b99c8a2819469568f369479c097cc8e3ed1f2478958460755b283dc7d11706
+R 6c218aec154c4655107f21b73d8542a6
+U drh
+Z 1589ccc4b4a2077318cb6f8bd24f96bb
 # Remove this line to create a well-formed Fossil manifest.

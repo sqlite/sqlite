@@ -20,7 +20,7 @@ sqlite-configure canonical {
     proj-opt-set all 1
     proj-opt-set debug 1
     proj-opt-set amalgamation 0
-    define CFLAGS [get-env CFLAGS {-O0 -g}]
+    define CFLAGS [get-env CFLAGS {-O0 -g -DSQLITE_DEBUG=1}]
     # -------------^^^^^^^ intentionally using [get-env] instead of
     # [proj-get-env] here because [sqlite-setup-default-cflags] uses
     # [proj-get-env] and we want this to supercede that.
