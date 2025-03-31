@@ -1,5 +1,5 @@
-C Ensure\sthat\sextension\ssources\salso\sinherit\sthe\sdebugging-related\sflags\sfrom\s--debug\sor\s--dev.
-D 2025-03-31T10:54:09.382
+C Add\sthe\s?ENCODING?\sparameter\sto\sthe\s"db\scopy"\scommand.\sIf\sused,\sit\swill\stranslate\sfrom\sthe\sgiven\sencoding\sto\sUTF-8
+D 2025-03-31T11:24:10.202
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -794,7 +794,7 @@ F src/sqliteInt.h 96133c5b4371629b30644a88108a0ca99e6a95a55509cdfc8de9961fba4bbd
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 767a11d470b031e85f51b8924a0e8929b2362ff1975aee3474a10eba3c2e0d36
+F src/tclsqlite.c b13fe776a38910f237b5b9861060c83eaa671533f341f49b5eff9a084468f78d
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c e89a11192dd15da20e8f7dc0731297182b2fff56cf4afe6ca6f9aeab890595c5
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -1725,7 +1725,7 @@ F test/tabfunc01.test e85679a3800aa632dee787966b8482fce0bd47629dad82f102fd52f319
 F test/table.test 7862a00b58b5541511a26757ea9c5c7c3f8298766e98aa099deec703d9c0a8e0
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
-F test/tclsqlite.test ad0bbd92edabe64cc91d990a0748142fe5ab962d74ac71fa3bfa94d50d2f4c87
+F test/tclsqlite.test c627fd82e2028d9f03d3f2aafb25361daeb3fd09ea3f933db9114f63e320d7e7
 F test/tempdb.test 4cdaa23ddd8acb4d79cbb1b68ccdfd09b0537aaba909ca69a876157c2a2cbd08
 F test/tempdb2.test 353864e96fd3ae2f70773d0ffbf8b1fe48589b02c2ec05013b540879410c3440
 F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
@@ -2216,8 +2216,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e48189ed33fa9d02b23c18255c7b4c6cab2a6d4b62f7c1edbb0a58ab329735fc
-R 900351079f392a3dac0ffc6765fe20f2
-U stephan
-Z 4c01788cf2ee043c6a538c02c303b015
+P 3e96b772a46638bc25e036de053d620ded3350871ee10e06fd6fe51429934b0d
+R 998b143fedcb6afb3f27ef334de6e12f
+T *branch * db-copy-encoding
+T *sym-db-copy-encoding *
+T -sym-trunk *
+U jan.nijtmans
+Z e388c1b3a45ffe93645e261095f25c2d
 # Remove this line to create a well-formed Fossil manifest.

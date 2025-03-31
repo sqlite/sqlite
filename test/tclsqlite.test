@@ -153,7 +153,7 @@ do_test tcl-1.21 {
 do_test tcl-1.22 {
   set v [catch {db copy} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db copy CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?"}}
+} {1 {wrong # args: should be "db copy CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR? ?ENCODING?"}}
 do_test tcl-1.23 {
   set v [catch {sqlite3 db2 test.db -vfs nosuchvfs} msg]
   lappend v $msg
