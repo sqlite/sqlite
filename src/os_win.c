@@ -489,9 +489,9 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 ** can manually set this value to 1 to emulate Win98 behavior.
 */
 #ifdef SQLITE_TEST
-LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
+int SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
 #else
-static LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
+static int SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
 #endif
 
 #ifndef SYSCALL
@@ -1229,7 +1229,7 @@ static struct win_syscall {
   { "getcwd",                   (SYSCALL)0,                      0 },
 #endif
 
-#define osGetcwd ((char*(*)(char*,size_t))aSyscall[84].pCurrent)
+#define cygGetcwd ((char*(*)(char*,size_t))aSyscall[84].pCurrent)
 
 #ifndef _WIN32
   { "readlink",                 (SYSCALL)readlink,               0 },
@@ -1237,7 +1237,7 @@ static struct win_syscall {
   { "readlink",                 (SYSCALL)0,                      0 },
 #endif
 
-#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[85].pCurrent)
+#define cygReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[85].pCurrent)
 
 #ifndef _WIN32
   { "lstat",                    (SYSCALL)lstat,                  0 },
@@ -1245,7 +1245,7 @@ static struct win_syscall {
   { "lstat",                    (SYSCALL)0,                      0 },
 #endif
 
-#define osLstat ((int(*)(const char*,struct stat*))aSyscall[86].pCurrent)
+#define cygLstat ((int(*)(const char*,struct stat*))aSyscall[86].pCurrent)
 
 #ifndef _WIN32
   { "__errno",                  (SYSCALL)__errno,                0 },
@@ -6078,7 +6078,7 @@ static int mkFullPathname(
   int nPath = sqlite3Strlen30(zPath);
   int iOff = 0;
   if( zPath[0]!='/' ){
-    if( osGetcwd(zOut, nOut-2)==0 ){
+    if( cygGetcwd(zOut, nOut-2)==0 ){
       return winLogError(SQLITE_CANTOPEN_BKPT, (DWORD)osErrno, "getcwd", zPath);
     }
     iOff = sqlite3Strlen30(zOut);
@@ -6123,7 +6123,7 @@ static int winFullPathnameNoMutex(
   SimulateIOError( return SQLITE_ERROR );
 
 #ifdef __CYGWIN__
-  if( osGetcwd ){
+  if( cygGetcwd ){
     zFull[nFull-1] = '\0';
     if( !winIsDriveLetterAndColon(zRelative) || !winIsDirSep(zRelative[2]) ){
       int rc = SQLITE_OK;
@@ -6138,8 +6138,8 @@ static int winFullPathnameNoMutex(
         /* Call lstat() on path zIn. Set bLink to true if the path is a symbolic
         ** link, or false otherwise.  */
         int bLink = 0;
-        if( osLstat && osReadlink ) {
-          if( osLstat(zIn, &buf)!=0 ){
+        if( cygLstat && cygReadlink ) {
+          if( cygLstat(zIn, &buf)!=0 ){
             int myErrno = osErrno;
             if( myErrno!=ENOENT ){
               rc = winLogError(SQLITE_CANTOPEN_BKPT, (DWORD)myErrno, "lstat", zIn);
@@ -6157,7 +6157,7 @@ static int winFullPathnameNoMutex(
             }
 
             if( rc==SQLITE_OK ){
-              nByte = osReadlink(zIn, zDel, nFull-1);
+              nByte = cygReadlink(zIn, zDel, nFull-1);
               if( nByte ==(DWORD)-1 ){
                 rc = winLogError(SQLITE_CANTOPEN_BKPT, (DWORD)osErrno, "readlink", zIn);
               }else{
@@ -6326,7 +6326,7 @@ static int winFullPathnameNoMutex(
     }else{
       char *p = zOut+6;
       *p = '\\';
-      if( osGetcwd ){
+      if( cygGetcwd ){
         /* On Cygwin, UNC paths use forward slashes */
         while( *p ){
           if( *p=='\\' ) *p = '/';
@@ -6631,6 +6631,7 @@ static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 
 #if SQLITE_OS_UNIX && !defined(SQLITE_AMALGAMATION)
 int sqlite3_os_unix_init(void);
+int sqlite3_os_unix_end(void);
 #endif
 
 /*
@@ -6752,6 +6753,10 @@ int sqlite3_os_init(void){
   assert( winSysInfo.dwAllocationGranularity>0 );
   assert( winSysInfo.dwPageSize>0 );
 
+#if SQLITE_OS_UNIX
+  sqlite3_os_unix_init();
+#endif
+
   sqlite3_vfs_register(&winVfs, 1);
 
 #if defined(SQLITE_WIN32_HAS_WIDE)
@@ -6781,6 +6786,10 @@ int sqlite3_os_end(void){
 
 #ifndef SQLITE_OMIT_WAL
   winBigLock = 0;
+#endif
+
+#if SQLITE_OS_UNIX
+  sqlite3_os_unix_end();
 #endif
 
   return SQLITE_OK;

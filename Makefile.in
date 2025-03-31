@@ -138,16 +138,10 @@ libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 # -fsanitize flags for the fuzzcheck-asap app
 CFLAGS.fuzzcheck-asan.fsanitize = @CFLAGS_ASAN_FSANITIZE@
 
-T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
-
 #
-# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
-# can include the generated sqlite_cfg.h.
+# Intended to either be empty or be set to -g -DSQLITE_DEBUG=1.
 #
-# main.mk will fill out T.cc.sqlite with additional flags common to
-# all builds.
-#
-T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+T.cc.TARGET_DEBUG = @TARGET_DEBUG@
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -246,8 +240,8 @@ TSTRNNR_OPTS = @TSTRNNR_OPTS@
 CFLAGS.gcov1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 LDFLAGS.gcov1 = -lgcov
 USE_GCOV = @USE_GCOV@
-T.compile.extras = $(CFLAGS.gcov$(USE_GCOV))
-T.link.extras = $(LDFLAGS.gcov$(USE_GCOV))
+T.compile.gcov = $(CFLAGS.gcov$(USE_GCOV))
+T.link.gcov = $(LDFLAGS.gcov$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.

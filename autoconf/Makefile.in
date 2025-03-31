@@ -193,6 +193,8 @@ install-dll-unix-generic: install-dll-out-implib
 install-dll-msys: install-dll-out-implib $(install-dir.bin)
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
+# Each of {msys,mingw,cygwin} uses a different name for the DLL, but
+# that is already accounted for via $(libsqlite3.DLL).
 install-dll-mingw:  install-dll-msys
 install-dll-cygwin: install-dll-msys
 

@@ -30,6 +30,7 @@
 ** will defined to either 1 or 0. One of them will be 1. The others will be 0.
 ** If none of the macros are initially defined, then select either
 ** SQLITE_OS_UNIX or SQLITE_OS_WIN depending on the target platform.
+** One exception: On Cygwin, both SQLITE_OS_UNIX and SQLITE_OS_WIN can be 1.
 **
 ** If SQLITE_OS_OTHER=1 is specified at compile-time, then the application
 ** must provide its own VFS implementation together with sqlite3_os_init()
@@ -37,14 +38,13 @@
 */
 #if !defined(SQLITE_OS_KV) && !defined(SQLITE_OS_OTHER) && \
        !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_WIN)
-#  if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || \
+#  if defined(__CYGWIN__)
+#    define SQLITE_OS_WIN 1
+#    define SQLITE_OS_UNIX 1
+#  elif defined(_WIN32) || defined(WIN32) || \
           defined(__MINGW32__) || defined(__BORLANDC__)
 #    define SQLITE_OS_WIN 1
-#    if defined(__CYGWIN__)
-#      define SQLITE_OS_UNIX 1
-#    else
-#      define SQLITE_OS_UNIX 0
-#    endif
+#    define SQLITE_OS_UNIX 0
 #  else
 #    define SQLITE_OS_WIN 0
 #    define SQLITE_OS_UNIX 1
@@ -79,16 +79,20 @@
 #  define SQLITE_OS_KV 0
 #  undef SQLITE_OS_OTHER
 #  define SQLITE_OS_OTHER 0
+#  if !defined(__CYGWIN__)
 #  undef SQLITE_OS_WIN
 #  define SQLITE_OS_WIN 0
+#  endif
 #endif
 #if SQLITE_OS_WIN+1>1
 #  undef SQLITE_OS_KV
 #  define SQLITE_OS_KV 0
 #  undef SQLITE_OS_OTHER
 #  define SQLITE_OS_OTHER 0
+#  if !defined(__CYGWIN__)
 #  undef SQLITE_OS_UNIX
 #  define SQLITE_OS_UNIX 0
+#  endif
 #endif
 
 

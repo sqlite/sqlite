@@ -26,6 +26,7 @@ sqlite-configure canonical {
     # [proj-get-env] and we want this to supercede that.
     sqlite-munge-cflags; # straighten out -DSQLITE_ENABLE/OMIT flags
   }
+  sqlite-handle-debug      ;# must come after --dev flag check
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
   sqlite-check-common-system-deps

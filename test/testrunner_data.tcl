@@ -526,7 +526,7 @@ proc make_script {cfg srcdir bMsvc} {
   set makeOpts   [list]                         ;# Extra args for [make]
   set configOpts [list]                         ;# Extra args for [configure]
 
-  # Define either SQLITE_OS_WIN or SQLITE_OS_UNIX, as appropriate.
+  # Define either SQLITE_OS_WIN or SQLITE_OS_UNIX or both, as appropriate.
   if {$::tcl_platform(os) eq "Windows NT"} {
     lappend opts -DSQLITE_OS_WIN=1
   }

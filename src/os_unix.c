@@ -8287,7 +8287,6 @@ int sqlite3_os_init(void){
 }
 
 #undef aSyscall
-#if !SQLITE_OS_WIN
 /*
 ** Shutdown the operating system interface.
 **
@@ -8295,10 +8294,16 @@ int sqlite3_os_init(void){
 ** to release dynamically allocated objects.  But not on unix.
 ** This routine is a no-op for unix.
 */
+#if SQLITE_OS_WIN
+#if defined(SQLITE_AMALGAMATION)
+static
+#endif
+int sqlite3_os_unix_end(void){
+#else
 int sqlite3_os_end(void){
+#endif
   unixBigLock = 0;
   return SQLITE_OK;
 }
-#endif /* !SQLITE_OS_WIN */
 
 #endif /* SQLITE_OS_UNIX */

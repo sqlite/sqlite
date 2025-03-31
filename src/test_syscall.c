@@ -81,7 +81,7 @@
 #include <string.h>
 #include <assert.h>
 
-#if SQLITE_OS_UNIX
+#if SQLITE_OS_UNIX && !defined(__CYGWIN__)
 
 /* From main.c */
 extern const char *sqlite3ErrName(int);
@@ -426,7 +426,7 @@ static int SQLITE_TCLAPI test_syscall_install(
 ){
   sqlite3_vfs *pVfs; 
   Tcl_Size nElem;
-  int i;
+  Tcl_Size i;
   Tcl_Obj **apElem;
 
   if( objc!=3 ){
@@ -438,7 +438,7 @@ static int SQLITE_TCLAPI test_syscall_install(
   }
   pVfs = sqlite3_vfs_find(0);
 
-  for(i=0; i<(int)nElem; i++){
+  for(i=0; i<nElem; i++){
     int iCall;
     int rc = Tcl_GetIndexFromObjStruct(interp, 
         apElem[i], aSyscall, sizeof(aSyscall[0]), "system-call", 0, &iCall
