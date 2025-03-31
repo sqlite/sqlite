@@ -260,8 +260,9 @@ EXTRA_SRC ?=
 #
 # $(OPTS)=... is another way of influencing C compilation. It is
 # distinctly separate from $(OPTIONS) and $(OPT_FEATURE_FLAGS) but,
-# like those, $(OPTS) applies to all invocations of $(T.cc). The
-# configure process does not set either of $(OPTIONS) or $(OPTS).
+# like those, $(OPTS) applies to all invocations of $(T.cc) (and some
+# invocations of $(B.cc). The configure process does not set either of
+# $(OPTIONS) or $(OPTS).
 #
 OPT_FEATURE_FLAGS ?=
 #
@@ -364,16 +365,35 @@ INSTALL.noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
 #
-# $(T.compile) = generic target platform compiler invocation,
-# differing only from $(T.cc) in that it appends $(T.compile.extras),
-# which are primarily intended for use with gcov-related flags.
+# T.compile.gcov = gcov-specific compilation flags for the target
+# platform.
 #
-T.compile = $(T.cc) $(T.compile.extras)
+T.compile.gcov ?=
+#
+# T.link.gcov = gcov-specific link flags for the target platform.
+#
+T.link.gcov ?=
+
+#
+# $(T.compile) = generic target platform compiler invocation,
+# differing only from $(T.cc) in that it appends $(T.compile.gcov),
+# which is intended for use with gcov-related flags.
+#
+T.compile = $(T.cc) $(T.compile.gcov)
 
 #
 # Optionally set by the configure script to include -DSQLITE_DEBUG=1
+# and other debug-related flags.
 #
 T.cc.TARGET_DEBUG ?=
+
+#
+# Extra CFLAGS for both the core sqlite3 components and extensions.
+#
+# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
+# can include the generated sqlite_cfg.h.
+#
+T.cc.sqlite.extras = -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite $(T.cc.TARGET_DEBUG)
 
 #
 # $(T.cc.sqlite) is $(T.cc) plus any flags which are desired for the
@@ -381,7 +401,7 @@ T.cc.TARGET_DEBUG ?=
 # will normally get initially populated with flags by the
 # configure-generated makefile.
 #
-T.cc.sqlite ?= $(T.cc) $(T.cc.sqlite.extras) $(T.cc.TARGET_DEBUG)
+T.cc.sqlite ?= $(T.compile) $(T.cc.sqlite.extras)
 
 #
 # $(CFLAGS.intree_includes) = -I... flags relevant specifically to
@@ -397,16 +417,16 @@ T.cc.sqlite += $(CFLAGS.intree_includes)
 #
 # $(T.cc.extension) = compiler invocation for loadable extensions.
 #
-T.cc.extension = $(T.compile) -I. -I$(TOP)/src $(T.cc.TARGET_DEBUG) -DSQLITE_CORE
+T.cc.extension = $(T.compile) -I. -I$(TOP)/src $(T.cc.sqlite.extras) -DSQLITE_CORE
 
 #
 # $(T.link) = compiler invocation for when the target will be an
 # executable.
 #
-# $(T.link.extras) = optional config-specific flags for $(T.link),
-# primarily intended for use with gcov-related flags.
+# $(T.link.gcov) = optional config-specific flags for $(T.link),
+# intended for use with gcov-related flags.
 #
-T.link = $(T.cc.sqlite) $(T.link.extras)
+T.link = $(T.cc.sqlite) $(T.link.gcov)
 #
 # $(T.link.shared) = $(T.link) invocation specifically for shared libraries
 #

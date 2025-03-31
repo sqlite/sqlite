@@ -525,7 +525,8 @@ define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
 # -shell then it strips that arg and passes the remaining args the
 # sqlite-add-shell-opt in addition to adding them to
-# OPT_FEATURE_FLAGS.
+# OPT_FEATURE_FLAGS. This is intended only for holding
+# -DSQLITE_ENABLE/OMIT/... flags, but that is not enforced here.
 proc sqlite-add-feature-flag {args} {
   set shell ""
   if {"-shell" eq [lindex $args 0]} {
@@ -771,6 +772,9 @@ proc sqlite-finalize-feature-flags {} {
     proj-assert {"canonical" eq $::sqliteConfig(build-mode)}
     msg-result "Appending source files to amalgamation: $extraSrc"
   }
+  if {[lsearch [get-define TARGET_DEBUG ""] -DSQLITE_DEBUG=1] > -1} {
+    msg-result "Note: this is a debug build, so performance will suffer."
+  }
 }
 
 ########################################################################
@@ -780,7 +784,8 @@ proc sqlite-finalize-feature-flags {} {
 proc sqlite-handle-debug {} {
   msg-checking "SQLITE_DEBUG build? "
   proj-if-opt-truthy debug {
-    define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+    define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -O0 -Wall}
+    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE
     proj-opt-set memsys5
     msg-result yes
   } {
@@ -1384,7 +1389,7 @@ proc sqlite-handle-load-extension {} {
     msg-result "Loadable extension support enabled."
   } else {
     msg-result "Disabling loadable extension support. Use --enable-load-extension to enable them."
-    sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
+    sqlite-add-feature-flag -DSQLITE_OMIT_LOAD_EXTENSION=1
   }
   return $found
 }
@@ -1398,7 +1403,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
