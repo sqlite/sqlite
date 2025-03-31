@@ -5,6 +5,7 @@
 # "autoconf" bundle of the SQLite project.
 use sqlite-config
 sqlite-configure autoconf {
+  sqlite-handle-debug
   sqlite-check-common-bins ;# must come before [sqlite-handle-wasi-sdk]
   sqlite-handle-wasi-sdk   ;# must run relatively early, as it changes the environment
   sqlite-check-common-system-deps

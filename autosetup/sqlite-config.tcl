@@ -435,7 +435,6 @@ proc sqlite-configure-phase1 {buildMode} {
     define SQLITE_OS_WIN 0
   }
   sqlite-setup-default-cflags
-  sqlite-handle-debug
   define HAVE_LFS 0
   if {[opt-bool largefile]} {
     #
