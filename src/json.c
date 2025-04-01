@@ -2532,7 +2532,7 @@ static int jsonBlobOverwrite(
   **                             2     3  4     5  6  7  8     9 */
   static const u8 aType[] = { 0xc0, 0xd0, 0, 0xe0, 0, 0, 0, 0xf0 };
 
-  if( (aIns[0]&0x0f)<=2 ) return ;     /* Cannot enlarge NULL, true, false */
+  if( (aIns[0]&0x0f)<=2 ) return 0;    /* Cannot enlarge NULL, true, false */
   switch( aIns[0]>>4 ){
     default: {                         /* aIns[] header size 1 */
       if( ((1<<d)&0x116)==0 ) return 0;  /* d must be 1, 2, 4, or 8 */

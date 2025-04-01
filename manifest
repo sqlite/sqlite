@@ -1,5 +1,5 @@
-C This\sis\san\sexperimental\soptimization\sthat\sattempts\sto\skeep\sa\sJSONB\svalue\nthe\ssame\ssize\s(same\snumber\sof\sbytes)\safter\sdoing\sa\sreplace\sof\san\selements\nwith\sa\sslightly\ssmaller\selement,\sby\sdenormalizing\sthe\ssize\sfield.\s\sThis\ncan\sperhaps\savoid\sunnecessary\spage\supdates\sand\smemmove()\soperations\swhen\nmaking\ssmall\schanges\sin\sthe\smiddle\sof\sa\slarge\sJSONB\svalue.
-D 2025-04-01T15:17:01.606
+C Fix\sa\stypo\saccidently\sadded\sto\sthe\sprior\scheck-in.
+D 2025-04-01T16:26:51.792
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a5f0366266be993ebf533808f22cb7a788624805b55bc45424ceed3f48c54a16
-F src/json.c 1de02e754ea25c5c02ac1edd7b3b5fd20d0da55e74190d0942d779a2a00bf07a
+F src/json.c fbae43c3920110be8d5307003d37d2b85b9bfb6d6d70fcb56ab68204026141af
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2216,11 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dd251377bd1a8e95a4a0179c50595f290b08ea93659f4906f88f5a9dff534aa1
-R d43087fc8a1c599b5542c89f392aa309
-T *branch * json-opt
-T *sym-json-opt *
-T -sym-trunk *
+P b5de9584b7f49586c5387d8a74af5e41dba50f1817a54257bf9da00deb695f72
+R f7b3decde4c91460fa618a18904e7ef3
 U drh
-Z 9a10eb32279f050fc9d357fd9e297aac
+Z 4f8d1e55abbb72c60ce6fde5ac11a1ee
 # Remove this line to create a well-formed Fossil manifest.
