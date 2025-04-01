@@ -23,8 +23,8 @@
 ** Beginning with version 3.45.0 (circa 2024-01-01), these routines also
 ** accept BLOB values that have JSON encoded using a binary representation
 ** called "JSONB".  The name JSONB comes from PostgreSQL, however the on-disk
-** format SQLite JSONB is completely different and incompatible with
-** PostgreSQL JSONB.
+** format for SQLite-JSONB is completely different and incompatible with
+** PostgreSQL-JSONB.
 **
 ** Decoding and interpreting JSONB is still O(N) where N is the size of
 ** the input, the same as text JSON.  However, the constant of proportionality
@@ -81,7 +81,7 @@
 **
 ** The payload size need not be expressed in its minimal form.  For example,
 ** if the payload size is 10, the size can be expressed in any of 5 different
-** ways: (1) (X>>4)==10, (2) (X>>4)==12 following by on 0x0a byte,
+** ways: (1) (X>>4)==10, (2) (X>>4)==12 following by one 0x0a byte,
 ** (3) (X>>4)==13 followed by 0x00 and 0x0a, (4) (X>>4)==14 followed by
 ** 0x00 0x00 0x00 0x0a, or (5) (X>>4)==15 followed by 7 bytes of 0x00 and
 ** a single byte of 0x0a.  The shorter forms are preferred, of course, but
@@ -91,7 +91,7 @@
 ** the size when it becomes known, resulting in a non-minimal encoding.
 **
 ** The value (X>>4)==15 is not actually used in the current implementation
-** (as SQLite is currently unable handle BLOBs larger than about 2GB)
+** (as SQLite is currently unable to handle BLOBs larger than about 2GB)
 ** but is included in the design to allow for future enhancements.
 **
 ** The payload follows the header.  NULL, TRUE, and FALSE have no payload and
@@ -1165,7 +1165,7 @@ static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
 }
 
 
-/* Append an node type byte together with the payload size and
+/* Append a node type byte together with the payload size and
 ** possibly also the payload.
 **
 ** If aPayload is not NULL, then it is a pointer to the payload which
@@ -2501,6 +2501,82 @@ static void jsonAfterEditSizeAdjust(JsonParse *pParse, u32 iRoot){
 }
 
 /*
+** If the JSONB at aIns[0..nIns-1] can be expanded (by denormalizing the
+** size field) by d bytes, then write the expansion into aOut[] and
+** return true.  In this way, an overwrite happens without changing the
+** size of the JSONB, which reduces memcpy() operations and also make it
+** faster and easier to update the B-Tree entry that contains the JSONB
+** in the database.
+**
+** If the expansion of aIns[] by d bytes cannot be (easily) accomplished
+** then return false.
+**
+** The d parameter is guaranteed to be between 1 and 8.
+**
+** This routine is an optimization.  A correct answer is obtained if it
+** always leaves the output unchanged and returns false.
+*/
+static int jsonBlobOverwrite(
+  u8 *aOut,                 /* Overwrite here */
+  const u8 *aIns,           /* New content */
+  u32 nIns,                 /* Bytes of new content */
+  u32 d                     /* Need to expand new content by this much */
+){
+  u32 szPayload;       /* Bytes of payload */
+  u32 i;               /* New header size, after expansion & a loop counter */
+  u8 szHdr;            /* Size of header before expansion */
+
+  /* Lookup table for finding the upper 4 bits of the first byte of the
+  ** expanded aIns[], based on the size of the expanded aIns[] header:
+  **
+  **                             2     3  4     5  6  7  8     9 */
+  static const u8 aType[] = { 0xc0, 0xd0, 0, 0xe0, 0, 0, 0, 0xf0 };
+
+  if( (aIns[0]&0x0f)<=2 ) return 0;    /* Cannot enlarge NULL, true, false */
+  switch( aIns[0]>>4 ){
+    default: {                         /* aIns[] header size 1 */
+      if( ((1<<d)&0x116)==0 ) return 0;  /* d must be 1, 2, 4, or 8 */
+      i = d + 1;                         /* New hdr sz: 2, 3, 5, or 9 */
+      szHdr = 1;
+      break;
+    }
+    case 12: {                         /* aIns[] header size is 2 */
+      if( ((1<<d)&0x8a)==0) return 0;    /* d must be 1, 3, or 7 */
+      i = d + 2;                         /* New hdr sz: 2, 5, or 9 */
+      szHdr = 2;
+      break;
+    }
+    case 13: {                         /* aIns[] header size is 3 */
+      if( d!=2 && d!=6 ) return 0;       /* d must be 2 or 6 */
+      i = d + 3;                         /* New hdr sz: 5 or 9 */
+      szHdr = 3;
+      break;
+    }
+    case 14: {                         /* aIns[] header size is 5 */
+      if( d!=4 ) return 0;               /* d must be 4 */
+      i = 9;                             /* New hdr sz: 9 */
+      szHdr = 5;
+      break;
+    }
+    case 15: {                         /* aIns[] header size is 9 */
+      return 0;                          /* No solution */
+    }
+  }
+  assert( i>=2 && i<=9 && aType[i-2]!=0 );
+  aOut[0] = (aIns[0] & 0x0f) | aType[i-2];
+  memcpy(&aOut[i], &aIns[szHdr], nIns-szHdr);
+  szPayload = nIns - szHdr;
+  while( 1/*edit-by-break*/ ){
+    i--;
+    aOut[i] = szPayload & 0xff;
+    if( i==1 ) break;
+    szPayload >>= 8;
+  }
+  assert( (szPayload>>8)==0 );
+  return 1;
+}
+
+/*
 ** Modify the JSONB blob at pParse->aBlob by removing nDel bytes of
 ** content beginning at iDel, and replacing them with nIns bytes of
 ** content given by aIns.
@@ -2521,6 +2597,11 @@ static void jsonBlobEdit(
   u32 nIns               /* Bytes of content to insert */
 ){
   i64 d = (i64)nIns - (i64)nDel;
+  if( d<0 && d>=(-8) && aIns!=0
+   && jsonBlobOverwrite(&pParse->aBlob[iDel], aIns, nIns, (int)-d)
+  ){
+    return;
+  }
   if( d!=0 ){
     if( pParse->nBlob + d > pParse->nBlobAlloc ){
       jsonBlobExpand(pParse, pParse->nBlob+d);
@@ -2532,7 +2613,9 @@ static void jsonBlobEdit(
     pParse->nBlob += d;
     pParse->delta += d;
   }
-  if( nIns && aIns ) memcpy(&pParse->aBlob[iDel], aIns, nIns);
+  if( nIns && aIns ){
+    memcpy(&pParse->aBlob[iDel], aIns, nIns);
+  }
 }
 
 /*
