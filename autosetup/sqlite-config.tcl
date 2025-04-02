@@ -221,6 +221,11 @@ proc sqlite-configure {buildMode configScript} {
               its containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
       }
+      {canonical} {
+        static-tclsqlite3=0
+          => {Statically-link tclsqlite3. Will only work if static libtcl
+              is available (it usually isn't!).}
+      }
     }
 
     # Options for line-editing modes for the CLI shell
