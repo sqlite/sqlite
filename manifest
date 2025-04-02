@@ -1,5 +1,5 @@
-C Increase\sthe\ssize\sof\sa\svariable\sin\sFTS3\sto\shelp\sstatic\sanalyzers\nsee\sthat\sthere\sare\sno\sinteger\soverflow\sproblems.
-D 2025-04-02T10:42:47.550
+C Remove\ssome\sstray\sdebug\soutput\sfrom\sproj.tcl.
+D 2025-04-02T11:21:09.553
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,7 +51,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl cac07d75249fa127500b8e96080dc807e9ae97fe98d29e84a17bc28f4628e93f
+F autosetup/proj.tcl b3c30cd29f16fdf76196c11391038d7fee32e1cfac2a47546dc058df1c0e075a
 F autosetup/sqlite-config.tcl f4ee2028c603fdffb0dfec1a1ac16f5477c8047c728eac6357382f3767ec203b
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a3d7b04216fff605629902b7de08fd45eb0a89e7e1b0bb7c5ba82cddbc030cc
-R 3da8f4fd9e376ed8f7a905947eb1a25a
-U drh
-Z 865f58a98b7544234ba9407faec2cac8
+P a921a4682fba23e1e223c2e3ecebd22ec59321552bcc563c29ce501bfe70fa4e
+R b36db031e41751f08c8c9b8d5ee4364e
+U stephan
+Z fc1c082b6c56254c3011590d999618fc
 # Remove this line to create a well-formed Fossil manifest.

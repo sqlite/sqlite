@@ -468,7 +468,7 @@ proc proj-opt-define-bool {args} {
   if {"" eq $descr} {
     set descr $defName
   }
-  puts "optName=$optName defName=$defName descr=$descr"
+  #puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
   msg-checking "[join $descr] ... "
   if {[proj-opt-truthy $optName]} {
