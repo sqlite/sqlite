@@ -1,5 +1,5 @@
-C Remove\ssome\sstray\sdebug\soutput\sfrom\sproj.tcl.
-D 2025-04-02T11:21:09.553
+C Fix\sharmless\scompiler\swarnings\sin\sthe\smemstat.c\sextension.\s\sNo\schanges\sto\nthe\score.
+D 2025-04-02T12:41:16.617
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -422,7 +422,7 @@ F ext/misc/fileio.c 07cf3109ec6452789e3a989a010234e2a17b599ce82ea29212c948572456
 F ext/misc/fossildelta.c 8c026e086e406e2b69947f1856fa3b848fff5379962276430d10085b8756b05a
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
-F ext/misc/memstat.c 5b284b78be431c1f5fa154b18eade2407e42c65ed32ec9e9fbf195d114778d7d
+F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a921a4682fba23e1e223c2e3ecebd22ec59321552bcc563c29ce501bfe70fa4e
-R b36db031e41751f08c8c9b8d5ee4364e
-U stephan
-Z fc1c082b6c56254c3011590d999618fc
+P 5fc7150a2045a19966570b86843f180c2f8ff1f4688616ac161f071de0e765ec
+R c2bd6f6427c0c22ec5c2f41063ac6b3e
+U drh
+Z 77b7875a2144a2fd9ebe6776079bddf4
 # Remove this line to create a well-formed Fossil manifest.
