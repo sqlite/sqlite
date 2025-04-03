@@ -1,5 +1,5 @@
-C Add\sexperimental\s--static-tclsqlite3\sconfigure\sflag\sto\sbuild\stclsqlite3\sstatically,\swhich\sonly\sworks\sif\sstatic\slibtcl/etc.\sare\savailable.\sCurrently\sintended\sfor\sdocker\sbuilds\svia\sAlpine\sLinux.
-D 2025-04-02T23:34:35.409
+C Minor\scleanups\sto\sthe\s--static-tclsqlite3\ssupport.
+D 2025-04-03T00:40:33.238
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -52,7 +52,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl b3c30cd29f16fdf76196c11391038d7fee32e1cfac2a47546dc058df1c0e075a
-F autosetup/sqlite-config.tcl 46399e59e18f82ce85bad2831f819c10a38be2c9475885ae3f3b93ac5df3ea26
+F autosetup/sqlite-config.tcl 4c4390106694baf62b2c12b2a0b655ab49265337652656314975f40e62a68915
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -709,7 +709,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c338276860ee7f27e306d7dc24aa56cc4154361bd45dd85a3fef2de11a69fb7f
+F main.mk 3dc309319ff957f7bd951e66565ebdaaf6973e3f88b6aab374c6eba1aa09427f
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2216,11 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e903953ba986df98435da40e94fdb645f6f72279552cba63ef50cec1fe3b486
-R a777dc5b9028c3898bbf56fa6ac897b3
-T *branch * static-tclsqlite3
-T *sym-static-tclsqlite3 *
-T -sym-trunk * Cancelled\sby\sbranch.
+P bef3c8b1b9fd188ee9f941f93bac4567795fea51cee0830abf1ebc1999e1604f
+R b89fa674042cd72e93e0365523635b36
 U stephan
-Z 186e6c7bc392b710af1231a4c5518892
+Z 3891ff9be6404b7947c486f6c2af06f6
 # Remove this line to create a well-formed Fossil manifest.

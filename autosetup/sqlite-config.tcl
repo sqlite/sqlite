@@ -223,8 +223,9 @@ proc sqlite-configure {buildMode configScript} {
       }
       {canonical} {
         static-tclsqlite3=0
-          => {Statically-link tclsqlite3. Will only work if static libtcl
-              is available (it usually isn't!).}
+          => {Statically-link tclsqlite3. This only works if TCL support is
+              enabled and the libs tclsqlite3 needs are all available in
+              static form.}
       }
     }
 
