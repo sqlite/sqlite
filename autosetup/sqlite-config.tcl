@@ -224,7 +224,7 @@ proc sqlite-configure {buildMode configScript} {
       {canonical} {
         static-tclsqlite3=0
           => {Statically-link tclsqlite3. This only works if TCL support is
-              enabled and the libs tclsqlite3 needs are all available in
+              enabled and all requisite libraries are available in
               static form. Note that glibc is unable to fully statically
               link certain libraries required by tclsqlite3, so this won't
               work on most Linux environments.}
@@ -281,6 +281,21 @@ proc sqlite-configure {buildMode configScript} {
       }
 
       {canonical} {
+        # Note that --static-cli-shell has a completely different
+        # meaning from --static-shell in the autoconf build!
+        # --[disable-]static-shell is a legacy flag which we can't
+        # remove without breaking downstream builds. We _could_
+        # recycle the name --static-shell here, as this flag is
+        # (currently) independent of the one in the autoconf build,
+        # but that would likely lead to confusion.
+        static-cli-shell=0
+          => {Statically-link the sqlite3 CLI shell.
+              This only works if the requisite libraries are all available in
+              static form.}
+
+        static-shells=0
+          => {Shorthand for --static-cli-shell --static-tclsqlite3}
+
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
               Needed only by ext/wasm. Default=EMSDK env var.}
@@ -295,6 +310,8 @@ proc sqlite-configure {buildMode configScript} {
     packaging {
       {autoconf} {
         # --disable-static-shell: https://sqlite.org/forum/forumpost/cc219ee704
+        # Note that this has a different meaning from --static-cli-shell in the
+        # canonical build!
         static-shell=1
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }

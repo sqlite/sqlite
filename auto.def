@@ -46,8 +46,6 @@ sqlite-configure canonical {
 
   define LINK_TOOLS_DYNAMICALLY [proj-opt-was-provided dynlink-tools]
 
-  proj-define-for-opt static-tclsqlite3 STATIC_TCLSQLITE3 "Statically link tclsqlite3?"
-
   if {[set fsan [join [opt-val asan-fsanitize] ","]] in {auto ""}} {
     set fsan address,bounds-strict
   }
@@ -55,5 +53,12 @@ sqlite-configure canonical {
 
   sqlite-handle-tcl
   sqlite-handle-emsdk
+
+  proj-if-opt-truthy static-shells {
+    proj-opt-set static-tclsqlite3 1
+    proj-opt-set static-cli-shell 1
+  }
+  proj-define-for-opt static-tclsqlite3 STATIC_TCLSQLITE3 "Statically link tclsqlite3?"
+  proj-define-for-opt static-cli-shell STATIC_CLI_SHELL "Statically link CLI shell?"
 
 }

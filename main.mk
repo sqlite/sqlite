@@ -1431,7 +1431,7 @@ tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 # STATIC_TCLSQLITE3 = 1 to statically link tclsqlite3, else
 # 0. Requires static versions of all requisite libraries. Primarily
 # intended for use with static-friendly environments like Alpine
-# Linux.
+# Linux. It won't work on glibc-based systems.
 #
 STATIC_TCLSQLITE3 ?= 0
 #
@@ -2105,6 +2105,18 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 xbin: threadtest5
 
 #
+# STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux.
+#
+STATIC_CLI_SHELL ?= 0
+#
+# sqlite3shell.flags.N = N is $(STATIC_CLI_SHELL)
+#
+sqlite3shell.flags.1 = -static
+sqlite3shell.flags.0 =
+#
 # When building sqlite3$(T.exe) we specifically embed a copy of
 # sqlite3.c, and not link to libsqlite3.so or libsqlite3.a, because
 # the shell needs to be able to enable arbitrary library features,
@@ -2116,6 +2128,7 @@ xbin: threadtest5
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
+		$(sqlite3shell.flags.$(STATIC_CLI_SHELL)) \
 		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 #
