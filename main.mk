@@ -88,6 +88,10 @@ T.exe ?= $(B.exe)
 T.dll ?= $(B.dll)
 T.lib ?= $(B.lib)
 #
+# HAVE_TCL = 1 to enable full tcl support, else 0.
+#
+HAVE_TCL ?= 0
+#
 # $(TCLSH_CMD) =
 #
 # The canonical tclsh.
@@ -1423,12 +1427,26 @@ tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.DLL)
+#
+# STATIC_TCLSQLITE3 = 1 to statically link tclsqlite3, else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux.
+#
+STATIC_TCLSQLITE3 ?= 0
+#
+# tclsqlite3.(deps|flags).N = N is $(STATIC_TCLSQLITE3)
+#
+tclsqlite3.deps.1 = sqlite3.o
+tclsqlite3.flags.1 = -static $(tclsqlite3.deps.1)
+tclsqlite3.deps.0 = $(libsqlite3.DLL)
+tclsqlite3.flags.0 = $(tclsqlite3.deps.0)
+tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(tclsqlite3.deps.$(STATIC_TCLSQLITE3))
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
-		$(libsqlite3.DLL) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
+		$(tclsqlite3.flags.$(STATIC_TCLSQLITE3)) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
 		$(LDFLAGS.libsqlite3)
 tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
-tclsqlite3$(T.exe)-0 tclsqlite3$(T.exe)-:
+tclsqlite3$(T.exe)-0:
 tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
 # Rules to build opcodes.c and opcodes.h

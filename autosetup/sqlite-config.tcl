@@ -221,6 +221,14 @@ proc sqlite-configure {buildMode configScript} {
               its containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
       }
+      {canonical} {
+        static-tclsqlite3=0
+          => {Statically-link tclsqlite3. This only works if TCL support is
+              enabled and the libs tclsqlite3 needs are all available in
+              static form. Note that glibc is unable to fully statically
+              link certain libraries required by tclsqlite3, so this won't
+              work on most Linux environments.}
+      }
     }
 
     # Options for line-editing modes for the CLI shell
