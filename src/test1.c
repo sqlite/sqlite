@@ -7984,7 +7984,7 @@ struct win32FileLocker {
 #endif
 
 
-#if SQLITE_OS_WIN
+#ifdef _WIN32
 #include <process.h>
 /*
 ** The background thread that does file locking.
