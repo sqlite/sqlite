@@ -1510,7 +1510,7 @@ proc sqlite-handle-mac-cversion {} {
 
 ########################################################################
 # If this is a Mac platform, check for support for
-# -Wl,-install_name,...  and, if it's set, define
+# -Wl,-install_name,...  and, if it's available, define
 # LDFLAGS_MAC_INSTALL_NAME to a variant of that string which is
 # intended to expand at make-time, else set LDFLAGS_MAC_INSTALL_NAME
 # to an empty string.

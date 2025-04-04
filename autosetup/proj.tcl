@@ -1411,6 +1411,10 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     TCL_EXEC_PREFIX
     TCL_PREFIX
     TCL_VERSION
+    TCL_MAJOR_VERSION
+    TCL_MINOR_VERSION
+    TCL_PATCH_LEVEL
+    TCL_SHLIB_SUFFIX
   }
   # Build a small shell script which proxies the $tclVars from
   # $tclConfigSh into autosetup code...
