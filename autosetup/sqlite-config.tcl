@@ -651,15 +651,41 @@ proc sqlite-setup-default-cflags {} {
 # Handle various SQLITE_ENABLE_... feature flags.
 proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
-  foreach {boolFlag featureFlag ifSetEvalThis} {
-    all         {} {
-      # The 'all' option must be first in this list.
-      proj-opt-set fts4
-      proj-opt-set fts5
-      proj-opt-set geopoly
-      proj-opt-set rtree
-      proj-opt-set session
+  if {"tcl-extension" eq $::sqliteConfig(build-mode)} {
+    set allFlagEnables {fts3 fts4 fts5 rtree geopoly}
+  } else {
+    set allFlagEnables {fts4 fts5 rtree rtree geopoly session}
+  }
+  if {![opt-bool all]} {
+    # Special handling for --disable-all
+    foreach flag $allFlagEnables {
+      if {![proj-opt-was-provided $flag]} {
+        proj-opt-set $flag 0
+      }
     }
+  }
+  foreach {boolFlag featureFlag ifSetEvalThis} [proj-strip-hash-comments {
+    all         {} {
+      # The 'all' option must be first in this list.  This impl makes
+      # an effort to only apply flags which the user did not already
+      # apply, so that combinations like (--all --disable-geopoly)
+      # will indeed disable geopoly. There are corner cases where
+      # flags which depend on each other will behave in non-intuitive
+      # ways:
+      #
+      # --all --disable-rtree
+      #
+      # Will NOT disable geopoly, though geopoly depends on rtree.
+      # The --geopoly flag, though, will automatically re-enable
+      # --rtree, so --disable-rtree won't actually disable anything in
+      # that case.
+      foreach k $allFlagEnables {
+        if {![proj-opt-was-provided $k]} {
+          proj-opt-set $k 1
+        }
+      }
+    }
+    fts3         -DSQLITE_ENABLE_FTS3    {sqlite-affirm-have-math fts3}
     fts4         -DSQLITE_ENABLE_FTS4    {sqlite-affirm-have-math fts4}
     fts5         -DSQLITE_ENABLE_FTS5    {sqlite-affirm-have-math fts5}
     geopoly      -DSQLITE_ENABLE_GEOPOLY {proj-opt-set rtree}
@@ -676,7 +702,7 @@ proc sqlite-handle-common-feature-flags {} {
       }
     }
     scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
-  } {
+  }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
       # the autoconf bundle.
