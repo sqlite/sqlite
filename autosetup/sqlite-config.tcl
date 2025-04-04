@@ -24,6 +24,7 @@ if {"--help" ni $::argv} {
 }
 use system ; # Will output "Host System" and "Build System" lines
 if {"--help" ni $::argv} {
+  proj-tweak-default-env-dirs
   msg-result "Source dir = $::autosetup(srcdir)"
   msg-result "Build dir  = $::autosetup(builddir)"
   use cc cc-db cc-shared cc-lib pkg-config

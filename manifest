@@ -1,5 +1,5 @@
-C Add\sthe\s--static-cli-shell\sconfigure\sflag\sto\sthe\scanonical\sbuild,\swhich\sworks\slike\s--static-tclsqlite3\sbut\sapplies\sto\sthe\sCLI\sshell\s(statically\slinking\sit,\swhich\sonly\sworks\sif\sall\srequisite\slibs\sare\savailable\sin\sstatic\sform).\sIt\sis\snot\scalled\s--static-shell\sbecause\sthat\sflag\shas\sa\scompletely\sdifferent\slegacy\smeaning\sin\sthe\sautoconf\sbuild\sand\sthis\sflight\smight\seventually\sbe\sadded\sto\sthat\sbuild,\sso\swould\scollide\sthere.
-D 2025-04-03T13:24:38.684
+C On\sHaikuOS,\sif\s--prefix\sis\snot\sexplicitly\sprovided\sthen\sdefault\sit\sto\s/boot/home/config/non-packaged,\sbased\son\san\soff-list\sdiscussion\swith\sHaikuOS\suser\sBrickViking.
+D 2025-04-04T02:40:08.657
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,8 +51,8 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl b3c30cd29f16fdf76196c11391038d7fee32e1cfac2a47546dc058df1c0e075a
-F autosetup/sqlite-config.tcl e098453e03d13bd1cff3c7f48db98c74f4ff0ab3c1ce6a5e40871a1e74315249
+F autosetup/proj.tcl 54edc60bf8f608b515a7109cd05c673ddc21dffc2c763b4dd871ac2072485dd2
+F autosetup/sqlite-config.tcl 8da064ba9edf03df18014e7e3242e2bbcb3db374866ad26e2acd08a4c53751bb
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61836324369e3213841295911aed4f8439a4b2b0f24820c2cf45bb68a0e2cd04
-R 8cb72016593f661ec1b70664fca522d9
+P fd2c1638ecc38617f5de0380ad23f233d1159be0712ae2ca4cae5c99e841f1b1
+R 75944a4ecd66309972a2e0bcf3170747
 U stephan
-Z 1ce8105ce198761cc8609ef51909976a
+Z 2b58a487000aab207aec456d9e913727
 # Remove this line to create a well-formed Fossil manifest.
