@@ -1,5 +1,5 @@
-C Feature-complete.\sNot\sall\stest-cases\spass.\sMerge\strunk.
-D 2025-03-31T14:12:44.221
+C win32longpath\smakes\sno\ssense\son\sCygwin.\sAll\stests\spass\snow\s(except\sdelete_db-1.3.0)
+D 2025-04-04T06:47:36.689
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2071,7 +2071,7 @@ F test/wherelimit3.test 22d73e046870cf8bbe15573eda6b432b07ebe64a88711f9f849c6b36
 F test/widetab1.test c296a98e123762de79917350e45fa33fdf88577a2571eb3a64c8bf7e44ef74d1
 F test/win32heap.test 1ec2ce646aee491ec23bfcdfd005b33c79f13bf91467966f374a76ffe7c7e85f
 F test/win32lock.test e56d7a9b6cf9d5f3867c2dd19ff36c5326881e4038c6867610ecb3a9868ea4eb
-F test/win32longpath.test df477a2891bd6a1a4e78e43290ea219a777da85eb2590092e36da65f2fb5f1cf
+F test/win32longpath.test 0f9837039b306735c13521c5f25b6ed42937b600dace58e28a3d2f8baf429b6a
 F test/win32nolock.test 95854dc0206b8a95e4aee15a76acc082767b38f079b2e24676aed6cbb0f32798
 F test/window1.test 79dc3b9a2226f622d7e104a1fc750d1c4c3c08d6147b59085bdbe05352947ffa
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 648aca5b47a2a9d070791f6924baac36a3e45706539678b310d4c8ab37129a34 e64c6a3856b839e4e8c0a1cb1713b0d2f1d3cb9b915dd215b0d3cb229502d539
-R 8f9a6f5ed3065a804e30e8de0eec7da2
+P 6552bfb70ae91ee28aadaa6ec22c8ecd272e2e68f175f0dc494b6ec2b96909bf
+R 118cee36983dc4834f684f55ae964fb2
 U jan.nijtmans
-Z 0c3d4c0b618cf07d02c083ca6188b4de
+Z e8a83810a4c0fca4b3c3e0c18e4cfd75
 # Remove this line to create a well-formed Fossil manifest.
