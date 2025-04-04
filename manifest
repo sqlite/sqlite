@@ -1,5 +1,5 @@
-C Correct\sa\smakefile\svar\sname\stype\sin\sthe\sconfigure\sscript,\sintroduced\sin\s[4947c1c782].
-D 2025-04-04T22:59:32.701
+C Rename\smakefile\svar\slibtclsqlite3.SO\sto\slibtclsqlite3.DLL\sfor\sconsistency.
+D 2025-04-04T23:12:32.981
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -709,7 +709,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 9692d882ecb43332b62295b3d0aa5ba356d4c2ad387d322b85e5bc98800e9285
+F main.mk f03c2af6e15b4a24ae18e2f675da306cc8e95e3d064a9763bf50eff2e7d83b5f
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0e1e49c7a4af526143214ce7dee97ef0da5e7baa85728fc667b1f7607693ab7
-R 38ac2cde604486aba3e9d7b4f05e364a
+P 84d77c5fe84d99d4af695a4da424b7dfc65f2343624e201736b7d673b2a8f179
+R 41dbfa3a3eb3de976c07f1845f1b45cd
 U stephan
-Z 85caa2e9f1276fc2e57e5363e1142a89
+Z 62730cb1d0d281d2a24934aa35440eec
 # Remove this line to create a well-formed Fossil manifest.

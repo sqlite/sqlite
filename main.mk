@@ -1630,8 +1630,8 @@ pkgIndex.tcl:
 pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
-libtclsqlite3.SO = libtclsqlite3$(T.dll)
-$(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
+libtclsqlite3.DLL = libtclsqlite3$(T.dll)
+$(libtclsqlite3.DLL): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
@@ -1639,19 +1639,19 @@ $(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 # ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
 # tclConfig.sh, but it's defined in such a way as to be useless for a
 # _static_ makefile.
-$(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
-$(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
-libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
+$(libtclsqlite3.DLL)-1: $(libtclsqlite3.DLL)
+$(libtclsqlite3.DLL)-0 $(libtclsqlite3.DLL)-:
+libtcl: $(libtclsqlite3.DLL)-$(HAVE_TCL)
 tcl: libtcl
 all: tcl
 
-install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
+install-tcl-1: $(libtclsqlite3.DLL) pkgIndex.tcl
 	$(T.tcl.env.source); \
 	$(INSTALL) -d "$(DESTDIR)$$TCLLIBDIR"; \
-	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$TCLLIBDIR"; \
+	$(INSTALL) $(libtclsqlite3.DLL) "$(DESTDIR)$$TCLLIBDIR"; \
 	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$TCLLIBDIR"
 install-tcl-0 install-tcl-:
-	@echo "TCL support disabled, so not installing $(libtclsqlite3.SO)"
+	@echo "TCL support disabled, so not installing $(libtclsqlite3.DLL)"
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
 
@@ -2557,7 +2557,7 @@ tidy:
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.SO) libsqlite3$(T.dll).a
+	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.DLL) libsqlite3$(T.dll).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
