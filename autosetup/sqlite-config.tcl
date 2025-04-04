@@ -2088,12 +2088,11 @@ proc sqlite-determine-codegen-tcl {} {
 }; # sqlite-determine-codegen-tcl
 
 ########################################################################
-# Runs sqlite-check-tcl and, if $alsoCheckCodeGen is true,
-# sqlite-determine-codegen-tcl (intended only for the canonical
-# build).
-proc sqlite-handle-tcl {{alsoCheckCodeGen 1}} {
+# Runs sqlite-check-tcl and, if this is the canonical build,
+# sqlite-determine-codegen-tcl.
+proc sqlite-handle-tcl {} {
   sqlite-check-tcl
-  if {$alsoCheckCodeGen} {
+  if {"canonical" eq $::sqliteConfig(build-mode)} {
     msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
   }
 }

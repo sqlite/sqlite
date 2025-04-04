@@ -1443,7 +1443,8 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 # @proj-tweak-default-env-dirs
 #
 # This function is not useful before [use system] is called to set up
-# --prefix and friends.
+# --prefix and friends. It should be called as soon after [use system]
+# as feasible.
 #
 # For certain target environments, if --prefix is _not_ passed in by
 # the user, set the prefix to an environment-specific default. For

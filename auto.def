@@ -61,4 +61,4 @@ sqlite-configure canonical {
   proj-define-for-opt static-tclsqlite3 STATIC_TCLSQLITE3 "Statically link tclsqlite3?"
   proj-define-for-opt static-cli-shell STATIC_CLI_SHELL "Statically link CLI shell?"
 
-}
+}; # sqlite-configure
