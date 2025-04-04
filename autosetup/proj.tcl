@@ -1402,6 +1402,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
   set shBody {}
   set tclVars {
     TCL_INCLUDE_SPEC
+    TCL_LIBS
     TCL_LIB_SPEC
     TCL_STUB_LIB_SPEC
     TCL_EXEC_PREFIX
