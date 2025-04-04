@@ -468,7 +468,7 @@ proc proj-opt-define-bool {args} {
   if {"" eq $descr} {
     set descr $defName
   }
-  puts "optName=$optName defName=$defName descr=$descr"
+  #puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
   msg-checking "[join $descr] ... "
   if {[proj-opt-truthy $optName]} {
@@ -1437,4 +1437,33 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     eval [exec sh $shName $tclConfigSh]
     file delete -force $shName
   }
+}
+
+########################################################################
+# @proj-tweak-default-env-dirs
+#
+# This function is not useful before [use system] is called to set up
+# --prefix and friends.
+#
+# For certain target environments, if --prefix is _not_ passed in by
+# the user, set the prefix to an environment-specific default. For
+# such environments its does [define prefix ...]  and [proj-opt-set
+# prefix ...], but it does not process vars derived from the prefix,
+# e.g. exec-prefix. To do so it is generally necessary to also call
+# proj-remap-autoconf-dir-vars late in the config process (immediately
+# before ".in" files are filtered).
+#
+# Returns 1 if it modifies the environment, else 0.
+proc proj-tweak-default-env-dirs {} {
+  switch -glob -- [get-define host] {
+    *-haiku {
+      set hpre /boot/home/config/non-packaged
+      if {![proj-opt-was-provided prefix]} {
+        proj-opt-set prefix $hpre
+        define prefix $hpre
+        return 1
+      }
+    }
+  }
+  return 0
 }
