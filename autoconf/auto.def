@@ -11,6 +11,10 @@ sqlite-configure autoconf {
   sqlite-check-common-system-deps
   proj-define-for-opt static-shell ENABLE_STATIC_SHELL \
     "Link library statically into the CLI shell?"
+  proj-define-for-opt static-cli-shell STATIC_CLI_SHELL "Statically link CLI shell?"
+  if {![opt-bool static-shell] && [opt-bool static-cli-shell]} {
+    proj-fatal "--disable-static-shell and --static-cli-shell are mutualy exclusive"
+  }
   if {![opt-bool shared] && ![opt-bool static-shell]} {
     proj-opt-set shared 1
     proj-indented-notice {

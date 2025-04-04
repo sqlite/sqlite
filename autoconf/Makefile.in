@@ -229,9 +229,22 @@ sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS.libsqlite3)
 sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib)
 sqlite3-shell-deps.1 = $(TOP)/sqlite3.c
 sqlite3-shell-deps.0 = $(libsqlite3.DLL)
+#
+# STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux.
+#
+STATIC_CLI_SHELL = @STATIC_CLI_SHELL@
+#
+# sqlite3-shell-static.flags.N = N is $(STATIC_CLI_SHELL)
+#
+sqlite3-shell-static.flags.1 = -static
+sqlite3-shell-static.flags.0 =
 sqlite3$(T.exe): $(TOP)/shell.c $(sqlite3-shell-deps.$(ENABLE_STATIC_SHELL))
 	$(CC) -o $@ \
 		$(TOP)/shell.c $(sqlite3-shell-link-flags.$(ENABLE_STATIC_SHELL)) \
+		$(sqlite3-shell-static.flags.$(STATIC_CLI_SHELL)) \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
 		$(LDFLAGS) $(LDFLAGS.readline)

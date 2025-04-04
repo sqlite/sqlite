@@ -281,19 +281,18 @@ proc sqlite-configure {buildMode configScript} {
           => {Top-most dir of the wasi-sdk for a WASI build}
       }
 
-      {canonical} {
+      {*} {
         # Note that --static-cli-shell has a completely different
         # meaning from --static-shell in the autoconf build!
         # --[disable-]static-shell is a legacy flag which we can't
-        # remove without breaking downstream builds. We _could_
-        # recycle the name --static-shell here, as this flag is
-        # (currently) independent of the one in the autoconf build,
-        # but that would likely lead to confusion.
+        # remove without breaking downstream builds.
         static-cli-shell=0
           => {Statically-link the sqlite3 CLI shell.
               This only works if the requisite libraries are all available in
               static form.}
+      }
 
+      {canonical} {
         static-shells=0
           => {Shorthand for --static-cli-shell --static-tclsqlite3}
 

@@ -2112,10 +2112,10 @@ xbin: threadtest5
 #
 STATIC_CLI_SHELL ?= 0
 #
-# sqlite3shell.flags.N = N is $(STATIC_CLI_SHELL)
+# sqlite3-shell-static.flags.N = N is $(STATIC_CLI_SHELL)
 #
-sqlite3shell.flags.1 = -static
-sqlite3shell.flags.0 =
+sqlite3-shell-static.flags.1 = -static
+sqlite3-shell-static.flags.0 =
 #
 # When building sqlite3$(T.exe) we specifically embed a copy of
 # sqlite3.c, and not link to libsqlite3.so or libsqlite3.a, because
@@ -2128,7 +2128,7 @@ sqlite3shell.flags.0 =
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
-		$(sqlite3shell.flags.$(STATIC_CLI_SHELL)) \
+		$(sqlite3-shell-static.flags.$(STATIC_CLI_SHELL)) \
 		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 #
