@@ -345,6 +345,9 @@ proc proj-first-bin-of {args} {
 # to the default value of baz. If the user does not explicitly pass in
 # --foo-bar (with or without a value) then this returns 0.
 #
+# Calling [proj-opt-set] is, for purposes of the above, equivalent to
+# explicitly passing in the flag.
+#
 # Note: unlike most functions which deal with configure --flags, this
 # one does not validate that $key refers to a pre-defined flag. i.e.
 # it accepts arbitrary keys, even those not defined via an [options]

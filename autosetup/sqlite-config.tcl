@@ -60,6 +60,19 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # (dump-defines-txt) but also a JSON file named after this option's
   # value.
   dump-defines-json  ""
+
+  #
+  # The list of feature --flags which the --all flag implies. This
+  # requires special handling in a few places and gets replaced with
+  # a different list in the tcl-extension build.
+  #
+  all-flag-enables {fts4 fts5 rtree geopoly session}
+
+  #
+  # Default value for the --all flag. Gets changed for the
+  # tcl-extension build.
+  #
+  all-flag-default 0
 }]]
 
 ########################################################################
@@ -88,6 +101,12 @@ proc sqlite-configure {buildMode configScript} {
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
   }
+  if {$::sqliteConfig(all-flag-default)} {
+    set allFlagHelp "Disable these extensions: $::sqliteConfig(all-flag-enables)"
+  } else {
+    set allFlagHelp "Enable these extensions: $::sqliteConfig(all-flag-enables)"
+  }
+
   set ::sqliteConfig(build-mode) $buildMode
   ########################################################################
   # A gentle introduction to flags handling in autosetup
@@ -194,7 +213,7 @@ proc sqlite-configure {buildMode configScript} {
         geopoly              => {Enable the GEOPOLY extension}
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
-        all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+        all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
               the generated sqlite_cfg.h by adding #define HAVE_LFS}
@@ -720,14 +739,9 @@ proc sqlite-setup-default-cflags {} {
 # Handle various SQLITE_ENABLE/OMIT_... feature flags.
 proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
-  if {"tcl-extension" eq $::sqliteConfig(build-mode)} {
-    set allFlagEnables {fts3 fts4 fts5 rtree geopoly}
-  } else {
-    set allFlagEnables {fts4 fts5 rtree rtree geopoly session}
-  }
   if {![opt-bool all]} {
     # Special handling for --disable-all
-    foreach flag $allFlagEnables {
+    foreach flag $::sqliteConfig(all-flag-enables) {
       if {![proj-opt-was-provided $flag]} {
         proj-opt-set $flag 0
       }
@@ -748,7 +762,7 @@ proc sqlite-handle-common-feature-flags {} {
       # The --geopoly flag, though, will automatically re-enable
       # --rtree, so --disable-rtree won't actually disable anything in
       # that case.
-      foreach k $allFlagEnables {
+      foreach k $::sqliteConfig(all-flag-enables) {
         if {![proj-opt-was-provided $k]} {
           proj-opt-set $k 1
         }
