@@ -1517,12 +1517,12 @@ proc sqlite-handle-mac-cversion {} {
 #
 # https://sqlite.org/forum/forumpost/5651662b8875ec0a
 proc sqlite-handle-mac-install-name {} {
-  define LDFLAGS_MAC_INSTALL_NAME ""; # {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.SO)"}
+  define LDFLAGS_MAC_INSTALL_NAME ""; # {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.DLL)"}
   set rc 0
   if {[proj-looks-like-mac]} {
     cc-with {-link 1} {
       if {[cc-check-flags "-Wl,-install_name,/usr/local/lib/libsqlite3.dylib"]} {
-        define LDFLAGS_MAC_INSTALL_NAME {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.SO)"}
+        define LDFLAGS_MAC_INSTALL_NAME {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.DLL)"}
         set rc 1
       }
     }

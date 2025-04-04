@@ -1,5 +1,5 @@
-C Add\smore\svars\sto\sthe\stclConfig.sh-to-tcl\sexporter,\sfor\suse\sin\sthe\sTEA\sbuild.
-D 2025-04-04T22:14:18.035
+C Correct\sa\smakefile\svar\sname\stype\sin\sthe\sconfigure\sscript,\sintroduced\sin\s[4947c1c782].
+D 2025-04-04T22:59:32.701
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -52,7 +52,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl b808e3b176671d994358fcd6c47d5645a284658773e6f9e3c6292ed698a0b220
-F autosetup/sqlite-config.tcl 8341c9bc702eef826f5f9a426ce3464c4bf3906d526a4c441c6111cf24e1cc8e
+F autosetup/sqlite-config.tcl 5c356e61d53b4f8b358b1a18aa27bc7856b745c425d5324c30b5231c967c9e52
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4947c1c78298253a51939adf6cf70ee233075db6d60cd7a183a4162c926e667c
-R 81caf4fec44dc4f3520227e408930067
+P b0e1e49c7a4af526143214ce7dee97ef0da5e7baa85728fc667b1f7607693ab7
+R 38ac2cde604486aba3e9d7b4f05e364a
 U stephan
-Z c68c7100b9bcee4fb09ef349948adcf6
+Z 85caa2e9f1276fc2e57e5363e1142a89
 # Remove this line to create a well-formed Fossil manifest.
