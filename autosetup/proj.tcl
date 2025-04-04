@@ -1446,12 +1446,12 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 # --prefix and friends.
 #
 # For certain target environments, if --prefix is _not_ passed in by
-# the user, set the prefix to an environment-specific default. May
-# emit output. For such environments its does [define prefix ...]  and
-# [proj-opt-set prefix ...], but it does not process vars derived from
-# the prefix, e.g. exec-prefix. To do so it is generally necessary,
-# late in the config process (immediately before ".in" files are
-# filtered) to also call proj-remap-autoconf-dir-vars.
+# the user, set the prefix to an environment-specific default. For
+# such environments its does [define prefix ...]  and [proj-opt-set
+# prefix ...], but it does not process vars derived from the prefix,
+# e.g. exec-prefix. To do so it is generally necessary to also call
+# proj-remap-autoconf-dir-vars late in the config process (immediately
+# before ".in" files are filtered).
 #
 # Returns 1 if it modifies the environment, else 0.
 proc proj-tweak-default-env-dirs {} {
