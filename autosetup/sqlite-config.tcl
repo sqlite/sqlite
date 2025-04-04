@@ -1371,6 +1371,28 @@ proc sqlite-handle-mac-cversion {} {
 }
 
 ########################################################################
+# If this is a Mac platform, check for support for
+# -Wl,-install_name,...  and, if it's set, define
+# LDFLAGS_MAC_INSTALL_NAME to a variant of that string which is
+# intended to expand at make-time, else set LDFLAGS_MAC_INSTALL_NAME
+# to an empty string.
+#
+# https://sqlite.org/forum/forumpost/5651662b8875ec0a
+proc sqlite-handle-mac-install-name {} {
+  define LDFLAGS_MAC_INSTALL_NAME ""; # {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.SO)"}
+  set rc 0
+  if {[proj-looks-like-mac]} {
+    cc-with {-link 1} {
+      if {[cc-check-flags "-Wl,-install_name,/usr/local/lib/libsqlite3.dylib"]} {
+        define LDFLAGS_MAC_INSTALL_NAME {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.SO)"}
+        set rc 1
+      }
+    }
+  }
+  return $rc
+}
+
+########################################################################
 # Handles the --dll-basename configure flag. [define]'s
 # SQLITE_DLL_BASENAME to the DLL's preferred base name (minus
 # extension). If --dll-basename is not provided then this is always
@@ -1538,6 +1560,7 @@ proc sqlite-handle-env-quirks {} {
   sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
+  sqlite-handle-mac-install-name
 }
 
 ########################################################################

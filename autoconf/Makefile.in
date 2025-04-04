@@ -127,10 +127,8 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
-# os-specific: see
-# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
-# - https://sqlite.org/forum/forumpost/0c7fc097b2
+LDFLAGS.libsqlite3.os-specific = \
+  @LDFLAGS_MAC_CVERSION@ @LDFLAGS_MAC_INSTALL_NAME@ @LDFLAGS_OUT_IMPLIB@
 
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
