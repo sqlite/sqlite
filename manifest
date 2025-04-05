@@ -1,5 +1,5 @@
-C Extend\sproj-dot-ins-append\sto\sprovide\sa\sway\sto\suse\sit\sfor\sthe\sspecial-case\semcc.sh.in\shandling.
-D 2025-04-05T09:17:13.814
+C Add\sdefault\s--manpath\sfor\sHaiku\sbut\sthat\spath\sis\sread-only\son\smy\sHaiku\ssystem,\sso\sshelve\sthis.
+D 2025-04-05T11:23:14.129
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,7 +51,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 06ba9f7841e848cdebef11fe61e6e959e3e379b974edadc5eac8a76fd6885bb5
+F autosetup/proj.tcl 4a32e838693e624064055d2d882d8f0c0e0d705a87b9ce82a1ff8fb8801ecb0e
 F autosetup/sqlite-config.tcl 26fd6bca350a88a92253afdf02ddea0fa1f304ff18325a41f30478f7c0f10175
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77d2c8e9ef9627c87c05beaf5615958628bd47c393c030ff6fcca607ba43e71f
-R d9334314847b8a0fe15ac5b6a1be0397
+P 0e98bbddc7b5e39310a8bf345521d05fdbcc906e279c23aa24cf30489ceeeff8
+R 028d93e6f6514cff79f0bf37629f8064
 U stephan
-Z bdc59ba3033c2d6bc844a137c31a6274
+Z 4df2bf3f848939b6263f0c47da2e37be
 # Remove this line to create a well-formed Fossil manifest.

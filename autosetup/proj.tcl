@@ -1492,19 +1492,28 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 # proj-remap-autoconf-dir-vars late in the config process (immediately
 # before ".in" files are filtered).
 #
+# Similar modifications may be made for --mandir.
+#
 # Returns 1 if it modifies the environment, else 0.
 proc proj-tweak-default-env-dirs {} {
+  set rc 0
   switch -glob -- [get-define host] {
     *-haiku {
-      set hpre /boot/home/config/non-packaged
       if {![proj-opt-was-provided prefix]} {
-        proj-opt-set prefix $hpre
-        define prefix $hpre
-        return 1
+        set hdir /boot/home/config/non-packaged
+        proj-opt-set prefix $hdir
+        define prefix $hdir
+        set rc 1
+      }
+      if {![proj-opt-was-provided mandir]} {
+        set hdir /boot/system/documentation/man
+        proj-opt-set mandir $hdir
+        define mandir $hdir
+        set rc 1
       }
     }
   }
-  return 0
+  return $rc
 }
 
 ########################################################################
