@@ -15,12 +15,16 @@
 # The intent is that these routines be relatively generic, independent
 # of a given project.
 #
+# For practical purposes, the copy of this file hosted in the SQLite
+# project is the "canonical" one:
+#
+# https://sqlite.org/src/file/autosetup/proj.tcl
+#
 # This file was initially derived from one used in the libfossil
 # project, authored by the same person who ported it here, and this is
 # noted here only as an indication that there are no licensing issues
 # despite this code having a handful of near-twins running around a
 # handful of third-party source trees.
-#
 ########################################################################
 #
 # Design notes:
