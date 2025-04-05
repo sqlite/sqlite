@@ -54,6 +54,16 @@
 # $proj_ is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set proj_ {}
+#
+# List of dot-in files to filter in the final stages of
+# configuration. Some configuration steps may append to this.  Each
+# one in this list which exists will trigger the generation of a
+# file with that same name, minus the ".in", in the build directory
+# (which differ from the source dir in out-of-tree builds).
+#
+# See: proj-dot-ins-append and proj-dot-ins-process
+#
+set proj_(dot-in-files) {}
 set proj_(isatty) [isatty? stdout]
 
 ########################################################################
@@ -71,7 +81,7 @@ proc proj-warn {msg} {
 # Emits an error message to stderr and exits with non-0.
 proc proj-fatal {msg} {
   show-notices
-  puts stderr "ERROR: $msg"
+  puts stderr "ERROR: \[[proj-current-proc-name 1]]: $msg"
   exit 1
 }
 
@@ -670,11 +680,18 @@ proc proj-touch {filename} {
 }
 
 ########################################################################
-# @proj-make-from-dot-in ?-touch? filename...
+# @proj-make-from-dot-in ?-touch? infile ?outfile?
 #
-# Uses [make-template] to create makefile(-like) file(s) $filename
-# from $filename.in but explicitly makes the output read-only, to
-# avoid inadvertent editing (who, me?).
+# Uses [make-template] to create makefile(-like) file(s) $outfile from
+# $infile but explicitly makes the output read-only, to avoid
+# inadvertent editing (who, me?).
+#
+# If $outfile is empty then:
+#
+# - If $infile is a 2-element list, it is assumed to be an in/out pair,
+#   and $outfile is set from the 2nd entry in that list. Else...
+#
+# - $outfile is set to $infile stripped of its extension.
 #
 # If the first argument is -touch then the generated file is touched
 # to update its timestamp. This can be used as a workaround for
@@ -684,25 +701,34 @@ proc proj-touch {filename} {
 #
 # Failures when running chmod or touch are silently ignored.
 proc proj-make-from-dot-in {args} {
-  set filename $args
+  set fIn ""
+  set fOut ""
   set touch 0
   if {[lindex $args 0] eq "-touch"} {
     set touch 1
-    set filename [lrange $args 1 end]
+    lassign $args - fIn fOut
+  } else {
+    lassign $args fIn fOut
   }
-  foreach f $filename {
-    set f [string trim $f]
-    if {[file exists $f]} {
-      catch { exec chmod u+w $f }
+  if {"" eq $fOut} {
+    if {2==[llength $fIn]} {
+      lassign $fIn fIn fOut
+    } else {
+      set fOut [file rootname $fIn]
     }
-    make-template $f.in $f
-    if {$touch} {
-      proj-touch $f
-    }
-    catch {
-      exec chmod -w $f
-      #file attributes -w $f; #jimtcl has no 'attributes'
-    }
+  }
+  #puts "filenames=$filename"
+  if {[file exists $fOut]} {
+    catch { exec chmod u+w $fOut }
+  }
+  #puts "making template: $fIn ==> $fOut"
+  make-template $fIn $fOut
+  if {$touch} {
+    proj-touch $fOut
+  }
+  catch {
+    exec chmod -w $fOut
+    #file attributes -w $f; #jimtcl has no 'attributes'
   }
 }
 
@@ -1475,4 +1501,79 @@ proc proj-tweak-default-env-dirs {} {
     }
   }
   return 0
+}
+
+########################################################################
+# @proj-dot-ins-append {file ?fileOut?}...
+#
+# Queues up an autosetup [make-template]-style file to be processed
+# at a later time using [proj-dot-ins-process].
+#
+# $file is the input file. If $fileOut is empty then this function
+# derives $fileOut from $file, stripping both its directory and
+# extension parts.
+#
+# See [proj-dot-ins-process]
+proc proj-dot-ins-append {args} {
+  set srcdir $::autosetup(srcdir)
+  foreach f ${args} {
+    if {1==[llength $f]} {
+      lappend f [file rootname [file tail $f]]
+    }
+    #puts "******* [proj-current-proc-name]: adding $f"
+    lappend ::proj_(dot-in-files) $f
+  }
+}
+
+########################################################################
+# @proj-dot-ins-list
+#
+# Returns the current list of [proj-dot-ins-append]'d files, noting
+# that each entry is a 2-element list.
+proc proj-dot-ins-list {} {
+  return $::proj_(dot-in-files)
+}
+
+########################################################################
+# @proj-dot-ins-process ?-touch?
+#
+# Each file which has previously been passed to [proj-dot-ins-append]
+# is processed, with its passing its in-file out-file names to
+# [proj-make-from-dot-in].
+#
+# The optional argument may be the -touch flag, which is passed on to
+# that [proj-make-from-dot-in].
+#
+# The intent is that a project accumulate any number of files to
+# filter and delay their actual filtering until the last stage of the
+# configure script, calling this function at that time.
+proc proj-dot-ins-process {args} {
+  set flags ""
+  if {"-touch" eq $args} {
+    set flags "-touch"
+  }
+  foreach f $::proj_(dot-in-files) {
+    proj-assert {2==[llength $f]}
+    lassign $f fIn fOut
+    #puts "DOING $fIn  ==> $fOut"
+    proj-make-from-dot-in {*}$flags $fIn $fOut
+  }
+}
+
+########################################################################
+# @proj-validate-no-unresolved-ats filenames...
+#
+# For each filename given to it, it validates that the file has no
+# unresolved @VAR@ references. If it finds any, it produces an error
+# with location information.
+proc proj-validate-no-unresolved-ats {args} {
+  foreach f $args {
+    set lnno 1
+    foreach line [proj-file-content-list $f] {
+      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
+        error "Unresolved reference to $match at line $lnno of $f"
+      }
+      incr lnno
+    }
+  }
 }

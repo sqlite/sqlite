@@ -490,6 +490,12 @@ proc sqlite-configure-phase1 {buildMode} {
     # may not) define HAVE_LFS.
     cc-check-lfs
   }
+
+  set srcdir $::autosetup(srcdir)
+  proj-dot-ins-append $srcdir/Makefile.in
+  if {[file exists $srcdir/sqlite3.pc.in]} {
+    proj-dot-ins-append $srcdir/sqlite3.pc.in
+  }
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -1005,8 +1011,17 @@ proc sqlite-handle-emsdk {} {
       # Maybe there's a copy in the path?
       proj-bin-define wasm-opt BIN_WASM_OPT
     }
-    proj-make-from-dot-in $emccSh $extWasmConfig
+    #
+    # We would prefer to pass these to proj-dot-ins-append but that
+    # family of APIs cannot handle the output being in a dir other
+    # than the current one. Also, we need to chmod +x $emccSh, and we
+    # don't have a hook to do that with if we defer dot-in-processing
+    # it.
+    #
+    proj-make-from-dot-in $emccSh.in
+    proj-make-from-dot-in $extWasmConfig.in
     catch {exec chmod u+x $emccSh}
+    proj-validate-no-unresolved-ats $emccSh $extWasmConfig
   } else {
     define EMCC_WRAPPER ""
     file delete -force -- $emccSh $extWasmConfig
@@ -1725,15 +1740,7 @@ proc sqlite-process-dot-in-files {} {
   # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
   proj-remap-autoconf-dir-vars
 
-  set srcdir $::autosetup(srcdir)/
-  foreach f {Makefile sqlite3.pc} {
-    if {[file exists $srcdir/$f.in]} {
-      # ^^^ we do this only so that this block can be made to work for
-      # multiple builds. e.g. the tea build (under construction) does
-      # not hae sqlite3.pc.in.
-      proj-make-from-dot-in -touch $f
-    }
-  }
+  proj-dot-ins-process
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
     -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
@@ -1755,17 +1762,9 @@ proc sqlite-post-config-validation {} {
   # contain any unresolved @VAR@ refs. That may indicate an
   # unexported/unused var or a typo.
   set srcdir $::autosetup(srcdir)
-  foreach f [list Makefile sqlite3.pc \
-             $srcdir/tool/emcc.sh \
-             $srcdir/ext/wasm/config.make] {
-    if {![file exists $f]} continue
-    set lnno 1
-    foreach line [proj-file-content-list $f] {
-      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
-        error "Unresolved reference to $match at line $lnno of $f"
-      }
-      incr lnno
-    }
+  foreach f [proj-dot-ins-list] {
+    proj-assert {2==[llength $f]}
+    proj-validate-no-unresolved-ats [lindex $f 1]
   }
 }
 
