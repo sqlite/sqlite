@@ -715,7 +715,7 @@ proc proj-make-from-dot-in {args} {
     lassign $args fIn fOut
   }
   if {"" eq $fOut} {
-    if {2==[llength $fIn]} {
+    if {[llength $fIn]>1} {
       lassign $fIn fIn fOut
     } else {
       set fOut [file rootname $fIn]
@@ -1508,22 +1508,39 @@ proc proj-tweak-default-env-dirs {} {
 }
 
 ########################################################################
-# @proj-dot-ins-append file ?fileOut?
+# @proj-dot-ins-append file ?fileOut ?postProcessScript??
 #
 # Queues up an autosetup [make-template]-style file to be processed
 # at a later time using [proj-dot-ins-process].
 #
 # $file is the input file. If $fileOut is empty then this function
 # derives $fileOut from $file, stripping both its directory and
-# extension parts.
+# extension parts. i.e. it defaults to writing the output to the
+# current directory (typically $::autosetup(builddir)).
 #
-# See [proj-dot-ins-process]
-proc proj-dot-ins-append {fileIn {fileOut ""}} {
+# If $postProcessScript is not empty then, during
+# [proj-dot-ins-process], it will be eval'd immediately after
+# processing the file. In the context of that script, the vars
+# $fileIn and $fileOut will be set to the input and output file
+# names.  This can be used, for example, to make the output file
+# executable or perform validation on its.
+#
+# See [proj-dot-ins-process], [proj-dot-ins-list]
+proc proj-dot-ins-append {fileIn args} {
   set srcdir $::autosetup(srcdir)
-  if {"" eq $fileOut} {
-    lappend fileIn [file rootname [file tail $fileIn]]
-  } else {
-    lappend fileIn $fileOut
+  switch -exact -- [llength $args] {
+    0 {
+      lappend fileIn [file rootname [file tail $fileIn]] ""
+    }
+    1 {
+      lappend fileIn [join $args] ""
+    }
+    2 {
+      lappend fileIn {*}$args
+    }
+    default {
+      proj-fatal "Too many arguments: $fileIn $args"
+    }
   }
   #puts "******* [proj-current-proc-name]: adding $fileIn"
   lappend ::proj_(dot-in-files) $fileIn
@@ -1533,7 +1550,8 @@ proc proj-dot-ins-append {fileIn {fileOut ""}} {
 # @proj-dot-ins-list
 #
 # Returns the current list of [proj-dot-ins-append]'d files, noting
-# that each entry is a 2-element list of (input, output) file names.
+# that each entry is a 3-element list of (inputFileName,
+# outputFileName, postProcessScript).
 proc proj-dot-ins-list {} {
   return $::proj_(dot-in-files)
 }
@@ -1557,10 +1575,13 @@ proc proj-dot-ins-process {args} {
     set flags "-touch"
   }
   foreach f $::proj_(dot-in-files) {
-    proj-assert {2==[llength $f]}
-    lassign $f fIn fOut
+    proj-assert {3==[llength $f]}
+    lassign $f fIn fOut fScript
     #puts "DOING $fIn  ==> $fOut"
     proj-make-from-dot-in {*}$flags $fIn $fOut
+    if {"" ne $fScript} {
+      uplevel 1 "set fileIn $fIn; set fileOut $fOut; eval {$fScript}"
+    }
   }
 }
 

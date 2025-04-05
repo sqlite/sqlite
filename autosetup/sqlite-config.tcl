@@ -490,7 +490,6 @@ proc sqlite-configure-phase1 {buildMode} {
     # may not) define HAVE_LFS.
     cc-check-lfs
   }
-
   set srcdir $::autosetup(srcdir)
   proj-dot-ins-append $srcdir/Makefile.in
   if {[file exists $srcdir/sqlite3.pc.in]} {
@@ -990,17 +989,10 @@ proc sqlite-handle-emsdk {} {
       # Maybe there's a copy in the path?
       proj-bin-define wasm-opt BIN_WASM_OPT
     }
-    #
-    # We would prefer to pass these to proj-dot-ins-append but that
-    # family of APIs cannot handle the output being in a dir other
-    # than the current one. Also, we need to chmod +x $emccSh, and we
-    # don't have a hook to do that with if we defer dot-in-processing
-    # it.
-    #
-    proj-make-from-dot-in $emccSh.in
-    proj-make-from-dot-in $extWasmConfig.in
-    catch {exec chmod u+x $emccSh}
-    proj-validate-no-unresolved-ats $emccSh $extWasmConfig
+    proj-dot-ins-append $emccSh.in $emccSh {
+      catch {exec chmod u+x $fileOut}
+    }
+    proj-dot-ins-append $extWasmConfig.in $extWasmConfig
   } else {
     define EMCC_WRAPPER ""
     file delete -force -- $emccSh $extWasmConfig
@@ -1742,7 +1734,8 @@ proc sqlite-post-config-validation {} {
   # unexported/unused var or a typo.
   set srcdir $::autosetup(srcdir)
   foreach f [proj-dot-ins-list] {
-    proj-assert {2==[llength $f]}
+    proj-assert {3==[llength $f]} \
+      "Expecting proj-dot-ins-list to be stored in 3-entry lists"
     proj-validate-no-unresolved-ats [lindex $f 1]
   }
 }
