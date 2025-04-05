@@ -1504,7 +1504,7 @@ proc proj-tweak-default-env-dirs {} {
 }
 
 ########################################################################
-# @proj-dot-ins-append {file ?fileOut?}...
+# @proj-dot-ins-append file ?fileOut?
 #
 # Queues up an autosetup [make-template]-style file to be processed
 # at a later time using [proj-dot-ins-process].
@@ -1514,22 +1514,22 @@ proc proj-tweak-default-env-dirs {} {
 # extension parts.
 #
 # See [proj-dot-ins-process]
-proc proj-dot-ins-append {args} {
+proc proj-dot-ins-append {fileIn {fileOut ""}} {
   set srcdir $::autosetup(srcdir)
-  foreach f ${args} {
-    if {1==[llength $f]} {
-      lappend f [file rootname [file tail $f]]
-    }
-    #puts "******* [proj-current-proc-name]: adding $f"
-    lappend ::proj_(dot-in-files) $f
+  if {"" eq $fileOut} {
+    lappend fileIn [file rootname [file tail $fileIn]]
+  } else {
+    lappend fileIn $fileOut
   }
+  #puts "******* [proj-current-proc-name]: adding $fileIn"
+  lappend ::proj_(dot-in-files) $fileIn
 }
 
 ########################################################################
 # @proj-dot-ins-list
 #
 # Returns the current list of [proj-dot-ins-append]'d files, noting
-# that each entry is a 2-element list.
+# that each entry is a 2-element list of (input, output) file names.
 proc proj-dot-ins-list {} {
   return $::proj_(dot-in-files)
 }
@@ -1575,5 +1575,42 @@ proc proj-validate-no-unresolved-ats {args} {
       }
       incr lnno
     }
+  }
+}
+
+########################################################################
+# @proj-first-found fileList tgtVar
+#
+# Searches $fileList for an existing file. If one is found, its name is
+# assigned to tgtVar and 1 is returned, else tgtVar is not modified
+# and 0 is returned.
+proc proj-first-file-found {fileList tgtVar} {
+  upvar $tgtVar tgt
+  foreach f $fileList {
+    if {[file exists $f]} {
+      set tgt $f
+      return 1
+    }
+  }
+  return 0
+}
+
+########################################################################
+# Defines $defName to contain makefile recipe commands for re-running
+# the configure script with its current set of $::argv flags.  This
+# can be used to automatically reconfigure.
+proc proj-setup-autoreconfig {defName} {
+  set squote {{arg} {
+    # Wrap $arg in single-quotes if it looks like it might need that
+    # to avoid mis-handling as a shell argument. We assume that $arg
+    # will never contain any single-quote characters.
+    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
+    return $arg
+  }}
+  define-append $defName cd [apply $squote $::autosetup(builddir)] \
+    && [apply $squote $::autosetup(srcdir)/configure]
+  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
+  foreach arg $::autosetup(argv) {
+    define-append $defName [apply $squote $arg]
   }
 }

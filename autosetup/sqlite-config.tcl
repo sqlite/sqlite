@@ -469,7 +469,7 @@ proc sqlite-configure-phase1 {buildMode} {
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   proc-debug "msg-debug is enabled"
-  sqlite-autoreconfig
+  proj-setup-autoreconfig SQLITE_AUTORECONFIG
   proj-file-extensions
   if {".exe" eq [get-define TARGET_EXEEXT]} {
     define SQLITE_OS_UNIX 0
@@ -546,27 +546,6 @@ proc msg-debug {msg} {
 # scope.
 proc proc-debug {msg} {
   msg-debug "\[[proj-current-proc-name 1]\]: $msg"
-}
-
-########################################################################
-# Sets up the SQLITE_AUTORECONFIG define.
-proc sqlite-autoreconfig {} {
-  # SQLITE_AUTORECONFIG contains make target rules for re-running the
-  # configure script with the same arguments it was initially invoked
-  # with. This can be used to automatically reconfigure.
-  set squote {{arg} {
-    # Wrap $arg in single-quotes if it looks like it might need that
-    # to avoid mis-handling as a shell argument. We assume that $arg
-    # will never contain any single-quote characters.
-    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
-    return $arg
-  }}
-  define-append SQLITE_AUTORECONFIG cd [apply $squote $::autosetup(builddir)] \
-    && [apply $squote $::autosetup(srcdir)/configure]
-  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
-  foreach arg $::autosetup(argv) {
-    define-append SQLITE_AUTORECONFIG [apply $squote $arg]
-  }
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
