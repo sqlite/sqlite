@@ -1,5 +1,5 @@
-C Extend\sproj-dot-ins-append\sto\sprovide\sa\sway\sto\suse\sit\sfor\sthe\sspecial-case\semcc.sh.in\shandling.
-D 2025-04-05T09:17:13.814
+C Fix\sa\sharmless\scode\stypo\sintroduced\sby\s[b57e3c3db00a6bc6]\sand\sreported\sby\n[forum:/forumpost/09957d8b2a|forum\spost\s09957d8b2a].
+D 2025-04-06T10:22:26.621
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -857,7 +857,7 @@ F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c b5deed01000b3970cfca089dc531cf9342afd96d00cc8b4ad26d303f088116ee
 F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
 F src/vdbeInt.h 5446f60e89b2aa7cdf3ab0ec4e7b01b8732cd9d52d9092a0b8b1bf700768f784
-F src/vdbeapi.c a9ad72afed9aaec2acdde4daa5caa2f342b298f8c8859704143f6e3b78cb9966
+F src/vdbeapi.c 28fab30ed0acc981aecfdcaab0a421503609078e29850eb28494816682baf0a7
 F src/vdbeaux.c 72a1c99d9300a5e0adff2c708074ac1355a619664301db474a48e147418fba05
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
 F src/vdbemem.c 571ae3116dbf840a62c4aaa6bc09d577dfef8ad4d3978cf37275bb5f9653217b
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77d2c8e9ef9627c87c05beaf5615958628bd47c393c030ff6fcca607ba43e71f
-R d9334314847b8a0fe15ac5b6a1be0397
-U stephan
-Z bdc59ba3033c2d6bc844a137c31a6274
+P 0e98bbddc7b5e39310a8bf345521d05fdbcc906e279c23aa24cf30489ceeeff8
+R 4ac80589d29845f42febfbd0c1aff7a6
+U drh
+Z b03b8aeb0a4ead4233bdc4e4a1e00244
 # Remove this line to create a well-formed Fossil manifest.
