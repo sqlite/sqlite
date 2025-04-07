@@ -1601,12 +1601,23 @@ proc proj-dot-ins-process {args} {
 # For each filename given to it, it validates that the file has no
 # unresolved @VAR@ references. If it finds any, it produces an error
 # with location information.
+#
+# Exception: if a filename matches the pattern {*[Mm]ake*} AND a given
+# line begins with a # (not including leading whitespace) then that
+# line is ignored for purposes of this validation. The intent is that
+# @VAR@ inside of makefile comments should not (necessarily) cause
+# validation to fail, as it's sometimes convenient to comment out
+# sections during development of a configure script and its
+# corresponding makefile(s).
 proc proj-validate-no-unresolved-ats {args} {
   foreach f $args {
     set lnno 1
+    set isMake [string match {*[Mm]ake*} $f]
     foreach line [proj-file-content-list $f] {
-      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
-        error "Unresolved reference to $match at line $lnno of $f"
+      if {!$isMake || ![string match "#*" [string trimleft $line]]} {
+        if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
+          error "Unresolved reference to $match at line $lnno of $f"
+        }
       }
       incr lnno
     }
