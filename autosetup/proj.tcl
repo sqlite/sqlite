@@ -74,18 +74,18 @@ set proj_(isatty) [isatty? stdout]
 # @proj-warn msg
 #
 # Emits a warning message to stderr.
-proc proj-warn {msg} {
+proc proj-warn {args} {
   show-notices
-  puts stderr "WARNING: $msg"
+  puts stderr "WARNING: $args"
 }
 
 ########################################################################
 # @proj-error msg
 #
 # Emits an error message to stderr and exits with non-0.
-proc proj-fatal {msg} {
+proc proj-fatal {args} {
   show-notices
-  puts stderr "ERROR: \[[proj-current-proc-name 1]]: $msg"
+  puts stderr "ERROR: \[[proj-current-proc-name 1]]: $args"
   exit 1
 }
 
@@ -115,11 +115,11 @@ proc proj-assert {script {msg ""}} {
 # If this function believes that the current console might support
 # ANSI escape sequences then this returns $str wrapped in a sequence
 # to bold that text, else it returns $str as-is.
-proc proj-bold {str} {
+proc proj-bold {args} {
   if {$::autosetup(iswin) || !$::proj_(isatty)} {
     return $str
   }
-  return "\033\[1m${str}\033\[0m"
+  return "\033\[1m${args}\033\[0m"
 }
 
 ########################################################################
@@ -1417,10 +1417,17 @@ proc proj-get-env {var {dflt ""}} {
 #
 # Returns the name of the _calling_ proc from ($lvl + 1) levels up the
 # call stack (where the caller's level will be 1 up from _this_
-# call). It is not legal to call this from the top scope.
+# call). If $lvl would resolve to global scope (or lower) then "global
+# scope" is returned.
 proc proj-current-proc-name {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
-  lindex [info level [expr {-$lvl - 1}]] 0
+  set ilvl [info level]
+  set offset [expr {-$lvl - 1}]
+  if {[expr {$ilvl + $offset}] <= 0} {
+    return "global scope"
+  } else {
+    return lindex [info level $offset] 0
+  }
 }
 
 

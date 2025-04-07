@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scode\stypo\sintroduced\sby\s[b57e3c3db00a6bc6]\sand\sreported\sby\n[forum:/forumpost/09957d8b2a|forum\spost\s09957d8b2a].
-D 2025-04-06T10:22:26.621
+C Make\sit\slegal\sto\scall\sproj-fatal\sfrom\sthe\sglobal\sscope.
+D 2025-04-07T02:08:55.545
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,7 +51,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 06ba9f7841e848cdebef11fe61e6e959e3e379b974edadc5eac8a76fd6885bb5
+F autosetup/proj.tcl 58800d7837f192a5457352a7b1b30dab610633dc9f656fe73644a3a49818aa08
 F autosetup/sqlite-config.tcl 26fd6bca350a88a92253afdf02ddea0fa1f304ff18325a41f30478f7c0f10175
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0e98bbddc7b5e39310a8bf345521d05fdbcc906e279c23aa24cf30489ceeeff8
-R 4ac80589d29845f42febfbd0c1aff7a6
-U drh
-Z b03b8aeb0a4ead4233bdc4e4a1e00244
+P f3a6cdb89b13bc173cfce9526f836600469b0242fe62b8f92f8747896d7d47bb
+R 7d67250d55da7e76d1914ae111cc9674
+U stephan
+Z 19a4bbe3c3a5475c934efcf9544f10b0
 # Remove this line to create a well-formed Fossil manifest.
