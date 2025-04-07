@@ -544,7 +544,7 @@ proc msg-debug {msg} {
 # the debug message. It is not legal to call this from the global
 # scope.
 proc proc-debug {msg} {
-  msg-debug "\[[proj-current-proc-name 1]\]: $msg"
+  msg-debug "\[[proj-current-scope 1]\]: $msg"
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.

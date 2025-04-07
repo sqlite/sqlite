@@ -85,7 +85,7 @@ proc proj-warn {args} {
 # Emits an error message to stderr and exits with non-0.
 proc proj-fatal {args} {
   show-notices
-  puts stderr "ERROR: \[[proj-current-proc-name 1]]: $args"
+  puts stderr "ERROR: \[[proj-current-scope 1]]: $args"
   exit 1
 }
 
@@ -1413,20 +1413,23 @@ proc proj-get-env {var {dflt ""}} {
 }
 
 ########################################################################
-# @proj-current-proc-name
+# @proj-current-scope ?lvl?
 #
 # Returns the name of the _calling_ proc from ($lvl + 1) levels up the
 # call stack (where the caller's level will be 1 up from _this_
-# call). If $lvl would resolve to global scope (or lower) then "global
-# scope" is returned.
-proc proj-current-proc-name {{lvl 0}} {
+# call). If $lvl would resolve to global scope "global scope" is
+# returned and if it would be negative then a string indicating such
+# is returned (as opposed to throwing an error).
+proc proj-current-scope {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   set ilvl [info level]
-  set offset [expr {-$lvl - 1}]
-  if {[expr {$ilvl + $offset}] <= 0} {
+  set offset [expr {$ilvl  - $lvl - 1}]
+  if { $offset < 0} {
+    return "invalid scope ($offset)"
+  } elseif { $offset == 0} {
     return "global scope"
   } else {
-    return lindex [info level $offset] 0
+    return [lindex [info level $offset] 0]
   }
 }
 
@@ -1549,7 +1552,7 @@ proc proj-dot-ins-append {fileIn args} {
       proj-fatal "Too many arguments: $fileIn $args"
     }
   }
-  #puts "******* [proj-current-proc-name]: adding $fileIn"
+  #puts "******* [proj-current-scope]: adding $fileIn"
   lappend ::proj_(dot-in-files) $fileIn
 }
 
