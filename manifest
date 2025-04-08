@@ -1,5 +1,5 @@
-C Have\ssqlite3session_diff()\sautomatically\sattach\stables\sto\ssession\sobjects,\sas\sit\shas\salways\sbeen\sdocumented\sto\sdo.
-D 2025-04-08T17:18:01.341
+C Remove\san\sincorrect\sALWAYS()\smacro.\s\s[forum:/forumpost/23875495059357a2|Forum\spost\s2025-04-08T19:16:42Z].
+D 2025-04-08T20:00:33.824
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -851,7 +851,7 @@ F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc6227
 F src/trigger.c 3ffb8ed6b64dbcc0ccae6e82435d01be3bf547e13b814e2d46f7df9bef84748e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
-F src/utf.c d4d55ca95106a2029ec1cdbd2497a34e69ea1d338f1a9d80ef15ebf4ff01690d
+F src/utf.c 3a20cbae9688af4c1e3754cc2520189d00762e37f60c2deb0b303360d166bba6
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c fbfc3e074c865d2b5b10b8a65a3783275b80c152653590690747a102bb6cc770
 F src/vdbe.c b5deed01000b3970cfca089dc531cf9342afd96d00cc8b4ad26d303f088116ee
@@ -2216,9 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 25d936b7b27d33b18bdac245bb193f7fbeaa9a7e7c320e47bdd433e6b371aef9 ec1641858ec48d96f5a2ddce4575ebd40a18932d69831fdb4eafc9acf508f216
-R 6ebf5bfd5cb344d6acbf7a36fe4e2d13
-T +closed ec1641858ec48d96f5a2ddce4575ebd40a18932d69831fdb4eafc9acf508f216
-U dan
-Z e1edca485bdff3fedae013ef977a47a5
+P 99827144f112303e27a829c990b1858d227bd7369095100a435c367637985fad
+R 91b13f4ff305e3d80ef9a44cf85a7a37
+U drh
+Z da0ef43ade8651ffc793a2c525f660e1
 # Remove this line to create a well-formed Fossil manifest.
