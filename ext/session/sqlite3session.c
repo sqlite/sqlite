@@ -2216,7 +2216,9 @@ int sqlite3session_diff(
     SessionTable *pTo;            /* Table zTbl */
 
     /* Locate and if necessary initialize the target table object */
+    pSession->bAutoAttach++;
     rc = sessionFindTable(pSession, zTbl, &pTo);
+    pSession->bAutoAttach--;
     if( pTo==0 ) goto diff_out;
     if( sessionInitTable(pSession, pTo, pSession->db, pSession->zDb) ){
       rc = pSession->rc;
