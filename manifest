@@ -1,5 +1,5 @@
-C During\sthe\spost-configure\svalidation\sof\s@VAR@\sreferences,\signore\scommented-out\sreferences\sin\sfiles\swhich\sseem\s(based\son\stheir\sname)\sto\sbe\smakefiles,\sas\sit's\ssometimes\shandy\sto\scomment-out\ssuch\svars\sduring\sdevelopment\sof\sa\sconfigure\sscript\sand\sits\scorresponding\smakefile(s).
-D 2025-04-07T18:29:57.707
+C Have\ssqlite3session_diff()\sautomatically\sattach\stables\sto\ssession\sobjects,\sas\sit\shas\salways\sbeen\sdocumented\sto\sdo.
+D 2025-04-08T17:18:01.341
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -589,7 +589,7 @@ F ext/session/session9.test 4e3aff62d6b4294498ddbe309076de06f4fddffad4fe5f5a6c03
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test c4fb7f8a688787111606e123a555f18ee04f65bb9f2a4bb2aa71d55ce4e6d02c
 F ext/session/sessionC.test f8a5508bc059ae646e5ec9bdbca66ad24bc92fe99fda5790ac57e1f59fce2fdf
-F ext/session/sessionD.test f5c6a762d00bc6ca9d561695c322ba8ecca2bed370486707ef37cf565d2f6c73
+F ext/session/sessionD.test 9d5d1d07bfc2de8400cd8607297dcd405e2889ccae58ae17db054de5fcae37ab
 F ext/session/sessionE.test b2010949c9d7415306f64e3c2072ddabc4b8250c98478d3c0c4d064bce83111d
 F ext/session/sessionF.test d37ed800881e742c208df443537bf29aa49fd56eac520d0f0c6df3e6320f3401
 F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d085eb8efdad0a
@@ -617,7 +617,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 8011b9531c7dd8dce55226def022f3303ce40d0b45966877f2c35185f4b1c3fc
+F ext/session/sqlite3session.c b0f44e89facdf03feacd040b18b6fb04a5cc55095be8b688f3cbb1412eeab993
 F ext/session/sqlite3session.h aa5de3ec8ef0e5313e9f65dafd69e8ba292d170f07b57da9200c040068dab061
 F ext/session/test_session.c af162108e8dc40cb9fe0e876e0155cecabcb49e82e5939677d21451e36160283
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
@@ -2216,8 +2216,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c7e5b6cab0f8c8d8ae4a1503ea04f2c65943b0788f3996c015fc163ae979a66
-R 26d5dd0f527a3c74906fdb59e7432e75
-U stephan
-Z 0d654b488cce619861d795377994e868
+P 25d936b7b27d33b18bdac245bb193f7fbeaa9a7e7c320e47bdd433e6b371aef9 ec1641858ec48d96f5a2ddce4575ebd40a18932d69831fdb4eafc9acf508f216
+R 6ebf5bfd5cb344d6acbf7a36fe4e2d13
+T +closed ec1641858ec48d96f5a2ddce4575ebd40a18932d69831fdb4eafc9acf508f216
+U dan
+Z e1edca485bdff3fedae013ef977a47a5
 # Remove this line to create a well-formed Fossil manifest.
