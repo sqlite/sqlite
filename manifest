@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\smacro.\s\s[forum:/forumpost/23875495059357a2|Forum\spost\s2025-04-08T19:16:42Z].
-D 2025-04-08T20:00:33.824
+C Doc\supdates\sin\sproj.tcl.\sImprove\sconfigure\scheck\sfor\swhether\sfdatasync\sor\snanosleep\srequire\s-lrt.\sRemove\sreferences\sto\s'tcl-config'\sbuild\smode\sfrom\ssqlite-config.tcl,\sas\sthat\sbuild\sis\snow\simplemented\swithout\sa\sdepency\son\ssqlite-config.tcl\sbecause\sthe\sTEA\sbuild's\sneeds\sare\sconsiderably\smore\smodest.
+D 2025-04-09T13:32:15.311
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,8 +51,8 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl a02eddcb7a940e36732993c09b8e59e65fb4a196fedbd85af4d93713c4802797
-F autosetup/sqlite-config.tcl 4d5d2a3baa2e3c1cba4558eb09b3436c40bf34697186315c61c7b2576eb88271
+F autosetup/proj.tcl e4170f543e417fcc1ae3c8aedcf8d6044221dbdeb880d324579730e0c96a6198
+F autosetup/sqlite-config.tcl a61e86a4033e3a77680bfba45e7950950285beaf756ddc2d14bec5147972d2b1
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 99827144f112303e27a829c990b1858d227bd7369095100a435c367637985fad
-R 91b13f4ff305e3d80ef9a44cf85a7a37
-U drh
-Z da0ef43ade8651ffc793a2c525f660e1
+P 062cca9c63ef6d7b9a525df69391e9b032284703aeb45a18c728305dd5957c43
+R 92b3c5f2612e90a858308a2688d29a68
+U stephan
+Z 18638b3b1088f615bed2bb48a17a75b6
 # Remove this line to create a well-formed Fossil manifest.

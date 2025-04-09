@@ -63,14 +63,13 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 
   #
   # The list of feature --flags which the --all flag implies. This
-  # requires special handling in a few places and gets replaced with
-  # a different list in the tcl-extension build.
+  # requires special handling in a few places.
   #
   all-flag-enables {fts4 fts5 rtree geopoly session}
 
   #
-  # Default value for the --all flag. Gets changed for the
-  # tcl-extension build.
+  # Default value for the --all flag. Can hypothetically be modified
+  # by non-canonical builds.
   #
   all-flag-default 0
 }]]
@@ -97,7 +96,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 proc sqlite-configure {buildMode configScript} {
   proj-assert {$::sqliteConfig(build-mode) eq "unknown"} \
     "sqlite-configure must not be called more than once"
-  set allBuildModes {canonical autoconf tcl-extension}
+  set allBuildModes {canonical autoconf}
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
   }
@@ -229,7 +228,7 @@ proc sqlite-configure {buildMode configScript} {
               copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
               test code require a canonical tclsh.}
       }
-      {canonical tcl-extension} {
+      {canonical} {
         with-tcl:DIR
           => {Directory containing tclConfig.sh or a directory one level up from
               that, from which we can derive a directory containing tclConfig.sh.
@@ -620,15 +619,21 @@ proc sqlite-check-common-system-deps {} {
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
     malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
 
-  set ldrt ""
-  # Collapse funcs from librt into LDFLAGS_RT.
-  # Some systems (ex: SunOS) require -lrt in order to use nanosleep
-  foreach func {fdatasync nanosleep} {
-    if {[proj-check-function-in-lib $func rt]} {
-      lappend ldrt [get-define lib_${func}]
+  apply {{} {
+    set ldrt ""
+    # Collapse funcs from librt into LDFLAGS_RT.
+    # Some systems (ex: SunOS) require -lrt in order to use nanosleep
+    foreach func {fdatasync nanosleep} {
+      if {[proj-check-function-in-lib $func rt]} {
+        set ldrt [get-define lib_${func} ""]
+        undefine lib_${func}
+        if {"" ne $ldrt} {
+          break
+        }
+      }
     }
-  }
-  define LDFLAGS_RT [join [lsort -unique $ldrt] ""]
+    define LDFLAGS_RT $ldrt
+  }}
 
   # Check for needed/wanted headers
   cc-check-includes \

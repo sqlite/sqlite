@@ -648,10 +648,12 @@ proc proj-file-write {args} {
 # which controls whether to run/skip this check.
 #
 # Returns 1 if supported, else 0. Defines MAKE_COMPILATION_DB to "yes"
-# if supported, "no" if not.
+# if supported, "no" if not. The use of MAKE_COMPILATION_DB is
+# deprecated/discouraged. It also sets HAVE_COMPILE_COMMANDS to 0 or
+# 1, and that's the preferred usage.
 #
-# This test has a long history of false positive results because of
-# compilers reacting differently to the -MJ flag.
+# ACHTUNG: this test has a long history of false positive results
+# because of compilers reacting differently to the -MJ flag.
 proc proj-check-compile-commands {{configFlag {}}} {
   msg-checking "compile_commands.json support... "
   if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
@@ -664,11 +666,13 @@ proc proj-check-compile-commands {{configFlag {}}} {
       # Martin G.'s older systems. drh also reports a false
       # positive on an unspecified older Mac system.
       msg-result "compiler supports compile_commands.json"
-      define MAKE_COMPILATION_DB yes
+      define MAKE_COMPILATION_DB yes; # deprecated
+      define HAVE_COMPILE_COMMANDS 1
       return 1
     } else {
       msg-result "compiler does not support compile_commands.json"
       define MAKE_COMPILATION_DB no
+      define HAVE_COMPILE_COMMANDS 0
       return 0
     }
   }
@@ -1259,6 +1263,11 @@ proc proj-dump-defs-json {file args} {
 # over any values from hidden aliases into their canonical names, such
 # that [opt-value canonical] will return X if --alias=X is passed to
 # configure.
+#
+# That said: autosetup's [opt-src] does support alias forms, but it
+# requires that the caller know all possible aliases. It's simpler, in
+# terms of options handling, if there's only a single canonical name
+# which each down-stream call of [opt-...] has to know.
 proc proj-xfer-options-aliases {mapping} {
   foreach {hidden - canonical} [proj-strip-hash-comments $mapping] {
     if {[proj-opt-was-provided $hidden]} {
