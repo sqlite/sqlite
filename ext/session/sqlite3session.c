@@ -1209,6 +1209,8 @@ static int sessionInitTable(
   if( pTab->nCol==0 ){
     u8 *abPK;
     assert( pTab->azCol==0 || pTab->abPK==0 );
+    sqlite3_free(pTab->azCol);
+    pTab->abPK = 0;
     rc = sessionTableInfo(pSession, db, zDb, 
         pTab->zName, &pTab->nCol, &pTab->nTotalCol, 0, &pTab->azCol, 
         &pTab->azDflt, &pTab->aiIdx, &abPK,

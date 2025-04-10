@@ -282,7 +282,6 @@ proc do_sessions_diff_error {tn db tbl err} {
 }
 
 # Test that it is an error if the named db is missing.
-breakpoint
 do_sessions_diff_error 5.1 nosuchdb t1 {
   1 {SQLITE_SCHEMA - no such table: nosuchdb.t1}
 }
@@ -296,5 +295,14 @@ do_sessions_diff_error 5.2 two t2 {
 do_sessions_diff_error 5.3 two t1 {
   1 {SQLITE_SCHEMA - table schemas do not match}
 }
+
+do_test 5.4 {
+  sqlite3session S db main
+
+  catch {S diff two blue}
+  catch {S diff two blue}
+
+  S delete
+} {}
 
 finish_test
