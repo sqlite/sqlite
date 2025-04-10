@@ -542,6 +542,7 @@ char *speedtest1_once(const char *zFormat, ...){
   char *zSql;
   sqlite3_stmt *pStmt;
   char *zResult = 0;
+  int rc;
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
@@ -557,9 +558,14 @@ char *speedtest1_once(const char *zFormat, ...){
       fprintf(g.pScript,"%s\n",z);
       sqlite3_free(z);
     }
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    if( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
       const char *z = (const char*)sqlite3_column_text(pStmt, 0);
       if( z ) zResult = sqlite3_mprintf("%s", z);
+    }else if( rc==SQLITE_ERROR ){
+      rc = sqlite3_reset(pStmt);
+      fprintf(stderr, "%s\nError code %d: %s\n",
+              sqlite3_sql(pStmt), rc, sqlite3_errmsg(g.db));
+      exit(1);
     }
     sqlite3_finalize(pStmt);
   }
@@ -590,7 +596,7 @@ void speedtest1_prepare(const char *zFormat, ...){
 
 /* Run an SQL statement previously prepared */
 void speedtest1_run(void){
-  int i, n, len;
+  int i, n, len, rc;
   if( g.bSqlOnly ) return;
   assert( g.pStmt );
   g.nResult = 0;
@@ -599,7 +605,7 @@ void speedtest1_run(void){
     fprintf(g.pScript,"%s\n",z);
     sqlite3_free(z);
   }
-  while( sqlite3_step(g.pStmt)==SQLITE_ROW ){
+  while( (rc = sqlite3_step(g.pStmt))==SQLITE_ROW ){
     n = sqlite3_column_count(g.pStmt);
     for(i=0; i<n; i++){
       const char *z = (const char*)sqlite3_column_text(g.pStmt, i);
@@ -644,6 +650,12 @@ void speedtest1_run(void){
         g.nResult += len;
       }
     }
+  }
+  if( rc==SQLITE_ERROR ){
+    rc = sqlite3_reset(g.pStmt);
+    fprintf(stderr, "%s\nError code %d: %s\n",
+                    sqlite3_sql(g.pStmt), rc, sqlite3_errmsg(g.db));
+    exit(1);
   }
 #if SQLITE_VERSION_NUMBER>=3006001
   if( g.bReprepare ){
