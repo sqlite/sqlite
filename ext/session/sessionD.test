@@ -259,7 +259,8 @@ do_changeset_test 4.2 S {
 S delete
 
 #-------------------------------------------------------------------------
-# Test that sqlite3session_diff() really does return errors if 
+# Test that sqlite3session_diff() really does return errors if the named
+# table or database do not exist.
 #
 reset_db
 forcedelete test.db2
