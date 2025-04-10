@@ -14,7 +14,7 @@
 ** versions of FTS5. It contains the implementation of an FTS5 auxiliary
 ** function very similar to the FTS4 function matchinfo():
 **
-**     https://www.sqlite.org/fts3.html#matchinfo
+**     https://sqlite.org/fts3.html#matchinfo
 **
 ** Known differences are that:
 **

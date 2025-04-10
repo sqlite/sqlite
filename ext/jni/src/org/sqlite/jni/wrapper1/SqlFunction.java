@@ -144,7 +144,7 @@ public interface SqlFunction  {
        range.
     */
     public void setAuxData(int argNdx, Object o){
-      /* From the API docs: https://www.sqlite.org/c3ref/get_auxdata.html
+      /* From the API docs: https://sqlite.org/c3ref/get_auxdata.html
 
          The value of the N parameter to these interfaces should be
          non-negative. Future enhancements may make use of negative N

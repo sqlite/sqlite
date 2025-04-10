@@ -5586,7 +5586,7 @@ int sqlite3IndexedByLookup(Parse *pParse, SrcItem *pFrom){
 ** above that generates the code for a compound SELECT with an ORDER BY clause
 ** uses a merge algorithm that requires the same collating sequence on the
 ** result columns as on the ORDER BY clause.  See ticket
-** http://www.sqlite.org/src/info/6709574d2a
+** http://sqlite.org/src/info/6709574d2a
 **
 ** This transformation is only needed for EXCEPT, INTERSECT, and UNION.
 ** The UNION ALL operator works fine with multiSelectOrderBy() even when

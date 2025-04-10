@@ -1013,7 +1013,7 @@ do_execsql_test like-12.16 {
   SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
 } {/SCAN/}
 
-# Ticket [https://www.sqlite.org/src/tktview/80369eddd5c94d49f7fbbcf5]
+# Ticket [https://sqlite.org/src/tktview/80369eddd5c94d49f7fbbcf5]
 # 2016-01-20
 #
 do_execsql_test like-13.1 {

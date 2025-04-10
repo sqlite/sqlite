@@ -255,7 +255,7 @@ do_catchsql_test 11.8 {
   SELECT * FROM t11 WHERE (a,a) IS NOT 1;
 } {1 {row value misused}}
 
-# 2016-10-27: https://www.sqlite.org/src/tktview/fef4bb4bd9185ec8f
+# 2016-10-27: https://sqlite.org/src/tktview/fef4bb4bd9185ec8f
 # Incorrect result from a LEFT JOIN with a row-value constraint
 #
 do_execsql_test 12.1 {
@@ -349,7 +349,7 @@ do_catchsql_test 15.5 {
 #-------------------------------------------------------------------------
 # Row-values used in UPDATE statements within TRIGGERs
 #
-# Ticket https://www.sqlite.org/src/info/8c9458e703666e1a
+# Ticket https://sqlite.org/src/info/8c9458e703666e1a
 #
 do_execsql_test 16.1 {
   CREATE TABLE t16a(a,b,c);
@@ -449,7 +449,7 @@ do_execsql_test 18.6 {
 } {1 1 1 1 2 1}
 
  
-# 2018-02-13 Ticket https://www.sqlite.org/src/tktview/f484b65f3d6230593c3
+# 2018-02-13 Ticket https://sqlite.org/src/tktview/f484b65f3d6230593c3
 # Incorrect result from a row-value comparison in the WHERE clause.
 #
 do_execsql_test 19.1 {
@@ -558,7 +558,7 @@ do_catchsql_test 20.1 {
   SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
 } {0 1}
 
-# 2018-11-03: Ticket https://www.sqlite.org/src/info/1a84668dcfdebaf1
+# 2018-11-03: Ticket https://sqlite.org/src/info/1a84668dcfdebaf1
 # Assertion fault when doing row-value operations on a primary key
 # containing duplicate columns.
 #
