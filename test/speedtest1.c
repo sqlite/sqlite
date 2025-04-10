@@ -35,6 +35,7 @@ static const char zHelp[] =
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --fullfsync         Enable fullfsync=TRUE\n"
+  "  --hard-heap-limit N The hard limit on the maximum heap size\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journal M         Set the journal_mode to M\n"
@@ -60,6 +61,7 @@ static const char zHelp[] =
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
+  "  --soft-heap-limit N The soft limit on the maximum heap size\n"
   "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
@@ -2961,6 +2963,8 @@ int main(int argc, char **argv){
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
   const char *zKey = 0;         /* Encryption key */
+  int nHardHeapLmt = 0;         /* The hard heap limit */
+  int nSoftHeapLmt = 0;         /* The soft heap limit */
   int nLook = -1, szLook = 0;   /* --lookaside configuration */
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
@@ -3033,6 +3037,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"explain")==0 ){
         g.bSqlOnly = 1;
         g.bExplain = 1;
+      }else if( strcmp(z,"hard-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nHardHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"heap")==0 ){
         ARGC_VALUE_CHECK(2);
         nHeap = integerValue(argv[i+1]);
@@ -3122,6 +3130,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"size")==0 ){
         ARGC_VALUE_CHECK(1);
         g.szTest = g.szBase = integerValue(argv[++i]);
+      }else if( strcmp(z,"soft-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nSoftHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -3279,6 +3291,15 @@ int main(int argc, char **argv){
   }
   if( doExclusive ){
     speedtest1_exec("PRAGMA locking_mode=EXCLUSIVE");
+  }
+  if( zJMode ){
+    speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
+  }
+  if( nHardHeapLmt>0 ){
+    speedtest1_exec("PRAGMA hard_heap_limit=%d", nHardHeapLmt);
+  }
+  if( nSoftHeapLmt>0 ){
+    speedtest1_exec("PRAGMA soft_heap_limit=%d", nSoftHeapLmt);
   }
   if( zJMode ){
     speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
