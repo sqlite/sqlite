@@ -7,7 +7,7 @@ define TEAISH_LOAD_PREFIX Sqlite3; # 2nd arg to [load]
 #
 # Get the version...
 #
-define TEAISH_VERSION [proj-file-content -trim ../VERSION]
+define TEAISH_VERSION [proj-file-content -trim [get-define TEAISH_DIR]/../VERSION]
 proj-assert {[string match 3.*.* [get-define TEAISH_VERSION]]}
 
 #
@@ -72,7 +72,7 @@ proc teaish-configure {} {
 
   set srcdir [get-define TEAISH_DIR]
   teaish-add-src -dist -dir generic/tclsqlite3.c
-  teaish-add-cflags -I.. ; # for sqlite3.c
+  teaish-add-cflags -I${srcdir}/.. ; # for sqlite3.c
   if {[proj-opt-was-provided override-sqlite-version]} {
     define TEAISH_VERSION [opt-val override-sqlite-version]
     msg-result "NOTICE: overriding version number: [get-define TEAISH_VERSION]"

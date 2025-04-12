@@ -633,7 +633,7 @@ proc teaish__find-extension {} {
   # We use the first one we find in the builddir or srcdir.
   #
   if {"" eq $extT} {
-    set flist [list $dext/teaish.tcl];# $dsrc/teaish.tcl]
+    set flist [list $dext/teaish.tcl $dsrc/teaish.tcl]
     if {![proj-first-file-found $flist extT]} {
       if {"--help" in $::argv} {
         return 0
@@ -665,7 +665,7 @@ use --teaish-extension-dir=/path/to/extension"
   # the builddir or the srcdir.
   #
   if {"" eq $extM} {
-    set flist [list $dext/teaish.make.in];# $dsrc/teaish.make.in]
+    set flist [list $dext/teaish.make.in $dsrc/teaish.make.in]
     proj-first-file-found $flist extM
   }
   if {"" ne $extM && [file readable $extM]} {
