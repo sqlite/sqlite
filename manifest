@@ -1,5 +1,5 @@
-C Add\smissing\steaish.test.tcl.
-D 2025-04-12T03:20:42.834
+C Eliminate\sa\sduplicate\s-lz\sflag\sin\sthe\steaish\sbuild.
+D 2025-04-12T10:33:12.462
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -33,7 +33,7 @@ F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357
 F autoconf/tea/doc/sqlite3.n 4499e2b556710dd4f9ea76a0bb35bd9616769dc4d33858213b075de8f6334872
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in ea13b90006ef3f1205f46fbd382736fe2f364caa644cc8e958c83a78ac7fa1d1
-F autoconf/tea/teaish.tcl 241824df34b1439df433e505bc302076a672487665c7519be27efefed7462271
+F autoconf/tea/teaish.tcl 057026fec1f49eb1226445ec60a948fec12957ca032a16259e40ab19761d01f4
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autoconf/tea/teaish.tester.tcl.in 743fd0fe1e667f82fd8fc3ebe0a5c77763e4dbed7bbc8605a9d4b1d0663dac78
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7462b1c66e8b3799ba1d73a1b815993e1c511ac0b7263e747ca0186d263ad001
-R a63487aeced1a079bed4e4ecb736a066
+P 3946a3ad9cd2d03b6940621066a8e5be0bd6fade88cbf6cb2823425a90eba9c9
+R 46ccc202ec9ce5285701d9f13d86d659
 U stephan
-Z d3640194c58031ae14dcf79915b66d12
+Z c87986dd454c7631e261b8a1b3d6c206
 # Remove this line to create a well-formed Fossil manifest.

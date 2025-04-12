@@ -107,9 +107,9 @@ proc teaish-configure {} {
   sqlite-handle-icu
   sqlite-handle-common-feature-flags
 
-  teaish-add-ldflags -d \
+  teaish-add-ldflags -p -d \
     LDFLAGS_LIBICU LDFLAGS_LIBMATH LDFLAGS_DLOPEN \
-    LDFLAGS_LIBRT LDFLAGS_LIBZ
+    LDFLAGS_LIBRT
 
   teaish-add-cflags -define CFLAGS_LIBICU OPT_FEATURE_FLAGS
 
