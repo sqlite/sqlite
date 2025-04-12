@@ -1,0 +1,13 @@
+# -*- tcl -*-
+# Automatically generated - do not edit
+#
+# This is the wrapper script invoked by teaish's "make test" recipe.
+load [lindex $::argv 0] [lindex $::argv 1]; source [lindex $::argv 2]
+@if TEAISH_PKGINIT_TCL
+apply {{} {set dir [file dirname $::argv0]; source @TEAISH_PKGINIT_TCL@}}
+@endif
+@if TEAISH_TEST_TCL
+source @TEAISH_TEST_TCL@
+@else
+puts "Extension successfully loaded"
+@endif

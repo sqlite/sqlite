@@ -76,7 +76,7 @@ set proj_(isatty) [isatty? stdout]
 # Emits a warning message to stderr.
 proc proj-warn {args} {
   show-notices
-  puts stderr "WARNING: $args"
+  puts stderr [join [list "WARNING:" {*}$args] " "]
 }
 
 ########################################################################
