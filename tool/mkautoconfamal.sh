@@ -87,6 +87,7 @@ EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
 find . -type f -name '*~' -exec rm -f \{} \;
+
 ./configure && make dist
 tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME

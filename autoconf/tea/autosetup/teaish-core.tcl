@@ -721,17 +721,33 @@ proc teaish__append_stuff {def args} {
   }
 }
 
-# @teaish-add-cflags cflags...
+# @teaish-add-cflags ?-define? cflags...
+#
 # Appends all non-empty $args to TEAISH_CFLAGS
+#
+# If -define is used then each flag is assumed to be a [define]'d
+# symbol name and [get-define X ""] used to fetch it.
 proc teaish-add-cflags {args} {
+  set isdefs 0
+  if {[lindex $args 0] in {-d -define}} {
+    set args [lassign $args -]
+    set xargs [list]
+    foreach arg $args {
+      lappend xargs [get-define $arg ""]
+    }
+    set args $xargs
+  }
   teaish__append_stuff TEAISH_CFLAGS {*}$args
 }
 
-# @teaish-add-cflags ?-p|-prepend? ldflags...
+# @teaish-add-cflags ?-p|-prepend? ?-define? ldflags...
 #
 # Appends all non-empty $args to TEAISH_LDFLAGS unless the first
 # argument is one of (-p | -prepend), in which case it prepends all
 # arguments, in their given order, to TEAISH_LDFLAGS.
+#
+# If -define is used then each argument is assumed to be a [define]'d
+# flag and [get-define X ""] is used to fetch it.
 #
 # Typically, -lXYZ flags need to be in "reverse" order, with each -lY
 # resolving symbols for -lX's to its left. This order is largely
@@ -740,8 +756,29 @@ proc teaish-add-cflags {args} {
 #
 # See: teaish-prepend-ldflags
 proc teaish-add-ldflags {args} {
-  if {[lindex $args 0] in {-p -prepend}} {
-    set args [lassign $args -]
+  set prepend 0
+  set isdefs 0
+  set xargs [list]
+  foreach arg $args {
+    switch -exact -- $arg {
+      -p - -prepend { set prepend 1 }
+      -d - -define {
+        set isdefs 1
+      }
+      default {
+        lappend xargs $arg
+      }
+    }
+  }
+  set args $xargs
+  if {$isdefs} {
+    set xargs [list]
+    foreach arg $args {
+      lappend xargs [get-define $arg ""]
+    }
+    set args $xargs
+  }
+  if {$prepend} {
     lappend args {*}[get-define TEAISH_LDFLAGS ""]
     define TEAISH_LDFLAGS [join $args]; # join to eliminate {} entries
   } else {
