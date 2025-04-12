@@ -1,4 +1,4 @@
-# teaish.tcl configure script extension for the SQLite TCL extension
+# Teaish configure script extension for the SQLite TCL extension
 
 define TEAISH_NAME sqlite
 define TEAISH_PKGNAME sqlite3
@@ -64,8 +64,8 @@ proc teaish-options {} {
 }
 
 #
-# Gets called by tea-configure. Must perform any configuration work
-# needed for this extension.
+# Gets called by tea-configure-core. Must perform any configuration
+# work needed for this extension.
 #
 proc teaish-configure {} {
   uplevel 1 {use teaish-feature-tests}
