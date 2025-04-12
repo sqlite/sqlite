@@ -1,5 +1,5 @@
-C Port\sautoconf/tea\sfrom\sthe\sautotools\sto\sautosetup.
-D 2025-04-12T21:24:10.947
+C tea\sbuild:\suse\sautosetup's\sfile-normalize\sinstead\sof\sTcl's\s(file\snormalize)\sbecause\sthe\slatter\sthrows\son\scygwin\sfor\snames\slike\s'.'\sand\s'./'.\sUpdate\sa\sdoc\sURL.
+D 2025-04-12T21:47:18.323
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -26,11 +26,11 @@ F autoconf/tea/Makefile.in 9ca3a7ccbeda98aaf4d48582905f00b7c3b30c0c2843383dc4424
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
 F autoconf/tea/auto.def 0ee2afbdbf5289fb5ab06d8c4cc9cd6fa8cdd173cf0db962bbb66212c8dc5106
 F autoconf/tea/autosetup/README.txt 17dd4cfae6094b3c239c7ad0a437b13162481e72c60243ba482d180e34314024
-F autoconf/tea/autosetup/teaish-core.tcl 3e2ebf01d65e111c57ab0fb5ebad8a74459820976bbff1b609261e52a09388ee
+F autoconf/tea/autosetup/teaish-core.tcl f5890a83ba034ad9543bf97c7978359679a178dfaa7f391e4c7b773d80ffd6d9
 F autoconf/tea/autosetup/teaish-feature-tests.tcl 4f641aff23eb364d5483dbd2122e070ea279059cab17e24b8108598c2b5f4457
 F autoconf/tea/autosetup/teaish-tester.tcl 6ea18f15260db28961581599de6b675b5118e86da1511b5e5bffdcbbc8d3b42c
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
-F autoconf/tea/doc/sqlite3.n 4499e2b556710dd4f9ea76a0bb35bd9616769dc4d33858213b075de8f6334872
+F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in ea13b90006ef3f1205f46fbd382736fe2f364caa644cc8e958c83a78ac7fa1d1
 F autoconf/tea/teaish.tcl 2ef641703ea6ae28c42975bd052c2e2b7ac85f9b688af2c2bb1f4dbfb2fa1bb9
@@ -2216,9 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0bac496d5c92c979295e702efc01803f6985b54d3d8ca30dce077c9776f7dcf2 10b917040b167de6aba6ee434b4e982580e690bbfe80521e34236b29d8e00b7d
-R 990c47fadc79721ebe2fb0ef76a8eebb
-T +closed 10b917040b167de6aba6ee434b4e982580e690bbfe80521e34236b29d8e00b7d Closed\sby\sintegrate-merge.
+P 691708642bf1cac562274a6df427d7c631aa4401dfbe98711963cf89203fb104
+R 9c8fbcf9ab3d161375e30cc0f94dd9d5
 U stephan
-Z 8d210c963435f769bcb62f43dafa9b61
+Z 75cf9a17534a4e6b26001cae515ab4e2
 # Remove this line to create a well-formed Fossil manifest.

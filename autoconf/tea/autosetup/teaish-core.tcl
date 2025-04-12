@@ -563,7 +563,7 @@ proc teaish__find-extension {} {
       set f [file join $f teaish.make.in]
     }
     if {[file readable $f]} {
-      return [file normalize $f]
+      return [file-normalize $f]
     }
     return ""
   }}
@@ -574,7 +574,7 @@ proc teaish__find-extension {} {
     if {![file readable $f]} {
       proj-fatal "extension tcl file is not readable: $f"
     }
-    return [file normalize $f]
+    return [file-normalize $f]
   }}
 #  set gotNonFlag 0
   foreach arg $::argv {
@@ -584,7 +584,7 @@ proc teaish__find-extension {} {
       --t-e-d=* -
       --teaish-extension-dir=* {
         regexp -- {--[^=]+=(.+)} $arg - extD
-        set extD [file normalize $extD]
+        set extD [file-normalize $extD]
         if {![file isdir $extD]} {
           proj-fatal "--teaish-extension-dir value is not a directory: $extD"
         }
@@ -607,7 +607,7 @@ proc teaish__find-extension {} {
 #        } else {
 #          incr gotNonFlag
 #          msg-checking "Treating fist non-flag argument as --teaish-extension-dir ... "
-#          if {[catch [set extD [file normalize $arg]]]} {
+#          if {[catch [set extD [file-normalize $arg]]]} {
 #            msg-result "dir name not normalizable: $arg"
 #            lappend largv $arg
 #          } else {
@@ -697,7 +697,7 @@ use --teaish-extension-dir=/path/to/extension"
   # THEAISH_OUT_OF_EXT_TREE = 1 if we're building from a dir other
   # than the extension's home dir.
   define THEAISH_OUT_OF_EXT_TREE \
-    [expr {[file normalize $::autosetup(builddir)] ne [file-normalize [get-define TEAISH_DIR]]}]
+    [expr {[file-normalize $::autosetup(builddir)] ne [file-normalize [get-define TEAISH_DIR]]}]
 
   #
   # Defines which extensions may optionally make but are not required
@@ -936,7 +936,7 @@ proc teaish__create-extension {dir} {
   set force [opt-bool teaish-force]
   file mkdir $dir
   set cwd [pwd]
-  set dir [file normalize [file join $cwd $dir]]
+  set dir [file-normalize [file join $cwd $dir]]
   msg-result "Created dir $dir"
   cd $dir
   set flist {teaish.tcl}
