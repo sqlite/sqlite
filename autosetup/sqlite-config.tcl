@@ -526,7 +526,6 @@ proc sqlite-configure-finalize {} {
   sqlite-handle-common-feature-flags
   sqlite-finalize-feature-flags
   sqlite-process-dot-in-files; # do not [define] anything after this
-  sqlite-post-config-validation
   sqlite-dump-defines
 }
 
@@ -1716,7 +1715,7 @@ proc sqlite-process-dot-in-files {} {
   # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
   proj-remap-autoconf-dir-vars
 
-  proj-dot-ins-process
+  proj-dot-ins-process -validate
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
     -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
@@ -1724,25 +1723,6 @@ proc sqlite-process-dot-in-files {} {
     -auto {HAVE_* PACKAGE_*} \
     -none *
   proj-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
-}
-
-########################################################################
-# Perform some high-level validation on the generated files...
-#
-# 1) Ensure that no unresolved @VAR@ placeholders are in files which
-#    use those.
-#
-# 2) TBD
-proc sqlite-post-config-validation {} {
-  # Check #1: ensure that files which get filtered for @VAR@ do not
-  # contain any unresolved @VAR@ refs. That may indicate an
-  # unexported/unused var or a typo.
-  set srcdir $::autosetup(srcdir)
-  foreach f [proj-dot-ins-list] {
-    proj-assert {3==[llength $f]} \
-      "Expecting proj-dot-ins-list to be stored in 3-entry lists"
-    proj-validate-no-unresolved-ats [lindex $f 1]
-  }
 }
 
 ########################################################################

@@ -67,7 +67,7 @@ array set proj_ {}
 #
 # See: proj-dot-ins-append and proj-dot-ins-process
 #
-set proj_(dot-in-files) {}
+set proj_(dot-in-files) [list]
 set proj_(isatty) [isatty? stdout]
 
 ########################################################################
@@ -1542,7 +1542,7 @@ proc proj-tweak-default-env-dirs {} {
 # processing the file. In the context of that script, the vars
 # $fileIn and $fileOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
-# executable or perform validation on its.
+# executable or perform validation on its contents.
 #
 # See [proj-dot-ins-process], [proj-dot-ins-list]
 proc proj-dot-ins-append {fileIn args} {
@@ -1576,31 +1576,53 @@ proc proj-dot-ins-list {} {
 }
 
 ########################################################################
-# @proj-dot-ins-process ?-touch?
+# @proj-dot-ins-process ?-touch? ?-validate? ?-clear?
 #
 # Each file which has previously been passed to [proj-dot-ins-append]
 # is processed, with its passing its in-file out-file names to
 # [proj-make-from-dot-in].
 #
-# The optional argument may be the -touch flag, which is passed on to
-# that [proj-make-from-dot-in].
-#
 # The intent is that a project accumulate any number of files to
 # filter and delay their actual filtering until the last stage of the
 # configure script, calling this function at that time.
+#
+# Optional flags:
+#
+# -touch: gets passed on to [proj-make-from-dot-in]
+#
+# -validate: after processing each file, before running the file's
+#  associated script, if any, it runs the file through
+#  proj-validate-no-unresolved-ats, erroring out if that does.
+#
+# -clear: after processing, empty the dot-ins list. This effectively
+#  makes proj-dot-ins-append available for re-use.
 proc proj-dot-ins-process {args} {
   set flags ""
-  if {"-touch" eq $args} {
-    set flags "-touch"
+  set clear 0
+  set validate 0
+  foreach arg $args {
+    switch -exact -- $arg {
+      -touch    {set flags "-touch"}
+      -clear    {incr clear}
+      -validate {incr validate}
+      default   break
+    }
   }
   foreach f $::proj_(dot-in-files) {
-    proj-assert {3==[llength $f]}
+    proj-assert {3==[llength $f]} \
+      "Expecting proj-dot-ins-list to be stored in 3-entry lists"
     lassign $f fIn fOut fScript
     #puts "DOING $fIn  ==> $fOut"
     proj-make-from-dot-in {*}$flags $fIn $fOut
+    if {$validate} {
+      proj-validate-no-unresolved-ats $fOut
+    }
     if {"" ne $fScript} {
       uplevel 1 "set fileIn $fIn; set fileOut $fOut; eval {$fScript}"
     }
+  }
+  if {$clear} {
+    set ::proj_(dot-in-files) [list]
   }
 }
 
