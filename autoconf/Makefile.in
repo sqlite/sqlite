@@ -293,7 +293,6 @@ dist:
 	rm -fr $(dist_name)
 	mkdir -p $(dist_name)
 	cp -rp $(DIST_FILES) $(dist_name)/.
-	rm -f $(dist_name)/tea/configure.ac.in
 	tar czf $(dist_tarball) $(dist_name)
 	rm -fr $(dist_name)
 	ls -l $(dist_tarball)
