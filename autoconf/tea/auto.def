@@ -3,5 +3,5 @@
 #
 # Main configure script entry point for the "TEA-via-autosetup"
 # framework.
-use teaish-core
+use teaish/core
 teaish-configure-core

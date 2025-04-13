@@ -139,10 +139,7 @@ proc teaish-configure-core {} {
   if {[llength [info proc teaish-options]] > 0} {
     # teaish-options is assumed to be imported via
     # TEAISH_TCL
-    set o [teaish-options]
-    if {"" ne $o} {
-      lappend opts {*}$o
-    }
+    set opts [teaish-combine-option-lists $opts [teaish-options]]
   }
 
   #lappend opts "soname:=duplicateEntry => {x}"; #just testing
@@ -267,7 +264,8 @@ proc teaish__configure-phase1 {} {
     [join [glob -nocomplain [get-define TEAISH_DIR]/teaish.test.tcl]]
 
   #define AS_LIBDIR $::autosetup(libdir)
-  define TEAISH_TESTER_TCL $::autosetup(libdir)/teaish-tester.tcl
+  define TEAISH_LIBDIR $::autosetup(libdir)/teaish
+  define TEAISH_TESTER_TCL [get-define TEAISH_LIBDIR]/tester.tcl
   teaish__configure-finalize
 }
 
@@ -914,7 +912,7 @@ proc teaish-feature-cache-set {{depth 0} val} {
 # @teaish-feature-cache-check ?$depth? tgtVarName
 #
 # If the feature-check cache has an entry named [proj-current-scope
-# [expr {$depth+1}]] this function assigns its value to tgtVar and
+# [expr {$depth+1}]] then this function assigns its value to tgtVar and
 # returns 1, else it assigns tgtVar to "" and returns 0.
 #
 proc teaish-feature-cache-check {{depth 0} tgtVar} {
@@ -928,6 +926,23 @@ proc teaish-feature-cache-check {{depth 0} tgtVar} {
   return 0
 }
 
+# @teash-combine-option-lists list1 ?...listN?
+#
+# Expects each argument to be a list of options compatible with
+# autosetup's [options] function. This function concatenates the
+# contents of each list into a new top-level list, stripping the outer
+# list part of each argument. The intent is that teaish-options
+# implementations can use this to combine multiple lists, e.g. from
+# functions teaish-check-openssl-options.
+proc teaish-combine-option-lists {args} {
+  set rv [list]
+  foreach e $args {
+    foreach x $e {
+      lappend rv $x
+    }
+  }
+  return $rv
+}
 
 #
 # Handles --teaish-create-extension=TARGET-DIR

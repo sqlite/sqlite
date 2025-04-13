@@ -73,10 +73,11 @@ rm -f ./*~
 #  find . -name '*~' -exec rm \{} \;
 #fi
 
-mkdir -p tea/generic
-mv tea/autosetup/*.tcl autosetup/.
+mkdir -p autosetup/teaish
+mv tea/autosetup/*.tcl autosetup/teaish/.
 rm -fr tea/autosetup
 
+mkdir -p tea/generic
 cat <<EOF > tea/generic/tclsqlite3.c
 #ifdef USE_SYSTEM_SQLITE
 # include <sqlite3.h>
@@ -87,6 +88,7 @@ EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
 find . -type f -name '*~' -exec rm -f \{} \;
+find . -type f -name '#*#' -exec rm -f \{} \;
 
 ./configure && make dist
 tar xzf sqlite-$VERSION.tar.gz

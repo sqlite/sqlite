@@ -14,7 +14,12 @@
 #
 ########################################################################
 # ----- @module teaish-tester.tcl -----
-# @section TEA-ish Testing APIs
+#
+# @section TEA-ish Testing APIs.
+#
+# Though these are part of the autosup dir hierarchy, they are not
+# intended to be run from autosetup code. Rather, they're for
+# use with/via teaish.tester.tcl.
 
 ########################################################################
 # @test-current-scope ?lvl?
@@ -97,7 +102,7 @@ proc test-catch {cmd args} {
   if {[catch {
     $cmd {*}$args
   } rc xopts]} {
-    puts "[test-current-scope] ignoring failure of: $cmd [lindex $args 0]"
+    puts "[test-current-scope] ignoring failure of: $cmd [lindex $args 0]: $rc"
     #how to extract just the message text from $xopts?
   }
 }

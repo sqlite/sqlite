@@ -68,7 +68,7 @@ proc teaish-options {} {
 # work needed for this extension.
 #
 proc teaish-configure {} {
-  uplevel 1 {use teaish-feature-tests}
+  use teaish/feature-tests
 
   set srcdir [get-define TEAISH_DIR]
   teaish-add-src -dist -dir generic/tclsqlite3.c
