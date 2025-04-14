@@ -112,6 +112,7 @@ proc teaish-configure {} {
     LDFLAGS_LIBRT
 
   teaish-add-cflags -define CFLAGS_LIBICU OPT_FEATURE_FLAGS
+  teaish-enable-dist 0
 
 }; # teaish-configure
 

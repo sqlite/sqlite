@@ -265,7 +265,8 @@ proc teaish__configure-phase1 {} {
 
   #define AS_LIBDIR $::autosetup(libdir)
   define TEAISH_LIBDIR $::autosetup(libdir)/teaish
-  define TEAISH_TESTER_TCL [get-define TEAISH_LIBDIR]/tester.tcl
+  define TEAISH_MODULE_TEST_TCL $::autosetup(libdir)/teaish/tester.tcl
+  define TEAISH_TESTER_TCL $::autosetup(builddir)/teaish.tester.tcl
   teaish__configure-finalize
 }
 
@@ -295,6 +296,10 @@ proc teaish__configure-finalize {} {
     TEAISH_DIST_FILES
   } {
     define $f [join [get-define $f]]
+  }
+
+  if {[get-define TEAISH_OUT_OF_EXT_TREE]} {
+    define TEAISH_ENABLE_DIST 0
   }
 
   define TEAISH_AUTOSETUP_DIR $::autosetup(libdir)
@@ -622,7 +627,7 @@ proc teaish__find-extension {} {
   set ::argv $largv
   set dbld $::autosetup(builddir)
   set dsrc $::autosetup(srcdir)
-  set dext [get-define TEAISH_DIR $::autosetup(builddir)]
+  set dext [get-define TEAISH_DIR $dbld]
 
   #
   # teaish.tcl is a TCL script which implements various
@@ -631,7 +636,10 @@ proc teaish__find-extension {} {
   # We use the first one we find in the builddir or srcdir.
   #
   if {"" eq $extT} {
-    set flist [list $dext/teaish.tcl $dsrc/teaish.tcl]
+    set flist [list $dext/teaish.tcl]
+    if {[lindex $flist 0] ne "$dsrc/teaish.tcl"} {
+      lappend flist $dsrc/teaish.tcl
+    }
     if {![proj-first-file-found $flist extT]} {
       if {"--help" in $::argv} {
         return 0
@@ -663,7 +671,10 @@ use --teaish-extension-dir=/path/to/extension"
   # the builddir or the srcdir.
   #
   if {"" eq $extM} {
-    set flist [list $dext/teaish.make.in $dsrc/teaish.make.in]
+    set flist [list $dext/teaish.make.in]
+    if {[lindex $flist 0] ne "$dsrc/teaish.make.in"} {
+      lappend flist $dsrc/teaish.make.in
+    }
     proj-first-file-found $flist extM
   }
   if {"" ne $extM && [file readable $extM]} {
@@ -677,10 +688,14 @@ use --teaish-extension-dir=/path/to/extension"
     #proj-warn "Did not find an teaish.make.in."
   }
 
-  set extI $dext/teaish.pkginit.tcl
-  if {[file exists $extI]} {
-    define TEAISH_PKGINIT_TCL $extI
+  set flist [list $dext/teaish.pkginit.tcl]
+  if {[lindex $flist 0] ne "$dsrc/teaish.pkginit.in"} {
+    lappend flist $dsrc/teaish.pkginit.in
+  }
+  if {[proj-first-file-found $flist extI]} {
     msg-result "Extension post-load init = $extI"
+    define TEAISH_PKGINIT_TCL $extI
+    define TEAISH_PKGINIT_TCL_TAIL [file tail $extI]; # for use in pkgIndex.tcl
     #teaish-add-install $extI
   }
 
@@ -692,9 +707,9 @@ use --teaish-extension-dir=/path/to/extension"
   define TEAISH_LIBDIR_NAME [get-define TEAISH_PKGNAME]
   define TEAISH_VERSION 0.0.0
 
-  # THEAISH_OUT_OF_EXT_TREE = 1 if we're building from a dir other
+  # TEAISH_OUT_OF_EXT_TREE = 1 if we're building from a dir other
   # than the extension's home dir.
-  define THEAISH_OUT_OF_EXT_TREE \
+  define TEAISH_OUT_OF_EXT_TREE \
     [expr {[file-normalize $::autosetup(builddir)] ne [file-normalize [get-define TEAISH_DIR]]}]
 
   #
@@ -704,9 +719,11 @@ use --teaish-extension-dir=/path/to/extension"
   foreach {optionalDef dflt} [subst {
     TEAISH_LOAD_PREFIX "[string totitle [get-define TEAISH_PKGNAME]]"
     TEAISH_MAKEFILE_CODE ""
+    TEAISH_ENABLE_DIST 1
   }] {
     define $optionalDef $dflt
   }
+
   return 1
 }
 
@@ -942,6 +959,18 @@ proc teaish-combine-option-lists {args} {
     }
   }
   return $rv
+}
+
+# @teaish-enable-dist ?yes?
+#
+# Explicitly enables or disables the "dist" rules in the default
+# Makefile.in. This is equivalent to defining TEAISH_ENABLE_DIST
+# to $yes (which must be 0 or 1).
+#
+# By default, dist creation is enabled.
+#
+proc teaish-enable-dist {{yes 1}} {
+  define TEAISH_ENABLE_DIST $yes
 }
 
 #
