@@ -6934,7 +6934,8 @@ WhereInfo *sqlite3WhereBegin(
     }
 
     /* TUNING:  Assume that a DISTINCT clause on a subquery reduces
-    ** the output size by a factor of 8 (LogEst -30).
+    ** the output size by a factor of 8 (LogEst -30).  Search for
+    ** tag-20250414a to see other cases.
     */
     if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
       WHERETRACE(0x0080,("nRowOut reduced from %d to %d due to DISTINCT\n",

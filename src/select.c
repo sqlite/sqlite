@@ -8119,6 +8119,12 @@ int sqlite3Select(
     if( pWInfo==0 ) goto select_end;
     if( sqlite3WhereOutputRowCount(pWInfo) < p->nSelectRow ){
       p->nSelectRow = sqlite3WhereOutputRowCount(pWInfo);
+      if( pDest->eDest<=SRT_DistQueue && pDest->eDest>=SRT_DistFifo ){
+        /* TUNING: For a UNION CTE, because UNION is implies DISTINCT,
+        ** reduce the estimated output row count by 8 (LogEst 30). 
+        ** Search for tag-20250414a to see other cases */
+        p->nSelectRow -= 30;
+      }
     }
     if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){
       sDistinct.eTnctType = sqlite3WhereIsDistinct(pWInfo);
