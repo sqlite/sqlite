@@ -1,4 +1,4 @@
-# Teaish configure script extension for the SQLite TCL extension
+# Teaish configure script for the SQLite TCL extension
 
 define TEAISH_NAME sqlite
 define TEAISH_PKGNAME sqlite3
@@ -31,8 +31,8 @@ proc teaish-options {} {
     with-system-sqlite=0
       => {Use the system-level sqlite instead of the copy in this tree.
           WARNING: this extension's version is taken from the in-tree copy
-          and there is no reliable way to get the version of a system-level copy
-          without knowing exactly where it lives (which this script does not)}
+          and there is no reliable way to get the version of a system-level
+          copy.}
     override-sqlite-version:VERSION
       => {For use with --with-system-sqlite to set the version number.}
     threadsafe=1         => {Disable mutexing}

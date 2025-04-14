@@ -1,5 +1,5 @@
-C Minor\scleanups\sand\sfixes\sin\sthe\sautoconf/tea\spieces.
-D 2025-04-14T10:18:40.707
+C Doc/help\stext\stweaks\sin\sautoconf/tea.
+D 2025-04-14T10:20:41.953
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -33,7 +33,7 @@ F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 2c99a64a0eff5dc2ad8e9657bb564fae2dbdfdb6b77a4c49b4387bd5a25c42ef
-F autoconf/tea/teaish.tcl 31efdeaadd4629dd883b7cfb52e18365a6c91bfb91f8b127570876032e920d1c
+F autoconf/tea/teaish.tcl 9fc1fb838eabebcda65035178ade8d04daafa6bf07a7f7a01e3b1fbd3df08f6c
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autoconf/tea/teaish.tester.tcl.in 743fd0fe1e667f82fd8fc3ebe0a5c77763e4dbed7bbc8605a9d4b1d0663dac78
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f54f7d07d31938f271bc5d04a40cb1f7b5e6ea48e78ad06b7cc65483533f54e
-R 01a906f212b7ee1ccd4bda790fce8e28
+P 4d6536bd0ad333854309e825feaca26fdd13ac4458c7ccfbe77fc76cc5a968bc
+R 6ce4803c4df253f8753ef98ce71d693c
 U stephan
-Z 80aac49167f19af66627472602a3ae1a
+Z ca1e347cc168fc07424b906d637dea8f
 # Remove this line to create a well-formed Fossil manifest.
