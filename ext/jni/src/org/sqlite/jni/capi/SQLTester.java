@@ -13,7 +13,6 @@
 ** SQLTester framework.
 */
 package org.sqlite.jni.capi;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,7 @@ enum ResultBufferMode {
   ESCAPED,
   //! Append output as-is
   ASIS
-};
+}
 
 /**
    Modes to specify how to emit multi-row output from
@@ -42,7 +41,7 @@ enum ResultRowMode {
   ONELINE,
   //! Add a newline between each result row.
   NEWLINE
-};
+}
 
 /**
    Base exception type for test-related failures.
@@ -278,7 +277,7 @@ public class SQLTester {
   }
 
   private StringBuilder clearBuffer(StringBuilder b){
-    b.setLength(0);;
+    b.setLength(0);
     return b;
   }
 
@@ -780,7 +779,7 @@ abstract class Command {
 class CloseDbCommand extends Command {
   public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
     argcCheck(ts,argv,0,1);
-    Integer id;
+    int id;
     if(argv.length>1){
       String arg = argv[1];
       if("all".equals(arg)){
@@ -1020,7 +1019,7 @@ class VerbosityCommand extends Command {
 
 class CommandDispatcher {
 
-  private static java.util.Map<String,Command> commandMap =
+  private static final java.util.Map<String,Command> commandMap =
     new java.util.HashMap<>();
 
   /**
@@ -1244,7 +1243,7 @@ class TestScript {
     }
     cur.pos = i;
     final String rv = cur.sb.toString();
-    if( i==cur.src.length && 0==rv.length() ){
+    if( i==cur.src.length && rv.isEmpty() ){
       return null /* EOF */;
     }
     return rv;
@@ -1364,7 +1363,7 @@ class TestScript {
     if( m.find() ){
       throw new IncompatibleDirective(this, m.group(1)+": "+m.group(3));
     }
-    if( line.indexOf("\n|")>=0 ){
+    if( line.contains("\n|") ){
       throw new IncompatibleDirective(this, "newline-pipe combination.");
     }
     return;
