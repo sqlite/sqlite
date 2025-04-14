@@ -333,7 +333,7 @@ public class SQLTester {
     return this;
   }
 
-  sqlite3 setCurrentDb(int n) throws Exception{
+  sqlite3 setCurrentDb(int n){
     affirmDbId(n);
     iCurrentDb = n;
     return this.aDb[n];
@@ -341,7 +341,7 @@ public class SQLTester {
 
   sqlite3 getCurrentDb(){ return aDb[iCurrentDb]; }
 
-  sqlite3 getDbById(int id) throws Exception{
+  sqlite3 getDbById(int id){
     return affirmDbId(id).aDb[id];
   }
 
@@ -362,7 +362,7 @@ public class SQLTester {
     }
   }
 
-  sqlite3 openDb(String name, boolean createIfNeeded) throws DbException {
+  sqlite3 openDb(String name, boolean createIfNeeded) {
     closeDb();
     int flags = SQLITE_OPEN_READWRITE;
     if( createIfNeeded ) flags |= SQLITE_OPEN_CREATE;
@@ -754,7 +754,7 @@ abstract class Command {
      fall in the inclusive range (min,max) then this function throws. Use
      a max value of -1 to mean unlimited.
   */
-  protected final void argcCheck(TestScript ts, String[] argv, int min, int max) throws Exception{
+  protected final void argcCheck(TestScript ts, String[] argv, int min, int max){
     int argc = argv.length-1;
     if(argc<min || (max>=0 && argc>max)){
       if( min==max ){
@@ -770,14 +770,14 @@ abstract class Command {
   /**
      Equivalent to argcCheck(argv,argc,argc).
   */
-  protected final void argcCheck(TestScript ts, String[] argv, int argc) throws Exception{
+  protected final void argcCheck(TestScript ts, String[] argv, int argc){
     argcCheck(ts, argv, argc, argc);
   }
 }
 
 //! --close command
 class CloseDbCommand extends Command {
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,0,1);
     int id;
     if(argv.length>1){
@@ -800,7 +800,7 @@ class CloseDbCommand extends Command {
 class ColumnNamesCommand extends Command {
   public void process(
     SQLTester st, TestScript ts, String[] argv
-  ) throws Exception{
+  ){
     argcCheck(ts,argv,1);
     st.outputColumnNames( Integer.parseInt(argv[1])!=0 );
   }
@@ -808,7 +808,7 @@ class ColumnNamesCommand extends Command {
 
 //! --db command
 class DbCommand extends Command {
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,1);
     t.setCurrentDb( Integer.parseInt(argv[1]) );
   }
@@ -820,7 +820,7 @@ class GlobCommand extends Command {
   public GlobCommand(){}
   protected GlobCommand(boolean negate){ this.negate = negate; }
 
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,1,-1);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
@@ -850,7 +850,7 @@ class JsonBlockCommand extends TableResultCommand {
 //! --new command
 class NewDbCommand extends OpenDbCommand {
   public NewDbCommand(){ super(true); }
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     if(argv.length>1){
       Util.unlink(argv[1]);
     }
@@ -866,7 +866,7 @@ class NoopCommand extends Command {
     this.verbose = verbose;
   }
   public NoopCommand(){}
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     if( this.verbose ){
       t.outln("Skipping unhandled command: "+argv[0]);
     }
@@ -884,7 +884,7 @@ class NotGlobCommand extends GlobCommand {
 class NullCommand extends Command {
   public void process(
     SQLTester st, TestScript ts, String[] argv
-  ) throws Exception{
+  ){
     argcCheck(ts,argv,1);
     st.setNullValue( argv[1] );
   }
@@ -895,7 +895,7 @@ class OpenDbCommand extends Command {
   private boolean createIfNeeded = false;
   public OpenDbCommand(){}
   protected OpenDbCommand(boolean c){createIfNeeded = c;}
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,1);
     t.openDb(argv[1], createIfNeeded);
   }
@@ -905,7 +905,7 @@ class OpenDbCommand extends Command {
 class PrintCommand extends Command {
   public void process(
     SQLTester st, TestScript ts, String[] argv
-  ) throws Exception{
+  ){
     st.out(ts.getOutputPrefix(),": ");
     if( 1==argv.length ){
       st.out( st.getInputText() );
@@ -920,7 +920,7 @@ class ResultCommand extends Command {
   private final ResultBufferMode bufferMode;
   protected ResultCommand(ResultBufferMode bm){ bufferMode = bm; }
   public ResultCommand(){ this(ResultBufferMode.ESCAPED); }
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,0,-1);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
@@ -938,7 +938,7 @@ class ResultCommand extends Command {
 
 //! --run command
 class RunCommand extends Command {
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,0,1);
     final sqlite3 db = (1==argv.length)
       ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
@@ -958,7 +958,7 @@ class TableResultCommand extends Command {
   private final boolean jsonMode;
   protected TableResultCommand(boolean jsonMode){ this.jsonMode = jsonMode; }
   public TableResultCommand(){ this(false); }
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,0);
     t.incrementTestCounter();
     String body = ts.fetchCommandBody(t);
@@ -1001,7 +1001,7 @@ class TableResultCommand extends Command {
 
 //! --testcase command
 class TestCaseCommand extends Command {
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,1);
     ts.setTestCaseName(argv[1]);
     t.clearResultBuffer();
@@ -1011,7 +1011,7 @@ class TestCaseCommand extends Command {
 
 //! --verbosity command
 class VerbosityCommand extends Command {
-  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+  public void process(SQLTester t, TestScript ts, String[] argv){
     argcCheck(ts,argv,1);
     ts.setVerbosity( Integer.parseInt(argv[1]) );
   }
