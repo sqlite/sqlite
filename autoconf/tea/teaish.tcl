@@ -29,10 +29,9 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 proc teaish-options {} {
   return [proj-strip-hash-comments [subst -nocommands -nobackslashes {
     with-system-sqlite=0
-      => {Use the system-level sqlite instead of the copy in this tree.
-          WARNING: this extension's version is taken from the in-tree copy
-          and there is no reliable way to get the version of a system-level
-          copy.}
+      => {Use the system-level SQLite instead of the copy in this tree.
+          Also requires use of --override-sqlite-version so that the build
+          knows what version number to associate with the system-level SQLite.}
     override-sqlite-version:VERSION
       => {For use with --with-system-sqlite to set the version number.}
     threadsafe=1         => {Disable mutexing}
@@ -72,10 +71,14 @@ proc teaish-configure {} {
 
   set srcdir [get-define TEAISH_DIR]
   teaish-add-src -dist -dir generic/tclsqlite3.c
-  teaish-add-cflags -I${srcdir}/.. ; # for sqlite3.c
+  teaish-add-cflags -I${srcdir}/.. ; # for sqlite3.[ch]
   if {[proj-opt-was-provided override-sqlite-version]} {
     define TEAISH_VERSION [opt-val override-sqlite-version]
-    msg-result "NOTICE: overriding version number: [get-define TEAISH_VERSION]"
+    proj-warn "overriding sqlite version number: [get-define TEAISH_VERSION]"
+  } elseif {[proj-opt-was-provided with-system-sqlite]
+            && [opt-val with-system-sqlite] ne "0"} {
+    proj-fatal "when using --with-system-sqlite also use"\
+      "--override-sqlite-version to specify a library version number."
   }
 
   define CFLAGS [proj-get-env CFLAGS {-O2}]

@@ -42,18 +42,45 @@ proc test-current-scope {{lvl 0}} {
   }
 }
 
+# @test-msg
+#
+# Emits all arugments to stdout.
 proc test-msg {args} {
-  puts "{*}$args"
+  puts "$args"
+}
+
+# @test-warn
+#
+# Emits all arugments to stderr.
+proc test-warn {args} {
+  puts stderr "WARNING: $args"
 }
 
 ########################################################################
 # @test-error msg
 #
-# Emits an error message to stderr and exits with non-0.
+# Triggers a test-failed error with a string describing the calling
+# scope and the provided message.
 proc test-fail {msg} {
   #puts stderr "ERROR: \[[test-current-scope 1]]: $msg"
   #exit 1
-  error "ERROR: \[[test-current-scope 1]]: $msg"
+  error "FAIL: \[[test-current-scope 1]]: $msg"
+}
+
+# Internal impl for assert-likes. Should not be called directly by
+# client code.
+proc test__assert {lvl script {msg ""}} {
+  set src "expr \{ $script \}"
+  # puts "XXXX evalling $src";
+  if {![uplevel $lvl $src]} {
+    if {"" eq $msg} {
+      set msg $script
+    }
+    set caller1 [test-current-scope $lvl]
+    incr lvl
+    set caller2 [test-current-scope $lvl]
+    error "Assertion failed in: \[$caller2 -> $caller1]]: $msg"
+  }
 }
 
 ########################################################################
@@ -64,13 +91,16 @@ proc test-fail {msg} {
 # includes the body of the failed assertion, but if $msg is set then
 # that is used instead.
 proc assert {script {msg ""}} {
-  set x "expr \{ $script \}"
-  if {![uplevel 1 $x]} {
-    if {"" eq $msg} {
-      set msg $script
-    }
-    test-fail "Assertion failed in \[[test-current-scope 1]]: $msg"
-  }
+  test__assert 1 $script $msg
+}
+
+########################################################################
+# @test-assert testId script ?msg?
+#
+# Works like [assert] but emits $testId to stdout first.
+proc test-assert {testId script {msg ""}} {
+  puts "test $testId"
+  test__assert 2 $script $msg
 }
 
 ########################################################################
@@ -81,28 +111,65 @@ proc assert {script {msg ""}} {
 proc test-expect {testId script result} {
   puts "test $testId"
   set x [uplevel 1 $script]
-  assert {$x eq $result} "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
-}
-
-########################################################################
-# @test-assert testId script ?msg?
-#
-# Works like [assert] but emits $testId to stdout first.
-proc test-assert {testId script {msg ""}} {
-  puts "test $testId"
-  assert $script $msg
+  test__assert 1 {$x eq $result} "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
 ########################################################################
 # @test-catch cmd ?...args?
 #
 # Runs [cmd ...args], repressing any exception except to possibly log
-# the failure.
+# the failure. Returns 1 if it caught anything, 0 if it didn't.
 proc test-catch {cmd args} {
   if {[catch {
     $cmd {*}$args
   } rc xopts]} {
     puts "[test-current-scope] ignoring failure of: $cmd [lindex $args 0]: $rc"
-    #how to extract just the message text from $xopts?
+    return 1
   }
+  return 0
+}
+
+array set teaish__BuildFlags {}
+
+# @teaish-build-flag2 flag tgtVar ?dflt?
+#
+# Caveat #1: only valid when called in the context of teaish's default
+# "make test" recipe, e.g. from teaish.test.tcl. It is not valid from
+# a teaish.tcl configure script because (A) the state it relies on
+# doesn't fully exist at that point and (B) that level of the API has
+# more direct access to the build state. This function requires that
+# an external script have populated its internal state, which is
+# normally handled via teaish.tester.tcl.in.
+#
+# If the current build has the configure-time flag named $flag set
+# then tgtVar is assigned its value and 1 is returned, else tgtVal is
+# assigned $dflt and 0 is returned.
+#
+# Caveat #2: defines in the style of HAVE_FEATURENAME with a value of
+# 0 are, by long-standing configure script conventions, treated as
+# _undefined_ here.
+#
+proc teaish-build-flag2 {flag tgtVar {dflt ""}} {
+  upvar $tgtVar tgt
+  if {[info exists ::teaish__BuildFlags($flag)]} {
+    set tgt $::teaish__BuildFlags($flag)
+    return 1;
+  } elseif {0==[array size ::teaish__BuildFlags]} {
+    test-warn \
+      "\[[test-current-scope]] was called from " \
+      "[test-current-scope 1] without the build flags imported."
+  }
+  set tgt $dflt
+  return 0
+}
+
+# @teaish-build-flag flag ?dflt?
+#
+# Convenience form of teaish-build-flag2 which returns the
+# configure-time-defined value of $flag or "" if it's not defined (or
+# if it's an empty string).
+proc teaish-build-flag {flag {dflt ""}} {
+  set tgt ""
+  teaish-build-flag2 $flag tgt $dflt
+  return $tgt
 }

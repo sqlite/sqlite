@@ -73,7 +73,8 @@ set proj_(isatty) [isatty? stdout]
 ########################################################################
 # @proj-warn msg
 #
-# Emits a warning message to stderr.
+# Emits a warning message to stderr. All args are appended with a
+# space between each.
 proc proj-warn {args} {
   show-notices
   puts stderr [join [list "WARNING:" {*}$args] " "]
@@ -82,10 +83,11 @@ proc proj-warn {args} {
 ########################################################################
 # @proj-error msg
 #
-# Emits an error message to stderr and exits with non-0.
+# Emits an error message to stderr and exits with non-0. All args are
+# appended with a space between each.
 proc proj-fatal {args} {
   show-notices
-  puts stderr "ERROR: \[[proj-current-scope 1]]: $args"
+  puts stderr [join [list "ERROR: \[[proj-current-scope 1]]:" {*}$args] " "]
   exit 1
 }
 
@@ -1689,5 +1691,67 @@ proc proj-setup-autoreconfig {defName} {
   #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
   foreach arg $::autosetup(argv) {
     define-append $defName [apply $squote $arg]
+  }
+}
+
+########################################################################
+# @prop-append-to defineName args...
+#
+# A proxy for Autosetup's [define-append]. Appends all non-empty $args
+# to [define-append $defineName].
+proc proj-define-append {defineName args} {
+  foreach a $args {
+    if {"" ne $a} {
+      define-append $defineName {*}$a
+    }
+  }
+}
+
+########################################################################
+# @prod-define-amend ?-p|-prepend? ?-define? FLAG args...
+#
+# A proxy for Autosetup's [define-append].
+#
+# Appends all non-empty $args to the define named by $FLAG unless.  If
+# one of (-p | -prepend) are used it instead prepends them, in their
+# given order, to $FLAG.
+#
+# If -define is used then each argument is assumed to be a [define]'d
+# flag and [get-define X ""] is used to fetch it.
+#
+# Typically, -lXYZ flags need to be in "reverse" order, with each -lY
+# resolving symbols for -lX's to its left. This order is largely
+# historical, and not relevant on all environments, but it is
+# technically correct and still relevant on some environments.
+#
+# See: proj-append-to
+proc proj-define-amend {defName args} {
+  set prepend 0
+  set isdefs 0
+  set xargs [list]
+  foreach arg $args {
+    switch -exact -- $arg {
+      -p - -prepend { set prepend 1 }
+      -d - -define {
+        set isdefs 1
+      }
+      default {
+        lappend xargs $arg
+      }
+    }
+  }
+  if {$isdefs} {
+    set args $xargs
+    set xargs [list]
+    foreach arg $args {
+      lappend xargs [get-define $arg ""]
+    }
+  }
+  set args $xargs
+  if {$prepend} {
+    lappend args {*}[get-define $defName ""]
+    define $defName [join $args]; # join to eliminate {} entries
+  } else {
+    proj-define-append $defName {*}$args
   }
 }
