@@ -1,5 +1,5 @@
-C Further\scleanups\sand\scode\sconsolidation\sbetween\steaish.tcl\sand\ssqlite-config.tcl\sparts.
-D 2025-04-15T02:02:36.015
+C Avoid\sa\spotential\sinteger\soverflow\sin\snon-default\sbuilds\sof\sthe\sfts3\smatchinfo()\sfunction.
+D 2025-04-15T11:06:37.142
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -89,7 +89,7 @@ F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 024417020c57dd1ab39816f5fe6cf45222a857b78a1f6412f040ada1ceabd4ff
-F ext/fts3/fts3_snippet.c 55506af9c656d06ad6acef0735b67749d199617421f2e66c5b7101745b9cf1ba
+F ext/fts3/fts3_snippet.c 627d564878f82479ee3e040c89fb15aebf691d81e11c8e451241033c02b9810d
 F ext/fts3/fts3_term.c 6a96027ad364001432545fe43322b6af04ed28bb5619ec51af1f59d0710d6d69
 F ext/fts3/fts3_test.c cc329471e573f95a6ea9fbca87e89dcfa1d355591c80172ffcd759ac521d25d8
 F ext/fts3/fts3_tokenize_vtab.c 66eba6c2baa04b2b15e80d68341b8fd0b4d3831f6b2edb33916a2906ff2d4389
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6b2d0e09e4806b5731764192782ec7e1ad595c529202a684d23bcfe2fae559d7
-R 459786ce4af7bd9d29b2d98508f1ac93
-U stephan
-Z 6395a8a08ae56770c6a7b258189df8f5
+P 07e9ceee51380ee25e580178fa82030be5d2b65d4f4b4dc86c94b21f7f04f291
+R 84dac09860d04f3b89dac3e5a6e35be6
+U dan
+Z fa2be2a8c187a7c531361e66a41cdaca
 # Remove this line to create a well-formed Fossil manifest.
