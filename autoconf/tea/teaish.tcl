@@ -103,7 +103,8 @@ proc teaish-configure {} {
     teaish-add-ldflags -lsqlite3
   }
 
-  sqlite-check-common-system-deps
+  teaish-check-librt
+  teaish-check-libz
   sqlite-handle-threadsafe
   sqlite-handle-tempstore
   sqlite-handle-load-extension
@@ -111,7 +112,6 @@ proc teaish-configure {} {
   sqlite-handle-icu
 
   sqlite-handle-common-feature-flags; # must be late in the process
-  teaish-add-cflags -define OPT_FEATURE_FLAGS
 }; # teaish-configure
 
 
@@ -136,8 +136,13 @@ proc sqlite-affirm-have-math {featureName} {
     if {![msg-quiet proj-check-function-in-lib log m]} {
       user-error "Missing math APIs for $featureName"
     }
-    define LDFLAGS_MATH [get-define lib_log ""]
+    set lfl [get-define lib_log ""]
     undefine lib_log
+    if {"" ne $lfl} {
+      user-notice "Forcing requirement of $lfl for $featureName"
+    }
+    define LDFLAGS_MATH $lfl
+    teaish-prepend-ldflags $lfl
   }
 }
 
@@ -215,13 +220,9 @@ proc sqlite-handle-common-feature-flags {} {
     }
   }
 
-  sqlite-finalize-feature-flags
-}
-
-#########################################################################
-# Remove duplicates from the final feature flag sets and show them to
-# the user.
-proc sqlite-finalize-feature-flags {} {
+  #########################################################################
+  # Remove duplicates from the final feature flag sets and show them
+  # to the user.
   set oFF [get-define OPT_FEATURE_FLAGS]
   if {"" ne $oFF} {
     define OPT_FEATURE_FLAGS [lsort -unique $oFF]
@@ -230,16 +231,8 @@ proc sqlite-finalize-feature-flags {} {
   if {[lsearch [get-define TARGET_DEBUG ""] -DSQLITE_DEBUG=1] > -1} {
     msg-result "Note: this is a debug build, so performance will suffer."
   }
-}
-
-########################################################################
-# Run checks for system-level includes and libs which are common to
-# both the canonical build and the "autoconf" bundle.
-#
-proc sqlite-check-common-system-deps {} {
-  teaish-check-librt
-  teaish-check-libz
-}
+  teaish-add-cflags -define OPT_FEATURE_FLAGS
+}; # sqlite-handle-common-feature-flags
 
 ########################################################################
 # If --enable-threadsafe is set, this adds -DSQLITE_THREADSAFE=1 to

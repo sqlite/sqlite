@@ -425,17 +425,14 @@ proc sqlite-configure {buildMode configScript} {
   }
 
   # Filter allFlags to create the set of [options] legal for this build
-  set opts {}
-  foreach {group XY} [subst -nobackslashes -nocommands \
-                        [proj-strip-hash-comments $allFlags]] {
+  foreach {group XY} [subst -nobackslashes -nocommands $allFlags] {
     foreach {X Y} $XY {
       if { $buildMode in $X || "*" in $X } {
-        foreach y $Y {
-          lappend opts $y
-        }
+        proj-options-add $Y
       }
     }
   }
+  set opts [proj-options-combine]
   #lappend opts "soname:=duplicateEntry => {x}"; #just testing
   if {[catch {options $opts} msg xopts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
@@ -585,8 +582,12 @@ proc sqlite-affirm-have-math {featureName} {
     if {![msg-quiet proj-check-function-in-lib log m]} {
       user-error "Missing math APIs for $featureName"
     }
-    define LDFLAGS_MATH [get-define lib_log ""]
+    set lfl [get-define lib_log ""]
     undefine lib_log
+    if {"" ne $lfl} {
+      user-notice "Forcing requirement of $lfl for $featureName"
+    }
+    define LDFLAGS_MATH $lfl
   }
 }
 

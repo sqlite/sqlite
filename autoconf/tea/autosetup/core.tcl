@@ -45,12 +45,6 @@ array set teaish__Config [proj-strip-hash-comments {
   # 0x10 = teaish-pragma was called: use their pkgIndex.tcl
   #
   pkgindex-policy 0
-
-  #
-  # A list of lists of Autosetup [options]-format --flags definitions.
-  # Append to this using [teaish-add-options].
-  #
-  extra-options {}
 }]
 
 #
@@ -110,7 +104,7 @@ proc teaish-configure-core {} {
   #
   # Set up the --flags...
   #
-  set opts [proj-strip-hash-comments {
+  proj-options-add [proj-strip-hash-comments {
     with-tcl:DIR
       => {Directory containing tclConfig.sh or a directory one level up from
           that, from which we can derive a directory containing tclConfig.sh.}
@@ -154,23 +148,14 @@ proc teaish-configure-core {} {
 
     t-d
     teaish-debug => {Enable teaish-specific debug output}
-  }]; # $opts
+  }]; # main options.
 
-  #
-  # Create the full options list from:
-  # 1) $opts
-  # 2) [teaish-options], if defined
-  # 3) $::teaish__Config(exta-options)
-  #
-  set optLists [list $opts]
   if {[llength [info proc teaish-options]] > 0} {
-    # teaish-options is assumed to be imported via TEAISH_TCL.
-    lappend optLists [teaish-options]
+    # Add options defined by teaish-options, which is assumed to be
+    # imported via TEAISH_TCL.
+    proj-options-add [teaish-options]
   }
-  lappend optLists {*}$::teaish__Config(extra-options)
-  set opts [teaish-combine-option-lists {*}$optLists]
-  unset optLists
-
+  set opts [proj-options-combine]
   #lappend opts teaish-debug => {x}; #testing dupe entry handling
   if {[catch {options $opts} msg xopts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
@@ -990,40 +975,6 @@ proc teaish-feature-cache-check {{depth 0} tgtVar} {
   }
   set tgtVar ""
   return 0
-}
-
-# @teach-add-options list
-#
-# Adds a list of options to the pending --flag processing.  It must be
-# in the format used by Autosetup's [options] function.
-#
-# This will have no effect if called from [teaish-configure],
-# as the flags processing is done by the time that is called.
-#
-# This may be used from the top scope of teaish.tcl or from
-# [teaish-options]. When used in conjunction with [teaish-options],
-# [teaish-options] will appear first in the --help list.
-#
-proc teaish-add-options {list} {
-  lappend ::teaish__Config(extra-options) $list
-}
-
-# @teash-combine-option-lists list1 ?...listN?
-#
-# Expects each argument to be a list of options compatible with
-# autosetup's [options] function. This function concatenates the
-# contents of each list into a new top-level list, stripping the outer
-# list part of each argument. The intent is that teaish-options
-# implementations can use this to combine multiple lists, e.g. from
-# functions teaish-check-openssl-options.
-proc teaish-combine-option-lists {args} {
-  set rv [list]
-  foreach e $args {
-    foreach x $e {
-      lappend rv $x
-    }
-  }
-  return $rv
 }
 
 ########################################################################

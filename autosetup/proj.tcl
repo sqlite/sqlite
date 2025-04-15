@@ -55,9 +55,10 @@
 # @section Project Helper APIs
 
 ########################################################################
-# $proj_ is an internal-use-only array for storing whatever generic
+# $proj__Config is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
-array set proj_ {}
+array set proj__Config {
+}
 #
 # List of dot-in files to filter in the final stages of
 # configuration. Some configuration steps may append to this.  Each
@@ -67,8 +68,15 @@ array set proj_ {}
 #
 # See: proj-dot-ins-append and proj-dot-ins-process
 #
-set proj_(dot-in-files) [list]
-set proj_(isatty) [isatty? stdout]
+set proj__Config(dot-in-files) [list]
+set proj__Config(isatty) [isatty? stdout]
+#
+# A list of lists of Autosetup [options]-format --flags definitions.
+# Append to this using [proj-options-add] and use
+# [proj-options-combine] to merge them into a single list for passing
+# to [options].
+#
+set proj__Config(extra-options} {}
 
 ########################################################################
 # @proj-warn msg
@@ -118,7 +126,7 @@ proc proj-assert {script {msg ""}} {
 # ANSI escape sequences then this returns $str wrapped in a sequence
 # to bold that text, else it returns $str as-is.
 proc proj-bold {args} {
-  if {$::autosetup(iswin) || !$::proj_(isatty)} {
+  if {$::autosetup(iswin) || !$::proj__Config(isatty)} {
     return $str
   }
   return "\033\[1m${args}\033\[0m"
@@ -1147,16 +1155,16 @@ proc proj-quote-str_ {value} {
 ########################################################################
 # An internal impl detail of proj-dump-defs-json. Requires a data
 # type specifier, as used by make-config-header, and a value. Returns
-# the formatted value or the value $::proj_(defs-skip) if the caller
+# the formatted value or the value $::proj__Config(defs-skip) if the caller
 # should skip emitting that value.
-set proj_(defs-skip) "-proj-defs-format_ sentinel"
+set proj__Config(defs-skip) "-proj-defs-format_ sentinel"
 proc proj-defs-format_ {type value} {
   switch -exact -- $type {
     -bare {
       # Just output the value unchanged
     }
     -none {
-      set value $::proj_(defs-skip)
+      set value $::proj__Config(defs-skip)
     }
     -str {
       set value [proj-quote-str_ $value]
@@ -1171,14 +1179,14 @@ proc proj-defs-format_ {type value} {
       set ar {}
       foreach v $value {
         set v [proj-defs-format_ -auto $v]
-        if {$::proj_(defs-skip) ne $v} {
+        if {$::proj__Config(defs-skip) ne $v} {
           lappend ar $v
         }
       }
       set value "\[ [join $ar {, }] \]"
     }
     "" {
-      set value $::proj_(defs-skip)
+      set value $::proj__Config(defs-skip)
     }
     default {
       proj-fatal "Unknown type in proj-dump-defs-json: $type"
@@ -1224,7 +1232,7 @@ proc proj-dump-defs-json {file args} {
   foreach n [lsort [dict keys [all-defines]]] {
     set type [proj-defs-type_ $n $args]
     set value [proj-defs-format_ $type [get-define $n]]
-    if {$::proj_(defs-skip) ne $value} {
+    if {$::proj__Config(defs-skip) ne $value} {
       lappend lines "\"$n\": ${value}"
     }
   }
@@ -1564,7 +1572,7 @@ proc proj-dot-ins-append {fileIn args} {
     }
   }
   #puts "******* [proj-current-scope]: adding $fileIn"
-  lappend ::proj_(dot-in-files) $fileIn
+  lappend ::proj__Config(dot-in-files) $fileIn
 }
 
 ########################################################################
@@ -1574,7 +1582,7 @@ proc proj-dot-ins-append {fileIn args} {
 # that each entry is a 3-element list of (inputFileName,
 # outputFileName, postProcessScript).
 proc proj-dot-ins-list {} {
-  return $::proj_(dot-in-files)
+  return $::proj__Config(dot-in-files)
 }
 
 ########################################################################
@@ -1610,7 +1618,7 @@ proc proj-dot-ins-process {args} {
       default   break
     }
   }
-  foreach f $::proj_(dot-in-files) {
+  foreach f $::proj__Config(dot-in-files) {
     proj-assert {3==[llength $f]} \
       "Expecting proj-dot-ins-list to be stored in 3-entry lists"
     lassign $f fIn fOut fScript
@@ -1624,7 +1632,7 @@ proc proj-dot-ins-process {args} {
     }
   }
   if {$clear} {
-    set ::proj_(dot-in-files) [list]
+    set ::proj__Config(dot-in-files) [list]
   }
 }
 
@@ -1747,6 +1755,7 @@ proc proj-define-amend {defName args} {
       lappend xargs [get-define $arg ""]
     }
   }
+
   set args $xargs
   if {$prepend} {
     lappend args {*}[get-define $defName ""]
@@ -1754,4 +1763,35 @@ proc proj-define-amend {defName args} {
   } else {
     proj-define-append $defName {*}$args
   }
+}
+
+# @proj-options-add list
+#
+# Adds a list of options to the pending --flag processing.  It must be
+# in the format used by Autosetup's [options] function.
+#
+# This will have no useful effect if called from after [options]
+# is called.
+proc proj-options-add {list} {
+  lappend ::proj__Config(extra-options) $list
+}
+
+# @proj-options-combine list1 ?...listN?
+#
+# Expects each argument to be a list of options compatible with
+# autosetup's [options] function. This function concatenates the
+# contents of each list into a new top-level list, stripping the outer
+# list part of each argument, and returning that list
+#
+# If passed no arguments, it uses the list generated by calls to
+# [proj-options-add].
+proc proj-options-combine {args} {
+  set rv [list]
+  if {0 == [llength $args]} {
+    set args $::proj__Config(extra-options)
+  }
+  foreach e $args {
+      lappend rv {*}$e
+  }
+  return $rv
 }
