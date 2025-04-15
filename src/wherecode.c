@@ -542,7 +542,7 @@ static void adjustOrderByCol(ExprList *pOrderBy, ExprList *pEList){
 /*
 ** pX is an expression of the form:  (vector) IN (SELECT ...)
 ** In other words, it is a vector IN operator with a SELECT clause on the
-** LHS.  But not all terms in the vector are indexable and the terms might
+** RHS.  But not all terms in the vector are indexable and the terms might
 ** not be in the correct order for indexing.
 **
 ** This routine makes a copy of the input pX expression and then adjusts

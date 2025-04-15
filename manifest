@@ -1,5 +1,5 @@
-C Cleanups\sand\srefactoring\sin\sproj.tcl\sand\steaish.
-D 2025-04-15T15:20:30.333
+C Fix\sa\sminor\stypo\sin\sa\scode\scomment.
+D 2025-04-15T19:53:36.675
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -871,7 +871,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 85690096a475ace0a2f5154be5341e3367f4ad8fda349a213702d2aff2d41d88
 F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
-F src/wherecode.c 6a3749575bcd02c7243ed89bde8a222525a60b56ae12ab78d997d64de346465c
+F src/wherecode.c d67fadf5430c2647773b5f702a47b82eb4af50a317f8978c0c82363cc1a5107f
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aecc0100cef3ea83feed558dbe34dd6313721fa54052ee1ed529741cec8cacda
-R 6d0851af6d222d7402138880b42a71fb
-U stephan
-Z eb37c816b2f5ad3c81b2db656b75bd7f
+P 6b7ca8176e8c1b5e99e177c3daaba47b0674fa2f82d91754e7a8f66460ca8419
+R 59cb199d5d0cc4abecb0c1293594bc0a
+U drh
+Z 66b3eb3d1515a55c6cbd6e0d69f293fa
 # Remove this line to create a well-formed Fossil manifest.
