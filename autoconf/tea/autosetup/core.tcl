@@ -27,9 +27,9 @@ define TEAISH_VERSION 0.1-beta
 use system ; # Will output "Host System" and "Build System" lines
 if {"--help" ni $::argv} {
   proj-tweak-default-env-dirs
-  msg-result "Source dir  = $::autosetup(srcdir)"
-  msg-result "Build dir   = $::autosetup(builddir)"
   msg-result "TEA(ish) Version = [get-define TEAISH_VERSION]"
+  msg-result "Source dir    = $::autosetup(srcdir)"
+  msg-result "Build dir     = $::autosetup(builddir)"
 }
 
 #
@@ -38,23 +38,25 @@ array set teaish__Config [proj-strip-hash-comments {
   # set to 1 to enable some internal debugging output
   debug-enabled 0
   #
-  # 0    = default
-  # 0x01 = teaish__find-extension found input in TEAISH_DIR
-  # 0x02 = teaish__find-extension found input in srcdir
-  # 0x04 = teaish__find-extension found output file but no input
-  # 0x10 = teaish-pragma was called: use their pkgIndex.tcl
+  # 0    = don't yet have extension's pkgindex
+  # 0x01 = teaish__find_extension found TEAISH_DIR/pkgindex.tcl
+  # 0x02 = teaish__find_extension found srcdir/pkgindex.tcl.in
+  # 0x04 = teaish__find_extension found TEAISH_DIR/pkgindex.tcl (static file)
+  # 0x10 = teaish-pragma was called: behave as if 0x04
   #
   pkgindex-policy 0
 }]
 
 #
-# Returns true if any arg in $::argv matches the given glob, else
-# returns false.
+# Returns true if any arg in $::argv matches any of the given globs,
+# else returns false.
 #
-proc teaish__argv-has {glob} {
-  foreach arg $::argv {
-    if {[string match $glob $arg]} {
-      return 1
+proc teaish__argv_has {args} {
+  foreach glob $args {
+    foreach arg $::argv {
+      if {[string match $glob $arg]} {
+        return 1
+      }
     }
   }
   return 0
@@ -66,26 +68,27 @@ proc teaish__argv-has {glob} {
 #
 proc teaish-configure-core {} {
   #
-  # "Declare" some defines for potential later use.
+  # "Declare" some defines...
   #
   foreach {f v} {
     TEAISH_MAKEFILE ""
     TEAISH_MAKEFILE_IN ""
+    TEAISH_DIST_FILES ""
+    TEAISH_PKGINIT_TCL ""
+    TEAISH_PKGINIT_TCL_IN ""
+    TEAISH_PKGINDEX_TCL_IN ""
+    TEAISH_PKGINDEX_TCL ""
     TEAISH_TCL ""
     TEAISH_CFLAGS ""
     TEAISH_LDFLAGS ""
     TEAISH_SRC ""
-    TEAISH_DIST_FILES ""
-    TEAISH_PKGINIT_TCL ""
-    TEAISH_PKGINDEX_TCL_IN ""
-    TEAISH_PKGINDEX_TCL ""
-    EXTRA_CFLAGS ""
   } {
     define $f $v
   }
 
   set gotExt 0; # True if an extension config is found
-  if {![teaish__argv-has --teaish-create-extension*]} {
+  if {![teaish__argv_has --teaish-create-extension* --t-c-e*]} {
+    # Don't look for an extension if we're in --t-c-e mode
     set gotExt [teaish__find-extension]
   }
 
@@ -177,7 +180,7 @@ proc teaish-configure-core {} {
   set ::teaish__Config(debug-enabled) [opt-bool teaish-debug]
 
   if {[proj-opt-was-provided teaish-create-extension]} {
-    teaish__create-extension [opt-val teaish-create-extension]
+    teaish__create_extension [opt-val teaish-create-extension]
     return
   }
   proj-assert {1==$gotExt} "Else we cannot have gotten this far"
@@ -305,7 +308,7 @@ proc teaish__configure-finalize {} {
   #
   # Ensure we have a pkgIndex.tcl and don't have a stale generated one
   # when rebuilding for different --with-tcl=... values. Also take
-  # care not to nuke it if pkgindex-policy is 1.
+  # care not to nuke it if pkgindex-policy is 0x10.
   #
   apply {{} {
     set policy $::teaish__Config(pkgindex-policy);
@@ -313,7 +316,6 @@ proc teaish__configure-finalize {} {
     if {$policy & 0x10} {
       # teaish-pragma --have-own-pkgIndex.tcl override. This means
       # we have a static/non-generated pkgIndex.tcl.
-      define TEAISH_PKGINDEX_TCL_IN ""
       set tpt [get-define TEAISH_PKGINDEX_TCL ""]
       if {"" eq $tpt} {
         set tpt [file join [get-define TEAISH_DIR] pkgIndex.tcl]
@@ -321,11 +323,11 @@ proc teaish__configure-finalize {} {
       }
       set src $tpt
     } elseif {$policy & 0x04} {
-      # Found output file in TEAISH_DIR but no input file, so
+      # Found TEAISH_DIR/pkgIndex.tcl but no pkgIndex.tcl.in, so
       # assume it's a hand-written one.
       set src [get-define TEAISH_PKGINDEX_TCL]
     } elseif {$policy} {
-      # Found input pkgIndex.tcl.in TEAISH_DIR or srcdir
+      # Found one of {TEAISH_DIR,srcdir}/pkgIndex.tcl.in
       set src [get-define TEAISH_PKGINDEX_TCL_IN]
     } else {
       proj-fatal "Cannot determine the pkgIndex.tcl to use"
@@ -602,77 +604,50 @@ proc teaish__find-extension {} {
   # be loaded before [options] is run (so that the extension can
   # inject its own options).
   #
-  set largv {}; # rewritten $::argv
   set extM ""; # teaish.make.in
   set extT ""; # teaish.tcl
-  set lambdaM {{f} {
-    if {[file isdir $f]} {
-      set f [file join $f teaish.make.in]
-    }
-    if {[file readable $f]} {
-      return [file-normalize $f]
+  # Helper for the foreach loop below.
+  set lambdaMT {{mustHave fid dir} {
+    if {[file isdir $dir]} {
+      set f [file join $dir $fid]
+      if {[file readable $f]} {
+        return [file-normalize $f]
+      } elseif {$mustHave} {
+        proj-fatal "Missing required $dir/$fid"
+      }
+    } elseif {$mustHave} {
+      proj-fatal "--teaish-extension-dir=$dir does not reference a directory"
     }
     return ""
   }}
-  set lambdaT {{f} {
-    if {[file isdir $f]} {
-      set f [file join $f teaish.tcl]
-    }
-    if {![file readable $f]} {
-      proj-fatal "extension tcl file is not readable: $f"
-    }
-    return [file-normalize $f]
-  }}
-#  set gotNonFlag 0
+  set largv {}; # rewritten $::argv
   foreach arg $::argv {
     #puts "*** arg=$arg"
     switch -glob -- $arg {
       --ted=* -
       --t-e-d=* -
       --teaish-extension-dir=* {
+        # Ensure that $extD refers to a directory and contains a
+        # teaish.tcl.
         regexp -- {--[^=]+=(.+)} $arg - extD
         set extD [file-normalize $extD]
         if {![file isdir $extD]} {
           proj-fatal "--teaish-extension-dir value is not a directory: $extD"
         }
-        set extM [apply $lambdaM [file join $extD teaish.make.in]]
-        set extT [apply $lambdaT [file join $extD teaish.tcl]]
+        set extM [apply $lambdaMT 0 teaish.make.in $extD]
+        set extT [apply $lambdaMT 1 teaish.tcl $extD]
         define TEAISH_DIR $extD
       }
       default {
-        # We'd like to treat the first non-flag argument as
-        # --teaish-extension-dir, but autosetup does not accept args
-        # except in the form --flag or X=Y
         lappend largv $arg
-#
-#      --* {
-#        lappend largv $arg
-#      }
-#      default {
-#        if {$gotNonFlag || "" ne $extT} {
-#          lappend largv $arg
-#        } else {
-#          incr gotNonFlag
-#          msg-checking "Treating fist non-flag argument as --teaish-extension-dir ... "
-#          if {[catch [set extD [file-normalize $arg]]]} {
-#            msg-result "dir name not normalizable: $arg"
-#            lappend largv $arg
-#          } else {
-#            set extM [apply $lambdaM [file join $arg teaish.make.in]]
-#            set extT [apply $lambdaT [file join $arg teaish.tcl]]
-#            define TEAISH_DIR $extD
-#            msg-result "$arg"
-#          }
-#        }
-#      }
       }
     }
   }
   set ::argv $largv
-  set dbld $::autosetup(builddir); # dir we're configuring under
-  set dsrc $::autosetup(srcdir);   # where teaish's configure script lives
-  set dext [get-define TEAISH_DIR $dbld] ; # dir with the extension
-  set extEqSrc [expr {$dext eq $dsrc}]   ; # are we building in-tree vis-a-vis teaish core?
+  set dirBld $::autosetup(builddir); # dir we're configuring under
+  set dirSrc $::autosetup(srcdir);   # where teaish's configure script lives
+  set dirExt [get-define TEAISH_DIR $dirBld] ; # dir with the extension
+  set extEqSrc [expr {$dirExt eq $dirSrc}]   ; # are we building in-tree vis-a-vis teaish core?
 
   #
   # teaish.tcl is a TCL script which implements various
@@ -681,33 +656,34 @@ proc teaish__find-extension {} {
   # We use the first one we find in the builddir or srcdir.
   #
   if {"" eq $extT} {
-    set flist [list $dext/teaish.tcl]
+    set flist [list $dirExt/teaish.tcl]
     if {!$extEqSrc} {
-      lappend flist $dsrc/teaish.tcl
+      lappend flist $dirSrc/teaish.tcl
     }
     if {![proj-first-file-found $flist extT]} {
       if {"--help" in $::argv} {
-        return 0
+        return 0; # signals teaish-configure-core to process --help
       }
       proj-indented-notice -error "
 Did not find any of: $flist
 
-If you are attempting an out-of-tree build, be sure to
-use --teaish-extension-dir=/path/to/extension"
+If you are attempting an out-of-tree build, use
+ --teaish-extension-dir=/path/to/extension"
     }
   }
   if {![file readable $extT]} {
     proj-fatal "extension tcl file is not readable: $extT"
   }
-  msg-result "Extension config           = $extT"
   define TEAISH_TCL $extT
   if {"" eq [get-define TEAISH_DIR ""]} {
     # If this wasn't set via --teaish-extension-dir then derive it from
     # $extT.
-    #puts "extT=$extT dext=$dext"
-    set dext [file dirname $extT]
-    define TEAISH_DIR $dext
+    #puts "extT=$extT dirExt=$dirExt"
+    set dirExt [file dirname $extT]
+    define TEAISH_DIR $dirExt
   }
+  msg-result "Extension dir            = [get-define TEAISH_DIR]"
+  msg-result "Extension config         = $extT"
 
   #
   # teaish.make provides some of the info for the main makefile,
@@ -717,9 +693,9 @@ use --teaish-extension-dir=/path/to/extension"
   # the builddir or the srcdir.
   #
   if {"" eq $extM} {
-    set flist [list $dext/teaish.make.in]
+    set flist [list $dirExt/teaish.make.in]
     if {!$extEqSrc} {
-      lappend flist $dsrc/teaish.make.in
+      lappend flist $dirSrc/teaish.make.in
     }
     proj-first-file-found $flist extM
   }
@@ -727,15 +703,15 @@ use --teaish-extension-dir=/path/to/extension"
     define TEAISH_MAKEFILE_IN $extM
     define TEAISH_MAKEFILE [file rootname [file tail $extM]]
     proj-dot-ins-append $extM [get-define TEAISH_MAKEFILE]
-    msg-result "Extension makefile         = $extM"
+    msg-result "Extension makefile       = $extM"
   } else {
     define TEAISH_MAKEFILE_IN ""
     define TEAISH_MAKEFILE ""
-    #proj-warn "Did not find an teaish.make.in."
+    #proj-warn "Did not find a teaish.make.in."
   }
 
   # Look for teaish.pkginit.tcl
-  set flist [list $dext/teaish.pkginit.tcl.in $dext/teaish.pkginit.tcl]
+  set flist [list $dirExt/teaish.pkginit.tcl.in $dirExt/teaish.pkginit.tcl]
   if {[proj-first-file-found $flist extI]} {
     if {[string match *.in $extI]} {
       proj-dot-ins-append $extI
@@ -746,37 +722,34 @@ use --teaish-extension-dir=/path/to/extension"
       define TEAISH_PKGINIT_TCL $extI
     }
     teaish-add-dist [file tail $extI]
-    msg-result "Extension post-load init   = $extI"
+    msg-result "Extension post-load init = $extI"
     define TEAISH_PKGINIT_TCL_TAIL [file tail [get-define TEAISH_PKGINIT_TCL]]; # for use in pkgIndex.tcl
   }
 
   # Look for pkgIndex.tcl[.in]...
   set piPolicy 0
-  if {[proj-first-file-found $dext/pkgIndex.tcl.in extPI]} {
-    # If $dext/pkgIndex.tcl.in exists, generate ./pkgIndex.tcl from
+  if {[proj-first-file-found $dirExt/pkgIndex.tcl.in extPI]} {
+    # If $dirExt/pkgIndex.tcl.in exists, generate ./pkgIndex.tcl from
     # it.
     define TEAISH_PKGINDEX_TCL_IN $extPI
     define TEAISH_PKGINDEX_TCL [file rootname [file tail $extPI]]
     proj-dot-ins-append $extPI
     teaish-add-dist [file tail $extPI]
     set piPolicy 0x01
-  } elseif {!$extEqSrc && [proj-first-file-found $dsrc/pkgIndex.tcl.in extPI]} {
-    # If $dsrc/pkgIndex.tcl.in exists, generate ./pkgIndex.tcl from
+  } elseif {!$extEqSrc && [proj-first-file-found $dirSrc/pkgIndex.tcl.in extPI]} {
+    # If $dirSrc/pkgIndex.tcl.in exists, generate ./pkgIndex.tcl from
     # it.
     define TEAISH_PKGINDEX_TCL_IN $extPI
     define TEAISH_PKGINDEX_TCL [file rootname [file tail $extPI]]
     proj-dot-ins-append $extPI
     set piPolicy 0x02
-  }
-  if {!$piPolicy } {
-    if {[proj-first-file-found $dext/pkgIndex.tcl extPI]} {
-      # if TEAISH_DIR/pkgIndex.tcl exists, assume it's a static file
-      # and use it.
-      define TEAISH_PKGINDEX_TCL_IN ""
-      define TEAISH_PKGINDEX_TCL $extPI
-      proj-dot-ins-append $extPI
-      set piPolicy 0x04
-    }
+  } elseif {[proj-first-file-found $dirExt/pkgIndex.tcl extPI]} {
+    # if TEAISH_DIR/pkgIndex.tcl exists, assume it's a static file
+    # and use it.
+    define TEAISH_PKGINDEX_TCL_IN ""
+    define TEAISH_PKGINDEX_TCL $extPI
+    proj-dot-ins-append $extPI
+    set piPolicy 0x04
   }
 
   set ::teaish__Config(pkgindex-policy) $piPolicy
@@ -946,53 +919,108 @@ proc teaish-make-config-header {filename} {
   proj-touch $filename; # help avoid frequent unnecessary auto-reconfig
 }
 
-# internal cache for feature checks.
-array set teaish__fCache {}
-
-# @teaish-feature-cache-set ?$depth? value
+# @teaish-feature-cache-set ?$key? value
 #
-# Sets a feature-check cache entry with a key equal to
-# [proj-current-scope [expr {$depth+1}]] and the given value.
-proc teaish-feature-cache-set {{depth 0} val} {
-  set key [proj-current-scope [expr {$depth + 1}]]
-  #puts "** fcheck set key=$key = $val"
-  set ::teaish__fCache($key) $val
+# Sets a feature-check cache entry with the given key.
+# See proj-cache-set for the key's semantics.
+proc teaish-feature-cache-set {{key 0} val} {
+  proj-cache-set $key 1 $val
 }
 
-# @teaish-feature-cache-check ?$depth? tgtVarName
+# @teaish-feature-cache-check ?$key? tgtVarName
 #
-# If the feature-check cache has an entry named [proj-current-scope
-# [expr {$depth+1}]] then this function assigns its value to tgtVar and
-# returns 1, else it assigns tgtVar to "" and returns 0.
+# Checks for a feature-check cache entry with the given key.
+# See proj-cache-set for the key's semantics.
 #
-proc teaish-feature-cache-check {{depth 0} tgtVar} {
+# If the feature-check cache has a matching entry then this function
+# assigns its value to tgtVar and returns 1, else it assigns tgtVar to
+# "" and returns 0.
+#
+# See proj-cache-check for $key's semantics.
+proc teaish-feature-cache-check {{key 0} tgtVar} {
   upvar $tgtVar tgt
-  set key [proj-current-scope [expr {$depth + 1}]]
-  #puts "** fcheck get key=$key"
-  if {[info exists ::teaish__fCache($key)]} {
-    set tgt $::teaish__fCache($key)
-    return 1
+  proj-cache-check $key 1 tgt
+}
+
+# @teaish-check-cached@ ?-nostatus? msg script
+#
+# A proxy for feature-test impls which handles caching of a feature
+# flag check on per-function basis, using the calling scope's name as
+# the cache key.
+#
+# It emits [msg-checking $msg]. If $msg is empty then it defaults to
+# the name of the caller's scope. At the end, it will [msg-result "ok"]
+# [msg-result "no"] unless -nostatus is used, in which case the caller
+# is responsible for emitting at least a newline when it's done.
+#
+# This function checks for a cache hit before running $script and
+# caching the result. If no hit is found then $script is run in the
+# calling scope and its result value is stored in the cache. This
+# routine will intercept a 'return' from $script.
+#
+# Flags:
+#
+#   -nostatus = do not emit "ok" or "no" at the end. This presumes
+#    that the caller will emit at least one newline before turning.
+proc teaish-check-cached {args} {
+  set quiet 0
+  set xargs {}
+  foreach arg $args {
+    switch -exact -- $arg {
+      -nostatus {
+        incr quiet
+      }
+      default {
+        lappend xargs $arg
+      }
+    }
   }
-  set tgtVar ""
-  return 0
+  lassign $xargs msg script
+  if {"" eq $msg} {
+    set msg [proj-current-scope 1]
+  }
+  msg-checking "${msg} ... "
+  if {[teaish-feature-cache-check 1 check]} {
+    msg-checking "(cached) "
+    if {$check} {msg-result "ok"} else {msg-result "no"}
+    return $check
+  } else {
+    set code [catch {uplevel 1 $script} rc xopt]
+    #puts "***** cached-check got code=$code rc=$rc"
+    if {$code in {0 2}} {
+      teaish-feature-cache-set 1 $rc
+      if {!$quiet} {
+        if {$rc} {
+          msg-result "ok"
+        } else {
+          msg-result "no"
+        }
+      }
+    } else {
+      #puts "**** code=$code rc=$rc xopt=$xopt"
+      teaish-feature-cache-set 1 0
+    }
+    #puts "**** code=$code rc=$rc"
+    return {*}$xopt $rc
+  }
 }
 
 ########################################################################
-# Internal helper for teaish__defs-format_: returns a JSON-ish quoted
+# Internal helper for teaish__defs_format_: returns a JSON-ish quoted
 # form of the given string-type values. It only performs the most
 # basic of escaping. The input must not contain any control
 # characters.
-proc teaish__quote-str {value} {
+proc teaish__quote_str {value} {
   return \"[string map [list \\ \\\\ \" \\\"] $value]\"
 }
 
 ########################################################################
-# Internal helper for teaish__dump-defs-json. Expects to be passed a
+# Internal helper for teaish__dump_defs_to_list. Expects to be passed a
 # [define] name and the variadic $args which are passed to
-# teaish__dump-defs-json. If it finds a pattern match for the given
+# teaish__dump_defs_to_list.. If it finds a pattern match for the given
 # $name in the various $args, it returns the type flag for that $name,
 # e.g. "-str" or "-bare", else returns an empty string.
-proc teaish__defs-type {name spec} {
+proc teaish__defs_type {name spec} {
   foreach {type patterns} $spec {
     foreach pattern $patterns {
       if {[string match $pattern $name]} {
@@ -1008,8 +1036,8 @@ proc teaish__defs-type {name spec} {
 # make-config-header, and a value. Returns the formatted value or the
 # value $::teaish__Config(defs-skip) if the caller should skip
 # emitting that value.
-set teaish__Config(defs-skip) "-teaish__defs-format sentinel"
-proc teaish__defs-format {type value} {
+set teaish__Config(defs-skip) "-teaish__defs_format sentinel"
+proc teaish__defs_format {type value} {
   switch -exact -- $type {
     -bare {
       # Just output the value unchanged
@@ -1018,18 +1046,18 @@ proc teaish__defs-format {type value} {
       set value $::teaish__Config(defs-skip)
     }
     -str {
-      set value [teaish__quote-str_ $value]
+      set value [teaish__quote_str_ $value]
     }
     -auto {
       # Automatically determine the type
       if {![string is integer -strict $value]} {
-        set value [teaish__quote-str $value]
+        set value [teaish__quote_str $value]
       }
     }
     -array {
       set ar {}
       foreach v $value {
-        set v [teaish__defs-format -auto $v]
+        set v [teaish__defs_format -auto $v]
         if {$::teaish__Config(defs-skip) ne $v} {
           lappend ar $v
         }
@@ -1065,8 +1093,8 @@ proc teaish__dump_defs_to_list {args} {
     -bare {SIZEOF_* HAVE_DECL_*} \
     -auto *
   foreach n [lsort [dict keys [all-defines]]] {
-    set type [teaish__defs-type $n $args]
-    set value [teaish__defs-format $type [get-define $n]]
+    set type [teaish__defs_type $n $args]
+    set value [teaish__defs_format $type [get-define $n]]
     if {$skipper ne $value} {
       lappend lines "$n $value"
     }
@@ -1081,13 +1109,15 @@ proc teaish__dump_defs_to_list {args} {
 # particular those which require changing how the core looks for an
 # extension and its files.
 #
-# Accepts the following flags:
+# Accepts the following flags. Those marked with [L] are safe to use
+# during initial loading of tclish.tcl (recall that most teaish APIs
+# cannot be used until [teaish-configure] is called).
 #
-#   --have-own-pkgIndex.tcl: Tells teaish that ./pkgIndex.tcl is not a
-#    generated file, so it will not try to overwrite or delete it.
-#    May be used during initial loading of teaish.tcl.
+#   --have-own-pkgIndex.tcl [L]: Tells teaish that ./pkgIndex.tcl is
+#    not a generated file, so it will not try to overwrite or delete
+#    it.
 #
-#   --disable-dist: disables the "dist" parts of the filtered
+#   --disable-dist [L]: disables the "dist" parts of the filtered
 #     Makefile.  May be used during initial loading of teaish.tcl.
 #
 # Emits a warning message for unknown arguments.
@@ -1132,17 +1162,27 @@ proc teaish-enable-dist {{yes 1}} {
 #
 # Handles --teaish-create-extension=TARGET-DIR
 #
-proc teaish__create-extension {dir} {
+proc teaish__create_extension {dir} {
   set force [opt-bool teaish-force]
+  if {"" eq $dir} {
+    proj-fatal "--teaish-create-extension=X requires a directory name."
+  }
   file mkdir $dir
   set cwd [pwd]
-  set dir [file-normalize [file join $cwd $dir]]
+  #set dir [file-normalize [file join $cwd $dir]]
   msg-result "Created dir $dir"
   cd $dir
-  set flist {teaish.tcl}
-  foreach f $flist {
-    if {!$force && [file exists $f]} {
-      error "Cowardly refusing to overwrite $dir/$f. Use --teaish-force to overwrite."
+  if {!$force} {
+    # Ensure that we don't blindly overwrite anything
+    foreach f {
+      teaish.c
+      teaish.tcl
+      teaish.make.in
+      teaish.test.tcl
+    } {
+      if {[file exists $f]} {
+        error "Cowardly refusing to overwrite $dir/$f. Use --teaish-force to overwrite."
+      }
     }
   }
 

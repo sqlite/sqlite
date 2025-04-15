@@ -16,65 +16,6 @@
 # private/internal APIs. Those with a prefix of teaish- are
 # public APIs.
 
-# @teaish-check-cached@ ?-flags? msg script
-#
-# A proxy for feature-test impls which handles caching of a feature
-# flag check on per-function basis, using the calling scope's name as
-# the cache key.
-#
-# The test is performed by $script. This function checks for a chache
-# hit before running $script and caching the result. The value stored
-# in the cache is the final value of $script (and this routine will
-# intercept a 'return' from $script).
-#
-# Flags:
-#
-#   -nostatus = do not emit "ok" or "no" at the end. This presumes
-#    that the caller will emit at least one newline before turning.
-proc teaish-check-cached {args} {
-  set quiet 0
-  set xargs {}
-  foreach arg $args {
-    switch -exact -- $arg {
-      -nostatus {
-        incr quiet
-      }
-      default {
-        lappend xargs $arg
-      }
-    }
-  }
-  lassign $xargs msg script
-  if {"" eq $msg} {
-    set msg [proj-current-scope 1]
-  }
-  msg-checking "${msg} ... "
-  if {[teaish-feature-cache-check 1 check]} {
-    msg-checking "(cached) "
-    if {$check} {msg-result "ok"} else {msg-result "no"}
-    return $check
-  } else {
-    set code [catch {uplevel 1 $script} rc xopt]
-    #puts "***** ::teaish__fCache ="; parray ::teaish__fCache
-    #puts "***** cached-check got code=$code rc=$rc"
-    if {$code in {0 2}} {
-      teaish-feature-cache-set 1 $rc
-      if {!$quiet} {
-        if {$rc} {
-          msg-result "ok"
-        } else {
-          msg-result "no"
-        }
-      }
-    } else {
-      #puts "**** code=$code rc=$rc xopt=$xopt"
-      teaish-feature-cache-set 1 0
-    }
-    #puts "**** code=$code rc=$rc"
-    return {*}$xopt $rc
-  }
-}
-
 
 # @teaish-check-libz
 #

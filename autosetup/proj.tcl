@@ -58,7 +58,9 @@
 # $proj__Config is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 array set proj__Config {
+  self-tests 0
 }
+
 #
 # List of dot-in files to filter in the final stages of
 # configuration. Some configuration steps may append to this.  Each
@@ -1794,4 +1796,104 @@ proc proj-options-combine {args} {
       lappend rv {*}$e
   }
   return $rv
+}
+
+# Internal cache for use via proj-cache-*.
+array set proj__Cache {}
+
+# @proj-cache-key ?addLevel? arg
+#
+# Helper to generate cache keys for [proj-cache-*].
+#
+# Returns a cache key for the given argument:
+#
+#   integer: relative call stack levels to get the scope name of for
+#   use as a key. [proj-current-scope [expr {1 + $arg + addLevel}]] is
+#   then used to generate the key. i.e. the default of 0 uses the
+#   calling scope's name as the key.
+#
+#   "-": same as 0
+#
+#   Anything else: returned as-is
+#
+proc proj-cache-key {{addLevel 0} arg} {
+  if {"-" eq $arg} {set arg 0}
+  if {[string is integer -strict $arg]} {
+    return [proj-current-scope [expr {$arg + $addLevel + 1}]]
+  }
+  return $arg
+}
+
+# @proj-cache-set ?key? ?addLevel? value
+#
+# Sets a feature-check cache entry with the given key.
+#
+# See proj-cache-key for $key's and $addLevel's semantics, noting that
+# this function adds one to $addLevel for purposes of that call.
+proc proj-cache-set {{key 0} {addLevel 0} val} {
+  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  #puts "** fcheck set $key = $val"
+  set ::proj__Cache($key) $val
+}
+
+# @proj-cache-remove ?key? ?addLevel?
+#
+# Removes an entry from the proj-cache.
+proc proj-cache-remove {{key 0} {addLevel 0}} {
+  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  set rv ""
+  if {[info exists ::proj__Cache($key)]} {
+    set rv $::proj__Cache($key)
+    unset ::proj__Cache($key)
+  }
+  return $rv;
+}
+
+# @proj-cache-check ?$key? ?addLevel? tgtVarName
+#
+# Checks for a feature-check cache entry with the given key.
+#
+# If the feature-check cache has a matching entry then this function
+# assigns its value to tgtVar and returns 1, else it assigns tgtVar to
+# "" and returns 0.
+#
+# See proj-cache-key for $key's and $addLevel's semantics, noting that
+# this function adds one to $addLevel for purposes of that call.
+proc proj-cache-check {{key 0} {addLevel 0} tgtVar} {
+  upvar $tgtVar tgt
+  set rc 0
+  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  #puts "** fcheck get key=$key"
+  if {[info exists ::proj__Cache($key)]} {
+    set tgt $::proj__Cache($key)
+    incr rc
+  } else {
+    set tgt ""
+  }
+  return $rc
+}
+
+if {$::proj__Config(self-tests)} {
+  apply {{} {
+    proj-warn "Test code for proj-cache"
+    proj-assert {![proj-cache-check here check]}
+    proj-assert {"here" eq [proj-cache-key here]}
+    proj-assert {"" eq $check}
+    proj-cache-set here thevalue
+    proj-assert {[proj-cache-check here check]}
+    proj-assert {"thevalue" eq $check}
+
+    proj-assert {![proj-cache-check check]}
+    #puts "*** key = ([proj-cache-key -])"
+    proj-assert {"" eq $check}
+    proj-cache-set abc
+    proj-assert {[proj-cache-check check]}
+    proj-assert {"abc" eq $check}
+
+    parray ::proj__Cache;
+    proj-assert {"" ne [proj-cache-remove]}
+    proj-assert {"" eq [proj-cache-remove]}
+    proj-assert {![proj-cache-check check]}
+    proj-assert {"" eq $check}
+  }}
 }
