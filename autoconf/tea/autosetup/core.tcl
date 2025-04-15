@@ -48,7 +48,7 @@ array set teaish__Config [proj-strip-hash-comments {
 
   #
   # A list of lists of Autosetup [options]-format --flags definitions.
-  # Append to this using [teaish-append-options].
+  # Append to this using [teaish-add-options].
   #
   extra-options {}
 }]
@@ -992,7 +992,7 @@ proc teaish-feature-cache-check {{depth 0} tgtVar} {
   return 0
 }
 
-# @teach-append-options list
+# @teach-add-options list
 #
 # Adds a list of options to the pending --flag processing.  It must be
 # in the format used by Autosetup's [options] function.
@@ -1004,7 +1004,7 @@ proc teaish-feature-cache-check {{depth 0} tgtVar} {
 # [teaish-options]. When used in conjunction with [teaish-options],
 # [teaish-options] will appear first in the --help list.
 #
-proc teaish-append-options {list} {
+proc teaish-add-options {list} {
   lappend ::teaish__Config(extra-options) $list
 }
 

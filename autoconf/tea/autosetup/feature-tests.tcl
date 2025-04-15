@@ -235,7 +235,7 @@ proc teaish-import-features {args} {
     if {$doOpt} {
       set n "teaish-check-${arg}-options"
       if {[llength [info proc $n]] > 0} {
-        teaish-append-options [$n]
+        teaish-add-options [$n]
       }
     }
   }

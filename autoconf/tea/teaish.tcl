@@ -67,6 +67,7 @@ proc teaish-options {} {
 # work needed for this extension.
 #
 proc teaish-configure {} {
+  teaish-enable-dist 0
   use teaish/feature-tests
 
   set srcdir [get-define TEAISH_DIR]
@@ -108,15 +109,9 @@ proc teaish-configure {} {
   sqlite-handle-load-extension
   sqlite-handle-math
   sqlite-handle-icu
-  sqlite-handle-common-feature-flags
 
-  teaish-add-ldflags -p -d \
-    LDFLAGS_LIBICU LDFLAGS_LIBMATH LDFLAGS_DLOPEN \
-    LDFLAGS_LIBRT
-
-  teaish-add-cflags -define CFLAGS_LIBICU OPT_FEATURE_FLAGS
-  teaish-enable-dist 0
-
+  sqlite-handle-common-feature-flags; # must be late in the process
+  teaish-add-cflags -define OPT_FEATURE_FLAGS
 }; # teaish-configure
 
 
@@ -242,27 +237,6 @@ proc sqlite-finalize-feature-flags {} {
 # both the canonical build and the "autoconf" bundle.
 #
 proc sqlite-check-common-system-deps {} {
-  # Check for needed/wanted data types
-  if {0} {
-    # We don't need these until/unless we want to generate
-    # sqlite_cfg.h. The historical TEA build does not generate that
-    # file.
-    cc-with {-includes stdint.h} \
-      {cc-check-types int8_t int16_t int32_t int64_t intptr_t \
-         uint8_t uint16_t uint32_t uint64_t uintptr_t}
-
-    # Check for needed/wanted functions
-    cc-check-functions gmtime_r isnan localtime_r localtime_s \
-      malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
-
-    # Check for needed/wanted headers
-    cc-check-includes \
-      sys/types.h sys/stat.h dlfcn.h unistd.h \
-      stdlib.h malloc.h memory.h \
-      string.h strings.h \
-      inttypes.h
-  }
-
   teaish-check-librt
   teaish-check-libz
 }
@@ -273,6 +247,8 @@ proc sqlite-check-common-system-deps {} {
 # needed for linking pthread (possibly an empty string). If
 # --enable-threadsafe is not set, adds -DSQLITE_THREADSAFE=0 to
 # OPT_FEATURE_FLAGS and sets LDFLAGS_PTHREAD to an empty string.
+#
+# It prepends the flags to the global LDFLAGS.
 proc sqlite-handle-threadsafe {} {
   msg-checking "Support threadsafe operation? "
   define LDFLAGS_PTHREAD ""
@@ -281,8 +257,10 @@ proc sqlite-handle-threadsafe {} {
     proj-if-opt-truthy threadsafe {
       if {[proj-check-function-in-lib pthread_create pthread]
           && [proj-check-function-in-lib pthread_mutexattr_init pthread]} {
-        set enable 1
-        define LDFLAGS_PTHREAD [get-define lib_pthread_create]
+        incr enable
+        set ldf [get-define lib_pthread_create]
+        define LDFLAGS_PTHREAD $ldf
+        teaish-prepend-ldflags $ldf
         undefine lib_pthread_create
         undefine lib_pthread_mutexattr_init
       } elseif {[proj-opt-was-provided threadsafe]} {
@@ -305,16 +283,16 @@ proc sqlite-handle-threadsafe {} {
     if {[string match *pthread* [get-define TCL_LIBS]]} {
       # ^^^ FIXME: there must be a better way of testing this
       set flagName "--threadsafe"
-      set lblAbled "en"
+      set lblAbled "enabled"
       set enable 1
       msg-result "yes"
     } else {
       set flagName "--disable-threadsafe"
-      set lblAbled "dis"
+      set lblAbled "disabled"
       set enable 0
       msg-result "no"
     }
-    msg-result "NOTICE: defaulting to ${flagName} because TCL has threading ${lblAbled}abled."
+    msg-result "NOTICE: defaulting to ${flagName} because TCL has threading ${lblAbled}."
     # ^^^ We don't need to link against -lpthread in the is-enabled case.
   }
   sqlite-add-feature-flag -DSQLITE_THREADSAFE=${enable}
@@ -342,7 +320,9 @@ proc sqlite-handle-load-extension {} {
   proj-if-opt-truthy load-extension {
     set found [proj-check-function-in-lib dlopen dl]
     if {$found} {
-      define LDFLAGS_DLOPEN [get-define lib_dlopen]
+      set ldf [get-define lib_dlopen]
+      define LDFLAGS_DLOPEN $ldf
+      teaish-prepend-ldflags $ldf
       undefine lib_dlopen
     } else {
       if {[proj-opt-was-provided load-extension]} {
@@ -461,6 +441,8 @@ proc sqlite-handle-icu {} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
     }
+    teaish-prepend-ldflags $ldflags
+    teaish-add-cflags $cflags
   } elseif {[opt-bool icu-collations]} {
     proj-warn "ignoring --enable-icu-collations because neither --with-icu-ldflags nor --with-icu-config provided any linker flags"
   } else {
