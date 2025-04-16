@@ -1,14 +1,12 @@
 # Teaish configure script for the SQLite TCL extension
 
-define TEAISH_NAME sqlite
-define TEAISH_PKGNAME sqlite3
-define TEAISH_LIBDIR_NAME sqlite3
+define TEAISH_NAME sqlite; # name used in dist tarballs and as the libdir prefix
+define TEAISH_PKGNAME sqlite3; # name for purposes of Tcl_PkgProvide()
 define TEAISH_LOAD_PREFIX Sqlite3; # 2nd arg to [load]
-#
-# Get the version...
-#
 define TEAISH_VERSION [proj-file-content -trim [get-define TEAISH_DIR]/../VERSION]
 proj-assert {[string match 3.*.* [get-define TEAISH_VERSION]]}
+define TEAISH_LIBDIR_NAME \
+  [join [list [get-define TEAISH_NAME] [get-define TEAISH_VERSION]] ""]
 
 #
 # Object for communicating certain config-time state across various
