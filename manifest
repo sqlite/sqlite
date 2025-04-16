@@ -1,5 +1,5 @@
-C Change\sthe\starget\slibdir\sname\sin\sthe\steaish\sbuild\sto\smatch\shistorical\stea\sbuilds.
-D 2025-04-16T15:40:40.262
+C Attempt\sto\sprovide\sEBCDIC\stranslations\sto\sthe\stables\sin\sthe\sJSON\nimplementation.\s\sThe\sSQLite\sdevelopers\sdo\snot\shave\saccess\sto\sany\ncomputers\susing\sEBCDIC\sand\sso\shave\sno\sway\sto\stest\sthis\spatch,\sand\ncannot\svouch\sfor\sits\saccuracy.
+D 2025-04-16T17:36:26.944
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c fbae43c3920110be8d5307003d37d2b85b9bfb6d6d70fcb56ab68204026141af
+F src/json.c d0e1c62a9689018fe5876b1a1eb574e4ab7a40e0928e0e5adda8b3860c70e1b8
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 849534499d9b2056c0eabef7f3e65f79f58e8a6fefb3f7603de44774da7166b5
-R c663d63347fffecf7bafd62061283993
-U stephan
-Z 52b71a2b4e4aa998a2fc1dd4aabdcd89
+P 8ae437301ed0cf71ef0e07be07917d9702221d27bdc98491209d8f28c7a500e2
+R c64f1aa94a03741a3b8d9bb200ed893f
+U drh
+Z 0fc17037f0ec1a61cba3bc34abd61d37
 # Remove this line to create a well-formed Fossil manifest.
