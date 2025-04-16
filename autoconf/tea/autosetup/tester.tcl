@@ -61,10 +61,10 @@ proc test-warn {args} {
 #
 # Triggers a test-failed error with a string describing the calling
 # scope and the provided message.
-proc test-fail {msg} {
+proc test-fail {args} {
   #puts stderr "ERROR: \[[test-current-scope 1]]: $msg"
   #exit 1
-  error "FAIL: \[[test-current-scope 1]]: $msg"
+  error "FAIL: \[[test-current-scope 1]]: $args"
 }
 
 # Internal impl for assert-likes. Should not be called directly by
@@ -129,7 +129,9 @@ proc test-catch {cmd args} {
   return 0
 }
 
-array set teaish__BuildFlags {}
+if {![array exists ::teaish__BuildFlags]} {
+  array set ::teaish__BuildFlags {}
+}
 
 # @teaish-build-flag2 flag tgtVar ?dflt?
 #

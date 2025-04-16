@@ -3,6 +3,7 @@
 define TEAISH_NAME sqlite; # name used in dist tarballs and as the libdir prefix
 define TEAISH_PKGNAME sqlite3; # name for purposes of Tcl_PkgProvide()
 define TEAISH_LOAD_PREFIX Sqlite3; # 2nd arg to [load]
+define TEAISH_VSATISFIES_TCL 8.6-; # builds with 8.5 but some tests fail
 define TEAISH_VERSION [proj-file-content -trim [get-define TEAISH_DIR]/../VERSION]
 proj-assert {[string match 3.*.* [get-define TEAISH_VERSION]]}
 define TEAISH_LIBDIR_NAME \

@@ -38,7 +38,6 @@ tx.pkgName       = @TEAISH_PKGNAME@
 tx.version       = @TEAISH_VERSION@
 tx.libdir        = @TEAISH_LIBDIR_NAME@
 tx.loadPrefix    = @TEAISH_LOAD_PREFIX@
-#tx.testScript    = @TEAISH_TEST_TCL@
 tx.tcl           = @TEAISH_TCL@
 tx.makefile      = @TEAISH_MAKEFILE@
 tx.makefile.in   = @TEAISH_MAKEFILE_IN@
@@ -50,9 +49,9 @@ tx.dll           = $(tx.dll$(TCL_MAJOR_VERSION))
 tx.dir           = @TEAISH_DIR@
 
 teaish.dir           = @abs_top_srcdir@
-teaish.dir.autosetup = @TEAISH_AUTOSETUP_DIR@
+#teaish.dir.autosetup = @TEAISH_AUTOSETUP_DIR@
 teaish.makefile      = Makefile
-teaish.makefile.in   =  $(teaish.dir)/Makefile.in
+teaish.makefile.in   = $(teaish.dir)/Makefile.in
 teaish__auto.def     = $(teaish.dir)/auto.def
 
 #
@@ -156,13 +155,15 @@ tx.dist.files = @TEAISH_DIST_FILES@
 #
 teaish__cleanExtra =
 
-#
 # List of deps which may trigger an auto-reconfigure.
 #
 teaish__autogen.deps = \
   $(tx.makefile.in) $(teaish.makefile.in) \
-  $(tx.tcl) $(teaish.dir)/pkgIndex.tcl.in \
+  $(tx.tcl) \
+  @TEAISH_PKGINDEX_TCL_IN@ \
+  @TEAISH_MODULE_TEST_TCL@ \
   @AUTODEPS@
+
 #
 # Problem: when more than one target can invoke TEAISH_AUTORECONFIG,
 # we can get parallel reconfigures running. Thus, targets which
@@ -178,6 +179,16 @@ reconfigure:
 
 $(teaish.makefile): $(teaish__auto.def) $(teaish.makefile.in) \
   @AUTODEPS@
+
+@if TEAISH_TEST_TCL_IN
+#config.log: @TEAISH_TEST_TCL_IN@
+#@TEAISH_TEST_TCL_IN@:
+#@TEAISH_TEST_TCL@: @TEAISH_TEST_TCL_IN@
+@endif
+
+@TEAISH_TESTER_TCL_IN@:
+@TEAISH_TESTER_TCL@: @TEAISH_TESTER_TCL_IN@
+config.log: @TEAISH_TESTER_TCL@
 
 #
 # The rest of this makefile exists solely to support this brief
@@ -208,7 +219,7 @@ tclsh: $(teaish.makefile) config.log
 tx.tester.args = $(tx.dll) $(tx.loadPrefix) @TEAISH_MODULE_TEST_TCL@
 .PHONY: test-pre test-core test test-post test-extension
 test-extension: # this name is reserved for use by teaish.make
-test-prepre: $(tx.dll)
+test-prepre: $(tx.dll) @TEAISH_TESTER_TCL@
 test-pre: test-prepre
 test-core: test-pre
 	$(TCLSH) @TEAISH_TESTER_TCL@ $(tx.tester.args)
@@ -218,7 +229,7 @@ test: test-post
 #
 # Cleanup rules...
 #
-.PHONY: clean-pre clean-core clean-post clean-extension
+#.PHONY: clean-pre clean-core clean-post clean-extension
 clean-extension: # this name is reserved for use by teaish.make
 clean-pre:
 clean-core: clean-pre
@@ -230,8 +241,25 @@ clean: clean-post
 distclean-extension: # this name is reserved for use by teaish.make
 distclean-pre: clean
 distclean-core: distclean-pre
-	rm -f Makefile pkgIndex.tcl teaish.make teaish.tester.tcl
+	rm -f Makefile
 	rm -f config.log config.defines.txt
+@if TEAISH_MAKEFILE_IN
+@if TEAISH_MAKEFILE
+	rm -f @TEAISH_MAKEFILE@
+@endif
+@endif
+@if TEAISH_TESTER_TCL_IN
+	rm -f @TEAISH_TESTER_TCL@
+@endif
+@if TEAISH_PKGINDEX_TCL_IN
+	rm -f @TEAISH_PKGINDEX_TCL@
+@endif
+@if TEAISH_PKGINIT_TCL_IN
+	rm -f @TEAISH_PKGINIT_TCL@
+@endif
+@if TEAISH_TEST_TCL_IN
+	rm -f @TEAISH_TEST_TCL@
+@endif
 distclean-post: distclean-core
 distclean: distclean-post
 
@@ -279,8 +307,8 @@ uninstall-post: uninstall-core
 uninstall: uninstall-post
 
 Makefile: config.log $(teaish.makefile.in)
-@if TEAISH_MAKEFILE
-$(tx.makefile): config.log
+@if TEAISH_MAKEFILE_IN
+config.log: @TEAISH_MAKEFILE_IN@
 @endif
 
 #
@@ -354,9 +382,8 @@ dist:
 @endif
 @endif #TEAISH_ENABLE_DIST
 
-@if TEAISH_MAKEFILE
 #
-# tx.makefile defines any extension-specific state this file
+# TEAISH_MAKEFILE[_IN] defines any extension-specific state this file
 # needs.
 #
 # It must set the following vars if they're not already accounted for
@@ -377,15 +404,32 @@ dist:
 #
 # It may optionally hook into various targets as documented in
 # /doc/extensions.md in the canonical teaish source tree.
+#
+# Interestingly, we don't have to pre-filter teaish.makefile.in -
+# we can just import it into here. That skips its teaish-specific
+# validation though. Hmm.
+#
+#@if TEAISH_MAKEFILE_IN
+## TEAISH_MAKEFILE_IN ==>
+#Makefile: @TEAISH_MAKEFILE_IN@
+#@include @TEAISH_MAKEFILE_IN@
+#@endif
+#@if !TEAISH_MAKEFILE_IN
+@if TEAISH_MAKEFILE
+# TEAISH_MAKEFILE ==>
+Makefile: @TEAISH_MAKEFILE@
 @include @TEAISH_MAKEFILE@
 @endif #TEAISH_MAKEFILE
+#@endif #!TEAISH_MAKEFILE_IN
 
-@if TEAISH_MAKEFILE_CODE
 #
 # TEAISH_MAKEFILE_CODE may contain literal makefile code, which
 # gets pasted verbatim here. Either [define TEAISH_MAKEFILE_CODE
 # ...] or use [teaish-add-make] to incrementally build up this
 # content.
 #
+@if TEAISH_MAKEFILE_CODE
+# TEAISH_MAKEFILE_CODE ==>
+Makefile: @TEAISH_TCL@
 @TEAISH_MAKEFILE_CODE@
 @endif #TEAISH_MAKEFILE_CODE

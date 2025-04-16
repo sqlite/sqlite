@@ -1,13 +1,33 @@
 # -*- tcl -*-
-# Automatically generated - do not edit
+#
+# Unless this file is named teaish.tester.tcl.in, you are probably
+# looking at an automatically generated/filtered copy and should
+# probably not edit it.
 #
 # This is the wrapper script invoked by teaish's "make test" recipe.
-load [lindex $::argv 0] [lindex $::argv 1]; source [lindex $::argv 2]
+@if TEAISH_VSATISFIES_TCL
+if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
+  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
+}
+@endif
+load [lindex $::argv 0] [lindex $::argv 1];
+source [lindex $::argv 2]; # teaish/tester.tcl
 @if TEAISH_PKGINIT_TCL
-apply {{} {set dir [file dirname $::argv0]; source @TEAISH_PKGINIT_TCL@}}
+apply {{file} {
+  set dir [file dirname $::argv0]
+  source $file
+}} [join {@TEAISH_PKGINIT_TCL@}]
 @endif
 @if TEAISH_TEST_TCL
-source @TEAISH_TEST_TCL@
-@else
-puts "Extension successfully loaded"
+apply {{file} {
+  # Populate state for [tester.tcl::teaish-build-flag*]
+  array set ::teaish__BuildFlags @TEAISH__DEFINES_MAP@
+  set dir [file normalize [file dirname $file]]
+  #test-fail "Just testing"
+  source $file
+}} [join {@TEAISH_TEST_TCL@}]
+@else # TEAISH_TEST_TCL
+# No $TEAISH_TEST_TCL provided, so here's a default test which simply
+# loads the extension.
+puts {Extension @TEAISH_NAME@ @TEAISH_VERSION@ successfully loaded from @TEAISH_TESTER_TCL@}
 @endif
