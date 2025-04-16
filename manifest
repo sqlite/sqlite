@@ -1,5 +1,5 @@
-C Correctly\shandle\sthe\scase\sof\sa\smulti-column\sUNIQUE\sconstraint\sthat\scontains\nthe\sROWID\sas\sone\sof\sit\scolumns,\sand\sthen\sthe\scolumns\sof\sthat\sUNIQUE\sare\nused\sin\sa\srow-value\sIN\soperator\sas\sa\sWHERE\sclause\sconstraint.\s\sReported\sby\n[forum:/forumpost/b9647a113b465950|forum\spost\sb9647a113b].\s\sProblem\nintroduced\sby\s[723f1be3d4a905a6],\spart\sof\sticket\s[da78413751863].
-D 2025-04-15T21:59:38.221
+C Latest\supstream\steaish\sfor\sfixes\sand\simprovements.
+D 2025-04-16T12:48:27.368
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -26,8 +26,8 @@ F autoconf/tea/Makefile.in 2a90dfab1e95cb3ec610429c78d88d4a7d26beb080ad45ff6a059
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
 F autoconf/tea/auto.def 81e2617cfb90d53c19b53b3ec632cd2893bf32f2e5dd272b1116fadf2ea86c2d
 F autoconf/tea/autosetup/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
-F autoconf/tea/autosetup/core.tcl b0d2781acbd2bebbcf4baeb4c0a1fae4814e251df7a1b4f4db10e88c57d03eef
-F autoconf/tea/autosetup/feature-tests.tcl 87b448e620b043c8c23b6cb727a3a5e485b61b600077222b6799e9f64aab941a
+F autoconf/tea/autosetup/core.tcl 4b828c8c77bfe7c94c7331d6dbb9efd1077160343867b4bee6d83c9977a11b6c
+F autoconf/tea/autosetup/feature-tests.tcl 3ccf2fd1cad368c7ed958a869d8b915fada7f164a6b382c7381540c4892476f8
 F autoconf/tea/autosetup/tester.tcl d94aa9d51d2a22062e61db97310c2502ca0df50ca87108482c3bccf8f41db127
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
@@ -51,8 +51,8 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 3e9f84104d401a353f53961db7d361469bf6d614897c11144aecedc9727120d3
-F autosetup/sqlite-config.tcl d4e888fc94e677e3820fea998747c94b8dcc4ff346a14253bf7f5344f526ceef
+F autosetup/proj.tcl ce217cdf7defa6b69664039039d7bbf064d00cb849e9cc64c6597f0f447e5e84
+F autosetup/sqlite-config.tcl bde169c42d5d5331485ae7785f5dd19ca1aa01315787e8306441c472ad4e4201
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 158e8c4fd7bdfc1cd4c0135abecd0d00994cd4027cf74ce6e5cf73d76475ae95
-R c2d14e3a5c8d8bcc253d1803871a054b
-U drh
-Z 7bbbfb8e256d1c10ef6ff3242542ea0b
+P d22475b81c4e26ccc50f3b5626d43b32f7a2de34e5a764539554665bdda735d5
+R 244c408285d69971e2cf8a84cb501cc6
+U stephan
+Z cd79baf6d120e2ca68da7047ac9f0e56
 # Remove this line to create a well-formed Fossil manifest.

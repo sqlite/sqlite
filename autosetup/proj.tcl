@@ -61,6 +61,7 @@ array set proj__Config {
   self-tests 0
 }
 
+
 #
 # List of dot-in files to filter in the final stages of
 # configuration. Some configuration steps may append to this.  Each
@@ -72,13 +73,6 @@ array set proj__Config {
 #
 set proj__Config(dot-in-files) [list]
 set proj__Config(isatty) [isatty? stdout]
-#
-# A list of lists of Autosetup [options]-format --flags definitions.
-# Append to this using [proj-options-add] and use
-# [proj-options-combine] to merge them into a single list for passing
-# to [options].
-#
-set proj__Config(extra-options} {}
 
 ########################################################################
 # @proj-warn msg
@@ -91,13 +85,22 @@ proc proj-warn {args} {
 }
 
 ########################################################################
-# @proj-error msg
+# @proj-error ?-up...? msg
 #
 # Emits an error message to stderr and exits with non-0. All args are
 # appended with a space between each.
+#
+# The calling scope's name is used in the error message. To instead
+# use the name of a call higher up in the stack, use -up once for each
+# additional level.
 proc proj-fatal {args} {
   show-notices
-  puts stderr [join [list "ERROR: \[[proj-current-scope 1]]:" {*}$args] " "]
+  set lvl 1
+  while {"-up" eq [lindex $args 0]} {
+    set args [lassign $args -]
+    incr lvl
+  }
+  puts stderr [join [list "ERROR: \[[proj-current-scope $lvl]]:" {*}$args] " "]
   exit 1
 }
 
@@ -129,7 +132,7 @@ proc proj-assert {script {msg ""}} {
 # to bold that text, else it returns $str as-is.
 proc proj-bold {args} {
   if {$::autosetup(iswin) || !$::proj__Config(isatty)} {
-    return $str
+    return [join $args]
   }
   return "\033\[1m${args}\033\[0m"
 }
@@ -1609,31 +1612,28 @@ proc proj-dot-ins-list {} {
 # -clear: after processing, empty the dot-ins list. This effectively
 #  makes proj-dot-ins-append available for re-use.
 proc proj-dot-ins-process {args} {
-  set flags ""
-  set clear 0
-  set validate 0
-  foreach arg $args {
-    switch -exact -- $arg {
-      -touch    {set flags "-touch"}
-      -clear    {incr clear}
-      -validate {incr validate}
-      default   break
-    }
+  proj-parse-simple-flags args flags {
+    -touch   "" {return "-touch"}
+    -clear    0 {expr 1}
+    -validate 0 {expr 1}
+  }
+  if {[llength $args] > 0} {
+    error "Invalid argument to [proj-current-scope]: $args"
   }
   foreach f $::proj__Config(dot-in-files) {
     proj-assert {3==[llength $f]} \
       "Expecting proj-dot-ins-list to be stored in 3-entry lists"
     lassign $f fIn fOut fScript
     #puts "DOING $fIn  ==> $fOut"
-    proj-make-from-dot-in {*}$flags $fIn $fOut
-    if {$validate} {
+    proj-make-from-dot-in {*}$flags(-touch) $fIn $fOut
+    if {$flags(-validate)} {
       proj-validate-no-unresolved-ats $fOut
     }
     if {"" ne $fScript} {
       uplevel 1 "set fileIn $fIn; set fileOut $fOut; eval {$fScript}"
     }
   }
-  if {$clear} {
+  if {$flags(-clear)} {
     set ::proj__Config(dot-in-files) [list]
   }
 }
@@ -1735,18 +1735,22 @@ proc proj-define-append {defineName args} {
 # technically correct and still relevant on some environments.
 #
 # See: proj-append-to
-proc proj-define-amend {defName args} {
+proc proj-define-amend {args} {
+  set defName ""
   set prepend 0
   set isdefs 0
   set xargs [list]
   foreach arg $args {
     switch -exact -- $arg {
       -p - -prepend { set prepend 1 }
-      -d - -define {
-        set isdefs 1
-      }
+      -d - -define  { set isdefs 1 }
+      "" {}
       default {
-        lappend xargs $arg
+        if {"" eq $defName} {
+          set defName $arg
+        } else {
+          lappend xargs $arg
+        }
       }
     }
   }
@@ -1756,7 +1760,10 @@ proc proj-define-amend {defName args} {
     foreach arg $args {
       lappend xargs [get-define $arg ""]
     }
+    set args $xargs
   }
+#  puts "**** args=$args"
+#  puts "**** xargs=$xargs"
 
   set args $xargs
   if {$prepend} {
@@ -1767,36 +1774,97 @@ proc proj-define-amend {defName args} {
   }
 }
 
-# @proj-options-add list
+# @proj-define-to-cflag ?-list? defineName...
 #
-# Adds a list of options to the pending --flag processing.  It must be
-# in the format used by Autosetup's [options] function.
+# Treat each argument as the name of a [define]
+# and attempt to render it like a CFLAGS value:
 #
-# This will have no useful effect if called from after [options]
-# is called.
-proc proj-options-add {list} {
-  lappend ::proj__Config(extra-options) $list
+#  -D$name
+#  -D$name=value
+#
+# If treats integers as numbers and everything else as a quoted
+# string, noting that it does not handle strings which themselves
+# contain quotes.
+#
+# By default it returns the result as string of all -D... flags,
+# but if passed the -list flag it will return a list of the
+# individual CFLAGS.
+proc proj-define-to-cflag {args} {
+  set rv {}
+  set xargs {}
+  set returnList 0;
+  foreach arg $args {
+    switch -exact -- $arg {
+      -list {incr returnList}
+      default {
+        lappend xargs $arg
+      }
+    }
+  }
+  foreach d $xargs {
+    set v [get-define $d ""]
+    set li [list -D${d}]
+    if {[string is integer -strict $v]} {
+      lappend li = $v
+    } elseif {"" eq $d} {
+    } else {
+      lappend li = {"} $v {"}
+    }
+    lappend rv [join $li ""]
+  }
+  if {$returnList} { return $rv }
+  return [join $rv]
 }
 
-# @proj-options-combine list1 ?...listN?
-#
-# Expects each argument to be a list of options compatible with
-# autosetup's [options] function. This function concatenates the
-# contents of each list into a new top-level list, stripping the outer
-# list part of each argument, and returning that list
-#
-# If passed no arguments, it uses the list generated by calls to
-# [proj-options-add].
-proc proj-options-combine {args} {
-  set rv [list]
-  if {0 == [llength $args]} {
-    set args $::proj__Config(extra-options)
+
+if {0} {
+  # Turns out that autosetup's [options-add] essentially does exactly
+  # this...
+
+  # A list of lists of Autosetup [options]-format --flags definitions.
+  # Append to this using [proj-options-add] and use
+  # [proj-options-combine] to merge them into a single list for passing
+  # to [options].
+  #
+  set ::proj__Config(extra-options) {}
+
+  # @proj-options-add list
+  #
+  # Adds a list of options to the pending --flag processing.  It must be
+  # in the format used by Autosetup's [options] function.
+  #
+  # This will have no useful effect if called from after [options]
+  # is called.
+  #
+  # Use [proj-options-combine] to get a combined list of all added
+  # options.
+  #
+  # PS: when writing this i wasn't aware of autosetup's [options-add],
+  # works quite similarly. Only the timing is different.
+  proc proj-options-add {list} {
+    lappend ::proj__Config(extra-options) $list
   }
-  foreach e $args {
+
+  # @proj-options-combine list1 ?...listN?
+  #
+  # Expects each argument to be a list of options compatible with
+  # autosetup's [options] function. This function concatenates the
+  # contents of each list into a new top-level list, stripping the outer
+  # list part of each argument, and returning that list
+  #
+  # If passed no arguments, it uses the list generated by calls to
+  # [proj-options-add].
+  proc proj-options-combine {args} {
+    set rv [list]
+    if {0 == [llength $args]} {
+      set args $::proj__Config(extra-options)
+    }
+    foreach e $args {
       lappend rv {*}$e
+    }
+    return $rv
   }
-  return $rv
-}
+}; # proj-options-*
 
 # Internal cache for use via proj-cache-*.
 array set proj__Cache {}
@@ -1873,6 +1941,155 @@ proc proj-cache-check {{key 0} {addLevel 0} tgtVar} {
   return $rc
 }
 
+# @proj-coalesce ...args
+#
+# Returns the first argument which is not empty (eq ""), or an empty
+# string on no match.
+proc proj-coalesce {args} {
+  foreach arg $args {
+    if {"" ne $arg} {
+      return $arg
+    }
+  }
+  return ""
+}
+
+# @proj-parse-simple-flags ...
+#
+# An experiment. Do not use.
+#
+# A helper to parse flags from proc argument lists.
+#
+# Expects a list of arguments to parse, an array name to store any
+# -flag values to, and a prototype object which declares the flags.
+#
+# The prototype must be a list in one of the following forms:
+#
+#   -flag defaultValue {script}
+#
+#   -flag => defaultValue
+#   -----^--^ (wiith spaces there!)
+#
+# Repeated for each flag.
+#
+# The first form represents a basic flag with no associated
+# following argument. The second form extracts its value
+# from the following argument in $argvName.
+#
+# The first argument to this function is the name of a var holding the
+# args to parse. It will be overwritten, possibly with a smaller list.
+#
+# The second argument the name of an array variable to create in the
+# caller's scope. (Pneumonic: => points to the next argument.)
+#
+# For the first form of flag, $script is run in the caller's scope if
+# $argv contains -flag, and the result of that script is the new value
+# for $tgtArrayName(-flag). This function intercepts [return $val]
+# from $script. Any empty script will result in the flag having ""
+# assigned to it.
+#
+# The args list is only inspected until the first argument which is
+# not described by $prototype. i.e. the first "non-flag" (not counting
+# values consumed for flags defined like --flag=>default).
+#
+# If a "--" flag is encountered, no more arguments are inspected as
+# flags. If "--" is the first non-flag argument, the "--" flag is
+# removed from the results but all remaining arguments are passed
+# through. If "--" appears after the first non-flag, it is retained.
+#
+# This function assumes that each flag is unique, and using a flag
+# more than once behaves in a last-one-wins fashion.
+#
+# Any $argv entries not described in $prototype are not treated
+# as flags.
+#
+# Returns the number of flags it processed in $argvName.
+#
+# Example:
+#
+# set args [list -foo -bar {blah} 8 9 10]
+# set args [proj-parse-simple-flags args flags {
+#   -foo    0  {expr 1}
+#   -bar    => 0
+#   -no-baz 2  {return 0}
+# }
+#
+# After that $flags would contain {-foo 1 -bar {blah} -no-baz 2}
+# and $args would be {8 9 10}.
+#
+proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
+  upvar $argvName argv
+  upvar $tgtArrayName tgt
+  array set dflt {}
+  array set scripts {}
+  array set consuming {}
+  set n [llength $prototype]
+  # Figure out what our flags are...
+  for {set i 0} {$i < $n} {} {
+    set k [lindex $prototype $i]
+    #puts "**** #$i of $n k=$k"
+    proj-assert {[string match -* $k]} \
+      "Invalid flag value for [proj-current-scope]: $k"
+    set v ""
+    set s ""
+    if {"=>" eq [lindex $prototype [expr {$i + 1}]]} {
+      incr i 2
+      if {$i >= $n} {
+        proj-fatal "Missing argument for $k => flag"
+      }
+      set consuming($k) 1
+      set v [lindex $prototype $i]
+    } else {
+      set v [lindex $prototype [incr i]]
+      set s [lindex $prototype [incr i]]
+      set scripts($k) $s
+    }
+    incr i
+    #puts "**** #$i of $n k=$k v=$v s=$s"
+    set dflt($k) $v
+  }
+  # Now look for those flags in the source list
+  array set tgt $dflt
+  unset dflt
+  set rc 0
+  set rv {}
+  set skipMode 0
+  set n [llength $argv]
+  for {set i 0} {$i < $n} {} {
+    set arg [lindex $argv $i]
+    if {$skipMode} {
+      lappend rv $arg
+    } elseif {"--" eq $arg} {
+      incr skipMode
+    } elseif {[info exists tgt($arg)]} {
+      if {[info exists consuming($arg)]} {
+        if {$i + 1 >= $n} {
+          proj-fatal "Missing argument for $arg flag"
+        }
+        set tgt($arg) [lindex $argv [incr i]]
+      } elseif {"" eq $scripts($arg)} {
+        set tgt($arg) ""
+      } else {
+        #puts "**** running scripts($arg) $scripts($arg)"
+        set code [catch {uplevel 1 $scripts($arg)} rc xopt]
+        #puts "**** tgt($arg)=$scripts($arg) code=$code rc=$rc"
+        if {$code in {0 2}} {
+          set tgt($arg) $rc
+        } else {
+          return {*}$xopt $rc
+        }
+      }
+      incr rc
+    } else {
+      incr skipMode
+      lappend rv $arg
+    }
+    incr i
+  }
+  set argv $rv
+  return $rc
+}
+
 if {$::proj__Config(self-tests)} {
   apply {{} {
     proj-warn "Test code for proj-cache"
@@ -1890,10 +2107,10 @@ if {$::proj__Config(self-tests)} {
     proj-assert {[proj-cache-check check]}
     proj-assert {"abc" eq $check}
 
-    parray ::proj__Cache;
+    #parray ::proj__Cache;
     proj-assert {"" ne [proj-cache-remove]}
-    proj-assert {"" eq [proj-cache-remove]}
     proj-assert {![proj-cache-check check]}
+    proj-assert {"" eq [proj-cache-remove]}
     proj-assert {"" eq $check}
   }}
 }

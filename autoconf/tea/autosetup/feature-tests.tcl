@@ -149,11 +149,11 @@ proc teaish-check-libmath {} {
 #
 #   use teaish/feature/$name
 #
-# to load $::autosetup(libdir)/teaish/feature/$name.tcl.
+# to load TEAISH_AUTOSETUP_DIR/feature/$name.tcl
 #
 # By default, if a proc named teaish-check-${name}-options is defined
 # after sourcing a file, it is called and its result is passed to
-# teaish-append-options. This can be suppressed with the -no-options
+# proj-append-options. This can be suppressed with the -no-options
 # flag.
 proc teaish-import-features {args} {
   set doOpt 1
@@ -176,7 +176,10 @@ proc teaish-import-features {args} {
     if {$doOpt} {
       set n "teaish-check-${arg}-options"
       if {[llength [info proc $n]] > 0} {
-        proj-options-add [$n]
+        set x [$n]
+        if {"" ne $x} {
+          options-add $x
+        }
       }
     }
   }

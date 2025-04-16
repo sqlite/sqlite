@@ -428,13 +428,12 @@ proc sqlite-configure {buildMode configScript} {
   foreach {group XY} [subst -nobackslashes -nocommands $allFlags] {
     foreach {X Y} $XY {
       if { $buildMode in $X || "*" in $X } {
-        proj-options-add $Y
+        options-add $Y
       }
     }
   }
-  set opts [proj-options-combine]
   #lappend opts "soname:=duplicateEntry => {x}"; #just testing
-  if {[catch {options $opts} msg xopts]} {
+  if {[catch {options {}} msg xopts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
     # where [options] behaves oddly on _some_ TCL builds when it's
     # called from deeper than the global scope.
