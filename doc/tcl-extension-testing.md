@@ -35,84 +35,69 @@ perspective on how to compile SQLite on unix-like systems.
 ###  2.1 Setup
 
 <ol type="1">
-<li value="1"> 
-    [Fossil](https://fossil-scm.org/) installed.
+<li value="1">
+    [Fossil][] installed.
 <li> Check out source code and set environment variables:
    <ol type="a">
    <li> **TCLSOURCE** &rarr;
-    The top-level directory of a Fossil check-out of the TCL source tree.
+    The top-level directory of a [Fossil][] check-out of the
+    [TCL source tree][tcl-fossil].
    <li> **SQLITESOURCE** &rarr;
     A Fossil check-out of the SQLite source tree.
-   <li> **TCLBUILD** &rarr;
+   <li> **TCLHOME** &rarr;
     A directory that does not exist at the start of the test and which
     will be deleted at the end of the test, and that will contain the
     test builds of the TCL libraries and the SQLite TCL Extensions.
+    It is the top-most installation directory, i.e. the one provided
+    to Tcl's `./configure --prefix=/path/to/tcl`.
+   <li> **TCLVERSION** &rarr;
+    The `X.Y`-form version of Tcl being used: 8.6, 9.0, 9.1...
    </ol>
 </ol>
 
-### 2.2 Testing TCL 8.6 on unix
+### 2.2 Testing TCL 8.x and 9.x on unix
+
+From a checked-out copy of [the core Tcl tree][tcl-fossil]
 
 <ol type="1">
-<li value="3">  `mkdir -p $TCLBUILD/tcl86`
-<li>  `cd $TCLSOURCE/unix`
-<li>  `fossil up core-8-6-16` <br>
-      &uarr; Or some other version of Tcl8.6.
+<li value="3">`TCLVERSION=8.6` <br>
+      &uarr; A version of your choice. This process has been tested with
+      values of 8.6, 9.0, and 9.1 (as of 2025-04-16). The out-of-life
+      version 8.5 fails some of `make devtest` for undetermined reasons.
+<li>`TCLHOME=$HOME/tcl/$TCLVERSION`
+<li>`TCLSOURCE=/path/to/tcl/checkout`
+<li>`SQLITESOURCE=/path/to/sqlite/checkout`
+<li>`rm -fr $TCLHOME` <br>
+      &uarr; Ensure that no stale Tcl installation is laying around.
+<li> `cd $TCLSOURCE`
+<li>  `fossil up core-8-6-branch` <br>
+      &uarr; The branch corresponding to `$TCLVERSION`, e.g.
+      `core-9-0-branch` or `trunk`.
 <li>  `fossil clean -x`
-<li>  `./configure --prefix=$TCLBUILD/tcl86 --disable-shared` <br>
-      &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
+<li>  `cd unix`
+<li>  `./configure --prefix=$TCLHOME --disable-shared` <br>
+      &uarr; The `--disable-shared` is to avoid the need to set `LD_LIBRARY_PATH`
       when using this Tcl build.
 <li>  `make install`
 <li> `cd $SQLITESOURCE`
 <li> `fossil clean -x`
-<li> `./configure --with-tclsh=$TCLBUILD/tcl86/bin/tclsh8.6 --all`
+<li> `./configure --with-tcl=$TCLHOME --all`
 <li> `make tclextension-install` <br>
-     &uarr; Verify extension installed at $TCLBUILD/tcl86/lib/tcl8.6/sqlite3.*
+     &uarr; Verify extension installed at
+     `$TCLHOME/lib/tcl${TCLVERSION}/sqlite<SQLITE_VERSION>`.
 <li> `make tclextension-list` <br>
      &uarr; Verify TCL extension correctly installed.
 <li> `make tclextension-verify` <br>
      &uarr; Verify that the correct version is installed.
-<li> `$TCLBUILD/tcl86/bin/tclsh8.6 test/testrunner.tcl release --explain` <br>
+<li> `$TCLHOME/bin/tclsh[89].[0-9] test/testrunner.tcl release --explain` <br>
      &uarr; Verify thousands of lines of output with no errors. Or
      consider running "devtest" without --explain instead of "release".
 </ol>
 
-### 2.3 Testing TCL 9.0 on unix
-
-<ol>
-<li value="16">  `mkdir -p $TCLBUILD/tcl90`
-<li>  `fossil up core-9-0-0` <br>
-      &uarr; Or some other version of Tcl9
-<li>  `fossil clean -x`
-<li>  `./configure --prefix=$TCLBUILD/tcl90 --disable-shared` <br>
-      &uarr; The --disable-shared is to avoid the need to set LD_LIBRARY_PATH
-      when using this Tcl build.
-<li>  `make install`
-<li>  `cp -r ../library $TCLBUILD/tcl90/lib/tcl9.0` <br>
-      &uarr; The Tcl library is not installed by "make install" for Tcl9.0 unless
-      you also include the --disable-zipfs to ./configure.  But if you do that
-      then the generated tclsh9.0 is no longer stand-alone.  On the other hand,
-      if you don't install the Tcl library, other programs like testfixture
-      won't be able to find the Tcl library and hence won't work.  This
-      extra installation step resolves the dilemma.
-      This step is not required when building Tcl8.6, which lacks support for
-      zipfs and hence always installs its Tcl library.
-<li> `cd $SQLITESOURCE`
-<li> `fossil clean -x`
-<li> `./configure --with-tclsh=$TCLBUILD/tcl90/bin/tclsh9.0 --all`
-<li> `make tclextension-install` <br>
-     &uarr; Verify extension installed at $TCLBUILD/tcl90/lib/sqlite3.*
-<li> `make tclextension-list` <br>
-     &uarr; Verify TCL extension correctly installed.
-<li> `make tclextension-verify`
-<li> `$TCLBUILD/tcl90/bin/tclsh9.0 test/testrunner.tcl release --explain` <br>
-     &uarr; Verify thousands of lines of output with no errors.  Or
-     consider running "devtest" without --explain instead of "release".
-</ol>
-
-### 2.4 Cleanup
+### 2.3 Cleanup
 
 <ol type="1">
-<li value="29"> `rm -rf $TCLBUILD`
+<li value="29"> `rm -rf $TCLHOME`
 </ol>
 
 <a id="windows"></a>
@@ -123,9 +108,11 @@ perspective on how to compile SQLite on Windows.
 
 ###  3.1 Setup for Windows
 
+(These docs are not as up-to-date as the Unix docs, above.)
+
 <ol type="1">
-<li value="1"> 
-    [Fossil](https://fossil-scm.org/) installed.
+<li value="1">
+    [Fossil][] installed.
 <li>
     Unix-like command-line tools installed.  Example:
     [unxutils](https://unxutils.sourceforge.net/)
@@ -206,3 +193,6 @@ perspective on how to compile SQLite on Windows.
 <ol type="1">
 <li value="35"> `rm -rf %TCLBUILD%`
 </ol>
+
+[Fossil]: https://fossil-scm.org/home
+[tcl-fossil]: https://core.tcl-lang.org/tcl
