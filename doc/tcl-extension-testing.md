@@ -194,5 +194,71 @@ perspective on how to compile SQLite on Windows.
 <li value="35"> `rm -rf %TCLBUILD%`
 </ol>
 
+## 4.0 Testing the TEA(ish) Build (unix only)
+
+This part requires following the setup instructions for Unix systems,
+at the top of this document.
+
+The former TEA, now TEA(ish), build of this extension uses the same
+code as the builds described above but is provided in a form more
+convenient for downstream Tcl users.
+
+It lives in `autoconf/tea` and, as part of the `autoconf` bundle,
+_cannot be tested directly from the canonical tree_. Instead it has to
+be packaged.
+
+### 4.1 Teaish Setup
+
+Follow the same Tcl- and environment-related related setup described
+in the first section of this document, up to and including the
+installation of Tcl (unless, of course, it was already installed using
+those same instructions).
+
+### 4.2 Teaish Testing
+
+<ol>
+<li>`cd $SQLITESOURCE`
+<li>Run either `make snapshot-tarball` or `make amalgamation-tarball`
+    &uarr;
+    Those steps will leave behind a temp dir called `mkpkg_tmp_dir`,
+    under which the extension is most readily reached. It can optionally
+    be extracted from the generated tarball, but that tarball was
+    generated from this dir, and reusing this dir is a time saver
+    during development.
+<li> `cd mkpkg_tmp/tea`
+<li> `./configure --with-tcl=$TCLHOME`
+<li> `make test install` <br>
+     &uarr; Should run to completion without any errors.
+<li> `make uninstall` <br>
+     &uarr; Will uninstall the extension. This _can_ be run
+     in the same invocation as the `install` target, but only
+     if the `-j#` make flag is _not_ used. If it is, the
+     install/uninstall steps will race and make a mess of things.
+     Parallel builds do not help in this build, anyway, as there's
+     only a single C file to compile.
+</ol>
+
+When actively developing and testing the teaish build, which requires
+going through the tarball generation, there's a caveat about the
+`mkpkg_tmp_dir` dir: it will be deleted every time a tarball is
+built, the shell console which is parked in that
+directory for testing needs to add `cd $PWD &&` to the start of the
+build commands, like:
+
+>
+```
+[user@host:.../mkpkg_tmp_dir/tea]$ \
+  cd $PWD && ./configure CFLAGS=-O0 --with-tcl=$TCLHOME \
+  && make test install uninstall
+```
+
+### 4.3 Teaish Cleanup
+
+
+<ol type="1">
+<li> `rm -rf $TCLHOME`
+<li> `cd $SQLITESOURCE; rm -fr mkpkg_tmp_dir; fossil clean -x`
+</ol>
+
 [Fossil]: https://fossil-scm.org/home
 [tcl-fossil]: https://core.tcl-lang.org/tcl

@@ -1,5 +1,5 @@
-C Latest\supstream\steaish.\sMost\snotably\sit\sadds\sthe\sability\sfor\sthe\sextension\sto\sspecify\sa\sminimum\sTcl\sversion,\sand\sthis\sbuild\snow\senforces\sa\sminimum\sTcl\sof\s8.6.
-D 2025-04-16T21:53:01.406
+C Add\sdocs\sexplaining\show\sto\stest\sthe\steaish\sbuild.
+D 2025-04-16T22:25:02.780
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -63,7 +63,7 @@ F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347b
 F doc/jsonb.md ede3238186e3a90bb79d20b2a6a06d0f9429a38e069e9da0efbad0f2ed48b924
 F doc/lemon.html 89ea833a6f71773ab1a9063fbb7fb9b32147bc0b1057b53ecab94a3b30c0aef5
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
-F doc/tcl-extension-testing.md b10538db54c3eda7f8682c05328ced8a2043d3de7ddbd22ae3f2b6cc770006ce
+F doc/tcl-extension-testing.md b88861804fc1eaf83249f8e206334189b61e150c360e1b80d0dcf91af82354f5
 F doc/testrunner.md 15583cf8c7d8a1c3378fd5d4319ca769a14c4d950a5df9b015d01d5be290dc69
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c4c5dcb79c57f6e38cfe9b68b00e60e42d03ef30aeaefc5bf9dafed994849e1d
-R 1aafbce6cec55668ed932a92db582aa3
+P c86315e538f4d75161faa72673927cde8be080c983f04a98491d1add14615038
+R e22f6e8195a60e01cd4d511f333ebac2
 U stephan
-Z da0b8bd6f0a90b2d384ef615e8494fec
+Z cdf29b539adbf4afb90ada6e24ecd013
 # Remove this line to create a well-formed Fossil manifest.
