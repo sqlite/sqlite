@@ -27,7 +27,7 @@ proc teaish-check-libz {} {
   teaish-check-cached "Checking for libz" {
     set rc 0
     if {[msg-quiet cc-check-includes zlib.h] && [msg-quiet proj-check-function-in-lib deflate z]} {
-      teaish-prepend-ldflags [define LDFLAGS_LIBZ [get-define lib_deflate]]
+      teaish-ldflags-prepend [define LDFLAGS_LIBZ [get-define lib_deflate]]
       undefine lib_deflate
       incr rc
     }
@@ -38,7 +38,7 @@ proc teaish-check-libz {} {
 # @teaish-check-librt ?funclist?
 #
 # Checks whether -lrt is needed for any of the given functions.  If
-# so, appends -lrt via [teaish-prepend-ldflags] and returns 1, else
+# so, appends -lrt via [teaish-ldflags-prepend] and returns 1, else
 # returns 0. It also defines LDFLAGS_LIBRT to the libs flag or an
 # empty string.
 #
@@ -52,7 +52,7 @@ proc teaish-check-librt {{funclist {fdatasync nanosleep}}} {
         set ldrt [get-define lib_${func}]
         undefine lib_${func}
         if {"" ne $ldrt} {
-          teaish-prepend-ldflags -r [define LDFLAGS_LIBRT $ldrt]
+          teaish-ldflags-prepend -r [define LDFLAGS_LIBRT $ldrt]
           msg-result $ldrt
           return 1
         } else {
@@ -95,7 +95,7 @@ proc teaish-is-mingw {} {
 # Checks for whether dlopen() can be found and whether it requires
 # -ldl for linking. If found, returns 1, defines LDFLAGS_DLOPEN to the
 # linker flags (if any), and passes those flags to
-# teaish-prepend-ldflags. It unconditionally defines HAVE_DLOPEN to 0
+# teaish-ldflags-prepend. It unconditionally defines HAVE_DLOPEN to 0
 # or 1 (the its return result value).
 proc teaish-check-dlopen {} {
   teaish-check-cached -nostatus "Checking for dlopen()" {
@@ -117,7 +117,7 @@ proc teaish-check-dlopen {} {
     } else {
       msg-result "not found"
     }
-    teaish-prepend-ldflags [define LDFLAGS_DLOPEN $lfl]
+    teaish-ldflags-prepend [define LDFLAGS_DLOPEN $lfl]
     define HAVE_DLOPEN $rc
   }
 }
@@ -135,7 +135,7 @@ proc teaish-check-libmath {} {
       incr rc
       set lfl [get-define lib_ceil]
       undefine lib_ceil
-      teaish-prepend-ldflags $lfl
+      teaish-ldflags-prepend $lfl
       msg-checking "$lfl "
     }
     define LDFLAGS_LIBMATH $lfl
@@ -143,7 +143,7 @@ proc teaish-check-libmath {} {
   }
 }
 
-# @teaish-import-features ?-no-options? feature-names...
+# @teaish-import-features ?-flags? feature-names...
 #
 # For each $name in feature-names... it invokes:
 #
@@ -155,31 +155,59 @@ proc teaish-check-libmath {} {
 # after sourcing a file, it is called and its result is passed to
 # proj-append-options. This can be suppressed with the -no-options
 # flag.
+#
+# Flags:
+#
+#   -no-options: disables the automatic running of
+#    teaish-check-NAME-options,
+#
+#   -run: if the function teaish-check-NAME exists after importing
+#    then it is called. This flag must not be used when calling this
+#    function from teaish-options. This trumps both -pre and -post.
+#
+#   -pre: if the function teaish-check-NAME exists after importing
+#    then it is passed to [teaish-checks-queue -pre].
+#
+#   -post: works like -pre but instead uses[teaish-checks-queue -post].
 proc teaish-import-features {args} {
+  set pk ""
   set doOpt 1
-  if {1} {
-    set xopt [list]
-    foreach arg $args {
-      switch -exact -- $arg {
-        -no-options {
-          set doOpt 0
-        }
-        default {
-          lappend xopt $arg
-        }
-      }
-    }
-    set args $xopt
+  proj-parse-simple-flags args flags {
+    -no-options 0 {set doOpt 0}
+    -run        0 {expr 1}
+    -pre        0 {set pk -pre}
+    -post       0 {set pk -post}
   }
+  #
+  # TODO: never import the same module more than once. The "use"
+  # command is smart enough to not do that but we would need to
+  # remember whether or not any teaish-check-${arg}* procs have been
+  # called before, and skip them.
+  #
+  if {$flags(-run) && "" ne $pk} {
+    proj-error "Cannot use both -run and $pk" \
+      " (called from [proj-current-scope 1])"
+  }
+
   foreach arg $args {
     uplevel "use teaish/feature/$arg"
     if {$doOpt} {
       set n "teaish-check-${arg}-options"
       if {[llength [info proc $n]] > 0} {
-        set x [$n]
-        if {"" ne $x} {
+        if {"" ne [set x [$n]]} {
           options-add $x
         }
+      }
+    }
+    if {$flags(-run)} {
+      set n "teaish-check-${arg}"
+      if {[llength [info proc $n]] > 0} {
+        uplevel 1 $n
+      }
+    } elseif {"" ne $pk} {
+      set n "teaish-check-${arg}"
+      if {[llength [info proc $n]] > 0} {
+        teaish-checks-queue {*}$pk $n
       }
     }
   }

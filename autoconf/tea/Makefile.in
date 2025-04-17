@@ -97,7 +97,7 @@ TCLLIBDIR         = @TCLLIBDIR@
 # CFLAGS.configure = CFLAGS as known at configure-time.
 #
 # This ordering is deliberate: flags populated via tcl's
-# [teaish-add-cflags] should preceed CFLAGS and CPPFLAGS (which
+# [teaish-cflags-add] should preceed CFLAGS and CPPFLAGS (which
 # typically come from the ./configure command-line invocation).
 #
 CFLAGS.configure = @SH_CFLAGS@ @TEAISH_CFLAGS@ @CFLAGS@ @CPPFLAGS@ $(TCL_INCLUDE_SPEC)
@@ -107,7 +107,7 @@ CFLAGS.configure = @SH_CFLAGS@ @TEAISH_CFLAGS@ @CFLAGS@ @CPPFLAGS@ $(TCL_INCLUDE
 # LDFLAGS.configure = LDFLAGS as known at configure-time.
 #
 # This ordering is deliberate: flags populated via tcl's
-# [teaish-add-ldflags] should preceed LDFLAGS (which typically
+# [teaish-ldflags-add] should preceed LDFLAGS (which typically
 # comes from the ./configure command-line invocation).
 #
 LDFLAGS.configure = @SH_LDFLAGS@ @TEAISH_LDFLAGS@ @LDFLAGS@ $(TCL_STUB_LIB_SPEC)
@@ -120,7 +120,7 @@ LDFLAGS.configure = @SH_LDFLAGS@ @TEAISH_LDFLAGS@ @LDFLAGS@ $(TCL_STUB_LIB_SPEC)
 #
 # tx.src is the list of source or object files to include in the
 # (single) compiler invocation. This will initially contain any
-# sources passed to [teaish-add-src], but may also be appended to
+# sources passed to [teaish-src-add], but may also be appended to
 # by teaish.make.
 #
 tx.src     =@TEAISH_SRC@
@@ -139,8 +139,8 @@ tx.LDFLAGS =
 
 #
 # The list of 'dist' files may be appended to from teaish.make.in.
-# It can also be set up from teaish.tcl using [teaish-add-dist]
-# and/or [teaish-add-src -dist ...].
+# It can also be set up from teaish.tcl using [teaish-dist-add]
+# and/or [teaish-src-add -dist ...].
 #
 tx.dist.files = @TEAISH_DIST_FILES@
 
@@ -180,12 +180,6 @@ reconfigure:
 $(teaish.makefile): $(teaish__auto.def) $(teaish.makefile.in) \
   @AUTODEPS@
 
-@if TEAISH_TEST_TCL_IN
-#config.log: @TEAISH_TEST_TCL_IN@
-#@TEAISH_TEST_TCL_IN@:
-#@TEAISH_TEST_TCL@: @TEAISH_TEST_TCL_IN@
-@endif
-
 @TEAISH_TESTER_TCL_IN@:
 @TEAISH_TESTER_TCL@: @TEAISH_TESTER_TCL_IN@
 config.log: @TEAISH_TESTER_TCL@
@@ -201,7 +195,7 @@ $(tx.dll): $(tx.src) config.log
 all: $(tx.dll)
 
 tclsh: $(teaish.makefile) config.log
-	@{ echo "#!/bin/sh"; echo "exec $(TCLSH) \"\$$@\""; } > $@
+	@{ echo "#!/bin/sh"; echo 'exec $(TCLSH) "$$@"'; } > $@
 	@chmod +x $@
 	@echo "Created $@"
 
@@ -392,15 +386,15 @@ dist:
 # - tx.src = list of the extension's source files, being sure to
 #   prefix each with $(tx.dir) (if it's in the same dir as the
 #   extension) so that out-of-tree builds can find them.  Optionally,
-#   [define] TEAISH_SRC or pass them to [teaish-add-src].
+#   [define] TEAISH_SRC or pass them to [teaish-src-add].
 #
 # It may optionally set the following vars:
 #
 # - tx.CFLAGS = CFLAGS/CPPFLAGS. Optionally, [define] TEAISH_CFLAGS
-#   or pass them to [teaish-add-cflags].
+#   or pass them to [teaish-cflags-add].
 #
 # - tx.LDFLAGS = LDFLAGS. Optionally, [define] TEAISH_LDFLAGS or
-#   pass them to [teaish-add-ldflags].
+#   pass them to [teaish-ldflags-add].
 #
 # It may optionally hook into various targets as documented in
 # /doc/extensions.md in the canonical teaish source tree.
@@ -425,7 +419,7 @@ Makefile: @TEAISH_MAKEFILE@
 #
 # TEAISH_MAKEFILE_CODE may contain literal makefile code, which
 # gets pasted verbatim here. Either [define TEAISH_MAKEFILE_CODE
-# ...] or use [teaish-add-make] to incrementally build up this
+# ...] or use [teaish-make-add] to incrementally build up this
 # content.
 #
 @if TEAISH_MAKEFILE_CODE

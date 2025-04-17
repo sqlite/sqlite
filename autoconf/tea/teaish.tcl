@@ -1,13 +1,16 @@
 # Teaish configure script for the SQLite TCL extension
 
-define TEAISH_NAME sqlite; # name used in dist tarballs and as the libdir prefix
-define TEAISH_PKGNAME sqlite3; # name for purposes of Tcl_PkgProvide()
-define TEAISH_LOAD_PREFIX Sqlite3; # 2nd arg to [load]
-define TEAISH_VSATISFIES_TCL 8.6-; # builds with 8.5 but some tests fail
-define TEAISH_VERSION [proj-file-content -trim [get-define TEAISH_DIR]/../VERSION]
-proj-assert {[string match 3.*.* [get-define TEAISH_VERSION]]}
-define TEAISH_LIBDIR_NAME \
-  [join [list [get-define TEAISH_NAME] [get-define TEAISH_VERSION]] ""]
+apply {{} {
+  set version [proj-file-content -trim [get-define TEAISH_DIR]/../VERSION]
+  proj-assert {[string match 3.*.* $version]}
+  teaish-pkginfo-set \
+    -name sqlite \
+    -pkgName sqlite3 \
+    -version $version \
+    -loadPrefix Sqlite3 \
+    -vsatisfies 8.6- \
+    -libDir sqlite$version
+}}
 
 #
 # Object for communicating certain config-time state across various
@@ -70,14 +73,14 @@ proc teaish-configure {} {
   use teaish/feature-tests
 
   set srcdir [get-define TEAISH_DIR]
-  teaish-add-src -dist -dir generic/tclsqlite3.c
-  teaish-add-cflags -I${srcdir}/.. ; # for sqlite3.[ch]
+  teaish-src-add -dist -dir generic/tclsqlite3.c
+  teaish-cflags-add -I${srcdir}/..
   if {[proj-opt-was-provided override-sqlite-version]} {
-    define TEAISH_VERSION [opt-val override-sqlite-version]
-    proj-warn "overriding sqlite version number: [get-define TEAISH_VERSION]"
+    teaish-pkginfo-set -version [opt-val override-sqlite-version]
+    proj-warn "overriding sqlite version number:" [teaish-pkginfo-get -version]
   } elseif {[proj-opt-was-provided with-system-sqlite]
             && [opt-val with-system-sqlite] ne "0"} {
-    proj-fatal "when using --with-system-sqlite also use"\
+    proj-fatal "when using --with-system-sqlite also use" \
       "--override-sqlite-version to specify a library version number."
   }
 
@@ -98,8 +101,8 @@ proc teaish-configure {} {
 
   if {[opt-bool with-system-sqlite]} {
     msg-result "Using system-level sqlite3."
-    teaish-add-cflags -DUSE_SYSTEM_SQLITE
-    teaish-add-ldflags -lsqlite3
+    teaish-cflags-add -DUSE_SYSTEM_SQLITE
+    teaish-ldflags-add -lsqlite3
   }
 
   teaish-check-librt
@@ -141,7 +144,7 @@ proc sqlite-affirm-have-math {featureName} {
       user-notice "Forcing requirement of $lfl for $featureName"
     }
     define LDFLAGS_MATH $lfl
-    teaish-prepend-ldflags $lfl
+    teaish-ldflags-prepend $lfl
   }
 }
 
@@ -230,7 +233,7 @@ proc sqlite-handle-common-feature-flags {} {
   if {[lsearch [get-define TARGET_DEBUG ""] -DSQLITE_DEBUG=1] > -1} {
     msg-result "Note: this is a debug build, so performance will suffer."
   }
-  teaish-add-cflags -define OPT_FEATURE_FLAGS
+  teaish-cflags-add -define OPT_FEATURE_FLAGS
 }; # sqlite-handle-common-feature-flags
 
 ########################################################################
@@ -252,7 +255,7 @@ proc sqlite-handle-threadsafe {} {
         incr enable
         set ldf [get-define lib_pthread_create]
         define LDFLAGS_PTHREAD $ldf
-        teaish-prepend-ldflags $ldf
+        teaish-ldflags-prepend $ldf
         undefine lib_pthread_create
         undefine lib_pthread_mutexattr_init
       } elseif {[proj-opt-was-provided threadsafe]} {
@@ -314,7 +317,7 @@ proc sqlite-handle-load-extension {} {
     if {$found} {
       set ldf [get-define lib_dlopen]
       define LDFLAGS_DLOPEN $ldf
-      teaish-prepend-ldflags $ldf
+      teaish-ldflags-prepend $ldf
       undefine lib_dlopen
     } else {
       if {[proj-opt-was-provided load-extension]} {
@@ -433,8 +436,8 @@ proc sqlite-handle-icu {} {
       msg-result "Enabling ICU collations."
       sqlite-add-feature-flag -DSQLITE_ENABLE_ICU_COLLATIONS
     }
-    teaish-prepend-ldflags $ldflags
-    teaish-add-cflags $cflags
+    teaish-ldflags-prepend $ldflags
+    teaish-cflags-add $cflags
   } elseif {[opt-bool icu-collations]} {
     proj-warn "ignoring --enable-icu-collations because neither --with-icu-ldflags nor --with-icu-config provided any linker flags"
   } else {
@@ -478,7 +481,7 @@ proc sqlite-handle-math {} {
     set lfl [get-define lib_ceil]
     undefine lib_ceil
     define LDFLAGS_MATH $lfl
-    teaish-prepend-ldflags $lfl
+    teaish-ldflags-prepend $lfl
     sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
     msg-result "Enabling math SQL functions"
   } {

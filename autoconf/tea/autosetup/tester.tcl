@@ -21,7 +21,7 @@
 # intended to be run from autosetup code. Rather, they're for
 # use with/via teaish.tester.tcl.
 
-########################################################################
+#
 # @test-current-scope ?lvl?
 #
 # Returns the name of the _calling_ proc from ($lvl + 1) levels up the
@@ -52,23 +52,27 @@ proc test-msg {args} {
 # @test-warn
 #
 # Emits all arugments to stderr.
+#
 proc test-warn {args} {
   puts stderr "WARNING: $args"
 }
 
-########################################################################
+#
 # @test-error msg
 #
 # Triggers a test-failed error with a string describing the calling
 # scope and the provided message.
+#
 proc test-fail {args} {
   #puts stderr "ERROR: \[[test-current-scope 1]]: $msg"
   #exit 1
   error "FAIL: \[[test-current-scope 1]]: $args"
 }
 
+#
 # Internal impl for assert-likes. Should not be called directly by
 # client code.
+#
 proc test__assert {lvl script {msg ""}} {
   set src "expr \{ $script \}"
   # puts "XXXX evalling $src";
@@ -83,42 +87,46 @@ proc test__assert {lvl script {msg ""}} {
   }
 }
 
-########################################################################
+#
 # @assert script ?message?
 #
 # Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
 # false, a fatal error is triggered. The error message, by default,
 # includes the body of the failed assertion, but if $msg is set then
 # that is used instead.
+#
 proc assert {script {msg ""}} {
   test__assert 1 $script $msg
 }
 
-########################################################################
+#
 # @test-assert testId script ?msg?
 #
 # Works like [assert] but emits $testId to stdout first.
+#
 proc test-assert {testId script {msg ""}} {
   puts "test $testId"
   test__assert 2 $script $msg
 }
 
-########################################################################
+#
 # @test-expect testId script result
 #
 # Runs $script in the calling scope and compares its result to
 # $result.  If they differ, it triggers an [assert].
+#
 proc test-expect {testId script result} {
   puts "test $testId"
   set x [uplevel 1 $script]
   test__assert 1 {$x eq $result} "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
-########################################################################
+#
 # @test-catch cmd ?...args?
 #
 # Runs [cmd ...args], repressing any exception except to possibly log
 # the failure. Returns 1 if it caught anything, 0 if it didn't.
+#
 proc test-catch {cmd args} {
   if {[catch {
     $cmd {*}$args
@@ -133,6 +141,7 @@ if {![array exists ::teaish__BuildFlags]} {
   array set ::teaish__BuildFlags {}
 }
 
+#
 # @teaish-build-flag2 flag tgtVar ?dflt?
 #
 # Caveat #1: only valid when called in the context of teaish's default
@@ -165,11 +174,13 @@ proc teaish-build-flag2 {flag tgtVar {dflt ""}} {
   return 0
 }
 
+#
 # @teaish-build-flag flag ?dflt?
 #
 # Convenience form of teaish-build-flag2 which returns the
 # configure-time-defined value of $flag or "" if it's not defined (or
 # if it's an empty string).
+#
 proc teaish-build-flag {flag {dflt ""}} {
   set tgt ""
   teaish-build-flag2 $flag tgt $dflt
