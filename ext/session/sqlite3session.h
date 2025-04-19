@@ -358,9 +358,10 @@ void sqlite3session_table_filter(
 ** is inserted while a session object is enabled, then later deleted while 
 ** the same session object is disabled, no INSERT record will appear in the
 ** changeset, even though the delete took place while the session was disabled.
-** Or, if one field of a row is updated while a session is disabled, and 
-** another field of the same row is updated while the session is enabled, the
-** resulting changeset will contain an UPDATE change that updates both fields.
+** Or, if one field of a row is updated while a session is enabled, and 
+** then another field of the same row is updated while the session is disabled,
+** the resulting changeset will contain an UPDATE change that updates both
+** fields.
 */
 int sqlite3session_changeset(
   sqlite3_session *pSession,      /* Session object */

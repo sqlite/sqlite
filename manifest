@@ -1,5 +1,5 @@
-C Add\san\sappropriate\s_declspec\sto\sthe\sdeclaration\sof\sthe\ssqlite3_dbdata_init()\nfunction\sin\sthe\srecovery\sextension.
-D 2025-04-18T14:47:56.507
+C Update\sto\scomments\sin\ssqlite3session.h.
+D 2025-04-19T20:08:04.182
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -618,7 +618,7 @@ F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63b
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 7a8816d56940c464c74706dfb02f18129b290655df1ccb8648228a7d436141f2
-F ext/session/sqlite3session.h 532561f5b181bc623c25bfa0ecfd1f115bc9a2b42ec96fee8a67b1a10f3cc42c
+F ext/session/sqlite3session.h 9b58d8f8052145bc302a72391b898f41a47d5138c8a757818bd4dc467874f5f3
 F ext/session/test_session.c af162108e8dc40cb9fe0e876e0155cecabcb49e82e5939677d21451e36160283
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile 24d7e6f446528fa67f5ade6c3c7d7e46e1ac52649d6264cbe24539c1dab608e1
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c72c00d34d70b36f847af19a2382299746448b5dd94a616f6b567389c5694c17
-R 87a340268826e4e34cb74cdf99929e58
-U drh
-Z 9337bbf6f2732c8c8765cfbe21ec024f
+P 00313d15270b36fce44f7784c97ddc42517e23c209c1ccc4d814ef06b11528c0
+R 8e876785cd8a9f724c2edd8d86d424db
+U dan
+Z ad6897ab80a5e3b64556d94fd097e39b
 # Remove this line to create a well-formed Fossil manifest.
