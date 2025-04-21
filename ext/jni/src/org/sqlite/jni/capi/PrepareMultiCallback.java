@@ -65,7 +65,7 @@ public interface PrepareMultiCallback extends CallbackProxy {
      A PrepareMultiCallback impl which steps entirely through a result set,
      ignoring all non-error results.
   */
-  public static final class StepAll implements PrepareMultiCallback {
+  final class StepAll implements PrepareMultiCallback {
     public StepAll(){}
     /**
        Calls sqlite3_step() on st until it returns something other than

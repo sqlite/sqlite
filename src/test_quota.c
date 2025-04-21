@@ -44,14 +44,12 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
-#include "os_setup.h"
 
-#if SQLITE_OS_UNIX
-# include <unistd.h>
-#endif
-#if SQLITE_OS_WIN
-# include "os_win.h"
+#ifdef _WIN32
+# include <windows.h>
 # include <io.h>
+#else
+# include <unistd.h>
 #endif
 
 
@@ -130,7 +128,7 @@ struct quota_FILE {
   FILE *f;                /* Open stdio file pointer */
   sqlite3_int64 iOfst;    /* Current offset into the file */
   quotaFile *pFile;       /* The file record in the quota system */
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   char *zMbcsName;        /* Full MBCS pathname of the file */
 #endif
 };
@@ -375,7 +373,7 @@ static quotaFile *quotaFindFile(
 ** used to store the returned pointer when done.
 */
 static char *quota_utf8_to_mbcs(const char *zUtf8){
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   size_t n;          /* Bytes in zUtf8 */
   int nWide;         /* number of UTF-16 characters */
   int nMbcs;         /* Bytes of MBCS */
@@ -410,7 +408,7 @@ static char *quota_utf8_to_mbcs(const char *zUtf8){
 ** Deallocate any memory allocated by quota_utf8_to_mbcs().
 */
 static void quota_mbcs_free(char *zOld){
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   sqlite3_free(zOld);
 #else
   /* No-op on unix */
@@ -970,7 +968,7 @@ quota_FILE *sqlite3_quota_fopen(const char *zFilename, const char *zMode){
   }
   quotaLeave();
   sqlite3_free(zFull);
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   p->zMbcsName = zFullTranslated;
 #endif
   return p;
@@ -1073,7 +1071,7 @@ int sqlite3_quota_fclose(quota_FILE *p){
     }
     quotaLeave();
   }
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   quota_mbcs_free(p->zMbcsName);
 #endif
   sqlite3_free(p);
@@ -1087,11 +1085,10 @@ int sqlite3_quota_fflush(quota_FILE *p, int doFsync){
   int rc;
   rc = fflush(p->f);
   if( rc==0 && doFsync ){
-#if SQLITE_OS_UNIX
-    rc = fsync(fileno(p->f));
-#endif
-#if SQLITE_OS_WIN
+#ifdef _WIN32
     rc = _commit(_fileno(p->f));
+#else
+    rc = fsync(fileno(p->f));
 #endif
   }
   return rc!=0;
@@ -1143,17 +1140,16 @@ int sqlite3_quota_ftruncate(quota_FILE *p, sqlite3_int64 szNew){
     pGroup->iSize += szNew - pFile->iSize;
     quotaLeave();
   }
-#if SQLITE_OS_UNIX
-  rc = ftruncate(fileno(p->f), szNew);
-#endif
-#if SQLITE_OS_WIN
-#  if defined(__MINGW32__) && defined(SQLITE_TEST)
+#ifdef _WIN32
+#  if defined(__MSVCRT__) && defined(SQLITE_TEST)
      /* _chsize_s() is missing from MingW (as of 2012-11-06).  Use
      ** _chsize() as a work-around for testing purposes. */
      rc = _chsize(_fileno(p->f), (long)szNew);
 #  else
      rc = _chsize_s(_fileno(p->f), szNew);
 #  endif
+#else
+  rc = ftruncate(fileno(p->f), szNew);
 #endif
   if( pFile && rc==0 ){
     quotaGroup *pGroup = pFile->pGroup;
@@ -1172,13 +1168,12 @@ int sqlite3_quota_ftruncate(quota_FILE *p, sqlite3_int64 szNew){
 */
 int sqlite3_quota_file_mtime(quota_FILE *p, time_t *pTime){
   int rc;
-#if SQLITE_OS_UNIX
-  struct stat buf;
-  rc = fstat(fileno(p->f), &buf);
-#endif
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   struct _stati64 buf;
   rc = _stati64(p->zMbcsName, &buf);
+#else
+  struct stat buf;
+  rc = fstat(fileno(p->f), &buf);
 #endif
   if( rc==0 ) *pTime = buf.st_mtime;
   return rc;
@@ -1190,13 +1185,12 @@ int sqlite3_quota_file_mtime(quota_FILE *p, time_t *pTime){
 */
 sqlite3_int64 sqlite3_quota_file_truesize(quota_FILE *p){
   int rc;
-#if SQLITE_OS_UNIX
-  struct stat buf;
-  rc = fstat(fileno(p->f), &buf);
-#endif
-#if SQLITE_OS_WIN
+#ifdef _WIN32
   struct _stati64 buf;
   rc = _stati64(p->zMbcsName, &buf);
+#else
+  struct stat buf;
+  rc = fstat(fileno(p->f), &buf);
 #endif
   return rc==0 ? buf.st_size : -1;
 }

@@ -455,7 +455,7 @@ proc trd_fuzztest_data {} {
   set lFuzzDb    [glob [file join $::testdir fuzzdata*.db]] 
   set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
 
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     return [list fuzzcheck.exe $lFuzzDb]
   }
 
@@ -527,7 +527,7 @@ proc make_script {cfg srcdir bMsvc} {
   set configOpts [list]                         ;# Extra args for [configure]
 
   # Define either SQLITE_OS_WIN or SQLITE_OS_UNIX, as appropriate.
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     lappend opts -DSQLITE_OS_WIN=1
   } else {
     lappend opts -DSQLITE_OS_UNIX=1

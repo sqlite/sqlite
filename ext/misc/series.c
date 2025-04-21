@@ -115,6 +115,7 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -480,25 +481,52 @@ static int seriesFilter(
     ** constraints on the "value" column.
     */
     if( idxNum & 0x0080 ){
-      iMin = iMax = sqlite3_value_int64(argv[i++]);
+      if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
+        double r = sqlite3_value_double(argv[i++]);
+        if( r==ceil(r) ){
+          iMin = iMax = (sqlite3_int64)r;
+        }else{
+          returnNoRows = 1;
+        }
+      }else{
+        iMin = iMax = sqlite3_value_int64(argv[i++]);
+      }
     }else{
       if( idxNum & 0x0300 ){
-        iMin = sqlite3_value_int64(argv[i++]);
-        if( idxNum & 0x0200 ){
-          if( iMin==LARGEST_INT64 ){
-            returnNoRows = 1;
+        if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
+          double r = sqlite3_value_double(argv[i++]);
+          if( idxNum & 0x0200 && r==ceil(r) ){
+            iMin = (sqlite3_int64)ceil(r+1.0);
           }else{
-            iMin++;
+            iMin = (sqlite3_int64)ceil(r);
+          }
+        }else{
+          iMin = sqlite3_value_int64(argv[i++]);
+          if( idxNum & 0x0200 ){
+            if( iMin==LARGEST_INT64 ){
+              returnNoRows = 1;
+            }else{
+              iMin++;
+            }
           }
         }
       }
       if( idxNum & 0x3000 ){
-        iMax = sqlite3_value_int64(argv[i++]);
-        if( idxNum & 0x2000 ){
-          if( iMax==SMALLEST_INT64 ){
-            returnNoRows = 1;
+        if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
+          double r = sqlite3_value_double(argv[i++]);
+          if( (idxNum & 0x2000)!=0 && r==floor(r) ){
+            iMax = (sqlite3_int64)(r-1.0);
           }else{
-            iMax--;
+            iMax = (sqlite3_int64)floor(r);
+          }
+        }else{
+          iMax = sqlite3_value_int64(argv[i++]);
+          if( idxNum & 0x2000 ){
+            if( iMax==SMALLEST_INT64 ){
+              returnNoRows = 1;
+            }else{
+              iMax--;
+            }
           }
         }
       }
@@ -552,7 +580,7 @@ static int seriesFilter(
   for(i=0; i<argc; i++){
     if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
       /* If any of the constraints have a NULL value, then return no rows.
-      ** See ticket https://www.sqlite.org/src/info/fac496b61722daf2 */
+      ** See ticket https://sqlite.org/src/info/fac496b61722daf2 */
       returnNoRows = 1;
       break;
     }

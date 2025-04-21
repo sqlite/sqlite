@@ -22,7 +22,7 @@
 ** The delta format is the Fossil delta format, described in a comment
 ** on the delete_create() function implementation below, and also at
 **
-**    https://www.fossil-scm.org/fossil/doc/trunk/www/delta_format.wiki
+**    https://fossil-scm.org/fossil/doc/trunk/www/delta_format.wiki
 **
 ** This delta format is used by the RBU extension, which is the main
 ** reason that these routines are included in the extension library.

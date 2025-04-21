@@ -1,0 +1,7 @@
+#/do/not/tclsh
+# ^^^ help out editors which guess this file's content type.
+#
+# Main configure script entry point for the "TEA-via-autosetup"
+# framework.
+use teaish/core
+teaish-configure-core

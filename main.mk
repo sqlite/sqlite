@@ -88,6 +88,10 @@ T.exe ?= $(B.exe)
 T.dll ?= $(B.dll)
 T.lib ?= $(B.lib)
 #
+# HAVE_TCL = 1 to enable full tcl support, else 0.
+#
+HAVE_TCL ?= 0
+#
 # $(TCLSH_CMD) =
 #
 # The canonical tclsh.
@@ -260,8 +264,9 @@ EXTRA_SRC ?=
 #
 # $(OPTS)=... is another way of influencing C compilation. It is
 # distinctly separate from $(OPTIONS) and $(OPT_FEATURE_FLAGS) but,
-# like those, $(OPTS) applies to all invocations of $(T.cc). The
-# configure process does not set either of $(OPTIONS) or $(OPTS).
+# like those, $(OPTS) applies to all invocations of $(T.cc) (and some
+# invocations of $(B.cc). The configure process does not set either of
+# $(OPTIONS) or $(OPTS).
 #
 OPT_FEATURE_FLAGS ?=
 #
@@ -364,11 +369,35 @@ INSTALL.noexec = $(INSTALL) -m 0644
 # ^^^ do not use GNU-specific flags to $(INSTALL), e.g. --mode=...
 
 #
-# $(T.compile) = generic target platform compiler invocation,
-# differing only from $(T.cc) in that it appends $(T.compile.extras),
-# which are primarily intended for use with gcov-related flags.
+# T.compile.gcov = gcov-specific compilation flags for the target
+# platform.
 #
-T.compile = $(T.cc) $(T.compile.extras)
+T.compile.gcov ?=
+#
+# T.link.gcov = gcov-specific link flags for the target platform.
+#
+T.link.gcov ?=
+
+#
+# $(T.compile) = generic target platform compiler invocation,
+# differing only from $(T.cc) in that it appends $(T.compile.gcov),
+# which is intended for use with gcov-related flags.
+#
+T.compile = $(T.cc) $(T.compile.gcov)
+
+#
+# Optionally set by the configure script to include -DSQLITE_DEBUG=1
+# and other debug-related flags.
+#
+T.cc.TARGET_DEBUG ?=
+
+#
+# Extra CFLAGS for both the core sqlite3 components and extensions.
+#
+# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
+# can include the generated sqlite_cfg.h.
+#
+T.cc.sqlite.extras = -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite $(T.cc.TARGET_DEBUG)
 
 #
 # $(T.cc.sqlite) is $(T.cc) plus any flags which are desired for the
@@ -376,7 +405,7 @@ T.compile = $(T.cc) $(T.compile.extras)
 # will normally get initially populated with flags by the
 # configure-generated makefile.
 #
-T.cc.sqlite ?= $(T.cc)
+T.cc.sqlite ?= $(T.compile) $(T.cc.sqlite.extras)
 
 #
 # $(CFLAGS.intree_includes) = -I... flags relevant specifically to
@@ -392,16 +421,16 @@ T.cc.sqlite += $(CFLAGS.intree_includes)
 #
 # $(T.cc.extension) = compiler invocation for loadable extensions.
 #
-T.cc.extension = $(T.compile) -I. -I$(TOP)/src -DSQLITE_CORE
+T.cc.extension = $(T.compile) -I. -I$(TOP)/src $(T.cc.sqlite.extras) -DSQLITE_CORE
 
 #
 # $(T.link) = compiler invocation for when the target will be an
 # executable.
 #
-# $(T.link.extras) = optional config-specific flags for $(T.link),
-# primarily intended for use with gcov-related flags.
+# $(T.link.gcov) = optional config-specific flags for $(T.link),
+# intended for use with gcov-related flags.
 #
-T.link = $(T.cc.sqlite) $(T.link.extras)
+T.link = $(T.cc.sqlite) $(T.link.gcov)
 #
 # $(T.link.shared) = $(T.link) invocation specifically for shared libraries
 #
@@ -1399,12 +1428,26 @@ tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
 
-tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(libsqlite3.DLL)
+#
+# STATIC_TCLSQLITE3 = 1 to statically link tclsqlite3, else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux. It won't work on glibc-based systems.
+#
+STATIC_TCLSQLITE3 ?= 0
+#
+# tclsqlite3.(deps|flags).N = N is $(STATIC_TCLSQLITE3)
+#
+tclsqlite3.deps.1 = sqlite3.o
+tclsqlite3.flags.1 = -static $(tclsqlite3.deps.1)
+tclsqlite3.deps.0 = $(libsqlite3.DLL)
+tclsqlite3.flags.0 = $(tclsqlite3.deps.0)
+tclsqlite3$(T.exe):	$(T.tcl.env.sh) tclsqlite-shell.o $(tclsqlite3.deps.$(STATIC_TCLSQLITE3))
 	$(T.link.tcl) -o $@ tclsqlite-shell.o \
-		$(libsqlite3.DLL) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
+		$(tclsqlite3.flags.$(STATIC_TCLSQLITE3)) $$TCL_INCLUDE_SPEC $$TCL_LIB_SPEC \
 		$(LDFLAGS.libsqlite3)
 tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
-tclsqlite3$(T.exe)-0 tclsqlite3$(T.exe)-:
+tclsqlite3$(T.exe)-0:
 tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
 # Rules to build opcodes.c and opcodes.h
@@ -1482,7 +1525,7 @@ all: so
 # The link named libsqlite3.so.0 is provided in an attempt to reduce
 # downstream disruption when performing upgrades from pre-3.48 to a
 # version 3.48 or higher.  That name is considered a legacy remnant
-# and will eventually be removed from this installation process.
+# and may eventually be removed from this installation process.
 #
 # Historically libtool installed the library like so:
 #
@@ -1543,6 +1586,8 @@ install-dll-unix-generic: install-dll-out-implib
 install-dll-msys: install-dll-out-implib $(install-dir.bin)
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
+# Each of {msys,mingw,cygwin} uses a different name for the DLL, but
+# that is already accounted for via $(libsqlite3.DLL).
 install-dll-mingw:  install-dll-msys
 install-dll-cygwin: install-dll-msys
 
@@ -1586,8 +1631,8 @@ pkgIndex.tcl:
 pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
-libtclsqlite3.SO = libtclsqlite3$(T.dll)
-$(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
+libtclsqlite3.DLL = libtclsqlite3$(T.dll)
+$(libtclsqlite3.DLL): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
@@ -1595,19 +1640,19 @@ $(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 # ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
 # tclConfig.sh, but it's defined in such a way as to be useless for a
 # _static_ makefile.
-$(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
-$(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
-libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
+$(libtclsqlite3.DLL)-1: $(libtclsqlite3.DLL)
+$(libtclsqlite3.DLL)-0 $(libtclsqlite3.DLL)-:
+libtcl: $(libtclsqlite3.DLL)-$(HAVE_TCL)
 tcl: libtcl
 all: tcl
 
-install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
+install-tcl-1: $(libtclsqlite3.DLL) pkgIndex.tcl
 	$(T.tcl.env.source); \
 	$(INSTALL) -d "$(DESTDIR)$$TCLLIBDIR"; \
-	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$TCLLIBDIR"; \
+	$(INSTALL) $(libtclsqlite3.DLL) "$(DESTDIR)$$TCLLIBDIR"; \
 	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$TCLLIBDIR"
 install-tcl-0 install-tcl-:
-	@echo "TCL support disabled, so not installing $(libtclsqlite3.SO)"
+	@echo "TCL support disabled, so not installing $(libtclsqlite3.DLL)"
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
 
@@ -2061,6 +2106,18 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 xbin: threadtest5
 
 #
+# STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux.
+#
+STATIC_CLI_SHELL ?= 0
+#
+# sqlite3-shell-static.flags.N = N is $(STATIC_CLI_SHELL)
+#
+sqlite3-shell-static.flags.1 = -static
+sqlite3-shell-static.flags.0 =
+#
 # When building sqlite3$(T.exe) we specifically embed a copy of
 # sqlite3.c, and not link to libsqlite3.so or libsqlite3.a, because
 # the shell needs to be able to enable arbitrary library features,
@@ -2072,6 +2129,7 @@ xbin: threadtest5
 sqlite3$(T.exe):	shell.c sqlite3.c
 	$(T.link) -o $@ \
 		shell.c sqlite3.c \
+		$(sqlite3-shell-static.flags.$(STATIC_CLI_SHELL)) \
 		$(CFLAGS.readline) $(SHELL_OPT) $(CFLAGS.icu) \
 		$(LDFLAGS.libsqlite3) $(LDFLAGS.readline)
 #
@@ -2500,7 +2558,7 @@ tidy:
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.SO) libsqlite3$(T.dll).a
+	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.DLL) libsqlite3$(T.dll).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)

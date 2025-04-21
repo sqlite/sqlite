@@ -141,7 +141,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 ** corresponding string value, then it is important that the string be
 ** derived from the numeric value, not the other way around, to ensure
 ** that the index and table are consistent.  See ticket
-** https://www.sqlite.org/src/info/343634942dd54ab (2018-01-31) for
+** https://sqlite.org/src/info/343634942dd54ab (2018-01-31) for
 ** an example.
 **
 ** This routine looks at pMem to verify that if it has both a numeric

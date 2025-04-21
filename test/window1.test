@@ -630,7 +630,7 @@ do_execsql_test 13.5 {
 } {}
 
 # 2018-12-06
-# https://www.sqlite.org/src/info/f09fcd17810f65f7
+# https://sqlite.org/src/info/f09fcd17810f65f7
 # Assertion fault when window functions are used.
 #
 # Root cause is the query flattener invoking sqlite3ExprDup() on
@@ -657,7 +657,7 @@ do_execsql_test 14.1 {
 } {1 2 3}
 
 # 2018-12-31
-# https://www.sqlite.org/src/info/d0866b26f83e9c55
+# https://sqlite.org/src/info/d0866b26f83e9c55
 # Window function in correlated subquery causes assertion fault 
 #
 do_catchsql_test 15.0 {
@@ -1205,7 +1205,7 @@ do_execsql_test 29.2 {
 
 # 2019-07-18
 # Check-in [7ef7b23cbb1b9ace] (which was itself a fix for ticket
-# https://www.sqlite.org/src/info/1be72aab9) introduced a new problem
+# https://sqlite.org/src/info/1be72aab9) introduced a new problem
 # if the LHS of a BETWEEN operator is a WINDOW function.  The problem
 # was found by (the recently enhanced) dbsqlfuzz.
 #

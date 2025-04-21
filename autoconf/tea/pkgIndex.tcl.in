@@ -1,10 +1,38 @@
 # -*- tcl -*-
-# Tcl package index file, version 1.1
+# Tcl package index file
 #
+# Unless this file is named pkgIndex.tcl.in, you are probably looking
+# at an automatically generated/filtered copy and should probably not
+# edit it.
+#
+# Adapted from https://core.tcl-lang.org/tcltls
+@if TEAISH_VSATISFIES_TCL
+if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
+  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
+}
+@endif
 if {[package vsatisfies [package provide Tcl] 9.0-]} {
-    package ifneeded sqlite3 @PACKAGE_VERSION@ \
-	    [list load [file join $dir @PKG_LIB_FILE9@] Sqlite3]
+  package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+    load [file join $dir {@TEAISH_DLL9@}] @TEAISH_LOAD_PREFIX@
+@if TEAISH_PKGINIT_TCL_TAIL
+    set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
+    if {[file exists $initScript]} {
+      source -encoding utf-8 $initScript
+    }
+@endif
+  }} $dir]
 } else {
-    package ifneeded sqlite3 @PACKAGE_VERSION@ \
-	    [list load [file join $dir @PKG_LIB_FILE8@] Sqlite3]
+  package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+    if {[string tolower [file extension {@TEAISH_DLL8@}]] in [list .dll .dylib .so]} {
+      load [file join $dir {@TEAISH_DLL8@}] @TEAISH_LOAD_PREFIX@
+    } else {
+      load {} @TEAISH_LOAD_PREFIX@
+    }
+@if TEAISH_PKGINIT_TCL_TAIL
+    set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
+    if {[file exists $initScript]} {
+      source -encoding utf-8 $initScript
+    }
+@endif
+  }} $dir]
 }

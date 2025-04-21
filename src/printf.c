@@ -1344,6 +1344,15 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   return zBuf;
 }
 
+/* Maximum size of an sqlite3_log() message. */
+#if defined(SQLITE_MAX_LOG_MESSAGE) 
+  /* Leave the definition as supplied */
+#elif SQLITE_PRINT_BUF_SIZE*10>10000
+# define SQLITE_MAX_LOG_MESSAGE 10000
+#else
+# define SQLITE_MAX_LOG_MESSAGE (SQLITE_PRINT_BUF_SIZE*10)
+#endif
+
 /*
 ** This is the routine that actually formats the sqlite3_log() message.
 ** We house it in a separate routine from sqlite3_log() to avoid using
@@ -1360,7 +1369,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 */
 static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   StrAccum acc;                          /* String accumulator */
-  char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
+  char zMsg[SQLITE_MAX_LOG_MESSAGE];     /* Complete log message */
 
   sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
   sqlite3_str_vappendf(&acc, zFormat, ap);
