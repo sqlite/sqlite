@@ -1,5 +1,5 @@
-C Update\sto\scomments\sin\ssqlite3session.h.
-D 2025-04-19T20:08:04.182
+C Do\sa\sbetter\sjob\sof\sproviding\sbug\scompatibility\swith\sSQLite\s3.44.0.\s\sSee\n[forum:/forumpost/07e206fcd6|forum\sthread\s07e206fcd6]\sfor\sbackground.
+D 2025-04-21T19:53:12.406
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c d0e1c62a9689018fe5876b1a1eb574e4ab7a40e0928e0e5adda8b3860c70e1b8
+F src/json.c d13d5e29d18b1b711d832cab48f48fab6705747abbac0ab65953c06eba74c99d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 00313d15270b36fce44f7784c97ddc42517e23c209c1ccc4d814ef06b11528c0
-R 8e876785cd8a9f724c2edd8d86d424db
-U dan
-Z ad6897ab80a5e3b64556d94fd097e39b
+P ea9acb5573f4d71a314e4467d30477a1d01c8db648985750a42b3c047f404c9c
+R ead9acfd8b581f4510534b8b584f9293
+U drh
+Z dd601f105d2c079fb81118dbb59f331e
 # Remove this line to create a well-formed Fossil manifest.
