@@ -3489,7 +3489,7 @@ jsonInsertIntoBlob_patherror:
 **
 ** The first byte of valid JSON text must be one of: '{', '[', '"', ' ', '\n',
 ** '\r', '\t', '-', or a digit '0' through '9'.  Of these, only a subset
-** can also be the first byte of JSONB:  '{', '[', '\n', '\t', and digits '3'
+** can also be the first byte of JSONB:  '{', '[', and digits '3'
 ** through '9'.  In every one of those cases, the payload size is 7 bytes
 ** or less.  So if we do full JSONB validation for every BLOB where the
 ** payload is less than 7 bytes, we will never get a false positive for
@@ -3497,16 +3497,19 @@ jsonInsertIntoBlob_patherror:
 */
 static int jsonArgIsJsonb(sqlite3_value *pArg, JsonParse *p){
   u32 n, sz = 0;
+  u8 c;
   if( sqlite3_value_type(pArg)!=SQLITE_BLOB ) return 0;
   p->aBlob = (u8*)sqlite3_value_blob(pArg);
   p->nBlob = (u32)sqlite3_value_bytes(pArg);
   if( p->nBlob>0
    && ALWAYS(p->aBlob!=0)
-   && (p->aBlob[0] & 0x0f)<=JSONB_OBJECT
+   && ((c = p->aBlob[0]) & 0x0f)<=JSONB_OBJECT
    && (n = jsonbPayloadSize(p, 0, &sz))>0
    && sz+n==p->nBlob
-   && ((p->aBlob[0] & 0x0f)>JSONB_FALSE || sz==0)
-   && (sz>7 || (sz&1)==0 || jsonbValidityCheck(p, 0, p->nBlob, 1)==0)
+   && ((c & 0x0f)>JSONB_FALSE || sz==0)
+   && (sz>7 
+      || (c!=0x7b && c!=0x5b && !sqlite3Isdigit(c))
+      || jsonbValidityCheck(p, 0, p->nBlob, 1)==0)
   ){
     return 1;
   }
@@ -4602,7 +4605,7 @@ static void jsonValidFunc(
       JsonParse py;
       memset(&py, 0, sizeof(py));
       if( jsonArgIsJsonb(argv[0], &py) ){
-        if( (flags & 0x04)!=0 || py.nBlob<=7 ){
+        if( flags & 0x04 ){
           /* Superficial checking only - accomplished by the
           ** jsonArgIsJsonb() call above. */
           res = 1;
