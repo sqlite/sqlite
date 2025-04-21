@@ -1394,7 +1394,7 @@ static u32 jsonbValidityCheck(
     case JSONB_INT5: {
       if( sz<3 ) return i+1;
       j = i+n;
-      if( z[j]=='-' || z[j]=='+' ){
+      if( z[j]=='-' ){
         if( sz<4 ) return i+1;
         j++;
       }

@@ -1,5 +1,5 @@
-C Further\simprovements\sto\sthe\sdecision\sof\swhether\sor\snot\sa\sBLOB\sinput\nis\sJSONB.
-D 2025-04-21T20:58:49.823
+C Remove\san\sextra\sconditional\sthat\swas\sinserted\searlier\stoday\sand\swhich\nis\sunreachable.
+D 2025-04-21T23:44:55.916
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c bb0f8f2fa2c0fb4cbcc3d8cc7abdaf161b341d541455069dda310645f031734c
+F src/json.c c84b0f2bae967341d5a035808d21d0619b23b6e054ceac08e7592cd87f04ed4f
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 614d061b32c3bdf4825323d6f8e8a98624e4eeeb96dd442d8e365527122ed3bc
-R 8a150a5cec72c6ab77984c7d65063b89
+P 6538813cb89f6109727481e29633e2e98f98e0257c58695e3b53e8ce237d9195
+R f846b0d70084164be308ce186bb3a97a
 U drh
-Z 59b3d2a5c6021cf082dd8b7ce8b12041
+Z 29505047856922d4c8d25e24a8f84ffb
 # Remove this line to create a well-formed Fossil manifest.
