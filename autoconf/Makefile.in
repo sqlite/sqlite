@@ -125,10 +125,8 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
 
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
-# os-specific: see
-# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
-# - https://sqlite.org/forum/forumpost/0c7fc097b2
+LDFLAGS.libsqlite3.os-specific = \
+  @LDFLAGS_MAC_CVERSION@ @LDFLAGS_MAC_INSTALL_NAME@ @LDFLAGS_OUT_IMPLIB@
 
 LDFLAGS.libsqlite3 = \
   $(LDFLAGS.rpath) $(LDFLAGS.pthread) \
@@ -193,6 +191,8 @@ install-dll-unix-generic: install-dll-out-implib
 install-dll-msys: install-dll-out-implib $(install-dir.bin)
 	$(INSTALL) $(libsqlite3.DLL) "$(install-dir.bin)"
 # ----------------------------------------------^^^ yes, bin
+# Each of {msys,mingw,cygwin} uses a different name for the DLL, but
+# that is already accounted for via $(libsqlite3.DLL).
 install-dll-mingw:  install-dll-msys
 install-dll-cygwin: install-dll-msys
 
@@ -227,9 +227,22 @@ sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS.libsqlite3)
 sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib)
 sqlite3-shell-deps.1 = $(TOP)/sqlite3.c
 sqlite3-shell-deps.0 = $(libsqlite3.DLL)
+#
+# STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
+# 0. Requires static versions of all requisite libraries. Primarily
+# intended for use with static-friendly environments like Alpine
+# Linux.
+#
+STATIC_CLI_SHELL = @STATIC_CLI_SHELL@
+#
+# sqlite3-shell-static.flags.N = N is $(STATIC_CLI_SHELL)
+#
+sqlite3-shell-static.flags.1 = -static
+sqlite3-shell-static.flags.0 =
 sqlite3$(T.exe): $(TOP)/shell.c $(sqlite3-shell-deps.$(ENABLE_STATIC_SHELL))
 	$(CC) -o $@ \
 		$(TOP)/shell.c $(sqlite3-shell-link-flags.$(ENABLE_STATIC_SHELL)) \
+		$(sqlite3-shell-static.flags.$(STATIC_CLI_SHELL)) \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
 		$(LDFLAGS) $(LDFLAGS.readline)
@@ -280,7 +293,6 @@ dist:
 	rm -fr $(dist_name)
 	mkdir -p $(dist_name)
 	cp -rp $(DIST_FILES) $(dist_name)/.
-	rm -f $(dist_name)/tea/configure.ac.in
 	tar czf $(dist_tarball) $(dist_name)
 	rm -fr $(dist_name)
 	ls -l $(dist_tarball)

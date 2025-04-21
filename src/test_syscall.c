@@ -686,7 +686,7 @@ static int SQLITE_TCLAPI test_syscall_pagesize(
     }
   }else{
     if( pgsz<512 || (pgsz & (pgsz-1)) ){
-      Tcl_AppendResult(interp, "pgsz out of range", 0);
+      Tcl_AppendResult(interp, "pgsz out of range", NULL);
       return TCL_ERROR;
     }
     gSyscall.orig_getpagesize = pVfs->xGetSystemCall(pVfs, "getpagesize");
@@ -729,7 +729,7 @@ static int SQLITE_TCLAPI test_syscall(
     return TCL_ERROR;
   }
   if( pVfs->iVersion<3 || pVfs->xSetSystemCall==0 ){
-    Tcl_AppendResult(interp, "VFS does not support xSetSystemCall", 0);
+    Tcl_AppendResult(interp, "VFS does not support xSetSystemCall", NULL);
     rc = TCL_ERROR;
   }else{
     rc = Tcl_GetIndexFromObjStruct(interp, 

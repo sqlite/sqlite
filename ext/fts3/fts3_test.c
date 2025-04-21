@@ -219,7 +219,7 @@ static int SQLITE_TCLAPI fts3_near_match_cmd(
     rc = Tcl_ListObjGetElements(interp, pPhrase, &nToken, &apToken);
     if( rc!=TCL_OK ) goto near_match_out;
     if( nToken>NM_MAX_TOKEN ){
-      Tcl_AppendResult(interp, "Too many tokens in phrase", 0);
+      Tcl_AppendResult(interp, "Too many tokens in phrase", NULL);
       rc = TCL_ERROR;
       goto near_match_out;
     }
@@ -547,7 +547,7 @@ static int SQLITE_TCLAPI fts3_test_varint_cmd(
   if( w!=w2 || nByte!=nByte2 ){
     char *zErr = sqlite3_mprintf("error testing %lld", w);
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, zErr, 0);
+    Tcl_AppendResult(interp, zErr, NULL);
     return TCL_ERROR;
   }
 
@@ -557,7 +557,7 @@ static int SQLITE_TCLAPI fts3_test_varint_cmd(
     if( (int)w!=i || nByte!=nByte2 ){
       char *zErr = sqlite3_mprintf("error testing %lld (32-bit)", w);
       Tcl_ResetResult(interp);
-      Tcl_AppendResult(interp, zErr, 0);
+      Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
   }

@@ -34,7 +34,7 @@ struct TestStreamInput {
 static int dbHandleFromObj(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **pDb){
   Tcl_CmdInfo info;
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(pObj), &info) ){
-    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(pObj), 0);
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(pObj), NULL);
     return TCL_ERROR;
   }
 
@@ -130,7 +130,7 @@ static int SQLITE_TCLAPI test_sql_exec_changeset(
   rc = sql_exec_changeset(db, zSql, &nChangeset, &pChangeset);
   if( rc!=SQLITE_OK ){
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "error in sql_exec_changeset()", 0);
+    Tcl_AppendResult(interp, "error in sql_exec_changeset()", NULL);
     return TCL_ERROR;
   }
 
@@ -166,7 +166,7 @@ static int test_session_error(Tcl_Interp *interp, int rc, char *zErr){
   extern const char *sqlite3ErrName(int);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
   if( zErr ){
-    Tcl_AppendResult(interp, " - ", zErr, 0);
+    Tcl_AppendResult(interp, " - ", zErr, NULL);
     sqlite3_free(zErr);
   }
   return TCL_ERROR;
@@ -435,7 +435,7 @@ static int SQLITE_TCLAPI test_sqlite3session(
   }
 
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[2]), &info) ){
-    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), NULL);
     return TCL_ERROR;
   }
   db = *(sqlite3 **)info.objClientData;
@@ -832,7 +832,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     return TCL_ERROR;
   }
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
-    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[1]), 0);
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[1]), NULL);
     return TCL_ERROR;
   }
   db = *(sqlite3 **)info.objClientData;
@@ -924,7 +924,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply_replace_all(
     return TCL_ERROR;
   }
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
-    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), NULL);
     return TCL_ERROR;
   }
   db = *(sqlite3 **)info.objClientData;
@@ -1551,7 +1551,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       TestChangeIter *pIter = 0;
       const char *zIter = Tcl_GetString(objv[2]);
       if( 0==Tcl_GetCommandInfo(interp, zIter, &cmdInfo) ){
-        Tcl_AppendResult(interp, "no such iter: ", Tcl_GetString(objv[2]), 0);
+        Tcl_AppendResult(interp, "no such iter: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
       }
 

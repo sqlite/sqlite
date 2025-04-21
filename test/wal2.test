@@ -26,7 +26,7 @@ ifcapable !wal {finish_test ; return }
 set sqlite_sync_count 0
 proc cond_incr_sync_count {adj} {
   global sqlite_sync_count
-  if {$::tcl_platform(platform) == "windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     incr sqlite_sync_count $adj
   } {
     ifcapable !dirsync {
@@ -1038,7 +1038,7 @@ tvfs delete
 # the new files with the same file-system permissions as the database 
 # file itself. Test this.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   faultsim_delete_and_reopen
   # Changed on 2012-02-13: umask is deliberately ignored for -wal files.
   #set umask [exec /bin/sh -c umask]
@@ -1094,7 +1094,7 @@ if {$::tcl_platform(platform) == "unix"} {
 # database, wal or shm files cannot be opened, or can only be opened
 # read-only.
 #
-if {$::tcl_platform(platform) == "unix"} {
+if {$::tcl_platform(os) ne "Windows NT"} {
   proc perm {} {
     set L [list]
     foreach f {test.db test.db-wal test.db-shm} {

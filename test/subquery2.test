@@ -104,7 +104,7 @@ do_execsql_test 2.2 {
 } {2 3   3 6   4 10}
 
 ############################################################################
-# Ticket http://www.sqlite.org/src/info/d11a6e908f (2014-09-20)
+# Ticket http://sqlite.org/src/info/d11a6e908f (2014-09-20)
 # Query planner fault on three-way nested join with compound inner SELECT 
 #
 do_execsql_test 3.0 {

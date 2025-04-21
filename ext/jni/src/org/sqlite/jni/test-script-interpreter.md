@@ -4,7 +4,7 @@
 
 The purpose of the Test Script Interpreter is to read and interpret
 script files that contain SQL commands and desired results.  The
-interpreter will check results and report any discrepencies found.
+interpreter will check results and report any discrepancies found.
 
 The test script files are ASCII text files.  The filename always ends with
 ".test".  Each script is evaluated independently; context does not carry
@@ -160,7 +160,7 @@ the result buffer.  This distinction does not matter for the --result
 command itself, but it is important for related commands like --glob
 and --notglob.  Sometimes test cases will contains a bunch of SQL
 followed by multiple --glob and/or --notglob statements.  All of the
-globs should be evaluated agains the result buffer, but the SQL should
+globs should be evaluated against the result buffer, but the SQL should
 only be run once.  This is accomplished by resetting the input buffer
 but not the result buffer.
 

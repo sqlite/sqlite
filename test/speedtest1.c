@@ -35,6 +35,7 @@ static const char zHelp[] =
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --fullfsync         Enable fullfsync=TRUE\n"
+  "  --hard-heap-limit N The hard limit on the maximum heap size\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journal M         Set the journal_mode to M\n"
@@ -60,6 +61,7 @@ static const char zHelp[] =
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
+  "  --soft-heap-limit N The soft limit on the maximum heap size\n"
   "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
   "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
@@ -542,6 +544,7 @@ char *speedtest1_once(const char *zFormat, ...){
   char *zSql;
   sqlite3_stmt *pStmt;
   char *zResult = 0;
+  int rc;
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
@@ -560,6 +563,12 @@ char *speedtest1_once(const char *zFormat, ...){
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *z = (const char*)sqlite3_column_text(pStmt, 0);
       if( z ) zResult = sqlite3_mprintf("%s", z);
+    }
+    rc = sqlite3_reset(pStmt);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "%s\nError code %d: %s\n",
+              sqlite3_sql(pStmt), rc, sqlite3_errmsg(g.db));
+      exit(1);
     }
     sqlite3_finalize(pStmt);
   }
@@ -590,7 +599,7 @@ void speedtest1_prepare(const char *zFormat, ...){
 
 /* Run an SQL statement previously prepared */
 void speedtest1_run(void){
-  int i, n, len;
+  int i, n, len, rc;
   if( g.bSqlOnly ) return;
   assert( g.pStmt );
   g.nResult = 0;
@@ -649,12 +658,22 @@ void speedtest1_run(void){
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
     sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
-    sqlite3_finalize(g.pStmt);
+    rc = sqlite3_finalize(g.pStmt);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "%s\nError code %d: %s\n",
+                      sqlite3_sql(pNew), rc, sqlite3_errmsg(g.db));
+      exit(1);
+    }
     g.pStmt = pNew;
   }else
 #endif
   {
-    sqlite3_reset(g.pStmt);
+    rc = sqlite3_reset(g.pStmt);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "%s\nError code %d: %s\n",
+                      sqlite3_sql(g.pStmt), rc, sqlite3_errmsg(g.db));
+      exit(1);
+    }
   }
   speedtest1_shrink_memory();
 }
@@ -2949,6 +2968,8 @@ int main(int argc, char **argv){
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
   const char *zKey = 0;         /* Encryption key */
+  int nHardHeapLmt = 0;         /* The hard heap limit */
+  int nSoftHeapLmt = 0;         /* The soft heap limit */
   int nLook = -1, szLook = 0;   /* --lookaside configuration */
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
@@ -3021,6 +3042,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"explain")==0 ){
         g.bSqlOnly = 1;
         g.bExplain = 1;
+      }else if( strcmp(z,"hard-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nHardHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"heap")==0 ){
         ARGC_VALUE_CHECK(2);
         nHeap = integerValue(argv[i+1]);
@@ -3110,6 +3135,10 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"size")==0 ){
         ARGC_VALUE_CHECK(1);
         g.szTest = g.szBase = integerValue(argv[++i]);
+      }else if( strcmp(z,"soft-heap-limit")==0 ){
+        ARGC_VALUE_CHECK(1);
+        nSoftHeapLmt = integerValue(argv[i+1]);
+        i += 1;
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"temp")==0 ){
@@ -3267,6 +3296,15 @@ int main(int argc, char **argv){
   }
   if( doExclusive ){
     speedtest1_exec("PRAGMA locking_mode=EXCLUSIVE");
+  }
+  if( zJMode ){
+    speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
+  }
+  if( nHardHeapLmt>0 ){
+    speedtest1_exec("PRAGMA hard_heap_limit=%d", nHardHeapLmt);
+  }
+  if( nSoftHeapLmt>0 ){
+    speedtest1_exec("PRAGMA soft_heap_limit=%d", nSoftHeapLmt);
   }
   if( zJMode ){
     speedtest1_exec("PRAGMA journal_mode=%s", zJMode);

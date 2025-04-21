@@ -12,14 +12,9 @@
 ** This file declares the main JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni.capi;
-import java.nio.charset.StandardCharsets;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import org.sqlite.jni.annotation.*;
 import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
+import org.sqlite.jni.annotation.*;
 
 /**
   This class contains the entire C-style sqlite3 JNI API binding,
@@ -169,7 +164,7 @@ public final class CApi {
      <p>Like the C API, it returns 0 if allocation fails or if
      initialize is false and no prior aggregate context was allocated
      for cx.  If initialize is true then it returns 0 only on
-     allocation error. In all casses, 0 is considered the sentinel
+     allocation error. In all cases, 0 is considered the sentinel
      "not a key" value.
   */
   public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
@@ -563,7 +558,7 @@ public final class CApi {
     sqlite3_blob_open(db.getNativePointer(), dbName, tableName, columnName,
                       iRow, flags, out);
     return out.take();
-  };
+  }
 
   private static native int sqlite3_blob_read(
     @NotNull long ptrToBlob, @NotNull byte[] target, int srcOffset
@@ -1298,7 +1293,7 @@ public final class CApi {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     sqlite3_open(filename, out);
     return out.take();
-  };
+  }
 
   public static native int sqlite3_open_v2(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb,
@@ -1314,7 +1309,7 @@ public final class CApi {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     sqlite3_open_v2(filename, out, flags, zVfs);
     return out.take();
-  };
+  }
 
   /**
      The sqlite3_prepare() family of functions require slightly
@@ -1410,7 +1405,7 @@ public final class CApi {
 
   /**
      Works like the canonical sqlite3_prepare_v2() but its "tail"
-     output paramter is returned as the index offset into the given
+     output parameter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
   public static int sqlite3_prepare_v2(
@@ -1462,7 +1457,7 @@ public final class CApi {
 
   /**
      Works like the canonical sqlite3_prepare_v2() but its "tail"
-     output paramter is returned as the index offset into the given
+     output parameter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
   public static int sqlite3_prepare_v3(
@@ -1542,7 +1537,7 @@ public final class CApi {
     int rc = 0;
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     while( 0==rc && pos<sqlChunk.length ){
-      sqlite3_stmt stmt = null;
+      sqlite3_stmt stmt;
       if( pos>0 ){
         sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
                                       sqlChunk.length);

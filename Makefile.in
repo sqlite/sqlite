@@ -122,10 +122,13 @@ LDFLAGS.rt = @LDFLAGS_RT@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-LDFLAGS.libsqlite3.os-specific = @LDFLAGS_MAC_CVERSION@ @LDFLAGS_OUT_IMPLIB@
+LDFLAGS.libsqlite3.os-specific = \
+  @LDFLAGS_MAC_CVERSION@ @LDFLAGS_MAC_INSTALL_NAME@ @LDFLAGS_OUT_IMPLIB@
 # os-specific: see
 # - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # - https://sqlite.org/forum/forumpost/0c7fc097b2
+# - https://sqlite.org/forum/forumpost/5651662b8875ec0a
+
 libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
 # DLL.basename: see https://sqlite.org/forum/forumpost/828fdfe904
 libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
@@ -138,16 +141,10 @@ libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 # -fsanitize flags for the fuzzcheck-asap app
 CFLAGS.fuzzcheck-asan.fsanitize = @CFLAGS_ASAN_FSANITIZE@
 
-T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
-
 #
-# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
-# can include the generated sqlite_cfg.h.
+# Intended to either be empty or be set to -g -DSQLITE_DEBUG=1.
 #
-# main.mk will fill out T.cc.sqlite with additional flags common to
-# all builds.
-#
-T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+T.cc.TARGET_DEBUG = @TARGET_DEBUG@
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -246,8 +243,8 @@ TSTRNNR_OPTS = @TSTRNNR_OPTS@
 CFLAGS.gcov1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 LDFLAGS.gcov1 = -lgcov
 USE_GCOV = @USE_GCOV@
-T.compile.extras = $(CFLAGS.gcov$(USE_GCOV))
-T.link.extras = $(LDFLAGS.gcov$(USE_GCOV))
+T.compile.gcov = $(CFLAGS.gcov$(USE_GCOV))
+T.link.gcov = $(LDFLAGS.gcov$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.
@@ -265,6 +262,8 @@ USE_AMALGAMATION ?= @USE_AMALGAMATION@
 LINK_TOOLS_DYNAMICALLY ?= @LINK_TOOLS_DYNAMICALLY@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
 EXTRA_SRC ?= @AMALGAMATION_EXTRA_SRC@
+STATIC_TCLSQLITE3 = @STATIC_TCLSQLITE3@
+STATIC_CLI_SHELL = @STATIC_CLI_SHELL@
 
 #
 # CFLAGS for sqlite3$(T.exe)

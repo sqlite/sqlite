@@ -799,7 +799,7 @@ do_execsql_test join-14.9 {
 } {111 {}}
 
 # Verify the fix to ticket 
-# https://www.sqlite.org/src/tktview/7fde638e94287d2c948cd9389
+# https://sqlite.org/src/tktview/7fde638e94287d2c948cd9389
 #
 db close
 sqlite3 db :memory:
@@ -819,7 +819,7 @@ do_execsql_test join-14.12 {
 } {4 {} {} | 2 2 1 |}
 
 # Verify the fix for ticket
-# https://www.sqlite.org/src/info/892fc34f173e99d8
+# https://sqlite.org/src/info/892fc34f173e99d8
 #
 db close
 sqlite3 db :memory:
@@ -904,7 +904,7 @@ do_execsql_test join-15.110 {
    ORDER BY a1, a2, a3, a4, a5;
 } {1 {} {} {} {} 1 11 {} {} {} 1 12 {} {} {} 1 12 121 {} {} 1 13 {} {} {}}
 
-# 2019-02-05 Ticket https://www.sqlite.org/src/tktview/5948e09b8c415bc45da5c
+# 2019-02-05 Ticket https://sqlite.org/src/tktview/5948e09b8c415bc45da5c
 # Error in join due to the LEFT JOIN strength reduction optimization.
 #
 do_execsql_test join-16.100 {
