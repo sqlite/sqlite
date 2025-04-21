@@ -1216,6 +1216,8 @@ static int sessionInitTable(
   if( pTab->nCol==0 ){
     u8 *abPK;
     assert( pTab->azCol==0 || pTab->abPK==0 );
+    sqlite3_free(pTab->azCol);
+    pTab->abPK = 0;
     rc = sessionTableInfo(pSession, db, zDb, 
         pTab->zName, &pTab->nCol, &pTab->nTotalCol, 0, &pTab->azCol, 
         &pTab->azDflt, &pTab->aiIdx, &abPK,
@@ -2223,7 +2225,9 @@ int sqlite3session_diff(
     SessionTable *pTo;            /* Table zTbl */
 
     /* Locate and if necessary initialize the target table object */
+    pSession->bAutoAttach++;
     rc = sessionFindTable(pSession, zTbl, &pTo);
+    pSession->bAutoAttach--;
     if( pTo==0 ) goto diff_out;
     if( sessionInitTable(pSession, pTo, pSession->db, pSession->zDb) ){
       rc = pSession->rc;
@@ -2234,17 +2238,43 @@ int sqlite3session_diff(
     if( rc==SQLITE_OK ){
       int bHasPk = 0;
       int bMismatch = 0;
-      int nCol;                   /* Columns in zFrom.zTbl */
+      int nCol = 0;               /* Columns in zFrom.zTbl */
       int bRowid = 0;
-      u8 *abPK;
+      u8 *abPK = 0;
       const char **azCol = 0;
-      rc = sessionTableInfo(0, db, zFrom, zTbl, 
-          &nCol, 0, 0, &azCol, 0, 0, &abPK, 
-          pSession->bImplicitPK ? &bRowid : 0
-      );
+      char *zDbExists = 0;
+
+      /* Check that database zFrom is attached.  */
+      zDbExists = sqlite3_mprintf("SELECT * FROM %Q.sqlite_schema", zFrom);
+      if( zDbExists==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        sqlite3_stmt *pDbExists = 0;
+        rc = sqlite3_prepare_v2(db, zDbExists, -1, &pDbExists, 0);
+        if( rc==SQLITE_ERROR ){
+          rc = SQLITE_OK;
+          nCol = -1;
+        }
+        sqlite3_finalize(pDbExists);
+        sqlite3_free(zDbExists);
+      }
+
+      if( rc==SQLITE_OK && nCol==0 ){
+        rc = sessionTableInfo(0, db, zFrom, zTbl, 
+            &nCol, 0, 0, &azCol, 0, 0, &abPK, 
+            pSession->bImplicitPK ? &bRowid : 0
+        );
+      }
       if( rc==SQLITE_OK ){
         if( pTo->nCol!=nCol ){
-          bMismatch = 1;
+          if( nCol<=0 ){
+            rc = SQLITE_SCHEMA;
+            if( pzErrMsg ){
+              *pzErrMsg = sqlite3_mprintf("no such table: %s.%s", zFrom, zTbl);
+            }
+          }else{
+            bMismatch = 1;
+          }
         }else{
           int i;
           for(i=0; i<nCol; i++){

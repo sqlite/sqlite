@@ -444,7 +444,7 @@ foreach {tn isvalid ws} {
   $isvalid
 }
 
-# Ticket https://www.sqlite.org/src/info/ad2559db380abf8e
+# Ticket https://sqlite.org/src/info/ad2559db380abf8e
 # Control characters must be escaped in JSON strings.
 #
 do_execsql_test json101-8.1 {
@@ -807,7 +807,7 @@ do_execsql_test json101-10.95 {
 } {0}
 
 #--------------------------------------------------------------------------
-# 2017-04-11.  https://www.sqlite.org/src/info/981329adeef51011
+# 2017-04-11.  https://sqlite.org/src/info/981329adeef51011
 # Stack overflow on deeply nested JSON.
 #
 # The following tests confirm that deeply nested JSON is considered invalid.
@@ -878,7 +878,7 @@ do_execsql_test json101-12.120b {
 } {0}
 
 # 2018-01-26
-# ticket https://www.sqlite.org/src/tktview/80177f0c226ff54f6ddd41
+# ticket https://sqlite.org/src/tktview/80177f0c226ff54f6ddd41
 # Make sure the query planner knows about the arguments to table-valued functions.
 #
 do_execsql_test json101-13.100 {

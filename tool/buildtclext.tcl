@@ -75,7 +75,7 @@ set fd [open $srcdir/VERSION]
 set VERSION [string trim [read $fd]]
 close $fd
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   # We are only able to install, uninstall, and list on Windows.
   # The build process is handled by the Makefile.msc, specifically
   # using "nmake /f Makefile.msc pkgIndex.tcl tclsqlite3.dll"
@@ -149,15 +149,20 @@ if {$tcl_platform(platform)=="windows"} {
     append INC " $inc"
   }
   set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
-  regexp {TCL_SHLIB_LD='([^']+)'} $tclConfig all cmd
+  regexp {TCL_SHLIB_LD='([^']+)(-Wl,--out-implib.*)?'} $tclConfig all cmd
   set LDFLAGS "$INC -DUSE_TCL_STUBS"
   if {[string length $OPTS]>1} {
     append LDFLAGS $OPTS
   }
-  if {$TCLMAJOR>8} {
-    set OUT libtcl9sqlite$VERSION.$SUFFIX
+  if {$tcl_platform(os) eq "Windows NT"} {
+    set OUT cyg
   } else {
-    set OUT libsqlite$VERSION.$SUFFIX
+    set OUT lib
+  }
+  if {$TCLMAJOR>8} {
+    set OUT ${OUT}tcl9sqlite$VERSION.$SUFFIX
+  } else {
+    set OUT ${OUT}sqlite$VERSION.$SUFFIX
   }
   set @ $OUT; # Workaround for https://sqlite.org/forum/forumpost/0683a49cb02f31a1
               # in which Gentoo edits their tclConfig.sh to include an soname
@@ -295,7 +300,7 @@ package ifneeded sqlite3 $VERSION \\
 
   # Generate and execute the command with which to do the compilation.
   #
-  set cmd "$CMD tclsqlite3.c -o $OUT $LIBS"
+  set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT $LIBS"
   puts $cmd
   file delete -force $OUT
   catch {exec {*}$cmd} errmsg

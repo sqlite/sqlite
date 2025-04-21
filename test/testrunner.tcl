@@ -38,7 +38,7 @@ proc find_interpreter {} {
   }
   if {$rc} {
     puts "Cannot find tcl package sqlite3: Trying to build it now..."
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       set bat [open make-tcl-extension.bat w]
       puts $bat "nmake /f Makefile.msc tclextension"
       close $bat
@@ -170,7 +170,7 @@ proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
   
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
       if {$::tcl_platform(os)=="Darwin"} {
@@ -263,6 +263,19 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(shell)       sqlite3.exe
     set TRG(run)         run.bat
     set TRG(runcmd)      "run.bat"
+    if {"unix" eq $tcl_platform(platform)} {
+      # Presumably cygwin. This block gets testrunner.tcl started on
+      # Cygwin but then downstream tests all fail, at least in part
+      # because of the discrepancies in build target names which need
+      # .exe on cygwin but not on other Unix-like platforms.
+      set TRG(platform)  cygwin
+      set TRG(make)      make.sh
+      set TRG(makecmd)   "bash make.sh"
+      set TRG(testfixture) testfixture
+      set TRG(shell)       sqlite3
+      set TRG(run)       run.sh
+      set TRG(runcmd)    "bash run.sh"
+    }
   }
   default {
     puts "tcl_platform(os)=$::tcl_platform(os)"
@@ -804,7 +817,7 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {[string match "$a*" --stop-on-coredump]} {
       set TRG(stopOnCore) 1
     } elseif {[string match "$a*" --status]} {
-      if {$tcl_platform(platform)=="windows"} {
+      if {$tcl_platform(platform) eq "windows"} {
         puts stdout \
 "The --status option is not available on Windows. A suggested work-around"
         puts stdout \
@@ -1487,7 +1500,7 @@ proc progress_report {} {
   global TRG
 
   if {$TRG(fullstatus)} {
-    if {$::tcl_platform(platform)=="windows"} {
+    if {$::tcl_platform(platform) eq "windows"} {
       exec [info nameofexe] $::argv0 status --cls
     } else {
       show_status trdb 1

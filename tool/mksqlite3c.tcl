@@ -111,7 +111,7 @@ puts $out [subst \
 ** separate file. This file contains only code for the core SQLite library.
 **}]
 set srcroot [file dirname [file dirname [info script]]]
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set vsrcprog src-verify.exe
 } else {
   set vsrcprog ./src-verify

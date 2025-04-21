@@ -195,7 +195,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
       possible, identically to the C-native counterparts, as documented at:
 
-      https://www.sqlite.org/c3ref/intro.html
+      https://sqlite.org/c3ref/intro.html
 
       A very few exceptions require an additional level of proxy
       function or may otherwise require special attention in the WASM
@@ -663,7 +663,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        free those pointers (using `wasm.uninstallFunction()` or
        equivalent).
 
-       C reference: https://www.sqlite.org/c3ref/create_function.html
+       C reference: https://sqlite.org/c3ref/create_function.html
 
        Maintenance reminder: the ability to add new
        WASM-accessible functions to the runtime requires that the

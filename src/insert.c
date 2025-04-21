@@ -2113,7 +2113,7 @@ void sqlite3GenerateConstraintChecks(
   ** could happen in any order, but they are grouped up front for
   ** convenience.
   **
-  ** 2018-08-14: Ticket https://www.sqlite.org/src/info/908f001483982c43
+  ** 2018-08-14: Ticket https://sqlite.org/src/info/908f001483982c43
   ** The order of constraints used to have OE_Update as (2) and OE_Abort
   ** and so forth as (1). But apparently PostgreSQL checks the OE_Update
   ** constraint before any others, so it had to be moved.

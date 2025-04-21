@@ -1808,7 +1808,7 @@ int sqlite3_bind_text64(
   assert( xDel!=SQLITE_DYNAMIC );
   if( enc!=SQLITE_UTF8 ){
     if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
-    nData &= ~(u16)1;
+    nData &= ~(u64)1;
   }
   return bindText(pStmt, i, zData, nData, xDel, enc);
 }
