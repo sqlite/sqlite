@@ -1002,7 +1002,7 @@ do_execsql_test expr-13.9 {
   SELECT '' <= "";
 } {1}
 
-# 2018-02-26. Ticket https://www.sqlite.org/src/tktview/36fae083b450e3af85
+# 2018-02-26. Ticket https://sqlite.org/src/tktview/36fae083b450e3af85
 # 
 do_execsql_test expr-14.1 {
   DROP TABLE IF EXISTS t1;

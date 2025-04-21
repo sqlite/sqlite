@@ -584,7 +584,7 @@ datetest 16.30 {datetime(5373484,'-14712 years')} {-4713-12-31 12:00:00}
 datetest 16.31 {datetime(5373484,'-14713 years')} NULL
 
 # 2017-03-02: Wrong 'start of day' computation.
-# https://www.sqlite.org/src/info/6097cb92745327a1
+# https://sqlite.org/src/info/6097cb92745327a1
 #
 datetest 17.1 {datetime(2457754, 'start of day')} {2016-12-31 00:00:00}
 datetest 17.2 {datetime(2457828)} {2017-03-15 12:00:00}

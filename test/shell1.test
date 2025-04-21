@@ -515,6 +515,7 @@ do_test shell1-3.15.3 {
 } {1 {ERROR: extra parameter: "BAD".  Usage:
 .output ?FILE?           Send output to FILE or stdout if FILE is omitted
    If FILE begins with '|' then open it as a pipe.
+   If FILE is 'off' then output is disabled.
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
@@ -533,6 +534,7 @@ do_test shell1-3.16.2 {
 } {1 {ERROR: extra parameter: "BAD".  Usage:
 .output ?FILE?           Send output to FILE or stdout if FILE is omitted
    If FILE begins with '|' then open it as a pipe.
+   If FILE is 'off' then output is disabled.
    Options:
      --bom                 Prefix output with a UTF8 byte-order mark
      -e                    Send output to the system text editor
@@ -1064,20 +1066,20 @@ do_test shell1-5.0 {
     #       return character (and on Windows, the end-of-file character)
     #       cannot be used here.
     #
-    if {$i==0x0D || ($tcl_platform(platform)=="windows" && $i==0x1A)} {
+    if {$i==0x0D || ($tcl_platform(platform) eq "windows" && $i==0x1A)} {
       continue
     }
     # Tcl 8.7 maps 0x80 through 0x9f into valid UTF8.  So skip those tests.
     if {$i>=0x80} {
       if {$i<=0x9F || $tcl_version>=9.0} continue
-      if {$tcl_platform(platform)=="windows"} continue
+      if {$tcl_platform(platform) eq "windows"} continue
     }
-    if {$i>=0xE0 && $tcl_platform(os)=="OpenBSD"}  continue
-    if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os)=="Linux"}  continue
+    if {$i>=0xE0 && $tcl_platform(os) eq "OpenBSD"}  continue
+    if {$i>=0xE0 && $i<=0xEF && $tcl_platform(os) eq "Linux"}  continue
     set hex [format %02X $i]
     set char [subst \\x$hex]; set oldChar $char
     set escapes [list]
-    if {$tcl_platform(platform)=="windows"} {
+    if {$tcl_platform(platform) eq "windows"} {
       #
       # NOTE: On Windows, we need to escape all the whitespace characters,
       #       the alarm (\a) character, and those with special meaning to

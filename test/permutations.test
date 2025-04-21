@@ -103,7 +103,7 @@ foreach f [glob -nocomplain $testdir/../ext/session/*.test] {
 }
 unset f
 
-if {$::tcl_platform(platform)!="unix"} {
+if {$::tcl_platform(platform) ne "unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
 }
 set alltests [test_set $alltests -exclude {

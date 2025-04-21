@@ -1823,7 +1823,7 @@ do_test pragma-19.5 {
   file tail [lindex [execsql {PRAGMA filename}] 0]
 } {test.db}
 
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
 # Test data_store_directory pragma
 #
 db close

@@ -351,7 +351,7 @@ static int SQLITE_TCLAPI superlock_cmd(
   if( rc!=SQLITE_OK ){
     extern const char *sqlite3ErrStr(int);
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrStr(rc), NULL);
     return TCL_ERROR;
   }
 

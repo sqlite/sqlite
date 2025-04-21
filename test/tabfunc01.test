@@ -194,6 +194,63 @@ do_execsql_test tabfunc01-5.2 {
    WHERE value=67;
 } 67
 
+# 2025-03-22 forum post 0d5d63257e3ff4f6
+#
+do_execsql_test tabfunc01-6.1 {
+  SELECT value FROM generate_series(1,10) WHERE value<5.5;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.2 {
+  SELECT value FROM generate_series(1,10) WHERE value<5.0;
+} {1 2 3 4}
+do_execsql_test tabfunc01-6.3 {
+  SELECT value FROM generate_series(1,10) WHERE value<=5.5;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.4 {
+  SELECT value FROM generate_series(1,10) WHERE value<=5.0;
+} {1 2 3 4 5}
+do_execsql_test tabfunc01-6.5 {
+  SELECT value FROM generate_series(1,10) WHERE value>5.5;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.6 {
+  SELECT value FROM generate_series(1,10) WHERE value>5.0;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.7 {
+  SELECT value FROM generate_series(1,10) WHERE value>=5.5;
+} {6 7 8 9 10}
+do_execsql_test tabfunc01-6.8 {
+  SELECT value FROM generate_series(1,10) WHERE value>=5.0;
+} {5 6 7 8 9 10}
+do_execsql_test tabfunc01-6.9 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<5.5;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.10 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<5.0;
+} {4 3 2 1}
+do_execsql_test tabfunc01-6.11 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<=5.5;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.12 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<=5.0;
+} {5 4 3 2 1}
+do_execsql_test tabfunc01-6.13 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>5.5;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.14 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>5.0;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.15 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>=5.5;
+} {10 9 8 7 6}
+do_execsql_test tabfunc01-6.16 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value>=5.0;
+} {10 9 8 7 6 5}
+do_execsql_test tabfunc01-6.17 {
+  SELECT value FROM generate_series(1,10) WHERE value==5.5;
+} {}
+do_execsql_test tabfunc01-6.18 {
+  SELECT value FROM generate_series(1,10) WHERE value==5.0;
+} {5}
+
 # The next series of tests is verifying that virtual table are able
 # to optimize the IN operator, even on terms that are not marked "omit".
 # When the generate_series virtual table is compiled for the testfixture,
@@ -282,7 +339,7 @@ do_test tabfunc01-750 {
   }
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 
-# ticket https://www.sqlite.org/src/info/2ae0c599b735d59e
+# ticket https://sqlite.org/src/info/2ae0c599b735d59e
 # Verification of testtag-20230227a
 do_test tabfunc01-751 {
   db eval {

@@ -55,7 +55,7 @@ static int subst_puts(
     }else if( strcmp(zArg, "-nonewline")==0 ){
       addNewLine = 0;
     }else{
-      Tcl_AppendResult(interp, "bad argument: ", zArg, 0);
+      Tcl_AppendResult(interp, "bad argument: ", zArg, NULL);
       return TCL_ERROR;
     }
   }
