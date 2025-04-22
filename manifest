@@ -1,5 +1,5 @@
-C Generic\scleanups\sand\sfixes\sin\sthe\steaish\sbuild.
-D 2025-04-22T01:01:19.374
+C Latest\supstream\sjimtcl\sto\sfix\srare\ssegfault\scases.
+D 2025-04-22T09:29:53.190
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -49,7 +49,7 @@ F autosetup/cc-lib.tcl 493c5935b5dd3bf9bd4eca89b07c8b1b1a9356d61783035144e21795f
 F autosetup/cc-shared.tcl 4f024e94a47f427ba61de1739f6381ef0080210f9fae89112d5c1de1e5460d78
 F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e45f
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
-F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
+F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 3eb8e6c74002fc89a1543406039bc36a9347e6deda90fadd00a7436820d38014
 F autosetup/sqlite-config.tcl bde169c42d5d5331485ae7785f5dd19ca1aa01315787e8306441c472ad4e4201
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ea56af2d27611c5a8ea275316d21a02e70032f93243549ae776e9a89edc6229
-R d6b619df788366d9b93ebd1a1771f590
+P 734823a5a8e073b511ebc3f37df3542c1bb734b9b1e1bd50ca3e9df12c4bb89e
+R 7314569e2f49380ba2ad4032f6be829d
 U stephan
-Z ae25c7334f797c5472e3ad844051b2c6
+Z 5242a8cac856aa0cbd261ef3d21cb581
 # Remove this line to create a well-formed Fossil manifest.
