@@ -139,7 +139,7 @@ proc proj-assert {script {msg ""}} {
     if {"" eq $msg} {
       set msg $script
     }
-    proj-fatal "Assertion failed: $msg"
+    proj-fatal "Assertion failed in \[[proj-current-scope 1]\]: $msg"
   }
 }
 
@@ -297,7 +297,7 @@ proc proj-search-for-header-dir {header args} {
       -dirs     { set args [lassign $args - dirs] }
       -subdirs  { set args [lassign $args - subdirs] }
       default   {
-        proj-fatal "Unhandled argument: $args"
+        proj-error "Unhandled argument: $args"
       }
     }
   }
@@ -2064,7 +2064,7 @@ proc proj-coalesce {args} {
 #   -flag defaultValue {script}
 #
 #   -flag => defaultValue
-#   -----^--^ (wiith spaces there!)
+#   -----^--^ (with spaces there!)
 #
 # Repeated for each flag.
 #
@@ -2096,8 +2096,8 @@ proc proj-coalesce {args} {
 # This function assumes that each flag is unique, and using a flag
 # more than once behaves in a last-one-wins fashion.
 #
-# Any $argv entries not described in $prototype are not treated
-# as flags.
+# Any argvName entries not described in $prototype are not treated as
+# flags.
 #
 # Returns the number of flags it processed in $argvName.
 #
@@ -2113,6 +2113,10 @@ proc proj-coalesce {args} {
 # After that $flags would contain {-foo 1 -bar {blah} -no-baz 2}
 # and $args would be {8 9 10}.
 #
+# Potential TODOs: consider using lappend instead of set so that any
+# given flag can be used more than once. Or add a syntax to indicate
+# that.
+#
 proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
   upvar $argvName argv
   upvar $tgtArrayName tgt
@@ -2121,26 +2125,28 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
   array set consuming {}
   set n [llength $prototype]
   # Figure out what our flags are...
-  for {set i 0} {$i < $n} {} {
+  for {set i 0} {$i < $n} {incr i} {
     set k [lindex $prototype $i]
     #puts "**** #$i of $n k=$k"
     proj-assert {[string match -* $k]} \
-      "Invalid flag value for [proj-current-scope]: $k"
+      "Invalid flag value: $k"
     set v ""
     set s ""
-    if {"=>" eq [lindex $prototype [expr {$i + 1}]]} {
-      incr i 2
-      if {$i >= $n} {
-        proj-fatal "Missing argument for $k => flag"
+    switch -exact -- [lindex $prototype [expr {$i + 1}]] {
+      => {
+        incr i 2
+        if {$i >= $n} {
+          proj-error "Missing argument for $k => flag"
+        }
+        set consuming($k) 1
+        set v [lindex $prototype $i]
       }
-      set consuming($k) 1
-      set v [lindex $prototype $i]
-    } else {
-      set v [lindex $prototype [incr i]]
-      set s [lindex $prototype [incr i]]
-      set scripts($k) $s
+      default {
+        set v [lindex $prototype [incr i]]
+        set s [lindex $prototype [incr i]]
+        set scripts($k) $s
+      }
     }
-    incr i
     #puts "**** #$i of $n k=$k v=$v s=$s"
     set dflt($k) $v
   }
@@ -2160,7 +2166,7 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
     } elseif {[info exists tgt($arg)]} {
       if {[info exists consuming($arg)]} {
         if {$i + 1 >= $n} {
-          proj-fatal "Missing argument for $arg flag"
+          proj-assert 0 {Cannot happen - bounds already checked}
         }
         set tgt($arg) [lindex $argv [incr i]]
       } elseif {"" eq $scripts($arg)} {

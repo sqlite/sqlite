@@ -5,10 +5,8 @@
 # probably not edit it.
 #
 # This is the wrapper script invoked by teaish's "make test" recipe.
-@if TEAISH_VSATISFIES_TCL
-if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
-  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
-}
+@if TEAISH_VSATISFIES_CODE
+@TEAISH_VSATISFIES_CODE@
 @endif
 load [lindex $::argv 0] [lindex $::argv 1];
 source [lindex $::argv 2]; # teaish/tester.tcl

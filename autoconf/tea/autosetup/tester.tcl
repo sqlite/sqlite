@@ -29,6 +29,7 @@
 # call). If $lvl would resolve to global scope "global scope" is
 # returned and if it would be negative then a string indicating such
 # is returned (as opposed to throwing an error).
+#
 proc test-current-scope {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   set ilvl [info level]
@@ -45,6 +46,7 @@ proc test-current-scope {{lvl 0}} {
 # @test-msg
 #
 # Emits all arugments to stdout.
+#
 proc test-msg {args} {
   puts "$args"
 }

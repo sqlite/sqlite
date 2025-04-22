@@ -320,8 +320,8 @@ dist.zip.dir = $(tx.name)-$(tx.version)
 dist.zip = $(dist.zip.dir).zip
 .PHONY: dist.zip dist.zip-core dist.zip-post
 #dist.zip-pre:
-# We apparently can't add a pre-hook here, even if dist.zip-pre is
-# .PHONY, else "make dist" rebuilds the archive each time it's run.
+# We apparently can't add a pre-hook here, else "make dist" rebuilds
+# the archive each time it's run.
 $(dist.zip): $(tx.dist.files)
 	@rm -fr $(teaish__dist.tmp.zip)
 	@mkdir -p $(teaish__dist.tmp.zip)/$(dist.zip.dir)

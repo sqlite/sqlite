@@ -6,10 +6,8 @@
 # edit it.
 #
 # Adapted from https://core.tcl-lang.org/tcltls
-@if TEAISH_VSATISFIES_TCL
-if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
-  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
-}
+@if TEAISH_VSATISFIES_CODE
+@TEAISH_VSATISFIES_CODE@
 @endif
 if {[package vsatisfies [package provide Tcl] 9.0-]} {
   package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
