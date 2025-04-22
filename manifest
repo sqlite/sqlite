@@ -1,5 +1,5 @@
-C Latest\supstream\sjimtcl\sto\sfix\srare\ssegfault\scases.
-D 2025-04-22T09:29:53.190
+C Fix\sa\sproblem\sin\sthe\sfts5matchinfo.test\sfile\sthat\sprevented\sit\sfrom\nworking\son\sMac.
+D 2025-04-22T18:45:40.700
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -205,7 +205,7 @@ F ext/fts5/test/fts5lastrowid.test f36298a1fb9f988bde060a274a7ce638faa9c38a31400
 F ext/fts5/test/fts5leftjoin.test c0b4cafb9661379e576dc4405c0891d8fcc2782680740513c4d1fc114b43d4ad
 F ext/fts5/test/fts5limits.test 8ab67cf5d311c124b6ceb0062d0297767176df4572d955fce79fa43004dff01c
 F ext/fts5/test/fts5locale.test 83ba7ee12628b540d3098f39c39c1de0c0440eddff8f7512c8c698d0c4a3ae3c
-F ext/fts5/test/fts5matchinfo.test 7806f6d521bb49bcb54fff88a50f137866f7000c96ccfd28500caa47b63cb0aa
+F ext/fts5/test/fts5matchinfo.test bc9e74157773db7f00aec1e85587f1145956ebdf1672c136f0f04323b2752aa0
 F ext/fts5/test/fts5merge.test 2654df0bcdb2d117c2d38b6aeb0168061be01c643f9e9194b36c43a2970e8082
 F ext/fts5/test/fts5merge2.test 3ebad1a59d6ad3fb66eff6523a09e95dc6367cbefb3cd73196801dea0425c8e2
 F ext/fts5/test/fts5misc.test f4dee7da898d605a6488c5b7afaace3158ed6bb9addff78faa1b37b402b77fb9
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 734823a5a8e073b511ebc3f37df3542c1bb734b9b1e1bd50ca3e9df12c4bb89e
-R 7314569e2f49380ba2ad4032f6be829d
-U stephan
-Z 5242a8cac856aa0cbd261ef3d21cb581
+P b6c5516940851bd17706435148253325d1b912a44ae138d2b8ca33e5167418c7
+R 9218ccd8b518b209e6a20d61b383e872
+U drh
+Z f58d140defc6379d7662d9d02b260125
 # Remove this line to create a well-formed Fossil manifest.
