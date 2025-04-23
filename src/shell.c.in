@@ -196,7 +196,7 @@ typedef unsigned char u8;
  /* Make sure isatty() has a prototype. */
  extern int isatty(int);
 
-# if !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI)
+# if !defined(__RTP__) && !defined(_WRS_KERNEL) && !defined(SQLITE_WASI) && !defined(__nanvix__)
   /* popen and pclose are not C89 functions and so are
   ** sometimes omitted from the <stdio.h> header */
    extern FILE *popen(const char*,const char*);
@@ -281,7 +281,7 @@ static sqlite3_int64 timeOfDay(void){
   return t;
 }
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__minux)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__minux) && !defined(__nanvix__)
 #include <sys/time.h>
 #include <sys/resource.h>
 

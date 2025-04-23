@@ -481,6 +481,10 @@ case $1 in
 				basic_machine=le32-unknown
 				basic_os=nacl
 				;;
+			nanvix)
+				basic_machine=i686-pc
+				basic_os=nanvix
+				;;
 			ncr3000)
 				basic_machine=i486-ncr
 				basic_os=sysv4
@@ -1727,6 +1731,9 @@ case $os in
 		obj=$os
 		os=
 		;;
+	nanvix*)
+		os=nanvix
+		;;
 	*)
 		# No normalization, but not necessarily accepted, that comes below.
 		;;
@@ -2055,6 +2062,7 @@ case $os in
 	| msys* \
 	| mvs* \
 	| nacl* \
+	| nanvix* \
 	| netbsd* \
 	| netware* \
 	| newsos* \
