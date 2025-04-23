@@ -46,7 +46,7 @@ tx.dll9.basename = @TEAISH_DLL9_BASENAME@
 tx.dll8          = @TEAISH_DLL8@
 tx.dll9          = @TEAISH_DLL9@
 tx.dll           = $(tx.dll$(TCL_MAJOR_VERSION))
-tx.dir           = @TEAISH_DIR@
+tx.dir           = @TEAISH_EXT_DIR@
 
 teaish.dir           = @abs_top_srcdir@
 #teaish.dir.autosetup = @TEAISH_AUTOSETUP_DIR@
@@ -123,7 +123,7 @@ LDFLAGS.configure = @SH_LDFLAGS@ @TEAISH_LDFLAGS@ @LDFLAGS@ $(TCL_STUB_LIB_SPEC)
 # sources passed to [teaish-src-add], but may also be appended to
 # by teaish.make.
 #
-tx.src     =@TEAISH_SRC@
+tx.src     =@TEAISH_EXT_SRC@
 
 #
 # tx.CFLAGS is typically set by teaish.make, whereas TEAISH_CFLAGS
@@ -161,7 +161,6 @@ teaish__autogen.deps = \
   $(tx.makefile.in) $(teaish.makefile.in) \
   $(tx.tcl) \
   @TEAISH_PKGINDEX_TCL_IN@ \
-  @TEAISH_MODULE_TEST_TCL@ \
   @AUTODEPS@
 
 #
@@ -184,6 +183,7 @@ $(teaish.makefile): $(teaish__auto.def) $(teaish.makefile.in) \
 @TEAISH_TESTER_TCL@: @TEAISH_TESTER_TCL_IN@
 config.log: @TEAISH_TESTER_TCL@
 
+@if TEAISH_ENABLE_DLL
 #
 # The rest of this makefile exists solely to support this brief
 # target: the extension shared lib.
@@ -193,6 +193,7 @@ $(tx.dll): $(tx.src) config.log
 		$(tx.src) $(LDFLAGS.configure) $(LDFLAGS) $(tx.LDFLAGS)
 
 all: $(tx.dll)
+@endif # TEAISH_ENABLE_DLL
 
 tclsh: $(teaish.makefile) config.log
 	@{ echo "#!/bin/sh"; echo 'exec $(TCLSH) "$$@"'; } > $@
@@ -200,23 +201,24 @@ tclsh: $(teaish.makefile) config.log
 	@echo "Created $@"
 
 #
-# If the extension includes teaish.test.tcl then provide a "test"
-# target which which runs that script, passing it (1) the full path to
-# extension's DLL (which also provides the script with a way to get
-# the test directory) and (2) a script of test utility code intended for
-# sourcing by the client.
+# Run the generated test script.
 #
-# If the extension has no test script, add a small one which
-# simply loads the DLL and success if it can.
-#
-#
-tx.tester.args = $(tx.dll) $(tx.loadPrefix) @TEAISH_MODULE_TEST_TCL@
-.PHONY: test-pre test-core test test-post test-extension
-test-extension: # this name is reserved for use by teaish.make
-test-prepre: $(tx.dll) @TEAISH_TESTER_TCL@
+.PHONY: test-pre test-prepre test-core test test-post test-extension
+test-extension: # this name is reserved for use by teaish.make[.in]
+@if TEAISH_ENABLE_DLL
+test-prepre: $(tx.dll)
+@endif
+test-core.args = @TEAISH_TESTER_TCL@
+@if TEAISH_ENABLE_DLL
+test-core.args += '$(tx.dll)' '$(tx.loadPrefix)'
+@else
+test-core.args += '' ''
+@endif
+test-core.args += @TEAISH_TESTUTIL_TCL@
+test-prepre: @TEAISH_TESTER_TCL@
 test-pre: test-prepre
 test-core: test-pre
-	$(TCLSH) @TEAISH_TESTER_TCL@ $(tx.tester.args)
+	$(TCLSH) $(test-core.args)
 test-post: test-core
 test: test-post
 
@@ -367,12 +369,12 @@ undist-tgz:
 	rm -f $(dist.tgz)
 undist: undist-tgz
 @endif #BIN_TAR
-@else
+@else #!TEAISH_ENABLE_DIST
 undist:
 dist:
 @if TEAISH_OUT_OF_EXT_TREE
 	@echo "'dist' can only be used from an extension's home dir" 1>&2; \
-	echo "In this case: @TEAISH_DIR@" 1>&2; exit 1
+	echo "In this case: @TEAISH_EXT_DIR@" 1>&2; exit 1
 @endif
 @endif #TEAISH_ENABLE_DIST
 
@@ -386,7 +388,7 @@ dist:
 # - tx.src = list of the extension's source files, being sure to
 #   prefix each with $(tx.dir) (if it's in the same dir as the
 #   extension) so that out-of-tree builds can find them.  Optionally,
-#   [define] TEAISH_SRC or pass them to [teaish-src-add].
+#   [define] TEAISH_EXT_SRC or pass them to [teaish-src-add].
 #
 # It may optionally set the following vars:
 #

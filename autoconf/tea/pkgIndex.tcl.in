@@ -11,7 +11,9 @@
 @endif
 if {[package vsatisfies [package provide Tcl] 9.0-]} {
   package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+@if TEAISH_ENABLE_DLL
     load [file join $dir {@TEAISH_DLL9@}] @TEAISH_LOAD_PREFIX@
+@endif
 @if TEAISH_PKGINIT_TCL_TAIL
     set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
     if {[file exists $initScript]} {
@@ -21,11 +23,13 @@ if {[package vsatisfies [package provide Tcl] 9.0-]} {
   }} $dir]
 } else {
   package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+@if TEAISH_ENABLE_DLL
     if {[string tolower [file extension {@TEAISH_DLL8@}]] in [list .dll .dylib .so]} {
       load [file join $dir {@TEAISH_DLL8@}] @TEAISH_LOAD_PREFIX@
     } else {
       load {} @TEAISH_LOAD_PREFIX@
     }
+@endif
 @if TEAISH_PKGINIT_TCL_TAIL
     set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
     if {[file exists $initScript]} {

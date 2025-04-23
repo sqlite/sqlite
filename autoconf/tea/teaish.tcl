@@ -3,14 +3,15 @@
 apply {{} {
   set version [proj-file-content -trim [teaish-get -dir]/../VERSION]
   proj-assert {[string match 3.*.* $version]}
-  teaish-pkginfo-set \
-    -name sqlite \
-    -pkgName sqlite3 \
-    -version $version \
-    -loadPrefix Sqlite3 \
-    -vsatisfies 8.6- \
-    -libDir sqlite$version \
-    -pragmas {disable-dist}
+  teaish-pkginfo-set -vars {
+    -name sqlite
+    -pkgName sqlite3
+    -version $version
+    -loadPrefix Sqlite3
+    -vsatisfies 8.6-
+    -libDir sqlite$version
+    -pragmas {no-dist}
+  }
 }}
 
 #
@@ -72,9 +73,8 @@ proc teaish-options {} {
 proc teaish-configure {} {
   use teaish/feature-tests
 
-  set srcdir [get-define TEAISH_DIR]
+  set srcdir [teaish-get -dir]
   teaish-src-add -dist -dir generic/tclsqlite3.c
-  teaish-cflags-add -I${srcdir}/..
   if {[proj-opt-was-provided override-sqlite-version]} {
     teaish-pkginfo-set -version [opt-val override-sqlite-version]
     proj-warn "overriding sqlite version number:" [teaish-pkginfo-get -version]
@@ -103,6 +103,8 @@ proc teaish-configure {} {
     msg-result "Using system-level sqlite3."
     teaish-cflags-add -DUSE_SYSTEM_SQLITE
     teaish-ldflags-add -lsqlite3
+  } else {
+    teaish-cflags-add -I${srcdir}/..
   }
 
   teaish-check-librt

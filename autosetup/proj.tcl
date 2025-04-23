@@ -8,7 +8,13 @@
 #  * May you find forgiveness for yourself and forgive others.
 #  * May you share freely, never taking more than you give.
 #
-########################################################################
+
+#
+# ----- @module proj.tcl -----
+# @section Project Helper APIs
+#
+
+#
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
@@ -25,13 +31,12 @@
 # noted here only as an indication that there are no licensing issues
 # despite this code having a handful of near-twins running around a
 # handful of third-party source trees.
-########################################################################
 #
 # Design notes:
 #
-# - Symbols with a suffix of _ are intended for internal use within
+# - Symbols with _ separators are intended for internal use within
 #   this file, and are not part of the API which auto.def files should
-#   rely on.
+#   rely on. Symbols with - separators are public APIs.
 #
 # - By and large, autosetup prefers to update global state with the
 #   results of feature checks, e.g. whether the compiler supports flag
@@ -49,10 +54,7 @@
 # test, downstream tests may not like the $prefix/lib path added by
 # the rpath test. To avoid such problems, we avoid (intentionally)
 # updating global state via feature tests.
-########################################################################
-
-# ----- @module proj.tcl -----
-# @section Project Helper APIs
+#
 
 #
 # $proj__Config is an internal-use-only array for storing whatever generic
@@ -1427,11 +1429,11 @@ proc proj-which-linenoise {dotH} {
 # manner unless they are explicitly overridden at configure-time, in
 # which case those overrides takes precedence.
 #
-# Each --XYZdir flag which is explicitly passed to configure is
-# exported as-is, as are those which default to some top-level system
-# directory, e.g. /etc or /var.  All which derive from either $prefix
-# or $exec_prefix are exported in the form of a Makefile var
-# reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
+# Each autoconf-relvant --XYZ flag which is explicitly passed to
+# configure is exported as-is, as are those which default to some
+# top-level system directory, e.g. /etc or /var.  All which derive
+# from either $prefix or $exec_prefix are exported in the form of a
+# Makefile var reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
 # --exec-prefix=FOO is passed to configure, libdir will still derive,
 # at make-time, from whatever exec_prefix is passed to make, and will
 # use FOO if exec_prefix is not overridden at make-time.  Without this
@@ -1467,7 +1469,7 @@ proc proj-remap-autoconf-dir-vars {} {
     }
     # Maintenance reminder: the [join] call is to avoid {braces}
     # around the output when someone passes in,
-    # e.g. --libdir=\${prefix}/foo/bar. The Debian package build
+    # e.g. --libdir=\${prefix}/foo/bar. Debian's SQLite package build
     # script does that.
   }
 }
@@ -1526,7 +1528,6 @@ proc proj-current-scope {{lvl 0}} {
   }
 }
 
-
 #
 # Converts parts of tclConfig.sh to autosetup [define]s.
 #
@@ -1568,7 +1569,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     set fd [open "| sh" "rw"]
     #puts "fd = $fd"; exit
     puts $fd $shBody
-    flush $fd
+    #flush $fd; # "bad file descriptor"? Without flush, [read] blocks
     set rd [read $fd]
     close $fd
     puts "rd=$rd"; exit 1
@@ -1576,8 +1577,12 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
   } else {
     set shName ".tclConfigSh.tcl"
     proj-file-write $shName $shBody
-    eval [exec sh $shName $tclConfigSh]
+    catch {
+      eval [exec sh $shName $tclConfigSh]
+      expr 1
+    } rc xopts
     file delete -force $shName
+    return {*}$xopts $rc
   }
 }
 
@@ -1635,7 +1640,7 @@ proc proj-tweak-default-env-dirs {} {
 # If $postProcessScript is not empty then, during
 # [proj-dot-ins-process], it will be eval'd immediately after
 # processing the file. In the context of that script, the vars
-# $fileIn and $fileOut will be set to the input and output file
+# $dotInsIn and $dotInsOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
 # executable or perform validation on its contents.
 #
@@ -1713,7 +1718,10 @@ proc proj-dot-ins-process {args} {
       proj-validate-no-unresolved-ats $fOut
     }
     if {"" ne $fScript} {
-      uplevel 1 "set fileIn $fIn; set fileOut $fOut; eval {$fScript}"
+      uplevel 1 [join [list set dotInsIn $fIn \; \
+                         set dotInsOut $fOut \; \
+                         eval \{${fScript}\} \; \
+                         unset dotInsIn dotInsOut]]
     }
   }
   if {$flags(-clear)} {

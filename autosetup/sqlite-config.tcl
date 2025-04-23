@@ -994,7 +994,7 @@ proc sqlite-handle-emsdk {} {
       proj-bin-define wasm-opt BIN_WASM_OPT
     }
     proj-dot-ins-append $emccSh.in $emccSh {
-      catch {exec chmod u+x $fileOut}
+      catch {exec chmod u+x $dotInsOut}
     }
     proj-dot-ins-append $extWasmConfig.in $extWasmConfig
   } else {
