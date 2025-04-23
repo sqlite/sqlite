@@ -2371,7 +2371,7 @@ void *sqlite3_preupdate_hook(
 */
 int sqlite3_autovacuum_pages(
   sqlite3 *db,                 /* Attach the hook to this database */
-  unsigned int (*xCallback)(void*,const char*,u32,u32,u32),
+  unsigned int (*xCallback)(void*,const char*,unsigned,unsigned,unsigned),
   void *pArg,                  /* Argument to the function */
   void (*xDestructor)(void*)   /* Destructor for pArg */
 ){
