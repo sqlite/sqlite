@@ -1,5 +1,5 @@
-C Upstream\steaish\sfixes\sand\simprovements.
-D 2025-04-23T14:54:13.759
+C Teaish\sinternal\sAPI\stweaks\sand\sensure\sthat\s-encoding\sutf-8\sis\sused\swhen\ssource'ing\stest\sscripts.
+D 2025-04-25T11:27:13.409
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -26,7 +26,7 @@ F autoconf/tea/Makefile.in bb66da485861af82a45e7c135fcf89270f5c0989dbfbb17912c74
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
 F autoconf/tea/autosetup/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
-F autoconf/tea/autosetup/core.tcl b230b6a6d711c162ead7249c771bfb730b7c413b38ceb6832f92baab8d2e62a5
+F autoconf/tea/autosetup/core.tcl 603506c76d1bdf3cf12be0ed87e11fb77aeae3b0598b97e3989e6fabb60de01a
 F autoconf/tea/autosetup/feature-tests.tcl 307cac35806817fc87bd0d92004364ee682c0e99f2ab505291500493ab6c7a5f
 F autoconf/tea/autosetup/tester.tcl 93cff35afc5cabc8f855fad114fae58b435fa47cbab5f8cbd4dc694ff0c26107
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
@@ -35,7 +35,7 @@ F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in e07da6b94561f4aa382bab65b1ccceb04701b97bf59d007c1d1f20a222b22d07
 F autoconf/tea/teaish.tcl 9abc575ff3106c60ec0924a558d45dd58f7b4cd07373f87372df1988611b7d8c
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
-F autoconf/tea/teaish.tester.tcl.in 430c3514633f6de0a9527f52ff7d251febacf839a91d45c04b10a70388bcaee2
+F autoconf/tea/teaish.tester.tcl.in 0d048e5569ad9bbaffbe5123c2084f9084d424a7719d06f5ca941caafbcca320
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
 F autosetup/README.md f324bb9f9bf1cc787122034df53fbfdfed28ee2657e6652b763d992ab0d04829
@@ -51,7 +51,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 38999aca5258e59fc6e7d4d5964c395b74bb5dc7865479bd98cee4dca71e61ba
+F autosetup/proj.tcl 7eff53437b4e0a5cc9215221487129ea8c53b89e8b651ee2d2713cdc6e1d0642
 F autosetup/sqlite-config.tcl 54c88abadda1a42c6276186afcf6534e9bcb08350d96676c4ec08b99f2ada484
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5a411c609ba0ee17b1ce5bd0b40b9ded92d76f35933f92b2e02a58a3f169c715
-R b0c338fe00382bfb412fdd47cce333a1
+P 235ea2c0e1823fe4324c3890069a9131ebb6de14e55eb56c0e9f42a7e491a699
+R ea525321199f0f66dd9876a7d0687939
 U stephan
-Z eee13aa4761e9cdaf3c2c73939710886
+Z 5ae1dc01157b80ae73825ec4ac34cc82
 # Remove this line to create a well-formed Fossil manifest.

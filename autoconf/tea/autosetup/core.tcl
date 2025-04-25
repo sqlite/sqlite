@@ -177,8 +177,8 @@ proc teaish-configure-core {} {
 
     # TEA has --with-tclinclude but it appears to only be useful for
     # building an extension against an uninstalled copy of TCL's own
-    # source tree. Either we get that info from tclConfig.sh or we
-    # give up.
+    # source tree. The policy here is that either we get that info
+    # from tclConfig.sh or we give up.
     #
     # with-tclinclude:DIR
     #   => {Specify the directory which contains the tcl.h. This should not
@@ -188,24 +188,27 @@ proc teaish-configure-core {} {
     # extensions, and thus use a teaish-... prefix on most flags. However,
     # --teaish-extension-dir is frequently needed, so...
     #
-    # As of this spontaneous moment, we'll formalize using using
-    # --t-X-Y to abbreviate teaish flags when doing so is
+    # As of this spontaneous moment, we'll settle on using --t-A-X to
+    # abbreviate --teaish-A...-X... flags when doing so is
     # unambiguous...
     ted: t-e-d:
     teaish-extension-dir:DIR
-      => {Looks for an extension in the given directory instead of the current dir.}
+      => {Looks for an extension in the given directory instead of the current
+          dir.}
 
     t-c-e:
     teaish-create-extension:TARGET_DIRECTORY
       => {Writes stub files for creating an extension. Will refuse to overwrite
-          existing files without --force.}
+          existing files without --teaish-force.}
 
     t-f
     teaish-force
-      => {Has a context-dependent meaning (autosetup defines --force for its own use)}
+      => {Has a context-dependent meaning (autosetup defines --force for its
+          own use).}
 
     t-d-d
-    teaish-dump-defines => {Dump all configure-defined vars to config.defines.txt}
+    teaish-dump-defines
+      => {Dump all configure-defined vars to config.defines.txt}
 
     t-v
     teaish-verbose=0
@@ -813,7 +816,7 @@ proc teaish__find_extension {} {
     if {$dirExt ne $dirSrc} {
       lappend flist $dirSrc/teaish.tcl
     }
-    if {![proj-first-file-found $flist extT]} {
+    if {![proj-first-file-found extT $flist]} {
       if {$gotHelpArg} {
         # Tell teaish-configure-core that the lack of extension is not
         # an error when --help is used.
@@ -859,9 +862,8 @@ If you are attempting an out-of-tree build, use
   # We use the first one of teaish.make.in or teaish.make we find in
   # $dirExt.
   #
-  if {[proj-first-file-found \
-         [list $dirExt/teaish.make.in $dirExt/teaish.make] \
-         extM]} {
+  if {[proj-first-file-found extM \
+         [list $dirExt/teaish.make.in $dirExt/teaish.make]]} {
     if {[string match *.in $extM]} {
       define TEAISH_MAKEFILE_IN $extM
       define TEAISH_MAKEFILE [file rootname [file tail $extM]]
@@ -878,9 +880,8 @@ If you are attempting an out-of-tree build, use
   }
 
   # Look for teaish.pkginit.tcl[.in]
-  if {[proj-first-file-found \
-         [list $dirExt/teaish.pkginit.tcl.in $dirExt/teaish.pkginit.tcl] \
-         extI]} {
+  if {[proj-first-file-found extI \
+         [list $dirExt/teaish.pkginit.tcl.in $dirExt/teaish.pkginit.tcl]]} {
     if {[string match *.in $extI]} {
       proj-dot-ins-append $extI
       define TEAISH_PKGINIT_TCL_IN $extI
@@ -897,19 +898,19 @@ If you are attempting an out-of-tree build, use
 
   # Look for pkgIndex.tcl[.in]...
   set piPolicy 0
-  if {[proj-first-file-found $dirExt/pkgIndex.tcl.in extPI]} {
+  if {[proj-first-file-found extPI $dirExt/pkgIndex.tcl.in]} {
     # Generate ./pkgIndex.tcl from it.
     define TEAISH_PKGINDEX_TCL_IN $extPI
     define TEAISH_PKGINDEX_TCL [file rootname [file tail $extPI]]
     apply $addDist $extPI
     set piPolicy 0x01
   } elseif {$dirExt ne $dirSrc
-            && [proj-first-file-found $dirSrc/pkgIndex.tcl.in extPI]} {
+            && [proj-first-file-found extPI $dirSrc/pkgIndex.tcl.in]} {
     # Generate ./pkgIndex.tcl from it.
     define TEAISH_PKGINDEX_TCL_IN $extPI
     define TEAISH_PKGINDEX_TCL [file rootname [file tail $extPI]]
     set piPolicy 0x02
-  } elseif {[proj-first-file-found $dirExt/pkgIndex.tcl extPI]} {
+  } elseif {[proj-first-file-found extPI $dirExt/pkgIndex.tcl]} {
     # Assume it's a static file and use it.
     define TEAISH_PKGINDEX_TCL_IN ""
     define TEAISH_PKGINDEX_TCL $extPI
@@ -924,7 +925,7 @@ If you are attempting an out-of-tree build, use
   # Look for teaish.test.tcl[.in]
   proj-assert {"" ne $dirExt}
   set flist [list $dirExt/teaish.test.tcl.in $dirExt/teaish.test.tcl]
-  if {[proj-first-file-found $flist ttt]} {
+  if {[proj-first-file-found ttt $flist]} {
     if {[string match *.in $ttt]} {
       # Generate teaish.test.tcl from $ttt
       set xt [file rootname [file tail $ttt]]
@@ -944,7 +945,7 @@ If you are attempting an out-of-tree build, use
 
   # Look for teaish.tester.tcl[.in]
   set flist [list $dirExt/teaish.tester.tcl.in $dirSrc/teaish.tester.tcl.in]
-  if {[proj-first-file-found $flist ttt]} {
+  if {[proj-first-file-found ttt $flist]} {
     # Generate teaish.test.tcl from $ttt
     set xt [file rootname [file tail $ttt]]
     file delete -force -- $xt; # ensure no stale copy is used
@@ -1408,10 +1409,14 @@ proc teaish__pragma {args} {
 #   teaish-pkginfo-set ?-vars|-subst? {-name foo -version 0.1.2}
 #
 # The latter may be easier to write for a multi-line invocation.
-# Passing the -vars flag tells it to perform a [subst] of (only)
-# variables in the {...} part from the calling scope. The -subst flag
-# will cause is to [subst] the {...} with command substitution as well
-# (but no backslash substitution).
+#
+# For the second call form, passing the -vars flag tells it to perform
+# a [subst] of (only) variables in the {...} part from the calling
+# scope. The -subst flag will cause it to [subst] the {...} with
+# command substitution as well (but no backslash substitution). When
+# using -subst for string concatenation, e.g.  with -libDir
+# foo[get-version-number], be sure to wrap the value in braces:
+# -libDir {foo[get-version-number]}.
 #
 # Each pkginfo flag corresponds to one piece of extension package
 # info.  Teaish provides usable default values for all of these flags,

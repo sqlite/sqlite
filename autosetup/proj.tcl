@@ -1760,13 +1760,13 @@ proc proj-validate-no-unresolved-ats {args} {
 }
 
 #
-# @proj-first-found fileList tgtVar
+# @proj-first-found tgtVar fileList
 #
 # Searches $fileList for an existing file. If one is found, its name is
 # assigned to tgtVar and 1 is returned, else tgtVar is not modified
 # and 0 is returned.
 #
-proc proj-first-file-found {fileList tgtVar} {
+proc proj-first-file-found {tgtVar fileList} {
   upvar $tgtVar tgt
   foreach f $fileList {
     if {[file exists $f]} {
