@@ -1,4 +1,4 @@
-# Teaish configure script for the SQLite TCL extension
+# Teaish configure script for the SQLite Tcl extension
 
 apply {{} {
   set version [proj-file-content -trim [teaish-get -dir]/../VERSION]
@@ -31,7 +31,9 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 # autosetup's [options] function.
 #
 proc teaish-options {} {
-  return [proj-strip-hash-comments [subst -nocommands -nobackslashes {
+  # These flags and defaults mostly derive from the historical TEA
+  # build.  Some, like ICU, are taken from the canonical SQLite tree.
+  return [subst -nocommands -nobackslashes {
     with-system-sqlite=0
       => {Use the system-level SQLite instead of the copy in this tree.
           Also requires use of --override-sqlite-version so that the build
@@ -63,7 +65,7 @@ proc teaish-options {} {
     icu-collations=0
       => {Enable SQLITE_ENABLE_ICU_COLLATIONS. Requires --with-icu-ldflags=...
           or --with-icu-config}
-  }]]
+  }]
 }
 
 #
@@ -118,9 +120,8 @@ proc teaish-configure {} {
   sqlite-handle-common-feature-flags; # must be late in the process
 }; # teaish-configure
 
-
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-########################################################################
+#
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS. This is intended only for holding
 # -DSQLITE_ENABLE/OMIT/... flags, but that is not enforced here.
 proc sqlite-add-feature-flag {args} {
@@ -129,7 +130,7 @@ proc sqlite-add-feature-flag {args} {
   }
 }
 
-########################################################################
+#
 # Check for log(3) in libm and die with an error if it is not
 # found. $featureName should be the feature name which requires that
 # function (it's used only in error messages). defines LDFLAGS_MATH to
@@ -150,7 +151,7 @@ proc sqlite-affirm-have-math {featureName} {
   }
 }
 
-########################################################################
+#
 # Handle various SQLITE_ENABLE/OMIT_... feature flags.
 proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
@@ -208,7 +209,7 @@ proc sqlite-handle-common-feature-flags {} {
       }
     }
   }
-  ########################################################################
+  #
   # Invert the above loop's logic for some SQLITE_OMIT_...  cases. If
   # config option $boolFlag is false, [sqlite-add-feature-flag
   # $featureFlag], where $featureFlag is intended to be
@@ -224,7 +225,7 @@ proc sqlite-handle-common-feature-flags {} {
     }
   }
 
-  #########################################################################
+  ##
   # Remove duplicates from the final feature flag sets and show them
   # to the user.
   set oFF [get-define OPT_FEATURE_FLAGS]
@@ -238,7 +239,7 @@ proc sqlite-handle-common-feature-flags {} {
   teaish-cflags-add -define OPT_FEATURE_FLAGS
 }; # sqlite-handle-common-feature-flags
 
-########################################################################
+#
 # If --enable-threadsafe is set, this adds -DSQLITE_THREADSAFE=1 to
 # OPT_FEATURE_FLAGS and sets LDFLAGS_PTHREAD to the linker flags
 # needed for linking pthread (possibly an empty string). If
@@ -260,10 +261,8 @@ proc sqlite-handle-threadsafe {} {
         teaish-ldflags-prepend $ldf
         undefine lib_pthread_create
         undefine lib_pthread_mutexattr_init
-      } elseif {[proj-opt-was-provided threadsafe]} {
-        user-error "Missing required pthread libraries. Use --disable-threadsafe to disable this check."
       } else {
-        msg-result "pthread support not detected"
+        user-error "Missing required pthread libraries. Use --disable-threadsafe to disable this check."
       }
       # Recall that LDFLAGS_PTHREAD might be empty even if pthreads if
       # found because it's in -lc on some platforms.
@@ -273,30 +272,31 @@ proc sqlite-handle-threadsafe {} {
   } else {
     #
     # If user does not specify --[disable-]threadsafe then select a
-    # default based on whether it looks like TCL has threading
+    # default based on whether it looks like Tcl has threading
     # support.
     #
-    #puts "TCL_LIBS = [get-define TCL_LIBS]"
-    if {[string match *pthread* [get-define TCL_LIBS]]} {
-      # ^^^ FIXME: there must be a better way of testing this
+    catch {
+      scan [exec echo {puts [tcl::pkgconfig get threaded]} | [get-define TCLSH_CMD]] \
+        %d enable
+    }
+    if {$enable} {
       set flagName "--threadsafe"
       set lblAbled "enabled"
-      set enable 1
-      msg-result "yes"
+      msg-result yes
     } else {
       set flagName "--disable-threadsafe"
       set lblAbled "disabled"
-      set enable 0
-      msg-result "no"
+      msg-result no
     }
-    msg-result "NOTICE: defaulting to ${flagName} because TCL has threading ${lblAbled}."
-    # ^^^ We don't need to link against -lpthread in the is-enabled case.
+    msg-result "Defaulting to ${flagName} because Tcl has threading ${lblAbled}."
+    # ^^^ We (probably) don't need to link against -lpthread in the
+    # is-enabled case. We might in the case of static linking. Unsure.
   }
   sqlite-add-feature-flag -DSQLITE_THREADSAFE=${enable}
   return $enable
 }
 
-########################################################################
+#
 # Handles the --enable-load-extension flag. Returns 1 if the support
 # is enabled, else 0. If support for that feature is not found, a
 # fatal error is triggered if --enable-load-extension is explicitly
@@ -348,7 +348,7 @@ proc sqlite-handle-load-extension {} {
   return $found
 }
 
-########################################################################
+#
 # ICU - International Components for Unicode
 #
 # Handles these flags:
@@ -448,7 +448,7 @@ proc sqlite-handle-icu {} {
 }; # sqlite-handle-icu
 
 
-########################################################################
+#
 # Handles the --with-tempstore flag.
 #
 # The test fixture likes to set SQLITE_TEMP_STORE on its own, so do
@@ -473,7 +473,7 @@ proc sqlite-handle-tempstore {} {
   }
 }
 
-########################################################################
+#
 # Handles the --enable-math flag.
 proc sqlite-handle-math {} {
   proj-if-opt-truthy math {
@@ -492,15 +492,13 @@ proc sqlite-handle-math {} {
   }
 }
 
-########################################################################
+#
 # Move -DSQLITE_OMIT... and -DSQLITE_ENABLE... flags from CFLAGS and
 # CPPFLAGS to OPT_FEATURE_FLAGS and remove them from BUILD_CFLAGS.
 proc sqlite-munge-cflags {} {
   # Move CFLAGS and CPPFLAGS entries matching -DSQLITE_OMIT* and
   # -DSQLITE_ENABLE* to OPT_FEATURE_FLAGS. This behavior is derived
-  # from the legacy build and was missing the 3.48.0 release (the
-  # initial Autosetup port).
-  # https://sqlite.org/forum/forumpost/9801e54665afd728
+  # from the pre-3.48 build.
   #
   # Handling of CPPFLAGS, as well as removing ENABLE/OMIT from
   # CFLAGS/CPPFLAGS, was missing in the 3.49.0 release as well.
