@@ -1760,7 +1760,7 @@ proc proj-validate-no-unresolved-ats {args} {
 }
 
 #
-# @proj-first-found tgtVar fileList
+# @proj-first-file-found tgtVar fileList
 #
 # Searches $fileList for an existing file. If one is found, its name is
 # assigned to tgtVar and 1 is returned, else tgtVar is not modified
@@ -1783,19 +1783,10 @@ proc proj-first-file-found {tgtVar fileList} {
 # can be used to automatically reconfigure.
 #
 proc proj-setup-autoreconfig {defName} {
-  set squote {{arg} {
-    # Wrap $arg in single-quotes if it looks like it might need that
-    # to avoid mis-handling as a shell argument. We assume that $arg
-    # will never contain any single-quote characters.
-    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
-    return $arg
-  }}
-  define-append $defName cd [apply $squote $::autosetup(builddir)] \
-    && [apply $squote $::autosetup(srcdir)/configure]
-  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
-  foreach arg $::autosetup(argv) {
-    define-append $defName [apply $squote $arg]
-  }
+  define $defName \
+    [join [list \
+             cd \"$::autosetup(builddir)\" \
+             && [get-define AUTOREMAKE "error - missing @AUTOREMAKE@"]]]
 }
 
 #
@@ -1813,21 +1804,22 @@ proc proj-define-append {defineName args} {
 }
 
 #
-# @prod-define-amend ?-p|-prepend? ?-define? FLAG args...
+# @prod-define-amend ?-p|-prepend? ?-d|-define? defineName args...
 #
 # A proxy for Autosetup's [define-append].
 #
-# Appends all non-empty $args to the define named by $FLAG unless.  If
+# Appends all non-empty $args to the define named by $defineName.  If
 # one of (-p | -prepend) are used it instead prepends them, in their
-# given order, to $FLAG.
+# given order, to $defineName.
 #
 # If -define is used then each argument is assumed to be a [define]'d
 # flag and [get-define X ""] is used to fetch it.
 #
-# Typically, -lXYZ flags need to be in "reverse" order, with each -lY
-# resolving symbols for -lX's to its left. This order is largely
-# historical, and not relevant on all environments, but it is
-# technically correct and still relevant on some environments.
+# Re. linker flags: typically, -lXYZ flags need to be in "reverse"
+# order, with each -lY resolving symbols for -lX's to its left. This
+# order is largely historical, and not relevant on all environments,
+# but it is technically correct and still relevant on some
+# environments.
 #
 # See: proj-append-to
 #
@@ -1838,9 +1830,9 @@ proc proj-define-amend {args} {
   set xargs [list]
   foreach arg $args {
     switch -exact -- $arg {
-      -p - -prepend { set prepend 1 }
-      -d - -define  { set isdefs 1 }
       "" {}
+      -p - -prepend { incr prepend }
+      -d - -define  { incr isdefs }
       default {
         if {"" eq $defName} {
           set defName $arg
@@ -1849,6 +1841,9 @@ proc proj-define-amend {args} {
         }
       }
     }
+  }
+  if {"" eq $defName} {
+    proj-error "Missing defineName argument in call from [proj-current-scope 1]"
   }
   if {$isdefs} {
     set args $xargs
@@ -1871,17 +1866,22 @@ proc proj-define-amend {args} {
 }
 
 #
-# @proj-define-to-cflag ?-list? defineName...
+# @proj-define-to-cflag ?-list? ?-quote? ?-zero-undef? defineName...
 #
-# Treat each argument as the name of a [define]
-# and attempt to render it like a CFLAGS value:
+# Treat each argument as the name of a [define] and renders it like a
+# CFLAGS value in one of the following forms:
 #
 #  -D$name
-#  -D$name=value
+#  -D$name=integer   (strict integer matches only)
+#  '-D$name=value'   (without -quote)
+#  '-D$name="value"' (with -quote)
 #
-# If treats integers as numbers and everything else as a quoted
+# It treats integers as numbers and everything else as a quoted
 # string, noting that it does not handle strings which themselves
 # contain quotes.
+#
+# The -zero-undef flag causes no -D to be emitted for integer values
+# of 0.
 #
 # By default it returns the result as string of all -D... flags,
 # but if passed the -list flag it will return a list of the
@@ -1889,29 +1889,28 @@ proc proj-define-amend {args} {
 #
 proc proj-define-to-cflag {args} {
   set rv {}
-  set xargs {}
-  set returnList 0;
-  foreach arg $args {
-    switch -exact -- $arg {
-      -list {incr returnList}
-      default {
-        lappend xargs $arg
-      }
-    }
+  proj-parse-simple-flags args flags {
+    -list       0 {expr 1}
+    -quote      0 {expr 1}
+    -zero-undef 0 {expr 1}
   }
-  foreach d $xargs {
+  foreach d $args {
     set v [get-define $d ""]
-    set li [list -D${d}]
-    if {[string is integer -strict $v]} {
-      lappend li = $v
-    } elseif {"" eq $d} {
+    set li {}
+    if {"" eq $d} {
+      set v "-D${d}"
+    } elseif {[string is integer -strict $v]} {
+      if {!$flags(-zero-undef) || $v ne "0"} {
+        set v "-D${d}=$v"
+      }
+    } elseif {$flags(-quote)} {
+      set v "'-D${d}=\"$v\"'"
     } else {
-      lappend li = {"} $v {"}
+      set v "'-D${d}=$v'"
     }
-    lappend rv [join $li ""]
+    lappend rv $v
   }
-  if {$returnList} { return $rv }
-  return [join $rv]
+  expr {$flags(-list) ? $rv : [join $rv]}
 }
 
 
