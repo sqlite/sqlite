@@ -1,5 +1,5 @@
-C tea:\spull\sin\supstream\steaish.\sConsolidate\sthe\sbuild\sdefinition\sfrom\sthe\supstream\sbuild\sand\sthis\sone\sto\sease\smaintenace.\sImprove\scompatibility\swith\shistorical\sTEA\susage\sof\s--with-tcl=...\s(it\sinsists\son\sa\s/lib\ssuffix\sfor\sthat\spath).
-D 2025-04-28T09:25:19.852
+C Remove\slong-obsolete\sperformance\stesting\sscripts\sfrom\sthe\stools/\sfolder.\nThe\stest/speedtest.tcl\sscript\sis\swhat\sshould\sbe\sused\sthese\sdays.\s\sThis\nis\sjust\scruft\sclean-up.
+D 2025-04-28T13:32:46.678
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2143,7 +2143,6 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/kvtest-speed.sh 4761a9c4b3530907562314d7757995787f7aef8f
 F tool/lemon.c f51a488369046cd4f4212d755a214a57673ded400cbeb01e298cbf63539e1d8c
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
@@ -2163,7 +2162,6 @@ F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07
 F tool/mkpragmatab.tcl 3801ce32f8c55fe63a3b279f231fb26c2c1a2ea9a09d2dd599239d87a609acec
 F tool/mkshellc.tcl 9ce74de0fa904a2c56a96f8d8b5261246bacb0eaa8d7e184f9e18ff94145ebbc
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
-F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
 F tool/mksqlite3c.tcl f11b63445c4840509248bd4aa151a81aea25d5415fef71943c8d436eba4f3b3c
 F tool/mksqlite3h.tcl 989948c6a26e188e673d7c2f2f093ea3acd816ad6ac65bab596280075c8f3a45
@@ -2179,7 +2177,6 @@ F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafe
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/run-speed-test.sh df9686c0991ea7c617b2cb5467d89d34b561f198ab91cb87735e27030ede92e8
 F tool/showdb.c 3956d71e5193162609a60e8c9edfcf09274c00cfea2b1d221261427adb2b5cca
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
@@ -2188,12 +2185,6 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
-F tool/speed-check.sh 2d9e337449f8eb9f5ab4c1ce7433024e334ea03a68d48aa9caee6229c7cf0774
-F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
-F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
-F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
-F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
@@ -2216,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a2f4f319c90b768c6acc96671a3173c0ef0493180f3c4d5443f1ca03d92f6b4
-R 9db6b397f54d671a4320cc5ce752e15a
-U stephan
-Z a79c230793c16373c3792db45c1c451d
+P 0ea5993dd8549056d73f3d5447e0a810495ece23a75be8add78fba6842125d85
+R e9a7a5bb7d30c86d12fb872b44065ee2
+U drh
+Z faa21c2c7bc49d38601dda410afe3656
 # Remove this line to create a well-formed Fossil manifest.
