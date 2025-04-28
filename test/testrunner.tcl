@@ -1044,6 +1044,7 @@ proc job_matches_any_pattern {patternlist jobcmd} {
 # 
 proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   global TRG
+  set ntcljob 0
 
   set topdir [file dirname $::testdir]
   set testrunner_tcl [file normalize [info script]]
@@ -1087,12 +1088,17 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     set depid [lindex $build 0]
     if {$shelldepid!="" && [lsearch $lProp shell]>=0} { set depid $shelldepid }
 
+    incr ntcljob
     add_job                            \
         -displaytype tcl               \
         -displayname $displayname      \
         -cmd $cmd                      \
         -depid $depid                  \
         -priority $priority
+  }
+  if {$ntcljob==0 && [llength $build]>0} {
+    set bldid [lindex $build 0]
+    trdb eval {DELETE FROM jobs WHERE rowid=$bldid}
   }
 }
 
