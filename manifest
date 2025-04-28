@@ -1,5 +1,5 @@
-C proj.tcl:\scorrect\sthe\sauto-reconfigure\srules\sto\sinclude\sany\sX=Y\spassed\sto\sconfigure.\sImprove\shandling\sof\squoted\sCFLAGS.
-D 2025-04-27T06:01:26.900
+C tea:\spull\sin\supstream\steaish.\sConsolidate\sthe\sbuild\sdefinition\sfrom\sthe\supstream\sbuild\sand\sthis\sone\sto\sease\smaintenace.\sImprove\scompatibility\swith\shistorical\sTEA\susage\sof\s--with-tcl=...\s(it\sinsists\son\sa\s/lib\ssuffix\sfor\sthat\spath).
+D 2025-04-28T09:25:19.852
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -22,18 +22,18 @@ F autoconf/Makefile.msc 5bc67d3912444c40c6f96d003e5c90663e51abb83d204a520110b1b2
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
-F autoconf/tea/Makefile.in bb66da485861af82a45e7c135fcf89270f5c0989dbfbb17912c745440b2f9c6c
+F autoconf/tea/Makefile.in 6aebb3d820c8aab94f7599e8594d5f2ecea63894d08f36ba4141040b322042bc
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
 F autoconf/tea/autosetup/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
-F autoconf/tea/autosetup/core.tcl 603506c76d1bdf3cf12be0ed87e11fb77aeae3b0598b97e3989e6fabb60de01a
+F autoconf/tea/autosetup/core.tcl f0eebd4aa416df44f0c22f7be1a2b5b05e8fe4f64e53b0d06a21f328963c5109
 F autoconf/tea/autosetup/feature-tests.tcl 307cac35806817fc87bd0d92004364ee682c0e99f2ab505291500493ab6c7a5f
-F autoconf/tea/autosetup/tester.tcl 93cff35afc5cabc8f855fad114fae58b435fa47cbab5f8cbd4dc694ff0c26107
+F autoconf/tea/autosetup/tester.tcl c293695a0ab5d9e8d0ceeb0ee422f90e8a6aa9f0c7c51acd0b6d9f09d8edfed3
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in e07da6b94561f4aa382bab65b1ccceb04701b97bf59d007c1d1f20a222b22d07
-F autoconf/tea/teaish.tcl 172fd9d6e06e5874db58e3384cfa9a7d52325634302eed189bb60f6cbf40bbd9
+F autoconf/tea/teaish.tcl 8e124f33cbaf9309f3e49be4e7018a03b8f3a52f8c8d9e1e5419f4f7b0eae59e
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autoconf/tea/teaish.tester.tcl.in 0d048e5569ad9bbaffbe5123c2084f9084d424a7719d06f5ca941caafbcca320
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
@@ -51,7 +51,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl d2c0c6da22b4b6e0da6d054851079477815f8acc265e718f16879f3e88ffd819
+F autosetup/proj.tcl 4deaa5bba71390367a55fe4f0dbdc0e0ddbefb5c24a0ee4a5a54bbf288a3285d
 F autosetup/sqlite-config.tcl 54c88abadda1a42c6276186afcf6534e9bcb08350d96676c4ec08b99f2ada484
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2216,8 +2216,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4aeec30443b282f10353cdb9415fdce436287280f0f5d5d6b9917da831744898
-R d75d037808a96903ea777bfc48335881
+P 7a2f4f319c90b768c6acc96671a3173c0ef0493180f3c4d5443f1ca03d92f6b4
+R 9db6b397f54d671a4320cc5ce752e15a
 U stephan
-Z 7e9da962d1e2273ff3dad52e3e71aeeb
+Z a79c230793c16373c3792db45c1c451d
 # Remove this line to create a well-formed Fossil manifest.

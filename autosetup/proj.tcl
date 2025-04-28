@@ -85,7 +85,7 @@ set proj__Config(isatty) [isatty? stdout]
 #
 proc proj-warn {args} {
   show-notices
-  puts stderr [join [list "WARNING:" {*}$args] " "]
+  puts stderr [join [list "WARNING: \[[proj-current-scope 1]\]: " {*}$args] " "]
 }
 
 #
@@ -1762,8 +1762,8 @@ proc proj-validate-no-unresolved-ats {args} {
 #
 # @proj-first-file-found tgtVar fileList
 #
-# Searches $fileList for an existing file. If one is found, its name is
-# assigned to tgtVar and 1 is returned, else tgtVar is not modified
+# Searches $fileList for an existing file. If one is found, its name
+# is assigned to tgtVar and 1 is returned, else tgtVar is set to ""
 # and 0 is returned.
 #
 proc proj-first-file-found {tgtVar fileList} {
@@ -1774,6 +1774,7 @@ proc proj-first-file-found {tgtVar fileList} {
       return 1
     }
   }
+  set tgt ""
   return 0
 }
 

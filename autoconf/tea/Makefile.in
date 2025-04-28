@@ -34,8 +34,8 @@ INSTALL.noexec = $(INSTALL) -m 0644
 # any given teaish build.
 #
 tx.name          = @TEAISH_NAME@
-tx.pkgName       = @TEAISH_PKGNAME@
 tx.version       = @TEAISH_VERSION@
+tx.name.pkg      = @TEAISH_PKGNAME@
 tx.libdir        = @TEAISH_LIBDIR_NAME@
 tx.loadPrefix    = @TEAISH_LOAD_PREFIX@
 tx.tcl           = @TEAISH_TCL@
@@ -47,6 +47,12 @@ tx.dll8          = @TEAISH_DLL8@
 tx.dll9          = @TEAISH_DLL9@
 tx.dll           = $(tx.dll$(TCL_MAJOR_VERSION))
 tx.dir           = @TEAISH_EXT_DIR@
+
+@if TEAISH_DIST_NAME
+tx.name.dist     = @TEAISH_DIST_NAME@
+@else
+tx.name.dist     = $(teaish.name)
+@endif
 
 teaish.dir           = @abs_top_srcdir@
 #teaish.dir.autosetup = @TEAISH_AUTOSETUP_DIR@
@@ -69,6 +75,7 @@ libdir         = @libdir@
 libexecdir     = @libexecdir@
 localstatedir  = @localstatedir@
 mandir         = @mandir@
+prefix         = @prefix@
 runstatedir    = @runstatedir@
 sbindir        = @sbindir@
 sharedstatedir = @sharedstatedir@
@@ -81,16 +88,17 @@ sysconfdir     = @sysconfdir@
 #
 TCLSH             = @TCLSH_CMD@
 TCL_CONFIG_SH     = @TCL_CONFIG_SH@
-TCL_INCLUDE_SPEC  = @TCL_INCLUDE_SPEC@
-TCL_LIB_SPEC      = @TCL_LIB_SPEC@
-TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 TCL_EXEC_PREFIX   = @TCL_EXEC_PREFIX@
-TCL_VERSION       = @TCL_VERSION@
+TCL_INCLUDE_SPEC  = @TCL_INCLUDE_SPEC@
+TCL_LIBS          = @TCL_LIBS@
+TCL_LIB_SPEC      = @TCL_LIB_SPEC@
 TCL_MAJOR_VERSION = @TCL_MAJOR_VERSION@
 TCL_MINOR_VERSION = @TCL_MINOR_VERSION@
 TCL_PATCH_LEVEL   = @TCL_PATCH_LEVEL@
+TCL_PREFIX        = @TCL_PREFIX@
 TCL_SHLIB_SUFFIX  = @TCL_SHLIB_SUFFIX@
-TCL_LIBS          = @TCL_LIBS@
+TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
+TCL_VERSION       = @TCL_VERSION@
 TCLLIBDIR         = @TCLLIBDIR@
 
 #
@@ -107,10 +115,15 @@ CFLAGS.configure = @SH_CFLAGS@ @TEAISH_CFLAGS@ @CFLAGS@ @CPPFLAGS@ $(TCL_INCLUDE
 # LDFLAGS.configure = LDFLAGS as known at configure-time.
 #
 # This ordering is deliberate: flags populated via tcl's
-# [teaish-ldflags-add] should preceed LDFLAGS (which typically
+# [teaish-ldflags-add] should precede LDFLAGS (which typically
 # comes from the ./configure command-line invocation).
 #
-LDFLAGS.configure = @SH_LDFLAGS@ @TEAISH_LDFLAGS@ @LDFLAGS@ $(TCL_STUB_LIB_SPEC)
+LDFLAGS.configure = @TEAISH_LDFLAGS@ @LDFLAGS@
+
+#
+# Linker flags for linkhing a shared library.
+#
+LDFLAGS.shlib = @SH_LDFLAGS@
 
 #
 # The following tx.XYZ vars may be populated/modified by teaish.tcl
@@ -119,9 +132,9 @@ LDFLAGS.configure = @SH_LDFLAGS@ @TEAISH_LDFLAGS@ @LDFLAGS@ $(TCL_STUB_LIB_SPEC)
 
 #
 # tx.src is the list of source or object files to include in the
-# (single) compiler invocation. This will initially contain any
-# sources passed to [teaish-src-add], but may also be appended to
-# by teaish.make.
+# (single) compiler/linker invocation. This will initially contain any
+# sources passed to [teaish-src-add], but may also be appended to by
+# teaish.make.
 #
 tx.src     =@TEAISH_EXT_SRC@
 
@@ -163,25 +176,49 @@ teaish__autogen.deps = \
   @TEAISH_PKGINDEX_TCL_IN@ \
   @AUTODEPS@
 
+@if TEAISH_MAKEFILE_IN
+$(tx.makefile): $(tx.makefile.in)
+@endif
+
+teaish.autoreconfig = \
+  @TEAISH_AUTORECONFIG@
+
 #
 # Problem: when more than one target can invoke TEAISH_AUTORECONFIG,
 # we can get parallel reconfigures running. Thus, targets which
 # may require reconfigure should depend on...
 #
 config.log: $(teaish__autogen.deps)
-	@TEAISH_AUTORECONFIG@
+	$(teaish.autoreconfig)
 # ^^^ We would love to skip this when running [dist]clean, but there's
 # no POSIX Make-portable way to do that. GNU Make can.
 .PHONY: reconfigure
 reconfigure:
-	@TEAISH_AUTORECONFIG@
+	$(teaish.autoreconfig)
 
 $(teaish.makefile): $(teaish__auto.def) $(teaish.makefile.in) \
   @AUTODEPS@
 
+@if TEAISH_TESTER_TCL_IN
 @TEAISH_TESTER_TCL_IN@:
 @TEAISH_TESTER_TCL@: @TEAISH_TESTER_TCL_IN@
 config.log: @TEAISH_TESTER_TCL@
+@endif
+
+#
+# CC variant for compiling Tcl-using sources.
+#
+CC.tcl = \
+  $(CC) -o $@ $(CFLAGS.configure) $(CFLAGS) $(tx.CFLAGS)
+
+#
+# CC variant for linking $(tx.src) into an extension DLL.  Note that
+# $(tx.src) must come before $(LDFLAGS...) for linking to third-party
+# libs to work.
+#
+CC.dll = \
+  $(CC.tcl) $(tx.src) $(LDFLAGS.shlib) \
+    $(LDFLAGS.configure) $(LDFLAGS) $(tx.LDFLAGS) $(TCL_STUB_LIB_SPEC)
 
 @if TEAISH_ENABLE_DLL
 #
@@ -189,8 +226,11 @@ config.log: @TEAISH_TESTER_TCL@
 # target: the extension shared lib.
 #
 $(tx.dll): $(tx.src) config.log
-	$(CC) -o $@ $(CFLAGS.configure) $(CFLAGS) $(tx.CFLAGS) \
-		$(tx.src) $(LDFLAGS.configure) $(LDFLAGS) $(tx.LDFLAGS)
+	@if [ "x" = "x$(tx.src)" ]; then \
+		echo "Makefile var tx.src (source/object files) is empty" 1>&2; \
+		exit 1; \
+	fi
+	$(CC.dll)
 
 all: $(tx.dll)
 @endif # TEAISH_ENABLE_DLL
@@ -208,6 +248,7 @@ test-extension: # this name is reserved for use by teaish.make[.in]
 @if TEAISH_ENABLE_DLL
 test-prepre: $(tx.dll)
 @endif
+@if TEAISH_TESTER_TCL
 test-core.args = @TEAISH_TESTER_TCL@
 @if TEAISH_ENABLE_DLL
 test-core.args += '$(tx.dll)' '$(tx.loadPrefix)'
@@ -215,10 +256,14 @@ test-core.args += '$(tx.dll)' '$(tx.loadPrefix)'
 test-core.args += '' ''
 @endif
 test-core.args += @TEAISH_TESTUTIL_TCL@
-test-prepre: @TEAISH_TESTER_TCL@
-test-pre: test-prepre
 test-core: test-pre
 	$(TCLSH) $(test-core.args)
+test-prepre: @TEAISH_TESTER_TCL@
+@else # !TEAISH_TESTER_TCL
+test-prepre:
+@endif # TEAISH_TESTER_TCL
+test-pre: test-prepre
+test-core: test-pre
 test-post: test-core
 test: test-post
 
@@ -234,7 +279,6 @@ clean-post: clean-core
 clean: clean-post
 
 .PHONY: distclean-pre distclean-core distclean-post clean-extension
-distclean-extension: # this name is reserved for use by teaish.make
 distclean-pre: clean
 distclean-core: distclean-pre
 	rm -f Makefile
@@ -256,6 +300,7 @@ distclean-core: distclean-pre
 @if TEAISH_TEST_TCL_IN
 	rm -f @TEAISH_TEST_TCL@
 @endif
+distclean-extension: # this name is reserved for use by teaish.make
 distclean-post: distclean-core
 distclean: distclean-post
 
@@ -277,14 +322,15 @@ install-core: install-pre
 	$(INSTALL.noexec) @TEAISH_PKGINIT_TCL@ "$(DESTDIR)$(TCLLIBDIR)"
 @endif
 install-test: install-core
-	@echo 'package require $(tx.pkgName) $(tx.version)' > $@.tcl
-	@echo "Post-install test of [package require $(tx.pkgName) $(tx.version)]..."
-	@if $(TCLSH) $@.tcl ; then \
-		echo "test passed"; \
-		rm -f $@.tcl; \
+	@echo "Post-install test of [package require $(tx.name.pkg) $(tx.version)]..."; \
+	if echo \
+		'set c 0;' \
+		'if {[catch {package require  $(tx.name.pkg) $(tx.version)}]} {incr c};' \
+		'exit $$c' \
+		| $(TCLSH) ; then \
+		echo "passed"; \
 	else \
-		echo "TEST FAILED"; \
-		rm -f $@.tcl; \
+		echo "FAILED"; \
 		exit 1; \
 	fi
 install-post: install-test
@@ -302,35 +348,50 @@ uninstall-post: uninstall-core
 	@echo "Uninstalled Tcl extension $(tx.name) $(tx.version)"
 uninstall: uninstall-post
 
-Makefile: config.log $(teaish.makefile.in)
 @if TEAISH_MAKEFILE_IN
-config.log: @TEAISH_MAKEFILE_IN@
+Makefile:  $(tx.makefile.in)
+config.log: $(teaish.makefile.in)
 @endif
 
 #
 # Package archive generation ("dist") rules...
 #
 @if TEAISH_ENABLE_DIST
+@if BIN_TAR
 @if BIN_ZIP
+
+# When installing teaish as part of "make dist", we need to run
+# configure with similar flags to what we last configured with but we
+# must not pass on any extension-specific flags, as those won't be
+# recognized when running in --teaish-install mode, causing
+# the sub-configure to fail.
+dist.flags = --with-tclsh=$(TCLSH)
+dist.reconfig = $(teaish.dir)/configure $(dist.flags)
+
 # Temp dir for dist.zip. Must be different than dist.tgz or else
 # parallel builds may hose the dist.
 teaish__dist.tmp.zip = teaish__dist_zip
 #
 # Make a distribution zip file...
 #
-dist.zip.dir = $(tx.name)-$(tx.version)
-dist.zip = $(dist.zip.dir).zip
+dist.basename = $(tx.name.dist)-$(tx.version)
+dist.zip = $(dist.basename).zip
 .PHONY: dist.zip dist.zip-core dist.zip-post
 #dist.zip-pre:
 # We apparently can't add a pre-hook here, else "make dist" rebuilds
 # the archive each time it's run.
 $(dist.zip): $(tx.dist.files)
 	@rm -fr $(teaish__dist.tmp.zip)
-	@mkdir -p $(teaish__dist.tmp.zip)/$(dist.zip.dir)
+	@mkdir -p $(teaish__dist.tmp.zip)/$(dist.basename)
 	@tar cf $(teaish__dist.tmp.zip)/tmp.tar $(tx.dist.files)
-	@tar xf $(teaish__dist.tmp.zip)/tmp.tar -C $(teaish__dist.tmp.zip)/$(dist.zip.dir)
-	@rm -f $(dist.zip.dir)/tmp.tar $(dist.zip)
-	@cd $(teaish__dist.tmp.zip) && zip -q -r ../$(dist.zip) $(dist.zip.dir)
+	@tar xf $(teaish__dist.tmp.zip)/tmp.tar -C $(teaish__dist.tmp.zip)/$(dist.basename)
+@if TEAISH_DIST_FULL
+	@$(dist.reconfig) \
+		--teaish-install=$(teaish__dist.tmp.zip)/$(dist.basename) \
+		--t-e-d=$(teaish__dist.tmp.zip)/$(dist.basename) >/dev/null
+@endif
+	@rm -f $(dist.basename)/tmp.tar $(dist.zip)
+	@cd $(teaish__dist.tmp.zip) && zip -q -r ../$(dist.zip) $(dist.basename)
 	@rm -fr $(teaish__dist.tmp.zip)
 	@ls -la $(dist.zip)
 dist.zip-core: $(dist.zip)
@@ -342,23 +403,27 @@ undist-zip:
 undist: undist-zip
 @endif #BIN_ZIP
 
-@if BIN_TAR
 #
 # Make a distribution tarball...
 #
 teaish__dist.tmp.tgz = teaish__dist_tgz
-dist.tgz.dir = $(tx.name)-$(tx.version)
-dist.tgz = $(dist.tgz.dir).tar.gz
+dist.tgz = $(dist.basename).tar.gz
 .PHONY: dist.tgz dist.tgz-core dist.tgz-post
 # dist.tgz-pre:
 # see notes in dist.zip
 $(dist.tgz): $(tx.dist.files)
 	@rm -fr $(teaish__dist.tmp.tgz)
-	@mkdir -p $(teaish__dist.tmp.tgz)/$(dist.tgz.dir)
+	@mkdir -p $(teaish__dist.tmp.tgz)/$(dist.basename)
 	@tar cf $(teaish__dist.tmp.tgz)/tmp.tar $(tx.dist.files)
-	@tar xf $(teaish__dist.tmp.tgz)/tmp.tar -C $(teaish__dist.tmp.tgz)/$(dist.tgz.dir)
-	@rm -f $(dist.tgz.dir)/tmp.tar $(dist.tgz)
-	@cd $(teaish__dist.tmp.tgz) && tar czf ../$(dist.tgz) $(dist.tgz.dir)
+	@tar xf $(teaish__dist.tmp.tgz)/tmp.tar -C $(teaish__dist.tmp.tgz)/$(dist.basename)
+@if TEAISH_DIST_FULL
+	@rm -f $(teaish__dist.tmp.tgz)/$(dist.basename)/pkgIndex.tcl.in; # kludge
+	@$(dist.reconfig) \
+		--teaish-install=$(teaish__dist.tmp.tgz)/$(dist.basename) \
+		--t-e-d=$(teaish__dist.tmp.zip)/$(dist.basename) >/dev/null
+@endif
+	@rm -f $(dist.basename)/tmp.tar $(dist.tgz)
+	@cd $(teaish__dist.tmp.tgz) && tar czf ../$(dist.tgz) $(dist.basename)
 	@rm -fr $(teaish__dist.tmp.tgz)
 	@ls -la $(dist.tgz)
 dist.tgz-core: $(dist.tgz)
@@ -368,6 +433,9 @@ dist: dist.tgz
 undist-tgz:
 	rm -f $(dist.tgz)
 undist: undist-tgz
+@else #!BIN_TAR
+dist:
+	@echo "The dist rules require tar, which configure did not find." 1>&2; exit 1
 @endif #BIN_TAR
 @else #!TEAISH_ENABLE_DIST
 undist:
@@ -378,6 +446,21 @@ dist:
 @endif
 @endif #TEAISH_ENABLE_DIST
 
+Makefile: @TEAISH_TCL@
+
+@if TEAISH_MAKEFILE_CODE
+#
+# TEAISH_MAKEFILE_CODE may contain literal makefile code, which
+# gets pasted verbatim here. Either [define TEAISH_MAKEFILE_CODE
+# ...] or use [teaish-make-add] to incrementally build up this
+# content.
+#
+# <TEAISH_MAKEFILE_CODE>
+@TEAISH_MAKEFILE_CODE@
+# </TEAISH_MAKEFILE_CODE>
+@endif
+
+@if TEAISH_MAKEFILE
 #
 # TEAISH_MAKEFILE[_IN] defines any extension-specific state this file
 # needs.
@@ -401,31 +484,12 @@ dist:
 # It may optionally hook into various targets as documented in
 # /doc/extensions.md in the canonical teaish source tree.
 #
-# Interestingly, we don't have to pre-filter teaish.makefile.in -
-# we can just import it into here. That skips its teaish-specific
-# validation though. Hmm.
+# Interestingly, we don't have to pre-filter teaish.makefile.in - we
+# can just @include it here. That skips its teaish-specific validation
+# though. Hmm.
 #
-#@if TEAISH_MAKEFILE_IN
-## TEAISH_MAKEFILE_IN ==>
-#Makefile: @TEAISH_MAKEFILE_IN@
-#@include @TEAISH_MAKEFILE_IN@
-#@endif
-#@if !TEAISH_MAKEFILE_IN
-@if TEAISH_MAKEFILE
-# TEAISH_MAKEFILE ==>
+# <TEAISH_MAKEFILE>
 Makefile: @TEAISH_MAKEFILE@
 @include @TEAISH_MAKEFILE@
-@endif #TEAISH_MAKEFILE
-#@endif #!TEAISH_MAKEFILE_IN
-
-#
-# TEAISH_MAKEFILE_CODE may contain literal makefile code, which
-# gets pasted verbatim here. Either [define TEAISH_MAKEFILE_CODE
-# ...] or use [teaish-make-add] to incrementally build up this
-# content.
-#
-@if TEAISH_MAKEFILE_CODE
-# TEAISH_MAKEFILE_CODE ==>
-Makefile: @TEAISH_TCL@
-@TEAISH_MAKEFILE_CODE@
-@endif #TEAISH_MAKEFILE_CODE
+# </TEAISH_MAKEFILE>
+@endif

@@ -1,30 +1,74 @@
 # Teaish configure script for the SQLite Tcl extension
 
-apply {{} {
-  set version [proj-file-content -trim [teaish-get -dir]/../VERSION]
-  proj-assert {[string match 3.*.* $version]}
-  teaish-pkginfo-set -vars {
-    -name sqlite
-    -pkgName sqlite3
-    -version $version
-    -loadPrefix Sqlite3
-    -vsatisfies 8.6-
-    -libDir sqlite$version
-    -pragmas {no-dist}
-  }
-}}
-
 #
-# Object for communicating certain config-time state across various
-# auto.def-related pieces.
+# State for disparate config-time pieces.
 #
-array set sqliteConfig [subst [proj-strip-hash-comments {
+array set sqlite__Config [proj-strip-hash-comments {
   #
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
   all-flag-enables {fts3 fts4 fts5 rtree geopoly}
-}]]
+
+  # >0 if building in the canonical tree. -1=undetermined
+  is-canonical -1
+}]
+
+#
+# Set up the package info for teaish...
+#
+apply {{dir} {
+  # Figure out the version number...
+  set version ""
+  if {[file exists $dir/../VERSION]} {
+    # The canonical SQLite TEA(ish) build
+    set version [proj-file-content -trim $dir/../VERSION]
+    set ::sqlite__Config(is-canonical) 1
+    set distname sqlite-tcl
+  } elseif {[file exists $dir/generic/tclsqlite3.c]} {
+    # The copy from the teaish tree, used as a dev/test bed before
+    # updating SQLite's tree.
+    set ::sqlite__Config(is-canonical) 0
+    set fd [open $dir/generic/tclsqlite3.c rb]
+    while {[gets $fd line] >=0} {
+      if {[regexp {^#define[ ]+SQLITE_VERSION[ ]+"(3.+)"} \
+             $line - version]} {
+        set distname sqlite-teaish
+        break
+      }
+    }
+    close $fd
+  }
+
+  if {"" eq $version} {
+    proj-fatal "Cannot determine the SQLite version number"
+  }
+
+  proj-assert {$::sqlite__Config(is-canonical) > -1}
+  proj-assert {[string match 3.*.* $version]} \
+    "Unexpected SQLite version: $version"
+
+  set pragmas {}
+  if {$::sqlite__Config(is-canonical)} {
+    # Disable "make dist" in the canonical tree.  That tree is
+    # generated from several pieces and creating/testing working
+    # "dist" rules for that sub-build currently feels unnecessary. The
+    # copy in the teaish tree, though, should be able to "make dist".
+    lappend pragmas no-dist
+  } else {
+    lappend pragmas full-dist
+  }
+
+  teaish-pkginfo-set -vars {
+    -name sqlite
+    -name.pkg sqlite3
+    -version $version
+    -name.dist $distname
+    -vsatisfies 8.6-
+    -libDir sqlite$version
+    -pragmas $pragmas
+  }
+}} [teaish-get -dir]
 
 #
 # Must return either an empty string or a list in the form accepted by
@@ -52,7 +96,7 @@ proc teaish-options {} {
     geopoly              => {Enable the GEOPOLY extension}
     rtree                => {Enable the RTREE extension}
     session              => {Enable the SESSION extension}
-    all=1                => {Disable $::sqliteConfig(all-flag-enables)}
+    all=1                => {Disable $::sqlite__Config(all-flag-enables)}
     with-icu-ldflags:LDFLAGS
       => {Enable SQLITE_ENABLE_ICU and add the given linker flags for the
           ICU libraries. e.g. on Ubuntu systems, try '-licui18n -licuuc -licudata'.}
@@ -75,8 +119,8 @@ proc teaish-options {} {
 proc teaish-configure {} {
   use teaish/feature-tests
 
-  set srcdir [teaish-get -dir]
   teaish-src-add -dist -dir generic/tclsqlite3.c
+
   if {[proj-opt-was-provided override-sqlite-version]} {
     teaish-pkginfo-set -version [opt-val override-sqlite-version]
     proj-warn "overriding sqlite version number:" [teaish-pkginfo-get -version]
@@ -105,8 +149,8 @@ proc teaish-configure {} {
     msg-result "Using system-level sqlite3."
     teaish-cflags-add -DUSE_SYSTEM_SQLITE
     teaish-ldflags-add -lsqlite3
-  } else {
-    teaish-cflags-add -I${srcdir}/..
+  } elseif {$::sqlite__Config(is-canonical)} {
+    teaish-cflags-add -I[teaish-get -dir]/..
   }
 
   teaish-check-librt
@@ -157,7 +201,7 @@ proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
   if {![opt-bool all]} {
     # Special handling for --disable-all
-    foreach flag $::sqliteConfig(all-flag-enables) {
+    foreach flag $::sqlite__Config(all-flag-enables) {
       if {![proj-opt-was-provided $flag]} {
         proj-opt-set $flag 0
       }
@@ -178,7 +222,7 @@ proc sqlite-handle-common-feature-flags {} {
       # The --geopoly flag, though, will automatically re-enable
       # --rtree, so --disable-rtree won't actually disable anything in
       # that case.
-      foreach k $::sqliteConfig(all-flag-enables) {
+      foreach k $::sqlite__Config(all-flag-enables) {
         if {![proj-opt-was-provided $k]} {
           proj-opt-set $k 1
         }
@@ -499,9 +543,6 @@ proc sqlite-munge-cflags {} {
   # Move CFLAGS and CPPFLAGS entries matching -DSQLITE_OMIT* and
   # -DSQLITE_ENABLE* to OPT_FEATURE_FLAGS. This behavior is derived
   # from the pre-3.48 build.
-  #
-  # Handling of CPPFLAGS, as well as removing ENABLE/OMIT from
-  # CFLAGS/CPPFLAGS, was missing in the 3.49.0 release as well.
   #
   # If any configure flags for features are in conflict with
   # CFLAGS/CPPFLAGS-specified feature flags, all bets are off.  There

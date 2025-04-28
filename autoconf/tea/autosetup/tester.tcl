@@ -115,12 +115,15 @@ proc test-assert {testId script {msg ""}} {
 # @test-expect testId script result
 #
 # Runs $script in the calling scope and compares its result to
-# $result.  If they differ, it triggers an [assert].
+# $result, minus any leading or trailing whitespace.  If they differ,
+# it triggers an [assert].
 #
 proc test-expect {testId script result} {
   puts "test $testId"
-  set x [uplevel 1 $script]
-  test__assert 1 {$x eq $result} "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
+  set x [string trim [uplevel 1 $script]]
+  set result [string trim $result]
+  test__assert 1 {$x eq $result} \
+    "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
 #
