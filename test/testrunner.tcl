@@ -1163,24 +1163,47 @@ proc add_make_job {bld target} {
 }
 
 proc add_fuzztest_jobs {buildname patternlist} {
+  global env TRG
 
   foreach {interpreter scripts} [trd_fuzztest_data] {
     set bldDone 0
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
 
+    if {$interpreter=="fuzzcheck"
+     && [info exists env(FUZZDB)]
+     && [file readable $env(FUZZDB)]
+    } {
+      set TRG(FUZZDB) $env(FUZZDB)
+      set fname [file normalize $env(FUZZDB)]
+      set N [expr {([file size $fname]+4999999)/5000000}]
+      for {set i 0} {$i<$N} {incr i} {
+        lappend scripts [list --slice $i $N $fname]
+      }
+    }
+
     foreach s $scripts {
 
       # Fuzz data files fuzzdata1.db and fuzzdata2.db are larger than
       # the others. So ensure that these are run as a higher priority.
-      set tail [file tail $s]
+      if {[llength $s]==1} {
+        set tail [file tail $s]
+      } else {
+        set fname [lindex $s end]
+        set tail [lrange $s 0 end-1]
+        lappend tail [file tail $fname]
+      }
       if {![job_matches_any_pattern $patternlist "fuzzcheck $tail"]} continue
       if {!$bldDone} {
         set bld [add_build_job $buildname $interpreter]
         foreach {depid dirname displayname} $bld {}
         set bldDone 1
       }
-      if {$tail=="fuzzdata1.db" || $tail=="fuzzdata2.db"} {
+      if {[string match ?-slice* $tail]} {
+        set priority 15
+      } elseif {$tail=="fuzzdata1.db"
+          || $tail=="fuzzdata2.db"
+          || $tail=="fuzzdata8.db"} {
         set priority 5
       } else {
         set priority 1
@@ -1618,6 +1641,9 @@ proc run_testset {} {
 
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
+  if {[info exists TRG(FUZZDB)]} {
+    puts "Extra fuzztest data taken from $TRG(FUZZDB)"
+  }
   trdb eval {
      SELECT sum(ntest) AS totaltest,
             sum(nerr) AS totalerr
