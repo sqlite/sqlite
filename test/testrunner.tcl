@@ -1002,6 +1002,35 @@ proc add_job {args} {
 
   trdb last_insert_rowid
 }
+
+# Look to see if $jobcmd matches any of the glob patterns given in
+# $patternlist.  Return true if there is a match.  Return false
+# if no match is seen.
+#
+# An empty patternlist matches everything
+#
+proc job_matches_any_pattern {patternlist jobcmd} {
+  set bMatch 0
+  if {[llength $patternlist]==0} {return 1}
+  foreach p $patternlist {
+    set p [string trim $p *]
+    if {[string index $p 0]=="^"} {
+      set p [string range $p 1 end]
+    } else {
+      set p "*$p"
+    }
+    if {[string index $p end]=="\$"} {
+      set p [string range $p 0 end-1]
+    } else {
+      set p "$p*"
+    }
+    if {[string match $p $jobcmd]} {
+      set bMatch 1
+      break
+    }
+  }
+  return $bMatch
+}
        
 
 # Argument $build is either an empty string, or else a list of length 3 
@@ -1032,26 +1061,8 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   # The ::testspec array is populated by permutations.test
   foreach f [dict get $::testspec($config) -files] {
 
-    if {[llength $patternlist]>0} {
-      set bMatch 0
-      foreach p $patternlist {
-        set p [string trim $p *]
-        if {[string index $p 0]=="^"} {
-          set p [string range $p 1 end]
-        } else {
-          set p "*$p"
-        }
-        if {[string index $p end]=="\$"} {
-          set p [string range $p 0 end-1]
-        } else {
-          set p "$p*"
-        }
-        if {[string match $p "$config [file tail $f]"]} {
-          set bMatch 1
-          break
-        }
-      }
-      if {$bMatch==0} continue
+    if {![job_matches_any_pattern $patternlist "$config [file tail $f]"]} {
+      continue
     }
 
     if {[file pathtype $f]!="absolute"} { set f [file join $::testdir $f] }
@@ -1145,26 +1156,29 @@ proc add_make_job {bld target} {
     -priority 1
 }
 
-proc add_fuzztest_jobs {buildname} {
+proc add_fuzztest_jobs {buildname patternlist} {
 
   foreach {interpreter scripts} [trd_fuzztest_data] {
+    set bldDone 0
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
-
-    set bld [add_build_job $buildname $interpreter]
-    foreach {depid dirname displayname} $bld {}
 
     foreach s $scripts {
 
       # Fuzz data files fuzzdata1.db and fuzzdata2.db are larger than
       # the others. So ensure that these are run as a higher priority.
       set tail [file tail $s]
+      if {![job_matches_any_pattern $patternlist "fuzzcheck $tail"]} continue
+      if {!$bldDone} {
+        set bld [add_build_job $buildname $interpreter]
+        foreach {depid dirname displayname} $bld {}
+        set bldDone 1
+      }
       if {$tail=="fuzzdata1.db" || $tail=="fuzzdata2.db"} {
         set priority 5
       } else {
         set priority 1
       }
-
       add_job                                                   \
         -displaytype fuzz                                       \
         -displayname "$buildname $interpreter $tail"            \
@@ -1200,9 +1214,7 @@ proc add_devtest_jobs {lBld patternlist} {
   foreach b $lBld {
     set bld [add_build_job $b $TRG(testfixture)]
     add_tcl_jobs $bld veryquick $patternlist SHELL
-    if {$patternlist==""} {
-      add_fuzztest_jobs $b
-    }
+    add_fuzztest_jobs $b $patternlist
 
     if {[trdb one "SELECT EXISTS (SELECT 1 FROM jobs WHERE depid='SHELL')"]} {
       set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
@@ -1276,13 +1288,11 @@ proc add_jobs_from_cmdline {patternlist} {
           add_tcl_jobs $bld $c $patternlist SHELL
         }
 
-        if {$patternlist==""} {
-          foreach e [trd_extras $TRG(platform) $b] {
-            if {$e=="fuzztest"} {
-              add_fuzztest_jobs $b
-            } else {
-              add_make_job $bld $e
-            }
+        foreach e [trd_extras $TRG(platform) $b] {
+          if {$e=="fuzztest"} {
+            add_fuzztest_jobs $b $patternlist
+          } elseif {[job_matches_any_pattern $patternlist $e]} {
+            add_make_job $bld $e
           }
         }
 
