@@ -169,7 +169,6 @@ Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
 proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
-  
     if {$::tcl_platform(platform) eq "windows"} {
       catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
