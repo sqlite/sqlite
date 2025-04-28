@@ -531,7 +531,7 @@ proc show_status {db cls} {
       (SELECT value FROM config WHERE name='start')
   }]
 
-  set total 0
+  set totalw 0
   foreach s {"" ready running done failed omit} { set S($s) 0; set W($s) 0; }
   set workpending 0
   $db eval {
@@ -556,7 +556,7 @@ proc show_status {db cls} {
     flush stdout
   }
   puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]"]
-  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total jobs,\
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$totalw jobs,\
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
@@ -1170,7 +1170,7 @@ proc add_fuzztest_jobs {buildname patternlist} {
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
 
-    if {$interpreter=="fuzzcheck"
+    if {[string match fuzzcheck* $interpreter]
      && [info exists env(FUZZDB)]
      && [file readable $env(FUZZDB)]
     } {
@@ -1193,7 +1193,9 @@ proc add_fuzztest_jobs {buildname patternlist} {
         set tail [lrange $s 0 end-1]
         lappend tail [file tail $fname]
       }
-      if {![job_matches_any_pattern $patternlist "fuzzcheck $tail"]} continue
+      if {![job_matches_any_pattern $patternlist "$interpreter $tail"]} {
+        continue
+      }
       if {!$bldDone} {
         set bld [add_build_job $buildname $interpreter]
         foreach {depid dirname displayname} $bld {}

@@ -459,7 +459,10 @@ proc trd_fuzztest_data {} {
     return [list fuzzcheck.exe $lFuzzDb]
   }
 
-  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb {sessionfuzz run} $lSessionDb]
+  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
+               [trd_get_bin_name fuzzcheck-asan] $lFuzzDb \
+               [trd_get_bin_name fuzzcheck-ubsan] $lFuzzDb \
+               {sessionfuzz run} $lSessionDb]
 }
 
 
