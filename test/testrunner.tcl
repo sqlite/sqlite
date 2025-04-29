@@ -1174,6 +1174,8 @@ proc add_fuzztest_jobs {buildname patternlist} {
     if {[string match fuzzcheck* $interpreter]
      && [info exists env(FUZZDB)]
      && [file readable $env(FUZZDB)]
+     && $buildname ne "Windows-Win32Heap"
+     && $buildname ne "Windows-Memdebug"
     } {
       set TRG(FUZZDB) $env(FUZZDB)
       set fname [file normalize $env(FUZZDB)]

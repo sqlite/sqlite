@@ -457,7 +457,6 @@ proc trd_fuzztest_data {buildname} {
   set sanBuilds {All-Debug Apple Have-Not Update-Delete-Limit}
 
   if {$::tcl_platform(platform) eq "windows"} {
-    if {$buildname eq "Windows-Win32Heap"} return [list]
     return [list fuzzcheck.exe $lFuzzDb]
   } elseif {[lsearch $sanBuilds $buildname]>=0} {
     return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
