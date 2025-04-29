@@ -1647,7 +1647,7 @@ proc run_testset {} {
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
   if {[info exists TRG(FUZZDB)]} {
-    puts "Extra fuzztest data taken from $TRG(FUZZDB)"
+    puts "Extra fuzzcheck data taken from $TRG(FUZZDB)"
   }
   trdb eval {
      SELECT sum(ntest) AS totaltest,
