@@ -1164,8 +1164,9 @@ proc add_make_job {bld target} {
 
 proc add_fuzztest_jobs {buildname patternlist} {
   global env TRG
+  # puts buildname=$buildname
 
-  foreach {interpreter scripts} [trd_fuzztest_data] {
+  foreach {interpreter scripts} [trd_fuzztest_data $buildname] {
     set bldDone 0
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
