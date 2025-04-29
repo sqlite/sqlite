@@ -98,6 +98,7 @@ Usage:
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
+    --fuzzdb FILENAME        Additional external fuzzcheck database
     --jobs NUM               Run tests using NUM separate processes
     --omit CONFIGS           Omit configs on comma-separated list CONFIGS
     --status                 Show the full "status" report while running
@@ -811,6 +812,9 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
+    } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
+      incr ii
+      set env(FUZZDB) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
       set TRG(stopOnError) 1
     } elseif {[string match "$a*" --stop-on-coredump]} {
