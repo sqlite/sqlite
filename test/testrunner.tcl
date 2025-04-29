@@ -1701,7 +1701,13 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      set tail [lindex $displayname end]
+      if {[lindex $displayname end-3] eq "--slice"} {
+        set M [lindex $displayname end-2]
+        set N [lindex $displayname end-1]
+        set tail "[lindex $displayname end] (slice $M/$N)"
+      } else {
+        set tail [lindex $displayname end]
+      }
       set e1 [lindex $displayname 1]
       if {[string match config=* $e1]} {
         set cfg [string range $e1 7 end]

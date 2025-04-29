@@ -1,5 +1,5 @@
-C Do\snot\srun\sFUZZDB\son\seither\sWindows-Memdebug\sor\sWindows-Win32Heap.
-D 2025-04-29T10:29:35.813
+C Improved\s--explain\sdisplay\sof\sFUZZDB\stest\splans\sin\stestrunner.tcl.
+D 2025-04-29T10:41:16.849
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1734,7 +1734,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
-F test/testrunner.tcl e84f0bbac16ec0d2f5bad2c7738ee7e9301ef8145f967d31a578407b2ca6219a x
+F test/testrunner.tcl 038b538f04c857066b7057661878f4cc1517860f6c3f040087455780fc9f20dd x
 F test/testrunner_data.tcl 8d5fa3851c48bc94e26db0be325202e44f6ca4ed838272b8d5b10c23817621e6
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 785599394dde0fb36ae2e07d611f9523a05a0817dbd8c416582b3b682dbfa4ff
-R d74a397dc8027d24c61598f2314a351f
+P 10d8401d59136dda7051af0da398b06a18031560f2734f4fa347d339765d2089
+R f8d86c9e45d3a96c13f67cb70749dc31
 U drh
-Z fe67492a73ff090eb49d8f6be601615a
+Z 1e9ce377b8e70ac62de3d9fa2977f8de
 # Remove this line to create a well-formed Fossil manifest.
