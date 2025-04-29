@@ -11,7 +11,7 @@
 
 #
 # ----- @module proj.tcl -----
-# @section Project Helper APIs
+# @section Project-agnostic Helper APIs
 #
 
 #
@@ -85,7 +85,7 @@ set proj__Config(isatty) [isatty? stdout]
 #
 proc proj-warn {args} {
   show-notices
-  puts stderr [join [list "WARNING: \[[proj-current-scope 1]\]: " {*}$args] " "]
+  puts stderr [join [list "WARNING: \[[proj-scope 1]\]: " {*}$args] " "]
 }
 
 #
@@ -105,7 +105,7 @@ proc proj-fatal {args} {
     set args [lassign $args -]
     incr lvl
   }
-  puts stderr [join [list "FATAL: \[[proj-current-scope $lvl]]: " {*}$args]]
+  puts stderr [join [list "FATAL: \[[proj-scope $lvl]]: " {*}$args]]
   exit 1
 }
 
@@ -121,27 +121,26 @@ proc proj-error {args} {
     set args [lassign $args -]
     incr lvl
   }
-  error [join [list "\[[proj-current-scope $lvl]]:" {*}$args]]
+  error [join [list "\[[proj-scope $lvl]]:" {*}$args]]
 }
 
 #
 # @proj-assert script ?message?
 #
-# Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
-# false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $msg is set then
-# that is used instead.
+# Kind of like a C assert: if uplevel of [list expr $script] is false,
+# a fatal error is triggered. The error message, by default, includes
+# the body of the failed assertion, but if $msg is set then that is
+# used instead.
 #
 proc proj-assert {script {msg ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
-  set x "expr \{ $script \}"
-  if {![uplevel 1 $x]} {
+  if {![uplevel 1 [list expr $script]]} {
     if {"" eq $msg} {
       set msg $script
     }
-    proj-fatal "Assertion failed in \[[proj-current-scope 1]\]: $msg"
+    proj-fatal "Assertion failed in \[[proj-scope 1]\]: $msg"
   }
 }
 
@@ -214,7 +213,7 @@ proc proj-indented-notice {args} {
 # Returns 1 if cross-compiling, else 0.
 #
 proc proj-is-cross-compiling {} {
-  return [expr {[get-define host] ne [get-define build]}]
+  expr {[get-define host] ne [get-define build]}
 }
 
 #
@@ -251,7 +250,7 @@ proc proj-cflags-without-werror {{var CFLAGS}} {
       default { lappend rv $f }
     }
   }
-  return [join $rv " "]
+  join $rv " "
 }
 
 #
@@ -377,7 +376,8 @@ proc proj-first-bin-of {args} {
   set rc ""
   foreach b $args {
     set u [string toupper $b]
-    # Note that cc-path-progs defines $u to false if it finds no match.
+    # Note that cc-path-progs defines $u to "false" if it finds no
+    # match.
     if {[cc-path-progs $b]} {
       set rc [get-define $u]
     }
@@ -521,7 +521,7 @@ proc proj-define-for-opt {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 # @proj-opt-define-bool ?-v? optName defName ?descr?
 #
 # Checks [proj-opt-truthy $optName] and calls [define $defName X]
-# where X is 0 for false and 1 for true. descr is an optional
+# where X is 0 for false and 1 for true. $descr is an optional
 # [msg-checking] argument which defaults to $defName. Returns X.
 #
 # If args[0] is -v then the boolean semantics are inverted: if
@@ -531,7 +531,7 @@ proc proj-define-for-opt {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 proc proj-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
-    set invert 1
+    incr invert
     lassign $args - optName defName descr
   } else {
     lassign $args optName defName descr
@@ -542,14 +542,9 @@ proc proj-opt-define-bool {args} {
   #puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
   msg-checking "[join $descr] ... "
-  if {[proj-opt-truthy $optName]} {
-    if {0 eq $invert} {
-      set rc 1
-    } else {
-      set rc 0
-    }
-  } elseif {0 ne $invert} {
-    set rc 1
+  set rc [proj-opt-truthy $optName]
+  if {$invert} {
+    set rc [expr {!$rc}]
   }
   msg-result $rc
   define $defName $rc
@@ -1343,7 +1338,7 @@ proc proj-dump-defs-json {file args} {
 # that [opt-value canonical] will return X if --alias=X is passed to
 # configure.
 #
-# That said: autosetup's [opt-src] does support alias forms, but it
+# That said: autosetup's [opt-str] does support alias forms, but it
 # requires that the caller know all possible aliases. It's simpler, in
 # terms of options handling, if there's only a single canonical name
 # which each down-stream call of [opt-...] has to know.
@@ -1503,11 +1498,11 @@ proc proj-env-file {flag {dflt ""}} {
 # If none of those are set, $dflt is returned.
 #
 proc proj-get-env {var {dflt ""}} {
-  return [get-env $var [proj-env-file $var $dflt]]
+  get-env $var [proj-env-file $var $dflt]
 }
 
 #
-# @proj-current-scope ?lvl?
+# @proj-scope ?lvl?
 #
 # Returns the name of the _calling_ proc from ($lvl + 1) levels up the
 # call stack (where the caller's level will be 1 up from _this_
@@ -1515,7 +1510,7 @@ proc proj-get-env {var {dflt ""}} {
 # returned and if it would be negative then a string indicating such
 # is returned (as opposed to throwing an error).
 #
-proc proj-current-scope {{lvl 0}} {
+proc proj-scope {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   set ilvl [info level]
   set offset [expr {$ilvl  - $lvl - 1}]
@@ -1526,6 +1521,15 @@ proc proj-current-scope {{lvl 0}} {
   } else {
     return [lindex [info level $offset] 0]
   }
+}
+
+#
+# Deprecated name of [proj-scope].
+#
+proc proj-current-scope {{lvl 0}} {
+  puts stderr \
+    "Deprecated proj-current-scope called from [proj-scope 1]. Use proj-scope instead."
+  proj-scope [incr lvl]
 }
 
 #
@@ -1548,6 +1552,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     TCL_VERSION
     TCL_MAJOR_VERSION
     TCL_MINOR_VERSION
+    TCL_PACKAGE_PATH
     TCL_PATCH_LEVEL
     TCL_SHLIB_SUFFIX
   }
@@ -1564,26 +1569,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
   lappend shBody "exit"
   set shBody [join $shBody "\n"]
   #puts "shBody=$shBody\n"; exit
-  if {0} {
-    # This doesn't work but would be preferable to using a temp file...
-    set fd [open "| sh" "rw"]
-    #puts "fd = $fd"; exit
-    puts $fd $shBody
-    #flush $fd; # "bad file descriptor"? Without flush, [read] blocks
-    set rd [read $fd]
-    close $fd
-    puts "rd=$rd"; exit 1
-    eval $rd
-  } else {
-    set shName ".tclConfigSh.tcl"
-    proj-file-write $shName $shBody
-    catch {
-      eval [exec sh $shName $tclConfigSh]
-      expr 1
-    } rc xopts
-    file delete -force $shName
-    return {*}$xopts $rc
-  }
+  eval [exec echo $shBody | sh]
 }
 
 #
@@ -1662,7 +1648,7 @@ proc proj-dot-ins-append {fileIn args} {
       proj-fatal "Too many arguments: $fileIn $args"
     }
   }
-  #puts "******* [proj-current-scope]: adding $fileIn"
+  #puts "******* [proj-scope]: adding $fileIn"
   lappend ::proj__Config(dot-in-files) $fileIn
 }
 
@@ -1706,7 +1692,7 @@ proc proj-dot-ins-process {args} {
     -validate 0 {expr 1}
   }
   if {[llength $args] > 0} {
-    error "Invalid argument to [proj-current-scope]: $args"
+    error "Invalid argument to [proj-scope]: $args"
   }
   foreach f $::proj__Config(dot-in-files) {
     proj-assert {3==[llength $f]} \
@@ -1844,7 +1830,7 @@ proc proj-define-amend {args} {
     }
   }
   if {"" eq $defName} {
-    proj-error "Missing defineName argument in call from [proj-current-scope 1]"
+    proj-error "Missing defineName argument in call from [proj-scope 1]"
   }
   if {$isdefs} {
     set args $xargs
@@ -1975,7 +1961,7 @@ array set proj__Cache {}
 # Returns a cache key for the given argument:
 #
 #   integer: relative call stack levels to get the scope name of for
-#   use as a key. [proj-current-scope [expr {1 + $arg + addLevel}]] is
+#   use as a key. [proj-scope [expr {1 + $arg + addLevel}]] is
 #   then used to generate the key. i.e. the default of 0 uses the
 #   calling scope's name as the key.
 #
@@ -1986,7 +1972,7 @@ array set proj__Cache {}
 proc proj-cache-key {{addLevel 0} arg} {
   if {"-" eq $arg} {set arg 0}
   if {[string is integer -strict $arg]} {
-    return [proj-current-scope [expr {$arg + $addLevel + 1}]]
+    return [proj-scope [expr {$arg + $addLevel + 1}]]
   }
   return $arg
 }

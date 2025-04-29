@@ -279,7 +279,7 @@ proc teaish-configure-core {} {
     # Set up some default values if the extension did not set them.
     # This must happen _after_ it's sourced but before
     # teaish-configure is called.
-    teaish__f2d_array f2d
+    array set f2d $::teaish__Config(pkginfo-f2d)
     foreach {pflag key type val} {
       - TEAISH_CFLAGS           -v ""
       - TEAISH_LDFLAGS          -v ""
@@ -397,7 +397,7 @@ proc teaish-configure-core {} {
 #
 proc teaish-debug {msg} {
   if {$::teaish__Config(debug-enabled)} {
-    puts stderr [proj-bold "** DEBUG: \[[proj-current-scope 1]\]: $msg"]
+    puts stderr [proj-bold "** DEBUG: \[[proj-scope 1]\]: $msg"]
   }
 }
 
@@ -831,7 +831,59 @@ proc teaish__check_tcl {} {
     }
   }
   msg-result "Using Tcl [get-define TCL_VERSION] from [get-define TCL_PREFIX]."
+  teaish__tcl_platform_quirks
 }; # teaish__check_tcl
+
+#
+# Perform last-minute platform-specific tweaks to account for quirks.
+#
+proc teaish__tcl_platform_quirks {} {
+  define TEAISH_POSTINST_PREREQUIRE ""
+  switch -glob -- [get-define host] {
+    *-haiku {
+      # Haiku's default TCLLIBDIR is "all wrong": it points to a
+      # read-only virtual filesystem mount-point. We bend it back to
+      # fit under $TCL_PACKAGE_PATH here.
+      foreach {k d} {
+        vj TCL_MAJOR_VERSION
+        vn TCL_MINOR_VERSION
+        pp TCL_PACKAGE_PATH
+        ld TCLLIBDIR
+      } {
+        set $k [get-define $d]
+      }
+      if {[string match /packages/* $ld]} {
+        set old $ld
+        set tail [file tail $ld]
+        if {8 == $vj} {
+          set ld "${pp}/tcl${vj}.${vn}/${tail}"
+        } else {
+          proj-assert {9 == $vj}
+          set ld "${pp}/${tail}"
+        }
+        define TCLLIBDIR $ld
+        # [load foo.so], without a directory part, does not work via
+        # automated tests on Haiku (but works when run
+        # manually). Similarly, the post-install [package require ...]
+        # test fails, presumably for a similar reason. We work around
+        # the former in teaish.tester.tcl.in. We work around the
+        # latter by amending the post-install check's ::auto_path (in
+        # Makefile.in). This code MUST NOT contain any single-quotes.
+        define TEAISH_POSTINST_PREREQUIRE \
+          [join [list set ::auto_path \
+                   \[ linsert \$::auto_path 0 $ld \] \; \
+                  ]]
+        proj-indented-notice [subst -nocommands -nobackslashes {
+          Haiku users take note: patching target installation dir to match
+          Tcl's home because Haiku's is not writable.
+
+          Original  : $old
+          Substitute: $ld
+        }]
+      }
+    }
+  }
+}; # teaish__tcl_platform_quirks
 
 #
 # Searches $::argv and/or the build dir and/or the source dir for
@@ -1246,7 +1298,7 @@ proc teaish-dist-add {args} {
 #}
 
 #
-# @teash-append-make args...
+# @teash-make-add args...
 #
 # Appends makefile code to the TEAISH_MAKEFILE_CODE define. Each
 # arg may be any of:
@@ -1331,7 +1383,7 @@ proc teaish-make-obj {o src args} {
     }
   }
   teaish-make-add \
-    "# [proj-current-scope 1] -> [proj-current-scope] $o $src" -nl \
+    "# [proj-scope 1] -> [proj-scope] $o $src" -nl \
     "$o: $src $::teaish__Config(teaish.tcl)"
   if {[info exists flags(-deps)]} {
     teaish-make-add " " [join $flags(-deps)]
@@ -1378,7 +1430,7 @@ proc teaish-make-clean {args} {
     }
   }
   set rule [teaish__cleanup_rule $tgt]
-  teaish-make-add "# [proj-current-scope 1] -> [proj-current-scope]: [join $args]\n"
+  teaish-make-add "# [proj-scope 1] -> [proj-scope]: [join $args]\n"
   teaish-make-add "${rule}:\n\trm ${rmflags}"
   foreach a $args {
     teaish-make-add " \"$a\""
@@ -1461,7 +1513,7 @@ proc teaish-check-cached {args} {
   }
   lassign $args msg script
   if {"" eq $msg} {
-    set msg [proj-current-scope 1]
+    set msg [proj-scope 1]
   }
   msg-checking "${msg} ... "
   if {[teaish-feature-cache-check 1 check]} {
@@ -1583,7 +1635,7 @@ proc teaish__defs_format {type value} {
     default {
       proj-error \
         "Unknown [project-current-scope] -type ($type) called from" \
-        [proj-current-scope 1]
+        [proj-scope 1]
     }
   }
   return $value
@@ -1850,7 +1902,7 @@ proc teaish-pkginfo-set {args} {
   }
   proj-parse-simple-flags args flags $flagDefs
   if {[llength $args]} {
-    proj-error -up "Too many (or unknown) arguments to [proj-current-scope]: $args"
+    proj-error -up "Too many (or unknown) arguments to [proj-scope]: $args"
   }
   foreach {f d} $::teaish__Config(pkginfo-f2d) {
     if {$sentinel eq [set v $flags($f)]} continue
@@ -1964,13 +2016,12 @@ proc teaish-pkginfo-get {args} {
     }
 
     default {
-      proj-error "invalid arg count from [proj-current-scope 1]"
+      proj-error "invalid arg count from [proj-scope 1]"
     }
   }
 
-  set cases [join $cases]
   foreach {flag defName} $::teaish__Config(pkginfo-f2d) {
-    switch -exact -- $flag $cases
+    switch -exact -- $flag [join $cases]
   }
   if {0 == $argc} { return $rv }
 }
@@ -2078,12 +2129,6 @@ proc teaish-get {flag} {
     }
   }
   proj-error "Unhandled flag: $flag"
-}
-
-array set ::teaish__PkgInfoF2D $::teaish__Config(pkginfo-f2d)
-proc teaish__f2d_array {tgtArrayName} {
-  upvar $tgtArrayName tgt
-  set tgt $::teaish__PkgInfoF2D
 }
 
 #

@@ -324,8 +324,9 @@ install-core: install-pre
 install-test: install-core
 	@echo "Post-install test of [package require $(tx.name.pkg) $(tx.version)]..."; \
 	if echo \
-		'set c 0;' \
-		'if {[catch {package require  $(tx.name.pkg) $(tx.version)}]} {incr c};' \
+		'set c 0; ' \
+		'@TEAISH_POSTINST_PREREQUIRE@' \
+		'if {[catch {package require $(tx.name.pkg) $(tx.version)}]} {incr c};' \
 		'exit $$c' \
 		| $(TCLSH) ; then \
 		echo "passed"; \

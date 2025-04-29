@@ -17,7 +17,9 @@
 @TEAISH_VSATISFIES_CODE@
 @endif
 if {[llength [lindex $::argv 0]] > 0} {
-  load [lindex $::argv 0] [lindex $::argv 1];
+  load [file normalize [lindex $::argv 0]] [lindex $::argv 1];
+  # ----^^^^^^^ needed on Haiku when argv 0 is just a filename, else
+  # load cannot find the file.
 }
 source -encoding utf-8 [lindex $::argv 2]; # teaish/tester.tcl
 @if TEAISH_PKGINIT_TCL
